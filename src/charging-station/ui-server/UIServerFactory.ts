@@ -68,8 +68,10 @@ export class UIServerFactory {
             uiServerConfiguration.type as ApplicationProtocol
           )
         ) {
-          // eslint-disable-next-line @typescript-eslint/no-base-to-string
-          const logMsg = `Unknown application protocol type '${uiServerConfiguration.type}' in '${ConfigurationSection.uiServer}' configuration section from values '${ApplicationProtocol.toString()}', defaulting to '${
+          const logMsg = `Unknown application protocol type '${uiServerConfiguration.type}' in '${
+            ConfigurationSection.uiServer
+            // eslint-disable-next-line @typescript-eslint/no-base-to-string
+          }' configuration section from values '${ApplicationProtocol.toString()}', defaulting to '${
             ApplicationProtocol.WS
           }'`
           logger.warn(`${UIServerFactory.logPrefix()} ${logMsg}`)

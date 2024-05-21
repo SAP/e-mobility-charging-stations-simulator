@@ -333,9 +333,9 @@ export class AutomaticTransactionGenerator {
     const connectorStatus = this.chargingStation.getConnectorStatus(connectorId)
     if (connectorStatus?.transactionStarted === true) {
       logger.info(
-        `${this.logPrefix(
-          connectorId
-        )} entered in transaction loop while a transaction ${connectorStatus.transactionId} is already started on connector ${connectorId}`
+        `${this.logPrefix(connectorId)} entered in transaction loop while a transaction ${
+          connectorStatus.transactionId
+        } is already started on connector ${connectorId}`
       )
       return false
     }
@@ -378,9 +378,9 @@ export class AutomaticTransactionGenerator {
     while (connectorStatus?.transactionStarted === true) {
       if (!logged) {
         logger.info(
-          `${this.logPrefix(
-            connectorId
-          )} transaction loop waiting for started transaction ${connectorStatus.transactionId} on connector ${connectorId} to be stopped`
+          `${this.logPrefix(connectorId)} transaction loop waiting for started transaction ${
+            connectorStatus.transactionId
+          } on connector ${connectorId} to be stopped`
         )
         logged = true
       }
@@ -416,7 +416,9 @@ export class AutomaticTransactionGenerator {
       )
     } else if (this.chargingStation.getAutomaticTransactionGeneratorStatuses() != null) {
       logger.warn(
-        `${this.logPrefix(connectorId)} no status found for connector #${connectorId} in charging station configuration file. New status will be created`
+        `${this.logPrefix(
+          connectorId
+        )} no status found for connector #${connectorId} in charging station configuration file. New status will be created`
       )
     }
     if (connectorStatus != null) {
@@ -507,7 +509,9 @@ export class AutomaticTransactionGenerator {
     startResponse = await this.chargingStation.ocppRequestService.requestHandler<
     Partial<StartTransactionRequest>,
     StartTransactionResponse
-    >(this.chargingStation, RequestCommand.START_TRANSACTION, { connectorId })
+    >(this.chargingStation, RequestCommand.START_TRANSACTION, {
+      connectorId
+    })
     this.handleStartTransactionResponse(connectorId, startResponse)
     PerformanceStatistics.endMeasure(measureId, beginId)
     return startResponse

@@ -225,9 +225,13 @@ export class Bootstrap extends EventEmitter {
         )
         console.info(
           chalk.green(
-            `Charging stations simulator ${
-              this.version
-            } started with ${this.numberOfConfiguredChargingStations} configured and ${this.numberOfProvisionedChargingStations} provisioned charging station(s) from ${this.numberOfChargingStationTemplates} charging station template(s) and ${
+            `Charging stations simulator ${this.version} started with ${
+              this.numberOfConfiguredChargingStations
+            } configured and ${
+              this.numberOfProvisionedChargingStations
+            } provisioned charging station(s) from ${
+              this.numberOfChargingStationTemplates
+            } charging station template(s) and ${
               Configuration.workerDynamicPoolInUse() ? `${workerConfiguration.poolMinSize}/` : ''
             }${this.workerImplementation?.size}${
               Configuration.workerPoolInUse() ? `/${workerConfiguration.poolMaxSize}` : ''
@@ -373,7 +377,9 @@ export class Bootstrap extends EventEmitter {
         poolOptions: {
           messageHandler: this.messageHandler.bind(this) as MessageHandler<Worker>,
           ...(workerConfiguration.resourceLimits != null && {
-            workerOptions: { resourceLimits: workerConfiguration.resourceLimits }
+            workerOptions: {
+              resourceLimits: workerConfiguration.resourceLimits
+            }
           })
         }
       }
@@ -418,7 +424,11 @@ export class Bootstrap extends EventEmitter {
           break
         default:
           throw new BaseError(
-            `Unknown charging station worker message event: '${event}' received with data: ${JSON.stringify(data, undefined, 2)}`
+            `Unknown charging station worker message event: '${event}' received with data: ${JSON.stringify(
+              data,
+              undefined,
+              2
+            )}`
           )
       }
     } catch (error) {
@@ -436,7 +446,9 @@ export class Bootstrap extends EventEmitter {
         data.stationInfo.chargingStationId
       } (hashId: ${data.stationInfo.hashId}) added (${
         this.numberOfAddedChargingStations
-      } added from ${this.numberOfConfiguredChargingStations} configured and ${this.numberOfProvisionedChargingStations} provisioned charging station(s))`
+      } added from ${this.numberOfConfiguredChargingStations} configured and ${
+        this.numberOfProvisionedChargingStations
+      } provisioned charging station(s))`
     )
   }
 
@@ -451,7 +463,9 @@ export class Bootstrap extends EventEmitter {
         data.stationInfo.chargingStationId
       } (hashId: ${data.stationInfo.hashId}) deleted (${
         this.numberOfAddedChargingStations
-      } added from ${this.numberOfConfiguredChargingStations} configured and ${this.numberOfProvisionedChargingStations} provisioned charging station(s))`
+      } added from ${this.numberOfConfiguredChargingStations} configured and ${
+        this.numberOfProvisionedChargingStations
+      } provisioned charging station(s))`
     )
   }
 

@@ -892,7 +892,9 @@
         "username": "admin",
         "password": "admin"
       },
-      "dataPropertyOrder": { "&": ["baseUrl", "protocol", "version", "username", "password"] },
+      "dataPropertyOrder": {
+        "&": ["baseUrl", "protocol", "version", "username", "password"]
+      },
       "color": null,
       "isPrivate": false,
       "metaSortKey": 1661789025528,

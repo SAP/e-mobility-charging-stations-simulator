@@ -142,7 +142,9 @@ const simulatorButtonClass = computed<string>(() =>
 )
 const simulatorButtonMessage = computed<string>(
   () =>
-    `${simulatorState.value?.started === true ? 'Stop' : 'Start'} Simulator${simulatorState.value?.version != null ? ` (${simulatorState.value.version})` : ''}`
+    `${simulatorState.value?.started === true ? 'Stop' : 'Start'} Simulator${
+      simulatorState.value?.version != null ? ` (${simulatorState.value.version})` : ''
+    }`
 )
 
 const state = ref<{
@@ -286,7 +288,10 @@ onUnmounted(() => {
   unregisterWSEventListeners()
 })
 
-const uiServerConfigurations: { index: number; configuration: UIServerConfigurationSection }[] = (
+const uiServerConfigurations: {
+  index: number
+  configuration: UIServerConfigurationSection
+}[] = (
   app?.appContext.config.globalProperties.$configuration.value
     .uiServer as UIServerConfigurationSection[]
 ).map((configuration: UIServerConfigurationSection, index: number) => ({

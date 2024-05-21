@@ -583,9 +583,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
         authorizeConnectorStatus.idTagAuthorized = false
         delete authorizeConnectorStatus.authorizeIdTag
         logger.debug(
-          `${chargingStation.logPrefix()} idTag '${requestPayload.idTag}' rejected with status '${
-            payload.idTagInfo.status
-          }'`
+          `${chargingStation.logPrefix()} idTag '${
+            requestPayload.idTag
+          }' rejected with status '${payload.idTagInfo.status}'`
         )
       }
     } else {
@@ -698,7 +698,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
       connectorStatus?.status !== OCPP16ChargePointStatus.Preparing
     ) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to start a transaction on connector id ${connectorId} with status ${connectorStatus?.status}`
+        `${chargingStation.logPrefix()} Trying to start a transaction on connector id ${connectorId} with status ${
+          connectorStatus?.status
+        }`
       )
       return
     }
@@ -733,9 +735,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
             logger.warn(
               `${chargingStation.logPrefix()} Reserved transaction ${
                 payload.transactionId
-              } started with a different idTag ${requestPayload.idTag} than the reservation one ${
-                reservation.idTag
-              }`
+              } started with a different idTag ${
+                requestPayload.idTag
+              } than the reservation one ${reservation.idTag}`
             )
           }
           if (hasReservationExpired(reservation)) {
@@ -774,11 +776,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ChargePointStatus.Charging
       )
       logger.info(
-        `${chargingStation.logPrefix()} Transaction with id ${
-          payload.transactionId
-        } STARTED on ${chargingStation.stationInfo?.chargingStationId}#${connectorId} for idTag '${
-          requestPayload.idTag
-        }'`
+        `${chargingStation.logPrefix()} Transaction with id ${payload.transactionId} STARTED on ${
+          chargingStation.stationInfo?.chargingStationId
+        }#${connectorId} for idTag '${requestPayload.idTag}'`
       )
       if (chargingStation.stationInfo?.powerSharedByConnectors === true) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

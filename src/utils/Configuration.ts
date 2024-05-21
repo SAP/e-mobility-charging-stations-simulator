@@ -171,7 +171,7 @@ export class Configuration {
     if (isCFEnvironment()) {
       delete uiServerConfiguration.options?.host
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      uiServerConfiguration.options!.port = parseInt(env.PORT!)
+      uiServerConfiguration.options!.port = Number.parseInt(env.PORT!)
     }
     return uiServerConfiguration
   }

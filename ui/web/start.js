@@ -7,7 +7,7 @@ import finalhandler from 'finalhandler'
 import serveStatic from 'serve-static'
 
 const isCFEnvironment = env.VCAP_APPLICATION != null
-const PORT = isCFEnvironment ? parseInt(env.PORT) : 3030
+const PORT = isCFEnvironment ? Number.parseInt(env.PORT) : 3030
 const uiPath = join(dirname(fileURLToPath(import.meta.url)), './dist')
 
 const serve = serveStatic(uiPath)

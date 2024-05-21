@@ -80,7 +80,10 @@ export const handleSendMessageError = (
   chargingStation: ChargingStation,
   commandName: RequestCommand | IncomingRequestCommand,
   error: Error,
-  params: HandleErrorParams<EmptyObject> = { throwError: false, consoleOut: false }
+  params: HandleErrorParams<EmptyObject> = {
+    throwError: false,
+    consoleOut: false
+  }
 ): void => {
   setDefaultErrorParams(params, { throwError: false, consoleOut: false })
   logger.error(`${chargingStation.logPrefix()} Request command '${commandName}' error:`, error)

@@ -383,7 +383,11 @@ export abstract class OCPPRequestService {
                     params.skipBufferingOnError === false ? '' : 'non '
                   }buffered message id '${messageId}' with content '${messageToSend}'`,
                   commandName,
-                  { name: error.name, message: error.message, stack: error.stack }
+                  {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack
+                  }
                 )
               )
             }

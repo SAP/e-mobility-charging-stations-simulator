@@ -179,9 +179,9 @@ export class PerformanceStatistics {
       )
     if (performanceStorageConfiguration.enabled === true) {
       logger.info(
-        `${this.logPrefix()} storage enabled: type ${performanceStorageConfiguration.type}, uri: ${
-          performanceStorageConfiguration.uri
-        }`
+        `${this.logPrefix()} storage enabled: type ${
+          performanceStorageConfiguration.type
+        }, uri: ${performanceStorageConfiguration.uri}`
       )
     }
   }
@@ -290,9 +290,10 @@ export class PerformanceStatistics {
           Constants.DEFAULT_CIRCULAR_BUFFER_CAPACITY
         )
     }
-    this.statistics.statisticsData
-      .get(entry.name)
-      ?.measurementTimeSeries?.push({ timestamp: entry.startTime, value: entry.duration })
+    this.statistics.statisticsData.get(entry.name)?.measurementTimeSeries?.push({
+      timestamp: entry.startTime,
+      value: entry.duration
+    })
     const timeMeasurementValues = extractTimeSeriesValues(
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this.statistics.statisticsData.get(entry.name)!.measurementTimeSeries!

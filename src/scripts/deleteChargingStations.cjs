@@ -14,7 +14,7 @@ const config = JSON.parse(fs.readFileSync('scriptConfig.json', 'utf8'))
 // Mongo Connection and Query
 if (config?.mongoConnectionString) {
   // eslint-disable-next-line n/handle-callback-err
-  MongoClient.connect(config.mongoConnectionString, async function (_err, client) {
+  MongoClient.connect(config.mongoConnectionString, async (_err, client) => {
     const db = client.db()
 
     for await (const tenantID of config.tenantIDs) {

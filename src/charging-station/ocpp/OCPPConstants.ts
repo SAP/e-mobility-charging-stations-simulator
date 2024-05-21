@@ -26,8 +26,13 @@ export class OCPPConstants {
 
   static readonly OCPP_REQUEST_EMPTY = Constants.EMPTY_FROZEN_OBJECT
   static readonly OCPP_RESPONSE_EMPTY = Constants.EMPTY_FROZEN_OBJECT
-  static readonly OCPP_RESPONSE_ACCEPTED = Object.freeze({ status: GenericStatus.Accepted })
-  static readonly OCPP_RESPONSE_REJECTED = Object.freeze({ status: GenericStatus.Rejected })
+  static readonly OCPP_RESPONSE_ACCEPTED = Object.freeze({
+    status: GenericStatus.Accepted
+  })
+
+  static readonly OCPP_RESPONSE_REJECTED = Object.freeze({
+    status: GenericStatus.Rejected
+  })
 
   static readonly OCPP_CONFIGURATION_RESPONSE_ACCEPTED = Object.freeze({
     status: ConfigurationStatus.ACCEPTED
@@ -65,7 +70,10 @@ export class OCPPConstants {
     status: ClearChargingProfileStatus.UNKNOWN
   })
 
-  static readonly OCPP_RESPONSE_UNLOCKED = Object.freeze({ status: UnlockStatus.UNLOCKED })
+  static readonly OCPP_RESPONSE_UNLOCKED = Object.freeze({
+    status: UnlockStatus.UNLOCKED
+  })
+
   static readonly OCPP_RESPONSE_UNLOCK_FAILED = Object.freeze({
     status: UnlockStatus.UNLOCK_FAILED
   })

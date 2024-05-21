@@ -27,7 +27,7 @@ export const convertToInt = (value: unknown): number => {
   }
   let changedValue: number = value as number
   if (typeof value === 'string') {
-    changedValue = parseInt(value)
+    changedValue = Number.parseInt(value)
   }
   if (isNaN(changedValue)) {
     throw new Error(`Cannot convert to integer: '${String(value)}'`)

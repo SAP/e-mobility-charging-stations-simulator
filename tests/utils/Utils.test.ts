@@ -232,7 +232,7 @@ await describe('Utils test suite', async () => {
     expect(isAsyncFunction([])).toBe(false)
     expect(isAsyncFunction(new Date())).toBe(false)
     // eslint-disable-next-line prefer-regex-literals
-    expect(isAsyncFunction(new RegExp('[a-z]', 'i'))).toBe(false)
+    expect(isAsyncFunction(/[a-z]/i)).toBe(false)
     expect(isAsyncFunction(new Error())).toBe(false)
     expect(isAsyncFunction(new Map())).toBe(false)
     expect(isAsyncFunction(new Set())).toBe(false)

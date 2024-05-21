@@ -25,7 +25,9 @@ export class MongoDBStorage extends Storage {
       await this.client
         ?.db(this.dbName)
         .collection<Statistics>(Constants.PERFORMANCE_RECORDS_TABLE)
-        .replaceOne({ id: performanceStatistics.id }, performanceStatistics, { upsert: true })
+        .replaceOne({ id: performanceStatistics.id }, performanceStatistics, {
+          upsert: true
+        })
     } catch (error) {
       this.handleDBError(StorageType.MONGO_DB, error as Error, Constants.PERFORMANCE_RECORDS_TABLE)
     }

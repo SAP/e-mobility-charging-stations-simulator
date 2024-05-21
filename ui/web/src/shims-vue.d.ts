@@ -1,4 +1,4 @@
-export {}
+export type {}
 
 declare module 'vue' {
   export interface GlobalComponents {

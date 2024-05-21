@@ -113,7 +113,7 @@ export const convertToInt = (value: unknown): number => {
   }
   let changedValue: number = value as number
   if (typeof value === 'string') {
-    changedValue = parseInt(value)
+    changedValue = Number.parseInt(value)
   }
   if (isNaN(changedValue)) {
     throw new Error(`Cannot convert to integer: '${String(value)}'`)
@@ -127,7 +127,7 @@ export const convertToFloat = (value: unknown): number => {
   }
   let changedValue: number = value as number
   if (typeof value === 'string') {
-    changedValue = parseFloat(value)
+    changedValue = Number.parseFloat(value)
   }
   if (isNaN(changedValue)) {
     throw new Error(`Cannot convert to float: '${String(value)}'`)
@@ -282,7 +282,9 @@ export const JSONStringify = <
       if (is(Map, value)) {
         switch (mapFormat) {
           case MapStringifyFormat.object:
-            return { ...Object.fromEntries<Map<string, Record<string, unknown>>>(value.entries()) }
+            return {
+              ...Object.fromEntries<Map<string, Record<string, unknown>>>(value.entries())
+            }
           case MapStringifyFormat.array:
           default:
             return [...value]

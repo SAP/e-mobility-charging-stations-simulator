@@ -105,7 +105,9 @@ export class UIClient {
   }
 
   public async deleteChargingStation(hashId: string): Promise<ResponsePayload> {
-    return this.sendRequest(ProcedureName.DELETE_CHARGING_STATIONS, { hashIds: [hashId] })
+    return this.sendRequest(ProcedureName.DELETE_CHARGING_STATIONS, {
+      hashIds: [hashId]
+    })
   }
 
   public async setSupervisionUrl(hashId: string, supervisionUrl: string): Promise<ResponsePayload> {
@@ -116,11 +118,15 @@ export class UIClient {
   }
 
   public async startChargingStation(hashId: string): Promise<ResponsePayload> {
-    return this.sendRequest(ProcedureName.START_CHARGING_STATION, { hashIds: [hashId] })
+    return this.sendRequest(ProcedureName.START_CHARGING_STATION, {
+      hashIds: [hashId]
+    })
   }
 
   public async stopChargingStation(hashId: string): Promise<ResponsePayload> {
-    return this.sendRequest(ProcedureName.STOP_CHARGING_STATION, { hashIds: [hashId] })
+    return this.sendRequest(ProcedureName.STOP_CHARGING_STATION, {
+      hashIds: [hashId]
+    })
   }
 
   public async openConnection(hashId: string): Promise<ResponsePayload> {
@@ -183,11 +189,17 @@ export class UIClient {
       this.uiServerConfiguration.authentication?.type === AuthenticationType.PROTOCOL_BASIC_AUTH
         ? [
             `${this.uiServerConfiguration.protocol}${this.uiServerConfiguration.version}`,
-            `authorization.basic.${btoa(`${this.uiServerConfiguration.authentication.username}:${this.uiServerConfiguration.authentication.password}`).replace(/={1,2}$/, '')}`
+            `authorization.basic.${btoa(
+              `${this.uiServerConfiguration.authentication.username}:${this.uiServerConfiguration.authentication.password}`
+            ).replace(/={1,2}$/, '')}`
           ]
         : `${this.uiServerConfiguration.protocol}${this.uiServerConfiguration.version}`
     this.ws = new WebSocket(
-      `${this.uiServerConfiguration.secure === true ? ApplicationProtocol.WSS : ApplicationProtocol.WS}://${this.uiServerConfiguration.host}:${this.uiServerConfiguration.port}`,
+      `${
+        this.uiServerConfiguration.secure === true
+          ? ApplicationProtocol.WSS
+          : ApplicationProtocol.WS
+      }://${this.uiServerConfiguration.host}:${this.uiServerConfiguration.port}`,
       protocols
     )
     this.ws.onopen = () => {

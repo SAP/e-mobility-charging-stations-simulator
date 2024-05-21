@@ -166,7 +166,9 @@ export abstract class AbstractUIServer {
     const authorizationProtocol = req.headers['sec-websocket-protocol']?.split(/,\s+/).pop()
     const [username, password] = getUsernameAndPasswordFromAuthorizationToken(
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      `${authorizationProtocol}${Array(((4 - (authorizationProtocol!.length % 4)) % 4) + 1).join('=')}`
+      `${authorizationProtocol}${Array(((4 - (authorizationProtocol!.length % 4)) % 4) + 1).join(
+        '='
+      )}`
         .split('.')
         .pop() ?? '',
       next

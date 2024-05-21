@@ -130,7 +130,11 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
         data: elementData
       } satisfies WorkerMessage<D>
       workerSetElement.worker.postMessage(message)
-      this.promiseResponseMap.set(message.uuid, { resolve, reject, workerSetElement })
+      this.promiseResponseMap.set(message.uuid, {
+        resolve,
+        reject,
+        workerSetElement
+      })
     })
     const response = await sendMessageToWorker
     // Add element sequentially to optimize memory at startup
@@ -199,7 +203,10 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     worker.once('exit', () => {
       this.removeWorkerSetElement(this.getWorkerSetElementByWorker(worker))
     })
-    const workerSetElement: WorkerSetElement = { worker, numberOfWorkerElements: 0 }
+    const workerSetElement: WorkerSetElement = {
+      worker,
+      numberOfWorkerElements: 0
+    }
     this.workerSet.add(workerSetElement)
     this.workerStartup = false
     return workerSetElement

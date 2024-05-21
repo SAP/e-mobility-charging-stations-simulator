@@ -657,7 +657,9 @@
         "protocol": "ui",
         "version": "0.0.1"
       },
-      "dataPropertyOrder": { "&": ["baseUrl", "username", "password", "protocol", "version"] },
+      "dataPropertyOrder": {
+        "&": ["baseUrl", "username", "password", "protocol", "version"]
+      },
       "color": null,
       "isPrivate": false,
       "metaSortKey": 1671183662529,

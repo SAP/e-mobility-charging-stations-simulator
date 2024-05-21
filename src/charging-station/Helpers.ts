@@ -306,7 +306,11 @@ export const checkConnectorsConfiguration = (
     )
     stationTemplate.randomConnectors = true
   }
-  return { configuredMaxConnectors, templateMaxConnectors, templateMaxAvailableConnectors }
+  return {
+    configuredMaxConnectors,
+    templateMaxConnectors,
+    templateMaxAvailableConnectors
+  }
 }
 
 export const checkStationInfoConnectorStatus = (
@@ -524,7 +528,10 @@ export const createSerialNumber = (
     randomSerialNumber?: boolean
   }
 ): void => {
-  params = { ...{ randomSerialNumberUpperCase: true, randomSerialNumber: true }, ...params }
+  params = {
+    ...{ randomSerialNumberUpperCase: true, randomSerialNumber: true },
+    ...params
+  }
   const serialNumberSuffix =
     params.randomSerialNumber === true
       ? getRandomSerialNumberSuffix({
