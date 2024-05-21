@@ -267,12 +267,12 @@ export class PerformanceStatistics {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.statistics.statisticsData.get(entry.name)!.minTimeMeasurement = min(
       entry.duration,
-      this.statistics.statisticsData.get(entry.name)?.minTimeMeasurement ?? Infinity
+      this.statistics.statisticsData.get(entry.name)?.minTimeMeasurement ?? Number.POSITIVE_INFINITY
     )
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.statistics.statisticsData.get(entry.name)!.maxTimeMeasurement = max(
       entry.duration,
-      this.statistics.statisticsData.get(entry.name)?.maxTimeMeasurement ?? -Infinity
+      this.statistics.statisticsData.get(entry.name)?.maxTimeMeasurement ?? Number.NEGATIVE_INFINITY
     )
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.statistics.statisticsData.get(entry.name)!.totalTimeMeasurement =

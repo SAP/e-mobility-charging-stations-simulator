@@ -6,7 +6,7 @@ import { max, min, nthPercentile, stdDeviation } from '../../src/utils/Statistic
 
 await describe('StatisticUtils test suite', async () => {
   await it('Verify min()', () => {
-    expect(min()).toBe(Infinity)
+    expect(min()).toBe(Number.POSITIVE_INFINITY)
     expect(min(0, 1)).toBe(0)
     expect(min(1, 0)).toBe(0)
     expect(min(0, -1)).toBe(-1)
@@ -14,7 +14,7 @@ await describe('StatisticUtils test suite', async () => {
   })
 
   await it('Verify max()', () => {
-    expect(max()).toBe(-Infinity)
+    expect(max()).toBe(Number.NEGATIVE_INFINITY)
     expect(max(0, 1)).toBe(1)
     expect(max(1, 0)).toBe(1)
     expect(max(0, -1)).toBe(0)
