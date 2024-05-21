@@ -57,8 +57,8 @@ importers:
         specifier: ^6.6.2
         version: 6.6.2(socks@2.8.3)
       poolifier:
-        specifier: ^4.0.10
-        version: 4.0.10
+        specifier: ^4.0.11
+        version: 4.0.11
       rambda:
         specifier: ^9.2.0
         version: 9.2.0
@@ -182,7 +182,7 @@ importers:
         specifier: ^5.0.7
         version: 5.0.7
       semver:
-        specifier: ^7.6.2
+        specifier: ^7.5.3
         version: 7.6.2
       ts-node:
         specifier: ^10.9.2
@@ -4867,8 +4867,8 @@ packages:
     resolution: {integrity: sha512-nDywThFk1i4BQK4twPQ6TA4RT8bDY96yeuCVBWL3ePARCiEKDRSrNGbFIgUJpLp+XeIR65v8ra7WuJOFUBtkMA==}
     engines: {node: '>=8'}
 
-  poolifier@4.0.10:
-    resolution: {integrity: sha512-PSitQC7KbzqnPrHLOLl0nebqDbGtEPN1fNVZgAdYPK7jmswAiDaW9z4VDr1fW45mkPio654bEg77QvsScUG+WQ==}
+  poolifier@4.0.11:
+    resolution: {integrity: sha512-TW2Nik3Q7+KgwsiqUHmzeCYRsO20TGZnxXSAhaySEMD+wAmtNFOkCAOwcKCCs0XPByJkiGvEVtkaaDGeC6vuRg==}
     engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
 
   possible-typed-array-names@1.0.0:
@@ -11581,7 +11581,7 @@ snapshots:
     dependencies:
       find-up: 3.0.0
 
-  poolifier@4.0.10: {}
+  poolifier@4.0.11: {}
 
   possible-typed-array-names@1.0.0: {}
 
