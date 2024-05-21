@@ -13,7 +13,7 @@ export type StatisticsData = Partial<{
   responseCount: number
   errorCount: number
   timeMeasurementCount: number
-  measurementTimeSeries: CircularBuffer<TimestampedData>
+  measurementTimeSeries: CircularBuffer<TimestampedData> | TimestampedData[]
   currentTimeMeasurement: number
   minTimeMeasurement: number
   maxTimeMeasurement: number

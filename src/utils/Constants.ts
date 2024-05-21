@@ -67,7 +67,7 @@ export class Constants {
       stopAbsoluteDuration: false
     })
 
-  static readonly DEFAULT_CIRCULAR_BUFFER_CAPACITY = 385
+  static readonly DEFAULT_CIRCULAR_BUFFER_CAPACITY = 386
 
   static readonly DEFAULT_HASH_ALGORITHM = 'sha384'
 

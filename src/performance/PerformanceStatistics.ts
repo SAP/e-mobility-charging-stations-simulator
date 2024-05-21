@@ -296,7 +296,8 @@ export class PerformanceStatistics {
     })
     const timeMeasurementValues = extractTimeSeriesValues(
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this.statistics.statisticsData.get(entry.name)!.measurementTimeSeries!
+      this.statistics.statisticsData.get(entry.name)!
+        .measurementTimeSeries as CircularBuffer<TimestampedData>
     )
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.statistics.statisticsData.get(entry.name)!.avgTimeMeasurement = mean(timeMeasurementValues)
