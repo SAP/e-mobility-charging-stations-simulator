@@ -5,6 +5,7 @@ import type { URL } from 'node:url'
 import { parentPort } from 'node:worker_threads'
 
 import { secondsToMilliseconds } from 'date-fns'
+import { CircularBuffer } from 'mnemonist'
 import { is, mean, median } from 'rambda'
 
 import { BaseError } from '../exception/index.js'
@@ -22,7 +23,6 @@ import {
 } from '../types/index.js'
 import {
   buildPerformanceStatisticsMessage,
-  CircularArray,
   Configuration,
   Constants,
   extractTimeSeriesValues,
@@ -277,16 +277,22 @@ export class PerformanceStatistics {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.statistics.statisticsData.get(entry.name)!.totalTimeMeasurement =
       (this.statistics.statisticsData.get(entry.name)?.totalTimeMeasurement ?? 0) + entry.duration
-    this.statistics.statisticsData.get(entry.name)?.measurementTimeSeries instanceof CircularArray
-      ? this.statistics.statisticsData
-        .get(entry.name)
-        ?.measurementTimeSeries?.push({ timestamp: entry.startTime, value: entry.duration })
-      : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        (this.statistics.statisticsData.get(entry.name)!.measurementTimeSeries =
-          new CircularArray<TimestampedData>(Constants.DEFAULT_CIRCULAR_BUFFER_CAPACITY, {
-            timestamp: entry.startTime,
-            value: entry.duration
-          }))
+    if (
+      !(
+        this.statistics.statisticsData.get(entry.name)?.measurementTimeSeries instanceof
+        CircularBuffer
+      )
+    ) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      this.statistics.statisticsData.get(entry.name)!.measurementTimeSeries =
+        new CircularBuffer<TimestampedData>(
+          Array<TimestampedData>,
+          Constants.DEFAULT_CIRCULAR_BUFFER_CAPACITY
+        )
+    }
+    this.statistics.statisticsData
+      .get(entry.name)
+      ?.measurementTimeSeries?.push({ timestamp: entry.startTime, value: entry.duration })
     const timeMeasurementValues = extractTimeSeriesValues(
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this.statistics.statisticsData.get(entry.name)!.measurementTimeSeries!

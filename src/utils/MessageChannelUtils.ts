@@ -1,3 +1,5 @@
+import { clone } from 'rambda'
+
 import type { ChargingStation } from '../charging-station/index.js'
 import {
   type ChargingStationData,
@@ -62,7 +64,8 @@ export const buildPerformanceStatisticsMessage = (
 ): ChargingStationWorkerMessage<Statistics> => {
   return {
     event: ChargingStationWorkerMessageEvents.performanceStatistics,
-    data: statistics
+    // FIXME: CircularBuffer is not structured-cloneable, rambda clone strips the whole statisticsData Map
+    data: clone(statistics)
   }
 }
 

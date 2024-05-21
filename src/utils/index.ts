@@ -5,7 +5,6 @@ export {
   buildEvsesStatus,
   OutputFormat
 } from './ChargingStationConfigurationUtils.js'
-export { CircularArray } from './CircularArray.js'
 export { Configuration } from './Configuration.js'
 export { Constants } from './Constants.js'
 export { ACElectricUtils, DCElectricUtils } from './ElectricUtils.js'

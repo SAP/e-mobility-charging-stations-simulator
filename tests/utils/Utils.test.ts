@@ -4,8 +4,10 @@ import { describe, it } from 'node:test'
 
 import { hoursToMilliseconds, hoursToSeconds } from 'date-fns'
 import { expect } from 'expect'
+import { CircularBuffer } from 'mnemonist'
 import { satisfies } from 'semver'
 
+import type { TimestampedData } from '../../src/types/index.js'
 import { Constants } from '../../src/utils/Constants.js'
 import {
   clone,
@@ -188,14 +190,19 @@ await describe('Utils test suite', async () => {
   })
 
   await it('Verify extractTimeSeriesValues()', () => {
-    expect(extractTimeSeriesValues([])).toEqual([])
-    expect(extractTimeSeriesValues([{ timestamp: Date.now(), value: 1.1 }])).toEqual([1.1])
     expect(
-      extractTimeSeriesValues([
-        { timestamp: Date.now(), value: 1.1 },
-        { timestamp: Date.now(), value: 2.2 }
-      ])
-    ).toEqual([1.1, 2.2])
+      extractTimeSeriesValues(
+        new CircularBuffer<TimestampedData>(Array, Constants.DEFAULT_CIRCULAR_BUFFER_CAPACITY)
+      )
+    ).toEqual([])
+    const circularBuffer = new CircularBuffer<TimestampedData>(
+      Array,
+      Constants.DEFAULT_CIRCULAR_BUFFER_CAPACITY
+    )
+    circularBuffer.push({ timestamp: Date.now(), value: 1.1 })
+    circularBuffer.push({ timestamp: Date.now(), value: 2.2 })
+    circularBuffer.push({ timestamp: Date.now(), value: 3.3 })
+    expect(extractTimeSeriesValues(circularBuffer)).toEqual([1.1, 2.2, 3.3])
   })
 
   await it('Verify isObject()', () => {

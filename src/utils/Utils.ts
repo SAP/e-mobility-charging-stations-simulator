@@ -12,6 +12,7 @@ import {
   minutesToSeconds,
   secondsToMilliseconds
 } from 'date-fns'
+import type { CircularBuffer } from 'mnemonist'
 import { is } from 'rambda'
 
 import {
@@ -200,8 +201,8 @@ export const getRandomFloatFluctuatedRounded = (
   )
 }
 
-export const extractTimeSeriesValues = (timeSeries: TimestampedData[]): number[] => {
-  return timeSeries.map(timeSeriesItem => timeSeriesItem.value)
+export const extractTimeSeriesValues = (timeSeries: CircularBuffer<TimestampedData>): number[] => {
+  return (timeSeries.toArray() as TimestampedData[]).map(timeSeriesItem => timeSeriesItem.value)
 }
 
 export const clone = <T>(object: T): T => {

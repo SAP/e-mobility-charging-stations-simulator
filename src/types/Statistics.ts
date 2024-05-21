@@ -1,4 +1,5 @@
-import type { CircularArray } from '../utils/index.js'
+import type { CircularBuffer } from 'mnemonist'
+
 import type { WorkerData } from '../worker/index.js'
 import type { IncomingRequestCommand, RequestCommand } from './ocpp/Requests.js'
 
@@ -12,7 +13,7 @@ export type StatisticsData = Partial<{
   responseCount: number
   errorCount: number
   timeMeasurementCount: number
-  measurementTimeSeries: CircularArray<TimestampedData>
+  measurementTimeSeries: CircularBuffer<TimestampedData>
   currentTimeMeasurement: number
   minTimeMeasurement: number
   maxTimeMeasurement: number
