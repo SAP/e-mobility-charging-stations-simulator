@@ -96,7 +96,7 @@
     "@mikro-orm/mariadb": "^6.2.8",
     "@mikro-orm/reflection": "^6.2.8",
     "@mikro-orm/sqlite": "^6.2.8",
-    "ajv": "^8.13.0",
+    "ajv": "^8.14.0",
     "ajv-formats": "^3.0.1",
     "basic-ftp": "^5.0.5",
     "chalk": "^5.3.0",
