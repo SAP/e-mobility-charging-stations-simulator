@@ -146,7 +146,7 @@
     "expect": "^29.7.0",
     "glob": "^10.4.1",
     "husky": "^9.0.11",
-    "lint-staged": "^15.2.4",
+    "lint-staged": "^15.2.5",
     "prettier": "^3.2.5",
     "release-it": "^17.3.0",
     "rimraf": "^5.0.7",
