@@ -2224,7 +2224,11 @@ export class ChargingStation extends EventEmitter {
     // Start WebSocket ping
     this.startWebSocketPing()
     // Start heartbeat
-    this.startHeartbeat()
+    if (this.heartbeatSetInterval == null) {
+      this.startHeartbeat()
+    } else if (this.getHeartbeatInterval() !== this.bootNotificationResponse?.interval) {
+      this.restartHeartbeat()
+    }
     // Initialize connectors status
     if (this.hasEvses) {
       for (const [evseId, evseStatus] of this.evses) {

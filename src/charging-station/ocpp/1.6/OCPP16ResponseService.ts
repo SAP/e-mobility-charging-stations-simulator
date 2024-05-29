@@ -510,29 +510,26 @@ export class OCPP16ResponseService extends OCPPResponseService {
     chargingStation: ChargingStation,
     payload: OCPP16BootNotificationResponse
   ): void {
-    if (payload.status === RegistrationStatusEnumType.ACCEPTED) {
-      addConfigurationKey(
-        chargingStation,
-        OCPP16StandardParametersKey.HeartbeatInterval,
-        payload.interval.toString(),
-        {},
-        { overwrite: true, save: true }
-      )
-      addConfigurationKey(
-        chargingStation,
-        OCPP16StandardParametersKey.HeartBeatInterval,
-        payload.interval.toString(),
-        { visible: false },
-        { overwrite: true, save: true }
-      )
-      OCPP16ServiceUtils.startHeartbeatInterval(chargingStation, payload.interval)
-    }
     if (Object.values(RegistrationStatusEnumType).includes(payload.status)) {
       chargingStation.bootNotificationResponse = payload
       if (chargingStation.isRegistered()) {
         chargingStation.emit(ChargingStationEvents.registered)
         if (chargingStation.inAcceptedState()) {
           chargingStation.emit(ChargingStationEvents.accepted)
+          addConfigurationKey(
+            chargingStation,
+            OCPP16StandardParametersKey.HeartbeatInterval,
+            payload.interval.toString(),
+            {},
+            { overwrite: true, save: true }
+          )
+          addConfigurationKey(
+            chargingStation,
+            OCPP16StandardParametersKey.HeartBeatInterval,
+            payload.interval.toString(),
+            { visible: false },
+            { overwrite: true, save: true }
+          )
         }
       } else if (chargingStation.inRejectedState()) {
         chargingStation.emit(ChargingStationEvents.rejected)

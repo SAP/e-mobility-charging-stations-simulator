@@ -1379,14 +1379,6 @@ export class OCPPServiceUtils {
     }
   }
 
-  public static startHeartbeatInterval (chargingStation: ChargingStation, interval: number): void {
-    if (chargingStation.heartbeatSetInterval == null) {
-      chargingStation.startHeartbeat()
-    } else if (chargingStation.getHeartbeatInterval() !== interval) {
-      chargingStation.restartHeartbeat()
-    }
-  }
-
   protected static parseJsonSchemaFile<T extends JsonType>(
     relativePath: string,
     ocppVersion: OCPPVersion,
