@@ -528,6 +528,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       OCPP16ServiceUtils.startHeartbeatInterval(chargingStation, payload.interval)
     }
     if (Object.values(RegistrationStatusEnumType).includes(payload.status)) {
+      chargingStation.bootNotificationResponse = payload
       if (chargingStation.isRegistered()) {
         chargingStation.emit(ChargingStationEvents.registered)
         if (chargingStation.inAcceptedState()) {

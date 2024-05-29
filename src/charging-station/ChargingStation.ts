@@ -1832,6 +1832,7 @@ export class ChargingStation extends EventEmitter {
       if (!this.isRegistered()) {
         // Send BootNotification
         do {
+          // FIXME: duplicated assignment with the boot notification response handler
           this.bootNotificationResponse = await this.ocppRequestService.requestHandler<
           BootNotificationRequest,
           BootNotificationResponse
