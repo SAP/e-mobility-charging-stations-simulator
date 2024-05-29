@@ -13,6 +13,7 @@ import {
 import { OCPPError } from '../../../exception/index.js'
 import {
   type ChangeConfigurationResponse,
+  ChargingStationEvents,
   ErrorType,
   type GenericResponse,
   type GetConfigurationResponse,
@@ -527,6 +528,14 @@ export class OCPP16ResponseService extends OCPPResponseService {
       OCPP16ServiceUtils.startHeartbeatInterval(chargingStation, payload.interval)
     }
     if (Object.values(RegistrationStatusEnumType).includes(payload.status)) {
+      if (chargingStation.isRegistered()) {
+        chargingStation.emit(ChargingStationEvents.registered)
+        if (chargingStation.inAcceptedState()) {
+          chargingStation.emit(ChargingStationEvents.accepted)
+        }
+      } else if (chargingStation.inRejectedState()) {
+        chargingStation.emit(ChargingStationEvents.rejected)
+      }
       const logMsg = `${chargingStation.logPrefix()} Charging station in '${
         payload.status
       }' state on the central server`

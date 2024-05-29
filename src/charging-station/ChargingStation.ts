@@ -1861,15 +1861,7 @@ export class ChargingStation extends EventEmitter {
             this.stationInfo?.registrationMaxRetries === -1)
         )
       }
-      if (this.isRegistered()) {
-        this.emit(ChargingStationEvents.registered)
-        if (this.inAcceptedState()) {
-          this.emit(ChargingStationEvents.accepted)
-        }
-      } else {
-        if (this.inRejectedState()) {
-          this.emit(ChargingStationEvents.rejected)
-        }
+      if (!this.isRegistered()) {
         logger.error(
           `${this.logPrefix()} Registration failure: maximum retries reached (${registrationRetryCount}) or retry disabled (${
             this.stationInfo?.registrationMaxRetries

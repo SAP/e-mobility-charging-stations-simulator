@@ -5,6 +5,7 @@ import type { ValidateFunction } from 'ajv'
 import { addConfigurationKey, type ChargingStation } from '../../../charging-station/index.js'
 import { OCPPError } from '../../../exception/index.js'
 import {
+  ChargingStationEvents,
   ErrorType,
   type JsonType,
   type OCPP20BootNotificationResponse,
@@ -193,6 +194,14 @@ export class OCPP20ResponseService extends OCPPResponseService {
       OCPP20ServiceUtils.startHeartbeatInterval(chargingStation, payload.interval)
     }
     if (Object.values(RegistrationStatusEnumType).includes(payload.status)) {
+      if (chargingStation.isRegistered()) {
+        chargingStation.emit(ChargingStationEvents.registered)
+        if (chargingStation.inAcceptedState()) {
+          chargingStation.emit(ChargingStationEvents.accepted)
+        }
+      } else if (chargingStation.inRejectedState()) {
+        chargingStation.emit(ChargingStationEvents.rejected)
+      }
       const logMsg = `${chargingStation.logPrefix()} Charging station in '${
         payload.status
       }' state on the central server`
