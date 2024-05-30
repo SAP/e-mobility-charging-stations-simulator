@@ -188,7 +188,6 @@ export class OCPP20ResponseService extends OCPPResponseService {
       if (chargingStation.isRegistered()) {
         chargingStation.emit(ChargingStationEvents.registered)
         if (chargingStation.inAcceptedState()) {
-          chargingStation.emit(ChargingStationEvents.accepted)
           addConfigurationKey(
             chargingStation,
             OCPP20OptionalVariableName.HeartbeatInterval,
@@ -196,6 +195,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
             {},
             { overwrite: true, save: true }
           )
+          chargingStation.emit(ChargingStationEvents.accepted)
         }
       } else if (chargingStation.inRejectedState()) {
         chargingStation.emit(ChargingStationEvents.rejected)

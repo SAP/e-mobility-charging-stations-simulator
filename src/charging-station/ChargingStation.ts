@@ -236,6 +236,11 @@ export class ChargingStation extends EventEmitter {
     this.on(ChargingStationEvents.rejected, () => {
       this.wsConnectionRetried = false
     })
+    this.on(ChargingStationEvents.connected, () => {
+      if (this.wsPingSetInterval == null) {
+        this.startWebSocketPing()
+      }
+    })
     this.on(ChargingStationEvents.disconnected, () => {
       try {
         this.internalStopMessageSequence()
@@ -554,7 +559,8 @@ export class ChargingStation extends EventEmitter {
   }
 
   public startHeartbeat (): void {
-    if (this.getHeartbeatInterval() > 0 && this.heartbeatSetInterval == null) {
+    const heartbeatInterval = this.getHeartbeatInterval()
+    if (heartbeatInterval > 0 && this.heartbeatSetInterval == null) {
       this.heartbeatSetInterval = setInterval(() => {
         this.ocppRequestService
           .requestHandler<HeartbeatRequest, HeartbeatResponse>(this, RequestCommand.HEARTBEAT)
@@ -564,21 +570,21 @@ export class ChargingStation extends EventEmitter {
               error
             )
           })
-      }, this.getHeartbeatInterval())
+      }, heartbeatInterval)
       logger.info(
         `${this.logPrefix()} Heartbeat started every ${formatDurationMilliSeconds(
-          this.getHeartbeatInterval()
+          heartbeatInterval
         )}`
       )
     } else if (this.heartbeatSetInterval != null) {
       logger.info(
         `${this.logPrefix()} Heartbeat already started every ${formatDurationMilliSeconds(
-          this.getHeartbeatInterval()
+          heartbeatInterval
         )}`
       )
     } else {
       logger.error(
-        `${this.logPrefix()} Heartbeat interval set to ${this.getHeartbeatInterval()}, not starting the heartbeat`
+        `${this.logPrefix()} Heartbeat interval set to ${heartbeatInterval}, not starting the heartbeat`
       )
     }
   }
@@ -1822,6 +1828,7 @@ export class ChargingStation extends EventEmitter {
 
   private async onOpen (): Promise<void> {
     if (this.isWebSocketConnectionOpened()) {
+      this.emit(ChargingStationEvents.connected)
       this.emit(ChargingStationEvents.updated)
       logger.info(
         `${this.logPrefix()} Connection to OCPP server through ${
@@ -2222,12 +2229,12 @@ export class ChargingStation extends EventEmitter {
       })
     }
     // Start WebSocket ping
-    this.startWebSocketPing()
+    if (this.wsPingSetInterval == null) {
+      this.startWebSocketPing()
+    }
     // Start heartbeat
     if (this.heartbeatSetInterval == null) {
       this.startHeartbeat()
-    } else if (this.getHeartbeatInterval() !== this.bootNotificationResponse?.interval) {
-      this.restartHeartbeat()
     }
     // Initialize connectors status
     if (this.hasEvses) {
@@ -2318,13 +2325,14 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
+  private getWebSocketPingInterval (): number {
+    return getConfigurationKey(this, StandardParametersKey.WebSocketPingInterval) != null
+      ? convertToInt(getConfigurationKey(this, StandardParametersKey.WebSocketPingInterval)?.value)
+      : 0
+  }
+
   private startWebSocketPing (): void {
-    const webSocketPingInterval =
-      getConfigurationKey(this, StandardParametersKey.WebSocketPingInterval) != null
-        ? convertToInt(
-          getConfigurationKey(this, StandardParametersKey.WebSocketPingInterval)?.value
-        )
-        : 0
+    const webSocketPingInterval = this.getWebSocketPingInterval()
     if (webSocketPingInterval > 0 && this.wsPingSetInterval == null) {
       this.wsPingSetInterval = setInterval(() => {
         if (this.isWebSocketConnectionOpened()) {
