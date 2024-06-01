@@ -2449,9 +2449,7 @@ export class ChargingStation extends EventEmitter {
       )
     } else if (this.stationInfo?.autoReconnectMaxRetries !== -1) {
       logger.error(
-        `${this.logPrefix()} WebSocket connection retries failure: maximum retries reached (${
-          this.wsConnectionRetryCount
-        }) or retries disabled (${this.stationInfo?.autoReconnectMaxRetries})`
+        `${this.logPrefix()} WebSocket connection retries failure: maximum retries reached (${this.wsConnectionRetryCount.toString()}) or retries disabled (${this.stationInfo?.autoReconnectMaxRetries})`
       )
     }
   }
