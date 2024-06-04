@@ -28,7 +28,7 @@ import {
 } from '../../utils/index.js'
 import { OCPPConstants } from './OCPPConstants.js'
 import type { OCPPResponseService } from './OCPPResponseService.js'
-import { OCPPServiceUtils } from './OCPPServiceUtils.js'
+import { getMessageTypeString, OCPPServiceUtils } from './OCPPServiceUtils.js'
 type Ajv = _Ajv.default
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 const Ajv = _Ajv.default
@@ -94,9 +94,15 @@ export abstract class OCPPRequestService {
         commandName
       )
     } catch (error) {
-      handleSendMessageError(chargingStation, commandName, error as Error, {
-        throwError: true
-      })
+      handleSendMessageError(
+        chargingStation,
+        commandName,
+        MessageType.CALL_RESULT_MESSAGE,
+        error as Error,
+        {
+          throwError: true
+        }
+      )
       return null
     }
   }
@@ -117,7 +123,12 @@ export abstract class OCPPRequestService {
         commandName
       )
     } catch (error) {
-      handleSendMessageError(chargingStation, commandName, error as Error)
+      handleSendMessageError(
+        chargingStation,
+        commandName,
+        MessageType.CALL_ERROR_MESSAGE,
+        error as Error
+      )
       return null
     }
   }
@@ -143,9 +154,15 @@ export abstract class OCPPRequestService {
         params
       )
     } catch (error) {
-      handleSendMessageError(chargingStation, commandName, error as Error, {
-        throwError: params.throwError
-      })
+      handleSendMessageError(
+        chargingStation,
+        commandName,
+        MessageType.CALL_MESSAGE,
+        error as Error,
+        {
+          throwError: params.throwError
+        }
+      )
       return null
     }
   }
@@ -291,7 +308,7 @@ export abstract class OCPPRequestService {
             )
           }
           logger.error(
-            `${chargingStation.logPrefix()} Error occurred at ${OCPPServiceUtils.getMessageTypeString(
+            `${chargingStation.logPrefix()} Error occurred at ${getMessageTypeString(
               messageType
             )} command ${commandName} with PDU %j:`,
             messagePayload,
@@ -358,7 +375,7 @@ export abstract class OCPPRequestService {
             clearTimeout(sendTimeout)
             if (error == null) {
               logger.debug(
-                `${chargingStation.logPrefix()} >> Command '${commandName}' sent ${OCPPServiceUtils.getMessageTypeString(
+                `${chargingStation.logPrefix()} >> Command '${commandName}' sent ${getMessageTypeString(
                   messageType
                 )} payload: ${messageToSend}`
               )

@@ -3,12 +3,14 @@ import process from 'node:process'
 import chalk from 'chalk'
 
 import type { ChargingStation } from '../charging-station/index.js'
+import { getMessageTypeString } from '../charging-station/ocpp/OCPPServiceUtils.js'
 import type {
   EmptyObject,
   FileType,
   HandleErrorParams,
   IncomingRequestCommand,
   JsonType,
+  MessageType,
   RequestCommand
 } from '../types/index.js'
 import { logger } from './Logger.js'
@@ -79,6 +81,7 @@ export const handleFileException = (
 export const handleSendMessageError = (
   chargingStation: ChargingStation,
   commandName: RequestCommand | IncomingRequestCommand,
+  messageType: MessageType,
   error: Error,
   params: HandleErrorParams<EmptyObject> = {
     throwError: false,
@@ -86,7 +89,10 @@ export const handleSendMessageError = (
   }
 ): void => {
   setDefaultErrorParams(params, { throwError: false, consoleOut: false })
-  logger.error(`${chargingStation.logPrefix()} Request command '${commandName}' error:`, error)
+  logger.error(
+    `${chargingStation.logPrefix()} Send ${getMessageTypeString(messageType)} command '${commandName}' error:`,
+    error
+  )
   if (params.throwError === true) {
     throw error
   }
