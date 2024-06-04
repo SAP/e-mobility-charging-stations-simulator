@@ -1,4 +1,4 @@
-import type { CircularBuffer } from 'mnemonist'
+import { CircularBuffer } from 'mnemonist'
 
 import type { ChargingStation } from '../charging-station/index.js'
 import {
@@ -64,9 +64,9 @@ export const buildPerformanceStatisticsMessage = (
   statistics: Statistics
 ): ChargingStationWorkerMessage<Statistics> => {
   const statisticsData = [...statistics.statisticsData].map(([key, value]) => {
-    value.measurementTimeSeries = (
-      value.measurementTimeSeries as CircularBuffer<TimestampedData>
-    ).toArray() as TimestampedData[]
+    if (value.measurementTimeSeries instanceof CircularBuffer) {
+      value.measurementTimeSeries = value.measurementTimeSeries.toArray() as TimestampedData[]
+    }
     return [key, value]
   })
   return {
