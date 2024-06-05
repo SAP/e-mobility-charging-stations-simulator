@@ -172,7 +172,7 @@ export class OCPP16RequestService extends OCPPRequestService {
   ): Promise<ResponseType> {
     // FIXME?: add sanity checks on charging station availability, connector availability, connector status, etc.
     if (OCPP16ServiceUtils.isRequestCommandSupported(chargingStation, commandName)) {
-      // Post request actions hook
+      // Pre request actions hook
       switch (commandName) {
         case OCPP16RequestCommand.START_TRANSACTION:
           await OCPP16ServiceUtils.sendAndSetConnectorStatus(

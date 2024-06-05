@@ -80,7 +80,7 @@ export class OCPP20RequestService extends OCPPRequestService {
   ): Promise<ResponseType> {
     // FIXME?: add sanity checks on charging station availability, connector availability, connector status, etc.
     if (OCPP20ServiceUtils.isRequestCommandSupported(chargingStation, commandName)) {
-      // TODO: post request actions hook
+      // TODO: pre request actions hook
       return (await this.sendMessage(
         chargingStation,
         generateUUID(),
