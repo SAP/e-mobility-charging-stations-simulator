@@ -56,11 +56,12 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
     error: Error,
     params: HandleErrorParams<T> = { throwError: true, consoleOut: false }
   ): T | undefined {
-    setDefaultErrorParams(params)
+    params = setDefaultErrorParams(params)
     logger.error(
       `${chargingStation.logPrefix()} ${moduleName}.handleIncomingRequestError: Incoming request command '${commandName}' error:`,
       error
     )
+    console.error('params set', params)
     if (params.throwError === false && params.errorResponse != null) {
       return params.errorResponse
     }

@@ -40,7 +40,7 @@ export const handleFileException = (
   logPrefix: string,
   params: HandleErrorParams<EmptyObject> = defaultErrorParams
 ): void => {
-  setDefaultErrorParams(params)
+  params = setDefaultErrorParams(params)
   const prefix = isNotEmptyString(logPrefix) ? `${logPrefix} ` : ''
   let logMsg: string
   switch (error.code) {
@@ -88,7 +88,7 @@ export const handleSendMessageError = (
     consoleOut: false
   }
 ): void => {
-  setDefaultErrorParams(params, { throwError: false, consoleOut: false })
+  params = setDefaultErrorParams(params, { throwError: false, consoleOut: false })
   logger.error(
     `${chargingStation.logPrefix()} Send ${getMessageTypeString(messageType)} command '${commandName}' error:`,
     error
@@ -102,6 +102,5 @@ export const setDefaultErrorParams = <T extends JsonType>(
   params: HandleErrorParams<T>,
   defaultParams: HandleErrorParams<T> = defaultErrorParams
 ): HandleErrorParams<T> => {
-  params = { ...defaultParams, ...params }
-  return params
+  return { ...defaultParams, ...params }
 }

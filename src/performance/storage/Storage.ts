@@ -31,7 +31,7 @@ export abstract class Storage {
       consoleOut: false
     }
   ): void {
-    setDefaultErrorParams(params, { throwError: false, consoleOut: false })
+    params = setDefaultErrorParams(params, { throwError: false, consoleOut: false })
     const inTableOrCollectionStr = table != null && ` in table or collection '${table}'`
     logger.error(
       `${this.logPrefix} ${this.getDBNameFromStorageType(type)} error '${
