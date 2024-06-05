@@ -420,7 +420,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         if (response.status === GenericStatus.Accepted) {
           const { connectorId, idTag } = request
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          chargingStation.getConnectorStatus(connectorId)!.transactionRemoteStarted = true
+          chargingStation.getConnectorStatus(connectorId!)!.transactionRemoteStarted = true
           chargingStation.ocppRequestService
             .requestHandler<Partial<OCPP16StartTransactionRequest>, OCPP16StartTransactionResponse>(
             chargingStation,
@@ -1165,6 +1165,13 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     chargingStation: ChargingStation,
     commandPayload: RemoteStartTransactionRequest
   ): Promise<GenericResponse> {
+    if (commandPayload.connectorId == null) {
+      do {
+        commandPayload.connectorId = randomInt(1, chargingStation.getNumberOfConnectors())
+      } while (
+        chargingStation.getConnectorStatus(commandPayload.connectorId)?.transactionStarted === true
+      )
+    }
     const { connectorId: transactionConnectorId, idTag, chargingProfile } = commandPayload
     if (!chargingStation.hasConnector(transactionConnectorId)) {
       return this.notifyRemoteStartTransactionRejected(

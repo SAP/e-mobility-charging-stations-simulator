@@ -77,7 +77,7 @@ export interface ChangeConfigurationRequest extends JsonObject {
 }
 
 export interface RemoteStartTransactionRequest extends JsonObject {
-  connectorId: number
+  connectorId?: number
   idTag: string
   chargingProfile?: OCPP16ChargingProfile
 }
