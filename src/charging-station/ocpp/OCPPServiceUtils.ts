@@ -264,6 +264,38 @@ const checkConnectorStatusTransition = (
   return transitionAllowed
 }
 
+export const ajvErrorsToErrorType = (errors: ErrorObject[] | undefined | null): ErrorType => {
+  if (isNotEmptyArray(errors)) {
+    for (const error of errors as DefinedError[]) {
+      switch (error.keyword) {
+        case 'type':
+          return ErrorType.TYPE_CONSTRAINT_VIOLATION
+        case 'dependencies':
+        case 'required':
+          return ErrorType.OCCURRENCE_CONSTRAINT_VIOLATION
+        case 'pattern':
+        case 'format':
+          return ErrorType.PROPERTY_CONSTRAINT_VIOLATION
+      }
+    }
+  }
+  return ErrorType.FORMAT_VIOLATION
+}
+
+export const convertDateToISOString = <T extends JsonType>(object: T): void => {
+  for (const key in object) {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion
+    if (isDate(object![key])) {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion
+      (object![key] as string) = (object![key] as Date).toISOString()
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-unnecessary-condition
+    } else if (typeof object![key] === 'object' && object![key] !== null) {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion
+      convertDateToISOString<T>(object![key] as T)
+    }
+  }
+}
+
 export const buildMeterValue = (
   chargingStation: ChargingStation,
   connectorId: number,
@@ -1262,7 +1294,6 @@ const getMeasurandDefaultLocation = (
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class OCPPServiceUtils {
   public static readonly sendAndSetConnectorStatus = sendAndSetConnectorStatus
-  public static readonly restoreConnectorStatus = restoreConnectorStatus
   public static readonly isIdTagAuthorized = isIdTagAuthorized
   public static readonly buildTransactionEndMeterValue = buildTransactionEndMeterValue
   protected static getSampledValueTemplate = getSampledValueTemplate
@@ -1270,24 +1301,6 @@ export class OCPPServiceUtils {
 
   protected constructor () {
     // This is intentional
-  }
-
-  public static ajvErrorsToErrorType (errors: ErrorObject[] | undefined | null): ErrorType {
-    if (isNotEmptyArray(errors)) {
-      for (const error of errors as DefinedError[]) {
-        switch (error.keyword) {
-          case 'type':
-            return ErrorType.TYPE_CONSTRAINT_VIOLATION
-          case 'dependencies':
-          case 'required':
-            return ErrorType.OCCURRENCE_CONSTRAINT_VIOLATION
-          case 'pattern':
-          case 'format':
-            return ErrorType.PROPERTY_CONSTRAINT_VIOLATION
-        }
-      }
-    }
-    return ErrorType.FORMAT_VIOLATION
   }
 
   public static isRequestCommandSupported (
@@ -1362,20 +1375,6 @@ export class OCPPServiceUtils {
       return false
     }
     return true
-  }
-
-  public static convertDateToISOString<T extends JsonType>(object: T): void {
-    for (const key in object) {
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion
-      if (isDate(object![key])) {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion
-        (object![key] as string) = (object![key] as Date).toISOString()
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-unnecessary-condition
-      } else if (typeof object![key] === 'object' && object![key] !== null) {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion
-        OCPPServiceUtils.convertDateToISOString<T>(object![key] as T)
-      }
-    }
   }
 
   protected static parseJsonSchemaFile<T extends JsonType>(

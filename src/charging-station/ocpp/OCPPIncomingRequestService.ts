@@ -14,7 +14,7 @@ import type {
 } from '../../types/index.js'
 import { logger, setDefaultErrorParams } from '../../utils/index.js'
 import { OCPPConstants } from './OCPPConstants.js'
-import { OCPPServiceUtils } from './OCPPServiceUtils.js'
+import { ajvErrorsToErrorType } from './OCPPServiceUtils.js'
 type Ajv = _Ajv.default
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 const Ajv = _Ajv.default
@@ -89,7 +89,7 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
       validate?.errors
     )
     throw new OCPPError(
-      OCPPServiceUtils.ajvErrorsToErrorType(validate?.errors),
+      ajvErrorsToErrorType(validate?.errors),
       'Incoming request PDU is invalid',
       commandName,
       JSON.stringify(validate?.errors, undefined, 2)
