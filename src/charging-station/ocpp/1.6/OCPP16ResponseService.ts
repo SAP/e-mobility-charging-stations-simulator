@@ -541,6 +541,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         ? logger.warn(logMsg)
         : logger.info(logMsg)
     } else {
+      delete chargingStation.bootNotificationResponse
       logger.error(
         `${chargingStation.logPrefix()} Charging station boot notification response received: %j with undefined registration status`,
         payload
