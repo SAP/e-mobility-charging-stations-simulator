@@ -1169,7 +1169,13 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       do {
         commandPayload.connectorId = randomInt(1, chargingStation.getNumberOfConnectors())
       } while (
-        chargingStation.getConnectorStatus(commandPayload.connectorId)?.transactionStarted === true
+        chargingStation.getConnectorStatus(commandPayload.connectorId)?.transactionStarted ===
+          true &&
+        OCPP16ServiceUtils.hasReservation(
+          chargingStation,
+          commandPayload.connectorId,
+          commandPayload.idTag
+        )
       )
     }
     const { connectorId: transactionConnectorId, idTag, chargingProfile } = commandPayload
