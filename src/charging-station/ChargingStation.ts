@@ -181,7 +181,6 @@ export class ChargingStation extends EventEmitter {
   private ocppIncomingRequestService!: OCPPIncomingRequestService
   private readonly messageBuffer: Set<string>
   private configuredSupervisionUrl!: URL
-  private wsConnectionRetried: boolean
   private wsConnectionRetryCount: number
   private templateFileWatcher?: FSWatcher
   private templateFileHash!: string
@@ -196,7 +195,6 @@ export class ChargingStation extends EventEmitter {
     this.starting = false
     this.stopping = false
     this.wsConnection = null
-    this.wsConnectionRetried = false
     this.wsConnectionRetryCount = 0
     this.index = index
     this.templateFile = templateFile
@@ -225,16 +223,16 @@ export class ChargingStation extends EventEmitter {
     })
     this.on(ChargingStationEvents.accepted, () => {
       this.startMessageSequence(
-        this.wsConnectionRetried
+        this.wsConnectionRetryCount > 0
           ? true
           : this.getAutomaticTransactionGeneratorConfiguration()?.stopAbsoluteDuration
       ).catch((error: unknown) => {
         logger.error(`${this.logPrefix()} Error while starting the message sequence:`, error)
       })
-      this.wsConnectionRetried = false
+      this.wsConnectionRetryCount = 0
     })
     this.on(ChargingStationEvents.rejected, () => {
-      this.wsConnectionRetried = false
+      this.wsConnectionRetryCount = 0
     })
     this.on(ChargingStationEvents.connected, () => {
       if (this.wsPingSetInterval == null) {
@@ -1875,7 +1873,6 @@ export class ChargingStation extends EventEmitter {
           })`
         )
       }
-      this.wsConnectionRetryCount = 0
       this.emit(ChargingStationEvents.updated)
     } else {
       logger.warn(
@@ -2421,7 +2418,6 @@ export class ChargingStation extends EventEmitter {
       this.wsConnectionRetryCount < this.stationInfo!.autoReconnectMaxRetries! ||
       this.stationInfo?.autoReconnectMaxRetries === -1
     ) {
-      this.wsConnectionRetried = true
       ++this.wsConnectionRetryCount
       const reconnectDelay =
         this.stationInfo?.reconnectExponentialDelay === true
