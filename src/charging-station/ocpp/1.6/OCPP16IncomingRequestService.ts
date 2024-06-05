@@ -510,15 +510,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         switch (requestedMessage) {
           case OCPP16MessageTrigger.BootNotification:
             chargingStation.ocppRequestService
-              .requestHandler<OCPP16BootNotificationRequest, OCPP16BootNotificationResponse>(
-              chargingStation,
-              OCPP16RequestCommand.BOOT_NOTIFICATION,
-              chargingStation.bootNotificationRequest as OCPP16BootNotificationRequest,
-              { skipBufferingOnError: true, triggerMessage: true }
-            )
-              .then(response => {
-                chargingStation.bootNotificationResponse = response
-              })
+              .requestHandler<
+            OCPP16BootNotificationRequest,
+            OCPP16BootNotificationResponse
+            >(chargingStation, OCPP16RequestCommand.BOOT_NOTIFICATION, chargingStation.bootNotificationRequest as OCPP16BootNotificationRequest, { skipBufferingOnError: true, triggerMessage: true })
               .catch(errorHandler)
             break
           case OCPP16MessageTrigger.Heartbeat:
