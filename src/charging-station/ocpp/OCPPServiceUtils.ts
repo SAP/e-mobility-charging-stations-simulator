@@ -1261,7 +1261,6 @@ const getMeasurandDefaultLocation = (
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class OCPPServiceUtils {
-  public static readonly getMessageTypeString = getMessageTypeString
   public static readonly sendAndSetConnectorStatus = sendAndSetConnectorStatus
   public static readonly restoreConnectorStatus = restoreConnectorStatus
   public static readonly isIdTagAuthorized = isIdTagAuthorized
