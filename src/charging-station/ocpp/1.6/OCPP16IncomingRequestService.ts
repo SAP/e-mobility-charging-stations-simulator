@@ -1475,7 +1475,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         const logConfiguration = Configuration.getConfigurationSection<LogConfiguration>(
           ConfigurationSection.log
         )
-        const logFiles = readdirSync(resolve(dirname(fileURLToPath(import.meta.url)), '../'))
+        const logFiles = readdirSync(
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          resolve((fileURLToPath(import.meta.url), '../', dirname(logConfiguration.file!)))
+        )
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           .filter(file => file.endsWith(extname(logConfiguration.file!)))
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
