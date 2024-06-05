@@ -431,7 +431,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
             }
           )
             .then(response => {
-              if (response.status === OCPP16AuthorizationStatus.ACCEPTED) {
+              if (response.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED) {
                 logger.debug(
                   `${chargingStation.logPrefix()} Remote start transaction ACCEPTED on ${
                     chargingStation.stationInfo?.chargingStationId
