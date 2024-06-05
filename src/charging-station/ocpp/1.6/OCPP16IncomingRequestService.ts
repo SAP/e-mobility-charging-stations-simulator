@@ -1053,41 +1053,46 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       return OCPP16Constants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_UNKNOWN
     }
     const { connectorId } = commandPayload
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    if (!chargingStation.hasConnector(connectorId!)) {
-      logger.error(
-        `${chargingStation.logPrefix()} Trying to clear a charging profile(s) to a non existing connector id ${connectorId}`
-      )
-      return OCPP16Constants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_UNKNOWN
-    }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const connectorStatus = chargingStation.getConnectorStatus(connectorId!)
-    if (connectorId != null && isNotEmptyArray(connectorStatus?.chargingProfiles)) {
-      connectorStatus.chargingProfiles = []
-      logger.debug(
-        `${chargingStation.logPrefix()} Charging profile(s) cleared on connector id ${connectorId}`
-      )
-      return OCPP16Constants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_ACCEPTED
-    }
-    if (connectorId == null) {
+    if (connectorId != null) {
+      if (!chargingStation.hasConnector(connectorId)) {
+        logger.error(
+          `${chargingStation.logPrefix()} Trying to clear a charging profile(s) to a non existing connector id ${connectorId}`
+        )
+        return OCPP16Constants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_UNKNOWN
+      }
+      const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+      if (isNotEmptyArray(connectorStatus?.chargingProfiles)) {
+        connectorStatus.chargingProfiles = []
+        logger.debug(
+          `${chargingStation.logPrefix()} Charging profile(s) cleared on connector id ${connectorId}`
+        )
+        return OCPP16Constants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_ACCEPTED
+      }
+    } else {
       let clearedCP = false
       if (chargingStation.hasEvses) {
         for (const evseStatus of chargingStation.evses.values()) {
           for (const status of evseStatus.connectors.values()) {
-            clearedCP = OCPP16ServiceUtils.clearChargingProfiles(
+            const clearedConnectorCP = OCPP16ServiceUtils.clearChargingProfiles(
               chargingStation,
               commandPayload,
               status.chargingProfiles
             )
+            if (clearedConnectorCP && !clearedCP) {
+              clearedCP = true
+            }
           }
         }
       } else {
         for (const id of chargingStation.connectors.keys()) {
-          clearedCP = OCPP16ServiceUtils.clearChargingProfiles(
+          const clearedConnectorCP = OCPP16ServiceUtils.clearChargingProfiles(
             chargingStation,
             commandPayload,
             chargingStation.getConnectorStatus(id)?.chargingProfiles
           )
+          if (clearedConnectorCP && !clearedCP) {
+            clearedCP = true
+          }
         }
       }
       if (clearedCP) {
