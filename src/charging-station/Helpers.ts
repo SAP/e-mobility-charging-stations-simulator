@@ -405,6 +405,13 @@ export const initializeConnectorsMapStatus = (
   }
 }
 
+export const resetAuthorizeConnectorStatus = (connectorStatus: ConnectorStatus): void => {
+  connectorStatus.idTagLocalAuthorized = false
+  connectorStatus.idTagAuthorized = false
+  delete connectorStatus.localAuthorizeIdTag
+  delete connectorStatus.authorizeIdTag
+}
+
 export const resetConnectorStatus = (connectorStatus: ConnectorStatus | undefined): void => {
   if (connectorStatus == null) {
     return
@@ -415,14 +422,11 @@ export const resetConnectorStatus = (connectorStatus: ConnectorStatus | undefine
         chargingProfile => chargingProfile.transactionId !== connectorStatus.transactionId
       )
       : []
-  connectorStatus.idTagLocalAuthorized = false
-  connectorStatus.idTagAuthorized = false
+  resetAuthorizeConnectorStatus(connectorStatus)
   connectorStatus.transactionRemoteStarted = false
   connectorStatus.transactionStarted = false
   delete connectorStatus.transactionStart
   delete connectorStatus.transactionId
-  delete connectorStatus.localAuthorizeIdTag
-  delete connectorStatus.authorizeIdTag
   delete connectorStatus.transactionIdTag
   connectorStatus.transactionEnergyActiveImportRegisterValue = 0
   delete connectorStatus.transactionBeginMeterValue

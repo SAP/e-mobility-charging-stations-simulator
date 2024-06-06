@@ -14,5 +14,6 @@ export {
   hasReservationExpired,
   prepareChargingProfileKind,
   removeExpiredReservations,
+  resetAuthorizeConnectorStatus,
   resetConnectorStatus
 } from './Helpers.js'

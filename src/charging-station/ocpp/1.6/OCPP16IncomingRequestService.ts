@@ -26,6 +26,7 @@ import {
   getConnectorChargingProfiles,
   prepareChargingProfileKind,
   removeExpiredReservations,
+  resetAuthorizeConnectorStatus,
   setConfigurationKeyValue
 } from '../../../charging-station/index.js'
 import { OCPPError } from '../../../exception/index.js'
@@ -1661,6 +1662,12 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     commandPayload.expiryDate = convertToDate(commandPayload.expiryDate)!
     const { reservationId, idTag, connectorId } = commandPayload
+    if (!chargingStation.hasConnector(connectorId)) {
+      logger.error(
+        `${chargingStation.logPrefix()} Trying to reserve a non existing connector id ${connectorId}`
+      )
+      return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED
+    }
     let response: OCPP16ReserveNowResponse
     try {
       if (connectorId > 0 && !chargingStation.isConnectorAvailable(connectorId)) {
@@ -1673,7 +1680,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED
       }
       await removeExpiredReservations(chargingStation)
-      switch (chargingStation.getConnectorStatus(connectorId)?.status) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const connectorStatus = chargingStation.getConnectorStatus(connectorId)!
+      resetAuthorizeConnectorStatus(connectorStatus)
+      switch (connectorStatus.status) {
         case OCPP16ChargePointStatus.Faulted:
           response = OCPP16Constants.OCPP_RESERVATION_RESPONSE_FAULTED
           break
