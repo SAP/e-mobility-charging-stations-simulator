@@ -1668,21 +1668,21 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       )
       return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED
     }
+    if (connectorId > 0 && !chargingStation.isConnectorAvailable(connectorId)) {
+      return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED
+    }
+    if (connectorId === 0 && !chargingStation.getReserveConnectorZeroSupported()) {
+      return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED
+    }
+    if (!(await OCPP16ServiceUtils.isIdTagAuthorized(chargingStation, connectorId, idTag))) {
+      return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED
+    }
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId)!
+    resetAuthorizeConnectorStatus(connectorStatus)
     let response: OCPP16ReserveNowResponse
     try {
-      if (connectorId > 0 && !chargingStation.isConnectorAvailable(connectorId)) {
-        return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED
-      }
-      if (connectorId === 0 && !chargingStation.getReserveConnectorZeroSupported()) {
-        return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED
-      }
-      if (!(await OCPP16ServiceUtils.isIdTagAuthorized(chargingStation, connectorId, idTag))) {
-        return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED
-      }
       await removeExpiredReservations(chargingStation)
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const connectorStatus = chargingStation.getConnectorStatus(connectorId)!
-      resetAuthorizeConnectorStatus(connectorStatus)
       switch (connectorStatus.status) {
         case OCPP16ChargePointStatus.Faulted:
           response = OCPP16Constants.OCPP_RESERVATION_RESPONSE_FAULTED

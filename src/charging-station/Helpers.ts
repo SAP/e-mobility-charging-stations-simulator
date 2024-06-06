@@ -416,12 +416,15 @@ export const resetConnectorStatus = (connectorStatus: ConnectorStatus | undefine
   if (connectorStatus == null) {
     return
   }
-  connectorStatus.chargingProfiles =
-    connectorStatus.transactionId != null && isNotEmptyArray(connectorStatus.chargingProfiles)
-      ? connectorStatus.chargingProfiles.filter(
-        chargingProfile => chargingProfile.transactionId !== connectorStatus.transactionId
-      )
-      : []
+  if (isNotEmptyArray(connectorStatus.chargingProfiles)) {
+    connectorStatus.chargingProfiles = connectorStatus.chargingProfiles.filter(
+      chargingProfile =>
+        (chargingProfile.transactionId != null &&
+          connectorStatus.transactionId != null &&
+          chargingProfile.transactionId !== connectorStatus.transactionId) ||
+        chargingProfile.transactionId == null
+    )
+  }
   resetAuthorizeConnectorStatus(connectorStatus)
   connectorStatus.transactionRemoteStarted = false
   connectorStatus.transactionStarted = false
