@@ -1843,13 +1843,10 @@ export class ChargingStation extends EventEmitter {
           >(this, RequestCommand.BOOT_NOTIFICATION, this.bootNotificationRequest, {
             skipBufferingOnError: true
           })
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-          if (this.bootNotificationResponse?.currentTime != null) {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            this.bootNotificationResponse.currentTime = convertToDate(
-              this.bootNotificationResponse.currentTime
-            )!
-          }
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          this.bootNotificationResponse!.currentTime = convertToDate(
+            this.bootNotificationResponse?.currentTime
+          )!
           if (!this.isRegistered()) {
             this.stationInfo?.registrationMaxRetries !== -1 && ++registrationRetryCount
             await sleep(
