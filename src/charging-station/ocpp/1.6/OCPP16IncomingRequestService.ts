@@ -1162,17 +1162,27 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     commandPayload: RemoteStartTransactionRequest
   ): Promise<GenericResponse> {
     if (commandPayload.connectorId == null) {
-      do {
-        commandPayload.connectorId = randomInt(1, chargingStation.getNumberOfConnectors())
-      } while (
-        chargingStation.getConnectorStatus(commandPayload.connectorId)?.transactionStarted ===
-          true &&
-        OCPP16ServiceUtils.hasReservation(
-          chargingStation,
-          commandPayload.connectorId,
-          commandPayload.idTag
+      for (
+        let connectorId = 1;
+        connectorId <= chargingStation.getNumberOfConnectors();
+        connectorId++
+      ) {
+        if (
+          chargingStation.getConnectorStatus(connectorId)?.transactionStarted === false &&
+          !OCPP16ServiceUtils.hasReservation(chargingStation, connectorId, commandPayload.idTag)
+        ) {
+          commandPayload.connectorId = connectorId
+          break
+        }
+      }
+      if (commandPayload.connectorId == null) {
+        logger.debug(
+          `${chargingStation.logPrefix()} Remote start transaction REJECTED on ${
+            chargingStation.stationInfo?.chargingStationId
+          }, idTag '${commandPayload.idTag}': no available connector found`
         )
-      )
+        return OCPP16Constants.OCPP_RESPONSE_REJECTED
+      }
     }
     const { connectorId: transactionConnectorId, idTag, chargingProfile } = commandPayload
     if (!chargingStation.hasConnector(transactionConnectorId)) {
