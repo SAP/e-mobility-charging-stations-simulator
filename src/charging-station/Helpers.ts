@@ -327,27 +327,6 @@ export const checkStationInfoConnectorStatus = (
   }
 }
 
-export const buildConnectorsMap = (
-  connectors: Record<string, ConnectorStatus>,
-  logPrefix: string,
-  templateFile: string
-): Map<number, ConnectorStatus> => {
-  const connectorsMap = new Map<number, ConnectorStatus>()
-  if (getMaxNumberOfConnectors(connectors) > 0) {
-    for (const connector in connectors) {
-      const connectorStatus = connectors[connector]
-      const connectorId = convertToInt(connector)
-      checkStationInfoConnectorStatus(connectorId, connectorStatus, logPrefix, templateFile)
-      connectorsMap.set(connectorId, clone<ConnectorStatus>(connectorStatus))
-    }
-  } else {
-    logger.warn(
-      `${logPrefix} Charging station information from template ${templateFile} with no connectors, cannot build connectors map`
-    )
-  }
-  return connectorsMap
-}
-
 export const setChargingStationOptions = (
   stationInfo: ChargingStationInfo,
   options?: ChargingStationOptions
@@ -377,6 +356,27 @@ export const setChargingStationOptions = (
     stationInfo.stopTransactionsOnStopped = options.stopTransactionsOnStopped
   }
   return stationInfo
+}
+
+export const buildConnectorsMap = (
+  connectors: Record<string, ConnectorStatus>,
+  logPrefix: string,
+  templateFile: string
+): Map<number, ConnectorStatus> => {
+  const connectorsMap = new Map<number, ConnectorStatus>()
+  if (getMaxNumberOfConnectors(connectors) > 0) {
+    for (const connector in connectors) {
+      const connectorStatus = connectors[connector]
+      const connectorId = convertToInt(connector)
+      checkStationInfoConnectorStatus(connectorId, connectorStatus, logPrefix, templateFile)
+      connectorsMap.set(connectorId, clone<ConnectorStatus>(connectorStatus))
+    }
+  } else {
+    logger.warn(
+      `${logPrefix} Charging station information from template ${templateFile} with no connectors, cannot build connectors map`
+    )
+  }
+  return connectorsMap
 }
 
 export const initializeConnectorsMapStatus = (
@@ -433,6 +433,26 @@ export const resetConnectorStatus = (connectorStatus: ConnectorStatus | undefine
   delete connectorStatus.transactionIdTag
   connectorStatus.transactionEnergyActiveImportRegisterValue = 0
   delete connectorStatus.transactionBeginMeterValue
+}
+
+export const prepareDatesInConnectorStatus = (
+  connectorStatus: ConnectorStatus
+): ConnectorStatus => {
+  if (connectorStatus.reservation != null) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    connectorStatus.reservation.expiryDate = convertToDate(connectorStatus.reservation.expiryDate)!
+  }
+  if (isNotEmptyArray(connectorStatus.chargingProfiles)) {
+    connectorStatus.chargingProfiles = connectorStatus.chargingProfiles.map(chargingProfile => {
+      chargingProfile.chargingSchedule.startSchedule = convertToDate(
+        chargingProfile.chargingSchedule.startSchedule
+      )
+      chargingProfile.validFrom = convertToDate(chargingProfile.validFrom)
+      chargingProfile.validTo = convertToDate(chargingProfile.validTo)
+      return chargingProfile
+    })
+  }
+  return connectorStatus
 }
 
 export const createBootNotificationRequest = (
