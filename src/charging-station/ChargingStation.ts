@@ -1925,7 +1925,7 @@ export class ChargingStation extends EventEmitter {
     }
     throw new OCPPError(
       ErrorType.PROTOCOL_ERROR,
-      `Cached request for message id ${messageId} ${getMessageTypeString(
+      `Cached request for message id '${messageId}' ${getMessageTypeString(
         messageType
       )} is not an array`,
       undefined,
@@ -1935,6 +1935,14 @@ export class ChargingStation extends EventEmitter {
 
   private async handleIncomingMessage (request: IncomingRequest): Promise<void> {
     const [messageType, messageId, commandName, commandPayload] = request
+    if (this.requests.has(messageId)) {
+      throw new OCPPError(
+        ErrorType.SECURITY_ERROR,
+        `Received message with duplicate message id '${messageId}'`,
+        commandName,
+        commandPayload
+      )
+    }
     if (this.stationInfo?.enableStatistics === true) {
       this.performanceStatistics?.addRequestStatistic(commandName, messageType)
     }
@@ -1959,7 +1967,7 @@ export class ChargingStation extends EventEmitter {
       // Error
       throw new OCPPError(
         ErrorType.INTERNAL_ERROR,
-        `Response for unknown message id ${messageId}`,
+        `Response for unknown message id '${messageId}'`,
         undefined,
         commandPayload
       )
@@ -1984,7 +1992,7 @@ export class ChargingStation extends EventEmitter {
       // Error
       throw new OCPPError(
         ErrorType.INTERNAL_ERROR,
-        `Error response for unknown message id ${messageId}`,
+        `Error response for unknown message id '${messageId}'`,
         undefined,
         { errorType, errorMessage, errorDetails }
       )
@@ -2069,10 +2077,10 @@ export class ChargingStation extends EventEmitter {
       }
       if (!(error instanceof OCPPError)) {
         logger.warn(
-          `${this.logPrefix()} Error thrown at incoming OCPP command '${
+          `${this.logPrefix()} Error thrown at incoming OCPP command ${
             commandName ?? requestCommandName ?? Constants.UNKNOWN_OCPP_COMMAND
             // eslint-disable-next-line @typescript-eslint/no-base-to-string
-          }' message '${data.toString()}' handling is not an OCPPError:`,
+          } message '${data.toString()}' handling is not an OCPPError:`,
           error
         )
       }

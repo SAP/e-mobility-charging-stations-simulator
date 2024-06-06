@@ -469,7 +469,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         // Throw exception
         throw new OCPPError(
           ErrorType.NOT_IMPLEMENTED,
-          `'${commandName}' is not implemented to handle response PDU ${JSON.stringify(
+          `${commandName} is not implemented to handle response PDU ${JSON.stringify(
             payload,
             undefined,
             2
