@@ -414,7 +414,7 @@ export class AutomaticTransactionGenerator {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         this.chargingStation.getAutomaticTransactionGeneratorStatuses()![statusIndex]
       )
-    } else if (this.chargingStation.getAutomaticTransactionGeneratorStatuses() != null) {
+    } else {
       logger.warn(
         `${this.logPrefix(
           connectorId
