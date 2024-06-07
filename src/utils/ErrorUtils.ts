@@ -16,6 +16,8 @@ import type {
 import { logger } from './Logger.js'
 import { isNotEmptyString } from './Utils.js'
 
+const moduleName = 'ErrorUtils'
+
 const defaultErrorParams = {
   throwError: true,
   consoleOut: false
@@ -90,11 +92,33 @@ export const handleSendMessageError = (
 ): void => {
   params = setDefaultErrorParams(params, { throwError: false, consoleOut: false })
   logger.error(
-    `${chargingStation.logPrefix()} Send ${getMessageTypeString(messageType)} command '${commandName}' error:`,
+    `${chargingStation.logPrefix()} ${moduleName}.handleSendMessageError: Send ${getMessageTypeString(messageType)} command '${commandName}' error:`,
     error
   )
   if (params.throwError === true) {
     throw error
+  }
+}
+
+export const handleIncomingRequestError = <T extends JsonType>(
+  chargingStation: ChargingStation,
+  commandName: IncomingRequestCommand,
+  error: Error,
+  params: HandleErrorParams<T> = { throwError: true, consoleOut: false }
+): T | undefined => {
+  params = setDefaultErrorParams(params)
+  logger.error(
+    `${chargingStation.logPrefix()} ${moduleName}.handleIncomingRequestError: Incoming request command '${commandName}' error:`,
+    error
+  )
+  if (params.throwError === false && params.errorResponse != null) {
+    return params.errorResponse
+  }
+  if (params.throwError === true && params.errorResponse == null) {
+    throw error
+  }
+  if (params.throwError === true && params.errorResponse != null) {
+    return params.errorResponse
   }
 }
 

@@ -7,12 +7,11 @@ import { type ChargingStation, getIdTagsFile } from '../../charging-station/inde
 import { OCPPError } from '../../exception/index.js'
 import type {
   ClearCacheResponse,
-  HandleErrorParams,
   IncomingRequestCommand,
   JsonType,
   OCPPVersion
 } from '../../types/index.js'
-import { logger, setDefaultErrorParams } from '../../utils/index.js'
+import { logger } from '../../utils/index.js'
 import { OCPPConstants } from './OCPPConstants.js'
 import { ajvErrorsToErrorType } from './OCPPServiceUtils.js'
 type Ajv = _Ajv.default
@@ -48,28 +47,6 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
       OCPPIncomingRequestService.instance = new this()
     }
     return OCPPIncomingRequestService.instance as T
-  }
-
-  protected handleIncomingRequestError<T extends JsonType>(
-    chargingStation: ChargingStation,
-    commandName: IncomingRequestCommand,
-    error: Error,
-    params: HandleErrorParams<T> = { throwError: true, consoleOut: false }
-  ): T | undefined {
-    params = setDefaultErrorParams(params)
-    logger.error(
-      `${chargingStation.logPrefix()} ${moduleName}.handleIncomingRequestError: Incoming request command '${commandName}' error:`,
-      error
-    )
-    if (params.throwError === false && params.errorResponse != null) {
-      return params.errorResponse
-    }
-    if (params.throwError === true && params.errorResponse == null) {
-      throw error
-    }
-    if (params.throwError === true && params.errorResponse != null) {
-      return params.errorResponse
-    }
   }
 
   protected validateIncomingRequestPayload<T extends JsonType>(

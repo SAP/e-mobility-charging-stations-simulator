@@ -106,6 +106,7 @@ import {
   convertToDate,
   convertToInt,
   formatDurationMilliSeconds,
+  handleIncomingRequestError,
   isAsyncFunction,
   isNotEmptyArray,
   isNotEmptyString,
@@ -1577,7 +1578,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         })
         ftpClient?.close()
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        return this.handleIncomingRequestError<GetDiagnosticsResponse>(
+        return handleIncomingRequestError<GetDiagnosticsResponse>(
           chargingStation,
           OCPP16IncomingRequestCommand.GET_DIAGNOSTICS,
           error as Error,
@@ -1647,7 +1648,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       return OCPP16Constants.OCPP_DATA_TRANSFER_RESPONSE_UNKNOWN_VENDOR_ID
     } catch (error) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      return this.handleIncomingRequestError<OCPP16DataTransferResponse>(
+      return handleIncomingRequestError<OCPP16DataTransferResponse>(
         chargingStation,
         OCPP16IncomingRequestCommand.DATA_TRANSFER,
         error as Error,
@@ -1730,7 +1731,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       chargingStation.getConnectorStatus(connectorId)!.status = OCPP16ChargePointStatus.Available
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      return this.handleIncomingRequestError<OCPP16ReserveNowResponse>(
+      return handleIncomingRequestError<OCPP16ReserveNowResponse>(
         chargingStation,
         OCPP16IncomingRequestCommand.RESERVE_NOW,
         error as Error,
@@ -1768,7 +1769,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       return OCPP16Constants.OCPP_CANCEL_RESERVATION_RESPONSE_ACCEPTED
     } catch (error) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      return this.handleIncomingRequestError<GenericResponse>(
+      return handleIncomingRequestError<GenericResponse>(
         chargingStation,
         OCPP16IncomingRequestCommand.CANCEL_RESERVATION,
         error as Error,
