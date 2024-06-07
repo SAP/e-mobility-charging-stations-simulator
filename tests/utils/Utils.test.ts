@@ -21,6 +21,7 @@ import {
   generateUUID,
   getRandomFloat,
   hasOwnProp,
+  insertAt,
   isArraySorted,
   isAsyncFunction,
   isNotEmptyArray,
@@ -378,6 +379,11 @@ await describe('Utils test suite', async () => {
     expect(isNotEmptyArray(new Set())).toBe(false)
     expect(isNotEmptyArray(new WeakMap())).toBe(false)
     expect(isNotEmptyArray(new WeakSet())).toBe(false)
+  })
+
+  await it('Verify insertAt()', () => {
+    expect(insertAt('test', 'ing', 'test'.length)).toBe('testing')
+    expect(insertAt('test', 'ing', 2)).toBe('teingst')
   })
 
   await it('Verify isArraySorted()', () => {
