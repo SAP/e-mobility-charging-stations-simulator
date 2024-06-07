@@ -22,7 +22,7 @@ export abstract class Storage {
     this.logPrefix = logPrefix
   }
 
-  protected handleDBError (
+  protected handleDBStorageError (
     type: StorageType,
     error: Error,
     table?: string,
