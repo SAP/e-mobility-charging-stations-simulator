@@ -1,4 +1,4 @@
-import { type FSWatcher, readFileSync, watch } from 'node:fs'
+import { existsSync, type FSWatcher, readFileSync, watch } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { env } from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -44,28 +44,80 @@ type ConfigurationSectionType =
   | WorkerConfiguration
   | UIServerConfiguration
 
+const defaultUIServerConfiguration: UIServerConfiguration = {
+  enabled: false,
+  type: ApplicationProtocol.WS,
+  version: ApplicationProtocolVersion.VERSION_11,
+  options: {
+    host: Constants.DEFAULT_UI_SERVER_HOST,
+    port: Constants.DEFAULT_UI_SERVER_PORT
+  }
+}
+
+const defaultStorageConfiguration: StorageConfiguration = {
+  enabled: true,
+  type: StorageType.NONE
+}
+
+const defaultLogConfiguration: LogConfiguration = {
+  enabled: true,
+  file: 'logs/combined.log',
+  errorFile: 'logs/error.log',
+  statisticsInterval: Constants.DEFAULT_LOG_STATISTICS_INTERVAL,
+  level: 'info',
+  format: 'simple',
+  rotate: true
+}
+
+const defaultWorkerConfiguration: WorkerConfiguration = {
+  processType: WorkerProcessType.workerSet,
+  startDelay: DEFAULT_WORKER_START_DELAY,
+  elementsPerWorker: 'auto',
+  elementAddDelay: DEFAULT_ELEMENT_ADD_DELAY,
+  poolMinSize: DEFAULT_POOL_MIN_SIZE,
+  poolMaxSize: DEFAULT_POOL_MAX_SIZE
+}
+
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Configuration {
   public static configurationChangeCallback?: () => Promise<void>
 
-  private static readonly configurationFile = join(
-    dirname(fileURLToPath(import.meta.url)),
-    'assets',
-    'config.json'
-  )
-
+  private static configurationFile: string | undefined
   private static configurationFileReloading = false
   private static configurationData?: ConfigurationData
   private static configurationFileWatcher?: FSWatcher
-  private static readonly configurationSectionCache = new Map<
-  ConfigurationSection,
-  ConfigurationSectionType
-  >([
-    [ConfigurationSection.log, Configuration.buildLogSection()],
-    [ConfigurationSection.performanceStorage, Configuration.buildPerformanceStorageSection()],
-    [ConfigurationSection.worker, Configuration.buildWorkerSection()],
-    [ConfigurationSection.uiServer, Configuration.buildUIServerSection()]
-  ])
+  private static configurationSectionCache: Map<ConfigurationSection, ConfigurationSectionType>
+
+  static {
+    const configurationFile = join(dirname(fileURLToPath(import.meta.url)), 'assets', 'config.json')
+    if (existsSync(configurationFile)) {
+      Configuration.configurationFile = configurationFile
+    } else {
+      console.error(
+        `${chalk.green(logPrefix())} ${chalk.red(
+          `Configuration file '${configurationFile}' not found, using default configuration`
+        )}`
+      )
+      Configuration.configurationData = {
+        stationTemplateUrls: [],
+        supervisionUrls: 'ws://localhost:8180/steve/websocket/CentralSystemService',
+        supervisionUrlDistribution: SupervisionUrlDistribution.ROUND_ROBIN,
+        uiServer: defaultUIServerConfiguration,
+        performanceStorage: defaultStorageConfiguration,
+        log: defaultLogConfiguration,
+        worker: defaultWorkerConfiguration
+      }
+    }
+    Configuration.configurationSectionCache = new Map<
+    ConfigurationSection,
+    ConfigurationSectionType
+    >([
+      [ConfigurationSection.log, Configuration.buildLogSection()],
+      [ConfigurationSection.performanceStorage, Configuration.buildPerformanceStorageSection()],
+      [ConfigurationSection.worker, Configuration.buildWorkerSection()],
+      [ConfigurationSection.uiServer, Configuration.buildUIServerSection()]
+    ])
+  }
 
   private constructor () {
     // This is intentional
@@ -152,15 +204,7 @@ export class Configuration {
   }
 
   private static buildUIServerSection (): UIServerConfiguration {
-    let uiServerConfiguration: UIServerConfiguration = {
-      enabled: false,
-      type: ApplicationProtocol.WS,
-      version: ApplicationProtocolVersion.VERSION_11,
-      options: {
-        host: Constants.DEFAULT_UI_SERVER_HOST,
-        port: Constants.DEFAULT_UI_SERVER_PORT
-      }
-    }
+    let uiServerConfiguration: UIServerConfiguration = defaultUIServerConfiguration
     if (hasOwnProp(Configuration.getConfigurationData(), ConfigurationSection.uiServer)) {
       uiServerConfiguration = mergeDeepRight(
         uiServerConfiguration,
@@ -195,10 +239,7 @@ export class Configuration {
         break
       case StorageType.NONE:
       default:
-        storageConfiguration = {
-          enabled: true,
-          type: StorageType.NONE
-        }
+        storageConfiguration = defaultStorageConfiguration
         break
     }
     if (hasOwnProp(Configuration.getConfigurationData(), ConfigurationSection.performanceStorage)) {
@@ -220,15 +261,6 @@ export class Configuration {
   }
 
   private static buildLogSection (): LogConfiguration {
-    const defaultLogConfiguration: LogConfiguration = {
-      enabled: true,
-      file: 'logs/combined.log',
-      errorFile: 'logs/error.log',
-      statisticsInterval: Constants.DEFAULT_LOG_STATISTICS_INTERVAL,
-      level: 'info',
-      format: 'simple',
-      rotate: true
-    }
     const deprecatedLogConfiguration: LogConfiguration = {
       ...(hasOwnProp(Configuration.getConfigurationData(), 'logEnabled') && {
         enabled: Configuration.getConfigurationData()?.logEnabled
@@ -271,15 +303,6 @@ export class Configuration {
   }
 
   private static buildWorkerSection (): WorkerConfiguration {
-    const defaultWorkerConfiguration: WorkerConfiguration = {
-      processType: WorkerProcessType.workerSet,
-      startDelay: DEFAULT_WORKER_START_DELAY,
-      elementsPerWorker: 'auto',
-      elementAddDelay: DEFAULT_ELEMENT_ADD_DELAY,
-      poolMinSize: DEFAULT_POOL_MIN_SIZE,
-      poolMaxSize: DEFAULT_POOL_MAX_SIZE
-    }
-
     const deprecatedWorkerConfiguration: WorkerConfiguration = {
       ...(hasOwnProp(Configuration.getConfigurationData(), 'workerProcess') && {
         processType: Configuration.getConfigurationData()?.workerProcess
@@ -545,7 +568,11 @@ export class Configuration {
   }
 
   public static getConfigurationData (): ConfigurationData | undefined {
-    if (Configuration.configurationData == null) {
+    if (
+      Configuration.configurationData == null &&
+      Configuration.configurationFile != null &&
+      Configuration.configurationFile.length > 0
+    ) {
       try {
         Configuration.configurationData = JSON.parse(
           readFileSync(Configuration.configurationFile, 'utf8')
@@ -566,6 +593,9 @@ export class Configuration {
   }
 
   private static getConfigurationFileWatcher (): FSWatcher | undefined {
+    if (Configuration.configurationFile == null || Configuration.configurationFile.length === 0) {
+      return
+    }
     try {
       return watch(Configuration.configurationFile, (event, filename): void => {
         if (
