@@ -10,7 +10,7 @@ await describe('ConfigurationUtils test suite', async () => {
     const error = new Error()
     error.code = 'ENOENT'
     expect(() => {
-      handleFileException('path/to/module.js', FileType.Authorization, error, 'log prefix')
+      handleFileException('path/to/module.js', FileType.Authorization, error, 'log prefix |')
     }).toThrow(error)
   })
 })

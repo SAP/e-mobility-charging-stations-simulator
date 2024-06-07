@@ -10,10 +10,10 @@ await describe('ErrorUtils test suite', async () => {
     const error = new Error()
     error.code = 'ENOENT'
     expect(() => {
-      handleFileException('path/to/module.js', FileType.Authorization, error, 'log prefix', {})
+      handleFileException('path/to/module.js', FileType.Authorization, error, 'log prefix |', {})
     }).toThrow(error)
     expect(() => {
-      handleFileException('path/to/module.js', FileType.Authorization, error, 'log prefix', {
+      handleFileException('path/to/module.js', FileType.Authorization, error, 'log prefix |', {
         throwError: false
       })
     }).not.toThrow()
