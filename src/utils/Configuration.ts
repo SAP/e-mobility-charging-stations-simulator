@@ -95,11 +95,16 @@ export class Configuration {
     } else {
       console.error(
         `${chalk.green(logPrefix())} ${chalk.red(
-          `Configuration file '${configurationFile}' not found, using default configuration`
+          "Configuration file './src/assets/config.json' not found, using default configuration"
         )}`
       )
       Configuration.configurationData = {
-        stationTemplateUrls: [],
+        stationTemplateUrls: [
+          {
+            file: 'siemens.station-template.json',
+            numberOfStations: 1
+          }
+        ],
         supervisionUrls: 'ws://localhost:8180/steve/websocket/CentralSystemService',
         supervisionUrlDistribution: SupervisionUrlDistribution.ROUND_ROBIN,
         uiServer: defaultUIServerConfiguration,
