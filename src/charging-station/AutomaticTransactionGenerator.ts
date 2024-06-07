@@ -408,6 +408,10 @@ export class AutomaticTransactionGenerator {
 
   private getConnectorStatus (connectorId: number): Status {
     const statusIndex = connectorId - 1
+    if (statusIndex < 0) {
+      logger.error(`${this.logPrefix(connectorId)} invalid connector id`)
+      throw new BaseError(`Invalid connector id ${connectorId}`)
+    }
     let connectorStatus: Status | undefined
     if (this.chargingStation.getAutomaticTransactionGeneratorStatuses()?.[statusIndex] != null) {
       connectorStatus = clone<Status>(
