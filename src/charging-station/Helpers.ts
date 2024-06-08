@@ -636,15 +636,14 @@ export const getConnectorChargingProfiles = (
   chargingStation: ChargingStation,
   connectorId: number
 ): ChargingProfile[] => {
-  return clone<ChargingProfile[]>(
-    (chargingStation.getConnectorStatus(connectorId)?.chargingProfiles ?? [])
-      .sort((a, b) => b.stackLevel - a.stackLevel)
-      .concat(
-        (chargingStation.getConnectorStatus(0)?.chargingProfiles ?? []).sort(
-          (a, b) => b.stackLevel - a.stackLevel
-        )
-      )
-  )
+  return (chargingStation.getConnectorStatus(connectorId)?.chargingProfiles ?? [])
+    .slice()
+    .sort((a, b) => b.stackLevel - a.stackLevel)
+    .concat(
+      (chargingStation.getConnectorStatus(0)?.chargingProfiles ?? [])
+        .slice()
+        .sort((a, b) => b.stackLevel - a.stackLevel)
+    )
 }
 
 export const getChargingStationConnectorChargingProfilesPowerLimit = (
