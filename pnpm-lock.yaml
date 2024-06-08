@@ -188,8 +188,8 @@ importers:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@20.14.2)(typescript@5.4.5)
       tsx:
-        specifier: ^4.13.2
-        version: 4.13.2
+        specifier: ^4.14.0
+        version: 4.14.0
       typescript:
         specifier: ~5.4.5
         version: 5.4.5
@@ -2265,17 +2265,11 @@ packages:
   d3-format@1.4.5:
     resolution: {integrity: sha512-J0piedu6Z8iB6TbIGfZgDzfXxUFN3qQRMofy2oPdXzQibYGqPB/9iMcxr/TGalU+2RsyDO+U4f33id8tbnSRMQ==}
 
-  d3-format@2.0.0:
-    resolution: {integrity: sha512-Ab3S6XuE/Q+flY96HXT0jOXcM4EAClYFnRGY5zsjRGNy6qCYrQsMffs7cV5Q9xejb35zxW5hf/guKw34kvIKsA==}
-
   d3-hierarchy@1.1.9:
     resolution: {integrity: sha512-j8tPxlqh1srJHAtxfvOUwKNYJkQuBFdM1+JAUfq6xqH5eAqf93L7oG1NVqDa4CpFZNvnNKtCYEUC8KY9yEn9lQ==}
 
   d3-interpolate@1.4.0:
     resolution: {integrity: sha512-V9znK0zc3jOPV4VD2zZn0sDhZU3WAE2bmlxdIwwQPPzPjvyLkd8B3JUVdS1IDUFDkWZ72c9qnv1GK2ZagTZ8EA==}
-
-  d3-interpolate@2.0.1:
-    resolution: {integrity: sha512-c5UhwwTs/yybcmTpAVqwSFl6vrQ8JZJoT5F7xNFK9pymv5C0Ymcc9/LIJHtYIggg/yS9YHw8i8O8tgb9pupjeQ==}
 
   d3-path@1.0.9:
     resolution: {integrity: sha512-VLaYcn81dtHVTjEHd8B+pbe9yHWpXKZUC87PzoFmsFrJqgFwDe/qxfp5MlfsfM1V5E/iVt0MmEbWQ7FVIXh/bg==}
@@ -2567,8 +2561,8 @@ packages:
   ee-first@1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
 
-  electron-to-chromium@1.4.794:
-    resolution: {integrity: sha512-6FApLtsYhDCY0Vglq3AptsdxQ+PJLc6AxlAM0HjEihUAiOPPbkASEsq9gtxUeZY9o0sJIEa3WnF0vVH4VT4iug==}
+  electron-to-chromium@1.4.796:
+    resolution: {integrity: sha512-NglN/xprcM+SHD2XCli4oC6bWe6kHoytcyLKCWXmRL854F0qhPhaYgUswUsglnPxYaNQIg2uMY4BvaomIf3kLA==}
 
   elliptic@6.5.5:
     resolution: {integrity: sha512-7EjbcmUm17NQFu4Pmgmq2olYMj8nwMnpcddByChSUjArp8F5DQWcIcpriwO4ZToLNAJig0yiyjswfyGNje/ixw==}
@@ -5800,8 +5794,8 @@ packages:
   tslib@2.6.3:
     resolution: {integrity: sha512-xNvxJEOUiWPGhUuUdQgAJPKOOJfGnIyKySOc09XkKsgdUV/3E2zvwZYdejjmRgPCgcym1juLH3226yA7sEFJKQ==}
 
-  tsx@4.13.2:
-    resolution: {integrity: sha512-s+WGqChkA77uU8xij1IdO9jQnwJAiWJto0bF5yJLbAZpLtNs82Qa5CwMBxWjJ7QOYU9MzBf4MCNt6lZduwkQ+g==}
+  tsx@4.14.0:
+    resolution: {integrity: sha512-DsDLlJlusAPyCnz07S4y0gqJoUl8GciBeYcXQd75/5DqkZ4gfjKpvAUFUzmZf62nEotkcqC7JCWrdL8d+PXSng==}
     engines: {node: '>=18.0.0'}
     hasBin: true
 
@@ -6073,8 +6067,8 @@ packages:
   vm-browserify@1.1.2:
     resolution: {integrity: sha512-2ham8XPWTONajOR0ohOKOHXkm3+gaBmGut3SRuu75xLd/RRaY6vqgh8NBYYk7+RW3u5AtzPQZG8F10LHkl0lAQ==}
 
-  vue-component-type-helpers@2.0.19:
-    resolution: {integrity: sha512-cN3f1aTxxKo4lzNeQAkVopswuImUrb5Iurll9Gaw5cqpnbTAxtEMM1mgi6ou4X79OCyqYv1U1mzBHJkzmiK82w==}
+  vue-component-type-helpers@2.0.20:
+    resolution: {integrity: sha512-Weol01CnbTkPrKHT4Gi5q+llB170X/q/oJ0AYrC1zRBm+OhEun1+j4mKr2Y1kXG1hgGnjvuBPshy+bRefGczTA==}
 
   vue-eslint-parser@9.4.3:
     resolution: {integrity: sha512-2rYRLWlIpaiN8xbPiDyXZXRgLGOtWxERV7ND5fFAv5qo1D2N9Fu9MNajBNc6o13lZ+24DAWCkQCvj4klgmcITg==}
@@ -7707,7 +7701,7 @@ snapshots:
   '@vue/test-utils@2.4.6':
     dependencies:
       js-beautify: 1.15.1
-      vue-component-type-helpers: 2.0.19
+      vue-component-type-helpers: 2.0.20
 
   '@vue/tsconfig@0.5.1': {}
 
@@ -8194,7 +8188,7 @@ snapshots:
   browserslist@4.23.0:
     dependencies:
       caniuse-lite: 1.0.30001629
-      electron-to-chromium: 1.4.794
+      electron-to-chromium: 1.4.796
       node-releases: 2.0.14
       update-browserslist-db: 1.0.16(browserslist@4.23.0)
 
@@ -8725,15 +8719,9 @@ snapshots:
 
   d3-format@1.4.5: {}
 
-  d3-format@2.0.0: {}
-
   d3-hierarchy@1.1.9: {}
 
   d3-interpolate@1.4.0:
-    dependencies:
-      d3-color: 3.1.0
-
-  d3-interpolate@2.0.1:
     dependencies:
       d3-color: 3.1.0
 
@@ -8742,8 +8730,8 @@ snapshots:
   d3-scale@3.3.0:
     dependencies:
       d3-array: 2.12.1
-      d3-format: 2.0.0
-      d3-interpolate: 2.0.1
+      d3-format: 1.4.5
+      d3-interpolate: 1.4.0
       d3-time: 2.1.1
       d3-time-format: 2.3.0
 
@@ -9016,7 +9004,7 @@ snapshots:
 
   ee-first@1.1.1: {}
 
-  electron-to-chromium@1.4.794: {}
+  electron-to-chromium@1.4.796: {}
 
   elliptic@6.5.5:
     dependencies:
@@ -12703,7 +12691,7 @@ snapshots:
 
   tslib@2.6.3: {}
 
-  tsx@4.13.2:
+  tsx@4.14.0:
     dependencies:
       esbuild: 0.20.2
       get-tsconfig: 4.7.5
@@ -13009,7 +12997,7 @@ snapshots:
 
   vm-browserify@1.1.2: {}
 
-  vue-component-type-helpers@2.0.19: {}
+  vue-component-type-helpers@2.0.20: {}
 
   vue-eslint-parser@9.4.3(eslint@8.57.0):
     dependencies:
