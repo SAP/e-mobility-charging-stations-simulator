@@ -650,6 +650,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     }
     if (
       connectorStatus?.idTagAuthorized === true &&
+      connectorStatus.authorizeIdTag != null &&
       connectorStatus.authorizeIdTag !== requestPayload.idTag
     ) {
       logger.error(
@@ -664,6 +665,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     }
     if (
       connectorStatus?.idTagLocalAuthorized === true &&
+      connectorStatus.localAuthorizeIdTag != null &&
       connectorStatus.localAuthorizeIdTag !== requestPayload.idTag
     ) {
       logger.error(
