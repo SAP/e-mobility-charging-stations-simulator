@@ -31,6 +31,7 @@ import {
   BootReasonEnumType,
   type ChargingProfile,
   ChargingProfileKindType,
+  ChargingProfilePurposeType,
   ChargingRateUnitType,
   type ChargingSchedulePeriod,
   type ChargingStationConfiguration,
@@ -419,10 +420,10 @@ export const resetConnectorStatus = (connectorStatus: ConnectorStatus | undefine
   if (isNotEmptyArray(connectorStatus.chargingProfiles)) {
     connectorStatus.chargingProfiles = connectorStatus.chargingProfiles.filter(
       chargingProfile =>
+        chargingProfile.chargingProfilePurpose !== ChargingProfilePurposeType.TX_PROFILE ||
         (chargingProfile.transactionId != null &&
           connectorStatus.transactionId != null &&
-          chargingProfile.transactionId !== connectorStatus.transactionId) ||
-        chargingProfile.transactionId == null
+          chargingProfile.transactionId !== connectorStatus.transactionId)
     )
   }
   resetAuthorizeConnectorStatus(connectorStatus)

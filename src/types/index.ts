@@ -162,6 +162,7 @@ export { ChargePointErrorCode } from './ocpp/ChargePointErrorCode.js'
 export {
   type ChargingProfile,
   ChargingProfileKindType,
+  ChargingProfilePurposeType,
   ChargingRateUnitType,
   type ChargingSchedulePeriod,
   RecurrencyKindType

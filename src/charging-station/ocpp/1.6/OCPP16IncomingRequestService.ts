@@ -918,6 +918,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       csChargingProfiles.chargingProfilePurpose === OCPP16ChargingProfilePurposeType.TX_PROFILE &&
       connectorId > 0 &&
       connectorStatus?.transactionStarted === true &&
+      csChargingProfiles.transactionId != null &&
       csChargingProfiles.transactionId !== connectorStatus.transactionId
     ) {
       logger.error(
@@ -1276,7 +1277,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     connectorId: number,
     chargingProfile: OCPP16ChargingProfile
   ): boolean {
-    if (chargingProfile.chargingProfilePurpose === OCPP16ChargingProfilePurposeType.TX_PROFILE) {
+    if (
+      chargingProfile.chargingProfilePurpose === OCPP16ChargingProfilePurposeType.TX_PROFILE &&
+      chargingProfile.transactionId == null
+    ) {
       OCPP16ServiceUtils.setChargingProfile(chargingStation, connectorId, chargingProfile)
       logger.debug(
         `${chargingStation.logPrefix()} Charging profile(s) set at remote start transaction on ${
@@ -1289,7 +1293,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     logger.debug(
       `${chargingStation.logPrefix()} Not allowed to set ${
         chargingProfile.chargingProfilePurpose
-      } charging profile(s) at remote start transaction`
+      } charging profile(s)${chargingProfile.transactionId != null ? ' with transactionId set' : ''} at remote start transaction`
     )
     return false
   }
