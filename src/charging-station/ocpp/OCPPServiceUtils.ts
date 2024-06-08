@@ -305,6 +305,7 @@ export const buildMeterValue = (
 ): MeterValue => {
   const connector = chargingStation.getConnectorStatus(connectorId)
   let meterValue: MeterValue
+  let connectorMaximumAvailablePower: number | undefined
   let socSampledValueTemplate: SampledValueTemplate | undefined
   let voltageSampledValueTemplate: SampledValueTemplate | undefined
   let powerSampledValueTemplate: SampledValueTemplate | undefined
@@ -504,7 +505,7 @@ export const buildMeterValue = (
         // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         const powerMeasurandValues: MeasurandValues = {} as MeasurandValues
         const unitDivider = powerSampledValueTemplate.unit === MeterValueUnit.KILO_WATT ? 1000 : 1
-        const connectorMaximumAvailablePower =
+        connectorMaximumAvailablePower =
           chargingStation.getConnectorMaximumAvailablePower(connectorId)
         const connectorMaximumPower = Math.round(connectorMaximumAvailablePower)
         const connectorMaximumPowerPerPhase = Math.round(
@@ -774,8 +775,9 @@ export const buildMeterValue = (
         } measurand value`
         // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         const currentMeasurandValues: MeasurandValues = {} as MeasurandValues
-        const connectorMaximumAvailablePower =
-          chargingStation.getConnectorMaximumAvailablePower(connectorId)
+        connectorMaximumAvailablePower == null &&
+          (connectorMaximumAvailablePower =
+            chargingStation.getConnectorMaximumAvailablePower(connectorId))
         const connectorMinimumAmperage = currentSampledValueTemplate.minimumValue ?? 0
         let connectorMaximumAmperage: number
         switch (chargingStation.stationInfo.currentOutType) {
@@ -991,8 +993,9 @@ export const buildMeterValue = (
         checkMeasurandPowerDivider(chargingStation, energySampledValueTemplate.measurand)
         const unitDivider =
           energySampledValueTemplate.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1
-        const connectorMaximumAvailablePower =
-          chargingStation.getConnectorMaximumAvailablePower(connectorId)
+        connectorMaximumAvailablePower == null &&
+          (connectorMaximumAvailablePower =
+            chargingStation.getConnectorMaximumAvailablePower(connectorId))
         const connectorMaximumEnergyRounded = roundTo(
           (connectorMaximumAvailablePower * interval) / (3600 * 1000),
           2
