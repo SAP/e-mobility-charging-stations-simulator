@@ -671,6 +671,11 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
+  public restartMeterValues (connectorId: number, interval: number): void {
+    this.stopMeterValues(connectorId)
+    this.startMeterValues(connectorId, interval)
+  }
+
   private add (): void {
     this.emit(ChargingStationEvents.added)
   }

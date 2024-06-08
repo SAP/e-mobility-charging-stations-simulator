@@ -840,6 +840,25 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       ) {
         chargingStation.restartWebSocketPing()
       }
+      if (
+        (keyToChange.key as OCPP16StandardParametersKey) ===
+          OCPP16StandardParametersKey.MeterValueSampleInterval &&
+        chargingStation.getNumberOfRunningTransactions() > 0 &&
+        valueChanged
+      ) {
+        for (
+          let connectorId = 1;
+          connectorId <= chargingStation.getNumberOfConnectors();
+          connectorId++
+        ) {
+          if (chargingStation.getConnectorStatus(connectorId)?.transactionStarted === true) {
+            chargingStation.restartMeterValues(
+              connectorId,
+              secondsToMilliseconds(convertToInt(value))
+            )
+          }
+        }
+      }
       if (keyToChange.reboot === true) {
         return OCPP16Constants.OCPP_CONFIGURATION_RESPONSE_REBOOT_REQUIRED
       }
