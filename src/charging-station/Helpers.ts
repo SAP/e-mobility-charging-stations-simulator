@@ -670,18 +670,16 @@ export const getChargingStationConnectorChargingProfilesPowerLimit = (
   chargingStation: ChargingStation,
   connectorId: number
 ): number | undefined => {
-  let limit: number | undefined, chargingProfile: ChargingProfile | undefined
   const chargingProfiles = getConnectorChargingProfiles(chargingStation, connectorId)
   if (isNotEmptyArray(chargingProfiles)) {
-    const result = getLimitFromChargingProfiles(
+    const chargingProfilesLimit = getLimitFromChargingProfiles(
       chargingStation,
       connectorId,
       chargingProfiles,
       chargingStation.logPrefix()
     )
-    if (result != null) {
-      limit = result.limit
-      chargingProfile = result.chargingProfile
+    if (chargingProfilesLimit != null) {
+      let { limit, chargingProfile } = chargingProfilesLimit
       switch (chargingStation.stationInfo?.currentOutType) {
         case CurrentType.AC:
           limit =
@@ -709,13 +707,13 @@ export const getChargingStationConnectorChargingProfilesPowerLimit = (
           `${chargingStation.logPrefix()} ${moduleName}.getChargingStationConnectorChargingProfilesPowerLimit: Charging profile id ${
             chargingProfile.chargingProfileId
           } limit ${limit} is greater than connector id ${connectorId} maximum ${connectorMaximumPower}: %j`,
-          result
+          chargingProfilesLimit
         )
         limit = connectorMaximumPower
       }
+      return limit
     }
   }
-  return limit
 }
 
 export const getDefaultVoltageOut = (
@@ -884,7 +882,7 @@ const getLimitFromChargingProfiles = (
   chargingProfiles: ChargingProfile[],
   logPrefix: string
 ): ChargingProfilesLimit | undefined => {
-  const debugLogMsg = `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Matching charging profile found for power limitation: %j`
+  const debugLogMsg = `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profiles limit found: %j`
   const currentDate = new Date()
   const connectorStatus = chargingStation.getConnectorStatus(connectorId)
   let previousActiveChargingProfile: ChargingProfile | undefined
@@ -949,12 +947,12 @@ const getLimitFromChargingProfiles = (
         }
         // Handle only one schedule period
         if (chargingSchedule.chargingSchedulePeriod.length === 1) {
-          const result: ChargingProfilesLimit = {
+          const chargingProfilesLimit: ChargingProfilesLimit = {
             limit: chargingSchedule.chargingSchedulePeriod[0].limit,
             chargingProfile
           }
-          logger.debug(debugLogMsg, result)
-          return result
+          logger.debug(debugLogMsg, chargingProfilesLimit)
+          return chargingProfilesLimit
         }
         let previousChargingSchedulePeriod: ChargingSchedulePeriod | undefined
         // Search for the right schedule period
@@ -970,12 +968,12 @@ const getLimitFromChargingProfiles = (
             )
           ) {
             // Found the schedule period: previous is the correct one
-            const result: ChargingProfilesLimit = {
+            const chargingProfilesLimit: ChargingProfilesLimit = {
               limit: previousChargingSchedulePeriod?.limit ?? chargingSchedulePeriod.limit,
               chargingProfile: previousActiveChargingProfile ?? chargingProfile
             }
-            logger.debug(debugLogMsg, result)
-            return result
+            logger.debug(debugLogMsg, chargingProfilesLimit)
+            return chargingProfilesLimit
           }
           // Handle the last schedule period within the charging profile duration
           if (
@@ -989,12 +987,12 @@ const getLimitFromChargingProfiles = (
                 chargingSchedule.startSchedule
               ) > chargingSchedule.duration)
           ) {
-            const result: ChargingProfilesLimit = {
+            const chargingProfilesLimit: ChargingProfilesLimit = {
               limit: chargingSchedulePeriod.limit,
               chargingProfile
             }
-            logger.debug(debugLogMsg, result)
-            return result
+            logger.debug(debugLogMsg, chargingProfilesLimit)
+            return chargingProfilesLimit
           }
           // Keep a reference to previous charging schedule period
           previousChargingSchedulePeriod = chargingSchedulePeriod
