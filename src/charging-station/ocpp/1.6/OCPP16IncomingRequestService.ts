@@ -979,7 +979,6 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       start: currentDate,
       end: addSeconds(currentDate, duration)
     }
-    // Get charging profiles sorted by connector id then stack level
     const chargingProfiles: OCPP16ChargingProfile[] = getConnectorChargingProfiles(
       chargingStation,
       connectorId

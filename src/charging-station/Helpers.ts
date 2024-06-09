@@ -625,23 +625,39 @@ export const getAmperageLimitationUnitDivider = (stationInfo: ChargingStationInf
 }
 
 /**
- * Gets the connector cloned charging profiles applying a power limitation
- * and sorted by connector id descending then stack level descending
+ * Gets the connector charging profiles relevant for power limitation shallow cloned and sorted by priorities
  *
- * @param chargingStation -
- * @param connectorId -
+ * @param chargingStation - Charging station
+ * @param connectorId - Connector id
  * @returns connector charging profiles array
  */
 export const getConnectorChargingProfiles = (
   chargingStation: ChargingStation,
   connectorId: number
 ): ChargingProfile[] => {
+  // FIXME: handle charging profile purpose CHARGE_POINT_MAX_PROFILE
   return (chargingStation.getConnectorStatus(connectorId)?.chargingProfiles ?? [])
     .slice()
-    .sort((a, b) => b.stackLevel - a.stackLevel)
+    .sort((a, b) => {
+      if (
+        a.chargingProfilePurpose === ChargingProfilePurposeType.TX_PROFILE &&
+        b.chargingProfilePurpose === ChargingProfilePurposeType.TX_DEFAULT_PROFILE
+      ) {
+        return -1
+      } else if (
+        a.chargingProfilePurpose === ChargingProfilePurposeType.TX_DEFAULT_PROFILE &&
+        b.chargingProfilePurpose === ChargingProfilePurposeType.TX_PROFILE
+      ) {
+        return 1
+      }
+      return b.stackLevel - a.stackLevel
+    })
     .concat(
       (chargingStation.getConnectorStatus(0)?.chargingProfiles ?? [])
-        .slice()
+        .filter(
+          chargingProfile =>
+            chargingProfile.chargingProfilePurpose === ChargingProfilePurposeType.TX_DEFAULT_PROFILE
+        )
         .sort((a, b) => b.stackLevel - a.stackLevel)
     )
 }
@@ -651,7 +667,6 @@ export const getChargingStationConnectorChargingProfilesPowerLimit = (
   connectorId: number
 ): number | undefined => {
   let limit: number | undefined, chargingProfile: ChargingProfile | undefined
-  // Get charging profiles sorted by connector id then stack level
   const chargingProfiles = getConnectorChargingProfiles(chargingStation, connectorId)
   if (isNotEmptyArray(chargingProfiles)) {
     const result = getLimitFromChargingProfiles(
@@ -868,6 +883,7 @@ const getLimitFromChargingProfiles = (
   const debugLogMsg = `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Matching charging profile found for power limitation: %j`
   const currentDate = new Date()
   const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+  let previousActiveChargingProfile: ChargingProfile | undefined
   for (const chargingProfile of chargingProfiles) {
     const chargingSchedule = chargingProfile.chargingSchedule
     if (chargingSchedule.startSchedule == null) {
@@ -951,15 +967,12 @@ const getLimitFromChargingProfiles = (
           ) {
             // Found the schedule period: previous is the correct one
             const result: ChargingProfilesLimit = {
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              limit: previousChargingSchedulePeriod!.limit,
-              chargingProfile
+              limit: previousChargingSchedulePeriod?.limit ?? chargingSchedulePeriod.limit,
+              chargingProfile: previousActiveChargingProfile ?? chargingProfile
             }
             logger.debug(debugLogMsg, result)
             return result
           }
-          // Keep a reference to previous one
-          previousChargingSchedulePeriod = chargingSchedulePeriod
           // Handle the last schedule period within the charging profile duration
           if (
             index === chargingSchedule.chargingSchedulePeriod.length - 1 ||
@@ -973,14 +986,18 @@ const getLimitFromChargingProfiles = (
               ) > chargingSchedule.duration)
           ) {
             const result: ChargingProfilesLimit = {
-              limit: previousChargingSchedulePeriod.limit,
+              limit: chargingSchedulePeriod.limit,
               chargingProfile
             }
             logger.debug(debugLogMsg, result)
             return result
           }
+          // Keep a reference to previous charging schedule period
+          previousChargingSchedulePeriod = chargingSchedulePeriod
         }
       }
+      // Keep a reference to previous active charging profile
+      previousActiveChargingProfile = chargingProfile
     }
   }
 }
