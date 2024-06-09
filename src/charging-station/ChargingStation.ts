@@ -131,7 +131,7 @@ import {
   hasFeatureProfile,
   hasReservationExpired,
   initializeConnectorsMapStatus,
-  prepareDatesInConnectorStatus,
+  prepareConnectorStatus,
   propagateSerialNumber,
   setChargingStationOptions,
   stationTemplateToStationInfo,
@@ -1480,7 +1480,7 @@ export class ChargingStation extends EventEmitter {
       for (const [connectorId, connectorStatus] of configuration.connectorsStatus.entries()) {
         this.connectors.set(
           connectorId,
-          prepareDatesInConnectorStatus(clone<ConnectorStatus>(connectorStatus))
+          prepareConnectorStatus(clone<ConnectorStatus>(connectorStatus))
         )
       }
     } else if (configuration.evsesStatus != null && configuration.connectorsStatus == null) {
@@ -1493,7 +1493,7 @@ export class ChargingStation extends EventEmitter {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             evseStatusConfiguration.connectorsStatus!.map((connectorStatus, connectorId) => [
               connectorId,
-              prepareDatesInConnectorStatus(connectorStatus)
+              prepareConnectorStatus(connectorStatus)
             ])
           )
         })

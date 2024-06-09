@@ -436,22 +436,25 @@ export const resetConnectorStatus = (connectorStatus: ConnectorStatus | undefine
   delete connectorStatus.transactionBeginMeterValue
 }
 
-export const prepareDatesInConnectorStatus = (
-  connectorStatus: ConnectorStatus
-): ConnectorStatus => {
+export const prepareConnectorStatus = (connectorStatus: ConnectorStatus): ConnectorStatus => {
   if (connectorStatus.reservation != null) {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     connectorStatus.reservation.expiryDate = convertToDate(connectorStatus.reservation.expiryDate)!
   }
   if (isNotEmptyArray(connectorStatus.chargingProfiles)) {
-    connectorStatus.chargingProfiles = connectorStatus.chargingProfiles.map(chargingProfile => {
-      chargingProfile.chargingSchedule.startSchedule = convertToDate(
-        chargingProfile.chargingSchedule.startSchedule
+    connectorStatus.chargingProfiles = connectorStatus.chargingProfiles
+      .filter(
+        chargingProfile =>
+          chargingProfile.chargingProfilePurpose !== ChargingProfilePurposeType.TX_PROFILE
       )
-      chargingProfile.validFrom = convertToDate(chargingProfile.validFrom)
-      chargingProfile.validTo = convertToDate(chargingProfile.validTo)
-      return chargingProfile
-    })
+      .map(chargingProfile => {
+        chargingProfile.chargingSchedule.startSchedule = convertToDate(
+          chargingProfile.chargingSchedule.startSchedule
+        )
+        chargingProfile.validFrom = convertToDate(chargingProfile.validFrom)
+        chargingProfile.validTo = convertToDate(chargingProfile.validTo)
+        return chargingProfile
+      })
   }
   return connectorStatus
 }
