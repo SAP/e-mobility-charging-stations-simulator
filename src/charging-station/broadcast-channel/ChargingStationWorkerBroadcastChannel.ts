@@ -155,23 +155,21 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       [
         BroadcastChannelProcedureName.BOOT_NOTIFICATION,
         async (requestPayload?: BroadcastChannelRequestPayload) => {
-          this.chargingStation.bootNotificationResponse =
-            await this.chargingStation.ocppRequestService.requestHandler<
-            BootNotificationRequest,
-            BootNotificationResponse
-            >(
-              this.chargingStation,
-              RequestCommand.BOOT_NOTIFICATION,
-              {
-                ...this.chargingStation.bootNotificationRequest,
-                ...requestPayload
-              },
-              {
-                skipBufferingOnError: true,
-                throwError: true
-              }
-            )
-          return this.chargingStation.bootNotificationResponse
+          return await this.chargingStation.ocppRequestService.requestHandler<
+          BootNotificationRequest,
+          BootNotificationResponse
+          >(
+            this.chargingStation,
+            RequestCommand.BOOT_NOTIFICATION,
+            {
+              ...this.chargingStation.bootNotificationRequest,
+              ...requestPayload
+            },
+            {
+              skipBufferingOnError: true,
+              throwError: true
+            }
+          )
         }
       ],
       [

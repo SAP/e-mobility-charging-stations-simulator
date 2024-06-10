@@ -9,9 +9,9 @@
   },
   "volta": {
     "node": "22.2.0",
-    "pnpm": "9.1.4"
+    "pnpm": "9.2.0"
   },
-  "packageManager": "pnpm@9.1.4",
+  "packageManager": "pnpm@9.2.0",
   "type": "module",
   "scripts": {
     "build": "vite build",
@@ -58,7 +58,7 @@
     "prettier": "^3.3.1",
     "rimraf": "^5.0.7",
     "typescript": "~5.4.5",
-    "vite": "^5.2.12",
+    "vite": "^5.2.13",
     "vitest": "^1.6.0"
   },
   "_id": "webui@0.3.0"

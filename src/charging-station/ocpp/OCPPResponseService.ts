@@ -10,7 +10,7 @@ import type {
   RequestCommand
 } from '../../types/index.js'
 import { Constants, logger } from '../../utils/index.js'
-import { OCPPServiceUtils } from './OCPPServiceUtils.js'
+import { ajvErrorsToErrorType } from './OCPPServiceUtils.js'
 type Ajv = _Ajv.default
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 const Ajv = _Ajv.default
@@ -69,7 +69,7 @@ export abstract class OCPPResponseService {
       validate?.errors
     )
     throw new OCPPError(
-      OCPPServiceUtils.ajvErrorsToErrorType(validate?.errors),
+      ajvErrorsToErrorType(validate?.errors),
       'Response PDU is invalid',
       commandName,
       JSON.stringify(validate?.errors, undefined, 2)

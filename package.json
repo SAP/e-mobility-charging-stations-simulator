@@ -1,16 +1,16 @@
 {
   "$schema": "https://json.schemastore.org/package",
   "name": "e-mobility-charging-stations-simulator",
-  "version": "1.3.3",
+  "version": "1.3.5",
   "engines": {
     "node": ">=18.18.0",
     "pnpm": ">=9.0.0"
   },
   "volta": {
     "node": "22.2.0",
-    "pnpm": "9.1.4"
+    "pnpm": "9.2.0"
   },
-  "packageManager": "pnpm@9.1.4",
+  "packageManager": "pnpm@9.2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/sap/e-mobility-charging-stations-simulator.git"
@@ -70,9 +70,9 @@
     "build:entities": "tsc -p tsconfig-mikro-orm.json",
     "clean:dist": "pnpm exec rimraf dist",
     "clean:node_modules": "pnpm exec rimraf node_modules",
-    "lint": "cross-env TIMING=1 eslint --cache src tests .eslintrc.cjs bundle.js mikro-orm.config-template.ts",
-    "lint:fix": "cross-env TIMING=1 eslint --cache --fix src tests .eslintrc.cjs bundle.js mikro-orm.config-template.ts",
-    "format": "prettier --cache --write .; eslint --cache --fix src .eslintrc.cjs tests bundle.js mikro-orm.config-template.ts",
+    "lint": "cross-env TIMING=1 eslint --cache src tests ./*.cjs ./*.js ./*.ts",
+    "lint:fix": "cross-env TIMING=1 eslint --cache --fix src tests ./*.cjs ./*.js ./*.ts",
+    "format": "prettier --cache --write .; eslint --cache --fix src tests ./*.cjs ./*.js ./*.ts",
     "test": "glob -c \"c8 node --import tsx --test\" \"tests/**/*.test.ts\"",
     "test:debug": "glob -c \"node --import tsx --test --inspect\" \"tests/**/*.test.ts\"",
     "coverage": "c8 report --reporter=lcov",
@@ -139,8 +139,8 @@
     "eslint-define-config": "^2.1.0",
     "eslint-import-resolver-typescript": "^3.6.1",
     "eslint-plugin-import": "^2.29.1",
-    "eslint-plugin-jsdoc": "^48.2.7",
-    "eslint-plugin-n": "^17.8.0",
+    "eslint-plugin-jsdoc": "^48.2.9",
+    "eslint-plugin-n": "^17.8.1",
     "eslint-plugin-simple-import-sort": "^12.1.0",
     "eslint-plugin-tsdoc": "^0.3.0",
     "expect": "^29.7.0",
@@ -152,7 +152,7 @@
     "rimraf": "^5.0.7",
     "semver": "^7.6.2",
     "ts-node": "^10.9.2",
-    "tsx": "^4.11.2",
+    "tsx": "^4.15.1",
     "typescript": "~5.4.5"
   }
 }

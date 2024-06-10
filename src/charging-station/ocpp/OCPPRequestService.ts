@@ -28,7 +28,11 @@ import {
 } from '../../utils/index.js'
 import { OCPPConstants } from './OCPPConstants.js'
 import type { OCPPResponseService } from './OCPPResponseService.js'
-import { getMessageTypeString, OCPPServiceUtils } from './OCPPServiceUtils.js'
+import {
+  ajvErrorsToErrorType,
+  convertDateToISOString,
+  getMessageTypeString
+} from './OCPPServiceUtils.js'
 type Ajv = _Ajv.default
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 const Ajv = _Ajv.default
@@ -183,7 +187,7 @@ export abstract class OCPPRequestService {
     }
     const validate = this.payloadValidateFunctions.get(commandName as RequestCommand)
     payload = clone<T>(payload)
-    OCPPServiceUtils.convertDateToISOString<T>(payload)
+    convertDateToISOString<T>(payload)
     if (validate?.(payload) === true) {
       return true
     }
@@ -193,7 +197,7 @@ export abstract class OCPPRequestService {
     )
     // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
     throw new OCPPError(
-      OCPPServiceUtils.ajvErrorsToErrorType(validate?.errors),
+      ajvErrorsToErrorType(validate?.errors),
       'Request PDU is invalid',
       commandName,
       JSON.stringify(validate?.errors, undefined, 2)
@@ -222,7 +226,7 @@ export abstract class OCPPRequestService {
       commandName as IncomingRequestCommand
     )
     payload = clone<T>(payload)
-    OCPPServiceUtils.convertDateToISOString<T>(payload)
+    convertDateToISOString<T>(payload)
     if (validate?.(payload) === true) {
       return true
     }
@@ -232,7 +236,7 @@ export abstract class OCPPRequestService {
     )
     // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
     throw new OCPPError(
-      OCPPServiceUtils.ajvErrorsToErrorType(validate?.errors),
+      ajvErrorsToErrorType(validate?.errors),
       'Response PDU is invalid',
       commandName,
       JSON.stringify(validate?.errors, undefined, 2)

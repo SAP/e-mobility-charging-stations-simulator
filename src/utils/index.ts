@@ -10,6 +10,7 @@ export { Constants } from './Constants.js'
 export { ACElectricUtils, DCElectricUtils } from './ElectricUtils.js'
 export {
   handleFileException,
+  handleIncomingRequestError,
   handleSendMessageError,
   handleUncaughtException,
   handleUnhandledRejection,

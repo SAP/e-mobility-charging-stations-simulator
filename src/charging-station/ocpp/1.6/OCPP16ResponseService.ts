@@ -469,7 +469,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         // Throw exception
         throw new OCPPError(
           ErrorType.NOT_IMPLEMENTED,
-          `'${commandName}' is not implemented to handle response PDU ${JSON.stringify(
+          `${commandName} is not implemented to handle response PDU ${JSON.stringify(
             payload,
             undefined,
             2
@@ -541,6 +541,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         ? logger.warn(logMsg)
         : logger.info(logMsg)
     } else {
+      delete chargingStation.bootNotificationResponse
       logger.error(
         `${chargingStation.logPrefix()} Charging station boot notification response received: %j with undefined registration status`,
         payload
@@ -649,6 +650,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     }
     if (
       connectorStatus?.idTagAuthorized === true &&
+      connectorStatus.authorizeIdTag != null &&
       connectorStatus.authorizeIdTag !== requestPayload.idTag
     ) {
       logger.error(
@@ -663,6 +665,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     }
     if (
       connectorStatus?.idTagLocalAuthorized === true &&
+      connectorStatus.localAuthorizeIdTag != null &&
       connectorStatus.localAuthorizeIdTag !== requestPayload.idTag
     ) {
       logger.error(

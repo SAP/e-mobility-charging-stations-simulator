@@ -264,6 +264,38 @@ const checkConnectorStatusTransition = (
   return transitionAllowed
 }
 
+export const ajvErrorsToErrorType = (errors: ErrorObject[] | undefined | null): ErrorType => {
+  if (isNotEmptyArray(errors)) {
+    for (const error of errors as DefinedError[]) {
+      switch (error.keyword) {
+        case 'type':
+          return ErrorType.TYPE_CONSTRAINT_VIOLATION
+        case 'dependencies':
+        case 'required':
+          return ErrorType.OCCURRENCE_CONSTRAINT_VIOLATION
+        case 'pattern':
+        case 'format':
+          return ErrorType.PROPERTY_CONSTRAINT_VIOLATION
+      }
+    }
+  }
+  return ErrorType.FORMAT_VIOLATION
+}
+
+export const convertDateToISOString = <T extends JsonType>(object: T): void => {
+  for (const key in object) {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion
+    if (isDate(object![key])) {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion
+      (object![key] as string) = (object![key] as Date).toISOString()
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-unnecessary-condition
+    } else if (typeof object![key] === 'object' && object![key] !== null) {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion
+      convertDateToISOString<T>(object![key] as T)
+    }
+  }
+}
+
 export const buildMeterValue = (
   chargingStation: ChargingStation,
   connectorId: number,
@@ -273,6 +305,7 @@ export const buildMeterValue = (
 ): MeterValue => {
   const connector = chargingStation.getConnectorStatus(connectorId)
   let meterValue: MeterValue
+  let connectorMaximumAvailablePower: number | undefined
   let socSampledValueTemplate: SampledValueTemplate | undefined
   let voltageSampledValueTemplate: SampledValueTemplate | undefined
   let powerSampledValueTemplate: SampledValueTemplate | undefined
@@ -472,7 +505,7 @@ export const buildMeterValue = (
         // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         const powerMeasurandValues: MeasurandValues = {} as MeasurandValues
         const unitDivider = powerSampledValueTemplate.unit === MeterValueUnit.KILO_WATT ? 1000 : 1
-        const connectorMaximumAvailablePower =
+        connectorMaximumAvailablePower =
           chargingStation.getConnectorMaximumAvailablePower(connectorId)
         const connectorMaximumPower = Math.round(connectorMaximumAvailablePower)
         const connectorMaximumPowerPerPhase = Math.round(
@@ -742,8 +775,9 @@ export const buildMeterValue = (
         } measurand value`
         // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
         const currentMeasurandValues: MeasurandValues = {} as MeasurandValues
-        const connectorMaximumAvailablePower =
-          chargingStation.getConnectorMaximumAvailablePower(connectorId)
+        connectorMaximumAvailablePower == null &&
+          (connectorMaximumAvailablePower =
+            chargingStation.getConnectorMaximumAvailablePower(connectorId))
         const connectorMinimumAmperage = currentSampledValueTemplate.minimumValue ?? 0
         let connectorMaximumAmperage: number
         switch (chargingStation.stationInfo.currentOutType) {
@@ -959,8 +993,9 @@ export const buildMeterValue = (
         checkMeasurandPowerDivider(chargingStation, energySampledValueTemplate.measurand)
         const unitDivider =
           energySampledValueTemplate.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1
-        const connectorMaximumAvailablePower =
-          chargingStation.getConnectorMaximumAvailablePower(connectorId)
+        connectorMaximumAvailablePower == null &&
+          (connectorMaximumAvailablePower =
+            chargingStation.getConnectorMaximumAvailablePower(connectorId))
         const connectorMaximumEnergyRounded = roundTo(
           (connectorMaximumAvailablePower * interval) / (3600 * 1000),
           2
@@ -1272,24 +1307,6 @@ export class OCPPServiceUtils {
     // This is intentional
   }
 
-  public static ajvErrorsToErrorType (errors: ErrorObject[] | undefined | null): ErrorType {
-    if (isNotEmptyArray(errors)) {
-      for (const error of errors as DefinedError[]) {
-        switch (error.keyword) {
-          case 'type':
-            return ErrorType.TYPE_CONSTRAINT_VIOLATION
-          case 'dependencies':
-          case 'required':
-            return ErrorType.OCCURRENCE_CONSTRAINT_VIOLATION
-          case 'pattern':
-          case 'format':
-            return ErrorType.PROPERTY_CONSTRAINT_VIOLATION
-        }
-      }
-    }
-    return ErrorType.FORMAT_VIOLATION
-  }
-
   public static isRequestCommandSupported (
     chargingStation: ChargingStation,
     command: RequestCommand
@@ -1362,20 +1379,6 @@ export class OCPPServiceUtils {
       return false
     }
     return true
-  }
-
-  public static convertDateToISOString<T extends JsonType>(object: T): void {
-    for (const key in object) {
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion
-      if (isDate(object![key])) {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion
-        (object![key] as string) = (object![key] as Date).toISOString()
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-unnecessary-condition
-      } else if (typeof object![key] === 'object' && object![key] !== null) {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion
-        OCPPServiceUtils.convertDateToISOString<T>(object![key] as T)
-      }
-    }
   }
 
   protected static parseJsonSchemaFile<T extends JsonType>(

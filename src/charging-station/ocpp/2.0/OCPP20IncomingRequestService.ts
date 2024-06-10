@@ -109,7 +109,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         // Throw exception
         throw new OCPPError(
           ErrorType.NOT_IMPLEMENTED,
-          `'${commandName}' is not implemented to handle request PDU ${JSON.stringify(
+          `${commandName} is not implemented to handle request PDU ${JSON.stringify(
             commandPayload,
             undefined,
             2

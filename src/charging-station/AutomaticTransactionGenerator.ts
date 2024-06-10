@@ -8,6 +8,7 @@ import { BaseError } from '../exception/index.js'
 import { PerformanceStatistics } from '../performance/index.js'
 import {
   AuthorizationStatus,
+  ChargingStationEvents,
   RequestCommand,
   type StartTransactionRequest,
   type StartTransactionResponse,
@@ -262,9 +263,10 @@ export class AutomaticTransactionGenerator {
       )}`
     )
     logger.debug(
-      `${this.logPrefix(connectorId)} connector status: %j`,
+      `${this.logPrefix(connectorId)} stopped with connector status: %j`,
       this.connectorsStatus.get(connectorId)
     )
+    this.chargingStation.emit(ChargingStationEvents.updated)
   }
 
   private setStartConnectorStatus (
@@ -294,6 +296,7 @@ export class AutomaticTransactionGenerator {
     this.connectorsStatus.get(connectorId)!.skippedConsecutiveTransactions = 0
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.connectorsStatus.get(connectorId)!.start = true
+    this.chargingStation.emit(ChargingStationEvents.updated)
   }
 
   private canStartConnector (connectorId: number): boolean {
@@ -408,13 +411,17 @@ export class AutomaticTransactionGenerator {
 
   private getConnectorStatus (connectorId: number): Status {
     const statusIndex = connectorId - 1
+    if (statusIndex < 0) {
+      logger.error(`${this.logPrefix(connectorId)} invalid connector id`)
+      throw new BaseError(`Invalid connector id ${connectorId}`)
+    }
     let connectorStatus: Status | undefined
     if (this.chargingStation.getAutomaticTransactionGeneratorStatuses()?.[statusIndex] != null) {
       connectorStatus = clone<Status>(
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         this.chargingStation.getAutomaticTransactionGeneratorStatuses()![statusIndex]
       )
-    } else if (this.chargingStation.getAutomaticTransactionGeneratorStatuses() != null) {
+    } else {
       logger.warn(
         `${this.logPrefix(
           connectorId

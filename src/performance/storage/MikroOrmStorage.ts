@@ -28,7 +28,11 @@ export class MikroOrmStorage extends Storage {
         }))
       } satisfies PerformanceRecord)
     } catch (error) {
-      this.handleDBError(this.storageType, error as Error, Constants.PERFORMANCE_RECORDS_TABLE)
+      this.handleDBStorageError(
+        this.storageType,
+        error as Error,
+        Constants.PERFORMANCE_RECORDS_TABLE
+      )
     }
   }
 
@@ -46,7 +50,7 @@ export class MikroOrmStorage extends Storage {
         }
       }
     } catch (error) {
-      this.handleDBError(this.storageType, error as Error)
+      this.handleDBStorageError(this.storageType, error as Error)
     }
   }
 
@@ -58,7 +62,7 @@ export class MikroOrmStorage extends Storage {
         delete this.orm
       }
     } catch (error) {
-      this.handleDBError(this.storageType, error as Error)
+      this.handleDBStorageError(this.storageType, error as Error)
     }
   }
 

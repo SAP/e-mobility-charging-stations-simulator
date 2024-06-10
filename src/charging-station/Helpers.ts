@@ -31,6 +31,7 @@ import {
   BootReasonEnumType,
   type ChargingProfile,
   ChargingProfileKindType,
+  ChargingProfilePurposeType,
   ChargingRateUnitType,
   type ChargingSchedulePeriod,
   type ChargingStationConfiguration,
@@ -327,27 +328,6 @@ export const checkStationInfoConnectorStatus = (
   }
 }
 
-export const buildConnectorsMap = (
-  connectors: Record<string, ConnectorStatus>,
-  logPrefix: string,
-  templateFile: string
-): Map<number, ConnectorStatus> => {
-  const connectorsMap = new Map<number, ConnectorStatus>()
-  if (getMaxNumberOfConnectors(connectors) > 0) {
-    for (const connector in connectors) {
-      const connectorStatus = connectors[connector]
-      const connectorId = convertToInt(connector)
-      checkStationInfoConnectorStatus(connectorId, connectorStatus, logPrefix, templateFile)
-      connectorsMap.set(connectorId, clone<ConnectorStatus>(connectorStatus))
-    }
-  } else {
-    logger.warn(
-      `${logPrefix} Charging station information from template ${templateFile} with no connectors, cannot build connectors map`
-    )
-  }
-  return connectorsMap
-}
-
 export const setChargingStationOptions = (
   stationInfo: ChargingStationInfo,
   options?: ChargingStationOptions
@@ -379,6 +359,27 @@ export const setChargingStationOptions = (
   return stationInfo
 }
 
+export const buildConnectorsMap = (
+  connectors: Record<string, ConnectorStatus>,
+  logPrefix: string,
+  templateFile: string
+): Map<number, ConnectorStatus> => {
+  const connectorsMap = new Map<number, ConnectorStatus>()
+  if (getMaxNumberOfConnectors(connectors) > 0) {
+    for (const connector in connectors) {
+      const connectorStatus = connectors[connector]
+      const connectorId = convertToInt(connector)
+      checkStationInfoConnectorStatus(connectorId, connectorStatus, logPrefix, templateFile)
+      connectorsMap.set(connectorId, clone<ConnectorStatus>(connectorStatus))
+    }
+  } else {
+    logger.warn(
+      `${logPrefix} Charging station information from template ${templateFile} with no connectors, cannot build connectors map`
+    )
+  }
+  return connectorsMap
+}
+
 export const initializeConnectorsMapStatus = (
   connectors: Map<number, ConnectorStatus>,
   logPrefix: string
@@ -405,27 +406,58 @@ export const initializeConnectorsMapStatus = (
   }
 }
 
+export const resetAuthorizeConnectorStatus = (connectorStatus: ConnectorStatus): void => {
+  connectorStatus.idTagLocalAuthorized = false
+  connectorStatus.idTagAuthorized = false
+  delete connectorStatus.localAuthorizeIdTag
+  delete connectorStatus.authorizeIdTag
+}
+
 export const resetConnectorStatus = (connectorStatus: ConnectorStatus | undefined): void => {
   if (connectorStatus == null) {
     return
   }
-  connectorStatus.chargingProfiles =
-    connectorStatus.transactionId != null && isNotEmptyArray(connectorStatus.chargingProfiles)
-      ? connectorStatus.chargingProfiles.filter(
-        chargingProfile => chargingProfile.transactionId !== connectorStatus.transactionId
-      )
-      : []
-  connectorStatus.idTagLocalAuthorized = false
-  connectorStatus.idTagAuthorized = false
+  if (isNotEmptyArray(connectorStatus.chargingProfiles)) {
+    connectorStatus.chargingProfiles = connectorStatus.chargingProfiles.filter(
+      chargingProfile =>
+        (chargingProfile.chargingProfilePurpose === ChargingProfilePurposeType.TX_PROFILE &&
+          chargingProfile.transactionId != null &&
+          connectorStatus.transactionId != null &&
+          chargingProfile.transactionId !== connectorStatus.transactionId) ||
+        chargingProfile.chargingProfilePurpose !== ChargingProfilePurposeType.TX_PROFILE
+    )
+  }
+  resetAuthorizeConnectorStatus(connectorStatus)
   connectorStatus.transactionRemoteStarted = false
   connectorStatus.transactionStarted = false
   delete connectorStatus.transactionStart
   delete connectorStatus.transactionId
-  delete connectorStatus.localAuthorizeIdTag
-  delete connectorStatus.authorizeIdTag
   delete connectorStatus.transactionIdTag
   connectorStatus.transactionEnergyActiveImportRegisterValue = 0
   delete connectorStatus.transactionBeginMeterValue
+}
+
+export const prepareConnectorStatus = (connectorStatus: ConnectorStatus): ConnectorStatus => {
+  if (connectorStatus.reservation != null) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    connectorStatus.reservation.expiryDate = convertToDate(connectorStatus.reservation.expiryDate)!
+  }
+  if (isNotEmptyArray(connectorStatus.chargingProfiles)) {
+    connectorStatus.chargingProfiles = connectorStatus.chargingProfiles
+      .filter(
+        chargingProfile =>
+          chargingProfile.chargingProfilePurpose !== ChargingProfilePurposeType.TX_PROFILE
+      )
+      .map(chargingProfile => {
+        chargingProfile.chargingSchedule.startSchedule = convertToDate(
+          chargingProfile.chargingSchedule.startSchedule
+        )
+        chargingProfile.validFrom = convertToDate(chargingProfile.validFrom)
+        chargingProfile.validTo = convertToDate(chargingProfile.validTo)
+        return chargingProfile
+      })
+  }
+  return connectorStatus
 }
 
 export const createBootNotificationRequest = (
@@ -597,45 +629,57 @@ export const getAmperageLimitationUnitDivider = (stationInfo: ChargingStationInf
 }
 
 /**
- * Gets the connector cloned charging profiles applying a power limitation
- * and sorted by connector id descending then stack level descending
+ * Gets the connector charging profiles relevant for power limitation shallow cloned and sorted by priorities
  *
- * @param chargingStation -
- * @param connectorId -
+ * @param chargingStation - Charging station
+ * @param connectorId - Connector id
  * @returns connector charging profiles array
  */
 export const getConnectorChargingProfiles = (
   chargingStation: ChargingStation,
   connectorId: number
 ): ChargingProfile[] => {
-  return clone<ChargingProfile[]>(
-    (chargingStation.getConnectorStatus(connectorId)?.chargingProfiles ?? [])
-      .sort((a, b) => b.stackLevel - a.stackLevel)
-      .concat(
-        (chargingStation.getConnectorStatus(0)?.chargingProfiles ?? []).sort(
-          (a, b) => b.stackLevel - a.stackLevel
+  // FIXME: handle charging profile purpose CHARGE_POINT_MAX_PROFILE
+  return (chargingStation.getConnectorStatus(connectorId)?.chargingProfiles ?? [])
+    .slice()
+    .sort((a, b) => {
+      if (
+        a.chargingProfilePurpose === ChargingProfilePurposeType.TX_PROFILE &&
+        b.chargingProfilePurpose === ChargingProfilePurposeType.TX_DEFAULT_PROFILE
+      ) {
+        return -1
+      } else if (
+        a.chargingProfilePurpose === ChargingProfilePurposeType.TX_DEFAULT_PROFILE &&
+        b.chargingProfilePurpose === ChargingProfilePurposeType.TX_PROFILE
+      ) {
+        return 1
+      }
+      return b.stackLevel - a.stackLevel
+    })
+    .concat(
+      (chargingStation.getConnectorStatus(0)?.chargingProfiles ?? [])
+        .filter(
+          chargingProfile =>
+            chargingProfile.chargingProfilePurpose === ChargingProfilePurposeType.TX_DEFAULT_PROFILE
         )
-      )
-  )
+        .sort((a, b) => b.stackLevel - a.stackLevel)
+    )
 }
 
 export const getChargingStationConnectorChargingProfilesPowerLimit = (
   chargingStation: ChargingStation,
   connectorId: number
 ): number | undefined => {
-  let limit: number | undefined, chargingProfile: ChargingProfile | undefined
-  // Get charging profiles sorted by connector id then stack level
   const chargingProfiles = getConnectorChargingProfiles(chargingStation, connectorId)
   if (isNotEmptyArray(chargingProfiles)) {
-    const result = getLimitFromChargingProfiles(
+    const chargingProfilesLimit = getLimitFromChargingProfiles(
       chargingStation,
       connectorId,
       chargingProfiles,
       chargingStation.logPrefix()
     )
-    if (result != null) {
-      limit = result.limit
-      chargingProfile = result.chargingProfile
+    if (chargingProfilesLimit != null) {
+      let { limit, chargingProfile } = chargingProfilesLimit
       switch (chargingStation.stationInfo?.currentOutType) {
         case CurrentType.AC:
           limit =
@@ -663,13 +707,13 @@ export const getChargingStationConnectorChargingProfilesPowerLimit = (
           `${chargingStation.logPrefix()} ${moduleName}.getChargingStationConnectorChargingProfilesPowerLimit: Charging profile id ${
             chargingProfile.chargingProfileId
           } limit ${limit} is greater than connector id ${connectorId} maximum ${connectorMaximumPower}: %j`,
-          result
+          chargingProfilesLimit
         )
         limit = connectorMaximumPower
       }
+      return limit
     }
   }
-  return limit
 }
 
 export const getDefaultVoltageOut = (
@@ -838,9 +882,10 @@ const getLimitFromChargingProfiles = (
   chargingProfiles: ChargingProfile[],
   logPrefix: string
 ): ChargingProfilesLimit | undefined => {
-  const debugLogMsg = `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Matching charging profile found for power limitation: %j`
+  const debugLogMsg = `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profiles limit found: %j`
   const currentDate = new Date()
   const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+  let previousActiveChargingProfile: ChargingProfile | undefined
   for (const chargingProfile of chargingProfiles) {
     const chargingSchedule = chargingProfile.chargingSchedule
     if (chargingSchedule.startSchedule == null) {
@@ -902,12 +947,12 @@ const getLimitFromChargingProfiles = (
         }
         // Handle only one schedule period
         if (chargingSchedule.chargingSchedulePeriod.length === 1) {
-          const result: ChargingProfilesLimit = {
+          const chargingProfilesLimit: ChargingProfilesLimit = {
             limit: chargingSchedule.chargingSchedulePeriod[0].limit,
             chargingProfile
           }
-          logger.debug(debugLogMsg, result)
-          return result
+          logger.debug(debugLogMsg, chargingProfilesLimit)
+          return chargingProfilesLimit
         }
         let previousChargingSchedulePeriod: ChargingSchedulePeriod | undefined
         // Search for the right schedule period
@@ -923,16 +968,13 @@ const getLimitFromChargingProfiles = (
             )
           ) {
             // Found the schedule period: previous is the correct one
-            const result: ChargingProfilesLimit = {
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              limit: previousChargingSchedulePeriod!.limit,
-              chargingProfile
+            const chargingProfilesLimit: ChargingProfilesLimit = {
+              limit: previousChargingSchedulePeriod?.limit ?? chargingSchedulePeriod.limit,
+              chargingProfile: previousActiveChargingProfile ?? chargingProfile
             }
-            logger.debug(debugLogMsg, result)
-            return result
+            logger.debug(debugLogMsg, chargingProfilesLimit)
+            return chargingProfilesLimit
           }
-          // Keep a reference to previous one
-          previousChargingSchedulePeriod = chargingSchedulePeriod
           // Handle the last schedule period within the charging profile duration
           if (
             index === chargingSchedule.chargingSchedulePeriod.length - 1 ||
@@ -945,15 +987,19 @@ const getLimitFromChargingProfiles = (
                 chargingSchedule.startSchedule
               ) > chargingSchedule.duration)
           ) {
-            const result: ChargingProfilesLimit = {
-              limit: previousChargingSchedulePeriod.limit,
+            const chargingProfilesLimit: ChargingProfilesLimit = {
+              limit: chargingSchedulePeriod.limit,
               chargingProfile
             }
-            logger.debug(debugLogMsg, result)
-            return result
+            logger.debug(debugLogMsg, chargingProfilesLimit)
+            return chargingProfilesLimit
           }
+          // Keep a reference to previous charging schedule period
+          previousChargingSchedulePeriod = chargingSchedulePeriod
         }
       }
+      // Keep a reference to previous active charging profile
+      previousActiveChargingProfile = chargingProfile
     }
   }
 }
