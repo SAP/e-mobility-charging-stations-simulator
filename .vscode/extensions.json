@@ -6,6 +6,7 @@
     "dbaeumer.vscode-eslint",
     "EditorConfig.EditorConfig",
     "ms-azuretools.vscode-docker",
+    "ms-python.python",
     "sonarsource.sonarlint-vscode",
     "streetsidesoftware.code-spell-checker"
   ]
