@@ -3,18 +3,18 @@ import logging
 from datetime import datetime, timezone
 from typing import Sequence
 
+import ocpp.v201
 import websockets
 from ocpp.routing import on
-from ocpp.v201 import ChargePoint as cp
 from ocpp.v201 import call_result
-from ocpp.v201.enums import RegistrationStatusType
+from ocpp.v201.enums import RegistrationStatusType, ClearCacheStatusType
 
 # Setting up the logging configuration to display debug level messages.
 logging.basicConfig(level=logging.DEBUG)
 
 
 # Define a ChargePoint class inheriting from the OCPP 2.0.1 ChargePoint class.
-class ChargePoint(cp):
+class ChargePoint(ocpp.v201.ChargePoint):
     # Message handlers to receive OCPP message.
     @on('BootNotification')
     async def on_boot_notification(self, charging_station, reason, **kwargs):
@@ -28,6 +28,14 @@ class ChargePoint(cp):
         )
 
     # Request handlers to emit OCPP messages.
+    async def send_clear_cache(self):
+        request = ocpp.v201.call.ClearCache()
+        response = await self.call(request)
+
+        if response.status == ClearCacheStatusType.accepted:
+            logging.info("Cache cleared successfully")
+        else:
+            logging.info("Cache clearing failed")
 
 
 # Function to handle new WebSocket connections.
