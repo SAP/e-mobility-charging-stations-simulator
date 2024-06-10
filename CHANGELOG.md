@@ -1,6 +1,18 @@
 # Changelog
 
-## [v1.3.5](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.3.4...v1.3.5)
+## [v1.3.6](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.3.5...v1.3.6)
+
+- build(deps-dev): apply updates [`01ffb6d`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/01ffb6d3583ab4da138dad815803121f3cc6d336)
+- feat: handle CHARGE_POINT_MAX_PROFILE charging profiles at power [`3579910`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/357991053f9d8910cdfaebde426eca58f813c05f)
+- build(deps-dev): apply updates [`7b0a334`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/7b0a334d2c0e42768b246cbc962718d605ca7464)
+- refactor: cleanup power limitation code [`21f68e2`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/21f68e222da0b9ac5d43a70b96beaf3f13ff3926)
+- refactor: cleanup charging profiles handling code [`c76d9c8`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/c76d9c83dba681eeccd78dcfae661b085d7ccf2b)
+- fix: ensure no charging profile purpose TxProfile is loaded at startup [`3edfdf5`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/3edfdf53dc3c75bf26b4737bb014e6e98239ef38)
+- build(deps-dev): apply updates [`1056f1b`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/1056f1b4cf5e305c45351093cb062d05468c83e8)
+- build: apply volta pnpm update [`c9a92ed`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/c9a92ed7a2ef6d5258f075620b7f4878ba12c454)
+- fix: fix TxProfile removal with transaction id defined at Tx stop [`d020e24`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/d020e249e5206699107d6e63d3d585a7e72e7830)
+
+## [v1.3.5](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.3.4...v1.3.5) (2024-06-09)
 
 - test: add ErrorUtils test [`d05b53c`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/d05b53c7a03b8fad2e106caee68d5871cc6aac6e)
 - test: improve ErrorUtils coverage [`2d4928a`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/2d4928a7237a906158f2e9652e08f0392eeabdcd)
@@ -9,6 +21,7 @@
 - build(deps-dev): apply updates [`65b608f`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/65b608f0259f6f59138406ea327d22ecd6a19361)
 - test: add tests [`b49550e`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/b49550e256d11c7a30fb19cd672e5e3611d01553)
 - test: improve coverage on existing tests [`ff40d2c`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/ff40d2cc466140d6f18bc15b742100dd4f060d0f)
+- chore: version 1.3.5 [`cc04ce3`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/cc04ce3549100de93505abdd6ff43fd3d968998d)
 - fix: restart metervalues interval if MeterValueSampleInterval is changed [`b8e3363`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/b8e3363a179fcf79d8bb66f47724b377d4d38a75)
 - refactor: rename Storage.handleDBError -&gt; Storage.handleDBStorageError [`a03b18c`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/a03b18c4731bfd1173ff67b74a75684d3f6bb470)
 - fix: allow to set charging profile with TxProfile purpose [`65099c1`](https://github.com/sap/e-mobility-charging-stations-simulator/commit/65099c1e7297b252523172096a8d6ded22daa702)
