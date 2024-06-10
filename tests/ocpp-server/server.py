@@ -75,9 +75,9 @@ async def main():
     # Create the WebSocket server and specify the handler for new connections.
     server = await websockets.serve(
         on_connect,
-        '0.0.0.0',  # Listen on all available interfaces.
+        '0.0.0.0',  # Listen on loopback.
         9000,       # Port number.
-        subprotocols=['ocpp2.0.1']  # Specify the OCPP 2.0.1 subprotocol.
+        subprotocols=['ocpp2.0', 'ocpp2.0.1']  # Specify OCPP 2.0.1 subprotocols.
     )
     logging.info("WebSocket Server Started")
     # Wait for the server to close (runs indefinitely).

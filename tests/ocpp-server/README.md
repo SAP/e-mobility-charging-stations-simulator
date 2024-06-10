@@ -1,6 +1,6 @@
 # OCPP2 Mock Server
 
-This project includes a mock Open Charge Point Protocol (OCPP) version 2.0.1 server implemented in Python.
+This project includes an Open Charge Point Protocol (OCPP) version 2.0.1 mock server implemented in Python.
 
 ## Prerequisites
 
@@ -10,6 +10,7 @@ This project requires Python 3.7+ and the following Python packages:
 - `ocpp`
 
 You can install these packages using pip:
+
 ```
 pip install websockets ocpp
 ```
