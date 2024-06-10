@@ -715,7 +715,7 @@ export const getConnectorChargingProfilesLimit = (
       chargingProfiles
     )
     if (chargingProfilesLimit != null) {
-      let limit = buildChargingProfilesLimit(chargingStation, chargingProfilesLimit)
+      const limit = buildChargingProfilesLimit(chargingStation, chargingProfilesLimit)
       const connectorMaximumPower =
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         chargingStation.stationInfo!.maximumPower! / chargingStation.powerDivider!
@@ -726,7 +726,7 @@ export const getConnectorChargingProfilesLimit = (
           } limit ${limit} is greater than connector ${connectorId} maximum ${connectorMaximumPower}: %j`,
           chargingProfilesLimit
         )
-        limit = connectorMaximumPower
+        return connectorMaximumPower
       }
       return limit
     }
@@ -737,27 +737,29 @@ const buildChargingProfilesLimit = (
   chargingStation: ChargingStation,
   chargingProfilesLimit: ChargingProfilesLimit
 ): number => {
-  let { limit, chargingProfile } = chargingProfilesLimit
+  const errorMsg = `Unknown ${chargingStation.stationInfo?.currentOutType} currentOutType in charging station information, cannot build charging profiles limit`
+  const { limit, chargingProfile } = chargingProfilesLimit
   switch (chargingStation.stationInfo?.currentOutType) {
     case CurrentType.AC:
-      limit =
-        chargingProfile.chargingSchedule.chargingRateUnit === ChargingRateUnitType.WATT
-          ? limit
-          : ACElectricUtils.powerTotal(
-            chargingStation.getNumberOfPhases(),
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            chargingStation.stationInfo.voltageOut!,
-            limit
-          )
-      break
+      return chargingProfile.chargingSchedule.chargingRateUnit === ChargingRateUnitType.WATT
+        ? limit
+        : ACElectricUtils.powerTotal(
+          chargingStation.getNumberOfPhases(),
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          chargingStation.stationInfo.voltageOut!,
+          limit
+        )
     case CurrentType.DC:
-      limit =
-        chargingProfile.chargingSchedule.chargingRateUnit === ChargingRateUnitType.WATT
-          ? limit
-          : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          DCElectricUtils.power(chargingStation.stationInfo.voltageOut!, limit)
+      return chargingProfile.chargingSchedule.chargingRateUnit === ChargingRateUnitType.WATT
+        ? limit
+        : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        DCElectricUtils.power(chargingStation.stationInfo.voltageOut!, limit)
+    default:
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.buildChargingProfilesLimit: ${errorMsg}`
+      )
+      throw new BaseError(errorMsg)
   }
-  return limit
 }
 
 export const getDefaultVoltageOut = (
