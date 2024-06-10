@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 # Define a ChargePoint class inheriting from the OCPP 2.0.1 ChargePoint class.
 class ChargePoint(cp):
-  # Define a handler for the BootNotification message.
+  # Message handlers to receive OCPP message.
   @on('BootNotification')
   async def on_boot_notification(self, charging_station, reason, **kwargs):
     logging.info("Received BootNotification")
@@ -26,27 +26,7 @@ class ChargePoint(cp):
       status=RegistrationStatusType.accepted
     )
 
-  # Define a handler for the GetBaseReport message.
-  @on('GetBaseReport')
-  async def on_get_base_report(self, request_id, report_base, **kwargs):
-    try:
-      logging.info(
-        f"Received GetBaseReport request with RequestId: {request_id} and ReportBase: {report_base}")
-
-      # Create a mock response for demonstration purposes, indicating the report is accepted.
-      response = call_result.GetBaseReport(
-        status=GenericDeviceModelStatusType.accepted
-      )
-
-      logging.info(f"Sending GetBaseReport response: {response}")
-      return response
-    except Exception as e:
-      # Log any errors that occur while handling the GetBaseReport request.
-      logging.error(f"Error handling GetBaseReport request: {e}", exc_info=True)
-      # Return a rejected status in case of error.
-      return call_result.GetBaseReport(
-        status=GenericDeviceModelStatusType.rejected
-      )
+  # Request handlers to emit OCPP messages.
 
 
 # Function to handle new WebSocket connections.
