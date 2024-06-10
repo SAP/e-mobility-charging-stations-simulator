@@ -4,15 +4,10 @@ This project includes an Open Charge Point Protocol (OCPP) version 2.0.1 mock se
 
 ## Prerequisites
 
-This project requires Python 3.7+ and the following Python packages:
-
-- `websockets`
-- `ocpp`
-
-You can install these packages using pip:
+This project requires Python 3.7+ and [poetry](https://python-poetry.org/) to install the required packages:
 
 ```
-pip install websockets ocpp
+poetry install
 ```
 
 ## Running the Server
@@ -35,7 +30,7 @@ The server script uses the websockets and ocpp libraries to facilitate the WebSo
 
 ## Note
 
-Primarily, this software is intended for testing applications. The server scripts don't execute full OCPP adherence and it is advised not to use them in a production environment without additional development.
+Primarily, this software is intended for testing applications. The server script don't adhere to the full OCPP specifications and it is advised not to use them in a production environment without additional development.
 
 For reference:
 https://github.com/mobilityhouse/ocpp

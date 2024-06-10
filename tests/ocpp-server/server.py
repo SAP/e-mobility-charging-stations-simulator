@@ -48,7 +48,8 @@ class ChargePoint(cp):
 
 # Function to handle new WebSocket connections.
 async def on_connect(websocket, path):
-    """ For every new charge point that connects, create a ChargePoint instance and start listening for messages. """
+    """ For every new charge point that connects, create a ChargePoint instance and start
+    listening for messages."""
     try:
         requested_protocols = websocket.request_headers['Sec-WebSocket-Protocol']
     except KeyError:
@@ -75,8 +76,8 @@ async def main():
     # Create the WebSocket server and specify the handler for new connections.
     server = await websockets.serve(
         on_connect,
-        '0.0.0.0',  # Listen on loopback.
-        9000,       # Port number.
+        '127.0.0.1',  # Listen on loopback.
+        9000,         # Port number.
         subprotocols=['ocpp2.0', 'ocpp2.0.1']  # Specify OCPP 2.0.1 subprotocols.
     )
     logging.info("WebSocket Server Started")
