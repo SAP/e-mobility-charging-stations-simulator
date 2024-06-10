@@ -120,8 +120,9 @@ import {
   createSerialNumber,
   getAmperageLimitationUnitDivider,
   getBootConnectorStatus,
-  getChargingStationConnectorChargingProfilesPowerLimit,
+  getChargingStationChargingProfilesLimit,
   getChargingStationId,
+  getConnectorChargingProfilesLimit,
   getDefaultVoltageOut,
   getHashId,
   getIdTagsFile,
@@ -391,14 +392,14 @@ export class ChargingStation extends EventEmitter {
   }
 
   public getConnectorMaximumAvailablePower (connectorId: number): number {
-    let connectorAmperageLimitationPowerLimit: number | undefined
+    let connectorAmperageLimitationLimit: number | undefined
     const amperageLimitation = this.getAmperageLimitation()
     if (
       amperageLimitation != null &&
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       amperageLimitation < this.stationInfo!.maximumAmperage!
     ) {
-      connectorAmperageLimitationPowerLimit =
+      connectorAmperageLimitationLimit =
         (this.stationInfo?.currentOutType === CurrentType.AC
           ? ACElectricUtils.powerTotal(
             this.getNumberOfPhases(),
@@ -414,20 +415,25 @@ export class ChargingStation extends EventEmitter {
     }
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const connectorMaximumPower = this.stationInfo!.maximumPower! / this.powerDivider!
-    const connectorChargingProfilesPowerLimit =
-      getChargingStationConnectorChargingProfilesPowerLimit(this, connectorId)
+    const chargingStationChargingProfilesLimit =
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      getChargingStationChargingProfilesLimit(this)! / this.powerDivider!
+    const connectorChargingProfilesLimit = getConnectorChargingProfilesLimit(this, connectorId)
     return min(
       isNaN(connectorMaximumPower) ? Number.POSITIVE_INFINITY : connectorMaximumPower,
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      isNaN(connectorAmperageLimitationPowerLimit!)
+      isNaN(connectorAmperageLimitationLimit!)
         ? Number.POSITIVE_INFINITY
         : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        connectorAmperageLimitationPowerLimit!,
+        connectorAmperageLimitationLimit!,
+      isNaN(chargingStationChargingProfilesLimit)
+        ? Number.POSITIVE_INFINITY
+        : chargingStationChargingProfilesLimit,
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      isNaN(connectorChargingProfilesPowerLimit!)
+      isNaN(connectorChargingProfilesLimit!)
         ? Number.POSITIVE_INFINITY
         : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        connectorChargingProfilesPowerLimit!
+        connectorChargingProfilesLimit!
     )
   }
 

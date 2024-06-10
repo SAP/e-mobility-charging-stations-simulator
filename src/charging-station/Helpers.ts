@@ -628,8 +628,46 @@ export const getAmperageLimitationUnitDivider = (stationInfo: ChargingStationInf
   return unitDivider
 }
 
+const getChargingStationChargingProfiles = (
+  chargingStation: ChargingStation
+): ChargingProfile[] => {
+  return (chargingStation.getConnectorStatus(0)?.chargingProfiles ?? [])
+    .filter(
+      chargingProfile =>
+        chargingProfile.chargingProfilePurpose ===
+        ChargingProfilePurposeType.CHARGE_POINT_MAX_PROFILE
+    )
+    .sort((a, b) => b.stackLevel - a.stackLevel)
+}
+
+export const getChargingStationChargingProfilesLimit = (
+  chargingStation: ChargingStation
+): number | undefined => {
+  const chargingProfiles = getChargingStationChargingProfiles(chargingStation)
+  if (isNotEmptyArray(chargingProfiles)) {
+    const chargingProfilesLimit = getChargingProfilesLimit(chargingStation, 0, chargingProfiles)
+    if (chargingProfilesLimit != null) {
+      const limit = buildChargingProfilesLimit(chargingStation, chargingProfilesLimit)
+      const chargingStationMaximumPower =
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        chargingStation.stationInfo!.maximumPower!
+      if (limit > chargingStationMaximumPower) {
+        logger.error(
+          `${chargingStation.logPrefix()} ${moduleName}.getChargingStationChargingProfilesLimit: Charging profile id ${
+            chargingProfilesLimit.chargingProfile.chargingProfileId
+          } limit ${limit} is greater than charging station maximum ${chargingStationMaximumPower}: %j`,
+          chargingProfilesLimit
+        )
+        return chargingStationMaximumPower
+      }
+      return limit
+    }
+  }
+}
+
 /**
- * Gets the connector charging profiles relevant for power limitation shallow cloned and sorted by priorities
+ * Gets the connector charging profiles relevant for power limitation shallow cloned
+ * and sorted by priorities
  *
  * @param chargingStation - Charging station
  * @param connectorId - Connector id
@@ -639,7 +677,6 @@ export const getConnectorChargingProfiles = (
   chargingStation: ChargingStation,
   connectorId: number
 ): ChargingProfile[] => {
-  // FIXME: handle charging profile purpose CHARGE_POINT_MAX_PROFILE
   return (chargingStation.getConnectorStatus(connectorId)?.chargingProfiles ?? [])
     .slice()
     .sort((a, b) => {
@@ -666,47 +703,27 @@ export const getConnectorChargingProfiles = (
     )
 }
 
-export const getChargingStationConnectorChargingProfilesPowerLimit = (
+export const getConnectorChargingProfilesLimit = (
   chargingStation: ChargingStation,
   connectorId: number
 ): number | undefined => {
   const chargingProfiles = getConnectorChargingProfiles(chargingStation, connectorId)
   if (isNotEmptyArray(chargingProfiles)) {
-    const chargingProfilesLimit = getLimitFromChargingProfiles(
+    const chargingProfilesLimit = getChargingProfilesLimit(
       chargingStation,
       connectorId,
-      chargingProfiles,
-      chargingStation.logPrefix()
+      chargingProfiles
     )
     if (chargingProfilesLimit != null) {
-      let { limit, chargingProfile } = chargingProfilesLimit
-      switch (chargingStation.stationInfo?.currentOutType) {
-        case CurrentType.AC:
-          limit =
-            chargingProfile.chargingSchedule.chargingRateUnit === ChargingRateUnitType.WATT
-              ? limit
-              : ACElectricUtils.powerTotal(
-                chargingStation.getNumberOfPhases(),
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                chargingStation.stationInfo.voltageOut!,
-                limit
-              )
-          break
-        case CurrentType.DC:
-          limit =
-            chargingProfile.chargingSchedule.chargingRateUnit === ChargingRateUnitType.WATT
-              ? limit
-              : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              DCElectricUtils.power(chargingStation.stationInfo.voltageOut!, limit)
-      }
+      let limit = buildChargingProfilesLimit(chargingStation, chargingProfilesLimit)
       const connectorMaximumPower =
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         chargingStation.stationInfo!.maximumPower! / chargingStation.powerDivider!
       if (limit > connectorMaximumPower) {
         logger.error(
-          `${chargingStation.logPrefix()} ${moduleName}.getChargingStationConnectorChargingProfilesPowerLimit: Charging profile id ${
-            chargingProfile.chargingProfileId
-          } limit ${limit} is greater than connector id ${connectorId} maximum ${connectorMaximumPower}: %j`,
+          `${chargingStation.logPrefix()} ${moduleName}.getConnectorChargingProfilesLimit: Charging profile id ${
+            chargingProfilesLimit.chargingProfile.chargingProfileId
+          } limit ${limit} is greater than connector ${connectorId} maximum ${connectorMaximumPower}: %j`,
           chargingProfilesLimit
         )
         limit = connectorMaximumPower
@@ -714,6 +731,33 @@ export const getChargingStationConnectorChargingProfilesPowerLimit = (
       return limit
     }
   }
+}
+
+const buildChargingProfilesLimit = (
+  chargingStation: ChargingStation,
+  chargingProfilesLimit: ChargingProfilesLimit
+): number => {
+  let { limit, chargingProfile } = chargingProfilesLimit
+  switch (chargingStation.stationInfo?.currentOutType) {
+    case CurrentType.AC:
+      limit =
+        chargingProfile.chargingSchedule.chargingRateUnit === ChargingRateUnitType.WATT
+          ? limit
+          : ACElectricUtils.powerTotal(
+            chargingStation.getNumberOfPhases(),
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            chargingStation.stationInfo.voltageOut!,
+            limit
+          )
+      break
+    case CurrentType.DC:
+      limit =
+        chargingProfile.chargingSchedule.chargingRateUnit === ChargingRateUnitType.WATT
+          ? limit
+          : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          DCElectricUtils.power(chargingStation.stationInfo.voltageOut!, limit)
+  }
+  return limit
 }
 
 export const getDefaultVoltageOut = (
@@ -868,21 +912,20 @@ interface ChargingProfilesLimit {
 }
 
 /**
- * Charging profiles shall already be sorted by connector id descending then stack level descending
+ * Get the charging profiles limit for a connector
+ * Charging profiles shall already be sorted by priorities
  *
  * @param chargingStation -
  * @param connectorId -
  * @param chargingProfiles -
- * @param logPrefix -
  * @returns ChargingProfilesLimit
  */
-const getLimitFromChargingProfiles = (
+const getChargingProfilesLimit = (
   chargingStation: ChargingStation,
   connectorId: number,
-  chargingProfiles: ChargingProfile[],
-  logPrefix: string
+  chargingProfiles: ChargingProfile[]
 ): ChargingProfilesLimit | undefined => {
-  const debugLogMsg = `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profiles limit found: %j`
+  const debugLogMsg = `${chargingStation.logPrefix()} ${moduleName}.getChargingProfilesLimit: Charging profiles limit found: %j`
   const currentDate = new Date()
   const connectorStatus = chargingStation.getConnectorStatus(connectorId)
   let previousActiveChargingProfile: ChargingProfile | undefined
@@ -890,29 +933,36 @@ const getLimitFromChargingProfiles = (
     const chargingSchedule = chargingProfile.chargingSchedule
     if (chargingSchedule.startSchedule == null) {
       logger.debug(
-        `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} has no startSchedule defined. Trying to set it to the connector current transaction start date`
+        `${chargingStation.logPrefix()} ${moduleName}.getChargingProfilesLimit: Charging profile id ${chargingProfile.chargingProfileId} has no startSchedule defined. Trying to set it to the connector current transaction start date`
       )
       // OCPP specifies that if startSchedule is not defined, it should be relative to start of the connector transaction
       chargingSchedule.startSchedule = connectorStatus?.transactionStart
     }
     if (!isDate(chargingSchedule.startSchedule)) {
       logger.warn(
-        `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} startSchedule property is not a Date instance. Trying to convert it to a Date instance`
+        `${chargingStation.logPrefix()} ${moduleName}.getChargingProfilesLimit: Charging profile id ${chargingProfile.chargingProfileId} startSchedule property is not a Date instance. Trying to convert it to a Date instance`
       )
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       chargingSchedule.startSchedule = convertToDate(chargingSchedule.startSchedule)!
     }
     if (chargingSchedule.duration == null) {
       logger.debug(
-        `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} has no duration defined and will be set to the maximum time allowed`
+        `${chargingStation.logPrefix()} ${moduleName}.getChargingProfilesLimit: Charging profile id ${chargingProfile.chargingProfileId} has no duration defined and will be set to the maximum time allowed`
       )
       // OCPP specifies that if duration is not defined, it should be infinite
       chargingSchedule.duration = differenceInSeconds(maxTime, chargingSchedule.startSchedule)
     }
-    if (!prepareChargingProfileKind(connectorStatus, chargingProfile, currentDate, logPrefix)) {
+    if (
+      !prepareChargingProfileKind(
+        connectorStatus,
+        chargingProfile,
+        currentDate,
+        chargingStation.logPrefix()
+      )
+    ) {
       continue
     }
-    if (!canProceedChargingProfile(chargingProfile, currentDate, logPrefix)) {
+    if (!canProceedChargingProfile(chargingProfile, currentDate, chargingStation.logPrefix())) {
       continue
     }
     // Check if the charging profile is active
@@ -934,14 +984,14 @@ const getLimitFromChargingProfiles = (
           )
         ) {
           logger.warn(
-            `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} schedule periods are not sorted by start period`
+            `${chargingStation.logPrefix()} ${moduleName}.getChargingProfilesLimit: Charging profile id ${chargingProfile.chargingProfileId} schedule periods are not sorted by start period`
           )
           chargingSchedule.chargingSchedulePeriod.sort(chargingSchedulePeriodCompareFn)
         }
         // Check if the first schedule period startPeriod property is equal to 0
         if (chargingSchedule.chargingSchedulePeriod[0].startPeriod !== 0) {
           logger.error(
-            `${logPrefix} ${moduleName}.getLimitFromChargingProfiles: Charging profile id ${chargingProfile.chargingProfileId} first schedule period start period ${chargingSchedule.chargingSchedulePeriod[0].startPeriod} is not equal to 0`
+            `${chargingStation.logPrefix()} ${moduleName}.getChargingProfilesLimit: Charging profile id ${chargingProfile.chargingProfileId} first schedule period start period ${chargingSchedule.chargingSchedulePeriod[0].startPeriod} is not equal to 0`
           )
           continue
         }

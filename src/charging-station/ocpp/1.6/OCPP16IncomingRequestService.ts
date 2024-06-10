@@ -979,6 +979,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       start: currentDate,
       end: addSeconds(currentDate, duration)
     }
+    // FIXME: add and handle charging station charging profiles
     const chargingProfiles: OCPP16ChargingProfile[] = getConnectorChargingProfiles(
       chargingStation,
       connectorId
