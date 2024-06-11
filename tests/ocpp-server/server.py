@@ -33,7 +33,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
         response = await self.call(request)
 
         if response.status == ClearCacheStatusType.accepted:
-            logging.info("Cache cleared successfully")
+            logging.info("Cache clearing successful")
         else:
             logging.info("Cache clearing failed")
 
