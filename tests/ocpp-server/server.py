@@ -2,13 +2,11 @@ import asyncio
 import logging
 from datetime import datetime, timezone
 from threading import Timer
-from typing import Sequence
 
 import ocpp.v201
 import websockets
 from ocpp.routing import on
-from ocpp.v201 import call_result
-from ocpp.v201.enums import RegistrationStatusType, ClearCacheStatusType
+from ocpp.v201.enums import RegistrationStatusType, ClearCacheStatusType, Action
 
 # Setting up the logging configuration to display debug level messages.
 logging.basicConfig(level=logging.DEBUG)
@@ -26,12 +24,12 @@ class RepeatTimer(Timer):
 # Define a ChargePoint class inheriting from the OCPP 2.0.1 ChargePoint class.
 class ChargePoint(ocpp.v201.ChargePoint):
     # Message handlers to receive OCPP messages.
-    @on('BootNotification')
+    @on(Action.BootNotification)
     async def on_boot_notification(self, charging_station, reason, **kwargs):
         logging.info("Received BootNotification")
         # Create and return a BootNotification response with the current time,
         # an interval of 10 seconds, and an accepted status.
-        return call_result.BootNotification(
+        return ocpp.v201.call_result.BootNotification(
             current_time=datetime.now(timezone.utc).isoformat(),
             interval=10,
             status=RegistrationStatusType.accepted
@@ -81,7 +79,7 @@ async def main():
         on_connect,
         '127.0.0.1',  # Listen on loopback.
         9000,  # Port number.
-        subprotocols=Sequence['ocpp2.0', 'ocpp2.0.1']  # Specify OCPP 2.0.1 subprotocols.
+        subprotocols=['ocpp2.0', 'ocpp2.0.1']  # Specify OCPP 2.0.1 subprotocols.
     )
     logging.info("WebSocket Server Started")
     # Wait for the server to close (runs indefinitely).
