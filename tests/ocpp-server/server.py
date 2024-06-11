@@ -52,7 +52,8 @@ class ChargePoint(ocpp.v201.ChargePoint):
     async def on_authorize(self, id_token, **kwargs):
         logging.info("Received Authorize")
         return ocpp.v201.call_result.Authorize(
-            id_token_info={'status': AuthorizationStatusType.accepted})
+            id_token_info={'status': AuthorizationStatusType.accepted}
+        )
 
     @on(Action.TransactionEvent)
     async def on_transaction_event(self, event_type, timestamp, trigger_reason, seq_no,
@@ -61,11 +62,13 @@ class ChargePoint(ocpp.v201.ChargePoint):
             case TransactionEventType.started:
                 logging.info("Received TransactionEvent Started")
                 return ocpp.v201.call_result.TransactionEvent(
-                    id_token_info={'status': AuthorizationStatusType.accepted})
+                    id_token_info={'status': AuthorizationStatusType.accepted}
+                )
             case TransactionEventType.updated:
                 logging.info("Received TransactionEvent Updated")
                 return ocpp.v201.call_result.TransactionEvent(
-                    total_cost=10)
+                    total_cost=10
+                )
             case TransactionEventType.ended:
                 logging.info("Received TransactionEvent Ended")
                 return ocpp.v201.call_result.TransactionEvent()
@@ -102,7 +105,8 @@ async def on_connect(websocket, path):
         logging.warning('Protocols Mismatched | Expected Subprotocols: %s,'
                         ' but client supports %s | Closing connection',
                         websocket.available_subprotocols,
-                        requested_protocols)
+                        requested_protocols
+                        )
         return await websocket.close()
 
     charge_point_id = path.strip('/')
