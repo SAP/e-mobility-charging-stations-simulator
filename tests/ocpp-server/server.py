@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from datetime import datetime, timezone
+from threading import Timer
 from typing import Sequence
 
 import ocpp.v201
@@ -13,9 +14,18 @@ from ocpp.v201.enums import RegistrationStatusType, ClearCacheStatusType
 logging.basicConfig(level=logging.DEBUG)
 
 
+class RepeatTimer(Timer):
+    """ Class that inherits from the Timer class. It will run a
+    function at regular intervals."""
+
+    def run(self):
+        while not self.finished.wait(self.interval):
+            self.function(*self.args, **self.kwargs)
+
+
 # Define a ChargePoint class inheriting from the OCPP 2.0.1 ChargePoint class.
 class ChargePoint(ocpp.v201.ChargePoint):
-    # Message handlers to receive OCPP message.
+    # Message handlers to receive OCPP messages.
     @on('BootNotification')
     async def on_boot_notification(self, charging_station, reason, **kwargs):
         logging.info("Received BootNotification")
