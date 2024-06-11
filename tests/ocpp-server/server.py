@@ -6,7 +6,8 @@ from threading import Timer
 import ocpp.v201
 import websockets
 from ocpp.routing import on
-from ocpp.v201.enums import RegistrationStatusType, ClearCacheStatusType, Action
+from ocpp.v201.enums import RegistrationStatusType, ClearCacheStatusType, AuthorizationStatusType, \
+    Action
 
 # Setting up the logging configuration to display debug level messages.
 logging.basicConfig(level=logging.DEBUG)
@@ -28,7 +29,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
     async def on_boot_notification(self, charging_station, reason, **kwargs):
         logging.info("Received BootNotification")
         # Create and return a BootNotification response with the current time,
-        # an interval of 10 seconds, and an accepted status.
+        # an interval of 60 seconds, and an accepted status.
         return ocpp.v201.call_result.BootNotification(
             current_time=datetime.now(timezone.utc).isoformat(),
             interval=60,
@@ -36,14 +37,26 @@ class ChargePoint(ocpp.v201.ChargePoint):
         )
 
     @on(Action.Heartbeat)
-    async def on_heartbeat(self, charging_station, **kwargs):
+    async def on_heartbeat(self, **kwargs):
         logging.info("Received Heartbeat")
         return ocpp.v201.call_result.Heartbeat(current_time=datetime.now(timezone.utc).isoformat())
 
     @on(Action.StatusNotification)
-    async def on_status_notification(self, charging_station, connector_id, status, **kwargs):
+    async def on_status_notification(self, timestamp, evse_id, connector_id, connector_status,
+                                     **kwargs):
         logging.info("Received StatusNotification")
         return ocpp.v201.call_result.StatusNotification()
+
+    @on(Action.Authorize)
+    async def on_authorize(self, id_token, **kwargs):
+        logging.info("Received Authorize")
+        return ocpp.v201.call_result.Authorize(
+            id_token_info={'status': AuthorizationStatusType.accepted})
+
+    @on(Action.MeterValues)
+    async def on_meter_values(self, evse_id, meter_value, **kwargs):
+        logging.info("Received MeterValues")
+        return ocpp.v201.call_result.MeterValues()
 
     # Request handlers to emit OCPP messages.
     async def send_clear_cache(self):
