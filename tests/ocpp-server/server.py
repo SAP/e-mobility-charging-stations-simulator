@@ -7,6 +7,7 @@ import ocpp.v201
 import websockets
 from ocpp.routing import on
 from ocpp.v201.enums import RegistrationStatusType, ClearCacheStatusType, AuthorizationStatusType, \
+    TransactionEventType, \
     Action
 
 # Setting up the logging configuration to display debug level messages.
@@ -52,6 +53,22 @@ class ChargePoint(ocpp.v201.ChargePoint):
         logging.info("Received Authorize")
         return ocpp.v201.call_result.Authorize(
             id_token_info={'status': AuthorizationStatusType.accepted})
+
+    @on(Action.TransactionEvent)
+    async def on_transaction_event(self, event_type, timestamp, trigger_reason, seq_no,
+                                   transaction_info, **kwargs):
+        match event_type:
+            case TransactionEventType.started:
+                logging.info("Received TransactionEvent Started")
+                return ocpp.v201.call_result.TransactionEvent(
+                    id_token_info={'status': AuthorizationStatusType.accepted})
+            case TransactionEventType.updated:
+                logging.info("Received TransactionEvent Updated")
+                return ocpp.v201.call_result.TransactionEvent(
+                    total_cost=10)
+            case TransactionEventType.ended:
+                logging.info("Received TransactionEvent Ended")
+                return ocpp.v201.call_result.TransactionEvent()
 
     @on(Action.MeterValues)
     async def on_meter_values(self, evse_id, meter_value, **kwargs):
