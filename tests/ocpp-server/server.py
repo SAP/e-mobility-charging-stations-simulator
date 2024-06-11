@@ -40,6 +40,11 @@ class ChargePoint(ocpp.v201.ChargePoint):
         logging.info("Received Heartbeat")
         return ocpp.v201.call_result.Heartbeat(current_time=datetime.now(timezone.utc).isoformat())
 
+    @on(Action.StatusNotification)
+    async def on_status_notification(self, charging_station, connector_id, status, **kwargs):
+        logging.info("Received StatusNotification")
+        return ocpp.v201.call_result.StatusNotification()
+
     # Request handlers to emit OCPP messages.
     async def send_clear_cache(self):
         request = ocpp.v201.call.ClearCache()
