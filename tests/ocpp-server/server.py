@@ -31,9 +31,14 @@ class ChargePoint(ocpp.v201.ChargePoint):
         # an interval of 10 seconds, and an accepted status.
         return ocpp.v201.call_result.BootNotification(
             current_time=datetime.now(timezone.utc).isoformat(),
-            interval=10,
+            interval=60,
             status=RegistrationStatusType.accepted
         )
+
+    @on(Action.Heartbeat)
+    async def on_heartbeat(self, charging_station, **kwargs):
+        logging.info("Received Heartbeat")
+        return ocpp.v201.call_result.Heartbeat(current_time=datetime.now(timezone.utc).isoformat())
 
     # Request handlers to emit OCPP messages.
     async def send_clear_cache(self):
