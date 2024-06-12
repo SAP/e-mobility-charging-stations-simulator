@@ -10,10 +10,15 @@ python = "^3.12"
 websockets = "^12.0"
 ocpp = "^2.0.0rc1"
 
-[tool.poetry.group.development.dependencies]
+[tool.poetry.group.dev.dependencies]
+taskipy = "^1"
 isort = "^5"
 black = "^24"
 flake8 = "^7"
+
+[tool.taskipy.tasks]
+format = "black . && isort ."
+lint = "flake8 ."
 
 [tool.isort]
 profile = 'black'
