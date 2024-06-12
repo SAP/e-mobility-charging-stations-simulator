@@ -2,7 +2,7 @@
 name = "ocpp-server"
 version = "0.1.0"
 description = "OCPP2 mock server"
-authors = ["Jérôme Benoit <jerome.benoit@piment-noir.org>"]
+authors = ["Jérôme Benoit <jerome.benoit@sap.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
