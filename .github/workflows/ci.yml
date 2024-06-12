@@ -21,6 +21,29 @@ jobs:
           else
             echo "defined=false" >> $GITHUB_OUTPUT;
           fi
+  build-ocpp-server:
+    strategy:
+      matrix:
+        python:
+          - 3.12
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tests/ocpp-server
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python ${{ matrix.python }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install Poetry
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+      - name: Install Dependencies
+        run: poetry install
+      - name: Lint
+        run: poetry run task lint
   build-simulator:
     needs: [check-secrets]
     strategy:

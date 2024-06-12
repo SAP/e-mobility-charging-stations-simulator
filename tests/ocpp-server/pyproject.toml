@@ -18,7 +18,7 @@ flake8 = "^7"
 
 [tool.taskipy.tasks]
 format = "black . && isort ."
-lint = "flake8 ."
+lint = "black --check --diff . && isort --check --diff . && flake8 ."
 
 [tool.isort]
 profile = 'black'
