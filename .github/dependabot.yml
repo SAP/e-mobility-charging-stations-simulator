@@ -4,7 +4,7 @@ updates:
   - package-ecosystem: github-actions
     directory: '/'
     schedule:
-      interval: 'daily'
+      interval: daily
     labels:
       - 'github-actions'
     reviewers:
@@ -13,7 +13,7 @@ updates:
   - package-ecosystem: npm
     directory: '/'
     schedule:
-      interval: 'daily'
+      interval: daily
     labels:
       - 'dependencies'
     reviewers:
