@@ -15,7 +15,7 @@ poetry install
 To start the server, run the `server.py` script:
 
 ```shell
-python server.py
+poetry run task server
 ```
 
 The server will start listening for connections on port 9000.

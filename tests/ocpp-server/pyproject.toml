@@ -17,6 +17,7 @@ black = "^24"
 flake8 = "^7"
 
 [tool.taskipy.tasks]
+server = "python server.py"
 format = "black . && isort ."
 lint = "black --check --diff . && isort --check --diff . && flake8 ."
 
