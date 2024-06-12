@@ -26,6 +26,7 @@ jobs:
       matrix:
         python:
           - 3.12
+    name: Build OCPP mock server with Python ${{ matrix.python }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -41,7 +42,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install poetry
       - name: Install Dependencies
-        run: poetry install
+        run: poetry install --no-root
       - name: Lint
         run: poetry run task lint
   build-simulator:
