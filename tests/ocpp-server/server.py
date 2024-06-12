@@ -43,7 +43,8 @@ class ChargePoint(ocpp.v201.ChargePoint):
         return ocpp.v201.call_result.Heartbeat(current_time=datetime.now(timezone.utc).isoformat())
 
     @on(Action.StatusNotification)
-    async def on_status_notification(self, timestamp, evse_id, connector_id, connector_status,
+    async def on_status_notification(self, timestamp, evse_id: int, connector_id: int,
+                                     connector_status,
                                      **kwargs):
         logging.info("Received StatusNotification")
         return ocpp.v201.call_result.StatusNotification()
@@ -56,7 +57,8 @@ class ChargePoint(ocpp.v201.ChargePoint):
         )
 
     @on(Action.TransactionEvent)
-    async def on_transaction_event(self, event_type, timestamp, trigger_reason, seq_no,
+    async def on_transaction_event(self, event_type: TransactionEventType, timestamp,
+                                   trigger_reason, seq_no: int,
                                    transaction_info, **kwargs):
         match event_type:
             case TransactionEventType.started:
@@ -74,7 +76,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
                 return ocpp.v201.call_result.TransactionEvent()
 
     @on(Action.MeterValues)
-    async def on_meter_values(self, evse_id, meter_value, **kwargs):
+    async def on_meter_values(self, evse_id: int, meter_value, **kwargs):
         logging.info("Received MeterValues")
         return ocpp.v201.call_result.MeterValues()
 
