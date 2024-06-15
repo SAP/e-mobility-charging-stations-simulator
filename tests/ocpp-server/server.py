@@ -13,9 +13,12 @@ from ocpp.v201.enums import (
     RegistrationStatusType,
     TransactionEventType,
 )
+from websockets import ConnectionClosed
 
 # Setting up the logging configuration to display debug level messages.
 logging.basicConfig(level=logging.DEBUG)
+
+ChargePoints = set()
 
 
 class RepeatTimer(Timer):
@@ -29,6 +32,21 @@ class RepeatTimer(Timer):
 
 # Define a ChargePoint class inheriting from the OCPP 2.0.1 ChargePoint class.
 class ChargePoint(ocpp.v201.ChargePoint):
+    def __init__(self, charge_point_id, connection):
+        super().__init__(self, charge_point_id, connection)
+        self._ws_ping_timer = RepeatTimer(60, self.web_socket_ping)
+        self._ws_ping_timer.start()
+
+    def stop(self):
+        self._ws_ping_timer.cancel()
+
+    def web_socket_ping(self):
+        try:
+            self._connection.ping()
+        except ConnectionClosed:
+            ChargePoints.remove(self)
+            self.stop()
+
     # Message handlers to receive OCPP messages.
     @on(Action.BootNotification)
     async def on_boot_notification(self, charging_station, reason, **kwargs):
@@ -124,6 +142,7 @@ async def on_connect(websocket, path):
 
     charge_point_id = path.strip("/")
     cp = ChargePoint(charge_point_id, websocket)
+    ChargePoints.add(cp)
 
     # Start the ChargePoint instance to listen for incoming messages.
     await cp.start()
