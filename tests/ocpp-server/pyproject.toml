@@ -12,17 +12,16 @@ ocpp = "^2.0.0rc1"
 
 [tool.poetry.group.dev.dependencies]
 taskipy = "^1"
-isort = "^5"
-black = "^24"
-flake8 = "^7"
+ruff = "^0.4"
 
 [tool.taskipy.tasks]
 server = "python server.py"
-format = "black . && isort ."
-lint = "black --check --diff . && isort --check --diff . && flake8 ."
+format = "ruff format . && ruff check --fix ."
+lint = "ruff format --check --diff . && ruff check --diff ."
 
-[tool.isort]
-profile = 'black'
+[tool.ruff.lint]
+select = ["E", "W", "F", "B", "Q", "I"]
+
 
 [build-system]
 requires = ["poetry-core"]
