@@ -133,7 +133,7 @@ async def on_connect(websocket, path):
     except ConnectionClosed:
         logging.info("ChargePoint %s closed connection", cp.id)
         ChargePoints.remove(cp)
-        logging.debug("Connected charge points: %d", len(ChargePoints))
+        logging.debug("Connected ChargePoint(s): %d", len(ChargePoints))
 
 
 # Main function to start the WebSocket server.
