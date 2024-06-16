@@ -32,25 +32,10 @@ class RepeatTimer(Timer):
 
 # Define a ChargePoint class inheriting from the OCPP 2.0.1 ChargePoint class.
 class ChargePoint(ocpp.v201.ChargePoint):
-    def __init__(self, charge_point_id, connection):
-        super().__init__(self, charge_point_id, connection)
-        self._ws_ping_timer = RepeatTimer(60, self.web_socket_ping)
-        self._ws_ping_timer.start()
-
-    def stop(self):
-        self._ws_ping_timer.cancel()
-
-    def web_socket_ping(self):
-        try:
-            self._connection.ping()
-        except ConnectionClosed:
-            ChargePoints.remove(self)
-            self.stop()
-
     # Message handlers to receive OCPP messages.
     @on(Action.BootNotification)
     async def on_boot_notification(self, charging_station, reason, **kwargs):
-        logging.info("Received BootNotification")
+        logging.info("Received %s", Action.BootNotification)
         # Create and return a BootNotification response with the current time,
         # an interval of 60 seconds, and an accepted status.
         return ocpp.v201.call_result.BootNotification(
@@ -61,7 +46,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
 
     @on(Action.Heartbeat)
     async def on_heartbeat(self, **kwargs):
-        logging.info("Received Heartbeat")
+        logging.info("Received %s", Action.Heartbeat)
         return ocpp.v201.call_result.Heartbeat(
             current_time=datetime.now(timezone.utc).isoformat()
         )
@@ -70,12 +55,12 @@ class ChargePoint(ocpp.v201.ChargePoint):
     async def on_status_notification(
         self, timestamp, evse_id: int, connector_id: int, connector_status, **kwargs
     ):
-        logging.info("Received StatusNotification")
+        logging.info("Received %s", Action.StatusNotification)
         return ocpp.v201.call_result.StatusNotification()
 
     @on(Action.Authorize)
     async def on_authorize(self, id_token, **kwargs):
-        logging.info("Received Authorize")
+        logging.info("Received %s", Action.Authorize)
         return ocpp.v201.call_result.Authorize(
             id_token_info={"status": AuthorizationStatusType.accepted}
         )
@@ -92,20 +77,20 @@ class ChargePoint(ocpp.v201.ChargePoint):
     ):
         match event_type:
             case TransactionEventType.started:
-                logging.info("Received TransactionEvent Started")
+                logging.info("Received %s Started", Action.TransactionEvent)
                 return ocpp.v201.call_result.TransactionEvent(
                     id_token_info={"status": AuthorizationStatusType.accepted}
                 )
             case TransactionEventType.updated:
-                logging.info("Received TransactionEvent Updated")
+                logging.info("Received %s Updated", Action.TransactionEvent)
                 return ocpp.v201.call_result.TransactionEvent(total_cost=10)
             case TransactionEventType.ended:
-                logging.info("Received TransactionEvent Ended")
+                logging.info("Received %s Ended", Action.TransactionEvent)
                 return ocpp.v201.call_result.TransactionEvent()
 
     @on(Action.MeterValues)
     async def on_meter_values(self, evse_id: int, meter_value, **kwargs):
-        logging.info("Received MeterValues")
+        logging.info("Received %s", Action.MeterValues)
         return ocpp.v201.call_result.MeterValues()
 
     # Request handlers to emit OCPP messages.
@@ -114,9 +99,9 @@ class ChargePoint(ocpp.v201.ChargePoint):
         response = await self.call(request)
 
         if response.status == ClearCacheStatusType.accepted:
-            logging.info("Cache clearing successful")
+            logging.info("%s successful", Action.ClearCache)
         else:
-            logging.info("Cache clearing failed")
+            logging.info("%s failed", Action.ClearCache)
 
 
 # Function to handle new WebSocket connections.
@@ -143,9 +128,12 @@ async def on_connect(websocket, path):
     charge_point_id = path.strip("/")
     cp = ChargePoint(charge_point_id, websocket)
     ChargePoints.add(cp)
-
-    # Start the ChargePoint instance to listen for incoming messages.
-    await cp.start()
+    try:
+        await cp.start()
+    except ConnectionClosed:
+        logging.info("ChargePoint %s closed connection", cp.id)
+        ChargePoints.remove(cp)
+        logging.debug("Connected charge points: %d", len(ChargePoints))
 
 
 # Main function to start the WebSocket server.
