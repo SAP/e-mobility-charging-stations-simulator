@@ -8,9 +8,9 @@
   },
   "volta": {
     "node": "22.3.0",
-    "pnpm": "9.3.0"
+    "pnpm": "9.4.0"
   },
-  "packageManager": "pnpm@9.3.0",
+  "packageManager": "pnpm@9.4.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/sap/e-mobility-charging-stations-simulator.git"
@@ -110,7 +110,7 @@
     "tar": "^7.2.0",
     "winston": "^3.13.0",
     "winston-daily-rotate-file": "^5.0.0",
-    "ws": "^8.17.0"
+    "ws": "^8.17.1"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8",
@@ -121,11 +121,11 @@
     "@commitlint/config-conventional": "^19.2.2",
     "@mikro-orm/cli": "^6.2.9",
     "@release-it/bumper": "^6.0.1",
-    "@types/node": "^20.14.2",
+    "@types/node": "^20.14.3",
     "@types/semver": "^7.5.8",
     "@types/ws": "^8.5.10",
-    "@typescript-eslint/eslint-plugin": "^7.13.0",
-    "@typescript-eslint/parser": "^7.13.0",
+    "@typescript-eslint/eslint-plugin": "^7.13.1",
+    "@typescript-eslint/parser": "^7.13.1",
     "auto-changelog": "^2.4.0",
     "c8": "^10.1.2",
     "clinic": "^13.0.0",
@@ -152,7 +152,7 @@
     "rimraf": "^5.0.7",
     "semver": "^7.6.2",
     "ts-node": "^10.9.2",
-    "tsx": "^4.15.5",
+    "tsx": "^4.15.6",
     "typescript": "~5.4.5"
   }
 }
