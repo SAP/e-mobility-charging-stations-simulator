@@ -24,6 +24,9 @@ Simple [node.js](https://nodejs.org/) software to simulate and scale a set of ch
     - [Windows](#windows)
     - [MacOSX](#macosx)
     - [GNU/Linux](#gnulinux)
+  - [Development prerequisites (optional)](#development-prerequisites-optional)
+    - [Unix](#unix)
+    - [Windows](#windows-1)
   - [Dependencies](#dependencies)
 - [Initial configuration](#initial-configuration)
 - [Start simulator](#start-simulator)
@@ -70,11 +73,29 @@ brew install node
 
 #### GNU/Linux
 
-- [NodeSource](https://github.com/nodesource/distributions) Node.js Binary Distributions for all supported versions.
+- [NodeSource](https://github.com/nodesource/distributions) node.js binary distributions for all supported versions.
 
-#### Dependencies
+### Development prerequisites (optional)
 
-Enable corepack if not already done and install latest pnpm version:
+Install [volta](https://volta.sh/) for managing automatically the node.js runtime and package manager version:
+
+#### Unix
+
+```shell
+curl https://get.volta.sh | bash
+```
+
+#### Windows
+
+```powershell
+choco install volta
+```
+
+Setup [volta](https://volta.sh/) for [pnpm](https://github.com/pnpm/pnpm) package manager support: https://docs.volta.sh/advanced/pnpm
+
+### Dependencies
+
+Enable corepack, if [volta](https://volta.sh/) is not installed and configured, and install latest pnpm version:
 
 ```shell
 corepack enable
