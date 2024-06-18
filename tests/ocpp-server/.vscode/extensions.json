@@ -4,6 +4,7 @@
   "recommendations": [
     "EditorConfig.EditorConfig",
     "streetsidesoftware.code-spell-checker",
-    "ms-python.python"
+    "ms-python.python",
+    "charliermarsh.ruff"
   ]
 }
