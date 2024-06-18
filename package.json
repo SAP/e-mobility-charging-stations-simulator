@@ -7,10 +7,10 @@
     "pnpm": ">=9.0.0"
   },
   "volta": {
-    "node": "22.2.0",
-    "pnpm": "9.3.0"
+    "node": "22.3.0",
+    "pnpm": "9.4.0"
   },
-  "packageManager": "pnpm@9.3.0",
+  "packageManager": "pnpm@9.4.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/sap/e-mobility-charging-stations-simulator.git"
@@ -105,12 +105,12 @@
     "logform": "^2.6.0",
     "mnemonist": "0.40.0-rc1",
     "mongodb": "^6.7.0",
-    "poolifier": "^4.0.13",
+    "poolifier": "^4.0.14",
     "rambda": "^9.2.0",
     "tar": "^7.2.0",
     "winston": "^3.13.0",
     "winston-daily-rotate-file": "^5.0.0",
-    "ws": "^8.17.0"
+    "ws": "^8.17.1"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8",
@@ -121,13 +121,13 @@
     "@commitlint/config-conventional": "^19.2.2",
     "@mikro-orm/cli": "^6.2.9",
     "@release-it/bumper": "^6.0.1",
-    "@types/node": "^20.14.2",
+    "@types/node": "^20.14.3",
     "@types/semver": "^7.5.8",
     "@types/ws": "^8.5.10",
-    "@typescript-eslint/eslint-plugin": "^7.13.0",
-    "@typescript-eslint/parser": "^7.13.0",
+    "@typescript-eslint/eslint-plugin": "^7.13.1",
+    "@typescript-eslint/parser": "^7.13.1",
     "auto-changelog": "^2.4.0",
-    "c8": "^10.1.1",
+    "c8": "^10.1.2",
     "clinic": "^13.0.0",
     "cross-env": "^7.0.3",
     "esbuild": "^0.21.5",
@@ -139,20 +139,20 @@
     "eslint-define-config": "^2.1.0",
     "eslint-import-resolver-typescript": "^3.6.1",
     "eslint-plugin-import": "^2.29.1",
-    "eslint-plugin-jsdoc": "^48.2.9",
-    "eslint-plugin-n": "^17.8.1",
+    "eslint-plugin-jsdoc": "^48.2.12",
+    "eslint-plugin-n": "^17.9.0",
     "eslint-plugin-simple-import-sort": "^12.1.0",
     "eslint-plugin-tsdoc": "^0.3.0",
     "expect": "^29.7.0",
     "glob": "^10.4.1",
     "husky": "^9.0.11",
-    "lint-staged": "^15.2.6",
+    "lint-staged": "^15.2.7",
     "prettier": "^3.3.2",
     "release-it": "^17.3.0",
     "rimraf": "^5.0.7",
     "semver": "^7.6.2",
     "ts-node": "^10.9.2",
-    "tsx": "^4.15.2",
+    "tsx": "^4.15.6",
     "typescript": "~5.4.5"
   }
 }

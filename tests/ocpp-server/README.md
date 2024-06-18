@@ -34,9 +34,9 @@ The server will start listening for connections on port 9000.
 
 ### Server.py
 
-The server script waits for connections from clients. When a client connects, the server creates a new instance of the `ChargePoint` class. This class includes methods for handling various OCPP actions (`BootNotification`,`GetBaseReport`), most of which return a dummy response. The `GetBaseReport` method prints the received request and returns a simple confirmation message.
+The server script waits for connections from clients. When a client connects, the server creates a new instance of the `ChargePoint` class. This class includes methods for handling various OCPP messages, most of which return a dummy response.
 
-The server script uses the websockets and ocpp libraries to facilitate the WebSocket and OCPP communication.
+The server script uses the `websockets` and `ocpp` libraries to facilitate the implementation.
 
 ## Development
 
