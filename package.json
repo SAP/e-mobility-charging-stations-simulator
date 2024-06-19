@@ -107,7 +107,7 @@
     "mongodb": "^6.7.0",
     "poolifier": "^4.0.14",
     "rambda": "^9.2.1",
-    "tar": "^7.2.0",
+    "tar": "^7.4.0",
     "winston": "^3.13.0",
     "winston-daily-rotate-file": "^5.0.0",
     "ws": "^8.17.1"
@@ -144,7 +144,7 @@
     "eslint-plugin-simple-import-sort": "^12.1.0",
     "eslint-plugin-tsdoc": "^0.3.0",
     "expect": "^29.7.0",
-    "glob": "^10.4.1",
+    "glob": "^10.4.2",
     "husky": "^9.0.11",
     "lint-staged": "^15.2.7",
     "prettier": "^3.3.2",
