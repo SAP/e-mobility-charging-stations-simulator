@@ -33,7 +33,7 @@ Simple [node.js](https://nodejs.org/) software to simulate and scale a set of ch
 - [Start Web UI](#start-web-ui)
 - [Configuration files syntax](#configuration-files-syntax)
   - [Charging stations simulator configuration](#charging-stations-simulator-configuration)
-  - [Charging station configuration template](#charging-station-configuration-template)
+  - [Charging station template configuration](#charging-station-template-configuration)
   - [Charging station configuration](#charging-station-configuration)
 - [Docker](#docker)
 - [OCPP-J commands supported](#ocpp-j-commands-supported)
@@ -91,7 +91,7 @@ curl https://get.volta.sh | bash
 choco install volta
 ```
 
-Setup [volta](https://volta.sh/) for [pnpm](https://github.com/pnpm/pnpm) package manager support: https://docs.volta.sh/advanced/pnpm
+Setup [volta](https://volta.sh/) with [pnpm](https://github.com/pnpm/pnpm) package manager support: https://docs.volta.sh/advanced/pnpm
 
 ### Dependencies
 
@@ -181,7 +181,7 @@ But the modifications to test have to be done to the files in the build target d
 - **dynamicPool** (experimental):
   Dynamically sized worker pool executing a fixed total number of simulated charging stations
 
-### Charging station configuration template
+### Charging station template configuration
 
 **src/assets/station-templates/\<name\>.json**:
 
