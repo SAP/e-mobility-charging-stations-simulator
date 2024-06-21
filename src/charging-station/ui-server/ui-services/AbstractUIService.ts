@@ -223,7 +223,7 @@ export abstract class AbstractUIService {
           )
           return undefined
         })
-        .filter(hashId => hashId != null) as string[]
+        .filter(hashId => hashId != null)
     } else {
       delete payload.hashIds
     }

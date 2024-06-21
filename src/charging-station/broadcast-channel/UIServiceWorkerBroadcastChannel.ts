@@ -70,6 +70,7 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
         : ResponseStatus.FAILURE
     return {
       status: responsesStatus,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-non-null-asserted-optional-chain
       hashIdsSucceeded: this.responses
         .get(uuid)
         ?.responses.map(({ status, hashId }) => {
@@ -78,8 +79,9 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
           }
           return undefined
         })
-        .filter(hashId => hashId != null) as string[],
+        .filter(hashId => hashId != null)!,
       ...(responsesStatus === ResponseStatus.FAILURE && {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-non-null-asserted-optional-chain
         hashIdsFailed: this.responses
           .get(uuid)
           ?.responses.map(({ status, hashId }) => {
@@ -88,9 +90,10 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
             }
             return undefined
           })
-          .filter(hashId => hashId != null) as string[]
+          .filter(hashId => hashId != null)!
       }),
       ...(responsesStatus === ResponseStatus.FAILURE && {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-non-null-asserted-optional-chain
         responsesFailed: this.responses
           .get(uuid)
           ?.responses.map(response => {
@@ -99,7 +102,7 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
             }
             return undefined
           })
-          .filter(response => response != null) as BroadcastChannelResponsePayload[]
+          .filter(response => response != null)!
       })
     }
   }
