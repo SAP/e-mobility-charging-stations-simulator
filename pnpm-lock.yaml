@@ -206,8 +206,8 @@ importers:
         specifier: ^3.4.29
         version: 3.4.29(typescript@5.5.2)
       vue-router:
-        specifier: ^4.3.3
-        version: 4.3.3(vue@3.4.29(typescript@5.5.2))
+        specifier: ^4.4.0
+        version: 4.4.0(vue@3.4.29(typescript@5.5.2))
       vue-toast-notification:
         specifier: ^3.1.2
         version: 3.1.2(vue@3.4.29(typescript@5.5.2))
@@ -3888,8 +3888,8 @@ packages:
     engines: {node: '>=18.12.0'}
     hasBin: true
 
-  listr2@8.2.2:
-    resolution: {integrity: sha512-sy0dq+JPS+RAFiFk2K8Nbub7khNmeeoFALNUJ4Wzk34wZKAzaOhEXqGWs4RA5aui0RaM6Hgn7VEKhCj0mlKNLA==}
+  listr2@8.2.3:
+    resolution: {integrity: sha512-Lllokma2mtoniUOS94CcOErHWAug5iu7HOmDrvWgpw8jyQH2fomgB+7lZS4HWZxytUuQwkGOwe49FvwVaA85Xw==}
     engines: {node: '>=18.0.0'}
 
   local-pkg@0.5.0:
@@ -5947,8 +5947,8 @@ packages:
     peerDependencies:
       eslint: '>=6.0.0'
 
-  vue-router@4.3.3:
-    resolution: {integrity: sha512-8Q+u+WP4N2SXY38FDcF2H1dUEbYVHVPtPCPZj/GTZx8RCbiB8AtJP9+YIxn4Vs0svMTNQcLIzka4GH7Utkx9xQ==}
+  vue-router@4.4.0:
+    resolution: {integrity: sha512-HB+t2p611aIZraV2aPSRNXf0Z/oLZFrlygJm+sZbdJaW6lcFqEDQwnzUBXn+DApw+/QzDU/I9TeWx9izEjTmsA==}
     peerDependencies:
       vue: ^3.2.0
 
@@ -10493,7 +10493,7 @@ snapshots:
       debug: 4.3.5
       execa: 8.0.1
       lilconfig: 3.1.2
-      listr2: 8.2.2
+      listr2: 8.2.3
       micromatch: 4.0.7
       pidtree: 0.6.0
       string-argv: 0.3.2
@@ -10501,7 +10501,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  listr2@8.2.2:
+  listr2@8.2.3:
     dependencies:
       cli-truncate: 4.0.0
       colorette: 2.0.20
@@ -12800,7 +12800,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  vue-router@4.3.3(vue@3.4.29(typescript@5.5.2)):
+  vue-router@4.4.0(vue@3.4.29(typescript@5.5.2)):
     dependencies:
       '@vue/devtools-api': 6.6.3
       vue: 3.4.29(typescript@5.5.2)
