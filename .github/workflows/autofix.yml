@@ -28,13 +28,12 @@ jobs:
         with:
           cache: 'pnpm'
 
-      - run: |
-          pnpm install --ignore-scripts --frozen-lockfile
-          pnpm format
+      - run: pnpm install --ignore-scripts
+
+      - run: pnpm format
 
       - working-directory: ui/web
         run: |
-          pnpm install --ignore-scripts --frozen-lockfile
           pnpm format
           pnpm lint:fix
 
