@@ -1,8 +1,8 @@
+import argparse
 import asyncio
 import logging
 from datetime import datetime, timezone
 from threading import Timer
-import argparse
 
 import ocpp.v201
 import websockets
@@ -12,8 +12,8 @@ from ocpp.v201.enums import (
     AuthorizationStatusType,
     ClearCacheStatusType,
     RegistrationStatusType,
-    TransactionEventType,
     ReportBaseType,
+    TransactionEventType,
 )
 from websockets import ConnectionClosed
 
@@ -96,7 +96,9 @@ class ChargePoint(ocpp.v201.ChargePoint):
         return ocpp.v201.call_result.MeterValues()
 
     @on(Action.GetBaseReport)
-    async def on_get_base_report(self, request_id: int, report_base: ReportBaseType, **kwargs):
+    async def on_get_base_report(
+        self, request_id: int, report_base: ReportBaseType, **kwargs
+    ):
         logging.info("Received GetBaseReport")
         return ocpp.v201.call_result.GetBaseReport(status="Accepted")
 
@@ -112,12 +114,16 @@ class ChargePoint(ocpp.v201.ChargePoint):
 
     async def send_get_base_report(self):
         logging.info("Executing send_get_base_report...")
-        request = ocpp.v201.call.GetBaseReport(reportBase=ReportBaseType.ConfigurationInventory)  # Use correct ReportBaseType
+        request = ocpp.v201.call.GetBaseReport(
+            reportBase=ReportBaseType.ConfigurationInventory
+        )  # Use correct ReportBaseType
         try:
             response = await self.call(request)
             logging.info("Send GetBaseReport")
 
-            if response.status == "Accepted":  # Adjust depending on the structure of your response
+            if (
+                response.status == "Accepted"
+            ):  # Adjust depending on the structure of your response
                 logging.info("Send GetBaseReport successful")
             else:
                 logging.info("Send GetBaseReport failed")
@@ -125,13 +131,15 @@ class ChargePoint(ocpp.v201.ChargePoint):
             logging.error(f"Send GetBaseReport failed: {str(e)}")
         logging.info("send_get_base_report done.")
 
+
 # Define argument parser
-parser = argparse.ArgumentParser(description='OCPP Charge Point Simulator')
-parser.add_argument('--request', type=str, help='OCPP 2 Command Name')
-parser.add_argument('--delay', type=int, help='Delay in seconds')
-parser.add_argument('--period', type=int, help='Period in seconds')
+parser = argparse.ArgumentParser(description="OCPP Charge Point Simulator")
+parser.add_argument("--request", type=str, help="OCPP 2 Command Name")
+parser.add_argument("--delay", type=int, help="Delay in seconds")
+parser.add_argument("--period", type=int, help="Period in seconds")
 
 args = parser.parse_args()
+
 
 # Function to send OCPP command
 async def send_ocpp_command(cp, command_name, delay=None, period=None):
@@ -142,13 +150,13 @@ async def send_ocpp_command(cp, command_name, delay=None, period=None):
     # If period is not None, send command repeatedly with period interval
     if period:
         while True:
-            if command_name == 'GetBaseReport':
+            if command_name == "GetBaseReport":
                 logging.info("GetBaseReport parser working")
                 await cp.send_get_base_report()
 
             await asyncio.sleep(period)
     else:
-        if command_name == 'GetBaseReport':
+        if command_name == "GetBaseReport":
             await cp.send_get_base_report()
 
 
@@ -176,9 +184,11 @@ async def on_connect(websocket, path):
     charge_point_id = path.strip("/")
     cp = ChargePoint(charge_point_id, websocket)
 
-     # Check if request argument is specified
+    # Check if request argument is specified
     if args.request:
-        asyncio.create_task(send_ocpp_command(cp, args.request, args.delay, args.period))
+        asyncio.create_task(
+            send_ocpp_command(cp, args.request, args.delay, args.period)
+        )
 
     # Start the ChargePoint instance to listen for incoming messages.
     await cp.start()
@@ -190,7 +200,6 @@ async def on_connect(websocket, path):
         logging.info("ChargePoint %s closed connection", cp.id)
         ChargePoints.remove(cp)
         logging.debug("Connected ChargePoint(s): %d", len(ChargePoints))
-
 
 
 # Main function to start the WebSocket server.
