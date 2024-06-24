@@ -6,15 +6,16 @@ https://github.com/mobilityhouse/ocpp/blob/master/ocpp/v201/enums.py
 ## Prerequisites
 
 This project requires Python 3.7+ and [poetry](https://python-poetry.org/) to install the required packages:
+
 ```shell
 pip install poetry
 ```
+
 then
 
 ```shell
 poetry install
 ```
-
 
 ## Running the Server
 
@@ -23,11 +24,13 @@ To start the server, run the `server.py` script:
 ```shell
 poetry run task server
 ```
+
 or
 
 ```shell
 poetry run task server --request GetBaseReport --period 5
 ```
+
 The server will start listening for connections on port 9000.
 
 ## Overview of the Server Scripts
