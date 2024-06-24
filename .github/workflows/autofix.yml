@@ -1,0 +1,56 @@
+name: autofix.ci
+on:
+  pull_request:
+  push:
+    branches: ['main']
+permissions:
+  contents: read
+
+jobs:
+  autofix-ocpp-server:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tests/ocpp-server
+    steps:
+      - uses: actions/checkout@v4
+      - run: pipx install poetry
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+          cache: poetry
+      - run: poetry install --no-root
+      - run: poetry run task format
+
+      - uses: autofix-ci/action@dd55f44df8f7cdb7a6bf74c78677eb8acd40cd0a
+  autofix-simulator:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          cache: 'pnpm'
+
+      - run: pnpm install --ignore-scripts --frozen-lockfile
+      - run: pnpm format
+
+      - uses: autofix-ci/action@dd55f44df8f7cdb7a6bf74c78677eb8acd40cd0a
+  autofix-dashboard:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ui/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          cache: 'pnpm'
+
+      - run: pnpm install --ignore-scripts --frozen-lockfile
+      - run: |
+          pnpm format
+          pnpm lint:fix
+
+      - uses: autofix-ci/action@dd55f44df8f7cdb7a6bf74c78677eb8acd40cd0a
