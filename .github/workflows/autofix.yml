@@ -20,7 +20,7 @@ jobs:
       - working-directory: tests/ocpp-server
         run: |
           poetry install --no-root
-          poetry run task lint
+          poetry run task format
 
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
