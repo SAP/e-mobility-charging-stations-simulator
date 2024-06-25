@@ -117,7 +117,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
         )  # Use correct ReportBaseType
         try:
             response = await self.call(request)
-            logging.info("Send GetBaseReport")
+            logging.info("Send %s", Action.GetBaseReport)
 
             if (
                 response.status == "Accepted"
