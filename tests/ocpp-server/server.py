@@ -157,7 +157,7 @@ async def send_ocpp_command(cp, command_name, delay=None, period=None):
                             await charge_point.send_clear_cache()
                         case Action.GetBaseReport:
                             logging.info("GetBaseReport parser working")
-                            await charge_point.send_get_base_report()
+                            await cp.send_get_base_report()
                         case _:
                             logging.warning(f"Unsupported command {command_name}")
                 except Exception as e:
