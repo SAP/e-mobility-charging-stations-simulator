@@ -149,7 +149,7 @@ async def send_ocpp_command(cp, command_name, delay=None, period=None):
     if period:
         async def send_command_repeatedly():
             while True:
-                command_name = await charge_point.receive_command()
+                command_name = await cp.receive_command()
                 try:
                     match command_name:
                         case Action.ClearCache:
