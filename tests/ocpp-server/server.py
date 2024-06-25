@@ -155,7 +155,7 @@ async def send_ocpp_command(cp, command_name, delay=None, period=None):
                         case Action.ClearCache:
                             logging.info("ClearCache parser working")
                             await charge_point.send_clear_cache()
-                        case 'GetBaseReport':
+                        case Action.GetBaseReport:
                             logging.info("GetBaseReport parser working")
                             await charge_point.send_get_base_report()
                         case _:
