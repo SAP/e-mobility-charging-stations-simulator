@@ -1,8 +1,8 @@
 import argparse
 import asyncio
-from functools import partial
 import logging
 from datetime import datetime, timezone
+from functools import partial
 from threading import Timer
 
 import ocpp.v201
@@ -97,11 +97,13 @@ class ChargePoint(ocpp.v201.ChargePoint):
         return ocpp.v201.call_result.MeterValues()
 
     @on(Action.GetBaseReport)
-    async def on_get_base_report(self, request_id: int, report_base: ReportBaseType, **kwargs):
+    async def on_get_base_report(
+        self, request_id: int, report_base: ReportBaseType, **kwargs
+    ):
         logging.info("Received %s", Action.GetBaseReport)
         return ocpp.v201.call_result.GetBaseReport(
-                    id_token_info={"status": ReportBaseType.accepted}
-                )
+            id_token_info={"status": ReportBaseType.accepted}
+        )
 
     # Request handlers to emit OCPP messages.
     async def send_clear_cache(self):
@@ -135,7 +137,6 @@ class ChargePoint(ocpp.v201.ChargePoint):
         logging.info("send_get_base_report done.")
 
 
-
 # Function to send OCPP command
 async def send_ocpp_command(cp, command_name, delay=None, period=None):
     # If delay is not None, sleep for delay seconds
@@ -144,6 +145,7 @@ async def send_ocpp_command(cp, command_name, delay=None, period=None):
 
     # If period is not None, send command repeatedly with period interval
     if period:
+
         async def send_command_repeatedly():
             while True:
                 command_name = await cp.receive_command()
@@ -157,8 +159,10 @@ async def send_ocpp_command(cp, command_name, delay=None, period=None):
                             await cp.send_get_base_report()
                         case _:
                             logging.warning(f"Unsupported command {command_name}")
-                except Exception as e:
-                    logging.exception(f"Failure while processing command {command_name}")
+                except Exception:
+                    logging.exception(
+                        f"Failure while processing command {command_name}"
+                    )
                 finally:
                     await asyncio.sleep(period)
 
@@ -200,7 +204,9 @@ async def on_connect(websocket, path, args):
         await cp.start()
         # Check if request argument is specified
         if args.request:
-            asyncio.create_task(send_ocpp_command(cp, args.request, args.delay, args.period))
+            asyncio.create_task(
+                send_ocpp_command(cp, args.request, args.delay, args.period)
+            )
 
     except ConnectionClosed:
         logging.info("ChargePoint %s closed connection", cp.id)
@@ -218,7 +224,7 @@ async def main():
 
     args = parser.parse_args()
 
-    on_connect_bound = partial(on_connect, args=args) # Add args to on_connect
+    on_connect_bound = partial(on_connect, args=args)  # Add args to on_connect
 
     # Create the WebSocket server and specify the handler for new connections.
     server = await websockets.serve(
