@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+from functools import partial
 import logging
 from datetime import datetime, timezone
 from threading import Timer
@@ -96,11 +97,11 @@ class ChargePoint(ocpp.v201.ChargePoint):
         return ocpp.v201.call_result.MeterValues()
 
     @on(Action.GetBaseReport)
-    async def on_get_base_report(
-        self, request_id: int, report_base: ReportBaseType, **kwargs
-    ):
+    async def on_get_base_report(self, request_id: int, report_base: ReportBaseType, **kwargs):
         logging.info("Received %s", Action.GetBaseReport)
-        return ocpp.v201.call_result.GetBaseReport(status="Accepted")
+        return ocpp.v201.call_result.GetBaseReport(
+                    id_token_info={"status": ReportBaseType.accepted}
+                )
 
     # Request handlers to emit OCPP messages.
     async def send_clear_cache(self):
@@ -113,7 +114,6 @@ class ChargePoint(ocpp.v201.ChargePoint):
             logging.info("%s failed", Action.ClearCache)
 
     async def send_get_base_report(self):
-        logging.info("Executing send_get_base_report...")
         request = ocpp.v201.call.GetBaseReport(
             reportBase=ReportBaseType.ConfigurationInventory
         )  # Use correct ReportBaseType
@@ -121,24 +121,19 @@ class ChargePoint(ocpp.v201.ChargePoint):
             response = await self.call(request)
             logging.info("Send %s", Action.GetBaseReport)
 
-            if (
-                response.status == "Accepted"
-            ):  # Adjust depending on the structure of your response
-                logging.info("Send GetBaseReport successful")
+            if response.status == ReportBaseType.accepted:
+                logging.info("%s successful", Action.GetBaseReport)
             else:
-                logging.info("Send GetBaseReport failed")
+                logging.info("%s failed", Action.GetBaseReport)
+
+        except ConnectionClosed as e:
+            logging.error("Connection closed: %s", str(e))
+
         except Exception as e:
-            logging.error(f"Send GetBaseReport failed: {str(e)}")
+            logging.error("Unexpected error occurred: %s", str(e))
+
         logging.info("send_get_base_report done.")
 
-
-# Define argument parser
-parser = argparse.ArgumentParser(description="OCPP Charge Point Simulator")
-parser.add_argument("--request", type=str, help="OCPP 2 Command Name")
-parser.add_argument("--delay", type=int, help="Delay in seconds")
-parser.add_argument("--period", type=int, help="Period in seconds")
-
-args = parser.parse_args()
 
 
 # Function to send OCPP command
@@ -149,7 +144,6 @@ async def send_ocpp_command(cp, command_name, delay=None, period=None):
 
     # If period is not None, send command repeatedly with period interval
     if period:
-
         async def send_command_repeatedly():
             while True:
                 command_name = await cp.receive_command()
@@ -163,10 +157,8 @@ async def send_ocpp_command(cp, command_name, delay=None, period=None):
                             await cp.send_get_base_report()
                         case _:
                             logging.warning(f"Unsupported command {command_name}")
-                except Exception:
-                    logging.exception(
-                        f"Failure while processing command {command_name}"
-                    )
+                except Exception as e:
+                    logging.exception(f"Failure while processing command {command_name}")
                 finally:
                     await asyncio.sleep(period)
 
@@ -180,7 +172,7 @@ async def send_ocpp_command(cp, command_name, delay=None, period=None):
 
 
 # Function to handle new WebSocket connections.
-async def on_connect(websocket, path):
+async def on_connect(websocket, path, args):
     """For every new charge point that connects, create a ChargePoint instance and start
     listening for messages."""
     try:
@@ -208,9 +200,7 @@ async def on_connect(websocket, path):
         await cp.start()
         # Check if request argument is specified
         if args.request:
-            asyncio.create_task(
-                send_ocpp_command(cp, args.request, args.delay, args.period)
-            )
+            asyncio.create_task(send_ocpp_command(cp, args.request, args.delay, args.period))
 
     except ConnectionClosed:
         logging.info("ChargePoint %s closed connection", cp.id)
@@ -220,6 +210,16 @@ async def on_connect(websocket, path):
 
 # Main function to start the WebSocket server.
 async def main():
+    # Define argument parser
+    parser = argparse.ArgumentParser(description="OCPP Charge Point Simulator")
+    parser.add_argument("--request", type=str, help="OCPP 2 Command Name")
+    parser.add_argument("--delay", type=int, help="Delay in seconds")
+    parser.add_argument("--period", type=int, help="Period in seconds")
+
+    args = parser.parse_args()
+
+    on_connect = partial(on_connect, args=args) # Add args to on_connect
+
     # Create the WebSocket server and specify the handler for new connections.
     server = await websockets.serve(
         on_connect,

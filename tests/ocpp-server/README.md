@@ -32,8 +32,6 @@ To run the server and send a GetBaseReport command every 5 seconds, use:
 poetry run task server --request GetBaseReport --period 5
 ```
 
-=======
-
 ### ClearCache Command
 
 To run the server and send a ClearCache command every 5 seconds, use:
