@@ -218,11 +218,11 @@ async def main():
 
     args = parser.parse_args()
 
-    on_connect = partial(on_connect, args=args) # Add args to on_connect
+    on_connect_bound = partial(on_connect, args=args) # Add args to on_connect
 
     # Create the WebSocket server and specify the handler for new connections.
     server = await websockets.serve(
-        on_connect,
+        on_connect_bound,
         "127.0.0.1",  # Listen on loopback.
         9000,  # Port number.
         subprotocols=["ocpp2.0", "ocpp2.0.1"],  # Specify OCPP 2.0.1 subprotocols.
