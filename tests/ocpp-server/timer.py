@@ -12,7 +12,8 @@ class Timer:
         callback_args=(),
         callback_kwargs=None,
     ):
-        """An asynchronous Timer object.
+        """
+        An asynchronous Timer object.
 
         Parameters
         ----------

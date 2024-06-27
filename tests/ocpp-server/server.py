@@ -208,11 +208,8 @@ def check_positive_number(value: Optional[float]):
 # Main function to start the WebSocket server.
 async def main():
     parser = argparse.ArgumentParser(description="OCPP2 Server")
-    parser.add_argument("-c", "--command", type=Action, help="OCPP2 command name")
-    parsed_args, _ = parser.parse_known_args()
-    group = parser.add_mutually_exclusive_group(
-        required=parsed_args.command is not None
-    )
+    parser.add_argument("-c", "--command", type=Action, help="command name")
+    group = parser.add_mutually_exclusive_group()
     group.add_argument(
         "-d",
         "--delay",
@@ -225,6 +222,7 @@ async def main():
         type=check_positive_number,
         help="period in seconds",
     )
+    group.required = parser.parse_known_args()[0].command is not None
 
     args = parser.parse_args()
 
