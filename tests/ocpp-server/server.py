@@ -130,12 +130,6 @@ class ChargePoint(ocpp.v201.ChargePoint):
     async def send_command(
         self, command_name: Action, delay: Optional[float], period: Optional[float]
     ):
-        if not delay and not period:
-            raise ValueError("Either delay or period must be defined")
-        if delay and delay <= 0:
-            raise ValueError("Delay must be a positive number")
-        if period and period <= 0:
-            raise ValueError("Period must be a positive number")
         try:
             if delay and not self._command_timer:
                 self._command_timer = Timer(
@@ -201,12 +195,36 @@ async def on_connect(
         cp.handle_connection_closed()
 
 
+def check_positive_number(value: Optional[float]):
+    try:
+        value = float(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError("must be a number") from None
+    if value <= 0:
+        raise argparse.ArgumentTypeError("must be a positive number")
+    return value
+
+
 # Main function to start the WebSocket server.
 async def main():
     parser = argparse.ArgumentParser(description="OCPP2 Server")
-    parser.add_argument("-c", "--command", type=Action, help="OCPP2 Command Name")
-    parser.add_argument("-d", "--delay", type=float, help="Delay in seconds")
-    parser.add_argument("-p", "--period", type=float, help="Period in seconds")
+    parser.add_argument("-c", "--command", type=Action, help="OCPP2 command name")
+    parsed_args, _ = parser.parse_known_args()
+    group = parser.add_mutually_exclusive_group(
+        required=parsed_args.command is not None
+    )
+    group.add_argument(
+        "-d",
+        "--delay",
+        type=check_positive_number,
+        help="delay in seconds",
+    )
+    group.add_argument(
+        "-p",
+        "--period",
+        type=check_positive_number,
+        help="period in seconds",
+    )
 
     args = parser.parse_args()
 
