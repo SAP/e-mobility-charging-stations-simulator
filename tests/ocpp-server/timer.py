@@ -1,6 +1,4 @@
-"""
-Timer for asyncio.
-"""
+"""Timer for asyncio."""
 
 import asyncio
 
@@ -17,7 +15,7 @@ class Timer:
         """An asynchronous Timer object.
 
         Parameters
-        -----------
+        ----------
         timeout: :class:`float`:
         The duration for which the timer should last.
 
@@ -33,6 +31,7 @@ class Timer:
 
         callback_kwargs: Optional[:class:`dict`]:
         The kwargs to be passed to the callback.
+
         """
         self._timeout = timeout
         self._repeat = repeat
@@ -61,7 +60,5 @@ class Timer:
             self._callback(*self._callback_args, **self._callback_kwargs)
 
     def cancel(self):
-        """
-        Cancels the timer. The callback will not be called.
-        """
+        """Cancels the timer. The callback will not be called."""
         self._task.cancel()

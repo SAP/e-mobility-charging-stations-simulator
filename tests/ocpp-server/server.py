@@ -170,7 +170,8 @@ async def on_connect(
     period: Optional[float],
 ):
     """For every new charge point that connects, create a ChargePoint instance and start
-    listening for messages."""
+    listening for messages.
+    """
     try:
         requested_protocols = websocket.request_headers["Sec-WebSocket-Protocol"]
     except KeyError:
