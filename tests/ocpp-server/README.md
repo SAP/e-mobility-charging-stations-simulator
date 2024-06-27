@@ -29,7 +29,7 @@ You can also specify a command and a period duration with the --request and --pe
 To run the server and send a GetBaseReport command every 5 seconds, use:
 
 ```shell
-poetry run task server --request GetBaseReport --period 5
+poetry run task server --command GetBaseReport --period 5
 ```
 
 ### ClearCache Command
@@ -37,7 +37,7 @@ poetry run task server --request GetBaseReport --period 5
 To run the server and send a ClearCache command every 5 seconds, use:
 
 ```shell
-poetry run task server --request ClearCache --period 5
+poetry run task server --command ClearCache --period 5
 ```
 
 Please be mindful that these commands were examples according to the provided scenario, the available commands and their syntax might vary depending on the ocpp version and the implemented functionalities on your server.
