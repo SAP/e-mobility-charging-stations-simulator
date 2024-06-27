@@ -137,7 +137,9 @@ async def send_ocpp_command(cp, command_name, delay=None, period=None):
                 logging.info("%s Send:", Action.GetBaseReport)
                 await cp.send_get_base_report()
     except Exception:
-        logging.exception(f"Not supported or Failure while processing command {command_name}")
+        logging.exception(
+            f"Not supported or Failure while processing command {command_name}"
+        )
 
     if delay:
         await asyncio.sleep(delay)
