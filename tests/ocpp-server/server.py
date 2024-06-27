@@ -2,7 +2,6 @@ import argparse
 import asyncio
 import logging
 from datetime import datetime, timezone
-from functools import partial
 from threading import Timer
 
 import ocpp.v201
@@ -127,7 +126,6 @@ class ChargePoint(ocpp.v201.ChargePoint):
             logging.info("%s filed", Action.GetBaseReport)
 
 
-
 # Function to send OCPP command
 async def send_ocpp_command(cp, command_name, delay=None, period=None):
     try:
@@ -145,7 +143,9 @@ async def send_ocpp_command(cp, command_name, delay=None, period=None):
         await asyncio.sleep(delay)
 
     if period:
-        my_timer = RepeatTimer(period, asyncio.create_task, [cp.send_ocpp_command(command_name)])
+        my_timer = RepeatTimer(
+            period, asyncio.create_task, [cp.send_ocpp_command(command_name)]
+        )
         my_timer.start()
 
 
@@ -182,6 +182,7 @@ async def on_connect(websocket, path):
         ChargePoints.remove(cp)
         logging.debug("Connected ChargePoint(s): %d", len(ChargePoints))
 
+
 # Main function to start the WebSocket server.
 async def main():
     # Define argument parser
@@ -189,7 +190,6 @@ async def main():
     parser.add_argument("--command", type=str, help="OCPP2 Command Name")
     parser.add_argument("--delay", type=int, help="Delay in seconds")
     parser.add_argument("--period", type=int, help="Period in seconds")
-
 
     # Create the WebSocket server and specify the handler for new connections.
     server = await websockets.serve(
@@ -206,7 +206,7 @@ async def main():
         for cp in ChargePoints:
             asyncio.create_task(
                 send_ocpp_command(cp, args.command, args.delay, args.period)
-                )
+            )
 
     # Wait for the server to close (runs indefinitely).
     await server.wait_closed()
