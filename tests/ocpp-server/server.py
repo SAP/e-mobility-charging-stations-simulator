@@ -118,7 +118,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
             logging.info("%s failed", Action.GetBaseReport)
 
     async def _send_command(self, command_name: Action):
-        logging.debug("Sending OCPP command: %s", command_name)
+        logging.debug("Sending OCPP command %s", command_name)
         match command_name:
             case Action.ClearCache:
                 await self._send_clear_cache()
