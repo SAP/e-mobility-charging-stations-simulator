@@ -11,6 +11,7 @@ from ocpp.v201.enums import (
     Action,
     AuthorizationStatusType,
     ClearCacheStatusType,
+    GenericDeviceModelStatusType,
     RegistrationStatusType,
     ReportBaseType,
     TransactionEventType,
@@ -101,7 +102,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
     ):
         logging.info("Received %s", Action.GetBaseReport)
         return ocpp.v201.call_result.GetBaseReport(
-            id_token_info={"status": ReportBaseType.accepted}
+            status=GenericDeviceModelStatusType.accepted
         )
 
     # Request handlers to emit OCPP messages.
@@ -116,39 +117,43 @@ class ChargePoint(ocpp.v201.ChargePoint):
 
     async def send_get_base_report(self):
         request = ocpp.v201.call.GetBaseReport(
-            reportBase=ReportBaseType.ConfigurationInventory
+            request_id=1, report_base=ReportBaseType.full_inventory
         )
         response = await self.call(request)
 
-        if response.status == ReportBaseType.accepted:
+        if response.status == GenericDeviceModelStatusType.accepted:
             logging.info("%s successful", Action.GetBaseReport)
         else:
             logging.info("%s failed", Action.GetBaseReport)
+
+    async def send_command(self, command_name: Action):
+        logging.debug("Sending OCPP command: %s", command_name)
+        match command_name:
+            case Action.ClearCache:
+                await self.send_clear_cache()
+            case Action.GetBaseReport:
+                await self.send_get_base_report()
+            case _:
+                logging.info(f"Not supported command {command_name}")
 
 
 # Function to send OCPP command
 async def send_ocpp_command(cp, command_name, delay=None, period=None):
     try:
-        match command_name:
-            case Action.ClearCache:
-                logging.info("%s Send:", Action.ClearCache)
-                await cp.send_clear_cache()
-            case Action.GetBaseReport:
-                logging.info("%s Send:", Action.GetBaseReport)
-                await cp.send_get_base_report()
-    except Exception:
-        logging.exception(
-            f"Not supported or Failure while processing command {command_name}"
-        )
-
-    if delay:
-        await asyncio.sleep(delay)
-
-    if period:
-        my_timer = RepeatTimer(
-            period, asyncio.create_task, [cp.send_ocpp_command(command_name)]
-        )
-        my_timer.start()
+        if delay:
+            await asyncio.sleep(delay)
+            cp.send_command(command_name)
+        if period:
+            command_timer = RepeatTimer(
+                period,
+                cp.send_command,
+                [command_name],
+            )
+            command_timer.start()
+    except ConnectionClosed:
+        logging.info("ChargePoint %s closed connection", cp.id)
+        ChargePoints.remove(cp)
+        logging.debug("Connected ChargePoint(s): %d", len(ChargePoints))
 
 
 # Function to handle new WebSocket connections.
@@ -178,7 +183,6 @@ async def on_connect(websocket, path):
     ChargePoints.add(cp)
     try:
         await cp.start()
-
     except ConnectionClosed:
         logging.info("ChargePoint %s closed connection", cp.id)
         ChargePoints.remove(cp)
@@ -206,7 +210,7 @@ async def main():
 
     if args.command:
         for cp in ChargePoints:
-            asyncio.create_task(
+            await asyncio.create_task(
                 send_ocpp_command(cp, args.command, args.delay, args.period)
             )
 
