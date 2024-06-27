@@ -123,7 +123,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
         if response.status == ReportBaseType.accepted:
             logging.info("%s successful", Action.GetBaseReport)
         else:
-            logging.info("%s filed", Action.GetBaseReport)
+            logging.info("%s failed", Action.GetBaseReport)
 
 
 # Function to send OCPP command
