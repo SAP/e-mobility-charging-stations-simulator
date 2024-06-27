@@ -20,6 +20,28 @@ poetry run task server
 
 The server will start listening for connections on port 9000.
 
+## Running the server with command sending
+
+You can also specify a command and a period duration with the --request and --period options respectively when running the server. The server will then send your chosen command to the connected client every period seconds.
+
+### GetBaseReport Command
+
+To run the server and send a GetBaseReport command every 5 seconds, use:
+
+```shell
+poetry run task server --command GetBaseReport --period 5
+```
+
+### ClearCache Command
+
+To run the server and send a ClearCache command every 5 seconds, use:
+
+```shell
+poetry run task server --command ClearCache --period 5
+```
+
+Please be mindful that these commands were examples according to the provided scenario, the available commands and their syntax might vary depending on the ocpp version and the implemented functionalities on your server.
+
 ## Overview of the Server Scripts
 
 ### Server.py
