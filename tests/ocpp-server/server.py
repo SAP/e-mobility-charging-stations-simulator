@@ -202,14 +202,6 @@ async def main():
     )
     logging.info("WebSocket Server Started")
 
-    args = parser.parse_args()
-
-    if args.command:
-        for cp in ChargePoints:
-            asyncio.create_task(
-                send_ocpp_command(cp, args.command, args.delay, args.period)
-            )
-
     # Wait for the server to close (runs indefinitely).
     await server.wait_closed()
 
