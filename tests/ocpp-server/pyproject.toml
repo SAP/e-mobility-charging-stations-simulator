@@ -12,7 +12,7 @@ ocpp = "^2.0.0rc2"
 
 [tool.poetry.group.dev.dependencies]
 taskipy = "^1"
-ruff = "^0.4"
+ruff = "^0.5"
 
 [tool.taskipy.tasks]
 server = "python server.py"
