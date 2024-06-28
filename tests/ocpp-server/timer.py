@@ -32,7 +32,6 @@ class Timer:
 
         callback_kwargs: Optional[:class:`dict`]:
         The kwargs to be passed to the callback.
-
         """
         self._timeout = timeout
         self._repeat = repeat
