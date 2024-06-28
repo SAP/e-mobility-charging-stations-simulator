@@ -2,7 +2,8 @@ import argparse
 import asyncio
 import logging
 from datetime import datetime, timezone
-from threading import Timer
+from functools import partial
+from typing import Optional
 
 import ocpp.v201
 import websockets
@@ -11,11 +12,14 @@ from ocpp.v201.enums import (
     Action,
     AuthorizationStatusType,
     ClearCacheStatusType,
+    GenericDeviceModelStatusType,
     RegistrationStatusType,
     ReportBaseType,
     TransactionEventType,
 )
 from websockets import ConnectionClosed
+
+from timer import Timer
 
 # Setting up the logging configuration to display debug level messages.
 logging.basicConfig(level=logging.DEBUG)
@@ -23,17 +27,14 @@ logging.basicConfig(level=logging.DEBUG)
 ChargePoints = set()
 
 
-class RepeatTimer(Timer):
-    """Class that inherits from the Timer class. It will run a
-    function at regular intervals."""
-
-    def run(self):
-        while not self.finished.wait(self.interval):
-            self.function(*self.args, **self.kwargs)
-
-
 # Define a ChargePoint class inheriting from the OCPP 2.0.1 ChargePoint class.
 class ChargePoint(ocpp.v201.ChargePoint):
+    _command_timer: Optional[Timer]
+
+    def __init__(self, connection):
+        super().__init__(connection.path.strip("/"), connection)
+        self._command_timer = None
+
     # Message handlers to receive OCPP messages.
     @on(Action.BootNotification)
     async def on_boot_notification(self, charging_station, reason, **kwargs):
@@ -95,17 +96,8 @@ class ChargePoint(ocpp.v201.ChargePoint):
         logging.info("Received %s", Action.MeterValues)
         return ocpp.v201.call_result.MeterValues()
 
-    @on(Action.GetBaseReport)
-    async def on_get_base_report(
-        self, request_id: int, report_base: ReportBaseType, **kwargs
-    ):
-        logging.info("Received %s", Action.GetBaseReport)
-        return ocpp.v201.call_result.GetBaseReport(
-            id_token_info={"status": ReportBaseType.accepted}
-        )
-
     # Request handlers to emit OCPP messages.
-    async def send_clear_cache(self):
+    async def _send_clear_cache(self):
         request = ocpp.v201.call.ClearCache()
         response = await self.call(request)
 
@@ -114,47 +106,66 @@ class ChargePoint(ocpp.v201.ChargePoint):
         else:
             logging.info("%s failed", Action.ClearCache)
 
-    async def send_get_base_report(self):
+    async def _send_get_base_report(self):
         request = ocpp.v201.call.GetBaseReport(
-            reportBase=ReportBaseType.ConfigurationInventory
+            request_id=1, report_base=ReportBaseType.full_inventory
         )
         response = await self.call(request)
 
-        if response.status == ReportBaseType.accepted:
+        if response.status == GenericDeviceModelStatusType.accepted:
             logging.info("%s successful", Action.GetBaseReport)
         else:
             logging.info("%s failed", Action.GetBaseReport)
 
-
-# Function to send OCPP command
-async def send_ocpp_command(cp, command_name, delay=None, period=None):
-    try:
+    async def _send_command(self, command_name: Action):
+        logging.debug("Sending OCPP command %s", command_name)
         match command_name:
             case Action.ClearCache:
-                logging.info("%s Send:", Action.ClearCache)
-                await cp.send_clear_cache()
+                await self._send_clear_cache()
             case Action.GetBaseReport:
-                logging.info("%s Send:", Action.GetBaseReport)
-                await cp.send_get_base_report()
-    except Exception:
-        logging.exception(
-            f"Not supported or Failure while processing command {command_name}"
-        )
+                await self._send_get_base_report()
+            case _:
+                logging.info(f"Not supported command {command_name}")
 
-    if delay:
-        await asyncio.sleep(delay)
+    async def send_command(
+        self, command_name: Action, delay: Optional[float], period: Optional[float]
+    ):
+        try:
+            if delay and not self._command_timer:
+                self._command_timer = Timer(
+                    delay,
+                    False,
+                    self._send_command,
+                    [command_name],
+                )
+            if period and not self._command_timer:
+                self._command_timer = Timer(
+                    period,
+                    True,
+                    self._send_command,
+                    [command_name],
+                )
+        except ConnectionClosed:
+            self.handle_connection_closed()
 
-    if period:
-        my_timer = RepeatTimer(
-            period, asyncio.create_task, [cp.send_ocpp_command(command_name)]
-        )
-        my_timer.start()
+    def handle_connection_closed(self):
+        logging.info("ChargePoint %s closed connection", self.id)
+        if self._command_timer:
+            self._command_timer.cancel()
+        ChargePoints.remove(self)
+        logging.debug("Connected ChargePoint(s): %d", len(ChargePoints))
 
 
 # Function to handle new WebSocket connections.
-async def on_connect(websocket, path):
+async def on_connect(
+    websocket,
+    command_name: Optional[Action],
+    delay: Optional[float],
+    period: Optional[float],
+):
     """For every new charge point that connects, create a ChargePoint instance and start
-    listening for messages."""
+    listening for messages.
+    """
     try:
         requested_protocols = websocket.request_headers["Sec-WebSocket-Protocol"]
     except KeyError:
@@ -172,30 +183,54 @@ async def on_connect(websocket, path):
         )
         return await websocket.close()
 
-    charge_point_id = path.strip("/")
-    cp = ChargePoint(charge_point_id, websocket)
+    cp = ChargePoint(websocket)
+    if command_name:
+        await cp.send_command(command_name, delay, period)
 
     ChargePoints.add(cp)
+
     try:
         await cp.start()
-
     except ConnectionClosed:
-        logging.info("ChargePoint %s closed connection", cp.id)
-        ChargePoints.remove(cp)
-        logging.debug("Connected ChargePoint(s): %d", len(ChargePoints))
+        cp.handle_connection_closed()
+
+
+def check_positive_number(value: Optional[float]):
+    try:
+        value = float(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError("must be a number") from None
+    if value <= 0:
+        raise argparse.ArgumentTypeError("must be a positive number")
+    return value
 
 
 # Main function to start the WebSocket server.
 async def main():
-    # Define argument parser
-    parser = argparse.ArgumentParser(description="OCPP2 Charge Point Simulator")
-    parser.add_argument("--command", type=str, help="OCPP2 Command Name")
-    parser.add_argument("--delay", type=int, help="Delay in seconds")
-    parser.add_argument("--period", type=int, help="Period in seconds")
+    parser = argparse.ArgumentParser(description="OCPP2 Server")
+    parser.add_argument("-c", "--command", type=Action, help="command name")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
+        "-d",
+        "--delay",
+        type=check_positive_number,
+        help="delay in seconds",
+    )
+    group.add_argument(
+        "-p",
+        "--period",
+        type=check_positive_number,
+        help="period in seconds",
+    )
+    group.required = parser.parse_known_args()[0].command is not None
+
+    args = parser.parse_args()
 
     # Create the WebSocket server and specify the handler for new connections.
     server = await websockets.serve(
-        on_connect,
+        partial(
+            on_connect, command_name=args.command, delay=args.delay, period=args.period
+        ),
         "127.0.0.1",  # Listen on loopback.
         9000,  # Port number.
         subprotocols=["ocpp2.0", "ocpp2.0.1"],  # Specify OCPP 2.0.1 subprotocols.
