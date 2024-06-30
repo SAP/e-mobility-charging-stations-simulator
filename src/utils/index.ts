@@ -13,8 +13,7 @@ export {
   handleIncomingRequestError,
   handleSendMessageError,
   handleUncaughtException,
-  handleUnhandledRejection,
-  setDefaultErrorParams
+  handleUnhandledRejection
 } from './ErrorUtils.js'
 export { watchJsonFile } from './FileUtils.js'
 export { logger } from './Logger.js'

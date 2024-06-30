@@ -14,8 +14,7 @@ import {
 import {
   handleFileException,
   handleIncomingRequestError,
-  handleSendMessageError,
-  setDefaultErrorParams
+  handleSendMessageError
 } from '../../src/utils/ErrorUtils.js'
 import { logger } from '../../src/utils/Logger.js'
 
@@ -105,25 +104,5 @@ await describe('ErrorUtils test suite', async () => {
     ).toStrictEqual(errorResponse)
     expect(chargingStation.logPrefix.mock.calls.length).toBe(3)
     expect(logger.error.mock.calls.length).toBe(3)
-  })
-
-  await it('Verify setDefaultErrorParams()', () => {
-    expect(setDefaultErrorParams({})).toStrictEqual({ throwError: true, consoleOut: false })
-    expect(setDefaultErrorParams({ throwError: false })).toStrictEqual({
-      throwError: false,
-      consoleOut: false
-    })
-    expect(setDefaultErrorParams({ throwError: false, consoleOut: true })).toStrictEqual({
-      throwError: false,
-      consoleOut: true
-    })
-    expect(setDefaultErrorParams({ throwError: true, consoleOut: true })).toStrictEqual({
-      throwError: true,
-      consoleOut: true
-    })
-    expect(setDefaultErrorParams({}, { throwError: false, consoleOut: false })).toStrictEqual({
-      throwError: false,
-      consoleOut: false
-    })
   })
 })

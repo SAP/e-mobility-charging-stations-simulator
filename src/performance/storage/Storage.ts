@@ -9,7 +9,7 @@ import {
   type Statistics,
   StorageType
 } from '../../types/index.js'
-import { logger, setDefaultErrorParams } from '../../utils/index.js'
+import { logger } from '../../utils/index.js'
 
 export abstract class Storage {
   protected readonly storageUri: URL
@@ -31,7 +31,13 @@ export abstract class Storage {
       consoleOut: false
     }
   ): void {
-    params = setDefaultErrorParams(params, { throwError: false, consoleOut: false })
+    params = {
+      ...{
+        throwError: false,
+        consoleOut: false
+      },
+      ...params
+    }
     const inTableOrCollectionStr = table != null && ` in table or collection '${table}'`
     logger.error(
       `${this.logPrefix} ${this.getDBNameFromStorageType(type)} error '${

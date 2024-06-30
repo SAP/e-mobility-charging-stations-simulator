@@ -18,11 +18,6 @@ import { isNotEmptyString } from './Utils.js'
 
 const moduleName = 'ErrorUtils'
 
-const defaultErrorParams = {
-  throwError: true,
-  consoleOut: false
-} satisfies HandleErrorParams<EmptyObject>
-
 export const handleUncaughtException = (): void => {
   process.on('uncaughtException', (error: Error) => {
     console.error(chalk.red('Uncaught exception: '), error)
@@ -40,9 +35,15 @@ export const handleFileException = (
   fileType: FileType,
   error: NodeJS.ErrnoException,
   logPrefix: string,
-  params: HandleErrorParams<EmptyObject> = defaultErrorParams
+  params?: HandleErrorParams<EmptyObject>
 ): void => {
-  params = setDefaultErrorParams(params)
+  params = {
+    ...{
+      throwError: true,
+      consoleOut: false
+    },
+    ...params
+  }
   const prefix = isNotEmptyString(logPrefix) ? `${logPrefix} ` : ''
   let logMsg: string
   switch (error.code) {
@@ -85,12 +86,15 @@ export const handleSendMessageError = (
   commandName: RequestCommand | IncomingRequestCommand,
   messageType: MessageType,
   error: Error,
-  params: HandleErrorParams<EmptyObject> = {
-    throwError: false,
-    consoleOut: false
-  }
+  params?: HandleErrorParams<EmptyObject>
 ): void => {
-  params = setDefaultErrorParams(params, { throwError: false, consoleOut: false })
+  params = {
+    ...{
+      throwError: false,
+      consoleOut: false
+    },
+    ...params
+  }
   logger.error(
     `${chargingStation.logPrefix()} ${moduleName}.handleSendMessageError: Send ${getMessageTypeString(messageType)} command '${commandName}' error:`,
     error
@@ -104,9 +108,15 @@ export const handleIncomingRequestError = <T extends JsonType>(
   chargingStation: ChargingStation,
   commandName: IncomingRequestCommand,
   error: Error,
-  params: HandleErrorParams<T> = { throwError: true, consoleOut: false }
+  params?: HandleErrorParams<T>
 ): T | undefined => {
-  params = setDefaultErrorParams(params)
+  params = {
+    ...{
+      throwError: true,
+      consoleOut: false
+    },
+    ...params
+  }
   logger.error(
     `${chargingStation.logPrefix()} ${moduleName}.handleIncomingRequestError: Incoming request command '${commandName}' error:`,
     error
@@ -120,11 +130,4 @@ export const handleIncomingRequestError = <T extends JsonType>(
   if (params.throwError === true && params.errorResponse != null) {
     return params.errorResponse
   }
-}
-
-export const setDefaultErrorParams = <T extends JsonType>(
-  params: HandleErrorParams<T>,
-  defaultParams: HandleErrorParams<T> = defaultErrorParams
-): HandleErrorParams<T> => {
-  return { ...defaultParams, ...params }
 }
