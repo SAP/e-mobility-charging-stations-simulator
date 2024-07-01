@@ -2,9 +2,8 @@ import { type ConnectorStatusTransition, OCPP16ChargePointStatus } from '../../.
 import { OCPPConstants } from '../OCPPConstants.js'
 
 export class OCPP16Constants extends OCPPConstants {
-  static readonly ChargePointStatusChargingStationTransitions: Readonly<
-  ConnectorStatusTransition[]
-  > = Object.freeze([
+  static readonly ChargePointStatusChargingStationTransitions: readonly ConnectorStatusTransition[] =
+    Object.freeze([
       { to: OCPP16ChargePointStatus.Available },
       // { from: OCPP16ChargePointStatus.Available, to: OCPP16ChargePointStatus.Available },
       {
@@ -34,10 +33,10 @@ export class OCPP16Constants extends OCPPConstants {
         from: OCPP16ChargePointStatus.Faulted,
         to: OCPP16ChargePointStatus.Unavailable
       }
-    // { from: OCPP16ChargePointStatus.Faulted, to: OCPP16ChargePointStatus.Faulted }
+      // { from: OCPP16ChargePointStatus.Faulted, to: OCPP16ChargePointStatus.Faulted }
     ])
 
-  static readonly ChargePointStatusConnectorTransitions: Readonly<ConnectorStatusTransition[]> =
+  static readonly ChargePointStatusConnectorTransitions: readonly ConnectorStatusTransition[] =
     Object.freeze([
       { to: OCPP16ChargePointStatus.Available },
       // { from: OCPP16ChargePointStatus.Available, to: OCPP16ChargePointStatus.Available },
