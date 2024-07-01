@@ -42,8 +42,8 @@ export interface LogConfiguration {
 }
 
 export enum ApplicationProtocolVersion {
-  VERSION_11 = 1.1,
-  VERSION_20 = 2.0
+  VERSION_11 = '1.1',
+  VERSION_20 = '2.0'
 }
 
 export interface UIServerConfiguration {
