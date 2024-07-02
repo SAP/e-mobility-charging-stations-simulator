@@ -141,7 +141,7 @@
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-jsdoc": "^48.5.0",
     "eslint-plugin-n": "^17.9.0",
-    "eslint-plugin-simple-import-sort": "^12.1.0",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
     "eslint-plugin-tsdoc": "^0.3.0",
     "expect": "^29.7.0",
     "glob": "^10.4.2",
