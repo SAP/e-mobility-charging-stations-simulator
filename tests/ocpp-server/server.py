@@ -3,6 +3,7 @@ import asyncio
 import logging
 from datetime import datetime, timezone
 from functools import partial
+from random import randint
 from typing import Optional
 
 import ocpp.v201
@@ -108,7 +109,8 @@ class ChargePoint(ocpp.v201.ChargePoint):
 
     async def _send_get_base_report(self):
         request = ocpp.v201.call.GetBaseReport(
-            request_id=1, report_base=ReportBaseType.full_inventory
+            request_id=randint(1, 100),  # noqa: S311
+            report_base=ReportBaseType.full_inventory,
         )
         response = await self.call(request)
 
