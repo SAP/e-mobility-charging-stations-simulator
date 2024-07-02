@@ -130,7 +130,7 @@
     "c8": "^10.1.2",
     "clinic": "^13.0.0",
     "cross-env": "^7.0.3",
-    "esbuild": "^0.22.0",
+    "esbuild": "^0.23.0",
     "esbuild-plugin-clean": "^1.0.1",
     "esbuild-plugin-copy": "^2.1.1",
     "eslint": "^8.57.0",
