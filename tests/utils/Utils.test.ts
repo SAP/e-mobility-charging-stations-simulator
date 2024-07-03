@@ -387,16 +387,8 @@ await describe('Utils test suite', async () => {
   })
 
   await it('Verify isArraySorted()', () => {
-    expect(
-      isArraySorted([], (a, b) => {
-        return a - b
-      })
-    ).toBe(true)
-    expect(
-      isArraySorted([1], (a, b) => {
-        return a - b
-      })
-    ).toBe(true)
+    expect(isArraySorted([], (a, b) => a - b)).toBe(true)
+    expect(isArraySorted([1], (a, b) => a - b)).toBe(true)
     expect(isArraySorted<number>([1, 2, 3, 4, 5], (a, b) => a - b)).toBe(true)
     expect(isArraySorted<number>([1, 2, 3, 5, 4], (a, b) => a - b)).toBe(false)
     expect(isArraySorted<number>([2, 1, 3, 4, 5], (a, b) => a - b)).toBe(false)
