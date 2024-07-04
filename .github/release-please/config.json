@@ -22,13 +22,9 @@
   },
   "plugins": [
     {
-      "type": "node-workspace",
-      "merge": false
-    },
-    {
       "type": "linked-versions",
-      "groupName": "simulator-ui",
-      "components": ["simulator", "ui"]
+      "groupName": "simulator-ui-ocpp-server",
+      "components": ["simulator", "ui", "ocpp-server"]
     }
   ],
   "changelog-sections": [
