@@ -8,17 +8,14 @@
   "packages": {
     ".": {
       "exclude-paths": ["ui/web", "tests/ocpp-server"],
-      "package-name": "simulator",
       "component": "simulator",
       "extra-files": ["sonar-project.properties"]
     },
     "ui/web": {
-      "package-name": "ui",
       "component": "ui",
       "extra-files": ["sonar-project.properties"]
     },
     "tests/ocpp-server": {
-      "package-name": "ocpp-server",
       "release-type": "python",
       "component": "ocpp-server"
     }
