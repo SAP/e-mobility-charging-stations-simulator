@@ -8,19 +8,14 @@
     ".": {
       "release-type": "node",
       "exclude-paths": ["ui/web", "tests/ocpp-server"],
-      "package-name": "simulator",
-      "component": "simulator",
-      "extra-files": ["sonar-project.properties"]
+      "component": "simulator"
     },
     "ui/web": {
       "release-type": "node",
-      "package-name": "ui",
-      "component": "ui",
-      "extra-files": ["sonar-project.properties"]
+      "component": "ui"
     },
     "tests/ocpp-server": {
       "release-type": "python",
-      "package-name": "ocpp-server",
       "component": "ocpp-server"
     }
   },
@@ -35,6 +30,7 @@
       "components": ["simulator", "ui", "ocpp-server"]
     }
   ],
+  "extra-files": ["sonar-project.properties", "ui/web/sonar-project.properties"],
   "changelog-sections": [
     { "type": "feat", "section": "🚀 Features", "hidden": false },
     { "type": "fix", "section": "🐞 Fixes", "hidden": false },
