@@ -1,6 +1,16 @@
 {
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
-  "plugins": ["node-workspace"],
+  "plugins": [
+    {
+      "type": "node-workspace",
+      "merge": false
+    },
+    {
+      "type": "linked-versions",
+      "groupName": "simulator-ui-ocpp-server",
+      "components": ["simulator", "ui", "ocpp-server"]
+    }
+  ],
   "bump-minor-pre-major": true,
   "bump-patch-for-minor-pre-major": true,
   "include-component-in-tag": false,
