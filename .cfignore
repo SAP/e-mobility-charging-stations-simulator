@@ -26,7 +26,6 @@
 .nycrc.json
 .nyc_output
 .reuse
-.release-it.json
 .xmake.cfg
 # Logs
 logs/

@@ -41,12 +41,6 @@
   ],
   "type": "module",
   "exports": "./dist/start.js",
-  "auto-changelog": {
-    "commitUrl": "https://github.com/sap/e-mobility-charging-stations-simulator/commit/{id}",
-    "issueUrl": "https://github.com/sap/e-mobility-charging-stations-simulator/issues/{id}",
-    "mergeUrl": "https://github.com/sap/e-mobility-charging-stations-simulator/pull/{id}",
-    "compareUrl": "https://github.com/sap/e-mobility-charging-stations-simulator/compare/{from}...{to}"
-  },
   "mikro-orm": {
     "tsConfigPath": "./tsconfig-mikro-orm.json",
     "useTsNode": true
@@ -77,8 +71,7 @@
     "test:debug": "glob -c \"node --import tsx --test --inspect\" \"tests/**/*.test.ts\"",
     "coverage": "c8 report --reporter=lcov",
     "coverage:html": "c8 report --reporter=html",
-    "clinic:clean": "clinic clean",
-    "release": "release-it"
+    "clinic:clean": "clinic clean"
   },
   "pnpm": {
     "overrides": {
@@ -120,13 +113,11 @@
     "@commitlint/cli": "^19.3.0",
     "@commitlint/config-conventional": "^19.2.2",
     "@mikro-orm/cli": "^6.2.9",
-    "@release-it/bumper": "^6.0.1",
     "@types/node": "^20.14.9",
     "@types/semver": "^7.5.8",
     "@types/ws": "^8.5.10",
     "@typescript-eslint/eslint-plugin": "^7.15.0",
     "@typescript-eslint/parser": "^7.15.0",
-    "auto-changelog": "^2.4.0",
     "c8": "^10.1.2",
     "clinic": "^13.0.0",
     "cross-env": "^7.0.3",
@@ -148,7 +139,6 @@
     "husky": "^9.0.11",
     "lint-staged": "^15.2.7",
     "prettier": "^3.3.2",
-    "release-it": "^17.4.1",
     "rimraf": "^5.0.7",
     "semver": "^7.6.2",
     "ts-node": "^10.9.2",
