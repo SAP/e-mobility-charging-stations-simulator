@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.4.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/v1.3.7...v1.4.0) (2024-07-04)
+
+
+### 🚀 Features
+
+* switch to release-please release manager ([2c02376](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/2c02376b6b17a6094c451b976275ed9eb2e1407b))
+
+
+### 🐞 Fixes
+
+* **ci:** fix release-please GH action run ([2a91b70](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/2a91b70f1cf33c64ee6f2f3be63bb9b5614cd319))
+* **ci:** silence release-please GH action warnings ([4dc1046](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/4dc10464e640d30a12ece043edcd72390cd1fb43))
+* **ocpp-server:** randomize GetBaseReport request id ([8fe113d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/8fe113d7ae764df93daaa7a69c6fe810b6703587))
+
+
+### ✨ Polish
+
+* **test:** code cleanups ([b53037c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b53037c097bf8412831281229234e814aaae82a9))
+* **test:** typing cleanups ([65a1581](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/65a1581afd90a44096f1c0157abf4d5531d76fa5))
+
+
+### 🤖 Automation
+
+* bump volta node version ([abc5de8](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/abc5de857ea9e4a27f83d1c2fe60b4618775a540))
+* **deps-dev:** apply updates ([e92bd99](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e92bd991d1f0c43442dd20d7b5e34fd30f9bb136))
+* **deps-dev:** apply updates ([a33e3b4](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/a33e3b4129757990b84af075cf9b678506937afb))
+* **deps:** bump ws from 8.17.1 to 8.18.0 ([4119c6e](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/4119c6edbafb3fe813587770a2fb5a91c85a8340))
+
 ## [v1.3.7](https://github.com/sap/e-mobility-charging-stations-simulator/compare/v1.3.6...v1.3.7)
 
 - fix: fix OCPP2 mock server command sending [`#1061`](https://github.com/sap/e-mobility-charging-stations-simulator/pull/1061)
