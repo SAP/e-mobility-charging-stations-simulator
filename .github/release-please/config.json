@@ -6,18 +6,18 @@
   "include-component-in-tag": false,
   "include-v-in-tag": true,
   "packages": {
-    "./": {
+    ".": {
       "release-type": "node",
-      "exclude-paths": ["./ui/web", "./tests/ocpp-server"],
+      "exclude-paths": ["ui/web", "tests/ocpp-server"],
       "component": "simulator",
       "extra-files": ["sonar-project.properties"]
     },
-    "./ui/web": {
+    "ui/web": {
       "release-type": "node",
       "component": "ui",
       "extra-files": ["sonar-project.properties"]
     },
-    "./tests/ocpp-server": {
+    "tests/ocpp-server": {
       "release-type": "python",
       "component": "ocpp-server"
     }
