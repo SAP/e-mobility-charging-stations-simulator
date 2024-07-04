@@ -93,6 +93,12 @@ choco install volta
 
 Setup [volta](https://volta.sh/) with [pnpm](https://github.com/pnpm/pnpm) package manager support: https://docs.volta.sh/advanced/pnpm
 
+### Branching model
+
+The `main` branch is the default development branch.
+The `vX` branches are the maintenance branches for the corresponding major version `X`.
+The `vX.Y` branches are the maintenance branches for the corresponding major and minor version `X.Y`.
+
 ### Dependencies
 
 Enable corepack, if [volta](https://volta.sh/) is not installed and configured, and install latest pnpm version:
