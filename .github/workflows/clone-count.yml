@@ -8,6 +8,7 @@ on:
 jobs:
   clone-count:
     runs-on: ubuntu-latest
+    if: github.repository == 'sap/e-mobility-charging-stations-simulator'
 
     steps:
       - uses: actions/checkout@v4
