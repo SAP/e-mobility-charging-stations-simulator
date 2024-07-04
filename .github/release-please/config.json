@@ -6,17 +6,17 @@
   "include-v-in-tag": true,
   "packages": {
     ".": {
-      "release-type": "node",
       "exclude-paths": ["ui/web", "tests/ocpp-server"],
-      "component": "simulator"
+      "component": "simulator",
+      "extra-files": ["sonar-project.properties"]
     },
     "ui/web": {
-      "release-type": "node",
       "component": "ui"
     },
     "tests/ocpp-server": {
       "release-type": "python",
-      "component": "ocpp-server"
+      "component": "ocpp-server",
+      "extra-files": ["sonar-project.properties"]
     }
   },
   "plugins": [
@@ -26,11 +26,10 @@
     },
     {
       "type": "linked-versions",
-      "groupName": "simulator-ui-ocpp-server",
-      "components": ["simulator", "ui", "ocpp-server"]
+      "groupName": "simulator-ui",
+      "components": ["simulator", "ui"]
     }
   ],
-  "extra-files": ["sonar-project.properties", "ui/web/sonar-project.properties"],
   "changelog-sections": [
     { "type": "feat", "section": "🚀 Features", "hidden": false },
     { "type": "fix", "section": "🐞 Fixes", "hidden": false },
