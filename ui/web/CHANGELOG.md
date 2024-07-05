@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.4.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ui@v1.4.0...ui@v1.4.1) (2024-07-05)
+
+### 🐞 Fixes
+
+- **ci:** fix release branches creation ([f727f02](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f727f029cb974cffb38a2c569173730b6b808e3f))
+
 ## [1.4.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ui-v1.3.7...ui@v1.4.0) (2024-07-04)
 
 ### 🤖 Automation

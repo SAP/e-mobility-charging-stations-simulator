@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/package",
   "name": "webui",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "readme": "README.md",
   "engines": {
     "node": ">=18.0.0",
