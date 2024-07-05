@@ -27,6 +27,7 @@ Simple [node.js](https://nodejs.org/) software to simulate and scale a set of ch
   - [Development prerequisites (optional)](#development-prerequisites-optional)
     - [Unix](#unix)
     - [Windows](#windows-1)
+  - [Branching model](#branching-model)
   - [Dependencies](#dependencies)
 - [Initial configuration](#initial-configuration)
 - [Start simulator](#start-simulator)
@@ -95,8 +96,8 @@ Setup [volta](https://volta.sh/) with [pnpm](https://github.com/pnpm/pnpm) packa
 
 ### Branching model
 
-The `main` branch is the default development branch.
-The `vX` branches are the maintenance branches for the corresponding major version `X`.
+The `main` branch is the default development branch.  
+The `vX` branches are the maintenance branches for the corresponding major version `X`.  
 The `vX.Y` branches are the maintenance branches for the corresponding major and minor version `X.Y`.
 
 ### Dependencies
