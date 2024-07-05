@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.4.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v1.4.0...simulator@v1.4.1) (2024-07-05)
+
+
+### 🐞 Fixes
+
+* **ci:** fix release branches creation ([f727f02](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f727f029cb974cffb38a2c569173730b6b808e3f))
+
+
+### ✨ Polish
+
+* **ci:** cleanup release-please configuration ([9880e6f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/9880e6fed0333e17aad03f33e5ec4ee6307510ec))
+
 ## [1.4.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator-v1.3.7...simulator@v1.4.0) (2024-07-04)
 
 ### 🚀 Features
