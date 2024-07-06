@@ -2,18 +2,16 @@
 
 ## [1.4.2](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v1.4.1...simulator@v1.4.2) (2024-07-06)
 
-
 ### 📚 Documentation
 
-* format 'Branching model' section in README.md ([3196db2](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3196db2fbe206231fc0ee7d7947b19937a23ce42))
-
+- format 'Branching model' section in README.md ([3196db2](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3196db2fbe206231fc0ee7d7947b19937a23ce42))
 
 ### 🤖 Automation
 
-* **ci:** do not cancel workflow in case of autofix failure ([7e302de](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7e302dea6f55838438fbe7bf0b9b8e70f3c3af21))
-* **ci:** fix release-please changelog after module renaming ([26058fd](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/26058fdb1d89d53caceceb1a981e3d48d73dcfae))
-* **ci:** rename module in changelog ([b7c140d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b7c140d7aad6d935d8941b07062011d4171596e9))
-* **deps:** bump poolifier from 4.0.15 to 4.0.16 ([8965c9e](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/8965c9e361bd771e59963c7ebd22b4d3fc0da04b))
+- **ci:** do not cancel workflow in case of autofix failure ([7e302de](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7e302dea6f55838438fbe7bf0b9b8e70f3c3af21))
+- **ci:** fix release-please changelog after module renaming ([26058fd](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/26058fdb1d89d53caceceb1a981e3d48d73dcfae))
+- **ci:** rename module in changelog ([b7c140d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b7c140d7aad6d935d8941b07062011d4171596e9))
+- **deps:** bump poolifier from 4.0.15 to 4.0.16 ([8965c9e](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/8965c9e361bd771e59963c7ebd22b4d3fc0da04b))
 
 ## [1.4.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v1.4.0...simulator@v1.4.1) (2024-07-05)
 
