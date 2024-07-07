@@ -98,7 +98,7 @@
     "logform": "^2.6.0",
     "mnemonist": "0.40.0-rc1",
     "mongodb": "^6.8.0",
-    "poolifier": "^4.0.16",
+    "poolifier": "^4.0.17",
     "rambda": "^9.2.1",
     "tar": "^7.4.0",
     "winston": "^3.13.0",
