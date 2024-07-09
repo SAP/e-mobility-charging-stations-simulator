@@ -89,7 +89,7 @@ curl https://get.volta.sh | bash
 #### Windows
 
 ```powershell
-choco install volta
+choco install -y volta
 ```
 
 Setup [volta](https://volta.sh/) with [pnpm](https://github.com/pnpm/pnpm) package manager support: https://docs.volta.sh/advanced/pnpm
