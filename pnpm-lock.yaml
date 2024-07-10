@@ -158,8 +158,8 @@ importers:
         specifier: ^29.7.0
         version: 29.7.0
       glob:
-        specifier: ^10.4.3
-        version: 10.4.3
+        specifier: ^11.0.0
+        version: 11.0.0
       husky:
         specifier: ^9.0.11
         version: 9.0.11
