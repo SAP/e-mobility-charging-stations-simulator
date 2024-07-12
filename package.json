@@ -47,7 +47,7 @@
   },
   "scripts": {
     "prepare": "node prepare.js",
-    "build-requirements": "node --no-warnings build-requirements.js",
+    "build-requirements": "node build-requirements.js",
     "start": "pnpm build && cross-env NODE_ENV=production node dist/start.js",
     "start:dev": "pnpm build:dev && cross-env NODE_ENV=development node --enable-source-maps dist/start.js",
     "start:dev:debug": "pnpm build:dev && cross-env NODE_ENV=development node --enable-source-maps --inspect dist/start.js",

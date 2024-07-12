@@ -51,12 +51,14 @@
     "rambda",
     "Recurrency",
     "RFID",
+    "runtimes",
     "shutdowning",
     "sonarlint",
     "SRPC",
     "tsdoc",
     "VCAP",
     "webui",
+    "workerd",
     "workerset"
   ]
 }

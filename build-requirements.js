@@ -5,6 +5,8 @@ import chalk from 'chalk'
 // eslint-disable-next-line n/no-unpublished-import
 import { satisfies } from 'semver'
 
+import { runtime, runtimes } from './utils/runtime.js'
+
 const packageJson = JSON.parse(readFileSync('./package.json', 'utf8'))
 
 /**
@@ -23,4 +25,15 @@ export const checkNodeVersion = () => {
   }
 }
 
-checkNodeVersion()
+switch (runtime) {
+  case runtimes.node:
+    checkNodeVersion()
+    break
+  case runtimes.bun:
+  case runtimes.deno:
+  case runtimes.workerd:
+  case runtimes.browser:
+  default:
+    console.error(chalk.red(`Unsupported ${runtime} runtime detected`))
+    break
+}
