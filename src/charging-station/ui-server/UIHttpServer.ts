@@ -13,7 +13,7 @@ import {
   type ProtocolVersion,
   type RequestPayload,
   ResponseStatus,
-  type UIServerConfiguration
+  type UIServerConfiguration,
 } from '../../types/index.js'
 import {
   Constants,
@@ -21,7 +21,7 @@ import {
   isNotEmptyString,
   JSONStringify,
   logger,
-  logPrefix
+  logPrefix,
 } from '../../utils/index.js'
 import { AbstractUIServer } from './AbstractUIServer.js'
 import { isProtocolAndVersionSupported } from './UIServerUtils.js'
@@ -60,7 +60,7 @@ export class UIHttpServer extends AbstractUIServer {
         const res = this.responseHandlers.get(uuid) as ServerResponse
         res
           .writeHead(this.responseStatusToStatusCode(payload.status), {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
           })
           .end(JSONStringify(payload, undefined, MapStringifyFormat.object))
       } else {
@@ -93,9 +93,9 @@ export class UIHttpServer extends AbstractUIServer {
         res
           .writeHead(StatusCodes.UNAUTHORIZED, {
             'Content-Type': 'text/plain',
-            'WWW-Authenticate': 'Basic realm=users'
+            'WWW-Authenticate': 'Basic realm=users',
           })
-          .end(`${StatusCodes.UNAUTHORIZED} Unauthorized`)
+          .end(`${StatusCodes.UNAUTHORIZED.toString()} Unauthorized`)
         res.destroy()
         req.destroy()
       }
@@ -135,7 +135,7 @@ export class UIHttpServer extends AbstractUIServer {
                 this.buildProtocolResponse(uuid, {
                   status: ResponseStatus.FAILURE,
                   errorMessage: (error as Error).message,
-                  errorStack: (error as Error).stack
+                  errorStack: (error as Error).stack,
                 })
               )
               return
@@ -147,10 +147,12 @@ export class UIHttpServer extends AbstractUIServer {
                 if (protocolResponse != null) {
                   this.sendResponse(protocolResponse)
                 }
+                return undefined
               })
               .catch(Constants.EMPTY_FUNCTION)
           })
       } else {
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         throw new BaseError(`Unsupported HTTP method: '${req.method}'`)
       }
     } catch (error) {

@@ -5,7 +5,7 @@ import {
   type IncomingRequestCommand,
   OCPPVersion,
   type RequestCommand,
-  VendorParametersKey
+  VendorParametersKey,
 } from '../types/index.js'
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
@@ -36,9 +36,9 @@ export class Constants {
     firmwareVersionPattern: Constants.SEMVER_PATTERN,
     firmwareUpgrade: {
       versionUpgrade: {
-        step: 1
+        step: 1,
       },
-      reset: true
+      reset: true,
     },
     ocppPersistentConfiguration: true,
     stationInfoPersistentConfiguration: true,
@@ -47,7 +47,7 @@ export class Constants {
     autoReconnectMaxRetries: -1,
     registrationMaxRetries: -1,
     reconnectExponentialDelay: false,
-    stopTransactionsOnStopped: true
+    stopTransactionsOnStopped: true,
   })
 
   static readonly DEFAULT_BOOT_NOTIFICATION_INTERVAL = 60000 // Ms
@@ -64,7 +64,7 @@ export class Constants {
       maxDelayBetweenTwoTransactions: 30,
       probabilityOfStart: 1,
       stopAfterHours: 0.25,
-      stopAbsoluteDuration: false
+      stopAbsoluteDuration: false,
     })
 
   static readonly DEFAULT_CIRCULAR_BUFFER_CAPACITY = 386

@@ -40,15 +40,15 @@ export const addConfigurationKey = (
     ...{
       readonly: false,
       visible: true,
-      reboot: false
+      reboot: false,
     },
-    ...options
+    ...options,
   }
   params = { ...{ overwrite: false, save: false }, ...params }
   let keyFound = getConfigurationKey(chargingStation, key)
-  if (keyFound != null && params.overwrite === true) {
+  if (keyFound != null && params.overwrite) {
     deleteConfigurationKey(chargingStation, keyFound.key, {
-      save: false
+      save: false,
     })
     keyFound = undefined
   }
@@ -59,9 +59,9 @@ export const addConfigurationKey = (
       readonly: options.readonly!,
       value,
       visible: options.visible,
-      reboot: options.reboot
+      reboot: options.reboot,
     })
-    params.save === true && chargingStation.saveOcppConfiguration()
+    params.save && chargingStation.saveOcppConfiguration()
   } else {
     logger.error(
       `${chargingStation.logPrefix()} Trying to add an already existing configuration key: %j`,
@@ -105,7 +105,7 @@ export const deleteConfigurationKey = (
       chargingStation.ocppConfiguration.configurationKey.indexOf(keyFound),
       1
     )
-    params.save === true && chargingStation.saveOcppConfiguration()
+    params.save && chargingStation.saveOcppConfiguration()
     return deletedConfigurationKey
   }
 }

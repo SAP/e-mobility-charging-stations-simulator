@@ -13,7 +13,7 @@ import {
   OCPP20RequestCommand,
   type OCPP20StatusNotificationRequest,
   OCPPVersion,
-  type RequestParams
+  type RequestParams,
 } from '../../../types/index.js'
 import { generateUUID } from '../../../utils/index.js'
 import { OCPPRequestService } from '../OCPPRequestService.js'
@@ -42,7 +42,7 @@ export class OCPP20RequestService extends OCPPRequestService {
               'constructor'
             )
           )
-          .bind(this)
+          .bind(this),
       ],
       [
         OCPP20RequestCommand.HEARTBEAT,
@@ -54,7 +54,7 @@ export class OCPP20RequestService extends OCPPRequestService {
               'constructor'
             )
           )
-          .bind(this)
+          .bind(this),
       ],
       [
         OCPP20RequestCommand.STATUS_NOTIFICATION,
@@ -66,8 +66,8 @@ export class OCPP20RequestService extends OCPPRequestService {
               'constructor'
             )
           )
-          .bind(this)
-      ]
+          .bind(this),
+      ],
     ])
     this.buildRequestPayload = this.buildRequestPayload.bind(this)
   }
@@ -112,7 +112,7 @@ export class OCPP20RequestService extends OCPPRequestService {
       case OCPP20RequestCommand.STATUS_NOTIFICATION:
         return {
           timestamp: new Date(),
-          ...commandParams
+          ...commandParams,
         } as unknown as Request
       default:
         // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().

@@ -26,7 +26,7 @@ export class MongoDBStorage extends Storage {
         ?.db(this.dbName)
         .collection<Statistics>(Constants.PERFORMANCE_RECORDS_TABLE)
         .replaceOne({ id: performanceStatistics.id }, performanceStatistics, {
-          upsert: true
+          upsert: true,
         })
     } catch (error) {
       this.handleDBStorageError(
@@ -63,6 +63,7 @@ export class MongoDBStorage extends Storage {
   private checkDBConnection (): void {
     if (this.client == null) {
       throw new BaseError(
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         `${this.logPrefix} ${this.getDBNameFromStorageType(
           StorageType.MONGO_DB
         )} client initialization failed while trying to issue a request`
@@ -70,6 +71,7 @@ export class MongoDBStorage extends Storage {
     }
     if (!this.connected) {
       throw new BaseError(
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         `${this.logPrefix} ${this.getDBNameFromStorageType(
           StorageType.MONGO_DB
         )} connection not opened while trying to issue a request`

@@ -29,7 +29,7 @@ export enum WorkerSetEvents {
 
 export const WorkerEvents = {
   ...PoolEvents,
-  ...WorkerSetEvents
+  ...WorkerSetEvents,
 } as const
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type WorkerEvents = PoolEvent | WorkerSetEvents

@@ -9,7 +9,7 @@ import {
   type ProtocolRequest,
   type ProtocolResponse,
   type UIServerConfiguration,
-  WebSocketCloseEventStatusCode
+  WebSocketCloseEventStatusCode,
 } from '../../types/index.js'
 import {
   Constants,
@@ -18,13 +18,13 @@ import {
   JSONStringify,
   logger,
   logPrefix,
-  validateUUID
+  validateUUID,
 } from '../../utils/index.js'
 import { AbstractUIServer } from './AbstractUIServer.js'
 import {
   getProtocolAndVersion,
   handleProtocols,
-  isProtocolAndVersionSupported
+  isProtocolAndVersionSupported,
 } from './UIServerUtils.js'
 
 const moduleName = 'UIWebSocketServer'
@@ -36,7 +36,7 @@ export class UIWebSocketServer extends AbstractUIServer {
     super(uiServerConfiguration)
     this.webSocketServer = new WebSocketServer({
       handleProtocols,
-      noServer: true
+      noServer: true,
     })
   }
 
@@ -68,6 +68,7 @@ export class UIWebSocketServer extends AbstractUIServer {
             if (protocolResponse != null) {
               this.sendResponse(protocolResponse)
             }
+            return undefined
           })
           .catch(Constants.EMPTY_FUNCTION)
       })
@@ -87,7 +88,7 @@ export class UIWebSocketServer extends AbstractUIServer {
     })
     this.httpServer.on('connect', (req: IncomingMessage, socket: Duplex, _head: Buffer) => {
       if (req.headers.connection !== 'Upgrade' || req.headers.upgrade !== 'websocket') {
-        socket.write(`HTTP/1.1 ${StatusCodes.BAD_REQUEST} Bad Request\r\n\r\n`)
+        socket.write(`HTTP/1.1 ${StatusCodes.BAD_REQUEST.toString()} Bad Request\r\n\r\n`)
         socket.destroy()
       }
     })
@@ -104,7 +105,7 @@ export class UIWebSocketServer extends AbstractUIServer {
       socket.on('error', onSocketError)
       this.authenticate(req, err => {
         if (err != null) {
-          socket.write(`HTTP/1.1 ${StatusCodes.UNAUTHORIZED} Unauthorized\r\n\r\n`)
+          socket.write(`HTTP/1.1 ${StatusCodes.UNAUTHORIZED.toString()} Unauthorized\r\n\r\n`)
           socket.destroy()
           return
         }
@@ -144,7 +145,7 @@ export class UIWebSocketServer extends AbstractUIServer {
               moduleName,
               'sendResponse'
             )} Error at sending response id '${responseId}', WebSocket is not open: ${
-              ws.readyState
+              ws.readyState.toString()
             }`
           )
         }
@@ -205,7 +206,7 @@ export class UIWebSocketServer extends AbstractUIServer {
         `${this.logPrefix(
           moduleName,
           'validateRawDataRequest'
-          // eslint-disable-next-line @typescript-eslint/no-base-to-string
+        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         )} UI protocol request is not valid JSON: ${rawData.toString()}`
       )
       return false

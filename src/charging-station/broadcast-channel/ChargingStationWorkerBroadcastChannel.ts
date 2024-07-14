@@ -35,7 +35,7 @@ import {
   type StatusNotificationRequest,
   type StatusNotificationResponse,
   type StopTransactionRequest,
-  type StopTransactionResponse
+  type StopTransactionResponse,
 } from '../../types/index.js'
 import { Constants, convertToInt, isAsyncFunction, logger } from '../../utils/index.js'
 import type { ChargingStation } from '../ChargingStation.js'
@@ -66,71 +66,71 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
   constructor (chargingStation: ChargingStation) {
     super()
     const requestParams: RequestParams = {
-      throwError: true
+      throwError: true,
     }
     this.commandHandlers = new Map<BroadcastChannelProcedureName, CommandHandler>([
       [
         BroadcastChannelProcedureName.START_CHARGING_STATION,
         () => {
           this.chargingStation.start()
-        }
+        },
       ],
       [
         BroadcastChannelProcedureName.STOP_CHARGING_STATION,
         async () => {
           await this.chargingStation.stop()
-        }
+        },
       ],
       [
         BroadcastChannelProcedureName.DELETE_CHARGING_STATIONS,
         async (requestPayload?: BroadcastChannelRequestPayload) => {
           await this.chargingStation.delete(requestPayload?.deleteConfiguration as boolean)
-        }
+        },
       ],
       [
         BroadcastChannelProcedureName.OPEN_CONNECTION,
         () => {
           this.chargingStation.openWSConnection()
-        }
+        },
       ],
       [
         BroadcastChannelProcedureName.CLOSE_CONNECTION,
         () => {
           this.chargingStation.closeWSConnection()
-        }
+        },
       ],
       [
         BroadcastChannelProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR,
         (requestPayload?: BroadcastChannelRequestPayload) => {
           this.chargingStation.startAutomaticTransactionGenerator(requestPayload?.connectorIds)
-        }
+        },
       ],
       [
         BroadcastChannelProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR,
         (requestPayload?: BroadcastChannelRequestPayload) => {
           this.chargingStation.stopAutomaticTransactionGenerator(requestPayload?.connectorIds)
-        }
+        },
       ],
       [
         BroadcastChannelProcedureName.SET_SUPERVISION_URL,
         (requestPayload?: BroadcastChannelRequestPayload) => {
           this.chargingStation.setSupervisionUrl(requestPayload?.url as string)
-        }
+        },
       ],
       [
         BroadcastChannelProcedureName.START_TRANSACTION,
         async (requestPayload?: BroadcastChannelRequestPayload) =>
           await this.chargingStation.ocppRequestService.requestHandler<
-          StartTransactionRequest,
-          StartTransactionResponse
-          >(this.chargingStation, RequestCommand.START_TRANSACTION, requestPayload, requestParams)
+            StartTransactionRequest,
+            StartTransactionResponse
+          >(this.chargingStation, RequestCommand.START_TRANSACTION, requestPayload as StartTransactionRequest, requestParams),
       ],
       [
         BroadcastChannelProcedureName.STOP_TRANSACTION,
         async (requestPayload?: BroadcastChannelRequestPayload) =>
           await this.chargingStation.ocppRequestService.requestHandler<
-          StopTransactionRequest,
-          StartTransactionResponse
+            StopTransactionRequest,
+            StartTransactionResponse
           >(
             this.chargingStation,
             RequestCommand.STOP_TRANSACTION,
@@ -139,54 +139,59 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
                 requestPayload?.transactionId,
                 true
               ),
-              ...requestPayload
-            },
+              ...requestPayload,
+            } as StopTransactionRequest,
             requestParams
-          )
+          ),
       ],
       [
         BroadcastChannelProcedureName.AUTHORIZE,
         async (requestPayload?: BroadcastChannelRequestPayload) =>
           await this.chargingStation.ocppRequestService.requestHandler<
-          AuthorizeRequest,
-          AuthorizeResponse
-          >(this.chargingStation, RequestCommand.AUTHORIZE, requestPayload, requestParams)
+            AuthorizeRequest,
+            AuthorizeResponse
+          >(this.chargingStation, RequestCommand.AUTHORIZE, requestPayload as AuthorizeRequest, requestParams),
       ],
       [
         BroadcastChannelProcedureName.BOOT_NOTIFICATION,
         async (requestPayload?: BroadcastChannelRequestPayload) => {
           return await this.chargingStation.ocppRequestService.requestHandler<
-          BootNotificationRequest,
-          BootNotificationResponse
+            BootNotificationRequest,
+            BootNotificationResponse
           >(
             this.chargingStation,
             RequestCommand.BOOT_NOTIFICATION,
             {
               ...this.chargingStation.bootNotificationRequest,
-              ...requestPayload
-            },
+              ...requestPayload,
+            } as BootNotificationRequest,
             {
               skipBufferingOnError: true,
-              throwError: true
+              throwError: true,
             }
           )
-        }
+        },
       ],
       [
         BroadcastChannelProcedureName.STATUS_NOTIFICATION,
         async (requestPayload?: BroadcastChannelRequestPayload) =>
           await this.chargingStation.ocppRequestService.requestHandler<
-          StatusNotificationRequest,
-          StatusNotificationResponse
-          >(this.chargingStation, RequestCommand.STATUS_NOTIFICATION, requestPayload, requestParams)
+            StatusNotificationRequest,
+            StatusNotificationResponse
+          >(
+            this.chargingStation,
+            RequestCommand.STATUS_NOTIFICATION,
+            requestPayload as StatusNotificationRequest,
+            requestParams
+          ),
       ],
       [
         BroadcastChannelProcedureName.HEARTBEAT,
         async (requestPayload?: BroadcastChannelRequestPayload) =>
           await this.chargingStation.ocppRequestService.requestHandler<
-          HeartbeatRequest,
-          HeartbeatResponse
-          >(this.chargingStation, RequestCommand.HEARTBEAT, requestPayload, requestParams)
+            HeartbeatRequest,
+            HeartbeatResponse
+          >(this.chargingStation, RequestCommand.HEARTBEAT, requestPayload as HeartbeatRequest, requestParams),
       ],
       [
         BroadcastChannelProcedureName.METER_VALUES,
@@ -196,8 +201,8 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
             StandardParametersKey.MeterValueSampleInterval
           )
           return await this.chargingStation.ocppRequestService.requestHandler<
-          MeterValuesRequest,
-          MeterValuesResponse
+            MeterValuesRequest,
+            MeterValuesResponse
           >(
             this.chargingStation,
             RequestCommand.METER_VALUES,
@@ -213,48 +218,48 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
                   configuredMeterValueSampleInterval != null
                     ? secondsToMilliseconds(convertToInt(configuredMeterValueSampleInterval.value))
                     : Constants.DEFAULT_METER_VALUES_INTERVAL
-                )
+                ),
               ],
-              ...requestPayload
-            },
+              ...requestPayload,
+            } as MeterValuesRequest,
             requestParams
           )
-        }
+        },
       ],
       [
         BroadcastChannelProcedureName.DATA_TRANSFER,
         async (requestPayload?: BroadcastChannelRequestPayload) =>
           await this.chargingStation.ocppRequestService.requestHandler<
-          DataTransferRequest,
-          DataTransferResponse
-          >(this.chargingStation, RequestCommand.DATA_TRANSFER, requestPayload, requestParams)
+            DataTransferRequest,
+            DataTransferResponse
+          >(this.chargingStation, RequestCommand.DATA_TRANSFER, requestPayload as DataTransferRequest, requestParams),
       ],
       [
         BroadcastChannelProcedureName.DIAGNOSTICS_STATUS_NOTIFICATION,
         async (requestPayload?: BroadcastChannelRequestPayload) =>
           await this.chargingStation.ocppRequestService.requestHandler<
-          DiagnosticsStatusNotificationRequest,
-          DiagnosticsStatusNotificationResponse
+            DiagnosticsStatusNotificationRequest,
+            DiagnosticsStatusNotificationResponse
           >(
             this.chargingStation,
             RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
-            requestPayload,
+            requestPayload as DiagnosticsStatusNotificationRequest,
             requestParams
-          )
+          ),
       ],
       [
         BroadcastChannelProcedureName.FIRMWARE_STATUS_NOTIFICATION,
         async (requestPayload?: BroadcastChannelRequestPayload) =>
           await this.chargingStation.ocppRequestService.requestHandler<
-          FirmwareStatusNotificationRequest,
-          FirmwareStatusNotificationResponse
+            FirmwareStatusNotificationRequest,
+            FirmwareStatusNotificationResponse
           >(
             this.chargingStation,
             RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
-            requestPayload,
+            requestPayload as FirmwareStatusNotificationRequest,
             requestParams
-          )
-      ]
+          ),
+      ],
     ])
     this.chargingStation = chargingStation
     this.onmessage = this.requestHandler.bind(this) as (message: unknown) => void
@@ -289,7 +294,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         if (commandResponse == null || isEmpty(commandResponse)) {
           responsePayload = {
             hashId: this.chargingStation.stationInfo?.hashId,
-            status: ResponseStatus.SUCCESS
+            status: ResponseStatus.SUCCESS,
           }
         } else {
           responsePayload = this.commandResponseToResponsePayload(
@@ -298,6 +303,11 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
             commandResponse
           )
         }
+        return undefined
+      })
+      .finally(() => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        this.sendResponse([uuid, responsePayload!])
       })
       .catch((error: unknown) => {
         logger.error(
@@ -311,12 +321,8 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
           requestPayload,
           errorMessage: (error as OCPPError).message,
           errorStack: (error as OCPPError).stack,
-          errorDetails: (error as OCPPError).details
+          errorDetails: (error as OCPPError).details,
         } satisfies BroadcastChannelResponsePayload
-      })
-      .finally(() => {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.sendResponse([uuid, responsePayload!])
       })
   }
 
@@ -357,7 +363,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     delete requestPayload.hashIds
     ![
       BroadcastChannelProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR,
-      BroadcastChannelProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR
+      BroadcastChannelProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR,
     ].includes(command) && delete requestPayload.connectorIds
   }
 
@@ -370,7 +376,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     if (responseStatus === ResponseStatus.SUCCESS) {
       return {
         hashId: this.chargingStation.stationInfo?.hashId,
-        status: responseStatus
+        status: responseStatus,
       }
     }
     return {
@@ -378,7 +384,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       status: responseStatus,
       command,
       requestPayload,
-      commandResponse
+      commandResponse,
     }
   }
 
@@ -390,14 +396,10 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       case BroadcastChannelProcedureName.START_TRANSACTION:
       case BroadcastChannelProcedureName.STOP_TRANSACTION:
       case BroadcastChannelProcedureName.AUTHORIZE:
-        if (
-          (
-            commandResponse as
-              | StartTransactionResponse
-              | StopTransactionResponse
-              | AuthorizeResponse
-          ).idTagInfo?.status === AuthorizationStatus.ACCEPTED
-        ) {
+        if ((commandResponse as
+                        | StartTransactionResponse
+                        | StopTransactionResponse
+                        | AuthorizeResponse).idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
           return ResponseStatus.SUCCESS
         }
         return ResponseStatus.FAILURE

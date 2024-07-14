@@ -11,7 +11,7 @@ import type {
   IncomingRequestCommand,
   JsonType,
   MessageType,
-  RequestCommand
+  RequestCommand,
 } from '../types/index.js'
 import { logger } from './Logger.js'
 import { isNotEmptyString } from './Utils.js'
@@ -40,9 +40,9 @@ export const handleFileException = (
   params = {
     ...{
       throwError: true,
-      consoleOut: false
+      consoleOut: false,
     },
-    ...params
+    ...params,
   }
   const prefix = isNotEmptyString(logPrefix) ? `${logPrefix} ` : ''
   let logMsg: string
@@ -91,9 +91,9 @@ export const handleSendMessageError = (
   params = {
     ...{
       throwError: false,
-      consoleOut: false
+      consoleOut: false,
     },
-    ...params
+    ...params,
   }
   logger.error(
     `${chargingStation.logPrefix()} ${moduleName}.handleSendMessageError: Send ${getMessageTypeString(messageType)} command '${commandName}' error:`,
@@ -113,9 +113,9 @@ export const handleIncomingRequestError = <T extends JsonType>(
   params = {
     ...{
       throwError: true,
-      consoleOut: false
+      consoleOut: false,
     },
-    ...params
+    ...params,
   }
   logger.error(
     `${chargingStation.logPrefix()} ${moduleName}.handleIncomingRequestError: Incoming request command '${commandName}' error:`,

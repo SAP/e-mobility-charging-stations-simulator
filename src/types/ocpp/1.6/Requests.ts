@@ -5,7 +5,7 @@ import type { OCPP16ChargePointStatus } from './ChargePointStatus.js'
 import type {
   OCPP16ChargingProfile,
   OCPP16ChargingProfilePurposeType,
-  OCPP16ChargingRateUnitType
+  OCPP16ChargingRateUnitType,
 } from './ChargingProfile.js'
 import type { OCPP16StandardParametersKey, OCPP16VendorParametersKey } from './Configuration.js'
 import type { OCPP16DiagnosticsStatus } from './DiagnosticsStatus.js'

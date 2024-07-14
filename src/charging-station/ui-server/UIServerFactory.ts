@@ -6,7 +6,7 @@ import {
   ApplicationProtocolVersion,
   AuthenticationType,
   ConfigurationSection,
-  type UIServerConfiguration
+  type UIServerConfiguration,
 } from '../../types/index.js'
 import { logger, logPrefix } from '../../utils/index.js'
 import type { AbstractUIServer } from './AbstractUIServer.js'
@@ -68,9 +68,10 @@ export class UIServerFactory {
             uiServerConfiguration.type as ApplicationProtocol
           )
         ) {
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           const logMsg = `Unknown application protocol type '${uiServerConfiguration.type}' in '${
             ConfigurationSection.uiServer
-            // eslint-disable-next-line @typescript-eslint/no-base-to-string
+          // eslint-disable-next-line @typescript-eslint/no-base-to-string
           }' configuration section from values '${ApplicationProtocol.toString()}', defaulting to '${
             ApplicationProtocol.WS
           }'`

@@ -24,8 +24,8 @@ export class MikroOrmStorage extends Storage {
         ...performanceStatistics,
         statisticsData: Array.from(performanceStatistics.statisticsData, ([name, value]) => ({
           name,
-          ...value
-        }))
+          ...value,
+        })),
       } satisfies PerformanceRecord)
     } catch (error) {
       this.handleDBStorageError(
@@ -78,7 +78,7 @@ export class MikroOrmStorage extends Storage {
       dbName: this.dbName,
       entities: ['./dist/types/orm/entities/*.js'],
       entitiesTs: ['./src/types/orm/entities/*.ts'],
-      clientUrl: this.getClientUrl()
+      clientUrl: this.getClientUrl(),
     }
   }
 

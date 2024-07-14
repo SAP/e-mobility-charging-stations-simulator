@@ -31,7 +31,6 @@ export const randomizeDelay = (delay: number): number => {
 
 /**
  * Generates a cryptographically secure random number in the [0,1[ range
- *
  * @returns A number in the [0,1[ range
  * @internal
  */

@@ -15,7 +15,6 @@ export abstract class WorkerAbstract<D extends WorkerData, R extends WorkerData>
 
   /**
    * `WorkerAbstract` constructor.
-   *
    * @param workerScript -
    * @param workerOptions -
    */
@@ -46,7 +45,6 @@ export abstract class WorkerAbstract<D extends WorkerData, R extends WorkerData>
   public abstract stop (): Promise<void>
   /**
    * Adds a task element to the worker pool/set.
-   *
    * @param elementData -
    */
   public abstract addElement (elementData: D): Promise<R>

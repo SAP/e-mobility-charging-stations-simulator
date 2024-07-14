@@ -28,7 +28,7 @@ import {
   type StorageConfiguration,
   type TemplateStatistics,
   type UIServerConfiguration,
-  type WorkerConfiguration
+  type WorkerConfiguration,
 } from '../types/index.js'
 import {
   Configuration,
@@ -40,7 +40,7 @@ import {
   isAsyncFunction,
   isNotEmptyArray,
   logger,
-  logPrefix
+  logPrefix,
 } from '../utils/index.js'
 import { DEFAULT_ELEMENTS_PER_WORKER, type WorkerAbstract, WorkerFactory } from '../worker/index.js'
 import { buildTemplateName, waitChargingStationEvents } from './Helpers.js'
@@ -126,7 +126,7 @@ export class Bootstrap extends EventEmitter {
       version: this.version,
       configuration: Configuration.getConfigurationData(),
       started: this.started,
-      templateStatistics: this.templateStatistics
+      templateStatistics: this.templateStatistics,
     }
   }
 
@@ -178,7 +178,7 @@ export class Bootstrap extends EventEmitter {
         if (isAsyncFunction(this.workerImplementation?.start)) {
           await this.workerImplementation.start()
         } else {
-          (this.workerImplementation?.start as () => void)()
+          ;(this.workerImplementation?.start as () => void)()
         }
         const performanceStorageConfiguration =
           Configuration.getConfigurationSection<StorageConfiguration>(
@@ -226,18 +226,22 @@ export class Bootstrap extends EventEmitter {
         console.info(
           chalk.green(
             `Charging stations simulator ${this.version} started with ${
-              this.numberOfConfiguredChargingStations
+              this.numberOfConfiguredChargingStations.toString()
             } configured and ${
-              this.numberOfProvisionedChargingStations
+              this.numberOfProvisionedChargingStations.toString()
             } provisioned charging station(s) from ${
-              this.numberOfChargingStationTemplates
+              this.numberOfChargingStationTemplates.toString()
             } charging station template(s) and ${
-              Configuration.workerDynamicPoolInUse() ? `${workerConfiguration.poolMinSize}/` : ''
-            }${this.workerImplementation?.size}${
-              Configuration.workerPoolInUse() ? `/${workerConfiguration.poolMaxSize}` : ''
+              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+              Configuration.workerDynamicPoolInUse() ? `${workerConfiguration.poolMinSize?.toString()}/` : ''
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+            }${this.workerImplementation?.size.toString()}${
+              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+              Configuration.workerPoolInUse() ? `/${workerConfiguration.poolMaxSize?.toString()}` : ''
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             } worker(s) concurrently running in '${workerConfiguration.processType}' mode${
               this.workerImplementation?.maxElementsPerWorker != null
-                ? ` (${this.workerImplementation.maxElementsPerWorker} charging station(s) per worker)`
+                ? ` (${this.workerImplementation.maxElementsPerWorker.toString()} charging station(s) per worker)`
                 : ''
             }`
           )
@@ -322,13 +326,14 @@ export class Bootstrap extends EventEmitter {
         ChargingStationWorkerMessageEvents.stopped,
         this.numberOfStartedChargingStations
       )
-        .then(() => {
+        .then((events) => {
           resolve('Charging stations stopped')
+          return events
         })
-        .catch(reject)
         .finally(() => {
           clearTimeout(waitTimeout)
         })
+        .catch(reject)
     })
   }
 
@@ -357,8 +362,8 @@ export class Bootstrap extends EventEmitter {
         elementsPerWorker = workerConfiguration.elementsPerWorker ?? DEFAULT_ELEMENTS_PER_WORKER
     }
     this.workerImplementation = WorkerFactory.getWorkerImplementation<
-    ChargingStationWorkerData,
-    ChargingStationInfo
+      ChargingStationWorkerData,
+      ChargingStationInfo
     >(
       join(
         dirname(fileURLToPath(import.meta.url)),
@@ -378,10 +383,10 @@ export class Bootstrap extends EventEmitter {
           messageHandler: this.messageHandler.bind(this) as MessageHandler<Worker>,
           ...(workerConfiguration.resourceLimits != null && {
             workerOptions: {
-              resourceLimits: workerConfiguration.resourceLimits
-            }
-          })
-        }
+              resourceLimits: workerConfiguration.resourceLimits,
+            },
+          }),
+        },
       }
     )
   }
@@ -443,11 +448,12 @@ export class Bootstrap extends EventEmitter {
     this.uiServer.chargingStations.set(data.stationInfo.hashId, data)
     logger.info(
       `${this.logPrefix()} ${moduleName}.workerEventAdded: Charging station ${
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         data.stationInfo.chargingStationId
       } (hashId: ${data.stationInfo.hashId}) added (${
-        this.numberOfAddedChargingStations
-      } added from ${this.numberOfConfiguredChargingStations} configured and ${
-        this.numberOfProvisionedChargingStations
+        this.numberOfAddedChargingStations.toString()
+      } added from ${this.numberOfConfiguredChargingStations.toString()} configured and ${
+        this.numberOfProvisionedChargingStations.toString()
       } provisioned charging station(s))`
     )
   }
@@ -460,11 +466,12 @@ export class Bootstrap extends EventEmitter {
     templateStatistics.indexes.delete(data.stationInfo.templateIndex)
     logger.info(
       `${this.logPrefix()} ${moduleName}.workerEventDeleted: Charging station ${
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         data.stationInfo.chargingStationId
       } (hashId: ${data.stationInfo.hashId}) deleted (${
-        this.numberOfAddedChargingStations
-      } added from ${this.numberOfConfiguredChargingStations} configured and ${
-        this.numberOfProvisionedChargingStations
+        this.numberOfAddedChargingStations.toString()
+      } added from ${this.numberOfConfiguredChargingStations.toString()} configured and ${
+        this.numberOfProvisionedChargingStations.toString()
       } provisioned charging station(s))`
     )
   }
@@ -475,10 +482,11 @@ export class Bootstrap extends EventEmitter {
     ++this.templateStatistics.get(data.stationInfo.templateName)!.started
     logger.info(
       `${this.logPrefix()} ${moduleName}.workerEventStarted: Charging station ${
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         data.stationInfo.chargingStationId
       } (hashId: ${data.stationInfo.hashId}) started (${
-        this.numberOfStartedChargingStations
-      } started from ${this.numberOfAddedChargingStations} added charging station(s))`
+        this.numberOfStartedChargingStations.toString()
+      } started from ${this.numberOfAddedChargingStations.toString()} added charging station(s))`
     )
   }
 
@@ -488,10 +496,11 @@ export class Bootstrap extends EventEmitter {
     --this.templateStatistics.get(data.stationInfo.templateName)!.started
     logger.info(
       `${this.logPrefix()} ${moduleName}.workerEventStopped: Charging station ${
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         data.stationInfo.chargingStationId
       } (hashId: ${data.stationInfo.hashId}) stopped (${
-        this.numberOfStartedChargingStations
-      } started from ${this.numberOfAddedChargingStations} added charging station(s))`
+        this.numberOfStartedChargingStations.toString()
+      } started from ${this.numberOfAddedChargingStations.toString()} added charging station(s))`
     )
   }
 
@@ -502,13 +511,13 @@ export class Bootstrap extends EventEmitter {
   private readonly workerEventPerformanceStatistics = (data: Statistics): void => {
     // eslint-disable-next-line @typescript-eslint/unbound-method
     if (isAsyncFunction(this.storage?.storePerformanceStatistics)) {
-      (
+      ;(
         this.storage.storePerformanceStatistics as (
           performanceStatistics: Statistics
         ) => Promise<void>
       )(data).catch(Constants.EMPTY_FUNCTION)
     } else {
-      (this.storage?.storePerformanceStatistics as (performanceStatistics: Statistics) => void)(
+      ;(this.storage?.storePerformanceStatistics as (performanceStatistics: Statistics) => void)(
         data
       )
     }
@@ -525,7 +534,7 @@ export class Bootstrap extends EventEmitter {
           provisioned: stationTemplateUrl.provisionedNumberOfStations ?? 0,
           added: 0,
           started: 0,
-          indexes: new Set<number>()
+          indexes: new Set<number>(),
         })
         this.uiServer.chargingStationTemplates.add(templateName)
       }
@@ -575,7 +584,7 @@ export class Bootstrap extends EventEmitter {
         'station-templates',
         templateFile
       ),
-      options
+      options,
     })
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const templateStatistics = this.templateStatistics.get(buildTemplateName(templateFile))!
@@ -591,12 +600,15 @@ export class Bootstrap extends EventEmitter {
         this.uiServer.stop()
         this.uiServerStarted = false
         this.waitChargingStationsStopped()
+          // eslint-disable-next-line promise/no-nesting
           .then(() => {
-            exit(exitCodes.succeeded)
+            return exit(exitCodes.succeeded)
           })
+          // eslint-disable-next-line promise/no-nesting
           .catch(() => {
             exit(exitCodes.gracefulShutdownError)
           })
+        return undefined
       })
       .catch((error: unknown) => {
         console.error(chalk.red('Error while shutdowning charging stations simulator: '), error)

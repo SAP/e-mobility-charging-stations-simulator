@@ -1,25 +1,25 @@
 {
   "folders": [
     {
-      "path": "."
+      "path": ".",
     },
     {
-      "path": "ui/web"
+      "path": "ui/web",
     },
     {
-      "path": "tests/ocpp-server"
-    }
+      "path": "tests/ocpp-server",
+    },
   ],
   "settings": {
     "nodejs-testing.extensions": [
       {
         "extensions": ["mjs", "cjs", "js"],
-        "parameters": []
+        "parameters": [],
       },
       {
         "extensions": ["mts", "cts", "ts"],
-        "parameters": ["--import", "tsx"]
-      }
-    ]
-  }
+        "parameters": ["--import", "tsx"],
+      },
+    ],
+  },
 }

@@ -21,7 +21,7 @@ import {
   type OCPP16StatusNotificationRequest,
   type OCPP16StopTransactionRequest,
   OCPPVersion,
-  type RequestParams
+  type RequestParams,
 } from '../../../types/index.js'
 import { Constants, generateUUID } from '../../../utils/index.js'
 import { OCPPRequestService } from '../OCPPRequestService.js'
@@ -50,7 +50,7 @@ export class OCPP16RequestService extends OCPPRequestService {
               'constructor'
             )
           )
-          .bind(this)
+          .bind(this),
       ],
       [
         OCPP16RequestCommand.BOOT_NOTIFICATION,
@@ -62,7 +62,7 @@ export class OCPP16RequestService extends OCPPRequestService {
               'constructor'
             )
           )
-          .bind(this)
+          .bind(this),
       ],
       [
         OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
@@ -74,7 +74,7 @@ export class OCPP16RequestService extends OCPPRequestService {
               'constructor'
             )
           )
-          .bind(this)
+          .bind(this),
       ],
       [
         OCPP16RequestCommand.HEARTBEAT,
@@ -86,7 +86,7 @@ export class OCPP16RequestService extends OCPPRequestService {
               'constructor'
             )
           )
-          .bind(this)
+          .bind(this),
       ],
       [
         OCPP16RequestCommand.METER_VALUES,
@@ -98,7 +98,7 @@ export class OCPP16RequestService extends OCPPRequestService {
               'constructor'
             )
           )
-          .bind(this)
+          .bind(this),
       ],
       [
         OCPP16RequestCommand.STATUS_NOTIFICATION,
@@ -110,7 +110,7 @@ export class OCPP16RequestService extends OCPPRequestService {
               'constructor'
             )
           )
-          .bind(this)
+          .bind(this),
       ],
       [
         OCPP16RequestCommand.START_TRANSACTION,
@@ -122,7 +122,7 @@ export class OCPP16RequestService extends OCPPRequestService {
               'constructor'
             )
           )
-          .bind(this)
+          .bind(this),
       ],
       [
         OCPP16RequestCommand.STOP_TRANSACTION,
@@ -134,7 +134,7 @@ export class OCPP16RequestService extends OCPPRequestService {
               'constructor'
             )
           )
-          .bind(this)
+          .bind(this),
       ],
       [
         OCPP16RequestCommand.DATA_TRANSFER,
@@ -146,7 +146,7 @@ export class OCPP16RequestService extends OCPPRequestService {
               'constructor'
             )
           )
-          .bind(this)
+          .bind(this),
       ],
       [
         OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
@@ -158,8 +158,8 @@ export class OCPP16RequestService extends OCPPRequestService {
               'constructor'
             )
           )
-          .bind(this)
-      ]
+          .bind(this),
+      ],
     ])
     this.buildRequestPayload = this.buildRequestPayload.bind(this)
   }
@@ -218,7 +218,7 @@ export class OCPP16RequestService extends OCPPRequestService {
       case OCPP16RequestCommand.AUTHORIZE:
         return {
           idTag: Constants.DEFAULT_IDTAG,
-          ...commandParams
+          ...commandParams,
         } as unknown as Request
       case OCPP16RequestCommand.HEARTBEAT:
         return OCPP16Constants.OCPP_REQUEST_EMPTY as unknown as Request
@@ -241,9 +241,9 @@ export class OCPP16RequestService extends OCPPRequestService {
               chargingStation.getConnectorStatus(0)?.status === OCPP16ChargePointStatus.Reserved
                 ? 0
                 : (commandParams.connectorId as number)
-            )!.reservationId
+            )!.reservationId,
           }),
-          ...commandParams
+          ...commandParams,
         } as unknown as Request
       case OCPP16RequestCommand.STOP_TRANSACTION:
         chargingStation.stationInfo?.transactionDataMeterValues === true &&
@@ -268,9 +268,9 @@ export class OCPP16RequestService extends OCPPRequestService {
                 connectorId!,
                 energyActiveImportRegister
               )
-            )
+            ),
           }),
-          ...commandParams
+          ...commandParams,
         } as unknown as Request
       default:
         // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().

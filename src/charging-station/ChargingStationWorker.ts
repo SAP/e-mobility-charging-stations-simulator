@@ -13,8 +13,8 @@ import { ChargingStation } from './ChargingStation.js'
 export let chargingStationWorker: object
 if (Configuration.workerPoolInUse()) {
   chargingStationWorker = new ThreadWorker<
-  ChargingStationWorkerData,
-  ChargingStationInfo | undefined
+    ChargingStationWorkerData,
+    ChargingStationInfo | undefined
   >((data?: ChargingStationWorkerData): ChargingStationInfo | undefined => {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const { index, templateFile, options } = data!
@@ -40,7 +40,7 @@ if (Configuration.workerPoolInUse()) {
                   uuid,
                   event: WorkerMessageEvents.addedWorkerElement,
                   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                  data: chargingStation.stationInfo!
+                  data: chargingStation.stationInfo!,
                 } satisfies WorkerMessage<ChargingStationInfo>)
               } catch (error) {
                 parentPort?.postMessage({
@@ -50,8 +50,8 @@ if (Configuration.workerPoolInUse()) {
                     event,
                     name: (error as Error).name,
                     message: (error as Error).message,
-                    stack: (error as Error).stack
-                  }
+                    stack: (error as Error).stack,
+                  },
                 } satisfies WorkerMessage<WorkerDataError>)
               }
               break

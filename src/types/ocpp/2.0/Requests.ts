@@ -3,7 +3,7 @@ import type { JsonObject } from '../../JsonType.js'
 import type {
   BootReasonEnumType,
   InstallCertificateUseEnumType,
-  OCPP20ConnectorStatusEnumType
+  OCPP20ConnectorStatusEnumType,
 } from './Common.js'
 import type { OCPP20SetVariableDataType } from './Variables.js'
 

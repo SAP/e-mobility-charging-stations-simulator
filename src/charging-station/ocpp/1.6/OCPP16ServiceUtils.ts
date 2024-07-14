@@ -8,13 +8,13 @@ import {
   type Interval,
   isAfter,
   isBefore,
-  isWithinInterval
+  isWithinInterval,
 } from 'date-fns'
 
 import {
   type ChargingStation,
   hasFeatureProfile,
-  hasReservationExpired
+  hasReservationExpired,
 } from '../../../charging-station/index.js'
 import {
   type ConfigurationKey,
@@ -35,7 +35,7 @@ import {
   OCPP16StandardParametersKey,
   OCPP16StopTransactionReason,
   type OCPP16SupportedFeatureProfiles,
-  OCPPVersion
+  OCPPVersion,
 } from '../../../types/index.js'
 import { convertToDate, isNotEmptyArray, logger, roundTo } from '../../../utils/index.js'
 import { OCPPServiceUtils } from '../OCPPServiceUtils.js'
@@ -65,7 +65,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
   ): OCPP16MeterValue {
     const meterValue: OCPP16MeterValue = {
       timestamp: new Date(),
-      sampledValue: []
+      sampledValue: [],
     }
     // Energy.Active.Import.Register measurand (default)
     const sampledValueTemplate = OCPP16ServiceUtils.getSampledValueTemplate(
@@ -152,14 +152,14 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
   ): void {
     if (chargingStation.getConnectorStatus(connectorId)?.chargingProfiles == null) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to set a charging profile on connector id ${connectorId} with an uninitialized charging profiles array attribute, applying deferred initialization`
+        `${chargingStation.logPrefix()} Trying to set a charging profile on connector id ${connectorId.toString()} with an uninitialized charging profiles array attribute, applying deferred initialization`
       )
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       chargingStation.getConnectorStatus(connectorId)!.chargingProfiles = []
     }
     if (!Array.isArray(chargingStation.getConnectorStatus(connectorId)?.chargingProfiles)) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to set a charging profile on connector id ${connectorId} with an improper attribute type for the charging profiles array, applying proper type deferred initialization`
+        `${chargingStation.logPrefix()} Trying to set a charging profile on connector id ${connectorId.toString()} with an improper attribute type for the charging profiles array, applying proper type deferred initialization`
       )
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       chargingStation.getConnectorStatus(connectorId)!.chargingProfiles = []
@@ -256,7 +256,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
         compositeChargingScheduleHigher!.startSchedule!,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         compositeChargingScheduleHigher!.duration!
-      )
+      ),
     }
     const compositeChargingScheduleLowerInterval: Interval = {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -266,7 +266,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
         compositeChargingScheduleLower!.startSchedule!,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         compositeChargingScheduleLower!.duration!
-      )
+      ),
     }
     const higherFirst = isBefore(
       compositeChargingScheduleHigherInterval.start,
@@ -305,7 +305,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                   differenceInSeconds(
                     compositeChargingScheduleHigherInterval.start,
                     compositeChargingScheduleLowerInterval.start
-                  )
+                  ),
             }
           }),
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -318,10 +318,10 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                     compositeChargingScheduleLowerInterval.start,
                     compositeChargingScheduleHigherInterval.start
                   )
-                : 0
+                : 0,
             }
-          })
-        ].sort((a, b) => a.startPeriod - b.startPeriod)
+          }),
+        ].sort((a, b) => a.startPeriod - b.startPeriod),
       }
     }
     return {
@@ -351,7 +351,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                 differenceInSeconds(
                   compositeChargingScheduleHigherInterval.start,
                   compositeChargingScheduleLowerInterval.start
-                )
+                ),
           }
         }),
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -366,7 +366,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                 ),
                 {
                   start: compositeChargingScheduleLowerInterval.start,
-                  end: compositeChargingScheduleHigherInterval.end
+                  end: compositeChargingScheduleHigherInterval.end,
                 }
               )
             ) {
@@ -383,7 +383,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                 ),
                 {
                   start: compositeChargingScheduleLowerInterval.start,
-                  end: compositeChargingScheduleHigherInterval.end
+                  end: compositeChargingScheduleHigherInterval.end,
                 }
               ) &&
               isWithinInterval(
@@ -394,7 +394,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                 ),
                 {
                   start: compositeChargingScheduleLowerInterval.start,
-                  end: compositeChargingScheduleHigherInterval.end
+                  end: compositeChargingScheduleHigherInterval.end,
                 }
               )
             ) {
@@ -409,7 +409,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                 ),
                 {
                   start: compositeChargingScheduleHigherInterval.start,
-                  end: compositeChargingScheduleLowerInterval.end
+                  end: compositeChargingScheduleLowerInterval.end,
                 }
               )
             ) {
@@ -429,10 +429,10 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                     compositeChargingScheduleLowerInterval.start,
                     compositeChargingScheduleHigherInterval.start
                   )
-                : 0
+                : 0,
             }
-          })
-      ].sort((a, b) => a.startPeriod - b.startPeriod)
+          }),
+      ].sort((a, b) => a.startPeriod - b.startPeriod),
     }
   }
 
@@ -462,7 +462,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
         chargingStationReservation.idTag === idTag)
     ) {
       logger.debug(
-        `${chargingStation.logPrefix()} Connector id ${connectorId} has a valid reservation for idTag ${idTag}: %j`,
+        `${chargingStation.logPrefix()} Connector id ${connectorId.toString()} has a valid reservation for idTag ${idTag}: %j`,
         connectorReservation ?? chargingStationReservation
       )
       return true
@@ -491,7 +491,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       start: chargingSchedule.startSchedule!,
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      end: addSeconds(chargingSchedule.startSchedule!, chargingSchedule.duration!)
+      end: addSeconds(chargingSchedule.startSchedule!, chargingSchedule.duration!),
     }
     if (areIntervalsOverlapping(chargingScheduleInterval, compositeInterval)) {
       chargingSchedule.chargingSchedulePeriod.sort((a, b) => a.startPeriod - b.startPeriod)
@@ -536,7 +536,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
                 schedulePeriod.startPeriod = 0
               }
               return schedulePeriod
-            })
+            }),
         }
       }
       if (isAfter(chargingScheduleInterval.end, compositeInterval.end)) {
@@ -551,7 +551,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
               addSeconds(chargingScheduleInterval.start, schedulePeriod.startPeriod),
               compositeInterval
             )
-          )
+          ),
         }
       }
       return chargingSchedule

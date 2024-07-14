@@ -5,12 +5,7 @@
 .github
 .prettierrc.json
 .prettierignore
-.jshintrc
-.eslintrc.json
-.eslintrc.js
-.eslintrc.cjs
-.eslintrc.mjs
-.eslintignore
+eslint.config.js
 .eslintcache
 .lintstagedrc.json
 .lintstagedrc.js

@@ -7,7 +7,7 @@ import {
   type EmptyObject,
   type HandleErrorParams,
   type Statistics,
-  StorageType
+  StorageType,
 } from '../../types/index.js'
 import { logger } from '../../utils/index.js'
 
@@ -28,20 +28,22 @@ export abstract class Storage {
     table?: string,
     params: HandleErrorParams<EmptyObject> = {
       throwError: false,
-      consoleOut: false
+      consoleOut: false,
     }
   ): void {
     params = {
       ...{
         throwError: false,
-        consoleOut: false
+        consoleOut: false,
       },
-      ...params
+      ...params,
     }
     const inTableOrCollectionStr = table != null && ` in table or collection '${table}'`
     logger.error(
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       `${this.logPrefix} ${this.getDBNameFromStorageType(type)} error '${
         error.message
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       }'${inTableOrCollectionStr}:`,
       error
     )

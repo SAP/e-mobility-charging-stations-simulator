@@ -16,20 +16,20 @@ import {
   OCPP16MessageTrigger,
   OCPP16RequestCommand,
   type OCPP16ReserveNowRequest,
-  type OCPP16StatusNotificationRequest
+  type OCPP16StatusNotificationRequest,
 } from './1.6/Requests.js'
 import { OperationalStatusEnumType } from './2.0/Common.js'
 import {
   type OCPP20BootNotificationRequest,
   OCPP20IncomingRequestCommand,
   OCPP20RequestCommand,
-  type OCPP20StatusNotificationRequest
+  type OCPP20StatusNotificationRequest,
 } from './2.0/Requests.js'
 import type { MessageType } from './MessageType.js'
 
 export const RequestCommand = {
   ...OCPP16RequestCommand,
-  ...OCPP20RequestCommand
+  ...OCPP20RequestCommand,
 } as const
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type RequestCommand = OCPP16RequestCommand | OCPP20RequestCommand
@@ -44,7 +44,7 @@ export interface RequestParams {
 
 export const IncomingRequestCommand = {
   ...OCPP16IncomingRequestCommand,
-  ...OCPP20IncomingRequestCommand
+  ...OCPP20IncomingRequestCommand,
 } as const
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type IncomingRequestCommand = OCPP16IncomingRequestCommand | OCPP20IncomingRequestCommand
@@ -60,15 +60,10 @@ export type ResponseCallback = (payload: JsonType, requestPayload: JsonType) => 
 
 export type ErrorCallback = (ocppError: OCPPError, requestStatistic?: boolean) => void
 
-export type CachedRequest = [
-  ResponseCallback,
-  ErrorCallback,
-  RequestCommand | IncomingRequestCommand,
-  JsonType
-]
+export type CachedRequest = [ResponseCallback, ErrorCallback, RequestCommand, JsonType]
 
 export const MessageTrigger = {
-  ...OCPP16MessageTrigger
+  ...OCPP16MessageTrigger,
 } as const
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type MessageTrigger = OCPP16MessageTrigger
@@ -91,19 +86,19 @@ export type FirmwareStatusNotificationRequest = OCPP16FirmwareStatusNotification
 
 export const AvailabilityType = {
   ...OCPP16AvailabilityType,
-  ...OperationalStatusEnumType
+  ...OperationalStatusEnumType,
 } as const
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type AvailabilityType = OCPP16AvailabilityType | OperationalStatusEnumType
 
 export const DiagnosticsStatus = {
-  ...OCPP16DiagnosticsStatus
+  ...OCPP16DiagnosticsStatus,
 } as const
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type DiagnosticsStatus = OCPP16DiagnosticsStatus
 
 export const FirmwareStatus = {
-  ...OCPP16FirmwareStatus
+  ...OCPP16FirmwareStatus,
 } as const
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type FirmwareStatus = OCPP16FirmwareStatus

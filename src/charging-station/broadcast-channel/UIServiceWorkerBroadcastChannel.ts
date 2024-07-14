@@ -3,7 +3,7 @@ import {
   type BroadcastChannelResponsePayload,
   type MessageEvent,
   type ResponsePayload,
-  ResponseStatus
+  ResponseStatus,
 } from '../../types/index.js'
 import { logger } from '../../utils/index.js'
 import type { AbstractUIService } from '../ui-server/ui-services/AbstractUIService.js'
@@ -42,7 +42,7 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
       this.responses.set(uuid, {
         responsesExpected: this.uiService.getBroadcastChannelExpectedResponses(uuid),
         responsesReceived: 1,
-        responses: [responsePayload]
+        responses: [responsePayload],
       })
     } else if (
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -90,7 +90,7 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
             }
             return undefined
           })
-          .filter(hashId => hashId != null)!
+          .filter(hashId => hashId != null)!,
       }),
       ...(responsesStatus === ResponseStatus.FAILURE && {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-non-null-asserted-optional-chain
@@ -102,8 +102,8 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
             }
             return undefined
           })
-          .filter(response => response != null)!
-      })
+          .filter(response => response != null)!,
+      }),
     }
   }
 

@@ -20,7 +20,6 @@ export const checkNodeVersion = () => {
         `Required node version ${enginesNodeVersion} not satisfied with current version ${version}`
       )
     )
-    // eslint-disable-next-line n/no-process-exit
     exit(1)
   }
 }

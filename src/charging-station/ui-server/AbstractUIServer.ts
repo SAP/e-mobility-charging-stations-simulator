@@ -15,7 +15,7 @@ import {
   ProtocolVersion,
   type RequestPayload,
   type ResponsePayload,
-  type UIServerConfiguration
+  type UIServerConfiguration,
 } from '../../types/index.js'
 import { logger } from '../../utils/index.js'
 import type { AbstractUIService } from './ui-services/AbstractUIService.js'
@@ -30,7 +30,7 @@ export abstract class AbstractUIServer {
   protected readonly httpServer: Server | Http2Server
   protected readonly responseHandlers: Map<
     `${string}-${string}-${string}-${string}-${string}`,
-  ServerResponse | WebSocket
+    ServerResponse | WebSocket
   >
 
   protected readonly uiServices: Map<ProtocolVersion, AbstractUIService>
@@ -47,12 +47,13 @@ export abstract class AbstractUIServer {
         break
       default:
         throw new BaseError(
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           `Unsupported application protocol version ${this.uiServerConfiguration.version} in '${ConfigurationSection.uiServer}' configuration section`
         )
     }
     this.responseHandlers = new Map<
       `${string}-${string}-${string}-${string}-${string}`,
-    ServerResponse | WebSocket
+      ServerResponse | WebSocket
     >()
     this.uiServices = new Map<ProtocolVersion, AbstractUIService>()
   }
@@ -165,7 +166,7 @@ export abstract class AbstractUIServer {
   private isValidProtocolBasicAuth (req: IncomingMessage, next: (err?: Error) => void): boolean {
     const authorizationProtocol = req.headers['sec-websocket-protocol']?.split(/,\s+/).pop()
     const [username, password] = getUsernameAndPasswordFromAuthorizationToken(
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/restrict-template-expressions
       `${authorizationProtocol}${Array(((4 - (authorizationProtocol!.length % 4)) % 4) + 1).join(
         '='
       )}`

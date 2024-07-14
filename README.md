@@ -11,7 +11,7 @@
 [![GitHub commit activity (main)](https://img.shields.io/github/commit-activity/m/SAP/e-mobility-charging-stations-simulator/main?color=brightgreen&logo=github)](https://github.com/SAP/e-mobility-charging-stations-simulator/graphs/commit-activity)
 [![CI workflow](https://github.com/SAP/e-mobility-charging-stations-simulator/actions/workflows/ci.yml/badge.svg)](https://github.com/SAP/e-mobility-charging-stations-simulator/actions/workflows/ci.yml)
 [![REUSE status](https://api.reuse.software/badge/github.com/SAP/e-mobility-charging-stations-simulator)](https://api.reuse.software/info/github.com/SAP/e-mobility-charging-stations-simulator)
-[![Javascript Standard Style Guide](<https://badgen.net/static/code style/standard/green>)](https://standardjs.com)
+[![neostandard Javascript Code Style](<https://badgen.net/static/code style/neostandard/green>)](https://github.com/neostandard/neostandard)
 
 </div>
 

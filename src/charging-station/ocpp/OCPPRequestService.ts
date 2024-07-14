@@ -18,20 +18,20 @@ import {
   type RequestParams,
   type Response,
   type ResponseCallback,
-  type ResponseType
+  type ResponseType,
 } from '../../types/index.js'
 import {
   clone,
   formatDurationMilliSeconds,
   handleSendMessageError,
-  logger
+  logger,
 } from '../../utils/index.js'
 import { OCPPConstants } from './OCPPConstants.js'
 import type { OCPPResponseService } from './OCPPResponseService.js'
 import {
   ajvErrorsToErrorType,
   convertDateToISOString,
-  getMessageTypeString
+  getMessageTypeString,
 } from './OCPPServiceUtils.js'
 type Ajv = _Ajv.default
 // eslint-disable-next-line @typescript-eslint/no-redeclare
@@ -43,7 +43,7 @@ const moduleName = 'OCPPRequestService'
 const defaultRequestParams: RequestParams = {
   skipBufferingOnError: false,
   triggerMessage: false,
-  throwError: false
+  throwError: false,
 }
 
 export abstract class OCPPRequestService {
@@ -57,7 +57,7 @@ export abstract class OCPPRequestService {
     this.version = version
     this.ajv = new Ajv({
       keywords: ['javaType'],
-      multipleOfPrecision: 2
+      multipleOfPrecision: 2,
     })
     ajvFormats(this.ajv)
     this.ocppResponseService = ocppResponseService
@@ -104,7 +104,7 @@ export abstract class OCPPRequestService {
         MessageType.CALL_RESULT_MESSAGE,
         error as Error,
         {
-          throwError: true
+          throwError: true,
         }
       )
       return null
@@ -146,7 +146,7 @@ export abstract class OCPPRequestService {
   ): Promise<ResponseType> {
     params = {
       ...defaultRequestParams,
-      ...params
+      ...params,
     }
     try {
       return await this.internalSendMessage(
@@ -164,7 +164,7 @@ export abstract class OCPPRequestService {
         MessageType.CALL_MESSAGE,
         error as Error,
         {
-          throwError: params.throwError
+          throwError: params.throwError,
         }
       )
       return null
@@ -253,7 +253,7 @@ export abstract class OCPPRequestService {
   ): Promise<ResponseType> {
     params = {
       ...defaultRequestParams,
-      ...params
+      ...params,
     }
     if (
       (chargingStation.inUnknownState() && commandName === RequestCommand.BOOT_NOTIFICATION) ||
@@ -269,7 +269,6 @@ export abstract class OCPPRequestService {
       return await new Promise<ResponseType>((resolve, reject: (reason?: unknown) => void) => {
         /**
          * Function that will receive the request's response
-         *
          * @param payload -
          * @param requestPayload -
          */
@@ -290,17 +289,17 @@ export abstract class OCPPRequestService {
             )
             .then(() => {
               resolve(payload)
+              return undefined
             })
-            .catch(reject)
             .finally(() => {
               chargingStation.requests.delete(messageId)
               chargingStation.emit(ChargingStationEvents.updated)
             })
+            .catch(reject)
         }
 
         /**
          * Function that will receive the request's error response
-         *
          * @param ocppError -
          * @param requestStatistic -
          */
@@ -407,7 +406,7 @@ export abstract class OCPPRequestService {
                   {
                     name: error.name,
                     message: error.message,
-                    stack: error.stack
+                    stack: error.stack,
                   }
                 )
               )
@@ -429,6 +428,7 @@ export abstract class OCPPRequestService {
     }
     throw new OCPPError(
       ErrorType.SECURITY_ERROR,
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       `Cannot send command ${commandName} PDU when the charging station is in ${chargingStation.bootNotificationResponse?.status} state on the central server`,
       commandName
     )
@@ -452,7 +452,7 @@ export abstract class OCPPRequestService {
           messageType,
           messageId,
           commandName as RequestCommand,
-          messagePayload as JsonType
+          messagePayload as JsonType,
         ] satisfies OutgoingRequest)
         break
       // Response
@@ -466,7 +466,7 @@ export abstract class OCPPRequestService {
         messageToSend = JSON.stringify([
           messageType,
           messageId,
-          messagePayload as JsonType
+          messagePayload as JsonType,
         ] satisfies Response)
         break
       // Error Message
@@ -478,8 +478,8 @@ export abstract class OCPPRequestService {
           (messagePayload as OCPPError).code,
           (messagePayload as OCPPError).message,
           (messagePayload as OCPPError).details ?? {
-            command: (messagePayload as OCPPError).command
-          }
+            command: (messagePayload as OCPPError).command,
+          },
         ] satisfies ErrorResponse)
         break
     }
@@ -498,7 +498,7 @@ export abstract class OCPPRequestService {
       responseCallback,
       errorCallback,
       commandName,
-      messagePayload
+      messagePayload,
     ])
   }
 

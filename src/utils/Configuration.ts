@@ -18,14 +18,14 @@ import {
   StorageType,
   SupervisionUrlDistribution,
   type UIServerConfiguration,
-  type WorkerConfiguration
+  type WorkerConfiguration,
 } from '../types/index.js'
 import {
   DEFAULT_ELEMENT_ADD_DELAY,
   DEFAULT_POOL_MAX_SIZE,
   DEFAULT_POOL_MIN_SIZE,
   DEFAULT_WORKER_START_DELAY,
-  WorkerProcessType
+  WorkerProcessType,
 } from '../worker/index.js'
 import {
   buildPerformanceUriFilePath,
@@ -33,7 +33,7 @@ import {
   checkWorkerProcessType,
   getDefaultPerformanceStorageUri,
   handleFileException,
-  logPrefix
+  logPrefix,
 } from './ConfigurationUtils.js'
 import { Constants } from './Constants.js'
 import { hasOwnProp, isCFEnvironment } from './Utils.js'
@@ -50,13 +50,13 @@ const defaultUIServerConfiguration: UIServerConfiguration = {
   version: ApplicationProtocolVersion.VERSION_11,
   options: {
     host: Constants.DEFAULT_UI_SERVER_HOST,
-    port: Constants.DEFAULT_UI_SERVER_PORT
-  }
+    port: Constants.DEFAULT_UI_SERVER_PORT,
+  },
 }
 
 const defaultStorageConfiguration: StorageConfiguration = {
   enabled: true,
-  type: StorageType.NONE
+  type: StorageType.NONE,
 }
 
 const defaultLogConfiguration: LogConfiguration = {
@@ -66,7 +66,7 @@ const defaultLogConfiguration: LogConfiguration = {
   statisticsInterval: Constants.DEFAULT_LOG_STATISTICS_INTERVAL,
   level: 'info',
   format: 'simple',
-  rotate: true
+  rotate: true,
 }
 
 const defaultWorkerConfiguration: WorkerConfiguration = {
@@ -75,7 +75,7 @@ const defaultWorkerConfiguration: WorkerConfiguration = {
   elementsPerWorker: 'auto',
   elementAddDelay: DEFAULT_ELEMENT_ADD_DELAY,
   poolMinSize: DEFAULT_POOL_MIN_SIZE,
-  poolMaxSize: DEFAULT_POOL_MAX_SIZE
+  poolMaxSize: DEFAULT_POOL_MAX_SIZE,
 }
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
@@ -102,25 +102,25 @@ export class Configuration {
         stationTemplateUrls: [
           {
             file: 'siemens.station-template.json',
-            numberOfStations: 1
-          }
+            numberOfStations: 1,
+          },
         ],
         supervisionUrls: 'ws://localhost:8180/steve/websocket/CentralSystemService',
         supervisionUrlDistribution: SupervisionUrlDistribution.ROUND_ROBIN,
         uiServer: defaultUIServerConfiguration,
         performanceStorage: defaultStorageConfiguration,
         log: defaultLogConfiguration,
-        worker: defaultWorkerConfiguration
+        worker: defaultWorkerConfiguration,
       }
     }
     Configuration.configurationSectionCache = new Map<
-    ConfigurationSection,
-    ConfigurationSectionType
+      ConfigurationSection,
+      ConfigurationSectionType
     >([
       [ConfigurationSection.log, Configuration.buildLogSection()],
       [ConfigurationSection.performanceStorage, Configuration.buildPerformanceStorageSection()],
       [ConfigurationSection.worker, Configuration.buildWorkerSection()],
-      [ConfigurationSection.uiServer, Configuration.buildUIServerSection()]
+      [ConfigurationSection.uiServer, Configuration.buildUIServerSection()],
     ])
   }
 
@@ -232,14 +232,14 @@ export class Configuration {
         storageConfiguration = {
           enabled: false,
           type: StorageType.SQLITE,
-          uri: getDefaultPerformanceStorageUri(StorageType.SQLITE)
+          uri: getDefaultPerformanceStorageUri(StorageType.SQLITE),
         }
         break
       case StorageType.JSON_FILE:
         storageConfiguration = {
           enabled: false,
           type: StorageType.JSON_FILE,
-          uri: getDefaultPerformanceStorageUri(StorageType.JSON_FILE)
+          uri: getDefaultPerformanceStorageUri(StorageType.JSON_FILE),
         }
         break
       case StorageType.NONE:
@@ -258,8 +258,8 @@ export class Configuration {
           uri: buildPerformanceUriFilePath(
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             new URL(Configuration.getConfigurationData()!.performanceStorage!.uri!).pathname
-          )
-        })
+          ),
+        }),
       }
     }
     return storageConfiguration
@@ -268,41 +268,41 @@ export class Configuration {
   private static buildLogSection (): LogConfiguration {
     const deprecatedLogConfiguration: LogConfiguration = {
       ...(hasOwnProp(Configuration.getConfigurationData(), 'logEnabled') && {
-        enabled: Configuration.getConfigurationData()?.logEnabled
+        enabled: Configuration.getConfigurationData()?.logEnabled,
       }),
       ...(hasOwnProp(Configuration.getConfigurationData(), 'logFile') && {
-        file: Configuration.getConfigurationData()?.logFile
+        file: Configuration.getConfigurationData()?.logFile,
       }),
       ...(hasOwnProp(Configuration.getConfigurationData(), 'logErrorFile') && {
-        errorFile: Configuration.getConfigurationData()?.logErrorFile
+        errorFile: Configuration.getConfigurationData()?.logErrorFile,
       }),
       ...(hasOwnProp(Configuration.getConfigurationData(), 'logStatisticsInterval') && {
-        statisticsInterval: Configuration.getConfigurationData()?.logStatisticsInterval
+        statisticsInterval: Configuration.getConfigurationData()?.logStatisticsInterval,
       }),
       ...(hasOwnProp(Configuration.getConfigurationData(), 'logLevel') && {
-        level: Configuration.getConfigurationData()?.logLevel
+        level: Configuration.getConfigurationData()?.logLevel,
       }),
       ...(hasOwnProp(Configuration.getConfigurationData(), 'logConsole') && {
-        console: Configuration.getConfigurationData()?.logConsole
+        console: Configuration.getConfigurationData()?.logConsole,
       }),
       ...(hasOwnProp(Configuration.getConfigurationData(), 'logFormat') && {
-        format: Configuration.getConfigurationData()?.logFormat
+        format: Configuration.getConfigurationData()?.logFormat,
       }),
       ...(hasOwnProp(Configuration.getConfigurationData(), 'logRotate') && {
-        rotate: Configuration.getConfigurationData()?.logRotate
+        rotate: Configuration.getConfigurationData()?.logRotate,
       }),
       ...(hasOwnProp(Configuration.getConfigurationData(), 'logMaxFiles') && {
-        maxFiles: Configuration.getConfigurationData()?.logMaxFiles
+        maxFiles: Configuration.getConfigurationData()?.logMaxFiles,
       }),
       ...(hasOwnProp(Configuration.getConfigurationData(), 'logMaxSize') && {
-        maxSize: Configuration.getConfigurationData()?.logMaxSize
-      })
+        maxSize: Configuration.getConfigurationData()?.logMaxSize,
+      }),
     }
     const logConfiguration: LogConfiguration = {
       ...defaultLogConfiguration,
       ...deprecatedLogConfiguration,
       ...(hasOwnProp(Configuration.getConfigurationData(), ConfigurationSection.log) &&
-        Configuration.getConfigurationData()?.log)
+        Configuration.getConfigurationData()?.log),
     }
     return logConfiguration
   }
@@ -310,26 +310,26 @@ export class Configuration {
   private static buildWorkerSection (): WorkerConfiguration {
     const deprecatedWorkerConfiguration: WorkerConfiguration = {
       ...(hasOwnProp(Configuration.getConfigurationData(), 'workerProcess') && {
-        processType: Configuration.getConfigurationData()?.workerProcess
+        processType: Configuration.getConfigurationData()?.workerProcess,
       }),
       ...(hasOwnProp(Configuration.getConfigurationData(), 'workerStartDelay') && {
-        startDelay: Configuration.getConfigurationData()?.workerStartDelay
+        startDelay: Configuration.getConfigurationData()?.workerStartDelay,
       }),
       ...(hasOwnProp(Configuration.getConfigurationData(), 'chargingStationsPerWorker') && {
-        elementsPerWorker: Configuration.getConfigurationData()?.chargingStationsPerWorker
+        elementsPerWorker: Configuration.getConfigurationData()?.chargingStationsPerWorker,
       }),
       ...(hasOwnProp(Configuration.getConfigurationData(), 'elementAddDelay') && {
-        elementAddDelay: Configuration.getConfigurationData()?.elementAddDelay
+        elementAddDelay: Configuration.getConfigurationData()?.elementAddDelay,
       }),
       ...(hasOwnProp(Configuration.getConfigurationData()?.worker, 'elementStartDelay') && {
-        elementAddDelay: Configuration.getConfigurationData()?.worker?.elementStartDelay
+        elementAddDelay: Configuration.getConfigurationData()?.worker?.elementStartDelay,
       }),
       ...(hasOwnProp(Configuration.getConfigurationData(), 'workerPoolMinSize') && {
-        poolMinSize: Configuration.getConfigurationData()?.workerPoolMinSize
+        poolMinSize: Configuration.getConfigurationData()?.workerPoolMinSize,
       }),
       ...(hasOwnProp(Configuration.getConfigurationData(), 'workerPoolMaxSize') && {
-        poolMaxSize: Configuration.getConfigurationData()?.workerPoolMaxSize
-      })
+        poolMaxSize: Configuration.getConfigurationData()?.workerPoolMaxSize,
+      }),
     }
     hasOwnProp(Configuration.getConfigurationData(), 'workerPoolStrategy') &&
       delete Configuration.getConfigurationData()?.workerPoolStrategy
@@ -337,7 +337,7 @@ export class Configuration {
       ...defaultWorkerConfiguration,
       ...deprecatedWorkerConfiguration,
       ...(hasOwnProp(Configuration.getConfigurationData(), ConfigurationSection.worker) &&
-        Configuration.getConfigurationData()?.worker)
+        Configuration.getConfigurationData()?.worker),
     }
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     checkWorkerProcessType(workerConfiguration.processType!)
@@ -379,7 +379,6 @@ export class Configuration {
         ] as StationTemplateUrl[])
     Configuration.getConfigurationData()?.stationTemplateUrls.forEach(
       (stationTemplateUrl: StationTemplateUrl) => {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (stationTemplateUrl['numberOfStation' as keyof StationTemplateUrl] != null) {
           console.error(
             `${chalk.green(logPrefix())} ${chalk.red(
@@ -613,6 +612,7 @@ export class Configuration {
           const consoleWarnOnce = once(console.warn)
           consoleWarnOnce(
             `${chalk.green(logPrefix())} ${chalk.yellow(
+              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
               `${FileType.Configuration} ${this.configurationFile} file have changed, reload`
             )}`
           )
@@ -620,11 +620,11 @@ export class Configuration {
           Configuration.configurationSectionCache.clear()
           if (Configuration.configurationChangeCallback != null) {
             Configuration.configurationChangeCallback()
-              .catch((error: unknown) => {
-                throw typeof error === 'string' ? new Error(error) : error
-              })
               .finally(() => {
                 Configuration.configurationFileReloading = false
+              })
+              .catch((error: unknown) => {
+                throw typeof error === 'string' ? new Error(error) : error
               })
           } else {
             Configuration.configurationFileReloading = false
