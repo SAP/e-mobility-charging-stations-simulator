@@ -1,0 +1,5 @@
+{
+  "main": "./dist/start.js",
+  "output": "./dist/evse-simulator.blob",
+  "disableExperimentalSEAWarning": true
+}

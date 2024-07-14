@@ -71,7 +71,8 @@
     "test:debug": "glob -c \"node --import tsx --test --inspect\" \"tests/**/*.test.ts\"",
     "coverage": "c8 report --reporter=lcov",
     "coverage:html": "c8 report --reporter=html",
-    "clinic:clean": "clinic clean"
+    "clinic:clean": "clinic clean",
+    "sea": "pnpm exec rimraf ./dist/evse-simulator ./dist/evse-simulator.blob && node --experimental-sea-config sea-config.json && cp $(volta which node || n which lts || nvm which node || command -v node) ./dist/evse-simulator && npx postject ./dist/evse-simulator NODE_SEA_BLOB ./dist/evse-simulator.blob --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2"
   },
   "pnpm": {
     "overrides": {
