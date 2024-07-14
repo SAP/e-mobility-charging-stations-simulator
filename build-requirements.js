@@ -34,6 +34,6 @@ switch (runtime) {
   case runtimes.workerd:
   case runtimes.browser:
   default:
-    console.error(chalk.red(`Unsupported ${runtime} runtime detected`))
+    console.warn(chalk.yellow(`Unsupported '${runtime}' runtime detected`))
     break
 }
