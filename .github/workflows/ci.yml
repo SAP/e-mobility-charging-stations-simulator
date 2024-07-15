@@ -127,9 +127,10 @@ jobs:
       - name: pnpm audit
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.node == '20.x' }}
         run: pnpm audit --prod
-      - name: pnpm lint
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node == '20.x' }}
-        run: pnpm lint
+      # TODO: needs flat config support in vue.js eslint plugins
+      # - name: pnpm lint
+      #   if: ${{ matrix.os == 'ubuntu-latest' && matrix.node == '20.x' }}
+      #   run: pnpm lint
       - name: pnpm build
         run: pnpm build
       - name: pnpm test

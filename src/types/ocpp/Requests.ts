@@ -60,7 +60,12 @@ export type ResponseCallback = (payload: JsonType, requestPayload: JsonType) => 
 
 export type ErrorCallback = (ocppError: OCPPError, requestStatistic?: boolean) => void
 
-export type CachedRequest = [ResponseCallback, ErrorCallback, RequestCommand, JsonType]
+export type CachedRequest = [
+  ResponseCallback,
+  ErrorCallback,
+  RequestCommand | IncomingRequestCommand,
+  JsonType
+]
 
 export const MessageTrigger = {
   ...OCPP16MessageTrigger,

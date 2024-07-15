@@ -67,7 +67,6 @@
     "lint": "cross-env TIMING=1 eslint --cache src tests ./*.js ./*.ts",
     "lint:fix": "cross-env TIMING=1 eslint --cache --fix src tests ./*.js ./*.ts",
     "format": "prettier --cache --write .; eslint --cache --fix src tests ./*.js ./*.ts",
-    "prettier": "prettier --cache --write .",
     "test": "glob -c \"c8 node --import tsx --test\" \"tests/**/*.test.ts\"",
     "test:debug": "glob -c \"node --import tsx --test --inspect\" \"tests/**/*.test.ts\"",
     "coverage": "c8 report --reporter=lcov",
