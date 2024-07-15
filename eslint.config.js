@@ -66,6 +66,12 @@ export default defineFlatConfig([
     },
   },
   {
+    files: ['tests/utils/Utils.test.ts'],
+    rules: {
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+    },
+  },
+  {
     files: ['**/*.js', '**/*.mjs', '**/*.cjs'],
     ...plugins['typescript-eslint'].configs.disableTypeChecked,
   },
