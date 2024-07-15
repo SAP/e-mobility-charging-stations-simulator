@@ -438,7 +438,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                   `${chargingStation.logPrefix()} Remote start transaction ACCEPTED on ${
                     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                     chargingStation.stationInfo?.chargingStationId
-                  // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+                    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                   }#${connectorId?.toString()} for idTag '${idTag}'`
                 )
               } else {
@@ -446,7 +446,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                   `${chargingStation.logPrefix()} Remote start transaction REJECTED on ${
                     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                     chargingStation.stationInfo?.chargingStationId
-                  // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+                    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                   }#${connectorId?.toString()} for idTag '${idTag}'`
                 )
               }
@@ -736,7 +736,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       return OCPP16Constants.OCPP_RESPONSE_UNLOCK_NOT_SUPPORTED
     }
     if (connectorId === 0) {
-      logger.error(`${chargingStation.logPrefix()} Trying to unlock connector id ${connectorId.toString()}`)
+      logger.error(
+        `${chargingStation.logPrefix()} Trying to unlock connector id ${connectorId.toString()}`
+      )
       return OCPP16Constants.OCPP_RESPONSE_UNLOCK_NOT_SUPPORTED
     }
     if (chargingStation.getConnectorStatus(connectorId)?.transactionStarted === true) {
@@ -932,7 +934,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       logger.error(
         `${chargingStation.logPrefix()} Trying to set transaction charging profile(s) on connector ${connectorId.toString()} with a different transaction id ${
           csChargingProfiles.transactionId.toString()
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         } than the started transaction id ${connectorStatus.transactionId?.toString()}`
       )
       return OCPP16Constants.OCPP_SET_CHARGING_PROFILE_RESPONSE_REJECTED
@@ -998,18 +1000,14 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     for (const chargingProfile of chargingProfiles) {
       if (chargingProfile.chargingSchedule.startSchedule == null) {
         logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCompositeSchedule: Charging profile id ${
-            chargingProfile.chargingProfileId.toString()
-          } has no startSchedule defined. Trying to set it to the connector current transaction start date`
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCompositeSchedule: Charging profile id ${chargingProfile.chargingProfileId.toString()} has no startSchedule defined. Trying to set it to the connector current transaction start date`
         )
         // OCPP specifies that if startSchedule is not defined, it should be relative to start of the connector transaction
         chargingProfile.chargingSchedule.startSchedule = connectorStatus?.transactionStart
       }
       if (!isDate(chargingProfile.chargingSchedule.startSchedule)) {
         logger.warn(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCompositeSchedule: Charging profile id ${
-            chargingProfile.chargingProfileId.toString()
-          } startSchedule property is not a Date instance. Trying to convert it to a Date instance`
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCompositeSchedule: Charging profile id ${chargingProfile.chargingProfileId.toString()} startSchedule property is not a Date instance. Trying to convert it to a Date instance`
         )
         chargingProfile.chargingSchedule.startSchedule = convertToDate(
           chargingProfile.chargingSchedule.startSchedule
@@ -1017,9 +1015,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       }
       if (chargingProfile.chargingSchedule.duration == null) {
         logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCompositeSchedule: Charging profile id ${
-            chargingProfile.chargingProfileId.toString()
-          } has no duration defined and will be set to the maximum time allowed`
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCompositeSchedule: Charging profile id ${chargingProfile.chargingProfileId.toString()} has no duration defined and will be set to the maximum time allowed`
         )
         // OCPP specifies that if duration is not defined, it should be infinite
         chargingProfile.chargingSchedule.duration = differenceInSeconds(
@@ -1280,7 +1276,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       }#${connectorId.toString()}, idTag '${idTag}', availability '${
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         connectorStatus?.availability
-      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       }', status '${connectorStatus?.status}'`
     )
     return OCPP16Constants.OCPP_RESPONSE_REJECTED
@@ -1563,9 +1559,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         if (accessResponse.code === 220) {
           ftpClient.trackProgress(info => {
             logger.info(
-              `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetDiagnostics: ${
-                (info.bytes / 1024).toString()
-              } bytes transferred from diagnostics archive ${info.name}`
+              `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetDiagnostics: ${(
+                info.bytes / 1024
+              ).toString()} bytes transferred from diagnostics archive ${info.name}`
             )
             chargingStation.ocppRequestService
               .requestHandler<

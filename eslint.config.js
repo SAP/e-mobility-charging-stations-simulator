@@ -52,6 +52,7 @@ export default defineFlatConfig([
     files: [
       'src/charging-station/ChargingStation.ts',
       'src/charging-station/ocpp/OCPPServiceUtils.ts',
+      'src/charging-station/ocpp/1.6/OCPP16ResponseService.ts',
       'src/performance/PerformanceStatistics.ts',
     ],
     rules: {

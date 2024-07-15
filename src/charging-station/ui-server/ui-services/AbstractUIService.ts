@@ -249,7 +249,7 @@ export abstract class AbstractUIService {
   private handleListChargingStations (): ResponsePayload {
     return {
       status: ResponseStatus.SUCCESS,
-      chargingStations: [...this.uiServer.chargingStations.values()],
+      chargingStations: [...this.uiServer.chargingStations.values()] as JsonType[],
     } satisfies ResponsePayload
   }
 

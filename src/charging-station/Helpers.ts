@@ -389,8 +389,7 @@ export const initializeConnectorsMapStatus = (
       logger.warn(
         `${logPrefix} Connector id ${connectorId.toString()} at initialization has a transaction started with id ${
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          connectors.get(connectorId)?.transactionId?.toString()
-        }`
+        connectors.get(connectorId)?.transactionId?.toString()}`
       )
     }
     if (connectorId === 0) {
@@ -653,9 +652,7 @@ export const getChargingStationChargingProfilesLimit = (
         chargingStation.stationInfo!.maximumPower!
       if (limit > chargingStationMaximumPower) {
         logger.error(
-          `${chargingStation.logPrefix()} ${moduleName}.getChargingStationChargingProfilesLimit: Charging profile id ${
-            chargingProfilesLimit.chargingProfile.chargingProfileId.toString()
-          } limit ${limit.toString()} is greater than charging station maximum ${chargingStationMaximumPower.toString()}: %j`,
+          `${chargingStation.logPrefix()} ${moduleName}.getChargingStationChargingProfilesLimit: Charging profile id ${chargingProfilesLimit.chargingProfile.chargingProfileId.toString()} limit ${limit.toString()} is greater than charging station maximum ${chargingStationMaximumPower.toString()}: %j`,
           chargingProfilesLimit
         )
         return chargingStationMaximumPower
@@ -720,9 +717,7 @@ export const getConnectorChargingProfilesLimit = (
         chargingStation.stationInfo!.maximumPower! / chargingStation.powerDivider!
       if (limit > connectorMaximumPower) {
         logger.error(
-          `${chargingStation.logPrefix()} ${moduleName}.getConnectorChargingProfilesLimit: Charging profile id ${
-            chargingProfilesLimit.chargingProfile.chargingProfileId.toString()
-          } limit ${limit.toString()} is greater than connector ${connectorId.toString()} maximum ${connectorMaximumPower.toString()}: %j`,
+          `${chargingStation.logPrefix()} ${moduleName}.getConnectorChargingProfilesLimit: Charging profile id ${chargingProfilesLimit.chargingProfile.chargingProfileId.toString()} limit ${limit.toString()} is greater than connector ${connectorId.toString()} maximum ${connectorMaximumPower.toString()}: %j`,
           chargingProfilesLimit
         )
         return connectorMaximumPower
@@ -1094,9 +1089,7 @@ export const canProceedChargingProfile = (
     (isValidDate(chargingProfile.validTo) && isAfter(currentDate, chargingProfile.validTo))
   ) {
     logger.debug(
-      `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${
-        chargingProfile.chargingProfileId.toString()
-      } is not valid for the current date ${
+      `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${chargingProfile.chargingProfileId.toString()} is not valid for the current date ${
         isDate(currentDate) ? currentDate.toISOString() : currentDate.toString()
       }`
     )
@@ -1246,9 +1239,7 @@ const checkRecurringChargingProfileDuration = (
     logger.warn(
       `${logPrefix} ${moduleName}.checkRecurringChargingProfileDuration: Recurring ${
         chargingProfile.chargingProfileKind
-      } charging profile id ${
-        chargingProfile.chargingProfileId.toString()
-      } duration is not defined, set it to the recurrency time interval duration ${differenceInSeconds(
+      } charging profile id ${chargingProfile.chargingProfileId.toString()} duration is not defined, set it to the recurrency time interval duration ${differenceInSeconds(
         interval.end,
         interval.start
       ).toString()}`
@@ -1260,9 +1251,7 @@ const checkRecurringChargingProfileDuration = (
     logger.warn(
       `${logPrefix} ${moduleName}.checkRecurringChargingProfileDuration: Recurring ${
         chargingProfile.chargingProfileKind
-      } charging profile id ${chargingProfile.chargingProfileId.toString()} duration ${
-        chargingProfile.chargingSchedule.duration.toString()
-      } is greater than the recurrency time interval duration ${differenceInSeconds(
+      } charging profile id ${chargingProfile.chargingProfileId.toString()} duration ${chargingProfile.chargingSchedule.duration.toString()} is greater than the recurrency time interval duration ${differenceInSeconds(
         interval.end,
         interval.start
       ).toString()}`

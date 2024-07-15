@@ -721,9 +721,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     }
     if (!Number.isSafeInteger(payload.transactionId)) {
       logger.warn(
-        `${chargingStation.logPrefix()} Trying to start a transaction on connector id ${connectorId.toString()} with a non integer transaction id ${
-          payload.transactionId.toString()
-        }, converting to integer`
+        `${chargingStation.logPrefix()} Trying to start a transaction on connector id ${connectorId.toString()} with a non integer transaction id ${payload.transactionId.toString()}, converting to integer`
       )
       payload.transactionId = convertToInt(payload.transactionId)
     }
@@ -748,20 +746,14 @@ export class OCPP16ResponseService extends OCPPResponseService {
         if (reservation != null) {
           if (reservation.idTag !== requestPayload.idTag) {
             logger.warn(
-              `${chargingStation.logPrefix()} Reserved transaction ${
-                payload.transactionId.toString()
-              } started with a different idTag ${
+              `${chargingStation.logPrefix()} Reserved transaction ${payload.transactionId.toString()} started with a different idTag ${
                 requestPayload.idTag
               } than the reservation one ${reservation.idTag}`
             )
           }
           if (hasReservationExpired(reservation)) {
             logger.warn(
-              `${chargingStation.logPrefix()} Reserved transaction ${
-                payload.transactionId.toString()
-              } started with expired reservation ${
-                requestPayload.reservationId.toString()
-              } (expiry date: ${reservation.expiryDate.toISOString()}))`
+              `${chargingStation.logPrefix()} Reserved transaction ${payload.transactionId.toString()} started with expired reservation ${requestPayload.reservationId.toString()} (expiry date: ${reservation.expiryDate.toISOString()}))`
             )
           }
           await chargingStation.removeReservation(
@@ -770,9 +762,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
           )
         } else {
           logger.warn(
-            `${chargingStation.logPrefix()} Reserved transaction ${
-              payload.transactionId.toString()
-            } started with unknown reservation ${requestPayload.reservationId.toString()}`
+            `${chargingStation.logPrefix()} Reserved transaction ${payload.transactionId.toString()} started with unknown reservation ${requestPayload.reservationId.toString()}`
           )
         }
       }
@@ -812,17 +802,15 @@ export class OCPP16ResponseService extends OCPPResponseService {
       )
     } else {
       logger.warn(
-        `${chargingStation.logPrefix()} Starting transaction with id ${
-          payload.transactionId.toString()
-        } REJECTED on ${
+        `${chargingStation.logPrefix()} Starting transaction with id ${payload.transactionId.toString()} REJECTED on ${
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           chargingStation.stationInfo?.chargingStationId
         }#${connectorId.toString()} with status '${payload.idTagInfo.status}', idTag '${
           requestPayload.idTag
         }'${
           OCPP16ServiceUtils.hasReservation(chargingStation, connectorId, requestPayload.idTag)
-            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            ? `, reservationId '${requestPayload.reservationId?.toString()}'`
+            ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+              `, reservationId '${requestPayload.reservationId?.toString()}'`
             : ''
         }`
       )
@@ -850,9 +838,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     )
     if (transactionConnectorId == null) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to stop a non existing transaction with id ${
-          requestPayload.transactionId.toString()
-        }`
+        `${chargingStation.logPrefix()} Trying to stop a non existing transaction with id ${requestPayload.transactionId.toString()}`
       )
       return
     }
@@ -895,12 +881,10 @@ export class OCPP16ResponseService extends OCPPResponseService {
     }
     resetConnectorStatus(chargingStation.getConnectorStatus(transactionConnectorId))
     chargingStation.stopMeterValues(transactionConnectorId)
-    const logMsg = `${chargingStation.logPrefix()} Transaction with id ${
-      requestPayload.transactionId.toString()
-    } STOPPED on ${
+    const logMsg = `${chargingStation.logPrefix()} Transaction with id ${requestPayload.transactionId.toString()} STOPPED on ${
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       chargingStation.stationInfo?.chargingStationId
-    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     }#${transactionConnectorId.toString()} with status '${payload.idTagInfo?.status}'`
     if (
       payload.idTagInfo == null ||

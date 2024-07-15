@@ -182,7 +182,7 @@ export class PerformanceStatistics {
         `${this.logPrefix()} storage enabled: type ${
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           performanceStorageConfiguration.type
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         }, uri: ${performanceStorageConfiguration.uri}`
       )
     }

@@ -123,7 +123,12 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
           await this.chargingStation.ocppRequestService.requestHandler<
             StartTransactionRequest,
             StartTransactionResponse
-          >(this.chargingStation, RequestCommand.START_TRANSACTION, requestPayload as StartTransactionRequest, requestParams),
+          >(
+            this.chargingStation,
+            RequestCommand.START_TRANSACTION,
+            requestPayload as StartTransactionRequest,
+            requestParams
+          ),
       ],
       [
         BroadcastChannelProcedureName.STOP_TRANSACTION,
@@ -150,7 +155,12 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
           await this.chargingStation.ocppRequestService.requestHandler<
             AuthorizeRequest,
             AuthorizeResponse
-          >(this.chargingStation, RequestCommand.AUTHORIZE, requestPayload as AuthorizeRequest, requestParams),
+          >(
+            this.chargingStation,
+            RequestCommand.AUTHORIZE,
+            requestPayload as AuthorizeRequest,
+            requestParams
+          ),
       ],
       [
         BroadcastChannelProcedureName.BOOT_NOTIFICATION,
@@ -191,7 +201,12 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
           await this.chargingStation.ocppRequestService.requestHandler<
             HeartbeatRequest,
             HeartbeatResponse
-          >(this.chargingStation, RequestCommand.HEARTBEAT, requestPayload as HeartbeatRequest, requestParams),
+          >(
+            this.chargingStation,
+            RequestCommand.HEARTBEAT,
+            requestPayload as HeartbeatRequest,
+            requestParams
+          ),
       ],
       [
         BroadcastChannelProcedureName.METER_VALUES,
@@ -232,7 +247,12 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
           await this.chargingStation.ocppRequestService.requestHandler<
             DataTransferRequest,
             DataTransferResponse
-          >(this.chargingStation, RequestCommand.DATA_TRANSFER, requestPayload as DataTransferRequest, requestParams),
+          >(
+            this.chargingStation,
+            RequestCommand.DATA_TRANSFER,
+            requestPayload as DataTransferRequest,
+            requestParams
+          ),
       ],
       [
         BroadcastChannelProcedureName.DIAGNOSTICS_STATUS_NOTIFICATION,
@@ -396,10 +416,11 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       case BroadcastChannelProcedureName.START_TRANSACTION:
       case BroadcastChannelProcedureName.STOP_TRANSACTION:
       case BroadcastChannelProcedureName.AUTHORIZE:
-        if ((commandResponse as
-                        | StartTransactionResponse
-                        | StopTransactionResponse
-                        | AuthorizeResponse).idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
+        if (
+          (
+            commandResponse as StartTransactionResponse | StopTransactionResponse | AuthorizeResponse
+          ).idTagInfo?.status === AuthorizationStatus.ACCEPTED
+        ) {
           return ResponseStatus.SUCCESS
         }
         return ResponseStatus.FAILURE

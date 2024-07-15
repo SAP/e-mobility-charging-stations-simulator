@@ -36,7 +36,7 @@ export const handleProtocols = (
   logger.error(
     `${logPrefix(
       ' UI WebSocket Server |'
-    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     )} Unsupported protocol: '${protocol}' or protocol version: '${version}'`
   )
   return false

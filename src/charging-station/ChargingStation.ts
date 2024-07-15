@@ -277,7 +277,7 @@ export class ChargingStation extends EventEmitter {
     return new URL(
       `${wsConnectionBaseUrlStr}${
         !wsConnectionBaseUrlStr.endsWith('/') ? '/' : ''
-      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       }${this.stationInfo?.chargingStationId}`
     )
   }
@@ -434,8 +434,8 @@ export class ChargingStation extends EventEmitter {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       isNaN(connectorChargingProfilesLimit!)
         ? Number.POSITIVE_INFINITY
-        : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        connectorChargingProfilesLimit!
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        : connectorChargingProfilesLimit!
     )
   }
 
@@ -544,9 +544,7 @@ export class ChargingStation extends EventEmitter {
     }
     this.stationInfo?.autoRegister === false &&
       logger.warn(
-        `${this.logPrefix()} Heartbeat interval configuration key not set, using default value: ${
-          Constants.DEFAULT_HEARTBEAT_INTERVAL.toString()
-        }`
+        `${this.logPrefix()} Heartbeat interval configuration key not set, using default value: ${Constants.DEFAULT_HEARTBEAT_INTERVAL.toString()}`
       )
     return Constants.DEFAULT_HEARTBEAT_INTERVAL
   }
@@ -612,7 +610,9 @@ export class ChargingStation extends EventEmitter {
 
   public startMeterValues (connectorId: number, interval: number): void {
     if (connectorId === 0) {
-      logger.error(`${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId.toString()}`)
+      logger.error(
+        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId.toString()}`
+      )
       return
     }
     const connectorStatus = this.getConnectorStatus(connectorId)
@@ -1454,8 +1454,10 @@ export class ChargingStation extends EventEmitter {
         }
       } else {
         for (const connectorId of this.connectors.keys()) {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          connectorsPhaseRotation.push(getPhaseRotationValue(connectorId, this.getNumberOfPhases())!)
+          connectorsPhaseRotation.push(
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            getPhaseRotationValue(connectorId, this.getNumberOfPhases())!
+          )
         }
       }
       addConfigurationKey(
@@ -1881,10 +1883,8 @@ export class ChargingStation extends EventEmitter {
       }
       if (!this.isRegistered()) {
         logger.error(
-          `${this.logPrefix()} Registration failure: maximum retries reached (${registrationRetryCount.toString()}) or retry disabled (${
-            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            this.stationInfo?.registrationMaxRetries?.toString()
-          })`
+          `${this.logPrefix()} Registration failure: maximum retries reached (${registrationRetryCount.toString()}) or retry disabled (${// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+          this.stationInfo?.registrationMaxRetries?.toString()})`
         )
       }
       this.emit(ChargingStationEvents.updated)

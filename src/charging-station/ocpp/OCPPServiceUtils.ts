@@ -349,8 +349,7 @@ export const buildMeterValue = (
               MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
             }: connector id ${connectorId.toString()}, transaction id ${
               // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              connector?.transactionId?.toString()
-            }, value: ${socMinimumValue.toString()}/${
+            connector?.transactionId?.toString()}, value: ${socMinimumValue.toString()}/${
               meterValue.sampledValue[sampledValuesIndex].value
             }/${socMaximumValue.toString()}`
           )
@@ -498,7 +497,7 @@ export const buildMeterValue = (
         checkMeasurandPowerDivider(chargingStation, powerSampledValueTemplate.measurand)
         const errMsg = `MeterValues measurand ${
           powerSampledValueTemplate.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         }: Unknown ${chargingStation.stationInfo.currentOutType} currentOutType in template file ${
           chargingStation.templateFile
         }, cannot calculate ${
@@ -684,8 +683,7 @@ export const buildMeterValue = (
               MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
             }: connector id ${connectorId.toString()}, transaction id ${
               // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              connector?.transactionId?.toString()
-            }, value: ${connectorMinimumPowerRounded.toString()}/${
+            connector?.transactionId?.toString()}, value: ${connectorMinimumPowerRounded.toString()}/${
               meterValue.sampledValue[sampledValuesIndex].value
             }/${connectorMaximumPowerRounded.toString()}`
           )
@@ -701,7 +699,9 @@ export const buildMeterValue = (
               powerPerPhaseSampledValueTemplates[
                 `L${phase.toString()}` as keyof MeasurandPerPhaseSampledValueTemplates
               ] ?? powerSampledValueTemplate,
-              powerMeasurandValues[`L${phase.toString()}` as keyof MeasurandPerPhaseSampledValueTemplates],
+              powerMeasurandValues[
+                `L${phase.toString()}` as keyof MeasurandPerPhaseSampledValueTemplates
+              ],
               undefined,
               phaseValue as MeterValuePhase
             )
@@ -731,8 +731,7 @@ export const buildMeterValue = (
                 meterValue.sampledValue[sampledValuesPerPhaseIndex].phase
               }, connector id ${connectorId.toString()}, transaction id ${
                 // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                connector?.transactionId?.toString()
-              }, value: ${connectorMinimumPowerPerPhaseRounded.toString()}/${
+              connector?.transactionId?.toString()}, value: ${connectorMinimumPowerPerPhaseRounded.toString()}/${
                 meterValue.sampledValue[sampledValuesPerPhaseIndex].value
               }/${connectorMaximumPowerPerPhaseRounded.toString()}`
             )
@@ -771,7 +770,7 @@ export const buildMeterValue = (
         checkMeasurandPowerDivider(chargingStation, currentSampledValueTemplate.measurand)
         const errMsg = `MeterValues measurand ${
           currentSampledValueTemplate.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         }: Unknown ${chargingStation.stationInfo.currentOutType} currentOutType in template file ${
           chargingStation.templateFile
         }, cannot calculate ${
@@ -946,8 +945,7 @@ export const buildMeterValue = (
               MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
             }: connector id ${connectorId.toString()}, transaction id ${
               // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              connector?.transactionId?.toString()
-            }, value: ${connectorMinimumAmperage.toString()}/${
+            connector?.transactionId?.toString()}, value: ${connectorMinimumAmperage.toString()}/${
               meterValue.sampledValue[sampledValuesIndex].value
             }/${connectorMaximumAmperage.toString()}`
           )
@@ -985,8 +983,7 @@ export const buildMeterValue = (
                 meterValue.sampledValue[sampledValuesPerPhaseIndex].phase
               }, connector id ${connectorId.toString()}, transaction id ${
                 // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                connector?.transactionId?.toString()
-              }, value: ${connectorMinimumAmperage.toString()}/${
+              connector?.transactionId?.toString()}, value: ${connectorMinimumAmperage.toString()}/${
                 meterValue.sampledValue[sampledValuesPerPhaseIndex].value
               }/${connectorMaximumAmperage.toString()}`
             )
@@ -1062,8 +1059,7 @@ export const buildMeterValue = (
               MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
             }: connector id ${connectorId.toString()}, transaction id ${
               // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              connector?.transactionId?.toString()
-            }, value: ${connectorMinimumEnergyRounded.toString()}/${energyValueRounded.toString()}/${connectorMaximumEnergyRounded.toString()}, duration: ${interval.toString()}ms`
+            connector?.transactionId?.toString()}, value: ${connectorMinimumEnergyRounded.toString()}/${energyValueRounded.toString()}/${connectorMaximumEnergyRounded.toString()}, duration: ${interval.toString()}ms`
           )
         }
       }

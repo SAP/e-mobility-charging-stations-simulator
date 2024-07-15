@@ -144,9 +144,7 @@ export class UIWebSocketServer extends AbstractUIServer {
             `${this.logPrefix(
               moduleName,
               'sendResponse'
-            )} Error at sending response id '${responseId}', WebSocket is not open: ${
-              ws.readyState.toString()
-            }`
+            )} Error at sending response id '${responseId}', WebSocket is not open: ${ws.readyState.toString()}`
           )
         }
       } else {
