@@ -155,7 +155,7 @@ importers:
         specifier: ^6.0.1
         version: 6.0.1
       semver:
-        specifier: ^7.6.2
+        specifier: ^7.5.3
         version: 7.6.2
       ts-node:
         specifier: ^10.9.2
