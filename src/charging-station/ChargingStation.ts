@@ -64,7 +64,7 @@ import {
   type Voltage,
   WebSocketCloseEventStatusCode,
   type WSError,
-  type WsOptions
+  type WsOptions,
 } from '../types/index.js'
 import {
   ACElectricUtils,
@@ -98,7 +98,7 @@ import {
   roundTo,
   secureRandom,
   sleep,
-  watchJsonFile
+  watchJsonFile,
 } from '../utils/index.js'
 import { AutomaticTransactionGenerator } from './AutomaticTransactionGenerator.js'
 import { ChargingStationWorkerBroadcastChannel } from './broadcast-channel/ChargingStationWorkerBroadcastChannel.js'
@@ -106,7 +106,7 @@ import {
   addConfigurationKey,
   deleteConfigurationKey,
   getConfigurationKey,
-  setConfigurationKeyValue
+  setConfigurationKeyValue,
 } from './ConfigurationKeyUtils.js'
 import {
   buildConnectorsMap,
@@ -136,7 +136,7 @@ import {
   propagateSerialNumber,
   setChargingStationOptions,
   stationTemplateToStationInfo,
-  warnTemplateKeysDeprecation
+  warnTemplateKeysDeprecation,
 } from './Helpers.js'
 import { IdTagsCache } from './IdTagsCache.js'
 import {
@@ -151,7 +151,7 @@ import {
   OCPP20ResponseService,
   type OCPPIncomingRequestService,
   type OCPPRequestService,
-  sendAndSetConnectorStatus
+  sendAndSetConnectorStatus,
 } from './ocpp/index.js'
 import { SharedLRUCache } from './SharedLRUCache.js'
 
@@ -267,6 +267,7 @@ export class ChargingStation extends EventEmitter {
 
   public get wsConnectionUrl (): URL {
     const wsConnectionBaseUrlStr = `${
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       this.stationInfo?.supervisionUrlOcppConfiguration === true &&
       isNotEmptyString(this.stationInfo.supervisionUrlOcppKey) &&
       isNotEmptyString(getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey)?.value)
@@ -276,6 +277,7 @@ export class ChargingStation extends EventEmitter {
     return new URL(
       `${wsConnectionBaseUrlStr}${
         !wsConnectionBaseUrlStr.endsWith('/') ? '/' : ''
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       }${this.stationInfo?.chargingStationId}`
     )
   }
@@ -424,16 +426,16 @@ export class ChargingStation extends EventEmitter {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       isNaN(connectorAmperageLimitationLimit!)
         ? Number.POSITIVE_INFINITY
-        : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        connectorAmperageLimitationLimit!,
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        : connectorAmperageLimitationLimit!,
       isNaN(chargingStationChargingProfilesLimit)
         ? Number.POSITIVE_INFINITY
         : chargingStationChargingProfilesLimit,
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       isNaN(connectorChargingProfilesLimit!)
         ? Number.POSITIVE_INFINITY
-        : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        connectorChargingProfilesLimit!
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        : connectorChargingProfilesLimit!
     )
   }
 
@@ -542,9 +544,7 @@ export class ChargingStation extends EventEmitter {
     }
     this.stationInfo?.autoRegister === false &&
       logger.warn(
-        `${this.logPrefix()} Heartbeat interval configuration key not set, using default value: ${
-          Constants.DEFAULT_HEARTBEAT_INTERVAL
-        }`
+        `${this.logPrefix()} Heartbeat interval configuration key not set, using default value: ${Constants.DEFAULT_HEARTBEAT_INTERVAL.toString()}`
       )
     return Constants.DEFAULT_HEARTBEAT_INTERVAL
   }
@@ -589,7 +589,7 @@ export class ChargingStation extends EventEmitter {
       )
     } else {
       logger.error(
-        `${this.logPrefix()} Heartbeat interval set to ${heartbeatInterval}, not starting the heartbeat`
+        `${this.logPrefix()} Heartbeat interval set to ${heartbeatInterval.toString()}, not starting the heartbeat`
       )
     }
   }
@@ -610,20 +610,22 @@ export class ChargingStation extends EventEmitter {
 
   public startMeterValues (connectorId: number, interval: number): void {
     if (connectorId === 0) {
-      logger.error(`${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId}`)
+      logger.error(
+        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId.toString()}`
+      )
       return
     }
     const connectorStatus = this.getConnectorStatus(connectorId)
     if (connectorStatus == null) {
       logger.error(
         `${this.logPrefix()} Trying to start MeterValues on non existing connector id
-          ${connectorId}`
+          ${connectorId.toString()}`
       )
       return
     }
     if (connectorStatus.transactionStarted === false) {
       logger.error(
-        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId} with no transaction started`
+        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId.toString()} with no transaction started`
       )
       return
     } else if (
@@ -631,7 +633,7 @@ export class ChargingStation extends EventEmitter {
       connectorStatus.transactionId == null
     ) {
       logger.error(
-        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId} with no transaction id`
+        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId.toString()} with no transaction id`
       )
       return
     }
@@ -646,14 +648,14 @@ export class ChargingStation extends EventEmitter {
         )
         this.ocppRequestService
           .requestHandler<MeterValuesRequest, MeterValuesResponse>(
-          this,
-          RequestCommand.METER_VALUES,
-          {
-            connectorId,
-            transactionId: connectorStatus.transactionId,
-            meterValue: [meterValue]
-          }
-        )
+            this,
+            RequestCommand.METER_VALUES,
+            {
+              connectorId,
+              transactionId: connectorStatus.transactionId,
+              meterValue: [meterValue],
+            }
+          )
           .catch((error: unknown) => {
             logger.error(
               `${this.logPrefix()} Error while sending '${RequestCommand.METER_VALUES}':`,
@@ -665,7 +667,7 @@ export class ChargingStation extends EventEmitter {
       logger.error(
         `${this.logPrefix()} Charging station ${
           StandardParametersKey.MeterValueSampleInterval
-        } configuration set to ${interval}, not sending MeterValues`
+        } configuration set to ${interval.toString()}, not sending MeterValues`
       )
     }
   }
@@ -817,12 +819,12 @@ export class ChargingStation extends EventEmitter {
 
   public openWSConnection (
     options?: WsOptions,
-    params?: { closeOpened?: boolean, terminateOpened?: boolean }
+    params?: { closeOpened?: boolean; terminateOpened?: boolean }
   ): void {
     options = {
       handshakeTimeout: secondsToMilliseconds(this.getConnectionTimeout()),
       ...this.stationInfo?.wsOptions,
-      ...options
+      ...options,
     }
     params = { ...{ closeOpened: false, terminateOpened: false }, ...params }
     if (!checkChargingStation(this, this.logPrefix())) {
@@ -831,10 +833,10 @@ export class ChargingStation extends EventEmitter {
     if (this.stationInfo?.supervisionUser != null && this.stationInfo.supervisionPassword != null) {
       options.auth = `${this.stationInfo.supervisionUser}:${this.stationInfo.supervisionPassword}`
     }
-    if (params.closeOpened === true) {
+    if (params.closeOpened) {
       this.closeWSConnection()
     }
-    if (params.terminateOpened === true) {
+    if (params.terminateOpened) {
       this.terminateWSConnection()
     }
 
@@ -849,6 +851,7 @@ export class ChargingStation extends EventEmitter {
 
     this.wsConnection = new WebSocket(
       this.wsConnectionUrl,
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       `ocpp${this.stationInfo?.ocppVersion}`,
       options
     )
@@ -881,12 +884,12 @@ export class ChargingStation extends EventEmitter {
   }
 
   public getAutomaticTransactionGeneratorConfiguration ():
-  | AutomaticTransactionGeneratorConfiguration
-  | undefined {
+    | AutomaticTransactionGeneratorConfiguration
+    | undefined {
     if (this.automaticTransactionGeneratorConfiguration == null) {
       let automaticTransactionGeneratorConfiguration:
-      | AutomaticTransactionGeneratorConfiguration
-      | undefined
+        | AutomaticTransactionGeneratorConfiguration
+        | undefined
       const stationTemplate = this.getTemplateFromFile()
       const stationConfiguration = this.getConfigurationFromFile()
       if (
@@ -901,7 +904,7 @@ export class ChargingStation extends EventEmitter {
       }
       this.automaticTransactionGeneratorConfiguration = {
         ...Constants.DEFAULT_ATG_CONFIGURATION,
-        ...automaticTransactionGeneratorConfiguration
+        ...automaticTransactionGeneratorConfiguration,
       }
     }
     return this.automaticTransactionGeneratorConfiguration
@@ -960,17 +963,17 @@ export class ChargingStation extends EventEmitter {
         {
           connectorId,
           transactionId,
-          meterValue: [transactionEndMeterValue]
+          meterValue: [transactionEndMeterValue],
         }
       )
     }
     return await this.ocppRequestService.requestHandler<
-    Partial<StopTransactionRequest>,
-    StopTransactionResponse
+      Partial<StopTransactionRequest>,
+      StopTransactionResponse
     >(this, RequestCommand.STOP_TRANSACTION, {
       transactionId,
       meterStop: this.getEnergyActiveImportRegisterByTransactionId(transactionId, true),
-      ...(reason != null && { reason })
+      ...(reason != null && { reason }),
     })
   }
 
@@ -1119,7 +1122,7 @@ export class ChargingStation extends EventEmitter {
         const [messageType] = JSON.parse(message) as OutgoingRequest | Response | ErrorResponse
         const isRequest = messageType === MessageType.CALL_MESSAGE
         if (isRequest) {
-          [, , commandName] = JSON.parse(message) as OutgoingRequest
+          ;[, , commandName] = JSON.parse(message) as OutgoingRequest
           beginId = PerformanceStatistics.beginMeasure(commandName)
         }
         this.wsConnection?.send(message, (error?: Error) => {
@@ -1224,7 +1227,7 @@ export class ChargingStation extends EventEmitter {
       .stationInfoPersistentConfiguration
   ): ChargingStationInfo | undefined {
     let stationInfo: ChargingStationInfo | undefined
-    if (stationInfoPersistentConfiguration === true) {
+    if (stationInfoPersistentConfiguration) {
       stationInfo = this.getConfigurationFromFile()?.stationInfo
       if (stationInfo != null) {
         delete stationInfo.infoHash
@@ -1276,6 +1279,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private handleUnsupportedVersion (version: OCPPVersion | undefined): void {
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     const errorMsg = `Unsupported protocol version '${version}' configured in template file ${this.templateFile}`
     logger.error(`${this.logPrefix()} ${errorMsg}`)
     throw new BaseError(errorMsg)
@@ -1346,7 +1350,7 @@ export class ChargingStation extends EventEmitter {
       this.bootNotificationResponse = {
         currentTime: new Date(),
         interval: millisecondsToSeconds(this.getHeartbeatInterval()),
-        status: RegistrationStatusEnumType.ACCEPTED
+        status: RegistrationStatusEnumType.ACCEPTED,
       }
     }
   }
@@ -1381,7 +1385,7 @@ export class ChargingStation extends EventEmitter {
     }
     if (getConfigurationKey(this, StandardParametersKey.HeartBeatInterval) == null) {
       addConfigurationKey(this, StandardParametersKey.HeartBeatInterval, '0', {
-        visible: false
+        visible: false,
       })
     }
     if (
@@ -1401,7 +1405,7 @@ export class ChargingStation extends EventEmitter {
       getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey) != null
     ) {
       deleteConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey, {
-        save: false
+        save: false,
       })
     }
     if (
@@ -1499,9 +1503,9 @@ export class ChargingStation extends EventEmitter {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             evseStatusConfiguration.connectorsStatus!.map((connectorStatus, connectorId) => [
               connectorId,
-              prepareConnectorStatus(connectorStatus)
+              prepareConnectorStatus(connectorStatus),
             ])
-          )
+          ),
         })
       }
     } else if (configuration.evsesStatus != null && configuration.connectorsStatus != null) {
@@ -1645,7 +1649,7 @@ export class ChargingStation extends EventEmitter {
                 this.logPrefix(),
                 this.templateFile
               ),
-              availability: AvailabilityType.Operative
+              availability: AvailabilityType.Operative,
             })
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             initializeConnectorsMapStatus(this.evses.get(evseId)!.connectors, this.logPrefix())
@@ -1762,11 +1766,11 @@ export class ChargingStation extends EventEmitter {
               configurationKey: configurationData.configurationKey,
               automaticTransactionGenerator: configurationData.automaticTransactionGenerator,
               ...(this.connectors.size > 0 && {
-                connectorsStatus: configurationData.connectorsStatus
+                connectorsStatus: configurationData.connectorsStatus,
               }),
               ...(this.evses.size > 0 && {
-                evsesStatus: configurationData.evsesStatus
-              })
+                evsesStatus: configurationData.evsesStatus,
+              }),
             } satisfies ChargingStationConfiguration)
           )
           .digest('hex')
@@ -1822,7 +1826,7 @@ export class ChargingStation extends EventEmitter {
     ocppPersistentConfiguration?: boolean
   ): ChargingStationOcppConfiguration | undefined {
     const configurationKey = this.getConfigurationFromFile()?.configurationKey
-    if (ocppPersistentConfiguration === true && Array.isArray(configurationKey)) {
+    if (ocppPersistentConfiguration && Array.isArray(configurationKey)) {
       return { configurationKey }
     }
     return undefined
@@ -1853,10 +1857,10 @@ export class ChargingStation extends EventEmitter {
         // Send BootNotification
         do {
           await this.ocppRequestService.requestHandler<
-          BootNotificationRequest,
-          BootNotificationResponse
+            BootNotificationRequest,
+            BootNotificationResponse
           >(this, RequestCommand.BOOT_NOTIFICATION, this.bootNotificationRequest, {
-            skipBufferingOnError: true
+            skipBufferingOnError: true,
           })
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           this.bootNotificationResponse!.currentTime = convertToDate(
@@ -1865,7 +1869,6 @@ export class ChargingStation extends EventEmitter {
           if (!this.isRegistered()) {
             this.stationInfo?.registrationMaxRetries !== -1 && ++registrationRetryCount
             await sleep(
-              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
               this.bootNotificationResponse?.interval != null
                 ? secondsToMilliseconds(this.bootNotificationResponse.interval)
                 : Constants.DEFAULT_BOOT_NOTIFICATION_INTERVAL
@@ -1880,9 +1883,8 @@ export class ChargingStation extends EventEmitter {
       }
       if (!this.isRegistered()) {
         logger.error(
-          `${this.logPrefix()} Registration failure: maximum retries reached (${registrationRetryCount}) or retry disabled (${
-            this.stationInfo?.registrationMaxRetries
-          })`
+          `${this.logPrefix()} Registration failure: maximum retries reached (${registrationRetryCount.toString()}) or retry disabled (${// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+          this.stationInfo?.registrationMaxRetries?.toString()})`
         )
       }
       this.emit(ChargingStationEvents.updated)
@@ -1918,6 +1920,7 @@ export class ChargingStation extends EventEmitter {
           this.reconnect()
             .then(() => {
               this.emit(ChargingStationEvents.updated)
+              return undefined
             })
             .catch((error: unknown) =>
               logger.error(`${this.logPrefix()} Error while reconnecting:`, error)
@@ -2026,7 +2029,7 @@ export class ChargingStation extends EventEmitter {
       // eslint-disable-next-line @typescript-eslint/no-base-to-string
       request = JSON.parse(data.toString()) as IncomingRequest | Response | ErrorResponse
       if (Array.isArray(request)) {
-        [messageType] = request
+        ;[messageType] = request
         // Check the type of message
         switch (messageType) {
           // Incoming Message
@@ -2054,12 +2057,13 @@ export class ChargingStation extends EventEmitter {
           'Incoming message is not an array',
           undefined,
           {
-            request
+            request,
           }
         )
       }
     } catch (error) {
       if (!Array.isArray(request)) {
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         logger.error(`${this.logPrefix()} Incoming message '${request}' parsing error:`, error)
         return
       }
@@ -2069,7 +2073,7 @@ export class ChargingStation extends EventEmitter {
       const [, messageId] = request
       switch (messageType) {
         case MessageType.CALL_MESSAGE:
-          [, , commandName] = request as IncomingRequest
+          ;[, , commandName] = request as IncomingRequest
           // Send error
           await this.ocppRequestService.sendError(this, messageId, error as OCPPError, commandName)
           break
@@ -2077,7 +2081,7 @@ export class ChargingStation extends EventEmitter {
         case MessageType.CALL_ERROR_MESSAGE:
           if (this.requests.has(messageId)) {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            [, errorCallback, requestCommandName] = this.getCachedRequest(messageType, messageId)!
+            ;[, errorCallback, requestCommandName] = this.getCachedRequest(messageType, messageId)!
             // Reject the deferred promise in case of error at response handling (rejecting an already fulfilled promise is a no-op)
             errorCallback(error as OCPPError, false)
           } else {
@@ -2090,7 +2094,7 @@ export class ChargingStation extends EventEmitter {
         logger.warn(
           `${this.logPrefix()} Error thrown at incoming OCPP command ${
             commandName ?? requestCommandName ?? Constants.UNKNOWN_OCPP_COMMAND
-            // eslint-disable-next-line @typescript-eslint/no-base-to-string
+          // eslint-disable-next-line @typescript-eslint/no-base-to-string
           } message '${data.toString()}' handling is not an OCPPError:`,
           error
         )
@@ -2098,7 +2102,7 @@ export class ChargingStation extends EventEmitter {
       logger.error(
         `${this.logPrefix()} Incoming OCPP command '${
           commandName ?? requestCommandName ?? Constants.UNKNOWN_OCPP_COMMAND
-          // eslint-disable-next-line @typescript-eslint/no-base-to-string
+        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         }' message '${data.toString()}'${
           this.requests.has(messageId)
             ? ` matching cached request '${JSON.stringify(
@@ -2238,10 +2242,10 @@ export class ChargingStation extends EventEmitter {
   private async startMessageSequence (ATGStopAbsoluteDuration?: boolean): Promise<void> {
     if (this.stationInfo?.autoRegister === true) {
       await this.ocppRequestService.requestHandler<
-      BootNotificationRequest,
-      BootNotificationResponse
+        BootNotificationRequest,
+        BootNotificationResponse
       >(this, RequestCommand.BOOT_NOTIFICATION, this.bootNotificationRequest, {
-        skipBufferingOnError: true
+        skipBufferingOnError: true,
       })
     }
     // Start WebSocket ping
@@ -2284,10 +2288,10 @@ export class ChargingStation extends EventEmitter {
     }
     if (this.stationInfo?.firmwareStatus === FirmwareStatus.Installing) {
       await this.ocppRequestService.requestHandler<
-      FirmwareStatusNotificationRequest,
-      FirmwareStatusNotificationResponse
+        FirmwareStatusNotificationRequest,
+        FirmwareStatusNotificationResponse
       >(this, RequestCommand.FIRMWARE_STATUS_NOTIFICATION, {
-        status: FirmwareStatus.Installed
+        status: FirmwareStatus.Installed,
       })
       this.stationInfo.firmwareStatus = FirmwareStatus.Installed
     }
@@ -2316,7 +2320,7 @@ export class ChargingStation extends EventEmitter {
   ): Promise<void> {
     this.internalStopMessageSequence()
     // Stop ongoing transactions
-    stopTransactions === true && (await this.stopRunningTransactions(reason))
+    stopTransactions && (await this.stopRunningTransactions(reason))
     if (this.hasEvses) {
       for (const [evseId, evseStatus] of this.evses) {
         if (evseId > 0) {
@@ -2368,7 +2372,7 @@ export class ChargingStation extends EventEmitter {
       )
     } else {
       logger.error(
-        `${this.logPrefix()} WebSocket ping interval set to ${webSocketPingInterval}, not starting the WebSocket ping`
+        `${this.logPrefix()} WebSocket ping interval set to ${webSocketPingInterval.toString()}, not starting the WebSocket ping`
       )
     }
   }
@@ -2397,7 +2401,7 @@ export class ChargingStation extends EventEmitter {
             Configuration.getSupervisionUrlDistribution()!
           ) &&
             logger.warn(
-              // eslint-disable-next-line @typescript-eslint/no-base-to-string
+              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-base-to-string
               `${this.logPrefix()} Unknown supervision url distribution '${Configuration.getSupervisionUrlDistribution()}' in configuration from values '${SupervisionUrlDistribution.toString()}', defaulting to '${
                 SupervisionUrlDistribution.CHARGING_STATION_AFFINITY
               }'`
@@ -2450,7 +2454,7 @@ export class ChargingStation extends EventEmitter {
         `${this.logPrefix()} WebSocket connection retry in ${roundTo(
           reconnectDelay,
           2
-        )}ms, timeout ${reconnectTimeout}ms`
+        ).toString()}ms, timeout ${reconnectTimeout.toString()}ms`
       )
       await sleep(reconnectDelay)
       logger.error(
@@ -2458,12 +2462,13 @@ export class ChargingStation extends EventEmitter {
       )
       this.openWSConnection(
         {
-          handshakeTimeout: reconnectTimeout
+          handshakeTimeout: reconnectTimeout,
         },
         { closeOpened: true }
       )
     } else if (this.stationInfo?.autoReconnectMaxRetries !== -1) {
       logger.error(
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         `${this.logPrefix()} WebSocket connection retries failure: maximum retries reached (${this.wsConnectionRetryCount.toString()}) or retries disabled (${this.stationInfo?.autoReconnectMaxRetries?.toString()})`
       )
     }

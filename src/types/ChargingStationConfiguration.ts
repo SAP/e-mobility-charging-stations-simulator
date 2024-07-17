@@ -17,9 +17,9 @@ interface EvsesConfiguration {
 }
 
 export type ChargingStationConfiguration = ChargingStationInfoConfiguration &
-ChargingStationOcppConfiguration &
-ChargingStationAutomaticTransactionGeneratorConfiguration &
-ConnectorsConfiguration &
-EvsesConfiguration & {
-  configurationHash?: string
-}
+  ChargingStationOcppConfiguration &
+  ChargingStationAutomaticTransactionGeneratorConfiguration &
+  ConnectorsConfiguration &
+  EvsesConfiguration & {
+    configurationHash?: string
+  }

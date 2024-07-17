@@ -6,10 +6,10 @@ interface StatisticsData {
   responseCount: number
   errorCount: number
   timeMeasurementCount: number
-  measurementTimeSeries: Array<{
+  measurementTimeSeries: {
     timestamp: number
     value: number
-  }>
+  }[]
   currentTimeMeasurement: number
   minTimeMeasurement: number
   maxTimeMeasurement: number
@@ -23,20 +23,20 @@ interface StatisticsData {
 @Entity()
 export class PerformanceRecord {
   @PrimaryKey()
-    id!: string
+  id!: string
 
   @Property()
-    name!: string
+  name!: string
 
   @Property()
-    uri!: string
+  uri!: string
 
   @Property()
-    createdAt!: Date
+  createdAt!: Date
 
   @Property()
-    updatedAt?: Date
+  updatedAt?: Date
 
   @Property()
-    statisticsData!: Array<Partial<StatisticsData>>
+  statisticsData!: Partial<StatisticsData>[]
 }

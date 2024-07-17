@@ -3,7 +3,7 @@ export {
   buildChargingStationAutomaticTransactionGeneratorConfiguration,
   buildConnectorsStatus,
   buildEvsesStatus,
-  OutputFormat
+  OutputFormat,
 } from './ChargingStationConfigurationUtils.js'
 export { Configuration } from './Configuration.js'
 export { Constants } from './Constants.js'
@@ -13,7 +13,7 @@ export {
   handleIncomingRequestError,
   handleSendMessageError,
   handleUncaughtException,
-  handleUnhandledRejection
+  handleUnhandledRejection,
 } from './ErrorUtils.js'
 export { watchJsonFile } from './FileUtils.js'
 export { logger } from './Logger.js'
@@ -23,7 +23,7 @@ export {
   buildPerformanceStatisticsMessage,
   buildStartedMessage,
   buildStoppedMessage,
-  buildUpdatedMessage
+  buildUpdatedMessage,
 } from './MessageChannelUtils.js'
 export { max, min, nthPercentile, stdDeviation } from './StatisticUtils.js'
 export {
@@ -50,5 +50,5 @@ export {
   roundTo,
   secureRandom,
   sleep,
-  validateUUID
+  validateUUID,
 } from './Utils.js'

@@ -15,7 +15,7 @@ import {
   type RequestPayload,
   type ResponsePayload,
   ResponseStatus,
-  type StorageConfiguration
+  type StorageConfiguration,
 } from '../../../types/index.js'
 import { Configuration, isAsyncFunction, isNotEmptyArray, logger } from '../../../utils/index.js'
 import { Bootstrap } from '../../Bootstrap.js'
@@ -32,24 +32,24 @@ interface AddChargingStationsRequestPayload extends RequestPayload {
 
 export abstract class AbstractUIService {
   protected static readonly ProcedureNameToBroadCastChannelProcedureNameMapping = new Map<
-  ProcedureName,
-  BroadcastChannelProcedureName
+    ProcedureName,
+    BroadcastChannelProcedureName
   >([
     [ProcedureName.START_CHARGING_STATION, BroadcastChannelProcedureName.START_CHARGING_STATION],
     [ProcedureName.STOP_CHARGING_STATION, BroadcastChannelProcedureName.STOP_CHARGING_STATION],
     [
       ProcedureName.DELETE_CHARGING_STATIONS,
-      BroadcastChannelProcedureName.DELETE_CHARGING_STATIONS
+      BroadcastChannelProcedureName.DELETE_CHARGING_STATIONS,
     ],
     [ProcedureName.CLOSE_CONNECTION, BroadcastChannelProcedureName.CLOSE_CONNECTION],
     [ProcedureName.OPEN_CONNECTION, BroadcastChannelProcedureName.OPEN_CONNECTION],
     [
       ProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR,
-      BroadcastChannelProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR
+      BroadcastChannelProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR,
     ],
     [
       ProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR,
-      BroadcastChannelProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR
+      BroadcastChannelProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR,
     ],
     [ProcedureName.SET_SUPERVISION_URL, BroadcastChannelProcedureName.SET_SUPERVISION_URL],
     [ProcedureName.START_TRANSACTION, BroadcastChannelProcedureName.START_TRANSACTION],
@@ -62,12 +62,12 @@ export abstract class AbstractUIService {
     [ProcedureName.DATA_TRANSFER, BroadcastChannelProcedureName.DATA_TRANSFER],
     [
       ProcedureName.DIAGNOSTICS_STATUS_NOTIFICATION,
-      BroadcastChannelProcedureName.DIAGNOSTICS_STATUS_NOTIFICATION
+      BroadcastChannelProcedureName.DIAGNOSTICS_STATUS_NOTIFICATION,
     ],
     [
       ProcedureName.FIRMWARE_STATUS_NOTIFICATION,
-      BroadcastChannelProcedureName.FIRMWARE_STATUS_NOTIFICATION
-    ]
+      BroadcastChannelProcedureName.FIRMWARE_STATUS_NOTIFICATION,
+    ],
   ])
 
   protected readonly requestHandlers: Map<ProcedureName, ProtocolRequestHandler>
@@ -76,7 +76,7 @@ export abstract class AbstractUIService {
   private readonly uiServiceWorkerBroadcastChannel: UIServiceWorkerBroadcastChannel
   private readonly broadcastChannelRequests: Map<
     `${string}-${string}-${string}-${string}-${string}`,
-  number
+    number
   >
 
   constructor (uiServer: AbstractUIServer, version: ProtocolVersion) {
@@ -89,12 +89,12 @@ export abstract class AbstractUIService {
       [ProcedureName.PERFORMANCE_STATISTICS, this.handlePerformanceStatistics.bind(this)],
       [ProcedureName.SIMULATOR_STATE, this.handleSimulatorState.bind(this)],
       [ProcedureName.START_SIMULATOR, this.handleStartSimulator.bind(this)],
-      [ProcedureName.STOP_SIMULATOR, this.handleStopSimulator.bind(this)]
+      [ProcedureName.STOP_SIMULATOR, this.handleStopSimulator.bind(this)],
     ])
     this.uiServiceWorkerBroadcastChannel = new UIServiceWorkerBroadcastChannel(this)
     this.broadcastChannelRequests = new Map<
       `${string}-${string}-${string}-${string}-${string}`,
-    number
+      number
     >()
   }
 
@@ -109,7 +109,7 @@ export abstract class AbstractUIService {
     let requestPayload: RequestPayload | undefined
     let responsePayload: ResponsePayload | undefined
     try {
-      [uuid, command, requestPayload] = request
+      ;[uuid, command, requestPayload] = request
 
       if (!this.requestHandlers.has(command)) {
         throw new BaseError(
@@ -146,7 +146,7 @@ export abstract class AbstractUIService {
         responsePayload,
         errorMessage: (error as OCPPError).message,
         errorStack: (error as OCPPError).stack,
-        errorDetails: (error as OCPPError).details
+        errorDetails: (error as OCPPError).details,
       } satisfies ResponsePayload
     }
     if (responsePayload != null) {
@@ -242,14 +242,14 @@ export abstract class AbstractUIService {
   private handleListTemplates (): ResponsePayload {
     return {
       status: ResponseStatus.SUCCESS,
-      templates: [...this.uiServer.chargingStationTemplates.values()] as JsonType[]
+      templates: [...this.uiServer.chargingStationTemplates.values()],
     } satisfies ResponsePayload
   }
 
   private handleListChargingStations (): ResponsePayload {
     return {
       status: ResponseStatus.SUCCESS,
-      chargingStations: [...this.uiServer.chargingStations.values()] as JsonType[]
+      chargingStations: [...this.uiServer.chargingStations.values()] as JsonType[],
     } satisfies ResponsePayload
   }
 
@@ -264,19 +264,19 @@ export abstract class AbstractUIService {
       return {
         status: ResponseStatus.FAILURE,
         errorMessage:
-          'Cannot add charging station(s) while the charging stations simulator is not started'
+          'Cannot add charging station(s) while the charging stations simulator is not started',
       } satisfies ResponsePayload
     }
     if (typeof template !== 'string' || typeof numberOfStations !== 'number') {
       return {
         status: ResponseStatus.FAILURE,
-        errorMessage: 'Invalid request payload'
+        errorMessage: 'Invalid request payload',
       } satisfies ResponsePayload
     }
     if (!this.uiServer.chargingStationTemplates.has(template)) {
       return {
         status: ResponseStatus.FAILURE,
-        errorMessage: `Template '${template}' not found`
+        errorMessage: `Template '${template}' not found`,
       } satisfies ResponsePayload
     }
     const succeededStationInfos: ChargingStationInfo[] = []
@@ -303,12 +303,12 @@ export abstract class AbstractUIService {
     return {
       status: err != null ? ResponseStatus.FAILURE : ResponseStatus.SUCCESS,
       ...(succeededStationInfos.length > 0 && {
-        hashIdsSucceeded: succeededStationInfos.map(stationInfo => stationInfo.hashId)
+        hashIdsSucceeded: succeededStationInfos.map(stationInfo => stationInfo.hashId),
       }),
       ...(failedStationInfos.length > 0 && {
-        hashIdsFailed: failedStationInfos.map(stationInfo => stationInfo.hashId)
+        hashIdsFailed: failedStationInfos.map(stationInfo => stationInfo.hashId),
       }),
-      ...(err != null && { errorMessage: err.message, errorStack: err.stack })
+      ...(err != null && { errorMessage: err.message, errorStack: err.stack }),
     } satisfies ResponsePayload
   }
 
@@ -320,7 +320,7 @@ export abstract class AbstractUIService {
     ) {
       return {
         status: ResponseStatus.FAILURE,
-        errorMessage: 'Performance statistics storage is not enabled'
+        errorMessage: 'Performance statistics storage is not enabled',
       } satisfies ResponsePayload
     }
     try {
@@ -328,14 +328,14 @@ export abstract class AbstractUIService {
         status: ResponseStatus.SUCCESS,
         performanceStatistics: [
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          ...Bootstrap.getInstance().getPerformanceStatistics()!
-        ] as JsonType[]
+          ...Bootstrap.getInstance().getPerformanceStatistics()!,
+        ] as JsonType[],
       } satisfies ResponsePayload
     } catch (error) {
       return {
         status: ResponseStatus.FAILURE,
         errorMessage: (error as Error).message,
-        errorStack: (error as Error).stack
+        errorStack: (error as Error).stack,
       } satisfies ResponsePayload
     }
   }
@@ -344,13 +344,13 @@ export abstract class AbstractUIService {
     try {
       return {
         status: ResponseStatus.SUCCESS,
-        state: Bootstrap.getInstance().getState() as unknown as JsonObject
+        state: Bootstrap.getInstance().getState() as unknown as JsonObject,
       } satisfies ResponsePayload
     } catch (error) {
       return {
         status: ResponseStatus.FAILURE,
         errorMessage: (error as Error).message,
-        errorStack: (error as Error).stack
+        errorStack: (error as Error).stack,
       } satisfies ResponsePayload
     }
   }
@@ -363,7 +363,7 @@ export abstract class AbstractUIService {
       return {
         status: ResponseStatus.FAILURE,
         errorMessage: (error as Error).message,
-        errorStack: (error as Error).stack
+        errorStack: (error as Error).stack,
       } satisfies ResponsePayload
     }
   }
@@ -376,7 +376,7 @@ export abstract class AbstractUIService {
       return {
         status: ResponseStatus.FAILURE,
         errorMessage: (error as Error).message,
-        errorStack: (error as Error).stack
+        errorStack: (error as Error).stack,
       } satisfies ResponsePayload
     }
   }

@@ -11,5 +11,5 @@ export {
   buildTransactionEndMeterValue,
   getMessageTypeString,
   isIdTagAuthorized,
-  sendAndSetConnectorStatus
+  sendAndSetConnectorStatus,
 } from './OCPPServiceUtils.js'

@@ -10,7 +10,7 @@ import {
   millisecondsToMinutes,
   millisecondsToSeconds,
   minutesToSeconds,
-  secondsToMilliseconds
+  secondsToMilliseconds,
 } from 'date-fns'
 import type { CircularBuffer } from 'mnemonist'
 import { is } from 'rambda'
@@ -19,7 +19,7 @@ import {
   type JsonType,
   MapStringifyFormat,
   type TimestampedData,
-  WebSocketCloseEventStatusString
+  WebSocketCloseEventStatusString,
 } from '../types/index.js'
 
 export const logPrefix = (prefixString = ''): string => {
@@ -65,7 +65,7 @@ export const formatDurationMilliSeconds = (duration: number): string => {
     days,
     hours,
     minutes,
-    seconds
+    seconds,
   })
 }
 
@@ -95,7 +95,7 @@ export const convertToDate = (
   if (typeof value === 'string' || typeof value === 'number') {
     const valueToDate = new Date(value)
     if (isNaN(valueToDate.getTime())) {
-      throw new Error(`Cannot convert to date: '${value}'`)
+      throw new Error(`Cannot convert to date: '${value.toString()}'`)
     }
     return valueToDate
   }
@@ -163,7 +163,6 @@ export const getRandomFloat = (max = Number.MAX_VALUE, min = 0): number => {
 /**
  * Rounds the given number to the given scale.
  * The rounding is done using the "round half away from zero" method.
- *
  * @param numberValue - The number to round.
  * @param scale - The scale to round to.
  * @returns The rounded number.
@@ -187,7 +186,7 @@ export const getRandomFloatFluctuatedRounded = (
 ): number => {
   if (fluctuationPercent < 0 || fluctuationPercent > 100) {
     throw new RangeError(
-      `Fluctuation percent must be between 0 and 100. Actual value: ${fluctuationPercent}`
+      `Fluctuation percent must be between 0 and 100. Actual value: ${fluctuationPercent.toString()}`
     )
   }
   if (fluctuationPercent === 0) {
@@ -211,7 +210,6 @@ export const clone = <T>(object: T): T => {
 
 /**
  * Detects whether the given value is an asynchronous function or not.
- *
  * @param fn - Unknown value.
  * @returns `true` if `fn` was an asynchronous function, otherwise `false`.
  * @internal
@@ -245,7 +243,6 @@ export const insertAt = (str: string, subStr: string, pos: number): string =>
 
 /**
  * Computes the retry delay in milliseconds using an exponential backoff algorithm.
- *
  * @param retryNumber - the number of retries that have already been attempted
  * @param delayFactor - the base delay factor in milliseconds
  * @returns delay in milliseconds
@@ -258,7 +255,6 @@ export const exponentialDelay = (retryNumber = 0, delayFactor = 100): number => 
 
 /**
  * Generates a cryptographically secure random number in the [0,1[ range
- *
  * @returns A number in the [0,1[ range
  */
 export const secureRandom = (): number => {
@@ -267,10 +263,10 @@ export const secureRandom = (): number => {
 
 export const JSONStringify = <
   T extends
-  | JsonType
-  | Array<Record<string, unknown>>
-  | Set<Record<string, unknown>>
-  | Map<string, Record<string, unknown>>
+    | JsonType
+    | Record<string, unknown>[]
+    | Set<Record<string, unknown>>
+    | Map<string, Record<string, unknown>>
 >(
     object: T,
     space?: string | number,
@@ -283,14 +279,14 @@ export const JSONStringify = <
         switch (mapFormat) {
           case MapStringifyFormat.object:
             return {
-              ...Object.fromEntries<Map<string, Record<string, unknown>>>(value.entries())
+              ...Object.fromEntries<Map<string, Record<string, unknown>>>(value.entries()),
             }
           case MapStringifyFormat.array:
           default:
             return [...value]
         }
       } else if (is(Set, value)) {
-        return [...value] as JsonType[]
+        return [...value]
       }
       return value
     },
@@ -300,7 +296,6 @@ export const JSONStringify = <
 
 /**
  * Converts websocket error code to human readable string message
- *
  * @param code - websocket error code
  * @returns human readable string message
  */

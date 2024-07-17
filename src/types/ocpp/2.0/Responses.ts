@@ -4,7 +4,7 @@ import type { RegistrationStatusEnumType } from '../Common.js'
 import type {
   GenericStatusEnumType,
   InstallCertificateStatusEnumType,
-  StatusInfoType
+  StatusInfoType,
 } from './Common.js'
 import type { OCPP20SetVariableResultType } from './Variables.js'
 

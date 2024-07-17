@@ -17,7 +17,7 @@ import {
   type OCPP20StatusNotificationResponse,
   OCPPVersion,
   RegistrationStatusEnumType,
-  type ResponseHandler
+  type ResponseHandler,
 } from '../../../types/index.js'
 import { isAsyncFunction, logger } from '../../../utils/index.js'
 import { OCPPResponseService } from '../OCPPResponseService.js'
@@ -27,8 +27,8 @@ const moduleName = 'OCPP20ResponseService'
 
 export class OCPP20ResponseService extends OCPPResponseService {
   public incomingRequestResponsePayloadValidateFunctions: Map<
-  OCPP20IncomingRequestCommand,
-  ValidateFunction<JsonType>
+    OCPP20IncomingRequestCommand,
+    ValidateFunction<JsonType>
   >
 
   protected payloadValidateFunctions: Map<OCPP20RequestCommand, ValidateFunction<JsonType>>
@@ -42,10 +42,10 @@ export class OCPP20ResponseService extends OCPPResponseService {
     this.responseHandlers = new Map<OCPP20RequestCommand, ResponseHandler>([
       [
         OCPP20RequestCommand.BOOT_NOTIFICATION,
-        this.handleResponseBootNotification.bind(this) as ResponseHandler
+        this.handleResponseBootNotification.bind(this) as ResponseHandler,
       ],
       [OCPP20RequestCommand.HEARTBEAT, this.emptyResponseHandler],
-      [OCPP20RequestCommand.STATUS_NOTIFICATION, this.emptyResponseHandler]
+      [OCPP20RequestCommand.STATUS_NOTIFICATION, this.emptyResponseHandler],
     ])
     this.payloadValidateFunctions = new Map<OCPP20RequestCommand, ValidateFunction<JsonType>>([
       [
@@ -58,7 +58,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
               'constructor'
             )
           )
-          .bind(this)
+          .bind(this),
       ],
       [
         OCPP20RequestCommand.HEARTBEAT,
@@ -70,7 +70,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
               'constructor'
             )
           )
-          .bind(this)
+          .bind(this),
       ],
       [
         OCPP20RequestCommand.STATUS_NOTIFICATION,
@@ -82,12 +82,12 @@ export class OCPP20ResponseService extends OCPPResponseService {
               'constructor'
             )
           )
-          .bind(this)
-      ]
+          .bind(this),
+      ],
     ])
     this.incomingRequestResponsePayloadValidateFunctions = new Map<
-    OCPP20IncomingRequestCommand,
-    ValidateFunction<JsonType>
+      OCPP20IncomingRequestCommand,
+      ValidateFunction<JsonType>
     >([
       [
         OCPP20IncomingRequestCommand.CLEAR_CACHE,
@@ -99,8 +99,8 @@ export class OCPP20ResponseService extends OCPPResponseService {
               'constructor'
             )
           )
-          .bind(this)
-      ]
+          .bind(this),
+      ],
     ])
     this.validatePayload = this.validatePayload.bind(this)
   }
@@ -123,7 +123,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
           if (isAsyncFunction(responseHandler)) {
             await responseHandler(chargingStation, payload, requestPayload)
           } else {
-            (
+            ;(
               responseHandler as (
                 chargingStation: ChargingStation,
                 payload: JsonType,

@@ -7,7 +7,7 @@ import {
   logger,
   logPrefix,
   secureRandom,
-  watchJsonFile
+  watchJsonFile,
 } from '../utils/index.js'
 import type { ChargingStation } from './ChargingStation.js'
 import { getIdTagsFile } from './Helpers.js'
@@ -37,11 +37,10 @@ export class IdTagsCache {
   /**
    * Gets one idtag from the cache given the distribution
    * Must be called after checking the cache is not an empty array
-   *
    * @param distribution -
    * @param chargingStation -
    * @param connectorId -
-   * @returns
+   * @returns string
    */
   public getIdTag (
     distribution: IdTagDistribution,
@@ -51,7 +50,7 @@ export class IdTagsCache {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const hashId = chargingStation.stationInfo!.hashId
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const idTagsFile = getIdTagsFile(chargingStation.stationInfo!)!
+    const idTagsFile = getIdTagsFile(chargingStation.stationInfo)!
     switch (distribution) {
       case IdTagDistribution.RANDOM:
         return this.getRandomIdTag(hashId, idTagsFile)
@@ -67,9 +66,8 @@ export class IdTagsCache {
   /**
    * Gets all idtags from the cache
    * Must be called after checking the cache is not an empty array
-   *
    * @param file -
-   * @returns
+   * @returns string[] | undefined
    */
   public getIdTags (file: string): string[] | undefined {
     if (!this.hasIdTagsCache(file)) {
@@ -151,13 +149,13 @@ export class IdTagsCache {
                 error as NodeJS.ErrnoException,
                 this.logPrefix(file),
                 {
-                  throwError: false
+                  throwError: false,
                 }
               )
             }
           }
         }
-      )
+      ),
     })
   }
 

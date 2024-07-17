@@ -5,7 +5,7 @@ import { expect } from 'expect'
 import {
   ApplicationProtocolVersion,
   ConfigurationSection,
-  SupervisionUrlDistribution
+  SupervisionUrlDistribution,
 } from '../../src/types/ConfigurationData.js'
 
 await describe('ConfigurationData test suite', async () => {

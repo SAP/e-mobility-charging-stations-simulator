@@ -77,12 +77,13 @@ export const checkWorkerElementsPerWorker = (
     !Number.isSafeInteger(elementsPerWorker)
   ) {
     throw new SyntaxError(
-      `Invalid number of elements per worker '${elementsPerWorker}' defined in configuration`
+      `Invalid number of elements per worker '${elementsPerWorker.toString()}' defined in configuration`
     )
   }
   if (Number.isSafeInteger(elementsPerWorker) && (elementsPerWorker as number) <= 0) {
     throw RangeError(
-      `Invalid negative or zero number of elements per worker '${elementsPerWorker}' defined in configuration`
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+      `Invalid negative or zero number of elements per worker '${elementsPerWorker?.toString()}' defined in configuration`
     )
   }
 }

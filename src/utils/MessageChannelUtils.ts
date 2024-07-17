@@ -6,13 +6,13 @@ import {
   type ChargingStationWorkerMessage,
   ChargingStationWorkerMessageEvents,
   type Statistics,
-  type TimestampedData
+  type TimestampedData,
 } from '../types/index.js'
 import {
   buildChargingStationAutomaticTransactionGeneratorConfiguration,
   buildConnectorsStatus,
   buildEvsesStatus,
-  OutputFormat
+  OutputFormat,
 } from './ChargingStationConfigurationUtils.js'
 
 export const buildAddedMessage = (
@@ -20,7 +20,7 @@ export const buildAddedMessage = (
 ): ChargingStationWorkerMessage<ChargingStationData> => {
   return {
     event: ChargingStationWorkerMessageEvents.added,
-    data: buildChargingStationDataPayload(chargingStation)
+    data: buildChargingStationDataPayload(chargingStation),
   }
 }
 
@@ -29,7 +29,7 @@ export const buildDeletedMessage = (
 ): ChargingStationWorkerMessage<ChargingStationData> => {
   return {
     event: ChargingStationWorkerMessageEvents.deleted,
-    data: buildChargingStationDataPayload(chargingStation)
+    data: buildChargingStationDataPayload(chargingStation),
   }
 }
 
@@ -38,7 +38,7 @@ export const buildStartedMessage = (
 ): ChargingStationWorkerMessage<ChargingStationData> => {
   return {
     event: ChargingStationWorkerMessageEvents.started,
-    data: buildChargingStationDataPayload(chargingStation)
+    data: buildChargingStationDataPayload(chargingStation),
   }
 }
 
@@ -47,7 +47,7 @@ export const buildStoppedMessage = (
 ): ChargingStationWorkerMessage<ChargingStationData> => {
   return {
     event: ChargingStationWorkerMessageEvents.stopped,
-    data: buildChargingStationDataPayload(chargingStation)
+    data: buildChargingStationDataPayload(chargingStation),
   }
 }
 
@@ -56,7 +56,7 @@ export const buildUpdatedMessage = (
 ): ChargingStationWorkerMessage<ChargingStationData> => {
   return {
     event: ChargingStationWorkerMessageEvents.updated,
-    data: buildChargingStationDataPayload(chargingStation)
+    data: buildChargingStationDataPayload(chargingStation),
   }
 }
 
@@ -77,8 +77,8 @@ export const buildPerformanceStatisticsMessage = (
       uri: statistics.uri,
       createdAt: statistics.createdAt,
       updatedAt: statistics.updatedAt,
-      statisticsData
-    }
+      statisticsData,
+    },
   }
 }
 
@@ -96,7 +96,7 @@ const buildChargingStationDataPayload = (chargingStation: ChargingStation): Char
     bootNotificationResponse: chargingStation.bootNotificationResponse,
     ...(chargingStation.automaticTransactionGenerator != null && {
       automaticTransactionGenerator:
-        buildChargingStationAutomaticTransactionGeneratorConfiguration(chargingStation)
-    })
+        buildChargingStationAutomaticTransactionGeneratorConfiguration(chargingStation),
+    }),
   }
 }

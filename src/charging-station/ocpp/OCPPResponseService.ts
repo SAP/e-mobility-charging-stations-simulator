@@ -7,7 +7,7 @@ import type {
   IncomingRequestCommand,
   JsonType,
   OCPPVersion,
-  RequestCommand
+  RequestCommand,
 } from '../../types/index.js'
 import { Constants, logger } from '../../utils/index.js'
 import { ajvErrorsToErrorType } from './OCPPServiceUtils.js'
@@ -25,20 +25,20 @@ export abstract class OCPPResponseService {
   protected readonly ajvIncomingRequest: Ajv
   protected abstract payloadValidateFunctions: Map<RequestCommand, ValidateFunction<JsonType>>
   public abstract incomingRequestResponsePayloadValidateFunctions: Map<
-  IncomingRequestCommand,
-  ValidateFunction<JsonType>
+    IncomingRequestCommand,
+    ValidateFunction<JsonType>
   >
 
   protected constructor (version: OCPPVersion) {
     this.version = version
     this.ajv = new Ajv({
       keywords: ['javaType'],
-      multipleOfPrecision: 2
+      multipleOfPrecision: 2,
     })
     ajvFormats(this.ajv)
     this.ajvIncomingRequest = new Ajv({
       keywords: ['javaType'],
-      multipleOfPrecision: 2
+      multipleOfPrecision: 2,
     })
     ajvFormats(this.ajvIncomingRequest)
     this.responseHandler = this.responseHandler.bind(this)

@@ -25,24 +25,24 @@ if (logConfiguration.rotate === true) {
       ),
       level: 'error',
       ...(logMaxFiles != null && { maxFiles: logMaxFiles }),
-      ...(logMaxSize != null && { maxSize: logMaxSize })
+      ...(logMaxSize != null && { maxSize: logMaxSize }),
     }),
     new DailyRotateFile({
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       filename: insertAt(logConfiguration.file!, '-%DATE%', logConfiguration.file!.indexOf('.log')),
       ...(logMaxFiles != null && { maxFiles: logMaxFiles }),
-      ...(logMaxSize != null && { maxSize: logMaxSize })
-    })
+      ...(logMaxSize != null && { maxSize: logMaxSize }),
+    }),
   ]
 } else {
   transports = [
     new TransportType.File({
       filename: logConfiguration.errorFile,
-      level: 'error'
+      level: 'error',
     }),
     new TransportType.File({
-      filename: logConfiguration.file
-    })
+      filename: logConfiguration.file,
+    }),
   ]
 }
 
@@ -54,7 +54,7 @@ export const logger = createLogger({
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     (format[logConfiguration.format! as keyof FormatWrap] as FormatWrap)()
   ),
-  transports
+  transports,
 })
 
 //
@@ -68,7 +68,7 @@ if (logConfiguration.console === true) {
         format.splat(),
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         (format[logConfiguration.format! as keyof FormatWrap] as FormatWrap)()
-      )
+      ),
     })
   )
 }

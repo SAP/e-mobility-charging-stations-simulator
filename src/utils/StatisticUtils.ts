@@ -35,7 +35,6 @@ export const nthPercentile = (dataSet: number[], percentile: number): number => 
 
 /**
  * Computes the sample standard deviation of the given data set.
- *
  * @param dataSet - Data set.
  * @param dataSetAverage - Average of the data set.
  * @returns The sample standard deviation of the given data set.

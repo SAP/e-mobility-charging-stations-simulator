@@ -13,7 +13,7 @@ import type {
   FirmwareStatus,
   IncomingRequestCommand,
   MessageTrigger,
-  RequestCommand
+  RequestCommand,
 } from './ocpp/Requests.js'
 
 export enum CurrentType {

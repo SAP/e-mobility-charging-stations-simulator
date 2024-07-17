@@ -13,7 +13,7 @@ import {
   WorkerMessageEvents,
   type WorkerOptions,
   type WorkerSetElement,
-  WorkerSetEvents
+  WorkerSetEvents,
 } from './WorkerTypes.js'
 import { randomizeDelay, sleep } from './WorkerUtils.js'
 
@@ -28,7 +28,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
   private readonly workerSet: Set<WorkerSetElement>
   private readonly promiseResponseMap: Map<
     `${string}-${string}-${string}-${string}`,
-  ResponseWrapper<R>
+    ResponseWrapper<R>
   >
 
   private started: boolean
@@ -36,7 +36,6 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
 
   /**
    * Creates a new `WorkerSet`.
-   *
    * @param workerScript -
    * @param workerOptions -
    */
@@ -54,7 +53,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     this.workerSet = new Set<WorkerSetElement>()
     this.promiseResponseMap = new Map<
       `${string}-${string}-${string}-${string}`,
-    ResponseWrapper<R>
+      ResponseWrapper<R>
     >()
     if (this.workerOptions.poolOptions?.enableEvents === true) {
       this.emitter = new EventEmitterAsyncResource({ name: 'workerset' })
@@ -75,7 +74,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
         0
       ),
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      elementsPerWorker: this.maxElementsPerWorker!
+      elementsPerWorker: this.maxElementsPerWorker!,
     }
   }
 
@@ -127,13 +126,13 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
       const message = {
         uuid: randomUUID(),
         event: WorkerMessageEvents.addWorkerElement,
-        data: elementData
+        data: elementData,
       } satisfies WorkerMessage<D>
       workerSetElement.worker.postMessage(message)
       this.promiseResponseMap.set(message.uuid, {
         resolve,
         reject,
-        workerSetElement
+        workerSetElement,
       })
     })
     const response = await sendMessageToWorker
@@ -148,12 +147,13 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
 
   /**
    * Adds a new `WorkerSetElement`.
+   * @returns The new `WorkerSetElement`.
    */
   private addWorkerSetElement (): WorkerSetElement {
     this.workerStartup = true
     const worker = new Worker(this.workerScript, {
       env: SHARE_ENV,
-      ...this.workerOptions.poolOptions?.workerOptions
+      ...this.workerOptions.poolOptions?.workerOptions,
     })
     worker.on('message', this.workerOptions.poolOptions?.messageHandler ?? EMPTY_FUNCTION)
     worker.on('message', (message: WorkerMessage<R>) => {
@@ -196,6 +196,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
         this.addWorkerSetElement()
       }
       worker.unref()
+      // eslint-disable-next-line promise/no-promise-in-callback
       worker.terminate().catch((error: unknown) => this.emitter?.emit(WorkerSetEvents.error, error))
     })
     worker.on('online', this.workerOptions.poolOptions?.onlineHandler ?? EMPTY_FUNCTION)
@@ -205,7 +206,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     })
     const workerSetElement: WorkerSetElement = {
       worker,
-      numberOfWorkerElements: 0
+      numberOfWorkerElements: 0,
     }
     this.workerSet.add(workerSetElement)
     this.workerStartup = false

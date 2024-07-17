@@ -3,7 +3,7 @@ export type { ChargingStation } from './ChargingStation.js'
 export {
   addConfigurationKey,
   getConfigurationKey,
-  setConfigurationKeyValue
+  setConfigurationKeyValue,
 } from './ConfigurationKeyUtils.js'
 export {
   canProceedChargingProfile,
@@ -15,5 +15,5 @@ export {
   prepareChargingProfileKind,
   removeExpiredReservations,
   resetAuthorizeConnectorStatus,
-  resetConnectorStatus
+  resetConnectorStatus,
 } from './Helpers.js'

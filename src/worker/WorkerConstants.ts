@@ -26,6 +26,6 @@ export const DEFAULT_WORKER_OPTIONS: WorkerOptions = Object.freeze({
     enableEvents: true,
     restartWorkerOnError: true,
     errorHandler: defaultErrorHandler,
-    exitHandler: defaultExitHandler
-  }
+    exitHandler: defaultExitHandler,
+  },
 })

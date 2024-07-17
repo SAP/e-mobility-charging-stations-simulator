@@ -39,10 +39,10 @@ export interface ChargingStationData extends WorkerData {
   ocppConfiguration: ChargingStationOcppConfiguration
   supervisionUrl: string
   wsState?:
-  | typeof WebSocket.CONNECTING
-  | typeof WebSocket.OPEN
-  | typeof WebSocket.CLOSING
-  | typeof WebSocket.CLOSED
+    | typeof WebSocket.CONNECTING
+    | typeof WebSocket.OPEN
+    | typeof WebSocket.CLOSING
+    | typeof WebSocket.CLOSED
   bootNotificationResponse?: BootNotificationResponse
   automaticTransactionGenerator?: ChargingStationAutomaticTransactionGeneratorConfiguration
 }
@@ -53,7 +53,7 @@ enum ChargingStationMessageEvents {
 
 export const ChargingStationWorkerMessageEvents = {
   ...ChargingStationEvents,
-  ...ChargingStationMessageEvents
+  ...ChargingStationMessageEvents,
 } as const
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type ChargingStationWorkerMessageEvents =

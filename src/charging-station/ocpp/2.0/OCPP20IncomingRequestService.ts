@@ -10,7 +10,7 @@ import {
   type JsonType,
   type OCPP20ClearCacheRequest,
   OCPP20IncomingRequestCommand,
-  OCPPVersion
+  OCPPVersion,
 } from '../../../types/index.js'
 import { isAsyncFunction, logger } from '../../../utils/index.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
@@ -22,8 +22,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   protected payloadValidateFunctions: Map<OCPP20IncomingRequestCommand, ValidateFunction<JsonType>>
 
   private readonly incomingRequestHandlers: Map<
-  OCPP20IncomingRequestCommand,
-  IncomingRequestHandler
+    OCPP20IncomingRequestCommand,
+    IncomingRequestHandler
   >
 
   public constructor () {
@@ -32,11 +32,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     // }
     super(OCPPVersion.VERSION_201)
     this.incomingRequestHandlers = new Map<OCPP20IncomingRequestCommand, IncomingRequestHandler>([
-      [OCPP20IncomingRequestCommand.CLEAR_CACHE, this.handleRequestClearCache.bind(this)]
+      [OCPP20IncomingRequestCommand.CLEAR_CACHE, this.handleRequestClearCache.bind(this)],
     ])
     this.payloadValidateFunctions = new Map<
-    OCPP20IncomingRequestCommand,
-    ValidateFunction<JsonType>
+      OCPP20IncomingRequestCommand,
+      ValidateFunction<JsonType>
     >([
       [
         OCPP20IncomingRequestCommand.CLEAR_CACHE,
@@ -48,8 +48,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               'constructor'
             )
           )
-          .bind(this)
-      ]
+          .bind(this),
+      ],
     ])
     this.validatePayload = this.validatePayload.bind(this)
   }

@@ -7,14 +7,13 @@ import type { WorkerData, WorkerOptions } from './WorkerTypes.js'
 import { randomizeDelay, sleep } from './WorkerUtils.js'
 
 export class WorkerFixedPool<D extends WorkerData, R extends WorkerData> extends WorkerAbstract<
-D,
-R
+  D,
+  R
 > {
   private readonly pool: FixedThreadPool<D, R>
 
   /**
    * Creates a new `WorkerFixedPool`.
-   *
    * @param workerScript -
    * @param workerOptions -
    */

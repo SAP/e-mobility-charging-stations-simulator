@@ -2,31 +2,31 @@ import type { JsonObject } from '../JsonType.js'
 import {
   OCPP16StandardParametersKey,
   OCPP16SupportedFeatureProfiles,
-  OCPP16VendorParametersKey
+  OCPP16VendorParametersKey,
 } from './1.6/Configuration.js'
 import {
   OCPP20OptionalVariableName,
   OCPP20RequiredVariableName,
-  OCPP20VendorVariableName
+  OCPP20VendorVariableName,
 } from './2.0/Variables.js'
 
 export const StandardParametersKey = {
   ...OCPP16StandardParametersKey,
   ...OCPP20RequiredVariableName,
-  ...OCPP20OptionalVariableName
+  ...OCPP20OptionalVariableName,
 } as const
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type StandardParametersKey = OCPP16StandardParametersKey
 
 export const VendorParametersKey = {
   ...OCPP16VendorParametersKey,
-  ...OCPP20VendorVariableName
+  ...OCPP20VendorVariableName,
 } as const
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type VendorParametersKey = OCPP16VendorParametersKey
 
 export const SupportedFeatureProfiles = {
-  ...OCPP16SupportedFeatureProfiles
+  ...OCPP16SupportedFeatureProfiles,
 } as const
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type SupportedFeatureProfiles = OCPP16SupportedFeatureProfiles

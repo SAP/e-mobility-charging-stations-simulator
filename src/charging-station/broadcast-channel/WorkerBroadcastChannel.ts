@@ -4,7 +4,7 @@ import type {
   BroadcastChannelRequest,
   BroadcastChannelResponse,
   JsonType,
-  MessageEvent
+  MessageEvent,
 } from '../../types/index.js'
 import { logger, logPrefix, validateUUID } from '../../utils/index.js'
 

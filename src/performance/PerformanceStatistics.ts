@@ -19,7 +19,7 @@ import {
   type Statistics,
   type StatisticsData,
   type StorageConfiguration,
-  type TimestampedData
+  type TimestampedData,
 } from '../types/index.js'
 import {
   buildPerformanceStatisticsMessage,
@@ -34,13 +34,13 @@ import {
   max,
   min,
   nthPercentile,
-  stdDeviation
+  stdDeviation,
 } from '../utils/index.js'
 
 export class PerformanceStatistics {
   private static readonly instances: Map<string, PerformanceStatistics> = new Map<
-  string,
-  PerformanceStatistics
+    string,
+    PerformanceStatistics
   >()
 
   private readonly objId: string | undefined
@@ -58,7 +58,7 @@ export class PerformanceStatistics {
       name: this.objName,
       uri: uri.toString(),
       createdAt: new Date(),
-      statisticsData: new Map()
+      statisticsData: new Map(),
     }
   }
 
@@ -132,7 +132,7 @@ export class PerformanceStatistics {
         } else {
           this.statistics.statisticsData.set(command, {
             ...this.statistics.statisticsData.get(command),
-            requestCount: 1
+            requestCount: 1,
           })
         }
         break
@@ -146,7 +146,7 @@ export class PerformanceStatistics {
         } else {
           this.statistics.statisticsData.set(command, {
             ...this.statistics.statisticsData.get(command),
-            responseCount: 1
+            responseCount: 1,
           })
         }
         break
@@ -160,7 +160,7 @@ export class PerformanceStatistics {
         } else {
           this.statistics.statisticsData.set(command, {
             ...this.statistics.statisticsData.get(command),
-            errorCount: 1
+            errorCount: 1,
           })
         }
         break
@@ -180,7 +180,9 @@ export class PerformanceStatistics {
     if (performanceStorageConfiguration.enabled === true) {
       logger.info(
         `${this.logPrefix()} storage enabled: type ${
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           performanceStorageConfiguration.type
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         }, uri: ${performanceStorageConfiguration.uri}`
       )
     }
@@ -215,7 +217,7 @@ export class PerformanceStatistics {
       ...this.statistics,
       statisticsData: JSON.parse(
         JSONStringify(this.statistics.statisticsData, undefined, MapStringifyFormat.object)
-      ) as Map<string | RequestCommand | IncomingRequestCommand, StatisticsData>
+      ) as Map<string | RequestCommand | IncomingRequestCommand, StatisticsData>,
     })
   }
 
@@ -241,7 +243,7 @@ export class PerformanceStatistics {
       )
     } else if (logConfiguration.enabled === true) {
       logger.info(
-        `${this.logPrefix()} log interval is set to ${logStatisticsInterval}. Not logging statistics`
+        `${this.logPrefix()} log interval is set to ${logStatisticsInterval.toString()}. Not logging statistics`
       )
     }
   }
@@ -292,7 +294,7 @@ export class PerformanceStatistics {
     }
     this.statistics.statisticsData.get(entry.name)?.measurementTimeSeries?.push({
       timestamp: entry.startTime,
-      value: entry.duration
+      value: entry.duration,
     })
     const timeMeasurementValues = extractTimeSeriesValues(
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -328,6 +330,7 @@ export class PerformanceStatistics {
   }
 
   private readonly logPrefix = (): string => {
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     return logPrefix(` ${this.objName} | Performance statistics`)
   }
 }

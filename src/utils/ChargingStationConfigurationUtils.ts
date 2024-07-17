@@ -3,7 +3,7 @@ import type {
   ChargingStationAutomaticTransactionGeneratorConfiguration,
   ConnectorStatus,
   EvseStatusConfiguration,
-  EvseStatusWorkerType
+  EvseStatusWorkerType,
 } from '../types/index.js'
 
 export const buildChargingStationAutomaticTransactionGeneratorConfiguration = (
@@ -13,9 +13,9 @@ export const buildChargingStationAutomaticTransactionGeneratorConfiguration = (
     automaticTransactionGenerator: chargingStation.getAutomaticTransactionGeneratorConfiguration(),
     ...(chargingStation.automaticTransactionGenerator?.connectorsStatus != null && {
       automaticTransactionGeneratorStatuses: [
-        ...chargingStation.automaticTransactionGenerator.connectorsStatus.values()
-      ]
-    })
+        ...chargingStation.automaticTransactionGenerator.connectorsStatus.values(),
+      ],
+    }),
   }
 }
 
@@ -33,7 +33,7 @@ export enum OutputFormat {
 export const buildEvsesStatus = (
   chargingStation: ChargingStation,
   outputFormat: OutputFormat = OutputFormat.configuration
-): Array<EvseStatusWorkerType | EvseStatusConfiguration> => {
+): (EvseStatusWorkerType | EvseStatusConfiguration)[] => {
   // eslint-disable-next-line array-callback-return
   return [...chargingStation.evses.values()].map(evseStatus => {
     const connectorsStatus = [...evseStatus.connectors.values()].map(
@@ -44,12 +44,12 @@ export const buildEvsesStatus = (
       case OutputFormat.worker:
         return {
           ...evseStatus,
-          connectors: connectorsStatus
+          connectors: connectorsStatus,
         }
       case OutputFormat.configuration:
         status = {
           ...evseStatus,
-          connectorsStatus
+          connectorsStatus,
         }
         delete (status as EvseStatusWorkerType).connectors
         return status

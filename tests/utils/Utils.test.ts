@@ -31,8 +31,9 @@ import {
   roundTo,
   secureRandom,
   sleep,
-  validateUUID
+  validateUUID,
 } from '../../src/utils/Utils.js'
+import { runtime, runtimes } from '../../utils/runtime.js'
 
 await describe('Utils test suite', async () => {
   await it('Verify generateUUID()/validateUUID()', () => {
@@ -232,7 +233,6 @@ await describe('Utils test suite', async () => {
     expect(isAsyncFunction('')).toBe(false)
     expect(isAsyncFunction([])).toBe(false)
     expect(isAsyncFunction(new Date())).toBe(false)
-    // eslint-disable-next-line prefer-regex-literals
     expect(isAsyncFunction(/[a-z]/i)).toBe(false)
     expect(isAsyncFunction(new Error())).toBe(false)
     expect(isAsyncFunction(new Map())).toBe(false)
@@ -315,7 +315,7 @@ await describe('Utils test suite', async () => {
     const date = new Date()
     expect(clone(date)).toStrictEqual(date)
     expect(clone(date) === date).toBe(false)
-    if (satisfies(version, '>=21.0.0')) {
+    if (runtime === runtimes.node && satisfies(version, '>=22.0.0')) {
       const url = new URL('https://domain.tld')
       expect(() => clone(url)).toThrowError(new Error('Cannot clone object of unsupported type.'))
     }

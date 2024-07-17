@@ -40,6 +40,7 @@
     "mikro",
     "MILLI",
     "mnemonist",
+    "neostandard",
     "ocpp",
     "olivierbagot",
     "onconnection",
@@ -51,12 +52,14 @@
     "rambda",
     "Recurrency",
     "RFID",
+    "runtimes",
     "shutdowning",
     "sonarlint",
     "SRPC",
     "tsdoc",
     "VCAP",
     "webui",
+    "workerd",
     "workerset"
   ]
 }

@@ -9,7 +9,7 @@ import type {
   ClearCacheResponse,
   IncomingRequestCommand,
   JsonType,
-  OCPPVersion
+  OCPPVersion,
 } from '../../types/index.js'
 import { logger } from '../../utils/index.js'
 import { OCPPConstants } from './OCPPConstants.js'
@@ -26,8 +26,8 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
   private readonly version: OCPPVersion
   protected readonly ajv: Ajv
   protected abstract payloadValidateFunctions: Map<
-  IncomingRequestCommand,
-  ValidateFunction<JsonType>
+    IncomingRequestCommand,
+    ValidateFunction<JsonType>
   >
 
   protected constructor (version: OCPPVersion) {
@@ -35,7 +35,7 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
     this.version = version
     this.ajv = new Ajv({
       keywords: ['javaType'],
-      multipleOfPrecision: 2
+      multipleOfPrecision: 2,
     })
     ajvFormats(this.ajv)
     this.incomingRequestHandler = this.incomingRequestHandler.bind(this)

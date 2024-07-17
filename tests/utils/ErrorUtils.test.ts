@@ -9,19 +9,18 @@ import {
   GenericStatus,
   IncomingRequestCommand,
   MessageType,
-  RequestCommand
+  RequestCommand,
 } from '../../src/types/index.js'
 import {
   handleFileException,
   handleIncomingRequestError,
-  handleSendMessageError
+  handleSendMessageError,
 } from '../../src/utils/ErrorUtils.js'
 import { logger } from '../../src/utils/Logger.js'
 
 await describe('ErrorUtils test suite', async () => {
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
   const chargingStation = {
-    logPrefix: () => 'CS-TEST |'
+    logPrefix: () => 'CS-TEST |',
   } as ChargingStation
 
   await it('Verify handleFileException()', t => {
@@ -36,20 +35,20 @@ await describe('ErrorUtils test suite', async () => {
     }).toThrow(error)
     expect(() => {
       handleFileException('path/to/module.js', FileType.Authorization, error, 'log prefix |', {
-        throwError: false
+        throwError: false,
       })
     }).not.toThrow()
     expect(logger.warn.mock.calls.length).toBe(1)
     expect(logger.error.mock.calls.length).toBe(1)
     expect(() => {
       handleFileException('path/to/module.js', FileType.Authorization, error, 'log prefix |', {
-        consoleOut: true
+        consoleOut: true,
       })
     }).toThrow(error)
     expect(() => {
       handleFileException('path/to/module.js', FileType.Authorization, error, 'log prefix |', {
         throwError: false,
-        consoleOut: true
+        consoleOut: true,
       })
     }).not.toThrow()
     expect(console.warn.mock.calls.length).toBe(1)
@@ -90,16 +89,16 @@ await describe('ErrorUtils test suite', async () => {
     }).toThrow(error)
     expect(() => {
       handleIncomingRequestError(chargingStation, IncomingRequestCommand.CLEAR_CACHE, error, {
-        throwError: false
+        throwError: false,
       })
     }).not.toThrow()
     const errorResponse = {
-      status: GenericStatus.Rejected
+      status: GenericStatus.Rejected,
     }
     expect(
       handleIncomingRequestError(chargingStation, IncomingRequestCommand.CLEAR_CACHE, error, {
         throwError: false,
-        errorResponse
+        errorResponse,
       })
     ).toStrictEqual(errorResponse)
     expect(chargingStation.logPrefix.mock.calls.length).toBe(3)

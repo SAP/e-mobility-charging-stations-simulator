@@ -34,7 +34,7 @@ await build({
     'winston',
     'winston/*',
     'winston-daily-rotate-file',
-    'ws'
+    'ws',
   ],
   treeShaking: true,
   minify: true,
@@ -50,33 +50,33 @@ await build({
         './dist/assets/json-schemas',
         './dist/assets/station-templates',
         './dist/assets/ui-protocol',
-        './dist/assets/configs-docker'
-      ]
+        './dist/assets/configs-docker',
+      ],
     }),
     copy({
       assets: [
         {
           from: ['./src/assets/config.json'],
-          to: ['./assets']
+          to: ['./assets'],
         },
         {
           from: ['./src/assets/idtags!(-template)*.json'],
-          to: ['./assets']
+          to: ['./assets'],
         },
         {
           from: ['./src/assets/json-schemas/**/*.json'],
-          to: ['./assets/json-schemas']
+          to: ['./assets/json-schemas'],
         },
         {
           from: ['./src/assets/station-templates/**/*.json'],
-          to: ['./assets/station-templates']
+          to: ['./assets/station-templates'],
         },
         {
           from: ['./src/assets/configs-docker/*.json'],
-          to: ['./assets/configs-docker']
-        }
-      ]
-    })
-  ]
+          to: ['./assets/configs-docker'],
+        },
+      ],
+    }),
+  ],
 })
 console.timeEnd('Build time')
