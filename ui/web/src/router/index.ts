@@ -13,41 +13,41 @@ export const router = createRouter({
       path: '/',
       name: 'charging-stations',
       components: {
-        default: ChargingStationsView
-      }
+        default: ChargingStationsView,
+      },
     },
     {
       path: '/add-charging-stations',
       name: 'add-charging-stations',
       components: {
         default: ChargingStationsView,
-        action: AddChargingStations
-      }
+        action: AddChargingStations,
+      },
     },
     {
       path: '/set-supervision-url/:hashId/:chargingStationId',
       name: 'set-supervision-url',
       components: {
         default: ChargingStationsView,
-        action: SetSupervisionUrl
+        action: SetSupervisionUrl,
       },
-      props: { default: false, action: true }
+      props: { default: false, action: true },
     },
     {
       path: '/start-transaction/:hashId/:chargingStationId/:connectorId',
       name: 'start-transaction',
       components: {
         default: ChargingStationsView,
-        action: StartTransaction
+        action: StartTransaction,
       },
-      props: { default: false, action: true }
+      props: { default: false, action: true },
     },
     {
       name: 'not-found',
       path: '/:pathMatch(.*)*',
       components: {
-        default: NotFoundView
-      }
-    }
-  ]
+        default: NotFoundView,
+      },
+    },
+  ],
 })

@@ -75,7 +75,7 @@
             autoStart: convertToBoolean(state.autoStart),
             persistentConfiguration: convertToBoolean(state.persistentConfiguration),
             ocppStrictCompliance: convertToBoolean(state.ocppStrictCompliance),
-            enableStatistics: convertToBoolean(state.enableStatistics)
+            enableStatistics: convertToBoolean(state.enableStatistics),
           })
           .then(() => {
             $toast.success('Charging stations successfully added')
@@ -117,7 +117,7 @@ const state = ref<{
   autoStart: false,
   persistentConfiguration: true,
   ocppStrictCompliance: true,
-  enableStatistics: false
+  enableStatistics: false,
 })
 
 watch(getCurrentInstance()!.appContext.config.globalProperties.$templates, () => {

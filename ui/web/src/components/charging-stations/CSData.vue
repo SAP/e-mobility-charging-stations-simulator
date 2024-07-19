@@ -31,8 +31,8 @@
               name: 'set-supervision-url',
               params: {
                 hashId: chargingStation.stationInfo.hashId,
-                chargingStationId: chargingStation.stationInfo.chargingStationId
-              }
+                chargingStationId: chargingStation.stationInfo.chargingStationId,
+              },
             })
           }
         "

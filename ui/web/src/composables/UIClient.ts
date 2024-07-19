@@ -9,7 +9,7 @@ import {
   type RequestPayload,
   type ResponsePayload,
   ResponseStatus,
-  type UIServerConfigurationSection
+  type UIServerConfigurationSection,
 } from '@/types'
 
 import { randomUUID, validateUUID } from './Utils'
@@ -100,44 +100,44 @@ export class UIClient {
     return this.sendRequest(ProcedureName.ADD_CHARGING_STATIONS, {
       template,
       numberOfStations,
-      options
+      options,
     })
   }
 
   public async deleteChargingStation(hashId: string): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.DELETE_CHARGING_STATIONS, {
-      hashIds: [hashId]
+      hashIds: [hashId],
     })
   }
 
   public async setSupervisionUrl(hashId: string, supervisionUrl: string): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.SET_SUPERVISION_URL, {
       hashIds: [hashId],
-      url: supervisionUrl
+      url: supervisionUrl,
     })
   }
 
   public async startChargingStation(hashId: string): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.START_CHARGING_STATION, {
-      hashIds: [hashId]
+      hashIds: [hashId],
     })
   }
 
   public async stopChargingStation(hashId: string): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.STOP_CHARGING_STATION, {
-      hashIds: [hashId]
+      hashIds: [hashId],
     })
   }
 
   public async openConnection(hashId: string): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.OPEN_CONNECTION, {
-      hashIds: [hashId]
+      hashIds: [hashId],
     })
   }
 
   public async closeConnection(hashId: string): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.CLOSE_CONNECTION, {
-      hashIds: [hashId]
+      hashIds: [hashId],
     })
   }
 
@@ -149,7 +149,7 @@ export class UIClient {
     return this.sendRequest(ProcedureName.START_TRANSACTION, {
       hashIds: [hashId],
       connectorId,
-      idTag
+      idTag,
     })
   }
 
@@ -159,7 +159,7 @@ export class UIClient {
   ): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.STOP_TRANSACTION, {
       hashIds: [hashId],
-      transactionId
+      transactionId,
     })
   }
 
@@ -169,7 +169,7 @@ export class UIClient {
   ): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR, {
       hashIds: [hashId],
-      connectorIds: [connectorId]
+      connectorIds: [connectorId],
     })
   }
 
@@ -179,7 +179,7 @@ export class UIClient {
   ): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR, {
       hashIds: [hashId],
-      connectorIds: [connectorId]
+      connectorIds: [connectorId],
     })
   }
 
@@ -191,7 +191,7 @@ export class UIClient {
             `${this.uiServerConfiguration.protocol}${this.uiServerConfiguration.version}`,
             `authorization.basic.${btoa(
               `${this.uiServerConfiguration.authentication.username}:${this.uiServerConfiguration.authentication.password}`
-            ).replace(/={1,2}$/, '')}`
+            ).replace(/={1,2}$/, '')}`,
           ]
         : `${this.uiServerConfiguration.protocol}${this.uiServerConfiguration.version}`
     this.ws = new WebSocket(

@@ -3,7 +3,7 @@ export type {
   ChargingStationInfo,
   ChargingStationOptions,
   ConnectorStatus,
-  Status
+  Status,
 } from './ChargingStationType'
 export type { ConfigurationData, UIServerConfigurationSection } from './ConfigurationType'
 export {
@@ -16,5 +16,5 @@ export {
   type RequestPayload,
   type ResponsePayload,
   ResponseStatus,
-  type SimulatorState
+  type SimulatorState,
 } from './UIProtocol'
