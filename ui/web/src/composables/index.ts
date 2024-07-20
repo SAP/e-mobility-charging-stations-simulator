@@ -7,5 +7,5 @@ export {
   getLocalStorage,
   randomUUID,
   setToLocalStorage,
-  useUIClient
+  useUIClient,
 } from './Utils'

@@ -126,13 +126,13 @@ import {
   getLocalStorage,
   randomUUID,
   setToLocalStorage,
-  useUIClient
+  useUIClient,
 } from '@/composables'
 import type {
   ChargingStationData,
   ResponsePayload,
   SimulatorState,
-  UIServerConfigurationSection
+  UIServerConfigurationSection,
 } from '@/types'
 
 const simulatorState = ref<SimulatorState | undefined>(undefined)
@@ -162,7 +162,7 @@ const state = ref<{
   gettingSimulatorState: false,
   gettingTemplates: false,
   gettingChargingStations: false,
-  uiServerIndex: getFromLocalStorage<number>('uiServerConfigurationIndex', 0)
+  uiServerIndex: getFromLocalStorage<number>('uiServerConfigurationIndex', 0),
 })
 
 const clearToggleButtons = (): void => {
@@ -296,7 +296,7 @@ const uiServerConfigurations: {
     .uiServer as UIServerConfigurationSection[]
 ).map((configuration: UIServerConfigurationSection, index: number) => ({
   index,
-  configuration
+  configuration,
 }))
 
 const startSimulator = (): void => {

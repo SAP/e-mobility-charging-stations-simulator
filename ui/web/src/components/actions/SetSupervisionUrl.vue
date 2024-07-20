@@ -44,7 +44,7 @@ defineProps<{
 }>()
 
 const state = ref<{ supervisionUrl: string }>({
-  supervisionUrl: ''
+  supervisionUrl: '',
 })
 </script>
 

@@ -7,7 +7,7 @@
     "pnpm": ">=9.0.0"
   },
   "volta": {
-    "node": "22.4.1",
+    "node": "22.5.0",
     "pnpm": "9.5.0"
   },
   "packageManager": "pnpm@9.5.0",
@@ -126,7 +126,7 @@
     "esbuild-plugin-copy": "^2.1.1",
     "eslint": "^9.7.0",
     "eslint-define-config": "^2.1.0",
-    "eslint-plugin-jsdoc": "^48.7.0",
+    "eslint-plugin-jsdoc": "^48.8.0",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "expect": "^29.7.0",
     "glob": "^11.0.0",

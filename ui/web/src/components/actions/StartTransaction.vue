@@ -41,7 +41,7 @@ defineProps<{
 }>()
 
 const state = ref<{ idTag: string }>({
-  idTag: ''
+  idTag: '',
 })
 </script>
 

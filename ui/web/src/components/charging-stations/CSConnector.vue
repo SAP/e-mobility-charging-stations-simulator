@@ -16,7 +16,7 @@
           () => {
             $router.push({
               name: 'start-transaction',
-              params: { hashId, chargingStationId, connectorId }
+              params: { hashId, chargingStationId, connectorId },
             })
           }
         "

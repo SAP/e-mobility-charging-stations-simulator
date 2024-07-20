@@ -6,7 +6,7 @@ module.exports = defineConfig({
   root: true,
 
   env: {
-    node: true
+    node: true,
   },
 
   plugins: ['simple-import-sort'],
@@ -17,20 +17,20 @@ module.exports = defineConfig({
     'plugin:import/typescript',
     'plugin:vue/vue3-recommended',
     '@vue/eslint-config-typescript/recommended',
-    '@vue/eslint-config-prettier'
+    '@vue/eslint-config-prettier',
   ],
 
   settings: {
     'import/resolver': {
       typescript: {
-        project: './tsconfig.json'
-      }
-    }
+        project: './tsconfig.json',
+      },
+    },
   },
 
   parserOptions: {
     sourceType: 'module',
-    ecmaVersion: 'latest'
+    ecmaVersion: 'latest',
   },
 
   rules: {
@@ -38,6 +38,6 @@ module.exports = defineConfig({
     'no-debugger': env.NODE_ENV === 'production' ? 'warn' : 'off',
     'simple-import-sort/imports': 'error',
     'simple-import-sort/exports': 'error',
-    'vue/multi-word-component-names': 'off'
-  }
+    'vue/multi-word-component-names': 'off',
+  },
 })
