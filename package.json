@@ -7,7 +7,7 @@
     "pnpm": ">=9.0.0"
   },
   "volta": {
-    "node": "22.5.0",
+    "node": "22.5.1",
     "pnpm": "9.5.0"
   },
   "packageManager": "pnpm@9.5.0",
@@ -86,10 +86,10 @@
     }
   },
   "dependencies": {
-    "@mikro-orm/core": "^6.2.9",
-    "@mikro-orm/mariadb": "^6.2.9",
-    "@mikro-orm/reflection": "^6.2.9",
-    "@mikro-orm/sqlite": "^6.2.9",
+    "@mikro-orm/core": "^6.3.0",
+    "@mikro-orm/mariadb": "^6.3.0",
+    "@mikro-orm/reflection": "^6.3.0",
+    "@mikro-orm/sqlite": "^6.3.0",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "basic-ftp": "^5.0.5",
@@ -99,7 +99,7 @@
     "logform": "^2.6.1",
     "mnemonist": "0.40.0-rc1",
     "mongodb": "^6.8.0",
-    "poolifier": "^4.0.18",
+    "poolifier": "^4.1.0",
     "rambda": "^9.2.1",
     "tar": "^7.4.0",
     "winston": "^3.13.1",
@@ -114,7 +114,7 @@
     "@commitlint/cli": "^19.3.0",
     "@commitlint/config-conventional": "^19.2.2",
     "@eslint/js": "^9.7.0",
-    "@mikro-orm/cli": "^6.2.9",
+    "@mikro-orm/cli": "^6.3.0",
     "@types/node": "^20.14.11",
     "@types/semver": "^7.5.8",
     "@types/ws": "^8.5.11",
@@ -126,7 +126,7 @@
     "esbuild-plugin-copy": "^2.1.1",
     "eslint": "^9.7.0",
     "eslint-define-config": "^2.1.0",
-    "eslint-plugin-jsdoc": "^48.7.0",
+    "eslint-plugin-jsdoc": "^48.8.3",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "expect": "^29.7.0",
     "glob": "^11.0.0",

@@ -8,7 +8,7 @@
     "pnpm": ">=9.0.0"
   },
   "volta": {
-    "node": "22.5.0",
+    "node": "22.5.1",
     "pnpm": "9.5.0"
   },
   "packageManager": "pnpm@9.5.0",
@@ -29,7 +29,7 @@
   "dependencies": {
     "finalhandler": "^1.2.0",
     "serve-static": "^1.15.0",
-    "vue": "^3.4.32",
+    "vue": "^3.4.33",
     "vue-router": "^4.4.0",
     "vue-toast-notification": "^3.1.2"
   },
