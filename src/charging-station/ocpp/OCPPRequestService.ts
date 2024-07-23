@@ -231,13 +231,13 @@ export abstract class OCPPRequestService {
       return true
     }
     logger.error(
-      `${chargingStation.logPrefix()} ${moduleName}.validateIncomingRequestResponsePayload: Command '${commandName}' response PDU is invalid: %j`,
+      `${chargingStation.logPrefix()} ${moduleName}.validateIncomingRequestResponsePayload: Command '${commandName}' incoming request response PDU is invalid: %j`,
       validate?.errors
     )
     // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
     throw new OCPPError(
       ajvErrorsToErrorType(validate?.errors),
-      'Response PDU is invalid',
+      'Incoming request response PDU is invalid',
       commandName,
       JSON.stringify(validate?.errors, undefined, 2)
     )
