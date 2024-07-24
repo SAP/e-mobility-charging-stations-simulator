@@ -111,7 +111,7 @@ import {
 import {
   buildConnectorsMap,
   buildTemplateName,
-  checkChargingStation,
+  checkChargingStationState,
   checkConfiguration,
   checkConnectorsConfiguration,
   checkStationInfoConnectorStatus,
@@ -136,6 +136,7 @@ import {
   propagateSerialNumber,
   setChargingStationOptions,
   stationTemplateToStationInfo,
+  validateStationInfo,
   warnTemplateKeysDeprecation,
 } from './Helpers.js'
 import { IdTagsCache } from './IdTagsCache.js'
@@ -827,7 +828,7 @@ export class ChargingStation extends EventEmitter {
       ...options,
     }
     params = { ...{ closeOpened: false, terminateOpened: false }, ...params }
-    if (!checkChargingStation(this, this.logPrefix())) {
+    if (!checkChargingStationState(this, this.logPrefix())) {
       return
     }
     if (this.stationInfo?.supervisionUser != null && this.stationInfo.supervisionPassword != null) {
@@ -1304,6 +1305,7 @@ export class ChargingStation extends EventEmitter {
       this.initializeConnectorsOrEvsesFromTemplate(stationTemplate)
     }
     this.stationInfo = this.getStationInfo(options)
+    validateStationInfo(this)
     if (
       this.stationInfo.firmwareStatus === FirmwareStatus.Installing &&
       isNotEmptyString(this.stationInfo.firmwareVersionPattern) &&

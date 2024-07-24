@@ -21,7 +21,7 @@ import { create } from 'tar'
 import {
   canProceedChargingProfile,
   type ChargingStation,
-  checkChargingStation,
+  checkChargingStationState,
   getConfigurationKey,
   getConnectorChargingProfiles,
   prepareChargingProfileKind,
@@ -1353,7 +1353,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     maxDelay = 30,
     minDelay = 15
   ): Promise<void> {
-    if (!checkChargingStation(chargingStation, chargingStation.logPrefix())) {
+    if (!checkChargingStationState(chargingStation, chargingStation.logPrefix())) {
       return
     }
     if (chargingStation.hasEvses) {
@@ -1464,7 +1464,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       }
     } while (transactionsStarted)
     !wasTransactionsStarted && (await sleep(secondsToMilliseconds(randomInt(minDelay, maxDelay))))
-    if (!checkChargingStation(chargingStation, chargingStation.logPrefix())) {
+    if (!checkChargingStationState(chargingStation, chargingStation.logPrefix())) {
       return
     }
     await chargingStation.ocppRequestService.requestHandler<

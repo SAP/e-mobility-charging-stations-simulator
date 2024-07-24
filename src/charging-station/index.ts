@@ -7,7 +7,7 @@ export {
 } from './ConfigurationKeyUtils.js'
 export {
   canProceedChargingProfile,
-  checkChargingStation,
+  checkChargingStationState,
   getConnectorChargingProfiles,
   getIdTagsFile,
   hasFeatureProfile,

@@ -28,7 +28,7 @@ import {
   sleep,
 } from '../utils/index.js'
 import type { ChargingStation } from './ChargingStation.js'
-import { checkChargingStation } from './Helpers.js'
+import { checkChargingStationState } from './Helpers.js'
 import { IdTagsCache } from './IdTagsCache.js'
 import { isIdTagAuthorized } from './ocpp/index.js'
 
@@ -74,7 +74,7 @@ export class AutomaticTransactionGenerator {
   }
 
   public start (stopAbsoluteDuration?: boolean): void {
-    if (!checkChargingStation(this.chargingStation, this.logPrefix())) {
+    if (!checkChargingStationState(this.chargingStation, this.logPrefix())) {
       return
     }
     if (this.started) {
@@ -107,7 +107,7 @@ export class AutomaticTransactionGenerator {
   }
 
   public startConnector (connectorId: number, stopAbsoluteDuration?: boolean): void {
-    if (!checkChargingStation(this.chargingStation, this.logPrefix(connectorId))) {
+    if (!checkChargingStationState(this.chargingStation, this.logPrefix(connectorId))) {
       return
     }
     if (!this.connectorsStatus.has(connectorId)) {

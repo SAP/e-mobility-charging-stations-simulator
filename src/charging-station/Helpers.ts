@@ -175,7 +175,44 @@ export const getHashId = (index: number, stationTemplate: ChargingStationTemplat
     .digest('hex')
 }
 
-export const checkChargingStation = (
+export const validateStationInfo = (chargingStation: ChargingStation): void => {
+  if (isEmpty(chargingStation.stationInfo)) {
+    throw new BaseError('Missing charging station information')
+  }
+  if (isEmpty(chargingStation.stationInfo?.hashId.trim())) {
+    throw new BaseError('Missing hashId in stationInfo properties')
+  }
+  if (isEmpty(chargingStation.stationInfo?.templateIndex)) {
+    throw new BaseError('Missing templateIndex in stationInfo properties')
+  }
+  if (isEmpty(chargingStation.stationInfo?.templateName.trim())) {
+    throw new BaseError('Missing templateName in stationInfo properties')
+  }
+  if (isEmpty(chargingStation.stationInfo?.chargingStationId?.trim())) {
+    throw new BaseError('Missing chargingStationId in stationInfo properties')
+  }
+  if (isEmpty(chargingStation.stationInfo?.maximumPower)) {
+    throw new BaseError('Missing maximumPower in stationInfo properties')
+  }
+  if (chargingStation.stationInfo?.maximumPower != null && chargingStation.stationInfo.maximumPower <= 0) {
+    throw new RangeError('Invalid maximumPower value in stationInfo properties')
+  }
+  if (isEmpty(chargingStation.stationInfo?.maximumAmperage)) {
+    throw new BaseError('Missing maximumAmperage in stationInfo properties')
+  }
+  if (chargingStation.stationInfo?.maximumAmperage != null && chargingStation.stationInfo.maximumAmperage <= 0) {
+    throw new RangeError('Invalid maximumAmperage value in stationInfo properties')
+  }
+  switch (chargingStation.stationInfo?.ocppVersion) {
+    case OCPPVersion.VERSION_20:
+    case OCPPVersion.VERSION_201:
+      if (chargingStation.evses.size === 0) {
+        throw new BaseError('OCPP 2.0 or superior requires at least one EVSE defined in the charging station template/configuration')
+      }
+  }
+}
+
+export const checkChargingStationState = (
   chargingStation: ChargingStation,
   logPrefix: string
 ): boolean => {
