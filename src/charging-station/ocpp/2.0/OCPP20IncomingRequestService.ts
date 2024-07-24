@@ -47,8 +47,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
     ])
     this.validatePayload = this.validatePayload.bind(this)

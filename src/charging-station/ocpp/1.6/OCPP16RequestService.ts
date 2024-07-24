@@ -49,8 +49,7 @@ export class OCPP16RequestService extends OCPPRequestService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
       [
         OCPP16RequestCommand.BOOT_NOTIFICATION,
@@ -61,8 +60,7 @@ export class OCPP16RequestService extends OCPPRequestService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
       [
         OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
@@ -73,8 +71,7 @@ export class OCPP16RequestService extends OCPPRequestService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
       [
         OCPP16RequestCommand.HEARTBEAT,
@@ -85,8 +82,7 @@ export class OCPP16RequestService extends OCPPRequestService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
       [
         OCPP16RequestCommand.METER_VALUES,
@@ -97,8 +93,7 @@ export class OCPP16RequestService extends OCPPRequestService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
       [
         OCPP16RequestCommand.STATUS_NOTIFICATION,
@@ -109,8 +104,7 @@ export class OCPP16RequestService extends OCPPRequestService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
       [
         OCPP16RequestCommand.START_TRANSACTION,
@@ -121,8 +115,7 @@ export class OCPP16RequestService extends OCPPRequestService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
       [
         OCPP16RequestCommand.STOP_TRANSACTION,
@@ -133,8 +126,7 @@ export class OCPP16RequestService extends OCPPRequestService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
       [
         OCPP16RequestCommand.DATA_TRANSFER,
@@ -145,8 +137,7 @@ export class OCPP16RequestService extends OCPPRequestService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
       [
         OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
@@ -157,8 +148,7 @@ export class OCPP16RequestService extends OCPPRequestService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
     ])
     this.buildRequestPayload = this.buildRequestPayload.bind(this)

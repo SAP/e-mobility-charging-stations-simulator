@@ -41,8 +41,7 @@ export class OCPP20RequestService extends OCPPRequestService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
       [
         OCPP20RequestCommand.HEARTBEAT,
@@ -53,8 +52,7 @@ export class OCPP20RequestService extends OCPPRequestService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
       [
         OCPP20RequestCommand.STATUS_NOTIFICATION,
@@ -65,8 +63,7 @@ export class OCPP20RequestService extends OCPPRequestService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
     ])
     this.buildRequestPayload = this.buildRequestPayload.bind(this)

@@ -57,8 +57,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
       [
         OCPP20RequestCommand.HEARTBEAT,
@@ -69,8 +68,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
       [
         OCPP20RequestCommand.STATUS_NOTIFICATION,
@@ -81,8 +79,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
     ])
     this.incomingRequestResponsePayloadValidateFunctions = new Map<
@@ -98,8 +95,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
     ])
     this.validatePayload = this.validatePayload.bind(this)

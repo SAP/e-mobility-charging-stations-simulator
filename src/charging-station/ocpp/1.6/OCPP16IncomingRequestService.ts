@@ -215,8 +215,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
       [
         OCPP16IncomingRequestCommand.CLEAR_CACHE,
@@ -227,8 +226,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
       [
         OCPP16IncomingRequestCommand.UNLOCK_CONNECTOR,
@@ -239,8 +237,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
       [
         OCPP16IncomingRequestCommand.GET_CONFIGURATION,
@@ -251,8 +248,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
       [
         OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION,
@@ -263,8 +259,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
       [
         OCPP16IncomingRequestCommand.GET_DIAGNOSTICS,
@@ -275,8 +270,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
       [
         OCPP16IncomingRequestCommand.GET_COMPOSITE_SCHEDULE,
@@ -287,8 +281,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
       [
         OCPP16IncomingRequestCommand.SET_CHARGING_PROFILE,
@@ -299,8 +292,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
       [
         OCPP16IncomingRequestCommand.CLEAR_CHARGING_PROFILE,
@@ -311,8 +303,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
       [
         OCPP16IncomingRequestCommand.CHANGE_AVAILABILITY,
@@ -323,8 +314,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
       [
         OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
@@ -335,8 +325,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
       [
         OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION,
@@ -347,8 +336,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
       [
         OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
@@ -359,8 +347,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
       [
         OCPP16IncomingRequestCommand.DATA_TRANSFER,
@@ -371,8 +358,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
       [
         OCPP16IncomingRequestCommand.UPDATE_FIRMWARE,
@@ -383,8 +369,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
       [
         OCPP16IncomingRequestCommand.RESERVE_NOW,
@@ -395,8 +380,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
       [
         OCPP16IncomingRequestCommand.CANCEL_RESERVATION,
@@ -407,8 +391,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
               moduleName,
               'constructor'
             )
-          )
-          .bind(this),
+          ),
       ],
     ])
     // Handle incoming request events
