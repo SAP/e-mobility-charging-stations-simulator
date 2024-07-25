@@ -1314,8 +1314,8 @@ const getRandomSerialNumberSuffix = (params?: {
   randomBytesLength?: number
   upperCase?: boolean
 }): string => {
-  const randomSerialNumberSuffix = randomBytes(params.randomBytesLength ?? 16).toString('hex')
-  if (params.upperCase) {
+  const randomSerialNumberSuffix = randomBytes(params?.randomBytesLength ?? 16).toString('hex')
+  if (params?.upperCase) {
     return randomSerialNumberSuffix.toUpperCase()
   }
   return randomSerialNumberSuffix

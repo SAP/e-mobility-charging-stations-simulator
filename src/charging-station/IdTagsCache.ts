@@ -50,7 +50,7 @@ export class IdTagsCache {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const hashId = chargingStation.stationInfo!.hashId
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const idTagsFile = getIdTagsFile(chargingStation.stationInfo)!
+    const idTagsFile = getIdTagsFile(chargingStation.stationInfo!)!
     switch (distribution) {
       case IdTagDistribution.RANDOM:
         return this.getRandomIdTag(hashId, idTagsFile)
