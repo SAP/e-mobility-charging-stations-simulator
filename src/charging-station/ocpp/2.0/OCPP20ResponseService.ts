@@ -50,36 +50,33 @@ export class OCPP20ResponseService extends OCPPResponseService {
     this.payloadValidateFunctions = new Map<OCPP20RequestCommand, ValidateFunction<JsonType>>([
       [
         OCPP20RequestCommand.BOOT_NOTIFICATION,
-        this.ajv
-          .compile(
-            OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20BootNotificationResponse>(
-              'assets/json-schemas/ocpp/2.0/BootNotificationResponse.json',
-              moduleName,
-              'constructor'
-            )
-          ),
+        this.ajv.compile(
+          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20BootNotificationResponse>(
+            'assets/json-schemas/ocpp/2.0/BootNotificationResponse.json',
+            moduleName,
+            'constructor'
+          )
+        ),
       ],
       [
         OCPP20RequestCommand.HEARTBEAT,
-        this.ajv
-          .compile(
-            OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20HeartbeatResponse>(
-              'assets/json-schemas/ocpp/2.0/HeartbeatResponse.json',
-              moduleName,
-              'constructor'
-            )
-          ),
+        this.ajv.compile(
+          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20HeartbeatResponse>(
+            'assets/json-schemas/ocpp/2.0/HeartbeatResponse.json',
+            moduleName,
+            'constructor'
+          )
+        ),
       ],
       [
         OCPP20RequestCommand.STATUS_NOTIFICATION,
-        this.ajv
-          .compile(
-            OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20StatusNotificationResponse>(
-              'assets/json-schemas/ocpp/2.0/StatusNotificationResponse.json',
-              moduleName,
-              'constructor'
-            )
-          ),
+        this.ajv.compile(
+          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20StatusNotificationResponse>(
+            'assets/json-schemas/ocpp/2.0/StatusNotificationResponse.json',
+            moduleName,
+            'constructor'
+          )
+        ),
       ],
     ])
     this.incomingRequestResponsePayloadValidateFunctions = new Map<
@@ -88,14 +85,13 @@ export class OCPP20ResponseService extends OCPPResponseService {
     >([
       [
         OCPP20IncomingRequestCommand.CLEAR_CACHE,
-        this.ajvIncomingRequest
-          .compile(
-            OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20ClearCacheResponse>(
-              'assets/json-schemas/ocpp/2.0/ClearCacheResponse.json',
-              moduleName,
-              'constructor'
-            )
-          ),
+        this.ajvIncomingRequest.compile(
+          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20ClearCacheResponse>(
+            'assets/json-schemas/ocpp/2.0/ClearCacheResponse.json',
+            moduleName,
+            'constructor'
+          )
+        ),
       ],
     ])
     this.validatePayload = this.validatePayload.bind(this)

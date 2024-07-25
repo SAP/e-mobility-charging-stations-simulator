@@ -34,36 +34,33 @@ export class OCPP20RequestService extends OCPPRequestService {
     this.payloadValidateFunctions = new Map<OCPP20RequestCommand, ValidateFunction<JsonType>>([
       [
         OCPP20RequestCommand.BOOT_NOTIFICATION,
-        this.ajv
-          .compile(
-            OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20BootNotificationRequest>(
-              'assets/json-schemas/ocpp/2.0/BootNotificationRequest.json',
-              moduleName,
-              'constructor'
-            )
-          ),
+        this.ajv.compile(
+          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20BootNotificationRequest>(
+            'assets/json-schemas/ocpp/2.0/BootNotificationRequest.json',
+            moduleName,
+            'constructor'
+          )
+        ),
       ],
       [
         OCPP20RequestCommand.HEARTBEAT,
-        this.ajv
-          .compile(
-            OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20HeartbeatRequest>(
-              'assets/json-schemas/ocpp/2.0/HeartbeatRequest.json',
-              moduleName,
-              'constructor'
-            )
-          ),
+        this.ajv.compile(
+          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20HeartbeatRequest>(
+            'assets/json-schemas/ocpp/2.0/HeartbeatRequest.json',
+            moduleName,
+            'constructor'
+          )
+        ),
       ],
       [
         OCPP20RequestCommand.STATUS_NOTIFICATION,
-        this.ajv
-          .compile(
-            OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20StatusNotificationRequest>(
-              'assets/json-schemas/ocpp/2.0/StatusNotificationRequest.json',
-              moduleName,
-              'constructor'
-            )
-          ),
+        this.ajv.compile(
+          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20StatusNotificationRequest>(
+            'assets/json-schemas/ocpp/2.0/StatusNotificationRequest.json',
+            moduleName,
+            'constructor'
+          )
+        ),
       ],
     ])
     this.buildRequestPayload = this.buildRequestPayload.bind(this)

@@ -29,7 +29,7 @@ export class UIClient {
     ResponseHandler
   >
 
-  private constructor(private uiServerConfiguration: UIServerConfigurationSection) {
+  private constructor (private uiServerConfiguration: UIServerConfigurationSection) {
     this.openWS()
     this.responseHandlers = new Map<
       `${string}-${string}-${string}-${string}-${string}`,
@@ -37,7 +37,7 @@ export class UIClient {
     >()
   }
 
-  public static getInstance(uiServerConfiguration?: UIServerConfigurationSection): UIClient {
+  public static getInstance (uiServerConfiguration?: UIServerConfigurationSection): UIClient {
     if (UIClient.instance === null) {
       if (uiServerConfiguration == null) {
         throw new Error('Cannot initialize UIClient if no configuration is provided')
@@ -47,7 +47,7 @@ export class UIClient {
     return UIClient.instance
   }
 
-  public setConfiguration(uiServerConfiguration: UIServerConfigurationSection): void {
+  public setConfiguration (uiServerConfiguration: UIServerConfigurationSection): void {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.close()
       delete this.ws
@@ -72,27 +72,27 @@ export class UIClient {
     this.ws?.removeEventListener(event, listener, options)
   }
 
-  public async simulatorState(): Promise<ResponsePayload> {
+  public async simulatorState (): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.SIMULATOR_STATE, {})
   }
 
-  public async startSimulator(): Promise<ResponsePayload> {
+  public async startSimulator (): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.START_SIMULATOR, {})
   }
 
-  public async stopSimulator(): Promise<ResponsePayload> {
+  public async stopSimulator (): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.STOP_SIMULATOR, {})
   }
 
-  public async listTemplates(): Promise<ResponsePayload> {
+  public async listTemplates (): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.LIST_TEMPLATES, {})
   }
 
-  public async listChargingStations(): Promise<ResponsePayload> {
+  public async listChargingStations (): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.LIST_CHARGING_STATIONS, {})
   }
 
-  public async addChargingStations(
+  public async addChargingStations (
     template: string,
     numberOfStations: number,
     options?: ChargingStationOptions
@@ -104,44 +104,44 @@ export class UIClient {
     })
   }
 
-  public async deleteChargingStation(hashId: string): Promise<ResponsePayload> {
+  public async deleteChargingStation (hashId: string): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.DELETE_CHARGING_STATIONS, {
       hashIds: [hashId],
     })
   }
 
-  public async setSupervisionUrl(hashId: string, supervisionUrl: string): Promise<ResponsePayload> {
+  public async setSupervisionUrl (hashId: string, supervisionUrl: string): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.SET_SUPERVISION_URL, {
       hashIds: [hashId],
       url: supervisionUrl,
     })
   }
 
-  public async startChargingStation(hashId: string): Promise<ResponsePayload> {
+  public async startChargingStation (hashId: string): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.START_CHARGING_STATION, {
       hashIds: [hashId],
     })
   }
 
-  public async stopChargingStation(hashId: string): Promise<ResponsePayload> {
+  public async stopChargingStation (hashId: string): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.STOP_CHARGING_STATION, {
       hashIds: [hashId],
     })
   }
 
-  public async openConnection(hashId: string): Promise<ResponsePayload> {
+  public async openConnection (hashId: string): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.OPEN_CONNECTION, {
       hashIds: [hashId],
     })
   }
 
-  public async closeConnection(hashId: string): Promise<ResponsePayload> {
+  public async closeConnection (hashId: string): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.CLOSE_CONNECTION, {
       hashIds: [hashId],
     })
   }
 
-  public async startTransaction(
+  public async startTransaction (
     hashId: string,
     connectorId: number,
     idTag: string | undefined
@@ -153,7 +153,7 @@ export class UIClient {
     })
   }
 
-  public async stopTransaction(
+  public async stopTransaction (
     hashId: string,
     transactionId: number | undefined
   ): Promise<ResponsePayload> {
@@ -163,7 +163,7 @@ export class UIClient {
     })
   }
 
-  public async startAutomaticTransactionGenerator(
+  public async startAutomaticTransactionGenerator (
     hashId: string,
     connectorId: number
   ): Promise<ResponsePayload> {
@@ -173,7 +173,7 @@ export class UIClient {
     })
   }
 
-  public async stopAutomaticTransactionGenerator(
+  public async stopAutomaticTransactionGenerator (
     hashId: string,
     connectorId: number
   ): Promise<ResponsePayload> {
@@ -183,7 +183,7 @@ export class UIClient {
     })
   }
 
-  private openWS(): void {
+  private openWS (): void {
     const protocols =
       this.uiServerConfiguration.authentication?.enabled === true &&
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -222,7 +222,7 @@ export class UIClient {
     }
   }
 
-  private async sendRequest(
+  private async sendRequest (
     procedureName: ProcedureName,
     payload: RequestPayload
   ): Promise<ResponsePayload> {
@@ -249,7 +249,7 @@ export class UIClient {
     })
   }
 
-  private responseHandler(messageEvent: MessageEvent<string>): void {
+  private responseHandler (messageEvent: MessageEvent<string>): void {
     let response: ProtocolResponse
     try {
       response = JSON.parse(messageEvent.data) as ProtocolResponse

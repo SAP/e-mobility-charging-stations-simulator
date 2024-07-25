@@ -204,7 +204,7 @@ export class UIWebSocketServer extends AbstractUIServer {
         `${this.logPrefix(
           moduleName,
           'validateRawDataRequest'
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
+          // eslint-disable-next-line @typescript-eslint/no-base-to-string
         )} UI protocol request is not valid JSON: ${rawData.toString()}`
       )
       return false

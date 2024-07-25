@@ -42,113 +42,103 @@ export class OCPP16RequestService extends OCPPRequestService {
     this.payloadValidateFunctions = new Map<OCPP16RequestCommand, ValidateFunction<JsonType>>([
       [
         OCPP16RequestCommand.AUTHORIZE,
-        this.ajv
-          .compile(
-            OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16AuthorizeRequest>(
-              'assets/json-schemas/ocpp/1.6/Authorize.json',
-              moduleName,
-              'constructor'
-            )
-          ),
+        this.ajv.compile(
+          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16AuthorizeRequest>(
+            'assets/json-schemas/ocpp/1.6/Authorize.json',
+            moduleName,
+            'constructor'
+          )
+        ),
       ],
       [
         OCPP16RequestCommand.BOOT_NOTIFICATION,
-        this.ajv
-          .compile(
-            OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16BootNotificationRequest>(
-              'assets/json-schemas/ocpp/1.6/BootNotification.json',
-              moduleName,
-              'constructor'
-            )
-          ),
+        this.ajv.compile(
+          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16BootNotificationRequest>(
+            'assets/json-schemas/ocpp/1.6/BootNotification.json',
+            moduleName,
+            'constructor'
+          )
+        ),
       ],
       [
         OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
-        this.ajv
-          .compile(
-            OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16DiagnosticsStatusNotificationRequest>(
-              'assets/json-schemas/ocpp/1.6/DiagnosticsStatusNotification.json',
-              moduleName,
-              'constructor'
-            )
-          ),
+        this.ajv.compile(
+          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16DiagnosticsStatusNotificationRequest>(
+            'assets/json-schemas/ocpp/1.6/DiagnosticsStatusNotification.json',
+            moduleName,
+            'constructor'
+          )
+        ),
       ],
       [
         OCPP16RequestCommand.HEARTBEAT,
-        this.ajv
-          .compile(
-            OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16HeartbeatRequest>(
-              'assets/json-schemas/ocpp/1.6/Heartbeat.json',
-              moduleName,
-              'constructor'
-            )
-          ),
+        this.ajv.compile(
+          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16HeartbeatRequest>(
+            'assets/json-schemas/ocpp/1.6/Heartbeat.json',
+            moduleName,
+            'constructor'
+          )
+        ),
       ],
       [
         OCPP16RequestCommand.METER_VALUES,
-        this.ajv
-          .compile(
-            OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16MeterValuesRequest>(
-              'assets/json-schemas/ocpp/1.6/MeterValues.json',
-              moduleName,
-              'constructor'
-            )
-          ),
+        this.ajv.compile(
+          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16MeterValuesRequest>(
+            'assets/json-schemas/ocpp/1.6/MeterValues.json',
+            moduleName,
+            'constructor'
+          )
+        ),
       ],
       [
         OCPP16RequestCommand.STATUS_NOTIFICATION,
-        this.ajv
-          .compile(
-            OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16StatusNotificationRequest>(
-              'assets/json-schemas/ocpp/1.6/StatusNotification.json',
-              moduleName,
-              'constructor'
-            )
-          ),
+        this.ajv.compile(
+          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16StatusNotificationRequest>(
+            'assets/json-schemas/ocpp/1.6/StatusNotification.json',
+            moduleName,
+            'constructor'
+          )
+        ),
       ],
       [
         OCPP16RequestCommand.START_TRANSACTION,
-        this.ajv
-          .compile(
-            OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16StartTransactionRequest>(
-              'assets/json-schemas/ocpp/1.6/StartTransaction.json',
-              moduleName,
-              'constructor'
-            )
-          ),
+        this.ajv.compile(
+          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16StartTransactionRequest>(
+            'assets/json-schemas/ocpp/1.6/StartTransaction.json',
+            moduleName,
+            'constructor'
+          )
+        ),
       ],
       [
         OCPP16RequestCommand.STOP_TRANSACTION,
-        this.ajv
-          .compile(
-            OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16StopTransactionRequest>(
-              'assets/json-schemas/ocpp/1.6/StopTransaction.json',
-              moduleName,
-              'constructor'
-            )
-          ),
+        this.ajv.compile(
+          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16StopTransactionRequest>(
+            'assets/json-schemas/ocpp/1.6/StopTransaction.json',
+            moduleName,
+            'constructor'
+          )
+        ),
       ],
       [
         OCPP16RequestCommand.DATA_TRANSFER,
-        this.ajv
-          .compile(
-            OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16DataTransferRequest>(
-              'assets/json-schemas/ocpp/1.6/DataTransfer.json',
-              moduleName,
-              'constructor'
-            )
-          ),
+        this.ajv.compile(
+          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16DataTransferRequest>(
+            'assets/json-schemas/ocpp/1.6/DataTransfer.json',
+            moduleName,
+            'constructor'
+          )
+        ),
       ],
       [
         OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
-        this.ajv
-          .compile(
-            OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16FirmwareStatusNotificationRequest>(
-              'assets/json-schemas/ocpp/1.6/FirmwareStatusNotification.json',
-              moduleName,
-              'constructor'
-            )
-          ),
+        this.ajv.compile(
+          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16FirmwareStatusNotificationRequest>(
+            'assets/json-schemas/ocpp/1.6/FirmwareStatusNotification.json',
+            moduleName,
+            'constructor'
+          )
+        ),
       ],
     ])
     this.buildRequestPayload = this.buildRequestPayload.bind(this)

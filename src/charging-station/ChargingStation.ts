@@ -2096,7 +2096,7 @@ export class ChargingStation extends EventEmitter {
         logger.warn(
           `${this.logPrefix()} Error thrown at incoming OCPP command ${
             commandName ?? requestCommandName ?? Constants.UNKNOWN_OCPP_COMMAND
-          // eslint-disable-next-line @typescript-eslint/no-base-to-string
+            // eslint-disable-next-line @typescript-eslint/no-base-to-string
           } message '${data.toString()}' handling is not an OCPPError:`,
           error
         )
@@ -2104,7 +2104,7 @@ export class ChargingStation extends EventEmitter {
       logger.error(
         `${this.logPrefix()} Incoming OCPP command '${
           commandName ?? requestCommandName ?? Constants.UNKNOWN_OCPP_COMMAND
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
+          // eslint-disable-next-line @typescript-eslint/no-base-to-string
         }' message '${data.toString()}'${
           this.requests.has(messageId)
             ? ` matching cached request '${JSON.stringify(

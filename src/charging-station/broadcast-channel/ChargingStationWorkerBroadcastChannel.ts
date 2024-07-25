@@ -418,7 +418,10 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       case BroadcastChannelProcedureName.AUTHORIZE:
         if (
           (
-            commandResponse as StartTransactionResponse | StopTransactionResponse | AuthorizeResponse
+            commandResponse as
+              | StartTransactionResponse
+              | StopTransactionResponse
+              | AuthorizeResponse
           ).idTagInfo?.status === AuthorizationStatus.ACCEPTED
         ) {
           return ResponseStatus.SUCCESS

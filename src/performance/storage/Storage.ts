@@ -43,7 +43,7 @@ export abstract class Storage {
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       `${this.logPrefix} ${this.getDBNameFromStorageType(type)} error '${
         error.message
-      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       }'${inTableOrCollectionStr}:`,
       error
     )

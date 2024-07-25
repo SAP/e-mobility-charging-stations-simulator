@@ -2,51 +2,45 @@
 
 ## [1.5.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v1.4.2...simulator@v1.5.0) (2024-07-25)
 
-
 ### 🚀 Features
 
-* add initial node sea support ([f6e18e3](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f6e18e33b68a67239eba3f4d873172a491283d00))
-
+- add initial node sea support ([f6e18e3](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f6e18e33b68a67239eba3f4d873172a491283d00))
 
 ### 🐞 Bug Fixes
 
-* ensure OCPP payload validation report error details ([45087a8](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/45087a81ca7dda0b6e72897acd1391d859026961))
-
+- ensure OCPP payload validation report error details ([45087a8](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/45087a81ca7dda0b6e72897acd1391d859026961))
 
 ### ✨ Polish
 
-* npx -&gt; pnpm dlx where appropriates ([bf25e53](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/bf25e531346a2e0579cb14d1d7c1da45dbb0aa08))
-* permit build code to run with other JS runtime ([456b7f2](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/456b7f2d7fc934d306e948e906c847417432009b))
-* refine OCPP PDU validation error messages ([5827ccc](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/5827ccc27d6c46f82df4e42a5707cfa19b550442))
-* refine station information validation error message ([915c88d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/915c88d593292e7a47c92868e4b2d3752cce4dcd))
-* validate station information at CS init ([b55f94b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b55f94b6ac5dee58f38d13781b4345c4cc43f349))
-
+- npx -&gt; pnpm dlx where appropriates ([bf25e53](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/bf25e531346a2e0579cb14d1d7c1da45dbb0aa08))
+- permit build code to run with other JS runtime ([456b7f2](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/456b7f2d7fc934d306e948e906c847417432009b))
+- refine OCPP PDU validation error messages ([5827ccc](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/5827ccc27d6c46f82df4e42a5707cfa19b550442))
+- refine station information validation error message ([915c88d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/915c88d593292e7a47c92868e4b2d3752cce4dcd))
+- validate station information at CS init ([b55f94b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b55f94b6ac5dee58f38d13781b4345c4cc43f349))
 
 ### 🧪 Tests
 
-* fix clone() test ([53ec800](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/53ec800a644f89a299cede7a89dd8a7b05959797))
-
+- fix clone() test ([53ec800](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/53ec800a644f89a299cede7a89dd8a7b05959797))
 
 ### 📚 Documentation
 
-* **README.md:** refine volta installation on windows ([fad9e72](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/fad9e7271b22c74fe6eb67e939090cf529a2b249))
-
+- **README.md:** refine volta installation on windows ([fad9e72](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/fad9e7271b22c74fe6eb67e939090cf529a2b249))
 
 ### 🤖 Automation
 
-* **ci:** fix autofix GH action ([c033310](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c03331039ff7a080a3456d5a88fb7b18d505df7f))
-* **deps-dev:** bump @types/node from 20.14.11 to 20.14.12 ([#1106](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1106)) ([fb46a87](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/fb46a877f5c2b880759b9e70a08092510a7cb473))
-* **deps-dev:** bump @vitejs/plugin-vue from 5.0.5 to 5.1.0 ([#1105](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1105)) ([d36c4c8](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/d36c4c840ab5ac7a9c7fe6abbd2ae01844cb981e))
-* **deps-dev:** bump @vitest/coverage-v8 from 2.0.1 to 2.0.2 ([bbdb386](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/bbdb3861ed14ea52669231e5d372add76c50d65e))
-* **deps-dev:** bump eslint-plugin-jsdoc from 48.5.2 to 48.6.0 ([fd091c8](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/fd091c8cd219780ff650859e7b4506180f436861))
-* **deps-dev:** bump glob from 10.4.3 to 11.0.0 ([cff23bd](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/cff23bd9ab0f9ca92bc2d4721bf454b00a54daf0))
-* **deps-dev:** bump husky from 9.0.11 to 9.1.0 ([#1091](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1091)) ([e74759d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e74759d1c5cc66ef325b75bae39cc930ae33eb92))
-* **deps-dev:** bump rimraf from 5.0.8 to 6.0.0 ([207408c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/207408cf661a7b8a1d35f8a9aa5ff02104fcd8ba))
-* **deps-dev:** bump typescript-eslint from 7.16.0 to 7.16.1 ([a60a99d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/a60a99dce05328466e9a631ba83a9d527f3b4548))
-* **deps-dev:** bump vitest from 2.0.1 to 2.0.2 ([#1082](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1082)) ([f3d0d30](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f3d0d30346974ec0e979d53d8a761ce254ba8bb0))
-* **deps:** bump github/combine-prs from 5.0.0 to 5.1.0 ([#1093](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1093)) ([55f4d38](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/55f4d386ab0e3903101c8a4b296b962cf71c9427))
-* **deps:** bump tar from 7.4.0 to 7.4.1 ([#1102](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1102)) ([0da233c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/0da233c3b206d71bda0504908a1fd429547de923))
-* **deps:** bump vue from 3.4.33 to 3.4.34 ([#1107](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1107)) ([0bfef14](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/0bfef1423a926bd6054a25934957148d1d2fb4b0))
+- **ci:** fix autofix GH action ([c033310](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c03331039ff7a080a3456d5a88fb7b18d505df7f))
+- **deps-dev:** bump @types/node from 20.14.11 to 20.14.12 ([#1106](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1106)) ([fb46a87](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/fb46a877f5c2b880759b9e70a08092510a7cb473))
+- **deps-dev:** bump @vitejs/plugin-vue from 5.0.5 to 5.1.0 ([#1105](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1105)) ([d36c4c8](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/d36c4c840ab5ac7a9c7fe6abbd2ae01844cb981e))
+- **deps-dev:** bump @vitest/coverage-v8 from 2.0.1 to 2.0.2 ([bbdb386](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/bbdb3861ed14ea52669231e5d372add76c50d65e))
+- **deps-dev:** bump eslint-plugin-jsdoc from 48.5.2 to 48.6.0 ([fd091c8](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/fd091c8cd219780ff650859e7b4506180f436861))
+- **deps-dev:** bump glob from 10.4.3 to 11.0.0 ([cff23bd](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/cff23bd9ab0f9ca92bc2d4721bf454b00a54daf0))
+- **deps-dev:** bump husky from 9.0.11 to 9.1.0 ([#1091](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1091)) ([e74759d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e74759d1c5cc66ef325b75bae39cc930ae33eb92))
+- **deps-dev:** bump rimraf from 5.0.8 to 6.0.0 ([207408c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/207408cf661a7b8a1d35f8a9aa5ff02104fcd8ba))
+- **deps-dev:** bump typescript-eslint from 7.16.0 to 7.16.1 ([a60a99d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/a60a99dce05328466e9a631ba83a9d527f3b4548))
+- **deps-dev:** bump vitest from 2.0.1 to 2.0.2 ([#1082](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1082)) ([f3d0d30](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f3d0d30346974ec0e979d53d8a761ce254ba8bb0))
+- **deps:** bump github/combine-prs from 5.0.0 to 5.1.0 ([#1093](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1093)) ([55f4d38](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/55f4d386ab0e3903101c8a4b296b962cf71c9427))
+- **deps:** bump tar from 7.4.0 to 7.4.1 ([#1102](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1102)) ([0da233c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/0da233c3b206d71bda0504908a1fd429547de923))
+- **deps:** bump vue from 3.4.33 to 3.4.34 ([#1107](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1107)) ([0bfef14](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/0bfef1423a926bd6054a25934957148d1d2fb4b0))
 
 ## [1.4.2](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v1.4.1...simulator@v1.4.2) (2024-07-06)
 

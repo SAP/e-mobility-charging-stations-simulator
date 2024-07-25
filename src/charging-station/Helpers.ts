@@ -196,20 +196,32 @@ export const validateStationInfo = (chargingStation: ChargingStation): void => {
   if (isEmpty(chargingStation.stationInfo?.maximumPower)) {
     throw new BaseError(`${chargingStationId}: Missing maximumPower in stationInfo properties`)
   }
-  if (chargingStation.stationInfo?.maximumPower != null && chargingStation.stationInfo.maximumPower <= 0) {
-    throw new RangeError(`${chargingStationId}: Invalid maximumPower value in stationInfo properties`)
+  if (
+    chargingStation.stationInfo?.maximumPower != null &&
+    chargingStation.stationInfo.maximumPower <= 0
+  ) {
+    throw new RangeError(
+      `${chargingStationId}: Invalid maximumPower value in stationInfo properties`
+    )
   }
   if (isEmpty(chargingStation.stationInfo?.maximumAmperage)) {
     throw new BaseError(`${chargingStationId}: Missing maximumAmperage in stationInfo properties`)
   }
-  if (chargingStation.stationInfo?.maximumAmperage != null && chargingStation.stationInfo.maximumAmperage <= 0) {
-    throw new RangeError(`${chargingStationId}: Invalid maximumAmperage value in stationInfo properties`)
+  if (
+    chargingStation.stationInfo?.maximumAmperage != null &&
+    chargingStation.stationInfo.maximumAmperage <= 0
+  ) {
+    throw new RangeError(
+      `${chargingStationId}: Invalid maximumAmperage value in stationInfo properties`
+    )
   }
   switch (chargingStation.stationInfo?.ocppVersion) {
     case OCPPVersion.VERSION_20:
     case OCPPVersion.VERSION_201:
       if (chargingStation.evses.size === 0) {
-        throw new BaseError(`${chargingStationId}: OCPP 2.0 or superior requires at least one EVSE defined in the charging station template/configuration`)
+        throw new BaseError(
+          `${chargingStationId}: OCPP 2.0 or superior requires at least one EVSE defined in the charging station template/configuration`
+        )
       }
   }
 }

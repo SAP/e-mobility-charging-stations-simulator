@@ -20,8 +20,8 @@
     "dev": "vite",
     "clean:dist": "pnpm exec rimraf dist",
     "clean:node_modules": "pnpm exec rimraf node_modules",
-    "lint": "cross-env TIMING=1 eslint .",
-    "lint:fix": "cross-env TIMING=1 eslint .",
+    "lint": "cross-env TIMING=1 eslint --cache .",
+    "lint:fix": "cross-env TIMING=1 eslint --cache --fix .",
     "format": "prettier --cache --write .",
     "test": "vitest",
     "coverage": "vitest run --coverage"

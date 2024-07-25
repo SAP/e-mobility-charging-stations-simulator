@@ -40,14 +40,13 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     >([
       [
         OCPP20IncomingRequestCommand.CLEAR_CACHE,
-        this.ajv
-          .compile(
-            OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20ClearCacheRequest>(
-              'assets/json-schemas/ocpp/2.0/ClearCacheRequest.json',
-              moduleName,
-              'constructor'
-            )
-          ),
+        this.ajv.compile(
+          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20ClearCacheRequest>(
+            'assets/json-schemas/ocpp/2.0/ClearCacheRequest.json',
+            moduleName,
+            'constructor'
+          )
+        ),
       ],
     ])
     this.validatePayload = this.validatePayload.bind(this)
