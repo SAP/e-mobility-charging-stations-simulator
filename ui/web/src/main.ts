@@ -1,6 +1,6 @@
 import 'vue-toast-notification/dist/theme-bootstrap.css'
 
-import { type App as AppType, createApp, ref } from 'vue'
+import { type App as AppType, type Component, createApp, ref } from 'vue'
 import ToastPlugin from 'vue-toast-notification'
 
 import App from '@/App.vue'
@@ -8,7 +8,7 @@ import { getFromLocalStorage, setToLocalStorage, UIClient } from '@/composables'
 import { router } from '@/router'
 import type { ChargingStationData, ConfigurationData, UIServerConfigurationSection } from '@/types'
 
-const app = createApp(App)
+const app = createApp(App as Component)
 
 const initializeApp = (app: AppType, config: ConfigurationData) => {
   app.config.errorHandler = (error, instance, info) => {
@@ -53,19 +53,21 @@ fetch('/config.json')
     if (!response.ok) {
       // TODO: add code for UI notifications or other error handling logic
       console.error('Failed to fetch app configuration')
-      return
+      return undefined
     }
     response
       .json()
       .then(config => {
-        initializeApp(app, config)
+        initializeApp(app, config as ConfigurationData)
+        return undefined
       })
-      .catch(error => {
+      .catch((error: unknown) => {
         // TODO: add code for UI notifications or other error handling logic
         console.error('Error at deserializing JSON app configuration:', error)
       })
+    return undefined
   })
-  .catch(error => {
+  .catch((error: unknown) => {
     // TODO: add code for UI notifications or other error handling logic
     console.error('Error at fetching app configuration:', error)
   })

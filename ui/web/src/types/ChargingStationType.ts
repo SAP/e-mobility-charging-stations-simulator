@@ -62,6 +62,7 @@ export interface FirmwareUpgrade extends JsonObject {
 export const FirmwareStatus = {
   ...OCPP16FirmwareStatus,
 } as const
+// eslint-disable-next-line @typescript-eslint/no-redeclare
 export type FirmwareStatus = OCPP16FirmwareStatus
 
 export interface ChargingStationOptions extends JsonObject {
@@ -170,6 +171,7 @@ export enum OCPP16IncomingRequestCommand {
 export const IncomingRequestCommand = {
   ...OCPP16IncomingRequestCommand,
 } as const
+// eslint-disable-next-line @typescript-eslint/no-redeclare
 export type IncomingRequestCommand = OCPP16IncomingRequestCommand
 
 export enum OCPP16RequestCommand {
@@ -186,6 +188,7 @@ export enum OCPP16RequestCommand {
 export const RequestCommand = {
   ...OCPP16RequestCommand,
 } as const
+// eslint-disable-next-line @typescript-eslint/no-redeclare
 export type RequestCommand = OCPP16RequestCommand
 
 export type BootNotificationResponse = OCPP16BootNotificationResponse
@@ -214,6 +217,7 @@ export enum OCPP16MessageTrigger {
 export const MessageTrigger = {
   ...OCPP16MessageTrigger,
 } as const
+// eslint-disable-next-line @typescript-eslint/no-redeclare
 export type MessageTrigger = OCPP16MessageTrigger
 
 interface CommandsSupport extends JsonObject {

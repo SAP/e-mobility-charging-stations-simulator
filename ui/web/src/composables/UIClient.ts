@@ -14,7 +14,7 @@ import {
 
 import { randomUUID, validateUUID } from './Utils'
 
-type ResponseHandler = {
+interface ResponseHandler {
   procedureName: ProcedureName
   resolve: (value: ResponsePayload | PromiseLike<ResponsePayload>) => void
   reject: (reason?: unknown) => void
@@ -186,10 +186,12 @@ export class UIClient {
   private openWS(): void {
     const protocols =
       this.uiServerConfiguration.authentication?.enabled === true &&
-      this.uiServerConfiguration.authentication?.type === AuthenticationType.PROTOCOL_BASIC_AUTH
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      this.uiServerConfiguration.authentication.type === AuthenticationType.PROTOCOL_BASIC_AUTH
         ? [
             `${this.uiServerConfiguration.protocol}${this.uiServerConfiguration.version}`,
             `authorization.basic.${btoa(
+              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
               `${this.uiServerConfiguration.authentication.username}:${this.uiServerConfiguration.authentication.password}`
             ).replace(/={1,2}$/, '')}`,
           ]
@@ -199,7 +201,7 @@ export class UIClient {
         this.uiServerConfiguration.secure === true
           ? ApplicationProtocol.WSS
           : ApplicationProtocol.WS
-      }://${this.uiServerConfiguration.host}:${this.uiServerConfiguration.port}`,
+      }://${this.uiServerConfiguration.host}:${this.uiServerConfiguration.port.toString()}`,
       protocols
     )
     this.ws.onopen = () => {
@@ -216,7 +218,7 @@ export class UIClient {
       )
     }
     this.ws.onclose = () => {
-      useToast().info(`WebSocket to UI server closed`)
+      useToast().info('WebSocket to UI server closed')
     }
   }
 
@@ -230,14 +232,14 @@ export class UIClient {
         const msg = JSON.stringify([uuid, procedureName, payload])
         const sendTimeout = setTimeout(() => {
           this.responseHandlers.delete(uuid)
-          return reject(new Error(`Send request '${procedureName}' message: connection timeout`))
+          reject(new Error(`Send request '${procedureName}' message: connection timeout`))
         }, 60000)
         try {
           this.ws.send(msg)
           this.responseHandlers.set(uuid, { procedureName, resolve, reject })
         } catch (error) {
           this.responseHandlers.delete(uuid)
-          reject(error)
+          reject(error as Error)
         } finally {
           clearTimeout(sendTimeout)
         }
@@ -250,7 +252,7 @@ export class UIClient {
   private responseHandler(messageEvent: MessageEvent<string>): void {
     let response: ProtocolResponse
     try {
-      response = JSON.parse(messageEvent.data)
+      response = JSON.parse(messageEvent.data) as ProtocolResponse
     } catch (error) {
       useToast().error('Invalid response JSON format')
       console.error('Invalid response JSON format', error)
@@ -272,6 +274,7 @@ export class UIClient {
     }
 
     if (this.responseHandlers.has(uuid)) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const { procedureName, resolve, reject } = this.responseHandlers.get(uuid)!
       switch (responsePayload.status) {
         case ResponseStatus.SUCCESS:
@@ -283,6 +286,7 @@ export class UIClient {
         default:
           reject(
             new Error(
+              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
               `Response status for procedure '${procedureName}' not supported: '${responsePayload.status}'`
             )
           )

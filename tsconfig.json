@@ -13,6 +13,5 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "forceConsistentCasingInFileNames": true
-  },
-  "exclude": ["ui/web/**/*.ts"]
+  }
 }

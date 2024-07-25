@@ -3,11 +3,12 @@ import js from '@eslint/js'
 import { defineFlatConfig } from 'eslint-define-config'
 import jsdoc from 'eslint-plugin-jsdoc'
 import simpleImportSort from 'eslint-plugin-simple-import-sort'
+// import pluginVue from 'eslint-plugin-vue'
 import neostandard, { plugins } from 'neostandard'
 
 export default defineFlatConfig([
   {
-    ignores: ['dist/**', 'ui/web/**'],
+    ignores: ['**/dist/**'],
   },
   js.configs.recommended,
   plugins.promise.configs['flat/recommended'],
@@ -27,12 +28,14 @@ export default defineFlatConfig([
   ...neostandard({
     ts: true,
   }),
+  // ...pluginVue.configs['flat/recommended'],
   ...plugins['typescript-eslint'].config(
     ...plugins['typescript-eslint'].configs.strictTypeChecked,
     ...plugins['typescript-eslint'].configs.stylisticTypeChecked
   ),
   {
     languageOptions: {
+      sourceType: 'module',
       parserOptions: {
         project: true,
         tsconfigRootDir: import.meta.dirname,
