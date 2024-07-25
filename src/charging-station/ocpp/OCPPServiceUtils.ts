@@ -347,8 +347,7 @@ export const buildMeterValue = (
             `${chargingStation.logPrefix()} MeterValues measurand ${
               meterValue.sampledValue[sampledValuesIndex].measurand ??
               MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-            }: connector id ${connectorId.toString()}, transaction id ${
-              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+            }: connector id ${connectorId.toString()}, transaction id ${// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             connector?.transactionId?.toString()}, value: ${socMinimumValue.toString()}/${
               meterValue.sampledValue[sampledValuesIndex].value
             }/${socMaximumValue.toString()}`
@@ -681,8 +680,7 @@ export const buildMeterValue = (
             `${chargingStation.logPrefix()} MeterValues measurand ${
               meterValue.sampledValue[sampledValuesIndex].measurand ??
               MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-            }: connector id ${connectorId.toString()}, transaction id ${
-              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+            }: connector id ${connectorId.toString()}, transaction id ${// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             connector?.transactionId?.toString()}, value: ${connectorMinimumPowerRounded.toString()}/${
               meterValue.sampledValue[sampledValuesIndex].value
             }/${connectorMaximumPowerRounded.toString()}`
@@ -729,8 +727,7 @@ export const buildMeterValue = (
               }: phase ${
                 // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 meterValue.sampledValue[sampledValuesPerPhaseIndex].phase
-              }, connector id ${connectorId.toString()}, transaction id ${
-                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+              }, connector id ${connectorId.toString()}, transaction id ${// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
               connector?.transactionId?.toString()}, value: ${connectorMinimumPowerPerPhaseRounded.toString()}/${
                 meterValue.sampledValue[sampledValuesPerPhaseIndex].value
               }/${connectorMaximumPowerPerPhaseRounded.toString()}`
@@ -943,8 +940,7 @@ export const buildMeterValue = (
             `${chargingStation.logPrefix()} MeterValues measurand ${
               meterValue.sampledValue[sampledValuesIndex].measurand ??
               MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-            }: connector id ${connectorId.toString()}, transaction id ${
-              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+            }: connector id ${connectorId.toString()}, transaction id ${// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             connector?.transactionId?.toString()}, value: ${connectorMinimumAmperage.toString()}/${
               meterValue.sampledValue[sampledValuesIndex].value
             }/${connectorMaximumAmperage.toString()}`
@@ -981,8 +977,7 @@ export const buildMeterValue = (
               }: phase ${
                 // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 meterValue.sampledValue[sampledValuesPerPhaseIndex].phase
-              }, connector id ${connectorId.toString()}, transaction id ${
-                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+              }, connector id ${connectorId.toString()}, transaction id ${// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
               connector?.transactionId?.toString()}, value: ${connectorMinimumAmperage.toString()}/${
                 meterValue.sampledValue[sampledValuesPerPhaseIndex].value
               }/${connectorMaximumAmperage.toString()}`
@@ -1057,8 +1052,7 @@ export const buildMeterValue = (
             `${chargingStation.logPrefix()} MeterValues measurand ${
               meterValue.sampledValue[sampledValuesIndex].measurand ??
               MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-            }: connector id ${connectorId.toString()}, transaction id ${
-              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+            }: connector id ${connectorId.toString()}, transaction id ${// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             connector?.transactionId?.toString()}, value: ${connectorMinimumEnergyRounded.toString()}/${energyValueRounded.toString()}/${connectorMaximumEnergyRounded.toString()}, duration: ${interval.toString()}ms`
           )
         }

@@ -427,16 +427,16 @@ export class ChargingStation extends EventEmitter {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       isNaN(connectorAmperageLimitationLimit!)
         ? Number.POSITIVE_INFINITY
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        : connectorAmperageLimitationLimit!,
+        : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        connectorAmperageLimitationLimit!,
       isNaN(chargingStationChargingProfilesLimit)
         ? Number.POSITIVE_INFINITY
         : chargingStationChargingProfilesLimit,
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       isNaN(connectorChargingProfilesLimit!)
         ? Number.POSITIVE_INFINITY
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        : connectorChargingProfilesLimit!
+        : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        connectorChargingProfilesLimit!
     )
   }
 

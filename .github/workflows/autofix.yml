@@ -30,8 +30,7 @@ jobs:
 
       - run: pnpm install --ignore-scripts
 
-      # - run: pnpm format
-      - run: pnpm lint:fix
+      - run: pnpm format
 
       - working-directory: ui/web
         run: |

@@ -438,8 +438,7 @@ export const initializeConnectorsMapStatus = (
   for (const connectorId of connectors.keys()) {
     if (connectorId > 0 && connectors.get(connectorId)?.transactionStarted === true) {
       logger.warn(
-        `${logPrefix} Connector id ${connectorId.toString()} at initialization has a transaction started with id ${
-          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        `${logPrefix} Connector id ${connectorId.toString()} at initialization has a transaction started with id ${// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         connectors.get(connectorId)?.transactionId?.toString()}`
       )
     }
@@ -798,8 +797,8 @@ const buildChargingProfilesLimit = (
     case CurrentType.DC:
       return chargingProfile.chargingSchedule.chargingRateUnit === ChargingRateUnitType.WATT
         ? limit
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        : DCElectricUtils.power(chargingStation.stationInfo.voltageOut!, limit)
+        : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        DCElectricUtils.power(chargingStation.stationInfo.voltageOut!, limit)
     default:
       logger.error(
         `${chargingStation.logPrefix()} ${moduleName}.buildChargingProfilesLimit: ${errorMsg}`

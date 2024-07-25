@@ -227,14 +227,14 @@ export class Bootstrap extends EventEmitter {
           chalk.green(
             `Charging stations simulator ${this.version} started with ${this.numberOfConfiguredChargingStations.toString()} configured and ${this.numberOfProvisionedChargingStations.toString()} provisioned charging station(s) from ${this.numberOfChargingStationTemplates.toString()} charging station template(s) and ${
               Configuration.workerDynamicPoolInUse()
-                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                ? `${workerConfiguration.poolMinSize?.toString()}/`
+                ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+                  `${workerConfiguration.poolMinSize?.toString()}/`
                 : ''
               // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             }${this.workerImplementation?.size.toString()}${
               Configuration.workerPoolInUse()
-                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                ? `/${workerConfiguration.poolMaxSize?.toString()}`
+                ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+                  `/${workerConfiguration.poolMaxSize?.toString()}`
                 : ''
               // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             } worker(s) concurrently running in '${workerConfiguration.processType}' mode${
