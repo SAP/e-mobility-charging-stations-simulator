@@ -25,6 +25,7 @@ body:
       options:
         - Simulator
         - Web UI
+        - OCPP 2 Mock Server
     validations:
       required: true
   - type: textarea
