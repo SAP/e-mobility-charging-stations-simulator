@@ -12,6 +12,7 @@ import { BaseError } from '../../src/exception/index.js'
 import {
   type ChargingStationInfo,
   type ChargingStationTemplate,
+  type ConnectorStatus,
   type EvseStatus,
   OCPPVersion,
 } from '../../src/types/index.js'
@@ -21,7 +22,10 @@ await describe('Helpers test suite', async () => {
   const chargingStationTemplate = {
     baseName,
   } as ChargingStationTemplate
-  const chargingStation = {} as ChargingStation
+  const chargingStation = {
+    evses: new Map<number, EvseStatus>(),
+    connectors: new Map<number, ConnectorStatus>(),
+  } as ChargingStation
 
   await it('Verify getChargingStationId()', t => {
     expect(getChargingStationId(1, chargingStationTemplate)).toBe(`${baseName}-00001`)
@@ -101,7 +105,6 @@ await describe('Helpers test suite', async () => {
     expect(() => {
       validateStationInfo(chargingStation)
     }).not.toThrow()
-    chargingStation.evses = new Map<number, EvseStatus>()
     chargingStation.stationInfo.ocppVersion = OCPPVersion.VERSION_201
     expect(() => {
       validateStationInfo(chargingStation)
