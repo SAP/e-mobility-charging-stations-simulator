@@ -5,6 +5,7 @@ import { expect } from 'expect'
 
 import {
   checkChargingStationState,
+  checkConfiguration,
   checkTemplate,
   getChargingStationId,
   getHashId,
@@ -14,6 +15,7 @@ import {
 import type { ChargingStation } from '../../src/charging-station/index.js'
 import { BaseError } from '../../src/exception/index.js'
 import {
+  type ChargingStationConfiguration,
   type ChargingStationInfo,
   type ChargingStationTemplate,
   type ConnectorStatus,
@@ -162,5 +164,19 @@ await describe('Helpers test suite', async () => {
     expect(logger.error.mock.calls.length).toBe(2)
     checkTemplate(chargingStationTemplate, 'log prefix |', 'test-template.json')
     expect(logger.warn.mock.calls.length).toBe(1)
+  })
+
+  await it('Verify checkConfiguration()', t => {
+    t.mock.method(logger, 'error')
+    expect(() => {
+      checkConfiguration(undefined, 'log prefix |', 'configuration.json')
+    }).toThrow(
+      new BaseError('Failed to read charging station configuration file configuration.json')
+    )
+    expect(logger.error.mock.calls.length).toBe(1)
+    expect(() => {
+      checkConfiguration({} as ChargingStationConfiguration, 'log prefix |', 'configuration.json')
+    }).toThrow(new BaseError('Empty charging station configuration from file configuration.json'))
+    expect(logger.error.mock.calls.length).toBe(2)
   })
 })
