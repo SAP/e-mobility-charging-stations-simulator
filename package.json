@@ -101,7 +101,7 @@
     "mongodb": "^6.8.0",
     "poolifier": "^4.1.0",
     "rambda": "^9.2.1",
-    "tar": "^7.4.2",
+    "tar": "^7.4.3",
     "winston": "^3.13.1",
     "winston-daily-rotate-file": "^5.0.0",
     "ws": "^8.18.0"
