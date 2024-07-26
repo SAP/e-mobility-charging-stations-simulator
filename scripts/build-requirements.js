@@ -5,7 +5,7 @@ import chalk from 'chalk'
 // eslint-disable-next-line n/no-unpublished-import
 import { satisfies } from 'semver'
 
-import { runtime, runtimes } from './utils/runtime.js'
+import { runtime, runtimes } from './runtime.js'
 
 const packageJson = JSON.parse(readFileSync('./package.json', 'utf8'))
 

@@ -7,6 +7,7 @@ import { expect } from 'expect'
 import { CircularBuffer } from 'mnemonist'
 import { satisfies } from 'semver'
 
+import { runtime, runtimes } from '../../scripts/runtime.js'
 import type { TimestampedData } from '../../src/types/index.js'
 import { Constants } from '../../src/utils/Constants.js'
 import {
@@ -33,7 +34,6 @@ import {
   sleep,
   validateUUID,
 } from '../../src/utils/Utils.js'
-import { runtime, runtimes } from '../../utils/runtime.js'
 
 await describe('Utils test suite', async () => {
   await it('Verify generateUUID()/validateUUID()', () => {
