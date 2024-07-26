@@ -1,10 +1,14 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { describe, it } from 'node:test'
 
 import { expect } from 'expect'
 
 import {
+  checkChargingStationState,
+  checkTemplate,
   getChargingStationId,
   getHashId,
+  getMaxNumberOfEvses,
   validateStationInfo,
 } from '../../src/charging-station/Helpers.js'
 import type { ChargingStation } from '../../src/charging-station/index.js'
@@ -16,6 +20,7 @@ import {
   type EvseStatus,
   OCPPVersion,
 } from '../../src/types/index.js'
+import { logger } from '../../src/utils/Logger.js'
 
 await describe('Helpers test suite', async () => {
   const baseName = 'CS-TEST'
@@ -23,21 +28,23 @@ await describe('Helpers test suite', async () => {
     baseName,
   } as ChargingStationTemplate
   const chargingStation = {
+    started: false,
+    logPrefix: () => `${baseName} |`,
     evses: new Map<number, EvseStatus>(),
     connectors: new Map<number, ConnectorStatus>(),
   } as ChargingStation
 
-  await it('Verify getChargingStationId()', t => {
+  await it('Verify getChargingStationId()', () => {
     expect(getChargingStationId(1, chargingStationTemplate)).toBe(`${baseName}-00001`)
   })
 
-  await it('Verify getHashId()', t => {
+  await it('Verify getHashId()', () => {
     expect(getHashId(1, chargingStationTemplate)).toBe(
       'b4b1e8ec4fca79091d99ea9a7ea5901548010e6c0e98be9296f604b9d68734444dfdae73d7d406b6124b42815214d088'
     )
   })
 
-  await it('Verify validateStationInfo()', t => {
+  await it('Verify validateStationInfo()', () => {
     expect(() => {
       validateStationInfo(chargingStation)
     }).toThrow(new BaseError('Missing charging station information'))
@@ -87,7 +94,7 @@ await describe('Helpers test suite', async () => {
     expect(() => {
       validateStationInfo(chargingStation)
     }).toThrow(
-      new BaseError(`${baseName}-00001: Invalid maximumPower value in stationInfo properties`)
+      new RangeError(`${baseName}-00001: Invalid maximumPower value in stationInfo properties`)
     )
     chargingStation.stationInfo.maximumPower = 12000
     expect(() => {
@@ -99,12 +106,20 @@ await describe('Helpers test suite', async () => {
     expect(() => {
       validateStationInfo(chargingStation)
     }).toThrow(
-      new BaseError(`${baseName}-00001: Invalid maximumAmperage value in stationInfo properties`)
+      new RangeError(`${baseName}-00001: Invalid maximumAmperage value in stationInfo properties`)
     )
     chargingStation.stationInfo.maximumAmperage = 16
     expect(() => {
       validateStationInfo(chargingStation)
     }).not.toThrow()
+    chargingStation.stationInfo.ocppVersion = OCPPVersion.VERSION_20
+    expect(() => {
+      validateStationInfo(chargingStation)
+    }).toThrow(
+      new BaseError(
+        `${baseName}-00001: OCPP 2.0 or superior requires at least one EVSE defined in the charging station template/configuration`
+      )
+    )
     chargingStation.stationInfo.ocppVersion = OCPPVersion.VERSION_201
     expect(() => {
       validateStationInfo(chargingStation)
@@ -113,5 +128,39 @@ await describe('Helpers test suite', async () => {
         `${baseName}-00001: OCPP 2.0 or superior requires at least one EVSE defined in the charging station template/configuration`
       )
     )
+  })
+
+  await it('Verify checkChargingStationState()', t => {
+    t.mock.method(logger, 'warn')
+    expect(checkChargingStationState(chargingStation, 'log prefix |')).toBe(false)
+    expect(logger.warn.mock.calls.length).toBe(1)
+    chargingStation.starting = true
+    expect(checkChargingStationState(chargingStation, 'log prefix |')).toBe(true)
+    expect(logger.warn.mock.calls.length).toBe(1)
+    chargingStation.started = true
+    expect(checkChargingStationState(chargingStation, 'log prefix |')).toBe(true)
+    expect(logger.warn.mock.calls.length).toBe(1)
+  })
+
+  await it('Verify getMaxNumberOfEvses()', () => {
+    expect(getMaxNumberOfEvses(undefined)).toBe(-1)
+    expect(getMaxNumberOfEvses({})).toBe(0)
+  })
+
+  await it('Verify checkTemplate()', t => {
+    t.mock.method(logger, 'warn')
+    t.mock.method(logger, 'error')
+    expect(() => {
+      checkTemplate(undefined, 'log prefix |', 'test-template.json')
+    }).toThrow(new BaseError('Failed to read charging station template file test-template.json'))
+    expect(logger.error.mock.calls.length).toBe(1)
+    expect(() => {
+      checkTemplate({} as ChargingStationTemplate, 'log prefix |', 'test-template.json')
+    }).toThrow(
+      new BaseError('Empty charging station information from template file test-template.json')
+    )
+    expect(logger.error.mock.calls.length).toBe(2)
+    checkTemplate(chargingStationTemplate, 'log prefix |', 'test-template.json')
+    expect(logger.warn.mock.calls.length).toBe(1)
   })
 })
