@@ -176,46 +176,56 @@ export const getHashId = (index: number, stationTemplate: ChargingStationTemplat
 }
 
 export const validateStationInfo = (chargingStation: ChargingStation): void => {
-  if (isEmpty(chargingStation.stationInfo)) {
+  if (chargingStation.stationInfo == null || isEmpty(chargingStation.stationInfo)) {
     throw new BaseError('Missing charging station information')
   }
-  if (isEmpty(chargingStation.stationInfo?.chargingStationId?.trim())) {
+  if (
+    chargingStation.stationInfo.chargingStationId == null ||
+    isEmpty(chargingStation.stationInfo.chargingStationId.trim())
+  ) {
     throw new BaseError('Missing chargingStationId in stationInfo properties')
   }
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const chargingStationId: string = chargingStation.stationInfo!.chargingStationId!
-  if (isEmpty(chargingStation.stationInfo?.hashId.trim())) {
+  const chargingStationId = chargingStation.stationInfo.chargingStationId
+  if (
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    chargingStation.stationInfo.hashId == null ||
+    isEmpty(chargingStation.stationInfo.hashId.trim())
+  ) {
     throw new BaseError(`${chargingStationId}: Missing hashId in stationInfo properties`)
   }
-  if (isEmpty(chargingStation.stationInfo?.templateIndex)) {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  if (chargingStation.stationInfo.templateIndex == null) {
     throw new BaseError(`${chargingStationId}: Missing templateIndex in stationInfo properties`)
   }
-  if (isEmpty(chargingStation.stationInfo?.templateName.trim())) {
-    throw new BaseError(`${chargingStationId}: Missing templateName in stationInfo properties`)
-  }
-  if (isEmpty(chargingStation.stationInfo?.maximumPower)) {
-    throw new BaseError(`${chargingStationId}: Missing maximumPower in stationInfo properties`)
+  if (chargingStation.stationInfo.templateIndex <= 0) {
+    throw new BaseError(
+      `${chargingStationId}: Invalid templateIndex value in stationInfo properties`
+    )
   }
   if (
-    chargingStation.stationInfo?.maximumPower != null &&
-    chargingStation.stationInfo.maximumPower <= 0
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    chargingStation.stationInfo.templateName == null ||
+    isEmpty(chargingStation.stationInfo.templateName.trim())
   ) {
+    throw new BaseError(`${chargingStationId}: Missing templateName in stationInfo properties`)
+  }
+  if (chargingStation.stationInfo.maximumPower == null) {
+    throw new BaseError(`${chargingStationId}: Missing maximumPower in stationInfo properties`)
+  }
+  if (chargingStation.stationInfo.maximumPower <= 0) {
     throw new RangeError(
       `${chargingStationId}: Invalid maximumPower value in stationInfo properties`
     )
   }
-  if (isEmpty(chargingStation.stationInfo?.maximumAmperage)) {
+  if (chargingStation.stationInfo.maximumAmperage == null) {
     throw new BaseError(`${chargingStationId}: Missing maximumAmperage in stationInfo properties`)
   }
-  if (
-    chargingStation.stationInfo?.maximumAmperage != null &&
-    chargingStation.stationInfo.maximumAmperage <= 0
-  ) {
+  if (chargingStation.stationInfo.maximumAmperage <= 0) {
     throw new RangeError(
       `${chargingStationId}: Invalid maximumAmperage value in stationInfo properties`
     )
   }
-  switch (chargingStation.stationInfo?.ocppVersion) {
+  switch (chargingStation.stationInfo.ocppVersion) {
     case OCPPVersion.VERSION_20:
     case OCPPVersion.VERSION_201:
       if (chargingStation.evses.size === 0) {

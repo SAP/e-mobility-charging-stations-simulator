@@ -202,10 +202,12 @@ export class AutomaticTransactionGenerator {
       }
       const wait = secondsToMilliseconds(
         randomInt(
-          this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
-            ?.minDelayBetweenTwoTransactions,
-          this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
-            ?.maxDelayBetweenTwoTransactions
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          this.chargingStation.getAutomaticTransactionGeneratorConfiguration()!
+            .minDelayBetweenTwoTransactions,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          this.chargingStation.getAutomaticTransactionGeneratorConfiguration()!
+            .maxDelayBetweenTwoTransactions
         )
       )
       logger.info(`${this.logPrefix(connectorId)} waiting for ${formatDurationMilliSeconds(wait)}`)
@@ -224,8 +226,10 @@ export class AutomaticTransactionGenerator {
           // Wait until end of transaction
           const waitTrxEnd = secondsToMilliseconds(
             randomInt(
-              this.chargingStation.getAutomaticTransactionGeneratorConfiguration()?.minDuration,
-              this.chargingStation.getAutomaticTransactionGeneratorConfiguration()?.maxDuration
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              this.chargingStation.getAutomaticTransactionGeneratorConfiguration()!.minDuration,
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              this.chargingStation.getAutomaticTransactionGeneratorConfiguration()!.maxDuration
             )
           )
           logger.info(
