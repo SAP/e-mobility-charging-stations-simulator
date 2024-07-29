@@ -284,6 +284,7 @@ export const ajvErrorsToErrorType = (errors: ErrorObject[] | undefined | null): 
   return ErrorType.FORMAT_VIOLATION
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export const convertDateToISOString = <T extends JsonType>(object: T): void => {
   for (const key in object) {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion

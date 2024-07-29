@@ -49,6 +49,7 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
     return OCPPIncomingRequestService.instance as T
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
   protected validateIncomingRequestPayload<T extends JsonType>(
     chargingStation: ChargingStation,
     commandName: IncomingRequestCommand,
@@ -81,7 +82,7 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
     return OCPPConstants.OCPP_RESPONSE_REJECTED
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-unnecessary-type-parameters
   public abstract incomingRequestHandler<ReqType extends JsonType, ResType extends JsonType>(
     chargingStation: ChargingStation,
     messageId: string,

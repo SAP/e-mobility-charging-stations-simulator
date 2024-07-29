@@ -378,6 +378,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     this.validatePayload = this.validatePayload.bind(this)
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
   public async responseHandler<ReqType extends JsonType, ResType extends JsonType>(
     chargingStation: ChargingStation,
     commandName: OCPP16RequestCommand,

@@ -52,6 +52,7 @@ export abstract class OCPPResponseService {
     return OCPPResponseService.instance as T
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
   protected validateResponsePayload<T extends JsonType>(
     chargingStation: ChargingStation,
     commandName: RequestCommand,
@@ -78,6 +79,7 @@ export abstract class OCPPResponseService {
 
   protected emptyResponseHandler = Constants.EMPTY_FUNCTION
 
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
   public abstract responseHandler<ReqType extends JsonType, ResType extends JsonType>(
     chargingStation: ChargingStation,
     commandName: RequestCommand,

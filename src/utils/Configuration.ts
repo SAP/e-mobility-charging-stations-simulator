@@ -128,6 +128,7 @@ export class Configuration {
     // This is intentional
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
   public static getConfigurationSection<T extends ConfigurationSectionType>(
     sectionName: ConfigurationSection
   ): T {

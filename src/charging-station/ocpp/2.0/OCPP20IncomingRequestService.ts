@@ -52,6 +52,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     this.validatePayload = this.validatePayload.bind(this)
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
   public async incomingRequestHandler<ReqType extends JsonType, ResType extends JsonType>(
     chargingStation: ChargingStation,
     messageId: string,

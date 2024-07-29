@@ -262,6 +262,7 @@ export const secureRandom = (): number => {
 }
 
 export const JSONStringify = <
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
   T extends
     | JsonType
     | Record<string, unknown>[]

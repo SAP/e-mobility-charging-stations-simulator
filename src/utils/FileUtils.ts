@@ -5,6 +5,7 @@ import { handleFileException } from './ErrorUtils.js'
 import { logger } from './Logger.js'
 import { isNotEmptyString } from './Utils.js'
 
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export const watchJsonFile = <T extends JsonType>(
   file: string,
   fileType: FileType,

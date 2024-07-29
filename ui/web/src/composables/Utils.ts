@@ -40,6 +40,7 @@ export const getFromLocalStorage = <T>(key: string, defaultValue: T): T => {
   return item != null ? (JSON.parse(item) as T) : defaultValue
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export const setToLocalStorage = <T>(key: string, value: T): void => {
   localStorage.setItem(key, JSON.stringify(value))
 }

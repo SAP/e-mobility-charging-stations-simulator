@@ -144,6 +144,7 @@ export class OCPP16RequestService extends OCPPRequestService {
     this.buildRequestPayload = this.buildRequestPayload.bind(this)
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
   public async requestHandler<RequestType extends JsonType, ResponseType extends JsonType>(
     chargingStation: ChargingStation,
     commandName: OCPP16RequestCommand,
@@ -179,6 +180,7 @@ export class OCPP16RequestService extends OCPPRequestService {
     )
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
   private buildRequestPayload<Request extends JsonType>(
     chargingStation: ChargingStation,
     commandName: OCPP16RequestCommand,
