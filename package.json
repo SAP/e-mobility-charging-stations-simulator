@@ -117,7 +117,7 @@
     "@mikro-orm/cli": "^6.3.1",
     "@types/node": "^22.0.0",
     "@types/semver": "^7.5.8",
-    "@types/ws": "^8.5.11",
+    "@types/ws": "^8.5.12",
     "c8": "^10.1.2",
     "clinic": "^13.0.0",
     "cross-env": "^7.0.3",
