@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.5.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v1.5.0...simulator@v1.5.1) (2024-07-30)
+
+### ✨ Polish
+
+- cleanup eslint configuration ([31dab31](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/31dab314ef8b2f785e8074218e1889792752049a))
+- move buidling, bundling, ... scripts into a directory ([bf30bb2](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/bf30bb229a6296e16bd4aab4cf7285f7dd187288))
+- silence two linter errors ([664ba1d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/664ba1dde7b64ea9f9a262a31dec9aa91c6a92f3))
+- **test:** code cleanups ([7edfbc1](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7edfbc133ab8b7d617cbb1e4fbda4acd4c63800d))
+
+### 🧪 Tests
+
+- add checkConfiguration() helper test ([243a494](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/243a494b9598b7aa85f9b5cdca067cd5fd4f5b06))
+- add more charging station helpers tests ([e01619b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e01619ba83f630b55890f18e1adbc561ef95fd50))
+- add some tests for charging station helpers ([df59920](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/df5992062c1e0975e1e159f7fa7b81bcc263bd27))
+
+### 📚 Documentation
+
+- add OCPP 2 mock server component to issue templates ([a95db78](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/a95db7832890d86af2eb75ffe39f3baad686eb09))
+
+### 🤖 Automation
+
+- **ci:** reenabled auto code formating and linting on simulator ([1e4b13c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/1e4b13ce2da1be9ee2437dd057d477309168b716))
+- **ci:** reenabled linting on web ui code ([5a1832c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/5a1832ce790d0398fa031e738db47eb94fa975ec))
+- **deps-dev:** bump @types/ws from 8.5.11 to 8.5.12 ([#1113](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1113)) ([1e10f26](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/1e10f2640989a05281874950de452b76fc57d59a))
+- **deps-dev:** bump eslint-plugin-jsdoc from 48.8.3 to 48.9.2 ([#1112](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1112)) ([79e727f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/79e727f19f927ee2532ff95337a363b8ee594bbb))
+- **deps-dev:** bump eslint-plugin-jsdoc from 48.9.2 to 48.10.1 ([#1115](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1115)) ([9cd5283](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/9cd5283ad66aeefacdcf3b7df7c8685e6df83d6b))
+- **deps-dev:** bump husky from 9.1.3 to 9.1.4 ([#1114](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1114)) ([c398be4](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c398be430ad2d387e8982af00e54fc89e2b0db8e))
+
 ## [1.5.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v1.4.2...simulator@v1.5.0) (2024-07-25)
 
 ### 🚀 Features
