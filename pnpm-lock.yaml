@@ -204,8 +204,8 @@ importers:
         specifier: ^4.0.0
         version: 4.0.0(vite@5.3.5(@types/node@22.0.0))(vue@3.4.35(typescript@5.5.4))
       '@vitest/coverage-v8':
-        specifier: ^2.0.4
-        version: 2.0.4(vitest@2.0.5(@types/node@22.0.0)(jsdom@24.1.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)))
+        specifier: ^2.0.5
+        version: 2.0.5(vitest@2.0.5(@types/node@22.0.0)(jsdom@24.1.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)))
       '@vue/test-utils':
         specifier: ^2.4.6
         version: 2.4.6
@@ -1335,10 +1335,10 @@ packages:
       vite: ^5.0.0
       vue: ^3.2.25
 
-  '@vitest/coverage-v8@2.0.4':
-    resolution: {integrity: sha512-i4lx/Wpg5zF1h2op7j0wdwuEQxaL/YTwwQaKuKMHYj7MMh8c7I4W7PNfOptZBCSBZI0z1qwn64o0pM/pA8Tz1g==}
+  '@vitest/coverage-v8@2.0.5':
+    resolution: {integrity: sha512-qeFcySCg5FLO2bHHSa0tAZAOnAUbp4L6/A5JDuj9+bt53JREl8hpLjLHEWF0e/gWc8INVpJaqA7+Ene2rclpZg==}
     peerDependencies:
-      vitest: 2.0.4
+      vitest: 2.0.5
 
   '@vitest/expect@2.0.5':
     resolution: {integrity: sha512-yHZtwuP7JZivj65Gxoi8upUN2OzHTi3zVfjwdpu2WrvCZPLwsJ2Ey5ILIPccoW23dd/zQBlJ4/dhi7DWNyXCpA==}
@@ -6894,7 +6894,7 @@ snapshots:
       vite: 5.3.5(@types/node@22.0.0)
       vue: 3.4.35(typescript@5.5.4)
 
-  '@vitest/coverage-v8@2.0.4(vitest@2.0.5(@types/node@22.0.0)(jsdom@24.1.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)))':
+  '@vitest/coverage-v8@2.0.5(vitest@2.0.5(@types/node@22.0.0)(jsdom@24.1.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)))':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@bcoe/v8-coverage': 0.2.3
