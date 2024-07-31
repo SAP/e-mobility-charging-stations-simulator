@@ -10,6 +10,7 @@ import {
   getChargingStationId,
   getHashId,
   getMaxNumberOfEvses,
+  getPhaseRotationValue,
   validateStationInfo,
 } from '../../src/charging-station/Helpers.js'
 import type { ChargingStation } from '../../src/charging-station/index.js'
@@ -142,6 +143,21 @@ await describe('Helpers test suite', async () => {
     chargingStation.started = true
     expect(checkChargingStationState(chargingStation, 'log prefix |')).toBe(true)
     expect(logger.warn.mock.calls.length).toBe(1)
+  })
+
+  await it('Verify getPhaseRotationValue()', () => {
+    expect(getPhaseRotationValue(0, 0)).toBe('0.RST')
+    expect(getPhaseRotationValue(1, 0)).toBe('1.NotApplicable')
+    expect(getPhaseRotationValue(2, 0)).toBe('2.NotApplicable')
+    expect(getPhaseRotationValue(0, 1)).toBe('0.NotApplicable')
+    expect(getPhaseRotationValue(1, 1)).toBe('1.NotApplicable')
+    expect(getPhaseRotationValue(2, 1)).toBe('2.NotApplicable')
+    expect(getPhaseRotationValue(0, 2)).toBeUndefined()
+    expect(getPhaseRotationValue(1, 2)).toBeUndefined()
+    expect(getPhaseRotationValue(2, 2)).toBeUndefined()
+    expect(getPhaseRotationValue(0, 3)).toBe('0.RST')
+    expect(getPhaseRotationValue(1, 3)).toBe('1.RST')
+    expect(getPhaseRotationValue(2, 3)).toBe('2.RST')
   })
 
   await it('Verify getMaxNumberOfEvses()', () => {
