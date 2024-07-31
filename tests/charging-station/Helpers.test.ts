@@ -6,6 +6,7 @@ import { expect } from 'expect'
 import {
   checkChargingStationState,
   checkConfiguration,
+  checkStationInfoConnectorStatus,
   checkTemplate,
   getChargingStationId,
   getHashId,
@@ -20,6 +21,7 @@ import {
   type ChargingStationInfo,
   type ChargingStationTemplate,
   type ConnectorStatus,
+  ConnectorStatusEnum,
   type EvseStatus,
   OCPPVersion,
 } from '../../src/types/index.js'
@@ -194,5 +196,15 @@ await describe('Helpers test suite', async () => {
       checkConfiguration({} as ChargingStationConfiguration, 'log prefix |', 'configuration.json')
     }).toThrow(new BaseError('Empty charging station configuration from file configuration.json'))
     expect(logger.error.mock.calls.length).toBe(2)
+  })
+
+  await it('Verify checkStationInfoConnectorStatus()', t => {
+    t.mock.method(logger, 'warn')
+    checkStationInfoConnectorStatus(1, {} as ConnectorStatus, 'log prefix |', 'test-template.json')
+    expect(logger.warn.mock.calls.length).toBe(0)
+    const connectorStatus = { status: ConnectorStatusEnum.Available } as ConnectorStatus
+    checkStationInfoConnectorStatus(1, connectorStatus, 'log prefix |', 'test-template.json')
+    expect(logger.warn.mock.calls.length).toBe(1)
+    expect(connectorStatus.status).toBeUndefined()
   })
 })
