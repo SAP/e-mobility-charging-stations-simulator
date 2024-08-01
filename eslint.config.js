@@ -53,6 +53,10 @@ export default defineFlatConfig([
     },
   },
   {
+    files: ['**/*.js', '**/*.mjs', '**/*.cjs'],
+    ...plugins['typescript-eslint'].configs.disableTypeChecked,
+  },
+  {
     plugins: {
       'simple-import-sort': simpleImportSort,
     },
@@ -94,9 +98,5 @@ export default defineFlatConfig([
     rules: {
       'vue/multi-word-component-names': 'off',
     },
-  },
-  {
-    files: ['**/*.js', '**/*.mjs', '**/*.cjs'],
-    ...plugins['typescript-eslint'].configs.disableTypeChecked,
   },
 ])
