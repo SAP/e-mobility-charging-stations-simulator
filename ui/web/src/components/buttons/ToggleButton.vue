@@ -1,6 +1,9 @@
 <template>
-  <Button :class="{ on: state.status }" @click="click()">
-    <slot></slot>
+  <Button
+    :class="{ on: state.status }"
+    @click="click()"
+  >
+    <slot />
   </Button>
 </template>
 

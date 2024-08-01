@@ -3,7 +3,8 @@ import js from '@eslint/js'
 import { defineFlatConfig } from 'eslint-define-config'
 import jsdoc from 'eslint-plugin-jsdoc'
 import simpleImportSort from 'eslint-plugin-simple-import-sort'
-// import pluginVue from 'eslint-plugin-vue'
+// eslint-disable-next-line n/no-extraneous-import
+import pluginVue from 'eslint-plugin-vue'
 import neostandard, { plugins } from 'neostandard'
 
 export default defineFlatConfig([
@@ -25,15 +26,25 @@ export default defineFlatConfig([
       ],
     },
   },
-  ...neostandard({
-    ts: true,
-  }),
-  // ...pluginVue.configs['flat/recommended'],
-  ...plugins['typescript-eslint'].config(
-    ...plugins['typescript-eslint'].configs.strictTypeChecked,
-    ...plugins['typescript-eslint'].configs.stylisticTypeChecked
-  ),
+  ...pluginVue.configs['flat/recommended'],
   {
+    files: ['**/*.vue'],
+    languageOptions: {
+      parserOptions: {
+        parser: '@typescript-eslint/parser',
+      },
+    },
+  },
+  ...plugins['typescript-eslint']
+    .config(
+      ...plugins['typescript-eslint'].configs.strictTypeChecked,
+      ...plugins['typescript-eslint'].configs.stylisticTypeChecked
+    )
+    .map(config => {
+      return { files: ['**/*.ts', '**/*.tsx', '**/*.mts', '**/*.cts', '*/**.vue'], ...config }
+    }),
+  {
+    files: ['**/*.ts', '**/*.tsx', '**/*.mts', '**/*.cts'],
     languageOptions: {
       parserOptions: {
         projectService: true,
@@ -50,6 +61,9 @@ export default defineFlatConfig([
       'simple-import-sort/exports': 'error',
     },
   },
+  ...neostandard({
+    ts: true,
+  }),
   {
     files: [
       'src/charging-station/Bootstrap.ts',
@@ -73,6 +87,12 @@ export default defineFlatConfig([
     files: ['tests/utils/Utils.test.ts'],
     rules: {
       '@typescript-eslint/no-unsafe-member-access': 'off',
+    },
+  },
+  {
+    files: ['ui/web/src/components/Container.vue', 'ui/web/src/components/buttons/Button.vue'],
+    rules: {
+      'vue/multi-word-component-names': 'off',
     },
   },
   {

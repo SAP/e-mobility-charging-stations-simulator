@@ -1,8 +1,18 @@
 <template>
-  <h1 id="action">Add Charging Stations</h1>
+  <h1 id="action">
+    Add Charging Stations
+  </h1>
   <p>Template:</p>
-  <select :key="state.renderTemplates" v-model="state.template">
-    <option disabled value="">Please select a template</option>
+  <select
+    :key="state.renderTemplates"
+    v-model="state.template"
+  >
+    <option
+      disabled
+      value=""
+    >
+      Please select a template
+    </option>
     <option
       v-for="template in $templates.value"
       v-show="Array.isArray($templates.value) && $templates.value.length > 0"
@@ -19,7 +29,7 @@
     min="1"
     name="number-of-stations"
     placeholder="number of stations"
-  />
+  >
   <p>Template options overrides:</p>
   <ul id="template-options">
     <li>
@@ -30,11 +40,16 @@
         type="url"
         name="supervision-url"
         placeholder="wss://"
-      />
+      >
     </li>
     <li>
       Auto start:
-      <input v-model="state.autoStart" type="checkbox" true-value="true" false-value="false" />
+      <input
+        v-model="state.autoStart"
+        type="checkbox"
+        true-value="true"
+        false-value="false"
+      >
     </li>
     <li>
       Persistent configuration:
@@ -43,7 +58,7 @@
         type="checkbox"
         true-value="true"
         false-value="false"
-      />
+      >
     </li>
     <li>
       OCPP strict compliance:
@@ -52,7 +67,7 @@
         type="checkbox"
         true-value="true"
         false-value="false"
-      />
+      >
     </li>
     <li>
       Performance statistics:
@@ -61,10 +76,10 @@
         type="checkbox"
         true-value="true"
         false-value="false"
-      />
+      >
     </li>
   </ul>
-  <br />
+  <br>
   <Button
     id="action-button"
     @click="

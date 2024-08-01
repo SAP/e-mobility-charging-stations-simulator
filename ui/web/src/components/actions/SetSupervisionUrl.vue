@@ -1,5 +1,7 @@
 <template>
-  <h1 id="action">Set Supervision Url</h1>
+  <h1 id="action">
+    Set Supervision Url
+  </h1>
   <h2>{{ chargingStationId }}</h2>
   <p>Supervision Url:</p>
   <input
@@ -8,8 +10,8 @@
     type="url"
     name="supervision-url"
     placeholder="wss://"
-  />
-  <br />
+  >
+  <br>
   <Button
     id="action-button"
     @click="

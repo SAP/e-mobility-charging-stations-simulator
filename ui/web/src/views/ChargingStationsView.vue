@@ -208,13 +208,14 @@ const getSimulatorState = (): void => {
       .simulatorState()
       .then((response: ResponsePayload) => {
         simulatorState.value = response.state as SimulatorState
+        return undefined
+      })
+      .finally(() => {
+        state.value.gettingSimulatorState = false
       })
       .catch((error: Error) => {
         $toast.error('Error at fetching simulator state')
         console.error('Error at fetching simulator state:', error)
-      })
-      .finally(() => {
-        state.value.gettingSimulatorState = false
       })
   }
 }
@@ -228,14 +229,15 @@ const getTemplates = (): void => {
         if (app != null) {
           app.appContext.config.globalProperties.$templates.value = response.templates as string[]
         }
+        return undefined
+      })
+      .finally(() => {
+        state.value.gettingTemplates = false
       })
       .catch((error: Error) => {
         clearTemplates()
         $toast.error('Error at fetching charging station templates')
         console.error('Error at fetching charging station templates:', error)
-      })
-      .finally(() => {
-        state.value.gettingTemplates = false
       })
   }
 }
@@ -250,14 +252,15 @@ const getChargingStations = (): void => {
           app.appContext.config.globalProperties.$chargingStations.value =
             response.chargingStations as ChargingStationData[]
         }
+        return undefined
+      })
+      .finally(() => {
+        state.value.gettingChargingStations = false
       })
       .catch((error: Error) => {
         clearChargingStations()
         $toast.error('Error at fetching charging stations')
         console.error('Error at fetching charging stations:', error)
-      })
-      .finally(() => {
-        state.value.gettingChargingStations = false
       })
   }
 }
@@ -303,14 +306,14 @@ const startSimulator = (): void => {
   uiClient
     .startSimulator()
     .then(() => {
-      $toast.success('Simulator successfully started')
+      return $toast.success('Simulator successfully started')
+    })
+    .finally(() => {
+      getSimulatorState()
     })
     .catch((error: Error) => {
       $toast.error('Error at starting simulator')
       console.error('Error at starting simulator:', error)
-    })
-    .finally(() => {
-      getSimulatorState()
     })
 }
 const stopSimulator = (): void => {
@@ -318,14 +321,14 @@ const stopSimulator = (): void => {
     .stopSimulator()
     .then(() => {
       clearChargingStations()
-      $toast.success('Simulator successfully stopped')
+      return $toast.success('Simulator successfully stopped')
+    })
+    .finally(() => {
+      getSimulatorState()
     })
     .catch((error: Error) => {
       $toast.error('Error at stopping simulator')
       console.error('Error at stopping simulator:', error)
-    })
-    .finally(() => {
-      getSimulatorState()
     })
 }
 </script>

@@ -239,7 +239,11 @@ export class UIClient {
           this.responseHandlers.set(uuid, { procedureName, resolve, reject })
         } catch (error) {
           this.responseHandlers.delete(uuid)
-          reject(error as Error)
+          reject(
+            new Error(
+              `Send request '${procedureName}' message: error ${(error as Error).toString()}`
+            )
+          )
         } finally {
           clearTimeout(sendTimeout)
         }

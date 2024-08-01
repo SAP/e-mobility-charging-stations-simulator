@@ -1,4 +1,8 @@
-<template><Container id="not-found">404 - Not found</Container></template>
+<template>
+  <Container id="not-found">
+    404 - Not found
+  </Container>
+</template>
 
 <script setup lang="ts">
 import Container from '@/components/Container.vue'

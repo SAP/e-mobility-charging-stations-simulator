@@ -5,17 +5,72 @@
     </caption>
     <thead id="cs-table__head">
       <tr class="cs-table__row">
-        <th scope="col" class="cs-table__column">Name</th>
-        <th scope="col" class="cs-table__column">Started</th>
-        <th scope="col" class="cs-table__column">Supervision Url</th>
-        <th scope="col" class="cs-table__column">WebSocket State</th>
-        <th scope="col" class="cs-table__column">Registration Status</th>
-        <th scope="col" class="cs-table__column">Template</th>
-        <th scope="col" class="cs-table__column">Vendor</th>
-        <th scope="col" class="cs-table__column">Model</th>
-        <th scope="col" class="cs-table__column">Firmware</th>
-        <th scope="col" class="cs-table__column">Actions</th>
-        <th scope="col" class="cs-table__connectors-column">Connector(s)</th>
+        <th
+          scope="col"
+          class="cs-table__column"
+        >
+          Name
+        </th>
+        <th
+          scope="col"
+          class="cs-table__column"
+        >
+          Started
+        </th>
+        <th
+          scope="col"
+          class="cs-table__column"
+        >
+          Supervision Url
+        </th>
+        <th
+          scope="col"
+          class="cs-table__column"
+        >
+          WebSocket State
+        </th>
+        <th
+          scope="col"
+          class="cs-table__column"
+        >
+          Registration Status
+        </th>
+        <th
+          scope="col"
+          class="cs-table__column"
+        >
+          Template
+        </th>
+        <th
+          scope="col"
+          class="cs-table__column"
+        >
+          Vendor
+        </th>
+        <th
+          scope="col"
+          class="cs-table__column"
+        >
+          Model
+        </th>
+        <th
+          scope="col"
+          class="cs-table__column"
+        >
+          Firmware
+        </th>
+        <th
+          scope="col"
+          class="cs-table__column"
+        >
+          Actions
+        </th>
+        <th
+          scope="col"
+          class="cs-table__connectors-column"
+        >
+          Connector(s)
+        </th>
       </tr>
     </thead>
     <tbody id="cs-table__body">
