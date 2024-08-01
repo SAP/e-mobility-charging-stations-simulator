@@ -7,24 +7,6 @@ import simpleImportSort from 'eslint-plugin-simple-import-sort'
 import pluginVue from 'eslint-plugin-vue'
 import neostandard, { plugins } from 'neostandard'
 
-// export default plugins['typescript-eslint'].config({
-//   files: ['** /*.ts'],
-//   extends: [
-//     eslint.configs.recommended,
-//     ...plugins['typescript-eslint'].configs.recommended,
-//   ],
-//   rules: {
-//     '@typescript-eslint/array-type': 'error',
-//     '@typescript-eslint/consistent-type-imports': 'error',
-//   },
-//   languageOptions: {
-//     parserOptions: {
-//       projectService: true,
-//       tsconfigRootDir: import.meta.dirname,
-//     },
-//   },
-// })
-
 export default defineFlatConfig([
   {
     ignores: ['**/dist/**'],
