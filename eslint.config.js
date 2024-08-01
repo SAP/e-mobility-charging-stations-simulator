@@ -35,23 +35,24 @@ export default defineFlatConfig([
       },
     },
   },
-  ...plugins['typescript-eslint']
-    .config(
-      ...plugins['typescript-eslint'].configs.strictTypeChecked,
-      ...plugins['typescript-eslint'].configs.stylisticTypeChecked
-    )
-    .map(config => {
-      return { files: ['**/*.ts', '**/*.tsx', '**/*.mts', '**/*.cts', '*/**.vue'], ...config }
-    }),
-  {
-    files: ['**/*.ts', '**/*.tsx', '**/*.mts', '**/*.cts'],
-    languageOptions: {
-      parserOptions: {
-        projectService: true,
-        tsconfigRootDir: import.meta.dirname,
-      },
+  ...plugins['typescript-eslint'].config(
+    {
+      files: ['**/*.ts', '**/*.tsx', '**/*.mts', '**/*.cts', '*/**.vue'],
+      extends: [
+        ...plugins['typescript-eslint'].configs.strictTypeChecked,
+        ...plugins['typescript-eslint'].configs.stylisticTypeChecked,
+      ],
     },
-  },
+    {
+      files: ['**/*.ts', '**/*.tsx', '**/*.mts', '**/*.cts'],
+      languageOptions: {
+        parserOptions: {
+          projectService: true,
+          tsconfigRootDir: import.meta.dirname,
+        },
+      },
+    }
+  ),
   {
     files: ['**/*.js', '**/*.mjs', '**/*.cjs'],
     ...plugins['typescript-eslint'].configs.disableTypeChecked,
