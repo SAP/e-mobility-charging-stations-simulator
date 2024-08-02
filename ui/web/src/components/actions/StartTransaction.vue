@@ -18,7 +18,7 @@
     @click="
       () => {
         $uiClient
-          .startTransaction(hashId, convertToInt(connectorId), state.idTag)
+          ?.startTransaction(hashId, convertToInt(connectorId), state.idTag)
           .then(() => {
             $toast.success('Transaction successfully started')
           })

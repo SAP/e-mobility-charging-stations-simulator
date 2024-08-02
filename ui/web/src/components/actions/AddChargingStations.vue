@@ -14,8 +14,8 @@
       Please select a template
     </option>
     <option
-      v-for="template in $templates.value"
-      v-show="Array.isArray($templates.value) && $templates.value.length > 0"
+      v-for="template in $templates!.value"
+      v-show="Array.isArray($templates?.value) && $templates.value.length > 0"
       :key="template"
     >
       {{ template }}
@@ -85,7 +85,7 @@
     @click="
       () => {
         $uiClient
-          .addChargingStations(state.template, state.numberOfStations, {
+          ?.addChargingStations(state.template, state.numberOfStations, {
             supervisionUrls: state.supervisionUrl.length > 0 ? state.supervisionUrl : undefined,
             autoStart: convertToBoolean(state.autoStart),
             persistentConfiguration: convertToBoolean(state.persistentConfiguration),
@@ -135,7 +135,7 @@ const state = ref<{
   enableStatistics: false,
 })
 
-watch(getCurrentInstance()!.appContext.config.globalProperties.$templates, () => {
+watch(getCurrentInstance()!.appContext.config.globalProperties!.$templates, () => {
   state.value.renderTemplates = randomUUID()
 })
 </script>

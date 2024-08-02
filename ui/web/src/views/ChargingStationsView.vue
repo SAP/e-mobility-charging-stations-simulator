@@ -13,13 +13,13 @@
               if (
                 getFromLocalStorage<number>('uiServerConfigurationIndex', 0) !== state.uiServerIndex
               ) {
-                $uiClient.setConfiguration(
-                  ($configuration.value.uiServer as UIServerConfigurationSection[])[
+                $uiClient?.setConfiguration(
+                  ($configuration!.value.uiServer as UIServerConfigurationSection[])[
                     state.uiServerIndex
                   ]
                 )
                 registerWSEventListeners()
-                $uiClient.registerWSEventListener(
+                $uiClient?.registerWSEventListener(
                   'open',
                   () => {
                     setToLocalStorage<number>('uiServerConfigurationIndex', state.uiServerIndex)
@@ -29,15 +29,15 @@
                   },
                   { once: true }
                 )
-                $uiClient.registerWSEventListener(
+                $uiClient?.registerWSEventListener(
                   'error',
                   () => {
                     state.uiServerIndex = getFromLocalStorage<number>(
                       'uiServerConfigurationIndex',
                       0
                     )
-                    $uiClient.setConfiguration(
-                      ($configuration.value.uiServer as UIServerConfigurationSection[])[
+                    $uiClient?.setConfiguration(
+                      ($configuration!.value.uiServer as UIServerConfigurationSection[])[
                         getFromLocalStorage<number>('uiServerConfigurationIndex', 0)
                       ]
                     )
@@ -99,9 +99,9 @@
       />
     </Container>
     <CSTable
-      v-show="Array.isArray($chargingStations.value) && $chargingStations.value.length > 0"
+      v-show="Array.isArray($chargingStations?.value) && $chargingStations.value.length > 0"
       :key="state.renderChargingStations"
-      :charging-stations="$chargingStations.value"
+      :charging-stations="$chargingStations!.value"
       @need-refresh="
         () => {
           state.renderAddChargingStations = randomUUID()
@@ -177,7 +177,7 @@ const clearToggleButtons = (): void => {
 
 const app = getCurrentInstance()
 
-watch(app!.appContext.config.globalProperties.$chargingStations, () => {
+watch(app!.appContext.config.globalProperties!.$chargingStations, () => {
   state.value.renderChargingStations = randomUUID()
 })
 
@@ -187,13 +187,13 @@ watch(simulatorState, () => {
 
 const clearTemplates = (): void => {
   if (app != null) {
-    app.appContext.config.globalProperties.$templates.value = []
+    app.appContext.config.globalProperties.$templates!.value = []
   }
 }
 
 const clearChargingStations = (): void => {
   if (app != null) {
-    app.appContext.config.globalProperties.$chargingStations.value = []
+    app.appContext.config.globalProperties.$chargingStations!.value = []
   }
 }
 
@@ -227,7 +227,7 @@ const getTemplates = (): void => {
       .listTemplates()
       .then((response: ResponsePayload) => {
         if (app != null) {
-          app.appContext.config.globalProperties.$templates.value = response.templates as string[]
+          app.appContext.config.globalProperties.$templates!.value = response.templates as string[]
         }
         return undefined
       })
@@ -249,7 +249,7 @@ const getChargingStations = (): void => {
       .listChargingStations()
       .then((response: ResponsePayload) => {
         if (app != null) {
-          app.appContext.config.globalProperties.$chargingStations.value =
+          app.appContext.config.globalProperties.$chargingStations!.value =
             response.chargingStations as ChargingStationData[]
         }
         return undefined
@@ -295,7 +295,7 @@ const uiServerConfigurations: {
   index: number
   configuration: UIServerConfigurationSection
 }[] = (
-  app?.appContext.config.globalProperties.$configuration.value
+  app!.appContext.config.globalProperties.$configuration!.value
     .uiServer as UIServerConfigurationSection[]
 ).map((configuration: UIServerConfigurationSection, index: number) => ({
   index,

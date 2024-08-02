@@ -17,7 +17,7 @@
     @click="
       () => {
         $uiClient
-          .setSupervisionUrl(hashId, state.supervisionUrl)
+          ?.setSupervisionUrl(hashId, state.supervisionUrl)
           .then(() => {
             $toast.success('Supervision url successfully set')
           })
