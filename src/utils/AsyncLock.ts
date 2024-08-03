@@ -52,7 +52,7 @@ export class AsyncLock {
       return
     }
     await new Promise<void>(resolve => {
-      asyncLock.resolveQueue.dequeue()
+      asyncLock.resolveQueue.dequeue()?.()
       resolve()
     })
   }

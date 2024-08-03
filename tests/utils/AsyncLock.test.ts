@@ -5,9 +5,9 @@ import { expect } from 'expect'
 import { AsyncLock, AsyncLockType } from '../../src/utils/AsyncLock.js'
 
 await describe('AsyncLock test suite', async () => {
-  await it('Verify runExclusive()', () => {
+  await it('Verify runExclusive() on sync fn', () => {
     const runs = 10
-    let executed: number[] = []
+    const executed: number[] = []
     let count = 0
     const fn = () => {
       executed.push(++count)
@@ -21,8 +21,12 @@ await describe('AsyncLock test suite', async () => {
         // eslint-disable-next-line @typescript-eslint/use-unknown-in-catch-callback-variable
         .catch(console.error)
     }
-    executed = []
-    count = 0
+  })
+
+  await it('Verify runExclusive() on async fn', () => {
+    const runs = 10
+    const executed: number[] = []
+    let count = 0
     const asyncFn = async () => {
       await new Promise(resolve => {
         setTimeout(resolve, 100)
