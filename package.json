@@ -128,6 +128,7 @@
     "eslint-define-config": "^2.1.0",
     "eslint-plugin-jsdoc": "^48.11.0",
     "eslint-plugin-simple-import-sort": "^12.1.1",
+    "eslint-plugin-vue": "^9.27.0",
     "expect": "^29.7.0",
     "glob": "^11.0.0",
     "husky": "^9.1.4",

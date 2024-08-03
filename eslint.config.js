@@ -3,7 +3,6 @@ import js from '@eslint/js'
 import { defineFlatConfig } from 'eslint-define-config'
 import jsdoc from 'eslint-plugin-jsdoc'
 import simpleImportSort from 'eslint-plugin-simple-import-sort'
-// eslint-disable-next-line n/no-extraneous-import
 import pluginVue from 'eslint-plugin-vue'
 import neostandard, { plugins } from 'neostandard'
 
