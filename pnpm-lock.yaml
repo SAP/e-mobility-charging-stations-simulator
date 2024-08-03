@@ -215,18 +215,6 @@ importers:
       cross-env:
         specifier: ^7.0.3
         version: 7.0.3
-      eslint:
-        specifier: ^9.8.0
-        version: 9.8.0
-      eslint-define-config:
-        specifier: ^2.1.0
-        version: 2.1.0
-      eslint-plugin-simple-import-sort:
-        specifier: ^12.1.1
-        version: 12.1.1(eslint@9.8.0)
-      eslint-plugin-vue:
-        specifier: ^9.27.0
-        version: 9.27.0(eslint@9.8.0)
       jsdom:
         specifier: ^24.1.1
         version: 24.1.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)
@@ -239,9 +227,6 @@ importers:
       typescript:
         specifier: ~5.5.4
         version: 5.5.4
-      typescript-eslint:
-        specifier: ^8.0.0
-        version: 8.0.0(eslint@9.8.0)(typescript@5.5.4)
       vite:
         specifier: ^5.3.5
         version: 5.3.5(@types/node@22.1.0)
