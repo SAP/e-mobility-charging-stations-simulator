@@ -51,10 +51,8 @@ export class AsyncLock {
       asyncLock.acquired = false
       return
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const queuedResolve = asyncLock.resolveQueue.dequeue()!
     await new Promise<void>(resolve => {
-      queuedResolve()
+      asyncLock.resolveQueue.dequeue()
       resolve()
     })
   }
