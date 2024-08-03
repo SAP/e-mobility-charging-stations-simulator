@@ -2,7 +2,7 @@
 
 import { Queue } from 'mnemonist'
 
-import { Constants } from './Constants.js'
+import { isAsyncFunction } from './Utils.js'
 
 export enum AsyncLockType {
   configuration = 'configuration',
@@ -22,11 +22,16 @@ export class AsyncLock {
   }
 
   public static async runExclusive<T>(type: AsyncLockType, fn: () => T | Promise<T>): Promise<T> {
-    return await AsyncLock.acquire(type)
-      .then(fn)
-      .finally(() => {
-        AsyncLock.release(type).catch(Constants.EMPTY_FUNCTION)
-      })
+    try {
+      await AsyncLock.acquire(type)
+      if (isAsyncFunction(fn)) {
+        return await fn()
+      } else {
+        return fn() as T
+      }
+    } finally {
+      await AsyncLock.release(type)
+    }
   }
 
   private static async acquire (type: AsyncLockType): Promise<void> {
