@@ -15,7 +15,7 @@ await describe('AsyncLock test suite', async () => {
     for (let i = 0; i < runs; i++) {
       AsyncLock.runExclusive(AsyncLockType.configuration, fn)
         .then(() => {
-          expect(executed).toEqual(new Array(count).fill(0).map((_, i) => ++i))
+          expect(executed).toStrictEqual(new Array(count).fill(0).map((_, i) => ++i))
           return undefined
         })
         // eslint-disable-next-line @typescript-eslint/use-unknown-in-catch-callback-variable
@@ -36,7 +36,7 @@ await describe('AsyncLock test suite', async () => {
     for (let i = 0; i < runs; i++) {
       AsyncLock.runExclusive(AsyncLockType.configuration, asyncFn)
         .then(() => {
-          expect(executed).toEqual(new Array(count).fill(0).map((_, i) => ++i))
+          expect(executed).toStrictEqual(new Array(count).fill(0).map((_, i) => ++i))
           return undefined
         })
         // eslint-disable-next-line @typescript-eslint/use-unknown-in-catch-callback-variable
