@@ -21,8 +21,8 @@ importers:
         specifier: ^6.3.2
         version: 6.3.2
       '@mikro-orm/mariadb':
-        specifier: ^6.3.2
-        version: 6.3.2(@mikro-orm/core@6.3.2)
+        specifier: ^6.3.3
+        version: 6.3.3(@mikro-orm/core@6.3.2)
       '@mikro-orm/reflection':
         specifier: ^6.3.2
         version: 6.3.2(@mikro-orm/core@6.3.2)
@@ -882,8 +882,24 @@ packages:
       mariadb:
         optional: true
 
-  '@mikro-orm/mariadb@6.3.2':
-    resolution: {integrity: sha512-h2ZsOsU5zsme7heTxQLYULJJNrEPCukUbNiACNMhxRvrudk2x9hLaB9h9spCpFWLtLw2Xgc3mtJeue62mc+wKg==}
+  '@mikro-orm/knex@6.3.3':
+    resolution: {integrity: sha512-eG3SW4GFQKA7SVj5VCkQQyxlQMC/ZUKHWhFwSDgbyF0sYTAV/78Ir0XX1m69nxK1zD+KJXA+4nf0g5HAoWQxUQ==}
+    engines: {node: '>= 18.12.0'}
+    peerDependencies:
+      '@mikro-orm/core': ^6.0.0
+      better-sqlite3: '*'
+      libsql: '*'
+      mariadb: '*'
+    peerDependenciesMeta:
+      better-sqlite3:
+        optional: true
+      libsql:
+        optional: true
+      mariadb:
+        optional: true
+
+  '@mikro-orm/mariadb@6.3.3':
+    resolution: {integrity: sha512-4BVpIIrjww2HJdPt5w2/GTqtg0OyO6eJaOgC/X5iZf7kwNSoMPIr/PIVVU5vGsatZ0BvNogPlPO8qGj/LMNcwg==}
     engines: {node: '>= 18.12.0'}
     peerDependencies:
       '@mikro-orm/core': ^6.0.0
@@ -6522,10 +6538,27 @@ snapshots:
       - supports-color
       - tedious
 
-  '@mikro-orm/mariadb@6.3.2(@mikro-orm/core@6.3.2)':
+  '@mikro-orm/knex@6.3.3(@mikro-orm/core@6.3.2)(mariadb@3.3.1)':
     dependencies:
       '@mikro-orm/core': 6.3.2
-      '@mikro-orm/knex': 6.3.2(@mikro-orm/core@6.3.2)(mariadb@3.3.1)(sqlite3@5.1.7)
+      fs-extra: 11.2.0
+      knex: 3.1.0(sqlite3@5.1.7)
+      sqlstring: 2.3.3
+    optionalDependencies:
+      mariadb: 3.3.1
+    transitivePeerDependencies:
+      - mysql
+      - mysql2
+      - pg
+      - pg-native
+      - sqlite3
+      - supports-color
+      - tedious
+
+  '@mikro-orm/mariadb@6.3.3(@mikro-orm/core@6.3.2)':
+    dependencies:
+      '@mikro-orm/core': 6.3.2
+      '@mikro-orm/knex': 6.3.3(@mikro-orm/core@6.3.2)(mariadb@3.3.1)
       mariadb: 3.3.1
     transitivePeerDependencies:
       - better-sqlite3

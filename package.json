@@ -87,7 +87,7 @@
   },
   "dependencies": {
     "@mikro-orm/core": "^6.3.2",
-    "@mikro-orm/mariadb": "^6.3.2",
+    "@mikro-orm/mariadb": "^6.3.3",
     "@mikro-orm/reflection": "^6.3.2",
     "@mikro-orm/sqlite": "^6.3.2",
     "ajv": "^8.17.1",
