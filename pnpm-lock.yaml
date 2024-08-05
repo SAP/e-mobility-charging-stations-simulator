@@ -24,8 +24,8 @@ importers:
         specifier: ^6.3.2
         version: 6.3.2(@mikro-orm/core@6.3.2)
       '@mikro-orm/reflection':
-        specifier: ^6.3.2
-        version: 6.3.2(@mikro-orm/core@6.3.2)
+        specifier: ^6.3.3
+        version: 6.3.3(@mikro-orm/core@6.3.2)
       '@mikro-orm/sqlite':
         specifier: ^6.3.2
         version: 6.3.2(@mikro-orm/core@6.3.2)(mariadb@3.3.1)
@@ -888,8 +888,8 @@ packages:
     peerDependencies:
       '@mikro-orm/core': ^6.0.0
 
-  '@mikro-orm/reflection@6.3.2':
-    resolution: {integrity: sha512-hrTa5owdrLssda6bGyOPKCpgxpxkqqajtAJ1MC3cEeA6I/P/Yd2ZnwzIsImrq9yU1io0rhQIAoi0737xuUz0MA==}
+  '@mikro-orm/reflection@6.3.3':
+    resolution: {integrity: sha512-tNwKb1EDco7Wb1BuVrUkGPRNnGNfeJPWe/y9aFmf/77qORPonzXTQQLcW4qzq0nLsoId5VXe4G9mmlhWbP3dEQ==}
     engines: {node: '>= 18.12.0'}
     peerDependencies:
       '@mikro-orm/core': ^6.0.0
@@ -6538,7 +6538,7 @@ snapshots:
       - supports-color
       - tedious
 
-  '@mikro-orm/reflection@6.3.2(@mikro-orm/core@6.3.2)':
+  '@mikro-orm/reflection@6.3.3(@mikro-orm/core@6.3.2)':
     dependencies:
       '@mikro-orm/core': 6.3.2
       globby: 11.1.0
