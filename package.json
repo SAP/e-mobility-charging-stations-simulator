@@ -86,10 +86,10 @@
     }
   },
   "dependencies": {
-    "@mikro-orm/core": "^6.3.2",
-    "@mikro-orm/mariadb": "^6.3.2",
-    "@mikro-orm/reflection": "^6.3.2",
-    "@mikro-orm/sqlite": "^6.3.2",
+    "@mikro-orm/core": "^6.3.3",
+    "@mikro-orm/mariadb": "^6.3.3",
+    "@mikro-orm/reflection": "^6.3.3",
+    "@mikro-orm/sqlite": "^6.3.3",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "basic-ftp": "^5.0.5",
@@ -114,7 +114,7 @@
     "@commitlint/cli": "^19.3.0",
     "@commitlint/config-conventional": "^19.2.2",
     "@eslint/js": "^9.8.0",
-    "@mikro-orm/cli": "^6.3.2",
+    "@mikro-orm/cli": "^6.3.3",
     "@types/node": "^22.1.0",
     "@types/semver": "^7.5.8",
     "@types/ws": "^8.5.12",
