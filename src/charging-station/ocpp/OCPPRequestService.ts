@@ -171,6 +171,7 @@ export abstract class OCPPRequestService {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
   private validateRequestPayload<T extends JsonType>(
     chargingStation: ChargingStation,
     commandName: RequestCommand | IncomingRequestCommand,
@@ -204,6 +205,7 @@ export abstract class OCPPRequestService {
     )
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
   private validateIncomingRequestResponsePayload<T extends JsonType>(
     chargingStation: ChargingStation,
     commandName: RequestCommand | IncomingRequestCommand,
