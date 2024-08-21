@@ -1,4 +1,5 @@
 import type { JsonObject } from '../JsonType.js'
+
 import {
   OCPP16StandardParametersKey,
   OCPP16SupportedFeatureProfiles,
@@ -33,16 +34,16 @@ export type SupportedFeatureProfiles = OCPP16SupportedFeatureProfiles
 
 export enum ConnectorPhaseRotation {
   NotApplicable = 'NotApplicable',
-  Unknown = 'Unknown',
   RST = 'RST',
   RTS = 'RTS',
   SRT = 'SRT',
   STR = 'STR',
   TRS = 'TRS',
-  TSR = 'TSR'
+  TSR = 'TSR',
+  Unknown = 'Unknown'
 }
 
-export type ConfigurationKeyType = string | StandardParametersKey | VendorParametersKey
+export type ConfigurationKeyType = StandardParametersKey | string | VendorParametersKey
 
 export interface OCPPConfigurationKey extends JsonObject {
   key: ConfigurationKeyType

@@ -9,9 +9,9 @@ export interface OCPP16HeartbeatResponse extends JsonObject {
 }
 
 export enum OCPP16UnlockStatus {
-  UNLOCKED = 'Unlocked',
+  NOT_SUPPORTED = 'NotSupported',
   UNLOCK_FAILED = 'UnlockFailed',
-  NOT_SUPPORTED = 'NotSupported'
+  UNLOCKED = 'Unlocked'
 }
 
 export interface UnlockConnectorResponse extends JsonObject {
@@ -20,9 +20,9 @@ export interface UnlockConnectorResponse extends JsonObject {
 
 export enum OCPP16ConfigurationStatus {
   ACCEPTED = 'Accepted',
-  REJECTED = 'Rejected',
+  NOT_SUPPORTED = 'NotSupported',
   REBOOT_REQUIRED = 'RebootRequired',
-  NOT_SUPPORTED = 'NotSupported'
+  REJECTED = 'Rejected'
 }
 
 export interface ChangeConfigurationResponse extends JsonObject {
@@ -30,9 +30,9 @@ export interface ChangeConfigurationResponse extends JsonObject {
 }
 
 export interface OCPP16BootNotificationResponse extends JsonObject {
-  status: RegistrationStatusEnumType
   currentTime: Date
   interval: number
+  status: RegistrationStatusEnumType
 }
 
 export type OCPP16StatusNotificationResponse = EmptyObject
@@ -44,15 +44,15 @@ export interface GetConfigurationResponse extends JsonObject {
 
 export enum OCPP16ChargingProfileStatus {
   ACCEPTED = 'Accepted',
-  REJECTED = 'Rejected',
-  NOT_SUPPORTED = 'NotSupported'
+  NOT_SUPPORTED = 'NotSupported',
+  REJECTED = 'Rejected'
 }
 
 export interface OCPP16GetCompositeScheduleResponse extends JsonObject {
-  status: GenericStatus
+  chargingSchedule?: OCPP16ChargingSchedule
   connectorId?: number
   scheduleStart?: Date
-  chargingSchedule?: OCPP16ChargingSchedule
+  status: GenericStatus
 }
 
 export interface SetChargingProfileResponse extends JsonObject {
@@ -90,8 +90,8 @@ export type OCPP16DiagnosticsStatusNotificationResponse = EmptyObject
 
 export enum OCPP16TriggerMessageStatus {
   ACCEPTED = 'Accepted',
-  REJECTED = 'Rejected',
-  NOT_IMPLEMENTED = 'NotImplemented'
+  NOT_IMPLEMENTED = 'NotImplemented',
+  REJECTED = 'Rejected'
 }
 
 export interface OCPP16TriggerMessageResponse extends JsonObject {
@@ -106,17 +106,17 @@ export enum OCPP16DataTransferStatus {
 }
 
 export interface OCPP16DataTransferResponse extends JsonObject {
-  status: OCPP16DataTransferStatus
   data?: string
+  status: OCPP16DataTransferStatus
 }
 
 export enum OCPP16ReservationStatus {
   ACCEPTED = 'Accepted',
   FAULTED = 'Faulted',
+  NOT_SUPPORTED = 'NotSupported',
   OCCUPIED = 'Occupied',
   REJECTED = 'Rejected',
-  UNAVAILABLE = 'Unavailable',
-  NOT_SUPPORTED = 'NotSupported'
+  UNAVAILABLE = 'Unavailable'
 }
 
 export interface OCPP16ReserveNowResponse extends JsonObject {

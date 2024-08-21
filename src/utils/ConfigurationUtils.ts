@@ -1,7 +1,6 @@
+import chalk from 'chalk'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-
-import chalk from 'chalk'
 
 import { type ElementsPerWorkerType, type FileType, StorageType } from '../types/index.js'
 import { WorkerProcessType } from '../worker/index.js'

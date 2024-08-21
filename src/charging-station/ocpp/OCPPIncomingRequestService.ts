@@ -1,16 +1,16 @@
-import { EventEmitter } from 'node:events'
-
 import _Ajv, { type ValidateFunction } from 'ajv'
 import _ajvFormats from 'ajv-formats'
+import { EventEmitter } from 'node:events'
 
-import { type ChargingStation, getIdTagsFile } from '../../charging-station/index.js'
-import { OCPPError } from '../../exception/index.js'
 import type {
   ClearCacheResponse,
   IncomingRequestCommand,
   JsonType,
   OCPPVersion,
 } from '../../types/index.js'
+
+import { type ChargingStation, getIdTagsFile } from '../../charging-station/index.js'
+import { OCPPError } from '../../exception/index.js'
 import { logger } from '../../utils/index.js'
 import { OCPPConstants } from './OCPPConstants.js'
 import { ajvErrorsToErrorType } from './OCPPServiceUtils.js'
@@ -22,13 +22,14 @@ const ajvFormats = _ajvFormats.default
 const moduleName = 'OCPPIncomingRequestService'
 
 export abstract class OCPPIncomingRequestService extends EventEmitter {
-  private static instance: OCPPIncomingRequestService | null = null
-  private readonly version: OCPPVersion
+  private static instance: null | OCPPIncomingRequestService = null
   protected readonly ajv: Ajv
   protected abstract payloadValidateFunctions: Map<
     IncomingRequestCommand,
     ValidateFunction<JsonType>
   >
+
+  private readonly version: OCPPVersion
 
   protected constructor (version: OCPPVersion) {
     super()
@@ -47,6 +48,14 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
       OCPPIncomingRequestService.instance = new this()
     }
     return OCPPIncomingRequestService.instance as T
+  }
+
+  protected handleRequestClearCache (chargingStation: ChargingStation): ClearCacheResponse {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    if (chargingStation.idTagsCache.deleteIdTags(getIdTagsFile(chargingStation.stationInfo!)!)) {
+      return OCPPConstants.OCPP_RESPONSE_ACCEPTED
+    }
+    return OCPPConstants.OCPP_RESPONSE_REJECTED
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
@@ -72,14 +81,6 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
       commandName,
       JSON.stringify(validate?.errors, undefined, 2)
     )
-  }
-
-  protected handleRequestClearCache (chargingStation: ChargingStation): ClearCacheResponse {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    if (chargingStation.idTagsCache.deleteIdTags(getIdTagsFile(chargingStation.stationInfo!)!)) {
-      return OCPPConstants.OCPP_RESPONSE_ACCEPTED
-    }
-    return OCPPConstants.OCPP_RESPONSE_REJECTED
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-unnecessary-type-parameters

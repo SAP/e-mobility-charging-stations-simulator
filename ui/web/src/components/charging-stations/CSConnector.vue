@@ -15,7 +15,11 @@
     <td class="connectors-table__column">
       <ToggleButton
         :id="`${hashId}-${connectorId}-start-transaction`"
-        :shared="true"
+        :off="
+          () => {
+            $router.push({ name: 'charging-stations' })
+          }
+        "
         :on="
           () => {
             $router.push({
@@ -24,11 +28,7 @@
             })
           }
         "
-        :off="
-          () => {
-            $router.push({ name: 'charging-stations' })
-          }
-        "
+        :shared="true"
         @clicked="
           () => {
             $emit('need-refresh')
@@ -51,19 +51,19 @@
 </template>
 
 <script setup lang="ts">
-import { useToast } from 'vue-toast-notification'
+import type { ConnectorStatus, Status } from '@/types'
 
 import Button from '@/components/buttons/Button.vue'
 import ToggleButton from '@/components/buttons/ToggleButton.vue'
 import { useUIClient } from '@/composables'
-import type { ConnectorStatus, Status } from '@/types'
+import { useToast } from 'vue-toast-notification'
 
 const props = defineProps<{
-  hashId: string
-  chargingStationId: string
-  connectorId: number
-  connector: ConnectorStatus
   atgStatus?: Status
+  chargingStationId: string
+  connector: ConnectorStatus
+  connectorId: number
+  hashId: string
 }>()
 
 const $emit = defineEmits(['need-refresh'])

@@ -33,49 +33,49 @@ export type ProtocolRequestHandler = (
   uuid?: `${string}-${string}-${string}-${string}-${string}`,
   procedureName?: ProcedureName,
   payload?: RequestPayload
-) => undefined | Promise<undefined> | ResponsePayload | Promise<ResponsePayload>
+) => Promise<ResponsePayload> | Promise<undefined> | ResponsePayload | undefined
 
 export enum ProcedureName {
-  SIMULATOR_STATE = 'simulatorState',
-  START_SIMULATOR = 'startSimulator',
-  STOP_SIMULATOR = 'stopSimulator',
-  LIST_TEMPLATES = 'listTemplates',
-  LIST_CHARGING_STATIONS = 'listChargingStations',
   ADD_CHARGING_STATIONS = 'addChargingStations',
-  DELETE_CHARGING_STATIONS = 'deleteChargingStations',
-  PERFORMANCE_STATISTICS = 'performanceStatistics',
-  START_CHARGING_STATION = 'startChargingStation',
-  STOP_CHARGING_STATION = 'stopChargingStation',
-  OPEN_CONNECTION = 'openConnection',
-  CLOSE_CONNECTION = 'closeConnection',
-  START_AUTOMATIC_TRANSACTION_GENERATOR = 'startAutomaticTransactionGenerator',
-  STOP_AUTOMATIC_TRANSACTION_GENERATOR = 'stopAutomaticTransactionGenerator',
-  SET_SUPERVISION_URL = 'setSupervisionUrl',
-  START_TRANSACTION = 'startTransaction',
-  STOP_TRANSACTION = 'stopTransaction',
   AUTHORIZE = 'authorize',
   BOOT_NOTIFICATION = 'bootNotification',
-  STATUS_NOTIFICATION = 'statusNotification',
-  HEARTBEAT = 'heartbeat',
-  METER_VALUES = 'meterValues',
+  CLOSE_CONNECTION = 'closeConnection',
   DATA_TRANSFER = 'dataTransfer',
+  DELETE_CHARGING_STATIONS = 'deleteChargingStations',
   DIAGNOSTICS_STATUS_NOTIFICATION = 'diagnosticsStatusNotification',
-  FIRMWARE_STATUS_NOTIFICATION = 'firmwareStatusNotification'
+  FIRMWARE_STATUS_NOTIFICATION = 'firmwareStatusNotification',
+  HEARTBEAT = 'heartbeat',
+  LIST_CHARGING_STATIONS = 'listChargingStations',
+  LIST_TEMPLATES = 'listTemplates',
+  METER_VALUES = 'meterValues',
+  OPEN_CONNECTION = 'openConnection',
+  PERFORMANCE_STATISTICS = 'performanceStatistics',
+  SET_SUPERVISION_URL = 'setSupervisionUrl',
+  SIMULATOR_STATE = 'simulatorState',
+  START_AUTOMATIC_TRANSACTION_GENERATOR = 'startAutomaticTransactionGenerator',
+  START_CHARGING_STATION = 'startChargingStation',
+  START_SIMULATOR = 'startSimulator',
+  START_TRANSACTION = 'startTransaction',
+  STATUS_NOTIFICATION = 'statusNotification',
+  STOP_AUTOMATIC_TRANSACTION_GENERATOR = 'stopAutomaticTransactionGenerator',
+  STOP_CHARGING_STATION = 'stopChargingStation',
+  STOP_SIMULATOR = 'stopSimulator',
+  STOP_TRANSACTION = 'stopTransaction'
 }
 
 export interface RequestPayload extends JsonObject {
-  hashIds?: string[]
   connectorIds?: number[]
+  hashIds?: string[]
 }
 
 export enum ResponseStatus {
-  SUCCESS = 'success',
-  FAILURE = 'failure'
+  FAILURE = 'failure',
+  SUCCESS = 'success'
 }
 
 export interface ResponsePayload extends JsonObject {
-  status: ResponseStatus
-  hashIdsSucceeded?: string[]
   hashIdsFailed?: string[]
+  hashIdsSucceeded?: string[]
   responsesFailed?: BroadcastChannelResponsePayload[]
+  status: ResponseStatus
 }

@@ -26,13 +26,13 @@ import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 const moduleName = 'OCPP20ResponseService'
 
 export class OCPP20ResponseService extends OCPPResponseService {
+  protected payloadValidateFunctions: Map<OCPP20RequestCommand, ValidateFunction<JsonType>>
+
+  private readonly responseHandlers: Map<OCPP20RequestCommand, ResponseHandler>
   public incomingRequestResponsePayloadValidateFunctions: Map<
     OCPP20IncomingRequestCommand,
     ValidateFunction<JsonType>
   >
-
-  protected payloadValidateFunctions: Map<OCPP20RequestCommand, ValidateFunction<JsonType>>
-  private readonly responseHandlers: Map<OCPP20RequestCommand, ResponseHandler>
 
   public constructor () {
     // if (new.target.name === moduleName) {
@@ -97,6 +97,56 @@ export class OCPP20ResponseService extends OCPPResponseService {
     this.validatePayload = this.validatePayload.bind(this)
   }
 
+  private handleResponseBootNotification (
+    chargingStation: ChargingStation,
+    payload: OCPP20BootNotificationResponse
+  ): void {
+    if (Object.values(RegistrationStatusEnumType).includes(payload.status)) {
+      chargingStation.bootNotificationResponse = payload
+      if (chargingStation.isRegistered()) {
+        chargingStation.emit(ChargingStationEvents.registered)
+        if (chargingStation.inAcceptedState()) {
+          addConfigurationKey(
+            chargingStation,
+            OCPP20OptionalVariableName.HeartbeatInterval,
+            payload.interval.toString(),
+            {},
+            { overwrite: true, save: true }
+          )
+          chargingStation.emit(ChargingStationEvents.accepted)
+        }
+      } else if (chargingStation.inRejectedState()) {
+        chargingStation.emit(ChargingStationEvents.rejected)
+      }
+      const logMsg = `${chargingStation.logPrefix()} Charging station in '${
+        payload.status
+      }' state on the central server`
+      payload.status === RegistrationStatusEnumType.REJECTED
+        ? logger.warn(logMsg)
+        : logger.info(logMsg)
+    } else {
+      delete chargingStation.bootNotificationResponse
+      logger.error(
+        `${chargingStation.logPrefix()} Charging station boot notification response received: %j with undefined registration status`,
+        payload
+      )
+    }
+  }
+
+  private validatePayload (
+    chargingStation: ChargingStation,
+    commandName: OCPP20RequestCommand,
+    payload: JsonType
+  ): boolean {
+    if (this.payloadValidateFunctions.has(commandName)) {
+      return this.validateResponsePayload(chargingStation, commandName, payload)
+    }
+    logger.warn(
+      `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema validation function found for command '${commandName}' PDU validation`
+    )
+    return false
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
   public async responseHandler<ReqType extends JsonType, ResType extends JsonType>(
     chargingStation: ChargingStation,
@@ -153,56 +203,6 @@ export class OCPP20ResponseService extends OCPPResponseService {
           2
         )} while the charging station is not registered on the central server`,
         commandName,
-        payload
-      )
-    }
-  }
-
-  private validatePayload (
-    chargingStation: ChargingStation,
-    commandName: OCPP20RequestCommand,
-    payload: JsonType
-  ): boolean {
-    if (this.payloadValidateFunctions.has(commandName)) {
-      return this.validateResponsePayload(chargingStation, commandName, payload)
-    }
-    logger.warn(
-      `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema validation function found for command '${commandName}' PDU validation`
-    )
-    return false
-  }
-
-  private handleResponseBootNotification (
-    chargingStation: ChargingStation,
-    payload: OCPP20BootNotificationResponse
-  ): void {
-    if (Object.values(RegistrationStatusEnumType).includes(payload.status)) {
-      chargingStation.bootNotificationResponse = payload
-      if (chargingStation.isRegistered()) {
-        chargingStation.emit(ChargingStationEvents.registered)
-        if (chargingStation.inAcceptedState()) {
-          addConfigurationKey(
-            chargingStation,
-            OCPP20OptionalVariableName.HeartbeatInterval,
-            payload.interval.toString(),
-            {},
-            { overwrite: true, save: true }
-          )
-          chargingStation.emit(ChargingStationEvents.accepted)
-        }
-      } else if (chargingStation.inRejectedState()) {
-        chargingStation.emit(ChargingStationEvents.rejected)
-      }
-      const logMsg = `${chargingStation.logPrefix()} Charging station in '${
-        payload.status
-      }' state on the central server`
-      payload.status === RegistrationStatusEnumType.REJECTED
-        ? logger.warn(logMsg)
-        : logger.info(logMsg)
-    } else {
-      delete chargingStation.bootNotificationResponse
-      logger.error(
-        `${chargingStation.logPrefix()} Charging station boot notification response received: %j with undefined registration status`,
         payload
       )
     }

@@ -1,6 +1,7 @@
 import { type FSWatcher, readFileSync, watch, type WatchListener } from 'node:fs'
 
 import type { FileType, JsonType } from '../types/index.js'
+
 import { handleFileException } from './ErrorUtils.js'
 import { logger } from './Logger.js'
 import { isNotEmptyString } from './Utils.js'

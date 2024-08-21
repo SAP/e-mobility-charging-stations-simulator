@@ -1,7 +1,7 @@
 <template>
   <button
-    type="button"
     class="button"
+    type="button"
   >
     <slot />
   </button>

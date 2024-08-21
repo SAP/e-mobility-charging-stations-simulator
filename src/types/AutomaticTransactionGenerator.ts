@@ -1,41 +1,41 @@
 import type { JsonObject } from './JsonType.js'
 
 export enum IdTagDistribution {
+  CONNECTOR_AFFINITY = 'connector-affinity',
   RANDOM = 'random',
-  ROUND_ROBIN = 'round-robin',
-  CONNECTOR_AFFINITY = 'connector-affinity'
+  ROUND_ROBIN = 'round-robin'
 }
 
 export interface AutomaticTransactionGeneratorConfiguration extends JsonObject {
   enable: boolean
-  minDuration: number
+  idTagDistribution?: IdTagDistribution
+  maxDelayBetweenTwoTransactions: number
   maxDuration: number
   minDelayBetweenTwoTransactions: number
-  maxDelayBetweenTwoTransactions: number
+  minDuration: number
   probabilityOfStart: number
-  stopAfterHours: number
-  stopAbsoluteDuration: boolean
   requireAuthorize?: boolean
-  idTagDistribution?: IdTagDistribution
+  stopAbsoluteDuration: boolean
+  stopAfterHours: number
 }
 
 export interface Status {
-  start: boolean
-  startDate?: Date
-  lastRunDate?: Date
-  stopDate?: Date
-  stoppedDate?: Date
-  authorizeRequests: number
   acceptedAuthorizeRequests: number
-  rejectedAuthorizeRequests: number
-  startTransactionRequests: number
   acceptedStartTransactionRequests: number
-  rejectedStartTransactionRequests: number
-  stopTransactionRequests: number
   acceptedStopTransactionRequests: number
+  authorizeRequests: number
+  lastRunDate?: Date
+  rejectedAuthorizeRequests: number
+  rejectedStartTransactionRequests: number
   rejectedStopTransactionRequests: number
   skippedConsecutiveTransactions: number
   skippedTransactions: number
+  start: boolean
+  startDate?: Date
+  startTransactionRequests: number
+  stopDate?: Date
+  stoppedDate?: Date
+  stopTransactionRequests: number
 }
 
 export interface ChargingStationAutomaticTransactionGeneratorConfiguration {

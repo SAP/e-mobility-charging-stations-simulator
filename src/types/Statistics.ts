@@ -9,34 +9,34 @@ export interface TimestampedData {
 }
 
 export type StatisticsData = Partial<{
+  avgTimeMeasurement: number
+  currentTimeMeasurement: number
+  errorCount: number
+  maxTimeMeasurement: number
+  measurementTimeSeries: CircularBuffer<TimestampedData> | TimestampedData[]
+  medTimeMeasurement: number
+  minTimeMeasurement: number
+  ninetyFiveThPercentileTimeMeasurement: number
   requestCount: number
   responseCount: number
-  errorCount: number
-  timeMeasurementCount: number
-  measurementTimeSeries: CircularBuffer<TimestampedData> | TimestampedData[]
-  currentTimeMeasurement: number
-  minTimeMeasurement: number
-  maxTimeMeasurement: number
-  totalTimeMeasurement: number
-  avgTimeMeasurement: number
-  medTimeMeasurement: number
-  ninetyFiveThPercentileTimeMeasurement: number
   stdDevTimeMeasurement: number
+  timeMeasurementCount: number
+  totalTimeMeasurement: number
 }>
 
 export interface Statistics extends WorkerData {
+  createdAt: Date
   id: string
   name: string
-  uri: string
-  createdAt: Date
+  statisticsData: Map<IncomingRequestCommand | RequestCommand | string, StatisticsData>
   updatedAt?: Date
-  statisticsData: Map<string | RequestCommand | IncomingRequestCommand, StatisticsData>
+  uri: string
 }
 
 export interface TemplateStatistics {
-  configured: number
-  provisioned: number
   added: number
-  started: number
+  configured: number
   indexes: Set<number>
+  provisioned: number
+  started: number
 }

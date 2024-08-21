@@ -1,17 +1,17 @@
 import type { EventEmitterAsyncResource } from 'node:events'
-import { existsSync } from 'node:fs'
-
 import type { PoolInfo } from 'poolifier'
+
+import { existsSync } from 'node:fs'
 
 import type { SetInfo, WorkerData, WorkerOptions } from './WorkerTypes.js'
 
 export abstract class WorkerAbstract<D extends WorkerData, R extends WorkerData> {
-  protected readonly workerScript: string
   protected readonly workerOptions: WorkerOptions
-  public abstract readonly info: PoolInfo | SetInfo
-  public abstract readonly size: number
-  public abstract readonly maxElementsPerWorker: number | undefined
+  protected readonly workerScript: string
   public abstract readonly emitter: EventEmitterAsyncResource | undefined
+  public abstract readonly info: PoolInfo | SetInfo
+  public abstract readonly maxElementsPerWorker: number | undefined
+  public abstract readonly size: number
 
   /**
    * `WorkerAbstract` constructor.
@@ -36,16 +36,16 @@ export abstract class WorkerAbstract<D extends WorkerData, R extends WorkerData>
   }
 
   /**
-   * Starts the worker pool/set.
-   */
-  public abstract start (): void | Promise<void>
-  /**
-   * Stops the worker pool/set.
-   */
-  public abstract stop (): Promise<void>
-  /**
    * Adds a task element to the worker pool/set.
    * @param elementData -
    */
   public abstract addElement (elementData: D): Promise<R>
+  /**
+   * Starts the worker pool/set.
+   */
+  public abstract start (): Promise<void> | void
+  /**
+   * Stops the worker pool/set.
+   */
+  public abstract stop (): Promise<void>
 }

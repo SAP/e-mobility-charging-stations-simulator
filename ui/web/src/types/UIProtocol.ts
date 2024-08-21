@@ -29,51 +29,51 @@ export type ProtocolResponse = [
 
 export type ProtocolRequestHandler = (
   payload: RequestPayload
-) => ResponsePayload | Promise<ResponsePayload>
+) => Promise<ResponsePayload> | ResponsePayload
 
 export enum ProcedureName {
-  SIMULATOR_STATE = 'simulatorState',
-  START_SIMULATOR = 'startSimulator',
-  STOP_SIMULATOR = 'stopSimulator',
-  LIST_TEMPLATES = 'listTemplates',
-  LIST_CHARGING_STATIONS = 'listChargingStations',
   ADD_CHARGING_STATIONS = 'addChargingStations',
-  DELETE_CHARGING_STATIONS = 'deleteChargingStations',
-  SET_SUPERVISION_URL = 'setSupervisionUrl',
-  START_CHARGING_STATION = 'startChargingStation',
-  STOP_CHARGING_STATION = 'stopChargingStation',
-  OPEN_CONNECTION = 'openConnection',
   CLOSE_CONNECTION = 'closeConnection',
+  DELETE_CHARGING_STATIONS = 'deleteChargingStations',
+  LIST_CHARGING_STATIONS = 'listChargingStations',
+  LIST_TEMPLATES = 'listTemplates',
+  OPEN_CONNECTION = 'openConnection',
+  SET_SUPERVISION_URL = 'setSupervisionUrl',
+  SIMULATOR_STATE = 'simulatorState',
   START_AUTOMATIC_TRANSACTION_GENERATOR = 'startAutomaticTransactionGenerator',
-  STOP_AUTOMATIC_TRANSACTION_GENERATOR = 'stopAutomaticTransactionGenerator',
+  START_CHARGING_STATION = 'startChargingStation',
+  START_SIMULATOR = 'startSimulator',
   START_TRANSACTION = 'startTransaction',
+  STOP_AUTOMATIC_TRANSACTION_GENERATOR = 'stopAutomaticTransactionGenerator',
+  STOP_CHARGING_STATION = 'stopChargingStation',
+  STOP_SIMULATOR = 'stopSimulator',
   STOP_TRANSACTION = 'stopTransaction'
 }
 
 export interface RequestPayload extends JsonObject {
-  hashIds?: string[]
   connectorIds?: number[]
+  hashIds?: string[]
 }
 
 export enum ResponseStatus {
-  SUCCESS = 'success',
-  FAILURE = 'failure'
+  FAILURE = 'failure',
+  SUCCESS = 'success'
 }
 
 export interface ResponsePayload extends JsonObject {
-  status: ResponseStatus
   hashIds?: string[]
+  status: ResponseStatus
 }
 
 interface TemplateStatistics extends JsonObject {
-  configured: number
   added: number
-  started: number
+  configured: number
   indexes: number[]
+  started: number
 }
 
 export interface SimulatorState extends JsonObject {
-  version: string
   started: boolean
   templateStatistics: Record<string, TemplateStatistics>
+  version: string
 }

@@ -36,7 +36,11 @@
       </Button>
       <ToggleButton
         :id="`${chargingStation.stationInfo.hashId}-set-supervision-url`"
-        :shared="true"
+        :off="
+          () => {
+            $router.push({ name: 'charging-stations' })
+          }
+        "
         :on="
           () => {
             $router.push({
@@ -48,11 +52,7 @@
             })
           }
         "
-        :off="
-          () => {
-            $router.push({ name: 'charging-stations' })
-          }
-        "
+        :shared="true"
         @clicked="
           () => {
             $emit('need-refresh')
@@ -77,32 +77,32 @@
         <thead id="connectors-table__head">
           <tr class="connectors-table__row">
             <th
-              scope="col"
               class="connectors-table__column"
+              scope="col"
             >
               Identifier
             </th>
             <th
-              scope="col"
               class="connectors-table__column"
+              scope="col"
             >
               Status
             </th>
             <th
-              scope="col"
               class="connectors-table__column"
+              scope="col"
             >
               Transaction
             </th>
             <th
-              scope="col"
               class="connectors-table__column"
+              scope="col"
             >
               ATG Started
             </th>
             <th
-              scope="col"
               class="connectors-table__column"
+              scope="col"
             >
               Actions
             </th>
@@ -112,11 +112,11 @@
           <CSConnector
             v-for="(connector, index) in getConnectorStatuses()"
             :key="index + 1"
-            :hash-id="chargingStation.stationInfo.hashId"
-            :charging-station-id="chargingStation.stationInfo.chargingStationId"
-            :connector-id="index + 1"
-            :connector="connector"
             :atg-status="getATGStatus(index + 1)"
+            :charging-station-id="chargingStation.stationInfo.chargingStationId"
+            :connector="connector"
+            :connector-id="index + 1"
+            :hash-id="chargingStation.stationInfo.hashId"
             @need-refresh="$emit('need-refresh')"
           />
         </tbody>
@@ -126,13 +126,13 @@
 </template>
 
 <script setup lang="ts">
-import { useToast } from 'vue-toast-notification'
+import type { ChargingStationData, ConnectorStatus, Status } from '@/types'
 
 import Button from '@/components/buttons/Button.vue'
 import ToggleButton from '@/components/buttons/ToggleButton.vue'
 import CSConnector from '@/components/charging-stations/CSConnector.vue'
 import { useUIClient } from '@/composables'
-import type { ChargingStationData, ConnectorStatus, Status } from '@/types'
+import { useToast } from 'vue-toast-notification'
 
 const props = defineProps<{
   chargingStation: ChargingStationData

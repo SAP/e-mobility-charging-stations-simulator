@@ -1,5 +1,4 @@
 import type { ClientRequestArgs } from 'node:http'
-
 import type { ClientOptions } from 'ws'
 
 import type { AutomaticTransactionGeneratorConfiguration } from './AutomaticTransactionGenerator.js'
@@ -22,15 +21,15 @@ export enum CurrentType {
 }
 
 export enum PowerUnits {
-  WATT = 'W',
-  KILO_WATT = 'kW'
+  KILO_WATT = 'kW',
+  WATT = 'W'
 }
 
 export enum AmpereUnits {
-  MILLI_AMPERE = 'mA',
+  AMPERE = 'A',
   CENTI_AMPERE = 'cA',
   DECI_AMPERE = 'dA',
-  AMPERE = 'A'
+  MILLI_AMPERE = 'mA'
 }
 
 export enum Voltage {
@@ -43,12 +42,12 @@ export enum Voltage {
 export type WsOptions = ClientOptions & ClientRequestArgs
 
 export interface FirmwareUpgrade extends JsonObject {
+  failureStatus?: FirmwareStatus
+  reset?: boolean
   versionUpgrade?: {
     patternGroup?: number
     step?: number
   }
-  reset?: boolean
-  failureStatus?: FirmwareStatus
 }
 
 interface CommandsSupport extends JsonObject {
@@ -57,79 +56,79 @@ interface CommandsSupport extends JsonObject {
 }
 
 enum x509CertificateType {
-  V2GRootCertificate = 'V2GRootCertificate',
-  MORootCertificate = 'MORootCertificate',
+  ChargingStationCertificate = 'ChargingStationCertificate',
   CSMSRootCertificate = 'CSMSRootCertificate',
   ManufacturerRootCertificate = 'ManufacturerRootCertificate',
-  ChargingStationCertificate = 'ChargingStationCertificate',
-  V2GCertificate = 'V2GCertificate'
+  MORootCertificate = 'MORootCertificate',
+  V2GCertificate = 'V2GCertificate',
+  V2GRootCertificate = 'V2GRootCertificate'
 }
 
 export interface ChargingStationTemplate {
-  templateHash?: string
-  supervisionUrls?: string | string[]
-  supervisionUrlOcppConfiguration?: boolean
-  supervisionUrlOcppKey?: string
-  supervisionUser?: string
-  supervisionPassword?: string
-  autoStart?: boolean
-  ocppVersion?: OCPPVersion
-  ocppProtocol?: OCPPProtocol
-  ocppStrictCompliance?: boolean
-  ocppPersistentConfiguration?: boolean
-  stationInfoPersistentConfiguration?: boolean
-  automaticTransactionGeneratorPersistentConfiguration?: boolean
-  wsOptions?: WsOptions
-  idTagsFile?: string
-  baseName: string
-  nameSuffix?: string
-  fixedName?: boolean
-  chargePointModel: string
-  chargePointVendor: string
-  chargePointSerialNumberPrefix?: string
-  chargeBoxSerialNumberPrefix?: string
-  firmwareVersionPattern?: string
-  firmwareVersion?: string
-  firmwareUpgrade?: FirmwareUpgrade
-  iccid?: string
-  imsi?: string
-  meterSerialNumberPrefix?: string
-  meterType?: string
-  power?: number | number[]
-  powerUnit?: PowerUnits
-  powerSharedByConnectors?: boolean
-  currentOutType?: CurrentType
-  voltageOut?: Voltage
-  numberOfPhases?: number
-  numberOfConnectors?: number | number[]
-  useConnectorId0?: boolean
-  randomConnectors?: boolean
-  resetTime?: number
-  autoRegister?: boolean
-  autoReconnectMaxRetries?: number
-  reconnectExponentialDelay?: boolean
-  registrationMaxRetries?: number
-  enableStatistics?: boolean
-  remoteAuthorization?: boolean
-  /** @deprecated Replaced by remoteAuthorization. */
-  mustAuthorizeAtRemoteStart?: boolean
-  /** @deprecated Replaced by ocppStrictCompliance. */
-  payloadSchemaValidation?: boolean
   amperageLimitationOcppKey?: string
   amperageLimitationUnit?: AmpereUnits
-  beginEndMeterValues?: boolean
-  outOfOrderEndMeterValues?: boolean
-  meteringPerTransaction?: boolean
-  transactionDataMeterValues?: boolean
-  stopTransactionsOnStopped?: boolean
-  mainVoltageMeterValues?: boolean
-  phaseLineToLineVoltageMeterValues?: boolean
-  customValueLimitationMeterValues?: boolean
-  commandsSupport?: CommandsSupport
-  messageTriggerSupport?: Record<MessageTrigger, boolean>
-  Configuration?: ChargingStationOcppConfiguration
   AutomaticTransactionGenerator?: AutomaticTransactionGeneratorConfiguration
-  Evses?: Record<string, EvseTemplate>
+  automaticTransactionGeneratorPersistentConfiguration?: boolean
+  autoReconnectMaxRetries?: number
+  autoRegister?: boolean
+  autoStart?: boolean
+  baseName: string
+  beginEndMeterValues?: boolean
+  chargeBoxSerialNumberPrefix?: string
+  chargePointModel: string
+  chargePointSerialNumberPrefix?: string
+  chargePointVendor: string
+  commandsSupport?: CommandsSupport
+  Configuration?: ChargingStationOcppConfiguration
   Connectors?: Record<string, ConnectorStatus>
+  currentOutType?: CurrentType
+  customValueLimitationMeterValues?: boolean
+  enableStatistics?: boolean
+  Evses?: Record<string, EvseTemplate>
+  firmwareUpgrade?: FirmwareUpgrade
+  firmwareVersion?: string
+  firmwareVersionPattern?: string
+  fixedName?: boolean
+  iccid?: string
+  idTagsFile?: string
+  imsi?: string
+  mainVoltageMeterValues?: boolean
+  messageTriggerSupport?: Record<MessageTrigger, boolean>
+  meteringPerTransaction?: boolean
+  meterSerialNumberPrefix?: string
+  meterType?: string
+  /** @deprecated Replaced by remoteAuthorization. */
+  mustAuthorizeAtRemoteStart?: boolean
+  nameSuffix?: string
+  numberOfConnectors?: number | number[]
+  numberOfPhases?: number
+  ocppPersistentConfiguration?: boolean
+  ocppProtocol?: OCPPProtocol
+  ocppStrictCompliance?: boolean
+  ocppVersion?: OCPPVersion
+  outOfOrderEndMeterValues?: boolean
+  /** @deprecated Replaced by ocppStrictCompliance. */
+  payloadSchemaValidation?: boolean
+  phaseLineToLineVoltageMeterValues?: boolean
+  power?: number | number[]
+  powerSharedByConnectors?: boolean
+  powerUnit?: PowerUnits
+  randomConnectors?: boolean
+  reconnectExponentialDelay?: boolean
+  registrationMaxRetries?: number
+  remoteAuthorization?: boolean
+  resetTime?: number
+  stationInfoPersistentConfiguration?: boolean
+  stopTransactionsOnStopped?: boolean
+  supervisionPassword?: string
+  supervisionUrlOcppConfiguration?: boolean
+  supervisionUrlOcppKey?: string
+  supervisionUrls?: string | string[]
+  supervisionUser?: string
+  templateHash?: string
+  transactionDataMeterValues?: boolean
+  useConnectorId0?: boolean
+  voltageOut?: Voltage
+  wsOptions?: WsOptions
   x509Certificates?: Record<x509CertificateType, string>
 }

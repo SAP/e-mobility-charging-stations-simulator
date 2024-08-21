@@ -1,11 +1,11 @@
 export enum OCPP16ChargePointStatus {
   Available = 'Available',
-  Preparing = 'Preparing',
   Charging = 'Charging',
-  SuspendedEVSE = 'SuspendedEVSE',
-  SuspendedEV = 'SuspendedEV',
+  Faulted = 'Faulted',
   Finishing = 'Finishing',
+  Preparing = 'Preparing',
   Reserved = 'Reserved',
-  Unavailable = 'Unavailable',
-  Faulted = 'Faulted'
+  SuspendedEV = 'SuspendedEV',
+  SuspendedEVSE = 'SuspendedEVSE',
+  Unavailable = 'Unavailable'
 }

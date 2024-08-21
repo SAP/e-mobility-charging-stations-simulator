@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
+import { expect } from 'expect'
 import { describe, it } from 'node:test'
 
-import { expect } from 'expect'
-
 import type { ChargingStation } from '../../src/charging-station/index.js'
+
 import {
   FileType,
   GenericStatus,
@@ -47,8 +47,8 @@ await describe('ErrorUtils test suite', async () => {
     }).toThrow(error)
     expect(() => {
       handleFileException('path/to/module.js', FileType.Authorization, error, 'log prefix |', {
-        throwError: false,
         consoleOut: true,
+        throwError: false,
       })
     }).not.toThrow()
     expect(console.warn.mock.calls.length).toBe(1)
@@ -97,8 +97,8 @@ await describe('ErrorUtils test suite', async () => {
     }
     expect(
       handleIncomingRequestError(chargingStation, IncomingRequestCommand.CLEAR_CACHE, error, {
-        throwError: false,
         errorResponse,
+        throwError: false,
       })
     ).toStrictEqual(errorResponse)
     expect(chargingStation.logPrefix.mock.calls.length).toBe(3)

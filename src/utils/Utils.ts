@@ -1,5 +1,4 @@
-import { getRandomValues, randomBytes, randomUUID } from 'node:crypto'
-import { env, nextTick } from 'node:process'
+import type { CircularBuffer } from 'mnemonist'
 
 import {
   formatDuration,
@@ -12,7 +11,8 @@ import {
   minutesToSeconds,
   secondsToMilliseconds,
 } from 'date-fns'
-import type { CircularBuffer } from 'mnemonist'
+import { getRandomValues, randomBytes, randomUUID } from 'node:crypto'
+import { env, nextTick } from 'node:process'
 import { is } from 'rambda'
 
 import {
@@ -84,7 +84,7 @@ export const isValidDate = (date: Date | number | undefined): date is Date | num
 }
 
 export const convertToDate = (
-  value: Date | string | number | undefined | null
+  value: Date | null | number | string | undefined
 ): Date | undefined => {
   if (value == null) {
     return undefined
@@ -265,12 +265,12 @@ export const JSONStringify = <
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
   T extends
     | JsonType
+    | Map<string, Record<string, unknown>>
     | Record<string, unknown>[]
     | Set<Record<string, unknown>>
-    | Map<string, Record<string, unknown>>
 >(
     object: T,
-    space?: string | number,
+    space?: number | string,
     mapFormat?: MapStringifyFormat
   ): string => {
   return JSON.stringify(

@@ -1,5 +1,7 @@
 import { type FSWatcher, readFileSync } from 'node:fs'
 
+import type { ChargingStation } from './ChargingStation.js'
+
 import { FileType, IdTagDistribution } from '../types/index.js'
 import {
   handleFileException,
@@ -9,7 +11,6 @@ import {
   secureRandom,
   watchJsonFile,
 } from '../utils/index.js'
-import type { ChargingStation } from './ChargingStation.js'
 import { getIdTagsFile } from './Helpers.js'
 
 interface IdTagsCacheValueType {
@@ -21,6 +22,10 @@ export class IdTagsCache {
   private static instance: IdTagsCache | null = null
   private readonly idTagsCaches: Map<string, IdTagsCacheValueType>
   private readonly idTagsCachesAddressableIndexes: Map<string, number>
+
+  private readonly logPrefix = (file: string): string => {
+    return logPrefix(` Id tags cache for id tags file '${file}' |`)
+  }
 
   private constructor () {
     this.idTagsCaches = new Map<string, IdTagsCacheValueType>()
@@ -34,50 +39,61 @@ export class IdTagsCache {
     return IdTagsCache.instance
   }
 
-  /**
-   * Gets one idtag from the cache given the distribution
-   * Must be called after checking the cache is not an empty array
-   * @param distribution -
-   * @param chargingStation -
-   * @param connectorId -
-   * @returns string
-   */
-  public getIdTag (
-    distribution: IdTagDistribution,
-    chargingStation: ChargingStation,
-    connectorId: number
-  ): string {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const hashId = chargingStation.stationInfo!.hashId
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const idTagsFile = getIdTagsFile(chargingStation.stationInfo!)!
-    switch (distribution) {
-      case IdTagDistribution.RANDOM:
-        return this.getRandomIdTag(hashId, idTagsFile)
-      case IdTagDistribution.ROUND_ROBIN:
-        return this.getRoundRobinIdTag(hashId, idTagsFile)
-      case IdTagDistribution.CONNECTOR_AFFINITY:
-        return this.getConnectorAffinityIdTag(chargingStation, connectorId)
-      default:
-        return this.getRoundRobinIdTag(hashId, idTagsFile)
-    }
+  private deleteIdTagsCache (file: string): boolean {
+    this.idTagsCaches.get(file)?.idTagsFileWatcher?.close()
+    return this.idTagsCaches.delete(file)
   }
 
-  /**
-   * Gets all idtags from the cache
-   * Must be called after checking the cache is not an empty array
-   * @param file -
-   * @returns string[] | undefined
-   */
-  public getIdTags (file: string): string[] | undefined {
-    if (!this.hasIdTagsCache(file)) {
-      this.setIdTagsCache(file, this.getIdTagsFromFile(file))
+  private deleteIdTagsCacheIndexes (file: string): boolean {
+    const deleted: boolean[] = []
+    for (const [key] of this.idTagsCachesAddressableIndexes) {
+      if (key.startsWith(file)) {
+        deleted.push(this.idTagsCachesAddressableIndexes.delete(key))
+      }
     }
-    return this.getIdTagsCache(file)
+    return !deleted.some(value => !value)
   }
 
-  public deleteIdTags (file: string): boolean {
-    return this.deleteIdTagsCache(file) && this.deleteIdTagsCacheIndexes(file)
+  private getConnectorAffinityIdTag (chargingStation: ChargingStation, connectorId: number): string {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const file = getIdTagsFile(chargingStation.stationInfo!)!
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const idTags = this.getIdTags(file)!
+    const addressableKey = this.getIdTagsCacheIndexesAddressableKey(
+      file,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      chargingStation.stationInfo!.hashId
+    )
+    this.idTagsCachesAddressableIndexes.set(
+      addressableKey,
+      (chargingStation.index - 1 + (connectorId - 1)) % idTags.length
+    )
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return idTags[this.idTagsCachesAddressableIndexes.get(addressableKey)!]
+  }
+
+  private getIdTagsCache (file: string): string[] | undefined {
+    return this.idTagsCaches.get(file)?.idTags
+  }
+
+  private getIdTagsCacheIndexesAddressableKey (prefix: string, uid: string): string {
+    return `${prefix}${uid}`
+  }
+
+  private getIdTagsFromFile (file: string): string[] {
+    if (isNotEmptyString(file)) {
+      try {
+        return JSON.parse(readFileSync(file, 'utf8')) as string[]
+      } catch (error) {
+        handleFileException(
+          file,
+          FileType.Authorization,
+          error as NodeJS.ErrnoException,
+          this.logPrefix(file)
+        )
+      }
+    }
+    return []
   }
 
   private getRandomIdTag (hashId: string, file: string): string {
@@ -103,24 +119,6 @@ export class IdTagsCache {
       idTagIndex === idTags.length - 1 ? 0 : idTagIndex + 1
     )
     return idTag
-  }
-
-  private getConnectorAffinityIdTag (chargingStation: ChargingStation, connectorId: number): string {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const file = getIdTagsFile(chargingStation.stationInfo!)!
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const idTags = this.getIdTags(file)!
-    const addressableKey = this.getIdTagsCacheIndexesAddressableKey(
-      file,
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      chargingStation.stationInfo!.hashId
-    )
-    this.idTagsCachesAddressableIndexes.set(
-      addressableKey,
-      (chargingStation.index - 1 + (connectorId - 1)) % idTags.length
-    )
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return idTags[this.idTagsCachesAddressableIndexes.get(addressableKey)!]
   }
 
   private hasIdTagsCache (file: string): boolean {
@@ -159,46 +157,49 @@ export class IdTagsCache {
     })
   }
 
-  private getIdTagsCache (file: string): string[] | undefined {
-    return this.idTagsCaches.get(file)?.idTags
+  public deleteIdTags (file: string): boolean {
+    return this.deleteIdTagsCache(file) && this.deleteIdTagsCacheIndexes(file)
   }
 
-  private deleteIdTagsCache (file: string): boolean {
-    this.idTagsCaches.get(file)?.idTagsFileWatcher?.close()
-    return this.idTagsCaches.delete(file)
-  }
-
-  private deleteIdTagsCacheIndexes (file: string): boolean {
-    const deleted: boolean[] = []
-    for (const [key] of this.idTagsCachesAddressableIndexes) {
-      if (key.startsWith(file)) {
-        deleted.push(this.idTagsCachesAddressableIndexes.delete(key))
-      }
+  /**
+   * Gets one idtag from the cache given the distribution
+   * Must be called after checking the cache is not an empty array
+   * @param distribution -
+   * @param chargingStation -
+   * @param connectorId -
+   * @returns string
+   */
+  public getIdTag (
+    distribution: IdTagDistribution,
+    chargingStation: ChargingStation,
+    connectorId: number
+  ): string {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const hashId = chargingStation.stationInfo!.hashId
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const idTagsFile = getIdTagsFile(chargingStation.stationInfo!)!
+    switch (distribution) {
+      case IdTagDistribution.CONNECTOR_AFFINITY:
+        return this.getConnectorAffinityIdTag(chargingStation, connectorId)
+      case IdTagDistribution.RANDOM:
+        return this.getRandomIdTag(hashId, idTagsFile)
+      case IdTagDistribution.ROUND_ROBIN:
+        return this.getRoundRobinIdTag(hashId, idTagsFile)
+      default:
+        return this.getRoundRobinIdTag(hashId, idTagsFile)
     }
-    return !deleted.some(value => !value)
   }
 
-  private getIdTagsCacheIndexesAddressableKey (prefix: string, uid: string): string {
-    return `${prefix}${uid}`
-  }
-
-  private getIdTagsFromFile (file: string): string[] {
-    if (isNotEmptyString(file)) {
-      try {
-        return JSON.parse(readFileSync(file, 'utf8')) as string[]
-      } catch (error) {
-        handleFileException(
-          file,
-          FileType.Authorization,
-          error as NodeJS.ErrnoException,
-          this.logPrefix(file)
-        )
-      }
+  /**
+   * Gets all idtags from the cache
+   * Must be called after checking the cache is not an empty array
+   * @param file -
+   * @returns string[] | undefined
+   */
+  public getIdTags (file: string): string[] | undefined {
+    if (!this.hasIdTagsCache(file)) {
+      this.setIdTagsCache(file, this.getIdTagsFromFile(file))
     }
-    return []
-  }
-
-  private readonly logPrefix = (file: string): string => {
-    return logPrefix(` Id tags cache for id tags file '${file}' |`)
+    return this.getIdTagsCache(file)
   }
 }

@@ -1,6 +1,7 @@
-import { ProtocolVersion } from '../../../types/index.js'
 import type { AbstractUIServer } from '../AbstractUIServer.js'
 import type { AbstractUIService } from './AbstractUIService.js'
+
+import { ProtocolVersion } from '../../../types/index.js'
 import { UIService001 } from './UIService001.js'
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class

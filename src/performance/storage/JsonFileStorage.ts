@@ -16,41 +16,10 @@ export class JsonFileStorage extends Storage {
     this.dbName = this.storageUri.pathname
   }
 
-  public storePerformanceStatistics (performanceStatistics: Statistics): void {
-    this.setPerformanceStatistics(performanceStatistics)
-    this.checkPerformanceRecordsFile()
-    AsyncLock.runExclusive(AsyncLockType.performance, () => {
-      writeSync(
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.fd!,
-        JSONStringify([...this.getPerformanceStatistics()], 2, MapStringifyFormat.object),
-        0,
-        'utf8'
-      )
-    }).catch((error: unknown) => {
-      handleFileException(
-        this.dbName,
-        FileType.PerformanceRecords,
-        error as NodeJS.ErrnoException,
-        this.logPrefix
-      )
-    })
-  }
-
-  public open (): void {
-    try {
-      if (this.fd == null) {
-        if (!existsSync(dirname(this.dbName))) {
-          mkdirSync(dirname(this.dbName), { recursive: true })
-        }
-        this.fd = openSync(this.dbName, 'w')
-      }
-    } catch (error) {
-      handleFileException(
-        this.dbName,
-        FileType.PerformanceRecords,
-        error as NodeJS.ErrnoException,
-        this.logPrefix
+  private checkPerformanceRecordsFile (): void {
+    if (this.fd == null) {
+      throw new BaseError(
+        `${this.logPrefix} Performance records '${this.dbName}' file descriptor not found`
       )
     }
   }
@@ -72,11 +41,42 @@ export class JsonFileStorage extends Storage {
     }
   }
 
-  private checkPerformanceRecordsFile (): void {
-    if (this.fd == null) {
-      throw new BaseError(
-        `${this.logPrefix} Performance records '${this.dbName}' file descriptor not found`
+  public open (): void {
+    try {
+      if (this.fd == null) {
+        if (!existsSync(dirname(this.dbName))) {
+          mkdirSync(dirname(this.dbName), { recursive: true })
+        }
+        this.fd = openSync(this.dbName, 'w')
+      }
+    } catch (error) {
+      handleFileException(
+        this.dbName,
+        FileType.PerformanceRecords,
+        error as NodeJS.ErrnoException,
+        this.logPrefix
       )
     }
+  }
+
+  public storePerformanceStatistics (performanceStatistics: Statistics): void {
+    this.setPerformanceStatistics(performanceStatistics)
+    this.checkPerformanceRecordsFile()
+    AsyncLock.runExclusive(AsyncLockType.performance, () => {
+      writeSync(
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        this.fd!,
+        JSONStringify([...this.getPerformanceStatistics()], 2, MapStringifyFormat.object),
+        0,
+        'utf8'
+      )
+    }).catch((error: unknown) => {
+      handleFileException(
+        this.dbName,
+        FileType.PerformanceRecords,
+        error as NodeJS.ErrnoException,
+        this.logPrefix
+      )
+    })
   }
 }

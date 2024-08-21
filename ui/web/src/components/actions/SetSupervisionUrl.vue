@@ -7,9 +7,9 @@
   <input
     id="supervision-url"
     v-model.trim="state.supervisionUrl"
-    type="url"
     name="supervision-url"
     placeholder="wss://"
+    type="url"
   >
   <br>
   <Button
@@ -36,13 +36,12 @@
 </template>
 
 <script setup lang="ts">
+import Button from '@/components/buttons/Button.vue'
 import { ref } from 'vue'
 
-import Button from '@/components/buttons/Button.vue'
-
 defineProps<{
-  hashId: string
   chargingStationId: string
+  hashId: string
 }>()
 
 const state = ref<{ supervisionUrl: string }>({

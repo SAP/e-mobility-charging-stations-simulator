@@ -18,48 +18,6 @@ export class MongoDBStorage extends Storage {
     this.dbName = this.storageUri.pathname.replace(/(?:^\/)|(?:\/$)/g, '')
   }
 
-  public async storePerformanceStatistics (performanceStatistics: Statistics): Promise<void> {
-    try {
-      this.setPerformanceStatistics(performanceStatistics)
-      this.checkDBConnection()
-      await this.client
-        ?.db(this.dbName)
-        .collection<Statistics>(Constants.PERFORMANCE_RECORDS_TABLE)
-        .replaceOne({ id: performanceStatistics.id }, performanceStatistics, {
-          upsert: true,
-        })
-    } catch (error) {
-      this.handleDBStorageError(
-        StorageType.MONGO_DB,
-        error as Error,
-        Constants.PERFORMANCE_RECORDS_TABLE
-      )
-    }
-  }
-
-  public async open (): Promise<void> {
-    try {
-      if (!this.connected && this.client != null) {
-        await this.client.connect()
-        this.connected = true
-      }
-    } catch (error) {
-      this.handleDBStorageError(StorageType.MONGO_DB, error as Error)
-    }
-  }
-
-  public async close (): Promise<void> {
-    this.clearPerformanceStatistics()
-    try {
-      if (this.connected && this.client != null) {
-        await this.client.close()
-        this.connected = false
-      }
-    } catch (error) {
-      this.handleDBStorageError(StorageType.MONGO_DB, error as Error)
-    }
-  }
-
   private checkDBConnection (): void {
     if (this.client == null) {
       throw new BaseError(
@@ -75,6 +33,48 @@ export class MongoDBStorage extends Storage {
         `${this.logPrefix} ${this.getDBNameFromStorageType(
           StorageType.MONGO_DB
         )} connection not opened while trying to issue a request`
+      )
+    }
+  }
+
+  public async close (): Promise<void> {
+    this.clearPerformanceStatistics()
+    try {
+      if (this.connected && this.client != null) {
+        await this.client.close()
+        this.connected = false
+      }
+    } catch (error) {
+      this.handleDBStorageError(StorageType.MONGO_DB, error as Error)
+    }
+  }
+
+  public async open (): Promise<void> {
+    try {
+      if (!this.connected && this.client != null) {
+        await this.client.connect()
+        this.connected = true
+      }
+    } catch (error) {
+      this.handleDBStorageError(StorageType.MONGO_DB, error as Error)
+    }
+  }
+
+  public async storePerformanceStatistics (performanceStatistics: Statistics): Promise<void> {
+    try {
+      this.setPerformanceStatistics(performanceStatistics)
+      this.checkDBConnection()
+      await this.client
+        ?.db(this.dbName)
+        .collection<Statistics>(Constants.PERFORMANCE_RECORDS_TABLE)
+        .replaceOne({ id: performanceStatistics.id }, performanceStatistics, {
+          upsert: true,
+        })
+    } catch (error) {
+      this.handleDBStorageError(
+        StorageType.MONGO_DB,
+        error as Error,
+        Constants.PERFORMANCE_RECORDS_TABLE
       )
     }
   }

@@ -1,6 +1,5 @@
-const fs = require('node:fs')
-
 const { MongoClient } = require('mongodb')
+const fs = require('node:fs')
 
 // This script sets charging stations public or private
 // Filter charging stations by id pattern

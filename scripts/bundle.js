@@ -1,20 +1,18 @@
 /* eslint-disable n/no-unpublished-import */
-import { env } from 'node:process'
-
 import chalk from 'chalk'
 import { build } from 'esbuild'
 import { clean } from 'esbuild-plugin-clean'
 import { copy } from 'esbuild-plugin-copy'
+import { env } from 'node:process'
 
 const isDevelopmentBuild = env.BUILD === 'development'
 const sourcemap = !!isDevelopmentBuild
 console.info(chalk.green(`Building in ${isDevelopmentBuild ? 'development' : 'production'} mode`))
 console.time('Build time')
 await build({
-  entryPoints: ['./src/start.ts', './src/charging-station/ChargingStationWorker.ts'],
   bundle: true,
-  platform: 'node',
-  format: 'esm',
+  entryNames: '[name]',
+  entryPoints: ['./src/start.ts', './src/charging-station/ChargingStationWorker.ts'],
   external: [
     '@mikro-orm/*',
     'ajv',
@@ -36,11 +34,10 @@ await build({
     'winston-daily-rotate-file',
     'ws',
   ],
-  treeShaking: true,
+  format: 'esm',
   minify: true,
-  sourcemap,
-  entryNames: '[name]',
   outdir: './dist',
+  platform: 'node',
   plugins: [
     clean({
       patterns: [
@@ -78,5 +75,7 @@ await build({
       ],
     }),
   ],
+  sourcemap,
+  treeShaking: true,
 })
 console.timeEnd('Build time')

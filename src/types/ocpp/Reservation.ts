@@ -5,9 +5,9 @@ export type Reservation = OCPP16ReserveNowRequest
 export type ReservationKey = keyof Reservation
 
 export enum ReservationTerminationReason {
-  EXPIRED = 'Expired',
-  TRANSACTION_STARTED = 'TransactionStarted',
   CONNECTOR_STATE_CHANGED = 'ConnectorStateChanged',
+  EXPIRED = 'Expired',
+  REPLACE_EXISTING = 'ReplaceExisting',
   RESERVATION_CANCELED = 'ReservationCanceled',
-  REPLACE_EXISTING = 'ReplaceExisting'
+  TRANSACTION_STARTED = 'TransactionStarted'
 }

@@ -1,6 +1,5 @@
-import { describe, it } from 'node:test'
-
 import { expect } from 'expect'
+import { describe, it } from 'node:test'
 
 import { max, min, nthPercentile, stdDeviation } from '../../src/utils/StatisticUtils.js'
 

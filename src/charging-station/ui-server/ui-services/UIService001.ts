@@ -1,5 +1,6 @@
-import { type ProtocolRequestHandler, ProtocolVersion } from '../../../types/index.js'
 import type { AbstractUIServer } from '../AbstractUIServer.js'
+
+import { type ProtocolRequestHandler, ProtocolVersion } from '../../../types/index.js'
 import { AbstractUIService } from './AbstractUIService.js'
 
 export class UIService001 extends AbstractUIService {

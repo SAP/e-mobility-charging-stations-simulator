@@ -5,16 +5,16 @@ export interface ConfigurationData {
 }
 
 export interface UIServerConfigurationSection {
-  name?: string
-  host: string
-  port: number
-  secure?: boolean
-  protocol: Protocol
-  version: ProtocolVersion
   authentication?: {
     enabled: boolean
+    password?: string
     type: AuthenticationType
     username?: string
-    password?: string
   }
+  host: string
+  name?: string
+  port: number
+  protocol: Protocol
+  secure?: boolean
+  version: ProtocolVersion
 }

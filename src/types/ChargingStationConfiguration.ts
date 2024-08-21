@@ -8,18 +8,18 @@ interface ConnectorsConfiguration {
   connectorsStatus?: ConnectorStatus[]
 }
 
-export type EvseStatusConfiguration = Omit<EvseStatus, 'connectors'> & {
+export type EvseStatusConfiguration = {
   connectorsStatus?: ConnectorStatus[]
-}
+} & Omit<EvseStatus, 'connectors'>
 
 interface EvsesConfiguration {
   evsesStatus?: EvseStatusConfiguration[]
 }
 
-export type ChargingStationConfiguration = ChargingStationInfoConfiguration &
+export type ChargingStationConfiguration = {
+  configurationHash?: string
+} & ChargingStationAutomaticTransactionGeneratorConfiguration &
+  ChargingStationInfoConfiguration &
   ChargingStationOcppConfiguration &
-  ChargingStationAutomaticTransactionGeneratorConfiguration &
   ConnectorsConfiguration &
-  EvsesConfiguration & {
-    configurationHash?: string
-  }
+  EvsesConfiguration

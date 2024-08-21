@@ -12,14 +12,31 @@ import {
 import { logger } from '../../utils/index.js'
 
 export abstract class Storage {
-  protected readonly storageUri: URL
-  protected readonly logPrefix: string
-  protected dbName!: string
   private static readonly performanceStatistics = new Map<string, Statistics>()
+  protected dbName!: string
+  protected readonly logPrefix: string
+  protected readonly storageUri: URL
 
   constructor (storageUri: string, logPrefix: string) {
     this.storageUri = new URL(storageUri)
     this.logPrefix = logPrefix
+  }
+
+  protected clearPerformanceStatistics (): void {
+    Storage.performanceStatistics.clear()
+  }
+
+  protected getDBNameFromStorageType (type: StorageType): DBName | undefined {
+    switch (type) {
+      case StorageType.MARIA_DB:
+        return DBName.MARIA_DB
+      case StorageType.MONGO_DB:
+        return DBName.MONGO_DB
+      case StorageType.MYSQL:
+        return DBName.MYSQL
+      case StorageType.SQLITE:
+        return DBName.SQLITE
+    }
   }
 
   protected handleDBStorageError (
@@ -27,14 +44,14 @@ export abstract class Storage {
     error: Error,
     table?: string,
     params: HandleErrorParams<EmptyObject> = {
-      throwError: false,
       consoleOut: false,
+      throwError: false,
     }
   ): void {
     params = {
       ...{
-        throwError: false,
         consoleOut: false,
+        throwError: false,
       },
       ...params,
     }
@@ -52,34 +69,17 @@ export abstract class Storage {
     }
   }
 
-  protected getDBNameFromStorageType (type: StorageType): DBName | undefined {
-    switch (type) {
-      case StorageType.SQLITE:
-        return DBName.SQLITE
-      case StorageType.MARIA_DB:
-        return DBName.MARIA_DB
-      case StorageType.MYSQL:
-        return DBName.MYSQL
-      case StorageType.MONGO_DB:
-        return DBName.MONGO_DB
-    }
-  }
-
-  public getPerformanceStatistics (): IterableIterator<Statistics> {
-    return Storage.performanceStatistics.values()
-  }
-
   protected setPerformanceStatistics (performanceStatistics: Statistics): void {
     Storage.performanceStatistics.set(performanceStatistics.id, performanceStatistics)
   }
 
-  protected clearPerformanceStatistics (): void {
-    Storage.performanceStatistics.clear()
-  }
+  public abstract close (): Promise<void> | void
 
-  public abstract open (): void | Promise<void>
-  public abstract close (): void | Promise<void>
+  public getPerformanceStatistics (): IterableIterator<Statistics> {
+    return Storage.performanceStatistics.values()
+  }
+  public abstract open (): Promise<void> | void
   public abstract storePerformanceStatistics (
     performanceStatistics: Statistics
-  ): void | Promise<void>
+  ): Promise<void> | void
 }

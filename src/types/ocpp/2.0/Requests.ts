@@ -25,16 +25,16 @@ interface ModemType extends JsonObject {
 }
 
 interface ChargingStationType extends JsonObject {
-  serialNumber?: string
-  model: string
-  vendorName: string
   firmwareVersion?: string
+  model: string
   modem?: ModemType
+  serialNumber?: string
+  vendorName: string
 }
 
 export interface OCPP20BootNotificationRequest extends JsonObject {
-  reason: BootReasonEnumType
   chargingStation: ChargingStationType
+  reason: BootReasonEnumType
 }
 
 export type OCPP20HeartbeatRequest = EmptyObject
@@ -42,10 +42,10 @@ export type OCPP20HeartbeatRequest = EmptyObject
 export type OCPP20ClearCacheRequest = EmptyObject
 
 export interface OCPP20StatusNotificationRequest extends JsonObject {
-  timestamp: Date
+  connectorId: number
   connectorStatus: OCPP20ConnectorStatusEnumType
   evseId: number
-  connectorId: number
+  timestamp: Date
 }
 
 export interface OCPP20SetVariablesRequest extends JsonObject {
@@ -53,6 +53,6 @@ export interface OCPP20SetVariablesRequest extends JsonObject {
 }
 
 export interface OCPP20InstallCertificateRequest extends JsonObject {
-  certificateType: InstallCertificateUseEnumType
   certificate: string
+  certificateType: InstallCertificateUseEnumType
 }

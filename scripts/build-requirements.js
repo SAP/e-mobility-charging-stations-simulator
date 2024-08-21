@@ -1,7 +1,6 @@
+import chalk from 'chalk'
 import { readFileSync } from 'node:fs'
 import { exit, version } from 'node:process'
-
-import chalk from 'chalk'
 // eslint-disable-next-line n/no-unpublished-import
 import { satisfies } from 'semver'
 

@@ -1,6 +1,5 @@
-import { describe, it } from 'node:test'
-
 import { expect } from 'expect'
+import { describe, it } from 'node:test'
 
 import { ACElectricUtils, DCElectricUtils } from '../../src/utils/ElectricUtils.js'
 

@@ -6,6 +6,6 @@ export interface EvseTemplate {
 }
 
 export interface EvseStatus {
-  connectors: Map<number, ConnectorStatus>
   availability: AvailabilityType
+  connectors: Map<number, ConnectorStatus>
 }

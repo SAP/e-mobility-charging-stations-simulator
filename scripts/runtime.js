@@ -1,9 +1,9 @@
 export const runtimes = {
+  browser: 'browser',
   bun: 'bun',
   deno: 'deno',
   node: 'node',
   workerd: 'workerd',
-  browser: 'browser',
 }
 
 const isBun = !!globalThis.Bun || !!globalThis.process?.versions?.bun

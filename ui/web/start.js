@@ -1,9 +1,8 @@
+import finalhandler from 'finalhandler'
 import { createServer } from 'node:http'
 import { dirname, join } from 'node:path'
 import { env } from 'node:process'
 import { fileURLToPath } from 'node:url'
-
-import finalhandler from 'finalhandler'
 import serveStatic from 'serve-static'
 
 const isCFEnvironment = env.VCAP_APPLICATION != null

@@ -22,7 +22,7 @@ export const getUsernameAndPasswordFromAuthorizationToken = (
 export const handleProtocols = (
   protocols: Set<string>,
   _request: IncomingMessage
-): string | false => {
+): false | string => {
   let protocol: Protocol | undefined
   let version: ProtocolVersion | undefined
   if (protocols.size === 0) {
