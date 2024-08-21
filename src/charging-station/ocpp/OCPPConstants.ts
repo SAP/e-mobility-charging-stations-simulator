@@ -118,33 +118,40 @@ export class OCPPConstants {
     status: DataTransferStatus.UNKNOWN_VENDOR_ID,
   })
 
+  // Reservation has been made
   static readonly OCPP_RESERVATION_RESPONSE_ACCEPTED = Object.freeze({
     status: ReservationStatus.ACCEPTED,
-  }) // Reservation has been made
+  })
 
+  // Reservation has not been made, because of connector in FAULTED state
   static readonly OCPP_RESERVATION_RESPONSE_FAULTED = Object.freeze({
     status: ReservationStatus.FAULTED,
-  }) // Reservation has not been made, because of connector in FAULTED state
+  })
 
+  // Reservation has not been made, because all connectors are OCCUPIED
   static readonly OCPP_RESERVATION_RESPONSE_OCCUPIED = Object.freeze({
     status: ReservationStatus.OCCUPIED,
-  }) // Reservation has not been made, because all connectors are OCCUPIED
+  })
 
+  // Reservation has not been made, because charging station is not configured to accept reservations
   static readonly OCPP_RESERVATION_RESPONSE_REJECTED = Object.freeze({
     status: ReservationStatus.REJECTED,
-  }) // Reservation has not been made, because charging station is not configured to accept reservations
+  })
 
+  // Reservation has not been made, because connector is in UNAVAILABLE state
   static readonly OCPP_RESERVATION_RESPONSE_UNAVAILABLE = Object.freeze({
     status: ReservationStatus.UNAVAILABLE,
-  }) // Reservation has not been made, because connector is in UNAVAILABLE state
+  })
 
+  // Reservation for id has been cancelled
   static readonly OCPP_CANCEL_RESERVATION_RESPONSE_ACCEPTED = Object.freeze({
     status: GenericStatus.Accepted,
-  }) // Reservation for id has been cancelled
+  })
 
+  // Reservation could not be cancelled, because there is no reservation active for id
   static readonly OCPP_CANCEL_RESERVATION_RESPONSE_REJECTED = Object.freeze({
     status: GenericStatus.Rejected,
-  }) // Reservation could not be cancelled, because there is no reservation active for id
+  })
 
   protected constructor () {
     // This is intentional

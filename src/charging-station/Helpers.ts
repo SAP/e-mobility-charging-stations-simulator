@@ -448,8 +448,10 @@ export const initializeConnectorsMapStatus = (
   for (const connectorId of connectors.keys()) {
     if (connectorId > 0 && connectors.get(connectorId)?.transactionStarted === true) {
       logger.warn(
-        `${logPrefix} Connector id ${connectorId.toString()} at initialization has a transaction started with id ${// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        connectors.get(connectorId)?.transactionId?.toString()}`
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        `${logPrefix} Connector id ${connectorId.toString()} at initialization has a transaction started with id ${connectors
+          .get(connectorId)
+          ?.transactionId?.toString()}`
       )
     }
     if (connectorId === 0) {
