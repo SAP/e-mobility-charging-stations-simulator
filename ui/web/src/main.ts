@@ -57,10 +57,12 @@ fetch('/config.json')
     }
     response
       .json()
+      // eslint-disable-next-line promise/no-nesting
       .then(config => {
         initializeApp(app, config as ConfigurationData)
         return undefined
       })
+      // eslint-disable-next-line promise/no-nesting
       .catch((error: unknown) => {
         // TODO: add code for UI notifications or other error handling logic
         console.error('Error at deserializing JSON app configuration:', error)
