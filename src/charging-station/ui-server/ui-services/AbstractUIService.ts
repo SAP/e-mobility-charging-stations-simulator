@@ -117,16 +117,6 @@ export abstract class AbstractUIService {
     )
   }
 
-  // public sendRequest (
-  //   uuid: `${string}-${string}-${string}-${string}-${string}`,
-  //   procedureName: ProcedureName,
-  //   requestPayload: RequestPayload
-  // ): void {
-  //   this.uiServer.sendRequest(
-  //     this.uiServer.buildProtocolRequest(uuid, procedureName, requestPayload)
-  //   )
-  // }
-
   private async handleAddChargingStations (
     _uuid?: `${string}-${string}-${string}-${string}-${string}`,
     _procedureName?: ProcedureName,
@@ -368,6 +358,16 @@ export abstract class AbstractUIService {
       return this.uiServer.buildProtocolResponse(uuid!, responsePayload)
     }
   }
+
+  // public sendRequest (
+  //   uuid: `${string}-${string}-${string}-${string}-${string}`,
+  //   procedureName: ProcedureName,
+  //   requestPayload: RequestPayload
+  // ): void {
+  //   this.uiServer.sendRequest(
+  //     this.uiServer.buildProtocolRequest(uuid, procedureName, requestPayload)
+  //   )
+  // }
 
   public sendResponse (
     uuid: `${string}-${string}-${string}-${string}-${string}`,

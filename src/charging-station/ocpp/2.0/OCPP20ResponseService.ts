@@ -27,7 +27,6 @@ const moduleName = 'OCPP20ResponseService'
 
 export class OCPP20ResponseService extends OCPPResponseService {
   protected payloadValidateFunctions: Map<OCPP20RequestCommand, ValidateFunction<JsonType>>
-
   private readonly responseHandlers: Map<OCPP20RequestCommand, ResponseHandler>
   public incomingRequestResponsePayloadValidateFunctions: Map<
     OCPP20IncomingRequestCommand,

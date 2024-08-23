@@ -208,7 +208,6 @@ export class ChargingStation extends EventEmitter {
   public starting: boolean
   public stationInfo?: ChargingStationInfo
   public readonly templateFile: string
-
   public wsConnection: null | WebSocket
 
   constructor (index: number, templateFile: string, options?: ChargingStationOptions) {

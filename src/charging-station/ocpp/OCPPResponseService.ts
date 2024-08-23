@@ -26,7 +26,6 @@ export abstract class OCPPResponseService {
   protected emptyResponseHandler = Constants.EMPTY_FUNCTION
   protected abstract payloadValidateFunctions: Map<RequestCommand, ValidateFunction<JsonType>>
   private readonly version: OCPPVersion
-
   public abstract incomingRequestResponsePayloadValidateFunctions: Map<
     IncomingRequestCommand,
     ValidateFunction<JsonType>

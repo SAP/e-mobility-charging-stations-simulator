@@ -31,7 +31,6 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
 
   private started: boolean
   private readonly workerSet: Set<WorkerSetElement>
-
   private workerStartup: boolean
   public readonly emitter: EventEmitterAsyncResource | undefined
 

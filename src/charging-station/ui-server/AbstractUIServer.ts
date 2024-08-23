@@ -34,7 +34,6 @@ export abstract class AbstractUIServer {
 
   protected readonly uiServices: Map<ProtocolVersion, AbstractUIService>
   public readonly chargingStations: Map<string, ChargingStationData>
-
   public readonly chargingStationTemplates: Set<string>
 
   public constructor (protected readonly uiServerConfiguration: UIServerConfiguration) {

@@ -51,7 +51,6 @@ export class AutomaticTransactionGenerator {
   private starting: boolean
   private stopping: boolean
   public readonly connectorsStatus: Map<number, Status>
-
   public started: boolean
 
   private constructor (chargingStation: ChargingStation) {
