@@ -1194,7 +1194,7 @@ const getSampledValueTemplate = (
   ) {
     if (
       !OCPPConstants.OCPP_MEASURANDS_SUPPORTED.includes(
-        sampledValueTemplates[index]?.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+        sampledValueTemplates[index].measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
       )
     ) {
       logger.warn(
@@ -1202,8 +1202,8 @@ const getSampledValueTemplate = (
       )
     } else if (
       phase != null &&
-      sampledValueTemplates[index]?.phase === phase &&
-      sampledValueTemplates[index]?.measurand === measurand &&
+      sampledValueTemplates[index].phase === phase &&
+      sampledValueTemplates[index].measurand === measurand &&
       getConfigurationKey(
         chargingStation,
         StandardParametersKey.MeterValuesSampledData
@@ -1212,8 +1212,8 @@ const getSampledValueTemplate = (
       return sampledValueTemplates[index]
     } else if (
       phase == null &&
-      sampledValueTemplates[index]?.phase == null &&
-      sampledValueTemplates[index]?.measurand === measurand &&
+      sampledValueTemplates[index].phase == null &&
+      sampledValueTemplates[index].measurand === measurand &&
       getConfigurationKey(
         chargingStation,
         StandardParametersKey.MeterValuesSampledData
@@ -1222,8 +1222,8 @@ const getSampledValueTemplate = (
       return sampledValueTemplates[index]
     } else if (
       measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER &&
-      (sampledValueTemplates[index]?.measurand == null ||
-        sampledValueTemplates[index]?.measurand === measurand)
+      (sampledValueTemplates[index].measurand == null ||
+        sampledValueTemplates[index].measurand === measurand)
     ) {
       return sampledValueTemplates[index]
     }

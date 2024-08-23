@@ -869,11 +869,11 @@ export const waitChargingStationEvents = async (
 
 const getConfiguredMaxNumberOfConnectors = (stationTemplate: ChargingStationTemplate): number => {
   let configuredMaxNumberOfConnectors = 0
-  if (isNotEmptyArray(stationTemplate.numberOfConnectors)) {
+  if (isNotEmptyArray<number>(stationTemplate.numberOfConnectors)) {
     const numberOfConnectors = stationTemplate.numberOfConnectors
     configuredMaxNumberOfConnectors =
       numberOfConnectors[Math.floor(secureRandom() * numberOfConnectors.length)]
-  } else if (stationTemplate.numberOfConnectors != null) {
+  } else if (typeof stationTemplate.numberOfConnectors === 'number') {
     configuredMaxNumberOfConnectors = stationTemplate.numberOfConnectors
   } else if (stationTemplate.Connectors != null && stationTemplate.Evses == null) {
     configuredMaxNumberOfConnectors =
@@ -1031,7 +1031,7 @@ const getChargingProfilesLimit = (
         start: chargingSchedule.startSchedule,
       })
     ) {
-      if (isNotEmptyArray(chargingSchedule.chargingSchedulePeriod)) {
+      if (isNotEmptyArray<ChargingSchedulePeriod>(chargingSchedule.chargingSchedulePeriod)) {
         const chargingSchedulePeriodCompareFn = (
           a: ChargingSchedulePeriod,
           b: ChargingSchedulePeriod

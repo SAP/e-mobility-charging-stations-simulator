@@ -388,7 +388,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private getConfiguredSupervisionUrl (): URL {
-    let configuredSupervisionUrl: string
+    let configuredSupervisionUrl: string | undefined
     const supervisionUrls = this.stationInfo?.supervisionUrls ?? Configuration.getSupervisionUrls()
     if (isNotEmptyArray(supervisionUrls)) {
       let configuredSupervisionUrlIndex: number
@@ -413,7 +413,7 @@ export class ChargingStation extends EventEmitter {
           break
       }
       configuredSupervisionUrl = supervisionUrls[configuredSupervisionUrlIndex]
-    } else {
+    } else if (typeof supervisionUrls === 'string') {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       configuredSupervisionUrl = supervisionUrls!
     }
@@ -603,17 +603,16 @@ export class ChargingStation extends EventEmitter {
     stationInfo.chargingStationId = getChargingStationId(this.index, stationTemplate)
     createSerialNumber(stationTemplate, stationInfo)
     stationInfo.voltageOut = this.getVoltageOut(stationInfo)
-    if (isNotEmptyArray(stationTemplate.power)) {
+    if (isNotEmptyArray<number>(stationTemplate.power)) {
       const powerArrayRandomIndex = Math.floor(secureRandom() * stationTemplate.power.length)
       stationInfo.maximumPower =
         stationTemplate.powerUnit === PowerUnits.KILO_WATT
           ? stationTemplate.power[powerArrayRandomIndex] * 1000
           : stationTemplate.power[powerArrayRandomIndex]
-    } else {
+    } else if (typeof stationTemplate.power === 'number') {
       stationInfo.maximumPower =
         stationTemplate.powerUnit === PowerUnits.KILO_WATT
-          ? // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          stationTemplate.power! * 1000
+          ? stationTemplate.power * 1000
           : stationTemplate.power
     }
     stationInfo.maximumAmperage = this.getMaximumAmperage(stationInfo)

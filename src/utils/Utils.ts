@@ -13,7 +13,7 @@ import {
 } from 'date-fns'
 import { getRandomValues, randomBytes, randomUUID } from 'node:crypto'
 import { env, nextTick } from 'node:process'
-import { is } from 'rambda'
+import { is, isNotEmpty, type NonEmptyArray, type ReadonlyNonEmptyArray } from 'rambda'
 
 import {
   type JsonType,
@@ -230,12 +230,16 @@ export const isCFEnvironment = (): boolean => {
   return env.VCAP_APPLICATION != null
 }
 
-export const isNotEmptyString = (value: unknown): value is string => {
+declare const nonEmptyString: unique symbol
+type NonEmptyString = { [nonEmptyString]: true } & string
+export const isNotEmptyString = (value: unknown): value is NonEmptyString => {
   return typeof value === 'string' && value.trim().length > 0
 }
 
-export const isNotEmptyArray = (value: unknown): value is unknown[] => {
-  return Array.isArray(value) && value.length > 0
+export const isNotEmptyArray = <T>(
+  value: unknown
+): value is NonEmptyArray<T> | ReadonlyNonEmptyArray<T> => {
+  return Array.isArray(value) && isNotEmpty<T>(value as T[])
 }
 
 export const insertAt = (str: string, subStr: string, pos: number): string =>
