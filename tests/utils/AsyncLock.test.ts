@@ -1,4 +1,5 @@
 import { expect } from 'expect'
+import { randomInt } from 'node:crypto'
 import { describe, it } from 'node:test'
 
 import { AsyncLock, AsyncLockType } from '../../src/utils/AsyncLock.js'
@@ -28,7 +29,7 @@ await describe('AsyncLock test suite', async () => {
     let count = 0
     const asyncFn = async () => {
       await new Promise(resolve => {
-        setTimeout(resolve, 100)
+        setTimeout(resolve, randomInt(1, 100))
       })
       executed.push(++count)
     }
