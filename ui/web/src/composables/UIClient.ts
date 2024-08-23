@@ -21,7 +21,6 @@ interface ResponseHandler {
 
 export class UIClient {
   private static instance: null | UIClient = null
-
   private responseHandlers: Map<
     `${string}-${string}-${string}-${string}-${string}`,
     ResponseHandler
