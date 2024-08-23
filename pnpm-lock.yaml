@@ -60,8 +60,8 @@ importers:
         specifier: ^4.2.3
         version: 4.2.3
       rambda:
-        specifier: ^9.2.1
-        version: 9.2.1
+        specifier: ^9.3.0
+        version: 9.3.0
       tar:
         specifier: ^7.4.3
         version: 7.4.3
@@ -4593,8 +4593,8 @@ packages:
     resolution: {integrity: sha512-kKr2uQ2AokadPjvTyKJQad9xELbZwYzWlNfI3Uz2j/ib5u6H9lDP7fUUR//rMycd0gv4Z5P1qXMfXR8YpIxrjQ==}
     hasBin: true
 
-  rambda@9.2.1:
-    resolution: {integrity: sha512-6Dp+QQVQuAuhwBlbIvL2FjJVHCKF29W+n9ca/BMTVDqpj+Q7KKqUh7UAINEna8aaB2/oRvPuL5hViCTQARa70Q==}
+  rambda@9.3.0:
+    resolution: {integrity: sha512-cl/7DCCKNxmsbc0dXZTJTY08rvDdzLhVfE6kPBson1fWzDapLzv0RKSzjpmAqP53fkQqAvq05gpUVHTrUNsuxg==}
 
   randombytes@2.1.0:
     resolution: {integrity: sha512-vYl3iOX+4CKUWuxGi9Ukhie6fsqXqS9FE2Zaic4tNFD2N2QQaXOMFbuKK4QmDHC0JO6B1Zp41J0LpT0oR68amQ==}
@@ -10820,7 +10820,7 @@ snapshots:
       minimist: 1.2.8
       through2: 2.0.5
 
-  rambda@9.2.1: {}
+  rambda@9.3.0: {}
 
   randombytes@2.1.0:
     dependencies:
