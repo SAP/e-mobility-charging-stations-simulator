@@ -100,7 +100,7 @@
     "mnemonist": "0.40.0-rc1",
     "mongodb": "^6.8.0",
     "poolifier": "^4.2.3",
-    "rambda": "^9.2.1",
+    "rambda": "^9.3.0",
     "tar": "^7.4.3",
     "winston": "^3.14.2",
     "winston-daily-rotate-file": "^5.0.0",
