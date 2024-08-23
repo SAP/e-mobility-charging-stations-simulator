@@ -51,11 +51,14 @@ import { UIServerFactory } from './ui-server/UIServerFactory.js'
 const moduleName = 'Bootstrap'
 
 enum exitCodes {
-  duplicateChargingStationTemplateUrls = 2,
-  gracefulShutdownError = 4,
+  succeeded = 0,
+  // eslint-disable-next-line perfectionist/sort-enums
   missingChargingStationsConfiguration = 1,
+  // eslint-disable-next-line perfectionist/sort-enums
+  duplicateChargingStationTemplateUrls = 2,
   noChargingStationTemplates = 3,
-  succeeded = 0
+  // eslint-disable-next-line perfectionist/sort-enums
+  gracefulShutdownError = 4
 }
 
 export class Bootstrap extends EventEmitter {
