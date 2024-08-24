@@ -26,7 +26,6 @@ export class Constants {
 
   static readonly DEFAULT_BOOT_NOTIFICATION_INTERVAL = 60000 // Ms
 
-  private static readonly DEFAULT_CHARGING_STATION_RESET_TIME = 30000 // Ms
   static readonly DEFAULT_CIRCULAR_BUFFER_CAPACITY = 386
   static readonly DEFAULT_CONNECTION_TIMEOUT = 30
 
@@ -61,7 +60,9 @@ export class Constants {
         step: 1,
       },
     },
-    firmwareVersionPattern: Constants.SEMVER_PATTERN,
+    // See https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+    firmwareVersionPattern:
+      '^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$',
     mainVoltageMeterValues: true,
     meteringPerTransaction: true,
     ocppPersistentConfiguration: true,
@@ -72,7 +73,7 @@ export class Constants {
     reconnectExponentialDelay: false,
     registrationMaxRetries: -1,
     remoteAuthorization: true,
-    resetTime: Constants.DEFAULT_CHARGING_STATION_RESET_TIME,
+    resetTime: 30000, // Ms
     stationInfoPersistentConfiguration: true,
     stopTransactionsOnStopped: true,
     supervisionUrlOcppConfiguration: false,
@@ -93,10 +94,6 @@ export class Constants {
   static readonly MAX_RANDOM_INTEGER = 281474976710655
 
   static readonly PERFORMANCE_RECORDS_TABLE = 'performance_records'
-
-  // See https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
-  private static readonly SEMVER_PATTERN =
-    '^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$'
 
   static readonly STOP_CHARGING_STATIONS_TIMEOUT = 60000 // Ms
 
