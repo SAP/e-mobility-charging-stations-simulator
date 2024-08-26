@@ -43,7 +43,7 @@
     "@vue/test-utils": "^2.4.6",
     "@vue/tsconfig": "^0.5.1",
     "cross-env": "^7.0.3",
-    "jsdom": "^24.1.1",
+    "jsdom": "^25.0.0",
     "prettier": "^3.3.3",
     "rimraf": "^6.0.1",
     "typescript": "~5.5.4",
