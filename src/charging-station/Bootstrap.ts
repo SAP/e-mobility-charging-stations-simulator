@@ -58,7 +58,7 @@ enum exitCodes {
   duplicateChargingStationTemplateUrls = 2,
   noChargingStationTemplates = 3,
   // eslint-disable-next-line perfectionist/sort-enums
-  gracefulShutdownError = 4
+  gracefulShutdownError = 4,
 }
 
 export class Bootstrap extends EventEmitter {

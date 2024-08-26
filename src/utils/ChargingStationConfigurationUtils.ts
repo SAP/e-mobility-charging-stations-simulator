@@ -27,7 +27,7 @@ export const buildConnectorsStatus = (chargingStation: ChargingStation): Connect
 
 export enum OutputFormat {
   configuration = 'configuration',
-  worker = 'worker'
+  worker = 'worker',
 }
 
 export const buildEvsesStatus = (

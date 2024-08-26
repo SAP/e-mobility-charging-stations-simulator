@@ -4,12 +4,12 @@ export enum StorageType {
   MONGO_DB = 'mongodb',
   MYSQL = 'mysql',
   NONE = 'none',
-  SQLITE = 'sqlite'
+  SQLITE = 'sqlite',
 }
 
 export enum DBName {
   MARIA_DB = 'MariaDB',
   MONGO_DB = 'MongoDB',
   MYSQL = 'MySQL',
-  SQLITE = 'SQLite'
+  SQLITE = 'SQLite',
 }

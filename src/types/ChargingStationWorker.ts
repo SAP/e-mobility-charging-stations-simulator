@@ -49,7 +49,7 @@ export interface ChargingStationData extends WorkerData {
 }
 
 enum ChargingStationMessageEvents {
-  performanceStatistics = 'performanceStatistics'
+  performanceStatistics = 'performanceStatistics',
 }
 
 export const ChargingStationWorkerMessageEvents = {

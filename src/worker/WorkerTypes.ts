@@ -6,7 +6,7 @@ export enum WorkerProcessType {
   /** @experimental */
   dynamicPool = 'dynamicPool',
   fixedPool = 'fixedPool',
-  workerSet = 'workerSet'
+  workerSet = 'workerSet',
 }
 
 export interface SetInfo {
@@ -24,7 +24,7 @@ export enum WorkerSetEvents {
   elementError = 'elementError',
   error = 'error',
   started = 'started',
-  stopped = 'stopped'
+  stopped = 'stopped',
 }
 
 export const WorkerEvents = {
@@ -66,5 +66,5 @@ export interface WorkerMessage<T extends WorkerData> {
 export enum WorkerMessageEvents {
   addedWorkerElement = 'addedWorkerElement',
   addWorkerElement = 'addWorkerElement',
-  workerElementError = 'workerElementError'
+  workerElementError = 'workerElementError',
 }

@@ -17,26 +17,26 @@ import type {
 
 export enum CurrentType {
   AC = 'AC',
-  DC = 'DC'
+  DC = 'DC',
 }
 
 export enum PowerUnits {
   KILO_WATT = 'kW',
-  WATT = 'W'
+  WATT = 'W',
 }
 
 export enum AmpereUnits {
   AMPERE = 'A',
   CENTI_AMPERE = 'cA',
   DECI_AMPERE = 'dA',
-  MILLI_AMPERE = 'mA'
+  MILLI_AMPERE = 'mA',
 }
 
 export enum Voltage {
   VOLTAGE_110 = 110,
   VOLTAGE_230 = 230,
   VOLTAGE_400 = 400,
-  VOLTAGE_800 = 800
+  VOLTAGE_800 = 800,
 }
 
 export type WsOptions = ClientOptions & ClientRequestArgs
@@ -61,7 +61,7 @@ enum x509CertificateType {
   ManufacturerRootCertificate = 'ManufacturerRootCertificate',
   MORootCertificate = 'MORootCertificate',
   V2GCertificate = 'V2GCertificate',
-  V2GRootCertificate = 'V2GRootCertificate'
+  V2GRootCertificate = 'V2GRootCertificate',
 }
 
 export interface ChargingStationTemplate {

@@ -3,7 +3,7 @@ import type { JsonObject } from './JsonType.js'
 export enum IdTagDistribution {
   CONNECTOR_AFFINITY = 'connector-affinity',
   RANDOM = 'random',
-  ROUND_ROBIN = 'round-robin'
+  ROUND_ROBIN = 'round-robin',
 }
 
 export interface AutomaticTransactionGeneratorConfiguration extends JsonObject {

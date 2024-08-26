@@ -1,20 +1,20 @@
 import type { JsonObject } from './JsonType'
 
 export enum Protocol {
-  UI = 'ui'
+  UI = 'ui',
 }
 
 export enum ApplicationProtocol {
   WS = 'ws',
-  WSS = 'wss'
+  WSS = 'wss',
 }
 
 export enum ProtocolVersion {
-  '0.0.1' = '0.0.1'
+  '0.0.1' = '0.0.1',
 }
 
 export enum AuthenticationType {
-  PROTOCOL_BASIC_AUTH = 'protocol-basic-auth'
+  PROTOCOL_BASIC_AUTH = 'protocol-basic-auth',
 }
 
 export type ProtocolRequest = [
@@ -47,7 +47,7 @@ export enum ProcedureName {
   STOP_AUTOMATIC_TRANSACTION_GENERATOR = 'stopAutomaticTransactionGenerator',
   STOP_CHARGING_STATION = 'stopChargingStation',
   STOP_SIMULATOR = 'stopSimulator',
-  STOP_TRANSACTION = 'stopTransaction'
+  STOP_TRANSACTION = 'stopTransaction',
 }
 
 export interface RequestPayload extends JsonObject {
@@ -57,7 +57,7 @@ export interface RequestPayload extends JsonObject {
 
 export enum ResponseStatus {
   FAILURE = 'failure',
-  SUCCESS = 'success'
+  SUCCESS = 'success',
 }
 
 export interface ResponsePayload extends JsonObject {

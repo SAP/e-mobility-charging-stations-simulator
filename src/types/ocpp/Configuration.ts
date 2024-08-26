@@ -40,7 +40,7 @@ export enum ConnectorPhaseRotation {
   STR = 'STR',
   TRS = 'TRS',
   TSR = 'TSR',
-  Unknown = 'Unknown'
+  Unknown = 'Unknown',
 }
 
 export type ConfigurationKeyType = StandardParametersKey | string | VendorParametersKey

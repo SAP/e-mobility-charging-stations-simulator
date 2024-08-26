@@ -32,7 +32,7 @@ enum HttpMethods {
   GET = 'GET',
   PATCH = 'PATCH',
   POST = 'POST',
-  PUT = 'PUT'
+  PUT = 'PUT',
 }
 
 export class UIHttpServer extends AbstractUIServer {

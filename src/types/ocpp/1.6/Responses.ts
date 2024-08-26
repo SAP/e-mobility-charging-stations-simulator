@@ -11,7 +11,7 @@ export interface OCPP16HeartbeatResponse extends JsonObject {
 export enum OCPP16UnlockStatus {
   NOT_SUPPORTED = 'NotSupported',
   UNLOCK_FAILED = 'UnlockFailed',
-  UNLOCKED = 'Unlocked'
+  UNLOCKED = 'Unlocked',
 }
 
 export interface UnlockConnectorResponse extends JsonObject {
@@ -22,7 +22,7 @@ export enum OCPP16ConfigurationStatus {
   ACCEPTED = 'Accepted',
   NOT_SUPPORTED = 'NotSupported',
   REBOOT_REQUIRED = 'RebootRequired',
-  REJECTED = 'Rejected'
+  REJECTED = 'Rejected',
 }
 
 export interface ChangeConfigurationResponse extends JsonObject {
@@ -45,7 +45,7 @@ export interface GetConfigurationResponse extends JsonObject {
 export enum OCPP16ChargingProfileStatus {
   ACCEPTED = 'Accepted',
   NOT_SUPPORTED = 'NotSupported',
-  REJECTED = 'Rejected'
+  REJECTED = 'Rejected',
 }
 
 export interface OCPP16GetCompositeScheduleResponse extends JsonObject {
@@ -62,7 +62,7 @@ export interface SetChargingProfileResponse extends JsonObject {
 export enum OCPP16AvailabilityStatus {
   ACCEPTED = 'Accepted',
   REJECTED = 'Rejected',
-  SCHEDULED = 'Scheduled'
+  SCHEDULED = 'Scheduled',
 }
 
 export interface OCPP16ChangeAvailabilityResponse extends JsonObject {
@@ -71,7 +71,7 @@ export interface OCPP16ChangeAvailabilityResponse extends JsonObject {
 
 export enum OCPP16ClearChargingProfileStatus {
   ACCEPTED = 'Accepted',
-  UNKNOWN = 'Unknown'
+  UNKNOWN = 'Unknown',
 }
 
 export interface OCPP16ClearChargingProfileResponse extends JsonObject {
@@ -91,7 +91,7 @@ export type OCPP16DiagnosticsStatusNotificationResponse = EmptyObject
 export enum OCPP16TriggerMessageStatus {
   ACCEPTED = 'Accepted',
   NOT_IMPLEMENTED = 'NotImplemented',
-  REJECTED = 'Rejected'
+  REJECTED = 'Rejected',
 }
 
 export interface OCPP16TriggerMessageResponse extends JsonObject {
@@ -102,7 +102,7 @@ export enum OCPP16DataTransferStatus {
   ACCEPTED = 'Accepted',
   REJECTED = 'Rejected',
   UNKNOWN_MESSAGE_ID = 'UnknownMessageId',
-  UNKNOWN_VENDOR_ID = 'UnknownVendorId'
+  UNKNOWN_VENDOR_ID = 'UnknownVendorId',
 }
 
 export interface OCPP16DataTransferResponse extends JsonObject {
@@ -116,7 +116,7 @@ export enum OCPP16ReservationStatus {
   NOT_SUPPORTED = 'NotSupported',
   OCCUPIED = 'Occupied',
   REJECTED = 'Rejected',
-  UNAVAILABLE = 'Unavailable'
+  UNAVAILABLE = 'Unavailable',
 }
 
 export interface OCPP16ReserveNowResponse extends JsonObject {

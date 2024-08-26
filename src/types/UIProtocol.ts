@@ -2,21 +2,21 @@ import type { JsonObject } from './JsonType.js'
 import type { BroadcastChannelResponsePayload } from './WorkerBroadcastChannel.js'
 
 export enum Protocol {
-  UI = 'ui'
+  UI = 'ui',
 }
 
 export enum ApplicationProtocol {
   HTTP = 'http',
-  WS = 'ws'
+  WS = 'ws',
 }
 
 export enum AuthenticationType {
   BASIC_AUTH = 'basic-auth',
-  PROTOCOL_BASIC_AUTH = 'protocol-basic-auth'
+  PROTOCOL_BASIC_AUTH = 'protocol-basic-auth',
 }
 
 export enum ProtocolVersion {
-  '0.0.1' = '0.0.1'
+  '0.0.1' = '0.0.1',
 }
 
 export type ProtocolRequest = [
@@ -60,7 +60,7 @@ export enum ProcedureName {
   STOP_AUTOMATIC_TRANSACTION_GENERATOR = 'stopAutomaticTransactionGenerator',
   STOP_CHARGING_STATION = 'stopChargingStation',
   STOP_SIMULATOR = 'stopSimulator',
-  STOP_TRANSACTION = 'stopTransaction'
+  STOP_TRANSACTION = 'stopTransaction',
 }
 
 export interface RequestPayload extends JsonObject {
@@ -70,7 +70,7 @@ export interface RequestPayload extends JsonObject {
 
 export enum ResponseStatus {
   FAILURE = 'failure',
-  SUCCESS = 'success'
+  SUCCESS = 'success',
 }
 
 export interface ResponsePayload extends JsonObject {
