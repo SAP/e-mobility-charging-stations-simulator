@@ -28,7 +28,7 @@ export enum BroadcastChannelProcedureName {
   STATUS_NOTIFICATION = 'statusNotification',
   STOP_AUTOMATIC_TRANSACTION_GENERATOR = 'stopAutomaticTransactionGenerator',
   STOP_CHARGING_STATION = 'stopChargingStation',
-  STOP_TRANSACTION = 'stopTransaction'
+  STOP_TRANSACTION = 'stopTransaction',
 }
 
 export interface BroadcastChannelRequestPayload extends RequestPayload {

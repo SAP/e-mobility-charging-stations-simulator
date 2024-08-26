@@ -9,5 +9,5 @@ export enum ChargingStationEvents {
   rejected = 'rejected',
   started = 'started',
   stopped = 'stopped',
-  updated = 'updated'
+  updated = 'updated',
 }

@@ -12,7 +12,7 @@ export enum OCPP16StopTransactionReason {
   REBOOT = 'Reboot',
   REMOTE = 'Remote',
   SOFT_RESET = 'SoftReset',
-  UNLOCK_COMMAND = 'UnlockCommand'
+  UNLOCK_COMMAND = 'UnlockCommand',
 }
 
 export enum OCPP16AuthorizationStatus {
@@ -20,7 +20,7 @@ export enum OCPP16AuthorizationStatus {
   BLOCKED = 'Blocked',
   CONCURRENT_TX = 'ConcurrentTx',
   EXPIRED = 'Expired',
-  INVALID = 'Invalid'
+  INVALID = 'Invalid',
 }
 
 interface IdTagInfo extends JsonObject {

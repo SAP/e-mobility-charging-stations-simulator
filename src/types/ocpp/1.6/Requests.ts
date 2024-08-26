@@ -20,7 +20,7 @@ export enum OCPP16RequestCommand {
   METER_VALUES = 'MeterValues',
   START_TRANSACTION = 'StartTransaction',
   STATUS_NOTIFICATION = 'StatusNotification',
-  STOP_TRANSACTION = 'StopTransaction'
+  STOP_TRANSACTION = 'StopTransaction',
 }
 
 export enum OCPP16IncomingRequestCommand {
@@ -40,7 +40,7 @@ export enum OCPP16IncomingRequestCommand {
   SET_CHARGING_PROFILE = 'SetChargingProfile',
   TRIGGER_MESSAGE = 'TriggerMessage',
   UNLOCK_CONNECTOR = 'UnlockConnector',
-  UPDATE_FIRMWARE = 'UpdateFirmware'
+  UPDATE_FIRMWARE = 'UpdateFirmware',
 }
 
 export type OCPP16HeartbeatRequest = EmptyObject
@@ -96,7 +96,7 @@ export interface GetConfigurationRequest extends JsonObject {
 
 enum ResetType {
   HARD = 'Hard',
-  SOFT = 'Soft'
+  SOFT = 'Soft',
 }
 
 export interface ResetRequest extends JsonObject {
@@ -116,7 +116,7 @@ export interface SetChargingProfileRequest extends JsonObject {
 
 export enum OCPP16AvailabilityType {
   Inoperative = 'Inoperative',
-  Operative = 'Operative'
+  Operative = 'Operative',
 }
 
 export interface OCPP16ChangeAvailabilityRequest extends JsonObject {
@@ -145,7 +145,7 @@ export enum OCPP16FirmwareStatus {
   Idle = 'Idle',
   InstallationFailed = 'InstallationFailed',
   Installed = 'Installed',
-  Installing = 'Installing'
+  Installing = 'Installing',
 }
 
 export interface OCPP16FirmwareStatusNotificationRequest extends JsonObject {
@@ -170,7 +170,7 @@ export enum OCPP16MessageTrigger {
   FirmwareStatusNotification = 'FirmwareStatusNotification',
   Heartbeat = 'Heartbeat',
   MeterValues = 'MeterValues',
-  StatusNotification = 'StatusNotification'
+  StatusNotification = 'StatusNotification',
 }
 
 export interface OCPP16TriggerMessageRequest extends JsonObject {

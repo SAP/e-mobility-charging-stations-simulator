@@ -8,7 +8,7 @@ import { Bootstrap } from './Bootstrap.js'
 
 enum CacheType {
   chargingStationConfiguration = 'chargingStationConfiguration',
-  chargingStationTemplate = 'chargingStationTemplate'
+  chargingStationTemplate = 'chargingStationTemplate',
 }
 
 type CacheValueType = ChargingStationConfiguration | ChargingStationTemplate

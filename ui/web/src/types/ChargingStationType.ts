@@ -3,7 +3,7 @@ import type { JsonObject } from './JsonType'
 export enum IdTagDistribution {
   CONNECTOR_AFFINITY = 'connector-affinity',
   RANDOM = 'random',
-  ROUND_ROBIN = 'round-robin'
+  ROUND_ROBIN = 'round-robin',
 }
 
 export interface AutomaticTransactionGeneratorConfiguration extends JsonObject {
@@ -47,7 +47,7 @@ export enum OCPP16FirmwareStatus {
   Idle = 'Idle',
   InstallationFailed = 'InstallationFailed',
   Installed = 'Installed',
-  Installing = 'Installing'
+  Installing = 'Installing',
 }
 
 export interface FirmwareUpgrade extends JsonObject {
@@ -165,7 +165,7 @@ export enum OCPP16IncomingRequestCommand {
   RESET = 'Reset',
   SET_CHARGING_PROFILE = 'SetChargingProfile',
   TRIGGER_MESSAGE = 'TriggerMessage',
-  UNLOCK_CONNECTOR = 'UnlockConnector'
+  UNLOCK_CONNECTOR = 'UnlockConnector',
 }
 
 export const IncomingRequestCommand = {
@@ -182,7 +182,7 @@ export enum OCPP16RequestCommand {
   METER_VALUES = 'MeterValues',
   START_TRANSACTION = 'StartTransaction',
   STATUS_NOTIFICATION = 'StatusNotification',
-  STOP_TRANSACTION = 'StopTransaction'
+  STOP_TRANSACTION = 'StopTransaction',
 }
 
 export const RequestCommand = {
@@ -196,7 +196,7 @@ export type BootNotificationResponse = OCPP16BootNotificationResponse
 export enum OCPP16RegistrationStatus {
   ACCEPTED = 'Accepted',
   PENDING = 'Pending',
-  REJECTED = 'Rejected'
+  REJECTED = 'Rejected',
 }
 
 export interface OCPP16BootNotificationResponse extends JsonObject {
@@ -211,7 +211,7 @@ export enum OCPP16MessageTrigger {
   FirmwareStatusNotification = 'FirmwareStatusNotification',
   Heartbeat = 'Heartbeat',
   MeterValues = 'MeterValues',
-  StatusNotification = 'StatusNotification'
+  StatusNotification = 'StatusNotification',
 }
 
 export const MessageTrigger = {
@@ -228,30 +228,30 @@ interface CommandsSupport extends JsonObject {
 export enum OCPPVersion {
   VERSION_16 = '1.6',
   VERSION_20 = '2.0',
-  VERSION_201 = '2.0.1'
+  VERSION_201 = '2.0.1',
 }
 
 export enum OCPPProtocol {
-  JSON = 'json'
+  JSON = 'json',
 }
 
 export enum CurrentType {
   AC = 'AC',
-  DC = 'DC'
+  DC = 'DC',
 }
 
 export enum Voltage {
   VOLTAGE_110 = 110,
   VOLTAGE_230 = 230,
   VOLTAGE_400 = 400,
-  VOLTAGE_800 = 800
+  VOLTAGE_800 = 800,
 }
 
 export enum AmpereUnits {
   AMPERE = 'A',
   CENTI_AMPERE = 'cA',
   DECI_AMPERE = 'dA',
-  MILLI_AMPERE = 'mA'
+  MILLI_AMPERE = 'mA',
 }
 
 export interface ConnectorStatus extends JsonObject {
@@ -277,7 +277,7 @@ export interface EvseStatus extends JsonObject {
 
 export enum OCPP16AvailabilityType {
   INOPERATIVE = 'Inoperative',
-  OPERATIVE = 'Operative'
+  OPERATIVE = 'Operative',
 }
 export type AvailabilityType = OCPP16AvailabilityType
 
@@ -291,7 +291,7 @@ export enum OCPP16ChargePointStatus {
   RESERVED = 'Reserved',
   SUSPENDED_EV = 'SuspendedEV',
   SUSPENDED_EVSE = 'SuspendedEVSE',
-  UNAVAILABLE = 'Unavailable'
+  UNAVAILABLE = 'Unavailable',
 }
 export type ChargePointStatus = OCPP16ChargePointStatus
 

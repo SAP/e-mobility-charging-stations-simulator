@@ -9,5 +9,5 @@ export enum ReservationTerminationReason {
   EXPIRED = 'Expired',
   REPLACE_EXISTING = 'ReplaceExisting',
   RESERVATION_CANCELED = 'ReservationCanceled',
-  TRANSACTION_STARTED = 'TransactionStarted'
+  TRANSACTION_STARTED = 'TransactionStarted',
 }

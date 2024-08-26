@@ -4,7 +4,7 @@ export enum OCPP16SupportedFeatureProfiles {
   LocalAuthListManagement = 'LocalAuthListManagement',
   RemoteTrigger = 'RemoteTrigger',
   Reservation = 'Reservation',
-  SmartCharging = 'SmartCharging'
+  SmartCharging = 'SmartCharging',
 }
 
 export enum OCPP16StandardParametersKey {
@@ -51,9 +51,9 @@ export enum OCPP16StandardParametersKey {
   TransactionMessageAttempts = 'TransactionMessageAttempts',
   TransactionMessageRetryInterval = 'TransactionMessageRetryInterval',
   UnlockConnectorOnEVSideDisconnect = 'UnlockConnectorOnEVSideDisconnect',
-  WebSocketPingInterval = 'WebSocketPingInterval'
+  WebSocketPingInterval = 'WebSocketPingInterval',
 }
 
 export enum OCPP16VendorParametersKey {
-  ConnectionUrl = 'ConnectionUrl'
+  ConnectionUrl = 'ConnectionUrl',
 }

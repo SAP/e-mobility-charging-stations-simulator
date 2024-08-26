@@ -19,7 +19,7 @@ enum OCPP20ComponentName {
   SecurityCtrlr = 'SecurityCtrlr',
   SmartChargingCtrlr = 'SmartChargingCtrlr',
   TariffCostCtrlr = 'TariffCostCtrlr',
-  TxCtrlr = 'TxCtrlr'
+  TxCtrlr = 'TxCtrlr',
 }
 
 export enum OCPP20RequiredVariableName {
@@ -50,23 +50,23 @@ export enum OCPP20RequiredVariableName {
   TxStopPoint = 'TxStopPoint',
   TxUpdatedInterval = 'TxUpdatedInterval',
   TxUpdatedMeasurands = 'TxUpdatedMeasurands',
-  UnlockOnEVSideDisconnect = 'UnlockOnEVSideDisconnect'
+  UnlockOnEVSideDisconnect = 'UnlockOnEVSideDisconnect',
 }
 
 export enum OCPP20OptionalVariableName {
   HeartbeatInterval = 'HeartbeatInterval',
-  WebSocketPingInterval = 'WebSocketPingInterval'
+  WebSocketPingInterval = 'WebSocketPingInterval',
 }
 
 export enum OCPP20VendorVariableName {
-  ConnectionUrl = 'ConnectionUrl'
+  ConnectionUrl = 'ConnectionUrl',
 }
 
 enum AttributeEnumType {
   Actual = 'Actual',
   MaxSet = 'MaxSet',
   MinSet = 'MinSet',
-  Target = 'Target'
+  Target = 'Target',
 }
 
 interface ComponentType extends JsonObject {
@@ -99,7 +99,7 @@ enum SetVariableStatusEnumType {
   RebootRequired = 'RebootRequired',
   Rejected = 'Rejected',
   UnknownComponent = 'UnknownComponent',
-  UnknownVariable = 'UnknownVariable'
+  UnknownVariable = 'UnknownVariable',
 }
 
 export interface OCPP20SetVariableResultType extends JsonObject {

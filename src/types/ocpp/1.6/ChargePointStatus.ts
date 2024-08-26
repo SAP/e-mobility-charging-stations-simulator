@@ -7,5 +7,5 @@ export enum OCPP16ChargePointStatus {
   Reserved = 'Reserved',
   SuspendedEV = 'SuspendedEV',
   SuspendedEVSE = 'SuspendedEVSE',
-  Unavailable = 'Unavailable'
+  Unavailable = 'Unavailable',
 }

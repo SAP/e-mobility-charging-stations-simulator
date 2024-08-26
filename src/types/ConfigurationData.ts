@@ -12,13 +12,13 @@ export enum ConfigurationSection {
   log = 'log',
   performanceStorage = 'performanceStorage',
   uiServer = 'uiServer',
-  worker = 'worker'
+  worker = 'worker',
 }
 
 export enum SupervisionUrlDistribution {
   CHARGING_STATION_AFFINITY = 'charging-station-affinity',
   RANDOM = 'random',
-  ROUND_ROBIN = 'round-robin'
+  ROUND_ROBIN = 'round-robin',
 }
 
 export interface StationTemplateUrl {
@@ -42,7 +42,7 @@ export interface LogConfiguration {
 
 export enum ApplicationProtocolVersion {
   VERSION_11 = '1.1',
-  VERSION_20 = '2.0'
+  VERSION_20 = '2.0',
 }
 
 export interface UIServerConfiguration {
