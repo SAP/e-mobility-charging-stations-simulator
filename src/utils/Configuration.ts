@@ -93,33 +93,43 @@ export class Configuration {
   private static buildLogSection (): LogConfiguration {
     const deprecatedLogConfiguration: LogConfiguration = {
       ...(hasOwnProp(Configuration.getConfigurationData(), 'logEnabled') && {
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         enabled: Configuration.getConfigurationData()?.logEnabled,
       }),
       ...(hasOwnProp(Configuration.getConfigurationData(), 'logFile') && {
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         file: Configuration.getConfigurationData()?.logFile,
       }),
       ...(hasOwnProp(Configuration.getConfigurationData(), 'logErrorFile') && {
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         errorFile: Configuration.getConfigurationData()?.logErrorFile,
       }),
       ...(hasOwnProp(Configuration.getConfigurationData(), 'logStatisticsInterval') && {
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         statisticsInterval: Configuration.getConfigurationData()?.logStatisticsInterval,
       }),
       ...(hasOwnProp(Configuration.getConfigurationData(), 'logLevel') && {
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         level: Configuration.getConfigurationData()?.logLevel,
       }),
       ...(hasOwnProp(Configuration.getConfigurationData(), 'logConsole') && {
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         console: Configuration.getConfigurationData()?.logConsole,
       }),
       ...(hasOwnProp(Configuration.getConfigurationData(), 'logFormat') && {
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         format: Configuration.getConfigurationData()?.logFormat,
       }),
       ...(hasOwnProp(Configuration.getConfigurationData(), 'logRotate') && {
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         rotate: Configuration.getConfigurationData()?.logRotate,
       }),
       ...(hasOwnProp(Configuration.getConfigurationData(), 'logMaxFiles') && {
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         maxFiles: Configuration.getConfigurationData()?.logMaxFiles,
       }),
       ...(hasOwnProp(Configuration.getConfigurationData(), 'logMaxSize') && {
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         maxSize: Configuration.getConfigurationData()?.logMaxSize,
       }),
     }
@@ -192,28 +202,36 @@ export class Configuration {
   private static buildWorkerSection (): WorkerConfiguration {
     const deprecatedWorkerConfiguration: WorkerConfiguration = {
       ...(hasOwnProp(Configuration.getConfigurationData(), 'workerProcess') && {
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         processType: Configuration.getConfigurationData()?.workerProcess,
       }),
       ...(hasOwnProp(Configuration.getConfigurationData(), 'workerStartDelay') && {
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         startDelay: Configuration.getConfigurationData()?.workerStartDelay,
       }),
       ...(hasOwnProp(Configuration.getConfigurationData(), 'chargingStationsPerWorker') && {
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         elementsPerWorker: Configuration.getConfigurationData()?.chargingStationsPerWorker,
       }),
       ...(hasOwnProp(Configuration.getConfigurationData(), 'elementAddDelay') && {
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         elementAddDelay: Configuration.getConfigurationData()?.elementAddDelay,
       }),
       ...(hasOwnProp(Configuration.getConfigurationData()?.worker, 'elementStartDelay') && {
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         elementAddDelay: Configuration.getConfigurationData()?.worker?.elementStartDelay,
       }),
       ...(hasOwnProp(Configuration.getConfigurationData(), 'workerPoolMinSize') && {
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         poolMinSize: Configuration.getConfigurationData()?.workerPoolMinSize,
       }),
       ...(hasOwnProp(Configuration.getConfigurationData(), 'workerPoolMaxSize') && {
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         poolMaxSize: Configuration.getConfigurationData()?.workerPoolMaxSize,
       }),
     }
     hasOwnProp(Configuration.getConfigurationData(), 'workerPoolStrategy') &&
+      // eslint-disable-next-line @typescript-eslint/no-deprecated
       delete Configuration.getConfigurationData()?.workerPoolStrategy
     const workerConfiguration: WorkerConfiguration = {
       ...defaultWorkerConfiguration,

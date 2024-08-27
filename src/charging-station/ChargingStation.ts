@@ -571,6 +571,7 @@ export class ChargingStation extends EventEmitter {
     if (stationInfoPersistentConfiguration) {
       stationInfo = this.getConfigurationFromFile()?.stationInfo
       if (stationInfo != null) {
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         delete stationInfo.infoHash
         delete (stationInfo as ChargingStationTemplate).numberOfConnectors
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
