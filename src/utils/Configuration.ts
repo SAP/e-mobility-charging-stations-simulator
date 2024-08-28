@@ -79,11 +79,48 @@ const defaultWorkerConfiguration: WorkerConfiguration = {
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Configuration {
+  static {
+    const configurationFile = join(dirname(fileURLToPath(import.meta.url)), 'assets', 'config.json')
+    if (existsSync(configurationFile)) {
+      Configuration.configurationFile = configurationFile
+    } else {
+      console.error(
+        `${chalk.green(logPrefix())} ${chalk.red(
+          "Configuration file './src/assets/config.json' not found, using default configuration"
+        )}`
+      )
+      Configuration.configurationData = {
+        log: defaultLogConfiguration,
+        performanceStorage: defaultStorageConfiguration,
+        stationTemplateUrls: [
+          {
+            file: 'siemens.station-template.json',
+            numberOfStations: 1,
+          },
+        ],
+        supervisionUrlDistribution: SupervisionUrlDistribution.ROUND_ROBIN,
+        supervisionUrls: 'ws://localhost:8180/steve/websocket/CentralSystemService',
+        uiServer: defaultUIServerConfiguration,
+        worker: defaultWorkerConfiguration,
+      }
+    }
+    Configuration.configurationSectionCache = new Map<
+      ConfigurationSection,
+      ConfigurationSectionType
+    >([
+      [ConfigurationSection.log, Configuration.buildLogSection()],
+      [ConfigurationSection.performanceStorage, Configuration.buildPerformanceStorageSection()],
+      [ConfigurationSection.uiServer, Configuration.buildUIServerSection()],
+      [ConfigurationSection.worker, Configuration.buildWorkerSection()],
+    ])
+  }
+
   public static configurationChangeCallback?: () => Promise<void>
   private static configurationData?: ConfigurationData
   private static configurationFile: string | undefined
   private static configurationFileReloading = false
   private static configurationFileWatcher?: FSWatcher
+
   private static configurationSectionCache: Map<ConfigurationSection, ConfigurationSectionType>
 
   private constructor () {
@@ -620,41 +657,5 @@ export class Configuration {
       Configuration.getConfigurationSection<WorkerConfiguration>(ConfigurationSection.worker)
         .processType!
     )
-  }
-
-  static {
-    const configurationFile = join(dirname(fileURLToPath(import.meta.url)), 'assets', 'config.json')
-    if (existsSync(configurationFile)) {
-      Configuration.configurationFile = configurationFile
-    } else {
-      console.error(
-        `${chalk.green(logPrefix())} ${chalk.red(
-          "Configuration file './src/assets/config.json' not found, using default configuration"
-        )}`
-      )
-      Configuration.configurationData = {
-        log: defaultLogConfiguration,
-        performanceStorage: defaultStorageConfiguration,
-        stationTemplateUrls: [
-          {
-            file: 'siemens.station-template.json',
-            numberOfStations: 1,
-          },
-        ],
-        supervisionUrlDistribution: SupervisionUrlDistribution.ROUND_ROBIN,
-        supervisionUrls: 'ws://localhost:8180/steve/websocket/CentralSystemService',
-        uiServer: defaultUIServerConfiguration,
-        worker: defaultWorkerConfiguration,
-      }
-    }
-    Configuration.configurationSectionCache = new Map<
-      ConfigurationSection,
-      ConfigurationSectionType
-    >([
-      [ConfigurationSection.log, Configuration.buildLogSection()],
-      [ConfigurationSection.performanceStorage, Configuration.buildPerformanceStorageSection()],
-      [ConfigurationSection.uiServer, Configuration.buildUIServerSection()],
-      [ConfigurationSection.worker, Configuration.buildWorkerSection()],
-    ])
   }
 }
