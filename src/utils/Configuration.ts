@@ -79,6 +79,15 @@ const defaultWorkerConfiguration: WorkerConfiguration = {
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Configuration {
+  public static configurationChangeCallback?: () => Promise<void>
+
+  private static configurationData?: ConfigurationData
+  private static configurationFile: string | undefined
+  private static configurationFileReloading = false
+  private static configurationFileWatcher?: FSWatcher
+  private static configurationSectionCache: Map<ConfigurationSection, ConfigurationSectionType>
+
+  // eslint-disable-next-line perfectionist/sort-classes
   static {
     const configurationFile = join(dirname(fileURLToPath(import.meta.url)), 'assets', 'config.json')
     if (existsSync(configurationFile)) {
@@ -114,14 +123,6 @@ export class Configuration {
       [ConfigurationSection.worker, Configuration.buildWorkerSection()],
     ])
   }
-
-  public static configurationChangeCallback?: () => Promise<void>
-  private static configurationData?: ConfigurationData
-  private static configurationFile: string | undefined
-  private static configurationFileReloading = false
-  private static configurationFileWatcher?: FSWatcher
-
-  private static configurationSectionCache: Map<ConfigurationSection, ConfigurationSectionType>
 
   private constructor () {
     // This is intentional
