@@ -87,7 +87,6 @@ export class Configuration {
   private static configurationFileWatcher?: FSWatcher
   private static configurationSectionCache: Map<ConfigurationSection, ConfigurationSectionType>
 
-  // eslint-disable-next-line perfectionist/sort-classes
   static {
     const configurationFile = join(dirname(fileURLToPath(import.meta.url)), 'assets', 'config.json')
     if (existsSync(configurationFile)) {
