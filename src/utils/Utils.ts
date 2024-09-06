@@ -1,5 +1,4 @@
-import { getRandomValues, randomBytes, randomUUID } from 'node:crypto'
-import { env, nextTick } from 'node:process'
+import type { CircularBuffer } from 'mnemonist'
 
 import {
   formatDuration,
@@ -12,8 +11,9 @@ import {
   minutesToSeconds,
   secondsToMilliseconds,
 } from 'date-fns'
-import type { CircularBuffer } from 'mnemonist'
-import { is } from 'rambda'
+import { getRandomValues, randomBytes, randomUUID } from 'node:crypto'
+import { env, nextTick } from 'node:process'
+import { is, isNotEmpty, type NonEmptyArray, type ReadonlyNonEmptyArray } from 'rambda'
 
 import {
   type JsonType,
@@ -84,7 +84,7 @@ export const isValidDate = (date: Date | number | undefined): date is Date | num
 }
 
 export const convertToDate = (
-  value: Date | string | number | undefined | null
+  value: Date | null | number | string | undefined
 ): Date | undefined => {
   if (value == null) {
     return undefined
@@ -230,12 +230,16 @@ export const isCFEnvironment = (): boolean => {
   return env.VCAP_APPLICATION != null
 }
 
-export const isNotEmptyString = (value: unknown): value is string => {
+declare const nonEmptyString: unique symbol
+type NonEmptyString = { [nonEmptyString]: true } & string
+export const isNotEmptyString = (value: unknown): value is NonEmptyString => {
   return typeof value === 'string' && value.trim().length > 0
 }
 
-export const isNotEmptyArray = (value: unknown): value is unknown[] => {
-  return Array.isArray(value) && value.length > 0
+export const isNotEmptyArray = <T>(
+  value: unknown
+): value is NonEmptyArray<T> | ReadonlyNonEmptyArray<T> => {
+  return Array.isArray(value) && isNotEmpty<T>(value as T[])
 }
 
 export const insertAt = (str: string, subStr: string, pos: number): string =>
@@ -265,12 +269,12 @@ export const JSONStringify = <
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
   T extends
     | JsonType
+    | Map<string, Record<string, unknown>>
     | Record<string, unknown>[]
     | Set<Record<string, unknown>>
-    | Map<string, Record<string, unknown>>
 >(
     object: T,
-    space?: string | number,
+    space?: number | string,
     mapFormat?: MapStringifyFormat
   ): string => {
   return JSON.stringify(

@@ -3,28 +3,28 @@ import type { Worker } from 'node:worker_threads'
 import { type PoolEvent, PoolEvents, type ThreadPoolOptions } from 'poolifier'
 
 export enum WorkerProcessType {
-  workerSet = 'workerSet',
-  fixedPool = 'fixedPool',
   /** @experimental */
-  dynamicPool = 'dynamicPool'
+  dynamicPool = 'dynamicPool',
+  fixedPool = 'fixedPool',
+  workerSet = 'workerSet',
 }
 
 export interface SetInfo {
-  version: string
-  type: string
-  worker: string
-  started: boolean
-  size: number
   elementsExecuting: number
   elementsPerWorker: number
+  size: number
+  started: boolean
+  type: string
+  version: string
+  worker: string
 }
 
 export enum WorkerSetEvents {
+  elementAdded = 'elementAdded',
+  elementError = 'elementError',
+  error = 'error',
   started = 'started',
   stopped = 'stopped',
-  error = 'error',
-  elementAdded = 'elementAdded',
-  elementError = 'elementError'
 }
 
 export const WorkerEvents = {
@@ -35,36 +35,36 @@ export const WorkerEvents = {
 export type WorkerEvents = PoolEvent | WorkerSetEvents
 
 export interface WorkerOptions {
-  workerStartDelay?: number
   elementAddDelay?: number
+  elementsPerWorker?: number
   poolMaxSize: number
   poolMinSize: number
-  elementsPerWorker?: number
   poolOptions?: ThreadPoolOptions
+  workerStartDelay?: number
 }
 
 export type WorkerData = Record<string, unknown>
 
 export interface WorkerDataError extends WorkerData {
   event: WorkerMessageEvents
-  name: string
   message: string
+  name: string
   stack?: string
 }
 
 export interface WorkerSetElement {
-  worker: Worker
   numberOfWorkerElements: number
+  worker: Worker
 }
 
 export interface WorkerMessage<T extends WorkerData> {
-  uuid: `${string}-${string}-${string}-${string}`
-  event: WorkerMessageEvents
   data: T
+  event: WorkerMessageEvents
+  uuid: `${string}-${string}-${string}-${string}`
 }
 
 export enum WorkerMessageEvents {
-  addWorkerElement = 'addWorkerElement',
   addedWorkerElement = 'addedWorkerElement',
-  workerElementError = 'workerElementError'
+  addWorkerElement = 'addWorkerElement',
+  workerElementError = 'workerElementError',
 }

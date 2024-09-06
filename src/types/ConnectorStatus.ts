@@ -6,23 +6,23 @@ import type { AvailabilityType } from './ocpp/Requests.js'
 import type { Reservation } from './ocpp/Reservation.js'
 
 export interface ConnectorStatus {
+  authorizeIdTag?: string
   availability: AvailabilityType
   bootStatus?: ConnectorStatusEnum
-  status?: ConnectorStatusEnum
-  MeterValues: SampledValueTemplate[]
-  authorizeIdTag?: string
-  idTagAuthorized?: boolean
-  localAuthorizeIdTag?: string
-  idTagLocalAuthorized?: boolean
-  transactionRemoteStarted?: boolean
-  transactionStarted?: boolean
-  transactionStart?: Date
-  transactionId?: number
-  transactionSetInterval?: NodeJS.Timeout
-  transactionIdTag?: string
-  energyActiveImportRegisterValue?: number // In Wh
-  transactionEnergyActiveImportRegisterValue?: number // In Wh
-  transactionBeginMeterValue?: MeterValue
   chargingProfiles?: ChargingProfile[]
+  energyActiveImportRegisterValue?: number // In Wh
+  idTagAuthorized?: boolean
+  idTagLocalAuthorized?: boolean
+  localAuthorizeIdTag?: string
+  MeterValues: SampledValueTemplate[]
   reservation?: Reservation
+  status?: ConnectorStatusEnum
+  transactionBeginMeterValue?: MeterValue
+  transactionEnergyActiveImportRegisterValue?: number // In Wh
+  transactionId?: number
+  transactionIdTag?: string
+  transactionRemoteStarted?: boolean
+  transactionSetInterval?: NodeJS.Timeout
+  transactionStart?: Date
+  transactionStarted?: boolean
 }

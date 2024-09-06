@@ -2,7 +2,7 @@
 import js from '@eslint/js'
 import { defineFlatConfig } from 'eslint-define-config'
 import jsdoc from 'eslint-plugin-jsdoc'
-import simpleImportSort from 'eslint-plugin-simple-import-sort'
+import perfectionist from 'eslint-plugin-perfectionist'
 import pluginVue from 'eslint-plugin-vue'
 import neostandard, { plugins } from 'neostandard'
 
@@ -19,8 +19,8 @@ export default defineFlatConfig([
       'jsdoc/check-tag-names': [
         'warn',
         {
-          typed: true,
           definedTags: ['defaultValue', 'experimental', 'typeParam'],
+          typed: true,
         },
       ],
     },
@@ -36,11 +36,11 @@ export default defineFlatConfig([
   },
   ...plugins['typescript-eslint'].config(
     {
-      files: ['**/*.ts', '**/*.tsx', '**/*.mts', '**/*.cts', '*/**.vue'],
       extends: [
         ...plugins['typescript-eslint'].configs.strictTypeChecked,
         ...plugins['typescript-eslint'].configs.stylisticTypeChecked,
       ],
+      files: ['**/*.ts', '**/*.tsx', '**/*.mts', '**/*.cts', '*/**.vue'],
       languageOptions: {
         parserOptions: {
           projectService: true,
@@ -53,13 +53,11 @@ export default defineFlatConfig([
       ...plugins['typescript-eslint'].configs.disableTypeChecked,
     }
   ),
+  perfectionist.configs['recommended-natural'],
   {
-    plugins: {
-      'simple-import-sort': simpleImportSort,
-    },
+    files: ['**/*.vue'],
     rules: {
-      'simple-import-sort/imports': 'error',
-      'simple-import-sort/exports': 'error',
+      'perfectionist/sort-vue-attributes': 'off',
     },
   },
   ...neostandard({

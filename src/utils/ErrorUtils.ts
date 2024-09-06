@@ -1,9 +1,7 @@
+import chalk from 'chalk'
 import process from 'node:process'
 
-import chalk from 'chalk'
-
 import type { ChargingStation } from '../charging-station/index.js'
-import { getMessageTypeString } from '../charging-station/ocpp/OCPPServiceUtils.js'
 import type {
   EmptyObject,
   FileType,
@@ -13,6 +11,8 @@ import type {
   MessageType,
   RequestCommand,
 } from '../types/index.js'
+
+import { getMessageTypeString } from '../charging-station/ocpp/OCPPServiceUtils.js'
 import { logger } from './Logger.js'
 import { isNotEmptyString } from './Utils.js'
 
@@ -39,8 +39,8 @@ export const handleFileException = (
 ): void => {
   params = {
     ...{
-      throwError: true,
       consoleOut: false,
+      throwError: true,
     },
     ...params,
   }
@@ -83,15 +83,15 @@ export const handleFileException = (
 
 export const handleSendMessageError = (
   chargingStation: ChargingStation,
-  commandName: RequestCommand | IncomingRequestCommand,
+  commandName: IncomingRequestCommand | RequestCommand,
   messageType: MessageType,
   error: Error,
   params?: HandleErrorParams<EmptyObject>
 ): void => {
   params = {
     ...{
-      throwError: false,
       consoleOut: false,
+      throwError: false,
     },
     ...params,
   }
@@ -112,8 +112,8 @@ export const handleIncomingRequestError = <T extends JsonType>(
 ): T | undefined => {
   params = {
     ...{
-      throwError: true,
       consoleOut: false,
+      throwError: true,
     },
     ...params,
   }

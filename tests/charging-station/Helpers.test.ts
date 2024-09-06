@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
+import { expect } from 'expect'
 import { describe, it } from 'node:test'
 
-import { expect } from 'expect'
+import type { ChargingStation } from '../../src/charging-station/index.js'
 
 import {
   checkChargingStationState,
@@ -14,7 +15,6 @@ import {
   getPhaseRotationValue,
   validateStationInfo,
 } from '../../src/charging-station/Helpers.js'
-import type { ChargingStation } from '../../src/charging-station/index.js'
 import { BaseError } from '../../src/exception/index.js'
 import {
   type ChargingStationConfiguration,
@@ -33,10 +33,10 @@ await describe('Helpers test suite', async () => {
     baseName,
   } as ChargingStationTemplate
   const chargingStation = {
-    started: false,
-    logPrefix: () => `${baseName} |`,
-    evses: new Map<number, EvseStatus>(),
     connectors: new Map<number, ConnectorStatus>(),
+    evses: new Map<number, EvseStatus>(),
+    logPrefix: () => `${baseName} |`,
+    started: false,
   } as ChargingStation
 
   await it('Verify getChargingStationId()', () => {

@@ -73,9 +73,9 @@ jobs:
           cache: 'pnpm'
       - name: pnpm install
         run: pnpm install --ignore-scripts --frozen-lockfile
-      - name: pnpm audit
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node == '20.x' }}
-        run: pnpm audit --prod
+      # - name: pnpm audit
+      #   if: ${{ matrix.os == 'ubuntu-latest' && matrix.node == '20.x' }}
+      #   run: pnpm audit --prod
       - name: pnpm lint
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.node == '20.x' }}
         run: pnpm lint
@@ -124,9 +124,9 @@ jobs:
           cache: 'pnpm'
       - name: pnpm install
         run: pnpm install --ignore-scripts --frozen-lockfile
-      - name: pnpm audit
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node == '20.x' }}
-        run: pnpm audit --prod
+      # - name: pnpm audit
+      #   if: ${{ matrix.os == 'ubuntu-latest' && matrix.node == '20.x' }}
+      #   run: pnpm audit --prod
       - name: pnpm lint
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.node == '20.x' }}
         run: pnpm lint

@@ -6,68 +6,68 @@
     <thead id="cs-table__head">
       <tr class="cs-table__row">
         <th
-          scope="col"
           class="cs-table__column"
+          scope="col"
         >
           Name
         </th>
         <th
-          scope="col"
           class="cs-table__column"
+          scope="col"
         >
           Started
         </th>
         <th
-          scope="col"
           class="cs-table__column"
+          scope="col"
         >
           Supervision Url
         </th>
         <th
-          scope="col"
           class="cs-table__column"
+          scope="col"
         >
           WebSocket State
         </th>
         <th
-          scope="col"
           class="cs-table__column"
+          scope="col"
         >
           Registration Status
         </th>
         <th
-          scope="col"
           class="cs-table__column"
+          scope="col"
         >
           Template
         </th>
         <th
-          scope="col"
           class="cs-table__column"
+          scope="col"
         >
           Vendor
         </th>
         <th
-          scope="col"
           class="cs-table__column"
+          scope="col"
         >
           Model
         </th>
         <th
-          scope="col"
           class="cs-table__column"
+          scope="col"
         >
           Firmware
         </th>
         <th
-          scope="col"
           class="cs-table__column"
+          scope="col"
         >
           Actions
         </th>
         <th
-          scope="col"
           class="cs-table__connectors-column"
+          scope="col"
         >
           Connector(s)
         </th>
@@ -85,8 +85,9 @@
 </template>
 
 <script setup lang="ts">
-import CSData from '@/components/charging-stations/CSData.vue'
 import type { ChargingStationData } from '@/types'
+
+import CSData from '@/components/charging-stations/CSData.vue'
 
 defineProps<{
   chargingStations: ChargingStationData[]

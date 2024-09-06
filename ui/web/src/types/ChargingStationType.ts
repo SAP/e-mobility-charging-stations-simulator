@@ -1,22 +1,22 @@
 import type { JsonObject } from './JsonType'
 
 export enum IdTagDistribution {
+  CONNECTOR_AFFINITY = 'connector-affinity',
   RANDOM = 'random',
   ROUND_ROBIN = 'round-robin',
-  CONNECTOR_AFFINITY = 'connector-affinity'
 }
 
 export interface AutomaticTransactionGeneratorConfiguration extends JsonObject {
   enable: boolean
-  minDuration: number
+  idTagDistribution?: IdTagDistribution
+  maxDelayBetweenTwoTransactions: number
   maxDuration: number
   minDelayBetweenTwoTransactions: number
-  maxDelayBetweenTwoTransactions: number
+  minDuration: number
   probabilityOfStart: number
-  stopAfterHours: number
-  stopAbsoluteDuration: boolean
   requireAuthorize?: boolean
-  idTagDistribution?: IdTagDistribution
+  stopAbsoluteDuration: boolean
+  stopAfterHours: number
 }
 
 export interface ChargingStationAutomaticTransactionGeneratorConfiguration extends JsonObject {
@@ -25,19 +25,19 @@ export interface ChargingStationAutomaticTransactionGeneratorConfiguration exten
 }
 
 export interface ChargingStationData extends JsonObject {
-  started: boolean
-  stationInfo: ChargingStationInfo
+  automaticTransactionGenerator?: ChargingStationAutomaticTransactionGeneratorConfiguration
+  bootNotificationResponse?: BootNotificationResponse
   connectors: ConnectorStatus[]
   evses: EvseStatus[]
   ocppConfiguration: ChargingStationOcppConfiguration
+  started: boolean
+  stationInfo: ChargingStationInfo
   supervisionUrl: string
   wsState?:
+    | typeof WebSocket.CLOSED
+    | typeof WebSocket.CLOSING
     | typeof WebSocket.CONNECTING
     | typeof WebSocket.OPEN
-    | typeof WebSocket.CLOSING
-    | typeof WebSocket.CLOSED
-  bootNotificationResponse?: BootNotificationResponse
-  automaticTransactionGenerator?: ChargingStationAutomaticTransactionGeneratorConfiguration
 }
 
 export enum OCPP16FirmwareStatus {
@@ -46,17 +46,17 @@ export enum OCPP16FirmwareStatus {
   Downloading = 'Downloading',
   Idle = 'Idle',
   InstallationFailed = 'InstallationFailed',
+  Installed = 'Installed',
   Installing = 'Installing',
-  Installed = 'Installed'
 }
 
 export interface FirmwareUpgrade extends JsonObject {
+  failureStatus?: FirmwareStatus
+  reset?: boolean
   versionUpgrade?: {
     patternGroup?: number
     step?: number
   }
-  reset?: boolean
-  failureStatus?: FirmwareStatus
 }
 
 export const FirmwareStatus = {
@@ -66,76 +66,76 @@ export const FirmwareStatus = {
 export type FirmwareStatus = OCPP16FirmwareStatus
 
 export interface ChargingStationOptions extends JsonObject {
-  supervisionUrls?: string | string[]
-  persistentConfiguration?: boolean
-  autoStart?: boolean
   autoRegister?: boolean
+  autoStart?: boolean
   enableStatistics?: boolean
   ocppStrictCompliance?: boolean
+  persistentConfiguration?: boolean
   stopTransactionsOnStopped?: boolean
+  supervisionUrls?: string | string[]
 }
 
 export interface ChargingStationInfo extends JsonObject {
-  hashId: string
-  templateIndex: number
-  templateName: string
-  chargingStationId: string
-  chargeBoxSerialNumber?: string
-  chargePointSerialNumber?: string
-  meterSerialNumber?: string
-  maximumPower?: number // Always in Watt
-  maximumAmperage?: number // Always in Ampere
-  firmwareStatus?: FirmwareStatus
-  templateHash?: string
-  supervisionUrls?: string | string[]
-  supervisionUrlOcppConfiguration?: boolean
-  supervisionUrlOcppKey?: string
-  supervisionUser?: string
-  supervisionPassword?: string
-  autoStart?: boolean
-  ocppVersion?: OCPPVersion
-  ocppProtocol?: OCPPProtocol
-  ocppStrictCompliance?: boolean
-  ocppPersistentConfiguration?: boolean
-  stationInfoPersistentConfiguration?: boolean
-  automaticTransactionGeneratorPersistentConfiguration?: boolean
-  idTagsFile?: string
-  baseName: string
-  nameSuffix?: string
-  fixedName?: boolean
-  chargePointModel: string
-  chargePointVendor: string
-  firmwareVersionPattern?: string
-  firmwareVersion?: string
-  firmwareUpgrade?: FirmwareUpgrade
-  iccid?: string
-  imsi?: string
-  meterType?: string
-  powerSharedByConnectors?: boolean
-  currentOutType?: CurrentType
-  voltageOut?: Voltage
-  numberOfPhases?: number
-  useConnectorId0?: boolean
-  randomConnectors?: boolean
-  resetTime?: number
-  autoRegister?: boolean
-  autoReconnectMaxRetries?: number
-  reconnectExponentialDelay?: boolean
-  registrationMaxRetries?: number
-  enableStatistics?: boolean
-  remoteAuthorization?: boolean
   amperageLimitationOcppKey?: string
   amperageLimitationUnit?: AmpereUnits
+  automaticTransactionGeneratorPersistentConfiguration?: boolean
+  autoReconnectMaxRetries?: number
+  autoRegister?: boolean
+  autoStart?: boolean
+  baseName: string
   beginEndMeterValues?: boolean
-  outOfOrderEndMeterValues?: boolean
-  meteringPerTransaction?: boolean
-  transactionDataMeterValues?: boolean
-  stopTransactionsOnStopped?: boolean
-  mainVoltageMeterValues?: boolean
-  phaseLineToLineVoltageMeterValues?: boolean
-  customValueLimitationMeterValues?: boolean
+  chargeBoxSerialNumber?: string
+  chargePointModel: string
+  chargePointSerialNumber?: string
+  chargePointVendor: string
+  chargingStationId: string
   commandsSupport?: CommandsSupport
+  currentOutType?: CurrentType
+  customValueLimitationMeterValues?: boolean
+  enableStatistics?: boolean
+  firmwareStatus?: FirmwareStatus
+  firmwareUpgrade?: FirmwareUpgrade
+  firmwareVersion?: string
+  firmwareVersionPattern?: string
+  fixedName?: boolean
+  hashId: string
+  iccid?: string
+  idTagsFile?: string
+  imsi?: string
+  mainVoltageMeterValues?: boolean
+  maximumAmperage?: number // Always in Ampere
+  maximumPower?: number // Always in Watt
   messageTriggerSupport?: Record<MessageTrigger, boolean>
+  meteringPerTransaction?: boolean
+  meterSerialNumber?: string
+  meterType?: string
+  nameSuffix?: string
+  numberOfPhases?: number
+  ocppPersistentConfiguration?: boolean
+  ocppProtocol?: OCPPProtocol
+  ocppStrictCompliance?: boolean
+  ocppVersion?: OCPPVersion
+  outOfOrderEndMeterValues?: boolean
+  phaseLineToLineVoltageMeterValues?: boolean
+  powerSharedByConnectors?: boolean
+  randomConnectors?: boolean
+  reconnectExponentialDelay?: boolean
+  registrationMaxRetries?: number
+  remoteAuthorization?: boolean
+  resetTime?: number
+  stationInfoPersistentConfiguration?: boolean
+  stopTransactionsOnStopped?: boolean
+  supervisionPassword?: string
+  supervisionUrlOcppConfiguration?: boolean
+  supervisionUrlOcppKey?: string
+  supervisionUrls?: string | string[]
+  supervisionUser?: string
+  templateHash?: string
+  templateIndex: number
+  templateName: string
+  transactionDataMeterValues?: boolean
+  useConnectorId0?: boolean
+  voltageOut?: Voltage
 }
 
 export interface ChargingStationOcppConfiguration extends JsonObject {
@@ -143,8 +143,8 @@ export interface ChargingStationOcppConfiguration extends JsonObject {
 }
 
 export interface ConfigurationKey extends OCPPConfigurationKey {
-  visible?: boolean
   reboot?: boolean
+  visible?: boolean
 }
 
 export interface OCPPConfigurationKey extends JsonObject {
@@ -154,18 +154,18 @@ export interface OCPPConfigurationKey extends JsonObject {
 }
 
 export enum OCPP16IncomingRequestCommand {
-  RESET = 'Reset',
-  CLEAR_CACHE = 'ClearCache',
   CHANGE_AVAILABILITY = 'ChangeAvailability',
-  UNLOCK_CONNECTOR = 'UnlockConnector',
-  GET_CONFIGURATION = 'GetConfiguration',
   CHANGE_CONFIGURATION = 'ChangeConfiguration',
-  SET_CHARGING_PROFILE = 'SetChargingProfile',
+  CLEAR_CACHE = 'ClearCache',
   CLEAR_CHARGING_PROFILE = 'ClearChargingProfile',
+  GET_CONFIGURATION = 'GetConfiguration',
+  GET_DIAGNOSTICS = 'GetDiagnostics',
   REMOTE_START_TRANSACTION = 'RemoteStartTransaction',
   REMOTE_STOP_TRANSACTION = 'RemoteStopTransaction',
-  GET_DIAGNOSTICS = 'GetDiagnostics',
-  TRIGGER_MESSAGE = 'TriggerMessage'
+  RESET = 'Reset',
+  SET_CHARGING_PROFILE = 'SetChargingProfile',
+  TRIGGER_MESSAGE = 'TriggerMessage',
+  UNLOCK_CONNECTOR = 'UnlockConnector',
 }
 
 export const IncomingRequestCommand = {
@@ -175,14 +175,14 @@ export const IncomingRequestCommand = {
 export type IncomingRequestCommand = OCPP16IncomingRequestCommand
 
 export enum OCPP16RequestCommand {
-  BOOT_NOTIFICATION = 'BootNotification',
-  HEARTBEAT = 'Heartbeat',
-  STATUS_NOTIFICATION = 'StatusNotification',
   AUTHORIZE = 'Authorize',
-  START_TRANSACTION = 'StartTransaction',
-  STOP_TRANSACTION = 'StopTransaction',
+  BOOT_NOTIFICATION = 'BootNotification',
+  DIAGNOSTICS_STATUS_NOTIFICATION = 'DiagnosticsStatusNotification',
+  HEARTBEAT = 'Heartbeat',
   METER_VALUES = 'MeterValues',
-  DIAGNOSTICS_STATUS_NOTIFICATION = 'DiagnosticsStatusNotification'
+  START_TRANSACTION = 'StartTransaction',
+  STATUS_NOTIFICATION = 'StatusNotification',
+  STOP_TRANSACTION = 'StopTransaction',
 }
 
 export const RequestCommand = {
@@ -196,13 +196,13 @@ export type BootNotificationResponse = OCPP16BootNotificationResponse
 export enum OCPP16RegistrationStatus {
   ACCEPTED = 'Accepted',
   PENDING = 'Pending',
-  REJECTED = 'Rejected'
+  REJECTED = 'Rejected',
 }
 
 export interface OCPP16BootNotificationResponse extends JsonObject {
-  status: OCPP16RegistrationStatus
   currentTime: Date
   interval: number
+  status: OCPP16RegistrationStatus
 }
 
 export enum OCPP16MessageTrigger {
@@ -211,7 +211,7 @@ export enum OCPP16MessageTrigger {
   FirmwareStatusNotification = 'FirmwareStatusNotification',
   Heartbeat = 'Heartbeat',
   MeterValues = 'MeterValues',
-  StatusNotification = 'StatusNotification'
+  StatusNotification = 'StatusNotification',
 }
 
 export const MessageTrigger = {
@@ -228,46 +228,46 @@ interface CommandsSupport extends JsonObject {
 export enum OCPPVersion {
   VERSION_16 = '1.6',
   VERSION_20 = '2.0',
-  VERSION_201 = '2.0.1'
+  VERSION_201 = '2.0.1',
 }
 
 export enum OCPPProtocol {
-  JSON = 'json'
+  JSON = 'json',
 }
 
 export enum CurrentType {
   AC = 'AC',
-  DC = 'DC'
+  DC = 'DC',
 }
 
 export enum Voltage {
   VOLTAGE_110 = 110,
   VOLTAGE_230 = 230,
   VOLTAGE_400 = 400,
-  VOLTAGE_800 = 800
+  VOLTAGE_800 = 800,
 }
 
 export enum AmpereUnits {
-  MILLI_AMPERE = 'mA',
+  AMPERE = 'A',
   CENTI_AMPERE = 'cA',
   DECI_AMPERE = 'dA',
-  AMPERE = 'A'
+  MILLI_AMPERE = 'mA',
 }
 
 export interface ConnectorStatus extends JsonObject {
+  authorizeIdTag?: string
   availability: AvailabilityType
   bootStatus?: ChargePointStatus
-  status?: ChargePointStatus
-  authorizeIdTag?: string
+  energyActiveImportRegisterValue?: number // In Wh
   idTagAuthorized?: boolean
-  localAuthorizeIdTag?: string
   idTagLocalAuthorized?: boolean
-  transactionRemoteStarted?: boolean
-  transactionStarted?: boolean
+  localAuthorizeIdTag?: string
+  status?: ChargePointStatus
+  transactionEnergyActiveImportRegisterValue?: number // In Wh
   transactionId?: number
   transactionIdTag?: string
-  energyActiveImportRegisterValue?: number // In Wh
-  transactionEnergyActiveImportRegisterValue?: number // In Wh
+  transactionRemoteStarted?: boolean
+  transactionStarted?: boolean
 }
 
 export interface EvseStatus extends JsonObject {
@@ -277,39 +277,39 @@ export interface EvseStatus extends JsonObject {
 
 export enum OCPP16AvailabilityType {
   INOPERATIVE = 'Inoperative',
-  OPERATIVE = 'Operative'
+  OPERATIVE = 'Operative',
 }
 export type AvailabilityType = OCPP16AvailabilityType
 
 export enum OCPP16ChargePointStatus {
   AVAILABLE = 'Available',
-  PREPARING = 'Preparing',
   CHARGING = 'Charging',
-  OCCUPIED = 'Occupied',
-  SUSPENDED_EVSE = 'SuspendedEVSE',
-  SUSPENDED_EV = 'SuspendedEV',
+  FAULTED = 'Faulted',
   FINISHING = 'Finishing',
+  OCCUPIED = 'Occupied',
+  PREPARING = 'Preparing',
   RESERVED = 'Reserved',
+  SUSPENDED_EV = 'SuspendedEV',
+  SUSPENDED_EVSE = 'SuspendedEVSE',
   UNAVAILABLE = 'Unavailable',
-  FAULTED = 'Faulted'
 }
 export type ChargePointStatus = OCPP16ChargePointStatus
 
 export interface Status extends JsonObject {
-  start?: boolean
-  startDate?: Date
-  lastRunDate?: Date
-  stopDate?: Date
-  stoppedDate?: Date
-  authorizeRequests?: number
   acceptedAuthorizeRequests?: number
-  rejectedAuthorizeRequests?: number
-  startTransactionRequests?: number
   acceptedStartTransactionRequests?: number
-  rejectedStartTransactionRequests?: number
-  stopTransactionRequests?: number
   acceptedStopTransactionRequests?: number
+  authorizeRequests?: number
+  lastRunDate?: Date
+  rejectedAuthorizeRequests?: number
+  rejectedStartTransactionRequests?: number
   rejectedStopTransactionRequests?: number
   skippedConsecutiveTransactions?: number
   skippedTransactions?: number
+  start?: boolean
+  startDate?: Date
+  startTransactionRequests?: number
+  stopDate?: Date
+  stoppedDate?: Date
+  stopTransactionRequests?: number
 }

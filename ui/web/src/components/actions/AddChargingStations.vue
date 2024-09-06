@@ -25,10 +25,10 @@
   <input
     id="number-of-stations"
     v-model="state.numberOfStations"
-    type="number"
     min="1"
     name="number-of-stations"
     placeholder="number of stations"
+    type="number"
   >
   <p>Template options overrides:</p>
   <ul id="template-options">
@@ -37,45 +37,45 @@
       <input
         id="supervision-url"
         v-model.trim="state.supervisionUrl"
-        type="url"
         name="supervision-url"
         placeholder="wss://"
+        type="url"
       >
     </li>
     <li>
       Auto start:
       <input
         v-model="state.autoStart"
-        type="checkbox"
-        true-value="true"
         false-value="false"
+        true-value="true"
+        type="checkbox"
       >
     </li>
     <li>
       Persistent configuration:
       <input
         v-model="state.persistentConfiguration"
-        type="checkbox"
-        true-value="true"
         false-value="false"
+        true-value="true"
+        type="checkbox"
       >
     </li>
     <li>
       OCPP strict compliance:
       <input
         v-model="state.ocppStrictCompliance"
-        type="checkbox"
-        true-value="true"
         false-value="false"
+        true-value="true"
+        type="checkbox"
       >
     </li>
     <li>
       Performance statistics:
       <input
         v-model="state.enableStatistics"
-        type="checkbox"
-        true-value="true"
         false-value="false"
+        true-value="true"
+        type="checkbox"
       >
     </li>
   </ul>
@@ -110,29 +110,28 @@
 </template>
 
 <script setup lang="ts">
-import { getCurrentInstance, ref, watch } from 'vue'
-
 import Button from '@/components/buttons/Button.vue'
 import { convertToBoolean, randomUUID } from '@/composables'
+import { getCurrentInstance, ref, watch } from 'vue'
 
 const state = ref<{
-  renderTemplates: `${string}-${string}-${string}-${string}-${string}`
-  template: string
-  numberOfStations: number
-  supervisionUrl: string
   autoStart: boolean
-  persistentConfiguration: boolean
-  ocppStrictCompliance: boolean
   enableStatistics: boolean
+  numberOfStations: number
+  ocppStrictCompliance: boolean
+  persistentConfiguration: boolean
+  renderTemplates: `${string}-${string}-${string}-${string}-${string}`
+  supervisionUrl: string
+  template: string
 }>({
-  renderTemplates: randomUUID(),
-  template: '',
-  numberOfStations: 1,
-  supervisionUrl: '',
   autoStart: false,
-  persistentConfiguration: true,
-  ocppStrictCompliance: true,
   enableStatistics: false,
+  numberOfStations: 1,
+  ocppStrictCompliance: true,
+  persistentConfiguration: true,
+  renderTemplates: randomUUID(),
+  supervisionUrl: '',
+  template: '',
 })
 
 watch(getCurrentInstance()!.appContext.config.globalProperties!.$templates, () => {

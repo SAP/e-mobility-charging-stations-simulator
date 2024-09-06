@@ -1,6 +1,7 @@
 import { CircularBuffer } from 'mnemonist'
 
 import type { ChargingStation } from '../charging-station/index.js'
+
 import {
   type ChargingStationData,
   type ChargingStationWorkerMessage,
@@ -19,8 +20,8 @@ export const buildAddedMessage = (
   chargingStation: ChargingStation
 ): ChargingStationWorkerMessage<ChargingStationData> => {
   return {
-    event: ChargingStationWorkerMessageEvents.added,
     data: buildChargingStationDataPayload(chargingStation),
+    event: ChargingStationWorkerMessageEvents.added,
   }
 }
 
@@ -28,8 +29,8 @@ export const buildDeletedMessage = (
   chargingStation: ChargingStation
 ): ChargingStationWorkerMessage<ChargingStationData> => {
   return {
-    event: ChargingStationWorkerMessageEvents.deleted,
     data: buildChargingStationDataPayload(chargingStation),
+    event: ChargingStationWorkerMessageEvents.deleted,
   }
 }
 
@@ -37,8 +38,8 @@ export const buildStartedMessage = (
   chargingStation: ChargingStation
 ): ChargingStationWorkerMessage<ChargingStationData> => {
   return {
-    event: ChargingStationWorkerMessageEvents.started,
     data: buildChargingStationDataPayload(chargingStation),
+    event: ChargingStationWorkerMessageEvents.started,
   }
 }
 
@@ -46,8 +47,8 @@ export const buildStoppedMessage = (
   chargingStation: ChargingStation
 ): ChargingStationWorkerMessage<ChargingStationData> => {
   return {
-    event: ChargingStationWorkerMessageEvents.stopped,
     data: buildChargingStationDataPayload(chargingStation),
+    event: ChargingStationWorkerMessageEvents.stopped,
   }
 }
 
@@ -55,8 +56,8 @@ export const buildUpdatedMessage = (
   chargingStation: ChargingStation
 ): ChargingStationWorkerMessage<ChargingStationData> => {
   return {
-    event: ChargingStationWorkerMessageEvents.updated,
     data: buildChargingStationDataPayload(chargingStation),
+    event: ChargingStationWorkerMessageEvents.updated,
   }
 }
 
@@ -70,30 +71,30 @@ export const buildPerformanceStatisticsMessage = (
     return [key, value]
   })
   return {
-    event: ChargingStationWorkerMessageEvents.performanceStatistics,
     data: {
+      createdAt: statistics.createdAt,
       id: statistics.id,
       name: statistics.name,
-      uri: statistics.uri,
-      createdAt: statistics.createdAt,
-      updatedAt: statistics.updatedAt,
       statisticsData,
+      updatedAt: statistics.updatedAt,
+      uri: statistics.uri,
     },
+    event: ChargingStationWorkerMessageEvents.performanceStatistics,
   }
 }
 
 const buildChargingStationDataPayload = (chargingStation: ChargingStation): ChargingStationData => {
   return {
-    started: chargingStation.started,
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    stationInfo: chargingStation.stationInfo!,
+    bootNotificationResponse: chargingStation.bootNotificationResponse,
     connectors: buildConnectorsStatus(chargingStation),
     evses: buildEvsesStatus(chargingStation, OutputFormat.worker),
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     ocppConfiguration: chargingStation.ocppConfiguration!,
+    started: chargingStation.started,
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    stationInfo: chargingStation.stationInfo!,
     supervisionUrl: chargingStation.wsConnectionUrl.href,
     wsState: chargingStation.wsConnection?.readyState,
-    bootNotificationResponse: chargingStation.bootNotificationResponse,
     ...(chargingStation.automaticTransactionGenerator != null && {
       automaticTransactionGenerator:
         buildChargingStationAutomaticTransactionGeneratorConfiguration(chargingStation),

@@ -1,14 +1,14 @@
-import { randomInt } from 'node:crypto'
-import { version } from 'node:process'
-import { describe, it } from 'node:test'
-
 import { hoursToMilliseconds, hoursToSeconds } from 'date-fns'
 import { expect } from 'expect'
 import { CircularBuffer } from 'mnemonist'
+import { randomInt } from 'node:crypto'
+import { version } from 'node:process'
+import { describe, it } from 'node:test'
 import { satisfies } from 'semver'
 
-import { runtime, runtimes } from '../../scripts/runtime.js'
 import type { TimestampedData } from '../../src/types/index.js'
+
+import { runtime, runtimes } from '../../scripts/runtime.js'
 import { Constants } from '../../src/utils/Constants.js'
 import {
   clone,
@@ -274,17 +274,17 @@ await describe('Utils test suite', async () => {
     expect(isAsyncFunction(async function named () {})).toBe(true)
     class TestClass {
       // eslint-disable-next-line @typescript-eslint/no-empty-function
-      public testSync (): void {}
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
-      public async testAsync (): Promise<void> {}
+      public testArrowAsync = async (): Promise<void> => {}
       // eslint-disable-next-line @typescript-eslint/no-empty-function
       public testArrowSync = (): void => {}
       // eslint-disable-next-line @typescript-eslint/no-empty-function
-      public testArrowAsync = async (): Promise<void> => {}
+      public static async testStaticAsync (): Promise<void> {}
       // eslint-disable-next-line @typescript-eslint/no-empty-function
       public static testStaticSync (): void {}
       // eslint-disable-next-line @typescript-eslint/no-empty-function
-      public static async testStaticAsync (): Promise<void> {}
+      public async testAsync (): Promise<void> {}
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      public testSync (): void {}
     }
     const testClass = new TestClass()
     // eslint-disable-next-line @typescript-eslint/unbound-method

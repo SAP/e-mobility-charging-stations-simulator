@@ -1,5 +1,7 @@
 import chalk from 'chalk'
 
+import type { AbstractUIServer } from './AbstractUIServer.js'
+
 import { BaseError } from '../../exception/index.js'
 import {
   ApplicationProtocol,
@@ -9,13 +11,21 @@ import {
   type UIServerConfiguration,
 } from '../../types/index.js'
 import { logger, logPrefix } from '../../utils/index.js'
-import type { AbstractUIServer } from './AbstractUIServer.js'
 import { UIHttpServer } from './UIHttpServer.js'
 import { isLoopback } from './UIServerUtils.js'
 import { UIWebSocketServer } from './UIWebSocketServer.js'
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class UIServerFactory {
+  private static readonly logPrefix = (modName?: string, methodName?: string): string => {
+    const logMsgPrefix = 'UI Server'
+    const logMsg =
+      modName != null && methodName != null
+        ? ` ${logMsgPrefix} | ${modName}.${methodName}:`
+        : ` ${logMsgPrefix} |`
+    return logPrefix(logMsg)
+  }
+
   private constructor () {
     // This is intentional
   }
@@ -80,14 +90,5 @@ export class UIServerFactory {
         }
         return new UIWebSocketServer(uiServerConfiguration)
     }
-  }
-
-  private static readonly logPrefix = (modName?: string, methodName?: string): string => {
-    const logMsgPrefix = 'UI Server'
-    const logMsg =
-      modName != null && methodName != null
-        ? ` ${logMsgPrefix} | ${modName}.${methodName}:`
-        : ` ${logMsgPrefix} |`
-    return logPrefix(logMsg)
   }
 }

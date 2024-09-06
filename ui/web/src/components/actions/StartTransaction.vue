@@ -8,9 +8,9 @@
   <input
     id="idtag"
     v-model.trim="state.idTag"
-    type="text"
     name="idtag"
     placeholder="RFID tag"
+    type="text"
   >
   <br>
   <Button
@@ -37,15 +37,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-
 import Button from '@/components/buttons/Button.vue'
 import { convertToInt } from '@/composables'
+import { ref } from 'vue'
 
 defineProps<{
-  hashId: string
   chargingStationId: string
   connectorId: string
+  hashId: string
 }>()
 
 const state = ref<{ idTag: string }>({

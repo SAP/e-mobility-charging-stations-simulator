@@ -6,9 +6,9 @@ declare module 'vue' {
     RouterView: (typeof import('vue-router'))['RouterView']
   }
   interface ComponentCustomProperties {
+    $chargingStations: import('vue').Ref<import('@/types').ChargingStationData[]> | undefined
     $configuration: import('vue').Ref<import('@/types').ConfigurationData> | undefined
     $templates: import('vue').Ref<string[]> | undefined
-    $chargingStations: import('vue').Ref<import('@/types').ChargingStationData[]> | undefined
     $uiClient: import('@/composables').UIClient | undefined
   }
 }

@@ -1,6 +1,10 @@
 import type { ChargingStation } from '../../charging-station/index.js'
 import type { JsonType } from '../JsonType.js'
 import type { OCPP16MeterValuesResponse } from './1.6/MeterValues.js'
+import type { OCPP20BootNotificationResponse, OCPP20ClearCacheResponse } from './2.0/Responses.js'
+import type { ErrorType } from './ErrorType.js'
+import type { MessageType } from './MessageType.js'
+
 import {
   OCPP16AvailabilityStatus,
   type OCPP16BootNotificationResponse,
@@ -17,10 +21,7 @@ import {
   OCPP16TriggerMessageStatus,
   OCPP16UnlockStatus,
 } from './1.6/Responses.js'
-import type { OCPP20BootNotificationResponse, OCPP20ClearCacheResponse } from './2.0/Responses.js'
 import { type GenericResponse, GenericStatus } from './Common.js'
-import type { ErrorType } from './ErrorType.js'
-import type { MessageType } from './MessageType.js'
 
 export type Response = [MessageType.CALL_RESULT_MESSAGE, string, JsonType]
 
@@ -30,7 +31,7 @@ export type ResponseHandler = (
   chargingStation: ChargingStation,
   payload: JsonType,
   requestPayload?: JsonType
-) => void | Promise<void>
+) => Promise<void> | void
 
 export type BootNotificationResponse =
   | OCPP16BootNotificationResponse

@@ -1,6 +1,5 @@
-import { describe, it } from 'node:test'
-
 import { expect } from 'expect'
+import { describe, it } from 'node:test'
 
 import { OCPPError } from '../../src/exception/OCPPError.js'
 import { ErrorType } from '../../src/types/index.js'

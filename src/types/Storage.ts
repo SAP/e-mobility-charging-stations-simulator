@@ -1,15 +1,15 @@
 export enum StorageType {
-  NONE = 'none',
   JSON_FILE = 'jsonfile',
+  MARIA_DB = 'mariadb',
   MONGO_DB = 'mongodb',
   MYSQL = 'mysql',
-  MARIA_DB = 'mariadb',
-  SQLITE = 'sqlite'
+  NONE = 'none',
+  SQLITE = 'sqlite',
 }
 
 export enum DBName {
+  MARIA_DB = 'MariaDB',
   MONGO_DB = 'MongoDB',
   MYSQL = 'MySQL',
-  MARIA_DB = 'MariaDB',
-  SQLITE = 'SQLite'
+  SQLITE = 'SQLite',
 }

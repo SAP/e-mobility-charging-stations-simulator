@@ -2,7 +2,6 @@ import type { WebSocket } from 'ws'
 
 import type { WorkerData } from '../worker/index.js'
 import type { ChargingStationAutomaticTransactionGeneratorConfiguration } from './AutomaticTransactionGenerator.js'
-import { ChargingStationEvents } from './ChargingStationEvents.js'
 import type { ChargingStationInfo } from './ChargingStationInfo.js'
 import type { ChargingStationOcppConfiguration } from './ChargingStationOcppConfiguration.js'
 import type { ConnectorStatus } from './ConnectorStatus.js'
@@ -11,44 +10,46 @@ import type { JsonObject } from './JsonType.js'
 import type { BootNotificationResponse } from './ocpp/Responses.js'
 import type { Statistics } from './Statistics.js'
 
+import { ChargingStationEvents } from './ChargingStationEvents.js'
+
 export interface ChargingStationOptions extends JsonObject {
-  supervisionUrls?: string | string[]
-  persistentConfiguration?: boolean
-  autoStart?: boolean
   autoRegister?: boolean
+  autoStart?: boolean
   enableStatistics?: boolean
   ocppStrictCompliance?: boolean
+  persistentConfiguration?: boolean
   stopTransactionsOnStopped?: boolean
+  supervisionUrls?: string | string[]
 }
 
 export interface ChargingStationWorkerData extends WorkerData {
   index: number
-  templateFile: string
   options?: ChargingStationOptions
+  templateFile: string
 }
 
-export type EvseStatusWorkerType = Omit<EvseStatus, 'connectors'> & {
+export type EvseStatusWorkerType = {
   connectors?: ConnectorStatus[]
-}
+} & Omit<EvseStatus, 'connectors'>
 
 export interface ChargingStationData extends WorkerData {
-  started: boolean
-  stationInfo: ChargingStationInfo
+  automaticTransactionGenerator?: ChargingStationAutomaticTransactionGeneratorConfiguration
+  bootNotificationResponse?: BootNotificationResponse
   connectors: ConnectorStatus[]
   evses: EvseStatusWorkerType[]
   ocppConfiguration: ChargingStationOcppConfiguration
+  started: boolean
+  stationInfo: ChargingStationInfo
   supervisionUrl: string
   wsState?:
+    | typeof WebSocket.CLOSED
+    | typeof WebSocket.CLOSING
     | typeof WebSocket.CONNECTING
     | typeof WebSocket.OPEN
-    | typeof WebSocket.CLOSING
-    | typeof WebSocket.CLOSED
-  bootNotificationResponse?: BootNotificationResponse
-  automaticTransactionGenerator?: ChargingStationAutomaticTransactionGeneratorConfiguration
 }
 
 enum ChargingStationMessageEvents {
-  performanceStatistics = 'performanceStatistics'
+  performanceStatistics = 'performanceStatistics',
 }
 
 export const ChargingStationWorkerMessageEvents = {
@@ -63,6 +64,6 @@ export type ChargingStationWorkerMessageEvents =
 export type ChargingStationWorkerMessageData = ChargingStationData | Statistics
 
 export interface ChargingStationWorkerMessage<T extends ChargingStationWorkerMessageData> {
-  event: ChargingStationWorkerMessageEvents
   data: T
+  event: ChargingStationWorkerMessageEvents
 }

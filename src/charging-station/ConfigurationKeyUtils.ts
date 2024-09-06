@@ -1,15 +1,16 @@
 import type { ConfigurationKey, ConfigurationKeyType } from '../types/index.js'
-import { logger } from '../utils/index.js'
 import type { ChargingStation } from './ChargingStation.js'
+
+import { logger } from '../utils/index.js'
 
 interface ConfigurationKeyOptions {
   readonly?: boolean
-  visible?: boolean
   reboot?: boolean
+  visible?: boolean
 }
 interface DeleteConfigurationKeyParams {
-  save?: boolean
   caseInsensitive?: boolean
+  save?: boolean
 }
 interface AddConfigurationKeyParams {
   overwrite?: boolean
@@ -39,8 +40,8 @@ export const addConfigurationKey = (
   options = {
     ...{
       readonly: false,
-      visible: true,
       reboot: false,
+      visible: true,
     },
     ...options,
   }
@@ -57,9 +58,9 @@ export const addConfigurationKey = (
       key,
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       readonly: options.readonly!,
+      reboot: options.reboot,
       value,
       visible: options.visible,
-      reboot: options.reboot,
     })
     params.save && chargingStation.saveOcppConfiguration()
   } else {
@@ -98,7 +99,7 @@ export const deleteConfigurationKey = (
   key: ConfigurationKeyType,
   params?: DeleteConfigurationKeyParams
 ): ConfigurationKey[] | undefined => {
-  params = { ...{ save: true, caseInsensitive: false }, ...params }
+  params = { ...{ caseInsensitive: false, save: true }, ...params }
   const keyFound = getConfigurationKey(chargingStation, key, params.caseInsensitive)
   if (keyFound != null) {
     const deletedConfigurationKey = chargingStation.ocppConfiguration?.configurationKey?.splice(

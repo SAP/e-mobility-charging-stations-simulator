@@ -6,21 +6,18 @@ import type {
   JsonType,
   MessageEvent,
 } from '../../types/index.js'
+
 import { logger, logPrefix, validateUUID } from '../../utils/index.js'
 
 const moduleName = 'WorkerBroadcastChannel'
 
 export abstract class WorkerBroadcastChannel extends BroadcastChannel {
+  private readonly logPrefix = (modName: string, methodName: string): string => {
+    return logPrefix(` Worker Broadcast Channel | ${modName}.${methodName}:`)
+  }
+
   protected constructor () {
     super('worker')
-  }
-
-  public sendRequest (request: BroadcastChannelRequest): void {
-    this.postMessage(request)
-  }
-
-  protected sendResponse (response: BroadcastChannelResponse): void {
-    this.postMessage(response)
   }
 
   protected isRequest (message: JsonType[]): boolean {
@@ -31,7 +28,11 @@ export abstract class WorkerBroadcastChannel extends BroadcastChannel {
     return Array.isArray(message) && message.length === 2
   }
 
-  protected validateMessageEvent (messageEvent: MessageEvent): MessageEvent | false {
+  protected sendResponse (response: BroadcastChannelResponse): void {
+    this.postMessage(response)
+  }
+
+  protected validateMessageEvent (messageEvent: MessageEvent): false | MessageEvent {
     if (!Array.isArray(messageEvent.data)) {
       logger.error(
         `${this.logPrefix(
@@ -53,7 +54,7 @@ export abstract class WorkerBroadcastChannel extends BroadcastChannel {
     return messageEvent
   }
 
-  private readonly logPrefix = (modName: string, methodName: string): string => {
-    return logPrefix(` Worker Broadcast Channel | ${modName}.${methodName}:`)
+  public sendRequest (request: BroadcastChannelRequest): void {
+    this.postMessage(request)
   }
 }

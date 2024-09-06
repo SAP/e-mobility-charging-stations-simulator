@@ -1,7 +1,7 @@
-type JsonPrimitive = string | number | boolean | Date | null
+type JsonPrimitive = boolean | Date | null | number | string
 
 export type JsonObject = {
   [key in string]?: JsonType
 }
 
-export type JsonType = JsonPrimitive | JsonType[] | JsonObject
+export type JsonType = JsonObject | JsonPrimitive | JsonType[]

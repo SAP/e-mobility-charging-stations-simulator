@@ -8,17 +8,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-
 import Button from '@/components/buttons/Button.vue'
 import { getFromLocalStorage, setToLocalStorage } from '@/composables'
+import { ref } from 'vue'
 
 const props = defineProps<{
   id: string
-  status?: boolean
-  shared?: boolean
-  on?: () => void
   off?: () => void
+  on?: () => void
+  shared?: boolean
+  status?: boolean
 }>()
 
 const $emit = defineEmits(['clicked'])

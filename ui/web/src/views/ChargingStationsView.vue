@@ -63,27 +63,27 @@
       <ToggleButton
         :id="'simulator'"
         :key="state.renderSimulator"
-        :status="simulatorState?.started"
-        :on="() => startSimulator()"
-        :off="() => stopSimulator()"
         :class="simulatorButtonClass"
+        :off="() => stopSimulator()"
+        :on="() => startSimulator()"
+        :status="simulatorState?.started"
       >
         {{ simulatorButtonMessage }}
       </ToggleButton>
       <ToggleButton
         :id="'add-charging-stations'"
         :key="state.renderAddChargingStations"
-        :shared="true"
-        :on="
-          () => {
-            $router.push({ name: 'add-charging-stations' })
-          }
-        "
         :off="
           () => {
             $router.push({ name: 'charging-stations' })
           }
         "
+        :on="
+          () => {
+            $router.push({ name: 'add-charging-stations' })
+          }
+        "
+        :shared="true"
         @clicked="
           () => {
             state.renderChargingStations = randomUUID()
@@ -113,8 +113,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, getCurrentInstance, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useToast } from 'vue-toast-notification'
+import type {
+  ChargingStationData,
+  ResponsePayload,
+  SimulatorState,
+  UIServerConfigurationSection,
+} from '@/types'
 
 import ReloadButton from '@/components/buttons/ReloadButton.vue'
 import ToggleButton from '@/components/buttons/ToggleButton.vue'
@@ -128,12 +132,8 @@ import {
   setToLocalStorage,
   useUIClient,
 } from '@/composables'
-import type {
-  ChargingStationData,
-  ResponsePayload,
-  SimulatorState,
-  UIServerConfigurationSection,
-} from '@/types'
+import { computed, getCurrentInstance, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useToast } from 'vue-toast-notification'
 
 const simulatorState = ref<SimulatorState | undefined>(undefined)
 
@@ -148,20 +148,20 @@ const simulatorButtonMessage = computed<string>(
 )
 
 const state = ref<{
-  renderSimulator: `${string}-${string}-${string}-${string}-${string}`
-  renderAddChargingStations: `${string}-${string}-${string}-${string}-${string}`
-  renderChargingStations: `${string}-${string}-${string}-${string}-${string}`
+  gettingChargingStations: boolean
   gettingSimulatorState: boolean
   gettingTemplates: boolean
-  gettingChargingStations: boolean
+  renderAddChargingStations: `${string}-${string}-${string}-${string}-${string}`
+  renderChargingStations: `${string}-${string}-${string}-${string}-${string}`
+  renderSimulator: `${string}-${string}-${string}-${string}-${string}`
   uiServerIndex: number
 }>({
-  renderSimulator: randomUUID(),
-  renderAddChargingStations: randomUUID(),
-  renderChargingStations: randomUUID(),
+  gettingChargingStations: false,
   gettingSimulatorState: false,
   gettingTemplates: false,
-  gettingChargingStations: false,
+  renderAddChargingStations: randomUUID(),
+  renderChargingStations: randomUUID(),
+  renderSimulator: randomUUID(),
   uiServerIndex: getFromLocalStorage<number>('uiServerConfigurationIndex', 0),
 })
 
@@ -292,14 +292,14 @@ onUnmounted(() => {
 })
 
 const uiServerConfigurations: {
-  index: number
   configuration: UIServerConfigurationSection
+  index: number
 }[] = (
   app!.appContext.config.globalProperties.$configuration!.value
     .uiServer as UIServerConfigurationSection[]
 ).map((configuration: UIServerConfigurationSection, index: number) => ({
-  index,
   configuration,
+  index,
 }))
 
 const startSimulator = (): void => {

@@ -13,16 +13,13 @@ export class ACElectricUtils {
     // This is intentional
   }
 
-  static powerTotal (nbOfPhases: number, V: number, Iph: number, cosPhi = 1): number {
-    return nbOfPhases * ACElectricUtils.powerPerPhase(V, Iph, cosPhi)
-  }
-
-  static powerPerPhase (V: number, Iph: number, cosPhi = 1): number {
-    const powerPerPhase = V * Iph * cosPhi
-    if (cosPhi === 1) {
-      return powerPerPhase
+  static amperagePerPhaseFromPower (nbOfPhases: number, P: number, V: number, cosPhi = 1): number {
+    const amperage = ACElectricUtils.amperageTotalFromPower(P, V, cosPhi)
+    const amperagePerPhase = amperage / nbOfPhases
+    if (amperage % nbOfPhases === 0) {
+      return amperagePerPhase
     }
-    return Math.round(powerPerPhase)
+    return Math.round(amperagePerPhase)
   }
 
   static amperageTotal (nbOfPhases: number, Iph: number): number {
@@ -37,13 +34,16 @@ export class ACElectricUtils {
     return Math.round(amperage)
   }
 
-  static amperagePerPhaseFromPower (nbOfPhases: number, P: number, V: number, cosPhi = 1): number {
-    const amperage = ACElectricUtils.amperageTotalFromPower(P, V, cosPhi)
-    const amperagePerPhase = amperage / nbOfPhases
-    if (amperage % nbOfPhases === 0) {
-      return amperagePerPhase
+  static powerPerPhase (V: number, Iph: number, cosPhi = 1): number {
+    const powerPerPhase = V * Iph * cosPhi
+    if (cosPhi === 1) {
+      return powerPerPhase
     }
-    return Math.round(amperagePerPhase)
+    return Math.round(powerPerPhase)
+  }
+
+  static powerTotal (nbOfPhases: number, V: number, Iph: number, cosPhi = 1): number {
+    return nbOfPhases * ACElectricUtils.powerPerPhase(V, Iph, cosPhi)
   }
 }
 
@@ -56,15 +56,15 @@ export class DCElectricUtils {
     // This is intentional
   }
 
-  static power (V: number, I: number): number {
-    return V * I
-  }
-
   static amperage (P: number, V: number): number {
     const amperage = P / V
     if (P % V === 0) {
       return amperage
     }
     return Math.round(amperage)
+  }
+
+  static power (V: number, I: number): number {
+    return V * I
   }
 }

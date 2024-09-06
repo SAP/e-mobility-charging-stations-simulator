@@ -32,12 +32,128 @@ const moduleName = 'UIWebSocketServer'
 export class UIWebSocketServer extends AbstractUIServer {
   private readonly webSocketServer: WebSocketServer
 
+  public logPrefix = (modName?: string, methodName?: string, prefixSuffix?: string): string => {
+    const logMsgPrefix =
+      prefixSuffix != null ? `UI WebSocket Server ${prefixSuffix}` : 'UI WebSocket Server'
+    const logMsg =
+      isNotEmptyString(modName) && isNotEmptyString(methodName)
+        ? ` ${logMsgPrefix} | ${modName}.${methodName}:`
+        : ` ${logMsgPrefix} |`
+    return logPrefix(logMsg)
+  }
+
   public constructor (protected readonly uiServerConfiguration: UIServerConfiguration) {
     super(uiServerConfiguration)
     this.webSocketServer = new WebSocketServer({
       handleProtocols,
       noServer: true,
     })
+  }
+
+  private broadcastToClients (message: string): void {
+    for (const client of this.webSocketServer.clients) {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(message)
+      }
+    }
+  }
+
+  private validateRawDataRequest (rawData: RawData): false | ProtocolRequest {
+    // logger.debug(
+    //   `${this.logPrefix(
+    //     moduleName,
+    //     'validateRawDataRequest'
+    //     // eslint-disable-next-line @typescript-eslint/no-base-to-string
+    //   )} Raw data received in string format: ${rawData.toString()}`
+    // )
+
+    let request: ProtocolRequest
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-base-to-string
+      request = JSON.parse(rawData.toString()) as ProtocolRequest
+    } catch (error) {
+      logger.error(
+        `${this.logPrefix(
+          moduleName,
+          'validateRawDataRequest'
+          // eslint-disable-next-line @typescript-eslint/no-base-to-string
+        )} UI protocol request is not valid JSON: ${rawData.toString()}`
+      )
+      return false
+    }
+
+    if (!Array.isArray(request)) {
+      logger.error(
+        `${this.logPrefix(
+          moduleName,
+          'validateRawDataRequest'
+        )} UI protocol request is not an array:`,
+        request
+      )
+      return false
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (request.length !== 3) {
+      logger.error(
+        `${this.logPrefix(moduleName, 'validateRawDataRequest')} UI protocol request is malformed:`,
+        request
+      )
+      return false
+    }
+
+    if (!validateUUID(request[0])) {
+      logger.error(
+        `${this.logPrefix(
+          moduleName,
+          'validateRawDataRequest'
+        )} UI protocol request UUID field is invalid:`,
+        request
+      )
+      return false
+    }
+
+    return request
+  }
+
+  public sendRequest (request: ProtocolRequest): void {
+    this.broadcastToClients(JSON.stringify(request))
+  }
+
+  public sendResponse (response: ProtocolResponse): void {
+    const responseId = response[0]
+    try {
+      if (this.hasResponseHandler(responseId)) {
+        const ws = this.responseHandlers.get(responseId) as WebSocket
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSONStringify(response, undefined, MapStringifyFormat.object))
+        } else {
+          logger.error(
+            `${this.logPrefix(
+              moduleName,
+              'sendResponse'
+            )} Error at sending response id '${responseId}', WebSocket is not open: ${ws.readyState.toString()}`
+          )
+        }
+      } else {
+        logger.error(
+          `${this.logPrefix(
+            moduleName,
+            'sendResponse'
+          )} Response for unknown request id: ${responseId}`
+        )
+      }
+    } catch (error) {
+      logger.error(
+        `${this.logPrefix(
+          moduleName,
+          'sendResponse'
+        )} Error at sending response id '${responseId}':`,
+        error
+      )
+    } finally {
+      this.responseHandlers.delete(responseId)
+    }
   }
 
   public start (): void {
@@ -126,121 +242,5 @@ export class UIWebSocketServer extends AbstractUIServer {
       socket.removeListener('error', onSocketError)
     })
     this.startHttpServer()
-  }
-
-  public sendRequest (request: ProtocolRequest): void {
-    this.broadcastToClients(JSON.stringify(request))
-  }
-
-  public sendResponse (response: ProtocolResponse): void {
-    const responseId = response[0]
-    try {
-      if (this.hasResponseHandler(responseId)) {
-        const ws = this.responseHandlers.get(responseId) as WebSocket
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSONStringify(response, undefined, MapStringifyFormat.object))
-        } else {
-          logger.error(
-            `${this.logPrefix(
-              moduleName,
-              'sendResponse'
-            )} Error at sending response id '${responseId}', WebSocket is not open: ${ws.readyState.toString()}`
-          )
-        }
-      } else {
-        logger.error(
-          `${this.logPrefix(
-            moduleName,
-            'sendResponse'
-          )} Response for unknown request id: ${responseId}`
-        )
-      }
-    } catch (error) {
-      logger.error(
-        `${this.logPrefix(
-          moduleName,
-          'sendResponse'
-        )} Error at sending response id '${responseId}':`,
-        error
-      )
-    } finally {
-      this.responseHandlers.delete(responseId)
-    }
-  }
-
-  public logPrefix = (modName?: string, methodName?: string, prefixSuffix?: string): string => {
-    const logMsgPrefix =
-      prefixSuffix != null ? `UI WebSocket Server ${prefixSuffix}` : 'UI WebSocket Server'
-    const logMsg =
-      isNotEmptyString(modName) && isNotEmptyString(methodName)
-        ? ` ${logMsgPrefix} | ${modName}.${methodName}:`
-        : ` ${logMsgPrefix} |`
-    return logPrefix(logMsg)
-  }
-
-  private broadcastToClients (message: string): void {
-    for (const client of this.webSocketServer.clients) {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(message)
-      }
-    }
-  }
-
-  private validateRawDataRequest (rawData: RawData): ProtocolRequest | false {
-    // logger.debug(
-    //   `${this.logPrefix(
-    //     moduleName,
-    //     'validateRawDataRequest'
-    //     // eslint-disable-next-line @typescript-eslint/no-base-to-string
-    //   )} Raw data received in string format: ${rawData.toString()}`
-    // )
-
-    let request: ProtocolRequest
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-base-to-string
-      request = JSON.parse(rawData.toString()) as ProtocolRequest
-    } catch (error) {
-      logger.error(
-        `${this.logPrefix(
-          moduleName,
-          'validateRawDataRequest'
-          // eslint-disable-next-line @typescript-eslint/no-base-to-string
-        )} UI protocol request is not valid JSON: ${rawData.toString()}`
-      )
-      return false
-    }
-
-    if (!Array.isArray(request)) {
-      logger.error(
-        `${this.logPrefix(
-          moduleName,
-          'validateRawDataRequest'
-        )} UI protocol request is not an array:`,
-        request
-      )
-      return false
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (request.length !== 3) {
-      logger.error(
-        `${this.logPrefix(moduleName, 'validateRawDataRequest')} UI protocol request is malformed:`,
-        request
-      )
-      return false
-    }
-
-    if (!validateUUID(request[0])) {
-      logger.error(
-        `${this.logPrefix(
-          moduleName,
-          'validateRawDataRequest'
-        )} UI protocol request UUID field is invalid:`,
-        request
-      )
-      return false
-    }
-
-    return request
   }
 }

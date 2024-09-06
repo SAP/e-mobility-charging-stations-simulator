@@ -11,24 +11,24 @@ export type BroadcastChannelResponse = [
 ]
 
 export enum BroadcastChannelProcedureName {
-  START_CHARGING_STATION = 'startChargingStation',
-  STOP_CHARGING_STATION = 'stopChargingStation',
-  DELETE_CHARGING_STATIONS = 'deleteChargingStations',
-  OPEN_CONNECTION = 'openConnection',
-  CLOSE_CONNECTION = 'closeConnection',
-  START_AUTOMATIC_TRANSACTION_GENERATOR = 'startAutomaticTransactionGenerator',
-  STOP_AUTOMATIC_TRANSACTION_GENERATOR = 'stopAutomaticTransactionGenerator',
-  SET_SUPERVISION_URL = 'setSupervisionUrl',
-  START_TRANSACTION = 'startTransaction',
-  STOP_TRANSACTION = 'stopTransaction',
   AUTHORIZE = 'authorize',
   BOOT_NOTIFICATION = 'bootNotification',
-  STATUS_NOTIFICATION = 'statusNotification',
+  CLOSE_CONNECTION = 'closeConnection',
+  DATA_TRANSFER = 'dataTransfer',
+  DELETE_CHARGING_STATIONS = 'deleteChargingStations',
+  DIAGNOSTICS_STATUS_NOTIFICATION = 'diagnosticsStatusNotification',
+  FIRMWARE_STATUS_NOTIFICATION = 'firmwareStatusNotification',
   HEARTBEAT = 'heartbeat',
   METER_VALUES = 'meterValues',
-  DATA_TRANSFER = 'dataTransfer',
-  DIAGNOSTICS_STATUS_NOTIFICATION = 'diagnosticsStatusNotification',
-  FIRMWARE_STATUS_NOTIFICATION = 'firmwareStatusNotification'
+  OPEN_CONNECTION = 'openConnection',
+  SET_SUPERVISION_URL = 'setSupervisionUrl',
+  START_AUTOMATIC_TRANSACTION_GENERATOR = 'startAutomaticTransactionGenerator',
+  START_CHARGING_STATION = 'startChargingStation',
+  START_TRANSACTION = 'startTransaction',
+  STATUS_NOTIFICATION = 'statusNotification',
+  STOP_AUTOMATIC_TRANSACTION_GENERATOR = 'stopAutomaticTransactionGenerator',
+  STOP_CHARGING_STATION = 'stopChargingStation',
+  STOP_TRANSACTION = 'stopTransaction',
 }
 
 export interface BroadcastChannelRequestPayload extends RequestPayload {
@@ -37,7 +37,7 @@ export interface BroadcastChannelRequestPayload extends RequestPayload {
 }
 
 export interface BroadcastChannelResponsePayload
-  extends Omit<ResponsePayload, 'hashIdsSucceeded' | 'hashIdsFailed' | 'responsesFailed'> {
+  extends Omit<ResponsePayload, 'hashIdsFailed' | 'hashIdsSucceeded' | 'responsesFailed'> {
   hashId: string | undefined
 }
 

@@ -1,11 +1,11 @@
 // Partial Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
 import { parentPort } from 'node:worker_threads'
-
 import { ThreadWorker } from 'poolifier'
 
-import { BaseError } from '../exception/index.js'
 import type { ChargingStationInfo, ChargingStationWorkerData } from '../types/index.js'
+
+import { BaseError } from '../exception/index.js'
 import { Configuration } from '../utils/index.js'
 import { type WorkerDataError, type WorkerMessage, WorkerMessageEvents } from '../worker/index.js'
 import { ChargingStation } from './ChargingStation.js'
@@ -17,7 +17,7 @@ if (Configuration.workerPoolInUse()) {
     ChargingStationInfo | undefined
   >((data?: ChargingStationWorkerData): ChargingStationInfo | undefined => {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const { index, templateFile, options } = data!
+    const { index, options, templateFile } = data!
     return new ChargingStation(index, templateFile, options).stationInfo
   })
 } else {
@@ -25,7 +25,7 @@ if (Configuration.workerPoolInUse()) {
   class ChargingStationWorker<Data extends ChargingStationWorkerData> {
     constructor () {
       parentPort?.on('message', (message: WorkerMessage<Data>) => {
-        const { uuid, event, data } = message
+        const { data, event, uuid } = message
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (uuid != null) {
           switch (event) {
@@ -37,21 +37,21 @@ if (Configuration.workerPoolInUse()) {
                   data.options
                 )
                 parentPort?.postMessage({
-                  uuid,
-                  event: WorkerMessageEvents.addedWorkerElement,
                   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   data: chargingStation.stationInfo!,
+                  event: WorkerMessageEvents.addedWorkerElement,
+                  uuid,
                 } satisfies WorkerMessage<ChargingStationInfo>)
               } catch (error) {
                 parentPort?.postMessage({
-                  uuid,
-                  event: WorkerMessageEvents.workerElementError,
                   data: {
                     event,
-                    name: (error as Error).name,
                     message: (error as Error).message,
+                    name: (error as Error).name,
                     stack: (error as Error).stack,
                   },
+                  event: WorkerMessageEvents.workerElementError,
+                  uuid,
                 } satisfies WorkerMessage<WorkerDataError>)
               }
               break

@@ -1,8 +1,8 @@
 import { isMainThread } from 'node:worker_threads'
-
 import { mergeDeepRight } from 'rambda'
 
 import type { WorkerAbstract } from './WorkerAbstract.js'
+
 import { DEFAULT_WORKER_OPTIONS } from './WorkerConstants.js'
 import { WorkerDynamicPool } from './WorkerDynamicPool.js'
 import { WorkerFixedPool } from './WorkerFixedPool.js'
@@ -25,12 +25,12 @@ export class WorkerFactory {
     }
     workerOptions = mergeDeepRight<WorkerOptions>(DEFAULT_WORKER_OPTIONS, workerOptions ?? {})
     switch (workerProcessType) {
-      case WorkerProcessType.workerSet:
-        return new WorkerSet<D, R>(workerScript, workerOptions)
-      case WorkerProcessType.fixedPool:
-        return new WorkerFixedPool<D, R>(workerScript, workerOptions)
       case WorkerProcessType.dynamicPool:
         return new WorkerDynamicPool<D, R>(workerScript, workerOptions)
+      case WorkerProcessType.fixedPool:
+        return new WorkerFixedPool<D, R>(workerScript, workerOptions)
+      case WorkerProcessType.workerSet:
+        return new WorkerSet<D, R>(workerScript, workerOptions)
       default:
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         throw new Error(`Worker implementation type '${workerProcessType}' not found`)

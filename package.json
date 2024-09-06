@@ -7,10 +7,10 @@
     "pnpm": ">=9.0.0"
   },
   "volta": {
-    "node": "22.6.0",
-    "pnpm": "9.7.1"
+    "node": "22.8.0",
+    "pnpm": "9.9.0"
   },
-  "packageManager": "pnpm@9.7.1",
+  "packageManager": "pnpm@9.9.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/sap/e-mobility-charging-stations-simulator.git"
@@ -72,7 +72,7 @@
     "coverage": "c8 report --reporter=lcov",
     "coverage:html": "c8 report --reporter=html",
     "clinic:clean": "clinic clean",
-    "sea": "pnpm exec rimraf ./dist/evse-simulator ./dist/evse-simulator.blob && node --experimental-sea-config sea-config.json && cp $(volta which node || n which lts || nvm which node || command -v node) ./dist/evse-simulator && pnpm dlx postject ./dist/evse-simulator NODE_SEA_BLOB ./dist/evse-simulator.blob --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2"
+    "sea": "pnpm exec rimraf ./dist/evse-simulator ./dist/evse-simulator.blob && node --experimental-sea-config sea-config.json && pnpm dlx ncp $(volta which node || n which lts || nvm which node || command -v node) ./dist/evse-simulator && pnpm dlx postject ./dist/evse-simulator NODE_SEA_BLOB ./dist/evse-simulator.blob --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2"
   },
   "pnpm": {
     "overrides": {
@@ -86,10 +86,10 @@
     }
   },
   "dependencies": {
-    "@mikro-orm/core": "^6.3.6",
-    "@mikro-orm/mariadb": "^6.3.6",
-    "@mikro-orm/reflection": "^6.3.6",
-    "@mikro-orm/sqlite": "^6.3.6",
+    "@mikro-orm/core": "^6.3.8",
+    "@mikro-orm/mariadb": "^6.3.8",
+    "@mikro-orm/reflection": "^6.3.8",
+    "@mikro-orm/sqlite": "^6.3.8",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "basic-ftp": "^5.0.5",
@@ -99,8 +99,8 @@
     "logform": "^2.6.1",
     "mnemonist": "0.40.0-rc1",
     "mongodb": "^6.8.0",
-    "poolifier": "^4.2.3",
-    "rambda": "^9.2.1",
+    "poolifier": "^4.2.9",
+    "rambda": "^9.3.0",
     "tar": "^7.4.3",
     "winston": "^3.14.2",
     "winston-daily-rotate-file": "^5.0.0",
@@ -111,11 +111,11 @@
     "utf-8-validate": "^6.0.4"
   },
   "devDependencies": {
-    "@commitlint/cli": "^19.4.0",
-    "@commitlint/config-conventional": "^19.2.2",
-    "@eslint/js": "^9.9.0",
-    "@mikro-orm/cli": "^6.3.6",
-    "@types/node": "^22.4.1",
+    "@commitlint/cli": "^19.4.1",
+    "@commitlint/config-conventional": "^19.4.1",
+    "@eslint/js": "^9.9.1",
+    "@mikro-orm/cli": "^6.3.8",
+    "@types/node": "^22.5.4",
     "@types/semver": "^7.5.8",
     "@types/ws": "^8.5.12",
     "c8": "^10.1.2",
@@ -124,21 +124,21 @@
     "esbuild": "^0.23.1",
     "esbuild-plugin-clean": "^1.0.1",
     "esbuild-plugin-copy": "^2.1.1",
-    "eslint": "^9.9.0",
+    "eslint": "^9.9.1",
     "eslint-define-config": "^2.1.0",
     "eslint-plugin-jsdoc": "^50.2.2",
-    "eslint-plugin-simple-import-sort": "^12.1.1",
-    "eslint-plugin-vue": "^9.27.0",
+    "eslint-plugin-perfectionist": "^3.4.0",
+    "eslint-plugin-vue": "^9.28.0",
     "expect": "^29.7.0",
     "glob": "^11.0.0",
     "husky": "^9.1.5",
-    "lint-staged": "^15.2.9",
-    "neostandard": "^0.11.3",
+    "lint-staged": "^15.2.10",
+    "neostandard": "^0.11.4",
     "prettier": "^3.3.3",
     "rimraf": "^6.0.1",
     "semver": "^7.6.3",
     "ts-node": "^10.9.2",
-    "tsx": "^4.17.0",
+    "tsx": "^4.19.0",
     "typescript": "~5.5.4"
   }
 }

@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-import { describe, it } from 'node:test'
-
 import { expect } from 'expect'
+import { describe, it } from 'node:test'
 
 import { FileType } from '../../src/types/index.js'
 import { handleFileException, logPrefix } from '../../src/utils/ConfigurationUtils.js'

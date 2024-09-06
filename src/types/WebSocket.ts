@@ -1,3 +1,4 @@
+/* eslint-disable perfectionist/sort-enums */
 export const WebSocketCloseEventStatusString: Record<WebSocketCloseEventStatusCode, string> =
   Object.freeze({
     1000: 'Normal Closure',
@@ -34,7 +35,7 @@ export enum WebSocketCloseEventStatusCode {
   CLOSE_SERVICE_RESTART = 1012,
   CLOSE_TRY_AGAIN_LATER = 1013,
   CLOSE_BAD_GATEWAY = 1014,
-  CLOSE_TLS_HANDSHAKE = 1015
+  CLOSE_TLS_HANDSHAKE = 1015,
 }
 
 export interface WSError extends Error {

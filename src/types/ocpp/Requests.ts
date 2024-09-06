@@ -1,8 +1,10 @@
 import type { ChargingStation } from '../../charging-station/index.js'
 import type { OCPPError } from '../../exception/index.js'
 import type { JsonType } from '../JsonType.js'
-import { OCPP16DiagnosticsStatus } from './1.6/DiagnosticsStatus.js'
 import type { OCPP16MeterValuesRequest } from './1.6/MeterValues.js'
+import type { MessageType } from './MessageType.js'
+
+import { OCPP16DiagnosticsStatus } from './1.6/DiagnosticsStatus.js'
 import {
   OCPP16AvailabilityType,
   type OCPP16BootNotificationRequest,
@@ -25,7 +27,6 @@ import {
   OCPP20RequestCommand,
   type OCPP20StatusNotificationRequest,
 } from './2.0/Requests.js'
-import type { MessageType } from './MessageType.js'
 
 export const RequestCommand = {
   ...OCPP16RequestCommand,
@@ -38,8 +39,8 @@ export type OutgoingRequest = [MessageType.CALL_MESSAGE, string, RequestCommand,
 
 export interface RequestParams {
   skipBufferingOnError?: boolean
-  triggerMessage?: boolean
   throwError?: boolean
+  triggerMessage?: boolean
 }
 
 export const IncomingRequestCommand = {
@@ -63,7 +64,7 @@ export type ErrorCallback = (ocppError: OCPPError, requestStatistic?: boolean) =
 export type CachedRequest = [
   ResponseCallback,
   ErrorCallback,
-  RequestCommand | IncomingRequestCommand,
+  IncomingRequestCommand | RequestCommand,
   JsonType
 ]
 

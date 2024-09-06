@@ -19,71 +19,71 @@ enum OCPP20ComponentName {
   SecurityCtrlr = 'SecurityCtrlr',
   SmartChargingCtrlr = 'SmartChargingCtrlr',
   TariffCostCtrlr = 'TariffCostCtrlr',
-  TxCtrlr = 'TxCtrlr'
+  TxCtrlr = 'TxCtrlr',
 }
 
 export enum OCPP20RequiredVariableName {
-  MessageTimeout = 'MessageTimeout',
+  AuthorizeRemoteStart = 'AuthorizeRemoteStart',
+  BytesPerMessage = 'BytesPerMessage',
+  CertificateEntries = 'CertificateEntries',
+  DateTime = 'DateTime',
+  EVConnectionTimeOut = 'EVConnectionTimeOut',
   FileTransferProtocols = 'FileTransferProtocols',
+  ItemsPerMessage = 'ItemsPerMessage',
+  LocalAuthorizeOffline = 'LocalAuthorizeOffline',
+  LocalPreAuthorize = 'LocalPreAuthorize',
+  MessageAttemptInterval = 'MessageAttemptInterval',
+  MessageAttempts = 'TransactionEvent',
+  MessageTimeout = 'MessageTimeout',
   NetworkConfigurationPriority = 'NetworkConfigurationPriority',
   NetworkProfileConnectionAttempts = 'NetworkProfileConnectionAttempts',
   OfflineThreshold = 'OfflineThreshold',
-  MessageAttempts = 'TransactionEvent',
-  MessageAttemptInterval = 'MessageAttemptInterval',
-  UnlockOnEVSideDisconnect = 'UnlockOnEVSideDisconnect',
-  ResetRetries = 'ResetRetries',
-  ItemsPerMessage = 'ItemsPerMessage',
-  BytesPerMessage = 'BytesPerMessage',
-  DateTime = 'DateTime',
-  TimeSource = 'TimeSource',
   OrganizationName = 'OrganizationName',
-  CertificateEntries = 'CertificateEntries',
+  ResetRetries = 'ResetRetries',
   SecurityProfile = 'SecurityProfile',
-  AuthorizeRemoteStart = 'AuthorizeRemoteStart',
-  LocalAuthorizeOffline = 'LocalAuthorizeOffline',
-  LocalPreAuthorize = 'LocalPreAuthorize',
-  EVConnectionTimeOut = 'EVConnectionTimeOut',
   StopTxOnEVSideDisconnect = 'StopTxOnEVSideDisconnect',
-  TxStartPoint = 'TxStartPoint',
-  TxStopPoint = 'TxStopPoint',
   StopTxOnInvalidId = 'StopTxOnInvalidId',
+  TimeSource = 'TimeSource',
   TxEndedMeasurands = 'TxEndedMeasurands',
   TxStartedMeasurands = 'TxStartedMeasurands',
+  TxStartPoint = 'TxStartPoint',
+  TxStopPoint = 'TxStopPoint',
+  TxUpdatedInterval = 'TxUpdatedInterval',
   TxUpdatedMeasurands = 'TxUpdatedMeasurands',
-  TxUpdatedInterval = 'TxUpdatedInterval'
+  UnlockOnEVSideDisconnect = 'UnlockOnEVSideDisconnect',
 }
 
 export enum OCPP20OptionalVariableName {
   HeartbeatInterval = 'HeartbeatInterval',
-  WebSocketPingInterval = 'WebSocketPingInterval'
+  WebSocketPingInterval = 'WebSocketPingInterval',
 }
 
 export enum OCPP20VendorVariableName {
-  ConnectionUrl = 'ConnectionUrl'
+  ConnectionUrl = 'ConnectionUrl',
 }
 
 enum AttributeEnumType {
   Actual = 'Actual',
-  Target = 'Target',
+  MaxSet = 'MaxSet',
   MinSet = 'MinSet',
-  MaxSet = 'MaxSet'
+  Target = 'Target',
 }
 
 interface ComponentType extends JsonObject {
-  name: string | OCPP20ComponentName
-  instance?: string
   evse?: EVSEType
+  instance?: string
+  name: OCPP20ComponentName | string
 }
 
 type VariableName =
-  | string
-  | OCPP20RequiredVariableName
   | OCPP20OptionalVariableName
+  | OCPP20RequiredVariableName
   | OCPP20VendorVariableName
+  | string
 
 interface VariableType extends JsonObject {
-  name: VariableName
   instance?: string
+  name: VariableName
 }
 
 export interface OCPP20SetVariableDataType extends JsonObject {
@@ -95,19 +95,19 @@ export interface OCPP20SetVariableDataType extends JsonObject {
 
 enum SetVariableStatusEnumType {
   Accepted = 'Accepted',
+  NotSupportedAttributeType = 'NotSupportedAttributeType',
+  RebootRequired = 'RebootRequired',
   Rejected = 'Rejected',
   UnknownComponent = 'UnknownComponent',
   UnknownVariable = 'UnknownVariable',
-  NotSupportedAttributeType = 'NotSupportedAttributeType',
-  RebootRequired = 'RebootRequired'
 }
 
 export interface OCPP20SetVariableResultType extends JsonObject {
-  attributeType?: AttributeEnumType
   attributeStatus: SetVariableStatusEnumType
+  attributeStatusInfo?: StatusInfoType
+  attributeType?: AttributeEnumType
   component: ComponentType
   variable: VariableType
-  attributeStatusInfo?: StatusInfoType
 }
 
 export interface OCPP20ComponentVariableType extends JsonObject {

@@ -2,14 +2,14 @@ import type { JsonObject } from '../../JsonType.js'
 import type { GenericStatus } from '../Common.js'
 
 export enum DataEnumType {
-  string = 'string',
+  boolean = 'boolean',
+  dateTime = 'dateTime',
   decimal = 'decimal',
   integer = 'integer',
-  dateTime = 'dateTime',
-  boolean = 'boolean',
+  MemberList = 'MemberList',
   OptionList = 'OptionList',
   SequenceList = 'SequenceList',
-  MemberList = 'MemberList'
+  string = 'string',
 }
 
 export enum BootReasonEnumType {
@@ -21,20 +21,20 @@ export enum BootReasonEnumType {
   ScheduledReset = 'ScheduledReset',
   Triggered = 'Triggered',
   Unknown = 'Unknown',
-  Watchdog = 'Watchdog'
+  Watchdog = 'Watchdog',
 }
 
 export enum OperationalStatusEnumType {
+  Inoperative = 'Inoperative',
   Operative = 'Operative',
-  Inoperative = 'Inoperative'
 }
 
 export enum OCPP20ConnectorStatusEnumType {
   Available = 'Available',
+  Faulted = 'Faulted',
   Occupied = 'Occupied',
   Reserved = 'Reserved',
   Unavailable = 'Unavailable',
-  Faulted = 'Faulted'
 }
 
 export type GenericStatusEnumType = GenericStatus
@@ -42,85 +42,85 @@ export type GenericStatusEnumType = GenericStatus
 export enum HashAlgorithmEnumType {
   SHA256 = 'SHA256',
   SHA384 = 'SHA384',
-  SHA512 = 'SHA512'
+  SHA512 = 'SHA512',
 }
 
 export enum GetCertificateIdUseEnumType {
-  V2GRootCertificate = 'V2GRootCertificate',
-  MORootCertificate = 'MORootCertificate',
   CSMSRootCertificate = 'CSMSRootCertificate',
+  ManufacturerRootCertificate = 'ManufacturerRootCertificate',
+  MORootCertificate = 'MORootCertificate',
   V2GCertificateChain = 'V2GCertificateChain',
-  ManufacturerRootCertificate = 'ManufacturerRootCertificate'
+  V2GRootCertificate = 'V2GRootCertificate',
 }
 
 export enum GetCertificateStatusEnumType {
   Accepted = 'Accepted',
-  Failed = 'Failed'
+  Failed = 'Failed',
 }
 
 export enum GetInstalledCertificateStatusEnumType {
   Accepted = 'Accepted',
-  NotFound = 'NotFound'
+  NotFound = 'NotFound',
 }
 
 export enum InstallCertificateStatusEnumType {
   Accepted = 'Accepted',
+  Failed = 'Failed',
   Rejected = 'Rejected',
-  Failed = 'Failed'
 }
 
 export enum InstallCertificateUseEnumType {
-  V2GRootCertificate = 'V2GRootCertificate',
-  MORootCertificate = 'MORootCertificate',
   CSMSRootCertificate = 'CSMSRootCertificate',
-  ManufacturerRootCertificate = 'ManufacturerRootCertificate'
+  ManufacturerRootCertificate = 'ManufacturerRootCertificate',
+  MORootCertificate = 'MORootCertificate',
+  V2GRootCertificate = 'V2GRootCertificate',
 }
 
 export enum DeleteCertificateStatusEnumType {
   Accepted = 'Accepted',
   Failed = 'Failed',
-  NotFound = 'NotFound'
+  NotFound = 'NotFound',
 }
 
 export enum CertificateActionEnumType {
   Install = 'Install',
-  Update = 'Update'
+  Update = 'Update',
 }
 
 export enum CertificateSigningUseEnumType {
   ChargingStationCertificate = 'ChargingStationCertificate',
-  V2GCertificate = 'V2GCertificate'
+  V2GCertificate = 'V2GCertificate',
 }
 
 export type CertificateSignedStatusEnumType = GenericStatusEnumType
 
 export interface CertificateHashDataType extends JsonObject {
   hashAlgorithm: HashAlgorithmEnumType
-  issuerNameHash: string
   issuerKeyHash: string
+  issuerNameHash: string
   serialNumber: string
 }
 
 export interface CertificateHashDataChainType extends JsonObject {
-  certificateType: GetCertificateIdUseEnumType
   certificateHashData: CertificateHashDataType
+  certificateType: GetCertificateIdUseEnumType
   childCertificateHashData?: CertificateHashDataType
 }
 
 export interface OCSPRequestDataType extends JsonObject {
   hashAlgorithm: HashAlgorithmEnumType
-  issuerNameHash: string
   issuerKeyHash: string
-  serialNumber: string
+  issuerNameHash: string
   responderURL: string
+  serialNumber: string
 }
 
 export interface StatusInfoType extends JsonObject {
-  reasonCode: string
   additionalInfo?: string
+  reasonCode: string
 }
 
 export interface EVSEType extends JsonObject {
-  id: number
   connectorId?: string
+  id: number
 }
