@@ -69,14 +69,16 @@ export class UIClient {
     )
     this.ws.onopen = () => {
       useToast().success(
-        `WebSocket to UI server '${this.uiServerConfiguration.host}' successfully opened`
+        `WebSocket to UI server '${this.uiServerConfiguration.host}:${this.uiServerConfiguration.port.toString()}' successfully opened`
       )
     }
     this.ws.onmessage = this.responseHandler.bind(this)
     this.ws.onerror = errorEvent => {
-      useToast().error(`Error in WebSocket to UI server '${this.uiServerConfiguration.host}'`)
+      useToast().error(
+        `Error in WebSocket to UI server '${this.uiServerConfiguration.host}:${this.uiServerConfiguration.port.toString()}'`
+      )
       console.error(
-        `Error in WebSocket to UI server '${this.uiServerConfiguration.host}'`,
+        `Error in WebSocket to UI server '${this.uiServerConfiguration.host}:${this.uiServerConfiguration.port.toString()}'`,
         errorEvent
       )
     }
