@@ -26,10 +26,10 @@ WORKDIR /usr/app
 COPY --from=builder /usr/builder/node_modules ./node_modules
 COPY --from=builder /usr/builder/dist ./dist
 COPY package.json README.md LICENSE ./
-COPY docker/start.sh /start.sh
+COPY docker/run.sh /run.sh
 COPY docker/autoconfig.sh /autoconfig.sh
 RUN set -ex \
-  && chmod +x /start.sh \
+  && chmod +x /run.sh \
   && chmod +x /autoconfig.sh
 
-ENTRYPOINT ["/bin/sh", "-c", "/autoconfig.sh && /start.sh"]
+ENTRYPOINT ["/bin/sh", "-c", "/autoconfig.sh && /run.sh"]
