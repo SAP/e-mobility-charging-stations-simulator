@@ -22,4 +22,4 @@ RUN set -ex \
   && chmod +x /start.sh \
   && chmod +x /autoconfig.sh
 
-CMD /autoconfig.sh && /start.sh
+ENTRYPOINT ["/bin/sh", "-c", "/autoconfig.sh && /start.sh"]
