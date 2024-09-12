@@ -98,7 +98,7 @@
     "http-status-codes": "^2.3.0",
     "logform": "^2.6.1",
     "mnemonist": "0.40.0-rc1",
-    "mongodb": "^6.8.1",
+    "mongodb": "^6.9.0",
     "poolifier": "^4.2.10",
     "rambda": "^9.3.0",
     "tar": "^7.4.3",
