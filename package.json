@@ -94,7 +94,7 @@
     "ajv-formats": "^3.0.1",
     "basic-ftp": "^5.0.5",
     "chalk": "^5.3.0",
-    "date-fns": "^4.0.0",
+    "date-fns": "^4.1.0",
     "http-status-codes": "^2.3.0",
     "logform": "^2.6.1",
     "mnemonist": "0.40.0-rc1",
