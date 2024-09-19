@@ -504,7 +504,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     return key.visible
   }
 
-  public static parseJsonSchemaFile<T extends JsonType>(
+  public static override parseJsonSchemaFile<T extends JsonType>(
     relativePath: string,
     moduleName?: string,
     methodName?: string

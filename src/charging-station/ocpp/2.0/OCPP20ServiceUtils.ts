@@ -6,7 +6,7 @@ import { type JsonType, OCPPVersion } from '../../../types/index.js'
 import { OCPPServiceUtils } from '../OCPPServiceUtils.js'
 
 export class OCPP20ServiceUtils extends OCPPServiceUtils {
-  public static parseJsonSchemaFile<T extends JsonType>(
+  public static override parseJsonSchemaFile<T extends JsonType>(
     relativePath: string,
     moduleName?: string,
     methodName?: string

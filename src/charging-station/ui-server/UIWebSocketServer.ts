@@ -42,7 +42,7 @@ export class UIWebSocketServer extends AbstractUIServer {
     return logPrefix(logMsg)
   }
 
-  public constructor (protected readonly uiServerConfiguration: UIServerConfiguration) {
+  public constructor (protected override readonly uiServerConfiguration: UIServerConfiguration) {
     super(uiServerConfiguration)
     this.webSocketServer = new WebSocketServer({
       handleProtocols,
