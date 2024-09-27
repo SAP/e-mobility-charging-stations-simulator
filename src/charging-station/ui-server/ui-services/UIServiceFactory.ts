@@ -15,6 +15,7 @@ export class UIServiceFactory {
     uiServer: AbstractUIServer
   ): AbstractUIService {
     switch (version) {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       case ProtocolVersion['0.0.1']:
         return new UIService001(uiServer)
     }

@@ -45,7 +45,7 @@ export class UIHttpServer extends AbstractUIServer {
     return logPrefix(logMsg)
   }
 
-  public constructor (protected readonly uiServerConfiguration: UIServerConfiguration) {
+  public constructor (protected override readonly uiServerConfiguration: UIServerConfiguration) {
     super(uiServerConfiguration)
   }
 

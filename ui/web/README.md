@@ -17,6 +17,7 @@ The Web UI code and configuration is in the repository directory [ui/web](./../.
   - [Run](#run)
     - [Compiles and run for production](#compiles-and-run-for-production)
     - [Preview locally](#preview-locally)
+    - [Docker](#docker)
   - [Development](#development)
     - [Compiles and run for development](#compiles-and-run-for-development)
     - [Formats files](#formats-files)
@@ -118,6 +119,14 @@ You can now follow the link displayed in the terminal. The Web UI looks like the
 
 1. With the buttons on the top you can change UI server, start/stop the simulator, add new charging stations and refresh the content.
 2. Each charging station is a row in the table with specific 'Actions' to execute on. Try 'Stop Charging Station' and refresh with the large blue button and see the status 'Started' turns from 'Yes' into 'No'.
+
+#### Docker
+
+In the [docker](./docker) folder:
+
+```shell
+make
+```
 
 ### Development
 

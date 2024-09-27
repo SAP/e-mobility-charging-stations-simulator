@@ -1,6 +1,6 @@
 FROM node:lts-alpine AS builder
 
-# Build simulator and dashboard
+# Build simulator
 WORKDIR /usr/builder
 COPY . ./
 RUN set -ex \
@@ -13,10 +13,7 @@ RUN set -ex \
   && cp docker/config.json src/assets/config.json \
   && cp docker/idtags.json src/assets/idtags.json \
   && pnpm build \
-  && apk del .gyp \
-  && cd ui/web \
-  && cp src/assets/config-template.json public/config.json \
-  && pnpm build
+  && apk del .gyp
 
 FROM node:lts-alpine
 
@@ -26,14 +23,13 @@ ARG MAX_OLD_SPACE_SIZE=768
 ENV NODE_OPTIONS="--stack-trace-limit=${STACK_TRACE_LIMIT} --max-old-space-size=${MAX_OLD_SPACE_SIZE}"
 
 WORKDIR /usr/app
-COPY --from=builder /usr/builder/ui/web ./ui/web
 COPY --from=builder /usr/builder/node_modules ./node_modules
 COPY --from=builder /usr/builder/dist ./dist
 COPY package.json README.md LICENSE ./
-COPY docker/start.sh /start.sh
+COPY docker/run.sh /run.sh
 COPY docker/autoconfig.sh /autoconfig.sh
 RUN set -ex \
-  && chmod +x /start.sh \
+  && chmod +x /run.sh \
   && chmod +x /autoconfig.sh
 
-CMD /autoconfig.sh && /start.sh
+ENTRYPOINT ["/bin/sh", "-c", "/autoconfig.sh && /run.sh"]

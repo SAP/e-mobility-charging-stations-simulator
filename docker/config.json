@@ -15,6 +15,9 @@
   },
   "uiServer": {
     "enabled": true,
+    "options": {
+      "host": "::"
+    },
     "type": "ws",
     "authentication": {
       "enabled": true,

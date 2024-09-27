@@ -4,6 +4,7 @@
   "compilerOptions": {
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
+    "noImplicitOverride": true,
     "sourceMap": true,
     "composite": true,
     "baseUrl": "./",
