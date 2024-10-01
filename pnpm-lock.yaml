@@ -18,17 +18,17 @@ importers:
   .:
     dependencies:
       '@mikro-orm/core':
-        specifier: ^6.3.11
-        version: 6.3.11
+        specifier: ^6.3.12
+        version: 6.3.12
       '@mikro-orm/mariadb':
-        specifier: ^6.3.11
-        version: 6.3.11(@mikro-orm/core@6.3.11)
+        specifier: ^6.3.12
+        version: 6.3.12(@mikro-orm/core@6.3.12)
       '@mikro-orm/reflection':
-        specifier: ^6.3.11
-        version: 6.3.11(@mikro-orm/core@6.3.11)
+        specifier: ^6.3.12
+        version: 6.3.12(@mikro-orm/core@6.3.12)
       '@mikro-orm/sqlite':
-        specifier: ^6.3.11
-        version: 6.3.11(@mikro-orm/core@6.3.11)(mariadb@3.3.2)
+        specifier: ^6.3.12
+        version: 6.3.12(@mikro-orm/core@6.3.12)(mariadb@3.3.2)
       ajv:
         specifier: ^8.17.1
         version: 8.17.1
@@ -92,8 +92,8 @@ importers:
         specifier: ^9.11.1
         version: 9.11.1
       '@mikro-orm/cli':
-        specifier: ^6.3.11
-        version: 6.3.11(mariadb@3.3.2)
+        specifier: ^6.3.12
+        version: 6.3.12(mariadb@3.3.2)
       '@types/node':
         specifier: ^22.7.4
         version: 22.7.4
@@ -128,11 +128,11 @@ importers:
         specifier: ^2.1.0
         version: 2.1.0
       eslint-plugin-jsdoc:
-        specifier: ^50.3.0
-        version: 50.3.0(eslint@9.11.1(jiti@1.21.6))
+        specifier: ^50.3.1
+        version: 50.3.1(eslint@9.11.1(jiti@1.21.6))
       eslint-plugin-perfectionist:
-        specifier: ^3.7.0
-        version: 3.7.0(eslint@9.11.1(jiti@1.21.6))(typescript@5.6.2)(vue-eslint-parser@9.4.3(eslint@9.11.1(jiti@1.21.6)))
+        specifier: ^3.8.0
+        version: 3.8.0(eslint@9.11.1(jiti@1.21.6))(typescript@5.6.2)(vue-eslint-parser@9.4.3(eslint@9.11.1(jiti@1.21.6)))
       eslint-plugin-vue:
         specifier: ^9.28.0
         version: 9.28.0(eslint@9.11.1(jiti@1.21.6))
@@ -1005,17 +1005,17 @@ packages:
   '@jridgewell/trace-mapping@0.3.9':
     resolution: {integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==}
 
-  '@mikro-orm/cli@6.3.11':
-    resolution: {integrity: sha512-mrFcjOfWWzlEbxYf+W85Ek8Ye+4wswuevqgm7ZkR86bN5qnvI2ijHH+PBiRAFqXDAv1MdpaynH1I0FBSPCt7Vw==}
+  '@mikro-orm/cli@6.3.12':
+    resolution: {integrity: sha512-r2dhhAvXr3rbX/zW/pvkZ6Tuj/ukgW148ZU+HhkcQxFdpGHR2X9pxHgNG3Z1qfx38/AA87jvdfox+f/NaKtLQg==}
     engines: {node: '>= 18.12.0'}
     hasBin: true
 
-  '@mikro-orm/core@6.3.11':
-    resolution: {integrity: sha512-pNd74bIDwpWMC0TV4R3hPIddzaydDzvv5pRi7QvX6UdASDEUdWfp185cH6QRi1bbWqlI70GXOBR8Bnzj1bbtpA==}
+  '@mikro-orm/core@6.3.12':
+    resolution: {integrity: sha512-CkUDS9Ghs4vLBbpVTvtJalTVyvQ82Lwow8K8GhJTNJcXYDWtFT4231zLVveb6mTB5ayM3rof19pRsIKEb2SJvw==}
     engines: {node: '>= 18.12.0'}
 
-  '@mikro-orm/knex@6.3.11':
-    resolution: {integrity: sha512-RDT3s+FTpB5rP81s7yVdgvTBwt4gRGUBsL08WPmlroJ8ADrLQVdywQPOIdXFhoDNDJPVD7Ht/KGvy2IyIpuOeg==}
+  '@mikro-orm/knex@6.3.12':
+    resolution: {integrity: sha512-TQ8lU+jwsZ0FWEnBvgICgyVOx4g0j8Vm7kOKC+fJDdXPpBz3N4JYu+y30NQ0fIiPEHBzOpvusCV42FxhSQ/DVQ==}
     engines: {node: '>= 18.12.0'}
     peerDependencies:
       '@mikro-orm/core': ^6.0.0
@@ -1030,20 +1030,20 @@ packages:
       mariadb:
         optional: true
 
-  '@mikro-orm/mariadb@6.3.11':
-    resolution: {integrity: sha512-TVr/8KLpReb430hWQHYjsqkz7ti85uxKj6iLEdHUN41M139x1PIYveP64LUPedc8zF+xSrLLXvTa5kn3qCR0bg==}
+  '@mikro-orm/mariadb@6.3.12':
+    resolution: {integrity: sha512-pzDsd1EqWiCx27ROWdfjsqRYRq2IRqyodtxF8OYWigRN3A1TetvqAZD1ZJhoVEA2JTAXwr+JsImKU91bmWIh1g==}
     engines: {node: '>= 18.12.0'}
     peerDependencies:
       '@mikro-orm/core': ^6.0.0
 
-  '@mikro-orm/reflection@6.3.11':
-    resolution: {integrity: sha512-kLET8HvxLJ/P+GYoRQh8BOy63djz97SFHC1kd7ERiWTv7BQNETPDTzbhpCSqJsNse9WDQQvzlb6QfQhNGmOKTg==}
+  '@mikro-orm/reflection@6.3.12':
+    resolution: {integrity: sha512-EHVMRrX5ycEuoo67TYzS4L2Iz+zPW49d1lh8eVxNdfHLd3QgM35YUEPvVfs5LTmnG3FJPx3qXHXeOapuWZ76wA==}
     engines: {node: '>= 18.12.0'}
     peerDependencies:
       '@mikro-orm/core': ^6.0.0
 
-  '@mikro-orm/sqlite@6.3.11':
-    resolution: {integrity: sha512-bknM7o+tzjEaxdjcK0PTCAhZQaDfAwa4UB5Ko4nJJoUfLOvzPQxjrQIOOJ6/AK8dg6hjvXvdFE4epMjDYRhJbw==}
+  '@mikro-orm/sqlite@6.3.12':
+    resolution: {integrity: sha512-xkpSP0Td5z+uGXFJNBTKI7NtI9M74Qjez8o90zLEKX3kMoKmPElR/I/FXD5LMB9+DTOwNt4esFC4TzjN8+2zKg==}
     engines: {node: '>= 18.12.0'}
     peerDependencies:
       '@mikro-orm/core': ^6.0.0
@@ -2651,8 +2651,8 @@ packages:
     peerDependencies:
       eslint: '>=8'
 
-  eslint-plugin-jsdoc@50.3.0:
-    resolution: {integrity: sha512-P7qDB/RckdKETpBM4CtjHRQ5qXByPmFhRi86sN3E+J+tySchq+RSOGGhI2hDIefmmKFuTi/1ACjqsnDJDDDfzg==}
+  eslint-plugin-jsdoc@50.3.1:
+    resolution: {integrity: sha512-SY9oUuTMr6aWoJggUS40LtMjsRzJPB5ZT7F432xZIHK3EfHF+8i48GbUBpwanrtlL9l1gILNTHK9o8gEhYLcKA==}
     engines: {node: '>=18'}
     peerDependencies:
       eslint: ^7.0.0 || ^8.0.0 || ^9.0.0
@@ -2663,8 +2663,8 @@ packages:
     peerDependencies:
       eslint: '>=8.23.0'
 
-  eslint-plugin-perfectionist@3.7.0:
-    resolution: {integrity: sha512-pemhfcR3LDbYVWeveHok9u048yR7GpsnfyPvn6RsDkp/UV7iqBV0y5K0aGb9ZJMsemOyWok7akxGzPLsz+mHKQ==}
+  eslint-plugin-perfectionist@3.8.0:
+    resolution: {integrity: sha512-BYJWbQVOjvIGK9V1xUfn790HuvkePjxti8epOi1H6sdzo0N4RehBmQ8coHPbgA/f12BUG1NIoDtQhI9mUm+o2A==}
     engines: {node: ^18.0.0 || >=20.0.0}
     peerDependencies:
       astro-eslint-parser: ^1.0.2
@@ -3969,8 +3969,8 @@ packages:
     resolution: {integrity: sha512-PXwfBhYu0hBCPw8Dn0E+WDYb7af3dSLVWKi3HGv84IdF4TyFoC0ysxFd0Goxw7nSv4T/PzEJQxsYsEiFCKo2BA==}
     engines: {node: '>=8.6'}
 
-  mikro-orm@6.3.11:
-    resolution: {integrity: sha512-RaOd6+3jm9TLtBAJ9vtgpzt6CnzARZwKZjLaNvXL65BLammDp8QWRBmUUqNPp0xwWYqdFgH8V7YFG/fyuMEJXQ==}
+  mikro-orm@6.3.12:
+    resolution: {integrity: sha512-CMLaxhq7EANGI0JD3EEhyafGf3fZh5ATvG1kNP/20DBarZBYSsp2GGzxhEENs0SCOVy5+dWWRL8vSuke/hIKEw==}
     engines: {node: '>= 18.12.0'}
 
   miller-rabin@4.0.1:
@@ -6722,11 +6722,11 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
 
-  '@mikro-orm/cli@6.3.11(mariadb@3.3.2)':
+  '@mikro-orm/cli@6.3.12(mariadb@3.3.2)':
     dependencies:
       '@jercle/yargonaut': 1.1.5
-      '@mikro-orm/core': 6.3.11
-      '@mikro-orm/knex': 6.3.11(@mikro-orm/core@6.3.11)(mariadb@3.3.2)(sqlite3@5.1.7)
+      '@mikro-orm/core': 6.3.12
+      '@mikro-orm/knex': 6.3.12(@mikro-orm/core@6.3.12)(mariadb@3.3.2)(sqlite3@5.1.7)
       fs-extra: 11.2.0
       tsconfig-paths: 4.2.0
       yargs: 17.7.2
@@ -6742,19 +6742,19 @@ snapshots:
       - supports-color
       - tedious
 
-  '@mikro-orm/core@6.3.11':
+  '@mikro-orm/core@6.3.12':
     dependencies:
       dataloader: 2.2.2
       dotenv: 16.4.5
       esprima: 4.0.1
       fs-extra: 11.2.0
       globby: 11.1.0
-      mikro-orm: 6.3.11
+      mikro-orm: 6.3.12
       reflect-metadata: 0.2.2
 
-  '@mikro-orm/knex@6.3.11(@mikro-orm/core@6.3.11)(mariadb@3.3.2)(sqlite3@5.1.7)':
+  '@mikro-orm/knex@6.3.12(@mikro-orm/core@6.3.12)(mariadb@3.3.2)(sqlite3@5.1.7)':
     dependencies:
-      '@mikro-orm/core': 6.3.11
+      '@mikro-orm/core': 6.3.12
       fs-extra: 11.2.0
       knex: 3.1.0(sqlite3@5.1.7)
       sqlstring: 2.3.3
@@ -6769,10 +6769,10 @@ snapshots:
       - supports-color
       - tedious
 
-  '@mikro-orm/mariadb@6.3.11(@mikro-orm/core@6.3.11)':
+  '@mikro-orm/mariadb@6.3.12(@mikro-orm/core@6.3.12)':
     dependencies:
-      '@mikro-orm/core': 6.3.11
-      '@mikro-orm/knex': 6.3.11(@mikro-orm/core@6.3.11)(mariadb@3.3.2)(sqlite3@5.1.7)
+      '@mikro-orm/core': 6.3.12
+      '@mikro-orm/knex': 6.3.12(@mikro-orm/core@6.3.12)(mariadb@3.3.2)(sqlite3@5.1.7)
       mariadb: 3.3.2
     transitivePeerDependencies:
       - better-sqlite3
@@ -6785,16 +6785,16 @@ snapshots:
       - supports-color
       - tedious
 
-  '@mikro-orm/reflection@6.3.11(@mikro-orm/core@6.3.11)':
+  '@mikro-orm/reflection@6.3.12(@mikro-orm/core@6.3.12)':
     dependencies:
-      '@mikro-orm/core': 6.3.11
+      '@mikro-orm/core': 6.3.12
       globby: 11.1.0
       ts-morph: 23.0.0
 
-  '@mikro-orm/sqlite@6.3.11(@mikro-orm/core@6.3.11)(mariadb@3.3.2)':
+  '@mikro-orm/sqlite@6.3.12(@mikro-orm/core@6.3.12)(mariadb@3.3.2)':
     dependencies:
-      '@mikro-orm/core': 6.3.11
-      '@mikro-orm/knex': 6.3.11(@mikro-orm/core@6.3.11)(mariadb@3.3.2)(sqlite3@5.1.7)
+      '@mikro-orm/core': 6.3.12
+      '@mikro-orm/knex': 6.3.12(@mikro-orm/core@6.3.12)(mariadb@3.3.2)(sqlite3@5.1.7)
       fs-extra: 11.2.0
       sqlite3: 5.1.7
       sqlstring-sqlite: 0.1.1
@@ -8797,7 +8797,7 @@ snapshots:
       eslint: 9.11.1(jiti@1.21.6)
       eslint-compat-utils: 0.5.1(eslint@9.11.1(jiti@1.21.6))
 
-  eslint-plugin-jsdoc@50.3.0(eslint@9.11.1(jiti@1.21.6)):
+  eslint-plugin-jsdoc@50.3.1(eslint@9.11.1(jiti@1.21.6)):
     dependencies:
       '@es-joy/jsdoccomment': 0.48.0
       are-docs-informative: 0.0.2
@@ -8826,7 +8826,7 @@ snapshots:
       minimatch: 9.0.5
       semver: 7.6.3
 
-  eslint-plugin-perfectionist@3.7.0(eslint@9.11.1(jiti@1.21.6))(typescript@5.6.2)(vue-eslint-parser@9.4.3(eslint@9.11.1(jiti@1.21.6))):
+  eslint-plugin-perfectionist@3.8.0(eslint@9.11.1(jiti@1.21.6))(typescript@5.6.2)(vue-eslint-parser@9.4.3(eslint@9.11.1(jiti@1.21.6))):
     dependencies:
       '@typescript-eslint/types': 8.8.0
       '@typescript-eslint/utils': 8.8.0(eslint@9.11.1(jiti@1.21.6))(typescript@5.6.2)
@@ -10264,7 +10264,7 @@ snapshots:
       braces: 3.0.3
       picomatch: 2.3.1
 
-  mikro-orm@6.3.11: {}
+  mikro-orm@6.3.12: {}
 
   miller-rabin@4.0.1:
     dependencies:
