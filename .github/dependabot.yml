@@ -39,3 +39,14 @@ updates:
     reviewers:
       - 'jerome-benoit'
       - 'olivierbagot'
+  - package-ecosystem: docker
+    directories:
+      - '/docker'
+      - '/ui/web/docker'
+    schedule:
+      interval: daily
+    labels:
+      - 'docker'
+    reviewers:
+      - 'jerome-benoit'
+      - 'olivierbagot'
