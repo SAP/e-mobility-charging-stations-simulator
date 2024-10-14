@@ -17,8 +17,8 @@ updates:
     groups:
       regular:
         update-types:
-          - 'minor'
           - 'patch'
+          - 'minor'
       mikro-orm:
         patterns:
           - '@mikro-orm/*'
@@ -38,8 +38,8 @@ updates:
     groups:
       regular:
         update-types:
-          - 'minor'
           - 'patch'
+          - 'minor'
     labels:
       - 'dependencies'
     reviewers:
