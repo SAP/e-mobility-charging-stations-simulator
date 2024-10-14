@@ -19,6 +19,12 @@ updates:
         update-types:
           - 'minor'
           - 'patch'
+      mikro-orm:
+        patterns:
+          - '@mikro-orm/*'
+      commitlint:
+        patterns:
+          - '@commitlint/*'
     labels:
       - 'dependencies'
     reviewers:
@@ -34,12 +40,6 @@ updates:
         update-types:
           - 'minor'
           - 'patch'
-      mikro-orm:
-        patterns:
-          - '@mikro-orm/*'
-      commitlint:
-        patterns:
-          - '@commitlint/*'
     labels:
       - 'dependencies'
     reviewers:
