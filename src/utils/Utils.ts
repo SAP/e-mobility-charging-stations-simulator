@@ -221,14 +221,6 @@ export const isAsyncFunction = (fn: unknown): fn is AsyncFunctionType<unknown[],
   return fn?.constructor === (async () => {}).constructor
 }
 
-export const isObject = (value: unknown): value is object => {
-  return value != null && !Array.isArray(value) && is(Object, value)
-}
-
-export const hasOwnProp = (value: unknown, property: PropertyKey): boolean => {
-  return isObject(value) && Object.hasOwn(value, property)
-}
-
 export const isCFEnvironment = (): boolean => {
   return env.VCAP_APPLICATION != null
 }

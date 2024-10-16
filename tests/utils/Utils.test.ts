@@ -21,13 +21,11 @@ import {
   formatDurationSeconds,
   generateUUID,
   getRandomFloat,
-  hasOwnProp,
   insertAt,
   isArraySorted,
   isAsyncFunction,
   isNotEmptyArray,
   isNotEmptyString,
-  isObject,
   isValidDate,
   roundTo,
   secureRandom,
@@ -207,23 +205,6 @@ await describe('Utils test suite', async () => {
     expect(extractTimeSeriesValues(circularBuffer)).toEqual([1.1, 2.2, 3.3])
   })
 
-  await it('Verify isObject()', () => {
-    expect(isObject('test')).toBe(false)
-    expect(isObject(undefined)).toBe(false)
-    expect(isObject(null)).toBe(false)
-    expect(isObject(0)).toBe(false)
-    expect(isObject([])).toBe(false)
-    expect(isObject([0, 1])).toBe(false)
-    expect(isObject(['0', '1'])).toBe(false)
-    expect(isObject({})).toBe(true)
-    expect(isObject({ 1: 1 })).toBe(true)
-    expect(isObject({ 1: '1' })).toBe(true)
-    expect(isObject(new Map())).toBe(true)
-    expect(isObject(new Set())).toBe(true)
-    expect(isObject(new WeakMap())).toBe(true)
-    expect(isObject(new WeakSet())).toBe(true)
-  })
-
   await it('Verify isAsyncFunction()', () => {
     expect(isAsyncFunction(null)).toBe(false)
     expect(isAsyncFunction(undefined)).toBe(false)
@@ -329,22 +310,6 @@ await describe('Utils test suite', async () => {
     expect(() => clone(weakMap)).toThrowError(new Error('#<WeakMap> could not be cloned.'))
     const weakSet = new WeakSet([{ 1: 1 }, { 2: 2 }])
     expect(() => clone(weakSet)).toThrowError(new Error('#<WeakSet> could not be cloned.'))
-  })
-
-  await it('Verify hasOwnProp()', () => {
-    expect(hasOwnProp('test', '')).toBe(false)
-    expect(hasOwnProp(undefined, '')).toBe(false)
-    expect(hasOwnProp(null, '')).toBe(false)
-    expect(hasOwnProp([], '')).toBe(false)
-    expect(hasOwnProp({}, '')).toBe(false)
-    expect(hasOwnProp({ 1: 1 }, 1)).toBe(true)
-    expect(hasOwnProp({ 1: 1 }, '1')).toBe(true)
-    expect(hasOwnProp({ 1: 1 }, 2)).toBe(false)
-    expect(hasOwnProp({ 1: 1 }, '2')).toBe(false)
-    expect(hasOwnProp({ 1: '1' }, '1')).toBe(true)
-    expect(hasOwnProp({ 1: '1' }, 1)).toBe(true)
-    expect(hasOwnProp({ 1: '1' }, '2')).toBe(false)
-    expect(hasOwnProp({ 1: '1' }, 2)).toBe(false)
   })
 
   await it('Verify isNotEmptyString()', () => {
