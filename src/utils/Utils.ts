@@ -208,14 +208,17 @@ export const clone = <T>(object: T): T => {
   return structuredClone<T>(object)
 }
 
+type AsyncFunctionType<A extends unknown[], R> = (...args: A) => PromiseLike<R>
+
 /**
  * Detects whether the given value is an asynchronous function or not.
  * @param fn - Unknown value.
  * @returns `true` if `fn` was an asynchronous function, otherwise `false`.
  * @internal
  */
-export const isAsyncFunction = (fn: unknown): fn is (...args: unknown[]) => Promise<unknown> => {
-  return is(Function, fn) && fn.constructor.name === 'AsyncFunction'
+export const isAsyncFunction = (fn: unknown): fn is AsyncFunctionType<unknown[], unknown> => {
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  return fn?.constructor === (async () => {}).constructor
 }
 
 export const isObject = (value: unknown): value is object => {
