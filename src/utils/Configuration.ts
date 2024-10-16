@@ -3,8 +3,7 @@ import { existsSync, type FSWatcher, readFileSync, watch } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { env } from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { mergeDeepRight, once } from 'rambda'
-import { has } from 'rambda'
+import { has, mergeDeepRight, once } from 'rambda'
 
 import {
   ApplicationProtocol,
@@ -130,43 +129,43 @@ export class Configuration {
 
   private static buildLogSection (): LogConfiguration {
     const deprecatedLogConfiguration: LogConfiguration = {
-      ...(has(Configuration.getConfigurationData(), 'logEnabled') && {
+      ...(has('logEnabled', Configuration.getConfigurationData()) && {
         // eslint-disable-next-line @typescript-eslint/no-deprecated
         enabled: Configuration.getConfigurationData()?.logEnabled,
       }),
-      ...(has(Configuration.getConfigurationData(), 'logFile') && {
+      ...(has('logFile', Configuration.getConfigurationData()) && {
         // eslint-disable-next-line @typescript-eslint/no-deprecated
         file: Configuration.getConfigurationData()?.logFile,
       }),
-      ...(has(Configuration.getConfigurationData(), 'logErrorFile') && {
+      ...(has('logErrorFile', Configuration.getConfigurationData()) && {
         // eslint-disable-next-line @typescript-eslint/no-deprecated
         errorFile: Configuration.getConfigurationData()?.logErrorFile,
       }),
-      ...(has(Configuration.getConfigurationData(), 'logStatisticsInterval') && {
+      ...(has('logStatisticsInterval', Configuration.getConfigurationData()) && {
         // eslint-disable-next-line @typescript-eslint/no-deprecated
         statisticsInterval: Configuration.getConfigurationData()?.logStatisticsInterval,
       }),
-      ...(has(Configuration.getConfigurationData(), 'logLevel') && {
+      ...(has('logLevel', Configuration.getConfigurationData()) && {
         // eslint-disable-next-line @typescript-eslint/no-deprecated
         level: Configuration.getConfigurationData()?.logLevel,
       }),
-      ...(has(Configuration.getConfigurationData(), 'logConsole') && {
+      ...(has('logConsole', Configuration.getConfigurationData()) && {
         // eslint-disable-next-line @typescript-eslint/no-deprecated
         console: Configuration.getConfigurationData()?.logConsole,
       }),
-      ...(has(Configuration.getConfigurationData(), 'logFormat') && {
+      ...(has('logFormat', Configuration.getConfigurationData()) && {
         // eslint-disable-next-line @typescript-eslint/no-deprecated
         format: Configuration.getConfigurationData()?.logFormat,
       }),
-      ...(has(Configuration.getConfigurationData(), 'logRotate') && {
+      ...(has('logRotate', Configuration.getConfigurationData()) && {
         // eslint-disable-next-line @typescript-eslint/no-deprecated
         rotate: Configuration.getConfigurationData()?.logRotate,
       }),
-      ...(has(Configuration.getConfigurationData(), 'logMaxFiles') && {
+      ...(has('logMaxFiles', Configuration.getConfigurationData()) && {
         // eslint-disable-next-line @typescript-eslint/no-deprecated
         maxFiles: Configuration.getConfigurationData()?.logMaxFiles,
       }),
-      ...(has(Configuration.getConfigurationData(), 'logMaxSize') && {
+      ...(has('logMaxSize', Configuration.getConfigurationData()) && {
         // eslint-disable-next-line @typescript-eslint/no-deprecated
         maxSize: Configuration.getConfigurationData()?.logMaxSize,
       }),
@@ -174,7 +173,7 @@ export class Configuration {
     const logConfiguration: LogConfiguration = {
       ...defaultLogConfiguration,
       ...deprecatedLogConfiguration,
-      ...(has(Configuration.getConfigurationData(), ConfigurationSection.log) &&
+      ...(has(ConfigurationSection.log, Configuration.getConfigurationData()) &&
         Configuration.getConfigurationData()?.log),
     }
     return logConfiguration
@@ -202,7 +201,7 @@ export class Configuration {
         storageConfiguration = defaultStorageConfiguration
         break
     }
-    if (has(Configuration.getConfigurationData(), ConfigurationSection.performanceStorage)) {
+    if (has(ConfigurationSection.performanceStorage, Configuration.getConfigurationData())) {
       storageConfiguration = {
         ...storageConfiguration,
         ...Configuration.getConfigurationData()?.performanceStorage,
@@ -222,7 +221,7 @@ export class Configuration {
 
   private static buildUIServerSection (): UIServerConfiguration {
     let uiServerConfiguration: UIServerConfiguration = defaultUIServerConfiguration
-    if (has(Configuration.getConfigurationData(), ConfigurationSection.uiServer)) {
+    if (has(ConfigurationSection.uiServer, Configuration.getConfigurationData())) {
       uiServerConfiguration = mergeDeepRight(
         uiServerConfiguration,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -239,42 +238,42 @@ export class Configuration {
 
   private static buildWorkerSection (): WorkerConfiguration {
     const deprecatedWorkerConfiguration: WorkerConfiguration = {
-      ...(has(Configuration.getConfigurationData(), 'workerProcess') && {
+      ...(has('workerProcess', Configuration.getConfigurationData()) && {
         // eslint-disable-next-line @typescript-eslint/no-deprecated
         processType: Configuration.getConfigurationData()?.workerProcess,
       }),
-      ...(has(Configuration.getConfigurationData(), 'workerStartDelay') && {
+      ...(has('workerStartDelay', Configuration.getConfigurationData()) && {
         // eslint-disable-next-line @typescript-eslint/no-deprecated
         startDelay: Configuration.getConfigurationData()?.workerStartDelay,
       }),
-      ...(has(Configuration.getConfigurationData(), 'chargingStationsPerWorker') && {
+      ...(has('chargingStationsPerWorker', Configuration.getConfigurationData()) && {
         // eslint-disable-next-line @typescript-eslint/no-deprecated
         elementsPerWorker: Configuration.getConfigurationData()?.chargingStationsPerWorker,
       }),
-      ...(has(Configuration.getConfigurationData(), 'elementAddDelay') && {
+      ...(has('elementAddDelay', Configuration.getConfigurationData()) && {
         // eslint-disable-next-line @typescript-eslint/no-deprecated
         elementAddDelay: Configuration.getConfigurationData()?.elementAddDelay,
       }),
-      ...(has(Configuration.getConfigurationData()?.worker, 'elementStartDelay') && {
+      ...(has('elementStartDelay', Configuration.getConfigurationData()?.worker) && {
         // eslint-disable-next-line @typescript-eslint/no-deprecated
         elementAddDelay: Configuration.getConfigurationData()?.worker?.elementStartDelay,
       }),
-      ...(has(Configuration.getConfigurationData(), 'workerPoolMinSize') && {
+      ...(has('workerPoolMinSize', Configuration.getConfigurationData()) && {
         // eslint-disable-next-line @typescript-eslint/no-deprecated
         poolMinSize: Configuration.getConfigurationData()?.workerPoolMinSize,
       }),
-      ...(has(Configuration.getConfigurationData(), 'workerPoolMaxSize') && {
+      ...(has('workerPoolMaxSize', Configuration.getConfigurationData()) && {
         // eslint-disable-next-line @typescript-eslint/no-deprecated
         poolMaxSize: Configuration.getConfigurationData()?.workerPoolMaxSize,
       }),
     }
-    has(Configuration.getConfigurationData(), 'workerPoolStrategy') &&
+    has('workerPoolStrategy', Configuration.getConfigurationData()) &&
       // eslint-disable-next-line @typescript-eslint/no-deprecated
       delete Configuration.getConfigurationData()?.workerPoolStrategy
     const workerConfiguration: WorkerConfiguration = {
       ...defaultWorkerConfiguration,
       ...deprecatedWorkerConfiguration,
-      ...(has(Configuration.getConfigurationData(), ConfigurationSection.worker) &&
+      ...(has(ConfigurationSection.worker, Configuration.getConfigurationData()) &&
         Configuration.getConfigurationData()?.worker),
     }
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
