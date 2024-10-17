@@ -39,14 +39,14 @@ export const handleFileException = (
   const prefix = isNotEmptyString(logPfx) ? `${logPfx} ` : ''
   let logMsg: string
   switch (error.code) {
-    case 'ENOENT':
-      logMsg = `${fileType} file ${file} not found: `
+    case 'EACCES':
+      logMsg = `${fileType} file ${file} access denied: `
       break
     case 'EEXIST':
       logMsg = `${fileType} file ${file} already exists: `
       break
-    case 'EACCES':
-      logMsg = `${fileType} file ${file} access denied: `
+    case 'ENOENT':
+      logMsg = `${fileType} file ${file} not found: `
       break
     case 'EPERM':
       logMsg = `${fileType} file ${file} permission denied: `

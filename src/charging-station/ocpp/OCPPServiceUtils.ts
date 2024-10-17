@@ -270,14 +270,14 @@ export const ajvErrorsToErrorType = (errors: ErrorObject[] | null | undefined): 
   if (isNotEmptyArray(errors)) {
     for (const error of errors) {
       switch (error.keyword) {
-        case 'type':
-          return ErrorType.TYPE_CONSTRAINT_VIOLATION
         case 'dependencies':
         case 'required':
           return ErrorType.OCCURRENCE_CONSTRAINT_VIOLATION
-        case 'pattern':
         case 'format':
+        case 'pattern':
           return ErrorType.PROPERTY_CONSTRAINT_VIOLATION
+        case 'type':
+          return ErrorType.TYPE_CONSTRAINT_VIOLATION
       }
     }
   }

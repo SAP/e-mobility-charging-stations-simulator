@@ -19,9 +19,9 @@ export class MikroOrmStorage extends Storage {
 
   private getClientUrl (): string | undefined {
     switch (this.storageType) {
-      case StorageType.SQLITE:
       case StorageType.MARIA_DB:
       case StorageType.MYSQL:
+      case StorageType.SQLITE:
         return this.storageUri.toString()
     }
   }
@@ -58,12 +58,12 @@ export class MikroOrmStorage extends Storage {
     try {
       if (this.orm == null) {
         switch (this.storageType) {
-          case StorageType.SQLITE:
-            this.orm = await SqliteORM.init(this.getOptions() as SqliteOptions)
-            break
           case StorageType.MARIA_DB:
           case StorageType.MYSQL:
             this.orm = await MariaDbORM.init(this.getOptions() as MariaDbOptions)
+            break
+          case StorageType.SQLITE:
+            this.orm = await SqliteORM.init(this.getOptions() as SqliteOptions)
             break
         }
       }

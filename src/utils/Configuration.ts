@@ -182,18 +182,18 @@ export class Configuration {
   private static buildPerformanceStorageSection (): StorageConfiguration {
     let storageConfiguration: StorageConfiguration
     switch (Configuration.getConfigurationData()?.performanceStorage?.type) {
-      case StorageType.SQLITE:
-        storageConfiguration = {
-          enabled: false,
-          type: StorageType.SQLITE,
-          uri: getDefaultPerformanceStorageUri(StorageType.SQLITE),
-        }
-        break
       case StorageType.JSON_FILE:
         storageConfiguration = {
           enabled: false,
           type: StorageType.JSON_FILE,
           uri: getDefaultPerformanceStorageUri(StorageType.JSON_FILE),
+        }
+        break
+      case StorageType.SQLITE:
+        storageConfiguration = {
+          enabled: false,
+          type: StorageType.SQLITE,
+          uri: getDefaultPerformanceStorageUri(StorageType.SQLITE),
         }
         break
       case StorageType.NONE:

@@ -677,11 +677,11 @@ export const hasFeatureProfile = (
 export const getAmperageLimitationUnitDivider = (stationInfo: ChargingStationInfo): number => {
   let unitDivider = 1
   switch (stationInfo.amperageLimitationUnit) {
-    case AmpereUnits.DECI_AMPERE:
-      unitDivider = 10
-      break
     case AmpereUnits.CENTI_AMPERE:
       unitDivider = 100
+      break
+    case AmpereUnits.DECI_AMPERE:
+      unitDivider = 10
       break
     case AmpereUnits.MILLI_AMPERE:
       unitDivider = 1000
