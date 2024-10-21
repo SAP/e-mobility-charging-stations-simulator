@@ -15,7 +15,7 @@ taskipy = "^1"
 ruff = "^0.7"
 
 [tool.taskipy.tasks]
-server = "python server.py"
+server = "poetry run python server.py"
 format = "ruff format . && ruff check --fix ."
 lint = "ruff format --check --diff . && ruff check --diff ."
 

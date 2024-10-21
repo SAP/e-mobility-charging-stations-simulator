@@ -18,6 +18,12 @@ To start the server, run the `server.py` script:
 poetry run task server
 ```
 
+Or
+
+```shell
+poetry run python server.py
+```
+
 The server will start listening for connections on port 9000.
 
 ## Running the server with OCPP command sending
