@@ -19,4 +19,4 @@ jobs:
         id: combine-prs
         uses: github/combine-prs@v5.2.0
         with:
-          github_token: ${{ secrets.SECRET_TOKEN }}
+          github_token: ${{ secrets.WORKFLOW_TOKEN }}
