@@ -1,7 +1,7 @@
 // Partial Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
 import { millisecondsToSeconds, secondsToMilliseconds } from 'date-fns'
-import { createHash, randomInt } from 'node:crypto'
+import { hash, randomInt } from 'node:crypto'
 import { EventEmitter } from 'node:events'
 import { existsSync, type FSWatcher, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -643,9 +643,11 @@ export class ChargingStation extends EventEmitter {
         const beginId = PerformanceStatistics.beginMeasure(measureId)
         template = JSON.parse(readFileSync(this.templateFile, 'utf8')) as ChargingStationTemplate
         PerformanceStatistics.endMeasure(measureId, beginId)
-        template.templateHash = createHash(Constants.DEFAULT_HASH_ALGORITHM)
-          .update(JSON.stringify(template))
-          .digest('hex')
+        template.templateHash = hash(
+          Constants.DEFAULT_HASH_ALGORITHM,
+          JSON.stringify(template),
+          'hex'
+        )
         this.sharedLRUCache.setChargingStationTemplate(template)
         this.templateFileHash = template.templateHash
       }
@@ -847,11 +849,11 @@ export class ChargingStation extends EventEmitter {
     if (stationTemplate.Connectors != null) {
       const { configuredMaxConnectors, templateMaxAvailableConnectors, templateMaxConnectors } =
         checkConnectorsConfiguration(stationTemplate, this.logPrefix(), this.templateFile)
-      const connectorsConfigHash = createHash(Constants.DEFAULT_HASH_ALGORITHM)
-        .update(
-          `${JSON.stringify(stationTemplate.Connectors)}${configuredMaxConnectors.toString()}`
-        )
-        .digest('hex')
+      const connectorsConfigHash = hash(
+        Constants.DEFAULT_HASH_ALGORITHM,
+        `${JSON.stringify(stationTemplate.Connectors)}${configuredMaxConnectors.toString()}`,
+        'hex'
+      )
       const connectorsConfigChanged =
         this.connectors.size !== 0 && this.connectorsConfigurationHash !== connectorsConfigHash
       if (this.connectors.size === 0 || connectorsConfigChanged) {
@@ -977,9 +979,11 @@ export class ChargingStation extends EventEmitter {
       )
     }
     if (stationTemplate.Evses != null) {
-      const evsesConfigHash = createHash(Constants.DEFAULT_HASH_ALGORITHM)
-        .update(JSON.stringify(stationTemplate.Evses))
-        .digest('hex')
+      const evsesConfigHash = hash(
+        Constants.DEFAULT_HASH_ALGORITHM,
+        JSON.stringify(stationTemplate.Evses),
+        'hex'
+      )
       const evsesConfigChanged =
         this.evses.size !== 0 && this.evsesConfigurationHash !== evsesConfigHash
       if (this.evses.size === 0 || evsesConfigChanged) {
@@ -1438,21 +1442,21 @@ export class ChargingStation extends EventEmitter {
           delete configurationData.evsesStatus
         }
         delete configurationData.configurationHash
-        const configurationHash = createHash(Constants.DEFAULT_HASH_ALGORITHM)
-          .update(
-            JSON.stringify({
-              automaticTransactionGenerator: configurationData.automaticTransactionGenerator,
-              configurationKey: configurationData.configurationKey,
-              stationInfo: configurationData.stationInfo,
-              ...(this.connectors.size > 0 && {
-                connectorsStatus: configurationData.connectorsStatus,
-              }),
-              ...(this.evses.size > 0 && {
-                evsesStatus: configurationData.evsesStatus,
-              }),
-            } satisfies ChargingStationConfiguration)
-          )
-          .digest('hex')
+        const configurationHash = hash(
+          Constants.DEFAULT_HASH_ALGORITHM,
+          JSON.stringify({
+            automaticTransactionGenerator: configurationData.automaticTransactionGenerator,
+            configurationKey: configurationData.configurationKey,
+            stationInfo: configurationData.stationInfo,
+            ...(this.connectors.size > 0 && {
+              connectorsStatus: configurationData.connectorsStatus,
+            }),
+            ...(this.evses.size > 0 && {
+              evsesStatus: configurationData.evsesStatus,
+            }),
+          } satisfies ChargingStationConfiguration),
+          'hex'
+        )
         if (this.configurationFileHash !== configurationHash) {
           AsyncLock.runExclusive(AsyncLockType.configuration, () => {
             configurationData.configurationHash = configurationHash
