@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.0.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ocpp-server@v1.5.2...ocpp-server@v2.0.0) (2024-10-23)
+
+### 🤖 Automation
+
+- **deps-dev:** bump taskipy in /tests/ocpp-server in the regular group ([#1199](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1199)) ([cd41213](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/cd41213f50caaf842c4cc078ce5907adba68c05b))
+
 ## [1.5.2](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ocpp-server@v1.5.1...ocpp-server@v1.5.2) (2024-10-21)
 
 ### 🐞 Bug Fixes
