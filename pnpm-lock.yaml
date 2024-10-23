@@ -149,8 +149,8 @@ importers:
         specifier: ^15.2.10
         version: 15.2.10
       neostandard:
-        specifier: ^0.11.6
-        version: 0.11.6(eslint@9.13.0(jiti@1.21.6))(typescript@5.6.3)
+        specifier: ^0.11.7
+        version: 0.11.7(eslint@9.13.0(jiti@1.21.6))(typescript@5.6.3)
       prettier:
         specifier: ^3.3.3
         version: 3.3.3
@@ -4246,8 +4246,8 @@ packages:
     resolution: {integrity: sha512-myRT3DiWPHqho5PrJaIRyaMv2kgYf0mUVgBNOYMuCH5Ki1yEiQaf/ZJuQ62nvpc44wL5WDbTX7yGJi1Neevw8w==}
     engines: {node: '>= 0.6'}
 
-  neostandard@0.11.6:
-    resolution: {integrity: sha512-/7egVVdQj1oyX2RBgjLqAm3akDa6/hZlmb2YC0mwS/rEy6xkOtT/o4P4/XrPLbIshdhda/VfQXOIhEA+O4No1w==}
+  neostandard@0.11.7:
+    resolution: {integrity: sha512-IagKoLOInY3OwmGQX/Spx4FTDNdODGh8JpChiwAXUuL9qSOXdbW5xUQOUIypp6p8TCkG9NjskKWz0uk1gynuXA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     hasBin: true
     peerDependencies:
@@ -10540,7 +10540,7 @@ snapshots:
   negotiator@0.6.4:
     optional: true
 
-  neostandard@0.11.6(eslint@9.13.0(jiti@1.21.6))(typescript@5.6.3):
+  neostandard@0.11.7(eslint@9.13.0(jiti@1.21.6))(typescript@5.6.3):
     dependencies:
       '@humanwhocodes/gitignore-to-minimatch': 1.0.2
       '@stylistic/eslint-plugin': 2.9.0(eslint@9.13.0(jiti@1.21.6))(typescript@5.6.3)
