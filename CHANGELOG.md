@@ -2,27 +2,24 @@
 
 ## [2.0.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v1.5.2...simulator@v2.0.0) (2024-10-23)
 
-
 ### ⚠ BREAKING CHANGES
 
-* bump the minimum node version supported to 20.x.x
+- bump the minimum node version supported to 20.x.x
 
 ### ⚡ Performance
 
-* use crypto `hash` instead of `createHash` ([1f9416c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/1f9416ccaf3bacf0c4f3f61ae8501d8b3f036ad2))
-
+- use crypto `hash` instead of `createHash` ([1f9416c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/1f9416ccaf3bacf0c4f3f61ae8501d8b3f036ad2))
 
 ### 🤖 Automation
 
-* **ci:** readd pnpm audit step ([11d2ed9](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/11d2ed98b089dff19a7c2521b0f36ffc81a49b0c))
-* **ci:** switch to workflow token ([ecb01bf](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ecb01bf1c1d631d2f0920c870097c7f17df6118a))
-* **deps-dev:** bump neostandard in the regular group ([#1198](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1198)) ([d65f40c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/d65f40c07014ba5c72e180ec8ca43b67bac0aacf))
-* **deps:** bump the regular group with 2 updates ([#1197](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1197)) ([6f31a7a](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6f31a7a48fbe760691ebc36695ca8ab07b538f8b))
-
+- **ci:** readd pnpm audit step ([11d2ed9](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/11d2ed98b089dff19a7c2521b0f36ffc81a49b0c))
+- **ci:** switch to workflow token ([ecb01bf](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ecb01bf1c1d631d2f0920c870097c7f17df6118a))
+- **deps-dev:** bump neostandard in the regular group ([#1198](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1198)) ([d65f40c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/d65f40c07014ba5c72e180ec8ca43b67bac0aacf))
+- **deps:** bump the regular group with 2 updates ([#1197](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1197)) ([6f31a7a](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6f31a7a48fbe760691ebc36695ca8ab07b538f8b))
 
 ### 🧹 Chores
 
-* bump the minimum node version supported to 20.x.x ([7b8957c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7b8957c7a45de0415157f08ce7aa18e0b2fc83c4))
+- bump the minimum node version supported to 20.x.x ([7b8957c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7b8957c7a45de0415157f08ce7aa18e0b2fc83c4))
 
 ## [1.5.2](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v1.5.1...simulator@v1.5.2) (2024-10-21)
 

@@ -2,10 +2,9 @@
 
 ## [2.0.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v1.5.2...webui@v2.0.0) (2024-10-23)
 
-
 ### 🤖 Automation
 
-* **deps:** bump the regular group with 2 updates ([#1197](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1197)) ([6f31a7a](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6f31a7a48fbe760691ebc36695ca8ab07b538f8b))
+- **deps:** bump the regular group with 2 updates ([#1197](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1197)) ([6f31a7a](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6f31a7a48fbe760691ebc36695ca8ab07b538f8b))
 
 ## [1.5.2](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v1.5.1...webui@v1.5.2) (2024-10-21)
 
