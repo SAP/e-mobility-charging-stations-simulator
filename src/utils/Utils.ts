@@ -12,7 +12,7 @@ import {
   secondsToMilliseconds,
 } from 'date-fns'
 import { getRandomValues, randomBytes, randomUUID } from 'node:crypto'
-import { env, nextTick } from 'node:process'
+import { env } from 'node:process'
 import { is, isNotEmpty, type NonEmptyArray, type ReadonlyNonEmptyArray } from 'rambda'
 
 import {
@@ -334,8 +334,8 @@ export const isArraySorted = <T>(array: T[], compareFn: (a: T, b: T) => number):
   return true
 }
 
-export const throwErrorInNextTick = (error: Error): void => {
-  nextTick(() => {
+export const queueMicrotaskErrorThrowing = (error: Error): void => {
+  queueMicrotask(() => {
     throw error
   })
 }
