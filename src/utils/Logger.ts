@@ -47,7 +47,7 @@ if (logConfiguration.rotate === true) {
   ]
 }
 
-export const logger = createLogger({
+const logger = createLogger({
   format: format.combine(
     format.splat(),
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -73,3 +73,5 @@ if (logConfiguration.console === true) {
     })
   )
 }
+
+export { logger }
