@@ -99,7 +99,7 @@
     "logform": "^2.6.1",
     "mnemonist": "0.40.0-rc1",
     "mongodb": "^6.10.0",
-    "poolifier": "^4.4.2",
+    "poolifier": "^4.4.4",
     "rambda": "^9.3.0",
     "tar": "^7.4.3",
     "winston": "^3.15.0",
@@ -128,7 +128,7 @@
     "eslint-define-config": "^2.1.0",
     "eslint-plugin-jsdoc": "^50.4.3",
     "eslint-plugin-perfectionist": "^3.9.1",
-    "eslint-plugin-vue": "^9.29.1",
+    "eslint-plugin-vue": "^9.30.0",
     "expect": "^29.7.0",
     "glob": "^11.0.0",
     "husky": "^9.1.6",
@@ -138,7 +138,7 @@
     "rimraf": "^6.0.1",
     "semver": "^7.6.3",
     "ts-node": "^10.9.2",
-    "tsx": "^4.19.1",
+    "tsx": "^4.19.2",
     "typescript": "~5.6.3"
   }
 }
