@@ -16,8 +16,8 @@ ruff = "^0.7"
 
 [tool.taskipy.tasks]
 server = "poetry run python server.py"
-format = "ruff format . && ruff check --fix ."
-lint = "ruff format --check --diff . && ruff check --diff ."
+format = "ruff check --fix . && ruff format ."
+lint = "ruff check --diff . && ruff format --check --diff ."
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "ASYNC", "S", "B", "A", "Q", "RUF", "I"]
