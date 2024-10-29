@@ -84,7 +84,7 @@ importers:
     devDependencies:
       '@commitlint/cli':
         specifier: ^19.5.0
-        version: 19.5.0(@types/node@22.8.1)(typescript@5.6.3)
+        version: 19.5.0(@types/node@22.8.2)(typescript@5.6.3)
       '@commitlint/config-conventional':
         specifier: ^19.5.0
         version: 19.5.0
@@ -95,8 +95,8 @@ importers:
         specifier: ^6.3.13
         version: 6.3.13(mariadb@3.3.2)
       '@types/node':
-        specifier: ^22.8.1
-        version: 22.8.1
+        specifier: ^22.8.2
+        version: 22.8.2
       '@types/semver':
         specifier: ^7.5.8
         version: 7.5.8
@@ -162,7 +162,7 @@ importers:
         version: 7.6.3
       ts-node:
         specifier: ^10.9.2
-        version: 10.9.2(@types/node@22.8.1)(typescript@5.6.3)
+        version: 10.9.2(@types/node@22.8.2)(typescript@5.6.3)
       tsx:
         specifier: ^4.19.2
         version: 4.19.2
@@ -195,17 +195,17 @@ importers:
         specifier: ^21.1.7
         version: 21.1.7
       '@types/node':
-        specifier: ^22.8.1
-        version: 22.8.1
+        specifier: ^22.8.2
+        version: 22.8.2
       '@vitejs/plugin-vue':
         specifier: ^5.1.4
-        version: 5.1.4(vite@5.4.10(@types/node@22.8.1))(vue@3.5.12(typescript@5.6.3))
+        version: 5.1.4(vite@5.4.10(@types/node@22.8.2))(vue@3.5.12(typescript@5.6.3))
       '@vitejs/plugin-vue-jsx':
         specifier: ^4.0.1
-        version: 4.0.1(vite@5.4.10(@types/node@22.8.1))(vue@3.5.12(typescript@5.6.3))
+        version: 4.0.1(vite@5.4.10(@types/node@22.8.2))(vue@3.5.12(typescript@5.6.3))
       '@vitest/coverage-v8':
         specifier: ^2.1.4
-        version: 2.1.4(vitest@2.1.4(@types/node@22.8.1)(jsdom@25.0.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)))
+        version: 2.1.4(vitest@2.1.4(@types/node@22.8.2)(jsdom@25.0.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)))
       '@vue/test-utils':
         specifier: ^2.4.6
         version: 2.4.6
@@ -229,10 +229,10 @@ importers:
         version: 5.6.3
       vite:
         specifier: ^5.4.10
-        version: 5.4.10(@types/node@22.8.1)
+        version: 5.4.10(@types/node@22.8.2)
       vitest:
         specifier: ^2.1.4
-        version: 2.1.4(@types/node@22.8.1)(jsdom@25.0.1(bufferutil@4.0.8)(utf-8-validate@6.0.4))
+        version: 2.1.4(@types/node@22.8.2)(jsdom@25.0.1(bufferutil@4.0.8)(utf-8-validate@6.0.4))
 
 packages:
 
@@ -1245,8 +1245,8 @@ packages:
   '@types/long@4.0.2':
     resolution: {integrity: sha512-MqTGEo5bj5t157U6fA/BiDynNkn0YknVdh48CMPkTSpFTVmvao5UQmm7uEF6xBEo7qIMAlY/JSleYaE6VOdpaA==}
 
-  '@types/node@22.8.1':
-    resolution: {integrity: sha512-k6Gi8Yyo8EtrNtkHXutUu2corfDf9su95VYVP10aGYMMROM6SAItZi0w1XszA6RtWTHSVp5OeFof37w0IEqCQg==}
+  '@types/node@22.8.2':
+    resolution: {integrity: sha512-NzaRNFV+FZkvK/KLCsNdTvID0SThyrs5SHB6tsD/lajr22FGC73N2QeDPM2wHtVde8mgcXuSsHQkH5cX1pbPLw==}
 
   '@types/offscreencanvas@2019.3.0':
     resolution: {integrity: sha512-esIJx9bQg+QYF0ra8GnvfianIY8qWB0GBx54PK5Eps6m+xTj86KLavHv6qDhzKcu5UUOgNfJ2pWaIIV7TRUd9Q==}
@@ -6260,11 +6260,11 @@ snapshots:
 
   '@colors/colors@1.6.0': {}
 
-  '@commitlint/cli@19.5.0(@types/node@22.8.1)(typescript@5.6.3)':
+  '@commitlint/cli@19.5.0(@types/node@22.8.2)(typescript@5.6.3)':
     dependencies:
       '@commitlint/format': 19.5.0
       '@commitlint/lint': 19.5.0
-      '@commitlint/load': 19.5.0(@types/node@22.8.1)(typescript@5.6.3)
+      '@commitlint/load': 19.5.0(@types/node@22.8.2)(typescript@5.6.3)
       '@commitlint/read': 19.5.0
       '@commitlint/types': 19.5.0
       tinyexec: 0.3.1
@@ -6311,7 +6311,7 @@ snapshots:
       '@commitlint/rules': 19.5.0
       '@commitlint/types': 19.5.0
 
-  '@commitlint/load@19.5.0(@types/node@22.8.1)(typescript@5.6.3)':
+  '@commitlint/load@19.5.0(@types/node@22.8.2)(typescript@5.6.3)':
     dependencies:
       '@commitlint/config-validator': 19.5.0
       '@commitlint/execute-rule': 19.5.0
@@ -6319,7 +6319,7 @@ snapshots:
       '@commitlint/types': 19.5.0
       chalk: 5.3.0
       cosmiconfig: 9.0.0(typescript@5.6.3)
-      cosmiconfig-typescript-loader: 5.1.0(@types/node@22.8.1)(cosmiconfig@9.0.0(typescript@5.6.3))(typescript@5.6.3)
+      cosmiconfig-typescript-loader: 5.1.0(@types/node@22.8.2)(cosmiconfig@9.0.0(typescript@5.6.3))(typescript@5.6.3)
       lodash.isplainobject: 4.0.6
       lodash.merge: 4.6.2
       lodash.uniq: 4.5.0
@@ -6688,7 +6688,7 @@ snapshots:
       '@jest/schemas': 29.6.3
       '@types/istanbul-lib-coverage': 2.0.6
       '@types/istanbul-reports': 3.0.4
-      '@types/node': 22.8.1
+      '@types/node': 22.8.2
       '@types/yargs': 17.0.33
       chalk: 4.1.2
 
@@ -6951,7 +6951,7 @@ snapshots:
 
   '@types/conventional-commits-parser@5.0.0':
     dependencies:
-      '@types/node': 22.8.1
+      '@types/node': 22.8.2
 
   '@types/estree@1.0.6': {}
 
@@ -6971,7 +6971,7 @@ snapshots:
 
   '@types/jsdom@21.1.7':
     dependencies:
-      '@types/node': 22.8.1
+      '@types/node': 22.8.2
       '@types/tough-cookie': 4.0.5
       parse5: 7.2.0
 
@@ -6979,7 +6979,7 @@ snapshots:
 
   '@types/long@4.0.2': {}
 
-  '@types/node@22.8.1':
+  '@types/node@22.8.2':
     dependencies:
       undici-types: 6.19.8
 
@@ -7005,7 +7005,7 @@ snapshots:
 
   '@types/ws@8.5.12':
     dependencies:
-      '@types/node': 22.8.1
+      '@types/node': 22.8.2
 
   '@types/yargs-parser@21.0.3': {}
 
@@ -7094,22 +7094,22 @@ snapshots:
       '@typescript-eslint/types': 8.11.0
       eslint-visitor-keys: 3.4.3
 
-  '@vitejs/plugin-vue-jsx@4.0.1(vite@5.4.10(@types/node@22.8.1))(vue@3.5.12(typescript@5.6.3))':
+  '@vitejs/plugin-vue-jsx@4.0.1(vite@5.4.10(@types/node@22.8.2))(vue@3.5.12(typescript@5.6.3))':
     dependencies:
       '@babel/core': 7.26.0
       '@babel/plugin-transform-typescript': 7.25.9(@babel/core@7.26.0)
       '@vue/babel-plugin-jsx': 1.2.5(@babel/core@7.26.0)
-      vite: 5.4.10(@types/node@22.8.1)
+      vite: 5.4.10(@types/node@22.8.2)
       vue: 3.5.12(typescript@5.6.3)
     transitivePeerDependencies:
       - supports-color
 
-  '@vitejs/plugin-vue@5.1.4(vite@5.4.10(@types/node@22.8.1))(vue@3.5.12(typescript@5.6.3))':
+  '@vitejs/plugin-vue@5.1.4(vite@5.4.10(@types/node@22.8.2))(vue@3.5.12(typescript@5.6.3))':
     dependencies:
-      vite: 5.4.10(@types/node@22.8.1)
+      vite: 5.4.10(@types/node@22.8.2)
       vue: 3.5.12(typescript@5.6.3)
 
-  '@vitest/coverage-v8@2.1.4(vitest@2.1.4(@types/node@22.8.1)(jsdom@25.0.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)))':
+  '@vitest/coverage-v8@2.1.4(vitest@2.1.4(@types/node@22.8.2)(jsdom@25.0.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)))':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@bcoe/v8-coverage': 0.2.3
@@ -7123,7 +7123,7 @@ snapshots:
       std-env: 3.7.0
       test-exclude: 7.0.1
       tinyrainbow: 1.2.0
-      vitest: 2.1.4(@types/node@22.8.1)(jsdom@25.0.1(bufferutil@4.0.8)(utf-8-validate@6.0.4))
+      vitest: 2.1.4(@types/node@22.8.2)(jsdom@25.0.1(bufferutil@4.0.8)(utf-8-validate@6.0.4))
     transitivePeerDependencies:
       - supports-color
 
@@ -7134,13 +7134,13 @@ snapshots:
       chai: 5.1.2
       tinyrainbow: 1.2.0
 
-  '@vitest/mocker@2.1.4(vite@5.4.10(@types/node@22.8.1))':
+  '@vitest/mocker@2.1.4(vite@5.4.10(@types/node@22.8.2))':
     dependencies:
       '@vitest/spy': 2.1.4
       estree-walker: 3.0.3
       magic-string: 0.30.12
     optionalDependencies:
-      vite: 5.4.10(@types/node@22.8.1)
+      vite: 5.4.10(@types/node@22.8.2)
 
   '@vitest/pretty-format@2.1.4':
     dependencies:
@@ -8104,9 +8104,9 @@ snapshots:
 
   core-util-is@1.0.3: {}
 
-  cosmiconfig-typescript-loader@5.1.0(@types/node@22.8.1)(cosmiconfig@9.0.0(typescript@5.6.3))(typescript@5.6.3):
+  cosmiconfig-typescript-loader@5.1.0(@types/node@22.8.2)(cosmiconfig@9.0.0(typescript@5.6.3))(typescript@5.6.3):
     dependencies:
-      '@types/node': 22.8.1
+      '@types/node': 22.8.2
       cosmiconfig: 9.0.0(typescript@5.6.3)
       jiti: 1.21.6
       typescript: 5.6.3
@@ -9894,7 +9894,7 @@ snapshots:
   jest-util@29.7.0:
     dependencies:
       '@jest/types': 29.6.3
-      '@types/node': 22.8.1
+      '@types/node': 22.8.2
       chalk: 4.1.2
       ci-info: 3.9.0
       graceful-fs: 4.2.11
@@ -10225,7 +10225,7 @@ snapshots:
   mariadb@3.3.2:
     dependencies:
       '@types/geojson': 7946.0.14
-      '@types/node': 22.8.1
+      '@types/node': 22.8.2
       denque: 2.1.0
       iconv-lite: 0.6.3
       lru-cache: 10.4.3
@@ -11866,14 +11866,14 @@ snapshots:
       '@ts-morph/common': 0.24.0
       code-block-writer: 13.0.3
 
-  ts-node@10.9.2(@types/node@22.8.1)(typescript@5.6.3):
+  ts-node@10.9.2(@types/node@22.8.2)(typescript@5.6.3):
     dependencies:
       '@cspotcode/source-map-support': 0.8.1
       '@tsconfig/node10': 1.0.11
       '@tsconfig/node12': 1.0.11
       '@tsconfig/node14': 1.0.3
       '@tsconfig/node16': 1.0.4
-      '@types/node': 22.8.1
+      '@types/node': 22.8.2
       acorn: 8.13.0
       acorn-walk: 8.3.4
       arg: 4.1.3
@@ -12113,12 +12113,12 @@ snapshots:
       core-util-is: 1.0.2
       extsprintf: 1.3.0
 
-  vite-node@2.1.4(@types/node@22.8.1):
+  vite-node@2.1.4(@types/node@22.8.2):
     dependencies:
       cac: 6.7.14
       debug: 4.3.7
       pathe: 1.1.2
-      vite: 5.4.10(@types/node@22.8.1)
+      vite: 5.4.10(@types/node@22.8.2)
     transitivePeerDependencies:
       - '@types/node'
       - less
@@ -12130,19 +12130,19 @@ snapshots:
       - supports-color
       - terser
 
-  vite@5.4.10(@types/node@22.8.1):
+  vite@5.4.10(@types/node@22.8.2):
     dependencies:
       esbuild: 0.21.5
       postcss: 8.4.47
       rollup: 4.24.0
     optionalDependencies:
-      '@types/node': 22.8.1
+      '@types/node': 22.8.2
       fsevents: 2.3.3
 
-  vitest@2.1.4(@types/node@22.8.1)(jsdom@25.0.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)):
+  vitest@2.1.4(@types/node@22.8.2)(jsdom@25.0.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)):
     dependencies:
       '@vitest/expect': 2.1.4
-      '@vitest/mocker': 2.1.4(vite@5.4.10(@types/node@22.8.1))
+      '@vitest/mocker': 2.1.4(vite@5.4.10(@types/node@22.8.2))
       '@vitest/pretty-format': 2.1.4
       '@vitest/runner': 2.1.4
       '@vitest/snapshot': 2.1.4
@@ -12158,11 +12158,11 @@ snapshots:
       tinyexec: 0.3.1
       tinypool: 1.0.1
       tinyrainbow: 1.2.0
-      vite: 5.4.10(@types/node@22.8.1)
-      vite-node: 2.1.4(@types/node@22.8.1)
+      vite: 5.4.10(@types/node@22.8.2)
+      vite-node: 2.1.4(@types/node@22.8.2)
       why-is-node-running: 2.3.0
     optionalDependencies:
-      '@types/node': 22.8.1
+      '@types/node': 22.8.2
       jsdom: 25.0.1(bufferutil@4.0.8)(utf-8-validate@6.0.4)
     transitivePeerDependencies:
       - less
