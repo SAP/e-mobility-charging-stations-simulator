@@ -1146,8 +1146,9 @@ const getLimitFromSampledValueTemplateCustomValue = (
   if (options.limitationEnabled) {
     return max(
       min(
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        (!isNaN(parsedValue) ? parsedValue : Number.POSITIVE_INFINITY) * options.unitMultiplier!,
+        (!Number.isNaN(parsedValue) ? parsedValue : Number.POSITIVE_INFINITY) *
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          options.unitMultiplier!,
         maxLimit
       ),
       minLimit
