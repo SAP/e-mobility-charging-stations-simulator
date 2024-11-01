@@ -1,6 +1,6 @@
+import { describe, it } from 'node:test'
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { expect } from 'expect'
-import { describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/index.js'
 

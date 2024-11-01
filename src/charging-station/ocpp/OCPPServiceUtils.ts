@@ -1154,8 +1154,10 @@ const getLimitFromSampledValueTemplateCustomValue = (
       minLimit
     )
   }
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  return (!isNaN(parsedValue) ? parsedValue : options.fallbackValue!) * options.unitMultiplier!
+  return (
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    (!Number.isNaN(parsedValue) ? parsedValue : options.fallbackValue!) * options.unitMultiplier!
+  )
 }
 
 const getSampledValueTemplate = (

@@ -1059,8 +1059,10 @@ export class ChargingStation extends EventEmitter {
         this,
         this.stationInfo.amperageLimitationOcppKey,
         // prettier-ignore
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        (this.stationInfo.maximumAmperage! * getAmperageLimitationUnitDivider(this.stationInfo)).toString()
+        (
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          this.stationInfo.maximumAmperage! * getAmperageLimitationUnitDivider(this.stationInfo)
+        ).toString()
       )
     }
     if (getConfigurationKey(this, StandardParametersKey.SupportedFeatureProfiles) == null) {

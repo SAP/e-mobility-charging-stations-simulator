@@ -1,9 +1,9 @@
+import { env } from 'node:process'
 /* eslint-disable n/no-unpublished-import */
 import chalk from 'chalk'
 import { build } from 'esbuild'
 import { clean } from 'esbuild-plugin-clean'
 import { copy } from 'esbuild-plugin-copy'
-import { env } from 'node:process'
 
 const isDevelopmentBuild = env.BUILD === 'development'
 const sourcemap = !!isDevelopmentBuild
