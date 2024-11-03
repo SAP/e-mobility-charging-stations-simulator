@@ -17,11 +17,23 @@ updates:
     groups:
       regular:
         update-types:
-          - 'minor'
           - 'patch'
-      major:
+          - 'minor'
+        exclude-patterns:
+          - 'typescript'
+      typescript:
         update-types:
+          - 'patch'
+          - 'minor'
           - 'major'
+        patterns:
+          - 'typescript'
+      mikro-orm:
+        patterns:
+          - '@mikro-orm/*'
+      commitlint:
+        patterns:
+          - '@commitlint/*'
     labels:
       - 'dependencies'
     reviewers:
@@ -35,13 +47,21 @@ updates:
     groups:
       regular:
         update-types:
-          - 'minor'
           - 'patch'
-      major:
-        update-types:
-          - 'major'
+          - 'minor'
     labels:
       - 'dependencies'
+    reviewers:
+      - 'jerome-benoit'
+      - 'olivierbagot'
+  - package-ecosystem: docker
+    directories:
+      - '/docker'
+      - '/ui/web/docker'
+    schedule:
+      interval: daily
+    labels:
+      - 'docker'
     reviewers:
       - 'jerome-benoit'
       - 'olivierbagot'

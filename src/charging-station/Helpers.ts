@@ -17,7 +17,7 @@ import {
   toDate,
 } from 'date-fns'
 import { maxTime } from 'date-fns/constants'
-import { createHash, randomBytes } from 'node:crypto'
+import { hash, randomBytes } from 'node:crypto'
 import { basename, dirname, isAbsolute, join, parse, relative, resolve } from 'node:path'
 import { env } from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -171,9 +171,11 @@ export const getHashId = (index: number, stationTemplate: ChargingStationTemplat
       meterType: stationTemplate.meterType,
     }),
   }
-  return createHash(Constants.DEFAULT_HASH_ALGORITHM)
-    .update(`${JSON.stringify(chargingStationInfo)}${getChargingStationId(index, stationTemplate)}`)
-    .digest('hex')
+  return hash(
+    Constants.DEFAULT_HASH_ALGORITHM,
+    `${JSON.stringify(chargingStationInfo)}${getChargingStationId(index, stationTemplate)}`,
+    'hex'
+  )
 }
 
 export const validateStationInfo = (chargingStation: ChargingStation): void => {
@@ -677,11 +679,11 @@ export const hasFeatureProfile = (
 export const getAmperageLimitationUnitDivider = (stationInfo: ChargingStationInfo): number => {
   let unitDivider = 1
   switch (stationInfo.amperageLimitationUnit) {
-    case AmpereUnits.DECI_AMPERE:
-      unitDivider = 10
-      break
     case AmpereUnits.CENTI_AMPERE:
       unitDivider = 100
+      break
+    case AmpereUnits.DECI_AMPERE:
+      unitDivider = 10
       break
     case AmpereUnits.MILLI_AMPERE:
       unitDivider = 1000

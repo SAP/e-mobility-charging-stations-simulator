@@ -1,6 +1,6 @@
 // Partial Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
 
-import type { Worker } from 'worker_threads'
+import type { Worker } from 'node:worker_threads'
 
 import chalk from 'chalk'
 import { EventEmitter } from 'node:events'

@@ -30,7 +30,8 @@ export const convertToInt = (value: unknown): number => {
     changedValue = Number.parseInt(value)
   }
   if (isNaN(changedValue)) {
-    throw new Error(`Cannot convert to integer: '${String(value)}'`)
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
+    throw new Error(`Cannot convert to integer: '${value.toString()}'`)
   }
   return changedValue
 }

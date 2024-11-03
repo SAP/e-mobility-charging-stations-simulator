@@ -1,16 +1,16 @@
 {
   "$schema": "https://json.schemastore.org/package",
   "name": "e-mobility-charging-stations-simulator",
-  "version": "1.5.1",
+  "version": "2.0.0",
   "engines": {
-    "node": ">=18.18.0",
+    "node": ">=20.0.0",
     "pnpm": ">=9.0.0"
   },
   "volta": {
-    "node": "22.9.0",
-    "pnpm": "9.11.0"
+    "node": "22.11.0",
+    "pnpm": "9.12.3"
   },
-  "packageManager": "pnpm@9.11.0",
+  "packageManager": "pnpm@9.12.3",
   "repository": {
     "type": "git",
     "url": "https://github.com/sap/e-mobility-charging-stations-simulator.git"
@@ -86,10 +86,10 @@
     }
   },
   "dependencies": {
-    "@mikro-orm/core": "^6.3.10",
-    "@mikro-orm/mariadb": "^6.3.10",
-    "@mikro-orm/reflection": "^6.3.10",
-    "@mikro-orm/sqlite": "^6.3.10",
+    "@mikro-orm/core": "^6.3.13",
+    "@mikro-orm/mariadb": "^6.3.13",
+    "@mikro-orm/reflection": "^6.3.13",
+    "@mikro-orm/sqlite": "^6.3.13",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "basic-ftp": "^5.0.5",
@@ -98,11 +98,11 @@
     "http-status-codes": "^2.3.0",
     "logform": "^2.6.1",
     "mnemonist": "0.40.0-rc1",
-    "mongodb": "^6.9.0",
-    "poolifier": "^4.2.11",
+    "mongodb": "^6.10.0",
+    "poolifier": "^4.4.4",
     "rambda": "^9.3.0",
     "tar": "^7.4.3",
-    "winston": "^3.14.2",
+    "winston": "^3.15.0",
     "winston-daily-rotate-file": "^5.0.0",
     "ws": "^8.18.0"
   },
@@ -113,9 +113,9 @@
   "devDependencies": {
     "@commitlint/cli": "^19.5.0",
     "@commitlint/config-conventional": "^19.5.0",
-    "@eslint/js": "^9.11.1",
-    "@mikro-orm/cli": "^6.3.10",
-    "@types/node": "^22.7.2",
+    "@eslint/js": "^9.13.0",
+    "@mikro-orm/cli": "^6.3.13",
+    "@types/node": "^22.8.6",
     "@types/semver": "^7.5.8",
     "@types/ws": "^8.5.12",
     "c8": "^10.1.2",
@@ -124,21 +124,21 @@
     "esbuild": "^0.24.0",
     "esbuild-plugin-clean": "^1.0.1",
     "esbuild-plugin-copy": "^2.1.1",
-    "eslint": "^9.11.1",
+    "eslint": "^9.13.0",
     "eslint-define-config": "^2.1.0",
-    "eslint-plugin-jsdoc": "^50.3.0",
-    "eslint-plugin-perfectionist": "^3.7.0",
-    "eslint-plugin-vue": "^9.28.0",
+    "eslint-plugin-jsdoc": "^50.4.3",
+    "eslint-plugin-perfectionist": "^3.9.1",
+    "eslint-plugin-vue": "^9.30.0",
     "expect": "^29.7.0",
     "glob": "^11.0.0",
     "husky": "^9.1.6",
     "lint-staged": "^15.2.10",
-    "neostandard": "^0.11.6",
+    "neostandard": "^0.11.7",
     "prettier": "^3.3.3",
     "rimraf": "^6.0.1",
     "semver": "^7.6.3",
     "ts-node": "^10.9.2",
-    "tsx": "^4.19.1",
-    "typescript": "~5.6.2"
+    "tsx": "^4.19.2",
+    "typescript": "~5.6.3"
   }
 }

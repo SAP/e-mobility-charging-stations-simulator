@@ -12,7 +12,7 @@ import {
   secondsToMilliseconds,
 } from 'date-fns'
 import { getRandomValues, randomBytes, randomUUID } from 'node:crypto'
-import { env, nextTick } from 'node:process'
+import { env } from 'node:process'
 import { is, isNotEmpty, type NonEmptyArray, type ReadonlyNonEmptyArray } from 'rambda'
 
 import {
@@ -76,9 +76,9 @@ export const formatDurationSeconds = (duration: number): string => {
 // More efficient time validation function than the one provided by date-fns
 export const isValidDate = (date: Date | number | undefined): date is Date | number => {
   if (typeof date === 'number') {
-    return !isNaN(date)
+    return !Number.isNaN(date)
   } else if (isDate(date)) {
-    return !isNaN(date.getTime())
+    return !Number.isNaN(date.getTime())
   }
   return false
 }
@@ -94,7 +94,7 @@ export const convertToDate = (
   }
   if (typeof value === 'string' || typeof value === 'number') {
     const valueToDate = new Date(value)
-    if (isNaN(valueToDate.getTime())) {
+    if (Number.isNaN(valueToDate.getTime())) {
       throw new Error(`Cannot convert to date: '${value.toString()}'`)
     }
     return valueToDate
@@ -115,8 +115,9 @@ export const convertToInt = (value: unknown): number => {
   if (typeof value === 'string') {
     changedValue = Number.parseInt(value)
   }
-  if (isNaN(changedValue)) {
-    throw new Error(`Cannot convert to integer: '${String(value)}'`)
+  if (Number.isNaN(changedValue)) {
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
+    throw new Error(`Cannot convert to integer: '${value.toString()}'`)
   }
   return changedValue
 }
@@ -129,8 +130,9 @@ export const convertToFloat = (value: unknown): number => {
   if (typeof value === 'string') {
     changedValue = Number.parseFloat(value)
   }
-  if (isNaN(changedValue)) {
-    throw new Error(`Cannot convert to float: '${String(value)}'`)
+  if (Number.isNaN(changedValue)) {
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
+    throw new Error(`Cannot convert to float: '${value.toString()}'`)
   }
   return changedValue
 }
@@ -208,22 +210,17 @@ export const clone = <T>(object: T): T => {
   return structuredClone<T>(object)
 }
 
+type AsyncFunctionType<A extends unknown[], R> = (...args: A) => PromiseLike<R>
+
 /**
  * Detects whether the given value is an asynchronous function or not.
  * @param fn - Unknown value.
  * @returns `true` if `fn` was an asynchronous function, otherwise `false`.
  * @internal
  */
-export const isAsyncFunction = (fn: unknown): fn is (...args: unknown[]) => Promise<unknown> => {
-  return is(Function, fn) && fn.constructor.name === 'AsyncFunction'
-}
-
-export const isObject = (value: unknown): value is object => {
-  return value != null && !Array.isArray(value) && is(Object, value)
-}
-
-export const hasOwnProp = (value: unknown, property: PropertyKey): boolean => {
-  return isObject(value) && Object.hasOwn(value, property)
+export const isAsyncFunction = (fn: unknown): fn is AsyncFunctionType<unknown[], unknown> => {
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  return fn?.constructor === (async () => {}).constructor
 }
 
 export const isCFEnvironment = (): boolean => {
@@ -339,8 +336,8 @@ export const isArraySorted = <T>(array: T[], compareFn: (a: T, b: T) => number):
   return true
 }
 
-export const throwErrorInNextTick = (error: Error): void => {
-  nextTick(() => {
+export const queueMicrotaskErrorThrowing = (error: Error): void => {
+  queueMicrotask(() => {
     throw error
   })
 }

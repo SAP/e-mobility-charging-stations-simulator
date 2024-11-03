@@ -115,11 +115,11 @@ export class UIClient {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const { procedureName, reject, resolve } = this.responseHandlers.get(uuid)!
       switch (responsePayload.status) {
-        case ResponseStatus.SUCCESS:
-          resolve(responsePayload)
-          break
         case ResponseStatus.FAILURE:
           reject(responsePayload)
+          break
+        case ResponseStatus.SUCCESS:
+          resolve(responsePayload)
           break
         default:
           reject(

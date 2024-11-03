@@ -164,14 +164,14 @@ const getSupervisionUrl = (): string => {
 }
 const getWSState = (): string => {
   switch (props.chargingStation?.wsState) {
+    case WebSocket.CLOSED:
+      return 'Closed'
+    case WebSocket.CLOSING:
+      return 'Closing'
     case WebSocket.CONNECTING:
       return 'Connecting'
     case WebSocket.OPEN:
       return 'Open'
-    case WebSocket.CLOSING:
-      return 'Closing'
-    case WebSocket.CLOSED:
-      return 'Closed'
     default:
       return 'Ø'
   }
