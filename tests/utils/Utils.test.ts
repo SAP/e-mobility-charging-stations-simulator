@@ -1,5 +1,5 @@
+import { expect } from '@std/expect'
 import { hoursToMilliseconds, hoursToSeconds } from 'date-fns'
-import { expect } from 'expect'
 import { CircularBuffer } from 'mnemonist'
 import { randomInt } from 'node:crypto'
 import { version } from 'node:process'
@@ -298,7 +298,7 @@ await describe('Utils test suite', async () => {
     expect(clone(date) === date).toBe(false)
     if (runtime === runtimes.node && satisfies(version, '>=22.0.0')) {
       const url = new URL('https://domain.tld')
-      expect(() => clone(url)).toThrowError(new Error('Cannot clone object of unsupported type.'))
+      expect(() => clone(url)).toThrow(new Error('Cannot clone object of unsupported type.'))
     }
     const map = new Map([['1', '2']])
     expect(clone(map)).toStrictEqual(map)
@@ -307,9 +307,9 @@ await describe('Utils test suite', async () => {
     expect(clone(set)).toStrictEqual(set)
     expect(clone(set) === set).toBe(false)
     const weakMap = new WeakMap([[{ 1: 1 }, { 2: 2 }]])
-    expect(() => clone(weakMap)).toThrowError(new Error('#<WeakMap> could not be cloned.'))
+    expect(() => clone(weakMap)).toThrow(new Error('#<WeakMap> could not be cloned.'))
     const weakSet = new WeakSet([{ 1: 1 }, { 2: 2 }])
-    expect(() => clone(weakSet)).toThrowError(new Error('#<WeakSet> could not be cloned.'))
+    expect(() => clone(weakSet)).toThrow(new Error('#<WeakSet> could not be cloned.'))
   })
 
   await it('Verify isNotEmptyString()', () => {

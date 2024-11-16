@@ -1,4 +1,4 @@
-import { expect } from 'expect'
+import { expect } from '@std/expect'
 import { describe, it } from 'node:test'
 
 import { OCPPError } from '../../src/exception/OCPPError.js'
