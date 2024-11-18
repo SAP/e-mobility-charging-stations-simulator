@@ -12,7 +12,7 @@ const isNode = globalThis.process?.release?.name === 'node'
 // eslint-disable-next-line n/no-unsupported-features/node-builtins
 const isWorkerd = globalThis.navigator?.userAgent === 'Cloudflare-Workers'
 // eslint-disable-next-line n/no-unsupported-features/node-builtins
-const isBrowser = !!globalThis.navigator
+const isBrowser = !!globalThis.window && !!globalThis.navigator
 
 export const runtime = (() => {
   if (isBun) return JSRuntime.bun

@@ -8,7 +8,7 @@ import { satisfies } from 'semver'
 
 import type { TimestampedData } from '../../src/types/index.js'
 
-import { runtime, runtimes } from '../../scripts/runtime.js'
+import { JSRuntime, runtime } from '../../scripts/runtime.js'
 import { Constants } from '../../src/utils/Constants.js'
 import {
   clone,
@@ -296,7 +296,7 @@ await describe('Utils test suite', async () => {
     const date = new Date()
     expect(clone(date)).toStrictEqual(date)
     expect(clone(date) === date).toBe(false)
-    if (runtime === runtimes.node && satisfies(version, '>=22.0.0')) {
+    if (runtime === JSRuntime.node && satisfies(version, '>=22.0.0')) {
       const url = new URL('https://domain.tld')
       expect(() => clone(url)).toThrow(new Error('Cannot clone object of unsupported type.'))
     }
