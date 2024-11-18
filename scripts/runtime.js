@@ -1,4 +1,4 @@
-export const runtimes = {
+export const JSRuntime = {
   browser: 'browser',
   bun: 'bun',
   deno: 'deno',
@@ -15,11 +15,11 @@ const isWorkerd = globalThis.navigator?.userAgent === 'Cloudflare-Workers'
 const isBrowser = !!globalThis.navigator
 
 export const runtime = (() => {
-  if (isBun) return runtimes.bun
-  if (isDeno) return runtimes.deno
-  if (isNode) return runtimes.node
-  if (isWorkerd) return runtimes.workerd
-  if (isBrowser) return runtimes.browser
+  if (isBun) return JSRuntime.bun
+  if (isDeno) return JSRuntime.deno
+  if (isNode) return JSRuntime.node
+  if (isWorkerd) return JSRuntime.workerd
+  if (isBrowser) return JSRuntime.browser
 
   return 'unknown'
 })()

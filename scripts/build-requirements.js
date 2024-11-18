@@ -4,7 +4,7 @@ import { exit, version } from 'node:process'
 // eslint-disable-next-line n/no-unpublished-import
 import { satisfies } from 'semver'
 
-import { runtime, runtimes } from './runtime.js'
+import { JSRuntime, runtime } from './runtime.js'
 
 const packageJson = JSON.parse(readFileSync('./package.json', 'utf8'))
 
@@ -24,13 +24,13 @@ export const checkNodeVersion = () => {
 }
 
 switch (runtime) {
-  case runtimes.node:
+  case JSRuntime.node:
     checkNodeVersion()
     break
-  case runtimes.bun:
-  case runtimes.deno:
-  case runtimes.workerd:
-  case runtimes.browser:
+  case JSRuntime.bun:
+  case JSRuntime.deno:
+  case JSRuntime.workerd:
+  case JSRuntime.browser:
   default:
     console.warn(chalk.yellow(`Unsupported '${runtime}' runtime detected`))
     break

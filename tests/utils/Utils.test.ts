@@ -348,6 +348,7 @@ await describe('Utils test suite', async () => {
 
   await it('Verify insertAt()', () => {
     expect(insertAt('test', 'ing', 'test'.length)).toBe('testing')
+    // eslint-disable-next-line @cspell/spellchecker
     expect(insertAt('test', 'ing', 2)).toBe('teingst')
   })
 

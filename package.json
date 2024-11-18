@@ -113,6 +113,7 @@
   "devDependencies": {
     "@commitlint/cli": "^19.5.0",
     "@commitlint/config-conventional": "^19.5.0",
+    "@cspell/eslint-plugin": "^8.16.0",
     "@eslint/js": "^9.14.0",
     "@mikro-orm/cli": "^6.4.0",
     "@std/expect": "npm:@jsr/std__expect@^1.0.8",
