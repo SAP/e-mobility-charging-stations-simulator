@@ -1303,8 +1303,8 @@ export class OCPPServiceUtils {
   public static readonly isIdTagAuthorized = isIdTagAuthorized
   public static readonly restoreConnectorStatus = restoreConnectorStatus
   public static readonly sendAndSetConnectorStatus = sendAndSetConnectorStatus
-  protected static buildSampledValue = buildSampledValue
 
+  protected static buildSampledValue = buildSampledValue
   protected static getSampledValueTemplate = getSampledValueTemplate
 
   protected constructor () {
