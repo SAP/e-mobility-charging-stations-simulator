@@ -1,6 +1,14 @@
 import type { JsonObject } from '../../JsonType.js'
 import type { OCPP16MeterValue } from './MeterValues.js'
 
+export enum OCPP16AuthorizationStatus {
+  ACCEPTED = 'Accepted',
+  BLOCKED = 'Blocked',
+  CONCURRENT_TX = 'ConcurrentTx',
+  EXPIRED = 'Expired',
+  INVALID = 'Invalid',
+}
+
 export enum OCPP16StopTransactionReason {
   DE_AUTHORIZED = 'DeAuthorized',
   EMERGENCY_STOP = 'EmergencyStop',
@@ -13,20 +21,6 @@ export enum OCPP16StopTransactionReason {
   REMOTE = 'Remote',
   SOFT_RESET = 'SoftReset',
   UNLOCK_COMMAND = 'UnlockCommand',
-}
-
-export enum OCPP16AuthorizationStatus {
-  ACCEPTED = 'Accepted',
-  BLOCKED = 'Blocked',
-  CONCURRENT_TX = 'ConcurrentTx',
-  EXPIRED = 'Expired',
-  INVALID = 'Invalid',
-}
-
-interface IdTagInfo extends JsonObject {
-  expiryDate?: Date
-  parentIdTag?: string
-  status: OCPP16AuthorizationStatus
 }
 
 export interface OCPP16AuthorizeRequest extends JsonObject {
@@ -61,4 +55,10 @@ export interface OCPP16StopTransactionRequest extends JsonObject {
 
 export interface OCPP16StopTransactionResponse extends JsonObject {
   idTagInfo?: IdTagInfo
+}
+
+interface IdTagInfo extends JsonObject {
+  expiryDate?: Date
+  parentIdTag?: string
+  status: OCPP16AuthorizationStatus
 }

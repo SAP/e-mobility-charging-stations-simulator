@@ -8,6 +8,8 @@ import {
   type OCPP16SampledValue,
 } from './1.6/MeterValues.js'
 
+export type MeterValue = OCPP16MeterValue
+
 export const MeterValueUnit = {
   ...OCPP16MeterValueUnit,
 } as const
@@ -20,17 +22,17 @@ export const MeterValueContext = {
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type MeterValueContext = OCPP16MeterValueContext
 
-export const MeterValueMeasurand = {
-  ...OCPP16MeterValueMeasurand,
-} as const
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export type MeterValueMeasurand = OCPP16MeterValueMeasurand
-
 export const MeterValueLocation = {
   ...OCPP16MeterValueLocation,
 } as const
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type MeterValueLocation = OCPP16MeterValueLocation
+
+export const MeterValueMeasurand = {
+  ...OCPP16MeterValueMeasurand,
+} as const
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type MeterValueMeasurand = OCPP16MeterValueMeasurand
 
 export const MeterValuePhase = {
   ...OCPP16MeterValuePhase,
@@ -39,5 +41,3 @@ export const MeterValuePhase = {
 export type MeterValuePhase = OCPP16MeterValuePhase
 
 export type SampledValue = OCPP16SampledValue
-
-export type MeterValue = OCPP16MeterValue

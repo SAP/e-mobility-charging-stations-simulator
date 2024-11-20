@@ -23,9 +23,25 @@ import {
 } from './1.6/Responses.js'
 import { type GenericResponse, GenericStatus } from './Common.js'
 
-export type Response = [MessageType.CALL_RESULT_MESSAGE, string, JsonType]
+export type BootNotificationResponse =
+  | OCPP16BootNotificationResponse
+  | OCPP20BootNotificationResponse
+
+export type ClearCacheResponse = GenericResponse | OCPP20ClearCacheResponse
+
+export type DataTransferResponse = OCPP16DataTransferResponse
+
+export type DiagnosticsStatusNotificationResponse = OCPP16DiagnosticsStatusNotificationResponse
 
 export type ErrorResponse = [MessageType.CALL_ERROR_MESSAGE, string, ErrorType, string, JsonType]
+
+export type FirmwareStatusNotificationResponse = OCPP16FirmwareStatusNotificationResponse
+
+export type HeartbeatResponse = OCPP16HeartbeatResponse
+
+export type MeterValuesResponse = OCPP16MeterValuesResponse
+
+export type Response = [MessageType.CALL_RESULT_MESSAGE, string, JsonType]
 
 export type ResponseHandler = (
   chargingStation: ChargingStation,
@@ -33,23 +49,7 @@ export type ResponseHandler = (
   requestPayload?: JsonType
 ) => Promise<void> | void
 
-export type BootNotificationResponse =
-  | OCPP16BootNotificationResponse
-  | OCPP20BootNotificationResponse
-
-export type HeartbeatResponse = OCPP16HeartbeatResponse
-
-export type ClearCacheResponse = GenericResponse | OCPP20ClearCacheResponse
-
 export type StatusNotificationResponse = OCPP16StatusNotificationResponse
-
-export type MeterValuesResponse = OCPP16MeterValuesResponse
-
-export type DataTransferResponse = OCPP16DataTransferResponse
-
-export type DiagnosticsStatusNotificationResponse = OCPP16DiagnosticsStatusNotificationResponse
-
-export type FirmwareStatusNotificationResponse = OCPP16FirmwareStatusNotificationResponse
 
 export const AvailabilityStatus = {
   ...OCPP16AvailabilityStatus,

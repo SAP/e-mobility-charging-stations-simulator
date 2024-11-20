@@ -1,17 +1,6 @@
 import type { JsonObject } from '../../JsonType.js'
 import type { GenericStatus } from '../Common.js'
 
-export enum DataEnumType {
-  boolean = 'boolean',
-  dateTime = 'dateTime',
-  decimal = 'decimal',
-  integer = 'integer',
-  MemberList = 'MemberList',
-  OptionList = 'OptionList',
-  SequenceList = 'SequenceList',
-  string = 'string',
-}
-
 export enum BootReasonEnumType {
   ApplicationReset = 'ApplicationReset',
   FirmwareUpdate = 'FirmwareUpdate',
@@ -24,25 +13,31 @@ export enum BootReasonEnumType {
   Watchdog = 'Watchdog',
 }
 
-export enum OperationalStatusEnumType {
-  Inoperative = 'Inoperative',
-  Operative = 'Operative',
+export enum CertificateActionEnumType {
+  Install = 'Install',
+  Update = 'Update',
 }
 
-export enum OCPP20ConnectorStatusEnumType {
-  Available = 'Available',
-  Faulted = 'Faulted',
-  Occupied = 'Occupied',
-  Reserved = 'Reserved',
-  Unavailable = 'Unavailable',
+export enum CertificateSigningUseEnumType {
+  ChargingStationCertificate = 'ChargingStationCertificate',
+  V2GCertificate = 'V2GCertificate',
 }
 
-export type GenericStatusEnumType = GenericStatus
+export enum DataEnumType {
+  boolean = 'boolean',
+  dateTime = 'dateTime',
+  decimal = 'decimal',
+  integer = 'integer',
+  MemberList = 'MemberList',
+  OptionList = 'OptionList',
+  SequenceList = 'SequenceList',
+  string = 'string',
+}
 
-export enum HashAlgorithmEnumType {
-  SHA256 = 'SHA256',
-  SHA384 = 'SHA384',
-  SHA512 = 'SHA512',
+export enum DeleteCertificateStatusEnumType {
+  Accepted = 'Accepted',
+  Failed = 'Failed',
+  NotFound = 'NotFound',
 }
 
 export enum GetCertificateIdUseEnumType {
@@ -63,6 +58,12 @@ export enum GetInstalledCertificateStatusEnumType {
   NotFound = 'NotFound',
 }
 
+export enum HashAlgorithmEnumType {
+  SHA256 = 'SHA256',
+  SHA384 = 'SHA384',
+  SHA512 = 'SHA512',
+}
+
 export enum InstallCertificateStatusEnumType {
   Accepted = 'Accepted',
   Failed = 'Failed',
@@ -76,23 +77,24 @@ export enum InstallCertificateUseEnumType {
   V2GRootCertificate = 'V2GRootCertificate',
 }
 
-export enum DeleteCertificateStatusEnumType {
-  Accepted = 'Accepted',
-  Failed = 'Failed',
-  NotFound = 'NotFound',
+export enum OCPP20ConnectorStatusEnumType {
+  Available = 'Available',
+  Faulted = 'Faulted',
+  Occupied = 'Occupied',
+  Reserved = 'Reserved',
+  Unavailable = 'Unavailable',
 }
 
-export enum CertificateActionEnumType {
-  Install = 'Install',
-  Update = 'Update',
+export enum OperationalStatusEnumType {
+  Inoperative = 'Inoperative',
+  Operative = 'Operative',
 }
 
-export enum CertificateSigningUseEnumType {
-  ChargingStationCertificate = 'ChargingStationCertificate',
-  V2GCertificate = 'V2GCertificate',
+export interface CertificateHashDataChainType extends JsonObject {
+  certificateHashData: CertificateHashDataType
+  certificateType: GetCertificateIdUseEnumType
+  childCertificateHashData?: CertificateHashDataType
 }
-
-export type CertificateSignedStatusEnumType = GenericStatusEnumType
 
 export interface CertificateHashDataType extends JsonObject {
   hashAlgorithm: HashAlgorithmEnumType
@@ -101,11 +103,14 @@ export interface CertificateHashDataType extends JsonObject {
   serialNumber: string
 }
 
-export interface CertificateHashDataChainType extends JsonObject {
-  certificateHashData: CertificateHashDataType
-  certificateType: GetCertificateIdUseEnumType
-  childCertificateHashData?: CertificateHashDataType
+export type CertificateSignedStatusEnumType = GenericStatusEnumType
+
+export interface EVSEType extends JsonObject {
+  connectorId?: string
+  id: number
 }
+
+export type GenericStatusEnumType = GenericStatus
 
 export interface OCSPRequestDataType extends JsonObject {
   hashAlgorithm: HashAlgorithmEnumType
@@ -118,9 +123,4 @@ export interface OCSPRequestDataType extends JsonObject {
 export interface StatusInfoType extends JsonObject {
   additionalInfo?: string
   reasonCode: string
-}
-
-export interface EVSEType extends JsonObject {
-  connectorId?: string
-  id: number
 }

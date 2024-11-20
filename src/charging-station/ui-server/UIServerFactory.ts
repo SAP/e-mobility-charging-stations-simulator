@@ -17,15 +17,6 @@ import { UIWebSocketServer } from './UIWebSocketServer.js'
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class UIServerFactory {
-  private static readonly logPrefix = (modName?: string, methodName?: string): string => {
-    const logMsgPrefix = 'UI Server'
-    const logMsg =
-      modName != null && methodName != null
-        ? ` ${logMsgPrefix} | ${modName}.${methodName}:`
-        : ` ${logMsgPrefix} |`
-    return logPrefix(logMsg)
-  }
-
   private constructor () {
     // This is intentional
   }
@@ -90,5 +81,14 @@ export class UIServerFactory {
         }
         return new UIWebSocketServer(uiServerConfiguration)
     }
+  }
+
+  private static readonly logPrefix = (modName?: string, methodName?: string): string => {
+    const logMsgPrefix = 'UI Server'
+    const logMsg =
+      modName != null && methodName != null
+        ? ` ${logMsgPrefix} | ${modName}.${methodName}:`
+        : ` ${logMsgPrefix} |`
+    return logPrefix(logMsg)
   }
 }

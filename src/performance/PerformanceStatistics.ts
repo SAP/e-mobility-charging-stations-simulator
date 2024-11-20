@@ -43,21 +43,10 @@ export class PerformanceStatistics {
     PerformanceStatistics
   >()
 
-  private static readonly logPrefix = (): string => {
-    return logPrefix(' Performance statistics')
-  }
-
   private displayInterval?: NodeJS.Timeout
-  private readonly logPrefix = (): string => {
-    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-    return logPrefix(` ${this.objName} | Performance statistics`)
-  }
-
   private readonly objId: string | undefined
   private readonly objName: string | undefined
-
   private performanceObserver!: PerformanceObserver
-
   private readonly statistics: Statistics
 
   private constructor (objId: string, objName: string, uri: URL) {
@@ -126,6 +115,93 @@ export class PerformanceStatistics {
       PerformanceStatistics.instances.set(objId, new PerformanceStatistics(objId, objName, uri))
     }
     return PerformanceStatistics.instances.get(objId)
+  }
+
+  private static readonly logPrefix = (): string => {
+    return logPrefix(' Performance statistics')
+  }
+
+  public addRequestStatistic (
+    command: IncomingRequestCommand | RequestCommand,
+    messageType: MessageType
+  ): void {
+    switch (messageType) {
+      case MessageType.CALL_ERROR_MESSAGE:
+        if (
+          this.statistics.statisticsData.has(command) &&
+          this.statistics.statisticsData.get(command)?.errorCount != null
+        ) {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          ++this.statistics.statisticsData.get(command)!.errorCount!
+        } else {
+          this.statistics.statisticsData.set(command, {
+            ...this.statistics.statisticsData.get(command),
+            errorCount: 1,
+          })
+        }
+        break
+      case MessageType.CALL_MESSAGE:
+        if (
+          this.statistics.statisticsData.has(command) &&
+          this.statistics.statisticsData.get(command)?.requestCount != null
+        ) {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          ++this.statistics.statisticsData.get(command)!.requestCount!
+        } else {
+          this.statistics.statisticsData.set(command, {
+            ...this.statistics.statisticsData.get(command),
+            requestCount: 1,
+          })
+        }
+        break
+      case MessageType.CALL_RESULT_MESSAGE:
+        if (
+          this.statistics.statisticsData.has(command) &&
+          this.statistics.statisticsData.get(command)?.responseCount != null
+        ) {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          ++this.statistics.statisticsData.get(command)!.responseCount!
+        } else {
+          this.statistics.statisticsData.set(command, {
+            ...this.statistics.statisticsData.get(command),
+            responseCount: 1,
+          })
+        }
+        break
+      default:
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        logger.error(`${this.logPrefix()} wrong message type ${messageType}`)
+        break
+    }
+  }
+
+  public restart (): void {
+    this.stop()
+    this.start()
+  }
+
+  public start (): void {
+    this.startLogStatisticsInterval()
+    const performanceStorageConfiguration =
+      Configuration.getConfigurationSection<StorageConfiguration>(
+        ConfigurationSection.performanceStorage
+      )
+    if (performanceStorageConfiguration.enabled === true) {
+      logger.info(
+        `${this.logPrefix()} storage enabled: type ${
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+          performanceStorageConfiguration.type
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        }, uri: ${performanceStorageConfiguration.uri}`
+      )
+    }
+  }
+
+  public stop (): void {
+    this.stopLogStatisticsInterval()
+    performance.clearMarks()
+    performance.clearMeasures()
+    this.performanceObserver.disconnect()
   }
 
   private addPerformanceEntryToStatistics (entry: PerformanceEntry): void {
@@ -210,6 +286,11 @@ export class PerformanceStatistics {
     this.performanceObserver.observe({ entryTypes: ['measure'] })
   }
 
+  private readonly logPrefix = (): string => {
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+    return logPrefix(` ${this.objName} | Performance statistics`)
+  }
+
   private logStatistics (): void {
     logger.info(this.logPrefix(), {
       ...this.statistics,
@@ -251,88 +332,5 @@ export class PerformanceStatistics {
       clearInterval(this.displayInterval)
       delete this.displayInterval
     }
-  }
-
-  public addRequestStatistic (
-    command: IncomingRequestCommand | RequestCommand,
-    messageType: MessageType
-  ): void {
-    switch (messageType) {
-      case MessageType.CALL_ERROR_MESSAGE:
-        if (
-          this.statistics.statisticsData.has(command) &&
-          this.statistics.statisticsData.get(command)?.errorCount != null
-        ) {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          ++this.statistics.statisticsData.get(command)!.errorCount!
-        } else {
-          this.statistics.statisticsData.set(command, {
-            ...this.statistics.statisticsData.get(command),
-            errorCount: 1,
-          })
-        }
-        break
-      case MessageType.CALL_MESSAGE:
-        if (
-          this.statistics.statisticsData.has(command) &&
-          this.statistics.statisticsData.get(command)?.requestCount != null
-        ) {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          ++this.statistics.statisticsData.get(command)!.requestCount!
-        } else {
-          this.statistics.statisticsData.set(command, {
-            ...this.statistics.statisticsData.get(command),
-            requestCount: 1,
-          })
-        }
-        break
-      case MessageType.CALL_RESULT_MESSAGE:
-        if (
-          this.statistics.statisticsData.has(command) &&
-          this.statistics.statisticsData.get(command)?.responseCount != null
-        ) {
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          ++this.statistics.statisticsData.get(command)!.responseCount!
-        } else {
-          this.statistics.statisticsData.set(command, {
-            ...this.statistics.statisticsData.get(command),
-            responseCount: 1,
-          })
-        }
-        break
-      default:
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        logger.error(`${this.logPrefix()} wrong message type ${messageType}`)
-        break
-    }
-  }
-
-  public restart (): void {
-    this.stop()
-    this.start()
-  }
-
-  public start (): void {
-    this.startLogStatisticsInterval()
-    const performanceStorageConfiguration =
-      Configuration.getConfigurationSection<StorageConfiguration>(
-        ConfigurationSection.performanceStorage
-      )
-    if (performanceStorageConfiguration.enabled === true) {
-      logger.info(
-        `${this.logPrefix()} storage enabled: type ${
-          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          performanceStorageConfiguration.type
-          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        }, uri: ${performanceStorageConfiguration.uri}`
-      )
-    }
-  }
-
-  public stop (): void {
-    this.stopLogStatisticsInterval()
-    performance.clearMarks()
-    performance.clearMeasures()
-    this.performanceObserver.disconnect()
   }
 }

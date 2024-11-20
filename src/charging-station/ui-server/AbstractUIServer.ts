@@ -26,6 +26,9 @@ import { getUsernameAndPasswordFromAuthorizationToken } from './UIServerUtils.js
 const moduleName = 'AbstractUIServer'
 
 export abstract class AbstractUIServer {
+  public readonly chargingStations: Map<string, ChargingStationData>
+  public readonly chargingStationTemplates: Set<string>
+
   protected readonly httpServer: Http2Server | Server
   protected readonly responseHandlers: Map<
     `${string}-${string}-${string}-${string}-${string}`,
@@ -33,8 +36,6 @@ export abstract class AbstractUIServer {
   >
 
   protected readonly uiServices: Map<ProtocolVersion, AbstractUIService>
-  public readonly chargingStations: Map<string, ChargingStationData>
-  public readonly chargingStationTemplates: Set<string>
 
   public constructor (protected readonly uiServerConfiguration: UIServerConfiguration) {
     this.chargingStations = new Map<string, ChargingStationData>()
@@ -57,6 +58,54 @@ export abstract class AbstractUIServer {
       ServerResponse | WebSocket
     >()
     this.uiServices = new Map<ProtocolVersion, AbstractUIService>()
+  }
+
+  public buildProtocolRequest (
+    uuid: `${string}-${string}-${string}-${string}-${string}`,
+    procedureName: ProcedureName,
+    requestPayload: RequestPayload
+  ): ProtocolRequest {
+    return [uuid, procedureName, requestPayload]
+  }
+
+  public buildProtocolResponse (
+    uuid: `${string}-${string}-${string}-${string}-${string}`,
+    responsePayload: ResponsePayload
+  ): ProtocolResponse {
+    return [uuid, responsePayload]
+  }
+
+  public clearCaches (): void {
+    this.chargingStations.clear()
+    this.chargingStationTemplates.clear()
+  }
+
+  public hasResponseHandler (uuid: `${string}-${string}-${string}-${string}-${string}`): boolean {
+    return this.responseHandlers.has(uuid)
+  }
+
+  public abstract logPrefix (moduleName?: string, methodName?: string, prefixSuffix?: string): string
+
+  public async sendInternalRequest (request: ProtocolRequest): Promise<ProtocolResponse> {
+    const protocolVersion = ProtocolVersion['0.0.1']
+    this.registerProtocolVersionUIService(protocolVersion)
+    return await (this.uiServices
+      .get(protocolVersion)
+      ?.requestHandler(request) as Promise<ProtocolResponse>)
+  }
+
+  public abstract sendRequest (request: ProtocolRequest): void
+
+  public abstract sendResponse (response: ProtocolResponse): void
+
+  public abstract start (): void
+
+  public stop (): void {
+    this.stopHttpServer()
+    for (const uiService of this.uiServices.values()) {
+      uiService.stop()
+    }
+    this.clearCaches()
   }
 
   protected authenticate (req: IncomingMessage, next: (err?: Error) => void): void {
@@ -143,50 +192,5 @@ export abstract class AbstractUIServer {
       this.httpServer.close()
       this.httpServer.removeAllListeners()
     }
-  }
-
-  public buildProtocolRequest (
-    uuid: `${string}-${string}-${string}-${string}-${string}`,
-    procedureName: ProcedureName,
-    requestPayload: RequestPayload
-  ): ProtocolRequest {
-    return [uuid, procedureName, requestPayload]
-  }
-
-  public buildProtocolResponse (
-    uuid: `${string}-${string}-${string}-${string}-${string}`,
-    responsePayload: ResponsePayload
-  ): ProtocolResponse {
-    return [uuid, responsePayload]
-  }
-
-  public clearCaches (): void {
-    this.chargingStations.clear()
-    this.chargingStationTemplates.clear()
-  }
-
-  public hasResponseHandler (uuid: `${string}-${string}-${string}-${string}-${string}`): boolean {
-    return this.responseHandlers.has(uuid)
-  }
-
-  public abstract logPrefix (moduleName?: string, methodName?: string, prefixSuffix?: string): string
-
-  public async sendInternalRequest (request: ProtocolRequest): Promise<ProtocolResponse> {
-    const protocolVersion = ProtocolVersion['0.0.1']
-    this.registerProtocolVersionUIService(protocolVersion)
-    return await (this.uiServices
-      .get(protocolVersion)
-      ?.requestHandler(request) as Promise<ProtocolResponse>)
-  }
-
-  public abstract sendRequest (request: ProtocolRequest): void
-  public abstract sendResponse (response: ProtocolResponse): void
-  public abstract start (): void
-  public stop (): void {
-    this.stopHttpServer()
-    for (const uiService of this.uiServices.values()) {
-      uiService.stop()
-    }
-    this.clearCaches()
   }
 }

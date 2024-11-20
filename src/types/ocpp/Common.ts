@@ -5,12 +5,12 @@ export enum GenericStatus {
   Rejected = 'Rejected',
 }
 
-export interface GenericResponse extends JsonObject {
-  status: GenericStatus
-}
-
 export enum RegistrationStatusEnumType {
   ACCEPTED = 'Accepted',
   PENDING = 'Pending',
   REJECTED = 'Rejected',
+}
+
+export interface GenericResponse extends JsonObject {
+  status: GenericStatus
 }

@@ -46,126 +46,6 @@ export class UIClient {
     return UIClient.instance
   }
 
-  private openWS (): void {
-    const protocols =
-      this.uiServerConfiguration.authentication?.enabled === true &&
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      this.uiServerConfiguration.authentication.type === AuthenticationType.PROTOCOL_BASIC_AUTH
-        ? [
-            `${this.uiServerConfiguration.protocol}${this.uiServerConfiguration.version}`,
-            `authorization.basic.${btoa(
-              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              `${this.uiServerConfiguration.authentication.username}:${this.uiServerConfiguration.authentication.password}`
-            ).replace(/={1,2}$/, '')}`,
-          ]
-        : `${this.uiServerConfiguration.protocol}${this.uiServerConfiguration.version}`
-    this.ws = new WebSocket(
-      `${
-        this.uiServerConfiguration.secure === true
-          ? ApplicationProtocol.WSS
-          : ApplicationProtocol.WS
-      }://${this.uiServerConfiguration.host}:${this.uiServerConfiguration.port.toString()}`,
-      protocols
-    )
-    this.ws.onopen = () => {
-      useToast().success(
-        `WebSocket to UI server '${this.uiServerConfiguration.host}:${this.uiServerConfiguration.port.toString()}' successfully opened`
-      )
-    }
-    this.ws.onmessage = this.responseHandler.bind(this)
-    this.ws.onerror = errorEvent => {
-      useToast().error(
-        `Error in WebSocket to UI server '${this.uiServerConfiguration.host}:${this.uiServerConfiguration.port.toString()}'`
-      )
-      console.error(
-        `Error in WebSocket to UI server '${this.uiServerConfiguration.host}:${this.uiServerConfiguration.port.toString()}'`,
-        errorEvent
-      )
-    }
-    this.ws.onclose = () => {
-      useToast().info('WebSocket to UI server closed')
-    }
-  }
-
-  private responseHandler (messageEvent: MessageEvent<string>): void {
-    let response: ProtocolResponse
-    try {
-      response = JSON.parse(messageEvent.data) as ProtocolResponse
-    } catch (error) {
-      useToast().error('Invalid response JSON format')
-      console.error('Invalid response JSON format', error)
-      return
-    }
-
-    if (!Array.isArray(response)) {
-      useToast().error('Response not an array')
-      console.error('Response not an array:', response)
-      return
-    }
-
-    const [uuid, responsePayload] = response
-
-    if (!validateUUID(uuid)) {
-      useToast().error('Response UUID field is invalid')
-      console.error('Response UUID field is invalid:', response)
-      return
-    }
-
-    if (this.responseHandlers.has(uuid)) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const { procedureName, reject, resolve } = this.responseHandlers.get(uuid)!
-      switch (responsePayload.status) {
-        case ResponseStatus.FAILURE:
-          reject(responsePayload)
-          break
-        case ResponseStatus.SUCCESS:
-          resolve(responsePayload)
-          break
-        default:
-          reject(
-            new Error(
-              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              `Response status for procedure '${procedureName}' not supported: '${responsePayload.status}'`
-            )
-          )
-      }
-      this.responseHandlers.delete(uuid)
-    } else {
-      throw new Error(`Not a response to a request: ${JSON.stringify(response, undefined, 2)}`)
-    }
-  }
-
-  private async sendRequest (
-    procedureName: ProcedureName,
-    payload: RequestPayload
-  ): Promise<ResponsePayload> {
-    return new Promise<ResponsePayload>((resolve, reject) => {
-      if (this.ws?.readyState === WebSocket.OPEN) {
-        const uuid = randomUUID()
-        const msg = JSON.stringify([uuid, procedureName, payload])
-        const sendTimeout = setTimeout(() => {
-          this.responseHandlers.delete(uuid)
-          reject(new Error(`Send request '${procedureName}' message: connection timeout`))
-        }, 60000)
-        try {
-          this.ws.send(msg)
-          this.responseHandlers.set(uuid, { procedureName, reject, resolve })
-        } catch (error) {
-          this.responseHandlers.delete(uuid)
-          reject(
-            new Error(
-              `Send request '${procedureName}' message: error ${(error as Error).toString()}`
-            )
-          )
-        } finally {
-          clearTimeout(sendTimeout)
-        }
-      } else {
-        reject(new Error(`Send request '${procedureName}' message: connection closed`))
-      }
-    })
-  }
-
   public async addChargingStations (
     template: string,
     numberOfStations: number,
@@ -300,5 +180,125 @@ export class UIClient {
     options?: AddEventListenerOptions | boolean
   ) {
     this.ws?.removeEventListener(event, listener, options)
+  }
+
+  private openWS (): void {
+    const protocols =
+      this.uiServerConfiguration.authentication?.enabled === true &&
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      this.uiServerConfiguration.authentication.type === AuthenticationType.PROTOCOL_BASIC_AUTH
+        ? [
+            `${this.uiServerConfiguration.protocol}${this.uiServerConfiguration.version}`,
+            `authorization.basic.${btoa(
+              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+              `${this.uiServerConfiguration.authentication.username}:${this.uiServerConfiguration.authentication.password}`
+            ).replace(/={1,2}$/, '')}`,
+          ]
+        : `${this.uiServerConfiguration.protocol}${this.uiServerConfiguration.version}`
+    this.ws = new WebSocket(
+      `${
+        this.uiServerConfiguration.secure === true
+          ? ApplicationProtocol.WSS
+          : ApplicationProtocol.WS
+      }://${this.uiServerConfiguration.host}:${this.uiServerConfiguration.port.toString()}`,
+      protocols
+    )
+    this.ws.onopen = () => {
+      useToast().success(
+        `WebSocket to UI server '${this.uiServerConfiguration.host}:${this.uiServerConfiguration.port.toString()}' successfully opened`
+      )
+    }
+    this.ws.onmessage = this.responseHandler.bind(this)
+    this.ws.onerror = errorEvent => {
+      useToast().error(
+        `Error in WebSocket to UI server '${this.uiServerConfiguration.host}:${this.uiServerConfiguration.port.toString()}'`
+      )
+      console.error(
+        `Error in WebSocket to UI server '${this.uiServerConfiguration.host}:${this.uiServerConfiguration.port.toString()}'`,
+        errorEvent
+      )
+    }
+    this.ws.onclose = () => {
+      useToast().info('WebSocket to UI server closed')
+    }
+  }
+
+  private responseHandler (messageEvent: MessageEvent<string>): void {
+    let response: ProtocolResponse
+    try {
+      response = JSON.parse(messageEvent.data) as ProtocolResponse
+    } catch (error) {
+      useToast().error('Invalid response JSON format')
+      console.error('Invalid response JSON format', error)
+      return
+    }
+
+    if (!Array.isArray(response)) {
+      useToast().error('Response not an array')
+      console.error('Response not an array:', response)
+      return
+    }
+
+    const [uuid, responsePayload] = response
+
+    if (!validateUUID(uuid)) {
+      useToast().error('Response UUID field is invalid')
+      console.error('Response UUID field is invalid:', response)
+      return
+    }
+
+    if (this.responseHandlers.has(uuid)) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const { procedureName, reject, resolve } = this.responseHandlers.get(uuid)!
+      switch (responsePayload.status) {
+        case ResponseStatus.FAILURE:
+          reject(responsePayload)
+          break
+        case ResponseStatus.SUCCESS:
+          resolve(responsePayload)
+          break
+        default:
+          reject(
+            new Error(
+              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+              `Response status for procedure '${procedureName}' not supported: '${responsePayload.status}'`
+            )
+          )
+      }
+      this.responseHandlers.delete(uuid)
+    } else {
+      throw new Error(`Not a response to a request: ${JSON.stringify(response, undefined, 2)}`)
+    }
+  }
+
+  private async sendRequest (
+    procedureName: ProcedureName,
+    payload: RequestPayload
+  ): Promise<ResponsePayload> {
+    return new Promise<ResponsePayload>((resolve, reject) => {
+      if (this.ws?.readyState === WebSocket.OPEN) {
+        const uuid = randomUUID()
+        const msg = JSON.stringify([uuid, procedureName, payload])
+        const sendTimeout = setTimeout(() => {
+          this.responseHandlers.delete(uuid)
+          reject(new Error(`Send request '${procedureName}' message: connection timeout`))
+        }, 60000)
+        try {
+          this.ws.send(msg)
+          this.responseHandlers.set(uuid, { procedureName, reject, resolve })
+        } catch (error) {
+          this.responseHandlers.delete(uuid)
+          reject(
+            new Error(
+              `Send request '${procedureName}' message: error ${(error as Error).toString()}`
+            )
+          )
+        } finally {
+          clearTimeout(sendTimeout)
+        }
+      } else {
+        reject(new Error(`Send request '${procedureName}' message: connection closed`))
+      }
+    })
   }
 }

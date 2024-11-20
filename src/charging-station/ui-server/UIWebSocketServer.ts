@@ -32,16 +32,6 @@ const moduleName = 'UIWebSocketServer'
 export class UIWebSocketServer extends AbstractUIServer {
   private readonly webSocketServer: WebSocketServer
 
-  public logPrefix = (modName?: string, methodName?: string, prefixSuffix?: string): string => {
-    const logMsgPrefix =
-      prefixSuffix != null ? `UI WebSocket Server ${prefixSuffix}` : 'UI WebSocket Server'
-    const logMsg =
-      isNotEmptyString(modName) && isNotEmptyString(methodName)
-        ? ` ${logMsgPrefix} | ${modName}.${methodName}:`
-        : ` ${logMsgPrefix} |`
-    return logPrefix(logMsg)
-  }
-
   public constructor (protected override readonly uiServerConfiguration: UIServerConfiguration) {
     super(uiServerConfiguration)
     this.webSocketServer = new WebSocketServer({
@@ -50,70 +40,14 @@ export class UIWebSocketServer extends AbstractUIServer {
     })
   }
 
-  private broadcastToClients (message: string): void {
-    for (const client of this.webSocketServer.clients) {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(message)
-      }
-    }
-  }
-
-  private validateRawDataRequest (rawData: RawData): false | ProtocolRequest {
-    // logger.debug(
-    //   `${this.logPrefix(
-    //     moduleName,
-    //     'validateRawDataRequest'
-    //     // eslint-disable-next-line @typescript-eslint/no-base-to-string
-    //   )} Raw data received in string format: ${rawData.toString()}`
-    // )
-
-    let request: ProtocolRequest
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-base-to-string
-      request = JSON.parse(rawData.toString()) as ProtocolRequest
-    } catch (error) {
-      logger.error(
-        `${this.logPrefix(
-          moduleName,
-          'validateRawDataRequest'
-          // eslint-disable-next-line @typescript-eslint/no-base-to-string
-        )} UI protocol request is not valid JSON: ${rawData.toString()}`
-      )
-      return false
-    }
-
-    if (!Array.isArray(request)) {
-      logger.error(
-        `${this.logPrefix(
-          moduleName,
-          'validateRawDataRequest'
-        )} UI protocol request is not an array:`,
-        request
-      )
-      return false
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (request.length !== 3) {
-      logger.error(
-        `${this.logPrefix(moduleName, 'validateRawDataRequest')} UI protocol request is malformed:`,
-        request
-      )
-      return false
-    }
-
-    if (!validateUUID(request[0])) {
-      logger.error(
-        `${this.logPrefix(
-          moduleName,
-          'validateRawDataRequest'
-        )} UI protocol request UUID field is invalid:`,
-        request
-      )
-      return false
-    }
-
-    return request
+  public logPrefix = (modName?: string, methodName?: string, prefixSuffix?: string): string => {
+    const logMsgPrefix =
+      prefixSuffix != null ? `UI WebSocket Server ${prefixSuffix}` : 'UI WebSocket Server'
+    const logMsg =
+      isNotEmptyString(modName) && isNotEmptyString(methodName)
+        ? ` ${logMsgPrefix} | ${modName}.${methodName}:`
+        : ` ${logMsgPrefix} |`
+    return logPrefix(logMsg)
   }
 
   public sendRequest (request: ProtocolRequest): void {
@@ -242,5 +176,71 @@ export class UIWebSocketServer extends AbstractUIServer {
       socket.removeListener('error', onSocketError)
     })
     this.startHttpServer()
+  }
+
+  private broadcastToClients (message: string): void {
+    for (const client of this.webSocketServer.clients) {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(message)
+      }
+    }
+  }
+
+  private validateRawDataRequest (rawData: RawData): false | ProtocolRequest {
+    // logger.debug(
+    //   `${this.logPrefix(
+    //     moduleName,
+    //     'validateRawDataRequest'
+    //     // eslint-disable-next-line @typescript-eslint/no-base-to-string
+    //   )} Raw data received in string format: ${rawData.toString()}`
+    // )
+
+    let request: ProtocolRequest
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-base-to-string
+      request = JSON.parse(rawData.toString()) as ProtocolRequest
+    } catch (error) {
+      logger.error(
+        `${this.logPrefix(
+          moduleName,
+          'validateRawDataRequest'
+          // eslint-disable-next-line @typescript-eslint/no-base-to-string
+        )} UI protocol request is not valid JSON: ${rawData.toString()}`
+      )
+      return false
+    }
+
+    if (!Array.isArray(request)) {
+      logger.error(
+        `${this.logPrefix(
+          moduleName,
+          'validateRawDataRequest'
+        )} UI protocol request is not an array:`,
+        request
+      )
+      return false
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (request.length !== 3) {
+      logger.error(
+        `${this.logPrefix(moduleName, 'validateRawDataRequest')} UI protocol request is malformed:`,
+        request
+      )
+      return false
+    }
+
+    if (!validateUUID(request[0])) {
+      logger.error(
+        `${this.logPrefix(
+          moduleName,
+          'validateRawDataRequest'
+        )} UI protocol request UUID field is invalid:`,
+        request
+      )
+      return false
+    }
+
+    return request
   }
 }

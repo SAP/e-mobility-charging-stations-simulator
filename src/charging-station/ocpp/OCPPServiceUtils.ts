@@ -1299,25 +1299,13 @@ const getMeasurandDefaultLocation = (
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class OCPPServiceUtils {
-  protected static buildSampledValue = buildSampledValue
   public static readonly buildTransactionEndMeterValue = buildTransactionEndMeterValue
-  protected static getSampledValueTemplate = getSampledValueTemplate
   public static readonly isIdTagAuthorized = isIdTagAuthorized
-  private static readonly logPrefix = (
-    ocppVersion: OCPPVersion,
-    moduleName?: string,
-    methodName?: string
-  ): string => {
-    const logMsg =
-      isNotEmptyString(moduleName) && isNotEmptyString(methodName)
-        ? ` OCPP ${ocppVersion} | ${moduleName}.${methodName}:`
-        : ` OCPP ${ocppVersion} |`
-    return logPrefix(logMsg)
-  }
-
   public static readonly restoreConnectorStatus = restoreConnectorStatus
-
   public static readonly sendAndSetConnectorStatus = sendAndSetConnectorStatus
+  protected static buildSampledValue = buildSampledValue
+
+  protected static getSampledValueTemplate = getSampledValueTemplate
 
   protected constructor () {
     // This is intentional
@@ -1416,5 +1404,17 @@ export class OCPPServiceUtils {
       )
       return {} as JSONSchemaType<T>
     }
+  }
+
+  private static readonly logPrefix = (
+    ocppVersion: OCPPVersion,
+    moduleName?: string,
+    methodName?: string
+  ): string => {
+    const logMsg =
+      isNotEmptyString(moduleName) && isNotEmptyString(methodName)
+        ? ` OCPP ${ocppVersion} | ${moduleName}.${methodName}:`
+        : ` OCPP ${ocppVersion} |`
+    return logPrefix(logMsg)
   }
 }

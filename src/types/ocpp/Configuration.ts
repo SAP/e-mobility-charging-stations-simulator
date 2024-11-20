@@ -11,6 +11,25 @@ import {
   OCPP20VendorVariableName,
 } from './2.0/Variables.js'
 
+export enum ConnectorPhaseRotation {
+  NotApplicable = 'NotApplicable',
+  RST = 'RST',
+  RTS = 'RTS',
+  SRT = 'SRT',
+  STR = 'STR',
+  TRS = 'TRS',
+  TSR = 'TSR',
+  Unknown = 'Unknown',
+}
+
+export type ConfigurationKeyType = StandardParametersKey | string | VendorParametersKey
+
+export interface OCPPConfigurationKey extends JsonObject {
+  key: ConfigurationKeyType
+  readonly: boolean
+  value?: string
+}
+
 export const StandardParametersKey = {
   ...OCPP16StandardParametersKey,
   ...OCPP20RequiredVariableName,
@@ -31,22 +50,3 @@ export const SupportedFeatureProfiles = {
 } as const
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type SupportedFeatureProfiles = OCPP16SupportedFeatureProfiles
-
-export enum ConnectorPhaseRotation {
-  NotApplicable = 'NotApplicable',
-  RST = 'RST',
-  RTS = 'RTS',
-  SRT = 'SRT',
-  STR = 'STR',
-  TRS = 'TRS',
-  TSR = 'TSR',
-  Unknown = 'Unknown',
-}
-
-export type ConfigurationKeyType = StandardParametersKey | string | VendorParametersKey
-
-export interface OCPPConfigurationKey extends JsonObject {
-  key: ConfigurationKeyType
-  readonly: boolean
-  value?: string
-}

@@ -255,13 +255,13 @@ await describe('Utils test suite', async () => {
     expect(isAsyncFunction(async function named () {})).toBe(true)
     class TestClass {
       // eslint-disable-next-line @typescript-eslint/no-empty-function
-      public testArrowAsync = async (): Promise<void> => {}
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
-      public testArrowSync = (): void => {}
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
       public static async testStaticAsync (): Promise<void> {}
       // eslint-disable-next-line @typescript-eslint/no-empty-function
       public static testStaticSync (): void {}
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      public testArrowAsync = async (): Promise<void> => {}
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      public testArrowSync = (): void => {}
       // eslint-disable-next-line @typescript-eslint/no-empty-function
       public async testAsync (): Promise<void> {}
       // eslint-disable-next-line @typescript-eslint/no-empty-function

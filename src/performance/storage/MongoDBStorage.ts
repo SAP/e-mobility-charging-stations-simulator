@@ -18,25 +18,6 @@ export class MongoDBStorage extends Storage {
     this.dbName = this.storageUri.pathname.replace(/(?:^\/)|(?:\/$)/g, '')
   }
 
-  private checkDBConnection (): void {
-    if (this.client == null) {
-      throw new BaseError(
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        `${this.logPrefix} ${this.getDBNameFromStorageType(
-          StorageType.MONGO_DB
-        )} client initialization failed while trying to issue a request`
-      )
-    }
-    if (!this.connected) {
-      throw new BaseError(
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        `${this.logPrefix} ${this.getDBNameFromStorageType(
-          StorageType.MONGO_DB
-        )} connection not opened while trying to issue a request`
-      )
-    }
-  }
-
   public async close (): Promise<void> {
     this.clearPerformanceStatistics()
     try {
@@ -75,6 +56,25 @@ export class MongoDBStorage extends Storage {
         StorageType.MONGO_DB,
         error as Error,
         Constants.PERFORMANCE_RECORDS_TABLE
+      )
+    }
+  }
+
+  private checkDBConnection (): void {
+    if (this.client == null) {
+      throw new BaseError(
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        `${this.logPrefix} ${this.getDBNameFromStorageType(
+          StorageType.MONGO_DB
+        )} client initialization failed while trying to issue a request`
+      )
+    }
+    if (!this.connected) {
+      throw new BaseError(
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        `${this.logPrefix} ${this.getDBNameFromStorageType(
+          StorageType.MONGO_DB
+        )} connection not opened while trying to issue a request`
       )
     }
   }

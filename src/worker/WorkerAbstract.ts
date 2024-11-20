@@ -6,12 +6,13 @@ import { existsSync } from 'node:fs'
 import type { SetInfo, WorkerData, WorkerOptions } from './WorkerTypes.js'
 
 export abstract class WorkerAbstract<D extends WorkerData, R extends WorkerData> {
-  protected readonly workerOptions: WorkerOptions
-  protected readonly workerScript: string
   public abstract readonly emitter: EventEmitterAsyncResource | undefined
   public abstract readonly info: PoolInfo | SetInfo
   public abstract readonly maxElementsPerWorker: number | undefined
   public abstract readonly size: number
+
+  protected readonly workerOptions: WorkerOptions
+  protected readonly workerScript: string
 
   /**
    * `WorkerAbstract` constructor.

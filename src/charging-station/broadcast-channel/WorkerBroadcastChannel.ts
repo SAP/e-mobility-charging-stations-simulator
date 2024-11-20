@@ -12,12 +12,12 @@ import { logger, logPrefix, validateUUID } from '../../utils/index.js'
 const moduleName = 'WorkerBroadcastChannel'
 
 export abstract class WorkerBroadcastChannel extends BroadcastChannel {
-  private readonly logPrefix = (modName: string, methodName: string): string => {
-    return logPrefix(` Worker Broadcast Channel | ${modName}.${methodName}:`)
-  }
-
   protected constructor () {
     super('worker')
+  }
+
+  public sendRequest (request: BroadcastChannelRequest): void {
+    this.postMessage(request)
   }
 
   protected isRequest (message: JsonType[]): boolean {
@@ -54,7 +54,7 @@ export abstract class WorkerBroadcastChannel extends BroadcastChannel {
     return messageEvent
   }
 
-  public sendRequest (request: BroadcastChannelRequest): void {
-    this.postMessage(request)
+  private readonly logPrefix = (modName: string, methodName: string): string => {
+    return logPrefix(` Worker Broadcast Channel | ${modName}.${methodName}:`)
   }
 }

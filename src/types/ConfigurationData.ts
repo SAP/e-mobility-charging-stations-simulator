@@ -6,7 +6,10 @@ import type { WorkerProcessType } from '../worker/index.js'
 import type { StorageType } from './Storage.js'
 import type { ApplicationProtocol, AuthenticationType } from './UIProtocol.js'
 
-type ServerOptions = ListenOptions
+export enum ApplicationProtocolVersion {
+  VERSION_11 = '1.1',
+  VERSION_20 = '2.0',
+}
 
 export enum ConfigurationSection {
   log = 'log',
@@ -19,63 +22,6 @@ export enum SupervisionUrlDistribution {
   CHARGING_STATION_AFFINITY = 'charging-station-affinity',
   RANDOM = 'random',
   ROUND_ROBIN = 'round-robin',
-}
-
-export interface StationTemplateUrl {
-  file: string
-  numberOfStations: number
-  provisionedNumberOfStations?: number
-}
-
-export interface LogConfiguration {
-  console?: boolean
-  enabled?: boolean
-  errorFile?: string
-  file?: string
-  format?: string
-  level?: string
-  maxFiles?: number | string
-  maxSize?: number | string
-  rotate?: boolean
-  statisticsInterval?: number
-}
-
-export enum ApplicationProtocolVersion {
-  VERSION_11 = '1.1',
-  VERSION_20 = '2.0',
-}
-
-export interface UIServerConfiguration {
-  authentication?: {
-    enabled: boolean
-    password?: string
-    type: AuthenticationType
-    username?: string
-  }
-  enabled?: boolean
-  options?: ServerOptions
-  type?: ApplicationProtocol
-  version?: ApplicationProtocolVersion
-}
-
-export interface StorageConfiguration {
-  enabled?: boolean
-  type?: StorageType
-  uri?: string
-}
-
-export type ElementsPerWorkerType = 'all' | 'auto' | number
-
-export interface WorkerConfiguration {
-  elementAddDelay?: number
-  elementsPerWorker?: ElementsPerWorkerType
-  /** @deprecated Use `elementAddDelay` instead. */
-  elementStartDelay?: number
-  poolMaxSize?: number
-  poolMinSize?: number
-  processType?: WorkerProcessType
-  resourceLimits?: ResourceLimits
-  startDelay?: number
 }
 
 export interface ConfigurationData {
@@ -123,3 +69,57 @@ export interface ConfigurationData {
   /** @deprecated Moved to worker configuration section. */
   workerStartDelay?: number
 }
+
+export type ElementsPerWorkerType = 'all' | 'auto' | number
+
+export interface LogConfiguration {
+  console?: boolean
+  enabled?: boolean
+  errorFile?: string
+  file?: string
+  format?: string
+  level?: string
+  maxFiles?: number | string
+  maxSize?: number | string
+  rotate?: boolean
+  statisticsInterval?: number
+}
+
+export interface StationTemplateUrl {
+  file: string
+  numberOfStations: number
+  provisionedNumberOfStations?: number
+}
+
+export interface StorageConfiguration {
+  enabled?: boolean
+  type?: StorageType
+  uri?: string
+}
+
+export interface UIServerConfiguration {
+  authentication?: {
+    enabled: boolean
+    password?: string
+    type: AuthenticationType
+    username?: string
+  }
+  enabled?: boolean
+  options?: ServerOptions
+  type?: ApplicationProtocol
+  version?: ApplicationProtocolVersion
+}
+
+export interface WorkerConfiguration {
+  elementAddDelay?: number
+  elementsPerWorker?: ElementsPerWorkerType
+  /** @deprecated Use `elementAddDelay` instead. */
+  elementStartDelay?: number
+  poolMaxSize?: number
+  poolMinSize?: number
+  processType?: WorkerProcessType
+  resourceLimits?: ResourceLimits
+  startDelay?: number
+}
+
+type ServerOptions = ListenOptions

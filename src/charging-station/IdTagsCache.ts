@@ -23,10 +23,6 @@ export class IdTagsCache {
   private readonly idTagsCaches: Map<string, IdTagsCacheValueType>
   private readonly idTagsCachesAddressableIndexes: Map<string, number>
 
-  private readonly logPrefix = (file: string): string => {
-    return logPrefix(` Id tags cache for id tags file '${file}' |`)
-  }
-
   private constructor () {
     this.idTagsCaches = new Map<string, IdTagsCacheValueType>()
     this.idTagsCachesAddressableIndexes = new Map<string, number>()
@@ -37,6 +33,52 @@ export class IdTagsCache {
       IdTagsCache.instance = new IdTagsCache()
     }
     return IdTagsCache.instance
+  }
+
+  public deleteIdTags (file: string): boolean {
+    return this.deleteIdTagsCache(file) && this.deleteIdTagsCacheIndexes(file)
+  }
+
+  /**
+   * Gets one idtag from the cache given the distribution
+   * Must be called after checking the cache is not an empty array
+   * @param distribution -
+   * @param chargingStation -
+   * @param connectorId -
+   * @returns string
+   */
+  public getIdTag (
+    distribution: IdTagDistribution,
+    chargingStation: ChargingStation,
+    connectorId: number
+  ): string {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const hashId = chargingStation.stationInfo!.hashId
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const idTagsFile = getIdTagsFile(chargingStation.stationInfo!)!
+    switch (distribution) {
+      case IdTagDistribution.CONNECTOR_AFFINITY:
+        return this.getConnectorAffinityIdTag(chargingStation, connectorId)
+      case IdTagDistribution.RANDOM:
+        return this.getRandomIdTag(hashId, idTagsFile)
+      case IdTagDistribution.ROUND_ROBIN:
+        return this.getRoundRobinIdTag(hashId, idTagsFile)
+      default:
+        return this.getRoundRobinIdTag(hashId, idTagsFile)
+    }
+  }
+
+  /**
+   * Gets all idtags from the cache
+   * Must be called after checking the cache is not an empty array
+   * @param file -
+   * @returns string[] | undefined
+   */
+  public getIdTags (file: string): string[] | undefined {
+    if (!this.hasIdTagsCache(file)) {
+      this.setIdTagsCache(file, this.getIdTagsFromFile(file))
+    }
+    return this.getIdTagsCache(file)
   }
 
   private deleteIdTagsCache (file: string): boolean {
@@ -125,6 +167,10 @@ export class IdTagsCache {
     return this.idTagsCaches.has(file)
   }
 
+  private readonly logPrefix = (file: string): string => {
+    return logPrefix(` Id tags cache for id tags file '${file}' |`)
+  }
+
   private setIdTagsCache (file: string, idTags: string[]): Map<string, IdTagsCacheValueType> {
     return this.idTagsCaches.set(file, {
       idTags,
@@ -155,51 +201,5 @@ export class IdTagsCache {
         }
       ),
     })
-  }
-
-  public deleteIdTags (file: string): boolean {
-    return this.deleteIdTagsCache(file) && this.deleteIdTagsCacheIndexes(file)
-  }
-
-  /**
-   * Gets one idtag from the cache given the distribution
-   * Must be called after checking the cache is not an empty array
-   * @param distribution -
-   * @param chargingStation -
-   * @param connectorId -
-   * @returns string
-   */
-  public getIdTag (
-    distribution: IdTagDistribution,
-    chargingStation: ChargingStation,
-    connectorId: number
-  ): string {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const hashId = chargingStation.stationInfo!.hashId
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const idTagsFile = getIdTagsFile(chargingStation.stationInfo!)!
-    switch (distribution) {
-      case IdTagDistribution.CONNECTOR_AFFINITY:
-        return this.getConnectorAffinityIdTag(chargingStation, connectorId)
-      case IdTagDistribution.RANDOM:
-        return this.getRandomIdTag(hashId, idTagsFile)
-      case IdTagDistribution.ROUND_ROBIN:
-        return this.getRoundRobinIdTag(hashId, idTagsFile)
-      default:
-        return this.getRoundRobinIdTag(hashId, idTagsFile)
-    }
-  }
-
-  /**
-   * Gets all idtags from the cache
-   * Must be called after checking the cache is not an empty array
-   * @param file -
-   * @returns string[] | undefined
-   */
-  public getIdTags (file: string): string[] | undefined {
-    if (!this.hasIdTagsCache(file)) {
-      this.setIdTagsCache(file, this.getIdTagsFromFile(file))
-    }
-    return this.getIdTagsCache(file)
   }
 }

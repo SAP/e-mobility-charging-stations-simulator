@@ -156,6 +156,45 @@ import {
 import { SharedLRUCache } from './SharedLRUCache.js'
 
 export class ChargingStation extends EventEmitter {
+  public automaticTransactionGenerator?: AutomaticTransactionGenerator
+  public bootNotificationRequest?: BootNotificationRequest
+  public bootNotificationResponse?: BootNotificationResponse
+  public readonly connectors: Map<number, ConnectorStatus>
+  public readonly evses: Map<number, EvseStatus>
+  public heartbeatSetInterval?: NodeJS.Timeout
+  public idTagsCache: IdTagsCache
+  public readonly index: number
+  public ocppConfiguration?: ChargingStationOcppConfiguration
+  public ocppRequestService!: OCPPRequestService
+  public performanceStatistics?: PerformanceStatistics
+  public powerDivider?: number
+  public readonly requests: Map<string, CachedRequest>
+  public started: boolean
+  public starting: boolean
+  public stationInfo?: ChargingStationInfo
+  public readonly templateFile: string
+  public wsConnection: null | WebSocket
+  public get hasEvses (): boolean {
+    return this.connectors.size === 0 && this.evses.size > 0
+  }
+
+  public get wsConnectionUrl (): URL {
+    const wsConnectionBaseUrlStr = `${
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+      this.stationInfo?.supervisionUrlOcppConfiguration === true &&
+      isNotEmptyString(this.stationInfo.supervisionUrlOcppKey) &&
+      isNotEmptyString(getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey)?.value)
+        ? getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey)?.value
+        : this.configuredSupervisionUrl.href
+    }`
+    return new URL(
+      `${wsConnectionBaseUrlStr}${
+        !wsConnectionBaseUrlStr.endsWith('/') ? '/' : ''
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+      }${this.stationInfo?.chargingStationId}`
+    )
+  }
+
   private automaticTransactionGeneratorConfiguration?: AutomaticTransactionGeneratorConfiguration
   private readonly chargingStationWorkerBroadcastChannel: ChargingStationWorkerBroadcastChannel
   private configurationFile!: string
@@ -172,43 +211,6 @@ export class ChargingStation extends EventEmitter {
   private templateFileWatcher?: FSWatcher
   private wsConnectionRetryCount: number
   private wsPingSetInterval?: NodeJS.Timeout
-  public automaticTransactionGenerator?: AutomaticTransactionGenerator
-  public bootNotificationRequest?: BootNotificationRequest
-  public bootNotificationResponse?: BootNotificationResponse
-  public readonly connectors: Map<number, ConnectorStatus>
-  public readonly evses: Map<number, EvseStatus>
-  public heartbeatSetInterval?: NodeJS.Timeout
-  public idTagsCache: IdTagsCache
-  public readonly index: number
-  public logPrefix = (): string => {
-    if (
-      this instanceof ChargingStation &&
-      this.stationInfo != null &&
-      isNotEmptyString(this.stationInfo.chargingStationId)
-    ) {
-      return logPrefix(` ${this.stationInfo.chargingStationId} |`)
-    }
-    let stationTemplate: ChargingStationTemplate | undefined
-    try {
-      stationTemplate = JSON.parse(
-        readFileSync(this.templateFile, 'utf8')
-      ) as ChargingStationTemplate
-    } catch {
-      // Ignore
-    }
-    return logPrefix(` ${getChargingStationId(this.index, stationTemplate)} |`)
-  }
-
-  public ocppConfiguration?: ChargingStationOcppConfiguration
-  public ocppRequestService!: OCPPRequestService
-  public performanceStatistics?: PerformanceStatistics
-  public powerDivider?: number
-  public readonly requests: Map<string, CachedRequest>
-  public started: boolean
-  public starting: boolean
-  public stationInfo?: ChargingStationInfo
-  public readonly templateFile: string
-  public wsConnection: null | WebSocket
 
   constructor (index: number, templateFile: string, options?: ChargingStationOptions) {
     super()
@@ -278,6 +280,792 @@ export class ChargingStation extends EventEmitter {
     if (this.stationInfo?.autoStart === true) {
       this.start()
     }
+  }
+
+  public async addReservation (reservation: Reservation): Promise<void> {
+    const reservationFound = this.getReservationBy('reservationId', reservation.reservationId)
+    if (reservationFound != null) {
+      await this.removeReservation(reservationFound, ReservationTerminationReason.REPLACE_EXISTING)
+    }
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    this.getConnectorStatus(reservation.connectorId)!.reservation = reservation
+    await sendAndSetConnectorStatus(
+      this,
+      reservation.connectorId,
+      ConnectorStatusEnum.Reserved,
+      undefined,
+      { send: reservation.connectorId !== 0 }
+    )
+  }
+
+  public bufferMessage (message: string): void {
+    this.messageBuffer.add(message)
+    this.setIntervalFlushMessageBuffer()
+  }
+
+  public closeWSConnection (): void {
+    if (this.isWebSocketConnectionOpened()) {
+      this.wsConnection?.close()
+      this.wsConnection = null
+    }
+  }
+
+  public async delete (deleteConfiguration = true): Promise<void> {
+    if (this.started) {
+      await this.stop()
+    }
+    AutomaticTransactionGenerator.deleteInstance(this)
+    PerformanceStatistics.deleteInstance(this.stationInfo?.hashId)
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    this.idTagsCache.deleteIdTags(getIdTagsFile(this.stationInfo!)!)
+    this.requests.clear()
+    this.connectors.clear()
+    this.evses.clear()
+    this.templateFileWatcher?.unref()
+    deleteConfiguration && rmSync(this.configurationFile, { force: true })
+    this.chargingStationWorkerBroadcastChannel.unref()
+    this.emit(ChargingStationEvents.deleted)
+    this.removeAllListeners()
+  }
+
+  public getAuthorizeRemoteTxRequests (): boolean {
+    const authorizeRemoteTxRequests = getConfigurationKey(
+      this,
+      StandardParametersKey.AuthorizeRemoteTxRequests
+    )
+    return authorizeRemoteTxRequests != null
+      ? convertToBoolean(authorizeRemoteTxRequests.value)
+      : false
+  }
+
+  public getAutomaticTransactionGeneratorConfiguration ():
+    | AutomaticTransactionGeneratorConfiguration
+    | undefined {
+    if (this.automaticTransactionGeneratorConfiguration == null) {
+      let automaticTransactionGeneratorConfiguration:
+        | AutomaticTransactionGeneratorConfiguration
+        | undefined
+      const stationTemplate = this.getTemplateFromFile()
+      const stationConfiguration = this.getConfigurationFromFile()
+      if (
+        this.stationInfo?.automaticTransactionGeneratorPersistentConfiguration === true &&
+        stationConfiguration?.stationInfo?.templateHash === stationTemplate?.templateHash &&
+        stationConfiguration?.automaticTransactionGenerator != null
+      ) {
+        automaticTransactionGeneratorConfiguration =
+          stationConfiguration.automaticTransactionGenerator
+      } else {
+        automaticTransactionGeneratorConfiguration = stationTemplate?.AutomaticTransactionGenerator
+      }
+      this.automaticTransactionGeneratorConfiguration = {
+        ...Constants.DEFAULT_ATG_CONFIGURATION,
+        ...automaticTransactionGeneratorConfiguration,
+      }
+    }
+    return this.automaticTransactionGeneratorConfiguration
+  }
+
+  public getAutomaticTransactionGeneratorStatuses (): Status[] | undefined {
+    return this.getConfigurationFromFile()?.automaticTransactionGeneratorStatuses
+  }
+
+  public getConnectorIdByTransactionId (transactionId: number | undefined): number | undefined {
+    if (transactionId == null) {
+      return undefined
+    } else if (this.hasEvses) {
+      for (const evseStatus of this.evses.values()) {
+        for (const [connectorId, connectorStatus] of evseStatus.connectors) {
+          if (connectorStatus.transactionId === transactionId) {
+            return connectorId
+          }
+        }
+      }
+    } else {
+      for (const connectorId of this.connectors.keys()) {
+        if (this.getConnectorStatus(connectorId)?.transactionId === transactionId) {
+          return connectorId
+        }
+      }
+    }
+  }
+
+  public getConnectorMaximumAvailablePower (connectorId: number): number {
+    let connectorAmperageLimitationLimit: number | undefined
+    const amperageLimitation = this.getAmperageLimitation()
+    if (
+      amperageLimitation != null &&
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      amperageLimitation < this.stationInfo!.maximumAmperage!
+    ) {
+      connectorAmperageLimitationLimit =
+        (this.stationInfo?.currentOutType === CurrentType.AC
+          ? ACElectricUtils.powerTotal(
+            this.getNumberOfPhases(),
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            this.stationInfo.voltageOut!,
+            amperageLimitation *
+                (this.hasEvses ? this.getNumberOfEvses() : this.getNumberOfConnectors())
+          )
+          : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          DCElectricUtils.power(this.stationInfo!.voltageOut!, amperageLimitation)) /
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        this.powerDivider!
+    }
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const connectorMaximumPower = this.stationInfo!.maximumPower! / this.powerDivider!
+    const chargingStationChargingProfilesLimit =
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      getChargingStationChargingProfilesLimit(this)! / this.powerDivider!
+    const connectorChargingProfilesLimit = getConnectorChargingProfilesLimit(this, connectorId)
+    return min(
+      Number.isNaN(connectorMaximumPower) ? Number.POSITIVE_INFINITY : connectorMaximumPower,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      Number.isNaN(connectorAmperageLimitationLimit!)
+        ? Number.POSITIVE_INFINITY
+        : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        connectorAmperageLimitationLimit!,
+      Number.isNaN(chargingStationChargingProfilesLimit)
+        ? Number.POSITIVE_INFINITY
+        : chargingStationChargingProfilesLimit,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      Number.isNaN(connectorChargingProfilesLimit!)
+        ? Number.POSITIVE_INFINITY
+        : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        connectorChargingProfilesLimit!
+    )
+  }
+
+  public getConnectorStatus (connectorId: number): ConnectorStatus | undefined {
+    if (this.hasEvses) {
+      for (const evseStatus of this.evses.values()) {
+        if (evseStatus.connectors.has(connectorId)) {
+          return evseStatus.connectors.get(connectorId)
+        }
+      }
+      return undefined
+    }
+    return this.connectors.get(connectorId)
+  }
+
+  public getEnergyActiveImportRegisterByConnectorId (connectorId: number, rounded = false): number {
+    return this.getEnergyActiveImportRegister(this.getConnectorStatus(connectorId), rounded)
+  }
+
+  public getEnergyActiveImportRegisterByTransactionId (
+    transactionId: number | undefined,
+    rounded = false
+  ): number {
+    return this.getEnergyActiveImportRegister(
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      this.getConnectorStatus(this.getConnectorIdByTransactionId(transactionId)!),
+      rounded
+    )
+  }
+
+  public getHeartbeatInterval (): number {
+    const HeartbeatInterval = getConfigurationKey(this, StandardParametersKey.HeartbeatInterval)
+    if (HeartbeatInterval != null) {
+      return secondsToMilliseconds(convertToInt(HeartbeatInterval.value))
+    }
+    const HeartBeatInterval = getConfigurationKey(this, StandardParametersKey.HeartBeatInterval)
+    if (HeartBeatInterval != null) {
+      return secondsToMilliseconds(convertToInt(HeartBeatInterval.value))
+    }
+    this.stationInfo?.autoRegister === false &&
+      logger.warn(
+        `${this.logPrefix()} Heartbeat interval configuration key not set, using default value: ${Constants.DEFAULT_HEARTBEAT_INTERVAL.toString()}`
+      )
+    return Constants.DEFAULT_HEARTBEAT_INTERVAL
+  }
+
+  public getLocalAuthListEnabled (): boolean {
+    const localAuthListEnabled = getConfigurationKey(
+      this,
+      StandardParametersKey.LocalAuthListEnabled
+    )
+    return localAuthListEnabled != null ? convertToBoolean(localAuthListEnabled.value) : false
+  }
+
+  public getNumberOfConnectors (): number {
+    if (this.hasEvses) {
+      let numberOfConnectors = 0
+      for (const [evseId, evseStatus] of this.evses) {
+        if (evseId > 0) {
+          numberOfConnectors += evseStatus.connectors.size
+        }
+      }
+      return numberOfConnectors
+    }
+    return this.connectors.has(0) ? this.connectors.size - 1 : this.connectors.size
+  }
+
+  public getNumberOfEvses (): number {
+    return this.evses.has(0) ? this.evses.size - 1 : this.evses.size
+  }
+
+  public getNumberOfPhases (stationInfo?: ChargingStationInfo): number {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const localStationInfo = stationInfo ?? this.stationInfo!
+    switch (this.getCurrentOutType(stationInfo)) {
+      case CurrentType.AC:
+        return localStationInfo.numberOfPhases ?? 3
+      case CurrentType.DC:
+        return 0
+    }
+  }
+
+  public getNumberOfRunningTransactions (): number {
+    let numberOfRunningTransactions = 0
+    if (this.hasEvses) {
+      for (const [evseId, evseStatus] of this.evses) {
+        if (evseId === 0) {
+          continue
+        }
+        for (const connectorStatus of evseStatus.connectors.values()) {
+          if (connectorStatus.transactionStarted === true) {
+            ++numberOfRunningTransactions
+          }
+        }
+      }
+    } else {
+      for (const connectorId of this.connectors.keys()) {
+        if (connectorId > 0 && this.getConnectorStatus(connectorId)?.transactionStarted === true) {
+          ++numberOfRunningTransactions
+        }
+      }
+    }
+    return numberOfRunningTransactions
+  }
+
+  public getReservationBy (
+    filterKey: ReservationKey,
+    value: number | string
+  ): Reservation | undefined {
+    if (this.hasEvses) {
+      for (const evseStatus of this.evses.values()) {
+        for (const connectorStatus of evseStatus.connectors.values()) {
+          if (connectorStatus.reservation?.[filterKey] === value) {
+            return connectorStatus.reservation
+          }
+        }
+      }
+    } else {
+      for (const connectorStatus of this.connectors.values()) {
+        if (connectorStatus.reservation?.[filterKey] === value) {
+          return connectorStatus.reservation
+        }
+      }
+    }
+  }
+
+  public getReserveConnectorZeroSupported (): boolean {
+    return convertToBoolean(
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      getConfigurationKey(this, StandardParametersKey.ReserveConnectorZeroSupported)!.value
+    )
+  }
+
+  public getTransactionIdTag (transactionId: number): string | undefined {
+    if (this.hasEvses) {
+      for (const evseStatus of this.evses.values()) {
+        for (const connectorStatus of evseStatus.connectors.values()) {
+          if (connectorStatus.transactionId === transactionId) {
+            return connectorStatus.transactionIdTag
+          }
+        }
+      }
+    } else {
+      for (const connectorId of this.connectors.keys()) {
+        if (this.getConnectorStatus(connectorId)?.transactionId === transactionId) {
+          return this.getConnectorStatus(connectorId)?.transactionIdTag
+        }
+      }
+    }
+  }
+
+  public hasConnector (connectorId: number): boolean {
+    if (this.hasEvses) {
+      for (const evseStatus of this.evses.values()) {
+        if (evseStatus.connectors.has(connectorId)) {
+          return true
+        }
+      }
+      return false
+    }
+    return this.connectors.has(connectorId)
+  }
+
+  public hasIdTags (): boolean {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return isNotEmptyArray(this.idTagsCache.getIdTags(getIdTagsFile(this.stationInfo!)!))
+  }
+
+  public inAcceptedState (): boolean {
+    return this.bootNotificationResponse?.status === RegistrationStatusEnumType.ACCEPTED
+  }
+
+  public inPendingState (): boolean {
+    return this.bootNotificationResponse?.status === RegistrationStatusEnumType.PENDING
+  }
+
+  public inRejectedState (): boolean {
+    return this.bootNotificationResponse?.status === RegistrationStatusEnumType.REJECTED
+  }
+
+  public inUnknownState (): boolean {
+    return this.bootNotificationResponse?.status == null
+  }
+
+  public isChargingStationAvailable (): boolean {
+    return this.getConnectorStatus(0)?.availability === AvailabilityType.Operative
+  }
+
+  public isConnectorAvailable (connectorId: number): boolean {
+    return (
+      connectorId > 0 &&
+      this.getConnectorStatus(connectorId)?.availability === AvailabilityType.Operative
+    )
+  }
+
+  public isConnectorReservable (
+    reservationId: number,
+    idTag?: string,
+    connectorId?: number
+  ): boolean {
+    const reservation = this.getReservationBy('reservationId', reservationId)
+    const reservationExists = reservation != null && !hasReservationExpired(reservation)
+    if (arguments.length === 1) {
+      return !reservationExists
+    } else if (arguments.length > 1) {
+      const userReservation = idTag != null ? this.getReservationBy('idTag', idTag) : undefined
+      const userReservationExists =
+        userReservation != null && !hasReservationExpired(userReservation)
+      const notConnectorZero = connectorId == null ? true : connectorId > 0
+      const freeConnectorsAvailable = this.getNumberOfReservableConnectors() > 0
+      return (
+        !reservationExists && !userReservationExists && notConnectorZero && freeConnectorsAvailable
+      )
+    }
+    return false
+  }
+
+  public isRegistered (): boolean {
+    return !this.inUnknownState() && (this.inAcceptedState() || this.inPendingState())
+  }
+
+  public isWebSocketConnectionOpened (): boolean {
+    return this.wsConnection?.readyState === WebSocket.OPEN
+  }
+
+  public logPrefix = (): string => {
+    if (
+      this instanceof ChargingStation &&
+      this.stationInfo != null &&
+      isNotEmptyString(this.stationInfo.chargingStationId)
+    ) {
+      return logPrefix(` ${this.stationInfo.chargingStationId} |`)
+    }
+    let stationTemplate: ChargingStationTemplate | undefined
+    try {
+      stationTemplate = JSON.parse(
+        readFileSync(this.templateFile, 'utf8')
+      ) as ChargingStationTemplate
+    } catch {
+      // Ignore
+    }
+    return logPrefix(` ${getChargingStationId(this.index, stationTemplate)} |`)
+  }
+
+  public openWSConnection (
+    options?: WsOptions,
+    params?: { closeOpened?: boolean; terminateOpened?: boolean }
+  ): void {
+    options = {
+      handshakeTimeout: secondsToMilliseconds(this.getConnectionTimeout()),
+      ...this.stationInfo?.wsOptions,
+      ...options,
+    }
+    params = { ...{ closeOpened: false, terminateOpened: false }, ...params }
+    if (!checkChargingStationState(this, this.logPrefix())) {
+      return
+    }
+    if (this.stationInfo?.supervisionUser != null && this.stationInfo.supervisionPassword != null) {
+      options.auth = `${this.stationInfo.supervisionUser}:${this.stationInfo.supervisionPassword}`
+    }
+    if (params.closeOpened) {
+      this.closeWSConnection()
+    }
+    if (params.terminateOpened) {
+      this.terminateWSConnection()
+    }
+
+    if (this.isWebSocketConnectionOpened()) {
+      logger.warn(
+        `${this.logPrefix()} OCPP connection to URL ${this.wsConnectionUrl.href} is already opened`
+      )
+      return
+    }
+
+    logger.info(`${this.logPrefix()} Open OCPP connection to URL ${this.wsConnectionUrl.href}`)
+
+    this.wsConnection = new WebSocket(
+      this.wsConnectionUrl,
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+      `ocpp${this.stationInfo?.ocppVersion}`,
+      options
+    )
+
+    // Handle WebSocket message
+    this.wsConnection.on('message', data => {
+      this.onMessage(data).catch(Constants.EMPTY_FUNCTION)
+    })
+    // Handle WebSocket error
+    this.wsConnection.on('error', this.onError.bind(this))
+    // Handle WebSocket close
+    this.wsConnection.on('close', this.onClose.bind(this))
+    // Handle WebSocket open
+    this.wsConnection.on('open', () => {
+      this.onOpen().catch((error: unknown) =>
+        logger.error(`${this.logPrefix()} Error while opening WebSocket connection:`, error)
+      )
+    })
+    // Handle WebSocket ping
+    this.wsConnection.on('ping', this.onPing.bind(this))
+    // Handle WebSocket pong
+    this.wsConnection.on('pong', this.onPong.bind(this))
+  }
+
+  public async removeReservation (
+    reservation: Reservation,
+    reason: ReservationTerminationReason
+  ): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const connector = this.getConnectorStatus(reservation.connectorId)!
+    switch (reason) {
+      case ReservationTerminationReason.CONNECTOR_STATE_CHANGED:
+      case ReservationTerminationReason.TRANSACTION_STARTED:
+        delete connector.reservation
+        break
+      case ReservationTerminationReason.EXPIRED:
+      case ReservationTerminationReason.REPLACE_EXISTING:
+      case ReservationTerminationReason.RESERVATION_CANCELED:
+        await sendAndSetConnectorStatus(
+          this,
+          reservation.connectorId,
+          ConnectorStatusEnum.Available,
+          undefined,
+          { send: reservation.connectorId !== 0 }
+        )
+        delete connector.reservation
+        break
+      default:
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        throw new BaseError(`Unknown reservation termination reason '${reason}'`)
+    }
+  }
+
+  public async reset (reason?: StopTransactionReason): Promise<void> {
+    await this.stop(reason)
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    await sleep(this.stationInfo!.resetTime!)
+    this.initialize()
+    this.start()
+  }
+
+  public restartHeartbeat (): void {
+    // Stop heartbeat
+    this.stopHeartbeat()
+    // Start heartbeat
+    this.startHeartbeat()
+  }
+
+  public restartMeterValues (connectorId: number, interval: number): void {
+    this.stopMeterValues(connectorId)
+    this.startMeterValues(connectorId, interval)
+  }
+
+  public restartWebSocketPing (): void {
+    // Stop WebSocket ping
+    this.stopWebSocketPing()
+    // Start WebSocket ping
+    this.startWebSocketPing()
+  }
+
+  public saveOcppConfiguration (): void {
+    if (this.stationInfo?.ocppPersistentConfiguration === true) {
+      this.saveConfiguration()
+    }
+  }
+
+  public setSupervisionUrl (url: string): void {
+    if (
+      this.stationInfo?.supervisionUrlOcppConfiguration === true &&
+      isNotEmptyString(this.stationInfo.supervisionUrlOcppKey)
+    ) {
+      setConfigurationKeyValue(this, this.stationInfo.supervisionUrlOcppKey, url)
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      this.stationInfo!.supervisionUrls = url
+      this.configuredSupervisionUrl = this.getConfiguredSupervisionUrl()
+      this.saveStationInfo()
+    }
+  }
+
+  public start (): void {
+    if (!this.started) {
+      if (!this.starting) {
+        this.starting = true
+        if (this.stationInfo?.enableStatistics === true) {
+          this.performanceStatistics?.start()
+        }
+        this.openWSConnection()
+        // Monitor charging station template file
+        this.templateFileWatcher = watchJsonFile(
+          this.templateFile,
+          FileType.ChargingStationTemplate,
+          this.logPrefix(),
+          undefined,
+          (event, filename): void => {
+            if (isNotEmptyString(filename) && event === 'change') {
+              try {
+                logger.debug(
+                  `${this.logPrefix()} ${FileType.ChargingStationTemplate} ${
+                    this.templateFile
+                  } file have changed, reload`
+                )
+                this.sharedLRUCache.deleteChargingStationTemplate(this.templateFileHash)
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                this.idTagsCache.deleteIdTags(getIdTagsFile(this.stationInfo!)!)
+                // Initialize
+                this.initialize()
+                // Restart the ATG
+                const ATGStarted = this.automaticTransactionGenerator?.started
+                if (ATGStarted === true) {
+                  this.stopAutomaticTransactionGenerator()
+                }
+                delete this.automaticTransactionGeneratorConfiguration
+                if (
+                  this.getAutomaticTransactionGeneratorConfiguration()?.enable === true &&
+                  ATGStarted === true
+                ) {
+                  this.startAutomaticTransactionGenerator(undefined, true)
+                }
+                if (this.stationInfo?.enableStatistics === true) {
+                  this.performanceStatistics?.restart()
+                } else {
+                  this.performanceStatistics?.stop()
+                }
+                // FIXME?: restart heartbeat and WebSocket ping when their interval values have changed
+              } catch (error) {
+                logger.error(
+                  `${this.logPrefix()} ${FileType.ChargingStationTemplate} file monitoring error:`,
+                  error
+                )
+              }
+            }
+          }
+        )
+        this.started = true
+        this.emit(ChargingStationEvents.started)
+        this.starting = false
+      } else {
+        logger.warn(`${this.logPrefix()} Charging station is already starting...`)
+      }
+    } else {
+      logger.warn(`${this.logPrefix()} Charging station is already started...`)
+    }
+  }
+
+  public startAutomaticTransactionGenerator (
+    connectorIds?: number[],
+    stopAbsoluteDuration?: boolean
+  ): void {
+    this.automaticTransactionGenerator = AutomaticTransactionGenerator.getInstance(this)
+    if (isNotEmptyArray(connectorIds)) {
+      for (const connectorId of connectorIds) {
+        this.automaticTransactionGenerator?.startConnector(connectorId, stopAbsoluteDuration)
+      }
+    } else {
+      this.automaticTransactionGenerator?.start(stopAbsoluteDuration)
+    }
+    this.saveAutomaticTransactionGeneratorConfiguration()
+    this.emit(ChargingStationEvents.updated)
+  }
+
+  public startHeartbeat (): void {
+    const heartbeatInterval = this.getHeartbeatInterval()
+    if (heartbeatInterval > 0 && this.heartbeatSetInterval == null) {
+      this.heartbeatSetInterval = setInterval(() => {
+        this.ocppRequestService
+          .requestHandler<HeartbeatRequest, HeartbeatResponse>(this, RequestCommand.HEARTBEAT)
+          .catch((error: unknown) => {
+            logger.error(
+              `${this.logPrefix()} Error while sending '${RequestCommand.HEARTBEAT}':`,
+              error
+            )
+          })
+      }, heartbeatInterval)
+      logger.info(
+        `${this.logPrefix()} Heartbeat started every ${formatDurationMilliSeconds(
+          heartbeatInterval
+        )}`
+      )
+    } else if (this.heartbeatSetInterval != null) {
+      logger.info(
+        `${this.logPrefix()} Heartbeat already started every ${formatDurationMilliSeconds(
+          heartbeatInterval
+        )}`
+      )
+    } else {
+      logger.error(
+        `${this.logPrefix()} Heartbeat interval set to ${heartbeatInterval.toString()}, not starting the heartbeat`
+      )
+    }
+  }
+
+  public startMeterValues (connectorId: number, interval: number): void {
+    if (connectorId === 0) {
+      logger.error(
+        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId.toString()}`
+      )
+      return
+    }
+    const connectorStatus = this.getConnectorStatus(connectorId)
+    if (connectorStatus == null) {
+      logger.error(
+        `${this.logPrefix()} Trying to start MeterValues on non existing connector id
+          ${connectorId.toString()}`
+      )
+      return
+    }
+    if (connectorStatus.transactionStarted === false) {
+      logger.error(
+        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId.toString()} with no transaction started`
+      )
+      return
+    } else if (
+      connectorStatus.transactionStarted === true &&
+      connectorStatus.transactionId == null
+    ) {
+      logger.error(
+        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId.toString()} with no transaction id`
+      )
+      return
+    }
+    if (interval > 0) {
+      connectorStatus.transactionSetInterval = setInterval(() => {
+        const meterValue = buildMeterValue(
+          this,
+          connectorId,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          connectorStatus.transactionId!,
+          interval
+        )
+        this.ocppRequestService
+          .requestHandler<MeterValuesRequest, MeterValuesResponse>(
+            this,
+            RequestCommand.METER_VALUES,
+            {
+              connectorId,
+              meterValue: [meterValue],
+              transactionId: connectorStatus.transactionId,
+            }
+          )
+          .catch((error: unknown) => {
+            logger.error(
+              `${this.logPrefix()} Error while sending '${RequestCommand.METER_VALUES}':`,
+              error
+            )
+          })
+      }, interval)
+    } else {
+      logger.error(
+        `${this.logPrefix()} Charging station ${
+          StandardParametersKey.MeterValueSampleInterval
+        } configuration set to ${interval.toString()}, not sending MeterValues`
+      )
+    }
+  }
+
+  public async stop (
+    reason?: StopTransactionReason,
+    stopTransactions = this.stationInfo?.stopTransactionsOnStopped
+  ): Promise<void> {
+    if (this.started) {
+      if (!this.stopping) {
+        this.stopping = true
+        await this.stopMessageSequence(reason, stopTransactions)
+        this.closeWSConnection()
+        if (this.stationInfo?.enableStatistics === true) {
+          this.performanceStatistics?.stop()
+        }
+        this.templateFileWatcher?.close()
+        delete this.bootNotificationResponse
+        this.started = false
+        this.saveConfiguration()
+        this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash)
+        this.emit(ChargingStationEvents.stopped)
+        this.stopping = false
+      } else {
+        logger.warn(`${this.logPrefix()} Charging station is already stopping...`)
+      }
+    } else {
+      logger.warn(`${this.logPrefix()} Charging station is already stopped...`)
+    }
+  }
+
+  public stopAutomaticTransactionGenerator (connectorIds?: number[]): void {
+    if (isNotEmptyArray(connectorIds)) {
+      for (const connectorId of connectorIds) {
+        this.automaticTransactionGenerator?.stopConnector(connectorId)
+      }
+    } else {
+      this.automaticTransactionGenerator?.stop()
+    }
+    this.saveAutomaticTransactionGeneratorConfiguration()
+    this.emit(ChargingStationEvents.updated)
+  }
+
+  public stopMeterValues (connectorId: number): void {
+    const connectorStatus = this.getConnectorStatus(connectorId)
+    if (connectorStatus?.transactionSetInterval != null) {
+      clearInterval(connectorStatus.transactionSetInterval)
+    }
+  }
+
+  public async stopTransactionOnConnector (
+    connectorId: number,
+    reason?: StopTransactionReason
+  ): Promise<StopTransactionResponse> {
+    const transactionId = this.getConnectorStatus(connectorId)?.transactionId
+    if (
+      this.stationInfo?.beginEndMeterValues === true &&
+      this.stationInfo.ocppStrictCompliance === true &&
+      this.stationInfo.outOfOrderEndMeterValues === false
+    ) {
+      const transactionEndMeterValue = buildTransactionEndMeterValue(
+        this,
+        connectorId,
+        this.getEnergyActiveImportRegisterByTransactionId(transactionId)
+      )
+      await this.ocppRequestService.requestHandler<MeterValuesRequest, MeterValuesResponse>(
+        this,
+        RequestCommand.METER_VALUES,
+        {
+          connectorId,
+          meterValue: [transactionEndMeterValue],
+          transactionId,
+        }
+      )
+    }
+    return await this.ocppRequestService.requestHandler<
+      Partial<StopTransactionRequest>,
+      StopTransactionResponse
+    >(this, RequestCommand.STOP_TRANSACTION, {
+      meterStop: this.getEnergyActiveImportRegisterByTransactionId(transactionId, true),
+      transactionId,
+      ...(reason != null && { reason }),
+    })
   }
 
   private add (): void {
@@ -395,8 +1183,8 @@ export class ChargingStation extends EventEmitter {
         case SupervisionUrlDistribution.RANDOM:
           configuredSupervisionUrlIndex = Math.floor(secureRandom() * supervisionUrls.length)
           break
-        case SupervisionUrlDistribution.ROUND_ROBIN:
         case SupervisionUrlDistribution.CHARGING_STATION_AFFINITY:
+        case SupervisionUrlDistribution.ROUND_ROBIN:
         default:
           !Object.values(SupervisionUrlDistribution).includes(
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -1691,793 +2479,5 @@ export class ChargingStation extends EventEmitter {
       this.wsConnection?.terminate()
       this.wsConnection = null
     }
-  }
-
-  public async addReservation (reservation: Reservation): Promise<void> {
-    const reservationFound = this.getReservationBy('reservationId', reservation.reservationId)
-    if (reservationFound != null) {
-      await this.removeReservation(reservationFound, ReservationTerminationReason.REPLACE_EXISTING)
-    }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.getConnectorStatus(reservation.connectorId)!.reservation = reservation
-    await sendAndSetConnectorStatus(
-      this,
-      reservation.connectorId,
-      ConnectorStatusEnum.Reserved,
-      undefined,
-      { send: reservation.connectorId !== 0 }
-    )
-  }
-
-  public bufferMessage (message: string): void {
-    this.messageBuffer.add(message)
-    this.setIntervalFlushMessageBuffer()
-  }
-
-  public closeWSConnection (): void {
-    if (this.isWebSocketConnectionOpened()) {
-      this.wsConnection?.close()
-      this.wsConnection = null
-    }
-  }
-
-  public async delete (deleteConfiguration = true): Promise<void> {
-    if (this.started) {
-      await this.stop()
-    }
-    AutomaticTransactionGenerator.deleteInstance(this)
-    PerformanceStatistics.deleteInstance(this.stationInfo?.hashId)
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.idTagsCache.deleteIdTags(getIdTagsFile(this.stationInfo!)!)
-    this.requests.clear()
-    this.connectors.clear()
-    this.evses.clear()
-    this.templateFileWatcher?.unref()
-    deleteConfiguration && rmSync(this.configurationFile, { force: true })
-    this.chargingStationWorkerBroadcastChannel.unref()
-    this.emit(ChargingStationEvents.deleted)
-    this.removeAllListeners()
-  }
-
-  public getAuthorizeRemoteTxRequests (): boolean {
-    const authorizeRemoteTxRequests = getConfigurationKey(
-      this,
-      StandardParametersKey.AuthorizeRemoteTxRequests
-    )
-    return authorizeRemoteTxRequests != null
-      ? convertToBoolean(authorizeRemoteTxRequests.value)
-      : false
-  }
-
-  public getAutomaticTransactionGeneratorConfiguration ():
-    | AutomaticTransactionGeneratorConfiguration
-    | undefined {
-    if (this.automaticTransactionGeneratorConfiguration == null) {
-      let automaticTransactionGeneratorConfiguration:
-        | AutomaticTransactionGeneratorConfiguration
-        | undefined
-      const stationTemplate = this.getTemplateFromFile()
-      const stationConfiguration = this.getConfigurationFromFile()
-      if (
-        this.stationInfo?.automaticTransactionGeneratorPersistentConfiguration === true &&
-        stationConfiguration?.stationInfo?.templateHash === stationTemplate?.templateHash &&
-        stationConfiguration?.automaticTransactionGenerator != null
-      ) {
-        automaticTransactionGeneratorConfiguration =
-          stationConfiguration.automaticTransactionGenerator
-      } else {
-        automaticTransactionGeneratorConfiguration = stationTemplate?.AutomaticTransactionGenerator
-      }
-      this.automaticTransactionGeneratorConfiguration = {
-        ...Constants.DEFAULT_ATG_CONFIGURATION,
-        ...automaticTransactionGeneratorConfiguration,
-      }
-    }
-    return this.automaticTransactionGeneratorConfiguration
-  }
-
-  public getAutomaticTransactionGeneratorStatuses (): Status[] | undefined {
-    return this.getConfigurationFromFile()?.automaticTransactionGeneratorStatuses
-  }
-
-  public getConnectorIdByTransactionId (transactionId: number | undefined): number | undefined {
-    if (transactionId == null) {
-      return undefined
-    } else if (this.hasEvses) {
-      for (const evseStatus of this.evses.values()) {
-        for (const [connectorId, connectorStatus] of evseStatus.connectors) {
-          if (connectorStatus.transactionId === transactionId) {
-            return connectorId
-          }
-        }
-      }
-    } else {
-      for (const connectorId of this.connectors.keys()) {
-        if (this.getConnectorStatus(connectorId)?.transactionId === transactionId) {
-          return connectorId
-        }
-      }
-    }
-  }
-
-  public getConnectorMaximumAvailablePower (connectorId: number): number {
-    let connectorAmperageLimitationLimit: number | undefined
-    const amperageLimitation = this.getAmperageLimitation()
-    if (
-      amperageLimitation != null &&
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      amperageLimitation < this.stationInfo!.maximumAmperage!
-    ) {
-      connectorAmperageLimitationLimit =
-        (this.stationInfo?.currentOutType === CurrentType.AC
-          ? ACElectricUtils.powerTotal(
-            this.getNumberOfPhases(),
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            this.stationInfo.voltageOut!,
-            amperageLimitation *
-                (this.hasEvses ? this.getNumberOfEvses() : this.getNumberOfConnectors())
-          )
-          : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          DCElectricUtils.power(this.stationInfo!.voltageOut!, amperageLimitation)) /
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.powerDivider!
-    }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const connectorMaximumPower = this.stationInfo!.maximumPower! / this.powerDivider!
-    const chargingStationChargingProfilesLimit =
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      getChargingStationChargingProfilesLimit(this)! / this.powerDivider!
-    const connectorChargingProfilesLimit = getConnectorChargingProfilesLimit(this, connectorId)
-    return min(
-      Number.isNaN(connectorMaximumPower) ? Number.POSITIVE_INFINITY : connectorMaximumPower,
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      Number.isNaN(connectorAmperageLimitationLimit!)
-        ? Number.POSITIVE_INFINITY
-        : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        connectorAmperageLimitationLimit!,
-      Number.isNaN(chargingStationChargingProfilesLimit)
-        ? Number.POSITIVE_INFINITY
-        : chargingStationChargingProfilesLimit,
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      Number.isNaN(connectorChargingProfilesLimit!)
-        ? Number.POSITIVE_INFINITY
-        : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        connectorChargingProfilesLimit!
-    )
-  }
-
-  public getConnectorStatus (connectorId: number): ConnectorStatus | undefined {
-    if (this.hasEvses) {
-      for (const evseStatus of this.evses.values()) {
-        if (evseStatus.connectors.has(connectorId)) {
-          return evseStatus.connectors.get(connectorId)
-        }
-      }
-      return undefined
-    }
-    return this.connectors.get(connectorId)
-  }
-
-  public getEnergyActiveImportRegisterByConnectorId (connectorId: number, rounded = false): number {
-    return this.getEnergyActiveImportRegister(this.getConnectorStatus(connectorId), rounded)
-  }
-
-  public getEnergyActiveImportRegisterByTransactionId (
-    transactionId: number | undefined,
-    rounded = false
-  ): number {
-    return this.getEnergyActiveImportRegister(
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this.getConnectorStatus(this.getConnectorIdByTransactionId(transactionId)!),
-      rounded
-    )
-  }
-
-  public getHeartbeatInterval (): number {
-    const HeartbeatInterval = getConfigurationKey(this, StandardParametersKey.HeartbeatInterval)
-    if (HeartbeatInterval != null) {
-      return secondsToMilliseconds(convertToInt(HeartbeatInterval.value))
-    }
-    const HeartBeatInterval = getConfigurationKey(this, StandardParametersKey.HeartBeatInterval)
-    if (HeartBeatInterval != null) {
-      return secondsToMilliseconds(convertToInt(HeartBeatInterval.value))
-    }
-    this.stationInfo?.autoRegister === false &&
-      logger.warn(
-        `${this.logPrefix()} Heartbeat interval configuration key not set, using default value: ${Constants.DEFAULT_HEARTBEAT_INTERVAL.toString()}`
-      )
-    return Constants.DEFAULT_HEARTBEAT_INTERVAL
-  }
-
-  public getLocalAuthListEnabled (): boolean {
-    const localAuthListEnabled = getConfigurationKey(
-      this,
-      StandardParametersKey.LocalAuthListEnabled
-    )
-    return localAuthListEnabled != null ? convertToBoolean(localAuthListEnabled.value) : false
-  }
-
-  public getNumberOfConnectors (): number {
-    if (this.hasEvses) {
-      let numberOfConnectors = 0
-      for (const [evseId, evseStatus] of this.evses) {
-        if (evseId > 0) {
-          numberOfConnectors += evseStatus.connectors.size
-        }
-      }
-      return numberOfConnectors
-    }
-    return this.connectors.has(0) ? this.connectors.size - 1 : this.connectors.size
-  }
-
-  public getNumberOfEvses (): number {
-    return this.evses.has(0) ? this.evses.size - 1 : this.evses.size
-  }
-
-  public getNumberOfPhases (stationInfo?: ChargingStationInfo): number {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const localStationInfo = stationInfo ?? this.stationInfo!
-    switch (this.getCurrentOutType(stationInfo)) {
-      case CurrentType.AC:
-        return localStationInfo.numberOfPhases ?? 3
-      case CurrentType.DC:
-        return 0
-    }
-  }
-
-  public getNumberOfRunningTransactions (): number {
-    let numberOfRunningTransactions = 0
-    if (this.hasEvses) {
-      for (const [evseId, evseStatus] of this.evses) {
-        if (evseId === 0) {
-          continue
-        }
-        for (const connectorStatus of evseStatus.connectors.values()) {
-          if (connectorStatus.transactionStarted === true) {
-            ++numberOfRunningTransactions
-          }
-        }
-      }
-    } else {
-      for (const connectorId of this.connectors.keys()) {
-        if (connectorId > 0 && this.getConnectorStatus(connectorId)?.transactionStarted === true) {
-          ++numberOfRunningTransactions
-        }
-      }
-    }
-    return numberOfRunningTransactions
-  }
-
-  public getReservationBy (
-    filterKey: ReservationKey,
-    value: number | string
-  ): Reservation | undefined {
-    if (this.hasEvses) {
-      for (const evseStatus of this.evses.values()) {
-        for (const connectorStatus of evseStatus.connectors.values()) {
-          if (connectorStatus.reservation?.[filterKey] === value) {
-            return connectorStatus.reservation
-          }
-        }
-      }
-    } else {
-      for (const connectorStatus of this.connectors.values()) {
-        if (connectorStatus.reservation?.[filterKey] === value) {
-          return connectorStatus.reservation
-        }
-      }
-    }
-  }
-
-  public getReserveConnectorZeroSupported (): boolean {
-    return convertToBoolean(
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      getConfigurationKey(this, StandardParametersKey.ReserveConnectorZeroSupported)!.value
-    )
-  }
-
-  public getTransactionIdTag (transactionId: number): string | undefined {
-    if (this.hasEvses) {
-      for (const evseStatus of this.evses.values()) {
-        for (const connectorStatus of evseStatus.connectors.values()) {
-          if (connectorStatus.transactionId === transactionId) {
-            return connectorStatus.transactionIdTag
-          }
-        }
-      }
-    } else {
-      for (const connectorId of this.connectors.keys()) {
-        if (this.getConnectorStatus(connectorId)?.transactionId === transactionId) {
-          return this.getConnectorStatus(connectorId)?.transactionIdTag
-        }
-      }
-    }
-  }
-
-  public hasConnector (connectorId: number): boolean {
-    if (this.hasEvses) {
-      for (const evseStatus of this.evses.values()) {
-        if (evseStatus.connectors.has(connectorId)) {
-          return true
-        }
-      }
-      return false
-    }
-    return this.connectors.has(connectorId)
-  }
-
-  public hasIdTags (): boolean {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return isNotEmptyArray(this.idTagsCache.getIdTags(getIdTagsFile(this.stationInfo!)!))
-  }
-
-  public inAcceptedState (): boolean {
-    return this.bootNotificationResponse?.status === RegistrationStatusEnumType.ACCEPTED
-  }
-
-  public inPendingState (): boolean {
-    return this.bootNotificationResponse?.status === RegistrationStatusEnumType.PENDING
-  }
-
-  public inRejectedState (): boolean {
-    return this.bootNotificationResponse?.status === RegistrationStatusEnumType.REJECTED
-  }
-
-  public inUnknownState (): boolean {
-    return this.bootNotificationResponse?.status == null
-  }
-
-  public isChargingStationAvailable (): boolean {
-    return this.getConnectorStatus(0)?.availability === AvailabilityType.Operative
-  }
-
-  public isConnectorAvailable (connectorId: number): boolean {
-    return (
-      connectorId > 0 &&
-      this.getConnectorStatus(connectorId)?.availability === AvailabilityType.Operative
-    )
-  }
-
-  public isConnectorReservable (
-    reservationId: number,
-    idTag?: string,
-    connectorId?: number
-  ): boolean {
-    const reservation = this.getReservationBy('reservationId', reservationId)
-    const reservationExists = reservation != null && !hasReservationExpired(reservation)
-    if (arguments.length === 1) {
-      return !reservationExists
-    } else if (arguments.length > 1) {
-      const userReservation = idTag != null ? this.getReservationBy('idTag', idTag) : undefined
-      const userReservationExists =
-        userReservation != null && !hasReservationExpired(userReservation)
-      const notConnectorZero = connectorId == null ? true : connectorId > 0
-      const freeConnectorsAvailable = this.getNumberOfReservableConnectors() > 0
-      return (
-        !reservationExists && !userReservationExists && notConnectorZero && freeConnectorsAvailable
-      )
-    }
-    return false
-  }
-
-  public isRegistered (): boolean {
-    return !this.inUnknownState() && (this.inAcceptedState() || this.inPendingState())
-  }
-
-  public isWebSocketConnectionOpened (): boolean {
-    return this.wsConnection?.readyState === WebSocket.OPEN
-  }
-
-  public openWSConnection (
-    options?: WsOptions,
-    params?: { closeOpened?: boolean; terminateOpened?: boolean }
-  ): void {
-    options = {
-      handshakeTimeout: secondsToMilliseconds(this.getConnectionTimeout()),
-      ...this.stationInfo?.wsOptions,
-      ...options,
-    }
-    params = { ...{ closeOpened: false, terminateOpened: false }, ...params }
-    if (!checkChargingStationState(this, this.logPrefix())) {
-      return
-    }
-    if (this.stationInfo?.supervisionUser != null && this.stationInfo.supervisionPassword != null) {
-      options.auth = `${this.stationInfo.supervisionUser}:${this.stationInfo.supervisionPassword}`
-    }
-    if (params.closeOpened) {
-      this.closeWSConnection()
-    }
-    if (params.terminateOpened) {
-      this.terminateWSConnection()
-    }
-
-    if (this.isWebSocketConnectionOpened()) {
-      logger.warn(
-        `${this.logPrefix()} OCPP connection to URL ${this.wsConnectionUrl.href} is already opened`
-      )
-      return
-    }
-
-    logger.info(`${this.logPrefix()} Open OCPP connection to URL ${this.wsConnectionUrl.href}`)
-
-    this.wsConnection = new WebSocket(
-      this.wsConnectionUrl,
-      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      `ocpp${this.stationInfo?.ocppVersion}`,
-      options
-    )
-
-    // Handle WebSocket message
-    this.wsConnection.on('message', data => {
-      this.onMessage(data).catch(Constants.EMPTY_FUNCTION)
-    })
-    // Handle WebSocket error
-    this.wsConnection.on('error', this.onError.bind(this))
-    // Handle WebSocket close
-    this.wsConnection.on('close', this.onClose.bind(this))
-    // Handle WebSocket open
-    this.wsConnection.on('open', () => {
-      this.onOpen().catch((error: unknown) =>
-        logger.error(`${this.logPrefix()} Error while opening WebSocket connection:`, error)
-      )
-    })
-    // Handle WebSocket ping
-    this.wsConnection.on('ping', this.onPing.bind(this))
-    // Handle WebSocket pong
-    this.wsConnection.on('pong', this.onPong.bind(this))
-  }
-
-  public async removeReservation (
-    reservation: Reservation,
-    reason: ReservationTerminationReason
-  ): Promise<void> {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const connector = this.getConnectorStatus(reservation.connectorId)!
-    switch (reason) {
-      case ReservationTerminationReason.CONNECTOR_STATE_CHANGED:
-      case ReservationTerminationReason.TRANSACTION_STARTED:
-        delete connector.reservation
-        break
-      case ReservationTerminationReason.EXPIRED:
-      case ReservationTerminationReason.REPLACE_EXISTING:
-      case ReservationTerminationReason.RESERVATION_CANCELED:
-        await sendAndSetConnectorStatus(
-          this,
-          reservation.connectorId,
-          ConnectorStatusEnum.Available,
-          undefined,
-          { send: reservation.connectorId !== 0 }
-        )
-        delete connector.reservation
-        break
-      default:
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        throw new BaseError(`Unknown reservation termination reason '${reason}'`)
-    }
-  }
-
-  public async reset (reason?: StopTransactionReason): Promise<void> {
-    await this.stop(reason)
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    await sleep(this.stationInfo!.resetTime!)
-    this.initialize()
-    this.start()
-  }
-
-  public restartHeartbeat (): void {
-    // Stop heartbeat
-    this.stopHeartbeat()
-    // Start heartbeat
-    this.startHeartbeat()
-  }
-
-  public restartMeterValues (connectorId: number, interval: number): void {
-    this.stopMeterValues(connectorId)
-    this.startMeterValues(connectorId, interval)
-  }
-
-  public restartWebSocketPing (): void {
-    // Stop WebSocket ping
-    this.stopWebSocketPing()
-    // Start WebSocket ping
-    this.startWebSocketPing()
-  }
-
-  public saveOcppConfiguration (): void {
-    if (this.stationInfo?.ocppPersistentConfiguration === true) {
-      this.saveConfiguration()
-    }
-  }
-
-  public setSupervisionUrl (url: string): void {
-    if (
-      this.stationInfo?.supervisionUrlOcppConfiguration === true &&
-      isNotEmptyString(this.stationInfo.supervisionUrlOcppKey)
-    ) {
-      setConfigurationKeyValue(this, this.stationInfo.supervisionUrlOcppKey, url)
-    } else {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this.stationInfo!.supervisionUrls = url
-      this.configuredSupervisionUrl = this.getConfiguredSupervisionUrl()
-      this.saveStationInfo()
-    }
-  }
-
-  public start (): void {
-    if (!this.started) {
-      if (!this.starting) {
-        this.starting = true
-        if (this.stationInfo?.enableStatistics === true) {
-          this.performanceStatistics?.start()
-        }
-        this.openWSConnection()
-        // Monitor charging station template file
-        this.templateFileWatcher = watchJsonFile(
-          this.templateFile,
-          FileType.ChargingStationTemplate,
-          this.logPrefix(),
-          undefined,
-          (event, filename): void => {
-            if (isNotEmptyString(filename) && event === 'change') {
-              try {
-                logger.debug(
-                  `${this.logPrefix()} ${FileType.ChargingStationTemplate} ${
-                    this.templateFile
-                  } file have changed, reload`
-                )
-                this.sharedLRUCache.deleteChargingStationTemplate(this.templateFileHash)
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                this.idTagsCache.deleteIdTags(getIdTagsFile(this.stationInfo!)!)
-                // Initialize
-                this.initialize()
-                // Restart the ATG
-                const ATGStarted = this.automaticTransactionGenerator?.started
-                if (ATGStarted === true) {
-                  this.stopAutomaticTransactionGenerator()
-                }
-                delete this.automaticTransactionGeneratorConfiguration
-                if (
-                  this.getAutomaticTransactionGeneratorConfiguration()?.enable === true &&
-                  ATGStarted === true
-                ) {
-                  this.startAutomaticTransactionGenerator(undefined, true)
-                }
-                if (this.stationInfo?.enableStatistics === true) {
-                  this.performanceStatistics?.restart()
-                } else {
-                  this.performanceStatistics?.stop()
-                }
-                // FIXME?: restart heartbeat and WebSocket ping when their interval values have changed
-              } catch (error) {
-                logger.error(
-                  `${this.logPrefix()} ${FileType.ChargingStationTemplate} file monitoring error:`,
-                  error
-                )
-              }
-            }
-          }
-        )
-        this.started = true
-        this.emit(ChargingStationEvents.started)
-        this.starting = false
-      } else {
-        logger.warn(`${this.logPrefix()} Charging station is already starting...`)
-      }
-    } else {
-      logger.warn(`${this.logPrefix()} Charging station is already started...`)
-    }
-  }
-
-  public startAutomaticTransactionGenerator (
-    connectorIds?: number[],
-    stopAbsoluteDuration?: boolean
-  ): void {
-    this.automaticTransactionGenerator = AutomaticTransactionGenerator.getInstance(this)
-    if (isNotEmptyArray(connectorIds)) {
-      for (const connectorId of connectorIds) {
-        this.automaticTransactionGenerator?.startConnector(connectorId, stopAbsoluteDuration)
-      }
-    } else {
-      this.automaticTransactionGenerator?.start(stopAbsoluteDuration)
-    }
-    this.saveAutomaticTransactionGeneratorConfiguration()
-    this.emit(ChargingStationEvents.updated)
-  }
-
-  public startHeartbeat (): void {
-    const heartbeatInterval = this.getHeartbeatInterval()
-    if (heartbeatInterval > 0 && this.heartbeatSetInterval == null) {
-      this.heartbeatSetInterval = setInterval(() => {
-        this.ocppRequestService
-          .requestHandler<HeartbeatRequest, HeartbeatResponse>(this, RequestCommand.HEARTBEAT)
-          .catch((error: unknown) => {
-            logger.error(
-              `${this.logPrefix()} Error while sending '${RequestCommand.HEARTBEAT}':`,
-              error
-            )
-          })
-      }, heartbeatInterval)
-      logger.info(
-        `${this.logPrefix()} Heartbeat started every ${formatDurationMilliSeconds(
-          heartbeatInterval
-        )}`
-      )
-    } else if (this.heartbeatSetInterval != null) {
-      logger.info(
-        `${this.logPrefix()} Heartbeat already started every ${formatDurationMilliSeconds(
-          heartbeatInterval
-        )}`
-      )
-    } else {
-      logger.error(
-        `${this.logPrefix()} Heartbeat interval set to ${heartbeatInterval.toString()}, not starting the heartbeat`
-      )
-    }
-  }
-
-  public startMeterValues (connectorId: number, interval: number): void {
-    if (connectorId === 0) {
-      logger.error(
-        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId.toString()}`
-      )
-      return
-    }
-    const connectorStatus = this.getConnectorStatus(connectorId)
-    if (connectorStatus == null) {
-      logger.error(
-        `${this.logPrefix()} Trying to start MeterValues on non existing connector id
-          ${connectorId.toString()}`
-      )
-      return
-    }
-    if (connectorStatus.transactionStarted === false) {
-      logger.error(
-        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId.toString()} with no transaction started`
-      )
-      return
-    } else if (
-      connectorStatus.transactionStarted === true &&
-      connectorStatus.transactionId == null
-    ) {
-      logger.error(
-        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId.toString()} with no transaction id`
-      )
-      return
-    }
-    if (interval > 0) {
-      connectorStatus.transactionSetInterval = setInterval(() => {
-        const meterValue = buildMeterValue(
-          this,
-          connectorId,
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          connectorStatus.transactionId!,
-          interval
-        )
-        this.ocppRequestService
-          .requestHandler<MeterValuesRequest, MeterValuesResponse>(
-            this,
-            RequestCommand.METER_VALUES,
-            {
-              connectorId,
-              meterValue: [meterValue],
-              transactionId: connectorStatus.transactionId,
-            }
-          )
-          .catch((error: unknown) => {
-            logger.error(
-              `${this.logPrefix()} Error while sending '${RequestCommand.METER_VALUES}':`,
-              error
-            )
-          })
-      }, interval)
-    } else {
-      logger.error(
-        `${this.logPrefix()} Charging station ${
-          StandardParametersKey.MeterValueSampleInterval
-        } configuration set to ${interval.toString()}, not sending MeterValues`
-      )
-    }
-  }
-
-  public async stop (
-    reason?: StopTransactionReason,
-    stopTransactions = this.stationInfo?.stopTransactionsOnStopped
-  ): Promise<void> {
-    if (this.started) {
-      if (!this.stopping) {
-        this.stopping = true
-        await this.stopMessageSequence(reason, stopTransactions)
-        this.closeWSConnection()
-        if (this.stationInfo?.enableStatistics === true) {
-          this.performanceStatistics?.stop()
-        }
-        this.templateFileWatcher?.close()
-        delete this.bootNotificationResponse
-        this.started = false
-        this.saveConfiguration()
-        this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash)
-        this.emit(ChargingStationEvents.stopped)
-        this.stopping = false
-      } else {
-        logger.warn(`${this.logPrefix()} Charging station is already stopping...`)
-      }
-    } else {
-      logger.warn(`${this.logPrefix()} Charging station is already stopped...`)
-    }
-  }
-
-  public stopAutomaticTransactionGenerator (connectorIds?: number[]): void {
-    if (isNotEmptyArray(connectorIds)) {
-      for (const connectorId of connectorIds) {
-        this.automaticTransactionGenerator?.stopConnector(connectorId)
-      }
-    } else {
-      this.automaticTransactionGenerator?.stop()
-    }
-    this.saveAutomaticTransactionGeneratorConfiguration()
-    this.emit(ChargingStationEvents.updated)
-  }
-
-  public stopMeterValues (connectorId: number): void {
-    const connectorStatus = this.getConnectorStatus(connectorId)
-    if (connectorStatus?.transactionSetInterval != null) {
-      clearInterval(connectorStatus.transactionSetInterval)
-    }
-  }
-
-  public async stopTransactionOnConnector (
-    connectorId: number,
-    reason?: StopTransactionReason
-  ): Promise<StopTransactionResponse> {
-    const transactionId = this.getConnectorStatus(connectorId)?.transactionId
-    if (
-      this.stationInfo?.beginEndMeterValues === true &&
-      this.stationInfo.ocppStrictCompliance === true &&
-      this.stationInfo.outOfOrderEndMeterValues === false
-    ) {
-      const transactionEndMeterValue = buildTransactionEndMeterValue(
-        this,
-        connectorId,
-        this.getEnergyActiveImportRegisterByTransactionId(transactionId)
-      )
-      await this.ocppRequestService.requestHandler<MeterValuesRequest, MeterValuesResponse>(
-        this,
-        RequestCommand.METER_VALUES,
-        {
-          connectorId,
-          meterValue: [transactionEndMeterValue],
-          transactionId,
-        }
-      )
-    }
-    return await this.ocppRequestService.requestHandler<
-      Partial<StopTransactionRequest>,
-      StopTransactionResponse
-    >(this, RequestCommand.STOP_TRANSACTION, {
-      meterStop: this.getEnergyActiveImportRegisterByTransactionId(transactionId, true),
-      transactionId,
-      ...(reason != null && { reason }),
-    })
-  }
-
-  public get hasEvses (): boolean {
-    return this.connectors.size === 0 && this.evses.size > 0
-  }
-
-  public get wsConnectionUrl (): URL {
-    const wsConnectionBaseUrlStr = `${
-      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      this.stationInfo?.supervisionUrlOcppConfiguration === true &&
-      isNotEmptyString(this.stationInfo.supervisionUrlOcppKey) &&
-      isNotEmptyString(getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey)?.value)
-        ? getConfigurationKey(this, this.stationInfo.supervisionUrlOcppKey)?.value
-        : this.configuredSupervisionUrl.href
-    }`
-    return new URL(
-      `${wsConnectionBaseUrlStr}${
-        !wsConnectionBaseUrlStr.endsWith('/') ? '/' : ''
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      }${this.stationInfo?.chargingStationId}`
-    )
   }
 }

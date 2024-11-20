@@ -22,6 +22,18 @@ export abstract class Storage {
     this.logPrefix = logPrefix
   }
 
+  public abstract close (): Promise<void> | void
+
+  public getPerformanceStatistics (): IterableIterator<Statistics> {
+    return Storage.performanceStatistics.values()
+  }
+
+  public abstract open (): Promise<void> | void
+
+  public abstract storePerformanceStatistics (
+    performanceStatistics: Statistics
+  ): Promise<void> | void
+
   protected clearPerformanceStatistics (): void {
     Storage.performanceStatistics.clear()
   }
@@ -72,14 +84,4 @@ export abstract class Storage {
   protected setPerformanceStatistics (performanceStatistics: Statistics): void {
     Storage.performanceStatistics.set(performanceStatistics.id, performanceStatistics)
   }
-
-  public abstract close (): Promise<void> | void
-
-  public getPerformanceStatistics (): IterableIterator<Statistics> {
-    return Storage.performanceStatistics.values()
-  }
-  public abstract open (): Promise<void> | void
-  public abstract storePerformanceStatistics (
-    performanceStatistics: Statistics
-  ): Promise<void> | void
 }

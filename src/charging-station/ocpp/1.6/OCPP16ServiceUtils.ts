@@ -43,6 +43,43 @@ import { OCPPServiceUtils } from '../OCPPServiceUtils.js'
 import { OCPP16Constants } from './OCPP16Constants.js'
 
 export class OCPP16ServiceUtils extends OCPPServiceUtils {
+  public static buildTransactionBeginMeterValue (
+    chargingStation: ChargingStation,
+    connectorId: number,
+    meterStart: number | undefined
+  ): OCPP16MeterValue {
+    const meterValue: OCPP16MeterValue = {
+      sampledValue: [],
+      timestamp: new Date(),
+    }
+    // Energy.Active.Import.Register measurand (default)
+    const sampledValueTemplate = OCPP16ServiceUtils.getSampledValueTemplate(
+      chargingStation,
+      connectorId
+    )
+    const unitDivider =
+      sampledValueTemplate?.unit === OCPP16MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1
+    meterValue.sampledValue.push(
+      OCPP16ServiceUtils.buildSampledValue(
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        sampledValueTemplate!,
+        roundTo((meterStart ?? 0) / unitDivider, 4),
+        OCPP16MeterValueContext.TRANSACTION_BEGIN
+      )
+    )
+    return meterValue
+  }
+
+  public static buildTransactionDataMeterValues (
+    transactionBeginMeterValue: OCPP16MeterValue,
+    transactionEndMeterValue: OCPP16MeterValue
+  ): OCPP16MeterValue[] {
+    const meterValues: OCPP16MeterValue[] = []
+    meterValues.push(transactionBeginMeterValue)
+    meterValues.push(transactionEndMeterValue)
+    return meterValues
+  }
+
   public static changeAvailability = async (
     chargingStation: ChargingStation,
     connectorIds: number[],
@@ -72,6 +109,22 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       return OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_SCHEDULED
     }
     return OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED
+  }
+
+  public static checkFeatureProfile (
+    chargingStation: ChargingStation,
+    featureProfile: OCPP16SupportedFeatureProfiles,
+    command: OCPP16IncomingRequestCommand | OCPP16RequestCommand
+  ): boolean {
+    if (hasFeatureProfile(chargingStation, featureProfile) === false) {
+      logger.warn(
+        `${chargingStation.logPrefix()} Trying to '${command}' without '${featureProfile}' feature enabled in ${
+          OCPP16StandardParametersKey.SupportedFeatureProfiles
+        } in configuration`
+      )
+      return false
+    }
+    return true
   }
 
   public static clearChargingProfiles = (
@@ -113,81 +166,6 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       })
     }
     return clearedCP
-  }
-
-  private static readonly composeChargingSchedule = (
-    chargingSchedule: OCPP16ChargingSchedule,
-    compositeInterval: Interval
-  ): OCPP16ChargingSchedule | undefined => {
-    const chargingScheduleInterval: Interval = {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      end: addSeconds(chargingSchedule.startSchedule!, chargingSchedule.duration!),
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      start: chargingSchedule.startSchedule!,
-    }
-    if (areIntervalsOverlapping(chargingScheduleInterval, compositeInterval)) {
-      chargingSchedule.chargingSchedulePeriod.sort((a, b) => a.startPeriod - b.startPeriod)
-      if (isBefore(chargingScheduleInterval.start, compositeInterval.start)) {
-        return {
-          ...chargingSchedule,
-          chargingSchedulePeriod: chargingSchedule.chargingSchedulePeriod
-            .filter((schedulePeriod, index) => {
-              if (
-                isWithinInterval(
-                  addSeconds(chargingScheduleInterval.start, schedulePeriod.startPeriod),
-                  compositeInterval
-                )
-              ) {
-                return true
-              }
-              if (
-                index < chargingSchedule.chargingSchedulePeriod.length - 1 &&
-                !isWithinInterval(
-                  addSeconds(chargingScheduleInterval.start, schedulePeriod.startPeriod),
-                  compositeInterval
-                ) &&
-                isWithinInterval(
-                  addSeconds(
-                    chargingScheduleInterval.start,
-                    chargingSchedule.chargingSchedulePeriod[index + 1].startPeriod
-                  ),
-                  compositeInterval
-                )
-              ) {
-                return true
-              }
-              return false
-            })
-            .map((schedulePeriod, index) => {
-              if (index === 0 && schedulePeriod.startPeriod !== 0) {
-                schedulePeriod.startPeriod = 0
-              }
-              return schedulePeriod
-            }),
-          duration: differenceInSeconds(
-            chargingScheduleInterval.end,
-            compositeInterval.start as Date
-          ),
-          startSchedule: compositeInterval.start as Date,
-        }
-      }
-      if (isAfter(chargingScheduleInterval.end, compositeInterval.end)) {
-        return {
-          ...chargingSchedule,
-          chargingSchedulePeriod: chargingSchedule.chargingSchedulePeriod.filter(schedulePeriod =>
-            isWithinInterval(
-              addSeconds(chargingScheduleInterval.start, schedulePeriod.startPeriod),
-              compositeInterval
-            )
-          ),
-          duration: differenceInSeconds(
-            compositeInterval.end as Date,
-            chargingScheduleInterval.start
-          ),
-        }
-      }
-      return chargingSchedule
-    }
   }
 
   public static composeChargingSchedules = (
@@ -425,78 +403,6 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     return false
   }
 
-  public static remoteStopTransaction = async (
-    chargingStation: ChargingStation,
-    connectorId: number
-  ): Promise<GenericResponse> => {
-    await OCPP16ServiceUtils.sendAndSetConnectorStatus(
-      chargingStation,
-      connectorId,
-      OCPP16ChargePointStatus.Finishing
-    )
-    const stopResponse = await chargingStation.stopTransactionOnConnector(
-      connectorId,
-      OCPP16StopTransactionReason.REMOTE
-    )
-    if (stopResponse.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
-      return OCPP16Constants.OCPP_RESPONSE_ACCEPTED
-    }
-    return OCPP16Constants.OCPP_RESPONSE_REJECTED
-  }
-
-  public static buildTransactionBeginMeterValue (
-    chargingStation: ChargingStation,
-    connectorId: number,
-    meterStart: number | undefined
-  ): OCPP16MeterValue {
-    const meterValue: OCPP16MeterValue = {
-      sampledValue: [],
-      timestamp: new Date(),
-    }
-    // Energy.Active.Import.Register measurand (default)
-    const sampledValueTemplate = OCPP16ServiceUtils.getSampledValueTemplate(
-      chargingStation,
-      connectorId
-    )
-    const unitDivider =
-      sampledValueTemplate?.unit === OCPP16MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1
-    meterValue.sampledValue.push(
-      OCPP16ServiceUtils.buildSampledValue(
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        sampledValueTemplate!,
-        roundTo((meterStart ?? 0) / unitDivider, 4),
-        OCPP16MeterValueContext.TRANSACTION_BEGIN
-      )
-    )
-    return meterValue
-  }
-
-  public static buildTransactionDataMeterValues (
-    transactionBeginMeterValue: OCPP16MeterValue,
-    transactionEndMeterValue: OCPP16MeterValue
-  ): OCPP16MeterValue[] {
-    const meterValues: OCPP16MeterValue[] = []
-    meterValues.push(transactionBeginMeterValue)
-    meterValues.push(transactionEndMeterValue)
-    return meterValues
-  }
-
-  public static checkFeatureProfile (
-    chargingStation: ChargingStation,
-    featureProfile: OCPP16SupportedFeatureProfiles,
-    command: OCPP16IncomingRequestCommand | OCPP16RequestCommand
-  ): boolean {
-    if (hasFeatureProfile(chargingStation, featureProfile) === false) {
-      logger.warn(
-        `${chargingStation.logPrefix()} Trying to '${command}' without '${featureProfile}' feature enabled in ${
-          OCPP16StandardParametersKey.SupportedFeatureProfiles
-        } in configuration`
-      )
-      return false
-    }
-    return true
-  }
-
   public static isConfigurationKeyVisible (key: ConfigurationKey): boolean {
     if (key.visible == null) {
       return true
@@ -515,6 +421,25 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       moduleName,
       methodName
     )
+  }
+
+  public static remoteStopTransaction = async (
+    chargingStation: ChargingStation,
+    connectorId: number
+  ): Promise<GenericResponse> => {
+    await OCPP16ServiceUtils.sendAndSetConnectorStatus(
+      chargingStation,
+      connectorId,
+      OCPP16ChargePointStatus.Finishing
+    )
+    const stopResponse = await chargingStation.stopTransactionOnConnector(
+      connectorId,
+      OCPP16StopTransactionReason.REMOTE
+    )
+    if (stopResponse.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
+      return OCPP16Constants.OCPP_RESPONSE_ACCEPTED
+    }
+    return OCPP16Constants.OCPP_RESPONSE_REJECTED
   }
 
   public static setChargingProfile (
@@ -557,5 +482,80 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       }
     }
     !cpReplaced && chargingStation.getConnectorStatus(connectorId)?.chargingProfiles?.push(cp)
+  }
+
+  private static readonly composeChargingSchedule = (
+    chargingSchedule: OCPP16ChargingSchedule,
+    compositeInterval: Interval
+  ): OCPP16ChargingSchedule | undefined => {
+    const chargingScheduleInterval: Interval = {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      end: addSeconds(chargingSchedule.startSchedule!, chargingSchedule.duration!),
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      start: chargingSchedule.startSchedule!,
+    }
+    if (areIntervalsOverlapping(chargingScheduleInterval, compositeInterval)) {
+      chargingSchedule.chargingSchedulePeriod.sort((a, b) => a.startPeriod - b.startPeriod)
+      if (isBefore(chargingScheduleInterval.start, compositeInterval.start)) {
+        return {
+          ...chargingSchedule,
+          chargingSchedulePeriod: chargingSchedule.chargingSchedulePeriod
+            .filter((schedulePeriod, index) => {
+              if (
+                isWithinInterval(
+                  addSeconds(chargingScheduleInterval.start, schedulePeriod.startPeriod),
+                  compositeInterval
+                )
+              ) {
+                return true
+              }
+              if (
+                index < chargingSchedule.chargingSchedulePeriod.length - 1 &&
+                !isWithinInterval(
+                  addSeconds(chargingScheduleInterval.start, schedulePeriod.startPeriod),
+                  compositeInterval
+                ) &&
+                isWithinInterval(
+                  addSeconds(
+                    chargingScheduleInterval.start,
+                    chargingSchedule.chargingSchedulePeriod[index + 1].startPeriod
+                  ),
+                  compositeInterval
+                )
+              ) {
+                return true
+              }
+              return false
+            })
+            .map((schedulePeriod, index) => {
+              if (index === 0 && schedulePeriod.startPeriod !== 0) {
+                schedulePeriod.startPeriod = 0
+              }
+              return schedulePeriod
+            }),
+          duration: differenceInSeconds(
+            chargingScheduleInterval.end,
+            compositeInterval.start as Date
+          ),
+          startSchedule: compositeInterval.start as Date,
+        }
+      }
+      if (isAfter(chargingScheduleInterval.end, compositeInterval.end)) {
+        return {
+          ...chargingSchedule,
+          chargingSchedulePeriod: chargingSchedule.chargingSchedulePeriod.filter(schedulePeriod =>
+            isWithinInterval(
+              addSeconds(chargingScheduleInterval.start, schedulePeriod.startPeriod),
+              compositeInterval
+            )
+          ),
+          duration: differenceInSeconds(
+            compositeInterval.end as Date,
+            chargingScheduleInterval.start
+          ),
+        }
+      }
+      return chargingSchedule
+    }
   }
 }

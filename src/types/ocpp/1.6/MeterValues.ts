@@ -1,25 +1,6 @@
 import type { EmptyObject } from '../../EmptyObject.js'
 import type { JsonObject } from '../../JsonType.js'
 
-export enum OCPP16MeterValueUnit {
-  AMP = 'A',
-  KILO_VAR = 'kvar',
-  KILO_VAR_HOUR = 'kvarh',
-  KILO_VOLT_AMP = 'kVA',
-  KILO_WATT = 'kW',
-  KILO_WATT_HOUR = 'kWh',
-  PERCENT = 'Percent',
-  TEMP_CELSIUS = 'Celsius',
-  TEMP_FAHRENHEIT = 'Fahrenheit',
-  TEMP_KELVIN = 'K',
-  VAR = 'var',
-  VAR_HOUR = 'varh',
-  VOLT = 'V',
-  VOLT_AMP = 'VA',
-  WATT = 'W',
-  WATT_HOUR = 'Wh',
-}
-
 export enum OCPP16MeterValueContext {
   INTERRUPTION_BEGIN = 'Interruption.Begin',
   INTERRUPTION_END = 'Interruption.End',
@@ -29,6 +10,14 @@ export enum OCPP16MeterValueContext {
   TRANSACTION_BEGIN = 'Transaction.Begin',
   TRANSACTION_END = 'Transaction.End',
   TRIGGER = 'Trigger',
+}
+
+export enum OCPP16MeterValueLocation {
+  BODY = 'Body',
+  CABLE = 'Cable',
+  EV = 'EV',
+  INLET = 'Inlet',
+  OUTLET = 'Outlet',
 }
 
 export enum OCPP16MeterValueMeasurand {
@@ -56,14 +45,6 @@ export enum OCPP16MeterValueMeasurand {
   VOLTAGE = 'Voltage',
 }
 
-export enum OCPP16MeterValueLocation {
-  BODY = 'Body',
-  CABLE = 'Cable',
-  EV = 'EV',
-  INLET = 'Inlet',
-  OUTLET = 'Outlet',
-}
-
 export enum OCPP16MeterValuePhase {
   L1 = 'L1',
   L1_L2 = 'L1-L2',
@@ -77,19 +58,28 @@ export enum OCPP16MeterValuePhase {
   N = 'N',
 }
 
+export enum OCPP16MeterValueUnit {
+  AMP = 'A',
+  KILO_VAR = 'kvar',
+  KILO_VAR_HOUR = 'kvarh',
+  KILO_VOLT_AMP = 'kVA',
+  KILO_WATT = 'kW',
+  KILO_WATT_HOUR = 'kWh',
+  PERCENT = 'Percent',
+  TEMP_CELSIUS = 'Celsius',
+  TEMP_FAHRENHEIT = 'Fahrenheit',
+  TEMP_KELVIN = 'K',
+  VAR = 'var',
+  VAR_HOUR = 'varh',
+  VOLT = 'V',
+  VOLT_AMP = 'VA',
+  WATT = 'W',
+  WATT_HOUR = 'Wh',
+}
+
 enum OCPP16MeterValueFormat {
   RAW = 'Raw',
   SIGNED_DATA = 'SignedData',
-}
-
-export interface OCPP16SampledValue extends JsonObject {
-  context?: OCPP16MeterValueContext
-  format?: OCPP16MeterValueFormat
-  location?: OCPP16MeterValueLocation
-  measurand?: OCPP16MeterValueMeasurand
-  phase?: OCPP16MeterValuePhase
-  unit?: OCPP16MeterValueUnit
-  value: string
 }
 
 export interface OCPP16MeterValue extends JsonObject {
@@ -104,3 +94,13 @@ export interface OCPP16MeterValuesRequest extends JsonObject {
 }
 
 export type OCPP16MeterValuesResponse = EmptyObject
+
+export interface OCPP16SampledValue extends JsonObject {
+  context?: OCPP16MeterValueContext
+  format?: OCPP16MeterValueFormat
+  location?: OCPP16MeterValueLocation
+  measurand?: OCPP16MeterValueMeasurand
+  phase?: OCPP16MeterValuePhase
+  unit?: OCPP16MeterValueUnit
+  value: string
+}

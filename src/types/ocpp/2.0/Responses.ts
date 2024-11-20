@@ -15,22 +15,22 @@ export interface OCPP20BootNotificationResponse extends JsonObject {
   statusInfo?: StatusInfoType
 }
 
-export interface OCPP20HeartbeatResponse extends JsonObject {
-  currentTime: Date
-}
-
 export interface OCPP20ClearCacheResponse extends JsonObject {
   status: GenericStatusEnumType
   statusInfo?: StatusInfoType
 }
 
-export type OCPP20StatusNotificationResponse = EmptyObject
-
-export interface OCPP20SetVariablesResponse extends JsonObject {
-  setVariableResult: OCPP20SetVariableResultType[]
+export interface OCPP20HeartbeatResponse extends JsonObject {
+  currentTime: Date
 }
 
 export interface OCPP20InstallCertificateResponse extends JsonObject {
   status: InstallCertificateStatusEnumType
   statusInfo?: StatusInfoType
 }
+
+export interface OCPP20SetVariablesResponse extends JsonObject {
+  setVariableResult: OCPP20SetVariableResultType[]
+}
+
+export type OCPP20StatusNotificationResponse = EmptyObject

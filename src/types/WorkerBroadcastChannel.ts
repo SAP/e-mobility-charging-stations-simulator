@@ -1,15 +1,5 @@
 import type { RequestPayload, ResponsePayload } from './UIProtocol.js'
 
-export type BroadcastChannelRequest = [
-  `${string}-${string}-${string}-${string}-${string}`,
-  BroadcastChannelProcedureName,
-  BroadcastChannelRequestPayload
-]
-export type BroadcastChannelResponse = [
-  `${string}-${string}-${string}-${string}-${string}`,
-  BroadcastChannelResponsePayload
-]
-
 export enum BroadcastChannelProcedureName {
   AUTHORIZE = 'authorize',
   BOOT_NOTIFICATION = 'bootNotification',
@@ -31,10 +21,21 @@ export enum BroadcastChannelProcedureName {
   STOP_TRANSACTION = 'stopTransaction',
 }
 
+export type BroadcastChannelRequest = [
+  `${string}-${string}-${string}-${string}-${string}`,
+  BroadcastChannelProcedureName,
+  BroadcastChannelRequestPayload
+]
+
 export interface BroadcastChannelRequestPayload extends RequestPayload {
   connectorId?: number
   transactionId?: number
 }
+
+export type BroadcastChannelResponse = [
+  `${string}-${string}-${string}-${string}-${string}`,
+  BroadcastChannelResponsePayload
+]
 
 export interface BroadcastChannelResponsePayload
   extends Omit<ResponsePayload, 'hashIdsFailed' | 'hashIdsSucceeded' | 'responsesFailed'> {

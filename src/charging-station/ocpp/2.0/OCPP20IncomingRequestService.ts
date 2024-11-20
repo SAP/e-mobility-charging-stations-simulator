@@ -53,20 +53,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     this.validatePayload = this.validatePayload.bind(this)
   }
 
-  private validatePayload (
-    chargingStation: ChargingStation,
-    commandName: OCPP20IncomingRequestCommand,
-    commandPayload: JsonType
-  ): boolean {
-    if (this.payloadValidateFunctions.has(commandName)) {
-      return this.validateIncomingRequestPayload(chargingStation, commandName, commandPayload)
-    }
-    logger.warn(
-      `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema validation function found for command '${commandName}' PDU validation`
-    )
-    return false
-  }
-
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
   public async incomingRequestHandler<ReqType extends JsonType, ResType extends JsonType>(
     chargingStation: ChargingStation,
@@ -153,5 +139,19 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     )
     // Emit command name event to allow delayed handling
     this.emit(commandName, chargingStation, commandPayload, response)
+  }
+
+  private validatePayload (
+    chargingStation: ChargingStation,
+    commandName: OCPP20IncomingRequestCommand,
+    commandPayload: JsonType
+  ): boolean {
+    if (this.payloadValidateFunctions.has(commandName)) {
+      return this.validateIncomingRequestPayload(chargingStation, commandName, commandPayload)
+    }
+    logger.warn(
+      `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema validation function found for command '${commandName}' PDU validation`
+    )
+    return false
   }
 }

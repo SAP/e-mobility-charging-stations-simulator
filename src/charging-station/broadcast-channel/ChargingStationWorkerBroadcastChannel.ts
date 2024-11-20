@@ -46,6 +46,11 @@ import { WorkerBroadcastChannel } from './WorkerBroadcastChannel.js'
 
 const moduleName = 'ChargingStationWorkerBroadcastChannel'
 
+type CommandHandler = (
+  requestPayload?: BroadcastChannelRequestPayload
+  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+) => CommandResponse | Promise<CommandResponse | void> | void
+
 type CommandResponse =
   | AuthorizeResponse
   | BootNotificationResponse
@@ -54,11 +59,6 @@ type CommandResponse =
   | HeartbeatResponse
   | StartTransactionResponse
   | StopTransactionResponse
-
-type CommandHandler = (
-  requestPayload?: BroadcastChannelRequestPayload
-  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
-) => CommandResponse | Promise<CommandResponse | void> | void
 
 export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChannel {
   private readonly chargingStation: ChargingStation

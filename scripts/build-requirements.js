@@ -27,10 +27,10 @@ switch (runtime) {
   case JSRuntime.node:
     checkNodeVersion()
     break
+  case JSRuntime.browser:
   case JSRuntime.bun:
   case JSRuntime.deno:
   case JSRuntime.workerd:
-  case JSRuntime.browser:
   default:
     console.warn(chalk.yellow(`Unsupported '${runtime}' runtime detected`))
     break

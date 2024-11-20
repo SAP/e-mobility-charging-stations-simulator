@@ -15,6 +15,13 @@ import type {
   RequestCommand,
 } from './ocpp/Requests.js'
 
+export enum AmpereUnits {
+  AMPERE = 'A',
+  CENTI_AMPERE = 'cA',
+  DECI_AMPERE = 'dA',
+  MILLI_AMPERE = 'mA',
+}
+
 export enum CurrentType {
   AC = 'AC',
   DC = 'DC',
@@ -25,34 +32,11 @@ export enum PowerUnits {
   WATT = 'W',
 }
 
-export enum AmpereUnits {
-  AMPERE = 'A',
-  CENTI_AMPERE = 'cA',
-  DECI_AMPERE = 'dA',
-  MILLI_AMPERE = 'mA',
-}
-
 export enum Voltage {
   VOLTAGE_110 = 110,
   VOLTAGE_230 = 230,
   VOLTAGE_400 = 400,
   VOLTAGE_800 = 800,
-}
-
-export type WsOptions = ClientOptions & ClientRequestArgs
-
-export interface FirmwareUpgrade extends JsonObject {
-  failureStatus?: FirmwareStatus
-  reset?: boolean
-  versionUpgrade?: {
-    patternGroup?: number
-    step?: number
-  }
-}
-
-interface CommandsSupport extends JsonObject {
-  incomingCommands: Record<IncomingRequestCommand, boolean>
-  outgoingCommands?: Record<RequestCommand, boolean>
 }
 
 enum x509CertificateType {
@@ -131,4 +115,20 @@ export interface ChargingStationTemplate {
   voltageOut?: Voltage
   wsOptions?: WsOptions
   x509Certificates?: Record<x509CertificateType, string>
+}
+
+export interface FirmwareUpgrade extends JsonObject {
+  failureStatus?: FirmwareStatus
+  reset?: boolean
+  versionUpgrade?: {
+    patternGroup?: number
+    step?: number
+  }
+}
+
+export type WsOptions = ClientOptions & ClientRequestArgs
+
+interface CommandsSupport extends JsonObject {
+  incomingCommands: Record<IncomingRequestCommand, boolean>
+  outgoingCommands?: Record<RequestCommand, boolean>
 }

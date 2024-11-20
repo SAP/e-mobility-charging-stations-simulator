@@ -1,12 +1,3 @@
-export enum OCPP16SupportedFeatureProfiles {
-  Core = 'Core',
-  FirmwareManagement = 'FirmwareManagement',
-  LocalAuthListManagement = 'LocalAuthListManagement',
-  RemoteTrigger = 'RemoteTrigger',
-  Reservation = 'Reservation',
-  SmartCharging = 'SmartCharging',
-}
-
 export enum OCPP16StandardParametersKey {
   AllowOfflineTxForUnknownId = 'AllowOfflineTxForUnknownId',
   AuthorizationCacheEnabled = 'AuthorizationCacheEnabled',
@@ -52,6 +43,15 @@ export enum OCPP16StandardParametersKey {
   TransactionMessageRetryInterval = 'TransactionMessageRetryInterval',
   UnlockConnectorOnEVSideDisconnect = 'UnlockConnectorOnEVSideDisconnect',
   WebSocketPingInterval = 'WebSocketPingInterval',
+}
+
+export enum OCPP16SupportedFeatureProfiles {
+  Core = 'Core',
+  FirmwareManagement = 'FirmwareManagement',
+  LocalAuthListManagement = 'LocalAuthListManagement',
+  RemoteTrigger = 'RemoteTrigger',
+  Reservation = 'Reservation',
+  SmartCharging = 'SmartCharging',
 }
 
 export enum OCPP16VendorParametersKey {
