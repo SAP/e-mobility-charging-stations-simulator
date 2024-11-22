@@ -2,15 +2,14 @@
 
 ## [2.0.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ocpp-server@v2.0.0...ocpp-server@v2.0.1) (2024-11-22)
 
-
 ### 🤖 Automation
 
-* **deps-dev:** bump ruff in /tests/ocpp-server in the regular group ([6c99ee6](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6c99ee6a02a4c98147c2f47b085faef12d850a73))
-* **deps-dev:** bump ruff in /tests/ocpp-server in the regular group ([#1201](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1201)) ([8a80af2](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/8a80af287e23d31f24fde579f0db6b68405f3091))
-* **deps-dev:** bump ruff in /tests/ocpp-server in the regular group ([#1213](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1213)) ([89e4a23](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/89e4a238ab0be07503d933dcb62ae3688497c123))
-* **deps-dev:** bump ruff in /tests/ocpp-server in the regular group ([#1224](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1224)) ([c047fe5](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c047fe50eca6da3b32136bd4ce8b8a99346bc8db))
-* **deps:** bump websockets from 13.1 to 14.0 in /tests/ocpp-server ([#1214](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1214)) ([cfafab3](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/cfafab382b0379a6f38a215c69908917e31de434))
-* **deps:** bump websockets in /tests/ocpp-server in the regular group ([#1218](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1218)) ([9e1c610](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/9e1c6101dbeaa175122a8810bc3c94521b49da61))
+- **deps-dev:** bump ruff in /tests/ocpp-server in the regular group ([6c99ee6](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6c99ee6a02a4c98147c2f47b085faef12d850a73))
+- **deps-dev:** bump ruff in /tests/ocpp-server in the regular group ([#1201](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1201)) ([8a80af2](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/8a80af287e23d31f24fde579f0db6b68405f3091))
+- **deps-dev:** bump ruff in /tests/ocpp-server in the regular group ([#1213](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1213)) ([89e4a23](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/89e4a238ab0be07503d933dcb62ae3688497c123))
+- **deps-dev:** bump ruff in /tests/ocpp-server in the regular group ([#1224](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1224)) ([c047fe5](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c047fe50eca6da3b32136bd4ce8b8a99346bc8db))
+- **deps:** bump websockets from 13.1 to 14.0 in /tests/ocpp-server ([#1214](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1214)) ([cfafab3](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/cfafab382b0379a6f38a215c69908917e31de434))
+- **deps:** bump websockets in /tests/ocpp-server in the regular group ([#1218](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1218)) ([9e1c610](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/9e1c6101dbeaa175122a8810bc3c94521b49da61))
 
 ## [2.0.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ocpp-server@v1.5.2...ocpp-server@v2.0.0) (2024-10-23)
 
