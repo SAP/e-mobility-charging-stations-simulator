@@ -131,7 +131,7 @@ import type { ChargingStationData, ConnectorStatus, Status } from '@/types'
 import Button from '@/components/buttons/Button.vue'
 import ToggleButton from '@/components/buttons/ToggleButton.vue'
 import CSConnector from '@/components/charging-stations/CSConnector.vue'
-import { useUIClient } from '@/composables'
+import { deleteFromLocalStorage, getLocalStorage, useUIClient } from '@/composables'
 import { useToast } from 'vue-toast-notification'
 
 const props = defineProps<{
@@ -229,6 +229,11 @@ const deleteChargingStation = (): void => {
   uiClient
     .deleteChargingStation(props.chargingStation.stationInfo.hashId)
     .then(() => {
+      for (const key in getLocalStorage()) {
+        if (key.includes(props.chargingStation.stationInfo.hashId)) {
+          deleteFromLocalStorage(key)
+        }
+      }
       return $toast.success('Charging station successfully deleted')
     })
     .catch((error: Error) => {
