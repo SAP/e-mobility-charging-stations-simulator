@@ -27,6 +27,8 @@ export type BootNotificationResponse =
   | OCPP16BootNotificationResponse
   | OCPP20BootNotificationResponse
 
+export type CancelReservationResponse = GenericResponse
+
 export type ClearCacheResponse = GenericResponse | OCPP20ClearCacheResponse
 
 export type DataTransferResponse = OCPP16DataTransferResponse
@@ -93,16 +95,14 @@ export const DataTransferStatus = {
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type DataTransferStatus = OCPP16DataTransferStatus
 
-export type ReservationStatus = OCPP16ReservationStatus
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const ReservationStatus = {
   ...OCPP16ReservationStatus,
 } as const
-
-export type CancelReservationStatus = GenericStatus
 // eslint-disable-next-line @typescript-eslint/no-redeclare
+export type ReservationStatus = OCPP16ReservationStatus
+
 export const CancelReservationStatus = {
   ...GenericStatus,
 } as const
-
-export type CancelReservationResponse = GenericResponse
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type CancelReservationStatus = GenericStatus
