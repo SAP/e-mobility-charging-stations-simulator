@@ -419,19 +419,15 @@ export class ChargingStation extends EventEmitter {
     const connectorChargingProfilesLimit = getConnectorChargingProfilesLimit(this, connectorId)
     return min(
       Number.isNaN(connectorMaximumPower) ? Number.POSITIVE_INFINITY : connectorMaximumPower,
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      Number.isNaN(connectorAmperageLimitationLimit!)
+      connectorAmperageLimitationLimit == null || Number.isNaN(connectorAmperageLimitationLimit)
         ? Number.POSITIVE_INFINITY
-        : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        connectorAmperageLimitationLimit!,
+        : connectorAmperageLimitationLimit,
       Number.isNaN(chargingStationChargingProfilesLimit)
         ? Number.POSITIVE_INFINITY
         : chargingStationChargingProfilesLimit,
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      Number.isNaN(connectorChargingProfilesLimit!)
+      connectorChargingProfilesLimit == null || Number.isNaN(connectorChargingProfilesLimit)
         ? Number.POSITIVE_INFINITY
-        : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        connectorChargingProfilesLimit!
+        : connectorChargingProfilesLimit
     )
   }
 
