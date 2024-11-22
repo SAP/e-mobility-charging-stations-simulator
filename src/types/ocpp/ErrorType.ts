@@ -1,6 +1,7 @@
 export enum ErrorType {
   // Payload for Action is syntactically incorrect or not conform the PDU structure for Action
   FORMAT_VIOLATION = 'FormatViolation',
+  /** @deprecated use FORMAT_VIOLATION instead */
   FORMATION_VIOLATION = 'FormationViolation',
   // Any other error not covered by the other ones
   GENERIC_ERROR = 'GenericError',
