@@ -1,4 +1,4 @@
 export default {
   '**/*.{json,md}': ['prettier --cache --write'],
-  '**/*.{py,pyi}': ['poetry run task format'],
+  '**/*.{py,pyi}': ['ruff check --fix', 'ruff format'],
 }
