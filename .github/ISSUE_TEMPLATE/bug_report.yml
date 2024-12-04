@@ -10,6 +10,7 @@ body:
 
         This issue tracker is for bugs and issues found in e-mobility-charging-stations-simulator.
         Any misuse of this issue tracker will be closed immediately, such as simulator configuration support, simulator usage support, ...
+        Support requests are expected to be filed in the [Discussions](https://github.com/poolifier/poolifier/discussions) Q&A category.
 
         Please fill in as much of the template below as you're able.
   - type: checkboxes
