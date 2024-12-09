@@ -8,7 +8,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.12"
 websockets = "^14.1"
-ocpp = "^2.0.0rc2"
+ocpp = "^2.0.0rc3"
 
 [tool.poetry.group.dev.dependencies]
 taskipy = "^1"
