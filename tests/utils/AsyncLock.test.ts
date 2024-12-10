@@ -18,7 +18,6 @@ await describe('AsyncLock test suite', async () => {
           expect(executed).toStrictEqual(new Array(count).fill(0).map((_, i) => ++i))
           return undefined
         })
-
         .catch(console.error)
     }
   })
