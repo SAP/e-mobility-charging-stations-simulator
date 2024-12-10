@@ -89,6 +89,7 @@ export class Bootstrap extends EventEmitter {
   private uiServerStarted: boolean
   private readonly version: string = version
   private workerImplementation?: WorkerAbstract<ChargingStationWorkerData, ChargingStationInfo>
+
   private get numberOfAddedChargingStations (): number {
     return [...this.templateStatistics.values()].reduce(
       (accumulator, value) => accumulator + value.added,

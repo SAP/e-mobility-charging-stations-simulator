@@ -174,6 +174,7 @@ export class ChargingStation extends EventEmitter {
   public stationInfo?: ChargingStationInfo
   public readonly templateFile: string
   public wsConnection: null | WebSocket
+
   public get hasEvses (): boolean {
     return this.connectors.size === 0 && this.evses.size > 0
   }
