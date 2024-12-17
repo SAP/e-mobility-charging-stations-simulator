@@ -89,7 +89,7 @@ jobs:
         run: pnpm coverage
       - name: SonarCloud Scan
         if: ${{ needs.check-secrets.outputs.sonar-token-exists == 'true' && github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.node == '20.x' }}
-        uses: sonarsource/sonarqube-scan-action@v4.1.0
+        uses: sonarsource/sonarqube-scan-action@v4.2.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -140,7 +140,7 @@ jobs:
         run: pnpm coverage
       - name: SonarCloud Scan
         if: ${{ needs.check-secrets.outputs.sonar-token-exists == 'true' && github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.node == '20.x' }}
-        uses: sonarsource/sonarqube-scan-action@v4.1.0
+        uses: sonarsource/sonarqube-scan-action@v4.2.1
         with:
           projectBaseDir: ui/web
         env:
