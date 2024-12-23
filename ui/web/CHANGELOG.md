@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.0.2](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v2.0.1...webui@v2.0.2) (2024-12-23)
+
+
+### ✨ Polish
+
+* cleanup event handling callbacks ([eeb27da](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/eeb27da6a0a27a68a6d5af86c288e2bf94b81dca))
+
+
+### 🤖 Automation
+
+* **deps-dev:** bump prettier from 3.4.1 to 3.4.2 in the regular group ([#1243](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1243)) ([a1bbf37](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/a1bbf3717246b87c33e935cdb28179eb78eae109))
+* **deps-dev:** bump the regular group with 2 updates ([#1235](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1235)) ([0414e23](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/0414e23c28c3a44aea711d596516a21070a3b867))
+* **deps-dev:** bump the regular group with 5 updates ([#1239](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1239)) ([5b34f7a](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/5b34f7ae2193fedb89219b108bbcc696303bd910))
+* **deps-dev:** bump the regular group with 6 updates ([#1230](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1230)) ([6ffb90e](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6ffb90e3d27c1935dc65cf9517ecfec0bfe31053))
+* **deps:** bump the regular group with 2 updates ([#1228](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1228)) ([01ae0b2](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/01ae0b21e24f7490f67c7f51434c03854123be58))
+* **deps:** bump the regular group with 4 updates ([#1251](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1251)) ([2cfd250](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/2cfd2508ff99ea6600088b503e592ca0ef9a114c))
+
 ## [2.0.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v2.0.0...webui@v2.0.1) (2024-11-22)
 
 ### 🐞 Bug Fixes
