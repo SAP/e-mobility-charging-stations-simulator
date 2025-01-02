@@ -11,12 +11,12 @@ import websockets
 from ocpp.routing import on
 from ocpp.v201.enums import (
     Action,
-    AuthorizationStatusType,
-    ClearCacheStatusType,
-    GenericDeviceModelStatusType,
-    RegistrationStatusType,
-    ReportBaseType,
-    TransactionEventType,
+    AuthorizationStatusEnumType,
+    ClearCacheStatusEnumType,
+    GenericDeviceModelStatusEnumType,
+    RegistrationStatusEnumType,
+    ReportBaseEnumType,
+    TransactionEventEnumType,
 )
 from websockets import ConnectionClosed
 
@@ -28,7 +28,6 @@ logging.basicConfig(level=logging.DEBUG)
 ChargePoints = set()
 
 
-# Define a ChargePoint class inheriting from the OCPP 2.0.1 ChargePoint class.
 class ChargePoint(ocpp.v201.ChargePoint):
     _command_timer: Optional[Timer]
 
@@ -37,42 +36,42 @@ class ChargePoint(ocpp.v201.ChargePoint):
         self._command_timer = None
 
     # Message handlers to receive OCPP messages.
-    @on(Action.BootNotification)
+    @on(Action.boot_notification)
     async def on_boot_notification(self, charging_station, reason, **kwargs):
-        logging.info("Received %s", Action.BootNotification)
+        logging.info("Received %s", Action.boot_notification)
         # Create and return a BootNotification response with the current time,
         # an interval of 60 seconds, and an accepted status.
         return ocpp.v201.call_result.BootNotification(
             current_time=datetime.now(timezone.utc).isoformat(),
             interval=60,
-            status=RegistrationStatusType.accepted,
+            status=RegistrationStatusEnumType.accepted,
         )
 
-    @on(Action.Heartbeat)
+    @on(Action.heartbeat)
     async def on_heartbeat(self, **kwargs):
-        logging.info("Received %s", Action.Heartbeat)
+        logging.info("Received %s", Action.heartbeat)
         return ocpp.v201.call_result.Heartbeat(
             current_time=datetime.now(timezone.utc).isoformat()
         )
 
-    @on(Action.StatusNotification)
+    @on(Action.status_notification)
     async def on_status_notification(
         self, timestamp, evse_id: int, connector_id: int, connector_status, **kwargs
     ):
-        logging.info("Received %s", Action.StatusNotification)
+        logging.info("Received %s", Action.status_notification)
         return ocpp.v201.call_result.StatusNotification()
 
-    @on(Action.Authorize)
+    @on(Action.authorize)
     async def on_authorize(self, id_token, **kwargs):
-        logging.info("Received %s", Action.Authorize)
+        logging.info("Received %s", Action.authorize)
         return ocpp.v201.call_result.Authorize(
-            id_token_info={"status": AuthorizationStatusType.accepted}
+            id_token_info={"status": AuthorizationStatusEnumType.accepted}
         )
 
-    @on(Action.TransactionEvent)
+    @on(Action.transaction_event)
     async def on_transaction_event(
         self,
-        event_type: TransactionEventType,
+        event_type: TransactionEventEnumType,
         timestamp,
         trigger_reason,
         seq_no: int,
@@ -80,21 +79,21 @@ class ChargePoint(ocpp.v201.ChargePoint):
         **kwargs,
     ):
         match event_type:
-            case TransactionEventType.started:
-                logging.info("Received %s Started", Action.TransactionEvent)
+            case TransactionEventEnumType.started:
+                logging.info("Received %s Started", Action.transaction_event)
                 return ocpp.v201.call_result.TransactionEvent(
-                    id_token_info={"status": AuthorizationStatusType.accepted}
+                    id_token_info={"status": AuthorizationStatusEnumType.accepted}
                 )
-            case TransactionEventType.updated:
-                logging.info("Received %s Updated", Action.TransactionEvent)
+            case TransactionEventEnumType.updated:
+                logging.info("Received %s Updated", Action.transaction_event)
                 return ocpp.v201.call_result.TransactionEvent(total_cost=10)
-            case TransactionEventType.ended:
-                logging.info("Received %s Ended", Action.TransactionEvent)
+            case TransactionEventEnumType.ended:
+                logging.info("Received %s Ended", Action.transaction_event)
                 return ocpp.v201.call_result.TransactionEvent()
 
-    @on(Action.MeterValues)
+    @on(Action.meter_values)
     async def on_meter_values(self, evse_id: int, meter_value, **kwargs):
-        logging.info("Received %s", Action.MeterValues)
+        logging.info("Received %s", Action.meter_values)
         return ocpp.v201.call_result.MeterValues()
 
     # Request handlers to emit OCPP messages.
@@ -102,29 +101,29 @@ class ChargePoint(ocpp.v201.ChargePoint):
         request = ocpp.v201.call.ClearCache()
         response = await self.call(request)
 
-        if response.status == ClearCacheStatusType.accepted:
-            logging.info("%s successful", Action.ClearCache)
+        if response.status == ClearCacheStatusEnumType.accepted:
+            logging.info("%s successful", Action.clear_cache)
         else:
-            logging.info("%s failed", Action.ClearCache)
+            logging.info("%s failed", Action.clear_cache)
 
     async def _send_get_base_report(self):
         request = ocpp.v201.call.GetBaseReport(
             request_id=randint(1, 100),  # noqa: S311
-            report_base=ReportBaseType.full_inventory,
+            report_base=ReportBaseEnumType.full_inventory,
         )
         response = await self.call(request)
 
-        if response.status == GenericDeviceModelStatusType.accepted:
-            logging.info("%s successful", Action.GetBaseReport)
+        if response.status == GenericDeviceModelStatusEnumType.accepted:
+            logging.info("%s successful", Action.get_base_report)
         else:
-            logging.info("%s failed", Action.GetBaseReport)
+            logging.info("%s failed", Action.get_base_report)
 
     async def _send_command(self, command_name: Action):
         logging.debug("Sending OCPP command %s", command_name)
         match command_name:
-            case Action.ClearCache:
+            case Action.clear_cache:
                 await self._send_clear_cache()
-            case Action.GetBaseReport:
+            case Action.get_base_report:
                 await self._send_get_base_report()
             case _:
                 logging.info(f"Not supported command {command_name}")
