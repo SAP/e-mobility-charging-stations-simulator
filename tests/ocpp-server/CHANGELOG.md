@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.0.3](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ocpp-server@v2.0.2...ocpp-server@v2.0.3) (2025-01-03)
+
+### 🐞 Bug Fixes
+
+- port OCPP 2 server code to ocpp version 2 library ([5dd0043](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/5dd0043f62de284dfdfcd055d891240a696851a3))
+
+### 🤖 Automation
+
+- **deps-dev:** bump ruff in /tests/ocpp-server in the regular group ([#1265](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1265)) ([c16a083](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c16a08374580fbe02b9797909b559ad18241c7a1))
+- **deps:** bump ocpp from 2.0.0rc3 to 2.0.0rc4 in /tests/ocpp-server ([#1266](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1266)) ([ef6b26b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ef6b26b096bb3c6faea89a3c62346e510d81861d))
+- **deps:** bump ocpp from 2.0.0rc4 to 2.0.0 in /tests/ocpp-server ([#1268](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1268)) ([6f05e7a](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6f05e7a9c51a7a271f5a3a6867a823cf53383d5d))
+
 ## [2.0.2](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ocpp-server@v2.0.1...ocpp-server@v2.0.2) (2024-12-23)
 
 ### 🤖 Automation
