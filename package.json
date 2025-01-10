@@ -132,7 +132,7 @@
     "eslint-plugin-jsdoc": "^50.6.1",
     "eslint-plugin-perfectionist": "^4.6.0",
     "eslint-plugin-vue": "^9.32.0",
-    "glob": "^11.0.0",
+    "glob": "^11.0.1",
     "husky": "^9.1.7",
     "lint-staged": "^15.3.0",
     "neostandard": "^0.12.0",
