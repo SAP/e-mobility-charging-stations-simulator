@@ -34,6 +34,14 @@ updates:
       commitlint:
         patterns:
           - '@commitlint/*'
+      vitest:
+        patterns:
+          - 'vitest'
+          - '@vitest/*'
+      vite:
+        patterns:
+          - 'vite'
+          - '@vitejs/*'
     labels:
       - 'dependencies'
     reviewers:
