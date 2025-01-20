@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.12"
-websockets = "^14.1"
+websockets = "^14.2"
 ocpp = "^2.0.0"
 
 [tool.poetry.group.dev.dependencies]
