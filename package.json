@@ -130,7 +130,7 @@
     "eslint": "^9.18.0",
     "eslint-define-config": "^2.1.0",
     "eslint-plugin-jsdoc": "^50.6.2",
-    "eslint-plugin-perfectionist": "^4.6.0",
+    "eslint-plugin-perfectionist": "^4.7.0",
     "eslint-plugin-vue": "^9.32.0",
     "glob": "^11.0.1",
     "husky": "^9.1.7",
