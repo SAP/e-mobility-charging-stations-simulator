@@ -168,6 +168,81 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     return clearedCP
   }
 
+  private static readonly composeChargingSchedule = (
+    chargingSchedule: OCPP16ChargingSchedule,
+    compositeInterval: Interval
+  ): OCPP16ChargingSchedule | undefined => {
+    const chargingScheduleInterval: Interval = {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      end: addSeconds(chargingSchedule.startSchedule!, chargingSchedule.duration!),
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      start: chargingSchedule.startSchedule!,
+    }
+    if (areIntervalsOverlapping(chargingScheduleInterval, compositeInterval)) {
+      chargingSchedule.chargingSchedulePeriod.sort((a, b) => a.startPeriod - b.startPeriod)
+      if (isBefore(chargingScheduleInterval.start, compositeInterval.start)) {
+        return {
+          ...chargingSchedule,
+          chargingSchedulePeriod: chargingSchedule.chargingSchedulePeriod
+            .filter((schedulePeriod, index) => {
+              if (
+                isWithinInterval(
+                  addSeconds(chargingScheduleInterval.start, schedulePeriod.startPeriod),
+                  compositeInterval
+                )
+              ) {
+                return true
+              }
+              if (
+                index < chargingSchedule.chargingSchedulePeriod.length - 1 &&
+                !isWithinInterval(
+                  addSeconds(chargingScheduleInterval.start, schedulePeriod.startPeriod),
+                  compositeInterval
+                ) &&
+                isWithinInterval(
+                  addSeconds(
+                    chargingScheduleInterval.start,
+                    chargingSchedule.chargingSchedulePeriod[index + 1].startPeriod
+                  ),
+                  compositeInterval
+                )
+              ) {
+                return true
+              }
+              return false
+            })
+            .map((schedulePeriod, index) => {
+              if (index === 0 && schedulePeriod.startPeriod !== 0) {
+                schedulePeriod.startPeriod = 0
+              }
+              return schedulePeriod
+            }),
+          duration: differenceInSeconds(
+            chargingScheduleInterval.end,
+            compositeInterval.start as Date
+          ),
+          startSchedule: compositeInterval.start as Date,
+        }
+      }
+      if (isAfter(chargingScheduleInterval.end, compositeInterval.end)) {
+        return {
+          ...chargingSchedule,
+          chargingSchedulePeriod: chargingSchedule.chargingSchedulePeriod.filter(schedulePeriod =>
+            isWithinInterval(
+              addSeconds(chargingScheduleInterval.start, schedulePeriod.startPeriod),
+              compositeInterval
+            )
+          ),
+          duration: differenceInSeconds(
+            compositeInterval.end as Date,
+            chargingScheduleInterval.start
+          ),
+        }
+      }
+      return chargingSchedule
+    }
+  }
+
   public static composeChargingSchedules = (
     chargingScheduleHigher: OCPP16ChargingSchedule | undefined,
     chargingScheduleLower: OCPP16ChargingSchedule | undefined,
@@ -482,80 +557,5 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       }
     }
     !cpReplaced && chargingStation.getConnectorStatus(connectorId)?.chargingProfiles?.push(cp)
-  }
-
-  private static readonly composeChargingSchedule = (
-    chargingSchedule: OCPP16ChargingSchedule,
-    compositeInterval: Interval
-  ): OCPP16ChargingSchedule | undefined => {
-    const chargingScheduleInterval: Interval = {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      end: addSeconds(chargingSchedule.startSchedule!, chargingSchedule.duration!),
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      start: chargingSchedule.startSchedule!,
-    }
-    if (areIntervalsOverlapping(chargingScheduleInterval, compositeInterval)) {
-      chargingSchedule.chargingSchedulePeriod.sort((a, b) => a.startPeriod - b.startPeriod)
-      if (isBefore(chargingScheduleInterval.start, compositeInterval.start)) {
-        return {
-          ...chargingSchedule,
-          chargingSchedulePeriod: chargingSchedule.chargingSchedulePeriod
-            .filter((schedulePeriod, index) => {
-              if (
-                isWithinInterval(
-                  addSeconds(chargingScheduleInterval.start, schedulePeriod.startPeriod),
-                  compositeInterval
-                )
-              ) {
-                return true
-              }
-              if (
-                index < chargingSchedule.chargingSchedulePeriod.length - 1 &&
-                !isWithinInterval(
-                  addSeconds(chargingScheduleInterval.start, schedulePeriod.startPeriod),
-                  compositeInterval
-                ) &&
-                isWithinInterval(
-                  addSeconds(
-                    chargingScheduleInterval.start,
-                    chargingSchedule.chargingSchedulePeriod[index + 1].startPeriod
-                  ),
-                  compositeInterval
-                )
-              ) {
-                return true
-              }
-              return false
-            })
-            .map((schedulePeriod, index) => {
-              if (index === 0 && schedulePeriod.startPeriod !== 0) {
-                schedulePeriod.startPeriod = 0
-              }
-              return schedulePeriod
-            }),
-          duration: differenceInSeconds(
-            chargingScheduleInterval.end,
-            compositeInterval.start as Date
-          ),
-          startSchedule: compositeInterval.start as Date,
-        }
-      }
-      if (isAfter(chargingScheduleInterval.end, compositeInterval.end)) {
-        return {
-          ...chargingSchedule,
-          chargingSchedulePeriod: chargingSchedule.chargingSchedulePeriod.filter(schedulePeriod =>
-            isWithinInterval(
-              addSeconds(chargingScheduleInterval.start, schedulePeriod.startPeriod),
-              compositeInterval
-            )
-          ),
-          duration: differenceInSeconds(
-            compositeInterval.end as Date,
-            chargingScheduleInterval.start
-          ),
-        }
-      }
-      return chargingSchedule
-    }
   }
 }
