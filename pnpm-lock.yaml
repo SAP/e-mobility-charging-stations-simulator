@@ -52,8 +52,8 @@ importers:
         specifier: ^2.7.0
         version: 2.7.0
       mnemonist:
-        specifier: 0.40.0-rc1
-        version: 0.40.0-rc1
+        specifier: 0.40.0
+        version: 0.40.0
       mongodb:
         specifier: ^6.12.0
         version: 6.12.0(socks@2.8.3)
@@ -4453,8 +4453,8 @@ packages:
   ml-xsadd@2.0.0:
     resolution: {integrity: sha512-VoAYUqmPRmzKbbqRejjqceGFp3VF81Qe8XXFGU0UXLxB7Mf4GGvyGq5Qn3k4AiQgDEV6WzobqlPOd+j0+m6IrA==}
 
-  mnemonist@0.40.0-rc1:
-    resolution: {integrity: sha512-38L0xGDezsPweee5i7duiaCRzlkkCJorozW6Rta60iel7ZkT4vF6jDIfr101NxE3rsAsumuOvc8yiTGZD5gG4w==}
+  mnemonist@0.40.0:
+    resolution: {integrity: sha512-kdd8AFNig2AD5Rkih7EPCXhu/iMvwevQFX/uEiGhZyPZi7fHqOoF4V4kHLpCfysxXMgQ4B52kdPMCwARshKvEg==}
 
   module-deps@6.2.3:
     resolution: {integrity: sha512-fg7OZaQBcL4/L+AK5f4iVqf9OMbCclXfy/znXRxTVhJSeW5AIlS9AwheYwDaXM3lVW7OBeaeUEY3gbaC6cLlSA==}
@@ -11115,7 +11115,7 @@ snapshots:
 
   ml-xsadd@2.0.0: {}
 
-  mnemonist@0.40.0-rc1:
+  mnemonist@0.40.0:
     dependencies:
       obliterator: 2.0.5
 
