@@ -5,6 +5,7 @@ WORKDIR /usr/builder
 COPY . ./
 RUN set -ex \
   && apk add --no-cache --virtual .gyp build-base python3 \
+  && npm install -g corepack \
   && corepack enable \
   && corepack prepare pnpm@latest --activate \
   && pnpm set progress=false \
