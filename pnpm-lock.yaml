@@ -99,8 +99,8 @@ importers:
         specifier: ^6.4.5
         version: 6.4.5(mariadb@3.4.0)
       '@std/expect':
-        specifier: npm:@jsr/std__expect@^1.0.12
-        version: '@jsr/std__expect@1.0.12'
+        specifier: npm:@jsr/std__expect@^1.0.13
+        version: '@jsr/std__expect@1.0.13'
       '@types/node':
         specifier: ^22.13.0
         version: 22.13.0
@@ -1263,8 +1263,8 @@ packages:
   '@jsr/std__assert@1.0.11':
     resolution: {integrity: sha512-sNXyi9EQA4f/9F3gI1t+Dz+LnvPwCC3JDUqn9YfWl7IK7RRipiHOkDpV8Vq3LL/ZDZF8Tcr36zVhuEOrRs8i+g==, tarball: https://npm.jsr.io/~/11/@jsr/std__assert/1.0.11.tgz}
 
-  '@jsr/std__expect@1.0.12':
-    resolution: {integrity: sha512-65IVhkUF5ui6Iz5ld7ufNavG5FZ0MLBFhT+qzTxWBvj0Y0FE81+L0lNrH12r8cMMZshTrfR//5JivBqTzTN/fQ==, tarball: https://npm.jsr.io/~/11/@jsr/std__expect/1.0.12.tgz}
+  '@jsr/std__expect@1.0.13':
+    resolution: {integrity: sha512-8wGrGz2Yeh+BZuAlMWCn3Q6GqfXouzatigi7NF9bKaQZQnD0DJLKujluF9uXgm++Xjrd9YrLmNPLhHsOdQzxaA==, tarball: https://npm.jsr.io/~/11/@jsr/std__expect/1.0.13.tgz}
 
   '@jsr/std__internal@1.0.5':
     resolution: {integrity: sha512-W2aN7UypJJ6EkfyXt5hBeIijBb8CmZk0jdjCzhOROr0SrXsXZ/V/9Qu1N0NxumFauPDAJz9NcP1mmZ9ZVSXwpQ==, tarball: https://npm.jsr.io/~/11/@jsr/std__internal/1.0.5.tgz}
@@ -7303,7 +7303,7 @@ snapshots:
     dependencies:
       '@jsr/std__internal': 1.0.5
 
-  '@jsr/std__expect@1.0.12':
+  '@jsr/std__expect@1.0.13':
     dependencies:
       '@jsr/std__assert': 1.0.11
       '@jsr/std__internal': 1.0.5

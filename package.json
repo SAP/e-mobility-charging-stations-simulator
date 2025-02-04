@@ -117,7 +117,7 @@
     "@cspell/eslint-plugin": "^8.17.3",
     "@eslint/js": "^9.19.0",
     "@mikro-orm/cli": "^6.4.5",
-    "@std/expect": "npm:@jsr/std__expect@^1.0.12",
+    "@std/expect": "npm:@jsr/std__expect@^1.0.13",
     "@types/node": "^22.13.0",
     "@types/semver": "^7.5.8",
     "@types/ws": "^8.5.14",
