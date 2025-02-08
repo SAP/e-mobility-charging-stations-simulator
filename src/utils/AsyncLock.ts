@@ -21,6 +21,19 @@ export class AsyncLock {
     this.resolveQueue = new Queue<ResolveType>()
   }
 
+  public static async runExclusive<T>(type: AsyncLockType, fn: () => Promise<T> | T): Promise<T> {
+    try {
+      await AsyncLock.acquire(type)
+      if (isAsyncFunction(fn)) {
+        return await fn()
+      } else {
+        return fn() as T
+      }
+    } finally {
+      await AsyncLock.release(type)
+    }
+  }
+
   private static async acquire (type: AsyncLockType): Promise<void> {
     const asyncLock = AsyncLock.getAsyncLock(type)
     if (!asyncLock.acquired) {
@@ -51,18 +64,5 @@ export class AsyncLock {
       asyncLock.resolveQueue.dequeue()!()
       resolve()
     })
-  }
-
-  public static async runExclusive<T>(type: AsyncLockType, fn: () => Promise<T> | T): Promise<T> {
-    try {
-      await AsyncLock.acquire(type)
-      if (isAsyncFunction(fn)) {
-        return await fn()
-      } else {
-        return fn() as T
-      }
-    } finally {
-      await AsyncLock.release(type)
-    }
   }
 }

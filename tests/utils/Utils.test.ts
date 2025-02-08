@@ -1,5 +1,5 @@
+import { expect } from '@std/expect'
 import { hoursToMilliseconds, hoursToSeconds } from 'date-fns'
-import { expect } from 'expect'
 import { CircularBuffer } from 'mnemonist'
 import { randomInt } from 'node:crypto'
 import { version } from 'node:process'
@@ -8,7 +8,7 @@ import { satisfies } from 'semver'
 
 import type { TimestampedData } from '../../src/types/index.js'
 
-import { runtime, runtimes } from '../../scripts/runtime.js'
+import { JSRuntime, runtime } from '../../scripts/runtime.js'
 import { Constants } from '../../src/utils/Constants.js'
 import {
   clone,
@@ -255,13 +255,13 @@ await describe('Utils test suite', async () => {
     expect(isAsyncFunction(async function named () {})).toBe(true)
     class TestClass {
       // eslint-disable-next-line @typescript-eslint/no-empty-function
-      public testArrowAsync = async (): Promise<void> => {}
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
-      public testArrowSync = (): void => {}
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
       public static async testStaticAsync (): Promise<void> {}
       // eslint-disable-next-line @typescript-eslint/no-empty-function
       public static testStaticSync (): void {}
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      public testArrowAsync = async (): Promise<void> => {}
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      public testArrowSync = (): void => {}
       // eslint-disable-next-line @typescript-eslint/no-empty-function
       public async testAsync (): Promise<void> {}
       // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -296,9 +296,9 @@ await describe('Utils test suite', async () => {
     const date = new Date()
     expect(clone(date)).toStrictEqual(date)
     expect(clone(date) === date).toBe(false)
-    if (runtime === runtimes.node && satisfies(version, '>=22.0.0')) {
+    if (runtime === JSRuntime.node && satisfies(version, '>=22.0.0')) {
       const url = new URL('https://domain.tld')
-      expect(() => clone(url)).toThrowError(new Error('Cannot clone object of unsupported type.'))
+      expect(() => clone(url)).toThrow(new Error('Cannot clone object of unsupported type.'))
     }
     const map = new Map([['1', '2']])
     expect(clone(map)).toStrictEqual(map)
@@ -307,9 +307,9 @@ await describe('Utils test suite', async () => {
     expect(clone(set)).toStrictEqual(set)
     expect(clone(set) === set).toBe(false)
     const weakMap = new WeakMap([[{ 1: 1 }, { 2: 2 }]])
-    expect(() => clone(weakMap)).toThrowError(new Error('#<WeakMap> could not be cloned.'))
+    expect(() => clone(weakMap)).toThrow(new Error('#<WeakMap> could not be cloned.'))
     const weakSet = new WeakSet([{ 1: 1 }, { 2: 2 }])
-    expect(() => clone(weakSet)).toThrowError(new Error('#<WeakSet> could not be cloned.'))
+    expect(() => clone(weakSet)).toThrow(new Error('#<WeakSet> could not be cloned.'))
   })
 
   await it('Verify isNotEmptyString()', () => {
@@ -348,6 +348,7 @@ await describe('Utils test suite', async () => {
 
   await it('Verify insertAt()', () => {
     expect(insertAt('test', 'ing', 'test'.length)).toBe('testing')
+    // eslint-disable-next-line @cspell/spellchecker
     expect(insertAt('test', 'ing', 2)).toBe('teingst')
   })
 

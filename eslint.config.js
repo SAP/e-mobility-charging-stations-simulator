@@ -1,4 +1,5 @@
 /* eslint-disable n/no-unpublished-import */
+import cspellConfigs from '@cspell/eslint-plugin/configs'
 import js from '@eslint/js'
 import { defineFlatConfig } from 'eslint-define-config'
 import jsdoc from 'eslint-plugin-jsdoc'
@@ -9,6 +10,53 @@ import neostandard, { plugins } from 'neostandard'
 export default defineFlatConfig([
   {
     ignores: ['**/dist/**'],
+  },
+  cspellConfigs.recommended,
+  {
+    rules: {
+      '@cspell/spellchecker': [
+        'warn',
+        {
+          autoFix: true,
+          cspell: {
+            words: [
+              'DECI',
+              'CENTI',
+              'MILLI',
+              'Benoit',
+              'chargingstations',
+              'ctrlr',
+              'csms',
+              'idtag',
+              'idtags',
+              'iccid',
+              'imsi',
+              'ocpp',
+              'onconnection',
+              'evse',
+              'evses',
+              'kvar',
+              'kvarh',
+              'varh',
+              'rfid',
+              'workerset',
+              'logform',
+              'mnemonist',
+              'poolifier',
+              'rambda',
+              'measurand',
+              'measurands',
+              'mikro',
+              'neostandard',
+              'recurrency',
+              'shutdowning',
+              'VCAP',
+              'workerd',
+            ],
+          },
+        },
+      ],
+    },
   },
   js.configs.recommended,
   plugins.promise.configs['flat/recommended'],

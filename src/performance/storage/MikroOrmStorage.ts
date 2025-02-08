@@ -17,31 +17,6 @@ export class MikroOrmStorage extends Storage {
     this.dbName = this.getDBName()
   }
 
-  private getClientUrl (): string | undefined {
-    switch (this.storageType) {
-      case StorageType.MARIA_DB:
-      case StorageType.MYSQL:
-      case StorageType.SQLITE:
-        return this.storageUri.toString()
-    }
-  }
-
-  private getDBName (): string {
-    if (this.storageType === StorageType.SQLITE) {
-      return `${Constants.DEFAULT_PERFORMANCE_DIRECTORY}/${Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME}.db`
-    }
-    return this.storageUri.pathname.replace(/(?:^\/)|(?:\/$)/g, '')
-  }
-
-  private getOptions (): MariaDbOptions | SqliteOptions {
-    return {
-      clientUrl: this.getClientUrl(),
-      dbName: this.dbName,
-      entities: ['./dist/types/orm/entities/*.js'],
-      entitiesTs: ['./src/types/orm/entities/*.ts'],
-    }
-  }
-
   public async close (): Promise<void> {
     this.clearPerformanceStatistics()
     try {
@@ -88,6 +63,31 @@ export class MikroOrmStorage extends Storage {
         error as Error,
         Constants.PERFORMANCE_RECORDS_TABLE
       )
+    }
+  }
+
+  private getClientUrl (): string | undefined {
+    switch (this.storageType) {
+      case StorageType.MARIA_DB:
+      case StorageType.MYSQL:
+      case StorageType.SQLITE:
+        return this.storageUri.toString()
+    }
+  }
+
+  private getDBName (): string {
+    if (this.storageType === StorageType.SQLITE) {
+      return `${Constants.DEFAULT_PERFORMANCE_DIRECTORY}/${Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME}.db`
+    }
+    return this.storageUri.pathname.replace(/(?:^\/)|(?:\/$)/g, '')
+  }
+
+  private getOptions (): MariaDbOptions | SqliteOptions {
+    return {
+      clientUrl: this.getClientUrl(),
+      dbName: this.dbName,
+      entities: ['./dist/types/orm/entities/*.js'],
+      entitiesTs: ['./src/types/orm/entities/*.ts'],
     }
   }
 }

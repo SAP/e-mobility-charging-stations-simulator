@@ -81,10 +81,6 @@ export abstract class AbstractUIService {
   private readonly uiServiceWorkerBroadcastChannel: UIServiceWorkerBroadcastChannel
   private readonly version: ProtocolVersion
 
-  public logPrefix = (modName: string, methodName: string): string => {
-    return this.uiServer.logPrefix(modName, methodName, this.version)
-  }
-
   constructor (uiServer: AbstractUIServer, version: ProtocolVersion) {
     this.uiServer = uiServer
     this.version = version
@@ -102,6 +98,89 @@ export abstract class AbstractUIService {
       `${string}-${string}-${string}-${string}-${string}`,
       number
     >()
+  }
+
+  public deleteBroadcastChannelRequest (
+    uuid: `${string}-${string}-${string}-${string}-${string}`
+  ): void {
+    this.broadcastChannelRequests.delete(uuid)
+  }
+
+  public getBroadcastChannelExpectedResponses (
+    uuid: `${string}-${string}-${string}-${string}-${string}`
+  ): number {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return this.broadcastChannelRequests.get(uuid)!
+  }
+
+  public logPrefix = (modName: string, methodName: string): string => {
+    return this.uiServer.logPrefix(modName, methodName, this.version)
+  }
+
+  public async requestHandler (request: ProtocolRequest): Promise<ProtocolResponse | undefined> {
+    let uuid: `${string}-${string}-${string}-${string}-${string}` | undefined
+    let command: ProcedureName | undefined
+    let requestPayload: RequestPayload | undefined
+    let responsePayload: ResponsePayload | undefined
+    try {
+      ;[uuid, command, requestPayload] = request
+
+      if (!this.requestHandlers.has(command)) {
+        throw new BaseError(
+          `'${command}' is not implemented to handle message payload ${JSON.stringify(
+            requestPayload,
+            undefined,
+            2
+          )}`
+        )
+      }
+
+      // Call the request handler to build the response payload
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const requestHandler = this.requestHandlers.get(command)!
+      if (isAsyncFunction(requestHandler)) {
+        responsePayload = await requestHandler(uuid, command, requestPayload)
+      } else {
+        responsePayload = (
+          requestHandler as (
+            uuid?: string,
+            procedureName?: ProcedureName,
+            payload?: RequestPayload
+          ) => ResponsePayload | undefined
+        )(uuid, command, requestPayload)
+      }
+    } catch (error) {
+      // Log
+      logger.error(`${this.logPrefix(moduleName, 'requestHandler')} Handle request error:`, error)
+      responsePayload = {
+        command,
+        errorDetails: (error as OCPPError).details,
+        errorMessage: (error as OCPPError).message,
+        errorStack: (error as OCPPError).stack,
+        hashIds: requestPayload?.hashIds,
+        requestPayload,
+        responsePayload,
+        status: ResponseStatus.FAILURE,
+      } satisfies ResponsePayload
+    }
+    if (responsePayload != null) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      return this.uiServer.buildProtocolResponse(uuid!, responsePayload)
+    }
+  }
+
+  public sendResponse (
+    uuid: `${string}-${string}-${string}-${string}-${string}`,
+    responsePayload: ResponsePayload
+  ): void {
+    if (this.uiServer.hasResponseHandler(uuid)) {
+      this.uiServer.sendResponse(this.uiServer.buildProtocolResponse(uuid, responsePayload))
+    }
+  }
+
+  public stop (): void {
+    this.broadcastChannelRequests.clear()
+    this.uiServiceWorkerBroadcastChannel.close()
   }
 
   protected handleProtocolRequest (
@@ -246,6 +325,16 @@ export abstract class AbstractUIService {
     }
   }
 
+  // public sendRequest (
+  //   uuid: `${string}-${string}-${string}-${string}-${string}`,
+  //   procedureName: ProcedureName,
+  //   requestPayload: RequestPayload
+  // ): void {
+  //   this.uiServer.sendRequest(
+  //     this.uiServer.buildProtocolRequest(uuid, procedureName, requestPayload)
+  //   )
+  // }
+
   private async handleStopSimulator (): Promise<ResponsePayload> {
     try {
       await Bootstrap.getInstance().stop()
@@ -292,94 +381,5 @@ export abstract class AbstractUIService {
     }
     this.uiServiceWorkerBroadcastChannel.sendRequest([uuid, procedureName, payload])
     this.broadcastChannelRequests.set(uuid, expectedNumberOfResponses)
-  }
-
-  public deleteBroadcastChannelRequest (
-    uuid: `${string}-${string}-${string}-${string}-${string}`
-  ): void {
-    this.broadcastChannelRequests.delete(uuid)
-  }
-
-  public getBroadcastChannelExpectedResponses (
-    uuid: `${string}-${string}-${string}-${string}-${string}`
-  ): number {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return this.broadcastChannelRequests.get(uuid)!
-  }
-
-  public async requestHandler (request: ProtocolRequest): Promise<ProtocolResponse | undefined> {
-    let uuid: `${string}-${string}-${string}-${string}-${string}` | undefined
-    let command: ProcedureName | undefined
-    let requestPayload: RequestPayload | undefined
-    let responsePayload: ResponsePayload | undefined
-    try {
-      ;[uuid, command, requestPayload] = request
-
-      if (!this.requestHandlers.has(command)) {
-        throw new BaseError(
-          `'${command}' is not implemented to handle message payload ${JSON.stringify(
-            requestPayload,
-            undefined,
-            2
-          )}`
-        )
-      }
-
-      // Call the request handler to build the response payload
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const requestHandler = this.requestHandlers.get(command)!
-      if (isAsyncFunction(requestHandler)) {
-        responsePayload = await requestHandler(uuid, command, requestPayload)
-      } else {
-        responsePayload = (
-          requestHandler as (
-            uuid?: string,
-            procedureName?: ProcedureName,
-            payload?: RequestPayload
-          ) => ResponsePayload | undefined
-        )(uuid, command, requestPayload)
-      }
-    } catch (error) {
-      // Log
-      logger.error(`${this.logPrefix(moduleName, 'requestHandler')} Handle request error:`, error)
-      responsePayload = {
-        command,
-        errorDetails: (error as OCPPError).details,
-        errorMessage: (error as OCPPError).message,
-        errorStack: (error as OCPPError).stack,
-        hashIds: requestPayload?.hashIds,
-        requestPayload,
-        responsePayload,
-        status: ResponseStatus.FAILURE,
-      } satisfies ResponsePayload
-    }
-    if (responsePayload != null) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      return this.uiServer.buildProtocolResponse(uuid!, responsePayload)
-    }
-  }
-
-  // public sendRequest (
-  //   uuid: `${string}-${string}-${string}-${string}-${string}`,
-  //   procedureName: ProcedureName,
-  //   requestPayload: RequestPayload
-  // ): void {
-  //   this.uiServer.sendRequest(
-  //     this.uiServer.buildProtocolRequest(uuid, procedureName, requestPayload)
-  //   )
-  // }
-
-  public sendResponse (
-    uuid: `${string}-${string}-${string}-${string}-${string}`,
-    responsePayload: ResponsePayload
-  ): void {
-    if (this.uiServer.hasResponseHandler(uuid)) {
-      this.uiServer.sendResponse(this.uiServer.buildProtocolResponse(uuid, responsePayload))
-    }
-  }
-
-  public stop (): void {
-    this.broadcastChannelRequests.clear()
-    this.uiServiceWorkerBroadcastChannel.close()
   }
 }

@@ -32,45 +32,6 @@ export class SharedLRUCache {
     return SharedLRUCache.instance
   }
 
-  private delete (key: string): void {
-    this.lruCache.delete(key)
-  }
-
-  private get (key: string): CacheValueType | undefined {
-    return this.lruCache.get(key)
-  }
-
-  private getChargingStationConfigurationKey (hash: string): string {
-    return `${CacheType.chargingStationConfiguration}${hash}`
-  }
-
-  private getChargingStationTemplateKey (hash: string): string {
-    return `${CacheType.chargingStationTemplate}${hash}`
-  }
-
-  private has (key: string): boolean {
-    return this.lruCache.has(key)
-  }
-
-  private isChargingStationConfigurationCacheable (
-    chargingStationConfiguration: ChargingStationConfiguration
-  ): boolean {
-    return (
-      chargingStationConfiguration.configurationKey != null &&
-      chargingStationConfiguration.stationInfo != null &&
-      chargingStationConfiguration.automaticTransactionGenerator != null &&
-      chargingStationConfiguration.configurationHash != null &&
-      isNotEmptyArray(chargingStationConfiguration.configurationKey) &&
-      !isEmpty(chargingStationConfiguration.stationInfo) &&
-      !isEmpty(chargingStationConfiguration.automaticTransactionGenerator) &&
-      isNotEmptyString(chargingStationConfiguration.configurationHash)
-    )
-  }
-
-  private set (key: string, value: CacheValueType): void {
-    this.lruCache.set(key, value)
-  }
-
   public clear (): void {
     this.lruCache.clear()
   }
@@ -123,5 +84,44 @@ export class SharedLRUCache {
       this.getChargingStationTemplateKey(chargingStationTemplate.templateHash!),
       chargingStationTemplate
     )
+  }
+
+  private delete (key: string): void {
+    this.lruCache.delete(key)
+  }
+
+  private get (key: string): CacheValueType | undefined {
+    return this.lruCache.get(key)
+  }
+
+  private getChargingStationConfigurationKey (hash: string): string {
+    return `${CacheType.chargingStationConfiguration}${hash}`
+  }
+
+  private getChargingStationTemplateKey (hash: string): string {
+    return `${CacheType.chargingStationTemplate}${hash}`
+  }
+
+  private has (key: string): boolean {
+    return this.lruCache.has(key)
+  }
+
+  private isChargingStationConfigurationCacheable (
+    chargingStationConfiguration: ChargingStationConfiguration
+  ): boolean {
+    return (
+      chargingStationConfiguration.configurationKey != null &&
+      chargingStationConfiguration.stationInfo != null &&
+      chargingStationConfiguration.automaticTransactionGenerator != null &&
+      chargingStationConfiguration.configurationHash != null &&
+      isNotEmptyArray(chargingStationConfiguration.configurationKey) &&
+      !isEmpty(chargingStationConfiguration.stationInfo) &&
+      !isEmpty(chargingStationConfiguration.automaticTransactionGenerator) &&
+      isNotEmptyString(chargingStationConfiguration.configurationHash)
+    )
+  }
+
+  private set (key: string, value: CacheValueType): void {
+    this.lruCache.set(key, value)
   }
 }

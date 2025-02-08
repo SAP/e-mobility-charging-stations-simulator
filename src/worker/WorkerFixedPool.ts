@@ -11,6 +11,22 @@ export class WorkerFixedPool<D extends WorkerData, R extends WorkerData> extends
   D,
   R
 > {
+  get emitter (): EventEmitterAsyncResource | undefined {
+    return this.pool.emitter
+  }
+
+  get info (): PoolInfo {
+    return this.pool.info
+  }
+
+  get maxElementsPerWorker (): number | undefined {
+    return undefined
+  }
+
+  get size (): number {
+    return this.pool.info.workerNodes
+  }
+
   private readonly pool: FixedThreadPool<D, R>
 
   /**
@@ -46,21 +62,5 @@ export class WorkerFixedPool<D extends WorkerData, R extends WorkerData> extends
   /** @inheritDoc */
   public async stop (): Promise<void> {
     await this.pool.destroy()
-  }
-
-  get emitter (): EventEmitterAsyncResource | undefined {
-    return this.pool.emitter
-  }
-
-  get info (): PoolInfo {
-    return this.pool.info
-  }
-
-  get maxElementsPerWorker (): number | undefined {
-    return undefined
-  }
-
-  get size (): number {
-    return this.pool.info.workerNodes
   }
 }

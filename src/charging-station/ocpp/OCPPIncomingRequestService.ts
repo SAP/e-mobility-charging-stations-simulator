@@ -50,6 +50,14 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
     return OCPPIncomingRequestService.instance as T
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-unnecessary-type-parameters
+  public abstract incomingRequestHandler<ReqType extends JsonType, ResType extends JsonType>(
+    chargingStation: ChargingStation,
+    messageId: string,
+    commandName: IncomingRequestCommand,
+    commandPayload: ReqType
+  ): Promise<void>
+
   protected handleRequestClearCache (chargingStation: ChargingStation): ClearCacheResponse {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     if (chargingStation.idTagsCache.deleteIdTags(getIdTagsFile(chargingStation.stationInfo!)!)) {
@@ -82,12 +90,4 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
       JSON.stringify(validate?.errors, undefined, 2)
     )
   }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-unnecessary-type-parameters
-  public abstract incomingRequestHandler<ReqType extends JsonType, ResType extends JsonType>(
-    chargingStation: ChargingStation,
-    messageId: string,
-    commandName: IncomingRequestCommand,
-    commandPayload: ReqType
-  ): Promise<void>
 }

@@ -24,6 +24,7 @@
                   () => {
                     setToLocalStorage<number>('uiServerConfigurationIndex', state.uiServerIndex)
                     clearToggleButtons()
+                    refresh()
                     $route.name !== 'charging-stations' &&
                       $router.push({ name: 'charging-stations' })
                   },
@@ -165,14 +166,17 @@ const state = ref<{
   uiServerIndex: getFromLocalStorage<number>('uiServerConfigurationIndex', 0),
 })
 
+const refresh = (): void => {
+  state.value.renderChargingStations = randomUUID()
+  state.value.renderAddChargingStations = randomUUID()
+}
+
 const clearToggleButtons = (): void => {
   for (const key in getLocalStorage()) {
     if (key.includes('toggle-button')) {
       deleteFromLocalStorage(key)
     }
   }
-  state.value.renderChargingStations = randomUUID()
-  state.value.renderAddChargingStations = randomUUID()
 }
 
 const app = getCurrentInstance()

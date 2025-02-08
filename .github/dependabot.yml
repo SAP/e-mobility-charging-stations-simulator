@@ -28,12 +28,26 @@ updates:
           - 'major'
         patterns:
           - 'typescript'
+      eslint:
+        update-types:
+          - 'major'
+        patterns:
+          - 'eslint'
+          - '@eslint/*'
       mikro-orm:
         patterns:
           - '@mikro-orm/*'
       commitlint:
         patterns:
           - '@commitlint/*'
+      vitest:
+        patterns:
+          - 'vitest'
+          - '@vitest/*'
+      vite:
+        patterns:
+          - 'vite'
+          - '@vitejs/*'
     labels:
       - 'dependencies'
     reviewers:

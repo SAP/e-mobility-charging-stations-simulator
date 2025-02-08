@@ -10,17 +10,21 @@ import type {
 import type { OCPP16StandardParametersKey, OCPP16VendorParametersKey } from './Configuration.js'
 import type { OCPP16DiagnosticsStatus } from './DiagnosticsStatus.js'
 
-export enum OCPP16RequestCommand {
-  AUTHORIZE = 'Authorize',
-  BOOT_NOTIFICATION = 'BootNotification',
-  DATA_TRANSFER = 'DataTransfer',
-  DIAGNOSTICS_STATUS_NOTIFICATION = 'DiagnosticsStatusNotification',
-  FIRMWARE_STATUS_NOTIFICATION = 'FirmwareStatusNotification',
-  HEARTBEAT = 'Heartbeat',
-  METER_VALUES = 'MeterValues',
-  START_TRANSACTION = 'StartTransaction',
-  STATUS_NOTIFICATION = 'StatusNotification',
-  STOP_TRANSACTION = 'StopTransaction',
+export enum OCPP16AvailabilityType {
+  Inoperative = 'Inoperative',
+  Operative = 'Operative',
+}
+
+export enum OCPP16DataTransferVendorId {}
+
+export enum OCPP16FirmwareStatus {
+  Downloaded = 'Downloaded',
+  DownloadFailed = 'DownloadFailed',
+  Downloading = 'Downloading',
+  Idle = 'Idle',
+  InstallationFailed = 'InstallationFailed',
+  Installed = 'Installed',
+  Installing = 'Installing',
 }
 
 export enum OCPP16IncomingRequestCommand {
@@ -43,7 +47,49 @@ export enum OCPP16IncomingRequestCommand {
   UPDATE_FIRMWARE = 'UpdateFirmware',
 }
 
-export type OCPP16HeartbeatRequest = EmptyObject
+export enum OCPP16MessageTrigger {
+  BootNotification = 'BootNotification',
+  DiagnosticsStatusNotification = 'DiagnosticsStatusNotification',
+  FirmwareStatusNotification = 'FirmwareStatusNotification',
+  Heartbeat = 'Heartbeat',
+  MeterValues = 'MeterValues',
+  StatusNotification = 'StatusNotification',
+}
+
+export enum OCPP16RequestCommand {
+  AUTHORIZE = 'Authorize',
+  BOOT_NOTIFICATION = 'BootNotification',
+  DATA_TRANSFER = 'DataTransfer',
+  DIAGNOSTICS_STATUS_NOTIFICATION = 'DiagnosticsStatusNotification',
+  FIRMWARE_STATUS_NOTIFICATION = 'FirmwareStatusNotification',
+  HEARTBEAT = 'Heartbeat',
+  METER_VALUES = 'MeterValues',
+  START_TRANSACTION = 'StartTransaction',
+  STATUS_NOTIFICATION = 'StatusNotification',
+  STOP_TRANSACTION = 'StopTransaction',
+}
+
+enum ResetType {
+  HARD = 'Hard',
+  SOFT = 'Soft',
+}
+
+export interface ChangeConfigurationRequest extends JsonObject {
+  key: OCPP16ConfigurationKey
+  value: string
+}
+
+export interface GetConfigurationRequest extends JsonObject {
+  key?: OCPP16ConfigurationKey[]
+}
+
+export interface GetDiagnosticsRequest extends JsonObject {
+  location: string
+  retries?: number
+  retryInterval?: number
+  startTime?: Date
+  stopTime?: Date
+}
 
 export interface OCPP16BootNotificationRequest extends JsonObject {
   chargeBoxSerialNumber?: string
@@ -57,6 +103,54 @@ export interface OCPP16BootNotificationRequest extends JsonObject {
   meterType?: string
 }
 
+export interface OCPP16CancelReservationRequest extends JsonObject {
+  reservationId: number
+}
+
+export interface OCPP16ChangeAvailabilityRequest extends JsonObject {
+  connectorId: number
+  type: OCPP16AvailabilityType
+}
+
+export type OCPP16ClearCacheRequest = EmptyObject
+
+export interface OCPP16ClearChargingProfileRequest extends JsonObject {
+  chargingProfilePurpose?: OCPP16ChargingProfilePurposeType
+  connectorId?: number
+  id?: number
+  stackLevel?: number
+}
+
+export interface OCPP16DataTransferRequest extends JsonObject {
+  data?: string
+  messageId?: string
+  vendorId: string
+}
+
+export interface OCPP16DiagnosticsStatusNotificationRequest extends JsonObject {
+  status: OCPP16DiagnosticsStatus
+}
+
+export interface OCPP16FirmwareStatusNotificationRequest extends JsonObject {
+  status: OCPP16FirmwareStatus
+}
+
+export interface OCPP16GetCompositeScheduleRequest extends JsonObject {
+  chargingRateUnit?: OCPP16ChargingRateUnitType
+  connectorId: number
+  duration: number
+}
+
+export type OCPP16HeartbeatRequest = EmptyObject
+
+export interface OCPP16ReserveNowRequest extends JsonObject {
+  connectorId: number
+  expiryDate: Date
+  idTag: string
+  parentIdTag?: string
+  reservationId: number
+}
+
 export interface OCPP16StatusNotificationRequest extends JsonObject {
   connectorId: number
   errorCode: OCPP16ChargePointErrorCode
@@ -67,13 +161,16 @@ export interface OCPP16StatusNotificationRequest extends JsonObject {
   vendorId?: string
 }
 
-export type OCPP16ClearCacheRequest = EmptyObject
+export interface OCPP16TriggerMessageRequest extends JsonObject {
+  connectorId?: number
+  requestedMessage: OCPP16MessageTrigger
+}
 
-type OCPP16ConfigurationKey = OCPP16StandardParametersKey | OCPP16VendorParametersKey | string
-
-export interface ChangeConfigurationRequest extends JsonObject {
-  key: OCPP16ConfigurationKey
-  value: string
+export interface OCPP16UpdateFirmwareRequest extends JsonObject {
+  location: string
+  retries?: number
+  retrieveDate: Date
+  retryInterval?: number
 }
 
 export interface RemoteStartTransactionRequest extends JsonObject {
@@ -86,27 +183,8 @@ export interface RemoteStopTransactionRequest extends JsonObject {
   transactionId: number
 }
 
-export interface UnlockConnectorRequest extends JsonObject {
-  connectorId: number
-}
-
-export interface GetConfigurationRequest extends JsonObject {
-  key?: OCPP16ConfigurationKey[]
-}
-
-enum ResetType {
-  HARD = 'Hard',
-  SOFT = 'Soft',
-}
-
 export interface ResetRequest extends JsonObject {
   type: ResetType
-}
-
-export interface OCPP16GetCompositeScheduleRequest extends JsonObject {
-  chargingRateUnit?: OCPP16ChargingRateUnitType
-  connectorId: number
-  duration: number
 }
 
 export interface SetChargingProfileRequest extends JsonObject {
@@ -114,86 +192,8 @@ export interface SetChargingProfileRequest extends JsonObject {
   csChargingProfiles: OCPP16ChargingProfile
 }
 
-export enum OCPP16AvailabilityType {
-  Inoperative = 'Inoperative',
-  Operative = 'Operative',
-}
-
-export interface OCPP16ChangeAvailabilityRequest extends JsonObject {
+export interface UnlockConnectorRequest extends JsonObject {
   connectorId: number
-  type: OCPP16AvailabilityType
 }
 
-export interface OCPP16ClearChargingProfileRequest extends JsonObject {
-  chargingProfilePurpose?: OCPP16ChargingProfilePurposeType
-  connectorId?: number
-  id?: number
-  stackLevel?: number
-}
-
-export interface OCPP16UpdateFirmwareRequest extends JsonObject {
-  location: string
-  retries?: number
-  retrieveDate: Date
-  retryInterval?: number
-}
-
-export enum OCPP16FirmwareStatus {
-  Downloaded = 'Downloaded',
-  DownloadFailed = 'DownloadFailed',
-  Downloading = 'Downloading',
-  Idle = 'Idle',
-  InstallationFailed = 'InstallationFailed',
-  Installed = 'Installed',
-  Installing = 'Installing',
-}
-
-export interface OCPP16FirmwareStatusNotificationRequest extends JsonObject {
-  status: OCPP16FirmwareStatus
-}
-
-export interface GetDiagnosticsRequest extends JsonObject {
-  location: string
-  retries?: number
-  retryInterval?: number
-  startTime?: Date
-  stopTime?: Date
-}
-
-export interface OCPP16DiagnosticsStatusNotificationRequest extends JsonObject {
-  status: OCPP16DiagnosticsStatus
-}
-
-export enum OCPP16MessageTrigger {
-  BootNotification = 'BootNotification',
-  DiagnosticsStatusNotification = 'DiagnosticsStatusNotification',
-  FirmwareStatusNotification = 'FirmwareStatusNotification',
-  Heartbeat = 'Heartbeat',
-  MeterValues = 'MeterValues',
-  StatusNotification = 'StatusNotification',
-}
-
-export interface OCPP16TriggerMessageRequest extends JsonObject {
-  connectorId?: number
-  requestedMessage: OCPP16MessageTrigger
-}
-
-export enum OCPP16DataTransferVendorId {}
-
-export interface OCPP16DataTransferRequest extends JsonObject {
-  data?: string
-  messageId?: string
-  vendorId: string
-}
-
-export interface OCPP16ReserveNowRequest extends JsonObject {
-  connectorId: number
-  expiryDate: Date
-  idTag: string
-  parentIdTag?: string
-  reservationId: number
-}
-
-export interface OCPP16CancelReservationRequest extends JsonObject {
-  reservationId: number
-}
+type OCPP16ConfigurationKey = OCPP16StandardParametersKey | OCPP16VendorParametersKey | string

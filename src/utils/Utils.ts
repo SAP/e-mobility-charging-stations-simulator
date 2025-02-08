@@ -228,7 +228,7 @@ export const isCFEnvironment = (): boolean => {
 }
 
 declare const nonEmptyString: unique symbol
-type NonEmptyString = { [nonEmptyString]: true } & string
+type NonEmptyString = string & { [nonEmptyString]: true }
 export const isNotEmptyString = (value: unknown): value is NonEmptyString => {
   return typeof value === 'string' && value.trim().length > 0
 }

@@ -1,25 +1,9 @@
 import type { JsonObject } from '../../JsonType.js'
 import type { EVSEType, StatusInfoType } from './Common.js'
 
-enum OCPP20ComponentName {
-  AlignedDataCtrlr = 'AlignedDataCtrlr',
-  AuthCacheCtrlr = 'AuthCacheCtrlr',
-  AuthCtrlr = 'AuthCtrlr',
-  CHAdeMOCtrlr = 'CHAdeMOCtrlr',
-  ClockCtrlr = 'ClockCtrlr',
-  CustomizationCtrlr = 'CustomizationCtrlr',
-  DeviceDataCtrlr = 'DeviceDataCtrlr',
-  DisplayMessageCtrlr = 'DisplayMessageCtrlr',
-  ISO15118Ctrlr = 'ISO15118Ctrlr',
-  LocalAuthListCtrlr = 'LocalAuthListCtrlr',
-  MonitoringCtrlr = 'MonitoringCtrlr',
-  OCPPCommCtrlr = 'OCPPCommCtrlr',
-  ReservationCtrlr = 'ReservationCtrlr',
-  SampledDataCtrlr = 'SampledDataCtrlr',
-  SecurityCtrlr = 'SecurityCtrlr',
-  SmartChargingCtrlr = 'SmartChargingCtrlr',
-  TariffCostCtrlr = 'TariffCostCtrlr',
-  TxCtrlr = 'TxCtrlr',
+export enum OCPP20OptionalVariableName {
+  HeartbeatInterval = 'HeartbeatInterval',
+  WebSocketPingInterval = 'WebSocketPingInterval',
 }
 
 export enum OCPP20RequiredVariableName {
@@ -53,11 +37,6 @@ export enum OCPP20RequiredVariableName {
   UnlockOnEVSideDisconnect = 'UnlockOnEVSideDisconnect',
 }
 
-export enum OCPP20OptionalVariableName {
-  HeartbeatInterval = 'HeartbeatInterval',
-  WebSocketPingInterval = 'WebSocketPingInterval',
-}
-
 export enum OCPP20VendorVariableName {
   ConnectionUrl = 'ConnectionUrl',
 }
@@ -67,6 +46,56 @@ enum AttributeEnumType {
   MaxSet = 'MaxSet',
   MinSet = 'MinSet',
   Target = 'Target',
+}
+
+enum OCPP20ComponentName {
+  AlignedDataCtrlr = 'AlignedDataCtrlr',
+  AuthCacheCtrlr = 'AuthCacheCtrlr',
+  AuthCtrlr = 'AuthCtrlr',
+  CHAdeMOCtrlr = 'CHAdeMOCtrlr',
+  ClockCtrlr = 'ClockCtrlr',
+  CustomizationCtrlr = 'CustomizationCtrlr',
+  DeviceDataCtrlr = 'DeviceDataCtrlr',
+  DisplayMessageCtrlr = 'DisplayMessageCtrlr',
+  ISO15118Ctrlr = 'ISO15118Ctrlr',
+  LocalAuthListCtrlr = 'LocalAuthListCtrlr',
+  MonitoringCtrlr = 'MonitoringCtrlr',
+  OCPPCommCtrlr = 'OCPPCommCtrlr',
+  ReservationCtrlr = 'ReservationCtrlr',
+  SampledDataCtrlr = 'SampledDataCtrlr',
+  SecurityCtrlr = 'SecurityCtrlr',
+  SmartChargingCtrlr = 'SmartChargingCtrlr',
+  TariffCostCtrlr = 'TariffCostCtrlr',
+  TxCtrlr = 'TxCtrlr',
+}
+
+enum SetVariableStatusEnumType {
+  Accepted = 'Accepted',
+  NotSupportedAttributeType = 'NotSupportedAttributeType',
+  RebootRequired = 'RebootRequired',
+  Rejected = 'Rejected',
+  UnknownComponent = 'UnknownComponent',
+  UnknownVariable = 'UnknownVariable',
+}
+
+export interface OCPP20ComponentVariableType extends JsonObject {
+  component: ComponentType
+  variable?: VariableType
+}
+
+export interface OCPP20SetVariableDataType extends JsonObject {
+  attributeType?: AttributeEnumType
+  attributeValue: string
+  component: ComponentType
+  variable: VariableType
+}
+
+export interface OCPP20SetVariableResultType extends JsonObject {
+  attributeStatus: SetVariableStatusEnumType
+  attributeStatusInfo?: StatusInfoType
+  attributeType?: AttributeEnumType
+  component: ComponentType
+  variable: VariableType
 }
 
 interface ComponentType extends JsonObject {
@@ -84,33 +113,4 @@ type VariableName =
 interface VariableType extends JsonObject {
   instance?: string
   name: VariableName
-}
-
-export interface OCPP20SetVariableDataType extends JsonObject {
-  attributeType?: AttributeEnumType
-  attributeValue: string
-  component: ComponentType
-  variable: VariableType
-}
-
-enum SetVariableStatusEnumType {
-  Accepted = 'Accepted',
-  NotSupportedAttributeType = 'NotSupportedAttributeType',
-  RebootRequired = 'RebootRequired',
-  Rejected = 'Rejected',
-  UnknownComponent = 'UnknownComponent',
-  UnknownVariable = 'UnknownVariable',
-}
-
-export interface OCPP20SetVariableResultType extends JsonObject {
-  attributeStatus: SetVariableStatusEnumType
-  attributeStatusInfo?: StatusInfoType
-  attributeType?: AttributeEnumType
-  component: ComponentType
-  variable: VariableType
-}
-
-export interface OCPP20ComponentVariableType extends JsonObject {
-  component: ComponentType
-  variable?: VariableType
 }

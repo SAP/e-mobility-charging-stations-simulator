@@ -38,20 +38,12 @@ export class AutomaticTransactionGenerator {
     AutomaticTransactionGenerator
   >()
 
-  private readonly chargingStation: ChargingStation
-  private readonly logPrefix = (connectorId?: number): string => {
-    return logPrefix(
-      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      ` ${this.chargingStation.stationInfo?.chargingStationId} | ATG${
-        connectorId != null ? ` on connector #${connectorId.toString()}` : ''
-      }:`
-    )
-  }
-
-  private starting: boolean
-  private stopping: boolean
   public readonly connectorsStatus: Map<number, Status>
   public started: boolean
+
+  private readonly chargingStation: ChargingStation
+  private starting: boolean
+  private stopping: boolean
 
   private constructor (chargingStation: ChargingStation) {
     this.started = false
@@ -80,6 +72,67 @@ export class AutomaticTransactionGenerator {
     }
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return AutomaticTransactionGenerator.instances.get(chargingStation.stationInfo!.hashId)
+  }
+
+  public start (stopAbsoluteDuration?: boolean): void {
+    if (!checkChargingStationState(this.chargingStation, this.logPrefix())) {
+      return
+    }
+    if (this.started) {
+      logger.warn(`${this.logPrefix()} is already started`)
+      return
+    }
+    if (this.starting) {
+      logger.warn(`${this.logPrefix()} is already starting`)
+      return
+    }
+    this.starting = true
+    this.startConnectors(stopAbsoluteDuration)
+    this.started = true
+    this.starting = false
+  }
+
+  public startConnector (connectorId: number, stopAbsoluteDuration?: boolean): void {
+    if (!checkChargingStationState(this.chargingStation, this.logPrefix(connectorId))) {
+      return
+    }
+    if (!this.connectorsStatus.has(connectorId)) {
+      logger.error(`${this.logPrefix(connectorId)} starting on non existing connector`)
+      throw new BaseError(`Connector ${connectorId.toString()} does not exist`)
+    }
+    if (this.connectorsStatus.get(connectorId)?.start === false) {
+      this.internalStartConnector(connectorId, stopAbsoluteDuration).catch(Constants.EMPTY_FUNCTION)
+    } else if (this.connectorsStatus.get(connectorId)?.start === true) {
+      logger.warn(`${this.logPrefix(connectorId)} is already started on connector`)
+    }
+  }
+
+  public stop (): void {
+    if (!this.started) {
+      logger.warn(`${this.logPrefix()} is already stopped`)
+      return
+    }
+    if (this.stopping) {
+      logger.warn(`${this.logPrefix()} is already stopping`)
+      return
+    }
+    this.stopping = true
+    this.stopConnectors()
+    this.started = false
+    this.stopping = false
+  }
+
+  public stopConnector (connectorId: number): void {
+    if (!this.connectorsStatus.has(connectorId)) {
+      logger.error(`${this.logPrefix(connectorId)} stopping on non existing connector`)
+      throw new BaseError(`Connector ${connectorId.toString()} does not exist`)
+    }
+    if (this.connectorsStatus.get(connectorId)?.start === true) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      this.connectorsStatus.get(connectorId)!.start = false
+    } else if (this.connectorsStatus.get(connectorId)?.start === false) {
+      logger.warn(`${this.logPrefix(connectorId)} is already stopped on connector`)
+    }
   }
 
   private canStartConnector (connectorId: number): boolean {
@@ -317,6 +370,15 @@ export class AutomaticTransactionGenerator {
     this.chargingStation.emit(ChargingStationEvents.updated)
   }
 
+  private readonly logPrefix = (connectorId?: number): string => {
+    return logPrefix(
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+      ` ${this.chargingStation.stationInfo?.chargingStationId} | ATG${
+        connectorId != null ? ` on connector #${connectorId.toString()}` : ''
+      }:`
+    )
+  }
+
   private setStartConnectorStatus (
     connectorId: number,
     stopAbsoluteDuration = this.chargingStation.getAutomaticTransactionGeneratorConfiguration()
@@ -533,67 +595,6 @@ export class AutomaticTransactionGenerator {
         logged = true
       }
       await sleep(Constants.DEFAULT_ATG_WAIT_TIME)
-    }
-  }
-
-  public start (stopAbsoluteDuration?: boolean): void {
-    if (!checkChargingStationState(this.chargingStation, this.logPrefix())) {
-      return
-    }
-    if (this.started) {
-      logger.warn(`${this.logPrefix()} is already started`)
-      return
-    }
-    if (this.starting) {
-      logger.warn(`${this.logPrefix()} is already starting`)
-      return
-    }
-    this.starting = true
-    this.startConnectors(stopAbsoluteDuration)
-    this.started = true
-    this.starting = false
-  }
-
-  public startConnector (connectorId: number, stopAbsoluteDuration?: boolean): void {
-    if (!checkChargingStationState(this.chargingStation, this.logPrefix(connectorId))) {
-      return
-    }
-    if (!this.connectorsStatus.has(connectorId)) {
-      logger.error(`${this.logPrefix(connectorId)} starting on non existing connector`)
-      throw new BaseError(`Connector ${connectorId.toString()} does not exist`)
-    }
-    if (this.connectorsStatus.get(connectorId)?.start === false) {
-      this.internalStartConnector(connectorId, stopAbsoluteDuration).catch(Constants.EMPTY_FUNCTION)
-    } else if (this.connectorsStatus.get(connectorId)?.start === true) {
-      logger.warn(`${this.logPrefix(connectorId)} is already started on connector`)
-    }
-  }
-
-  public stop (): void {
-    if (!this.started) {
-      logger.warn(`${this.logPrefix()} is already stopped`)
-      return
-    }
-    if (this.stopping) {
-      logger.warn(`${this.logPrefix()} is already stopping`)
-      return
-    }
-    this.stopping = true
-    this.stopConnectors()
-    this.started = false
-    this.stopping = false
-  }
-
-  public stopConnector (connectorId: number): void {
-    if (!this.connectorsStatus.has(connectorId)) {
-      logger.error(`${this.logPrefix(connectorId)} stopping on non existing connector`)
-      throw new BaseError(`Connector ${connectorId.toString()} does not exist`)
-    }
-    if (this.connectorsStatus.get(connectorId)?.start === true) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this.connectorsStatus.get(connectorId)!.start = false
-    } else if (this.connectorsStatus.get(connectorId)?.start === false) {
-      logger.warn(`${this.logPrefix(connectorId)} is already stopped on connector`)
     }
   }
 }

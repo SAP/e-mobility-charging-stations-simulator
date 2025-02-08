@@ -1,4 +1,4 @@
-import { expect } from 'expect'
+import { expect } from '@std/expect'
 import { randomInt } from 'node:crypto'
 import { describe, it } from 'node:test'
 
@@ -18,7 +18,6 @@ await describe('AsyncLock test suite', async () => {
           expect(executed).toStrictEqual(new Array(count).fill(0).map((_, i) => ++i))
           return undefined
         })
-        // eslint-disable-next-line @typescript-eslint/use-unknown-in-catch-callback-variable
         .catch(console.error)
     }
   })
@@ -39,7 +38,6 @@ await describe('AsyncLock test suite', async () => {
           expect(executed).toStrictEqual(new Array(count).fill(0).map((_, i) => ++i))
           return undefined
         })
-        // eslint-disable-next-line @typescript-eslint/use-unknown-in-catch-callback-variable
         .catch(console.error)
     }
   })

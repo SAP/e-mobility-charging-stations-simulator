@@ -29,11 +29,7 @@
           }
         "
         :shared="true"
-        @clicked="
-          () => {
-            $emit('need-refresh')
-          }
-        "
+        @clicked="$emit('need-refresh')"
       >
         Start Transaction
       </ToggleButton>

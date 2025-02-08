@@ -4,6 +4,7 @@ FROM node:lts-alpine AS builder
 WORKDIR /usr/builder
 COPY . ./
 RUN set -ex \
+  && npm install -g corepack \
   && corepack enable \
   && corepack prepare pnpm@latest --activate \
   && pnpm set progress=false \

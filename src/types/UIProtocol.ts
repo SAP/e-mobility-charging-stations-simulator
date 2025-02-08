@@ -1,10 +1,6 @@
 import type { JsonObject } from './JsonType.js'
 import type { BroadcastChannelResponsePayload } from './WorkerBroadcastChannel.js'
 
-export enum Protocol {
-  UI = 'ui',
-}
-
 export enum ApplicationProtocol {
   HTTP = 'http',
   WS = 'ws',
@@ -14,26 +10,6 @@ export enum AuthenticationType {
   BASIC_AUTH = 'basic-auth',
   PROTOCOL_BASIC_AUTH = 'protocol-basic-auth',
 }
-
-export enum ProtocolVersion {
-  '0.0.1' = '0.0.1',
-}
-
-export type ProtocolRequest = [
-  `${string}-${string}-${string}-${string}-${string}`,
-  ProcedureName,
-  RequestPayload
-]
-export type ProtocolResponse = [
-  `${string}-${string}-${string}-${string}-${string}`,
-  ResponsePayload
-]
-
-export type ProtocolRequestHandler = (
-  uuid?: `${string}-${string}-${string}-${string}-${string}`,
-  procedureName?: ProcedureName,
-  payload?: RequestPayload
-) => Promise<ResponsePayload> | Promise<undefined> | ResponsePayload | undefined
 
 export enum ProcedureName {
   ADD_CHARGING_STATIONS = 'addChargingStations',
@@ -63,14 +39,38 @@ export enum ProcedureName {
   STOP_TRANSACTION = 'stopTransaction',
 }
 
-export interface RequestPayload extends JsonObject {
-  connectorIds?: number[]
-  hashIds?: string[]
+export enum Protocol {
+  UI = 'ui',
 }
 
+export enum ProtocolVersion {
+  '0.0.1' = '0.0.1',
+}
 export enum ResponseStatus {
   FAILURE = 'failure',
   SUCCESS = 'success',
+}
+
+export type ProtocolRequest = [
+  `${string}-${string}-${string}-${string}-${string}`,
+  ProcedureName,
+  RequestPayload
+]
+
+export type ProtocolRequestHandler = (
+  uuid?: `${string}-${string}-${string}-${string}-${string}`,
+  procedureName?: ProcedureName,
+  payload?: RequestPayload
+) => Promise<ResponsePayload> | Promise<undefined> | ResponsePayload | undefined
+
+export type ProtocolResponse = [
+  `${string}-${string}-${string}-${string}-${string}`,
+  ResponsePayload
+]
+
+export interface RequestPayload extends JsonObject {
+  connectorIds?: number[]
+  hashIds?: string[]
 }
 
 export interface ResponsePayload extends JsonObject {

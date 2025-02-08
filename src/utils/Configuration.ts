@@ -127,6 +127,82 @@ export class Configuration {
     // This is intentional
   }
 
+  public static getConfigurationData (): ConfigurationData | undefined {
+    if (
+      Configuration.configurationData == null &&
+      Configuration.configurationFile != null &&
+      Configuration.configurationFile.length > 0
+    ) {
+      try {
+        Configuration.configurationData = JSON.parse(
+          readFileSync(Configuration.configurationFile, 'utf8')
+        ) as ConfigurationData
+        if (Configuration.configurationFileWatcher == null) {
+          Configuration.configurationFileWatcher = Configuration.getConfigurationFileWatcher()
+        }
+      } catch (error) {
+        handleFileException(
+          Configuration.configurationFile,
+          FileType.Configuration,
+          error as NodeJS.ErrnoException,
+          logPrefix()
+        )
+      }
+    }
+    return Configuration.configurationData
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+  public static getConfigurationSection<T extends ConfigurationSectionType>(
+    sectionName: ConfigurationSection
+  ): T {
+    if (!Configuration.isConfigurationSectionCached(sectionName)) {
+      Configuration.cacheConfigurationSection(sectionName)
+    }
+    return Configuration.configurationSectionCache.get(sectionName) as T
+  }
+
+  public static getStationTemplateUrls (): StationTemplateUrl[] | undefined {
+    const checkDeprecatedConfigurationKeysOnce = once(
+      Configuration.checkDeprecatedConfigurationKeys.bind(Configuration)
+    )
+    checkDeprecatedConfigurationKeysOnce()
+    return Configuration.getConfigurationData()?.stationTemplateUrls
+  }
+
+  public static getSupervisionUrlDistribution (): SupervisionUrlDistribution | undefined {
+    return has(Configuration.getConfigurationData(), 'supervisionUrlDistribution')
+      ? Configuration.getConfigurationData()?.supervisionUrlDistribution
+      : SupervisionUrlDistribution.ROUND_ROBIN
+  }
+
+  public static getSupervisionUrls (): string | string[] | undefined {
+    if (
+      Configuration.getConfigurationData()?.['supervisionURLs' as keyof ConfigurationData] != null
+    ) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      Configuration.getConfigurationData()!.supervisionUrls = Configuration.getConfigurationData()![
+        'supervisionURLs' as keyof ConfigurationData
+      ] as string | string[]
+    }
+    return Configuration.getConfigurationData()?.supervisionUrls
+  }
+
+  public static workerDynamicPoolInUse (): boolean {
+    return (
+      Configuration.getConfigurationSection<WorkerConfiguration>(ConfigurationSection.worker)
+        .processType === WorkerProcessType.dynamicPool
+    )
+  }
+
+  public static workerPoolInUse (): boolean {
+    return [WorkerProcessType.dynamicPool, WorkerProcessType.fixedPool].includes(
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      Configuration.getConfigurationSection<WorkerConfiguration>(ConfigurationSection.worker)
+        .processType!
+    )
+  }
+
   private static buildLogSection (): LogConfiguration {
     const deprecatedLogConfiguration: LogConfiguration = {
       ...(has('logEnabled', Configuration.getConfigurationData()) && {
@@ -501,31 +577,6 @@ export class Configuration {
     }
   }
 
-  public static getConfigurationData (): ConfigurationData | undefined {
-    if (
-      Configuration.configurationData == null &&
-      Configuration.configurationFile != null &&
-      Configuration.configurationFile.length > 0
-    ) {
-      try {
-        Configuration.configurationData = JSON.parse(
-          readFileSync(Configuration.configurationFile, 'utf8')
-        ) as ConfigurationData
-        if (Configuration.configurationFileWatcher == null) {
-          Configuration.configurationFileWatcher = Configuration.getConfigurationFileWatcher()
-        }
-      } catch (error) {
-        handleFileException(
-          Configuration.configurationFile,
-          FileType.Configuration,
-          error as NodeJS.ErrnoException,
-          logPrefix()
-        )
-      }
-    }
-    return Configuration.configurationData
-  }
-
   private static getConfigurationFileWatcher (): FSWatcher | undefined {
     if (Configuration.configurationFile == null || Configuration.configurationFile.length === 0) {
       return
@@ -571,42 +622,6 @@ export class Configuration {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
-  public static getConfigurationSection<T extends ConfigurationSectionType>(
-    sectionName: ConfigurationSection
-  ): T {
-    if (!Configuration.isConfigurationSectionCached(sectionName)) {
-      Configuration.cacheConfigurationSection(sectionName)
-    }
-    return Configuration.configurationSectionCache.get(sectionName) as T
-  }
-
-  public static getStationTemplateUrls (): StationTemplateUrl[] | undefined {
-    const checkDeprecatedConfigurationKeysOnce = once(
-      Configuration.checkDeprecatedConfigurationKeys.bind(Configuration)
-    )
-    checkDeprecatedConfigurationKeysOnce()
-    return Configuration.getConfigurationData()?.stationTemplateUrls
-  }
-
-  public static getSupervisionUrlDistribution (): SupervisionUrlDistribution | undefined {
-    return has(Configuration.getConfigurationData(), 'supervisionUrlDistribution')
-      ? Configuration.getConfigurationData()?.supervisionUrlDistribution
-      : SupervisionUrlDistribution.ROUND_ROBIN
-  }
-
-  public static getSupervisionUrls (): string | string[] | undefined {
-    if (
-      Configuration.getConfigurationData()?.['supervisionURLs' as keyof ConfigurationData] != null
-    ) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      Configuration.getConfigurationData()!.supervisionUrls = Configuration.getConfigurationData()![
-        'supervisionURLs' as keyof ConfigurationData
-      ] as string | string[]
-    }
-    return Configuration.getConfigurationData()?.supervisionUrls
-  }
-
   private static isConfigurationSectionCached (sectionName: ConfigurationSection): boolean {
     return Configuration.configurationSectionCache.has(sectionName)
   }
@@ -642,20 +657,5 @@ export class Configuration {
         )}`
       )
     }
-  }
-
-  public static workerDynamicPoolInUse (): boolean {
-    return (
-      Configuration.getConfigurationSection<WorkerConfiguration>(ConfigurationSection.worker)
-        .processType === WorkerProcessType.dynamicPool
-    )
-  }
-
-  public static workerPoolInUse (): boolean {
-    return [WorkerProcessType.dynamicPool, WorkerProcessType.fixedPool].includes(
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      Configuration.getConfigurationSection<WorkerConfiguration>(ConfigurationSection.worker)
-        .processType!
-    )
   }
 }

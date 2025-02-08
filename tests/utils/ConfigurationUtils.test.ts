@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-import { expect } from 'expect'
+import { expect } from '@std/expect'
 import { describe, it } from 'node:test'
 
 import { FileType } from '../../src/types/index.js'

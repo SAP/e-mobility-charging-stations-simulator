@@ -12,25 +12,9 @@ import type { Statistics } from './Statistics.js'
 
 import { ChargingStationEvents } from './ChargingStationEvents.js'
 
-export interface ChargingStationOptions extends JsonObject {
-  autoRegister?: boolean
-  autoStart?: boolean
-  enableStatistics?: boolean
-  ocppStrictCompliance?: boolean
-  persistentConfiguration?: boolean
-  stopTransactionsOnStopped?: boolean
-  supervisionUrls?: string | string[]
+enum ChargingStationMessageEvents {
+  performanceStatistics = 'performanceStatistics',
 }
-
-export interface ChargingStationWorkerData extends WorkerData {
-  index: number
-  options?: ChargingStationOptions
-  templateFile: string
-}
-
-export type EvseStatusWorkerType = {
-  connectors?: ConnectorStatus[]
-} & Omit<EvseStatus, 'connectors'>
 
 export interface ChargingStationData extends WorkerData {
   automaticTransactionGenerator?: ChargingStationAutomaticTransactionGeneratorConfiguration
@@ -48,9 +32,28 @@ export interface ChargingStationData extends WorkerData {
     | typeof WebSocket.OPEN
 }
 
-enum ChargingStationMessageEvents {
-  performanceStatistics = 'performanceStatistics',
+export interface ChargingStationOptions extends JsonObject {
+  autoRegister?: boolean
+  autoStart?: boolean
+  enableStatistics?: boolean
+  ocppStrictCompliance?: boolean
+  persistentConfiguration?: boolean
+  stopTransactionsOnStopped?: boolean
+  supervisionUrls?: string | string[]
 }
+
+export interface ChargingStationWorkerData extends WorkerData {
+  index: number
+  options?: ChargingStationOptions
+  templateFile: string
+}
+
+export interface ChargingStationWorkerMessage<T extends ChargingStationWorkerMessageData> {
+  data: T
+  event: ChargingStationWorkerMessageEvents
+}
+
+export type ChargingStationWorkerMessageData = ChargingStationData | Statistics
 
 export const ChargingStationWorkerMessageEvents = {
   ...ChargingStationEvents,
@@ -61,9 +64,6 @@ export type ChargingStationWorkerMessageEvents =
   | ChargingStationEvents
   | ChargingStationMessageEvents
 
-export type ChargingStationWorkerMessageData = ChargingStationData | Statistics
-
-export interface ChargingStationWorkerMessage<T extends ChargingStationWorkerMessageData> {
-  data: T
-  event: ChargingStationWorkerMessageEvents
+export type EvseStatusWorkerType = Omit<EvseStatus, 'connectors'> & {
+  connectors?: ConnectorStatus[]
 }

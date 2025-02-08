@@ -36,6 +36,10 @@ enum HttpMethods {
 }
 
 export class UIHttpServer extends AbstractUIServer {
+  public constructor (protected override readonly uiServerConfiguration: UIServerConfiguration) {
+    super(uiServerConfiguration)
+  }
+
   public logPrefix = (modName?: string, methodName?: string, prefixSuffix?: string): string => {
     const logMsgPrefix = prefixSuffix != null ? `UI HTTP Server ${prefixSuffix}` : 'UI HTTP Server'
     const logMsg =
@@ -45,8 +49,42 @@ export class UIHttpServer extends AbstractUIServer {
     return logPrefix(logMsg)
   }
 
-  public constructor (protected override readonly uiServerConfiguration: UIServerConfiguration) {
-    super(uiServerConfiguration)
+  public sendRequest (request: ProtocolRequest): void {
+    switch (this.uiServerConfiguration.version) {
+      case ApplicationProtocolVersion.VERSION_20:
+        this.httpServer.emit('request', request)
+        break
+    }
+  }
+
+  public sendResponse (response: ProtocolResponse): void {
+    const [uuid, payload] = response
+    try {
+      if (this.hasResponseHandler(uuid)) {
+        const res = this.responseHandlers.get(uuid) as ServerResponse
+        res
+          .writeHead(this.responseStatusToStatusCode(payload.status), {
+            'Content-Type': 'application/json',
+          })
+          .end(JSONStringify(payload, undefined, MapStringifyFormat.object))
+      } else {
+        logger.error(
+          `${this.logPrefix(moduleName, 'sendResponse')} Response for unknown request id: ${uuid}`
+        )
+      }
+    } catch (error) {
+      logger.error(
+        `${this.logPrefix(moduleName, 'sendResponse')} Error at sending response id '${uuid}':`,
+        error
+      )
+    } finally {
+      this.responseHandlers.delete(uuid)
+    }
+  }
+
+  public start (): void {
+    this.httpServer.on('request', this.requestListener.bind(this))
+    this.startHttpServer()
   }
 
   private requestListener (req: IncomingMessage, res: ServerResponse): void {
@@ -135,43 +173,5 @@ export class UIHttpServer extends AbstractUIServer {
       default:
         return StatusCodes.INTERNAL_SERVER_ERROR
     }
-  }
-
-  public sendRequest (request: ProtocolRequest): void {
-    switch (this.uiServerConfiguration.version) {
-      case ApplicationProtocolVersion.VERSION_20:
-        this.httpServer.emit('request', request)
-        break
-    }
-  }
-
-  public sendResponse (response: ProtocolResponse): void {
-    const [uuid, payload] = response
-    try {
-      if (this.hasResponseHandler(uuid)) {
-        const res = this.responseHandlers.get(uuid) as ServerResponse
-        res
-          .writeHead(this.responseStatusToStatusCode(payload.status), {
-            'Content-Type': 'application/json',
-          })
-          .end(JSONStringify(payload, undefined, MapStringifyFormat.object))
-      } else {
-        logger.error(
-          `${this.logPrefix(moduleName, 'sendResponse')} Response for unknown request id: ${uuid}`
-        )
-      }
-    } catch (error) {
-      logger.error(
-        `${this.logPrefix(moduleName, 'sendResponse')} Error at sending response id '${uuid}':`,
-        error
-      )
-    } finally {
-      this.responseHandlers.delete(uuid)
-    }
-  }
-
-  public start (): void {
-    this.httpServer.on('request', this.requestListener.bind(this))
-    this.startHttpServer()
   }
 }

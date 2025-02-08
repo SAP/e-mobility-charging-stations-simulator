@@ -21,15 +21,16 @@ const moduleName = 'OCPPResponseService'
 
 export abstract class OCPPResponseService {
   private static instance: null | OCPPResponseService = null
+  public abstract incomingRequestResponsePayloadValidateFunctions: Map<
+    IncomingRequestCommand,
+    ValidateFunction<JsonType>
+  >
+
   protected readonly ajv: Ajv
   protected readonly ajvIncomingRequest: Ajv
   protected emptyResponseHandler = Constants.EMPTY_FUNCTION
   protected abstract payloadValidateFunctions: Map<RequestCommand, ValidateFunction<JsonType>>
   private readonly version: OCPPVersion
-  public abstract incomingRequestResponsePayloadValidateFunctions: Map<
-    IncomingRequestCommand,
-    ValidateFunction<JsonType>
-  >
 
   protected constructor (version: OCPPVersion) {
     this.version = version
@@ -55,6 +56,14 @@ export abstract class OCPPResponseService {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+  public abstract responseHandler<ReqType extends JsonType, ResType extends JsonType>(
+    chargingStation: ChargingStation,
+    commandName: RequestCommand,
+    payload: ResType,
+    requestPayload: ReqType
+  ): Promise<void>
+
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
   protected validateResponsePayload<T extends JsonType>(
     chargingStation: ChargingStation,
     commandName: RequestCommand,
@@ -78,12 +87,4 @@ export abstract class OCPPResponseService {
       JSON.stringify(validate?.errors, undefined, 2)
     )
   }
-
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
-  public abstract responseHandler<ReqType extends JsonType, ResType extends JsonType>(
-    chargingStation: ChargingStation,
-    commandName: RequestCommand,
-    payload: ResType,
-    requestPayload: ReqType
-  ): Promise<void>
 }

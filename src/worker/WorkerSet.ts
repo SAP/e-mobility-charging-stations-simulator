@@ -24,6 +24,32 @@ interface ResponseWrapper<R extends WorkerData> {
 }
 
 export class WorkerSet<D extends WorkerData, R extends WorkerData> extends WorkerAbstract<D, R> {
+  public readonly emitter: EventEmitterAsyncResource | undefined
+
+  get info (): SetInfo {
+    return {
+      elementsExecuting: [...this.workerSet].reduce(
+        (accumulator, workerSetElement) => accumulator + workerSetElement.numberOfWorkerElements,
+        0
+      ),
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      elementsPerWorker: this.maxElementsPerWorker!,
+      size: this.size,
+      started: this.started,
+      type: 'set',
+      version: workerSetVersion,
+      worker: 'thread',
+    }
+  }
+
+  get maxElementsPerWorker (): number | undefined {
+    return this.workerOptions.elementsPerWorker
+  }
+
+  get size (): number {
+    return this.workerSet.size
+  }
+
   private readonly promiseResponseMap: Map<
     `${string}-${string}-${string}-${string}`,
     ResponseWrapper<R>
@@ -32,7 +58,6 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
   private started: boolean
   private readonly workerSet: Set<WorkerSetElement>
   private workerStartup: boolean
-  public readonly emitter: EventEmitterAsyncResource | undefined
 
   /**
    * Creates a new `WorkerSet`.
@@ -60,6 +85,65 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     }
     this.started = false
     this.workerStartup = false
+  }
+
+  /** @inheritDoc */
+  public async addElement (elementData: D): Promise<R> {
+    if (!this.started) {
+      throw new Error('Cannot add a WorkerSet element: not started')
+    }
+    const workerSetElement = await this.getWorkerSetElement()
+    const sendMessageToWorker = new Promise<R>((resolve, reject) => {
+      const message = {
+        data: elementData,
+        event: WorkerMessageEvents.addWorkerElement,
+        uuid: randomUUID(),
+      } satisfies WorkerMessage<D>
+      workerSetElement.worker.postMessage(message)
+      this.promiseResponseMap.set(message.uuid, {
+        reject,
+        resolve,
+        workerSetElement,
+      })
+    })
+    const response = await sendMessageToWorker
+    // Add element sequentially to optimize memory at startup
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    if (this.workerOptions.elementAddDelay! > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      await sleep(randomizeDelay(this.workerOptions.elementAddDelay!))
+    }
+    return response
+  }
+
+  /** @inheritDoc */
+  public async start (): Promise<void> {
+    this.addWorkerSetElement()
+    // Add worker set element sequentially to optimize memory at startup
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    this.workerOptions.workerStartDelay! > 0 &&
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      (await sleep(randomizeDelay(this.workerOptions.workerStartDelay!)))
+    this.emitter?.emit(WorkerSetEvents.started, this.info)
+    this.started = true
+  }
+
+  /** @inheritDoc */
+  public async stop (): Promise<void> {
+    for (const workerSetElement of this.workerSet) {
+      const worker = workerSetElement.worker
+      const waitWorkerExit = new Promise<void>(resolve => {
+        worker.once('exit', () => {
+          resolve()
+        })
+      })
+      worker.unref()
+      await worker.terminate()
+      await waitWorkerExit
+    }
+    this.emitter?.emit(WorkerSetEvents.stopped, this.info)
+    this.started = false
+    this.emitter?.emitDestroy()
   }
 
   /**
@@ -166,88 +250,5 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
       return
     }
     this.workerSet.delete(workerSetElement)
-  }
-
-  /** @inheritDoc */
-  public async addElement (elementData: D): Promise<R> {
-    if (!this.started) {
-      throw new Error('Cannot add a WorkerSet element: not started')
-    }
-    const workerSetElement = await this.getWorkerSetElement()
-    const sendMessageToWorker = new Promise<R>((resolve, reject) => {
-      const message = {
-        data: elementData,
-        event: WorkerMessageEvents.addWorkerElement,
-        uuid: randomUUID(),
-      } satisfies WorkerMessage<D>
-      workerSetElement.worker.postMessage(message)
-      this.promiseResponseMap.set(message.uuid, {
-        reject,
-        resolve,
-        workerSetElement,
-      })
-    })
-    const response = await sendMessageToWorker
-    // Add element sequentially to optimize memory at startup
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    if (this.workerOptions.elementAddDelay! > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      await sleep(randomizeDelay(this.workerOptions.elementAddDelay!))
-    }
-    return response
-  }
-
-  /** @inheritDoc */
-  public async start (): Promise<void> {
-    this.addWorkerSetElement()
-    // Add worker set element sequentially to optimize memory at startup
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.workerOptions.workerStartDelay! > 0 &&
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      (await sleep(randomizeDelay(this.workerOptions.workerStartDelay!)))
-    this.emitter?.emit(WorkerSetEvents.started, this.info)
-    this.started = true
-  }
-
-  /** @inheritDoc */
-  public async stop (): Promise<void> {
-    for (const workerSetElement of this.workerSet) {
-      const worker = workerSetElement.worker
-      const waitWorkerExit = new Promise<void>(resolve => {
-        worker.once('exit', () => {
-          resolve()
-        })
-      })
-      worker.unref()
-      await worker.terminate()
-      await waitWorkerExit
-    }
-    this.emitter?.emit(WorkerSetEvents.stopped, this.info)
-    this.started = false
-    this.emitter?.emitDestroy()
-  }
-
-  get info (): SetInfo {
-    return {
-      elementsExecuting: [...this.workerSet].reduce(
-        (accumulator, workerSetElement) => accumulator + workerSetElement.numberOfWorkerElements,
-        0
-      ),
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      elementsPerWorker: this.maxElementsPerWorker!,
-      size: this.size,
-      started: this.started,
-      type: 'set',
-      version: workerSetVersion,
-      worker: 'thread',
-    }
-  }
-
-  get maxElementsPerWorker (): number | undefined {
-    return this.workerOptions.elementsPerWorker
-  }
-
-  get size (): number {
-    return this.workerSet.size
   }
 }

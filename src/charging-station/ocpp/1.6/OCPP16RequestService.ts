@@ -146,6 +146,42 @@ export class OCPP16RequestService extends OCPPRequestService {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+  public async requestHandler<RequestType extends JsonType, ResponseType extends JsonType>(
+    chargingStation: ChargingStation,
+    commandName: OCPP16RequestCommand,
+    commandParams?: RequestType,
+    params?: RequestParams
+  ): Promise<ResponseType> {
+    // FIXME?: add sanity checks on charging station availability, connector availability, connector status, etc.
+    if (OCPP16ServiceUtils.isRequestCommandSupported(chargingStation, commandName)) {
+      // Pre request actions hook
+      switch (commandName) {
+        case OCPP16RequestCommand.START_TRANSACTION:
+          await OCPP16ServiceUtils.sendAndSetConnectorStatus(
+            chargingStation,
+            (commandParams as OCPP16StartTransactionRequest).connectorId,
+            OCPP16ChargePointStatus.Preparing
+          )
+          break
+      }
+      return (await this.sendMessage(
+        chargingStation,
+        generateUUID(),
+        this.buildRequestPayload<RequestType>(chargingStation, commandName, commandParams),
+        commandName,
+        params
+      )) as ResponseType
+    }
+    // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
+    throw new OCPPError(
+      ErrorType.NOT_SUPPORTED,
+      `Unsupported OCPP command ${commandName}`,
+      commandName,
+      commandParams
+    )
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
   private buildRequestPayload<Request extends JsonType>(
     chargingStation: ChargingStation,
     commandName: OCPP16RequestCommand,
@@ -229,41 +265,5 @@ export class OCPP16RequestService extends OCPPRequestService {
           commandParams
         )
     }
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
-  public async requestHandler<RequestType extends JsonType, ResponseType extends JsonType>(
-    chargingStation: ChargingStation,
-    commandName: OCPP16RequestCommand,
-    commandParams?: RequestType,
-    params?: RequestParams
-  ): Promise<ResponseType> {
-    // FIXME?: add sanity checks on charging station availability, connector availability, connector status, etc.
-    if (OCPP16ServiceUtils.isRequestCommandSupported(chargingStation, commandName)) {
-      // Pre request actions hook
-      switch (commandName) {
-        case OCPP16RequestCommand.START_TRANSACTION:
-          await OCPP16ServiceUtils.sendAndSetConnectorStatus(
-            chargingStation,
-            (commandParams as OCPP16StartTransactionRequest).connectorId,
-            OCPP16ChargePointStatus.Preparing
-          )
-          break
-      }
-      return (await this.sendMessage(
-        chargingStation,
-        generateUUID(),
-        this.buildRequestPayload<RequestType>(chargingStation, commandName, commandParams),
-        commandName,
-        params
-      )) as ResponseType
-    }
-    // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
-    throw new OCPPError(
-      ErrorType.NOT_SUPPORTED,
-      `Unsupported OCPP command ${commandName}`,
-      commandName,
-      commandParams
-    )
   }
 }

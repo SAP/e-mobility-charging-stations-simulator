@@ -83,6 +83,69 @@ export abstract class OCPPRequestService {
     return OCPPRequestService.instance as T
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+  public abstract requestHandler<ReqType extends JsonType, ResType extends JsonType>(
+    chargingStation: ChargingStation,
+    commandName: RequestCommand,
+    commandParams?: ReqType,
+    params?: RequestParams
+  ): Promise<ResType>
+
+  public async sendError (
+    chargingStation: ChargingStation,
+    messageId: string,
+    ocppError: OCPPError,
+    commandName: IncomingRequestCommand | RequestCommand
+  ): Promise<ResponseType> {
+    try {
+      // Send error message
+      return await this.internalSendMessage(
+        chargingStation,
+        messageId,
+        ocppError,
+        MessageType.CALL_ERROR_MESSAGE,
+        commandName
+      )
+    } catch (error) {
+      handleSendMessageError(
+        chargingStation,
+        commandName,
+        MessageType.CALL_ERROR_MESSAGE,
+        error as Error
+      )
+      return null
+    }
+  }
+
+  public async sendResponse (
+    chargingStation: ChargingStation,
+    messageId: string,
+    messagePayload: JsonType,
+    commandName: IncomingRequestCommand
+  ): Promise<ResponseType> {
+    try {
+      // Send response message
+      return await this.internalSendMessage(
+        chargingStation,
+        messageId,
+        messagePayload,
+        MessageType.CALL_RESULT_MESSAGE,
+        commandName
+      )
+    } catch (error) {
+      handleSendMessageError(
+        chargingStation,
+        commandName,
+        MessageType.CALL_RESULT_MESSAGE,
+        error as Error,
+        {
+          throwError: true,
+        }
+      )
+      return null
+    }
+  }
+
   protected async sendMessage (
     chargingStation: ChargingStation,
     messageId: string,
@@ -448,68 +511,5 @@ export abstract class OCPPRequestService {
       commandName,
       JSON.stringify(validate?.errors, undefined, 2)
     )
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
-  public abstract requestHandler<ReqType extends JsonType, ResType extends JsonType>(
-    chargingStation: ChargingStation,
-    commandName: RequestCommand,
-    commandParams?: ReqType,
-    params?: RequestParams
-  ): Promise<ResType>
-
-  public async sendError (
-    chargingStation: ChargingStation,
-    messageId: string,
-    ocppError: OCPPError,
-    commandName: IncomingRequestCommand | RequestCommand
-  ): Promise<ResponseType> {
-    try {
-      // Send error message
-      return await this.internalSendMessage(
-        chargingStation,
-        messageId,
-        ocppError,
-        MessageType.CALL_ERROR_MESSAGE,
-        commandName
-      )
-    } catch (error) {
-      handleSendMessageError(
-        chargingStation,
-        commandName,
-        MessageType.CALL_ERROR_MESSAGE,
-        error as Error
-      )
-      return null
-    }
-  }
-
-  public async sendResponse (
-    chargingStation: ChargingStation,
-    messageId: string,
-    messagePayload: JsonType,
-    commandName: IncomingRequestCommand
-  ): Promise<ResponseType> {
-    try {
-      // Send response message
-      return await this.internalSendMessage(
-        chargingStation,
-        messageId,
-        messagePayload,
-        MessageType.CALL_RESULT_MESSAGE,
-        commandName
-      )
-    } catch (error) {
-      handleSendMessageError(
-        chargingStation,
-        commandName,
-        MessageType.CALL_RESULT_MESSAGE,
-        error as Error,
-        {
-          throwError: true,
-        }
-      )
-      return null
-    }
   }
 }

@@ -16,14 +16,6 @@ export class JsonFileStorage extends Storage {
     this.dbName = this.storageUri.pathname
   }
 
-  private checkPerformanceRecordsFile (): void {
-    if (this.fd == null) {
-      throw new BaseError(
-        `${this.logPrefix} Performance records '${this.dbName}' file descriptor not found`
-      )
-    }
-  }
-
   public close (): void {
     this.clearPerformanceStatistics()
     try {
@@ -78,5 +70,13 @@ export class JsonFileStorage extends Storage {
         this.logPrefix
       )
     })
+  }
+
+  private checkPerformanceRecordsFile (): void {
+    if (this.fd == null) {
+      throw new BaseError(
+        `${this.logPrefix} Performance records '${this.dbName}' file descriptor not found`
+      )
+    }
   }
 }

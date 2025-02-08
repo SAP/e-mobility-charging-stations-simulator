@@ -19,6 +19,11 @@ export interface AutomaticTransactionGeneratorConfiguration extends JsonObject {
   stopAfterHours: number
 }
 
+export interface ChargingStationAutomaticTransactionGeneratorConfiguration {
+  automaticTransactionGenerator?: AutomaticTransactionGeneratorConfiguration
+  automaticTransactionGeneratorStatuses?: Status[]
+}
+
 export interface Status {
   acceptedAuthorizeRequests: number
   acceptedStartTransactionRequests: number
@@ -36,9 +41,4 @@ export interface Status {
   stopDate?: Date
   stoppedDate?: Date
   stopTransactionRequests: number
-}
-
-export interface ChargingStationAutomaticTransactionGeneratorConfiguration {
-  automaticTransactionGenerator?: AutomaticTransactionGeneratorConfiguration
-  automaticTransactionGeneratorStatuses?: Status[]
 }

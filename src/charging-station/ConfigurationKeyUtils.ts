@@ -3,6 +3,10 @@ import type { ChargingStation } from './ChargingStation.js'
 
 import { logger } from '../utils/index.js'
 
+interface AddConfigurationKeyParams {
+  overwrite?: boolean
+  save?: boolean
+}
 interface ConfigurationKeyOptions {
   readonly?: boolean
   reboot?: boolean
@@ -10,10 +14,6 @@ interface ConfigurationKeyOptions {
 }
 interface DeleteConfigurationKeyParams {
   caseInsensitive?: boolean
-  save?: boolean
-}
-interface AddConfigurationKeyParams {
-  overwrite?: boolean
   save?: boolean
 }
 
