@@ -131,7 +131,7 @@
     "eslint-define-config": "^2.1.0",
     "eslint-plugin-jsdoc": "^50.6.3",
     "eslint-plugin-perfectionist": "^4.9.0",
-    "eslint-plugin-vue": "^9.32.0",
+    "eslint-plugin-vue": "^9.33.0",
     "glob": "^11.0.1",
     "husky": "^9.1.7",
     "lint-staged": "^15.4.3",
