@@ -55,8 +55,8 @@ importers:
         specifier: 0.40.3
         version: 0.40.3
       mongodb:
-        specifier: ^6.14.1
-        version: 6.14.1(socks@2.8.4)
+        specifier: ^6.14.2
+        version: 6.14.2(socks@2.8.4)
       poolifier:
         specifier: ^4.4.5
         version: 4.4.5
@@ -101,8 +101,8 @@ importers:
         specifier: ^7.5.8
         version: 7.5.8
       '@types/ws':
-        specifier: ^8.5.14
-        version: 8.5.14
+        specifier: ^8.18.0
+        version: 8.18.0
       c8:
         specifier: ^10.1.3
         version: 10.1.3
@@ -1267,8 +1267,8 @@ packages:
   '@types/whatwg-url@11.0.5':
     resolution: {integrity: sha512-coYR071JRaHa+xoEvvYqvnIHaVqaYrLPbsufM9BF63HkwI5Lgmy2QR8Q5K/lYDYo5AK82wOvSOS0UsLTpTG7uQ==}
 
-  '@types/ws@8.5.14':
-    resolution: {integrity: sha512-bd/YFLW+URhBzMXurx7lWByOu+xzU9+kb3RboOteXYDfW+tr+JZa99OyNmPINEGB/ahzKrEuc8rcv4gnpJmxTw==}
+  '@types/ws@8.18.0':
+    resolution: {integrity: sha512-8svvI3hMyvN0kKCJMvTJP/x6Y/EoQbepff882wL+Sn5QsXb3etnamgrJq4isrBxSJj5L2AuXcI0+bgkoAXGUJw==}
 
   '@typescript-eslint/eslint-plugin@8.24.1':
     resolution: {integrity: sha512-ll1StnKtBigWIGqvYDVuDmXJHVH4zLVot1yQ4fJtLpL7qacwkxJc1T0bptqw+miBQ/QfUbhl1TcQ4accW5KUyA==}
@@ -4190,8 +4190,8 @@ packages:
   mongodb-connection-string-url@3.0.2:
     resolution: {integrity: sha512-rMO7CGo/9BFwyZABcKAWL8UJwH/Kc2x0g72uhDWzG48URRax5TCIcJ7Rc3RZqffZzO/Gwff/jyKwCU9TN8gehA==}
 
-  mongodb@6.14.1:
-    resolution: {integrity: sha512-GnHWIm4GtgREkssWRv9vYKNvqwbLd8WL5hCW3nCqzI2OxEZ6Q5g6vc3J6L1Grz0x1hx1wmYAprLlRr3kzBLcJg==}
+  mongodb@6.14.2:
+    resolution: {integrity: sha512-kMEHNo0F3P6QKDq17zcDuPeaywK/YaJVCEQRzPF3TOM/Bl9MFg64YE5Tu7ifj37qZJMhwU1tl2Ioivws5gRG5Q==}
     engines: {node: '>=16.20.1'}
     peerDependencies:
       '@aws-sdk/credential-providers': ^3.188.0
@@ -7189,7 +7189,7 @@ snapshots:
     dependencies:
       '@types/webidl-conversions': 7.0.3
 
-  '@types/ws@8.5.14':
+  '@types/ws@8.18.0':
     dependencies:
       '@types/node': 22.13.9
 
@@ -10691,7 +10691,7 @@ snapshots:
       '@types/whatwg-url': 11.0.5
       whatwg-url: 14.1.1
 
-  mongodb@6.14.1(socks@2.8.4):
+  mongodb@6.14.2(socks@2.8.4):
     dependencies:
       '@mongodb-js/saslprep': 1.2.0
       bson: 6.10.3
