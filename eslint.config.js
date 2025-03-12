@@ -1,13 +1,13 @@
 /* eslint-disable n/no-unpublished-import */
 import cspellConfigs from '@cspell/eslint-plugin/configs'
 import js from '@eslint/js'
-import { defineFlatConfig } from 'eslint-define-config'
 import jsdoc from 'eslint-plugin-jsdoc'
 import perfectionist from 'eslint-plugin-perfectionist'
 import pluginVue from 'eslint-plugin-vue'
+import { defineConfig } from 'eslint/config'
 import neostandard, { plugins } from 'neostandard'
 
-export default defineFlatConfig([
+export default defineConfig([
   {
     ignores: ['**/dist/**'],
   },
