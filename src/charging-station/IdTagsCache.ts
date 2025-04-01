@@ -29,9 +29,7 @@ export class IdTagsCache {
   }
 
   public static getInstance (): IdTagsCache {
-    if (IdTagsCache.instance === null) {
-      IdTagsCache.instance = new IdTagsCache()
-    }
+    IdTagsCache.instance ??= new IdTagsCache()
     return IdTagsCache.instance
   }
 

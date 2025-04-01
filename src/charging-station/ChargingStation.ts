@@ -1293,9 +1293,7 @@ export class ChargingStation extends EventEmitter {
   ): ChargingStationOcppConfiguration | undefined {
     let ocppConfiguration: ChargingStationOcppConfiguration | undefined =
       this.getOcppConfigurationFromFile(ocppPersistentConfiguration)
-    if (ocppConfiguration == null) {
-      ocppConfiguration = this.getOcppConfigurationFromTemplate()
-    }
+    ocppConfiguration ??= this.getOcppConfigurationFromTemplate()
     return ocppConfiguration
   }
 
@@ -1360,13 +1358,9 @@ export class ChargingStation extends EventEmitter {
         delete stationInfo.infoHash
         delete (stationInfo as ChargingStationTemplate).numberOfConnectors
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (stationInfo.templateIndex == null) {
-          stationInfo.templateIndex = this.index
-        }
+        stationInfo.templateIndex ??= this.index
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (stationInfo.templateName == null) {
-          stationInfo.templateName = buildTemplateName(this.templateFile)
-        }
+        stationInfo.templateName ??= buildTemplateName(this.templateFile)
       }
     }
     return stationInfo
@@ -2303,16 +2297,14 @@ export class ChargingStation extends EventEmitter {
   }
 
   private setIntervalFlushMessageBuffer (): void {
-    if (this.flushMessageBufferSetInterval == null) {
-      this.flushMessageBufferSetInterval = setInterval(() => {
-        if (this.isWebSocketConnectionOpened() && this.inAcceptedState()) {
-          this.flushMessageBuffer()
-        }
-        if (this.messageBuffer.size === 0) {
-          this.clearIntervalFlushMessageBuffer()
-        }
-      }, Constants.DEFAULT_MESSAGE_BUFFER_FLUSH_INTERVAL)
-    }
+    this.flushMessageBufferSetInterval ??= setInterval(() => {
+      if (this.isWebSocketConnectionOpened() && this.inAcceptedState()) {
+        this.flushMessageBuffer()
+      }
+      if (this.messageBuffer.size === 0) {
+        this.clearIntervalFlushMessageBuffer()
+      }
+    }, Constants.DEFAULT_MESSAGE_BUFFER_FLUSH_INTERVAL)
   }
 
   private async startMessageSequence (ATGStopAbsoluteDuration?: boolean): Promise<void> {

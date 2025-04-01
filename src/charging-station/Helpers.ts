@@ -932,9 +932,7 @@ const initializeConnectorStatus = (connectorStatus: ConnectorStatus): void => {
   connectorStatus.transactionStarted = false
   connectorStatus.energyActiveImportRegisterValue = 0
   connectorStatus.transactionEnergyActiveImportRegisterValue = 0
-  if (connectorStatus.chargingProfiles == null) {
-    connectorStatus.chargingProfiles = []
-  }
+  connectorStatus.chargingProfiles ??= []
 }
 
 const warnDeprecatedTemplateKey = (

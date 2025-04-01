@@ -77,9 +77,7 @@ export abstract class OCPPRequestService {
     this: new (ocppResponseService: OCPPResponseService) => T,
     ocppResponseService: OCPPResponseService
   ): T {
-    if (OCPPRequestService.instance === null) {
-      OCPPRequestService.instance = new this(ocppResponseService)
-    }
+    OCPPRequestService.instance ??= new this(ocppResponseService)
     return OCPPRequestService.instance as T
   }
 
