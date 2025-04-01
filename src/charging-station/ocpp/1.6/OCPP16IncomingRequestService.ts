@@ -1039,7 +1039,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     const { key } = commandPayload
     const configurationKey: OCPPConfigurationKey[] = []
     const unknownKey: string[] = []
-    if (key == null) {
+    if (key == null || isEmpty(key)) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       for (const configKey of chargingStation.ocppConfiguration!.configurationKey!) {
         if (!OCPP16ServiceUtils.isConfigurationKeyVisible(configKey)) {
