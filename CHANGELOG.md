@@ -2,18 +2,16 @@
 
 ## [2.0.4](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v2.0.3...simulator@v2.0.4) (2025-04-01)
 
-
 ### 🐞 Bug Fixes
 
-* properly handle empty key array in GetConfiguration ([#1368](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1368)) ([d13819a](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/d13819a6bfadb0a08c6c2379f5a4bdb4000be4eb)), closes [#1364](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1364)
-
+- properly handle empty key array in GetConfiguration ([#1368](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1368)) ([d13819a](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/d13819a6bfadb0a08c6c2379f5a4bdb4000be4eb)), closes [#1364](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1364)
 
 ### 🤖 Automation
 
-* **deps-dev:** bump the regular group with 6 updates ([da28b39](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/da28b394d059de0fd2cfa28bafe037e382411f7e))
-* **deps:** bump mongodb from 6.14.2 to 6.15.0 in the regular group ([#1354](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1354)) ([dbbcc02](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/dbbcc0206c58011165e816787efc8351193f3bcb))
-* **deps:** bump sonarsource/sonarqube-scan-action from 5.0.0 to 5.1.0 ([961c27d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/961c27d882f267bced5516081b3ddcbd157c1ca1))
-* **deps:** bump the regular group with 6 updates ([#1357](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1357)) ([93c3165](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/93c3165637b688b851ac9de682e9fcc8cc4a6d00))
+- **deps-dev:** bump the regular group with 6 updates ([da28b39](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/da28b394d059de0fd2cfa28bafe037e382411f7e))
+- **deps:** bump mongodb from 6.14.2 to 6.15.0 in the regular group ([#1354](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1354)) ([dbbcc02](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/dbbcc0206c58011165e816787efc8351193f3bcb))
+- **deps:** bump sonarsource/sonarqube-scan-action from 5.0.0 to 5.1.0 ([961c27d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/961c27d882f267bced5516081b3ddcbd157c1ca1))
+- **deps:** bump the regular group with 6 updates ([#1357](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1357)) ([93c3165](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/93c3165637b688b851ac9de682e9fcc8cc4a6d00))
 
 ## [2.0.3](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v2.0.2...simulator@v2.0.3) (2025-03-17)
 
