@@ -44,9 +44,7 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
   }
 
   public static getInstance<T extends OCPPIncomingRequestService>(this: new () => T): T {
-    if (OCPPIncomingRequestService.instance === null) {
-      OCPPIncomingRequestService.instance = new this()
-    }
+    OCPPIncomingRequestService.instance ??= new this()
     return OCPPIncomingRequestService.instance as T
   }
 

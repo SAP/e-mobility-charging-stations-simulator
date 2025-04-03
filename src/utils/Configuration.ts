@@ -137,9 +137,7 @@ export class Configuration {
         Configuration.configurationData = JSON.parse(
           readFileSync(Configuration.configurationFile, 'utf8')
         ) as ConfigurationData
-        if (Configuration.configurationFileWatcher == null) {
-          Configuration.configurationFileWatcher = Configuration.getConfigurationFileWatcher()
-        }
+        Configuration.configurationFileWatcher ??= Configuration.getConfigurationFileWatcher()
       } catch (error) {
         handleFileException(
           Configuration.configurationFile,

@@ -132,9 +132,7 @@ export class Bootstrap extends EventEmitter {
   }
 
   public static getInstance (): Bootstrap {
-    if (Bootstrap.instance === null) {
-      Bootstrap.instance = new Bootstrap()
-    }
+    Bootstrap.instance ??= new Bootstrap()
     return Bootstrap.instance
   }
 

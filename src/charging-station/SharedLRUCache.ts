@@ -26,9 +26,7 @@ export class SharedLRUCache {
   }
 
   public static getInstance (): SharedLRUCache {
-    if (SharedLRUCache.instance === null) {
-      SharedLRUCache.instance = new SharedLRUCache()
-    }
+    SharedLRUCache.instance ??= new SharedLRUCache()
     return SharedLRUCache.instance
   }
 
