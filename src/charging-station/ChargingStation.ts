@@ -2103,9 +2103,12 @@ export class ChargingStation extends EventEmitter {
           if (!this.isRegistered()) {
             this.stationInfo?.registrationMaxRetries !== -1 && ++registrationRetryCount
             await sleep(
-              this.bootNotificationResponse?.interval != null
-                ? secondsToMilliseconds(this.bootNotificationResponse.interval)
-                : Constants.DEFAULT_BOOT_NOTIFICATION_INTERVAL
+              exponentialDelay(
+                registrationRetryCount,
+                this.bootNotificationResponse?.interval != null
+                  ? secondsToMilliseconds(this.bootNotificationResponse.interval)
+                  : Constants.DEFAULT_BOOT_NOTIFICATION_INTERVAL
+              )
             )
           }
         } while (
