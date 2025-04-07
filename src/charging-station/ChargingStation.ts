@@ -646,10 +646,6 @@ export class ChargingStation extends EventEmitter {
     return false
   }
 
-  public isRegistered (): boolean {
-    return !this.inUnknownState() && (this.inAcceptedState() || this.inPendingState())
-  }
-
   public isWebSocketConnectionOpened (): boolean {
     return this.wsConnection?.readyState === WebSocket.OPEN
   }
@@ -2087,7 +2083,7 @@ export class ChargingStation extends EventEmitter {
         } succeeded`
       )
       let registrationRetryCount = 0
-      if (!this.isRegistered()) {
+      if (!this.inAcceptedState()) {
         // Send BootNotification
         do {
           await this.ocppRequestService.requestHandler<
@@ -2100,8 +2096,8 @@ export class ChargingStation extends EventEmitter {
           this.bootNotificationResponse!.currentTime = convertToDate(
             this.bootNotificationResponse?.currentTime
           )!
-          if (!this.isRegistered()) {
-            this.stationInfo?.registrationMaxRetries !== -1 && ++registrationRetryCount
+          if (!this.inAcceptedState()) {
+            ++registrationRetryCount
             await sleep(
               exponentialDelay(
                 registrationRetryCount,
@@ -2112,13 +2108,13 @@ export class ChargingStation extends EventEmitter {
             )
           }
         } while (
-          !this.isRegistered() &&
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          (registrationRetryCount <= this.stationInfo!.registrationMaxRetries! ||
-            this.stationInfo?.registrationMaxRetries === -1)
+          !this.inAcceptedState() &&
+          (this.stationInfo?.registrationMaxRetries === -1 ||
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            registrationRetryCount <= this.stationInfo!.registrationMaxRetries!)
         )
       }
-      if (!this.isRegistered()) {
+      if (!this.inAcceptedState()) {
         logger.error(
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           `${this.logPrefix()} Registration failure: maximum retries reached (${registrationRetryCount.toString()}) or retry disabled (${this.stationInfo?.registrationMaxRetries?.toString()})`
@@ -2142,9 +2138,9 @@ export class ChargingStation extends EventEmitter {
 
   private async reconnect (): Promise<void> {
     if (
+      this.stationInfo?.autoReconnectMaxRetries === -1 ||
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this.wsConnectionRetryCount < this.stationInfo!.autoReconnectMaxRetries! ||
-      this.stationInfo?.autoReconnectMaxRetries === -1
+      this.wsConnectionRetryCount < this.stationInfo!.autoReconnectMaxRetries!
     ) {
       ++this.wsConnectionRetryCount
       const reconnectDelay =

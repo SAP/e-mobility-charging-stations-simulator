@@ -5,7 +5,7 @@ export enum ChargingStationEvents {
   connectorStatusChanged = 'connectorStatusChanged',
   deleted = 'deleted',
   disconnected = 'disconnected',
-  registered = 'registered',
+  pending = 'pending',
   rejected = 'rejected',
   started = 'started',
   stopped = 'stopped',

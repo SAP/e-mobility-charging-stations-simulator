@@ -104,7 +104,13 @@ export class OCPP20ResponseService extends OCPPResponseService {
     payload: ResType,
     requestPayload: ReqType
   ): Promise<void> {
-    if (chargingStation.isRegistered() || commandName === OCPP20RequestCommand.BOOT_NOTIFICATION) {
+    if (
+      chargingStation.inAcceptedState() ||
+      ((chargingStation.inUnknownState() || chargingStation.inPendingState()) &&
+        commandName === OCPP20RequestCommand.BOOT_NOTIFICATION) ||
+      (chargingStation.stationInfo?.ocppStrictCompliance === false &&
+        (chargingStation.inUnknownState() || chargingStation.inPendingState()))
+    ) {
       if (
         this.responseHandlers.has(commandName) &&
         OCPP20ServiceUtils.isRequestCommandSupported(chargingStation, commandName)
@@ -164,18 +170,17 @@ export class OCPP20ResponseService extends OCPPResponseService {
   ): void {
     if (Object.values(RegistrationStatusEnumType).includes(payload.status)) {
       chargingStation.bootNotificationResponse = payload
-      if (chargingStation.isRegistered()) {
-        chargingStation.emit(ChargingStationEvents.registered)
-        if (chargingStation.inAcceptedState()) {
-          addConfigurationKey(
-            chargingStation,
-            OCPP20OptionalVariableName.HeartbeatInterval,
-            payload.interval.toString(),
-            {},
-            { overwrite: true, save: true }
-          )
-          chargingStation.emit(ChargingStationEvents.accepted)
-        }
+      if (chargingStation.inAcceptedState()) {
+        addConfigurationKey(
+          chargingStation,
+          OCPP20OptionalVariableName.HeartbeatInterval,
+          payload.interval.toString(),
+          {},
+          { overwrite: true, save: true }
+        )
+        chargingStation.emit(ChargingStationEvents.accepted)
+      } else if (chargingStation.inPendingState()) {
+        chargingStation.emit(ChargingStationEvents.pending)
       } else if (chargingStation.inRejectedState()) {
         chargingStation.emit(ChargingStationEvents.rejected)
       }
