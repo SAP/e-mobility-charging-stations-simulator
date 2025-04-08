@@ -2,11 +2,10 @@
 
 ## [2.0.6](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v2.0.5...simulator@v2.0.6) (2025-04-08)
 
-
 ### 🐞 Bug Fixes
 
-* ensure the BootNotification interval is reused a registration ([fcc3ada](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/fcc3ada9f33a04267d32fac032eee1bd0ad98152))
-* gracefully handle malformed boot notification response ([db7e450](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/db7e450e595dae12f32520fe3d1a7f1061c3616f))
+- ensure the BootNotification interval is reused a registration ([fcc3ada](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/fcc3ada9f33a04267d32fac032eee1bd0ad98152))
+- gracefully handle malformed boot notification response ([db7e450](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/db7e450e595dae12f32520fe3d1a7f1061c3616f))
 
 ## [2.0.5](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v2.0.4...simulator@v2.0.5) (2025-04-08)
 
