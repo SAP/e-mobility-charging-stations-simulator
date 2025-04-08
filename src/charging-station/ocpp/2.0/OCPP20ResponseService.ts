@@ -170,14 +170,14 @@ export class OCPP20ResponseService extends OCPPResponseService {
   ): void {
     if (Object.values(RegistrationStatusEnumType).includes(payload.status)) {
       chargingStation.bootNotificationResponse = payload
+      addConfigurationKey(
+        chargingStation,
+        OCPP20OptionalVariableName.HeartbeatInterval,
+        payload.interval.toString(),
+        {},
+        { overwrite: true, save: true }
+      )
       if (chargingStation.inAcceptedState()) {
-        addConfigurationKey(
-          chargingStation,
-          OCPP20OptionalVariableName.HeartbeatInterval,
-          payload.interval.toString(),
-          {},
-          { overwrite: true, save: true }
-        )
         chargingStation.emit(ChargingStationEvents.accepted)
       } else if (chargingStation.inPendingState()) {
         chargingStation.emit(ChargingStationEvents.pending)
