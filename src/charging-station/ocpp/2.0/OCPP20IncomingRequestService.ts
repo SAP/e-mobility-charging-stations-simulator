@@ -79,7 +79,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
     }
     if (
-      chargingStation.isRegistered() ||
+      chargingStation.inAcceptedState() ||
+      chargingStation.inPendingState() ||
       (chargingStation.stationInfo?.ocppStrictCompliance === false &&
         chargingStation.inUnknownState())
     ) {

@@ -386,7 +386,13 @@ export class OCPP16ResponseService extends OCPPResponseService {
     payload: ResType,
     requestPayload: ReqType
   ): Promise<void> {
-    if (chargingStation.isRegistered() || commandName === OCPP16RequestCommand.BOOT_NOTIFICATION) {
+    if (
+      chargingStation.inAcceptedState() ||
+      ((chargingStation.inUnknownState() || chargingStation.inPendingState()) &&
+        commandName === OCPP16RequestCommand.BOOT_NOTIFICATION) ||
+      (chargingStation.stationInfo?.ocppStrictCompliance === false &&
+        (chargingStation.inUnknownState() || chargingStation.inPendingState()))
+    ) {
       if (
         this.responseHandlers.has(commandName) &&
         OCPP16ServiceUtils.isRequestCommandSupported(chargingStation, commandName)
@@ -502,25 +508,24 @@ export class OCPP16ResponseService extends OCPPResponseService {
   ): void {
     if (Object.values(RegistrationStatusEnumType).includes(payload.status)) {
       chargingStation.bootNotificationResponse = payload
-      if (chargingStation.isRegistered()) {
-        chargingStation.emit(ChargingStationEvents.registered)
-        if (chargingStation.inAcceptedState()) {
-          addConfigurationKey(
-            chargingStation,
-            OCPP16StandardParametersKey.HeartbeatInterval,
-            payload.interval.toString(),
-            {},
-            { overwrite: true, save: true }
-          )
-          addConfigurationKey(
-            chargingStation,
-            OCPP16StandardParametersKey.HeartBeatInterval,
-            payload.interval.toString(),
-            { visible: false },
-            { overwrite: true, save: true }
-          )
-          chargingStation.emit(ChargingStationEvents.accepted)
-        }
+      if (chargingStation.inAcceptedState()) {
+        addConfigurationKey(
+          chargingStation,
+          OCPP16StandardParametersKey.HeartbeatInterval,
+          payload.interval.toString(),
+          {},
+          { overwrite: true, save: true }
+        )
+        addConfigurationKey(
+          chargingStation,
+          OCPP16StandardParametersKey.HeartBeatInterval,
+          payload.interval.toString(),
+          { visible: false },
+          { overwrite: true, save: true }
+        )
+        chargingStation.emit(ChargingStationEvents.accepted)
+      } else if (chargingStation.inPendingState()) {
+        chargingStation.emit(ChargingStationEvents.pending)
       } else if (chargingStation.inRejectedState()) {
         chargingStation.emit(ChargingStationEvents.rejected)
       }
