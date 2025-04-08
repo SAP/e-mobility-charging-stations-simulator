@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.0.5](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v2.0.4...simulator@v2.0.5) (2025-04-08)
+
+
+### 🐞 Bug Fixes
+
+* ensure CS in pending state can send boot notification ([#1376](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1376)) ([b72d174](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b72d174972edbd0572e0489036924934e6d8ea1c))
+
+
+### 🤖 Automation
+
+* **deps-dev:** bump the regular group with 2 updates ([1b0518d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/1b0518d781c3c2f5fb08243c5e8b39cbe8da871e))
+* **deps-dev:** bump the regular group with 2 updates ([a86ad89](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/a86ad89b37158d888826946197e82e28afa51606))
+* **deps:** bump the regular group with 7 updates ([33f5c72](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/33f5c724c277263dcb35d82dfb97e6d31f627175))
+
 ## [2.0.4](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v2.0.3...simulator@v2.0.4) (2025-04-01)
 
 ### 🐞 Bug Fixes
