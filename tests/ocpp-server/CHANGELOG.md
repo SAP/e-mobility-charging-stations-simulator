@@ -2,11 +2,10 @@
 
 ## [2.0.5](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ocpp-server@v2.0.4...ocpp-server@v2.0.5) (2025-04-08)
 
-
 ### 🤖 Automation
 
-* **deps-dev:** bump ruff in /tests/ocpp-server in the regular group ([3bae471](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3bae4711f84a10a63f196be92081d2644124dce0))
-* **deps-dev:** bump ruff in /tests/ocpp-server in the regular group ([3327a60](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3327a6085b4540edead4e9b90bb173e346604016))
+- **deps-dev:** bump ruff in /tests/ocpp-server in the regular group ([3bae471](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3bae4711f84a10a63f196be92081d2644124dce0))
+- **deps-dev:** bump ruff in /tests/ocpp-server in the regular group ([3327a60](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3327a6085b4540edead4e9b90bb173e346604016))
 
 ## [2.0.4](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ocpp-server@v2.0.3...ocpp-server@v2.0.4) (2025-04-01)
 
