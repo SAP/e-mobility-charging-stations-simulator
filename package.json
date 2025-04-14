@@ -8,9 +8,9 @@
   },
   "volta": {
     "node": "22.14.0",
-    "pnpm": "10.8.0"
+    "pnpm": "10.8.1"
   },
-  "packageManager": "pnpm@10.8.0",
+  "packageManager": "pnpm@10.8.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/sap/e-mobility-charging-stations-simulator.git"
@@ -87,10 +87,10 @@
     }
   },
   "dependencies": {
-    "@mikro-orm/core": "^6.4.12",
-    "@mikro-orm/mariadb": "^6.4.12",
-    "@mikro-orm/reflection": "^6.4.12",
-    "@mikro-orm/sqlite": "^6.4.12",
+    "@mikro-orm/core": "^6.4.13",
+    "@mikro-orm/mariadb": "^6.4.13",
+    "@mikro-orm/reflection": "^6.4.13",
+    "@mikro-orm/sqlite": "^6.4.13",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "basic-ftp": "^5.0.5",
@@ -116,7 +116,7 @@
     "@commitlint/config-conventional": "^19.8.0",
     "@cspell/eslint-plugin": "^8.18.1",
     "@eslint/js": "^9.24.0",
-    "@mikro-orm/cli": "^6.4.12",
+    "@mikro-orm/cli": "^6.4.13",
     "@std/expect": "npm:@jsr/std__expect@^1.0.15",
     "@types/node": "^22.14.1",
     "@types/semver": "^7.7.0",
