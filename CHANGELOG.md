@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.7](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v2.0.6...simulator@v2.0.7) (2025-04-18)
+
+
+### 🤖 Automation
+
+* **deps-dev:** bump vite from 6.2.5 to 6.2.6 in the regular group ([#1382](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1382)) ([c369454](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c369454c86a86543f38ce9549d16ac57a7b4e360))
+
 ## [2.0.6](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v2.0.5...simulator@v2.0.6) (2025-04-08)
 
 ### 🐞 Bug Fixes
