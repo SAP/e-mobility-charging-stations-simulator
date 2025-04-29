@@ -2304,16 +2304,12 @@ export class ChargingStation extends EventEmitter {
         isRequest && PerformanceStatistics.endMeasure(commandName!, beginId!)
         if (error == null) {
           logger.debug(
-            `${this.logPrefix()} >> Buffered ${getMessageTypeString(
-              messageType
-            )} OCPP message sent '${JSON.stringify(message)}'`
+            `${this.logPrefix()} >> Buffered ${getMessageTypeString(messageType)} OCPP message sent '${message}'`
           )
           this.messageQueue.shift()
         } else {
-          logger.debug(
-            `${this.logPrefix()} >> Buffered ${getMessageTypeString(
-              messageType
-            )} OCPP message '${JSON.stringify(message)}' send failed:`,
+          logger.error(
+            `${this.logPrefix()} >> Buffered ${getMessageTypeString(messageType)} OCPP message '${message}' send failed:`,
             error
           )
         }
