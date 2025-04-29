@@ -2285,7 +2285,10 @@ export class ChargingStation extends EventEmitter {
       try {
         parsedMessage = JSON.parse(message) as ErrorResponse | OutgoingRequest | Response
       } catch (error) {
-        logger.error(`${this.logPrefix()} Error while parsing message '${message}' to JSON:`, error)
+        logger.error(
+          `${this.logPrefix()} Error while parsing buffered OCPP message '${message}' to JSON:`,
+          error
+        )
         this.messageQueue.shift()
         this.sendMessageBuffer(onCompleteCallback, messageIdx)
         return
