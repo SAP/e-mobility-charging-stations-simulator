@@ -1,5 +1,31 @@
 # Changelog
 
+## [2.0.7](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v2.0.6...simulator@v2.0.7) (2025-04-30)
+
+
+### 🐞 Bug Fixes
+
+* ensure buffered messages flushing is stopped when WS is closed ([4e0e653](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/4e0e6536ce7de6a83e9343e6873d3054b58f2532))
+* throttle failed buffered messages sending with exponential backoff ([#1399](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1399)) ([f43dbe1](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f43dbe14bc4075c3fa6ec7611d8cab7885db69d6))
+
+
+### ✨ Polish
+
+* refine log level in buffered OCPP messages handling ([84fa762](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/84fa762257648a5d6f2095251b722563d201193d))
+
+
+### 📚 Documentation
+
+* recommend container tools vscode extension ([7282b15](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7282b156ff929492e067eebe326b748e3bcc80a3))
+
+
+### 🤖 Automation
+
+* **deps-dev:** bump the regular group across 1 directory with 5 updates ([#1396](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1396)) ([637b90c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/637b90ccf2a4c187e5681ab37d394e4cf57dd5bf))
+* **deps-dev:** bump vite from 6.2.5 to 6.2.6 in the regular group ([#1382](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1382)) ([c369454](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c369454c86a86543f38ce9549d16ac57a7b4e360))
+* **deps-dev:** bump vite from 6.3.3 to 6.3.4 in the regular group ([#1400](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1400)) ([3ea8331](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3ea83318991587b84a8d7df00655f437ef170752))
+* **deps:** bump the regular group across 1 directory with 7 updates ([#1393](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1393)) ([e55d6c4](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e55d6c40ca642e2dfb9f764a2b824a4eaba38494))
+
 ## [2.0.6](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v2.0.5...simulator@v2.0.6) (2025-04-08)
 
 ### 🐞 Bug Fixes
