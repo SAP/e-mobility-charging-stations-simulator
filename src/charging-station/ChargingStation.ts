@@ -2332,7 +2332,7 @@ export class ChargingStation extends EventEmitter {
       if (this.isWebSocketConnectionOpened() && this.inAcceptedState()) {
         this.flushMessageBuffer()
       }
-      if (!this.flushingMessageBuffer && this.messageQueue.length === 0) {
+      if (!this.isWebSocketConnectionOpened() || this.messageQueue.length === 0) {
         this.clearIntervalFlushMessageBuffer()
       }
     }, Constants.DEFAULT_MESSAGE_BUFFER_FLUSH_INTERVAL)
