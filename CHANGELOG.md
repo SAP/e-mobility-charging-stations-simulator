@@ -2,13 +2,12 @@
 
 ## [2.0.8](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v2.0.7...simulator@v2.0.8) (2025-05-10)
 
-
 ### 🤖 Automation
 
-* **deps-dev:** bump @cspell/eslint-plugin from 8.19.4 to 9.0.0 ([#1408](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1408)) ([78c7a82](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/78c7a82d33b0f3a9dc9713e4631b0dbdc652b193))
-* **deps:** bump sonarsource/sonarqube-scan-action from 5.1.0 to 5.2.0 ([7a64458](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7a64458c37ea67ff15cf0723501c56fff73a56cb))
-* **deps:** bump the regular group across 1 directory with 15 updates ([c74bb2c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c74bb2c6d158b4344ef8acfc6a8d6ae84cbc0801))
-* **deps:** bump the regular group across 1 directory with 9 updates ([#1411](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1411)) ([384bf4b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/384bf4b7a95fbc8d93b17950b4c7988982ea648a))
+- **deps-dev:** bump @cspell/eslint-plugin from 8.19.4 to 9.0.0 ([#1408](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1408)) ([78c7a82](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/78c7a82d33b0f3a9dc9713e4631b0dbdc652b193))
+- **deps:** bump sonarsource/sonarqube-scan-action from 5.1.0 to 5.2.0 ([7a64458](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7a64458c37ea67ff15cf0723501c56fff73a56cb))
+- **deps:** bump the regular group across 1 directory with 15 updates ([c74bb2c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c74bb2c6d158b4344ef8acfc6a8d6ae84cbc0801))
+- **deps:** bump the regular group across 1 directory with 9 updates ([#1411](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1411)) ([384bf4b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/384bf4b7a95fbc8d93b17950b4c7988982ea648a))
 
 ## [2.0.7](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v2.0.6...simulator@v2.0.7) (2025-04-30)
 
