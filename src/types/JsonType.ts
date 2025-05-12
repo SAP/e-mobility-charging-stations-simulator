@@ -1,4 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style
 export type JsonObject = {
   [key in string]?: JsonType
 }
