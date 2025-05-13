@@ -9,8 +9,8 @@ RUN set -ex \
   && corepack prepare pnpm@latest --activate \
   && pnpm set progress=false \
   && pnpm config set depth 0 \
-  && pnpm install --ignore-scripts \
-  && cp docker/config.json public/config.json \
+  && pnpm install --force --ignore-scripts \
+  && mkdir -p public && cp docker/config.json public/config.json \
   && pnpm build
 
 FROM node:lts-alpine
