@@ -110,9 +110,10 @@
 </template>
 
 <script setup lang="ts">
+import { getCurrentInstance, ref, watch } from 'vue'
+
 import Button from '@/components/buttons/Button.vue'
 import { convertToBoolean, randomUUID } from '@/composables'
-import { getCurrentInstance, ref, watch } from 'vue'
 
 const state = ref<{
   autoStart: boolean

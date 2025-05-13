@@ -1,3 +1,5 @@
+import { useToast } from 'vue-toast-notification'
+
 import {
   ApplicationProtocol,
   AuthenticationType,
@@ -9,7 +11,6 @@ import {
   ResponseStatus,
   type UIServerConfigurationSection,
 } from '@/types'
-import { useToast } from 'vue-toast-notification'
 
 import { randomUUID, validateUUID } from './Utils'
 

@@ -36,8 +36,9 @@
 </template>
 
 <script setup lang="ts">
-import Button from '@/components/buttons/Button.vue'
 import { ref } from 'vue'
+
+import Button from '@/components/buttons/Button.vue'
 
 defineProps<{
   chargingStationId: string

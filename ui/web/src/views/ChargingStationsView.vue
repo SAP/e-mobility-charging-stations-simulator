@@ -114,6 +114,9 @@
 </template>
 
 <script setup lang="ts">
+import { computed, getCurrentInstance, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useToast } from 'vue-toast-notification'
+
 import type {
   ChargingStationData,
   ResponsePayload,
@@ -133,8 +136,6 @@ import {
   setToLocalStorage,
   useUIClient,
 } from '@/composables'
-import { computed, getCurrentInstance, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useToast } from 'vue-toast-notification'
 
 const simulatorState = ref<SimulatorState | undefined>(undefined)
 
