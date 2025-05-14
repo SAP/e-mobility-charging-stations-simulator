@@ -122,13 +122,14 @@
 </template>
 
 <script setup lang="ts">
+import { useToast } from 'vue-toast-notification'
+
 import type { ChargingStationData, ConnectorStatus, Status } from '@/types'
 
 import Button from '@/components/buttons/Button.vue'
 import ToggleButton from '@/components/buttons/ToggleButton.vue'
 import CSConnector from '@/components/charging-stations/CSConnector.vue'
 import { deleteFromLocalStorage, getLocalStorage, useUIClient } from '@/composables'
-import { useToast } from 'vue-toast-notification'
 
 const props = defineProps<{
   chargingStation: ChargingStationData
