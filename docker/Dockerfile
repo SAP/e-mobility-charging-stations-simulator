@@ -10,7 +10,7 @@ RUN set -ex \
   && corepack prepare pnpm@latest --activate \
   && pnpm set progress=false \
   && pnpm config set depth 0 \
-  && pnpm install --force --ignore-scripts --frozen-lockfile \
+  && pnpm install --ignore-scripts --frozen-lockfile \
   && cp docker/config.json src/assets/config.json \
   && cp docker/idtags.json src/assets/idtags.json \
   && pnpm build \
