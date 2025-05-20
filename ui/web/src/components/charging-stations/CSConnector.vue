@@ -47,12 +47,13 @@
 </template>
 
 <script setup lang="ts">
+import { useToast } from 'vue-toast-notification'
+
 import type { ConnectorStatus, Status } from '@/types'
 
 import Button from '@/components/buttons/Button.vue'
 import ToggleButton from '@/components/buttons/ToggleButton.vue'
 import { useUIClient } from '@/composables'
-import { useToast } from 'vue-toast-notification'
 
 const props = defineProps<{
   atgStatus?: Status
