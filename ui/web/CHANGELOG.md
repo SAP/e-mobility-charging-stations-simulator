@@ -2,10 +2,9 @@
 
 ## [2.0.8](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v2.0.7...webui@v2.0.8) (2025-05-27)
 
-
 ### 🐞 Bug Fixes
 
-* **docker:** dependencies installation with latest pnpm ([b1dab0c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b1dab0ce2c231c96a3ba1aecb559054879745170))
+- **docker:** dependencies installation with latest pnpm ([b1dab0c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b1dab0ce2c231c96a3ba1aecb559054879745170))
 
 ## [2.0.7](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v2.0.6...webui@v2.0.7) (2025-04-30)
 
