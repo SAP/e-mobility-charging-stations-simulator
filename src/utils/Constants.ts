@@ -46,7 +46,7 @@ export class Constants {
 
   static readonly DEFAULT_PERFORMANCE_RECORDS_DB_NAME = 'e-mobility-charging-stations-simulator'
   static readonly DEFAULT_PERFORMANCE_RECORDS_FILENAME = 'performanceRecords.json'
-  static readonly DEFAULT_STATION_INFO: Partial<ChargingStationInfo> = Object.freeze({
+  static readonly DEFAULT_STATION_INFO: Readonly<Partial<ChargingStationInfo>> = Object.freeze({
     automaticTransactionGeneratorPersistentConfiguration: true,
     autoReconnectMaxRetries: -1,
     autoStart: true,

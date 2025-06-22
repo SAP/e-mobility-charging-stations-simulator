@@ -1,9 +1,8 @@
 import { LRUMapWithDelete as LRUCache } from 'mnemonist'
-import { isEmpty } from 'rambda'
 
 import type { ChargingStationConfiguration, ChargingStationTemplate } from '../types/index.js'
 
-import { isNotEmptyArray, isNotEmptyString } from '../utils/index.js'
+import { isEmpty, isNotEmptyArray, isNotEmptyString } from '../utils/index.js'
 import { Bootstrap } from './Bootstrap.js'
 
 enum CacheType {

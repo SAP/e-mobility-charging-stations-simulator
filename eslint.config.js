@@ -43,7 +43,6 @@ export default defineConfig([
               'logform',
               'mnemonist',
               'poolifier',
-              'rambda',
               'measurand',
               'measurands',
               'mikro',

@@ -1,5 +1,4 @@
 import { secondsToMilliseconds } from 'date-fns'
-import { isEmpty } from 'rambda'
 
 import type { ChargingStation } from '../ChargingStation.js'
 
@@ -39,7 +38,7 @@ import {
   type StopTransactionRequest,
   type StopTransactionResponse,
 } from '../../types/index.js'
-import { Constants, convertToInt, isAsyncFunction, logger } from '../../utils/index.js'
+import { Constants, convertToInt, isAsyncFunction, isEmpty, logger } from '../../utils/index.js'
 import { getConfigurationKey } from '../ConfigurationKeyUtils.js'
 import { buildMeterValue } from '../ocpp/index.js'
 import { WorkerBroadcastChannel } from './WorkerBroadcastChannel.js'

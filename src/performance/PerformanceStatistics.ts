@@ -6,7 +6,6 @@ import { secondsToMilliseconds } from 'date-fns'
 import { CircularBuffer } from 'mnemonist'
 import { performance, type PerformanceEntry, PerformanceObserver } from 'node:perf_hooks'
 import { parentPort } from 'node:worker_threads'
-import { is, mean, median } from 'rambda'
 
 import { BaseError } from '../exception/index.js'
 import {
@@ -32,6 +31,8 @@ import {
   logger,
   logPrefix,
   max,
+  mean,
+  median,
   min,
   nthPercentile,
   stdDeviation,
@@ -81,7 +82,7 @@ export class PerformanceStatistics {
     try {
       performance.measure(name, markId)
     } catch (error) {
-      if (is(Error, error) && error.message.includes('performance mark has not been set')) {
+      if (error instanceof Error && error.message.includes('performance mark has not been set')) {
         /* Ignore */
       } else {
         throw error

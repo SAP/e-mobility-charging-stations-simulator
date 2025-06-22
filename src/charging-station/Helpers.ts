@@ -21,7 +21,6 @@ import { hash, randomBytes } from 'node:crypto'
 import { basename, dirname, isAbsolute, join, parse, relative, resolve } from 'node:path'
 import { env } from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { isEmpty } from 'rambda'
 
 import type { ChargingStation } from './ChargingStation.js'
 
@@ -64,6 +63,7 @@ import {
   convertToInt,
   DCElectricUtils,
   isArraySorted,
+  isEmpty,
   isNotEmptyArray,
   isNotEmptyString,
   isValidDate,

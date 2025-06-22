@@ -27,7 +27,6 @@ await build({
     'mongodb',
     'node:*',
     'poolifier',
-    'rambda',
     'tar',
     'winston',
     'winston/*',

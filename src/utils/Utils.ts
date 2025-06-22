@@ -13,7 +13,6 @@ import {
 } from 'date-fns'
 import { getRandomValues, randomBytes, randomUUID } from 'node:crypto'
 import { env } from 'node:process'
-import { is, isNotEmpty, type NonEmptyArray, type ReadonlyNonEmptyArray } from 'rambda'
 
 import {
   type JsonType,
@@ -22,8 +21,85 @@ import {
   WebSocketCloseEventStatusString,
 } from '../types/index.js'
 
+type NonEmptyArray<T> = [T, ...T[]]
+type ReadonlyNonEmptyArray<T> = readonly [T, ...(readonly T[])]
+
 export const logPrefix = (prefixString = ''): string => {
   return `${new Date().toLocaleString()}${prefixString}`
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const once = <T extends (...args: any[]) => any>(fn: T): T => {
+  let hasBeenCalled = false
+  let result: ReturnType<T> | undefined
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return function (this: any, ...args: Parameters<T>): ReturnType<T> {
+    if (!hasBeenCalled) {
+      hasBeenCalled = true
+      result = fn.apply(this, args) as ReturnType<T>
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return result
+  } as T
+}
+
+export const has = (property: PropertyKey, object: object | undefined): boolean => {
+  if (object == null) {
+    return false
+  }
+  return Object.prototype.hasOwnProperty.call(object, property)
+}
+
+const type = (value: unknown): string => {
+  if (value === null) return 'Null'
+  if (value === undefined) return 'Undefined'
+  if (Number.isNaN(value)) return 'NaN'
+  if (Array.isArray(value)) return 'Array'
+  return Object.prototype.toString.call(value).slice(8, -1)
+}
+
+export const isEmpty = (value: unknown): boolean => {
+  const inputType = type(value)
+  if (['NaN', 'Null', 'Number', 'Undefined'].includes(inputType)) {
+    return false
+  }
+  if (!value) return true
+
+  if (inputType === 'Object') {
+    return Object.keys(value as Record<string, unknown>).length === 0
+  }
+
+  if (inputType === 'Array') {
+    return (value as unknown[]).length === 0
+  }
+
+  return false
+}
+
+const isObject = (value: unknown): value is object => {
+  return type(value) === 'Object'
+}
+
+export const mergeDeepRight = <T extends object>(target: T, source: Partial<T>): T => {
+  const output = { ...target }
+
+  if (isObject(target) && isObject(source)) {
+    Object.keys(source).forEach(key => {
+      if (isObject(source[key])) {
+        if (!(key in target)) {
+          Object.assign(output, { [key]: source[key] })
+        } else {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          output[key] = mergeDeepRight(target[key], source[key])
+        }
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        Object.assign(output, { [key]: source[key] })
+      }
+    })
+  }
+
+  return output
 }
 
 export const generateUUID = (): `${string}-${string}-${string}-${string}-${string}` => {
@@ -236,7 +312,7 @@ export const isNotEmptyString = (value: unknown): value is NonEmptyString => {
 export const isNotEmptyArray = <T>(
   value: unknown
 ): value is NonEmptyArray<T> | ReadonlyNonEmptyArray<T> => {
-  return Array.isArray(value) && isNotEmpty<T>(value as T[])
+  return Array.isArray(value) && value.length > 0
 }
 
 export const insertAt = (str: string, subStr: string, pos: number): string =>
@@ -277,7 +353,7 @@ export const JSONStringify = <
   return JSON.stringify(
     object,
     (_, value: Record<string, unknown>) => {
-      if (is(Map, value)) {
+      if (value instanceof Map) {
         switch (mapFormat) {
           case MapStringifyFormat.object:
             return {
@@ -287,8 +363,8 @@ export const JSONStringify = <
           default:
             return [...value]
         }
-      } else if (is(Set, value)) {
-        return [...value]
+      } else if (value instanceof Set) {
+        return [...value] as Record<string, unknown>[]
       }
       return value
     },

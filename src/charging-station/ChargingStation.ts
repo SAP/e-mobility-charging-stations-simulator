@@ -7,7 +7,6 @@ import { existsSync, type FSWatcher, mkdirSync, readFileSync, rmSync, writeFileS
 import { dirname, join } from 'node:path'
 import { URL } from 'node:url'
 import { parentPort } from 'node:worker_threads'
-import { mergeDeepRight, once } from 'rambda'
 import { type RawData, WebSocket } from 'ws'
 
 import { BaseError, OCPPError } from '../exception/index.js'
@@ -93,7 +92,9 @@ import {
   isNotEmptyString,
   logger,
   logPrefix,
+  mergeDeepRight,
   min,
+  once,
   roundTo,
   secureRandom,
   sleep,
@@ -1299,7 +1300,7 @@ export class ChargingStation extends EventEmitter {
     const stationInfoFromFile = this.getStationInfoFromFile(
       stationInfoFromTemplate.stationInfoPersistentConfiguration
     )
-    let stationInfo: ChargingStationInfo
+    let stationInfo: Partial<ChargingStationInfo>
     // Priority:
     // 1. charging station info from template
     // 2. charging station info from configuration file

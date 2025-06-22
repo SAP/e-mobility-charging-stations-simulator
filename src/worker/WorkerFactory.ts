@@ -1,8 +1,8 @@
 import { isMainThread } from 'node:worker_threads'
-import { mergeDeepRight } from 'rambda'
 
 import type { WorkerAbstract } from './WorkerAbstract.js'
 
+import { mergeDeepRight } from '../utils/index.js'
 import { DEFAULT_WORKER_OPTIONS } from './WorkerConstants.js'
 import { WorkerDynamicPool } from './WorkerDynamicPool.js'
 import { WorkerFixedPool } from './WorkerFixedPool.js'
@@ -18,7 +18,7 @@ export class WorkerFactory {
   public static getWorkerImplementation<D extends WorkerData, R extends WorkerData>(
     workerScript: string,
     workerProcessType: WorkerProcessType,
-    workerOptions?: WorkerOptions
+    workerOptions?: Partial<WorkerOptions>
   ): WorkerAbstract<D, R> {
     if (!isMainThread) {
       throw new Error('Cannot get a worker implementation outside the main thread')

@@ -15,7 +15,6 @@ import { randomInt } from 'node:crypto'
 import { createWriteStream, readdirSync } from 'node:fs'
 import { dirname, extname, join, resolve } from 'node:path'
 import { fileURLToPath, URL } from 'node:url'
-import { isEmpty } from 'rambda'
 import { create } from 'tar'
 
 import {
@@ -108,6 +107,7 @@ import {
   formatDurationMilliSeconds,
   handleIncomingRequestError,
   isAsyncFunction,
+  isEmpty,
   isNotEmptyArray,
   isNotEmptyString,
   logger,

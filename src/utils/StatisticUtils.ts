@@ -1,4 +1,21 @@
-import { mean } from 'rambda'
+export const mean = (dataSet: number[]): number => {
+  if (Array.isArray(dataSet) && dataSet.length === 0) {
+    return 0
+  }
+  return dataSet.reduce((accumulator, num) => accumulator + num, 0) / dataSet.length
+}
+
+export const median = (dataSet: number[]): number => {
+  if (Array.isArray(dataSet) && dataSet.length === 0) {
+    return 0
+  }
+  const sortedDataSet = dataSet.slice().sort((a, b) => a - b)
+  const length = sortedDataSet.length
+  if (length % 2 === 0) {
+    return (sortedDataSet[length / 2 - 1] + sortedDataSet[length / 2]) / 2
+  }
+  return sortedDataSet[Math.floor(length / 2)]
+}
 
 export const min = (...args: number[]): number =>
   args.reduce((minimum, num) => (minimum < num ? minimum : num), Number.POSITIVE_INFINITY)

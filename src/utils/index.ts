@@ -25,7 +25,7 @@ export {
   buildStoppedMessage,
   buildUpdatedMessage,
 } from './MessageChannelUtils.js'
-export { max, min, nthPercentile, stdDeviation } from './StatisticUtils.js'
+export { max, mean, median, min, nthPercentile, stdDeviation } from './StatisticUtils.js'
 export {
   clone,
   convertToBoolean,
@@ -40,13 +40,17 @@ export {
   getRandomFloatFluctuatedRounded,
   getRandomFloatRounded,
   getWebSocketCloseEventStatusString,
+  has,
   isArraySorted,
   isAsyncFunction,
+  isEmpty,
   isNotEmptyArray,
   isNotEmptyString,
   isValidDate,
   JSONStringify,
   logPrefix,
+  mergeDeepRight,
+  once,
   roundTo,
   secureRandom,
   sleep,
