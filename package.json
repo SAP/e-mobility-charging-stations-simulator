@@ -128,9 +128,9 @@
     "esbuild-plugin-clean": "^1.0.1",
     "esbuild-plugin-copy": "^2.1.1",
     "eslint": "^9.29.0",
-    "eslint-plugin-jsdoc": "^50.8.0",
+    "eslint-plugin-jsdoc": "^51.1.2",
     "eslint-plugin-perfectionist": "^4.15.0",
-    "eslint-plugin-vue": "^9.33.0",
+    "eslint-plugin-vue": "^10.2.0",
     "glob": "^11.0.3",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.2",
@@ -140,6 +140,7 @@
     "semver": "^7.7.2",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.3",
-    "typescript": "~5.8.3"
+    "typescript": "~5.8.3",
+    "vue-eslint-parser": "^10.1.3"
   }
 }

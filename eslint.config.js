@@ -77,6 +77,9 @@ export default defineConfig([
   {
     files: ['**/*.vue'],
     languageOptions: {
+      globals: {
+        localStorage: 'readonly',
+      },
       parserOptions: {
         parser: '@typescript-eslint/parser',
       },
