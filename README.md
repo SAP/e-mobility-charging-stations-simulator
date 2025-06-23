@@ -849,7 +849,6 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 Examples:
 
 - **Start Transaction**
-
   - Request:  
     `ProcedureName`: 'startTransaction'  
     `PDU`: {  
@@ -867,7 +866,6 @@ Examples:
     }
 
 - **Stop Transaction**
-
   - Request:  
     `ProcedureName`: 'stopTransaction'  
     `PDU`: {  
@@ -884,7 +882,6 @@ Examples:
     }
 
 - **Status Notification**
-
   - Request:  
     `ProcedureName`: 'statusNotification'  
     `PDU`: {  
@@ -903,7 +900,6 @@ Examples:
     }
 
 - **Heartbeat**
-
   - Request:  
     `ProcedureName`: 'heartbeat'  
     `PDU`: {  
