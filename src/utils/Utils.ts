@@ -43,7 +43,7 @@ export const once = <T extends (...args: any[]) => any>(fn: T): T => {
   } as T
 }
 
-export const has = (property: PropertyKey, object: object | undefined): boolean => {
+export const has = (property: PropertyKey, object: null | object | undefined): boolean => {
   if (object == null) {
     return false
   }
@@ -71,6 +71,14 @@ export const isEmpty = (value: unknown): boolean => {
 
   if (valueType === 'Array') {
     return (value as unknown[]).length === 0
+  }
+
+  if (valueType === 'Map') {
+    return (value as Map<unknown, unknown>).size === 0
+  }
+
+  if (valueType === 'Set') {
+    return (value as Set<unknown>).size === 0
   }
 
   return false
