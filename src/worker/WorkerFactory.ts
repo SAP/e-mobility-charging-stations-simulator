@@ -18,7 +18,7 @@ export class WorkerFactory {
   public static getWorkerImplementation<D extends WorkerData, R extends WorkerData>(
     workerScript: string,
     workerProcessType: WorkerProcessType,
-    workerOptions?: Partial<WorkerOptions>
+    workerOptions?: WorkerOptions
   ): WorkerAbstract<D, R> {
     if (!isMainThread) {
       throw new Error('Cannot get a worker implementation outside the main thread')

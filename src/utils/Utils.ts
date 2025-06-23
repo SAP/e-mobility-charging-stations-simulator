@@ -31,7 +31,7 @@ export const logPrefix = (prefixString = ''): string => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const once = <T extends (...args: any[]) => any>(fn: T): T => {
   let hasBeenCalled = false
-  let result: ReturnType<T> | undefined
+  let result: ReturnType<T>
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return function (this: any, ...args: Parameters<T>): ReturnType<T> {
     if (!hasBeenCalled) {
@@ -59,17 +59,17 @@ const type = (value: unknown): string => {
 }
 
 export const isEmpty = (value: unknown): boolean => {
-  const inputType = type(value)
-  if (['NaN', 'Null', 'Number', 'Undefined'].includes(inputType)) {
+  const valueType = type(value)
+  if (['NaN', 'Null', 'Number', 'Undefined'].includes(valueType)) {
     return false
   }
   if (!value) return true
 
-  if (inputType === 'Object') {
+  if (valueType === 'Object') {
     return Object.keys(value as Record<string, unknown>).length === 0
   }
 
-  if (inputType === 'Array') {
+  if (valueType === 'Array') {
     return (value as unknown[]).length === 0
   }
 
@@ -80,7 +80,10 @@ const isObject = (value: unknown): value is object => {
   return type(value) === 'Object'
 }
 
-export const mergeDeepRight = <T extends object>(target: T, source: Partial<T>): T => {
+export const mergeDeepRight = <T extends Record<string, unknown>>(
+  target: T,
+  source: Partial<T>
+): T => {
   const output = { ...target }
 
   if (isObject(target) && isObject(source)) {
@@ -89,11 +92,9 @@ export const mergeDeepRight = <T extends object>(target: T, source: Partial<T>):
         if (!(key in target)) {
           Object.assign(output, { [key]: source[key] })
         } else {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           output[key] = mergeDeepRight(target[key], source[key])
         }
       } else {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         Object.assign(output, { [key]: source[key] })
       }
     })

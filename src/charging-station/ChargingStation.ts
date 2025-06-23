@@ -1300,7 +1300,7 @@ export class ChargingStation extends EventEmitter {
     const stationInfoFromFile = this.getStationInfoFromFile(
       stationInfoFromTemplate.stationInfoPersistentConfiguration
     )
-    let stationInfo: Partial<ChargingStationInfo>
+    let stationInfo: ChargingStationInfo
     // Priority:
     // 1. charging station info from template
     // 2. charging station info from configuration file
@@ -2182,9 +2182,11 @@ export class ChargingStation extends EventEmitter {
         } else {
           delete configurationData.configurationKey
         }
-        configurationData = mergeDeepRight(
+        configurationData = mergeDeepRight<ChargingStationConfiguration>(
           configurationData,
-          buildChargingStationAutomaticTransactionGeneratorConfiguration(this)
+          buildChargingStationAutomaticTransactionGeneratorConfiguration(
+            this
+          ) as Partial<ChargingStationConfiguration>
         )
         if (this.stationInfo?.automaticTransactionGeneratorPersistentConfiguration !== true) {
           delete configurationData.automaticTransactionGenerator
