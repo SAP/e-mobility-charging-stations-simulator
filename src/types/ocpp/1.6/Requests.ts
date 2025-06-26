@@ -16,10 +16,10 @@ export enum OCPP16AvailabilityType {
 }
 
 export enum OCPP16DataTransferVendorId {
-    SchneiderElectric = 'Schneider Electric',
-    Abb = "ABB",
-    KebaAG = "Keba AG",
-    SIEMENS = "SIEMENS"
+  Abb = 'ABB',
+  KebaAG = 'Keba AG',
+  SchneiderElectric = 'Schneider Electric',
+  SIEMENS = 'SIEMENS',
 }
 
 export enum OCPP16FirmwareStatus {
