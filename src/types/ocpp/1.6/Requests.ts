@@ -16,7 +16,7 @@ export enum OCPP16AvailabilityType {
 }
 
 export enum OCPP16DataTransferVendorId {
-    SchneiderElectric = 'Schneider Electric'
+  SchneiderElectric = 'Schneider Electric',
 }
 
 export enum OCPP16FirmwareStatus {
