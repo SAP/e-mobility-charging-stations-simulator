@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.0.9](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v2.0.8...webui@v2.0.9) (2025-06-27)
+
+
+### 🤖 Automation
+
+* **deps-dev:** bump @types/node from 22.15.31 to 24.0.0 ([#1437](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1437)) ([b871758](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b871758ddaa7e28b479d45bf7585f172b4db36c4))
+* **deps-dev:** bump the regular group with 2 updates ([#1444](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1444)) ([dcd454c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/dcd454c166a2afcc25f992d3cb7c0fb6f7a07284))
+* **deps-dev:** bump the vite group with 3 updates ([1cd81ff](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/1cd81ff001b7505ddbdd9260bc5485367ac8973a))
+
 ## [2.0.8](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v2.0.7...webui@v2.0.8) (2025-05-27)
 
 ### 🐞 Bug Fixes
