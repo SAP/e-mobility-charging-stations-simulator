@@ -92,7 +92,6 @@ export {
   type OCPP16ClearCacheRequest,
   type OCPP16ClearChargingProfileRequest,
   type OCPP16DataTransferRequest,
-  OCPP16DataTransferVendorId,
   type OCPP16DiagnosticsStatusNotificationRequest,
   OCPP16FirmwareStatus,
   type OCPP16FirmwareStatusNotificationRequest,

@@ -60,7 +60,6 @@ import {
   type OCPP16ClearChargingProfileResponse,
   type OCPP16DataTransferRequest,
   type OCPP16DataTransferResponse,
-  OCPP16DataTransferVendorId,
   OCPP16DiagnosticsStatus,
   type OCPP16DiagnosticsStatusNotificationRequest,
   type OCPP16DiagnosticsStatusNotificationResponse,
@@ -904,7 +903,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
   ): OCPP16DataTransferResponse {
     const { vendorId } = commandPayload
     try {
-      if (Object.values(OCPP16DataTransferVendorId).includes(vendorId)) {
+      if (vendorId === chargingStation.stationInfo?.chargePointVendor) {
         return OCPP16Constants.OCPP_DATA_TRANSFER_RESPONSE_ACCEPTED
       }
       return OCPP16Constants.OCPP_DATA_TRANSFER_RESPONSE_UNKNOWN_VENDOR_ID
