@@ -58,8 +58,8 @@ importers:
         specifier: ^6.17.0
         version: 6.17.0(socks@2.8.5)
       poolifier:
-        specifier: ^4.4.5
-        version: 4.4.5
+        specifier: ^5.0.0
+        version: 5.0.0
       tar:
         specifier: ^7.4.3
         version: 7.4.3
@@ -4790,9 +4790,9 @@ packages:
     resolution: {integrity: sha512-nDywThFk1i4BQK4twPQ6TA4RT8bDY96yeuCVBWL3ePARCiEKDRSrNGbFIgUJpLp+XeIR65v8ra7WuJOFUBtkMA==}
     engines: {node: '>=8'}
 
-  poolifier@4.4.5:
-    resolution: {integrity: sha512-4DxdX11+x1D3/zBuNqblFPYwngPKnXVEbhO1cS4T/8ogCwbWp8CS6kp2zm9uJHVbQh6OOaWuVDNiqbr/Sq/YPA==}
-    engines: {node: '>=18.0.0', pnpm: '>=9.0.0'}
+  poolifier@5.0.0:
+    resolution: {integrity: sha512-y7hWzHBnz1r9KrcYiDRYGJ73AFiEboMhFyroUNFDdOcRMHceOouD7JBTDqPhwgeMAfR5CLXUWZcNQwxoAXupGA==}
+    engines: {node: '>=20.11.0', pnpm: '>=9.0.0'}
 
   possible-typed-array-names@1.1.0:
     resolution: {integrity: sha512-/+5VFTchJDoVj3bhoqi6UeymcD00DAwb1nJwamzPvHEszJ4FpF6SNNbUbOS8yI56qHzdV8eK0qEfOSiodkTdxg==}
@@ -11446,7 +11446,7 @@ snapshots:
     dependencies:
       find-up: 3.0.0
 
-  poolifier@4.4.5: {}
+  poolifier@5.0.0: {}
 
   possible-typed-array-names@1.1.0: {}
 
