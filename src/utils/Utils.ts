@@ -47,7 +47,7 @@ export const has = (property: PropertyKey, object: null | object | undefined): b
   if (object == null) {
     return false
   }
-  return Object.prototype.hasOwnProperty.call(object, property)
+  return Object.hasOwn(object, property)
 }
 
 const type = (value: unknown): string => {
@@ -255,7 +255,7 @@ export const getRandomFloat = (max = Number.MAX_VALUE, min = 0): number => {
  * @returns The rounded number.
  */
 export const roundTo = (numberValue: number, scale: number): number => {
-  const roundPower = Math.pow(10, scale)
+  const roundPower = 10 ** scale
   return Math.round(numberValue * roundPower * (1 + Number.EPSILON)) / roundPower
 }
 
@@ -334,7 +334,7 @@ export const insertAt = (str: string, subStr: string, pos: number): string =>
  * @returns delay in milliseconds
  */
 export const exponentialDelay = (retryNumber = 0, delayFactor = 100): number => {
-  const delay = Math.pow(2, retryNumber) * delayFactor
+  const delay = 2 ** retryNumber * delayFactor
   const randomSum = delay * 0.2 * secureRandom() // 0-20% of the delay
   return delay + randomSum
 }

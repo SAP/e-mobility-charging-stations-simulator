@@ -2,19 +2,23 @@ export const mean = (dataSet: number[]): number => {
   if (Array.isArray(dataSet) && dataSet.length === 0) {
     return 0
   }
-  return dataSet.reduce((accumulator, num) => accumulator + num, 0) / dataSet.length
+  if (Array.isArray(dataSet) && dataSet.length === 1) {
+    return dataSet[0]
+  }
+  return dataSet.reduce((accumulator, number) => accumulator + number, 0) / dataSet.length
 }
 
 export const median = (dataSet: number[]): number => {
   if (Array.isArray(dataSet) && dataSet.length === 0) {
     return 0
   }
-  const sortedDataSet = dataSet.slice().sort((a, b) => a - b)
-  const length = sortedDataSet.length
-  if (length % 2 === 0) {
-    return (sortedDataSet[length / 2 - 1] + sortedDataSet[length / 2]) / 2
+  if (Array.isArray(dataSet) && dataSet.length === 1) {
+    return dataSet[0]
   }
-  return sortedDataSet[Math.floor(length / 2)]
+  const sortedDataSet = dataSet.slice().sort((a, b) => a - b)
+  return (
+    (sortedDataSet[(sortedDataSet.length - 1) >> 1] + sortedDataSet[sortedDataSet.length >> 1]) / 2
+  )
 }
 
 export const min = (...args: number[]): number =>
@@ -63,7 +67,7 @@ export const stdDeviation = (dataSet: number[], dataSetAverage: number = mean(da
     return 0
   }
   return Math.sqrt(
-    dataSet.reduce((accumulator, num) => accumulator + Math.pow(num - dataSetAverage, 2), 0) /
+    dataSet.reduce((accumulator, num) => accumulator + (num - dataSetAverage) ** 2, 0) /
       (dataSet.length - 1)
   )
 }

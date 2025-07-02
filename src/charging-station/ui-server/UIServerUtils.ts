@@ -60,6 +60,5 @@ export const getProtocolAndVersion = (protocolStr: string): [Protocol, ProtocolV
 }
 
 export const isLoopback = (address: string): boolean => {
-  // eslint-disable-next-line no-useless-escape
-  return /^localhost$|^127(?:\.\d+){0,2}\.\d+$|^(?:0*\:)*?:?0*1$/i.test(address)
+  return /^localhost$|^127(?:\.\d+){0,2}\.\d+$|^(?:0*:)*?:?0*1$/i.test(address)
 }

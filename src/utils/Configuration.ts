@@ -591,7 +591,7 @@ export class Configuration {
           consoleWarnOnce(
             `${chalk.green(logPrefix())} ${chalk.yellow(
               // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              `${FileType.Configuration} ${this.configurationFile} file have changed, reload`
+              `${FileType.Configuration} ${Configuration.configurationFile} file have changed, reload`
             )}`
           )
           delete Configuration.configurationData

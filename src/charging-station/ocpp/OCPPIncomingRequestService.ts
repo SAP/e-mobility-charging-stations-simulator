@@ -14,6 +14,7 @@ import { OCPPError } from '../../exception/index.js'
 import { logger } from '../../utils/index.js'
 import { OCPPConstants } from './OCPPConstants.js'
 import { ajvErrorsToErrorType } from './OCPPServiceUtils.js'
+
 type Ajv = _Ajv.default
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 const Ajv = _Ajv.default
