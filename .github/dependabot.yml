@@ -7,9 +7,6 @@ updates:
       interval: daily
     labels:
       - 'github-actions'
-    reviewers:
-      - 'jerome-benoit'
-      - 'olivierbagot'
   - package-ecosystem: npm
     directory: '/'
     schedule:
@@ -50,9 +47,6 @@ updates:
           - '@vitejs/*'
     labels:
       - 'dependencies'
-    reviewers:
-      - 'jerome-benoit'
-      - 'olivierbagot'
     versioning-strategy: increase
   - package-ecosystem: pip
     directory: 'tests/ocpp-server'
@@ -65,9 +59,6 @@ updates:
           - 'minor'
     labels:
       - 'dependencies'
-    reviewers:
-      - 'jerome-benoit'
-      - 'olivierbagot'
   - package-ecosystem: docker
     directories:
       - '/docker'
@@ -76,6 +67,3 @@ updates:
       interval: daily
     labels:
       - 'docker'
-    reviewers:
-      - 'jerome-benoit'
-      - 'olivierbagot'
