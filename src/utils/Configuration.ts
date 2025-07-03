@@ -130,7 +130,7 @@ export class Configuration {
     if (
       Configuration.configurationData == null &&
       Configuration.configurationFile != null &&
-      Configuration.configurationFile.length > 0
+      Configuration.configurationFile.trim().length > 0
     ) {
       try {
         Configuration.configurationData = JSON.parse(
