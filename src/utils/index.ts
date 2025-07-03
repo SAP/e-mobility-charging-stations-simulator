@@ -25,7 +25,7 @@ export {
   buildStoppedMessage,
   buildUpdatedMessage,
 } from './MessageChannelUtils.js'
-export { max, mean, median, min, nthPercentile, stdDeviation } from './StatisticUtils.js'
+export { average, max, median, min, percentile, std } from './StatisticUtils.js'
 export {
   clone,
   convertToBoolean,

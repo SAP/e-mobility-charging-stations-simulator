@@ -1,4 +1,4 @@
-export const mean = (dataSet: number[]): number => {
+export const average = (dataSet: number[]): number => {
   if (Array.isArray(dataSet) && dataSet.length === 0) {
     return 0
   }
@@ -28,7 +28,7 @@ export const max = (...args: number[]): number =>
   args.reduce((maximum, num) => (maximum > num ? maximum : num), Number.NEGATIVE_INFINITY)
 
 // TODO: use order statistics tree https://en.wikipedia.org/wiki/Order_statistic_tree
-export const nthPercentile = (dataSet: number[], percentile: number): number => {
+export const percentile = (dataSet: number[], percentile: number): number => {
   if (percentile < 0 && percentile > 100) {
     throw new RangeError('Percentile is not between 0 and 100')
   }
@@ -62,7 +62,7 @@ export const nthPercentile = (dataSet: number[], percentile: number): number => 
  * @see https://en.wikipedia.org/wiki/Unbiased_estimation_of_standard_deviation
  * @internal
  */
-export const stdDeviation = (dataSet: number[], dataSetAverage: number = mean(dataSet)): number => {
+export const std = (dataSet: number[], dataSetAverage: number = average(dataSet)): number => {
   if (Array.isArray(dataSet) && (dataSet.length === 0 || dataSet.length === 1)) {
     return 0
   }
