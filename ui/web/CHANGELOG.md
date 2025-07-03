@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.0.10](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v2.0.9...webui@v2.0.10) (2025-07-03)
+
+### 🤖 Automation
+
+- **deps:** bump the regular group across 1 directory with 6 updates ([#1452](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1452)) ([b039a4f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b039a4fc9382aec82b63e48b126a47cb615f7dd4))
+
 ## [2.0.9](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v2.0.8...webui@v2.0.9) (2025-06-27)
 
 ### 🤖 Automation

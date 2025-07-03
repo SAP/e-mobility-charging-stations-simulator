@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.0.10](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v2.0.9...simulator@v2.0.10) (2025-07-03)
+
+### ⚡ Performance
+
+- speed up mean and median computation ([0c58e0c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/0c58e0c202eafd13fc96ea40b045e8ce9f119e52))
+
+### ✨ Polish
+
+- cleanup empty data structure checks ([3cc104c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3cc104c22939ea5c126faf04543745f7773b5548))
+- cleanup statistics related namespace ([034962b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/034962b82c0eb94cc3f1df604e95343ad4facc87))
+- handle empty string configuration file name ([c820074](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c820074de27fab5f31b371c80614f0de6361b3f1))
+
+### 🤖 Automation
+
+- **deps:** bump the regular group across 1 directory with 6 updates ([#1452](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1452)) ([b039a4f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b039a4fc9382aec82b63e48b126a47cb615f7dd4))
+
 ## [2.0.9](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v2.0.8...simulator@v2.0.9) (2025-06-27)
 
 ### 🐞 Bug Fixes
