@@ -88,6 +88,7 @@ import {
   formatDurationSeconds,
   getWebSocketCloseEventStatusString,
   handleFileException,
+  isEmpty,
   isNotEmptyArray,
   isNotEmptyString,
   logger,
@@ -177,7 +178,7 @@ export class ChargingStation extends EventEmitter {
   public wsConnection: null | WebSocket
 
   public get hasEvses (): boolean {
-    return this.connectors.size === 0 && this.evses.size > 0
+    return isEmpty(this.connectors) && this.evses.size > 0
   }
 
   public get wsConnectionUrl (): URL {
@@ -1587,7 +1588,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private initializeConnectorsFromTemplate (stationTemplate: ChargingStationTemplate): void {
-    if (stationTemplate.Connectors == null && this.connectors.size === 0) {
+    if (stationTemplate.Connectors == null && isEmpty(this.connectors)) {
       const errorMsg = `No already defined connectors and charging station information from template ${this.templateFile} with no connectors configuration defined`
       logger.error(`${this.logPrefix()} ${errorMsg}`)
       throw new BaseError(errorMsg)
@@ -1609,7 +1610,7 @@ export class ChargingStation extends EventEmitter {
       )
       const connectorsConfigChanged =
         this.connectors.size !== 0 && this.connectorsConfigurationHash !== connectorsConfigHash
-      if (this.connectors.size === 0 || connectorsConfigChanged) {
+      if (isEmpty(this.connectors) || connectorsConfigChanged) {
         connectorsConfigChanged && this.connectors.clear()
         this.connectorsConfigurationHash = connectorsConfigHash
         if (templateMaxConnectors > 0) {
@@ -1705,7 +1706,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private initializeEvsesFromTemplate (stationTemplate: ChargingStationTemplate): void {
-    if (stationTemplate.Evses == null && this.evses.size === 0) {
+    if (stationTemplate.Evses == null && isEmpty(this.evses)) {
       const errorMsg = `No already defined evses and charging station information from template ${this.templateFile} with no evses configuration defined`
       logger.error(`${this.logPrefix()} ${errorMsg}`)
       throw new BaseError(errorMsg)
@@ -1739,7 +1740,7 @@ export class ChargingStation extends EventEmitter {
       )
       const evsesConfigChanged =
         this.evses.size !== 0 && this.evsesConfigurationHash !== evsesConfigHash
-      if (this.evses.size === 0 || evsesConfigChanged) {
+      if (isEmpty(this.evses) || evsesConfigChanged) {
         evsesConfigChanged && this.evses.clear()
         this.evsesConfigurationHash = evsesConfigHash
         const templateMaxEvses = getMaxNumberOfEvses(stationTemplate.Evses)
@@ -2333,7 +2334,7 @@ export class ChargingStation extends EventEmitter {
       if (this.isWebSocketConnectionOpened() && this.inAcceptedState()) {
         this.flushMessageBuffer()
       }
-      if (!this.isWebSocketConnectionOpened() || this.messageQueue.length === 0) {
+      if (!this.isWebSocketConnectionOpened() || isEmpty(this.messageQueue)) {
         this.clearIntervalFlushMessageBuffer()
       }
     }, Constants.DEFAULT_MESSAGE_BUFFER_FLUSH_INTERVAL)

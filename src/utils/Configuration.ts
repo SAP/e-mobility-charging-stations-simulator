@@ -575,7 +575,10 @@ export class Configuration {
   }
 
   private static getConfigurationFileWatcher (): FSWatcher | undefined {
-    if (Configuration.configurationFile == null || Configuration.configurationFile.length === 0) {
+    if (
+      Configuration.configurationFile == null ||
+      Configuration.configurationFile.trim().length === 0
+    ) {
       return
     }
     try {

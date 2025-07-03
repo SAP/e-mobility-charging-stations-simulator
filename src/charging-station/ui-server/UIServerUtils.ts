@@ -2,7 +2,7 @@ import type { IncomingMessage } from 'node:http'
 
 import { BaseError } from '../../exception/index.js'
 import { Protocol, ProtocolVersion } from '../../types/index.js'
-import { logger, logPrefix } from '../../utils/index.js'
+import { isEmpty, logger, logPrefix } from '../../utils/index.js'
 
 export const getUsernameAndPasswordFromAuthorizationToken = (
   authorizationToken: string,
@@ -25,7 +25,7 @@ export const handleProtocols = (
 ): false | string => {
   let protocol: Protocol | undefined
   let version: ProtocolVersion | undefined
-  if (protocols.size === 0) {
+  if (isEmpty(protocols)) {
     return false
   }
   for (const fullProtocol of protocols) {
