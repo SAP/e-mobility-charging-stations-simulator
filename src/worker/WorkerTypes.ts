@@ -55,7 +55,7 @@ export interface WorkerMessage<T extends WorkerData> {
   uuid: `${string}-${string}-${string}-${string}`
 }
 
-export interface WorkerOptions {
+export interface WorkerOptions extends Record<string, unknown> {
   elementAddDelay?: number
   elementsPerWorker?: number
   poolMaxSize: number

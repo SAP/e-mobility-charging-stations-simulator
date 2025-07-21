@@ -3,7 +3,6 @@ import { existsSync, type FSWatcher, readFileSync, watch } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { env } from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { has, mergeDeepRight, once } from 'rambda'
 
 import {
   ApplicationProtocol,
@@ -35,7 +34,7 @@ import {
   logPrefix,
 } from './ConfigurationUtils.js'
 import { Constants } from './Constants.js'
-import { isCFEnvironment } from './Utils.js'
+import { has, isCFEnvironment, mergeDeepRight, once } from './Utils.js'
 
 type ConfigurationSectionType =
   | LogConfiguration
@@ -131,7 +130,7 @@ export class Configuration {
     if (
       Configuration.configurationData == null &&
       Configuration.configurationFile != null &&
-      Configuration.configurationFile.length > 0
+      Configuration.configurationFile.trim().length > 0
     ) {
       try {
         Configuration.configurationData = JSON.parse(
@@ -169,7 +168,7 @@ export class Configuration {
   }
 
   public static getSupervisionUrlDistribution (): SupervisionUrlDistribution | undefined {
-    return has(Configuration.getConfigurationData(), 'supervisionUrlDistribution')
+    return has('supervisionUrlDistribution', Configuration.getConfigurationData())
       ? Configuration.getConfigurationData()?.supervisionUrlDistribution
       : SupervisionUrlDistribution.ROUND_ROBIN
   }
@@ -566,7 +565,7 @@ export class Configuration {
       "Use 'uri' instead"
     )
     // uiServer section
-    if (has(Configuration.getConfigurationData(), 'uiWebSocketServer')) {
+    if (has('uiWebSocketServer', Configuration.getConfigurationData())) {
       console.error(
         `${chalk.green(logPrefix())} ${chalk.red(
           `Deprecated configuration section 'uiWebSocketServer' usage. Use '${ConfigurationSection.uiServer}' instead`
@@ -576,7 +575,10 @@ export class Configuration {
   }
 
   private static getConfigurationFileWatcher (): FSWatcher | undefined {
-    if (Configuration.configurationFile == null || Configuration.configurationFile.length === 0) {
+    if (
+      Configuration.configurationFile == null ||
+      Configuration.configurationFile.trim().length === 0
+    ) {
       return
     }
     try {
@@ -592,7 +594,7 @@ export class Configuration {
           consoleWarnOnce(
             `${chalk.green(logPrefix())} ${chalk.yellow(
               // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              `${FileType.Configuration} ${this.configurationFile} file have changed, reload`
+              `${FileType.Configuration} ${Configuration.configurationFile} file have changed, reload`
             )}`
           )
           delete Configuration.configurationData

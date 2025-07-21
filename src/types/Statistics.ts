@@ -23,7 +23,7 @@ export type StatisticsData = Partial<{
   ninetyFiveThPercentileTimeMeasurement: number
   requestCount: number
   responseCount: number
-  stdDevTimeMeasurement: number
+  stdTimeMeasurement: number
   timeMeasurementCount: number
   totalTimeMeasurement: number
 }>

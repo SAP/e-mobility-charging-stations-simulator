@@ -7,7 +7,6 @@ import { existsSync, type FSWatcher, mkdirSync, readFileSync, rmSync, writeFileS
 import { dirname, join } from 'node:path'
 import { URL } from 'node:url'
 import { parentPort } from 'node:worker_threads'
-import { mergeDeepRight, once } from 'rambda'
 import { type RawData, WebSocket } from 'ws'
 
 import { BaseError, OCPPError } from '../exception/index.js'
@@ -89,11 +88,14 @@ import {
   formatDurationSeconds,
   getWebSocketCloseEventStatusString,
   handleFileException,
+  isEmpty,
   isNotEmptyArray,
   isNotEmptyString,
   logger,
   logPrefix,
+  mergeDeepRight,
   min,
+  once,
   roundTo,
   secureRandom,
   sleep,
@@ -176,7 +178,7 @@ export class ChargingStation extends EventEmitter {
   public wsConnection: null | WebSocket
 
   public get hasEvses (): boolean {
-    return this.connectors.size === 0 && this.evses.size > 0
+    return isEmpty(this.connectors) && this.evses.size > 0
   }
 
   public get wsConnectionUrl (): URL {
@@ -227,7 +229,7 @@ export class ChargingStation extends EventEmitter {
     this.evses = new Map<number, EvseStatus>()
     this.requests = new Map<string, CachedRequest>()
     this.flushingMessageBuffer = false
-    this.messageQueue = new Array<string>()
+    this.messageQueue = [] as string[]
     this.sharedLRUCache = SharedLRUCache.getInstance()
     this.idTagsCache = IdTagsCache.getInstance()
     this.chargingStationWorkerBroadcastChannel = new ChargingStationWorkerBroadcastChannel(this)
@@ -1586,7 +1588,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private initializeConnectorsFromTemplate (stationTemplate: ChargingStationTemplate): void {
-    if (stationTemplate.Connectors == null && this.connectors.size === 0) {
+    if (stationTemplate.Connectors == null && isEmpty(this.connectors)) {
       const errorMsg = `No already defined connectors and charging station information from template ${this.templateFile} with no connectors configuration defined`
       logger.error(`${this.logPrefix()} ${errorMsg}`)
       throw new BaseError(errorMsg)
@@ -1608,7 +1610,7 @@ export class ChargingStation extends EventEmitter {
       )
       const connectorsConfigChanged =
         this.connectors.size !== 0 && this.connectorsConfigurationHash !== connectorsConfigHash
-      if (this.connectors.size === 0 || connectorsConfigChanged) {
+      if (isEmpty(this.connectors) || connectorsConfigChanged) {
         connectorsConfigChanged && this.connectors.clear()
         this.connectorsConfigurationHash = connectorsConfigHash
         if (templateMaxConnectors > 0) {
@@ -1704,7 +1706,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private initializeEvsesFromTemplate (stationTemplate: ChargingStationTemplate): void {
-    if (stationTemplate.Evses == null && this.evses.size === 0) {
+    if (stationTemplate.Evses == null && isEmpty(this.evses)) {
       const errorMsg = `No already defined evses and charging station information from template ${this.templateFile} with no evses configuration defined`
       logger.error(`${this.logPrefix()} ${errorMsg}`)
       throw new BaseError(errorMsg)
@@ -1738,7 +1740,7 @@ export class ChargingStation extends EventEmitter {
       )
       const evsesConfigChanged =
         this.evses.size !== 0 && this.evsesConfigurationHash !== evsesConfigHash
-      if (this.evses.size === 0 || evsesConfigChanged) {
+      if (isEmpty(this.evses) || evsesConfigChanged) {
         evsesConfigChanged && this.evses.clear()
         this.evsesConfigurationHash = evsesConfigHash
         const templateMaxEvses = getMaxNumberOfEvses(stationTemplate.Evses)
@@ -1811,10 +1813,8 @@ export class ChargingStation extends EventEmitter {
         this,
         this.stationInfo.amperageLimitationOcppKey,
         // prettier-ignore
-        (
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          this.stationInfo.maximumAmperage! * getAmperageLimitationUnitDivider(this.stationInfo)
-        ).toString()
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        (this.stationInfo.maximumAmperage! * getAmperageLimitationUnitDivider(this.stationInfo)).toString()
       )
     }
     if (getConfigurationKey(this, StandardParametersKey.SupportedFeatureProfiles) == null) {
@@ -2181,9 +2181,11 @@ export class ChargingStation extends EventEmitter {
         } else {
           delete configurationData.configurationKey
         }
-        configurationData = mergeDeepRight(
+        configurationData = mergeDeepRight<ChargingStationConfiguration>(
           configurationData,
-          buildChargingStationAutomaticTransactionGeneratorConfiguration(this)
+          buildChargingStationAutomaticTransactionGeneratorConfiguration(
+            this
+          ) as Partial<ChargingStationConfiguration>
         )
         if (this.stationInfo?.automaticTransactionGeneratorPersistentConfiguration !== true) {
           delete configurationData.automaticTransactionGenerator
@@ -2332,7 +2334,7 @@ export class ChargingStation extends EventEmitter {
       if (this.isWebSocketConnectionOpened() && this.inAcceptedState()) {
         this.flushMessageBuffer()
       }
-      if (!this.isWebSocketConnectionOpened() || this.messageQueue.length === 0) {
+      if (!this.isWebSocketConnectionOpened() || isEmpty(this.messageQueue)) {
         this.clearIntervalFlushMessageBuffer()
       }
     }, Constants.DEFAULT_MESSAGE_BUFFER_FLUSH_INTERVAL)

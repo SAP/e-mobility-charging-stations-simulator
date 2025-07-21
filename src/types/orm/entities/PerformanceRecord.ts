@@ -15,7 +15,7 @@ interface StatisticsData {
   ninetyFiveThPercentileTimeMeasurement: number
   requestCount: number
   responseCount: number
-  stdDevTimeMeasurement: number
+  stdTimeMeasurement: number
   timeMeasurementCount: number
   totalTimeMeasurement: number
 }

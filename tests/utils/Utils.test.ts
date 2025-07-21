@@ -21,12 +21,15 @@ import {
   formatDurationSeconds,
   generateUUID,
   getRandomFloat,
+  has,
   insertAt,
   isArraySorted,
   isAsyncFunction,
+  isEmpty,
   isNotEmptyArray,
   isNotEmptyString,
   isValidDate,
+  once,
   roundTo,
   secureRandom,
   sleep,
@@ -310,6 +313,57 @@ await describe('Utils test suite', async () => {
     expect(() => clone(weakMap)).toThrow(new Error('#<WeakMap> could not be cloned.'))
     const weakSet = new WeakSet([{ 1: 1 }, { 2: 2 }])
     expect(() => clone(weakSet)).toThrow(new Error('#<WeakSet> could not be cloned.'))
+  })
+
+  await it('Verify once()', () => {
+    let called = 0
+    const fn = (): number => ++called
+    const onceFn = once(fn)
+    const result1 = onceFn()
+    expect(called).toBe(1)
+    expect(result1).toBe(1)
+    const result2 = onceFn()
+    expect(called).toBe(1)
+    expect(result2).toBe(1)
+    const result3 = onceFn()
+    expect(called).toBe(1)
+    expect(result3).toBe(1)
+  })
+
+  await it('Verify has()', () => {
+    expect(has('', 'test')).toBe(false)
+    expect(has('test', '')).toBe(false)
+    expect(has('test', 'test')).toBe(false)
+    expect(has('', undefined)).toBe(false)
+    expect(has('', null)).toBe(false)
+    expect(has('', [])).toBe(false)
+    expect(has('', {})).toBe(false)
+    expect(has(1, { 1: 1 })).toBe(true)
+    expect(has('1', { 1: 1 })).toBe(true)
+    expect(has(2, { 1: 1 })).toBe(false)
+    expect(has('2', { 1: 1 })).toBe(false)
+    expect(has('1', { 1: '1' })).toBe(true)
+    expect(has(1, { 1: '1' })).toBe(true)
+    expect(has('2', { 1: '1' })).toBe(false)
+    expect(has(2, { 1: '1' })).toBe(false)
+  })
+
+  await it('Verify isEmpty()', () => {
+    expect(isEmpty('')).toBe(true)
+    expect(isEmpty(' ')).toBe(false)
+    expect(isEmpty('     ')).toBe(false)
+    expect(isEmpty('test')).toBe(false)
+    expect(isEmpty(' test')).toBe(false)
+    expect(isEmpty('test ')).toBe(false)
+    expect(isEmpty(undefined)).toBe(false)
+    expect(isEmpty(null)).toBe(false)
+    expect(isEmpty(0)).toBe(false)
+    expect(isEmpty({})).toBe(true)
+    expect(isEmpty([])).toBe(true)
+    expect(isEmpty(new Map())).toBe(true)
+    expect(isEmpty(new Set())).toBe(true)
+    expect(isEmpty(new WeakMap())).toBe(false)
+    expect(isEmpty(new WeakSet())).toBe(false)
   })
 
   await it('Verify isNotEmptyString()', () => {

@@ -11,7 +11,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     moduleName?: string,
     methodName?: string
   ): JSONSchemaType<T> {
-    return super.parseJsonSchemaFile<T>(
+    return OCPPServiceUtils.parseJsonSchemaFile<T>(
       relativePath,
       OCPPVersion.VERSION_201,
       moduleName,

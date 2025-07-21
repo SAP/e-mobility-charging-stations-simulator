@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ocpp-server"
-version = "2.0.7"
+version = "2.0.10"
 description = "OCPP2 mock server"
 authors = ["Jérôme Benoit <jerome.benoit@sap.com>"]
 readme = "README.md"
@@ -8,11 +8,11 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.12"
 websockets = "^15.0"
-ocpp = "^2.0.0"
+ocpp = "^2.1.0"
 
 [tool.poetry.group.dev.dependencies]
 taskipy = "^1"
-ruff = "^0.11"
+ruff = "^0.12"
 
 [tool.taskipy.tasks]
 server = "poetry run python server.py"

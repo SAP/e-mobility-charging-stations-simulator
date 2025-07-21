@@ -1,8 +1,8 @@
 import { isMainThread } from 'node:worker_threads'
-import { mergeDeepRight } from 'rambda'
 
 import type { WorkerAbstract } from './WorkerAbstract.js'
 
+import { mergeDeepRight } from '../utils/index.js'
 import { DEFAULT_WORKER_OPTIONS } from './WorkerConstants.js'
 import { WorkerDynamicPool } from './WorkerDynamicPool.js'
 import { WorkerFixedPool } from './WorkerFixedPool.js'

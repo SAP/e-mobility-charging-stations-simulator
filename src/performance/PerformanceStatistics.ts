@@ -6,7 +6,6 @@ import { secondsToMilliseconds } from 'date-fns'
 import { CircularBuffer } from 'mnemonist'
 import { performance, type PerformanceEntry, PerformanceObserver } from 'node:perf_hooks'
 import { parentPort } from 'node:worker_threads'
-import { is, mean, median } from 'rambda'
 
 import { BaseError } from '../exception/index.js'
 import {
@@ -22,6 +21,7 @@ import {
   type TimestampedData,
 } from '../types/index.js'
 import {
+  average,
   buildPerformanceStatisticsMessage,
   Configuration,
   Constants,
@@ -32,9 +32,10 @@ import {
   logger,
   logPrefix,
   max,
+  median,
   min,
-  nthPercentile,
-  stdDeviation,
+  percentile,
+  std,
 } from '../utils/index.js'
 
 export class PerformanceStatistics {
@@ -81,7 +82,7 @@ export class PerformanceStatistics {
     try {
       performance.measure(name, markId)
     } catch (error) {
-      if (is(Error, error) && error.message.includes('performance mark has not been set')) {
+      if (error instanceof Error && error.message.includes('performance mark has not been set')) {
         /* Ignore */
       } else {
         throw error
@@ -251,15 +252,16 @@ export class PerformanceStatistics {
         .measurementTimeSeries as CircularBuffer<TimestampedData>
     )
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.statistics.statisticsData.get(entry.name)!.avgTimeMeasurement = mean(timeMeasurementValues)
+    this.statistics.statisticsData.get(entry.name)!.avgTimeMeasurement =
+      average(timeMeasurementValues)
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.statistics.statisticsData.get(entry.name)!.medTimeMeasurement =
       median(timeMeasurementValues)
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.statistics.statisticsData.get(entry.name)!.ninetyFiveThPercentileTimeMeasurement =
-      nthPercentile(timeMeasurementValues, 95)
+      percentile(timeMeasurementValues, 95)
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.statistics.statisticsData.get(entry.name)!.stdDevTimeMeasurement = stdDeviation(
+    this.statistics.statisticsData.get(entry.name)!.stdTimeMeasurement = std(
       timeMeasurementValues,
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       this.statistics.statisticsData.get(entry.name)!.avgTimeMeasurement

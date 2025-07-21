@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
+
 import { expect } from '@std/expect'
 import { describe, it } from 'node:test'
 
@@ -202,7 +203,9 @@ await describe('Helpers test suite', async () => {
     t.mock.method(logger, 'warn')
     checkStationInfoConnectorStatus(1, {} as ConnectorStatus, 'log prefix |', 'test-template.json')
     expect(logger.warn.mock.calls.length).toBe(0)
-    const connectorStatus = { status: ConnectorStatusEnum.Available } as ConnectorStatus
+    const connectorStatus = {
+      status: ConnectorStatusEnum.Available,
+    } as ConnectorStatus
     checkStationInfoConnectorStatus(1, connectorStatus, 'log prefix |', 'test-template.json')
     expect(logger.warn.mock.calls.length).toBe(1)
     expect(connectorStatus.status).toBeUndefined()

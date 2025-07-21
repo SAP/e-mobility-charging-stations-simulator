@@ -15,7 +15,6 @@ import { randomInt } from 'node:crypto'
 import { createWriteStream, readdirSync } from 'node:fs'
 import { dirname, extname, join, resolve } from 'node:path'
 import { fileURLToPath, URL } from 'node:url'
-import { isEmpty } from 'rambda'
 import { create } from 'tar'
 
 import {
@@ -61,7 +60,6 @@ import {
   type OCPP16ClearChargingProfileResponse,
   type OCPP16DataTransferRequest,
   type OCPP16DataTransferResponse,
-  OCPP16DataTransferVendorId,
   OCPP16DiagnosticsStatus,
   type OCPP16DiagnosticsStatusNotificationRequest,
   type OCPP16DiagnosticsStatusNotificationResponse,
@@ -108,6 +106,7 @@ import {
   formatDurationMilliSeconds,
   handleIncomingRequestError,
   isAsyncFunction,
+  isEmpty,
   isNotEmptyArray,
   isNotEmptyString,
   logger,
@@ -904,7 +903,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
   ): OCPP16DataTransferResponse {
     const { vendorId } = commandPayload
     try {
-      if (Object.values(OCPP16DataTransferVendorId).includes(vendorId)) {
+      if (vendorId === chargingStation.stationInfo?.chargePointVendor) {
         return OCPP16Constants.OCPP_DATA_TRANSFER_RESPONSE_ACCEPTED
       }
       return OCPP16Constants.OCPP_DATA_TRANSFER_RESPONSE_UNKNOWN_VENDOR_ID

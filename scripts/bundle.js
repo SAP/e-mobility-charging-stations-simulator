@@ -1,4 +1,5 @@
 /* eslint-disable n/no-unpublished-import */
+
 import chalk from 'chalk'
 import { build } from 'esbuild'
 import { clean } from 'esbuild-plugin-clean'
@@ -27,7 +28,6 @@ await build({
     'mongodb',
     'node:*',
     'poolifier',
-    'rambda',
     'tar',
     'winston',
     'winston/*',

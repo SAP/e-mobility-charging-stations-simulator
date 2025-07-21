@@ -21,7 +21,6 @@ import { hash, randomBytes } from 'node:crypto'
 import { basename, dirname, isAbsolute, join, parse, relative, resolve } from 'node:path'
 import { env } from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { isEmpty } from 'rambda'
 
 import type { ChargingStation } from './ChargingStation.js'
 
@@ -64,6 +63,7 @@ import {
   convertToInt,
   DCElectricUtils,
   isArraySorted,
+  isEmpty,
   isNotEmptyArray,
   isNotEmptyString,
   isValidDate,
@@ -231,7 +231,7 @@ export const validateStationInfo = (chargingStation: ChargingStation): void => {
   switch (chargingStation.stationInfo.ocppVersion) {
     case OCPPVersion.VERSION_20:
     case OCPPVersion.VERSION_201:
-      if (chargingStation.evses.size === 0) {
+      if (isEmpty(chargingStation.evses)) {
         throw new BaseError(
           `${chargingStationId}: OCPP 2.0 or superior requires at least one EVSE defined in the charging station template/configuration`
         )
