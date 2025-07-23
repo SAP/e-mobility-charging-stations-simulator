@@ -53,6 +53,7 @@
             .catch((error: Error) => {
               $toast.error('Error at authorizing RFID tag')
               console.error('Error at authorizing RFID tag:', error)
+              $router.push({ name: 'charging-stations' })
             })
         } else {
           $uiClient
