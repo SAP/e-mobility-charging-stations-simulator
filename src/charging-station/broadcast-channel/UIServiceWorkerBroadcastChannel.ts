@@ -34,16 +34,18 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
     const responsesStatus =
       this.responses
         .get(uuid)
-        ?.responses.every(({ status }) => status === ResponseStatus.SUCCESS) === true
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        ?.responses.every(response => response?.status === ResponseStatus.SUCCESS) === true
         ? ResponseStatus.SUCCESS
         : ResponseStatus.FAILURE
     return {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-non-null-asserted-optional-chain
       hashIdsSucceeded: this.responses
         .get(uuid)
-        ?.responses.map(({ hashId, status }) => {
-          if (hashId != null && status === ResponseStatus.SUCCESS) {
-            return hashId
+        ?.responses.map(response => {
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+          if (response?.hashId != null && response?.status === ResponseStatus.SUCCESS) {
+            return response.hashId
           }
           return undefined
         })
@@ -53,9 +55,10 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-non-null-asserted-optional-chain
         hashIdsFailed: this.responses
           .get(uuid)
-          ?.responses.map(({ hashId, status }) => {
-            if (hashId != null && status === ResponseStatus.FAILURE) {
-              return hashId
+          ?.responses.map(response => {
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+            if (response?.hashId != null && response?.status === ResponseStatus.FAILURE) {
+              return response.hashId
             }
             return undefined
           })
@@ -66,7 +69,8 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
         responsesFailed: this.responses
           .get(uuid)
           ?.responses.map(response => {
-            if (response.status === ResponseStatus.FAILURE) {
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+            if (response?.status === ResponseStatus.FAILURE) {
               return response
             }
             return undefined

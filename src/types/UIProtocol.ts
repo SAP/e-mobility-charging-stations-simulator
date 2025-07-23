@@ -46,6 +46,7 @@ export enum Protocol {
 export enum ProtocolVersion {
   '0.0.1' = '0.0.1',
 }
+
 export enum ResponseStatus {
   FAILURE = 'failure',
   SUCCESS = 'success',

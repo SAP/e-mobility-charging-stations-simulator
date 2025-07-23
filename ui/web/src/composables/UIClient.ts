@@ -59,6 +59,13 @@ export class UIClient {
     })
   }
 
+  public async authorize (hashId: string, idTag: string): Promise<ResponsePayload> {
+    return this.sendRequest(ProcedureName.AUTHORIZE, {
+      hashIds: [hashId],
+      idTag,
+    })
+  }
+
   public async closeConnection (hashId: string): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.CLOSE_CONNECTION, {
       hashIds: [hashId],

@@ -848,6 +848,22 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
 
 Examples:
 
+- **Authorize**
+- Request:  
+   `ProcedureName`: 'authorize'  
+   `PDU`: {  
+   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+   `idTag`: RFID tag string  
+   }
+
+- Response:  
+   `PDU`: {  
+   `status`: 'success' | 'failure',  
+   `hashIdsSucceeded`: charging station unique identifier strings array,  
+   `hashIdsFailed`: charging station unique identifier strings array (optional),  
+   `responsesFailed`: failed responses payload array (optional)  
+   }
+
 - **Start Transaction**
   - Request:  
     `ProcedureName`: 'startTransaction'  

@@ -70,6 +70,10 @@ const uiClient = useUIClient()
 const $toast = useToast()
 
 const stopTransaction = (): void => {
+  if (props.connector.transactionId == null) {
+    $toast.error('No transaction to stop')
+    return
+  }
   uiClient
     .stopTransaction(props.hashId, props.connector.transactionId)
     .then(() => {

@@ -11,6 +11,7 @@ export enum AuthenticationType {
 
 export enum ProcedureName {
   ADD_CHARGING_STATIONS = 'addChargingStations',
+  AUTHORIZE = 'authorize',
   CLOSE_CONNECTION = 'closeConnection',
   DELETE_CHARGING_STATIONS = 'deleteChargingStations',
   LIST_CHARGING_STATIONS = 'listChargingStations',
@@ -35,6 +36,7 @@ export enum Protocol {
 export enum ProtocolVersion {
   '0.0.1' = '0.0.1',
 }
+
 export enum ResponseStatus {
   FAILURE = 'failure',
   SUCCESS = 'success',
