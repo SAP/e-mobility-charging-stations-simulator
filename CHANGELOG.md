@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.1.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v2.1.0...simulator@v2.1.1) (2025-07-25)
+
+### 🤖 Automation
+
+- **deps-dev:** bump the regular group with 2 updates ([#1477](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1477)) ([9dae2d1](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/9dae2d14c51d476267036b4426dcfb40262aa2af))
+
 ## [2.1.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v2.0.10...simulator@v2.1.0) (2025-07-24)
 
 ### 🚀 Features
