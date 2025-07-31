@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="32px" height="32px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <title>EV Charger</title>
+    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <!-- Charging Station Base -->
+        <rect fill="#4A90E2" x="20" y="40" width="24" height="20" rx="2"></rect>
+        <!-- Charger Body -->
+        <rect fill="#4A90E2" x="22" y="14" width="20" height="26" rx="2"></rect>
+        <!-- Charger Display -->
+        <rect fill="#FFFFFF" x="26" y="18" width="12" height="8" rx="1"></rect>
+        <!-- Charging Cable -->
+        <path d="M32,32 C40,32 44,38 44,44" stroke="#000000" stroke-width="2" stroke-linecap="round"></path>
+        <!-- Charging Plug -->
+        <rect fill="#333333" x="40" y="44" width="8" height="12" rx="2"></rect>
+        <!-- Charging Symbol -->
+        <path d="M32,20 L30,24 L34,24 L32,28" stroke="#4A90E2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+    </g>
+</svg>

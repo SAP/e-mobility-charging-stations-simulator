@@ -1,11 +1,9 @@
 <template>
-  <div class="container">
+  <div class="flex-auto">
     <slot />
   </div>
 </template>
 
 <style>
-.container {
-  flex: auto;
-}
+
 </style>

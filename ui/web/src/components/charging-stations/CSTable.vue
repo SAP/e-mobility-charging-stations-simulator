@@ -1,8 +1,5 @@
 <template>
   <table id="cs-table">
-    <caption id="cs-table__caption">
-      Charging Stations
-    </caption>
     <thead id="cs-table__head">
       <tr class="cs-table__row">
         <th
@@ -12,19 +9,19 @@
           Name
         </th>
         <th
-          class="cs-table__column"
+          class="cs-table__column cs-table__column-with-actions"
           scope="col"
         >
           Started
         </th>
         <th
-          class="cs-table__column"
+          class="cs-table__column cs-table__column-with-actions"
           scope="col"
         >
           Supervision Url
         </th>
         <th
-          class="cs-table__column"
+          class="cs-table__column cs-table__column-with-actions"
           scope="col"
         >
           WebSocket State
@@ -39,34 +36,14 @@
           class="cs-table__column"
           scope="col"
         >
-          Template
+          Charger Details
         </th>
+        <th
+          class="cs-table__column cs-table__column-with-actions"
+          scope="col"
+        />
         <th
           class="cs-table__column"
-          scope="col"
-        >
-          Vendor
-        </th>
-        <th
-          class="cs-table__column"
-          scope="col"
-        >
-          Model
-        </th>
-        <th
-          class="cs-table__column"
-          scope="col"
-        >
-          Firmware
-        </th>
-        <th
-          class="cs-table__column"
-          scope="col"
-        >
-          Actions
-        </th>
-        <th
-          class="cs-table__connectors-column"
           scope="col"
         >
           Connector(s)
@@ -98,22 +75,15 @@ const $emit = defineEmits(['need-refresh'])
 
 <style>
 #cs-table {
-  height: fit-content;
   width: 100%;
   background-color: white;
-  display: flex;
-  flex-direction: column;
-  overflow: auto hidden;
-  border: solid 0.25px black;
   border-collapse: collapse;
   empty-cells: show;
+  table-layout: auto;
 }
 
 #cs-table__body {
-  height: fit-content;
   width: 100%;
-  display: flex;
-  flex-direction: column;
 }
 
 #cs-table__caption {
@@ -125,34 +95,24 @@ const $emit = defineEmits(['need-refresh'])
 }
 
 .cs-table__row {
-  height: fit-content;
-  width: 100%;
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
   border: solid 0.25px black;
-}
-
-.cs-table__row:nth-of-type(even) {
-  background-color: whitesmoke;
 }
 
 .cs-table__column {
   height: fit-content;
-  width: calc((100% - calc(100% / 3)) / 10);
   display: flex;
   flex-direction: column;
-  text-align: center;
+  text-align: left;
 }
 
-#cs-table__head .cs-table__row {
-  background-color: lightgrey;
+.cs-table__column-with-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .cs-table__connectors-column {
   height: fit-content;
-  width: calc(100% / 3);
   display: flex;
   flex-direction: column;
 }

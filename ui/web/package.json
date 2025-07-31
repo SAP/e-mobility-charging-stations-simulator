@@ -28,8 +28,10 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.11",
+    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "finalhandler": "^2.1.0",
+    "lucide-vue-next": "^0.534.0",
     "serve-static": "^2.2.0",
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^4.1.11",
