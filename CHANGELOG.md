@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.1.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v2.1.0...simulator@v2.1.1) (2025-08-02)
+
+
+### 🤖 Automation
+
+* **deps-dev:** bump eslint-plugin-jsdoc in the regular group ([#1482](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1482)) ([17c6bdf](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/17c6bdf205fbd984eb40ee9b1baedc5f70a0f524))
+* **deps-dev:** bump the regular group across 1 directory with 2 updates ([#1486](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1486)) ([9bf18e3](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/9bf18e3550c8a92e6e6b7c5ff0b9b1e49a9ae4a3))
+* **deps-dev:** bump the regular group with 2 updates ([#1477](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1477)) ([9dae2d1](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/9dae2d14c51d476267036b4426dcfb40262aa2af))
+* **deps-dev:** bump typescript in the typescript group ([#1485](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1485)) ([622f9f6](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/622f9f6edb57daa3dacec4db8e411cbcefe7e0b3))
+
 ## [2.1.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v2.0.10...simulator@v2.1.0) (2025-07-24)
 
 ### 🚀 Features
