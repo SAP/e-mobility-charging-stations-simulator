@@ -1,10 +1,12 @@
 <template>
   <Button>
-    <span :class="{ spin: loading }"> &#8635; </span>
+    <RefreshCcw :size="16" />
   </Button>
 </template>
 
 <script setup lang="ts">
+import { RefreshCcw } from 'lucide-vue-next'
+
 import Button from '@/components/buttons/Button.vue'
 
 defineProps<{

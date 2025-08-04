@@ -3,69 +3,158 @@
     <td class="cs-table__column">
       {{ chargingStation.stationInfo.chargingStationId }}
     </td>
-    <td class="cs-table__column">
-      {{ chargingStation.started === true ? 'Yes' : 'No' }}
+    <td class="cs-table__column cs-table__column-with-actions">
+      <div class="column-data">
+        <DataBadge
+          :appearance="chargingStation.started === true ? 'success' : 'neutral'"
+          :is-bold="false"
+        >
+          {{ chargingStation.started === true ? 'Yes' : 'No' }}
+        </DataBadge>
+      </div>
+      <div class="column-actions">
+        <Button
+          v-if="chargingStation.started !== true"
+          class="inline-action-button"
+          title="Start charging station"
+          @click="startChargingStation()"
+        >
+          <span class="flex items-center gap-1">
+            <Play :size="12" />
+          </span>
+        </Button>
+        <Button
+          v-if="chargingStation.started === true"
+          class="inline-action-button"
+          title="Stop charging station"
+          @click="stopChargingStation()"
+        >
+          <span class="flex items-center gap-1">
+            <Square :size="12" />
+          </span>
+        </Button>
+      </div>
+    </td>
+    <td class="cs-table__column cs-table__column-with-actions">
+      <div class="column-data">
+        {{ getSupervisionUrl() }}
+      </div>
+      <div class="column-actions">
+        <ToggleButton
+          :id="`${chargingStation.stationInfo.hashId}-set-supervision-url`"
+          class="inline-action-button"
+          title="Configure supervision URL"
+          :off="
+            () => {
+              $router.push({ name: 'charging-stations' })
+            }
+          "
+          :on="
+            () => {
+              $router.push({
+                name: 'set-supervision-url',
+                params: {
+                  hashId: chargingStation.stationInfo.hashId,
+                  chargingStationId: chargingStation.stationInfo.chargingStationId,
+                },
+              })
+            }
+          "
+          :shared="true"
+          @clicked="$emit('need-refresh')"
+        >
+          <span class="flex items-center gap-1">
+            <Cog :size="12" />
+          </span>
+        </ToggleButton>
+      </div>
+    </td>
+    <td class="cs-table__column cs-table__column-with-actions">
+      <div class="column-data">
+        <DataBadge
+          :appearance="getWSState() === 'Open' ? 'success' : 'neutral'"
+          :is-bold="false"
+        >
+          {{ getWSState() }}
+        </DataBadge>
+      </div>
+      <div class="column-actions">
+        <Button
+          v-if="getWSState() !== 'Open'"
+          class="inline-action-button"
+          title="Connect to charging station"
+          @click="openConnection()"
+        >
+          <span class="flex items-center gap-1">
+            <Link :size="12" />
+          </span>
+        </Button>
+        <Button
+          v-if="getWSState() === 'Open'"
+          class="inline-action-button"
+          title="Disconnect from charging station"
+          @click="closeConnection()"
+        >
+          <span class="flex items-center gap-1">
+            <Link2Off :size="12" />
+          </span>
+        </Button>
+      </div>
     </td>
     <td class="cs-table__column">
-      {{ getSupervisionUrl() }}
-    </td>
-    <td class="cs-table__column">
-      {{ getWSState() }}
-    </td>
-    <td class="cs-table__column">
-      {{ chargingStation.bootNotificationResponse?.status ?? 'Ø' }}
-    </td>
-    <td class="cs-table__column">
-      {{ chargingStation.stationInfo.templateName }}
-    </td>
-    <td class="cs-table__column">
-      {{ chargingStation.stationInfo.chargePointVendor }}
-    </td>
-    <td class="cs-table__column">
-      {{ chargingStation.stationInfo.chargePointModel }}
-    </td>
-    <td class="cs-table__column">
-      {{ chargingStation.stationInfo.firmwareVersion ?? 'Ø' }}
-    </td>
-    <td class="cs-table__column">
-      <Button @click="startChargingStation()">
-        Start Charging Station
-      </Button>
-      <Button @click="stopChargingStation()">
-        Stop Charging Station
-      </Button>
-      <ToggleButton
-        :id="`${chargingStation.stationInfo.hashId}-set-supervision-url`"
-        :off="
-          () => {
-            $router.push({ name: 'charging-stations' })
-          }
-        "
-        :on="
-          () => {
-            $router.push({
-              name: 'set-supervision-url',
-              params: {
-                hashId: chargingStation.stationInfo.hashId,
-                chargingStationId: chargingStation.stationInfo.chargingStationId,
-              },
-            })
-          }
-        "
-        :shared="true"
-        @clicked="$emit('need-refresh')"
+      <DataBadge
+        :appearance="chargingStation.bootNotificationResponse?.status === 'Accepted' ? 'success' : 'neutral'"
+        :is-bold="false"
       >
-        Set Supervision Url
-      </ToggleButton>
-      <Button @click="openConnection()">
-        Open Connection
-      </Button>
-      <Button @click="closeConnection()">
-        Close Connection
-      </Button>
-      <Button @click="deleteChargingStation()">
-        Delete Charging Station
-      </Button>
+        {{ chargingStation.bootNotificationResponse?.status ?? 'None' }}
+      </DataBadge>
+    </td>
+    <td class="cs-table__column">
+      <div class="charger-details">
+        <div class="detail-item">
+          <DataTag>
+            {{ chargingStation.stationInfo.templateName }}
+          </DataTag>
+        </div>
+        <div class="detail-item">
+          <DataBadge
+            appearance="neutral"
+            title="Vendor"
+          >
+            {{ chargingStation.stationInfo.chargePointVendor }}
+          </DataBadge>
+        </div>
+        <div class="detail-item">
+          <DataBadge
+            appearance="neutral"
+            title="Model"
+          >
+            {{ chargingStation.stationInfo.chargePointModel }}
+          </DataBadge>
+        </div>
+        <div class="detail-item">
+          <DataBadge
+            appearance="neutral"
+            title="Firmware"
+          >
+            {{ chargingStation.stationInfo.firmwareVersion ?? 'None' }}
+          </DataBadge>
+        </div>
+      </div>
+    </td>
+    <td class="cs-table__column cs-table__column-with-actions">
+      <div class="column-actions">
+        <Button
+          class="inline-action-button danger"
+          appearance="danger"
+          title="Delete charging station"
+          @click="deleteChargingStation()"
+        >
+          <span class="flex items-center gap-1">
+            <Trash :size="12" />
+          </span>
+        </Button>
+      </div>
     </td>
     <td class="cs-table__connectors-column">
       <table id="connectors-table">
@@ -85,22 +174,16 @@
               Status
             </th>
             <th
-              class="connectors-table__column"
+              class="connectors-table__column connectors-table__column-with-actions"
               scope="col"
             >
               Transaction
             </th>
             <th
-              class="connectors-table__column"
+              class="connectors-table__column connectors-table__column-with-actions"
               scope="col"
             >
               ATG Started
-            </th>
-            <th
-              class="connectors-table__column"
-              scope="col"
-            >
-              Actions
             </th>
           </tr>
         </thead>
@@ -122,11 +205,14 @@
 </template>
 
 <script setup lang="ts">
+import { Cog, Link, Link2Off, Play, Square, Trash } from 'lucide-vue-next'
 import { useToast } from 'vue-toast-notification'
 
 import type { ChargingStationData, ConnectorStatus, Status } from '@/types'
 
 import Button from '@/components/buttons/Button.vue'
+import DataBadge from '@/components/buttons/DataBadge.vue'
+import DataTag from '@/components/buttons/DataTag.vue'
 import ToggleButton from '@/components/buttons/ToggleButton.vue'
 import CSConnector from '@/components/charging-stations/CSConnector.vue'
 import { deleteFromLocalStorage, getLocalStorage, useUIClient } from '@/composables'
@@ -170,7 +256,7 @@ const getWSState = (): string => {
     case WebSocket.OPEN:
       return 'Open'
     default:
-      return 'Ø'
+      return 'None'
   }
 }
 
@@ -256,25 +342,72 @@ const deleteChargingStation = (): void => {
 }
 
 .connectors-table__row {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
   border: solid 0.25px black;
-}
-
-.connectors-table__row:nth-of-type(even) {
-  background-color: whitesmoke;
-}
-
-#connectors-table__head .connectors-table__row {
-  background-color: lightgrey;
+  border-top: none;
+  border-bottom: none;
 }
 
 .connectors-table__column {
   width: calc(100% / 5);
+  display: table-cell !important;
+  text-align: left;
+}
+
+/* Styles for inline actions */
+.cs-table__column-with-actions {
   display: flex;
   flex-direction: column;
-  text-align: center;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.column-data {
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.column-actions {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+  justify-content: start;
+}
+
+.inline-action-button {
+  font-size: 0.75rem !important;
+  padding: 0.25rem 0.5rem !important;
+  white-space: nowrap;
+}
+
+/* Override flex display for table cells */
+.cs-table__column {
+  display: table-cell !important;
+  text-align: left;
+  padding: 8px;
+}
+
+/* Charger details styling */
+.charger-details {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 0.75rem;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.detail-label {
+  font-weight: 500;
+  min-width: 75px;
+}
+
+.cs-table__column-with-actions {
+  display: table-cell !important;
+  text-align: left;
+  padding: 8px;
 }
 </style>

@@ -52,7 +52,6 @@ const state = ref<{ supervisionUrl: string }>({
 
 <style>
 #supervision-url {
-  width: 90%;
   text-align: left;
 }
 </style>

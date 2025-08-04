@@ -27,13 +27,21 @@
     "coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@tailwindcss/vite": "^4.1.11",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "finalhandler": "^2.1.0",
+    "lucide-vue-next": "^0.534.0",
     "serve-static": "^2.2.0",
+    "tailwind-merge": "^3.3.1",
+    "tailwindcss": "^4.1.11",
+    "tailwindcss-animate": "^1.0.7",
     "vue": "^3.5.18",
     "vue-router": "^4.5.1",
     "vue-toast-notification": "^3.1.3"
   },
   "devDependencies": {
+    "@tailwindcss/typography": "^0.5.16",
     "@tsconfig/node22": "^22.0.2",
     "@types/jsdom": "^21.1.7",
     "@types/node": "^24.1.0",
@@ -46,6 +54,7 @@
     "jsdom": "^26.1.0",
     "prettier": "^3.6.2",
     "rimraf": "^6.0.1",
+    "tailwind-scrollbar": "^4.0.2",
     "typescript": "~5.9.2",
     "vite": "^7.0.6",
     "vitest": "^3.2.4"
