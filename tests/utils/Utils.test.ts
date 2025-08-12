@@ -42,6 +42,8 @@ await describe('Utils test suite', async () => {
     expect(uuid).toBeDefined()
     expect(uuid.length).toEqual(36)
     expect(validateUUID(uuid)).toBe(true)
+    expect(validateUUID('abcdef00-0000-4000-9000-000000000000')).toBe(true)
+    expect(validateUUID('abcdef00-0000-4000-a000-000000000000')).toBe(true)
     expect(validateUUID('abcdef00-0000-4000-0000-000000000000')).toBe(false)
     expect(validateUUID('')).toBe(false)
     // Shall invalidate Nil UUID
