@@ -32,11 +32,19 @@ export const logPrefix = (prefixString = ''): string => {
 export const once = <T extends (...args: any[]) => any>(fn: T): T => {
   let hasBeenCalled = false
   let result: ReturnType<T>
+  let thrownError: Error | undefined
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return function (this: any, ...args: Parameters<T>): ReturnType<T> {
     if (!hasBeenCalled) {
       hasBeenCalled = true
-      result = fn.apply(this, args) as ReturnType<T>
+      try {
+        result = fn.apply(this, args) as ReturnType<T>
+      } catch (err) {
+        thrownError = err as Error
+      }
+    }
+    if (thrownError != null) {
+      throw thrownError
     }
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return result
@@ -118,13 +126,17 @@ export const generateUUID = (): `${string}-${string}-${string}-${string}-${strin
 export const validateUUID = (
   uuid: `${string}-${string}-${string}-${string}-${string}`
 ): uuid is `${string}-${string}-${string}-${string}-${string}` => {
-  return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(uuid)
+  return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(
+    uuid
+  )
 }
 
 export const sleep = async (milliSeconds: number): Promise<NodeJS.Timeout> => {
-  return await new Promise<NodeJS.Timeout>(resolve =>
-    setTimeout(resolve as () => void, milliSeconds)
-  )
+  return await new Promise<NodeJS.Timeout>(resolve => {
+    const timeout = setTimeout(() => {
+      resolve(timeout)
+    }, milliSeconds)
+  })
 }
 
 export const formatDurationMilliSeconds = (duration: number): string => {
@@ -161,7 +173,7 @@ export const formatDurationSeconds = (duration: number): string => {
 // More efficient time validation function than the one provided by date-fns
 export const isValidDate = (date: Date | number | undefined): date is Date | number => {
   if (typeof date === 'number') {
-    return !Number.isNaN(date)
+    return Number.isFinite(date)
   } else if (isDate(date)) {
     return !Number.isNaN(date.getTime())
   }
@@ -184,6 +196,7 @@ export const convertToDate = (
     }
     return valueToDate
   }
+  return undefined
 }
 
 export const convertToInt = (value: unknown): number => {
@@ -237,11 +250,17 @@ export const convertToBoolean = (value: unknown): boolean => {
   return result
 }
 
+/**
+ * Generates a cryptographically secure random float in the [min, max] range
+ * @param max - The maximum value (inclusive). Defaults to `Number.MAX_VALUE`
+ * @param min - The minimum value (inclusive). Defaults to `0`
+ * @returns A float in the [min, max] range
+ */
 export const getRandomFloat = (max = Number.MAX_VALUE, min = 0): number => {
   if (max < min) {
     throw new RangeError('Invalid interval')
   }
-  if (max - min === Number.POSITIVE_INFINITY) {
+  if (!Number.isFinite(max) || !Number.isFinite(min)) {
     throw new RangeError('Invalid interval')
   }
   return (randomBytes(4).readUInt32LE() / 0xffffffff) * (max - min) + min
@@ -255,15 +274,24 @@ export const getRandomFloat = (max = Number.MAX_VALUE, min = 0): number => {
  * @returns The rounded number.
  */
 export const roundTo = (numberValue: number, scale: number): number => {
-  const roundPower = 10 ** scale
-  return Math.round(numberValue * roundPower * (1 + Number.EPSILON)) / roundPower
+  const factor = 10 ** scale
+  const scaled = numberValue * factor
+
+  const sign = Math.sign(scaled) || 1
+  const absScaled = Math.abs(scaled)
+  const integerPart = Math.trunc(absScaled)
+  const fractionalPart = absScaled - integerPart
+
+  const tol = Number.EPSILON * absScaled
+
+  const increment = fractionalPart > 0.5 + tol ? 1 : fractionalPart < 0.5 - tol ? 0 : 1
+
+  const roundedScaled = sign * (integerPart + increment)
+  return roundedScaled / factor
 }
 
 export const getRandomFloatRounded = (max = Number.MAX_VALUE, min = 0, scale = 2): number => {
-  if (min !== 0) {
-    return roundTo(getRandomFloat(max, min), scale)
-  }
-  return roundTo(getRandomFloat(max), scale)
+  return roundTo(getRandomFloat(max, min), scale)
 }
 
 export const getRandomFloatFluctuatedRounded = (
@@ -280,11 +308,11 @@ export const getRandomFloatFluctuatedRounded = (
     return roundTo(staticValue, scale)
   }
   const fluctuationRatio = fluctuationPercent / 100
-  return getRandomFloatRounded(
-    staticValue * (1 + fluctuationRatio),
-    staticValue * (1 - fluctuationRatio),
-    scale
-  )
+  const upperValue = staticValue * (1 + fluctuationRatio)
+  const lowerValue = staticValue * (1 - fluctuationRatio)
+  const max = Math.max(upperValue, lowerValue)
+  const min = Math.min(upperValue, lowerValue)
+  return getRandomFloatRounded(max, min, scale)
 }
 
 export const extractTimeSeriesValues = (timeSeries: CircularBuffer<TimestampedData>): number[] => {
@@ -365,9 +393,7 @@ export const JSONStringify = <
       if (value instanceof Map) {
         switch (mapFormat) {
           case MapStringifyFormat.object:
-            return {
-              ...Object.fromEntries<Map<string, Record<string, unknown>>>(value.entries()),
-            }
+            return Object.fromEntries<Record<string, unknown>>(value)
           case MapStringifyFormat.array:
           default:
             return [...value]
