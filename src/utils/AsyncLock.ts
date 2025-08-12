@@ -30,7 +30,7 @@ export class AsyncLock {
         return fn() as T
       }
     } finally {
-      await AsyncLock.release(type)
+      AsyncLock.release(type)
     }
   }
 
@@ -53,16 +53,13 @@ export class AsyncLock {
     return AsyncLock.asyncLocks.get(type)!
   }
 
-  private static async release (type: AsyncLockType): Promise<void> {
+  private static release (type: AsyncLockType): void {
     const asyncLock = AsyncLock.getAsyncLock(type)
-    if (asyncLock.resolveQueue.size === 0 && asyncLock.acquired) {
-      asyncLock.acquired = false
+    const nextResolve = asyncLock.resolveQueue.dequeue()
+    if (nextResolve != null) {
+      nextResolve()
       return
     }
-    await new Promise<void>(resolve => {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      asyncLock.resolveQueue.dequeue()!()
-      resolve()
-    })
+    asyncLock.acquired = false
   }
 }
