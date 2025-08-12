@@ -328,29 +328,43 @@ const deleteChargingStation = (): void => {
 
 <style>
 #connectors-table {
-  display: flex;
-  flex-direction: column;
+  display: table;
+  width: 100%;
   background-color: white;
   overflow: auto hidden;
   border-collapse: collapse;
   empty-cells: show;
 }
 
+#connectors-table__head {
+  display: table-header-group;
+}
+
 #connectors-table__body {
-  display: flex;
-  flex-direction: column;
+  display: table-row-group;
 }
 
 .connectors-table__row {
+  display: table-row;
   border: solid 0.25px black;
   border-top: none;
   border-bottom: none;
 }
 
 .connectors-table__column {
-  width: calc(100% / 5);
-  display: table-cell !important;
+  display: table-cell;
   text-align: left;
+  padding: 8px;
+  vertical-align: top;
+  width: 25%;
+}
+
+.connectors-table__column-with-actions {
+  display: table-cell;
+  text-align: left;
+  padding: 8px;
+  vertical-align: top;
+  width: 25%;
 }
 
 /* Styles for inline actions */

@@ -26,31 +26,21 @@
         </DataBadge>
       </div>
       <div class="column-actions">
-        <ToggleButton
+        <Button
           v-if="connector.transactionStarted !== true"
-          :id="`${hashId}-${connectorId}-start-transaction`"
           class="inline-action-button"
           title="Start transaction"
-          :off="
-            () => {
-              $router.push({ name: 'charging-stations' })
-            }
-          "
-          :on="
-            () => {
-              $router.push({
-                name: 'start-transaction',
-                params: { hashId, chargingStationId, connectorId },
-              })
-            }
-          "
-          :shared="true"
-          @clicked="$emit('need-refresh')"
+          @click="() => {
+            $router.push({
+              name: 'start-transaction',
+              params: { hashId, chargingStationId, connectorId },
+            })
+          }"
         >
           <span class="flex items-center gap-1">
             <Play :size="12" />
           </span>
-        </ToggleButton>
+        </Button>
         <Button
           v-if="connector.transactionStarted"
           class="inline-action-button"
@@ -109,7 +99,6 @@ import type { ConnectorStatus, Status } from '@/types'
 import Button from '@/components/buttons/Button.vue'
 import DataBadge from '@/components/buttons/DataBadge.vue'
 import DataTag from '@/components/buttons/DataTag.vue'
-import ToggleButton from '@/components/buttons/ToggleButton.vue'
 import { useUIClient } from '@/composables'
 
 const props = defineProps<{
@@ -193,16 +182,20 @@ const stopAutomaticTransactionGenerator = (): void => {
 <style>
 /* Override flex display for connector table cells */
 .connectors-table__column {
-  display: table-cell !important;
+  display: table-cell;
   text-align: left;
   padding: 8px;
+  vertical-align: top;
+  width: 25%;
 }
 
 /* Style for columns with actions */
 .connectors-table__column-with-actions {
-  display: table-cell !important;
+  display: table-cell;
   text-align: left;
   padding: 8px;
+  vertical-align: top;
+  width: 25%;
 }
 
 .column-data {
