@@ -29,7 +29,7 @@ export const max = (...args: number[]): number =>
 
 // TODO: use order statistics tree https://en.wikipedia.org/wiki/Order_statistic_tree
 export const percentile = (dataSet: number[], percentile: number): number => {
-  if (percentile < 0 && percentile > 100) {
+  if (percentile < 0 || percentile > 100) {
     throw new RangeError('Percentile is not between 0 and 100')
   }
   if (Array.isArray(dataSet) && dataSet.length === 0) {
@@ -63,7 +63,7 @@ export const percentile = (dataSet: number[], percentile: number): number => {
  * @internal
  */
 export const std = (dataSet: number[], dataSetAverage: number = average(dataSet)): number => {
-  if (Array.isArray(dataSet) && (dataSet.length === 0 || dataSet.length === 1)) {
+  if (Array.isArray(dataSet) && dataSet.length <= 1) {
     return 0
   }
   return Math.sqrt(

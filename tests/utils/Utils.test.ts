@@ -42,7 +42,9 @@ await describe('Utils test suite', async () => {
     expect(uuid).toBeDefined()
     expect(uuid.length).toEqual(36)
     expect(validateUUID(uuid)).toBe(true)
-    expect(validateUUID('abcdef00-0000-4000-0000-000000000000')).toBe(true)
+    expect(validateUUID('abcdef00-0000-4000-9000-000000000000')).toBe(true)
+    expect(validateUUID('abcdef00-0000-4000-a000-000000000000')).toBe(true)
+    expect(validateUUID('abcdef00-0000-4000-0000-000000000000')).toBe(false)
     expect(validateUUID('')).toBe(false)
     // Shall invalidate Nil UUID
     expect(validateUUID('00000000-0000-0000-0000-000000000000')).toBe(false)
@@ -184,7 +186,7 @@ await describe('Utils test suite', async () => {
     expect(randomFloat).toBeLessThanOrEqual(Number.MAX_VALUE)
     expect(randomFloat).not.toEqual(getRandomFloat())
     expect(() => getRandomFloat(0, 1)).toThrow(new RangeError('Invalid interval'))
-    expect(() => getRandomFloat(Number.MAX_VALUE, -Number.MAX_VALUE)).toThrow(
+    expect(() => getRandomFloat(Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY)).toThrow(
       new RangeError('Invalid interval')
     )
     randomFloat = getRandomFloat(0, -Number.MAX_VALUE)
