@@ -694,6 +694,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         error as Error,
         {
           errorResponse: OCPP16Constants.OCPP_CANCEL_RESERVATION_RESPONSE_REJECTED,
+          throwError: false,
         }
       )!
     }
@@ -913,7 +914,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         chargingStation,
         OCPP16IncomingRequestCommand.DATA_TRANSFER,
         error as Error,
-        { errorResponse: OCPP16Constants.OCPP_DATA_TRANSFER_RESPONSE_REJECTED }
+        { errorResponse: OCPP16Constants.OCPP_DATA_TRANSFER_RESPONSE_REJECTED, throwError: false }
       )!
     }
   }
@@ -1179,7 +1180,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           chargingStation,
           OCPP16IncomingRequestCommand.GET_DIAGNOSTICS,
           error as Error,
-          { errorResponse: OCPP16Constants.OCPP_RESPONSE_EMPTY }
+          { errorResponse: OCPP16Constants.OCPP_RESPONSE_EMPTY, throwError: false }
         )!
       }
     } else {
@@ -1373,7 +1374,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         chargingStation,
         OCPP16IncomingRequestCommand.RESERVE_NOW,
         error as Error,
-        { errorResponse: OCPP16Constants.OCPP_RESERVATION_RESPONSE_FAULTED }
+        { errorResponse: OCPP16Constants.OCPP_RESERVATION_RESPONSE_FAULTED, throwError: false }
       )!
     }
   }

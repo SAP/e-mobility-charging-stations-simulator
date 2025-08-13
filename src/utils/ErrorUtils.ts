@@ -21,12 +21,16 @@ const moduleName = 'ErrorUtils'
 export const handleUncaughtException = (): void => {
   process.on('uncaughtException', (error: Error) => {
     console.error(chalk.red('Uncaught exception: '), error)
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    logger?.error?.('Uncaught exception:', error)
   })
 }
 
 export const handleUnhandledRejection = (): void => {
-  process.on('unhandledRejection', (reason: unknown) => {
-    console.error(chalk.red('Unhandled rejection: '), reason)
+  process.on('unhandledRejection', (reason: unknown, promise: Promise<unknown>) => {
+    console.error(chalk.red('Unhandled rejection: '), { promise, reason })
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    logger?.error?.('Unhandled rejection:', { promise, reason })
   })
 }
 
@@ -53,11 +57,23 @@ export const handleFileException = (
     case 'EEXIST':
       logMsg = `${fileType} file ${file} already exists:`
       break
+    case 'EISDIR':
+      logMsg = `${fileType} file ${file} is a directory:`
+      break
     case 'ENOENT':
       logMsg = `${fileType} file ${file} not found:`
       break
+    case 'ENOSPC':
+      logMsg = `${fileType} file ${file} no space left on device:`
+      break
+    case 'ENOTDIR':
+      logMsg = `${fileType} file ${file} parent is not a directory:`
+      break
     case 'EPERM':
       logMsg = `${fileType} file ${file} permission denied:`
+      break
+    case 'EROFS':
+      logMsg = `${fileType} file ${file} read-only file system:`
       break
     default:
       logMsg = `${fileType} file ${file} error:`
@@ -95,10 +111,12 @@ export const handleSendMessageError = (
     },
     ...params,
   }
-  logger.error(
-    `${chargingStation.logPrefix()} ${moduleName}.handleSendMessageError: Send ${getMessageTypeString(messageType)} command '${commandName}' error:`,
-    error
-  )
+  const logMsg = `${chargingStation.logPrefix()} ${moduleName}.handleSendMessageError: Send ${getMessageTypeString(messageType)} command '${commandName}' error:`
+  if (params.consoleOut === true) {
+    console.error(logMsg, error)
+  } else {
+    logger.error(logMsg, error)
+  }
   if (params.throwError === true) {
     throw error
   }
@@ -117,17 +135,14 @@ export const handleIncomingRequestError = <T extends JsonType>(
     },
     ...params,
   }
-  logger.error(
-    `${chargingStation.logPrefix()} ${moduleName}.handleIncomingRequestError: Incoming request command '${commandName}' error:`,
-    error
-  )
-  if (params.throwError === false && params.errorResponse != null) {
+  const logMsg = `${chargingStation.logPrefix()} ${moduleName}.handleIncomingRequestError: Incoming request command '${commandName}' error:`
+  if (params.consoleOut === true) {
+    console.error(logMsg, error)
+  } else {
+    logger.error(logMsg, error)
+  }
+  if (params.throwError === false) {
     return params.errorResponse
   }
-  if (params.throwError === true && params.errorResponse == null) {
-    throw error
-  }
-  if (params.throwError === true && params.errorResponse != null) {
-    return params.errorResponse
-  }
+  throw error
 }
