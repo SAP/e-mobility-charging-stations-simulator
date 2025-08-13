@@ -1868,7 +1868,7 @@ export class ChargingStation extends EventEmitter {
     }
     if (
       getConfigurationKey(this, StandardParametersKey.LocalAuthListEnabled) == null &&
-      hasFeatureProfile(this, SupportedFeatureProfiles.LocalAuthListManagement) === true
+      hasFeatureProfile(this, SupportedFeatureProfiles.LocalAuthListManagement)
     ) {
       addConfigurationKey(this, StandardParametersKey.LocalAuthListEnabled, 'false')
     }
