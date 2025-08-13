@@ -14,7 +14,7 @@ export const watchJsonFile = <T extends JsonType>(
   listener: WatchListener<string> = (event, filename) => {
     if (isNotEmptyString(filename) && event === 'change') {
       try {
-        logger.debug(`${logPrefix} ${fileType} file ${file} have changed, reload`)
+        logger.debug(`${logPrefix} ${fileType} file ${file} has changed, reload`)
         refreshedVariable != null &&
           (refreshedVariable = JSON.parse(readFileSync(file, 'utf8')) as T)
       } catch (error) {
