@@ -14,6 +14,9 @@ export class ACElectricUtils {
   }
 
   static amperagePerPhaseFromPower (nbOfPhases: number, P: number, V: number, cosPhi = 1): number {
+    if (nbOfPhases <= 0) {
+      return 0
+    }
     const amperage = ACElectricUtils.amperageTotalFromPower(P, V, cosPhi)
     const amperagePerPhase = amperage / nbOfPhases
     if (amperage % nbOfPhases === 0) {
@@ -27,6 +30,9 @@ export class ACElectricUtils {
   }
 
   static amperageTotalFromPower (P: number, V: number, cosPhi = 1): number {
+    if (V === 0 || cosPhi === 0) {
+      return 0
+    }
     const amperage = P / (V * cosPhi)
     if (cosPhi === 1 && P % V === 0) {
       return amperage
@@ -57,6 +63,9 @@ export class DCElectricUtils {
   }
 
   static amperage (P: number, V: number): number {
+    if (V === 0) {
+      return 0
+    }
     const amperage = P / V
     if (P % V === 0) {
       return amperage
