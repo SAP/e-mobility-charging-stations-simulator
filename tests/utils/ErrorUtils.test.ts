@@ -87,19 +87,18 @@ await describe('ErrorUtils test suite', async () => {
     const error = new Error()
     expect(() => {
       handleIncomingRequestError(chargingStation, IncomingRequestCommand.CLEAR_CACHE, error)
-    }).toThrow(error)
+    }).not.toThrow(error)
     expect(() => {
       handleIncomingRequestError(chargingStation, IncomingRequestCommand.CLEAR_CACHE, error, {
-        throwError: false,
+        throwError: true,
       })
-    }).not.toThrow()
+    }).toThrow()
     const errorResponse = {
       status: GenericStatus.Rejected,
     }
     expect(
       handleIncomingRequestError(chargingStation, IncomingRequestCommand.CLEAR_CACHE, error, {
         errorResponse,
-        throwError: false,
       })
     ).toStrictEqual(errorResponse)
     expect(chargingStation.logPrefix.mock.calls.length).toBe(3)

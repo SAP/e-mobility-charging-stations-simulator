@@ -131,7 +131,7 @@ export const handleIncomingRequestError = <T extends JsonType>(
   params = {
     ...{
       consoleOut: false,
-      throwError: true,
+      throwError: false,
     },
     ...params,
   }
