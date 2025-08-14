@@ -184,7 +184,7 @@ export class UIHttpServer extends AbstractUIServer {
               })
               .catch((error: unknown) => {
                 logger.error(
-                  `${this.logPrefix(moduleName, 'requestListener.handler.catch')} UI service handler error:`,
+                  `${this.logPrefix(moduleName, 'requestListener.service.requestHandler')} UI service request handler error:`,
                   error
                 )
                 this.sendResponse(
