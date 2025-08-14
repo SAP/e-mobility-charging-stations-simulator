@@ -229,7 +229,7 @@ export abstract class AbstractUIService {
       let stationInfo: ChargingStationInfo | undefined
       try {
         stationInfo = await Bootstrap.getInstance().addChargingStation(
-          Bootstrap.getInstance().getLastIndex(template) + 1,
+          Bootstrap.getInstance().getLastContiguousIndex(template) + 1,
           `${template}.json`,
           options
         )

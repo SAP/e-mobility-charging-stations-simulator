@@ -156,14 +156,15 @@ export class Bootstrap extends EventEmitter {
         templateFile
       ),
     })
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const templateStatistics = this.templateStatistics.get(buildTemplateName(templateFile))!
-    ++templateStatistics.added
-    templateStatistics.indexes.add(index)
+    const templateStatistics = this.templateStatistics.get(buildTemplateName(templateFile))
+    if (stationInfo != null && templateStatistics != null) {
+      ++templateStatistics.added
+      templateStatistics.indexes.add(index)
+    }
     return stationInfo
   }
 
-  public getLastIndex (templateName: string): number {
+  public getLastContiguousIndex (templateName: string): number {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const indexes = [...this.templateStatistics.get(templateName)!.indexes]
       .concat(0)
@@ -236,8 +237,20 @@ export class Bootstrap extends EventEmitter {
         for (const stationTemplateUrl of Configuration.getStationTemplateUrls()!) {
           try {
             const nbStations = stationTemplateUrl.numberOfStations
+            const addChargingStationTasks: Promise<ChargingStationInfo | undefined>[] = []
             for (let index = 1; index <= nbStations; index++) {
-              await this.addChargingStation(index, stationTemplateUrl.file)
+              addChargingStationTasks.push(this.addChargingStation(index, stationTemplateUrl.file))
+            }
+            const results = await Promise.allSettled(addChargingStationTasks)
+            for (const result of results) {
+              if (result.status === 'rejected') {
+                console.error(
+                  chalk.red(
+                    `Error at starting charging station with template file ${stationTemplateUrl.file}: `
+                  ),
+                  result.reason
+                )
+              }
             }
           } catch (error) {
             console.error(
@@ -300,11 +313,7 @@ export class Bootstrap extends EventEmitter {
             Constants.EMPTY_FROZEN_OBJECT
           )
         )
-        try {
-          await this.waitChargingStationsStopped()
-        } catch (error) {
-          console.error(chalk.red('Error while waiting for charging stations to stop: '), error)
-        }
+        await this.waitChargingStationsStopped()
         await this.workerImplementation?.stop()
         this.removeAllListeners()
         this.uiServer.clearCaches()
@@ -324,18 +333,11 @@ export class Bootstrap extends EventEmitter {
     this.stop()
       .then(() => {
         console.info(chalk.green('Graceful shutdown'))
-        this.uiServer.stop()
-        this.uiServerStarted = false
-        this.waitChargingStationsStopped()
-          // eslint-disable-next-line promise/no-nesting
-          .then(() => {
-            return exit(exitCodes.succeeded)
-          })
-          // eslint-disable-next-line promise/no-nesting
-          .catch(() => {
-            exit(exitCodes.gracefulShutdownError)
-          })
-        return undefined
+        if (this.uiServerStarted) {
+          this.uiServer.stop()
+          this.uiServerStarted = false
+        }
+        return exit(exitCodes.succeeded)
       })
       .catch((error: unknown) => {
         console.error(chalk.red('Error while shutdowning charging stations simulator: '), error)
