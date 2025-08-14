@@ -189,7 +189,7 @@ export const validateStationInfo = (chargingStation: ChargingStation): void => {
   }
   if (
     chargingStation.stationInfo.chargingStationId == null ||
-    isEmpty(chargingStation.stationInfo.chargingStationId.trim())
+    isEmpty(chargingStation.stationInfo.chargingStationId)
   ) {
     throw new BaseError('Missing chargingStationId in stationInfo properties')
   }
@@ -197,7 +197,7 @@ export const validateStationInfo = (chargingStation: ChargingStation): void => {
   if (
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     chargingStation.stationInfo.hashId == null ||
-    isEmpty(chargingStation.stationInfo.hashId.trim())
+    isEmpty(chargingStation.stationInfo.hashId)
   ) {
     throw new BaseError(`${chargingStationId}: Missing hashId in stationInfo properties`)
   }
@@ -213,7 +213,7 @@ export const validateStationInfo = (chargingStation: ChargingStation): void => {
   if (
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     chargingStation.stationInfo.templateName == null ||
-    isEmpty(chargingStation.stationInfo.templateName.trim())
+    isEmpty(chargingStation.stationInfo.templateName)
   ) {
     throw new BaseError(`${chargingStationId}: Missing templateName in stationInfo properties`)
   }

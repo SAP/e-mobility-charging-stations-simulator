@@ -61,6 +61,7 @@ export const has = (property: PropertyKey, object: null | object | undefined): b
 const type = (value: unknown): string => {
   if (value === null) return 'Null'
   if (value === undefined) return 'Undefined'
+  if (typeof value === 'string') return 'String'
   if (Number.isNaN(value)) return 'NaN'
   if (Array.isArray(value)) return 'Array'
   return Object.prototype.toString.call(value).slice(8, -1)
@@ -72,6 +73,10 @@ export const isEmpty = (value: unknown): boolean => {
     return false
   }
   if (!value) return true
+
+  if (valueType === 'String') {
+    return (value as string).trim().length === 0
+  }
 
   if (valueType === 'Object') {
     return Object.keys(value as Record<string, unknown>).length === 0

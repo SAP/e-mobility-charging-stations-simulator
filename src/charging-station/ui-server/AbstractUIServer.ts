@@ -159,16 +159,20 @@ export abstract class AbstractUIServer {
   }
 
   private isValidBasicAuth (req: IncomingMessage, next: (err?: Error) => void): boolean {
-    const [username, password] = getUsernameAndPasswordFromAuthorizationToken(
+    const usernameAndPassword = getUsernameAndPasswordFromAuthorizationToken(
       req.headers.authorization?.split(/\s+/).pop() ?? '',
       next
     )
+    if (usernameAndPassword == null) {
+      return false
+    }
+    const [username, password] = usernameAndPassword
     return this.isValidUsernameAndPassword(username, password)
   }
 
   private isValidProtocolBasicAuth (req: IncomingMessage, next: (err?: Error) => void): boolean {
     const authorizationProtocol = req.headers['sec-websocket-protocol']?.split(/,\s+/).pop()
-    const [username, password] = getUsernameAndPasswordFromAuthorizationToken(
+    const usernameAndPassword = getUsernameAndPasswordFromAuthorizationToken(
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/restrict-template-expressions
       `${authorizationProtocol}${Array(((4 - (authorizationProtocol!.length % 4)) % 4) + 1).join(
         '='
@@ -177,6 +181,10 @@ export abstract class AbstractUIServer {
         .pop() ?? '',
       next
     )
+    if (usernameAndPassword == null) {
+      return false
+    }
+    const [username, password] = usernameAndPassword
     return this.isValidUsernameAndPassword(username, password)
   }
 
