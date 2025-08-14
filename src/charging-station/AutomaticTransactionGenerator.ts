@@ -300,7 +300,7 @@ export class AutomaticTransactionGenerator {
             .minDelayBetweenTwoTransactions,
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           this.chargingStation.getAutomaticTransactionGeneratorConfiguration()!
-            .maxDelayBetweenTwoTransactions
+            .maxDelayBetweenTwoTransactions + 1
         )
       )
       logger.info(`${this.logPrefix(connectorId)} waiting for ${formatDurationMilliSeconds(wait)}`)
@@ -322,7 +322,7 @@ export class AutomaticTransactionGenerator {
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               this.chargingStation.getAutomaticTransactionGeneratorConfiguration()!.minDuration,
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              this.chargingStation.getAutomaticTransactionGeneratorConfiguration()!.maxDuration
+              this.chargingStation.getAutomaticTransactionGeneratorConfiguration()!.maxDuration + 1
             )
           )
           logger.info(

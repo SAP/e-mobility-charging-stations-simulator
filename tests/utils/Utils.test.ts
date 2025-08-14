@@ -102,7 +102,7 @@ await describe('Utils test suite', async () => {
     expect(convertToInt(undefined)).toBe(0)
     expect(convertToInt(null)).toBe(0)
     expect(convertToInt(0)).toBe(0)
-    const randomInteger = randomInt(Constants.MAX_RANDOM_INTEGER)
+    const randomInteger = randomInt(Constants.MAX_RANDOM_INTEGER + 1)
     expect(convertToInt(randomInteger)).toEqual(randomInteger)
     expect(convertToInt('-1')).toBe(-1)
     expect(convertToInt('1')).toBe(1)

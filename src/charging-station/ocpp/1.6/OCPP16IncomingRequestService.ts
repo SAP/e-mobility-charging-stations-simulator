@@ -1669,7 +1669,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       chargingStation.stationInfo?.firmwareUpgrade?.failureStatus ===
       OCPP16FirmwareStatus.DownloadFailed
     ) {
-      await sleep(secondsToMilliseconds(randomInt(minDelay, maxDelay)))
+      await sleep(secondsToMilliseconds(randomInt(minDelay, maxDelay + 1)))
       await chargingStation.ocppRequestService.requestHandler<
         OCPP16FirmwareStatusNotificationRequest,
         OCPP16FirmwareStatusNotificationResponse
@@ -1680,7 +1680,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         chargingStation.stationInfo.firmwareUpgrade.failureStatus
       return
     }
-    await sleep(secondsToMilliseconds(randomInt(minDelay, maxDelay)))
+    await sleep(secondsToMilliseconds(randomInt(minDelay, maxDelay + 1)))
     await chargingStation.ocppRequestService.requestHandler<
       OCPP16FirmwareStatusNotificationRequest,
       OCPP16FirmwareStatusNotificationResponse
@@ -1736,7 +1736,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         transactionsStarted = false
       }
     } while (transactionsStarted)
-    !wasTransactionsStarted && (await sleep(secondsToMilliseconds(randomInt(minDelay, maxDelay))))
+    !wasTransactionsStarted &&
+      (await sleep(secondsToMilliseconds(randomInt(minDelay, maxDelay + 1))))
     if (!checkChargingStationState(chargingStation, chargingStation.logPrefix())) {
       return
     }
@@ -1752,7 +1753,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       chargingStation.stationInfo?.firmwareUpgrade?.failureStatus ===
       OCPP16FirmwareStatus.InstallationFailed
     ) {
-      await sleep(secondsToMilliseconds(randomInt(minDelay, maxDelay)))
+      await sleep(secondsToMilliseconds(randomInt(minDelay, maxDelay + 1)))
       await chargingStation.ocppRequestService.requestHandler<
         OCPP16FirmwareStatusNotificationRequest,
         OCPP16FirmwareStatusNotificationResponse
@@ -1764,7 +1765,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       return
     }
     if (chargingStation.stationInfo?.firmwareUpgrade?.reset === true) {
-      await sleep(secondsToMilliseconds(randomInt(minDelay, maxDelay)))
+      await sleep(secondsToMilliseconds(randomInt(minDelay, maxDelay + 1)))
       await chargingStation.reset(OCPP16StopTransactionReason.REBOOT)
     }
   }
