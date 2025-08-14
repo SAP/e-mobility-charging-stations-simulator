@@ -61,7 +61,6 @@ export const has = (property: PropertyKey, object: null | object | undefined): b
 const type = (value: unknown): string => {
   if (value === null) return 'Null'
   if (value === undefined) return 'Undefined'
-  if (typeof value === 'string') return 'String'
   if (Number.isNaN(value)) return 'NaN'
   if (Array.isArray(value)) return 'Array'
   return Object.prototype.toString.call(value).slice(8, -1)
@@ -69,7 +68,7 @@ const type = (value: unknown): string => {
 
 export const isEmpty = (value: unknown): boolean => {
   const valueType = type(value)
-  if (['NaN', 'Null', 'Number', 'Undefined'].includes(valueType)) {
+  if (['BigInt', 'Boolean', 'NaN', 'Null', 'Number', 'Undefined'].includes(valueType)) {
     return false
   }
   if (!value) return true

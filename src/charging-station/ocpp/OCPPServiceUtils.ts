@@ -286,14 +286,29 @@ export const ajvErrorsToErrorType = (errors: ErrorObject[] | null | undefined): 
 
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export const convertDateToISOString = <T extends JsonType>(object: T): void => {
-  // eslint-disable-next-line @typescript-eslint/no-for-in-array
-  for (const key in object) {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion
-    if (isDate(object![key])) {
-      ;(object[key] as unknown as string) = (object[key] as Date).toISOString()
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion
-    } else if (typeof object![key] === 'object' && object[key] !== null) {
-      convertDateToISOString<T>(object[key] as T)
+  for (const [key, value] of Object.entries(object as Record<string, unknown>)) {
+    if (isDate(value)) {
+      try {
+        ;(object as Record<string, unknown>)[key] = value.toISOString()
+      } catch {
+        // Ignore date conversion error
+      }
+    } else if (Array.isArray(value)) {
+      for (let i = 0; i < value.length; i++) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const item = value[i]
+        if (isDate(item)) {
+          try {
+            value[i] = item.toISOString() as unknown as typeof item
+          } catch {
+            // Ignore date conversion error
+          }
+        } else if (typeof item === 'object' && item !== null) {
+          convertDateToISOString(item as T)
+        }
+      }
+    } else if (typeof value === 'object' && value !== null) {
+      convertDateToISOString<T>(value as T)
     }
   }
 }
@@ -335,7 +350,7 @@ export const buildMeterValue = (
             Number.parseInt(socSampledValueTemplate.value),
             socSampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
           )
-          : randomInt(socMinimumValue, socMaximumValue)
+          : randomInt(socMinimumValue, socMaximumValue + 1)
         meterValue.sampledValue.push(
           buildSampledValue(socSampledValueTemplate, socSampledValueTemplateValue)
         )
@@ -979,8 +994,8 @@ export const buildMeterValue = (
               }: phase ${
                 // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 meterValue.sampledValue[sampledValuesPerPhaseIndex].phase
-              }, connector id ${connectorId.toString()}, transaction id $
-              connector?.transactionId?.toString()}, value: ${connectorMinimumAmperage.toString()}/${
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+              }, connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${connectorMinimumAmperage.toString()}/${
                 meterValue.sampledValue[sampledValuesPerPhaseIndex].value
               }/${connectorMaximumAmperage.toString()}`
             )
@@ -1143,7 +1158,7 @@ const getLimitFromSampledValueTemplateCustomValue = (
     },
     ...options,
   }
-  const parsedValue = Number.parseInt(value ?? '')
+  const parsedValue = Number.parseFloat(value ?? '')
   if (options.limitationEnabled) {
     return max(
       min(

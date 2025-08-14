@@ -92,16 +92,19 @@ export class UIWebSocketServer extends AbstractUIServer {
 
   public start (): void {
     this.webSocketServer.on('connection', (ws: WebSocket, _req: IncomingMessage): void => {
-      if (!isProtocolAndVersionSupported(ws.protocol)) {
+      const protocol = ws.protocol
+      const protocolAndVersion = getProtocolAndVersion(protocol)
+      if (protocolAndVersion == null || !isProtocolAndVersionSupported(protocol)) {
         logger.error(
           `${this.logPrefix(
             moduleName,
             'start.server.onconnection'
-          )} Unsupported UI protocol version: '${ws.protocol}'`
+          )} Unsupported UI protocol version: '${protocol}'`
         )
         ws.close(WebSocketCloseEventStatusCode.CLOSE_PROTOCOL_ERROR)
+        return
       }
-      const [, version] = getProtocolAndVersion(ws.protocol)
+      const [, version] = protocolAndVersion
       this.registerProtocolVersionUIService(version)
       ws.on('message', rawData => {
         const request = this.validateRawDataRequest(rawData)
@@ -121,6 +124,9 @@ export class UIWebSocketServer extends AbstractUIServer {
             return undefined
           })
           .catch(Constants.EMPTY_FUNCTION)
+          .finally(() => {
+            this.responseHandlers.delete(requestId)
+          })
       })
       ws.on('error', error => {
         logger.error(`${this.logPrefix(moduleName, 'start.ws.onerror')} WebSocket error:`, error)
@@ -134,10 +140,15 @@ export class UIWebSocketServer extends AbstractUIServer {
             code
           )}' - '${reason.toString()}'`
         )
+        for (const [responseId, responseHandlerWs] of this.responseHandlers) {
+          if (responseHandlerWs === ws) this.responseHandlers.delete(responseId)
+        }
       })
     })
     this.httpServer.on('connect', (req: IncomingMessage, socket: Duplex, _head: Buffer) => {
-      if (req.headers.connection !== 'Upgrade' || req.headers.upgrade !== 'websocket') {
+      const connectionHeader = req.headers.connection ?? ''
+      const upgradeHeader = req.headers.upgrade ?? ''
+      if (!/upgrade/i.test(connectionHeader) || !/^websocket$/i.test(upgradeHeader)) {
         socket.write(`HTTP/1.1 ${StatusCodes.BAD_REQUEST.toString()} Bad Request\r\n\r\n`)
         socket.destroy()
       }
@@ -154,6 +165,7 @@ export class UIWebSocketServer extends AbstractUIServer {
       }
       socket.on('error', onSocketError)
       this.authenticate(req, err => {
+        socket.removeListener('error', onSocketError)
         if (err != null) {
           socket.write(`HTTP/1.1 ${StatusCodes.UNAUTHORIZED.toString()} Unauthorized\r\n\r\n`)
           socket.destroy()
@@ -173,7 +185,6 @@ export class UIWebSocketServer extends AbstractUIServer {
           )
         }
       })
-      socket.removeListener('error', onSocketError)
     })
     this.startHttpServer()
   }
@@ -236,6 +247,29 @@ export class UIWebSocketServer extends AbstractUIServer {
           moduleName,
           'validateRawDataRequest'
         )} UI protocol request UUID field is invalid:`,
+        request
+      )
+      return false
+    }
+
+    if (typeof request[1] !== 'string') {
+      logger.error(
+        `${this.logPrefix(
+          moduleName,
+          'validateRawDataRequest'
+        )} UI protocol request procedure field must be a string:`,
+        request
+      )
+      return false
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (!(typeof request[2] === 'object' && request[2] !== null)) {
+      logger.error(
+        `${this.logPrefix(
+          moduleName,
+          'validateRawDataRequest'
+        )} UI protocol request payload field must be an object or an array:`,
         request
       )
       return false
