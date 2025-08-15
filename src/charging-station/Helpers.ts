@@ -888,9 +888,9 @@ const getConfiguredMaxNumberOfConnectors = (stationTemplate: ChargingStationTemp
         ? getMaxNumberOfConnectors(stationTemplate.Connectors) - 1
         : getMaxNumberOfConnectors(stationTemplate.Connectors)
   } else if (stationTemplate.Evses != null && stationTemplate.Connectors == null) {
-    for (const [evseId, evseStatus] of Object.entries(stationTemplate.Evses)) {
+    for (const [evseId, evseTemplate] of Object.entries(stationTemplate.Evses)) {
       if (evseId === '0') continue
-      configuredMaxNumberOfConnectors += getMaxNumberOfConnectors(evseStatus.Connectors)
+      configuredMaxNumberOfConnectors += getMaxNumberOfConnectors(evseTemplate.Connectors)
     }
   }
   return configuredMaxNumberOfConnectors
