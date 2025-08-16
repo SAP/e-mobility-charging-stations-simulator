@@ -109,8 +109,7 @@ export abstract class AbstractUIService {
   public getBroadcastChannelExpectedResponses (
     uuid: `${string}-${string}-${string}-${string}-${string}`
   ): number {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return this.broadcastChannelRequests.get(uuid)!
+    return this.broadcastChannelRequests.get(uuid) ?? 0
   }
 
   public logPrefix = (modName: string, methodName: string): string => {
@@ -164,10 +163,26 @@ export abstract class AbstractUIService {
       } satisfies ResponsePayload
     }
     if (responsePayload != null) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      return this.uiServer.buildProtocolResponse(uuid!, responsePayload)
+      if (uuid != null) {
+        return this.uiServer.buildProtocolResponse(uuid, responsePayload)
+      }
+      logger.warn(
+        `${this.logPrefix(moduleName, 'requestHandler')} UUID is not defined in the request:`,
+        request
+      )
+      return undefined
     }
   }
+
+  // public sendRequest (
+  //   uuid: `${string}-${string}-${string}-${string}-${string}`,
+  //   procedureName: ProcedureName,
+  //   requestPayload: RequestPayload
+  // ): void {
+  //   this.uiServer.sendRequest(
+  //     this.uiServer.buildProtocolRequest(uuid, procedureName, requestPayload)
+  //   )
+  // }
 
   public sendResponse (
     uuid: `${string}-${string}-${string}-${string}-${string}`,
@@ -175,6 +190,11 @@ export abstract class AbstractUIService {
   ): void {
     if (this.uiServer.hasResponseHandler(uuid)) {
       this.uiServer.sendResponse(this.uiServer.buildProtocolResponse(uuid, responsePayload))
+    } else {
+      logger.warn(`${this.logPrefix(moduleName, 'sendResponse')} Response handler not found:`, {
+        responsePayload,
+        uuid,
+      })
     }
   }
 
@@ -188,12 +208,12 @@ export abstract class AbstractUIService {
     procedureName: ProcedureName,
     payload: RequestPayload
   ): void {
-    this.sendBroadcastChannelRequest(
-      uuid,
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      AbstractUIService.ProcedureNameToBroadCastChannelProcedureNameMapping.get(procedureName)!,
-      payload
-    )
+    const broadCastChannelProcedureName =
+      AbstractUIService.ProcedureNameToBroadCastChannelProcedureNameMapping.get(procedureName)
+    if (broadCastChannelProcedureName == null) {
+      throw new BaseError(`No broadcast channel mapping for procedure '${procedureName}'`)
+    }
+    this.sendBroadcastChannelRequest(uuid, broadCastChannelProcedureName, payload)
   }
 
   private async handleAddChargingStations (
@@ -210,7 +230,12 @@ export abstract class AbstractUIService {
         status: ResponseStatus.FAILURE,
       } satisfies ResponsePayload
     }
-    if (typeof template !== 'string' || typeof numberOfStations !== 'number') {
+    if (
+      typeof template !== 'string' ||
+      typeof numberOfStations !== 'number' ||
+      !Number.isInteger(numberOfStations) ||
+      numberOfStations <= 0
+    ) {
       return {
         errorMessage: 'Invalid request payload',
         status: ResponseStatus.FAILURE,
@@ -283,8 +308,7 @@ export abstract class AbstractUIService {
     try {
       return {
         performanceStatistics: [
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          ...Bootstrap.getInstance().getPerformanceStatistics()!,
+          ...(Bootstrap.getInstance().getPerformanceStatistics() ?? []),
         ] as JsonType[],
         status: ResponseStatus.SUCCESS,
       } satisfies ResponsePayload
@@ -325,16 +349,6 @@ export abstract class AbstractUIService {
     }
   }
 
-  // public sendRequest (
-  //   uuid: `${string}-${string}-${string}-${string}-${string}`,
-  //   procedureName: ProcedureName,
-  //   requestPayload: RequestPayload
-  // ): void {
-  //   this.uiServer.sendRequest(
-  //     this.uiServer.buildProtocolRequest(uuid, procedureName, requestPayload)
-  //   )
-  // }
-
   private async handleStopSimulator (): Promise<ResponsePayload> {
     try {
       await Bootstrap.getInstance().stop()
@@ -367,7 +381,7 @@ export abstract class AbstractUIService {
           )
           return undefined
         })
-        .filter(hashId => hashId != null)
+        .filter((hashId): hashId is string => hashId != null)
     } else {
       delete payload.hashIds
     }
