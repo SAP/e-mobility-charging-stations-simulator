@@ -352,8 +352,8 @@ await describe('Utils test suite', async () => {
 
   await it('Verify isEmpty()', () => {
     expect(isEmpty('')).toBe(true)
-    expect(isEmpty(' ')).toBe(false)
-    expect(isEmpty('     ')).toBe(false)
+    expect(isEmpty(' ')).toBe(true)
+    expect(isEmpty('     ')).toBe(true)
     expect(isEmpty('test')).toBe(false)
     expect(isEmpty(' test')).toBe(false)
     expect(isEmpty('test ')).toBe(false)

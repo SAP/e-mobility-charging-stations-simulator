@@ -2,9 +2,11 @@ import chalk from 'chalk'
 import { getRandomValues } from 'node:crypto'
 
 export const sleep = async (milliSeconds: number): Promise<NodeJS.Timeout> => {
-  return await new Promise<NodeJS.Timeout>(resolve =>
-    setTimeout(resolve as () => void, milliSeconds)
-  )
+  return await new Promise<NodeJS.Timeout>(resolve => {
+    const timeout = setTimeout(() => {
+      resolve(timeout)
+    }, milliSeconds)
+  })
 }
 
 export const defaultExitHandler = (code: number): void => {

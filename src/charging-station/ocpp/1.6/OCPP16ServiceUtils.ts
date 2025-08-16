@@ -116,7 +116,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     featureProfile: OCPP16SupportedFeatureProfiles,
     command: OCPP16IncomingRequestCommand | OCPP16RequestCommand
   ): boolean {
-    if (hasFeatureProfile(chargingStation, featureProfile) === false) {
+    if (!hasFeatureProfile(chargingStation, featureProfile)) {
       logger.warn(
         `${chargingStation.logPrefix()} Trying to '${command}' without '${featureProfile}' feature enabled in ${
           OCPP16StandardParametersKey.SupportedFeatureProfiles

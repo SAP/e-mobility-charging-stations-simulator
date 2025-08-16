@@ -19,7 +19,7 @@ import {
   type ResponsePayload,
   type UIServerConfiguration,
 } from '../../types/index.js'
-import { logger } from '../../utils/index.js'
+import { isEmpty, logger } from '../../utils/index.js'
 import { UIServiceFactory } from './ui-services/UIServiceFactory.js'
 import { getUsernameAndPasswordFromAuthorizationToken } from './UIServerUtils.js'
 
@@ -105,25 +105,23 @@ export abstract class AbstractUIServer {
     for (const uiService of this.uiServices.values()) {
       uiService.stop()
     }
+    this.uiServices.clear()
+    this.responseHandlers.clear()
     this.clearCaches()
   }
 
   protected authenticate (req: IncomingMessage, next: (err?: Error) => void): void {
-    const authorizationError = new BaseError('Unauthorized')
-    if (this.isBasicAuthEnabled()) {
-      if (!this.isValidBasicAuth(req, next)) {
-        next(authorizationError)
-      }
+    if (this.uiServerConfiguration.authentication?.enabled !== true) {
       next()
-    } else if (this.isProtocolBasicAuthEnabled()) {
-      if (!this.isValidProtocolBasicAuth(req, next)) {
-        next(authorizationError)
-      }
-      next()
-    } else if (this.uiServerConfiguration.authentication?.enabled === true) {
-      next(authorizationError)
+      return
     }
-    next()
+    let ok = false
+    if (this.isBasicAuthEnabled()) {
+      ok = this.isValidBasicAuth(req, next)
+    } else if (this.isProtocolBasicAuthEnabled()) {
+      ok = this.isValidProtocolBasicAuth(req, next)
+    }
+    next(ok ? undefined : new BaseError('Unauthorized'))
   }
 
   protected registerProtocolVersionUIService (version: ProtocolVersion): void {
@@ -159,24 +157,34 @@ export abstract class AbstractUIServer {
   }
 
   private isValidBasicAuth (req: IncomingMessage, next: (err?: Error) => void): boolean {
-    const [username, password] = getUsernameAndPasswordFromAuthorizationToken(
+    const usernameAndPassword = getUsernameAndPasswordFromAuthorizationToken(
       req.headers.authorization?.split(/\s+/).pop() ?? '',
       next
     )
+    if (usernameAndPassword == null) {
+      return false
+    }
+    const [username, password] = usernameAndPassword
     return this.isValidUsernameAndPassword(username, password)
   }
 
   private isValidProtocolBasicAuth (req: IncomingMessage, next: (err?: Error) => void): boolean {
     const authorizationProtocol = req.headers['sec-websocket-protocol']?.split(/,\s+/).pop()
-    const [username, password] = getUsernameAndPasswordFromAuthorizationToken(
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/restrict-template-expressions
-      `${authorizationProtocol}${Array(((4 - (authorizationProtocol!.length % 4)) % 4) + 1).join(
+    if (authorizationProtocol == null || isEmpty(authorizationProtocol)) {
+      return false
+    }
+    const usernameAndPassword = getUsernameAndPasswordFromAuthorizationToken(
+      `${authorizationProtocol}${Array(((4 - (authorizationProtocol.length % 4)) % 4) + 1).join(
         '='
       )}`
         .split('.')
         .pop() ?? '',
       next
     )
+    if (usernameAndPassword == null) {
+      return false
+    }
+    const [username, password] = usernameAndPassword
     return this.isValidUsernameAndPassword(username, password)
   }
 

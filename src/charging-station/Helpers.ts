@@ -17,7 +17,7 @@ import {
   toDate,
 } from 'date-fns'
 import { maxTime } from 'date-fns/constants'
-import { hash, randomBytes } from 'node:crypto'
+import { createHash, randomBytes } from 'node:crypto'
 import { basename, dirname, isAbsolute, join, parse, relative, resolve } from 'node:path'
 import { env } from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -110,6 +110,7 @@ export const hasReservationExpired = (reservation: Reservation): boolean => {
 export const removeExpiredReservations = async (
   chargingStation: ChargingStation
 ): Promise<void> => {
+  const reservations: Reservation[] = []
   if (chargingStation.hasEvses) {
     for (const evseStatus of chargingStation.evses.values()) {
       for (const connectorStatus of evseStatus.connectors.values()) {
@@ -117,10 +118,7 @@ export const removeExpiredReservations = async (
           connectorStatus.reservation != null &&
           hasReservationExpired(connectorStatus.reservation)
         ) {
-          await chargingStation.removeReservation(
-            connectorStatus.reservation,
-            ReservationTerminationReason.EXPIRED
-          )
+          reservations.push(connectorStatus.reservation)
         }
       }
     }
@@ -130,11 +128,20 @@ export const removeExpiredReservations = async (
         connectorStatus.reservation != null &&
         hasReservationExpired(connectorStatus.reservation)
       ) {
-        await chargingStation.removeReservation(
-          connectorStatus.reservation,
-          ReservationTerminationReason.EXPIRED
-        )
+        reservations.push(connectorStatus.reservation)
       }
+    }
+  }
+  const results = await Promise.allSettled(
+    reservations.map(reservation =>
+      chargingStation.removeReservation(reservation, ReservationTerminationReason.EXPIRED)
+    )
+  )
+  for (const result of results) {
+    if (result.status === 'rejected') {
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.removeExpiredReservations: reservation removal failed: ${String(result.reason)}`
+      )
     }
   }
 }
@@ -171,11 +178,9 @@ export const getHashId = (index: number, stationTemplate: ChargingStationTemplat
       meterType: stationTemplate.meterType,
     }),
   }
-  return hash(
-    Constants.DEFAULT_HASH_ALGORITHM,
-    `${JSON.stringify(chargingStationInfo)}${getChargingStationId(index, stationTemplate)}`,
-    'hex'
-  )
+  return createHash(Constants.DEFAULT_HASH_ALGORITHM)
+    .update(`${JSON.stringify(chargingStationInfo)}${getChargingStationId(index, stationTemplate)}`)
+    .digest('hex')
 }
 
 export const validateStationInfo = (chargingStation: ChargingStation): void => {
@@ -184,7 +189,7 @@ export const validateStationInfo = (chargingStation: ChargingStation): void => {
   }
   if (
     chargingStation.stationInfo.chargingStationId == null ||
-    isEmpty(chargingStation.stationInfo.chargingStationId.trim())
+    isEmpty(chargingStation.stationInfo.chargingStationId)
   ) {
     throw new BaseError('Missing chargingStationId in stationInfo properties')
   }
@@ -192,7 +197,7 @@ export const validateStationInfo = (chargingStation: ChargingStation): void => {
   if (
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     chargingStation.stationInfo.hashId == null ||
-    isEmpty(chargingStation.stationInfo.hashId.trim())
+    isEmpty(chargingStation.stationInfo.hashId)
   ) {
     throw new BaseError(`${chargingStationId}: Missing hashId in stationInfo properties`)
   }
@@ -208,7 +213,7 @@ export const validateStationInfo = (chargingStation: ChargingStation): void => {
   if (
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     chargingStation.stationInfo.templateName == null ||
-    isEmpty(chargingStation.stationInfo.templateName.trim())
+    isEmpty(chargingStation.stationInfo.templateName)
   ) {
     throw new BaseError(`${chargingStationId}: Missing templateName in stationInfo properties`)
   }
@@ -265,6 +270,7 @@ export const getPhaseRotationValue = (
   } else if (connectorId >= 0 && numberOfPhases === 3) {
     return `${connectorId.toString()}.${ConnectorPhaseRotation.RST}`
   }
+  return undefined
 }
 
 export const getMaxNumberOfEvses = (evses: Record<string, EvseTemplate> | undefined): number => {
@@ -430,9 +436,8 @@ export const buildConnectorsMap = (
 ): Map<number, ConnectorStatus> => {
   const connectorsMap = new Map<number, ConnectorStatus>()
   if (getMaxNumberOfConnectors(connectors) > 0) {
-    for (const connector in connectors) {
-      const connectorStatus = connectors[connector]
-      const connectorId = convertToInt(connector)
+    for (const [connectorKey, connectorStatus] of Object.entries(connectors)) {
+      const connectorId = convertToInt(connectorKey)
       checkStationInfoConnectorStatus(connectorId, connectorStatus, logPrefix, templateFile)
       connectorsMap.set(connectorId, clone<ConnectorStatus>(connectorStatus))
     }
@@ -448,25 +453,18 @@ export const initializeConnectorsMapStatus = (
   connectors: Map<number, ConnectorStatus>,
   logPrefix: string
 ): void => {
-  for (const connectorId of connectors.keys()) {
-    if (connectorId > 0 && connectors.get(connectorId)?.transactionStarted === true) {
+  for (const [connectorId, connectorStatus] of connectors) {
+    if (connectorId > 0 && connectorStatus.transactionStarted === true) {
       logger.warn(
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        `${logPrefix} Connector id ${connectorId.toString()} at initialization has a transaction started with id ${connectors
-          .get(connectorId)
-          ?.transactionId?.toString()}`
+        `${logPrefix} Connector id ${connectorId.toString()} at initialization has a transaction started with id ${connectorStatus.transactionId?.toString()}`
       )
     }
     if (connectorId === 0) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      connectors.get(connectorId)!.availability = AvailabilityType.Operative
-      if (connectors.get(connectorId)?.chargingProfiles == null) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        connectors.get(connectorId)!.chargingProfiles = []
-      }
-    } else if (connectorId > 0 && connectors.get(connectorId)?.transactionStarted == null) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      initializeConnectorStatus(connectors.get(connectorId)!)
+      connectorStatus.availability = AvailabilityType.Operative
+      connectorStatus.chargingProfiles ??= []
+    } else if (connectorId > 0 && connectorStatus.transactionStarted == null) {
+      initializeConnectorStatus(connectorStatus)
     }
   }
 }
@@ -504,8 +502,12 @@ export const resetConnectorStatus = (connectorStatus: ConnectorStatus | undefine
 
 export const prepareConnectorStatus = (connectorStatus: ConnectorStatus): ConnectorStatus => {
   if (connectorStatus.reservation != null) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    connectorStatus.reservation.expiryDate = convertToDate(connectorStatus.reservation.expiryDate)!
+    const reservationExpiryDate = convertToDate(connectorStatus.reservation.expiryDate)
+    if (reservationExpiryDate != null) {
+      connectorStatus.reservation.expiryDate = reservationExpiryDate
+    } else {
+      delete connectorStatus.reservation
+    }
   }
   if (isNotEmptyArray(connectorStatus.chargingProfiles)) {
     connectorStatus.chargingProfiles = connectorStatus.chargingProfiles
@@ -669,8 +671,8 @@ export const propagateSerialNumber = (
 export const hasFeatureProfile = (
   chargingStation: ChargingStation,
   featureProfile: SupportedFeatureProfiles
-): boolean | undefined => {
-  return getConfigurationKey(
+): boolean => {
+  return !!getConfigurationKey(
     chargingStation,
     StandardParametersKey.SupportedFeatureProfiles
   )?.value?.includes(featureProfile)
@@ -860,12 +862,14 @@ export const waitChargingStationEvents = async (
       resolve(events)
       return
     }
-    emitter.on(event, () => {
+    const handler = () => {
       ++events
       if (events === eventsToWait) {
+        emitter.off(event, handler)
         resolve(events)
       }
-    })
+    }
+    emitter.on(event, handler)
   })
 }
 
@@ -884,13 +888,9 @@ const getConfiguredMaxNumberOfConnectors = (stationTemplate: ChargingStationTemp
         ? getMaxNumberOfConnectors(stationTemplate.Connectors) - 1
         : getMaxNumberOfConnectors(stationTemplate.Connectors)
   } else if (stationTemplate.Evses != null && stationTemplate.Connectors == null) {
-    for (const evse in stationTemplate.Evses) {
-      if (evse === '0') {
-        continue
-      }
-      configuredMaxNumberOfConnectors += getMaxNumberOfConnectors(
-        stationTemplate.Evses[evse].Connectors
-      )
+    for (const [evseId, evseTemplate] of Object.entries(stationTemplate.Evses)) {
+      if (evseId === '0') continue
+      configuredMaxNumberOfConnectors += getMaxNumberOfConnectors(evseTemplate.Connectors)
     }
   }
   return configuredMaxNumberOfConnectors

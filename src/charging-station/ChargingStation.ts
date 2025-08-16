@@ -1625,7 +1625,7 @@ export class ChargingStation extends EventEmitter {
             }
             const templateConnectorId =
               connectorId > 0 && stationTemplate.randomConnectors === true
-                ? randomInt(1, templateMaxAvailableConnectors)
+                ? randomInt(1, templateMaxAvailableConnectors + 1)
                 : connectorId
             const connectorStatus = stationTemplate.Connectors[templateConnectorId]
             checkStationInfoConnectorStatus(
@@ -1868,7 +1868,7 @@ export class ChargingStation extends EventEmitter {
     }
     if (
       getConfigurationKey(this, StandardParametersKey.LocalAuthListEnabled) == null &&
-      hasFeatureProfile(this, SupportedFeatureProfiles.LocalAuthListManagement) === true
+      hasFeatureProfile(this, SupportedFeatureProfiles.LocalAuthListManagement)
     ) {
       addConfigurationKey(this, StandardParametersKey.LocalAuthListEnabled, 'false')
     }

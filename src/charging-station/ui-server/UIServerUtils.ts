@@ -7,56 +7,74 @@ import { isEmpty, logger, logPrefix } from '../../utils/index.js'
 export const getUsernameAndPasswordFromAuthorizationToken = (
   authorizationToken: string,
   next: (err?: Error) => void
-): [string, string] => {
-  if (
-    !/^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/.test(authorizationToken)
-  ) {
-    next(new BaseError('Invalid basic authentication token format'))
+): [string, string] | undefined => {
+  try {
+    const authentication = Buffer.from(authorizationToken, 'base64').toString('utf8')
+    const separatorIndex = authentication.indexOf(':')
+    if (separatorIndex === -1) {
+      next(new BaseError('Invalid basic authentication token format: missing ":" separator'))
+      return undefined
+    }
+    const username = authentication.slice(0, separatorIndex)
+    const password = authentication.slice(separatorIndex + 1)
+    if (isEmpty(username)) {
+      next(new BaseError('Invalid basic authentication token format: empty username'))
+      return undefined
+    }
+    return [username, password]
+  } catch (error) {
+    next(new BaseError(`Invalid basic authentication token format: ${(error as Error).message}`))
+    return undefined
   }
-  const authentication = Buffer.from(authorizationToken, 'base64').toString()
-  const authenticationParts = authentication.split(/:/)
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  return [authenticationParts.shift()!, authenticationParts.join(':')]
 }
 
 export const handleProtocols = (
   protocols: Set<string>,
   _request: IncomingMessage
 ): false | string => {
-  let protocol: Protocol | undefined
-  let version: ProtocolVersion | undefined
   if (isEmpty(protocols)) {
     return false
   }
-  for (const fullProtocol of protocols) {
-    if (isProtocolAndVersionSupported(fullProtocol)) {
-      return fullProtocol
+  for (const protocol of protocols) {
+    if (isProtocolAndVersionSupported(protocol)) {
+      return protocol
     }
   }
   logger.error(
     `${logPrefix(
       ' UI WebSocket Server |'
-      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-    )} Unsupported protocol: '${protocol}' or protocol version: '${version}'`
+    )} Unsupported protocol in client request: '${Array.from(protocols).join(', ')}'`
   )
   return false
 }
 
 export const isProtocolAndVersionSupported = (protocolStr: string): boolean => {
-  const [protocol, version] = getProtocolAndVersion(protocolStr)
+  const protocolAndVersion = getProtocolAndVersion(protocolStr)
+  if (protocolAndVersion == null) {
+    return false
+  }
+  const [protocol, version] = protocolAndVersion
   return (
     Object.values(Protocol).includes(protocol) && Object.values(ProtocolVersion).includes(version)
   )
 }
 
-export const getProtocolAndVersion = (protocolStr: string): [Protocol, ProtocolVersion] => {
+export const getProtocolAndVersion = (
+  protocolStr: string
+): [Protocol, ProtocolVersion] | undefined => {
+  if (isEmpty(protocolStr)) {
+    return undefined
+  }
+  if (!protocolStr.startsWith(Protocol.UI)) {
+    return undefined
+  }
   const protocolIndex = protocolStr.indexOf(Protocol.UI)
-  const protocol = protocolStr.substring(
-    protocolIndex,
-    protocolIndex + Protocol.UI.length
-  ) as Protocol
-  const version = protocolStr.substring(protocolIndex + Protocol.UI.length) as ProtocolVersion
-  return [protocol, version]
+  const protocol = protocolStr.substring(protocolIndex, protocolIndex + Protocol.UI.length)
+  const version = protocolStr.substring(protocolIndex + Protocol.UI.length)
+  if (isEmpty(protocol) || isEmpty(version)) {
+    return undefined
+  }
+  return [protocol, version] as [Protocol, ProtocolVersion]
 }
 
 export const isLoopback = (address: string): boolean => {

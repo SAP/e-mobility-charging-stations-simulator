@@ -4,6 +4,7 @@ import type { ChargingStation } from './ChargingStation.js'
 import { logger } from '../utils/index.js'
 
 interface AddConfigurationKeyParams {
+  caseInsensitive?: boolean
   overwrite?: boolean
   save?: boolean
 }
@@ -22,12 +23,27 @@ export const getConfigurationKey = (
   key: ConfigurationKeyType,
   caseInsensitive = false
 ): ConfigurationKey | undefined => {
-  return chargingStation.ocppConfiguration?.configurationKey?.find(configElement => {
-    if (caseInsensitive) {
-      return configElement.key.toLowerCase() === key.toLowerCase()
-    }
-    return configElement.key === key
-  })
+  if (!Array.isArray(chargingStation.ocppConfiguration?.configurationKey)) return undefined
+  return chargingStation.ocppConfiguration.configurationKey.find(configElement =>
+    caseInsensitive
+      ? configElement.key.toLowerCase() === key.toLowerCase()
+      : configElement.key === key
+  )
+}
+
+const getConfigurationKeyIndex = (
+  chargingStation: ChargingStation,
+  key: ConfigurationKeyType,
+  caseInsensitive = false
+): number => {
+  if (!Array.isArray(chargingStation.ocppConfiguration?.configurationKey)) {
+    return -1
+  }
+  return chargingStation.ocppConfiguration.configurationKey.findIndex(configElement =>
+    caseInsensitive
+      ? configElement.key.toLowerCase() === key.toLowerCase()
+      : configElement.key === key
+  )
 }
 
 export const addConfigurationKey = (
@@ -45,16 +61,30 @@ export const addConfigurationKey = (
     },
     ...options,
   }
-  params = { ...{ overwrite: false, save: false }, ...params }
-  let keyFound = getConfigurationKey(chargingStation, key)
-  if (keyFound != null && params.overwrite) {
-    deleteConfigurationKey(chargingStation, keyFound.key, {
-      save: false,
-    })
-    keyFound = undefined
+  params = { ...{ caseInsensitive: false, overwrite: false, save: false }, ...params }
+  if (!Array.isArray(chargingStation.ocppConfiguration?.configurationKey)) {
+    return
   }
-  if (keyFound == null) {
-    chargingStation.ocppConfiguration?.configurationKey?.push({
+  const keyIndex = getConfigurationKeyIndex(chargingStation, key, params.caseInsensitive)
+  if (keyIndex !== -1) {
+    if (params.overwrite) {
+      chargingStation.ocppConfiguration.configurationKey[keyIndex] = {
+        ...chargingStation.ocppConfiguration.configurationKey[keyIndex],
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        readonly: options.readonly!,
+        reboot: options.reboot,
+        value,
+        visible: options.visible,
+      }
+    } else {
+      logger.error(
+        `${chargingStation.logPrefix()} Trying to add an already existing configuration key: %j`,
+        chargingStation.ocppConfiguration.configurationKey[keyIndex]
+      )
+      return
+    }
+  } else {
+    chargingStation.ocppConfiguration.configurationKey.push({
       key,
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       readonly: options.readonly!,
@@ -62,13 +92,8 @@ export const addConfigurationKey = (
       value,
       visible: options.visible,
     })
-    params.save && chargingStation.saveOcppConfiguration()
-  } else {
-    logger.error(
-      `${chargingStation.logPrefix()} Trying to add an already existing configuration key: %j`,
-      keyFound
-    )
   }
+  params.save && chargingStation.saveOcppConfiguration()
 }
 
 export const setConfigurationKeyValue = (
@@ -77,21 +102,21 @@ export const setConfigurationKeyValue = (
   value: string,
   caseInsensitive = false
 ): ConfigurationKey | undefined => {
-  const keyFound = getConfigurationKey(chargingStation, key, caseInsensitive)
-  if (keyFound != null) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    chargingStation.ocppConfiguration!.configurationKey![
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      chargingStation.ocppConfiguration!.configurationKey!.indexOf(keyFound)
-    ].value = value
-    chargingStation.saveOcppConfiguration()
-  } else {
-    logger.error(
-      `${chargingStation.logPrefix()} Trying to set a value on a non existing configuration key: %j`,
-      { key, value }
-    )
+  if (!Array.isArray(chargingStation.ocppConfiguration?.configurationKey)) {
+    return undefined
   }
-  return keyFound
+  const keyIndex = getConfigurationKeyIndex(chargingStation, key, caseInsensitive)
+  if (keyIndex !== -1) {
+    const keyFound = chargingStation.ocppConfiguration.configurationKey[keyIndex]
+    keyFound.value = value
+    chargingStation.saveOcppConfiguration()
+    return keyFound
+  }
+  logger.error(
+    `${chargingStation.logPrefix()} Trying to set a value on a non existing configuration key: %j`,
+    { key, value }
+  )
+  return undefined
 }
 
 export const deleteConfigurationKey = (
@@ -100,13 +125,17 @@ export const deleteConfigurationKey = (
   params?: DeleteConfigurationKeyParams
 ): ConfigurationKey[] | undefined => {
   params = { ...{ caseInsensitive: false, save: true }, ...params }
-  const keyFound = getConfigurationKey(chargingStation, key, params.caseInsensitive)
-  if (keyFound != null) {
-    const deletedConfigurationKey = chargingStation.ocppConfiguration?.configurationKey?.splice(
-      chargingStation.ocppConfiguration.configurationKey.indexOf(keyFound),
+  if (!Array.isArray(chargingStation.ocppConfiguration?.configurationKey)) {
+    return undefined
+  }
+  const keyIndex = getConfigurationKeyIndex(chargingStation, key, params.caseInsensitive)
+  if (keyIndex !== -1) {
+    const deletedConfigurationKey = chargingStation.ocppConfiguration.configurationKey.splice(
+      keyIndex,
       1
     )
     params.save && chargingStation.saveOcppConfiguration()
     return deletedConfigurationKey
   }
+  return undefined
 }

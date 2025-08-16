@@ -68,10 +68,14 @@ const type = (value: unknown): string => {
 
 export const isEmpty = (value: unknown): boolean => {
   const valueType = type(value)
-  if (['NaN', 'Null', 'Number', 'Undefined'].includes(valueType)) {
+  if (['BigInt', 'Boolean', 'NaN', 'Null', 'Number', 'Undefined'].includes(valueType)) {
     return false
   }
   if (!value) return true
+
+  if (valueType === 'String') {
+    return (value as string).trim().length === 0
+  }
 
   if (valueType === 'Object') {
     return Object.keys(value as Record<string, unknown>).length === 0

@@ -16,7 +16,6 @@ import {
   type UIServerConfiguration,
 } from '../../types/index.js'
 import {
-  Constants,
   generateUUID,
   isNotEmptyString,
   JSONStringify,
@@ -98,29 +97,52 @@ export class UIHttpServer extends AbstractUIServer {
           .end(`${StatusCodes.UNAUTHORIZED.toString()} Unauthorized`)
         res.destroy()
         req.destroy()
+        return
       }
-    })
-    // Expected request URL pathname: /ui/:version/:procedureName
-    const [protocol, version, procedureName] = req.url?.split('/').slice(1) as [
-      Protocol,
-      ProtocolVersion,
-      ProcedureName
-    ]
-    const uuid = generateUUID()
-    this.responseHandlers.set(uuid, res)
-    try {
-      const fullProtocol = `${protocol}${version}`
-      if (!isProtocolAndVersionSupported(fullProtocol)) {
-        throw new BaseError(`Unsupported UI protocol version: '${fullProtocol}'`)
-      }
-      this.registerProtocolVersionUIService(version)
-      req.on('error', error => {
-        logger.error(
-          `${this.logPrefix(moduleName, 'requestListener.req.onerror')} Error on HTTP request:`,
-          error
-        )
+
+      const uuid = generateUUID()
+      this.responseHandlers.set(uuid, res)
+      res.on('close', () => {
+        this.responseHandlers.delete(uuid)
       })
-      if (req.method === HttpMethods.POST) {
+      try {
+        // Expected request URL pathname: /ui/:version/:procedureName
+        const rawUrl = req.url ?? ''
+        const { pathname } = new URL(rawUrl, 'http://localhost')
+        const parts = pathname.split('/').filter(Boolean)
+        if (parts.length < 3) {
+          throw new BaseError(
+            `Malformed URL path: '${pathname}' (expected /ui/:version/:procedureName)`
+          )
+        }
+        const [protocol, version, procedureName] = parts as [
+          Protocol,
+          ProtocolVersion,
+          ProcedureName
+        ]
+        const fullProtocol = `${protocol}${version}`
+        if (!isProtocolAndVersionSupported(fullProtocol)) {
+          throw new BaseError(`Unsupported UI protocol version: '${fullProtocol}'`)
+        }
+        this.registerProtocolVersionUIService(version)
+
+        req.on('error', error => {
+          logger.error(
+            `${this.logPrefix(moduleName, 'requestListener.req.onerror')} Error on HTTP request:`,
+            error
+          )
+          if (!res.headersSent) {
+            this.sendResponse(this.buildProtocolResponse(uuid, { status: ResponseStatus.FAILURE }))
+          } else {
+            this.responseHandlers.delete(uuid)
+          }
+        })
+
+        if (req.method !== HttpMethods.POST) {
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+          throw new BaseError(`Unsupported HTTP method: '${req.method}'`)
+        }
+
         const bodyBuffer: Uint8Array[] = []
         req
           .on('data', (chunk: Uint8Array) => {
@@ -140,28 +162,44 @@ export class UIHttpServer extends AbstractUIServer {
               )
               return
             }
-            this.uiServices
-              .get(version)
-              ?.requestHandler(this.buildProtocolRequest(uuid, procedureName, requestPayload))
+            const service = this.uiServices.get(version)
+            if (service == null || typeof service.requestHandler !== 'function') {
+              this.sendResponse(
+                this.buildProtocolResponse(uuid, { status: ResponseStatus.FAILURE })
+              )
+              return
+            }
+            // eslint-disable-next-line promise/no-promise-in-callback
+            service
+              .requestHandler(this.buildProtocolRequest(uuid, procedureName, requestPayload))
               .then((protocolResponse?: ProtocolResponse) => {
                 if (protocolResponse != null) {
                   this.sendResponse(protocolResponse)
+                } else {
+                  this.sendResponse(
+                    this.buildProtocolResponse(uuid, { status: ResponseStatus.SUCCESS })
+                  )
                 }
                 return undefined
               })
-              .catch(Constants.EMPTY_FUNCTION)
+              .catch((error: unknown) => {
+                logger.error(
+                  `${this.logPrefix(moduleName, 'requestListener.service.requestHandler')} UI service request handler error:`,
+                  error
+                )
+                this.sendResponse(
+                  this.buildProtocolResponse(uuid, { status: ResponseStatus.FAILURE })
+                )
+              })
           })
-      } else {
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        throw new BaseError(`Unsupported HTTP method: '${req.method}'`)
+      } catch (error) {
+        logger.error(
+          `${this.logPrefix(moduleName, 'requestListener')} Handle HTTP request error:`,
+          error
+        )
+        this.sendResponse(this.buildProtocolResponse(uuid, { status: ResponseStatus.FAILURE }))
       }
-    } catch (error) {
-      logger.error(
-        `${this.logPrefix(moduleName, 'requestListener')} Handle HTTP request error:`,
-        error
-      )
-      this.sendResponse(this.buildProtocolResponse(uuid, { status: ResponseStatus.FAILURE }))
-    }
+    })
   }
 
   private responseStatusToStatusCode (status: ResponseStatus): StatusCodes {
