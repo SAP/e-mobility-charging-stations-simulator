@@ -31,51 +31,44 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
   }
 
   private buildResponsePayload (uuid: string): ResponsePayload {
+    const responsesArray = this.responses.get(uuid)?.responses ?? []
     const responsesStatus =
-      this.responses
-        .get(uuid)
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        ?.responses.every(response => response?.status === ResponseStatus.SUCCESS) === true
+      responsesArray.length > 0 &&
+      responsesArray.every(response => response.status === ResponseStatus.SUCCESS)
         ? ResponseStatus.SUCCESS
         : ResponseStatus.FAILURE
     return {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-non-null-asserted-optional-chain
-      hashIdsSucceeded: this.responses
-        .get(uuid)
-        ?.responses.map(response => {
+      hashIdsSucceeded: responsesArray
+        .map(response => {
           // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
           if (response?.hashId != null && response?.status === ResponseStatus.SUCCESS) {
             return response.hashId
           }
           return undefined
         })
-        .filter(hashId => hashId != null)!,
+        .filter((hashId): hashId is string => hashId != null),
       status: responsesStatus,
       ...(responsesStatus === ResponseStatus.FAILURE && {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-non-null-asserted-optional-chain
-        hashIdsFailed: this.responses
-          .get(uuid)
-          ?.responses.map(response => {
+        hashIdsFailed: responsesArray
+          .map(response => {
             // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             if (response?.hashId != null && response?.status === ResponseStatus.FAILURE) {
               return response.hashId
             }
             return undefined
           })
-          .filter(hashId => hashId != null)!,
+          .filter((hashId): hashId is string => hashId != null),
       }),
       ...(responsesStatus === ResponseStatus.FAILURE && {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-non-null-asserted-optional-chain
-        responsesFailed: this.responses
-          .get(uuid)
-          ?.responses.map(response => {
+        responsesFailed: responsesArray
+          .map(response => {
             // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             if (response?.status === ResponseStatus.FAILURE) {
               return response
             }
             return undefined
           })
-          .filter(response => response != null)!,
+          .filter((response): response is BroadcastChannelResponsePayload => response != null),
       }),
     }
   }
@@ -102,17 +95,22 @@ export class UIServiceWorkerBroadcastChannel extends WorkerBroadcastChannel {
         responsesExpected: this.uiService.getBroadcastChannelExpectedResponses(uuid),
         responsesReceived: 1,
       })
-    } else if (
+    } else {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this.responses.get(uuid)!.responsesReceived <= this.responses.get(uuid)!.responsesExpected
-    ) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      ++this.responses.get(uuid)!.responsesReceived
-      this.responses.get(uuid)?.responses.push(responsePayload)
+      const responses = this.responses.get(uuid)!
+      if (responses.responsesReceived < responses.responsesExpected) {
+        ++responses.responsesReceived
+        responses.responses.push(responsePayload)
+      } else {
+        logger.debug(
+          `${this.uiService.logPrefix(moduleName, 'responseHandler')} Received response after all expected responses:`,
+          { responsePayload, uuid }
+        )
+      }
     }
-    if (
-      this.responses.get(uuid)?.responsesReceived === this.responses.get(uuid)?.responsesExpected
-    ) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const responses = this.responses.get(uuid)!
+    if (responses.responsesReceived >= responses.responsesExpected) {
       this.uiService.sendResponse(uuid, this.buildResponsePayload(uuid))
       this.responses.delete(uuid)
       this.uiService.deleteBroadcastChannelRequest(uuid)
