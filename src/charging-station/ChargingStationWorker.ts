@@ -16,8 +16,10 @@ if (Configuration.workerPoolInUse()) {
     ChargingStationWorkerData,
     ChargingStationInfo | undefined
   >((data?: ChargingStationWorkerData): ChargingStationInfo | undefined => {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const { index, options, templateFile } = data!
+    if (data == null) {
+      throw new BaseError('Invalid charging station worker data')
+    }
+    const { index, options, templateFile } = data
     return new ChargingStation(index, templateFile, options).stationInfo
   })
 } else {
@@ -27,43 +29,58 @@ if (Configuration.workerPoolInUse()) {
       parentPort?.on('message', (message: WorkerMessage<Data>) => {
         const { data, event, uuid } = message
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (uuid != null) {
-          switch (event) {
-            case WorkerMessageEvents.addWorkerElement:
-              try {
-                const chargingStation = new ChargingStation(
-                  data.index,
-                  data.templateFile,
-                  data.options
-                )
-                parentPort?.postMessage({
-                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                  data: chargingStation.stationInfo!,
-                  event: WorkerMessageEvents.addedWorkerElement,
-                  uuid,
-                } satisfies WorkerMessage<ChargingStationInfo>)
-              } catch (error) {
-                parentPort?.postMessage({
-                  data: {
-                    event,
-                    message: (error as Error).message,
-                    name: (error as Error).name,
-                    stack: (error as Error).stack,
-                  },
-                  event: WorkerMessageEvents.workerElementError,
-                  uuid,
-                } satisfies WorkerMessage<WorkerDataError>)
-              }
-              break
-            default:
-              throw new BaseError(
-                `Unknown worker message event: '${event}' received with data: '${JSON.stringify(
-                  data,
-                  undefined,
-                  2
-                )}'`
+        if (data == null || event == null || uuid == null) {
+          parentPort?.postMessage({
+            data: {
+              event,
+              message: 'Invalid worker message format',
+              name: 'WorkerMessageFormatError',
+            },
+            event: WorkerMessageEvents.workerElementError,
+            uuid,
+          } satisfies WorkerMessage<WorkerDataError>)
+          return
+        }
+        switch (event) {
+          case WorkerMessageEvents.addWorkerElement:
+            try {
+              const chargingStation = new ChargingStation(
+                data.index,
+                data.templateFile,
+                data.options
               )
-          }
+              const stationInfo = chargingStation.stationInfo
+              if (stationInfo == null) {
+                throw new BaseError('Charging station info is not defined')
+              }
+              parentPort?.postMessage({
+                data: stationInfo,
+                event: WorkerMessageEvents.addedWorkerElement,
+                uuid,
+              } satisfies WorkerMessage<ChargingStationInfo>)
+            } catch (error) {
+              parentPort?.postMessage({
+                data: {
+                  event,
+                  message: (error as Error).message,
+                  name: (error as Error).name,
+                  stack: (error as Error).stack,
+                },
+                event: WorkerMessageEvents.workerElementError,
+                uuid,
+              } satisfies WorkerMessage<WorkerDataError>)
+            }
+            break
+          default:
+            parentPort?.postMessage({
+              data: {
+                event,
+                message: `Unknown worker message event: '${event}'`,
+                name: 'WorkerMessageEventError',
+              },
+              event: WorkerMessageEvents.workerElementError,
+              uuid,
+            } satisfies WorkerMessage<WorkerDataError>)
         }
       })
     }
