@@ -1,7 +1,7 @@
 import type { EventEmitterAsyncResource } from 'node:events'
 import type { PoolInfo } from 'poolifier'
 
-import { existsSync } from 'node:fs'
+import { statSync } from 'node:fs'
 
 import type { SetInfo, WorkerData, WorkerOptions } from './WorkerTypes.js'
 
@@ -29,8 +29,12 @@ export abstract class WorkerAbstract<D extends WorkerData, R extends WorkerData>
     if (workerScript.trim().length === 0) {
       throw new Error('Worker script is an empty string')
     }
-    if (!existsSync(workerScript)) {
-      throw new Error('Worker script file does not exist')
+    const workerScriptStats = statSync(workerScript, { throwIfNoEntry: false })
+    if (workerScriptStats == null) {
+      throw new Error(`Worker script file does not exist: '${workerScript}'`)
+    }
+    if (!workerScriptStats.isFile()) {
+      throw new Error(`Worker script is not a regular file: '${workerScript}'`)
     }
     this.workerScript = workerScript
     this.workerOptions = workerOptions

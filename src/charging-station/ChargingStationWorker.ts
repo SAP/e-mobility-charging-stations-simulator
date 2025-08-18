@@ -10,7 +10,9 @@ import { Configuration } from '../utils/index.js'
 import { type WorkerDataError, type WorkerMessage, WorkerMessageEvents } from '../worker/index.js'
 import { ChargingStation } from './ChargingStation.js'
 
-export let chargingStationWorker: object
+export let chargingStationWorker:
+  | object
+  | ThreadWorker<ChargingStationWorkerData, ChargingStationInfo>
 if (Configuration.workerPoolInUse()) {
   chargingStationWorker = new ThreadWorker<
     ChargingStationWorkerData,

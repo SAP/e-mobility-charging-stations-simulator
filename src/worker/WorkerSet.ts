@@ -51,7 +51,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
   }
 
   private readonly promiseResponseMap: Map<
-    `${string}-${string}-${string}-${string}`,
+    `${string}-${string}-${string}-${string}-${string}`,
     ResponseWrapper<R>
   >
 
@@ -77,7 +77,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     }
     this.workerSet = new Set<WorkerSetElement>()
     this.promiseResponseMap = new Map<
-      `${string}-${string}-${string}-${string}`,
+      `${string}-${string}-${string}-${string}-${string}`,
       ResponseWrapper<R>
     >()
     if (this.workerOptions.poolOptions?.enableEvents === true) {
@@ -99,19 +99,17 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
         event: WorkerMessageEvents.addWorkerElement,
         uuid: randomUUID(),
       } satisfies WorkerMessage<D>
-      workerSetElement.worker.postMessage(message)
       this.promiseResponseMap.set(message.uuid, {
         reject,
         resolve,
         workerSetElement,
       })
+      workerSetElement.worker.postMessage(message)
     })
     const response = await sendMessageToWorker
     // Add element sequentially to optimize memory at startup
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    if (this.workerOptions.elementAddDelay! > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      await sleep(randomizeDelay(this.workerOptions.elementAddDelay!))
+    if (this.workerOptions.elementAddDelay != null && this.workerOptions.elementAddDelay > 0) {
+      await sleep(randomizeDelay(this.workerOptions.elementAddDelay))
     }
     return response
   }
@@ -124,8 +122,8 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     this.workerOptions.workerStartDelay! > 0 &&
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       (await sleep(randomizeDelay(this.workerOptions.workerStartDelay!)))
-    this.emitter?.emit(WorkerSetEvents.started, this.info)
     this.started = true
+    this.emitter?.emit(WorkerSetEvents.started, this.info)
   }
 
   /** @inheritDoc */
@@ -141,8 +139,20 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
       await worker.terminate()
       await waitWorkerExit
     }
-    this.emitter?.emit(WorkerSetEvents.stopped, this.info)
+    for (const [uuid, responseWrapper] of this.promiseResponseMap) {
+      try {
+        responseWrapper.reject(
+          new Error(`WorkerSet stopped before responding request (uuid: ${uuid})`)
+        )
+      } finally {
+        this.promiseResponseMap.delete(uuid)
+      }
+    }
+    if (this.workerSet.size > 0) {
+      this.workerSet.clear()
+    }
     this.started = false
+    this.emitter?.emit(WorkerSetEvents.stopped, this.info)
     this.emitter?.emitDestroy()
   }
 
@@ -160,6 +170,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     worker.on('message', (message: WorkerMessage<R>) => {
       const { data, event, uuid } = message
       if (this.promiseResponseMap.has(uuid)) {
+        let error: Error
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const { reject, resolve, workerSetElement } = this.promiseResponseMap.get(uuid)!
         switch (event) {
@@ -173,22 +184,32 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
             reject(data)
             break
           default:
-            reject(
-              new Error(
-                `Unknown worker message event: '${event}' received with data: '${JSON.stringify(
-                  data,
-                  undefined,
-                  2
-                )}'`
-              )
+            error = new Error(
+              `Unknown worker message event: '${event}' received with data: '${JSON.stringify(
+                data,
+                undefined,
+                2
+              )}'`
             )
+            this.emitter?.emit(WorkerSetEvents.error, error)
+            reject(error)
         }
         this.promiseResponseMap.delete(uuid)
+      } else {
+        this.emitter?.emit(WorkerSetEvents.elementError, {
+          data,
+          event,
+          message: `Unknown worker message uuid: '${uuid}'`,
+        })
       }
     })
     worker.on('error', this.workerOptions.poolOptions?.errorHandler ?? EMPTY_FUNCTION)
     worker.once('error', error => {
       this.emitter?.emit(WorkerSetEvents.error, error)
+      const workerSetElement = this.getWorkerSetElementByWorker(worker)
+      if (workerSetElement != null) {
+        this.rejectPendingPromiseForWorker(workerSetElement, error)
+      }
       if (
         this.workerOptions.poolOptions?.restartWorkerOnError === true &&
         this.started &&
@@ -203,7 +224,11 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     worker.on('online', this.workerOptions.poolOptions?.onlineHandler ?? EMPTY_FUNCTION)
     worker.on('exit', this.workerOptions.poolOptions?.exitHandler ?? EMPTY_FUNCTION)
     worker.once('exit', () => {
-      this.removeWorkerSetElement(this.getWorkerSetElementByWorker(worker))
+      const workerSetElement = this.getWorkerSetElementByWorker(worker)
+      if (workerSetElement != null) {
+        this.rejectPendingPromiseForWorker(workerSetElement, new Error('Worker exited'))
+      }
+      this.removeWorkerSetElement(workerSetElement)
     })
     const workerSetElement: WorkerSetElement = {
       numberOfWorkerElements: 0,
@@ -226,23 +251,36 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     if (chosenWorkerSetElement == null) {
       chosenWorkerSetElement = this.addWorkerSetElement()
       // Add worker set element sequentially to optimize memory at startup
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this.workerOptions.workerStartDelay! > 0 &&
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        (await sleep(randomizeDelay(this.workerOptions.workerStartDelay!)))
+      if (this.workerOptions.workerStartDelay != null && this.workerOptions.workerStartDelay > 0) {
+        await sleep(randomizeDelay(this.workerOptions.workerStartDelay))
+      }
     }
     return chosenWorkerSetElement
   }
 
   private getWorkerSetElementByWorker (worker: Worker): undefined | WorkerSetElement {
-    let workerSetElt: undefined | WorkerSetElement
+    let workerSetElementFound: undefined | WorkerSetElement
     for (const workerSetElement of this.workerSet) {
       if (workerSetElement.worker.threadId === worker.threadId) {
-        workerSetElt = workerSetElement
+        workerSetElementFound = workerSetElement
         break
       }
     }
-    return workerSetElt
+    return workerSetElementFound
+  }
+
+  private rejectPendingPromiseForWorker (workerSetElement: WorkerSetElement, reason: unknown): void {
+    for (const [uuid, responseWrapper] of this.promiseResponseMap) {
+      if (responseWrapper.workerSetElement === workerSetElement) {
+        try {
+          responseWrapper.reject(
+            reason ?? new Error(`Worker failed before completing request (uuid: ${uuid})`)
+          )
+        } finally {
+          this.promiseResponseMap.delete(uuid)
+        }
+      }
+    }
   }
 
   private removeWorkerSetElement (workerSetElement: undefined | WorkerSetElement): void {

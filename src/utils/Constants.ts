@@ -10,7 +10,7 @@ import {
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class Constants {
-  static readonly DEFAULT_ATG_CONFIGURATION: AutomaticTransactionGeneratorConfiguration =
+  static readonly DEFAULT_ATG_CONFIGURATION: Readonly<AutomaticTransactionGeneratorConfiguration> =
     Object.freeze({
       enable: false,
       maxDelayBetweenTwoTransactions: 30,
@@ -27,7 +27,7 @@ export class Constants {
   static readonly DEFAULT_BOOT_NOTIFICATION_INTERVAL = 60000 // Ms
 
   static readonly DEFAULT_CIRCULAR_BUFFER_CAPACITY = 386
-  static readonly DEFAULT_CONNECTION_TIMEOUT = 30
+  static readonly DEFAULT_CONNECTION_TIMEOUT = 30 // Seconds
 
   static readonly DEFAULT_FLUCTUATION_PERCENT = 5
   static readonly DEFAULT_HASH_ALGORITHM = 'sha384'
@@ -87,11 +87,11 @@ export class Constants {
   static readonly DEFAULT_UI_SERVER_PORT = 8080
   static readonly EMPTY_FROZEN_OBJECT = Object.freeze({})
 
-  static readonly EMPTY_FUNCTION = Object.freeze(() => {
+  static readonly EMPTY_FUNCTION: () => void = Object.freeze(() => {
     /* This is intentional */
   })
 
-  static readonly MAX_RANDOM_INTEGER = 281474976710655
+  static readonly MAX_RANDOM_INTEGER = 281474976710655 // 2^48 - 1 (randomInit() limit)
 
   static readonly PERFORMANCE_RECORDS_TABLE = 'performance_records'
 
