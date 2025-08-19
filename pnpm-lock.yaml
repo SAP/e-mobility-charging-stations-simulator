@@ -40,8 +40,8 @@ importers:
         specifier: ^5.0.5
         version: 5.0.5
       chalk:
-        specifier: ^5.5.0
-        version: 5.5.0
+        specifier: ^5.6.0
+        version: 5.6.0
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -211,8 +211,8 @@ importers:
         specifier: ^2.4.6
         version: 2.4.6
       '@vue/tsconfig':
-        specifier: ^0.8.0
-        version: 0.8.0(typescript@5.9.2)(vue@3.5.18(typescript@5.9.2))
+        specifier: ^0.8.1
+        version: 0.8.1(typescript@5.9.2)(vue@3.5.18(typescript@5.9.2))
       cross-env:
         specifier: ^10.0.0
         version: 10.0.0
@@ -1576,8 +1576,8 @@ packages:
   '@vue/test-utils@2.4.6':
     resolution: {integrity: sha512-FMxEjOpYNYiFe0GkaHsnJPXFHxQ6m4t8vI/ElPGpMWxZKpmRvQ33OIrvRXemy6yha03RxhOlQuy+gZMC3CQSow==}
 
-  '@vue/tsconfig@0.8.0':
-    resolution: {integrity: sha512-HqJDMjxk9D3mbXAcO9IxqKPeKlVnRWvzyHtgY35L/VoLKubqn7zX80UeiD3jfS/gf+qS7ZlO5KmfXMUrsQtOeQ==}
+  '@vue/tsconfig@0.8.1':
+    resolution: {integrity: sha512-aK7feIWPXFSUhsCP9PFqPyFOcz4ENkb8hZ2pneL6m2UjCkccvaOhC/5KCKluuBufvp2KzkbdA2W2pk20vLzu3g==}
     peerDependencies:
       typescript: 5.x
       vue: ^3.4.0
@@ -2047,8 +2047,8 @@ packages:
     resolution: {integrity: sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA==}
     engines: {node: '>=10'}
 
-  chalk@5.5.0:
-    resolution: {integrity: sha512-1tm8DTaJhPBG3bIkVeZt1iZM9GfSX2lzOeDVZH9R9ffRHpmHvxZ/QhgQH/aDTkswQVt+YHdXAdS/In/30OjCbg==}
+  chalk@5.6.0:
+    resolution: {integrity: sha512-46QrSQFyVSEyYAgQ22hQ+zDa60YHA4fBstHmtSApj1Y5vKtG27fWowW03jCk5KcbXEWPZUIR894aARCA/G1kfQ==}
     engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
 
   char-spinner@1.0.1:
@@ -6546,7 +6546,7 @@ snapshots:
   '@commitlint/format@19.8.1':
     dependencies:
       '@commitlint/types': 19.8.1
-      chalk: 5.5.0
+      chalk: 5.6.0
 
   '@commitlint/is-ignored@19.8.1':
     dependencies:
@@ -6566,7 +6566,7 @@ snapshots:
       '@commitlint/execute-rule': 19.8.1
       '@commitlint/resolve-extends': 19.8.1
       '@commitlint/types': 19.8.1
-      chalk: 5.5.0
+      chalk: 5.6.0
       cosmiconfig: 9.0.0(typescript@5.9.2)
       cosmiconfig-typescript-loader: 6.1.0(@types/node@24.3.0)(cosmiconfig@9.0.0(typescript@5.9.2))(typescript@5.9.2)
       lodash.isplainobject: 4.0.6
@@ -6617,7 +6617,7 @@ snapshots:
   '@commitlint/types@19.8.1':
     dependencies:
       '@types/conventional-commits-parser': 5.0.1
-      chalk: 5.5.0
+      chalk: 5.6.0
 
   '@cspell/cspell-bundled-dicts@9.2.0':
     dependencies:
@@ -7727,7 +7727,7 @@ snapshots:
       js-beautify: 1.15.4
       vue-component-type-helpers: 2.2.12
 
-  '@vue/tsconfig@0.8.0(typescript@5.9.2)(vue@3.5.18(typescript@5.9.2))':
+  '@vue/tsconfig@0.8.1(typescript@5.9.2)(vue@3.5.18(typescript@5.9.2))':
     optionalDependencies:
       typescript: 5.9.2
       vue: 3.5.18(typescript@5.9.2)
@@ -8326,7 +8326,7 @@ snapshots:
       ansi-styles: 4.3.0
       supports-color: 7.2.0
 
-  chalk@5.5.0: {}
+  chalk@5.6.0: {}
 
   char-spinner@1.0.1: {}
 
@@ -10591,7 +10591,7 @@ snapshots:
 
   lint-staged@16.1.5:
     dependencies:
-      chalk: 5.5.0
+      chalk: 5.6.0
       commander: 14.0.0
       debug: 4.4.1
       lilconfig: 3.1.3
