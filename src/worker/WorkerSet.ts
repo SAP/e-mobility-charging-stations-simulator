@@ -118,10 +118,9 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
   public async start (): Promise<void> {
     this.addWorkerSetElement()
     // Add worker set element sequentially to optimize memory at startup
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.workerOptions.workerStartDelay! > 0 &&
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      (await sleep(randomizeDelay(this.workerOptions.workerStartDelay!)))
+    if (this.workerOptions.workerStartDelay != null && this.workerOptions.workerStartDelay > 0) {
+      await sleep(randomizeDelay(this.workerOptions.workerStartDelay))
+    }
     this.started = true
     this.emitter?.emit(WorkerSetEvents.started, this.info)
   }
