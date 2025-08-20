@@ -1,18 +1,18 @@
 export const average = (dataSet: number[]): number => {
-  if (Array.isArray(dataSet) && dataSet.length === 0) {
+  if (!Array.isArray(dataSet) || dataSet.length === 0) {
     return 0
   }
-  if (Array.isArray(dataSet) && dataSet.length === 1) {
+  if (dataSet.length === 1) {
     return dataSet[0]
   }
   return dataSet.reduce((accumulator, number) => accumulator + number, 0) / dataSet.length
 }
 
 export const median = (dataSet: number[]): number => {
-  if (Array.isArray(dataSet) && dataSet.length === 0) {
+  if (!Array.isArray(dataSet) || dataSet.length === 0) {
     return 0
   }
-  if (Array.isArray(dataSet) && dataSet.length === 1) {
+  if (dataSet.length === 1) {
     return dataSet[0]
   }
   const sortedDataSet = dataSet.slice().sort((a, b) => a - b)
@@ -29,10 +29,13 @@ export const max = (...args: number[]): number =>
 
 // TODO: use order statistics tree https://en.wikipedia.org/wiki/Order_statistic_tree
 export const percentile = (dataSet: number[], percentile: number): number => {
+  if (!Array.isArray(dataSet)) {
+    throw new TypeError('Data set must be an array')
+  }
   if (percentile < 0 || percentile > 100) {
     throw new RangeError('Percentile is not between 0 and 100')
   }
-  if (Array.isArray(dataSet) && dataSet.length === 0) {
+  if (dataSet.length === 0) {
     return 0
   }
   const sortedDataSet = dataSet.slice().sort((a, b) => a - b)
@@ -63,7 +66,10 @@ export const percentile = (dataSet: number[], percentile: number): number => {
  * @internal
  */
 export const std = (dataSet: number[], dataSetAverage: number = average(dataSet)): number => {
-  if (Array.isArray(dataSet) && dataSet.length <= 1) {
+  if (!Array.isArray(dataSet)) {
+    throw new TypeError('Data set must be an array')
+  }
+  if (dataSet.length <= 1) {
     return 0
   }
   return Math.sqrt(
