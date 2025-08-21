@@ -239,7 +239,11 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
       }
       worker.unref()
       // eslint-disable-next-line promise/no-promise-in-callback
-      worker.terminate().catch((error: unknown) => this.emitter?.emit(WorkerSetEvents.error, error))
+      worker.terminate().catch((error: unknown) => {
+        if (this.emitter != null && this.emitter.listenerCount(WorkerSetEvents.error) > 0) {
+          this.emitter.emit(WorkerSetEvents.error, error)
+        }
+      })
     })
     worker.on('online', this.workerOptions.poolOptions?.onlineHandler ?? EMPTY_FUNCTION)
     worker.on('exit', this.workerOptions.poolOptions?.exitHandler ?? EMPTY_FUNCTION)
