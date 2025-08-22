@@ -122,9 +122,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
       await sleep(randomizeDelay(this.workerOptions.workerStartDelay))
     }
     this.started = true
-    if (this.emitter != null && this.emitter.listenerCount(WorkerSetEvents.started) > 0) {
-      this.emitter.emit(WorkerSetEvents.started, this.info)
-    }
+    this.safeEmit(WorkerSetEvents.started, this.info)
   }
 
   /** @inheritDoc */
@@ -179,22 +177,12 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
         const { reject, resolve, workerSetElement } = this.promiseResponseMap.get(uuid)!
         switch (event) {
           case WorkerMessageEvents.addedWorkerElement:
-            if (
-              this.emitter != null &&
-              this.emitter.listenerCount(WorkerSetEvents.elementAdded) > 0
-            ) {
-              this.emitter.emit(WorkerSetEvents.elementAdded, this.info)
-            }
+            this.safeEmit(WorkerSetEvents.elementAdded, this.info)
             ++workerSetElement.numberOfWorkerElements
             resolve(data)
             break
           case WorkerMessageEvents.workerElementError:
-            if (
-              this.emitter != null &&
-              this.emitter.listenerCount(WorkerSetEvents.elementError) > 0
-            ) {
-              this.emitter.emit(WorkerSetEvents.elementError, data)
-            }
+            this.safeEmit(WorkerSetEvents.elementError, data)
             reject(data)
             break
           default:
@@ -205,27 +193,21 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
                 2
               )}'`
             )
-            if (this.emitter != null && this.emitter.listenerCount(WorkerSetEvents.error) > 0) {
-              this.emitter.emit(WorkerSetEvents.error, error)
-            }
+            this.safeEmit(WorkerSetEvents.error, error)
             reject(error)
         }
         this.promiseResponseMap.delete(uuid)
       } else {
-        if (this.emitter != null && this.emitter.listenerCount(WorkerSetEvents.elementError) > 0) {
-          this.emitter.emit(WorkerSetEvents.elementError, {
-            data,
-            event,
-            message: `Unknown worker message uuid: '${uuid}'`,
-          })
-        }
+        this.safeEmit(WorkerSetEvents.elementError, {
+          data,
+          event,
+          message: `Unknown worker message uuid: '${uuid}'`,
+        })
       }
     })
     worker.on('error', this.workerOptions.poolOptions?.errorHandler ?? EMPTY_FUNCTION)
     worker.once('error', error => {
-      if (this.emitter != null && this.emitter.listenerCount(WorkerSetEvents.error) > 0) {
-        this.emitter.emit(WorkerSetEvents.error, error)
-      }
+      this.safeEmit(WorkerSetEvents.error, error)
       const workerSetElement = this.getWorkerSetElementByWorker(worker)
       if (workerSetElement != null) {
         this.rejectPendingPromiseForWorker(workerSetElement, error)
@@ -240,9 +222,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
       worker.unref()
       // eslint-disable-next-line promise/no-promise-in-callback
       worker.terminate().catch((error: unknown) => {
-        if (this.emitter != null && this.emitter.listenerCount(WorkerSetEvents.error) > 0) {
-          this.emitter.emit(WorkerSetEvents.error, error)
-        }
+        this.safeEmit(WorkerSetEvents.error, error)
       })
     })
     worker.on('online', this.workerOptions.poolOptions?.onlineHandler ?? EMPTY_FUNCTION)
@@ -312,5 +292,11 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
       return
     }
     this.workerSet.delete(workerSetElement)
+  }
+
+  private safeEmit (event: WorkerSetEvents, ...args: unknown[]): void {
+    if (this.emitter != null && this.emitter.listenerCount(event) > 0) {
+      this.emitter.emit(event, ...args)
+    }
   }
 }
