@@ -177,8 +177,8 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
         const { reject, resolve, workerSetElement } = this.promiseResponseMap.get(uuid)!
         switch (event) {
           case WorkerMessageEvents.addedWorkerElement:
-            this.safeEmit(WorkerSetEvents.elementAdded, this.info)
             ++workerSetElement.numberOfWorkerElements
+            this.safeEmit(WorkerSetEvents.elementAdded, this.info)
             resolve(data)
             break
           case WorkerMessageEvents.workerElementError:
