@@ -22,7 +22,7 @@ Simple [node.js](https://nodejs.org/) software to simulate and scale a set of ch
 - [Installation](#installation)
   - [Prerequisites](#prerequisites)
     - [Windows](#windows)
-  - [macOS](#macos)
+    - [macOS](#macos)
     - [GNU/Linux](#gnulinux)
   - [Development prerequisites (optional)](#development-prerequisites-optional)
     - [Unix](#unix)
