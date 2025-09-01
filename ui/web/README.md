@@ -29,7 +29,7 @@ The Web UI code and configuration is in the repository directory [ui/web](./../.
 
 #### Simulator UI Server Configuration
 
-The simulator UI server must be enabled, use WebSocket transport type and have authentication disabled. The simulator main configuration file should have a `uiServer` section like this:
+The simulator UI server must be enabled, use WebSocket transport type, and be configured consistently with your Web UI authentication. The simulator main configuration file should have a `uiServer` section like this:
 
 ```json
   "uiServer": {
@@ -105,6 +105,12 @@ Copy the configuration template [src/assets/config-template.json](./src/assets/c
 
 ### Run
 
+#### Install dependencies
+
+```shell
+pnpm install
+```
+
 #### Compiles and run for production
 
 ```shell
@@ -117,7 +123,7 @@ You can now follow the link displayed in the terminal. The Web UI looks like the
 
 ![webui](./src/assets/webui.png)
 
-1. With the buttons on the top you can change UI server, start/stop the simulator, add new charging stations and refresh the content.
+1. With the buttons on the top you can change UI server, start/stop the simulator, add new charging stations, and refresh the content.
 2. Each charging station is a row in the table with specific 'Actions' to execute on. Try 'Stop Charging Station' and refresh with the large blue button and see the status 'Started' turns from 'Yes' into 'No'.
 
 #### Docker
