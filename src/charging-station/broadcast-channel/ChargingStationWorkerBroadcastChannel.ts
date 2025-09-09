@@ -173,6 +173,9 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
             chargingStation,
             StandardParametersKey.MeterValueSampleInterval
           )
+          const connectorId = requestPayload?.connectorId
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          const transactionId = this.chargingStation.getConnectorStatus(connectorId!)?.transactionId
           return await this.chargingStation.ocppRequestService.requestHandler<
             MeterValuesRequest,
             MeterValuesResponse
@@ -184,10 +187,9 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
                 buildMeterValue(
                   this.chargingStation,
                   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                  requestPayload!.connectorId!,
+                  connectorId!,
                   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                  this.chargingStation.getConnectorStatus(requestPayload!.connectorId!)!
-                    .transactionId!,
+                  transactionId!,
                   configuredMeterValueSampleInterval != null
                     ? secondsToMilliseconds(convertToInt(configuredMeterValueSampleInterval.value))
                     : Constants.DEFAULT_METER_VALUES_INTERVAL
@@ -208,7 +210,13 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       [
         BroadcastChannelProcedureName.SET_SUPERVISION_URL,
         (requestPayload?: BroadcastChannelRequestPayload) => {
-          this.chargingStation.setSupervisionUrl(requestPayload?.url as string)
+          const url = requestPayload?.url
+          if (typeof url !== 'string' || isEmpty(url)) {
+            throw new BaseError(
+              `${this.chargingStation.logPrefix()} ${moduleName}.requestHandler: 'url' field is required`
+            )
+          }
+          this.chargingStation.setSupervisionUrl(url)
         },
       ],
       [
@@ -266,7 +274,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         async (requestPayload?: BroadcastChannelRequestPayload) =>
           await this.chargingStation.ocppRequestService.requestHandler<
             StopTransactionRequest,
-            StartTransactionResponse
+            StopTransactionResponse
           >(
             this.chargingStation,
             RequestCommand.STOP_TRANSACTION,
@@ -416,6 +424,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       return
     }
     let responsePayload: BroadcastChannelResponsePayload | undefined
+    // eslint-disable-next-line promise/catch-or-return
     this.commandHandler(command, requestPayload)
       .then(commandResponse => {
         if (commandResponse == null || isEmpty(commandResponse)) {
@@ -432,10 +441,6 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         }
         return undefined
       })
-      .finally(() => {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.sendResponse([uuid, responsePayload!])
-      })
       .catch((error: unknown) => {
         logger.error(
           `${this.chargingStation.logPrefix()} ${moduleName}.requestHandler: Handle request error:`,
@@ -450,6 +455,11 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
           requestPayload,
           status: ResponseStatus.FAILURE,
         } satisfies BroadcastChannelResponsePayload
+        return undefined
+      })
+      .finally(() => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        this.sendResponse([uuid, responsePayload!])
       })
   }
 }

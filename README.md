@@ -22,7 +22,7 @@ Simple [node.js](https://nodejs.org/) software to simulate and scale a set of ch
 - [Installation](#installation)
   - [Prerequisites](#prerequisites)
     - [Windows](#windows)
-    - [MacOSX](#macosx)
+    - [macOS](#macos)
     - [GNU/Linux](#gnulinux)
   - [Development prerequisites (optional)](#development-prerequisites-optional)
     - [Unix](#unix)
@@ -44,7 +44,7 @@ Simple [node.js](https://nodejs.org/) software to simulate and scale a set of ch
   - [Version 1.6](#version-16-1)
   - [Version 2.x.x](#version-2xx-1)
 - [UI Protocol](#ui-protocol)
-  - [Websocket Protocol](#websocket-protocol)
+  - [WebSocket Protocol](#websocket-protocol)
   - [HTTP Protocol](#http-protocol)
 - [Support, Feedback, Contributing](#support-feedback-contributing)
 - [Code of Conduct](#code-of-conduct)
@@ -64,7 +64,7 @@ Install the [node.js](https://nodejs.org/) current LTS or superior version runti
 choco install -y nodejs
 ```
 
-#### MacOSX
+#### macOS
 
 - [Homebrew](https://brew.sh/):
 
@@ -565,18 +565,18 @@ All kind of OCPP parameters are supported in charging station configuration or c
 
 ## UI Protocol
 
-Protocol to control the simulator via a Websocket or HTTP server:
+Protocol to control the simulator via a WebSocket or HTTP server:
 
 ```mermaid
 sequenceDiagram
 Client->>UI Server: request
 UI Server->>Client: response
-Note over UI Server,Client: HTTP or Websocket
+Note over UI Server,Client: HTTP or WebSocket
 ```
 
-### Websocket Protocol
+### WebSocket Protocol
 
-SRPC protocol over Websocket. PDU stands for 'Protocol Data Unit'.
+SRPC protocol over WebSocket. PDU stands for 'Protocol Data Unit'.
 
 - Request:  
   [`uuid`, `ProcedureName`, `PDU`]  
@@ -589,11 +589,11 @@ SRPC protocol over Websocket. PDU stands for 'Protocol Data Unit'.
   `uuid`: String uniquely linking the response to the request  
   `PDU`: Response parameters to requested procedure
 
-To learn how to use the Websocket protocol to pilot the simulator, an [Insomnia](https://insomnia.rest/) Websocket requests collection is available in [src/assets/ui-protocol](./src/assets/ui-protocol) directory.
+To learn how to use the WebSocket protocol to pilot the simulator, an [Insomnia](https://insomnia.rest/) WebSocket requests collection is available in [src/assets/ui-protocol](./src/assets/ui-protocol) directory.
 
 #### Version 0.0.1
 
-Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
+Set the WebSocket header _Sec-WebSocket-Protocol_ to `ui0.0.1`.
 
 ##### Procedures
 
@@ -690,7 +690,7 @@ Set the Websocket header _Sec-Websocket-Protocol_ to `ui0.0.1`.
    `responsesFailed`: failed responses payload array (optional)  
   }
 
-###### Set Charging Station Supervision Url
+###### Set Charging Station Supervision URL
 
 - Request:  
   `ProcedureName`: 'setSupervisionUrl'  
@@ -944,4 +944,4 @@ We as members, contributors, and leaders pledge to make participation in our com
 
 ## Licensing
 
-Copyright 2020-2024 SAP SE or an SAP affiliate company and e-mobility-charging-stations-simulator contributors. Please see our [LICENSE](./LICENSE) for copyright and license information. Detailed information including third-party components and their licensing/copyright information is available [via the REUSE tool](https://api.reuse.software/info/github.com/SAP/e-mobility-charging-stations-simulator).
+Copyright 2020-2025 SAP SE or an SAP affiliate company and e-mobility-charging-stations-simulator contributors. Please see our [LICENSE](./LICENSE) for copyright and license information. Detailed information including third-party components and their licensing/copyright information is available [via the REUSE tool](https://api.reuse.software/info/github.com/SAP/e-mobility-charging-stations-simulator).

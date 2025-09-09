@@ -52,7 +52,7 @@ export type WorkerEvents = PoolEvent | WorkerSetEvents
 export interface WorkerMessage<T extends WorkerData> {
   data: T
   event: WorkerMessageEvents
-  uuid: `${string}-${string}-${string}-${string}`
+  uuid: `${string}-${string}-${string}-${string}-${string}`
 }
 
 export interface WorkerOptions extends Record<string, unknown> {

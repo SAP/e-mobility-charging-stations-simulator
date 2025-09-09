@@ -1,4 +1,4 @@
-// Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
+// Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
 
 import { type Options as MariaDbOptions, MikroORM as MariaDbORM } from '@mikro-orm/mariadb'
 import { type Options as SqliteOptions, MikroORM as SqliteORM } from '@mikro-orm/sqlite'

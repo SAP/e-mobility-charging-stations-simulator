@@ -1,4 +1,4 @@
-// Partial Copyright Jerome Benoit. 2021-2024. All Rights Reserved.
+// Partial Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
 
 import type { Worker } from 'node:worker_threads'
 

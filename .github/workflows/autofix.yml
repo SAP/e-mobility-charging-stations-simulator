@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - run: pipx install poetry
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: 3.13
           cache: poetry
@@ -24,7 +24,7 @@ jobs:
           poetry run task format
 
       - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           cache: 'pnpm'
 

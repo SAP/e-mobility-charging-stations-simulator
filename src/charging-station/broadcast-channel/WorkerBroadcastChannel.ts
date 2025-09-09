@@ -33,7 +33,8 @@ export abstract class WorkerBroadcastChannel extends BroadcastChannel {
   }
 
   protected validateMessageEvent (messageEvent: MessageEvent): false | MessageEvent {
-    if (!Array.isArray(messageEvent.data)) {
+    const data = messageEvent.data
+    if (!Array.isArray(data)) {
       logger.error(
         `${this.logPrefix(
           moduleName,
@@ -42,7 +43,7 @@ export abstract class WorkerBroadcastChannel extends BroadcastChannel {
       )
       return false
     }
-    if (!validateUUID(messageEvent.data[0])) {
+    if (!validateUUID(data[0])) {
       logger.error(
         `${this.logPrefix(
           moduleName,

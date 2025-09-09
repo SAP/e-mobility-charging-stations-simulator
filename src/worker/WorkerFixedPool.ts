@@ -47,10 +47,9 @@ export class WorkerFixedPool<D extends WorkerData, R extends WorkerData> extends
   public async addElement (elementData: D): Promise<R> {
     const response = await this.pool.execute(elementData)
     // Start element sequentially to optimize memory at startup
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.workerOptions.elementAddDelay! > 0 &&
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      (await sleep(randomizeDelay(this.workerOptions.elementAddDelay!)))
+    if (this.workerOptions.elementAddDelay != null && this.workerOptions.elementAddDelay > 0) {
+      await sleep(randomizeDelay(this.workerOptions.elementAddDelay))
+    }
     return response
   }
 
