@@ -13,7 +13,8 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "forceConsistentCasingInFileNames": true,
-    "noImplicitOverride": true
+    "noImplicitOverride": true,
+    "strictPropertyInitialization": false
   },
   "include": ["*.ts", "src/**/*.ts", "tests/**/*.ts"]
 }

@@ -13,6 +13,7 @@ import { availableParallelism, type MessageHandler } from 'poolifier'
 import type { AbstractUIServer } from './ui-server/AbstractUIServer.js'
 
 import { version } from '../../package.json'
+import { getAllTemplates } from '../data/repository/templateRepository.js'
 import { BaseError } from '../exception/index.js'
 import { type Storage, StorageFactory } from '../performance/index.js'
 import {
@@ -233,20 +234,21 @@ export class Bootstrap extends EventEmitter {
           this.uiServerStarted = true
         }
         // Start ChargingStation object instance in worker thread
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        for (const stationTemplateUrl of Configuration.getStationTemplateUrls()!) {
+
+        const templates = await getAllTemplates() // Fetch all templates from DB
+        for (const template of templates) {
           try {
-            const nbStations = stationTemplateUrl.numberOfStations
+            const nbStations = template.numberOfConnectors ?? 1
             const addChargingStationTasks: Promise<ChargingStationInfo | undefined>[] = []
             for (let index = 1; index <= nbStations; index++) {
-              addChargingStationTasks.push(this.addChargingStation(index, stationTemplateUrl.file))
+              addChargingStationTasks.push(this.addChargingStation(index, template.name))
             }
             const results = await Promise.allSettled(addChargingStationTasks)
             for (const result of results) {
               if (result.status === 'rejected') {
                 console.error(
                   chalk.red(
-                    `Error at starting charging station with template file ${stationTemplateUrl.file}: `
+                    `Error at starting charging station with template file ${template.name}: `
                   ),
                   result.reason
                 )
@@ -254,9 +256,7 @@ export class Bootstrap extends EventEmitter {
             }
           } catch (error) {
             console.error(
-              chalk.red(
-                `Error at starting charging station with template file ${stationTemplateUrl.file}: `
-              ),
+              chalk.red(`Error at starting charging station with template file ${template.name}: `),
               error
             )
           }
