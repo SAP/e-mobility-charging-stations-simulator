@@ -100,6 +100,20 @@ export class UIClient {
     this.ws?.addEventListener(event, listener, options)
   }
 
+  public async sendStatusNotification (
+    hashId: string,
+    connectorId: number,
+    status: string,
+    errorCode: string
+  ): Promise<ResponsePayload> {
+    return this.sendRequest(ProcedureName.STATUS_NOTIFICATION, {
+      connectorId,
+      errorCode,
+      hashIds: [hashId],
+      status,
+    })
+  }
+
   public setConfiguration (uiServerConfiguration: UIServerConfigurationSection): void {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.close()

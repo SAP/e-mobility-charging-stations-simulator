@@ -23,6 +23,7 @@ export enum ProcedureName {
   START_CHARGING_STATION = 'startChargingStation',
   START_SIMULATOR = 'startSimulator',
   START_TRANSACTION = 'startTransaction',
+  STATUS_NOTIFICATION = 'statusNotification',
   STOP_AUTOMATIC_TRANSACTION_GENERATOR = 'stopAutomaticTransactionGenerator',
   STOP_CHARGING_STATION = 'stopChargingStation',
   STOP_SIMULATOR = 'stopSimulator',

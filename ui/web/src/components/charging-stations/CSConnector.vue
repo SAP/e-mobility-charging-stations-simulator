@@ -42,6 +42,20 @@
       <Button @click="stopAutomaticTransactionGenerator()">
         Stop ATG
       </Button>
+      <ToggleButton
+        :id="`${hashId}-${connectorId}-status-notification`"
+        :off="() => { $router.push({ name: 'charging-stations' }) }"
+        :on="() => {
+          $router.push({
+            name: 'status-notification',
+            params: { hashId, chargingStationId, connectorId }
+          })
+        }"
+        :shared="true"
+        @clicked="$emit('need-refresh')"
+      >
+        Status Notification
+      </ToggleButton>
     </td>
   </tr>
 </template>

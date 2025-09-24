@@ -4,6 +4,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import AddChargingStations from '@/components/actions/AddChargingStations.vue'
 import SetSupervisionUrl from '@/components/actions/SetSupervisionUrl.vue'
 import StartTransaction from '@/components/actions/StartTransaction.vue'
+import StatusNotification from '@/components/actions/StatusNotification.vue'
 import ChargingStationsView from '@/views/ChargingStationsView.vue'
 import NotFoundView from '@/views/NotFoundView.vue'
 
@@ -41,6 +42,15 @@ export const router = createRouter({
       },
       name: 'start-transaction',
       path: '/start-transaction/:hashId/:chargingStationId/:connectorId',
+      props: { action: true, default: false },
+    },
+    {
+      components: {
+        action: StatusNotification,
+        default: ChargingStationsView,
+      },
+      name: 'status-notification',
+      path: '/status-notification/:hashId/:chargingStationId/:connectorId',
       props: { action: true, default: false },
     },
     {
