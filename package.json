@@ -7,10 +7,10 @@
     "pnpm": ">=9.0.0"
   },
   "volta": {
-    "node": "22.19.0",
-    "pnpm": "10.16.1"
+    "node": "22.20.0",
+    "pnpm": "10.17.1"
   },
-  "packageManager": "pnpm@10.16.1",
+  "packageManager": "pnpm@10.17.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/sap/e-mobility-charging-stations-simulator.git"
@@ -99,8 +99,8 @@
     "utf-8-validate": "^6.0.5"
   },
   "devDependencies": {
-    "@commitlint/cli": "^19.8.1",
-    "@commitlint/config-conventional": "^19.8.1",
+    "@commitlint/cli": "^20.0.0",
+    "@commitlint/config-conventional": "^20.0.0",
     "@cspell/eslint-plugin": "^9.2.1",
     "@eslint/js": "^9.36.0",
     "@mikro-orm/cli": "^6.5.6",
@@ -114,19 +114,19 @@
     "esbuild": "^0.25.10",
     "esbuild-plugin-clean": "^1.0.1",
     "esbuild-plugin-copy": "^2.1.1",
-    "eslint": "^9.35.0",
-    "eslint-plugin-jsdoc": "^57.0.7",
+    "eslint": "^9.36.0",
+    "eslint-plugin-jsdoc": "^60.4.0",
     "eslint-plugin-perfectionist": "^4.15.0",
     "eslint-plugin-vue": "^10.5.0",
     "glob": "^11.0.3",
     "husky": "^9.1.7",
-    "lint-staged": "^16.2.0",
+    "lint-staged": "^16.2.1",
     "neostandard": "^0.12.2",
     "prettier": "^3.6.2",
     "rimraf": "^6.0.1",
     "semver": "^7.7.2",
     "ts-node": "^10.9.2",
-    "tsx": "^4.20.5",
+    "tsx": "^4.20.6",
     "typescript": "~5.9.2",
     "vue-eslint-parser": "^10.2.0"
   }
