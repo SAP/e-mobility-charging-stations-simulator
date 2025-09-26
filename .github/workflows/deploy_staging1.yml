@@ -1,0 +1,84 @@
+name: Deploy to Prod
+
+on: [workflow_dispatch]
+
+env:
+  AWS_REGION: ap-south-1
+  ECR_REGISTRY: 733626105378.dkr.ecr.ap-south-1.amazonaws.com
+  ECR_REPOSITORY: charging-stations-simulator
+  ECS_SERVICE: prod-ecs-simulator-service
+  ECS_CLUSTER: prod
+  ECS_TASK_DEFINITION: .aws/prod-td.json
+  CONTAINER_NAME: app
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-24.04
+
+    permissions:
+      contents: read
+      id-token: write
+
+    outputs:
+      ecr-image: ${{ steps.build-image.outputs.image }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.IONAGE_GITHUB_ACTIONS_OIDC_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build image
+        id: build-image
+        run: |
+          export ECR_IMAGE=$ECR_REGISTRY/$ECR_REPOSITORY:prod-${{ github.sha }}
+          docker build -f docker/Dockerfile --build-arg env=${{ env.ECS_CLUSTER }} -t $ECR_IMAGE .
+          docker push $ECR_IMAGE
+          echo "image=$ECR_IMAGE" >> $GITHUB_OUTPUT
+
+  deploy:
+    name: ECS Deploy
+    runs-on: ubuntu-24.04
+
+    permissions:
+      contents: read
+      id-token: write
+
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.IONAGE_GITHUB_ACTIONS_OIDC_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Create task definition revision
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ env.ECS_TASK_DEFINITION }}
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ needs.build.outputs.ecr-image }}
+
+      - name: Deploy ECS service
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
