@@ -78,7 +78,7 @@ These instructions guide GitHub Copilot to generate changes consistent with this
 - Tests pass (where applicable).
 - Documentation updated to reflect changes.
 - Logs use appropriate levels (error, warn, info, debug).
-- Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) format.
+- PR title and commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) format.
 
 ## Examples
 
