@@ -47,7 +47,10 @@
                   console.error('Error at starting transaction:', error)
                 })
                 .finally(() => {
-                  resetToggleButtonState(`${props.hashId}-${props.connectorId}-start-transaction`, true)
+                  resetToggleButtonState(
+                    `${props.hashId}-${props.connectorId}-start-transaction`,
+                    true
+                  )
                   $router.push({ name: 'charging-stations' })
                 })
             })
