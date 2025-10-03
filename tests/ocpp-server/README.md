@@ -4,7 +4,13 @@ This project includes an Open Charge Point Protocol (OCPP) version 2.0.1 mock se
 
 ## Prerequisites
 
-This project requires Python 3.7+ and [poetry](https://python-poetry.org/) to install the required packages:
+This project requires Python 3.12+ (see `pyproject.toml`) and requires [poetry](https://python-poetry.org/) 2+ to install the required packages.
+
+```shell
+pipx install poetry
+```
+
+Then install dependencies:
 
 ```shell
 poetry install --no-root
