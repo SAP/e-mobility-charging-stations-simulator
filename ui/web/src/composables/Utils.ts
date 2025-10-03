@@ -54,6 +54,14 @@ export const getLocalStorage = (): Storage => {
   return localStorage
 }
 
+/**
+ * Resets the state of a toggle button by removing its entry from localStorage.
+ * This is typically called when an action completes to ensure the button's visual
+ * state matches the actual application state.
+ *
+ * @param id - The identifier of the toggle button
+ * @param shared - Whether the toggle button is shared (affects the localStorage key format)
+ */
 export const resetToggleButtonState = (id: string, shared = false): void => {
   const key = shared ? `shared-toggle-button-${id}` : `toggle-button-${id}`
   deleteFromLocalStorage(key)
