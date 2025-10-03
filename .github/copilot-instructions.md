@@ -24,6 +24,7 @@ These instructions guide GitHub Copilot to generate changes consistent with this
 
 ## Statistical conventions
 
+- **Hypothesis testing**: use a single test statistic (e.g., t-test) when possible.
 - **Divergence metrics**: document direction explicitly (e.g., KL(A||B) vs KL(B||A)); normalize distributions; add epsilon to avoid numerical issues.
 - **Effect sizes**: report alongside test statistics and p-values; use standard formulas; document directional interpretation.
 - **Distribution comparisons**: use multiple complementary metrics (parametric and non-parametric).
@@ -78,7 +79,7 @@ These instructions guide GitHub Copilot to generate changes consistent with this
 - Tests pass (where applicable).
 - Documentation updated to reflect changes.
 - Logs use appropriate levels (error, warn, info, debug).
-- Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) format.
+- PR title and commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) format.
 
 ## Examples
 
