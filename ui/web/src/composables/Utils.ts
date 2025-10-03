@@ -57,7 +57,7 @@ export const getLocalStorage = (): Storage => {
 /**
  * Resets the state of a toggle button by removing its entry from localStorage.
  * @param id - The identifier of the toggle button
- * @param shared - Whether the toggle button is shared (affects the localStorage key format)
+ * @param shared - Whether the toggle button is shared
  */
 export const resetToggleButtonState = (id: string, shared = false): void => {
   const key = shared ? `shared-toggle-button-${id}` : `toggle-button-${id}`
