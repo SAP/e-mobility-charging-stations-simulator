@@ -54,6 +54,11 @@ export const getLocalStorage = (): Storage => {
   return localStorage
 }
 
+export const resetToggleButtonState = (id: string, shared = false): void => {
+  const key = shared ? `shared-toggle-button-${id}` : `toggle-button-${id}`
+  deleteFromLocalStorage(key)
+}
+
 export const randomUUID = (): `${string}-${string}-${string}-${string}-${string}` => {
   return crypto.randomUUID()
 }

@@ -26,6 +26,7 @@
             console.error('Error at setting supervision url:', error)
           })
           .finally(() => {
+            resetToggleButtonState(`${props.hashId}-set-supervision-url`, true)
             $router.push({ name: 'charging-stations' })
           })
       }
@@ -39,8 +40,9 @@
 import { ref } from 'vue'
 
 import Button from '@/components/buttons/Button.vue'
+import { resetToggleButtonState } from '@/composables'
 
-defineProps<{
+const props = defineProps<{
   chargingStationId: string
   hashId: string
 }>()

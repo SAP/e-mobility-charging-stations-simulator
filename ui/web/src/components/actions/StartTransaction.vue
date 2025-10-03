@@ -47,12 +47,14 @@
                   console.error('Error at starting transaction:', error)
                 })
                 .finally(() => {
+                  resetToggleButtonState(`${props.hashId}-${props.connectorId}-start-transaction`, true)
                   $router.push({ name: 'charging-stations' })
                 })
             })
             .catch((error: Error) => {
               $toast.error('Error at authorizing RFID tag')
               console.error('Error at authorizing RFID tag:', error)
+              resetToggleButtonState(`${props.hashId}-${props.connectorId}-start-transaction`, true)
               $router.push({ name: 'charging-stations' })
             })
         } else {
@@ -66,6 +68,7 @@
               console.error('Error at starting transaction:', error)
             })
             .finally(() => {
+              resetToggleButtonState(`${props.hashId}-${props.connectorId}-start-transaction`, true)
               $router.push({ name: 'charging-stations' })
             })
         }
@@ -80,9 +83,9 @@
 import { ref } from 'vue'
 
 import Button from '@/components/buttons/Button.vue'
-import { convertToBoolean, convertToInt } from '@/composables'
+import { convertToBoolean, convertToInt, resetToggleButtonState } from '@/composables'
 
-defineProps<{
+const props = defineProps<{
   chargingStationId: string
   connectorId: string
   hashId: string

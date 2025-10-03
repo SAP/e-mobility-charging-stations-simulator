@@ -100,6 +100,7 @@
             console.error('Error at adding charging stations:', error)
           })
           .finally(() => {
+            resetToggleButtonState('add-charging-stations', true)
             $router.push({ name: 'charging-stations' })
           })
       }
@@ -113,7 +114,7 @@
 import { getCurrentInstance, ref, watch } from 'vue'
 
 import Button from '@/components/buttons/Button.vue'
-import { convertToBoolean, randomUUID } from '@/composables'
+import { convertToBoolean, randomUUID, resetToggleButtonState } from '@/composables'
 
 const state = ref<{
   autoStart: boolean
