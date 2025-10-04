@@ -176,14 +176,19 @@ export const sendAndSetConnectorStatus = async (
   options?: { send: boolean }
 ): Promise<void> => {
   options = { send: true, ...options }
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const previousStatus = chargingStation.getConnectorStatus(connectorId)!.status
+  const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+  if (connectorStatus == null) {
+    logger.error(
+      `${chargingStation.logPrefix()} Trying to set status on non-existing connector id ${connectorId.toString()}`
+    )
+    return
+  }
+  const previousStatus = connectorStatus.status
   // Set status before sending to ensure consistent state when updated event is emitted
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  chargingStation.getConnectorStatus(connectorId)!.status = status
+  connectorStatus.status = status
   chargingStation.emit(ChargingStationEvents.connectorStatusChanged, {
     connectorId,
-    ...chargingStation.getConnectorStatus(connectorId),
+    ...connectorStatus,
   })
   if (options.send) {
     try {
@@ -198,11 +203,10 @@ export const sendAndSetConnectorStatus = async (
       )
     } catch (error) {
       // Revert status on error
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      chargingStation.getConnectorStatus(connectorId)!.status = previousStatus
+      connectorStatus.status = previousStatus
       chargingStation.emit(ChargingStationEvents.connectorStatusChanged, {
         connectorId,
-        ...chargingStation.getConnectorStatus(connectorId),
+        ...connectorStatus,
       })
       throw error
     }
