@@ -9,8 +9,11 @@ These instructions guide GitHub Copilot to generate changes consistent with this
 
 ## Core principles
 
+- **Design patterns**: prefer established patterns (e.g., factory, singleton, strategy) for code organization and extensibility.
+- **Algorithmic**: prefer algorithms or heuristics minimizing time and space complexity.
+- **DRY**: avoid duplication of logic, data, and naming. Factor out commonalities.
 - **Single source of truth**: maintain a canonical defaults map for configuration tunables. Derive all user-facing options automatically.
-- **Naming coherence**: prefer semantically accurate names across code, documentation, and outputs. Avoid synonyms that create ambiguity.
+- **Naming coherence**: prefer semantically accurate names across code, documentation, directories, and outputs. Avoid synonyms that create ambiguity.
 - **English-only**: code, tests, logs, comments, and documentation must be in English.
 - **Small, verifiable changes**: prefer minimal diffs that keep public behavior stable unless explicitly requested.
 - **Tests-first mindset**: add or update minimal tests before refactoring or feature changes.
@@ -25,7 +28,7 @@ These instructions guide GitHub Copilot to generate changes consistent with this
 ## Statistical conventions
 
 - **Hypothesis testing**: use a single test statistic (e.g., t-test) when possible.
-- **Divergence metrics**: document direction explicitly (e.g., KL(A||B) vs KL(B||A)); normalize distributions; add epsilon to avoid numerical issues.
+- **Divergence metrics**: document direction explicitly (e.g., KL(A||B) vs KL(B||A)); normalize distributions; add numerical stability measures.
 - **Effect sizes**: report alongside test statistics and p-values; use standard formulas; document directional interpretation.
 - **Distribution comparisons**: use multiple complementary metrics (parametric and non-parametric).
 - **Multiple testing**: document corrections or acknowledge their absence.
@@ -40,7 +43,8 @@ These instructions guide GitHub Copilot to generate changes consistent with this
 ## Implementation guidance for Copilot
 
 - **Before coding**:
-  - Locate and analyze relevant existing code.
+  - Locate and analyze thoroughly relevant existing code.
+  - Identify code architecture and design patterns.
   - Identify canonical defaults and naming patterns.
 - **When coding**:
   - Follow TypeScript/Node.js and OCPP-specific conventions below.
@@ -58,7 +62,7 @@ These instructions guide GitHub Copilot to generate changes consistent with this
 - **Naming**: Use camelCase for variables/functions/methods, PascalCase for classes/types/enums/interfaces.
 - **Async operations**: Prefer async/await over raw Promises; handle rejections explicitly with try/catch.
 - **Error handling**: Use typed errors (BaseError, OCPPError) with structured properties; avoid generic Error.
-- **Worker communication**: Use broadcast channels for decoupled worker-main thread messaging.
+- **Worker communication**: Use broadcast channels for decoupled worker<->main thread messaging.
 - **Null safety**: Avoid non-null assertions (!); use optional chaining (?.) and nullish coalescing (??).
 - **Type safety**: Prefer explicit types over any; use type guards and discriminated unions where appropriate.
 - **Promise patterns**: Return Promises from async operations; store resolvers/rejectors in Maps for request/response flows.
