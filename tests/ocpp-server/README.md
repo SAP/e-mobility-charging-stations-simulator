@@ -12,7 +12,7 @@ Install poetry:
 pipx install poetry
 ```
 
-or using your OS packages manager.
+or by using your OS packages manager.
 
 Then install dependencies:
 
