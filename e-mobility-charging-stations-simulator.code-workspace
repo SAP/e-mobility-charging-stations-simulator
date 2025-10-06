@@ -9,17 +9,5 @@
     {
       "path": "tests/ocpp-server",
     },
-  ],
-  "settings": {
-    "nodejs-testing.extensions": [
-      {
-        "extensions": ["mjs", "cjs", "js"],
-        "parameters": [],
-      },
-      {
-        "extensions": ["mts", "cts", "ts"],
-        "parameters": ["--import", "tsx"],
-      },
-    ],
-  },
+  ]
 }
