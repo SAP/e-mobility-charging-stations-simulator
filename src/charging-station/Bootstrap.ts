@@ -606,6 +606,9 @@ export class Bootstrap extends EventEmitter {
   }
 
   private readonly workerEventUpdated = (data: ChargingStationData): void => {
-    this.uiServer.chargingStations.set(data.stationInfo.hashId, data)
+    const cachedData = this.uiServer.chargingStations.get(data.stationInfo.hashId)
+    if (cachedData == null || data.timestamp >= cachedData.timestamp) {
+      this.uiServer.chargingStations.set(data.stationInfo.hashId, data)
+    }
   }
 }

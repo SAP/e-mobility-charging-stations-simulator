@@ -25,6 +25,7 @@ export interface ChargingStationData extends WorkerData {
   started: boolean
   stationInfo: ChargingStationInfo
   supervisionUrl: string
+  timestamp: number
   wsState?:
     | typeof WebSocket.CLOSED
     | typeof WebSocket.CLOSING
