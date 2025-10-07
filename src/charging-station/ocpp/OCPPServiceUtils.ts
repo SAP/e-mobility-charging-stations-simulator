@@ -176,41 +176,23 @@ export const sendAndSetConnectorStatus = async (
   options?: { send: boolean }
 ): Promise<void> => {
   options = { send: true, ...options }
-  const connectorStatus = chargingStation.getConnectorStatus(connectorId)
-  if (connectorStatus == null) {
-    logger.error(
-      `${chargingStation.logPrefix()} Trying to set status on non-existing connector id ${connectorId.toString()}`
+  if (options.send) {
+    checkConnectorStatusTransition(chargingStation, connectorId, status)
+    await chargingStation.ocppRequestService.requestHandler<
+      StatusNotificationRequest,
+      StatusNotificationResponse
+    >(
+      chargingStation,
+      RequestCommand.STATUS_NOTIFICATION,
+      buildStatusNotificationRequest(chargingStation, connectorId, status, evseId)
     )
-    return
   }
-  const previousStatus = connectorStatus.status
-  // Set status before sending to ensure consistent state when updated event is emitted
-  connectorStatus.status = status
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  chargingStation.getConnectorStatus(connectorId)!.status = status
   chargingStation.emit(ChargingStationEvents.connectorStatusChanged, {
     connectorId,
-    ...connectorStatus,
+    ...chargingStation.getConnectorStatus(connectorId),
   })
-  if (options.send) {
-    try {
-      checkConnectorStatusTransition(chargingStation, connectorId, status)
-      await chargingStation.ocppRequestService.requestHandler<
-        StatusNotificationRequest,
-        StatusNotificationResponse
-      >(
-        chargingStation,
-        RequestCommand.STATUS_NOTIFICATION,
-        buildStatusNotificationRequest(chargingStation, connectorId, status, evseId)
-      )
-    } catch (error) {
-      // Revert status on error
-      connectorStatus.status = previousStatus
-      chargingStation.emit(ChargingStationEvents.connectorStatusChanged, {
-        connectorId,
-        ...connectorStatus,
-      })
-      throw error
-    }
-  }
 }
 
 export const restoreConnectorStatus = async (
