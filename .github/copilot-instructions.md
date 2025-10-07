@@ -103,7 +103,7 @@ Documentation serves as an operational specification, not narrative prose.
 
 - Documented build/lint/type checks pass (where applicable).
 - Documented tests pass (where applicable).
-- Documentation updated to reflect changes.
+- Documentation updated to reflect changes when necessary.
 - Logs use appropriate levels (error, warn, info, debug).
 - Pull request title and commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) format.
 
