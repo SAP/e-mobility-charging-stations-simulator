@@ -72,6 +72,7 @@ export type RequestCommand = OCPP16RequestCommand | OCPP20RequestCommand
 
 export interface RequestParams {
   skipBufferingOnError?: boolean
+  skipUpdatedEvent?: boolean
   throwError?: boolean
   triggerMessage?: boolean
 }

@@ -44,6 +44,7 @@ const moduleName = 'OCPPRequestService'
 
 const defaultRequestParams: RequestParams = {
   skipBufferingOnError: false,
+  skipUpdatedEvent: false,
   throwError: false,
   triggerMessage: false,
 }
@@ -282,7 +283,9 @@ export abstract class OCPPRequestService {
             })
             .finally(() => {
               chargingStation.requests.delete(messageId)
-              chargingStation.emit(ChargingStationEvents.updated)
+              if (params.skipUpdatedEvent !== true) {
+                chargingStation.emit(ChargingStationEvents.updated)
+              }
             })
             .catch(reject)
         }
@@ -307,7 +310,9 @@ export abstract class OCPPRequestService {
             ocppError
           )
           chargingStation.requests.delete(messageId)
-          chargingStation.emit(ChargingStationEvents.updated)
+          if (params.skipUpdatedEvent !== true) {
+            chargingStation.emit(ChargingStationEvents.updated)
+          }
           reject(ocppError)
         }
 

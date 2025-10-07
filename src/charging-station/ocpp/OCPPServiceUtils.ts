@@ -41,6 +41,7 @@ import {
   type OCPP20StatusNotificationRequest,
   OCPPVersion,
   RequestCommand,
+  type RequestParams,
   type SampledValue,
   type SampledValueTemplate,
   StandardParametersKey,
@@ -173,7 +174,8 @@ export const sendAndSetConnectorStatus = async (
   connectorId: number,
   status: ConnectorStatusEnum,
   evseId?: number,
-  options?: { send: boolean }
+  options?: { send: boolean },
+  params?: RequestParams
 ): Promise<void> => {
   options = { send: true, ...options }
   if (options.send) {
@@ -184,7 +186,8 @@ export const sendAndSetConnectorStatus = async (
     >(
       chargingStation,
       RequestCommand.STATUS_NOTIFICATION,
-      buildStatusNotificationRequest(chargingStation, connectorId, status, evseId)
+      buildStatusNotificationRequest(chargingStation, connectorId, status, evseId),
+      params
     )
   }
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
