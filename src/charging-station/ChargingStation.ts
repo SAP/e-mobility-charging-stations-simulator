@@ -2366,9 +2366,7 @@ export class ChargingStation extends EventEmitter {
               this,
               connectorId,
               getBootConnectorStatus(this, connectorId, connectorStatus),
-              evseId,
-              undefined,
-              { skipUpdatedEvent: true }
+              evseId
             )
           }
         }
@@ -2384,16 +2382,11 @@ export class ChargingStation extends EventEmitter {
               connectorId,
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               this.getConnectorStatus(connectorId)!
-            ),
-            undefined,
-            undefined,
-            { skipUpdatedEvent: true }
+            )
           )
         }
       }
     }
-    // Emit single updated event after all connectors are initialized
-    this.emit(ChargingStationEvents.updated)
     if (this.stationInfo?.firmwareStatus === FirmwareStatus.Installing) {
       await this.ocppRequestService.requestHandler<
         FirmwareStatusNotificationRequest,
