@@ -12,7 +12,7 @@ These instructions guide GitHub Copilot to generate changes consistent with this
 - **Before coding**:
   - Perform a comprehensive inventory of the codebase. Search for and read:
     - README.md, CONTRIBUTING.md, and all other documentation files.
-    - relevant code files related to the task.
+    - code files related to the task.
   - Identify existing code architecture, design patterns, canonical defaults, naming patterns and coding styles.
 - **When coding**:
   - Follow the core principles, TypeScript/Node.js and OCPP-specific conventions below.
@@ -22,13 +22,13 @@ These instructions guide GitHub Copilot to generate changes consistent with this
   - Ensure changes pass quality gates below.
 - **When adding a tunable**:
   - Add to canonical defaults with safe value.
-  - Ensure options and configuration section below is respected.
+  - Ensure the options and configuration section below is respected.
   - Update documentation and serialization.
 - **When implementing analytical methods**:
   - Follow statistical conventions below.
 - **When refactoring**:
   - Keep APIs stable; provide aliases if renaming.
-  - Update code, tests, and documentations atomically.
+  - Update code, tests, and documentation atomically.
 - **When documenting**:
   - Follow documentation conventions below.
 
