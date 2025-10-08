@@ -94,6 +94,7 @@ const buildChargingStationDataPayload = (chargingStation: ChargingStation): Char
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     stationInfo: chargingStation.stationInfo!,
     supervisionUrl: chargingStation.wsConnectionUrl.href,
+    timestamp: Date.now(),
     wsState: chargingStation.wsConnection?.readyState,
     ...(chargingStation.automaticTransactionGenerator != null && {
       automaticTransactionGenerator:
