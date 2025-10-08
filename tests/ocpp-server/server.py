@@ -96,6 +96,13 @@ class ChargePoint(ocpp.v201.ChargePoint):
         logging.info("Received %s", Action.meter_values)
         return ocpp.v201.call_result.MeterValues()
 
+    @on(Action.notify_report)
+    async def on_notify_report(
+        self, request_id: int, generated_at, seq_no: int, **kwargs
+    ):
+        logging.info("Received %s", Action.notify_report)
+        return ocpp.v201.call_result.NotifyReport()
+
     # Request handlers to emit OCPP messages.
     async def _send_clear_cache(self):
         request = ocpp.v201.call.ClearCache()
