@@ -176,6 +176,10 @@ export const sendAndSetConnectorStatus = async (
   options?: { send: boolean }
 ): Promise<void> => {
   options = { send: true, ...options }
+  const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+  if (connectorStatus == null) {
+    return
+  }
   if (options.send) {
     checkConnectorStatusTransition(chargingStation, connectorId, status)
     await chargingStation.ocppRequestService.requestHandler<
@@ -187,11 +191,10 @@ export const sendAndSetConnectorStatus = async (
       buildStatusNotificationRequest(chargingStation, connectorId, status, evseId)
     )
   }
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  chargingStation.getConnectorStatus(connectorId)!.status = status
+  connectorStatus.status = status
   chargingStation.emit(ChargingStationEvents.connectorStatusChanged, {
     connectorId,
-    ...chargingStation.getConnectorStatus(connectorId),
+    ...connectorStatus,
   })
 }
 
