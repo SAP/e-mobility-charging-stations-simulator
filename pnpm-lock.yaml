@@ -122,8 +122,8 @@ importers:
         specifier: ^9.37.0
         version: 9.37.0(jiti@2.6.1)
       eslint-plugin-jsdoc:
-        specifier: ^60.8.3
-        version: 60.8.3(eslint@9.37.0(jiti@2.6.1))
+        specifier: ^61.0.0
+        version: 61.0.0(eslint@9.37.0(jiti@2.6.1))
       eslint-plugin-perfectionist:
         specifier: ^4.15.1
         version: 4.15.1(eslint@9.37.0(jiti@2.6.1))(typescript@5.9.3)
@@ -753,8 +753,8 @@ packages:
   '@epic-web/invariant@1.0.0':
     resolution: {integrity: sha512-lrTPqgvfFQtR/eY/qkIzp98OGdNJu0m5ji3q/nJI8v3SXkRKEnWiOxMmbvcSoAIzv/cGiuvRy57k4suKQSAdwA==}
 
-  '@es-joy/jsdoccomment@0.71.0':
-    resolution: {integrity: sha512-2p9+dXWNQnp5Kq/V0XVWZiVAabzlX6rUW8vXXvtX8Yc1CkKgD93IPDEnv1sYZFkkS6HMvg6H0RMZfob/Co0YXA==}
+  '@es-joy/jsdoccomment@0.75.0':
+    resolution: {integrity: sha512-Bj+oF8reFb4b+6LUmG6ETpDsBU/28y/bAAzioyIR4VK/V6UodYBNGbtxRyGxk0aJJQqpZZ6jz82vVZWCX6Mwmg==}
     engines: {node: '>=20.11.0'}
 
   '@esbuild/aix-ppc64@0.25.10':
@@ -2901,8 +2901,8 @@ packages:
       eslint-import-resolver-node:
         optional: true
 
-  eslint-plugin-jsdoc@60.8.3:
-    resolution: {integrity: sha512-4191bTMvnd5WUtopCdzNhQchvv/MxtPD86ZGl3vem8Ibm22xJhKuIyClmgSxw+YERtorVc/NhG+bGjfFVa6+VQ==}
+  eslint-plugin-jsdoc@61.0.0:
+    resolution: {integrity: sha512-YxvOY3A9H8usnOfOEH82y71yHR7zVNWZJpQbjkC+rWqrADQtM+Gza3+db/j9euNNWCNKnN+/gBrowg16n9lwgg==}
     engines: {node: '>=20.11.0'}
     peerDependencies:
       eslint: ^7.0.0 || ^8.0.0 || ^9.0.0
@@ -3895,8 +3895,8 @@ packages:
   jsbn@0.1.1:
     resolution: {integrity: sha512-UVU9dibq2JcFWxQPA6KCqj5O42VOmAY3zQUfEKxU0KpTGXwNoCjkX1e13eHNvw/xPynt6pU0rZ1htjWTNTSXsg==}
 
-  jsdoc-type-pratt-parser@6.6.0:
-    resolution: {integrity: sha512-3hSD14nXx66Rspx1RMnz1Pj4JacrMBAsC0CrF9lZYO/Qsp5/oIr6KqujVUNhQu94B6mMip2ukki8MpEWZwyhKA==}
+  jsdoc-type-pratt-parser@6.9.1:
+    resolution: {integrity: sha512-HbYNAorY51GnpKvgDf4YINSY+V1segv0qEeijvTSI6OWMCmqah0W6mVwBFeWskJ81uTJJVnDQlwhpJMREvGsXg==}
     engines: {node: '>=20.0.0'}
 
   jsdom@27.0.0:
@@ -6935,13 +6935,13 @@ snapshots:
 
   '@epic-web/invariant@1.0.0': {}
 
-  '@es-joy/jsdoccomment@0.71.0':
+  '@es-joy/jsdoccomment@0.75.0':
     dependencies:
       '@types/estree': 1.0.8
       '@typescript-eslint/types': 8.46.0
       comment-parser: 1.4.1
       esquery: 1.6.0
-      jsdoc-type-pratt-parser: 6.6.0
+      jsdoc-type-pratt-parser: 6.9.1
 
   '@esbuild/aix-ppc64@0.25.10':
     optional: true
@@ -9434,9 +9434,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-plugin-jsdoc@60.8.3(eslint@9.37.0(jiti@2.6.1)):
+  eslint-plugin-jsdoc@61.0.0(eslint@9.37.0(jiti@2.6.1)):
     dependencies:
-      '@es-joy/jsdoccomment': 0.71.0
+      '@es-joy/jsdoccomment': 0.75.0
       are-docs-informative: 0.0.2
       comment-parser: 1.4.1
       debug: 4.4.3
@@ -10534,7 +10534,7 @@ snapshots:
 
   jsbn@0.1.1: {}
 
-  jsdoc-type-pratt-parser@6.6.0: {}
+  jsdoc-type-pratt-parser@6.9.1: {}
 
   jsdom@27.0.0(bufferutil@4.0.9)(postcss@8.5.6)(utf-8-validate@6.0.5):
     dependencies:
