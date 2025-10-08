@@ -513,6 +513,7 @@ export class Bootstrap extends EventEmitter {
       this.uiServer.stop()
       this.uiServerStarted = false
     }
+    this.initializeCounters()
     // FIXME: initialize worker implementation only if the worker section has changed
     this.initializeWorkerImplementation(
       Configuration.getConfigurationSection<WorkerConfiguration>(ConfigurationSection.worker)
