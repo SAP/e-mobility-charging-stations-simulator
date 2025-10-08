@@ -26,16 +26,17 @@ import { getUsernameAndPasswordFromAuthorizationToken } from './UIServerUtils.js
 const moduleName = 'AbstractUIServer'
 
 export abstract class AbstractUIServer {
-  private readonly chargingStations: Map<string, ChargingStationData>
   public readonly chargingStationTemplates: Set<string>
-
   protected readonly httpServer: Http2Server | Server
+
   protected readonly responseHandlers: Map<
     `${string}-${string}-${string}-${string}-${string}`,
     ServerResponse | WebSocket
   >
 
   protected readonly uiServices: Map<ProtocolVersion, AbstractUIService>
+
+  private readonly chargingStations: Map<string, ChargingStationData>
 
   public constructor (protected readonly uiServerConfiguration: UIServerConfiguration) {
     this.chargingStations = new Map<string, ChargingStationData>()
@@ -60,33 +61,6 @@ export abstract class AbstractUIServer {
     this.uiServices = new Map<ProtocolVersion, AbstractUIService>()
   }
 
-  public getChargingStationData (hashId: string): ChargingStationData | undefined {
-    return this.chargingStations.get(hashId)
-  }
-
-  public listChargingStationData (): ChargingStationData[] {
-    return [...this.chargingStations.values()]
-  }
-
-  public setChargingStationData (hashId: string, data: ChargingStationData): void {
-    const cachedData = this.chargingStations.get(hashId)
-    if (cachedData == null || data.timestamp >= cachedData.timestamp) {
-      this.chargingStations.set(hashId, data)
-    }
-  }
-
-  public deleteChargingStationData (hashId: string): boolean {
-    return this.chargingStations.delete(hashId)
-  }
-
-  public hasChargingStationData (hashId: string): boolean {
-    return this.chargingStations.has(hashId)
-  }
-
-  public getChargingStationsCount (): number {
-    return this.chargingStations.size
-  }
-
   public buildProtocolRequest (
     uuid: `${string}-${string}-${string}-${string}-${string}`,
     procedureName: ProcedureName,
@@ -107,8 +81,28 @@ export abstract class AbstractUIServer {
     this.chargingStationTemplates.clear()
   }
 
+  public deleteChargingStationData (hashId: string): boolean {
+    return this.chargingStations.delete(hashId)
+  }
+
+  public getChargingStationData (hashId: string): ChargingStationData | undefined {
+    return this.chargingStations.get(hashId)
+  }
+
+  public getChargingStationsCount (): number {
+    return this.chargingStations.size
+  }
+
+  public hasChargingStationData (hashId: string): boolean {
+    return this.chargingStations.has(hashId)
+  }
+
   public hasResponseHandler (uuid: `${string}-${string}-${string}-${string}-${string}`): boolean {
     return this.responseHandlers.has(uuid)
+  }
+
+  public listChargingStationData (): ChargingStationData[] {
+    return [...this.chargingStations.values()]
   }
 
   public abstract logPrefix (moduleName?: string, methodName?: string, prefixSuffix?: string): string
@@ -124,6 +118,13 @@ export abstract class AbstractUIServer {
   public abstract sendRequest (request: ProtocolRequest): void
 
   public abstract sendResponse (response: ProtocolResponse): void
+
+  public setChargingStationData (hashId: string, data: ChargingStationData): void {
+    const cachedData = this.chargingStations.get(hashId)
+    if (cachedData == null || data.timestamp >= cachedData.timestamp) {
+      this.chargingStations.set(hashId, data)
+    }
+  }
 
   public abstract start (): void
 
