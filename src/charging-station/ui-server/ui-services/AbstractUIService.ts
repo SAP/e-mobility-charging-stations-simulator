@@ -241,7 +241,7 @@ export abstract class AbstractUIService {
         status: ResponseStatus.FAILURE,
       } satisfies ResponsePayload
     }
-    if (!this.uiServer.chargingStationTemplates.has(template)) {
+    if (!this.uiServer.hasChargingStationTemplates(template)) {
       return {
         errorMessage: `Template '${template}' not found`,
         status: ResponseStatus.FAILURE,
@@ -290,7 +290,7 @@ export abstract class AbstractUIService {
   private handleListTemplates (): ResponsePayload {
     return {
       status: ResponseStatus.SUCCESS,
-      templates: [...this.uiServer.chargingStationTemplates.values()],
+      templates: this.uiServer.getChargingStationTemplates(),
     } satisfies ResponsePayload
   }
 

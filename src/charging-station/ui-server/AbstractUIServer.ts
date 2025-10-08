@@ -26,9 +26,7 @@ import { getUsernameAndPasswordFromAuthorizationToken } from './UIServerUtils.js
 const moduleName = 'AbstractUIServer'
 
 export abstract class AbstractUIServer {
-  public readonly chargingStationTemplates: Set<string>
   protected readonly httpServer: Http2Server | Server
-
   protected readonly responseHandlers: Map<
     `${string}-${string}-${string}-${string}-${string}`,
     ServerResponse | WebSocket
@@ -37,6 +35,7 @@ export abstract class AbstractUIServer {
   protected readonly uiServices: Map<ProtocolVersion, AbstractUIService>
 
   private readonly chargingStations: Map<string, ChargingStationData>
+  private readonly chargingStationTemplates: Set<string>
 
   public constructor (protected readonly uiServerConfiguration: UIServerConfiguration) {
     this.chargingStations = new Map<string, ChargingStationData>()
@@ -93,8 +92,16 @@ export abstract class AbstractUIServer {
     return this.chargingStations.size
   }
 
+  public getChargingStationTemplates (): string[] {
+    return [...this.chargingStationTemplates.values()]
+  }
+
   public hasChargingStationData (hashId: string): boolean {
     return this.chargingStations.has(hashId)
+  }
+
+  public hasChargingStationTemplates (template: string): boolean {
+    return this.chargingStationTemplates.has(template)
   }
 
   public hasResponseHandler (uuid: `${string}-${string}-${string}-${string}-${string}`): boolean {
@@ -123,6 +130,15 @@ export abstract class AbstractUIServer {
     const cachedData = this.chargingStations.get(hashId)
     if (cachedData == null || data.timestamp >= cachedData.timestamp) {
       this.chargingStations.set(hashId, data)
+    }
+  }
+
+  public setChargingStationTemplates (templates: string[] | undefined): void {
+    if (templates == null) {
+      return
+    }
+    for (const template of templates) {
+      this.chargingStationTemplates.add(template)
     }
   }
 

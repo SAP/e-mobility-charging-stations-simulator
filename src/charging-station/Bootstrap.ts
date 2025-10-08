@@ -223,6 +223,11 @@ export class Bootstrap extends EventEmitter {
           )
           await this.storage?.open()
         }
+        this.uiServer.setChargingStationTemplates(
+          Configuration.getStationTemplateUrls()?.map(stationTemplateUrl =>
+            buildTemplateName(stationTemplateUrl.file)
+          )
+        )
         if (
           !this.uiServerStarted &&
           Configuration.getConfigurationSection<UIServerConfiguration>(
@@ -358,7 +363,6 @@ export class Bootstrap extends EventEmitter {
           provisioned: stationTemplateUrl.provisionedNumberOfStations ?? 0,
           started: 0,
         })
-        this.uiServer.chargingStationTemplates.add(templateName)
       }
       if (this.templateStatistics.size !== stationTemplateUrls.length) {
         console.error(
@@ -509,7 +513,6 @@ export class Bootstrap extends EventEmitter {
       this.uiServer.stop()
       this.uiServerStarted = false
     }
-    this.initializeCounters()
     // FIXME: initialize worker implementation only if the worker section has changed
     this.initializeWorkerImplementation(
       Configuration.getConfigurationSection<WorkerConfiguration>(ConfigurationSection.worker)
