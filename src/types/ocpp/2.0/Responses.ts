@@ -2,6 +2,7 @@ import type { EmptyObject } from '../../EmptyObject.js'
 import type { JsonObject } from '../../JsonType.js'
 import type { RegistrationStatusEnumType } from '../Common.js'
 import type {
+  GenericDeviceModelStatusEnumType,
   GenericStatusEnumType,
   InstallCertificateStatusEnumType,
   StatusInfoType,
@@ -17,6 +18,11 @@ export interface OCPP20BootNotificationResponse extends JsonObject {
 
 export interface OCPP20ClearCacheResponse extends JsonObject {
   status: GenericStatusEnumType
+  statusInfo?: StatusInfoType
+}
+
+export interface OCPP20GetBaseReportResponse extends JsonObject {
+  status: GenericDeviceModelStatusEnumType
   statusInfo?: StatusInfoType
 }
 

@@ -58,6 +58,19 @@ export enum GetInstalledCertificateStatusEnumType {
   NotFound = 'NotFound',
 }
 
+export enum GenericDeviceModelStatusEnumType {
+  Accepted = 'Accepted',
+  Rejected = 'Rejected',
+  NotSupported = 'NotSupported',
+  EmptyResultSet = 'EmptyResultSet',
+}
+
+export enum ReportBaseEnumType {
+  ConfigurationInventory = 'ConfigurationInventory',
+  FullInventory = 'FullInventory',
+  SummaryInventory = 'SummaryInventory',
+}
+
 export enum HashAlgorithmEnumType {
   SHA256 = 'SHA256',
   SHA384 = 'SHA384',

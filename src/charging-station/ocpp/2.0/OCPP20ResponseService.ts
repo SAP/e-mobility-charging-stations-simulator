@@ -10,6 +10,7 @@ import {
   type JsonType,
   type OCPP20BootNotificationResponse,
   type OCPP20ClearCacheResponse,
+  type OCPP20GetBaseReportResponse,
   type OCPP20HeartbeatResponse,
   OCPP20IncomingRequestCommand,
   OCPP20OptionalVariableName,
@@ -88,6 +89,16 @@ export class OCPP20ResponseService extends OCPPResponseService {
         this.ajvIncomingRequest.compile(
           OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20ClearCacheResponse>(
             'assets/json-schemas/ocpp/2.0/ClearCacheResponse.json',
+            moduleName,
+            'constructor'
+          )
+        ),
+      ],
+      [
+        OCPP20IncomingRequestCommand.GET_BASE_REPORT,
+        this.ajvIncomingRequest.compile(
+          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20GetBaseReportResponse>(
+            'assets/json-schemas/ocpp/2.0/GetBaseReportResponse.json',
             moduleName,
             'constructor'
           )

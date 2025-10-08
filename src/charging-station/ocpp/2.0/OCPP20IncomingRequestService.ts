@@ -7,9 +7,12 @@ import type { ChargingStation } from '../../../charging-station/index.js'
 import { OCPPError } from '../../../exception/index.js'
 import {
   ErrorType,
+  GenericDeviceModelStatusEnumType,
   type IncomingRequestHandler,
   type JsonType,
   type OCPP20ClearCacheRequest,
+  type OCPP20GetBaseReportRequest,
+  type OCPP20GetBaseReportResponse,
   OCPP20IncomingRequestCommand,
   OCPPVersion,
 } from '../../../types/index.js'
@@ -34,6 +37,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     super(OCPPVersion.VERSION_201)
     this.incomingRequestHandlers = new Map<OCPP20IncomingRequestCommand, IncomingRequestHandler>([
       [OCPP20IncomingRequestCommand.CLEAR_CACHE, this.handleRequestClearCache.bind(this)],
+      [OCPP20IncomingRequestCommand.GET_BASE_REPORT, this.handleRequestGetBaseReport.bind(this)],
     ])
     this.payloadValidateFunctions = new Map<
       OCPP20IncomingRequestCommand,
@@ -44,6 +48,16 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         this.ajv.compile(
           OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20ClearCacheRequest>(
             'assets/json-schemas/ocpp/2.0/ClearCacheRequest.json',
+            moduleName,
+            'constructor'
+          )
+        ),
+      ],
+      [
+        OCPP20IncomingRequestCommand.GET_BASE_REPORT,
+        this.ajv.compile(
+          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20GetBaseReportRequest>(
+            'assets/json-schemas/ocpp/2.0/GetBaseReportRequest.json',
             moduleName,
             'constructor'
           )
@@ -140,6 +154,20 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     )
     // Emit command name event to allow delayed handling
     this.emit(commandName, chargingStation, commandPayload, response)
+  }
+
+  private handleRequestGetBaseReport (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20GetBaseReportRequest
+  ): OCPP20GetBaseReportResponse {
+    logger.info(
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetBaseReport: GetBaseReport request received with requestId ${commandPayload.requestId} and reportBase ${commandPayload.reportBase}`
+    )
+    // For now, accept the request
+    // The actual report will be sent via NotifyReport message(s) asynchronously
+    return {
+      status: GenericDeviceModelStatusEnumType.Accepted,
+    }
   }
 
   private validatePayload (
