@@ -6,6 +6,7 @@ export {
   getFromLocalStorage,
   getLocalStorage,
   randomUUID,
+  resetToggleButtonState,
   setToLocalStorage,
   useUIClient,
 } from './Utils'
