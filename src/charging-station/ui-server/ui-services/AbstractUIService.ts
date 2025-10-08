@@ -282,7 +282,7 @@ export abstract class AbstractUIService {
 
   private handleListChargingStations (): ResponsePayload {
     return {
-      chargingStations: [...this.uiServer.chargingStations.values()] as JsonType[],
+      chargingStations: this.uiServer.listChargingStationData() as JsonType[],
       status: ResponseStatus.SUCCESS,
     } satisfies ResponsePayload
   }
@@ -370,7 +370,7 @@ export abstract class AbstractUIService {
     if (isNotEmptyArray(payload.hashIds)) {
       payload.hashIds = payload.hashIds
         .map(hashId => {
-          if (this.uiServer.chargingStations.has(hashId)) {
+          if (this.uiServer.hasChargingStationData(hashId)) {
             return hashId
           }
           logger.warn(
@@ -387,7 +387,7 @@ export abstract class AbstractUIService {
     }
     const expectedNumberOfResponses = Array.isArray(payload.hashIds)
       ? payload.hashIds.length
-      : this.uiServer.chargingStations.size
+      : this.uiServer.getChargingStationsCount()
     if (expectedNumberOfResponses === 0) {
       throw new BaseError(
         'hashIds array in the request payload does not contain any valid charging station hashId'

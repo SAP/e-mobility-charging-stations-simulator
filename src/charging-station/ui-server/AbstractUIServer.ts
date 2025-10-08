@@ -26,7 +26,7 @@ import { getUsernameAndPasswordFromAuthorizationToken } from './UIServerUtils.js
 const moduleName = 'AbstractUIServer'
 
 export abstract class AbstractUIServer {
-  public readonly chargingStations: Map<string, ChargingStationData>
+  private readonly chargingStations: Map<string, ChargingStationData>
   public readonly chargingStationTemplates: Set<string>
 
   protected readonly httpServer: Http2Server | Server
@@ -58,6 +58,33 @@ export abstract class AbstractUIServer {
       ServerResponse | WebSocket
     >()
     this.uiServices = new Map<ProtocolVersion, AbstractUIService>()
+  }
+
+  public getChargingStationData (hashId: string): ChargingStationData | undefined {
+    return this.chargingStations.get(hashId)
+  }
+
+  public listChargingStationData (): ChargingStationData[] {
+    return [...this.chargingStations.values()]
+  }
+
+  public setChargingStationData (hashId: string, data: ChargingStationData): void {
+    const cachedData = this.chargingStations.get(hashId)
+    if (cachedData == null || data.timestamp >= cachedData.timestamp) {
+      this.chargingStations.set(hashId, data)
+    }
+  }
+
+  public deleteChargingStationData (hashId: string): boolean {
+    return this.chargingStations.delete(hashId)
+  }
+
+  public hasChargingStationData (hashId: string): boolean {
+    return this.chargingStations.has(hashId)
+  }
+
+  public getChargingStationsCount (): number {
+    return this.chargingStations.size
   }
 
   public buildProtocolRequest (
