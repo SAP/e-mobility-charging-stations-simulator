@@ -30,6 +30,8 @@ export interface OCPP20HeartbeatResponse extends JsonObject {
   currentTime: Date
 }
 
+export type OCPP20NotifyReportResponse = EmptyObject
+
 export interface OCPP20InstallCertificateResponse extends JsonObject {
   status: InstallCertificateStatusEnumType
   statusInfo?: StatusInfoType

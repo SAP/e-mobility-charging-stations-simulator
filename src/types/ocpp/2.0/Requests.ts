@@ -18,6 +18,7 @@ export enum OCPP20IncomingRequestCommand {
 export enum OCPP20RequestCommand {
   BOOT_NOTIFICATION = 'BootNotification',
   HEARTBEAT = 'Heartbeat',
+  NOTIFY_REPORT = 'NotifyReport',
   STATUS_NOTIFICATION = 'StatusNotification',
 }
 
@@ -34,6 +35,14 @@ export interface OCPP20GetBaseReportRequest extends JsonObject {
 }
 
 export type OCPP20HeartbeatRequest = EmptyObject
+
+export interface OCPP20NotifyReportRequest extends JsonObject {
+  generatedAt: Date
+  requestId: number
+  reportData?: ReportDataType[]
+  seqNo: number
+  tbc?: boolean
+}
 
 export interface OCPP20InstallCertificateRequest extends JsonObject {
   certificate: string
@@ -62,4 +71,37 @@ interface ChargingStationType extends JsonObject {
 interface ModemType extends JsonObject {
   iccid?: string
   imsi?: string
+}
+
+interface ReportDataType extends JsonObject {
+  component: ComponentType
+  variable: VariableType
+  variableAttribute?: VariableAttributeType[]
+  variableCharacteristics?: VariableCharacteristicsType
+}
+
+interface ComponentType extends JsonObject {
+  evse?: EVSEType
+  instance?: string
+  name: string
+}
+
+interface VariableType extends JsonObject {
+  instance?: string
+  name: string
+}
+
+interface VariableAttributeType extends JsonObject {
+  type?: string
+  value?: string
+}
+
+interface VariableCharacteristicsType extends JsonObject {
+  dataType: string
+  supportsMonitoring: boolean
+}
+
+interface EVSEType extends JsonObject {
+  connectorId?: number
+  id: number
 }

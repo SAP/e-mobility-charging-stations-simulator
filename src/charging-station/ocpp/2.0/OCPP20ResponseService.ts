@@ -13,6 +13,7 @@ import {
   type OCPP20GetBaseReportResponse,
   type OCPP20HeartbeatResponse,
   OCPP20IncomingRequestCommand,
+  type OCPP20NotifyReportResponse,
   OCPP20OptionalVariableName,
   OCPP20RequestCommand,
   type OCPP20StatusNotificationResponse,
@@ -46,6 +47,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
         this.handleResponseBootNotification.bind(this) as ResponseHandler,
       ],
       [OCPP20RequestCommand.HEARTBEAT, this.emptyResponseHandler],
+      [OCPP20RequestCommand.NOTIFY_REPORT, this.emptyResponseHandler],
       [OCPP20RequestCommand.STATUS_NOTIFICATION, this.emptyResponseHandler],
     ])
     this.payloadValidateFunctions = new Map<OCPP20RequestCommand, ValidateFunction<JsonType>>([
@@ -64,6 +66,16 @@ export class OCPP20ResponseService extends OCPPResponseService {
         this.ajv.compile(
           OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20HeartbeatResponse>(
             'assets/json-schemas/ocpp/2.0/HeartbeatResponse.json',
+            moduleName,
+            'constructor'
+          )
+        ),
+      ],
+      [
+        OCPP20RequestCommand.NOTIFY_REPORT,
+        this.ajv.compile(
+          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20NotifyReportResponse>(
+            'assets/json-schemas/ocpp/2.0/NotifyReportResponse.json',
             moduleName,
             'constructor'
           )

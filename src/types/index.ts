@@ -153,6 +153,7 @@ export {
   type OCPP20GetBaseReportRequest,
   type OCPP20HeartbeatRequest,
   OCPP20IncomingRequestCommand,
+  type OCPP20NotifyReportRequest,
   OCPP20RequestCommand,
   type OCPP20StatusNotificationRequest,
 } from './ocpp/2.0/Requests.js'
@@ -161,6 +162,7 @@ export type {
   OCPP20ClearCacheResponse,
   OCPP20GetBaseReportResponse,
   OCPP20HeartbeatResponse,
+  OCPP20NotifyReportResponse,
   OCPP20StatusNotificationResponse,
 } from './ocpp/2.0/Responses.js'
 export { OCPP20OptionalVariableName } from './ocpp/2.0/Variables.js'

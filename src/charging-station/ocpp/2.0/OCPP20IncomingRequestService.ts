@@ -14,6 +14,9 @@ import {
   type OCPP20GetBaseReportRequest,
   type OCPP20GetBaseReportResponse,
   OCPP20IncomingRequestCommand,
+  type OCPP20NotifyReportRequest,
+  type OCPP20NotifyReportResponse,
+  OCPP20RequestCommand,
   OCPPVersion,
 } from '../../../types/index.js'
 import { isAsyncFunction, logger } from '../../../utils/index.js'
@@ -163,10 +166,37 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     logger.info(
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetBaseReport: GetBaseReport request received with requestId ${commandPayload.requestId} and reportBase ${commandPayload.reportBase}`
     )
-    // For now, accept the request
-    // The actual report will be sent via NotifyReport message(s) asynchronously
+    // Trigger NotifyReport asynchronously
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    this.sendNotifyReport(chargingStation, commandPayload.requestId, commandPayload.reportBase)
     return {
       status: GenericDeviceModelStatusEnumType.Accepted,
+    }
+  }
+
+  private async sendNotifyReport (
+    chargingStation: ChargingStation,
+    requestId: number,
+    reportBase: string
+  ): Promise<void> {
+    try {
+      // Send a simple NotifyReport with minimal data
+      await chargingStation.ocppRequestService.requestHandler<
+        OCPP20NotifyReportRequest,
+        OCPP20NotifyReportResponse
+      >(chargingStation, OCPP20RequestCommand.NOTIFY_REPORT, {
+        requestId,
+        seqNo: 0,
+        tbc: false,
+      })
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.sendNotifyReport: NotifyReport sent for requestId ${requestId}`
+      )
+    } catch (error) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.sendNotifyReport: Error sending NotifyReport:`,
+        error
+      )
     }
   }
 
