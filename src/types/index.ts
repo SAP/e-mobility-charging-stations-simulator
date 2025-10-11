@@ -141,19 +141,28 @@ export {
   type OCPP16StopTransactionRequest,
   type OCPP16StopTransactionResponse,
 } from './ocpp/1.6/Transaction.js'
-export { BootReasonEnumType, OCPP20ConnectorStatusEnumType } from './ocpp/2.0/Common.js'
+export {
+  BootReasonEnumType,
+  GenericDeviceModelStatusEnumType,
+  OCPP20ConnectorStatusEnumType,
+  ReportBaseEnumType,
+} from './ocpp/2.0/Common.js'
 export {
   type OCPP20BootNotificationRequest,
   type OCPP20ClearCacheRequest,
+  type OCPP20GetBaseReportRequest,
   type OCPP20HeartbeatRequest,
   OCPP20IncomingRequestCommand,
+  type OCPP20NotifyReportRequest,
   OCPP20RequestCommand,
   type OCPP20StatusNotificationRequest,
 } from './ocpp/2.0/Requests.js'
 export type {
   OCPP20BootNotificationResponse,
   OCPP20ClearCacheResponse,
+  OCPP20GetBaseReportResponse,
   OCPP20HeartbeatResponse,
+  OCPP20NotifyReportResponse,
   OCPP20StatusNotificationResponse,
 } from './ocpp/2.0/Responses.js'
 export { OCPP20OptionalVariableName } from './ocpp/2.0/Variables.js'
