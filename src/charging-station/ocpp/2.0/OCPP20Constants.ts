@@ -5,6 +5,13 @@ import {
 import { OCPPConstants } from '../OCPPConstants.js'
 
 export class OCPP20Constants extends OCPPConstants {
+  static readonly ComponentName = {
+    CHARGING_STATION: 'ChargingStation',
+    CONNECTOR: 'Connector',
+    EVSE: 'EVSE',
+    OCPP_COMM_CTRLR: 'OCPPCommCtrlr',
+  } as const
+
   static readonly ChargingStationStatusTransitions: readonly ConnectorStatusTransition[] =
     Object.freeze([
       { to: OCPP20ConnectorStatusEnumType.Available },

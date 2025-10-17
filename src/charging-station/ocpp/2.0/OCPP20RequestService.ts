@@ -12,6 +12,7 @@ import {
   type JsonType,
   type OCPP20BootNotificationRequest,
   type OCPP20HeartbeatRequest,
+  type OCPP20NotifyReportRequest,
   OCPP20RequestCommand,
   type OCPP20StatusNotificationRequest,
   OCPPVersion,
@@ -48,6 +49,16 @@ export class OCPP20RequestService extends OCPPRequestService {
         this.ajv.compile(
           OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20HeartbeatRequest>(
             'assets/json-schemas/ocpp/2.0/HeartbeatRequest.json',
+            moduleName,
+            'constructor'
+          )
+        ),
+      ],
+      [
+        OCPP20RequestCommand.NOTIFY_REPORT,
+        this.ajv.compile(
+          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20NotifyReportRequest>(
+            'assets/json-schemas/ocpp/2.0/NotifyReportRequest.json',
             moduleName,
             'constructor'
           )
@@ -106,6 +117,11 @@ export class OCPP20RequestService extends OCPPRequestService {
         return commandParams as unknown as Request
       case OCPP20RequestCommand.HEARTBEAT:
         return OCPP20Constants.OCPP_RESPONSE_EMPTY as unknown as Request
+      case OCPP20RequestCommand.NOTIFY_REPORT:
+        return {
+          generatedAt: new Date(),
+          ...commandParams,
+        } as unknown as Request
       case OCPP20RequestCommand.STATUS_NOTIFICATION:
         return {
           timestamp: new Date(),
