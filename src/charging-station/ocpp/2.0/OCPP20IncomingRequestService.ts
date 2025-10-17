@@ -6,7 +6,9 @@ import type { ChargingStation } from '../../../charging-station/index.js'
 
 import { OCPPError } from '../../../exception/index.js'
 import {
+  type ComponentType,
   ErrorType,
+  type EVSEType,
   GenericDeviceModelStatusEnumType,
   type IncomingRequestHandler,
   type JsonType,
@@ -14,24 +16,20 @@ import {
   type OCPP20GetBaseReportRequest,
   type OCPP20GetBaseReportResponse,
   OCPP20IncomingRequestCommand,
-  type OCPP20NotifyReportRequest,
-  type OCPP20NotifyReportResponse,
   OCPP20RequestCommand,
   OCPPVersion,
   ReportBaseEnumType,
+  type ReportDataType,
+  type VariableAttributeType,
+  type VariableCharacteristicsType,
+  type VariableType,
 } from '../../../types/index.js'
 import { isAsyncFunction, logger } from '../../../utils/index.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
+import { OCPP20ComponentName } from './OCPP20Constants.js'
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 
 const moduleName = 'OCPP20IncomingRequestService'
-
-const COMPONENT_NAMES = {
-  CHARGING_STATION: 'ChargingStation',
-  CONNECTOR: 'Connector',
-  EVSE: 'EVSE',
-  OCPP_COMM_CTRLR: 'OCPPCommCtrlr',
-} as const
 
 export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   protected payloadValidateFunctions: Map<OCPP20IncomingRequestCommand, ValidateFunction<JsonType>>
@@ -184,54 +182,35 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         status: GenericDeviceModelStatusEnumType.EmptyResultSet,
       }
     }
-    // Trigger NotifyReport asynchronously
+    // Trigger NotifyReport asynchronously via ocppRequestService
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    this.sendNotifyReport(chargingStation, commandPayload.requestId, reportData)
-    return {
-      status: GenericDeviceModelStatusEnumType.Accepted,
-    }
-  }
-
-  private async sendNotifyReport (
-    chargingStation: ChargingStation,
-    requestId: number,
-    reportData: Array<{
-      component: { evse?: { connectorId?: number; id: number }; instance?: string; name: string }
-      variable: { instance?: string; name: string }
-      variableAttribute?: Array<{ type?: string; value?: string }>
-      variableCharacteristics?: { dataType: string; supportsMonitoring: boolean }
-    }>
-  ): Promise<void> {
-    try {
-      await chargingStation.ocppRequestService.requestHandler<
-        OCPP20NotifyReportRequest,
-        OCPP20NotifyReportResponse
-      >(chargingStation, OCPP20RequestCommand.NOTIFY_REPORT, {
+    chargingStation.ocppRequestService
+      .requestHandler(chargingStation, OCPP20RequestCommand.NOTIFY_REPORT, {
         reportData,
-        requestId,
+        requestId: commandPayload.requestId,
         seqNo: 0,
         tbc: false,
       })
-      logger.info(
-        `${chargingStation.logPrefix()} ${moduleName}.sendNotifyReport: NotifyReport sent for requestId ${requestId} with ${reportData.length} report items`
-      )
-    } catch (error) {
-      logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.sendNotifyReport: Error sending NotifyReport:`,
-        error
-      )
+      .then(() => {
+        logger.info(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetBaseReport: NotifyReport sent for requestId ${commandPayload.requestId} with ${reportData.length} report items`
+        )
+      })
+      .catch((error: Error) => {
+        logger.error(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetBaseReport: Error sending NotifyReport:`,
+          error
+        )
+      })
+    return {
+      status: GenericDeviceModelStatusEnumType.Accepted,
     }
   }
 
   private buildReportData (
     chargingStation: ChargingStation,
     reportBase: string
-  ): Array<{
-    component: { evse?: { connectorId?: number; id: number }; instance?: string; name: string }
-    variable: { instance?: string; name: string }
-    variableAttribute?: Array<{ type?: string; value?: string }>
-    variableCharacteristics?: { dataType: string; supportsMonitoring: boolean }
-  }> {
+  ): ReportDataType[] {
     // Validate reportBase parameter
     if (!Object.values(ReportBaseEnumType).includes(reportBase as ReportBaseEnumType)) {
       logger.warn(
@@ -240,12 +219,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return []
     }
 
-    const reportData: Array<{
-      component: { evse?: { connectorId?: number; id: number }; instance?: string; name: string }
-      variable: { instance?: string; name: string }
-      variableAttribute?: Array<{ type?: string; value?: string }>
-      variableCharacteristics?: { dataType: string; supportsMonitoring: boolean }
-    }> = []
+    const reportData: ReportDataType[] = []
 
     switch (reportBase) {
       case ReportBaseEnumType.ConfigurationInventory:
@@ -254,7 +228,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           for (const configKey of chargingStation.ocppConfiguration.configurationKey) {
             reportData.push({
               component: {
-                name: COMPONENT_NAMES.OCPP_COMM_CTRLR,
+                name: OCPP20ComponentName.OCPP_COMM_CTRLR,
               },
               variable: {
                 name: configKey.key,
@@ -281,7 +255,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           const stationInfo = chargingStation.stationInfo
           if (stationInfo.chargePointModel) {
             reportData.push({
-              component: { name: COMPONENT_NAMES.CHARGING_STATION },
+              component: { name: OCPP20ComponentName.CHARGING_STATION },
               variable: { name: 'Model' },
               variableAttribute: [{ type: 'Actual', value: stationInfo.chargePointModel }],
               variableCharacteristics: { dataType: 'string', supportsMonitoring: false },
@@ -289,7 +263,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           }
           if (stationInfo.chargePointVendor) {
             reportData.push({
-              component: { name: COMPONENT_NAMES.CHARGING_STATION },
+              component: { name: OCPP20ComponentName.CHARGING_STATION },
               variable: { name: 'VendorName' },
               variableAttribute: [{ type: 'Actual', value: stationInfo.chargePointVendor }],
               variableCharacteristics: { dataType: 'string', supportsMonitoring: false },
@@ -297,7 +271,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           }
           if (stationInfo.chargePointSerialNumber) {
             reportData.push({
-              component: { name: COMPONENT_NAMES.CHARGING_STATION },
+              component: { name: OCPP20ComponentName.CHARGING_STATION },
               variable: { name: 'SerialNumber' },
               variableAttribute: [{ type: 'Actual', value: stationInfo.chargePointSerialNumber }],
               variableCharacteristics: { dataType: 'string', supportsMonitoring: false },
@@ -305,7 +279,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           }
           if (stationInfo.firmwareVersion) {
             reportData.push({
-              component: { name: COMPONENT_NAMES.CHARGING_STATION },
+              component: { name: OCPP20ComponentName.CHARGING_STATION },
               variable: { name: 'FirmwareVersion' },
               variableAttribute: [{ type: 'Actual', value: stationInfo.firmwareVersion }],
               variableCharacteristics: { dataType: 'string', supportsMonitoring: false },
@@ -377,7 +351,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           const stationInfo = chargingStation.stationInfo
           if (stationInfo.chargePointModel) {
             reportData.push({
-              component: { name: COMPONENT_NAMES.CHARGING_STATION },
+              component: { name: OCPP20ComponentName.CHARGING_STATION },
               variable: { name: 'Model' },
               variableAttribute: [{ type: 'Actual', value: stationInfo.chargePointModel }],
               variableCharacteristics: { dataType: 'string', supportsMonitoring: false },
@@ -385,7 +359,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           }
           if (stationInfo.chargePointVendor) {
             reportData.push({
-              component: { name: COMPONENT_NAMES.CHARGING_STATION },
+              component: { name: OCPP20ComponentName.CHARGING_STATION },
               variable: { name: 'VendorName' },
               variableAttribute: [{ type: 'Actual', value: stationInfo.chargePointVendor }],
               variableCharacteristics: { dataType: 'string', supportsMonitoring: false },
@@ -393,7 +367,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           }
           if (stationInfo.firmwareVersion) {
             reportData.push({
-              component: { name: COMPONENT_NAMES.CHARGING_STATION },
+              component: { name: OCPP20ComponentName.CHARGING_STATION },
               variable: { name: 'FirmwareVersion' },
               variableAttribute: [{ type: 'Actual', value: stationInfo.firmwareVersion }],
               variableCharacteristics: { dataType: 'string', supportsMonitoring: false },

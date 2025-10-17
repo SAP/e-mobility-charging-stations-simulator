@@ -4,6 +4,13 @@ import {
 } from '../../../types/index.js'
 import { OCPPConstants } from '../OCPPConstants.js'
 
+export const OCPP20ComponentName = {
+  CHARGING_STATION: 'ChargingStation',
+  CONNECTOR: 'Connector',
+  EVSE: 'EVSE',
+  OCPP_COMM_CTRLR: 'OCPPCommCtrlr',
+} as const
+
 export class OCPP20Constants extends OCPPConstants {
   static readonly ChargingStationStatusTransitions: readonly ConnectorStatusTransition[] =
     Object.freeze([

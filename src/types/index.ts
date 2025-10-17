@@ -148,6 +148,8 @@ export {
   ReportBaseEnumType,
 } from './ocpp/2.0/Common.js'
 export {
+  type ComponentType,
+  type EVSEType,
   type OCPP20BootNotificationRequest,
   type OCPP20ClearCacheRequest,
   type OCPP20GetBaseReportRequest,
@@ -156,6 +158,10 @@ export {
   type OCPP20NotifyReportRequest,
   OCPP20RequestCommand,
   type OCPP20StatusNotificationRequest,
+  type ReportDataType,
+  type VariableAttributeType,
+  type VariableCharacteristicsType,
+  type VariableType,
 } from './ocpp/2.0/Requests.js'
 export type {
   OCPP20BootNotificationResponse,

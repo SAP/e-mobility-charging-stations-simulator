@@ -73,35 +73,35 @@ interface ModemType extends JsonObject {
   imsi?: string
 }
 
-interface ReportDataType extends JsonObject {
+export interface ReportDataType extends JsonObject {
   component: ComponentType
   variable: VariableType
   variableAttribute?: VariableAttributeType[]
   variableCharacteristics?: VariableCharacteristicsType
 }
 
-interface ComponentType extends JsonObject {
+export interface ComponentType extends JsonObject {
   evse?: EVSEType
   instance?: string
   name: string
 }
 
-interface VariableType extends JsonObject {
+export interface VariableType extends JsonObject {
   instance?: string
   name: string
 }
 
-interface VariableAttributeType extends JsonObject {
+export interface VariableAttributeType extends JsonObject {
   type?: string
   value?: string
 }
 
-interface VariableCharacteristicsType extends JsonObject {
+export interface VariableCharacteristicsType extends JsonObject {
   dataType: string
   supportsMonitoring: boolean
 }
 
-interface EVSEType extends JsonObject {
+export interface EVSEType extends JsonObject {
   connectorId?: number
   id: number
 }
