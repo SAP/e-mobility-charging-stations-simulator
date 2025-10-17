@@ -18,6 +18,7 @@ import {
   type OCPP20NotifyReportResponse,
   OCPP20RequestCommand,
   OCPPVersion,
+  ReportBaseEnumType,
 } from '../../../types/index.js'
 import { isAsyncFunction, logger } from '../../../utils/index.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
@@ -180,17 +181,18 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     reportBase: string
   ): Promise<void> {
     try {
-      // Send a simple NotifyReport with minimal data
+      const reportData = this.buildReportData(chargingStation, reportBase)
       await chargingStation.ocppRequestService.requestHandler<
         OCPP20NotifyReportRequest,
         OCPP20NotifyReportResponse
       >(chargingStation, OCPP20RequestCommand.NOTIFY_REPORT, {
+        reportData,
         requestId,
         seqNo: 0,
         tbc: false,
       })
       logger.info(
-        `${chargingStation.logPrefix()} ${moduleName}.sendNotifyReport: NotifyReport sent for requestId ${requestId}`
+        `${chargingStation.logPrefix()} ${moduleName}.sendNotifyReport: NotifyReport sent for requestId ${requestId} with ${reportData.length} report items`
       )
     } catch (error) {
       logger.error(
@@ -198,6 +200,173 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         error
       )
     }
+  }
+
+  private buildReportData (chargingStation: ChargingStation, reportBase: string): any[] {
+    const reportData: any[] = []
+
+    switch (reportBase) {
+      case ReportBaseEnumType.ConfigurationInventory:
+        // Include OCPP configuration keys
+        if (chargingStation.ocppConfiguration?.configurationKey) {
+          for (const configKey of chargingStation.ocppConfiguration.configurationKey) {
+            reportData.push({
+              component: {
+                name: 'OCPPCommCtrlr',
+              },
+              variable: {
+                name: configKey.key,
+              },
+              variableAttribute: [
+                {
+                  type: 'Actual',
+                  value: configKey.value,
+                },
+              ],
+              variableCharacteristics: {
+                dataType: 'string',
+                supportsMonitoring: false,
+              },
+            })
+          }
+        }
+        break
+
+      case ReportBaseEnumType.FullInventory:
+        // Include all device model variables
+        // 1. Station information
+        if (chargingStation.stationInfo) {
+          const stationInfo = chargingStation.stationInfo
+          if (stationInfo.chargePointModel) {
+            reportData.push({
+              component: { name: 'ChargingStation' },
+              variable: { name: 'Model' },
+              variableAttribute: [{ type: 'Actual', value: stationInfo.chargePointModel }],
+              variableCharacteristics: { dataType: 'string', supportsMonitoring: false },
+            })
+          }
+          if (stationInfo.chargePointVendor) {
+            reportData.push({
+              component: { name: 'ChargingStation' },
+              variable: { name: 'VendorName' },
+              variableAttribute: [{ type: 'Actual', value: stationInfo.chargePointVendor }],
+              variableCharacteristics: { dataType: 'string', supportsMonitoring: false },
+            })
+          }
+          if (stationInfo.chargePointSerialNumber) {
+            reportData.push({
+              component: { name: 'ChargingStation' },
+              variable: { name: 'SerialNumber' },
+              variableAttribute: [{ type: 'Actual', value: stationInfo.chargePointSerialNumber }],
+              variableCharacteristics: { dataType: 'string', supportsMonitoring: false },
+            })
+          }
+          if (stationInfo.firmwareVersion) {
+            reportData.push({
+              component: { name: 'ChargingStation' },
+              variable: { name: 'FirmwareVersion' },
+              variableAttribute: [{ type: 'Actual', value: stationInfo.firmwareVersion }],
+              variableCharacteristics: { dataType: 'string', supportsMonitoring: false },
+            })
+          }
+        }
+
+        // 2. OCPP configuration
+        if (chargingStation.ocppConfiguration?.configurationKey) {
+          for (const configKey of chargingStation.ocppConfiguration.configurationKey) {
+            reportData.push({
+              component: { name: 'OCPPCommCtrlr' },
+              variable: { name: configKey.key },
+              variableAttribute: [{ type: 'Actual', value: configKey.value }],
+              variableCharacteristics: { dataType: 'string', supportsMonitoring: false },
+            })
+          }
+        }
+
+        // 3. EVSE and connector information
+        if (chargingStation.evses.size > 0) {
+          for (const [evseId, evse] of chargingStation.evses) {
+            reportData.push({
+              component: {
+                evse: { id: evseId },
+                name: 'EVSE',
+              },
+              variable: { name: 'AvailabilityState' },
+              variableAttribute: [{ type: 'Actual', value: evse.availability }],
+              variableCharacteristics: { dataType: 'string', supportsMonitoring: true },
+            })
+            if (evse.connectors) {
+              for (const [connectorId, connector] of evse.connectors) {
+                reportData.push({
+                  component: {
+                    evse: { connectorId, id: evseId },
+                    name: 'Connector',
+                  },
+                  variable: { name: 'ConnectorType' },
+                  variableAttribute: [
+                    { type: 'Actual', value: String(connector.connectorType) },
+                  ],
+                  variableCharacteristics: { dataType: 'string', supportsMonitoring: false },
+                })
+              }
+            }
+          }
+        } else if (chargingStation.connectors.size > 0) {
+          // Fallback to connectors if no EVSE structure
+          for (const [connectorId, connector] of chargingStation.connectors) {
+            if (connectorId > 0) {
+              reportData.push({
+                component: {
+                  evse: { connectorId, id: 1 },
+                  name: 'Connector',
+                },
+                variable: { name: 'ConnectorType' },
+                variableAttribute: [{ type: 'Actual', value: String(connector.connectorType) }],
+                variableCharacteristics: { dataType: 'string', supportsMonitoring: false },
+              })
+            }
+          }
+        }
+        break
+
+      case ReportBaseEnumType.SummaryInventory:
+        // Include essential variables only
+        if (chargingStation.stationInfo) {
+          const stationInfo = chargingStation.stationInfo
+          if (stationInfo.chargePointModel) {
+            reportData.push({
+              component: { name: 'ChargingStation' },
+              variable: { name: 'Model' },
+              variableAttribute: [{ type: 'Actual', value: stationInfo.chargePointModel }],
+              variableCharacteristics: { dataType: 'string', supportsMonitoring: false },
+            })
+          }
+          if (stationInfo.chargePointVendor) {
+            reportData.push({
+              component: { name: 'ChargingStation' },
+              variable: { name: 'VendorName' },
+              variableAttribute: [{ type: 'Actual', value: stationInfo.chargePointVendor }],
+              variableCharacteristics: { dataType: 'string', supportsMonitoring: false },
+            })
+          }
+          if (stationInfo.firmwareVersion) {
+            reportData.push({
+              component: { name: 'ChargingStation' },
+              variable: { name: 'FirmwareVersion' },
+              variableAttribute: [{ type: 'Actual', value: stationInfo.firmwareVersion }],
+              variableCharacteristics: { dataType: 'string', supportsMonitoring: false },
+            })
+          }
+        }
+        break
+
+      default:
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.buildReportData: Unknown reportBase '${reportBase}'`
+        )
+    }
+
+    return reportData
   }
 
   private validatePayload (
