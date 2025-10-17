@@ -16,6 +16,9 @@ import {
   type OCPP20GetBaseReportRequest,
   type OCPP20GetBaseReportResponse,
   OCPP20IncomingRequestCommand,
+  type OCPP20NotifyReportRequest,
+  type OCPP20NotifyReportResponse,
+  OCPP20RequestCommand,
   OCPPVersion,
   ReportBaseEnumType,
   type ReportDataType,
@@ -181,17 +184,37 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         status: GenericDeviceModelStatusEnumType.EmptyResultSet,
       }
     }
-    // Emit event with report data to allow external handler to send NotifyReport
-    setImmediate(() => {
-      this.emit(OCPP20IncomingRequestCommand.GET_BASE_REPORT, {
-        chargingStation,
-        reportData,
-        requestId: commandPayload.requestId,
-      })
-    })
+    // Trigger NotifyReport asynchronously
+    this.sendNotifyReport(chargingStation, commandPayload.requestId, reportData).catch(
+      (error: Error) => {
+        logger.error(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetBaseReport: Error sending NotifyReport:`,
+          error
+        )
+      }
+    )
     return {
       status: GenericDeviceModelStatusEnumType.Accepted,
     }
+  }
+
+  private async sendNotifyReport (
+    chargingStation: ChargingStation,
+    requestId: number,
+    reportData: ReportDataType[]
+  ): Promise<void> {
+    await chargingStation.ocppRequestService.requestHandler<
+      OCPP20NotifyReportRequest,
+      OCPP20NotifyReportResponse
+    >(chargingStation, OCPP20RequestCommand.NOTIFY_REPORT, {
+      reportData,
+      requestId,
+      seqNo: 0,
+      tbc: false,
+    })
+    logger.info(
+      `${chargingStation.logPrefix()} ${moduleName}.sendNotifyReport: NotifyReport sent for requestId ${requestId} with ${reportData.length} report items`
+    )
   }
 
   private buildReportData (

@@ -43,8 +43,6 @@ import {
   MeterValueMeasurand,
   type MeterValuesRequest,
   type MeterValuesResponse,
-  OCPP20IncomingRequestCommand,
-  OCPP20RequestCommand,
   OCPPVersion,
   type OutgoingRequest,
   PowerUnits,
@@ -1900,27 +1898,6 @@ export class ChargingStation extends EventEmitter {
           OCPP20IncomingRequestService.getInstance<OCPP20IncomingRequestService>()
         this.ocppRequestService = OCPP20RequestService.getInstance<OCPP20RequestService>(
           OCPP20ResponseService.getInstance<OCPP20ResponseService>()
-        )
-        this.ocppIncomingRequestService.once(
-          OCPP20IncomingRequestCommand.GET_BASE_REPORT,
-          (event: {
-            chargingStation: ChargingStation
-            reportData: any[]
-            requestId: number
-          }) => {
-            // Send NotifyReport via ocppRequestService
-            // eslint-disable-next-line @typescript-eslint/no-floating-promises
-            event.chargingStation.ocppRequestService.requestHandler(
-              event.chargingStation,
-              OCPP20RequestCommand.NOTIFY_REPORT,
-              {
-                reportData: event.reportData,
-                requestId: event.requestId,
-                seqNo: 0,
-                tbc: false,
-              }
-            )
-          }
         )
         break
       default:
