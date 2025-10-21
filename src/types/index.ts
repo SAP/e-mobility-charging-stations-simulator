@@ -143,6 +143,7 @@ export {
 } from './ocpp/1.6/Transaction.js'
 export {
   BootReasonEnumType,
+  type CustomDataType,
   GenericDeviceModelStatusEnumType,
   OCPP20ComponentName,
   OCPP20ConnectorStatusEnumType,

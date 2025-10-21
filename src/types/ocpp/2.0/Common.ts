@@ -86,24 +86,81 @@ export enum InstallCertificateUseEnumType {
 }
 
 export enum OCPP20ComponentName {
+  // Physical and Logical Components
+  AccessBarrier = 'AccessBarrier',
+  AcDcConverter = 'AcDcConverter',
+  AcPhaseSelector = 'AcPhaseSelector',
+  Actuator = 'Actuator',
+  AirCoolingSystem = 'AirCoolingSystem',
   AlignedDataCtrlr = 'AlignedDataCtrlr',
+  AreaVentilation = 'AreaVentilation',
   AuthCacheCtrlr = 'AuthCacheCtrlr',
   AuthCtrlr = 'AuthCtrlr',
+  BayOccupancySensor = 'BayOccupancySensor',
+  BeaconLighting = 'BeaconLighting',
+  CableBreakawaySensor = 'CableBreakawaySensor',
+  CaseAccessSensor = 'CaseAccessSensor',
   CHAdeMOCtrlr = 'CHAdeMOCtrlr',
+  ChargingStation = 'ChargingStation',
+  ChargingStatusIndicator = 'ChargingStatusIndicator',
   ClockCtrlr = 'ClockCtrlr',
+  ConnectedEV = 'ConnectedEV',
+  Connector = 'Connector',
+  ConnectorHolsterRelease = 'ConnectorHolsterRelease',
+  ConnectorHolsterSensor = 'ConnectorHolsterSensor',
+  ConnectorPlugRetentionLock = 'ConnectorPlugRetentionLock',
+  ConnectorProtectionRelease = 'ConnectorProtectionRelease',
+  Controller = 'Controller',
+  ControlMetering = 'ControlMetering',
+  CPPWMController = 'CPPWMController',
   CustomizationCtrlr = 'CustomizationCtrlr',
+  DataLink = 'DataLink',
   DeviceDataCtrlr = 'DeviceDataCtrlr',
+  Display = 'Display',
   DisplayMessageCtrlr = 'DisplayMessageCtrlr',
+  DistributionPanel = 'DistributionPanel',
+  ElectricalFeed = 'ElectricalFeed',
+  ELVSupply = 'ELVSupply',
+  EmergencyStopSensor = 'EmergencyStopSensor',
+  EnvironmentalLighting = 'EnvironmentalLighting',
+  EVRetentionLock = 'EVRetentionLock',
+  EVSE = 'EVSE',
+  ExternalTemperatureSensor = 'ExternalTemperatureSensor',
+  FiscalMetering = 'FiscalMetering',
+  FloodSensor = 'FloodSensor',
+  GroundIsolationProtection = 'GroundIsolationProtection',
+  Heater = 'Heater',
+  HumiditySensor = 'HumiditySensor',
   ISO15118Ctrlr = 'ISO15118Ctrlr',
+  LightSensor = 'LightSensor',
+  LiquidCoolingSystem = 'LiquidCoolingSystem',
   LocalAuthListCtrlr = 'LocalAuthListCtrlr',
+  LocalAvailabilitySensor = 'LocalAvailabilitySensor',
+  LocalController = 'LocalController',
+  LocalEnergyStorage = 'LocalEnergyStorage',
   MonitoringCtrlr = 'MonitoringCtrlr',
   OCPPCommCtrlr = 'OCPPCommCtrlr',
+  OverCurrentProtection = 'OverCurrentProtection',
+  OverCurrentProtectionRecloser = 'OverCurrentProtectionRecloser',
+  PowerContactor = 'PowerContactor',
+  RCD = 'RCD',
+  RCDRecloser = 'RCDRecloser',
+  RealTimeClock = 'RealTimeClock',
   ReservationCtrlr = 'ReservationCtrlr',
   SampledDataCtrlr = 'SampledDataCtrlr',
   SecurityCtrlr = 'SecurityCtrlr',
+  ShockSensor = 'ShockSensor',
   SmartChargingCtrlr = 'SmartChargingCtrlr',
+  SpacesCountSignage = 'SpacesCountSignage',
+  Switch = 'Switch',
   TariffCostCtrlr = 'TariffCostCtrlr',
+  TemperatureSensor = 'TemperatureSensor',
+  TiltSensor = 'TiltSensor',
+  TokenReader = 'TokenReader',
   TxCtrlr = 'TxCtrlr',
+  UIInput = 'UIInput',
+  UpstreamProtectionTrigger = 'UpstreamProtectionTrigger',
+  VehicleIdSensor = 'VehicleIdSensor',
 }
 
 export enum OCPP20ConnectorEnumType {
@@ -166,21 +223,22 @@ export interface CertificateHashDataType extends JsonObject {
 export type CertificateSignedStatusEnumType = GenericStatusEnumType
 
 export interface ChargingStationType extends JsonObject {
+  customData?: CustomDataType
   firmwareVersion?: string
   model: string
   modem?: ModemType
   serialNumber?: string
   vendorName: string
 }
+
 export interface ComponentType extends JsonObject {
   evse?: EVSEType
   instance?: string
   name: OCPP20ComponentName | string
 }
 
-export interface EVSEType extends JsonObject {
-  connectorId?: string
-  id: number
+export interface CustomDataType extends JsonObject {
+  vendorId: string
 }
 
 export type GenericStatusEnumType = GenericStatus
@@ -205,7 +263,13 @@ export interface StatusInfoType extends JsonObject {
   reasonCode: string
 }
 
+interface EVSEType extends JsonObject {
+  connectorId?: number
+  id: number
+}
+
 interface ModemType extends JsonObject {
+  customData?: CustomDataType
   iccid?: string
   imsi?: string
 }

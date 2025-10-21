@@ -51,6 +51,9 @@ export default defineConfig([
               'shutdowning',
               'VCAP',
               'workerd',
+              // OCPP 2.0 Component Names
+              'cppwm',
+              'recloser',
             ],
           },
         },
