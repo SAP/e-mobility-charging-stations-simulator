@@ -310,7 +310,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         if (chargingStation.ocppConfiguration?.configurationKey) {
           for (const configKey of chargingStation.ocppConfiguration.configurationKey) {
             reportData.push({
-              component: { name: 'OCPPCommCtrlr' },
+              component: { name: OCPP20Constants.ComponentName.OCPP_COMM_CTRLR },
               variable: { name: configKey.key },
               variableAttribute: [{ type: 'Actual', value: configKey.value }],
               variableCharacteristics: { dataType: 'string', supportsMonitoring: false },
