@@ -53,6 +53,13 @@ export enum GetCertificateStatusEnumType {
   Failed = 'Failed',
 }
 
+export enum GenericDeviceModelStatusEnumType {
+  Accepted = 'Accepted',
+  EmptyResultSet = 'EmptyResultSet',
+  NotSupported = 'NotSupported',
+  Rejected = 'Rejected',
+}
+
 export enum GetInstalledCertificateStatusEnumType {
   Accepted = 'Accepted',
   NotFound = 'NotFound',
@@ -88,6 +95,12 @@ export enum OCPP20ConnectorStatusEnumType {
 export enum OperationalStatusEnumType {
   Inoperative = 'Inoperative',
   Operative = 'Operative',
+}
+
+export enum ReportBaseEnumType {
+  ConfigurationInventory = 'ConfigurationInventory',
+  FullInventory = 'FullInventory',
+  SummaryInventory = 'SummaryInventory',
 }
 
 export interface CertificateHashDataChainType extends JsonObject {
