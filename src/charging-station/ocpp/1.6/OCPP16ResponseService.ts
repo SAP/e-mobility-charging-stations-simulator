@@ -526,11 +526,11 @@ export class OCPP16ResponseService extends OCPPResponseService {
         )
       }
       if (chargingStation.inAcceptedState()) {
-        chargingStation.emit(ChargingStationEvents.accepted)
+        chargingStation.emitChargingStationEvent(ChargingStationEvents.accepted)
       } else if (chargingStation.inPendingState()) {
-        chargingStation.emit(ChargingStationEvents.pending)
+        chargingStation.emitChargingStationEvent(ChargingStationEvents.pending)
       } else if (chargingStation.inRejectedState()) {
-        chargingStation.emit(ChargingStationEvents.rejected)
+        chargingStation.emitChargingStationEvent(ChargingStationEvents.rejected)
       }
       const logMsg = `${chargingStation.logPrefix()} Charging station in '${
         payload.status

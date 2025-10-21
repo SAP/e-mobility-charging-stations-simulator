@@ -192,7 +192,7 @@ export const sendAndSetConnectorStatus = async (
     )
   }
   connectorStatus.status = status
-  chargingStation.emit(ChargingStationEvents.connectorStatusChanged, {
+  chargingStation.emitChargingStationEvent(ChargingStationEvents.connectorStatusChanged, {
     connectorId,
     ...connectorStatus,
   })

@@ -329,8 +329,20 @@ export class ChargingStation extends EventEmitter {
     this.templateFileWatcher?.unref()
     deleteConfiguration && rmSync(this.configurationFile, { force: true })
     this.chargingStationWorkerBroadcastChannel.unref()
-    this.emit(ChargingStationEvents.deleted)
+    this.emitChargingStationEvent(ChargingStationEvents.deleted)
     this.removeAllListeners()
+  }
+
+  /**
+   * Emit a ChargingStation event only if there are listeners registered for it.
+   * This optimizes performance by avoiding unnecessary event emission.
+   * @param event - The ChargingStation event to emit
+   * @param args - Arguments to pass to the event listeners
+   */
+  public emitChargingStationEvent (event: ChargingStationEvents, ...args: unknown[]): void {
+    if (this.listenerCount(event) > 0) {
+      this.emit(event, ...args)
+    }
   }
 
   public getAuthorizeRemoteTxRequests (): boolean {
@@ -863,7 +875,7 @@ export class ChargingStation extends EventEmitter {
           }
         )
         this.started = true
-        this.emit(ChargingStationEvents.started)
+        this.emitChargingStationEvent(ChargingStationEvents.started)
         this.starting = false
       } else {
         logger.warn(`${this.logPrefix()} Charging station is already starting...`)
@@ -886,7 +898,7 @@ export class ChargingStation extends EventEmitter {
       this.automaticTransactionGenerator?.start(stopAbsoluteDuration)
     }
     this.saveAutomaticTransactionGeneratorConfiguration()
-    this.emit(ChargingStationEvents.updated)
+    this.emitChargingStationEvent(ChargingStationEvents.updated)
   }
 
   public startHeartbeat (): void {
@@ -1001,7 +1013,7 @@ export class ChargingStation extends EventEmitter {
         this.started = false
         this.saveConfiguration()
         this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash)
-        this.emit(ChargingStationEvents.stopped)
+        this.emitChargingStationEvent(ChargingStationEvents.stopped)
         this.stopping = false
       } else {
         logger.warn(`${this.logPrefix()} Charging station is already stopping...`)
@@ -1020,7 +1032,7 @@ export class ChargingStation extends EventEmitter {
       this.automaticTransactionGenerator?.stop()
     }
     this.saveAutomaticTransactionGeneratorConfiguration()
-    this.emit(ChargingStationEvents.updated)
+    this.emitChargingStationEvent(ChargingStationEvents.updated)
   }
 
   public stopMeterValues (connectorId: number): void {
@@ -1066,7 +1078,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   private add (): void {
-    this.emit(ChargingStationEvents.added)
+    this.emitChargingStationEvent(ChargingStationEvents.added)
   }
 
   private clearIntervalFlushMessageBuffer (): void {
@@ -1481,7 +1493,7 @@ export class ChargingStation extends EventEmitter {
       commandName,
       commandPayload
     )
-    this.emit(ChargingStationEvents.updated)
+    this.emitChargingStationEvent(ChargingStationEvents.updated)
   }
 
   private handleResponseMessage (response: Response): void {
@@ -1918,8 +1930,8 @@ export class ChargingStation extends EventEmitter {
   }
 
   private onClose (code: WebSocketCloseEventStatusCode, reason: Buffer): void {
-    this.emit(ChargingStationEvents.disconnected)
-    this.emit(ChargingStationEvents.updated)
+    this.emitChargingStationEvent(ChargingStationEvents.disconnected)
+    this.emitChargingStationEvent(ChargingStationEvents.updated)
     switch (code) {
       // Normal close
       case WebSocketCloseEventStatusCode.CLOSE_NO_STATUS:
@@ -1941,7 +1953,7 @@ export class ChargingStation extends EventEmitter {
         this.started &&
           this.reconnect()
             .then(() => {
-              this.emit(ChargingStationEvents.updated)
+              this.emitChargingStationEvent(ChargingStationEvents.updated)
               return undefined
             })
             .catch((error: unknown) =>
@@ -2052,8 +2064,8 @@ export class ChargingStation extends EventEmitter {
 
   private async onOpen (): Promise<void> {
     if (this.isWebSocketConnectionOpened()) {
-      this.emit(ChargingStationEvents.connected)
-      this.emit(ChargingStationEvents.updated)
+      this.emitChargingStationEvent(ChargingStationEvents.connected)
+      this.emitChargingStationEvent(ChargingStationEvents.updated)
       logger.info(
         `${this.logPrefix()} Connection to OCPP server through ${
           this.wsConnectionUrl.href
@@ -2097,7 +2109,7 @@ export class ChargingStation extends EventEmitter {
           `${this.logPrefix()} Registration failure: maximum retries reached (${registrationRetryCount.toString()}) or retry disabled (${this.stationInfo?.registrationMaxRetries?.toString()})`
         )
       }
-      this.emit(ChargingStationEvents.updated)
+      this.emitChargingStationEvent(ChargingStationEvents.updated)
     } else {
       logger.warn(
         `${this.logPrefix()} Connection to OCPP server through ${this.wsConnectionUrl.href} failed`

@@ -468,27 +468,69 @@ export class Bootstrap extends EventEmitter {
     const { data, event } = msg
     try {
       switch (event) {
+        case ChargingStationWorkerMessageEvents.accepted:
+          if (this.listenerCount(ChargingStationWorkerMessageEvents.accepted) > 0) {
+            this.emit(ChargingStationWorkerMessageEvents.accepted, data)
+          }
+          break
         case ChargingStationWorkerMessageEvents.added:
-          this.emit(ChargingStationWorkerMessageEvents.added, data)
+          if (this.listenerCount(ChargingStationWorkerMessageEvents.added) > 0) {
+            this.emit(ChargingStationWorkerMessageEvents.added, data)
+          }
+          break
+        case ChargingStationWorkerMessageEvents.connected:
+          if (this.listenerCount(ChargingStationWorkerMessageEvents.connected) > 0) {
+            this.emit(ChargingStationWorkerMessageEvents.connected, data)
+          }
+          break
+        case ChargingStationWorkerMessageEvents.connectorStatusChanged:
+          if (this.listenerCount(ChargingStationWorkerMessageEvents.connectorStatusChanged) > 0) {
+            this.emit(ChargingStationWorkerMessageEvents.connectorStatusChanged, data)
+          }
           break
         case ChargingStationWorkerMessageEvents.deleted:
-          this.emit(ChargingStationWorkerMessageEvents.deleted, data)
+          if (this.listenerCount(ChargingStationWorkerMessageEvents.deleted) > 0) {
+            this.emit(ChargingStationWorkerMessageEvents.deleted, data)
+          }
+          break
+        case ChargingStationWorkerMessageEvents.disconnected:
+          if (this.listenerCount(ChargingStationWorkerMessageEvents.disconnected) > 0) {
+            this.emit(ChargingStationWorkerMessageEvents.disconnected, data)
+          }
+          break
+        case ChargingStationWorkerMessageEvents.pending:
+          if (this.listenerCount(ChargingStationWorkerMessageEvents.pending) > 0) {
+            this.emit(ChargingStationWorkerMessageEvents.pending, data)
+          }
           break
         case ChargingStationWorkerMessageEvents.performanceStatistics:
-          this.emit(ChargingStationWorkerMessageEvents.performanceStatistics, data)
+          if (this.listenerCount(ChargingStationWorkerMessageEvents.performanceStatistics) > 0) {
+            this.emit(ChargingStationWorkerMessageEvents.performanceStatistics, data)
+          }
+          break
+        case ChargingStationWorkerMessageEvents.rejected:
+          if (this.listenerCount(ChargingStationWorkerMessageEvents.rejected) > 0) {
+            this.emit(ChargingStationWorkerMessageEvents.rejected, data)
+          }
           break
         case ChargingStationWorkerMessageEvents.started:
-          this.emit(ChargingStationWorkerMessageEvents.started, data)
+          if (this.listenerCount(ChargingStationWorkerMessageEvents.started) > 0) {
+            this.emit(ChargingStationWorkerMessageEvents.started, data)
+          }
           break
         case ChargingStationWorkerMessageEvents.stopped:
-          this.emit(ChargingStationWorkerMessageEvents.stopped, data)
+          if (this.listenerCount(ChargingStationWorkerMessageEvents.stopped) > 0) {
+            this.emit(ChargingStationWorkerMessageEvents.stopped, data)
+          }
           break
         case ChargingStationWorkerMessageEvents.updated:
-          this.emit(ChargingStationWorkerMessageEvents.updated, data)
+          if (this.listenerCount(ChargingStationWorkerMessageEvents.updated) > 0) {
+            this.emit(ChargingStationWorkerMessageEvents.updated, data)
+          }
           break
         default:
           throw new BaseError(
-            `Unknown charging station worker message event: '${event}' received with data: ${JSON.stringify(
+            `Unknown charging station worker message event: '${event as string}' received with data: ${JSON.stringify(
               data,
               undefined,
               2

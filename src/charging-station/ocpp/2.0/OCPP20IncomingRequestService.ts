@@ -180,8 +180,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       response,
       commandName
     )
-    // Emit command name event to allow delayed handling
-    this.emit(commandName, chargingStation, commandPayload, response)
+    // Emit command name event to allow delayed handling only if there are listeners
+    if (this.listenerCount(commandName) > 0) {
+      this.emit(commandName, chargingStation, commandPayload, response)
+    }
   }
 
   private buildReportData (

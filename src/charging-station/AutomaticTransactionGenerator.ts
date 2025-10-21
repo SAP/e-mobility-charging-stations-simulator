@@ -367,7 +367,7 @@ export class AutomaticTransactionGenerator {
       `${this.logPrefix(connectorId)} stopped with connector status: %j`,
       this.connectorsStatus.get(connectorId)
     )
-    this.chargingStation.emit(ChargingStationEvents.updated)
+    this.chargingStation.emitChargingStationEvent(ChargingStationEvents.updated)
   }
 
   private readonly logPrefix = (connectorId?: number): string => {
@@ -406,7 +406,7 @@ export class AutomaticTransactionGenerator {
     this.connectorsStatus.get(connectorId)!.skippedConsecutiveTransactions = 0
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     this.connectorsStatus.get(connectorId)!.start = true
-    this.chargingStation.emit(ChargingStationEvents.updated)
+    this.chargingStation.emitChargingStationEvent(ChargingStationEvents.updated)
   }
 
   private startConnectors (stopAbsoluteDuration?: boolean): void {

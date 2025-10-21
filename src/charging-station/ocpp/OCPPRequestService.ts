@@ -282,7 +282,7 @@ export abstract class OCPPRequestService {
             })
             .finally(() => {
               chargingStation.requests.delete(messageId)
-              chargingStation.emit(ChargingStationEvents.updated)
+              chargingStation.emitChargingStationEvent(ChargingStationEvents.updated)
             })
             .catch(reject)
         }
@@ -307,7 +307,7 @@ export abstract class OCPPRequestService {
             ocppError
           )
           chargingStation.requests.delete(messageId)
-          chargingStation.emit(ChargingStationEvents.updated)
+          chargingStation.emitChargingStationEvent(ChargingStationEvents.updated)
           reject(ocppError)
         }
 
