@@ -101,7 +101,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               logger.info(
                 `${chargingStation.logPrefix()} ${moduleName}.constructor: NotifyReport sent for requestId ${requestId} with ${reportData.length} report items`
               )
-              return undefined
             })
             .catch((error: unknown) => {
               logger.error(
