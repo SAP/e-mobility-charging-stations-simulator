@@ -146,7 +146,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       ],
       [
         OCPP16IncomingRequestCommand.CLEAR_CACHE,
-        this.handleRequestClearCache.bind(this) as IncomingRequestHandler,
+        super.handleRequestClearCache.bind(this) as IncomingRequestHandler,
       ],
       [
         OCPP16IncomingRequestCommand.CLEAR_CHARGING_PROFILE,

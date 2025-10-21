@@ -1,5 +1,6 @@
 import type { SampledValueTemplate } from './MeasurandPerPhaseSampledValueTemplates.js'
 import type { ChargingProfile } from './ocpp/ChargingProfile.js'
+import type { ConnectorEnumType } from './ocpp/ConnectorEnumType.js'
 import type { ConnectorStatusEnum } from './ocpp/ConnectorStatusEnum.js'
 import type { MeterValue } from './ocpp/MeterValues.js'
 import type { AvailabilityType } from './ocpp/Requests.js'
@@ -25,4 +26,5 @@ export interface ConnectorStatus {
   transactionSetInterval?: NodeJS.Timeout
   transactionStart?: Date
   transactionStarted?: boolean
+  type?: ConnectorEnumType
 }

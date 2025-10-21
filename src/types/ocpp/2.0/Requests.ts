@@ -6,7 +6,12 @@ import type {
   OCPP20ConnectorStatusEnumType,
   ReportBaseEnumType,
 } from './Common.js'
-import type { OCPP20SetVariableDataType } from './Variables.js'
+import type {
+  ChargingStationType,
+  ComponentType,
+  OCPP20SetVariableDataType,
+  VariableType,
+} from './Variables.js'
 
 export enum OCPP20IncomingRequestCommand {
   CLEAR_CACHE = 'ClearCache',
@@ -36,17 +41,17 @@ export interface OCPP20GetBaseReportRequest extends JsonObject {
 
 export type OCPP20HeartbeatRequest = EmptyObject
 
-export interface OCPP20NotifyReportRequest extends JsonObject {
-  generatedAt: Date
-  requestId: number
-  reportData?: ReportDataType[]
-  seqNo: number
-  tbc?: boolean
-}
-
 export interface OCPP20InstallCertificateRequest extends JsonObject {
   certificate: string
   certificateType: InstallCertificateUseEnumType
+}
+
+export interface OCPP20NotifyReportRequest extends JsonObject {
+  generatedAt: Date
+  reportData?: ReportDataType[]
+  requestId: number
+  seqNo: number
+  tbc?: boolean
 }
 
 export interface OCPP20SetVariablesRequest extends JsonObject {
@@ -60,35 +65,11 @@ export interface OCPP20StatusNotificationRequest extends JsonObject {
   timestamp: Date
 }
 
-interface ChargingStationType extends JsonObject {
-  firmwareVersion?: string
-  model: string
-  modem?: ModemType
-  serialNumber?: string
-  vendorName: string
-}
-
-interface ModemType extends JsonObject {
-  iccid?: string
-  imsi?: string
-}
-
 export interface ReportDataType extends JsonObject {
   component: ComponentType
   variable: VariableType
   variableAttribute?: VariableAttributeType[]
   variableCharacteristics?: VariableCharacteristicsType
-}
-
-export interface ComponentType extends JsonObject {
-  evse?: EVSEType
-  instance?: string
-  name: string
-}
-
-export interface VariableType extends JsonObject {
-  instance?: string
-  name: string
 }
 
 export interface VariableAttributeType extends JsonObject {
@@ -99,9 +80,4 @@ export interface VariableAttributeType extends JsonObject {
 export interface VariableCharacteristicsType extends JsonObject {
   dataType: string
   supportsMonitoring: boolean
-}
-
-export interface EVSEType extends JsonObject {
-  connectorId?: number
-  id: number
 }

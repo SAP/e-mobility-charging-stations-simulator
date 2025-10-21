@@ -119,7 +119,6 @@ export class OCPP20RequestService extends OCPPRequestService {
         return OCPP20Constants.OCPP_RESPONSE_EMPTY as unknown as Request
       case OCPP20RequestCommand.NOTIFY_REPORT:
         return {
-          generatedAt: new Date(),
           ...commandParams,
         } as unknown as Request
       case OCPP20RequestCommand.STATUS_NOTIFICATION:

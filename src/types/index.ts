@@ -148,8 +148,6 @@ export {
   ReportBaseEnumType,
 } from './ocpp/2.0/Common.js'
 export {
-  type ComponentType,
-  type EVSEType,
   type OCPP20BootNotificationRequest,
   type OCPP20ClearCacheRequest,
   type OCPP20GetBaseReportRequest,
@@ -161,7 +159,6 @@ export {
   type ReportDataType,
   type VariableAttributeType,
   type VariableCharacteristicsType,
-  type VariableType,
 } from './ocpp/2.0/Requests.js'
 export type {
   OCPP20BootNotificationResponse,
@@ -171,7 +168,7 @@ export type {
   OCPP20NotifyReportResponse,
   OCPP20StatusNotificationResponse,
 } from './ocpp/2.0/Responses.js'
-export { OCPP20OptionalVariableName } from './ocpp/2.0/Variables.js'
+export { OCPP20ComponentName, OCPP20OptionalVariableName } from './ocpp/2.0/Variables.js'
 export { ChargePointErrorCode } from './ocpp/ChargePointErrorCode.js'
 export {
   type ChargingProfile,
@@ -190,6 +187,7 @@ export {
   SupportedFeatureProfiles,
   VendorParametersKey,
 } from './ocpp/Configuration.js'
+export { ConnectorEnumType } from './ocpp/ConnectorEnumType.js'
 export { ConnectorStatusEnum, type ConnectorStatusTransition } from './ocpp/ConnectorStatusEnum.js'
 export { ErrorType } from './ocpp/ErrorType.js'
 export { MessageType } from './ocpp/MessageType.js'
