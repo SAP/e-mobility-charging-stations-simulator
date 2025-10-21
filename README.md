@@ -39,10 +39,10 @@ Simple [node.js](https://nodejs.org/) software to simulate and scale a set of ch
 - [Docker](#docker)
 - [OCPP-J commands supported](#ocpp-j-commands-supported)
   - [Version 1.6](#version-16)
-  - [Version 2.x.x](#version-2xx)
+  - [Version 2.0.x](#version-20x)
 - [OCPP-J standard parameters supported](#ocpp-j-standard-parameters-supported)
   - [Version 1.6](#version-16-1)
-  - [Version 2.x.x](#version-2xx-1)
+  - [Version 2.0.x](#version-20x-1)
 - [UI Protocol](#ui-protocol)
   - [WebSocket Protocol](#websocket-protocol)
   - [HTTP Protocol](#http-protocol)
@@ -490,11 +490,15 @@ make SUBMODULES_INIT=true
 
 - :white_check_mark: TriggerMessage
 
-### Version 2.x.x
+### Version 2.0.x
+
+> **Note**: OCPP 2.0.x implementation is **partial** and under active development.
 
 #### Provisioning
 
 - :white_check_mark: BootNotification
+- :white_check_mark: GetBaseReport (partial)
+- :white_check_mark: NotifyReport
 
 #### Authorization
 
@@ -561,7 +565,9 @@ All kind of OCPP parameters are supported in charging station configuration or c
 
 - _none_
 
-### Version 2.x.x
+### Version 2.0.x
+
+> **Note**: OCPP 2.0.x variables management is not implemented yet.
 
 ## UI Protocol
 

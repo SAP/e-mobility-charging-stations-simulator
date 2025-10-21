@@ -92,7 +92,7 @@ Documentation serves as an operational specification, not narrative prose.
 ## OCPP-specific conventions
 
 - **Command naming**: Follow OCPP standard naming exactly (e.g., RemoteStartTransaction, BootNotification, StatusNotification).
-- **Version handling**: Clearly distinguish between OCPP 1.6 and 2.x implementations in separate namespaces/files.
+- **Version handling**: Clearly distinguish between OCPP 1.6 and 2.0.x implementations in separate namespaces/files.
 - **Payload validation**: Validate against OCPP JSON schemas when ocppStrictCompliance is enabled.
 - **Message format**: Use standard SRPC format: [messageTypeId, messageId, action, payload] or [messageTypeId, messageId, payload].
 - **UUID tracking**: Use UUIDs to correlate requests with responses; store pending operations in Maps with UUID keys.

@@ -260,6 +260,7 @@ export interface ReportDataType extends JsonObject {
 
 export interface StatusInfoType extends JsonObject {
   additionalInfo?: string
+  customData?: CustomDataType
   reasonCode: string
 }
 
