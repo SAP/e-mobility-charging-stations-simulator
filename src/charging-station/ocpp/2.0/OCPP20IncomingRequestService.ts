@@ -75,6 +75,43 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         ),
       ],
     ])
+    // Handle incoming request events
+    this.on(
+      OCPP20IncomingRequestCommand.GET_BASE_REPORT,
+      (
+        chargingStation: ChargingStation,
+        request: OCPP20GetBaseReportRequest,
+        response: OCPP20GetBaseReportResponse
+      ) => {
+        if (response.status === GenericDeviceModelStatusEnumType.Accepted) {
+          const { requestId, reportBase } = request
+          const reportData = this.buildReportData(chargingStation, reportBase)
+          chargingStation.ocppRequestService
+            .requestHandler<OCPP20NotifyReportRequest, OCPP20NotifyReportResponse>(
+              chargingStation,
+              OCPP20RequestCommand.NOTIFY_REPORT,
+              {
+                reportData,
+                requestId,
+                seqNo: 0,
+                tbc: false,
+              }
+            )
+            .then(() => {
+              logger.info(
+                `${chargingStation.logPrefix()} ${moduleName}.constructor: NotifyReport sent for requestId ${requestId} with ${reportData.length} report items`
+              )
+              return undefined
+            })
+            .catch((error: unknown) => {
+              logger.error(
+                `${chargingStation.logPrefix()} ${moduleName}.constructor: NotifyReport error:`,
+                error
+              )
+            })
+        }
+      }
+    )
     this.validatePayload = this.validatePayload.bind(this)
   }
 
@@ -184,37 +221,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         status: GenericDeviceModelStatusEnumType.EmptyResultSet,
       }
     }
-    // Trigger NotifyReport asynchronously
-    this.sendNotifyReport(chargingStation, commandPayload.requestId, reportData).catch(
-      (error: Error) => {
-        logger.error(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetBaseReport: Error sending NotifyReport:`,
-          error
-        )
-      }
-    )
     return {
       status: GenericDeviceModelStatusEnumType.Accepted,
     }
-  }
-
-  private async sendNotifyReport (
-    chargingStation: ChargingStation,
-    requestId: number,
-    reportData: ReportDataType[]
-  ): Promise<void> {
-    await chargingStation.ocppRequestService.requestHandler<
-      OCPP20NotifyReportRequest,
-      OCPP20NotifyReportResponse
-    >(chargingStation, OCPP20RequestCommand.NOTIFY_REPORT, {
-      reportData,
-      requestId,
-      seqNo: 0,
-      tbc: false,
-    })
-    logger.info(
-      `${chargingStation.logPrefix()} ${moduleName}.sendNotifyReport: NotifyReport sent for requestId ${requestId} with ${reportData.length} report items`
-    )
   }
 
   private buildReportData (
