@@ -144,8 +144,10 @@ export {
 export {
   BootReasonEnumType,
   GenericDeviceModelStatusEnumType,
+  OCPP20ComponentName,
   OCPP20ConnectorStatusEnumType,
   ReportBaseEnumType,
+  type ReportDataType,
 } from './ocpp/2.0/Common.js'
 export {
   type OCPP20BootNotificationRequest,
@@ -156,9 +158,6 @@ export {
   type OCPP20NotifyReportRequest,
   OCPP20RequestCommand,
   type OCPP20StatusNotificationRequest,
-  type ReportDataType,
-  type VariableAttributeType,
-  type VariableCharacteristicsType,
 } from './ocpp/2.0/Requests.js'
 export type {
   OCPP20BootNotificationResponse,
@@ -168,7 +167,7 @@ export type {
   OCPP20NotifyReportResponse,
   OCPP20StatusNotificationResponse,
 } from './ocpp/2.0/Responses.js'
-export { OCPP20ComponentName, OCPP20OptionalVariableName } from './ocpp/2.0/Variables.js'
+export { OCPP20OptionalVariableName } from './ocpp/2.0/Variables.js'
 export { ChargePointErrorCode } from './ocpp/ChargePointErrorCode.js'
 export {
   type ChargingProfile,

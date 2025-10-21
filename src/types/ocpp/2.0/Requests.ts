@@ -2,16 +2,13 @@ import type { EmptyObject } from '../../EmptyObject.js'
 import type { JsonObject } from '../../JsonType.js'
 import type {
   BootReasonEnumType,
+  ChargingStationType,
   InstallCertificateUseEnumType,
   OCPP20ConnectorStatusEnumType,
   ReportBaseEnumType,
+  ReportDataType,
 } from './Common.js'
-import type {
-  ChargingStationType,
-  ComponentType,
-  OCPP20SetVariableDataType,
-  VariableType,
-} from './Variables.js'
+import type { OCPP20SetVariableDataType } from './Variables.js'
 
 export enum OCPP20IncomingRequestCommand {
   CLEAR_CACHE = 'ClearCache',
@@ -63,21 +60,4 @@ export interface OCPP20StatusNotificationRequest extends JsonObject {
   connectorStatus: OCPP20ConnectorStatusEnumType
   evseId: number
   timestamp: Date
-}
-
-export interface ReportDataType extends JsonObject {
-  component: ComponentType
-  variable: VariableType
-  variableAttribute?: VariableAttributeType[]
-  variableCharacteristics?: VariableCharacteristicsType
-}
-
-export interface VariableAttributeType extends JsonObject {
-  type?: string
-  value?: string
-}
-
-export interface VariableCharacteristicsType extends JsonObject {
-  dataType: string
-  supportsMonitoring: boolean
 }
