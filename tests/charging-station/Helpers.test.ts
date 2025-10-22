@@ -123,7 +123,7 @@ await describe('Helpers test suite', async () => {
       validateStationInfo(chargingStation)
     }).toThrow(
       new BaseError(
-        `${baseName}-00001: OCPP 2.0 or superior requires at least one EVSE defined in the charging station template/configuration`
+        `${baseName}-00001: OCPP 2.0.x requires at least one EVSE defined in the charging station template/configuration`
       )
     )
     chargingStation.stationInfo.ocppVersion = OCPPVersion.VERSION_201
@@ -131,7 +131,7 @@ await describe('Helpers test suite', async () => {
       validateStationInfo(chargingStation)
     }).toThrow(
       new BaseError(
-        `${baseName}-00001: OCPP 2.0 or superior requires at least one EVSE defined in the charging station template/configuration`
+        `${baseName}-00001: OCPP 2.0.x requires at least one EVSE defined in the charging station template/configuration`
       )
     )
   })
