@@ -117,7 +117,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     chargingStation: ChargingStation,
     commandPayload: OCPP20GetVariablesRequest
   ): OCPP20GetVariablesResponse {
-    const getVariablesRequest = commandPayload
     const getVariablesResponse: OCPP20GetVariablesResponse = {
       getVariableResult: [],
     }
@@ -127,14 +126,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       const variableManager = OCPP20VariableManager.getInstance()
 
       // Get variables using VariableManager
-      const results = variableManager.getVariables(
-        chargingStation,
-        getVariablesRequest.getVariableData
-      )
+      const results = variableManager.getVariables(chargingStation, commandPayload.getVariableData)
       getVariablesResponse.getVariableResult = results
 
       logger.debug(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetVariables: Processed ${String(getVariablesRequest.getVariableData.length)} variable requests, returning ${String(results.length)} results`
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetVariables: Processed ${String(commandPayload.getVariableData.length)} variable requests, returning ${String(results.length)} results`
       )
 
       return getVariablesResponse
