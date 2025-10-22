@@ -121,29 +121,18 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       getVariableResult: [],
     }
 
-    try {
-      // Use VariableManager to get variables
-      const variableManager = OCPP20VariableManager.getInstance()
+    // Use VariableManager to get variables
+    const variableManager = OCPP20VariableManager.getInstance()
 
-      // Get variables using VariableManager
-      const results = variableManager.getVariables(chargingStation, commandPayload.getVariableData)
-      getVariablesResponse.getVariableResult = results
+    // Get variables using VariableManager
+    const results = variableManager.getVariables(chargingStation, commandPayload.getVariableData)
+    getVariablesResponse.getVariableResult = results
 
-      logger.debug(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetVariables: Processed ${String(commandPayload.getVariableData.length)} variable requests, returning ${String(results.length)} results`
-      )
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetVariables: Processed ${String(commandPayload.getVariableData.length)} variable requests, returning ${String(results.length)} results`
+    )
 
-      return getVariablesResponse
-    } catch (error) {
-      logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetVariables: Error handling GetVariables request:`,
-        error
-      )
-      throw new OCPPError(
-        ErrorType.INTERNAL_ERROR,
-        'Internal error occurred while processing GetVariables request'
-      )
-    }
+    return getVariablesResponse
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
