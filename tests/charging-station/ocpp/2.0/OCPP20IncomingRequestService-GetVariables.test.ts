@@ -3,44 +3,26 @@
 import { expect } from '@std/expect'
 import { describe, it } from 'node:test'
 
-import type { ChargingStation } from '../../../../src/charging-station/index.js'
-
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import {
   AttributeEnumType,
   GetVariableStatusEnumType,
   OCPP20ComponentName,
-  OCPP20ConnectorStatusEnumType,
   type OCPP20GetVariablesRequest,
   OCPP20OptionalVariableName,
   OCPP20RequiredVariableName,
 } from '../../../../src/types/index.js'
+import { createChargingStationWithEvses } from '../../../ChargingStationFactory.js'
 
 await describe('OCPP20IncomingRequestService GetVariables integration tests', async () => {
-  // Mock ChargingStation with comprehensive properties
-  const mockChargingStation = {
-    connectors: new Map([
-      [1, { status: OCPP20ConnectorStatusEnumType.Available }],
-      [2, { status: OCPP20ConnectorStatusEnumType.Available }],
-    ]),
-    evses: new Map([
-      [1, { connectors: new Map([[1, {}]]) }],
-      [2, { connectors: new Map([[1, {}]]) }],
-    ]),
-    getHeartbeatInterval: () => 60,
-    hasEvses: true,
-    logPrefix: () => 'CS-TEST-001',
-    ocppConfiguration: {
-      configurationKey: [
-        { key: OCPP20OptionalVariableName.WebSocketPingInterval, value: '30' },
-        { key: OCPP20OptionalVariableName.HeartbeatInterval, value: '60' },
-      ],
-    },
+  const mockChargingStation = createChargingStationWithEvses({
+    baseName: 'CS-TEST-001',
+    heartbeatInterval: 60,
     stationInfo: {
-      heartbeatInterval: 60,
       ocppStrictCompliance: false,
     },
-  } as unknown as ChargingStation
+    websocketPingInterval: 30,
+  })
 
   const incomingRequestService = new OCPP20IncomingRequestService()
 

@@ -3,8 +3,6 @@
 import { expect } from '@std/expect'
 import { describe, it } from 'node:test'
 
-import type { ChargingStation } from '../../src/charging-station/index.js'
-
 import {
   checkChargingStationState,
   checkConfiguration,
@@ -23,22 +21,15 @@ import {
   type ChargingStationTemplate,
   type ConnectorStatus,
   ConnectorStatusEnum,
-  type EvseStatus,
   OCPPVersion,
 } from '../../src/types/index.js'
 import { logger } from '../../src/utils/Logger.js'
+import { createChargingStation, createChargingStationTemplate } from '../ChargingStationFactory.js'
 
 await describe('Helpers test suite', async () => {
   const baseName = 'CS-TEST'
-  const chargingStationTemplate = {
-    baseName,
-  } as ChargingStationTemplate
-  const chargingStation = {
-    connectors: new Map<number, ConnectorStatus>(),
-    evses: new Map<number, EvseStatus>(),
-    logPrefix: () => `${baseName} |`,
-    started: false,
-  } as ChargingStation
+  const chargingStationTemplate = createChargingStationTemplate(baseName)
+  const chargingStation = createChargingStation({ baseName })
 
   await it('Verify getChargingStationId()', () => {
     expect(getChargingStationId(1, chargingStationTemplate)).toBe(`${baseName}-00001`)
@@ -51,6 +42,8 @@ await describe('Helpers test suite', async () => {
   })
 
   await it('Verify validateStationInfo()', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    delete (chargingStation as any).stationInfo
     expect(() => {
       validateStationInfo(chargingStation)
     }).toThrow(new BaseError('Missing charging station information'))

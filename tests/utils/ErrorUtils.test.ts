@@ -3,8 +3,6 @@
 import { expect } from '@std/expect'
 import { describe, it } from 'node:test'
 
-import type { ChargingStation } from '../../src/charging-station/index.js'
-
 import {
   FileType,
   GenericStatus,
@@ -18,11 +16,10 @@ import {
   handleSendMessageError,
 } from '../../src/utils/ErrorUtils.js'
 import { logger } from '../../src/utils/Logger.js'
+import { createChargingStation } from '../ChargingStationFactory.js'
 
 await describe('ErrorUtils test suite', async () => {
-  const chargingStation = {
-    logPrefix: () => 'CS-TEST |',
-  } as ChargingStation
+  const chargingStation = createChargingStation({ baseName: 'CS-TEST' })
 
   await it('Verify handleFileException()', t => {
     t.mock.method(console, 'warn')
