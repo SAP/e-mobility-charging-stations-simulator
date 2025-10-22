@@ -41,6 +41,7 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
     evses: new Map(),
     getHeartbeatInterval: () => heartbeatInterval,
     hasEvses: options.hasEvses ?? false,
+    inAcceptedState: () => true,
     logPrefix: () => `${baseName} |`,
     ocppConfiguration: options.ocppConfiguration ?? {
       configurationKey: [
