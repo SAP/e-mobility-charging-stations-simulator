@@ -7,7 +7,7 @@ import type {
   InstallCertificateStatusEnumType,
   StatusInfoType,
 } from './Common.js'
-import type { OCPP20SetVariableResultType } from './Variables.js'
+import type { OCPP20GetVariableResultType, OCPP20SetVariableResultType } from './Variables.js'
 
 export interface OCPP20BootNotificationResponse extends JsonObject {
   currentTime: Date
@@ -24,6 +24,10 @@ export interface OCPP20ClearCacheResponse extends JsonObject {
 export interface OCPP20GetBaseReportResponse extends JsonObject {
   status: GenericDeviceModelStatusEnumType
   statusInfo?: StatusInfoType
+}
+
+export interface OCPP20GetVariablesResponse extends JsonObject {
+  getVariableResult: OCPP20GetVariableResultType[]
 }
 
 export interface OCPP20HeartbeatResponse extends JsonObject {
