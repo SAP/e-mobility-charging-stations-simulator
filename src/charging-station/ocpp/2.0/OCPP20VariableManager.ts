@@ -3,7 +3,9 @@
 import {
   AttributeEnumType,
   type ComponentType,
+  GenericDeviceModelStatusEnumType,
   GetVariableStatusEnumType,
+  MutabilityEnumType,
   OCPP20ComponentName,
   type OCPP20GetVariableDataType,
   type OCPP20GetVariableResultType,
@@ -20,7 +22,7 @@ import { type ChargingStation } from '../../ChargingStation.js'
 interface StandardVariableConfig {
   attributeTypes: AttributeEnumType[]
   defaultValue?: string
-  mutability: 'ReadOnly' | 'ReadWrite' | 'WriteOnly'
+  mutability: MutabilityEnumType
   persistent: boolean
 }
 
@@ -69,7 +71,7 @@ export class OCPP20VariableManager {
           component: variableData.component,
           statusInfo: {
             additionalInfo: 'Internal error occurred while retrieving variable',
-            reasonCode: 'InternalError',
+            reasonCode: GenericDeviceModelStatusEnumType.Rejected,
           },
           variable: variableData.variable,
         })
@@ -99,7 +101,7 @@ export class OCPP20VariableManager {
         component,
         statusInfo: {
           additionalInfo: `Component ${component.name} is not supported by this charging station`,
-          reasonCode: 'NotSupported',
+          reasonCode: GenericDeviceModelStatusEnumType.NotSupported,
         },
         variable,
       }
@@ -113,7 +115,7 @@ export class OCPP20VariableManager {
         component,
         statusInfo: {
           additionalInfo: `Variable ${variable.name} is not supported for component ${component.name}`,
-          reasonCode: 'NotSupported',
+          reasonCode: GenericDeviceModelStatusEnumType.NotSupported,
         },
         variable,
       }
@@ -127,7 +129,7 @@ export class OCPP20VariableManager {
         component,
         statusInfo: {
           additionalInfo: `Attribute type ${attributeType} is not supported for variable ${variable.name}`,
-          reasonCode: 'NotSupported',
+          reasonCode: GenericDeviceModelStatusEnumType.NotSupported,
         },
         variable,
       }
@@ -226,7 +228,7 @@ export class OCPP20VariableManager {
       {
         attributeTypes: [AttributeEnumType.Actual, AttributeEnumType.Target],
         defaultValue: '300',
-        mutability: 'ReadWrite',
+        mutability: MutabilityEnumType.ReadWrite,
         persistent: true,
       }
     )
@@ -236,7 +238,7 @@ export class OCPP20VariableManager {
       {
         attributeTypes: [AttributeEnumType.Actual, AttributeEnumType.Target],
         defaultValue: '30',
-        mutability: 'ReadWrite',
+        mutability: MutabilityEnumType.ReadWrite,
         persistent: true,
       }
     )
@@ -336,8 +338,6 @@ export class OCPP20VariableManager {
       ...Object.values(OCPP20RequiredVariableName),
     ]
 
-    return knownVariables.includes(
-      variable.name as OCPP20OptionalVariableName | OCPP20RequiredVariableName
-    )
+    return knownVariables.includes(variable.name)
   }
 }

@@ -16,6 +16,12 @@ export enum GetVariableStatusEnumType {
   UnknownVariable = 'UnknownVariable',
 }
 
+export enum MutabilityEnumType {
+  ReadOnly = 'ReadOnly',
+  ReadWrite = 'ReadWrite',
+  WriteOnly = 'WriteOnly',
+}
+
 export enum OCPP20OptionalVariableName {
   HeartbeatInterval = 'HeartbeatInterval',
   WebSocketPingInterval = 'WebSocketPingInterval',
@@ -50,6 +56,15 @@ export enum OCPP20RequiredVariableName {
   TxUpdatedInterval = 'TxUpdatedInterval',
   TxUpdatedMeasurands = 'TxUpdatedMeasurands',
   UnlockOnEVSideDisconnect = 'UnlockOnEVSideDisconnect',
+}
+
+export enum OCPP20VariableName {
+  AvailabilityState = 'AvailabilityState',
+  ConnectorType = 'ConnectorType',
+  FirmwareVersion = 'FirmwareVersion',
+  Model = 'Model',
+  SerialNumber = 'SerialNumber',
+  VendorName = 'VendorName',
 }
 
 export enum OCPP20VendorVariableName {
@@ -108,5 +123,6 @@ export interface VariableType extends JsonObject {
 type VariableName =
   | OCPP20OptionalVariableName
   | OCPP20RequiredVariableName
+  | OCPP20VariableName
   | OCPP20VendorVariableName
   | string

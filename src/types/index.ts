@@ -145,6 +145,7 @@ export {
   BootReasonEnumType,
   type ComponentType,
   type CustomDataType,
+  DataEnumType,
   GenericDeviceModelStatusEnumType,
   OCPP20ComponentName,
   OCPP20ConnectorStatusEnumType,
@@ -174,10 +175,12 @@ export type {
 export {
   AttributeEnumType,
   GetVariableStatusEnumType,
+  MutabilityEnumType,
   type OCPP20GetVariableDataType,
   type OCPP20GetVariableResultType,
   OCPP20OptionalVariableName,
   OCPP20RequiredVariableName,
+  OCPP20VariableName,
   type VariableType,
 } from './ocpp/2.0/Variables.js'
 export { ChargePointErrorCode } from './ocpp/ChargePointErrorCode.js'
