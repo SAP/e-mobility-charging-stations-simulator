@@ -12,11 +12,19 @@ from ocpp.routing import on
 from ocpp.v201.enums import (
     Action,
     AuthorizationStatusEnumType,
+    ChangeAvailabilityStatusEnumType,
     ClearCacheStatusEnumType,
+    DataTransferStatusEnumType,
     GenericDeviceModelStatusEnumType,
+    MessageTriggerEnumType,
+    OperationalStatusEnumType,
     RegistrationStatusEnumType,
     ReportBaseEnumType,
+    ResetEnumType,
+    ResetStatusEnumType,
     TransactionEventEnumType,
+    TriggerMessageStatusEnumType,
+    UnlockStatusEnumType,
 )
 from websockets import ConnectionClosed
 
@@ -103,6 +111,28 @@ class ChargePoint(ocpp.v201.ChargePoint):
         logging.info("Received %s", Action.notify_report)
         return ocpp.v201.call_result.NotifyReport()
 
+    @on(Action.data_transfer)
+    async def on_data_transfer(self, vendor_id: str, **kwargs):
+        logging.info("Received %s", Action.data_transfer)
+        return ocpp.v201.call_result.DataTransfer(
+            status=DataTransferStatusEnumType.accepted
+        )
+
+    @on(Action.firmware_status_notification)
+    async def on_firmware_status_notification(self, status, **kwargs):
+        logging.info("Received %s", Action.firmware_status_notification)
+        return ocpp.v201.call_result.FirmwareStatusNotification()
+
+    @on(Action.log_status_notification)
+    async def on_log_status_notification(self, status, request_id: int, **kwargs):
+        logging.info("Received %s", Action.log_status_notification)
+        return ocpp.v201.call_result.LogStatusNotification()
+
+    @on(Action.security_event_notification)
+    async def on_security_event_notification(self, event_type, timestamp, **kwargs):
+        logging.info("Received %s", Action.security_event_notification)
+        return ocpp.v201.call_result.SecurityEventNotification()
+
     # Request handlers to emit OCPP messages.
     async def _send_clear_cache(self):
         request = ocpp.v201.call.ClearCache()
@@ -125,6 +155,107 @@ class ChargePoint(ocpp.v201.ChargePoint):
         else:
             logging.info("%s failed", Action.get_base_report)
 
+    async def _send_get_variables(self):
+        request = ocpp.v201.call.GetVariables(
+            get_variable_data=[
+                {
+                    "component": {"name": "ChargingStation"},
+                    "variable": {"name": "AvailabilityState"},
+                }
+            ]
+        )
+        await self.call(request)
+        logging.info("%s response received", Action.get_variables)
+
+    async def _send_set_variables(self):
+        request = ocpp.v201.call.SetVariables(
+            set_variable_data=[
+                {
+                    "component": {"name": "ChargingStation"},
+                    "variable": {"name": "HeartbeatInterval"},
+                    "attribute_value": "30",
+                }
+            ]
+        )
+        await self.call(request)
+        logging.info("%s response received", Action.set_variables)
+
+    async def _send_request_start_transaction(self):
+        request = ocpp.v201.call.RequestStartTransaction(
+            id_token={"id_token": "test_token", "type": "ISO14443"},
+            evse_id=1,
+            remote_start_id=randint(1, 1000),  # noqa: S311
+        )
+        await self.call(request)
+        logging.info("%s response received", Action.request_start_transaction)
+
+    async def _send_request_stop_transaction(self):
+        request = ocpp.v201.call.RequestStopTransaction(
+            transaction_id="test_transaction_123"
+        )
+        await self.call(request)
+        logging.info("%s response received", Action.request_stop_transaction)
+
+    async def _send_reset(self):
+        request = ocpp.v201.call.Reset(type=ResetEnumType.immediate)
+        response = await self.call(request)
+
+        if (
+            hasattr(response, "status")
+            and response.status == ResetStatusEnumType.accepted
+        ):
+            logging.info("%s successful", Action.reset)
+        else:
+            logging.info("%s failed", Action.reset)
+
+    async def _send_unlock_connector(self):
+        request = ocpp.v201.call.UnlockConnector(evse_id=1, connector_id=1)
+        response = await self.call(request)
+
+        if response.status == UnlockStatusEnumType.unlocked:
+            logging.info("%s successful", Action.unlock_connector)
+        else:
+            logging.info("%s failed", Action.unlock_connector)
+
+    async def _send_change_availability(self):
+        request = ocpp.v201.call.ChangeAvailability(
+            operational_status=OperationalStatusEnumType.operative
+        )
+        response = await self.call(request)
+
+        if (
+            hasattr(response, "status")
+            and response.status == ChangeAvailabilityStatusEnumType.accepted
+        ):
+            logging.info("%s successful", Action.change_availability)
+        else:
+            logging.info("%s failed", Action.change_availability)
+
+    async def _send_trigger_message(self):
+        request = ocpp.v201.call.TriggerMessage(
+            requested_message=MessageTriggerEnumType.status_notification
+        )
+        response = await self.call(request)
+
+        if (
+            hasattr(response, "status")
+            and response.status == TriggerMessageStatusEnumType.accepted
+        ):
+            logging.info("%s successful", Action.trigger_message)
+        else:
+            logging.info("%s failed", Action.trigger_message)
+
+    async def _send_data_transfer(self):
+        request = ocpp.v201.call.DataTransfer(
+            vendor_id="TestVendor", message_id="TestMessage", data="test_data"
+        )
+        response = await self.call(request)
+
+        if response.status == DataTransferStatusEnumType.accepted:
+            logging.info("%s successful", Action.data_transfer)
+        else:
+            logging.info("%s failed", Action.data_transfer)
+
     async def _send_command(self, command_name: Action):
         logging.debug("Sending OCPP command %s", command_name)
         match command_name:
@@ -132,6 +263,24 @@ class ChargePoint(ocpp.v201.ChargePoint):
                 await self._send_clear_cache()
             case Action.get_base_report:
                 await self._send_get_base_report()
+            case Action.get_variables:
+                await self._send_get_variables()
+            case Action.set_variables:
+                await self._send_set_variables()
+            case Action.request_start_transaction:
+                await self._send_request_start_transaction()
+            case Action.request_stop_transaction:
+                await self._send_request_stop_transaction()
+            case Action.reset:
+                await self._send_reset()
+            case Action.unlock_connector:
+                await self._send_unlock_connector()
+            case Action.change_availability:
+                await self._send_change_availability()
+            case Action.trigger_message:
+                await self._send_trigger_message()
+            case Action.data_transfer:
+                await self._send_data_transfer()
             case _:
                 logging.info(f"Not supported command {command_name}")
 

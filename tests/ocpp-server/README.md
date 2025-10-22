@@ -38,25 +38,44 @@ The server will start listening for connections on port 9000.
 
 ## Running the server with OCPP command sending
 
-You can also specify a command and a period duration with the --command and --period options respectively when running the server. The server will then send your chosen command to the connected client(s) every period seconds.
+### Command Line Interface
 
-### GetBaseReport Command
+```shell
+poetry run task server --command <COMMAND_NAME> --period <SECONDS>
+```
 
-To run the server and send a GetBaseReport command every 5 seconds, use:
+**Options:**
+
+- `--command <COMMAND_NAME>`: The OCPP command to send (see available commands below)
+- `--period <SECONDS>`: Interval in seconds between command sends
+
+**Example:**
 
 ```shell
 poetry run task server --command GetBaseReport --period 5
 ```
 
-### ClearCache Command
+### Available Outgoing Commands
 
-To run the server and send a ClearCache command every 5 seconds, use:
+- `ClearCache` - Clear the charging station cache
+- `GetBaseReport` - Request a base configuration report
+- `GetVariables` - Get variable values from the charging station
+- `SetVariables` - Set variable values on the charging station
+- `RequestStartTransaction` - Request to start a transaction
+- `RequestStopTransaction` - Request to stop a transaction
+- `Reset` - Reset the charging station
+- `UnlockConnector` - Unlock a specific connector
+- `ChangeAvailability` - Change connector availability
+- `TriggerMessage` - Trigger a specific message
+- `DataTransfer` - Send custom data
+
+### Testing the Server
+
+To run the test suite and validate all implemented commands:
 
 ```shell
-poetry run task server --command ClearCache --period 5
+poetry run task test
 ```
-
-Please be mindful that these commands were examples according to the provided scenario, the available commands and their syntax might vary depending on the ocpp version and the implemented functionalities on your client.
 
 ## Overview of the Server Scripts
 
