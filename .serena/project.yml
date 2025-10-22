@@ -68,4 +68,4 @@ excluded_tools: []
 # (contrary to the memories, which are loaded on demand).
 initial_prompt: 'You are working on a free and open source software project that simulates charging stations. Refer to the memories for more details and `.github/copilot-instructions.md` for development guidelines.'
 
-project_name: 'e-mobility-charging-stations-simulator-git'
+project_name: 'e-mobility-charging-stations-simulator'
