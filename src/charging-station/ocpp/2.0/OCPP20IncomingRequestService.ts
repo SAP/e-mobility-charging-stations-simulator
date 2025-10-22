@@ -528,13 +528,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetBaseReport: GetBaseReport request received with requestId ${commandPayload.requestId} and reportBase ${commandPayload.reportBase}`
     )
 
-    const supportedReportBases = [
-      ReportBaseEnumType.ConfigurationInventory,
-      ReportBaseEnumType.FullInventory,
-      ReportBaseEnumType.SummaryInventory,
-    ]
-
-    if (!supportedReportBases.includes(commandPayload.reportBase)) {
+    if (!Object.values(ReportBaseEnumType).includes(commandPayload.reportBase)) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetBaseReport: Unsupported reportBase ${commandPayload.reportBase}`
       )
