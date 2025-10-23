@@ -19,6 +19,7 @@ import {
   type WorkerConfiguration,
 } from '../types/index.js'
 import {
+  checkWorkerProcessType,
   DEFAULT_ELEMENT_ADD_DELAY,
   DEFAULT_POOL_MAX_SIZE,
   DEFAULT_POOL_MIN_SIZE,
@@ -28,7 +29,6 @@ import {
 import {
   buildPerformanceUriFilePath,
   checkWorkerElementsPerWorker,
-  checkWorkerProcessType,
   getDefaultPerformanceStorageUri,
   handleFileException,
   logPrefix,

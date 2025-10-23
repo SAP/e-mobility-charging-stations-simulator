@@ -1,6 +1,8 @@
 import chalk from 'chalk'
 import { getRandomValues } from 'node:crypto'
 
+import { WorkerProcessType } from './WorkerTypes.js'
+
 export const sleep = async (milliSeconds: number): Promise<NodeJS.Timeout> => {
   return await new Promise<NodeJS.Timeout>(resolve => {
     const timeout = setTimeout(() => {
@@ -28,6 +30,14 @@ export const randomizeDelay = (delay: number): number => {
   const sign = random < 0.5 ? -1 : 1
   const randomSum = delay * 0.2 * random // 0-20% of the delay
   return delay + sign * randomSum
+}
+
+export const checkWorkerProcessType = (workerProcessType: WorkerProcessType): void => {
+  if (!Object.values(WorkerProcessType).includes(workerProcessType)) {
+    throw new SyntaxError(
+      `Invalid worker process type '${workerProcessType}' defined in configuration`
+    )
+  }
 }
 
 /**
