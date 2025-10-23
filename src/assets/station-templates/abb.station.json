@@ -1,0 +1,194 @@
+{
+  "idTagsFile": "idtags.json",
+  "baseName": "SIMULATOR-ABB",
+  "chargePointSerialNumberPrefix": "T124",
+  "chargePointModel": "MD_TERRA_D",
+  "chargePointVendor": "ABB",
+  "firmwareVersionPattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$",
+  "firmwareVersion": "1.7.3.39",
+  "power": 130000,
+  "voltageOut": 480,
+  "numberOfPhases": 1,
+  "powerSharedByConnectors": true,
+  "powerUnit": "W",
+  "currentOutType": "DC",
+  "numberOfConnectors": 2,
+  "randomConnectors": false,
+  "resetTime": 30,
+  "enableStatistics": false,
+  "Configuration": {
+    "configurationKey": [
+      {
+        "key": "AllowOfflineTxForUnknownId",
+        "readonly": false,
+        "value": "true"
+      },
+      {
+        "key": "AuthorizationCacheEnabled",
+        "readonly": false,
+        "value": "true"
+      },
+      {
+        "key": "StopTransactionOnInvalidId",
+        "readonly": false,
+        "value": "true"
+      },
+      {
+        "key": "ClockAlignedDataInterval",
+        "readonly": false,
+        "value": "150"
+      },
+      {
+        "key": "ConnectionTimeOut",
+        "readonly": false,
+        "value": "150"
+      },
+      {
+        "key": "HeartbeatInterval",
+        "readonly": false,
+        "value": "30"
+      },
+      {
+        "key": "LocalAuthorizeOffline",
+        "readonly": false,
+        "value": "false"
+      },
+      {
+        "key": "LocalPreAuthorize",
+        "readonly": false,
+        "value": "false"
+      },
+      {
+        "key": "MeterValuesAlignedData",
+        "readonly": false,
+        "value": "Current.Import,Energy.Active.Import.Register,Power.Active.Import,SoC,Voltage,Current.Offered,Power.Offered,Temperature"
+      },
+      {
+        "key": "MeterValuesSampledData",
+        "readonly": false,
+        "value": "Current.Import,Energy.Active.Import.Register,Power.Active.Import,SoC,Voltage,Current.Offered,Power.Offered,Temperature"
+      },
+      {
+        "key": "MeterValueSampleInterval",
+        "readonly": false,
+        "value": "60"
+      },
+      {
+        "key": "MinimumStatusDuration",
+        "readonly": false,
+        "value": "5"
+      },
+      {
+        "key": "ResetRetries",
+        "readonly": false,
+        "value": "5"
+      },
+      {
+        "key": "StopTransactionOnEVSideDisconnect",
+        "readonly": false,
+        "value": "true"
+      },
+      {
+        "key": "TransactionMessageAttempts",
+        "readonly": false,
+        "value": "5"
+      },
+      {
+        "key": "TransactionMessageRetryInterval",
+        "readonly": false,
+        "value": "60"
+      },
+      {
+        "key": "UnlockConnectorOnEVSideDisconnect",
+        "readonly": false,
+        "value": "true"
+      },
+      {
+        "key": "UnlockConnectorOnEVSideDisconnect",
+        "readonly": false,
+        "value": "true"
+      },
+      {
+        "key": "WebSocketPingInterval",
+        "readonly": false,
+        "value": "30"
+      },
+      {
+        "key": "SupportedFeatureProfiles",
+        "readonly": true,
+        "value": "Core,FirmwareManagement,LocalAuthListManagement,SmartCharging,RemoteTrigger"
+      }
+    ]
+  },
+  "AutomaticTransactionGenerator": {
+    "enable": false,
+    "minDuration": 60,
+    "maxDuration": 80,
+    "minDelayBetweenTwoTransactions": 15,
+    "maxDelayBetweenTwoTransactions": 30,
+    "probabilityOfStart": 1,
+    "stopAfterHours": 0.3,
+    "requireAuthorize": true
+  },
+  "Connectors": {
+    "0": {},
+    "1": {
+      "MeterValues": [
+        {
+          "unit": "Percent",
+          "context": "Sample.Periodic",
+          "measurand": "SoC",
+          "location": "EV"
+        },
+        {
+          "unit": "V",
+          "context": "Sample.Periodic",
+          "measurand": "Voltage"
+        },
+        {
+          "unit": "W",
+          "context": "Sample.Periodic",
+          "measurand": "Power.Active.Import"
+        },
+        {
+          "unit": "A",
+          "context": "Sample.Periodic",
+          "measurand": "Current.Import"
+        },
+        {
+          "unit": "Wh",
+          "context": "Sample.Periodic"
+        }
+      ]
+    },
+    "2": {
+      "MeterValues": [
+        {
+          "unit": "Percent",
+          "context": "Sample.Periodic",
+          "measurand": "SoC",
+          "location": "EV"
+        },
+        {
+          "unit": "V",
+          "context": "Sample.Periodic",
+          "measurand": "Voltage"
+        },
+        {
+          "unit": "W",
+          "context": "Sample.Periodic",
+          "measurand": "Power.Active.Import"
+        },
+        {
+          "unit": "A",
+          "context": "Sample.Periodic",
+          "measurand": "Current.Import"
+        },
+        {
+          "unit": "Wh",
+          "context": "Sample.Periodic"
+        }
+      ]
+    }
+  }
+}
