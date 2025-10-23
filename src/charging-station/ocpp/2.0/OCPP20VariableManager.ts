@@ -1,5 +1,7 @@
 // Partial Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
 
+import { millisecondsToSeconds } from 'date-fns'
+
 import {
   AttributeEnumType,
   type ComponentType,
@@ -13,7 +15,7 @@ import {
   OCPP20RequiredVariableName,
   type VariableType,
 } from '../../../types/index.js'
-import { logger } from '../../../utils/index.js'
+import { Constants, logger } from '../../../utils/index.js'
 import { type ChargingStation } from '../../ChargingStation.js'
 
 /**
@@ -97,12 +99,12 @@ export class OCPP20VariableManager {
     if (!this.isComponentValid(chargingStation, component)) {
       return {
         attributeStatus: GetVariableStatusEnumType.UnknownComponent,
-        attributeType,
-        component,
-        statusInfo: {
+        attributeStatusInfo: {
           additionalInfo: `Component ${component.name} is not supported by this charging station`,
           reasonCode: GenericDeviceModelStatusEnumType.NotSupported,
         },
+        attributeType,
+        component,
         variable,
       }
     }
@@ -111,12 +113,12 @@ export class OCPP20VariableManager {
     if (!this.isVariableSupported(chargingStation, component, variable)) {
       return {
         attributeStatus: GetVariableStatusEnumType.UnknownVariable,
-        attributeType,
-        component,
-        statusInfo: {
+        attributeStatusInfo: {
           additionalInfo: `Variable ${variable.name} is not supported for component ${component.name}`,
           reasonCode: GenericDeviceModelStatusEnumType.NotSupported,
         },
+        attributeType,
+        component,
         variable,
       }
     }
@@ -125,12 +127,12 @@ export class OCPP20VariableManager {
     if (attributeType && !this.isAttributeTypeSupported(variable, attributeType)) {
       return {
         attributeStatus: GetVariableStatusEnumType.NotSupportedAttributeType,
-        attributeType,
-        component,
-        statusInfo: {
+        attributeStatusInfo: {
           additionalInfo: `Attribute type ${attributeType} is not supported for variable ${variable.name}`,
           reasonCode: GenericDeviceModelStatusEnumType.NotSupported,
         },
+        attributeType,
+        component,
         variable,
       }
     }
@@ -167,15 +169,19 @@ export class OCPP20VariableManager {
     // Handle standard ChargingStation variables
     if (componentName === (OCPP20ComponentName.ChargingStation as string)) {
       if (variableName === (OCPP20OptionalVariableName.HeartbeatInterval as string)) {
-        return chargingStation.getHeartbeatInterval().toString()
+        return millisecondsToSeconds(chargingStation.getHeartbeatInterval()).toString()
       }
 
       if (variableName === (OCPP20OptionalVariableName.WebSocketPingInterval as string)) {
-        // Use OCPP configuration or default value since getWebSocketPingInterval is private
-        const wsConfigKey = chargingStation.ocppConfiguration?.configurationKey?.find(
-          key => key.key === (OCPP20OptionalVariableName.WebSocketPingInterval as string)
-        )
-        return wsConfigKey?.value ?? '30'
+        return chargingStation.getWebSocketPingInterval().toString()
+      }
+
+      if (variableName === (OCPP20RequiredVariableName.EVConnectionTimeOut as string)) {
+        return Constants.DEFAULT_EV_CONNECTION_TIMEOUT.toString()
+      }
+
+      if (variableName === (OCPP20RequiredVariableName.MessageTimeout as string)) {
+        return chargingStation.getConnectionTimeout().toString()
       }
 
       // Try to get from OCPP configuration
@@ -227,7 +233,7 @@ export class OCPP20VariableManager {
       `${OCPP20ComponentName.ChargingStation}.${OCPP20OptionalVariableName.HeartbeatInterval}`,
       {
         attributeTypes: [AttributeEnumType.Actual, AttributeEnumType.Target],
-        defaultValue: '300',
+        defaultValue: millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL).toString(),
         mutability: MutabilityEnumType.ReadWrite,
         persistent: true,
       }
@@ -237,7 +243,27 @@ export class OCPP20VariableManager {
       `${OCPP20ComponentName.ChargingStation}.${OCPP20OptionalVariableName.WebSocketPingInterval}`,
       {
         attributeTypes: [AttributeEnumType.Actual, AttributeEnumType.Target],
-        defaultValue: '30',
+        defaultValue: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL.toString(),
+        mutability: MutabilityEnumType.ReadWrite,
+        persistent: true,
+      }
+    )
+
+    this.standardVariables.set(
+      `${OCPP20ComponentName.ChargingStation}.${OCPP20RequiredVariableName.EVConnectionTimeOut}`,
+      {
+        attributeTypes: [AttributeEnumType.Actual, AttributeEnumType.Target],
+        defaultValue: Constants.DEFAULT_EV_CONNECTION_TIMEOUT.toString(),
+        mutability: MutabilityEnumType.ReadWrite,
+        persistent: true,
+      }
+    )
+
+    this.standardVariables.set(
+      `${OCPP20ComponentName.ChargingStation}.${OCPP20RequiredVariableName.MessageTimeout}`,
+      {
+        attributeTypes: [AttributeEnumType.Actual, AttributeEnumType.Target],
+        defaultValue: Constants.DEFAULT_CONNECTION_TIMEOUT.toString(),
         mutability: MutabilityEnumType.ReadWrite,
         persistent: true,
       }
@@ -338,6 +364,8 @@ export class OCPP20VariableManager {
       ...Object.values(OCPP20RequiredVariableName),
     ]
 
-    return knownVariables.includes(variable.name)
+    return knownVariables.includes(
+      variable.name as OCPP20OptionalVariableName | OCPP20RequiredVariableName
+    )
   }
 }

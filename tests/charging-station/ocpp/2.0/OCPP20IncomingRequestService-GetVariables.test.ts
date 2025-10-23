@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 
 import { expect } from '@std/expect'
+import { millisecondsToSeconds } from 'date-fns'
 import { describe, it } from 'node:test'
 
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
@@ -12,16 +13,22 @@ import {
   OCPP20OptionalVariableName,
   OCPP20RequiredVariableName,
 } from '../../../../src/types/index.js'
+import { Constants } from '../../../../src/utils/index.js'
 import { createChargingStationWithEvses } from '../../../ChargingStationFactory.js'
+import {
+  TEST_CHARGING_STATION_NAME,
+  TEST_CONNECTOR_INVALID_INSTANCE,
+  TEST_CONNECTOR_VALID_INSTANCE,
+} from './OCPP20TestConstants.js'
 
 await describe('OCPP20IncomingRequestService GetVariables integration tests', async () => {
   const mockChargingStation = createChargingStationWithEvses({
-    baseName: 'CS-TEST-001',
-    heartbeatInterval: 60,
+    baseName: TEST_CHARGING_STATION_NAME,
+    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
     stationInfo: {
       ocppStrictCompliance: false,
     },
-    websocketPingInterval: 30,
+    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
   })
 
   const incomingRequestService = new OCPP20IncomingRequestService()
@@ -56,17 +63,23 @@ await describe('OCPP20IncomingRequestService GetVariables integration tests', as
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const firstResult = response.getVariableResult[0]
     expect(firstResult.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-    expect(firstResult.attributeValue).toBe('60')
+    expect(firstResult.attributeType).toBe(AttributeEnumType.Actual)
+    expect(firstResult.attributeValue).toBe(
+      millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL).toString()
+    )
     expect(firstResult.component.name).toBe(OCPP20ComponentName.ChargingStation)
     expect(firstResult.variable.name).toBe(OCPP20OptionalVariableName.HeartbeatInterval)
+    expect(firstResult.attributeStatusInfo).toBeUndefined()
 
     // Check second variable (WebSocketPingInterval)
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const secondResult = response.getVariableResult[1]
     expect(secondResult.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-    expect(secondResult.attributeValue).toBe('30')
+    expect(secondResult.attributeType).toBeUndefined()
+    expect(secondResult.attributeValue).toBe(Constants.DEFAULT_WEBSOCKET_PING_INTERVAL.toString())
     expect(secondResult.component.name).toBe(OCPP20ComponentName.ChargingStation)
     expect(secondResult.variable.name).toBe(OCPP20OptionalVariableName.WebSocketPingInterval)
+    expect(secondResult.attributeStatusInfo).toBeUndefined()
   })
 
   await it('Should handle GetVariables request with invalid variables', async () => {
@@ -100,11 +113,21 @@ await describe('OCPP20IncomingRequestService GetVariables integration tests', as
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const firstResult = response.getVariableResult[0]
     expect(firstResult.attributeStatus).toBe(GetVariableStatusEnumType.UnknownVariable)
+    expect(firstResult.attributeType).toBeUndefined()
+    expect(firstResult.attributeValue).toBeUndefined()
+    expect(firstResult.component.name).toBe(OCPP20ComponentName.ChargingStation)
+    expect(firstResult.variable.name).toBe('InvalidVariable')
+    expect(firstResult.attributeStatusInfo).toBeDefined()
 
     // Check second variable (should be UnknownComponent)
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const secondResult = response.getVariableResult[1]
     expect(secondResult.attributeStatus).toBe(GetVariableStatusEnumType.UnknownComponent)
+    expect(secondResult.attributeType).toBeUndefined()
+    expect(secondResult.attributeValue).toBeUndefined()
+    expect(secondResult.component.name).toBe('InvalidComponent')
+    expect(secondResult.variable.name).toBe(OCPP20OptionalVariableName.HeartbeatInterval)
+    expect(secondResult.attributeStatusInfo).toBeDefined()
   })
 
   await it('Should handle GetVariables request with unsupported attribute types', async () => {
@@ -139,14 +162,14 @@ await describe('OCPP20IncomingRequestService GetVariables integration tests', as
       getVariableData: [
         {
           component: {
-            instance: '1',
+            instance: TEST_CONNECTOR_VALID_INSTANCE,
             name: OCPP20ComponentName.Connector,
           },
           variable: { name: OCPP20RequiredVariableName.AuthorizeRemoteStart },
         },
         {
           component: {
-            instance: '999', // Non-existent connector
+            instance: TEST_CONNECTOR_INVALID_INSTANCE, // Non-existent connector
             name: OCPP20ComponentName.Connector,
           },
           variable: { name: OCPP20RequiredVariableName.AuthorizeRemoteStart },
@@ -170,12 +193,12 @@ await describe('OCPP20IncomingRequestService GetVariables integration tests', as
     const firstResult = response.getVariableResult[0]
     expect(firstResult.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
     expect(firstResult.component.name).toBe(OCPP20ComponentName.Connector)
-    expect(firstResult.component.instance).toBe('1')
+    expect(firstResult.component.instance).toBe(TEST_CONNECTOR_VALID_INSTANCE)
 
     // Check invalid connector
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const secondResult = response.getVariableResult[1]
     expect(secondResult.attributeStatus).toBe(GetVariableStatusEnumType.UnknownComponent)
-    expect(secondResult.component.instance).toBe('999')
+    expect(secondResult.component.instance).toBe(TEST_CONNECTOR_INVALID_INSTANCE)
   })
 })

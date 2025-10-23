@@ -18,23 +18,31 @@ import {
   OCPP20VariableName,
   type ReportDataType,
 } from '../../../../src/types/index.js'
+import { Constants } from '../../../../src/utils/index.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
+import {
+  TEST_CHARGE_POINT_MODEL,
+  TEST_CHARGE_POINT_SERIAL_NUMBER,
+  TEST_CHARGE_POINT_VENDOR,
+  TEST_CHARGING_STATION_NAME,
+  TEST_FIRMWARE_VERSION,
+} from './OCPP20TestConstants.js'
 
 await describe('OCPP20RequestService NotifyReport integration tests', async () => {
   const mockResponseService = new OCPP20ResponseService()
   const requestService = new OCPP20RequestService(mockResponseService)
 
   const mockChargingStation = createChargingStation({
-    baseName: 'CS-TEST-001',
-    heartbeatInterval: 60,
+    baseName: TEST_CHARGING_STATION_NAME,
+    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
     stationInfo: {
-      chargePointModel: 'Test Model',
-      chargePointSerialNumber: 'TEST-SN-001',
-      chargePointVendor: 'Test Vendor',
-      firmwareVersion: '1.0.0',
+      chargePointModel: TEST_CHARGE_POINT_MODEL,
+      chargePointSerialNumber: TEST_CHARGE_POINT_SERIAL_NUMBER,
+      chargePointVendor: TEST_CHARGE_POINT_VENDOR,
+      firmwareVersion: TEST_FIRMWARE_VERSION,
       ocppStrictCompliance: false,
     },
-    websocketPingInterval: 30,
+    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
   })
 
   await it('Should build NotifyReport request payload correctly with minimal required fields', () => {

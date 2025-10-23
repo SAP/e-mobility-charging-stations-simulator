@@ -10,12 +10,14 @@ import {
   OCPP20OptionalVariableName,
   OCPPVersion,
 } from '../src/types/index.js'
+import { Constants } from '../src/utils/index.js'
 
 /**
  * Options to customize the construction of a ChargingStation test instance
  */
 export interface ChargingStationOptions {
   baseName?: string
+  connectionTimeout?: number
   hasEvses?: boolean
   heartbeatInterval?: number
   ocppConfiguration?: ChargingStationConfiguration
@@ -25,21 +27,27 @@ export interface ChargingStationOptions {
   websocketPingInterval?: number
 }
 
+const CHARGING_STATION_BASE_NAME = 'CS-TEST'
+
 /**
  * Creates a ChargingStation instance for tests
  * @param options - Options to customize the ChargingStation instance
  * @returns A mock ChargingStation instance
  */
 export function createChargingStation (options: ChargingStationOptions = {}): ChargingStation {
-  const baseName = options.baseName ?? 'CS-TEST'
+  const baseName = options.baseName ?? CHARGING_STATION_BASE_NAME
   const templateIndex = 1
-  const heartbeatInterval = options.heartbeatInterval ?? 60
-  const websocketPingInterval = options.websocketPingInterval ?? 30
+  const connectionTimeout = options.connectionTimeout ?? Constants.DEFAULT_CONNECTION_TIMEOUT
+  const heartbeatInterval = options.heartbeatInterval ?? Constants.DEFAULT_HEARTBEAT_INTERVAL
+  const websocketPingInterval =
+    options.websocketPingInterval ?? Constants.DEFAULT_WEBSOCKET_PING_INTERVAL
 
   return {
     connectors: new Map(),
     evses: new Map(),
+    getConnectionTimeout: () => connectionTimeout,
     getHeartbeatInterval: () => heartbeatInterval,
+    getWebSocketPingInterval: () => websocketPingInterval,
     hasEvses: options.hasEvses ?? false,
     inAcceptedState: () => true,
     logPrefix: () => `${baseName} |`,
@@ -75,7 +83,9 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
  * @param baseName - Base name for the template
  * @returns A ChargingStationTemplate instance
  */
-export function createChargingStationTemplate (baseName = 'CS-TEST'): ChargingStationTemplate {
+export function createChargingStationTemplate (
+  baseName = CHARGING_STATION_BASE_NAME
+): ChargingStationTemplate {
   return {
     baseName,
   } as ChargingStationTemplate

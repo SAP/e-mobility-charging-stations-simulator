@@ -28,6 +28,7 @@ export class Constants {
 
   static readonly DEFAULT_CIRCULAR_BUFFER_CAPACITY = 386
   static readonly DEFAULT_CONNECTION_TIMEOUT = 30 // Seconds
+  static readonly DEFAULT_EV_CONNECTION_TIMEOUT = 180 // Seconds
 
   static readonly DEFAULT_FLUCTUATION_PERCENT = 5
   static readonly DEFAULT_HASH_ALGORITHM = 'sha384'
@@ -43,9 +44,9 @@ export class Constants {
   static readonly DEFAULT_METER_VALUES_INTERVAL = 60000 // Ms
 
   static readonly DEFAULT_PERFORMANCE_DIRECTORY = 'performance'
-
   static readonly DEFAULT_PERFORMANCE_RECORDS_DB_NAME = 'e-mobility-charging-stations-simulator'
   static readonly DEFAULT_PERFORMANCE_RECORDS_FILENAME = 'performanceRecords.json'
+
   static readonly DEFAULT_STATION_INFO: Readonly<Partial<ChargingStationInfo>> = Object.freeze({
     automaticTransactionGeneratorPersistentConfiguration: true,
     autoReconnectMaxRetries: -1,
@@ -83,8 +84,10 @@ export class Constants {
   })
 
   static readonly DEFAULT_UI_SERVER_HOST = 'localhost'
-
   static readonly DEFAULT_UI_SERVER_PORT = 8080
+
+  static readonly DEFAULT_WEBSOCKET_PING_INTERVAL = 30 // Seconds
+
   static readonly EMPTY_FROZEN_OBJECT = Object.freeze({})
 
   static readonly EMPTY_FUNCTION: () => void = Object.freeze(() => {

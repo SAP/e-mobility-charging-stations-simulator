@@ -13,23 +13,31 @@ import {
   OCPP20RequestCommand,
   type OCPP20StatusNotificationRequest,
 } from '../../../../src/types/index.js'
+import { Constants } from '../../../../src/utils/index.js'
 import { createChargingStationWithEvses } from '../../../ChargingStationFactory.js'
+import {
+  TEST_FIRMWARE_VERSION,
+  TEST_STATUS_CHARGE_POINT_MODEL,
+  TEST_STATUS_CHARGE_POINT_SERIAL_NUMBER,
+  TEST_STATUS_CHARGE_POINT_VENDOR,
+  TEST_STATUS_CHARGING_STATION_NAME,
+} from './OCPP20TestConstants.js'
 
 await describe('OCPP20RequestService StatusNotification integration tests', async () => {
   const mockResponseService = new OCPP20ResponseService()
   const requestService = new OCPP20RequestService(mockResponseService)
 
   const mockChargingStation = createChargingStationWithEvses({
-    baseName: 'CS-TEST-STATUS-001',
-    heartbeatInterval: 60,
+    baseName: TEST_STATUS_CHARGING_STATION_NAME,
+    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
     stationInfo: {
-      chargePointModel: 'Test Status Model',
-      chargePointSerialNumber: 'TEST-STATUS-SN-001',
-      chargePointVendor: 'Test Status Vendor',
-      firmwareVersion: '1.0.0',
+      chargePointModel: TEST_STATUS_CHARGE_POINT_MODEL,
+      chargePointSerialNumber: TEST_STATUS_CHARGE_POINT_SERIAL_NUMBER,
+      chargePointVendor: TEST_STATUS_CHARGE_POINT_VENDOR,
+      firmwareVersion: TEST_FIRMWARE_VERSION,
       ocppStrictCompliance: false,
     },
-    websocketPingInterval: 30,
+    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
   })
 
   await it('Should build StatusNotification request payload correctly with Available status', () => {

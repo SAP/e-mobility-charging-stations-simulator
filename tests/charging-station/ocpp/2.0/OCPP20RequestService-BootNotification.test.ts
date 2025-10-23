@@ -14,31 +14,39 @@ import {
   OCPP20RequestCommand,
 } from '../../../../src/types/index.js'
 import { type ChargingStationType } from '../../../../src/types/ocpp/2.0/Common.js'
+import { Constants } from '../../../../src/utils/index.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
+import {
+  TEST_CHARGE_POINT_MODEL,
+  TEST_CHARGE_POINT_SERIAL_NUMBER,
+  TEST_CHARGE_POINT_VENDOR,
+  TEST_CHARGING_STATION_NAME,
+  TEST_FIRMWARE_VERSION,
+} from './OCPP20TestConstants.js'
 
 await describe('OCPP20RequestService BootNotification integration tests', async () => {
   const mockResponseService = new OCPP20ResponseService()
   const requestService = new OCPP20RequestService(mockResponseService)
 
   const mockChargingStation = createChargingStation({
-    baseName: 'CS-TEST-001',
-    heartbeatInterval: 60,
+    baseName: TEST_CHARGING_STATION_NAME,
+    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
     stationInfo: {
-      chargePointModel: 'Test Model',
-      chargePointSerialNumber: 'TEST-SN-001',
-      chargePointVendor: 'Test Vendor',
-      firmwareVersion: '1.0.0',
+      chargePointModel: TEST_CHARGE_POINT_MODEL,
+      chargePointSerialNumber: TEST_CHARGE_POINT_SERIAL_NUMBER,
+      chargePointVendor: TEST_CHARGE_POINT_VENDOR,
+      firmwareVersion: TEST_FIRMWARE_VERSION,
       ocppStrictCompliance: false,
     },
-    websocketPingInterval: 30,
+    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
   })
 
   await it('Should build BootNotification request payload correctly with PowerUp reason', () => {
     const chargingStationInfo: ChargingStationType = {
-      firmwareVersion: '1.0.0',
-      model: 'Test Model',
-      serialNumber: 'TEST-SN-001',
-      vendorName: 'Test Vendor',
+      firmwareVersion: TEST_FIRMWARE_VERSION,
+      model: TEST_CHARGE_POINT_MODEL,
+      serialNumber: TEST_CHARGE_POINT_SERIAL_NUMBER,
+      vendorName: TEST_CHARGE_POINT_VENDOR,
     }
 
     const requestParams: OCPP20BootNotificationRequest = {
@@ -55,10 +63,10 @@ await describe('OCPP20RequestService BootNotification integration tests', async 
 
     expect(payload).toBeDefined()
     expect(payload.chargingStation).toBeDefined()
-    expect(payload.chargingStation.model).toBe('Test Model')
-    expect(payload.chargingStation.vendorName).toBe('Test Vendor')
-    expect(payload.chargingStation.firmwareVersion).toBe('1.0.0')
-    expect(payload.chargingStation.serialNumber).toBe('TEST-SN-001')
+    expect(payload.chargingStation.model).toBe(TEST_CHARGE_POINT_MODEL)
+    expect(payload.chargingStation.vendorName).toBe(TEST_CHARGE_POINT_VENDOR)
+    expect(payload.chargingStation.firmwareVersion).toBe(TEST_FIRMWARE_VERSION)
+    expect(payload.chargingStation.serialNumber).toBe(TEST_CHARGE_POINT_SERIAL_NUMBER)
     expect(payload.reason).toBe(BootReasonEnumType.PowerUp)
   })
 
@@ -119,8 +127,8 @@ await describe('OCPP20RequestService BootNotification integration tests', async 
 
   await it('Should handle all BootReasonEnumType values correctly', () => {
     const chargingStationInfo: ChargingStationType = {
-      model: 'Test Model',
-      vendorName: 'Test Vendor',
+      model: TEST_CHARGE_POINT_MODEL,
+      vendorName: TEST_CHARGE_POINT_VENDOR,
     }
 
     const testReasons = [

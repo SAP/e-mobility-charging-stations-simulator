@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 
 import { expect } from '@std/expect'
+import { millisecondsToSeconds } from 'date-fns'
 import { describe, it } from 'node:test'
 
 import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
@@ -14,14 +15,16 @@ import {
   OCPP20RequiredVariableName,
   type VariableType,
 } from '../../../../src/types/index.js'
+import { Constants } from '../../../../src/utils/index.js'
 import { createChargingStationWithEvses } from '../../../ChargingStationFactory.js'
+import { TEST_CHARGING_STATION_NAME } from './OCPP20TestConstants.js'
 
 await describe('OCPP20VariableManager test suite', async () => {
   // Create mock ChargingStation with EVSEs for OCPP 2.0 testing
   const mockChargingStation = createChargingStationWithEvses({
-    baseName: 'CS-TEST-001',
-    heartbeatInterval: 60,
-    websocketPingInterval: 30,
+    baseName: TEST_CHARGING_STATION_NAME,
+    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
   })
 
   await it('Verify that OCPP20VariableManager can be instantiated as singleton', () => {
@@ -42,16 +45,33 @@ await describe('OCPP20VariableManager test suite', async () => {
           component: { name: OCPP20ComponentName.ChargingStation },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
+        {
+          attributeType: AttributeEnumType.Actual,
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20RequiredVariableName.EVConnectionTimeOut },
+        },
       ]
 
       const result = manager.getVariables(mockChargingStation, request)
 
       expect(Array.isArray(result)).toBe(true)
-      expect(result).toHaveLength(1)
+      expect(result).toHaveLength(2)
+      // First variable: HeartbeatInterval
       expect(result[0].attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(result[0].attributeValue).toBe('60')
+      expect(result[0].attributeType).toBe(AttributeEnumType.Actual)
+      expect(result[0].attributeValue).toBe(
+        millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL).toString()
+      )
       expect(result[0].component.name).toBe(OCPP20ComponentName.ChargingStation)
       expect(result[0].variable.name).toBe(OCPP20OptionalVariableName.HeartbeatInterval)
+      expect(result[0].attributeStatusInfo).toBeUndefined()
+      // Second variable: EVConnectionTimeOut
+      expect(result[1].attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      expect(result[1].attributeType).toBe(AttributeEnumType.Actual)
+      expect(result[1].attributeValue).toBe(Constants.DEFAULT_EV_CONNECTION_TIMEOUT.toString())
+      expect(result[1].component.name).toBe(OCPP20ComponentName.ChargingStation)
+      expect(result[1].variable.name).toBe(OCPP20RequiredVariableName.EVConnectionTimeOut)
+      expect(result[1].attributeStatusInfo).toBeUndefined()
     })
 
     await it('Should handle valid Connector component requests', () => {
@@ -70,8 +90,12 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(Array.isArray(result)).toBe(true)
       expect(result).toHaveLength(1)
       expect(result[0].attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      expect(result[0].attributeType).toBeUndefined()
+      expect(result[0].attributeValue).toBe('')
       expect(result[0].component.name).toBe(OCPP20ComponentName.Connector)
       expect(result[0].component.instance).toBe('1')
+      expect(result[0].variable.name).toBe(OCPP20RequiredVariableName.AuthorizeRemoteStart)
+      expect(result[0].attributeStatusInfo).toBeUndefined()
     })
 
     await it('Should handle invalid component gracefully', () => {
@@ -89,6 +113,15 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(Array.isArray(result)).toBe(true)
       expect(result).toHaveLength(1)
       expect(result[0].attributeStatus).toBe(GetVariableStatusEnumType.UnknownComponent)
+      expect(result[0].attributeType).toBeUndefined()
+      expect(result[0].attributeValue).toBeUndefined()
+      expect(result[0].component.name).toBe('InvalidComponent')
+      expect(result[0].variable.name).toBe('SomeVariable')
+      expect(result[0].attributeStatusInfo).toBeDefined()
+      expect(result[0].attributeStatusInfo?.reasonCode).toBe('NotSupported')
+      expect(result[0].attributeStatusInfo?.additionalInfo).toContain(
+        'Component InvalidComponent is not supported'
+      )
     })
 
     await it('Should handle invalid variable gracefully', () => {
@@ -105,6 +138,15 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(Array.isArray(result)).toBe(true)
       expect(result).toHaveLength(1)
       expect(result[0].attributeStatus).toBe(GetVariableStatusEnumType.UnknownVariable)
+      expect(result[0].attributeType).toBeUndefined()
+      expect(result[0].attributeValue).toBeUndefined()
+      expect(result[0].component.name).toBe(OCPP20ComponentName.ChargingStation)
+      expect(result[0].variable.name).toBe('InvalidVariable')
+      expect(result[0].attributeStatusInfo).toBeDefined()
+      expect(result[0].attributeStatusInfo?.reasonCode).toBe('NotSupported')
+      expect(result[0].attributeStatusInfo?.additionalInfo).toContain(
+        'Variable InvalidVariable is not supported'
+      )
     })
 
     await it('Should handle unsupported attribute type gracefully', () => {
@@ -121,6 +163,15 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(Array.isArray(result)).toBe(true)
       expect(result).toHaveLength(1)
       expect(result[0].attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
+      expect(result[0].attributeType).toBe(AttributeEnumType.Target)
+      expect(result[0].attributeValue).toBeUndefined()
+      expect(result[0].component.name).toBe(OCPP20ComponentName.ChargingStation)
+      expect(result[0].variable.name).toBe(OCPP20OptionalVariableName.HeartbeatInterval)
+      expect(result[0].attributeStatusInfo).toBeDefined()
+      expect(result[0].attributeStatusInfo?.reasonCode).toBe('NotSupported')
+      expect(result[0].attributeStatusInfo?.additionalInfo).toContain(
+        'Attribute type Target is not supported'
+      )
     })
 
     await it('Should handle non-existent connector instance', () => {
@@ -139,6 +190,16 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(Array.isArray(result)).toBe(true)
       expect(result).toHaveLength(1)
       expect(result[0].attributeStatus).toBe(GetVariableStatusEnumType.UnknownComponent)
+      expect(result[0].attributeType).toBeUndefined()
+      expect(result[0].attributeValue).toBeUndefined()
+      expect(result[0].component.name).toBe(OCPP20ComponentName.Connector)
+      expect(result[0].component.instance).toBe('999')
+      expect(result[0].variable.name).toBe(OCPP20RequiredVariableName.AuthorizeRemoteStart)
+      expect(result[0].attributeStatusInfo).toBeDefined()
+      expect(result[0].attributeStatusInfo?.reasonCode).toBe('NotSupported')
+      expect(result[0].attributeStatusInfo?.additionalInfo).toContain(
+        'Component Connector is not supported'
+      )
     })
 
     await it('Should handle multiple variables in single request', () => {
@@ -151,14 +212,40 @@ await describe('OCPP20VariableManager test suite', async () => {
           component: { name: OCPP20ComponentName.ChargingStation },
           variable: { name: OCPP20OptionalVariableName.WebSocketPingInterval },
         },
+        {
+          attributeType: AttributeEnumType.Actual,
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20RequiredVariableName.MessageTimeout },
+        },
       ]
 
       const result = manager.getVariables(mockChargingStation, request)
 
       expect(Array.isArray(result)).toBe(true)
-      expect(result).toHaveLength(2)
+      expect(result).toHaveLength(3)
+      // First variable: HeartbeatInterval
       expect(result[0].attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      expect(result[0].attributeType).toBeUndefined()
+      expect(result[0].attributeValue).toBe(
+        millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL).toString()
+      )
+      expect(result[0].component.name).toBe(OCPP20ComponentName.ChargingStation)
+      expect(result[0].variable.name).toBe(OCPP20OptionalVariableName.HeartbeatInterval)
+      expect(result[0].attributeStatusInfo).toBeUndefined()
+      // Second variable: WebSocketPingInterval
       expect(result[1].attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      expect(result[1].attributeType).toBeUndefined()
+      expect(result[1].attributeValue).toBe(Constants.DEFAULT_WEBSOCKET_PING_INTERVAL.toString())
+      expect(result[1].component.name).toBe(OCPP20ComponentName.ChargingStation)
+      expect(result[1].variable.name).toBe(OCPP20OptionalVariableName.WebSocketPingInterval)
+      expect(result[1].attributeStatusInfo).toBeUndefined()
+      // Third variable: MessageTimeout
+      expect(result[2].attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      expect(result[2].attributeType).toBe(AttributeEnumType.Actual)
+      expect(result[2].attributeValue).toBe(mockChargingStation.getConnectionTimeout().toString())
+      expect(result[2].component.name).toBe(OCPP20ComponentName.ChargingStation)
+      expect(result[2].variable.name).toBe(OCPP20RequiredVariableName.MessageTimeout)
+      expect(result[2].attributeStatusInfo).toBeUndefined()
     })
 
     await it('Should handle EVSE component when supported', () => {
@@ -178,7 +265,12 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(result).toHaveLength(1)
       // Should be accepted since mockChargingStation has EVSEs
       expect(result[0].attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      expect(result[0].attributeType).toBeUndefined()
+      expect(result[0].attributeValue).toBe('')
       expect(result[0].component.name).toBe(OCPP20ComponentName.EVSE)
+      expect(result[0].component.instance).toBe('1')
+      expect(result[0].variable.name).toBe(OCPP20RequiredVariableName.AuthorizeRemoteStart)
+      expect(result[0].attributeStatusInfo).toBeUndefined()
     })
   })
 
