@@ -28,6 +28,7 @@ pnpm start:dev:debug        # Start with debugging enabled
 ### Testing
 
 ```bash
+pnpm build:dev              # Development build with source maps
 pnpm test                   # Run all tests
 pnpm test:debug             # Run tests with debugging
 pnpm coverage               # Generate coverage report
