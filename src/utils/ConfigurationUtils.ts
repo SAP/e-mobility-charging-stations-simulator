@@ -3,7 +3,6 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import { type ElementsPerWorkerType, type FileType, StorageType } from '../types/index.js'
-import { WorkerProcessType } from '../worker/index.js'
 import { Constants } from './Constants.js'
 import { isNotEmptyString, logPrefix as utilsLogPrefix } from './Utils.js'
 
@@ -74,14 +73,6 @@ export const handleFileException = (
   }
   console.error(`${chalk.green(prefix)}${chalk.red(logMsg)}`, error)
   throw error
-}
-
-export const checkWorkerProcessType = (workerProcessType: WorkerProcessType): void => {
-  if (!Object.values(WorkerProcessType).includes(workerProcessType)) {
-    throw new SyntaxError(
-      `Invalid worker process type '${workerProcessType}' defined in configuration`
-    )
-  }
 }
 
 export const checkWorkerElementsPerWorker = (

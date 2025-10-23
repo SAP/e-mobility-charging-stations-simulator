@@ -5047,11 +5047,6 @@ packages:
   resolve-pkg-maps@1.0.0:
     resolution: {integrity: sha512-seS2Tj26TBVOC2NIc2rOe2y2ZO7efxITtLZcGSOnHHNOQ7CkiUBfw0Iw2ck6xkIhPwLhKNLS8BO+hEpngQlqzw==}
 
-  resolve@1.22.10:
-    resolution: {integrity: sha512-NPRy+/ncIMeDlTAsuqwKIiferiawhefFJtkNSW0qZJEqMEb+qBt/77B/jGeeek+F0uOeN05CDa6HXbbIgtVX4w==}
-    engines: {node: '>= 0.4'}
-    hasBin: true
-
   resolve@1.22.11:
     resolution: {integrity: sha512-RfqAvLnMl313r7c9oclB1HhUEAezcpLjz95wFH4LVuhk9JF/r22qmVP9AMmOU4vMX7Q8pN8jwNg/CSpdFnMjTQ==}
     engines: {node: '>= 0.4'}
@@ -8115,7 +8110,7 @@ snapshots:
   brfs@2.0.2:
     dependencies:
       quote-stream: 1.0.2
-      resolve: 1.22.10
+      resolve: 1.22.11
       static-module: 3.0.4
       through2: 2.0.5
 
@@ -8134,7 +8129,7 @@ snapshots:
 
   browser-resolve@2.0.0:
     dependencies:
-      resolve: 1.22.10
+      resolve: 1.22.11
 
   browserify-aes@1.2.0:
     dependencies:
@@ -8215,7 +8210,7 @@ snapshots:
       querystring-es3: 0.2.1
       read-only-stream: 2.0.0
       readable-stream: 2.3.8
-      resolve: 1.22.10
+      resolve: 1.22.11
       shasum-object: 1.0.1
       shell-quote: 1.8.3
       stream-browserify: 3.0.0
@@ -10992,7 +10987,7 @@ snapshots:
       inherits: 2.0.4
       parents: 1.0.1
       readable-stream: 2.3.8
-      resolve: 1.22.10
+      resolve: 1.22.11
       stream-combiner2: 1.1.1
       subarg: 1.0.0
       through2: 2.0.5
@@ -11483,7 +11478,7 @@ snapshots:
       postcss: 8.5.6
       postcss-value-parser: 4.2.0
       read-cache: 1.0.0
-      resolve: 1.22.10
+      resolve: 1.22.11
 
   postcss-selector-parser@6.1.2:
     dependencies:
@@ -11745,12 +11740,6 @@ snapshots:
   resolve-from@5.0.0: {}
 
   resolve-pkg-maps@1.0.0: {}
-
-  resolve@1.22.10:
-    dependencies:
-      is-core-module: 2.16.1
-      path-parse: 1.0.7
-      supports-preserve-symlinks-flag: 1.0.0
 
   resolve@1.22.11:
     dependencies:
