@@ -30,11 +30,11 @@ await describe('WorkerUtils test suite', async () => {
   })
 
   await it('Verify sleep()', async () => {
-    const startTime = Date.now()
+    const startTime = performance.now()
     const delay = 10 // 10ms for fast test execution
 
     const timeout = await sleep(delay)
-    const endTime = Date.now()
+    const endTime = performance.now()
     const actualDelay = endTime - startTime
 
     // Verify timeout object is returned

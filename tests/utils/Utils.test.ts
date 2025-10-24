@@ -53,9 +53,15 @@ await describe('Utils test suite', async () => {
 
   await it('Verify sleep()', async () => {
     const start = performance.now()
-    await sleep(1000)
+    const delay = 1000
+    const timeout = await sleep(delay)
     const stop = performance.now()
-    expect(stop - start).toBeGreaterThanOrEqual(1000)
+    const actualDelay = stop - start
+    expect(timeout).toBeDefined()
+    expect(typeof timeout).toBe('object')
+    expect(actualDelay).toBeGreaterThanOrEqual(delay)
+    expect(actualDelay).toBeLessThan(delay + 50) // Allow 50ms tolerance
+    clearTimeout(timeout)
   })
 
   await it('Verify formatDurationMilliSeconds()', () => {
