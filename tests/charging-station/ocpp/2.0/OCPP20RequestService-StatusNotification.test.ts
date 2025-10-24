@@ -23,7 +23,7 @@ import {
   TEST_STATUS_CHARGING_STATION_NAME,
 } from './OCPP20TestConstants.js'
 
-await describe('OCPP20RequestService StatusNotification integration tests', async () => {
+await describe('G01 - Status Notification', async () => {
   const mockResponseService = new OCPP20ResponseService()
   const requestService = new OCPP20RequestService(mockResponseService)
 

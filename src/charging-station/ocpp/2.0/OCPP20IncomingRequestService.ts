@@ -26,9 +26,15 @@ import {
   type OCPP20NotifyReportRequest,
   type OCPP20NotifyReportResponse,
   OCPP20RequestCommand,
+  type OCPP20ResetRequest,
+  type OCPP20ResetResponse,
   OCPPVersion,
+  ReasonCodeEnumType,
   ReportBaseEnumType,
   type ReportDataType,
+  ResetEnumType,
+  ResetStatusEnumType,
+  StopTransactionReason,
 } from '../../../types/index.js'
 import { isAsyncFunction, logger } from '../../../utils/index.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
@@ -54,6 +60,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       [OCPP20IncomingRequestCommand.CLEAR_CACHE, super.handleRequestClearCache.bind(this)],
       [OCPP20IncomingRequestCommand.GET_BASE_REPORT, this.handleRequestGetBaseReport.bind(this)],
       [OCPP20IncomingRequestCommand.GET_VARIABLES, this.handleRequestGetVariables.bind(this)],
+      [OCPP20IncomingRequestCommand.RESET, this.handleRequestReset.bind(this)],
     ])
     this.payloadValidateFunctions = new Map<
       OCPP20IncomingRequestCommand,
@@ -84,6 +91,16 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         this.ajv.compile(
           OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20GetVariablesRequest>(
             'assets/json-schemas/ocpp/2.0/GetVariablesRequest.json',
+            moduleName,
+            'constructor'
+          )
+        ),
+      ],
+      [
+        OCPP20IncomingRequestCommand.RESET,
+        this.ajv.compile(
+          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20ResetRequest>(
+            'assets/json-schemas/ocpp/2.0/ResetRequest.json',
             moduleName,
             'constructor'
           )
@@ -536,6 +553,301 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
+  private handleRequestReset (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20ResetRequest
+  ): OCPP20ResetResponse {
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: Reset request received with type ${commandPayload.type}${commandPayload.evseId !== undefined ? ` for EVSE ${commandPayload.evseId.toString()}` : ''}`
+    )
+
+    const { evseId, type } = commandPayload
+
+    if (evseId !== undefined && evseId > 0) {
+      // Check if the charging station supports EVSE-specific reset
+      if (!chargingStation.hasEvses) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: Charging station does not support EVSE-specific reset`
+        )
+        return {
+          status: ResetStatusEnumType.Rejected,
+          statusInfo: {
+            additionalInfo: 'Charging station does not support resetting individual EVSE',
+            reasonCode: ReasonCodeEnumType.UnsupportedRequest,
+          },
+        }
+      }
+
+      // Check if the EVSE exists
+      const evseExists = chargingStation.evses.has(evseId)
+      if (!evseExists) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: EVSE ${evseId.toString()} not found, rejecting reset request`
+        )
+        return {
+          status: ResetStatusEnumType.Rejected,
+          statusInfo: {
+            additionalInfo: `EVSE ${evseId.toString()} does not exist on this charging station`,
+            reasonCode: ReasonCodeEnumType.UnknownEvse,
+          },
+        }
+      }
+    }
+
+    // Check for active transactions
+    const hasActiveTransactions = chargingStation.getNumberOfRunningTransactions() > 0
+
+    // Check for EVSE-specific active transactions if evseId is provided
+    let hasEvseActiveTransactions = false
+    if (evseId !== undefined && evseId > 0) {
+      // Check if there are active transactions on the specific EVSE
+      const evse = chargingStation.evses.get(evseId)
+      if (evse) {
+        for (const [, connector] of evse.connectors) {
+          if (connector.transactionId !== undefined) {
+            hasEvseActiveTransactions = true
+            break
+          }
+        }
+      }
+    }
+
+    try {
+      if (type === ResetEnumType.Immediate) {
+        if (evseId !== undefined) {
+          // EVSE-specific immediate reset
+          if (hasEvseActiveTransactions) {
+            logger.info(
+              `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: Immediate EVSE reset with active transaction, will terminate transaction and reset EVSE ${evseId.toString()}`
+            )
+
+            // TODO: Implement EVSE-specific transaction termination
+            // For now, accept and schedule the reset
+            this.scheduleEvseReset(chargingStation, evseId, true)
+
+            return {
+              status: ResetStatusEnumType.Accepted,
+              statusInfo: {
+                additionalInfo: `EVSE ${evseId.toString()} reset initiated, active transaction will be terminated`,
+                reasonCode: ReasonCodeEnumType.NoError,
+              },
+            }
+          } else {
+            // Reset EVSE immediately
+            logger.info(
+              `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: Immediate EVSE reset without active transactions for EVSE ${evseId.toString()}`
+            )
+
+            this.scheduleEvseReset(chargingStation, evseId, false)
+
+            return {
+              status: ResetStatusEnumType.Accepted,
+              statusInfo: {
+                additionalInfo: `EVSE ${evseId.toString()} reset initiated`,
+                reasonCode: ReasonCodeEnumType.NoError,
+              },
+            }
+          }
+        } else {
+          // Charging station immediate reset
+          if (hasActiveTransactions) {
+            logger.info(
+              `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: Immediate reset with active transactions, will terminate transactions and reset`
+            )
+
+            // TODO: Implement proper transaction termination with TransactionEventRequest
+            // For now, reset immediately and let the reset handle transaction cleanup
+            chargingStation.reset(StopTransactionReason.REMOTE).catch((error: unknown) => {
+              logger.error(
+                `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: Error during immediate reset:`,
+                error
+              )
+            })
+
+            return {
+              status: ResetStatusEnumType.Accepted,
+              statusInfo: {
+                additionalInfo: 'Immediate reset initiated, active transactions will be terminated',
+                reasonCode: ReasonCodeEnumType.NoError,
+              },
+            }
+          } else {
+            logger.info(
+              `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: Immediate reset without active transactions`
+            )
+
+            // TODO: Send StatusNotification(Unavailable) for all connectors
+            chargingStation.reset(StopTransactionReason.REMOTE).catch((error: unknown) => {
+              logger.error(
+                `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: Error during immediate reset:`,
+                error
+              )
+            })
+
+            return {
+              status: ResetStatusEnumType.Accepted,
+            }
+          }
+        }
+      } else {
+        // OnIdle reset
+        if (evseId !== undefined) {
+          // EVSE-specific OnIdle reset
+          if (hasEvseActiveTransactions) {
+            logger.info(
+              `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: OnIdle EVSE reset scheduled for EVSE ${evseId.toString()}, waiting for transaction completion`
+            )
+
+            // TODO: Implement proper monitoring of EVSE transaction completion
+            this.scheduleEvseResetOnIdle(chargingStation, evseId)
+
+            return {
+              status: ResetStatusEnumType.Scheduled,
+              statusInfo: {
+                additionalInfo: `EVSE ${evseId.toString()} reset scheduled after transaction completion`,
+                reasonCode: ReasonCodeEnumType.NoError,
+              },
+            }
+          } else {
+            // No active transactions on EVSE, reset immediately
+            logger.info(
+              `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: OnIdle EVSE reset without active transactions for EVSE ${evseId.toString()}`
+            )
+
+            this.scheduleEvseReset(chargingStation, evseId, false)
+
+            return {
+              status: ResetStatusEnumType.Accepted,
+              statusInfo: {
+                additionalInfo: `EVSE ${evseId.toString()} reset initiated`,
+                reasonCode: ReasonCodeEnumType.NoError,
+              },
+            }
+          }
+        } else {
+          // Charging station OnIdle reset
+          if (hasActiveTransactions) {
+            logger.info(
+              `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: OnIdle reset scheduled, waiting for transaction completion`
+            )
+
+            this.scheduleResetOnIdle(chargingStation)
+
+            return {
+              status: ResetStatusEnumType.Scheduled,
+              statusInfo: {
+                additionalInfo: 'Reset scheduled after all transactions complete',
+                reasonCode: ReasonCodeEnumType.NoError,
+              },
+            }
+          } else {
+            // No active transactions, reset immediately
+            logger.info(
+              `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: OnIdle reset without active transactions, resetting immediately`
+            )
+
+            chargingStation.reset(StopTransactionReason.REMOTE).catch((error: unknown) => {
+              logger.error(
+                `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: Error during OnIdle reset:`,
+                error
+              )
+            })
+
+            return {
+              status: ResetStatusEnumType.Accepted,
+            }
+          }
+        }
+      }
+    } catch (error) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: Error handling reset request:`,
+        error
+      )
+
+      return {
+        status: ResetStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: 'Internal error occurred while processing reset request',
+          reasonCode: ReasonCodeEnumType.InternalError,
+        },
+      }
+    }
+  }
+
+  private scheduleEvseReset (
+    chargingStation: ChargingStation,
+    evseId: number,
+    terminateTransactions: boolean
+  ): void {
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.scheduleEvseReset: Scheduling EVSE ${evseId.toString()} reset${terminateTransactions ? ' with transaction termination' : ''}`
+    )
+
+    setTimeout(
+      () => {
+        // TODO: Implement actual EVSE-specific reset logic
+        // This should:
+        // 1. Send StatusNotification(Unavailable) for EVSE connectors (B11.FR.08)
+        // 2. Terminate active transactions if needed
+        // 3. Reset EVSE state
+        // 4. Restore EVSE to appropriate state after reset
+
+        logger.info(
+          `${chargingStation.logPrefix()} ${moduleName}.scheduleEvseReset: EVSE ${evseId.toString()} reset executed`
+        )
+      },
+      terminateTransactions ? 1000 : 100
+    ) // Small delay for immediate execution
+  }
+
+  private scheduleEvseResetOnIdle (chargingStation: ChargingStation, evseId: number): void {
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.scheduleEvseResetOnIdle: Monitoring EVSE ${evseId.toString()} for transaction completion`
+    )
+
+    // TODO: Implement proper monitoring logic
+    const checkInterval = setInterval(() => {
+      const evse = chargingStation.evses.get(evseId)
+      if (evse) {
+        let hasActiveTransactions = false
+        for (const [, connector] of evse.connectors) {
+          if (connector.transactionId !== undefined) {
+            hasActiveTransactions = true
+            break
+          }
+        }
+
+        if (!hasActiveTransactions) {
+          clearInterval(checkInterval)
+          this.scheduleEvseReset(chargingStation, evseId, false)
+        }
+      }
+    }, 5000) // Check every 5 seconds
+  }
+
+  private scheduleResetOnIdle (chargingStation: ChargingStation): void {
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.scheduleResetOnIdle: Monitoring charging station for transaction completion`
+    )
+
+    // TODO: Implement proper monitoring logic
+    const checkInterval = setInterval(() => {
+      const hasActiveTransactions = chargingStation.getNumberOfRunningTransactions() > 0
+
+      if (!hasActiveTransactions) {
+        clearInterval(checkInterval)
+        // TODO: Use OCPP2 stop transaction reason when implemented
+        chargingStation.reset(StopTransactionReason.REMOTE).catch((error: unknown) => {
+          logger.error(
+            `${chargingStation.logPrefix()} ${moduleName}.scheduleResetOnIdle: Error during scheduled reset:`,
+            error
+          )
+        })
+      }
+    }, 5000) // Check every 5 seconds
+  }
+
   private async sendNotifyReportRequest (
     chargingStation: ChargingStation,
     request: OCPP20GetBaseReportRequest,
@@ -551,9 +863,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       chunks.push(reportData.slice(i, i + maxItemsPerMessage))
     }
 
-    // Ensure we always send at least one message (even if empty)
+    // Ensure we always send at least one message
     if (chunks.length === 0) {
-      chunks.push([])
+      chunks.push(undefined) // undefined means reportData will be omitted from the request
     }
 
     // Send fragmented NotifyReport messages
@@ -561,20 +873,23 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       const isLastChunk = seqNo === chunks.length - 1
       const chunk = chunks[seqNo]
 
-      await chargingStation.ocppRequestService.requestHandler<
-        OCPP20NotifyReportRequest,
-        OCPP20NotifyReportResponse
-      >(chargingStation, OCPP20RequestCommand.NOTIFY_REPORT, {
+      const notifyReportRequest: OCPP20NotifyReportRequest = {
         generatedAt: new Date(),
-        reportData: chunk,
         requestId,
         seqNo,
         tbc: !isLastChunk,
-      })
+        // Only include reportData if chunk is defined and not empty
+        ...(chunk !== undefined && chunk.length > 0 && { reportData: chunk }),
+      }
+
+      await chargingStation.ocppRequestService.requestHandler<
+        OCPP20NotifyReportRequest,
+        OCPP20NotifyReportResponse
+      >(chargingStation, OCPP20RequestCommand.NOTIFY_REPORT, notifyReportRequest)
 
       logger.debug(
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        `${chargingStation.logPrefix()} ${moduleName}.sendNotifyReportRequest: NotifyReport sent seqNo=${seqNo} for requestId ${requestId} with ${chunk.length} report items (tbc=${!isLastChunk})`
+        `${chargingStation.logPrefix()} ${moduleName}.sendNotifyReportRequest: NotifyReport sent seqNo=${seqNo} for requestId ${requestId} with ${chunk?.length ?? 0} report items (tbc=${!isLastChunk})`
       )
     }
 

@@ -149,8 +149,11 @@ export {
   GenericDeviceModelStatusEnumType,
   OCPP20ComponentName,
   OCPP20ConnectorStatusEnumType,
+  ReasonCodeEnumType,
   ReportBaseEnumType,
   type ReportDataType,
+  ResetEnumType,
+  ResetStatusEnumType,
 } from './ocpp/2.0/Common.js'
 export {
   type OCPP20BootNotificationRequest,
@@ -161,6 +164,7 @@ export {
   OCPP20IncomingRequestCommand,
   type OCPP20NotifyReportRequest,
   OCPP20RequestCommand,
+  type OCPP20ResetRequest,
   type OCPP20StatusNotificationRequest,
 } from './ocpp/2.0/Requests.js'
 export type {
@@ -170,6 +174,7 @@ export type {
   OCPP20GetVariablesResponse,
   OCPP20HeartbeatResponse,
   OCPP20NotifyReportResponse,
+  OCPP20ResetResponse,
   OCPP20StatusNotificationResponse,
 } from './ocpp/2.0/Responses.js'
 export {

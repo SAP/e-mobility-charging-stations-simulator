@@ -24,7 +24,7 @@ import {
   TEST_FIRMWARE_VERSION,
 } from './OCPP20TestConstants.js'
 
-await describe('OCPP20RequestService BootNotification integration tests', async () => {
+await describe('B01 - Cold Boot Charging Station', async () => {
   const mockResponseService = new OCPP20ResponseService()
   const requestService = new OCPP20RequestService(mockResponseService)
 

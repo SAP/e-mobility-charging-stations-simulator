@@ -21,7 +21,7 @@ import {
   TEST_CONNECTOR_VALID_INSTANCE,
 } from './OCPP20TestConstants.js'
 
-await describe('OCPP20IncomingRequestService GetVariables integration tests', async () => {
+await describe('B06 - Get Variables', async () => {
   const mockChargingStation = createChargingStationWithEvses({
     baseName: TEST_CHARGING_STATION_NAME,
     heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,

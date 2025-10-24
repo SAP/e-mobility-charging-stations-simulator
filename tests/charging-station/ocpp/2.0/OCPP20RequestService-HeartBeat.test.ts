@@ -19,7 +19,7 @@ import {
   TEST_FIRMWARE_VERSION,
 } from './OCPP20TestConstants.js'
 
-await describe('OCPP20RequestService HeartBeat integration tests', async () => {
+await describe('G02 - Heartbeat', async () => {
   const mockResponseService = new OCPP20ResponseService()
   const requestService = new OCPP20RequestService(mockResponseService)
 

@@ -12,7 +12,7 @@ import { Constants } from '../../../../src/utils/index.js'
 import { createChargingStationWithEvses } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_NAME } from './OCPP20TestConstants.js'
 
-await describe('OCPP20IncomingRequestService ClearCache integration tests', async () => {
+await describe('C11 - Clear Authorization Data in Authorization Cache', async () => {
   const mockChargingStation = createChargingStationWithEvses({
     baseName: TEST_CHARGING_STATION_NAME,
     heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,

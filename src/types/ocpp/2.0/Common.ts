@@ -201,10 +201,67 @@ export enum OperationalStatusEnumType {
   Operative = 'Operative',
 }
 
+export enum ReasonCodeEnumType {
+  CSNotAccepted = 'CSNotAccepted',
+  DuplicateProfile = 'DuplicateProfile',
+  DuplicateRequestId = 'DuplicateRequestId',
+  FixedCable = 'FixedCable',
+  FwUpdateInProgress = 'FwUpdateInProgress',
+  InternalError = 'InternalError',
+  InvalidCertificate = 'InvalidCertificate',
+  InvalidCSR = 'InvalidCSR',
+  InvalidIdToken = 'InvalidIdToken',
+  InvalidMessageSeq = 'InvalidMessageSeq',
+  InvalidProfile = 'InvalidProfile',
+  InvalidSchedule = 'InvalidSchedule',
+  InvalidStackLevel = 'InvalidStackLevel',
+  InvalidURL = 'InvalidURL',
+  InvalidValue = 'InvalidValue',
+  MissingDevModelInfo = 'MissingDevModelInfo',
+  MissingParam = 'MissingParam',
+  NoCable = 'NoCable',
+  NoError = 'NoError',
+  NotEnabled = 'NotEnabled',
+  NotFound = 'NotFound',
+  OutOfMemory = 'OutOfMemory',
+  OutOfStorage = 'OutOfStorage',
+  ReadOnly = 'ReadOnly',
+  TooLargeElement = 'TooLargeElement',
+  TooManyElements = 'TooManyElements',
+  TxInProgress = 'TxInProgress',
+  TxNotFound = 'TxNotFound',
+  TxStarted = 'TxStarted',
+  UnknownConnectorId = 'UnknownConnectorId',
+  UnknownConnectorType = 'UnknownConnectorType',
+  UnknownEvse = 'UnknownEvse',
+  UnknownTxId = 'UnknownTxId',
+  Unspecified = 'Unspecified',
+  UnsupportedParam = 'UnsupportedParam',
+  UnsupportedRateUnit = 'UnsupportedRateUnit',
+  UnsupportedRequest = 'UnsupportedRequest',
+  ValueOutOfRange = 'ValueOutOfRange',
+  ValuePositiveOnly = 'ValuePositiveOnly',
+  ValueTooHigh = 'ValueTooHigh',
+  ValueTooLow = 'ValueTooLow',
+  ValueZeroNotAllowed = 'ValueZeroNotAllowed',
+  WriteOnly = 'WriteOnly',
+}
+
 export enum ReportBaseEnumType {
   ConfigurationInventory = 'ConfigurationInventory',
   FullInventory = 'FullInventory',
   SummaryInventory = 'SummaryInventory',
+}
+
+export enum ResetEnumType {
+  Immediate = 'Immediate',
+  OnIdle = 'OnIdle',
+}
+
+export enum ResetStatusEnumType {
+  Accepted = 'Accepted',
+  Rejected = 'Rejected',
+  Scheduled = 'Scheduled',
 }
 
 export interface CertificateHashDataChainType extends JsonObject {
@@ -261,7 +318,7 @@ export interface ReportDataType extends JsonObject {
 export interface StatusInfoType extends JsonObject {
   additionalInfo?: string
   customData?: CustomDataType
-  reasonCode: string
+  reasonCode: ReasonCodeEnumType
 }
 
 interface EVSEType extends JsonObject {

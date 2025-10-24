@@ -5,6 +5,7 @@ import type {
   GenericDeviceModelStatusEnumType,
   GenericStatusEnumType,
   InstallCertificateStatusEnumType,
+  ResetStatusEnumType,
   StatusInfoType,
 } from './Common.js'
 import type { OCPP20GetVariableResultType, OCPP20SetVariableResultType } from './Variables.js'
@@ -40,6 +41,11 @@ export interface OCPP20InstallCertificateResponse extends JsonObject {
 }
 
 export type OCPP20NotifyReportResponse = EmptyObject
+
+export interface OCPP20ResetResponse extends JsonObject {
+  status: ResetStatusEnumType
+  statusInfo?: StatusInfoType
+}
 
 export interface OCPP20SetVariablesResponse extends JsonObject {
   setVariableResult: OCPP20SetVariableResultType[]

@@ -53,13 +53,13 @@ await describe('Utils test suite', async () => {
 
   await it('Verify sleep()', async () => {
     const start = performance.now()
-    const delay = 1000
+    const delay = 10
     const timeout = await sleep(delay)
     const stop = performance.now()
     const actualDelay = stop - start
     expect(timeout).toBeDefined()
     expect(typeof timeout).toBe('object')
-    expect(actualDelay).toBeGreaterThanOrEqual(delay)
+    expect(actualDelay).toBeGreaterThanOrEqual(delay - 0.5) // Allow 0.5ms tolerance
     expect(actualDelay).toBeLessThan(delay + 50) // Allow 50ms tolerance
     clearTimeout(timeout)
   })

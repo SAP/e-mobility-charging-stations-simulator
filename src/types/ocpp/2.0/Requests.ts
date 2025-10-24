@@ -7,6 +7,7 @@ import type {
   OCPP20ConnectorStatusEnumType,
   ReportBaseEnumType,
   ReportDataType,
+  ResetEnumType,
 } from './Common.js'
 import type { OCPP20GetVariableDataType, OCPP20SetVariableDataType } from './Variables.js'
 
@@ -16,6 +17,7 @@ export enum OCPP20IncomingRequestCommand {
   GET_VARIABLES = 'GetVariables',
   REQUEST_START_TRANSACTION = 'RequestStartTransaction',
   REQUEST_STOP_TRANSACTION = 'RequestStopTransaction',
+  RESET = 'Reset',
 }
 
 export enum OCPP20RequestCommand {
@@ -54,6 +56,11 @@ export interface OCPP20NotifyReportRequest extends JsonObject {
   requestId: number
   seqNo: number
   tbc?: boolean
+}
+
+export interface OCPP20ResetRequest extends JsonObject {
+  evseId?: number
+  type: ResetEnumType
 }
 
 export interface OCPP20SetVariablesRequest extends JsonObject {

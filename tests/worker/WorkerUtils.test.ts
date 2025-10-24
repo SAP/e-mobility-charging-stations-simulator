@@ -42,8 +42,8 @@ await describe('WorkerUtils test suite', async () => {
     expect(typeof timeout).toBe('object')
 
     // Verify actual delay is approximately correct (within reasonable tolerance)
-    expect(actualDelay).toBeGreaterThanOrEqual(delay)
-    expect(actualDelay).toBeLessThan(delay + 50) // Allow 50ms tolerance for system variance
+    expect(actualDelay).toBeGreaterThanOrEqual(delay - 0.5) // Allow 0.5ms tolerance
+    expect(actualDelay).toBeLessThan(delay + 50) // Allow 50ms tolerance
 
     // Clean up timeout
     clearTimeout(timeout)

@@ -24,7 +24,7 @@ import {
   TEST_FIRMWARE_VERSION,
 } from './OCPP20TestConstants.js'
 
-await describe('OCPP20IncomingRequestService GetBaseReport integration tests', async () => {
+await describe('B07 - Get Base Report', async () => {
   const mockChargingStation = createChargingStationWithEvses({
     baseName: TEST_CHARGING_STATION_NAME,
     heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,

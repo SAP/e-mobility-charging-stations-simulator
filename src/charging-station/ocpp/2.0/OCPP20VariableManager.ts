@@ -5,7 +5,6 @@ import { millisecondsToSeconds } from 'date-fns'
 import {
   AttributeEnumType,
   type ComponentType,
-  GenericDeviceModelStatusEnumType,
   GetVariableStatusEnumType,
   MutabilityEnumType,
   OCPP20ComponentName,
@@ -13,6 +12,7 @@ import {
   type OCPP20GetVariableResultType,
   OCPP20OptionalVariableName,
   OCPP20RequiredVariableName,
+  ReasonCodeEnumType,
   type VariableType,
 } from '../../../types/index.js'
 import { Constants, logger } from '../../../utils/index.js'
@@ -73,7 +73,7 @@ export class OCPP20VariableManager {
           component: variableData.component,
           statusInfo: {
             additionalInfo: 'Internal error occurred while retrieving variable',
-            reasonCode: GenericDeviceModelStatusEnumType.Rejected,
+            reasonCode: ReasonCodeEnumType.InternalError,
           },
           variable: variableData.variable,
         })
@@ -101,7 +101,7 @@ export class OCPP20VariableManager {
         attributeStatus: GetVariableStatusEnumType.UnknownComponent,
         attributeStatusInfo: {
           additionalInfo: `Component ${component.name} is not supported by this charging station`,
-          reasonCode: GenericDeviceModelStatusEnumType.NotSupported,
+          reasonCode: ReasonCodeEnumType.NotFound,
         },
         attributeType,
         component,
@@ -115,7 +115,7 @@ export class OCPP20VariableManager {
         attributeStatus: GetVariableStatusEnumType.UnknownVariable,
         attributeStatusInfo: {
           additionalInfo: `Variable ${variable.name} is not supported for component ${component.name}`,
-          reasonCode: GenericDeviceModelStatusEnumType.NotSupported,
+          reasonCode: ReasonCodeEnumType.NotFound,
         },
         attributeType,
         component,
@@ -129,7 +129,7 @@ export class OCPP20VariableManager {
         attributeStatus: GetVariableStatusEnumType.NotSupportedAttributeType,
         attributeStatusInfo: {
           additionalInfo: `Attribute type ${attributeType} is not supported for variable ${variable.name}`,
-          reasonCode: GenericDeviceModelStatusEnumType.NotSupported,
+          reasonCode: ReasonCodeEnumType.UnsupportedParam,
         },
         attributeType,
         component,

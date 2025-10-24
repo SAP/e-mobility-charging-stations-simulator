@@ -13,6 +13,7 @@ import {
   type OCPP20GetVariableDataType,
   OCPP20OptionalVariableName,
   OCPP20RequiredVariableName,
+  ReasonCodeEnumType,
   type VariableType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
@@ -118,7 +119,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(result[0].component.name).toBe('InvalidComponent')
       expect(result[0].variable.name).toBe('SomeVariable')
       expect(result[0].attributeStatusInfo).toBeDefined()
-      expect(result[0].attributeStatusInfo?.reasonCode).toBe('NotSupported')
+      expect(result[0].attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.NotFound)
       expect(result[0].attributeStatusInfo?.additionalInfo).toContain(
         'Component InvalidComponent is not supported'
       )
@@ -143,7 +144,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(result[0].component.name).toBe(OCPP20ComponentName.ChargingStation)
       expect(result[0].variable.name).toBe('InvalidVariable')
       expect(result[0].attributeStatusInfo).toBeDefined()
-      expect(result[0].attributeStatusInfo?.reasonCode).toBe('NotSupported')
+      expect(result[0].attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.NotFound)
       expect(result[0].attributeStatusInfo?.additionalInfo).toContain(
         'Variable InvalidVariable is not supported'
       )
@@ -168,7 +169,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(result[0].component.name).toBe(OCPP20ComponentName.ChargingStation)
       expect(result[0].variable.name).toBe(OCPP20OptionalVariableName.HeartbeatInterval)
       expect(result[0].attributeStatusInfo).toBeDefined()
-      expect(result[0].attributeStatusInfo?.reasonCode).toBe('NotSupported')
+      expect(result[0].attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
       expect(result[0].attributeStatusInfo?.additionalInfo).toContain(
         'Attribute type Target is not supported'
       )
@@ -196,7 +197,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(result[0].component.instance).toBe('999')
       expect(result[0].variable.name).toBe(OCPP20RequiredVariableName.AuthorizeRemoteStart)
       expect(result[0].attributeStatusInfo).toBeDefined()
-      expect(result[0].attributeStatusInfo?.reasonCode).toBe('NotSupported')
+      expect(result[0].attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.NotFound)
       expect(result[0].attributeStatusInfo?.additionalInfo).toContain(
         'Component Connector is not supported'
       )

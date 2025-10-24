@@ -494,21 +494,54 @@ make SUBMODULES_INIT=true
 
 > **Note**: OCPP 2.0.x implementation is **partial** and under active development.
 
-#### Provisioning
+#### A. Provisioning
 
 - :white_check_mark: BootNotification
-- :white_check_mark: GetBaseReport (partial)
-- :white_check_mark: GetVariables
+- :white_check_mark: GetBaseReport
 - :white_check_mark: NotifyReport
 
-#### Authorization
+#### B. Authorization
 
 - :white_check_mark: ClearCache
 
-#### Availability
+#### C. Availability
 
-- :white_check_mark: StatusNotification
 - :white_check_mark: Heartbeat
+- :white_check_mark: StatusNotification
+
+#### E. Transactions
+
+- :x: RequestStartTransaction
+- :x: RequestStopTransaction
+- :x: TransactionEvent
+
+#### F. RemoteControl
+
+- :white_check_mark: Reset
+
+#### G. Monitoring
+
+- :white_check_mark: GetVariables
+- :x: SetVariables
+
+#### H. FirmwareManagement
+
+- :x: UpdateFirmware
+- :x: FirmwareStatusNotification
+
+#### I. ISO15118CertificateManagement
+
+- :x: InstallCertificate
+- :x: DeleteCertificate
+
+#### J. LocalAuthorizationListManagement
+
+- :x: GetLocalListVersion
+- :x: SendLocalList
+
+#### K. DataTransfer
+
+- :x: DataTransfer
 
 ## OCPP-J standard parameters supported
 
@@ -568,7 +601,7 @@ All kind of OCPP parameters are supported in charging station configuration or c
 
 ### Version 2.0.x
 
-> **Note**: OCPP 2.0.x variables management is not implemented yet.
+> **Note**: OCPP 2.0.x variables management is not yet implemented.
 
 ## UI Protocol
 
