@@ -17,6 +17,7 @@ import {
   type OCPP20ClearCacheRequest,
   OCPP20ComponentName,
   OCPP20ConnectorStatusEnumType,
+  OCPP20DeviceInfoVariableName,
   type OCPP20GetBaseReportRequest,
   type OCPP20GetBaseReportResponse,
   type OCPP20GetVariablesRequest,
@@ -25,7 +26,6 @@ import {
   type OCPP20NotifyReportRequest,
   type OCPP20NotifyReportResponse,
   OCPP20RequestCommand,
-  OCPP20VariableName,
   OCPPVersion,
   ReportBaseEnumType,
   type ReportDataType,
@@ -274,7 +274,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           if (stationInfo.chargePointModel) {
             reportData.push({
               component: { name: OCPP20ComponentName.ChargingStation },
-              variable: { name: OCPP20VariableName.Model },
+              variable: { name: OCPP20DeviceInfoVariableName.Model },
               variableAttribute: [
                 { type: AttributeEnumType.Actual as string, value: stationInfo.chargePointModel },
               ],
@@ -284,7 +284,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           if (stationInfo.chargePointVendor) {
             reportData.push({
               component: { name: OCPP20ComponentName.ChargingStation },
-              variable: { name: OCPP20VariableName.VendorName },
+              variable: { name: OCPP20DeviceInfoVariableName.VendorName },
               variableAttribute: [
                 { type: AttributeEnumType.Actual as string, value: stationInfo.chargePointVendor },
               ],
@@ -294,7 +294,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           if (stationInfo.chargePointSerialNumber) {
             reportData.push({
               component: { name: OCPP20ComponentName.ChargingStation },
-              variable: { name: OCPP20VariableName.SerialNumber },
+              variable: { name: OCPP20DeviceInfoVariableName.SerialNumber },
               variableAttribute: [
                 {
                   type: AttributeEnumType.Actual as string,
@@ -307,7 +307,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           if (stationInfo.firmwareVersion) {
             reportData.push({
               component: { name: OCPP20ComponentName.ChargingStation },
-              variable: { name: OCPP20VariableName.FirmwareVersion },
+              variable: { name: OCPP20DeviceInfoVariableName.FirmwareVersion },
               variableAttribute: [
                 { type: AttributeEnumType.Actual as string, value: stationInfo.firmwareVersion },
               ],
@@ -351,7 +351,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
                 evse: { id: evseId },
                 name: OCPP20ComponentName.EVSE,
               },
-              variable: { name: OCPP20VariableName.AvailabilityState },
+              variable: { name: OCPP20DeviceInfoVariableName.AvailabilityState },
               variableAttribute: [
                 { type: AttributeEnumType.Actual as string, value: evse.availability },
               ],
@@ -364,7 +364,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
                     evse: { connectorId, id: evseId },
                     name: OCPP20ComponentName.EVSE,
                   },
-                  variable: { name: OCPP20VariableName.ConnectorType },
+                  variable: { name: OCPP20DeviceInfoVariableName.ConnectorType },
                   variableAttribute: [
                     {
                       type: AttributeEnumType.Actual as string,
@@ -388,7 +388,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
                   evse: { connectorId, id: 1 },
                   name: OCPP20ComponentName.Connector,
                 },
-                variable: { name: OCPP20VariableName.ConnectorType },
+                variable: { name: OCPP20DeviceInfoVariableName.ConnectorType },
                 variableAttribute: [
                   {
                     type: AttributeEnumType.Actual as string,
@@ -411,7 +411,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           if (stationInfo.chargePointModel) {
             reportData.push({
               component: { name: OCPP20ComponentName.ChargingStation },
-              variable: { name: OCPP20VariableName.Model },
+              variable: { name: OCPP20DeviceInfoVariableName.Model },
               variableAttribute: [
                 { type: AttributeEnumType.Actual as string, value: stationInfo.chargePointModel },
               ],
@@ -421,7 +421,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           if (stationInfo.chargePointVendor) {
             reportData.push({
               component: { name: OCPP20ComponentName.ChargingStation },
-              variable: { name: OCPP20VariableName.VendorName },
+              variable: { name: OCPP20DeviceInfoVariableName.VendorName },
               variableAttribute: [
                 { type: AttributeEnumType.Actual as string, value: stationInfo.chargePointVendor },
               ],
@@ -431,7 +431,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           if (stationInfo.firmwareVersion) {
             reportData.push({
               component: { name: OCPP20ComponentName.ChargingStation },
-              variable: { name: OCPP20VariableName.FirmwareVersion },
+              variable: { name: OCPP20DeviceInfoVariableName.FirmwareVersion },
               variableAttribute: [
                 { type: AttributeEnumType.Actual as string, value: stationInfo.firmwareVersion },
               ],
@@ -442,7 +442,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
         reportData.push({
           component: { name: OCPP20ComponentName.ChargingStation },
-          variable: { name: OCPP20VariableName.AvailabilityState },
+          variable: { name: OCPP20DeviceInfoVariableName.AvailabilityState },
           variableAttribute: [
             {
               type: AttributeEnumType.Actual as string,
@@ -461,7 +461,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
                 evse: { id: evseId },
                 name: OCPP20ComponentName.EVSE,
               },
-              variable: { name: OCPP20VariableName.AvailabilityState },
+              variable: { name: OCPP20DeviceInfoVariableName.AvailabilityState },
               variableAttribute: [
                 { type: AttributeEnumType.Actual as string, value: evse.availability },
               ],
@@ -477,7 +477,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
                   evse: { connectorId, id: 1 },
                   name: OCPP20ComponentName.Connector,
                 },
-                variable: { name: OCPP20VariableName.AvailabilityState },
+                variable: { name: OCPP20DeviceInfoVariableName.AvailabilityState },
                 variableAttribute: [
                   {
                     type: AttributeEnumType.Actual as string,

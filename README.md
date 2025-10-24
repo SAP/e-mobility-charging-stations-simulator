@@ -498,6 +498,7 @@ make SUBMODULES_INIT=true
 
 - :white_check_mark: BootNotification
 - :white_check_mark: GetBaseReport (partial)
+- :white_check_mark: GetVariables
 - :white_check_mark: NotifyReport
 
 #### Authorization

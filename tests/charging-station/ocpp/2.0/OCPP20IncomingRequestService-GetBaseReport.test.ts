@@ -10,8 +10,8 @@ import { OCPP20IncomingRequestService } from '../../../../src/charging-station/o
 import {
   GenericDeviceModelStatusEnumType,
   OCPP20ComponentName,
+  OCPP20DeviceInfoVariableName,
   type OCPP20GetBaseReportRequest,
-  OCPP20VariableName,
   ReportBaseEnumType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
@@ -175,7 +175,7 @@ await describe('OCPP20IncomingRequestService GetBaseReport integration tests', a
     // Check for station info variables
     const modelVariable = reportData.find(
       (item: any) =>
-        item.variable.name === OCPP20VariableName.Model &&
+        item.variable.name === OCPP20DeviceInfoVariableName.Model &&
         item.component.name === OCPP20ComponentName.ChargingStation
     )
     expect(modelVariable).toBeDefined()
@@ -183,7 +183,7 @@ await describe('OCPP20IncomingRequestService GetBaseReport integration tests', a
 
     const vendorVariable = reportData.find(
       (item: any) =>
-        item.variable.name === OCPP20VariableName.VendorName &&
+        item.variable.name === OCPP20DeviceInfoVariableName.VendorName &&
         item.component.name === OCPP20ComponentName.ChargingStation
     )
     expect(vendorVariable).toBeDefined()
@@ -202,7 +202,7 @@ await describe('OCPP20IncomingRequestService GetBaseReport integration tests', a
     // Check for availability state variable
     const availabilityVariable = reportData.find(
       (item: any) =>
-        item.variable.name === OCPP20VariableName.AvailabilityState &&
+        item.variable.name === OCPP20DeviceInfoVariableName.AvailabilityState &&
         item.component.name === OCPP20ComponentName.ChargingStation
     )
     expect(availabilityVariable).toBeDefined()

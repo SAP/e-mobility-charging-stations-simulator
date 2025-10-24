@@ -12,10 +12,10 @@ import {
   AttributeEnumType,
   DataEnumType,
   OCPP20ComponentName,
+  OCPP20DeviceInfoVariableName,
   type OCPP20NotifyReportRequest,
   OCPP20OptionalVariableName,
   OCPP20RequestCommand,
-  OCPP20VariableName,
   type ReportDataType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
@@ -74,7 +74,7 @@ await describe('OCPP20RequestService NotifyReport integration tests', async () =
           name: OCPP20ComponentName.ChargingStation,
         },
         variable: {
-          name: OCPP20VariableName.Model,
+          name: OCPP20DeviceInfoVariableName.Model,
         },
         variableAttribute: [
           {
@@ -120,7 +120,7 @@ await describe('OCPP20RequestService NotifyReport integration tests', async () =
           name: OCPP20ComponentName.ChargingStation,
         },
         variable: {
-          name: OCPP20VariableName.Model,
+          name: OCPP20DeviceInfoVariableName.Model,
         },
         variableAttribute: [
           {
@@ -138,7 +138,7 @@ await describe('OCPP20RequestService NotifyReport integration tests', async () =
           name: OCPP20ComponentName.ChargingStation,
         },
         variable: {
-          name: OCPP20VariableName.VendorName,
+          name: OCPP20DeviceInfoVariableName.VendorName,
         },
         variableAttribute: [
           {
@@ -206,7 +206,7 @@ await describe('OCPP20RequestService NotifyReport integration tests', async () =
           name: OCPP20ComponentName.ChargingStation,
         },
         variable: {
-          name: OCPP20VariableName.SerialNumber,
+          name: OCPP20DeviceInfoVariableName.SerialNumber,
         },
         variableAttribute: [
           {
