@@ -281,6 +281,6 @@ interface VariableAttributeType extends JsonObject {
 }
 
 interface VariableCharacteristicsType extends JsonObject {
-  dataType: string
+  dataType: DataEnumType
   supportsMonitoring: boolean
 }

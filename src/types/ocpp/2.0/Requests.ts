@@ -8,11 +8,12 @@ import type {
   ReportBaseEnumType,
   ReportDataType,
 } from './Common.js'
-import type { OCPP20SetVariableDataType } from './Variables.js'
+import type { OCPP20GetVariableDataType, OCPP20SetVariableDataType } from './Variables.js'
 
 export enum OCPP20IncomingRequestCommand {
   CLEAR_CACHE = 'ClearCache',
   GET_BASE_REPORT = 'GetBaseReport',
+  GET_VARIABLES = 'GetVariables',
   REQUEST_START_TRANSACTION = 'RequestStartTransaction',
   REQUEST_STOP_TRANSACTION = 'RequestStopTransaction',
 }
@@ -34,6 +35,10 @@ export type OCPP20ClearCacheRequest = EmptyObject
 export interface OCPP20GetBaseReportRequest extends JsonObject {
   reportBase: ReportBaseEnumType
   requestId: number
+}
+
+export interface OCPP20GetVariablesRequest extends JsonObject {
+  getVariableData: OCPP20GetVariableDataType[]
 }
 
 export type OCPP20HeartbeatRequest = EmptyObject

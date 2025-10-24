@@ -143,7 +143,9 @@ export {
 } from './ocpp/1.6/Transaction.js'
 export {
   BootReasonEnumType,
+  type ComponentType,
   type CustomDataType,
+  DataEnumType,
   GenericDeviceModelStatusEnumType,
   OCPP20ComponentName,
   OCPP20ConnectorStatusEnumType,
@@ -154,6 +156,7 @@ export {
   type OCPP20BootNotificationRequest,
   type OCPP20ClearCacheRequest,
   type OCPP20GetBaseReportRequest,
+  type OCPP20GetVariablesRequest,
   type OCPP20HeartbeatRequest,
   OCPP20IncomingRequestCommand,
   type OCPP20NotifyReportRequest,
@@ -164,11 +167,22 @@ export type {
   OCPP20BootNotificationResponse,
   OCPP20ClearCacheResponse,
   OCPP20GetBaseReportResponse,
+  OCPP20GetVariablesResponse,
   OCPP20HeartbeatResponse,
   OCPP20NotifyReportResponse,
   OCPP20StatusNotificationResponse,
 } from './ocpp/2.0/Responses.js'
-export { OCPP20OptionalVariableName } from './ocpp/2.0/Variables.js'
+export {
+  AttributeEnumType,
+  GetVariableStatusEnumType,
+  MutabilityEnumType,
+  OCPP20DeviceInfoVariableName,
+  type OCPP20GetVariableDataType,
+  type OCPP20GetVariableResultType,
+  OCPP20OptionalVariableName,
+  OCPP20RequiredVariableName,
+  type VariableType,
+} from './ocpp/2.0/Variables.js'
 export { ChargePointErrorCode } from './ocpp/ChargePointErrorCode.js'
 export {
   type ChargingProfile,

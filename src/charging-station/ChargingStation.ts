@@ -386,6 +386,16 @@ export class ChargingStation extends EventEmitter {
     return this.getConfigurationFromFile()?.automaticTransactionGeneratorStatuses
   }
 
+  public getConnectionTimeout (): number {
+    if (getConfigurationKey(this, StandardParametersKey.ConnectionTimeOut) != null) {
+      return convertToInt(
+        getConfigurationKey(this, StandardParametersKey.ConnectionTimeOut)?.value ??
+          Constants.DEFAULT_CONNECTION_TIMEOUT
+      )
+    }
+    return Constants.DEFAULT_CONNECTION_TIMEOUT
+  }
+
   public getConnectorIdByTransactionId (transactionId: number | undefined): number | undefined {
     if (transactionId == null) {
       return undefined
@@ -594,6 +604,12 @@ export class ChargingStation extends EventEmitter {
         }
       }
     }
+  }
+
+  public getWebSocketPingInterval (): number {
+    return getConfigurationKey(this, StandardParametersKey.WebSocketPingInterval) != null
+      ? convertToInt(getConfigurationKey(this, StandardParametersKey.WebSocketPingInterval)?.value)
+      : Constants.DEFAULT_WEBSOCKET_PING_INTERVAL
   }
 
   public hasConnector (connectorId: number): boolean {
@@ -1196,17 +1212,6 @@ export class ChargingStation extends EventEmitter {
     throw new BaseError(errorMsg)
   }
 
-  // 0 for disabling
-  private getConnectionTimeout (): number {
-    if (getConfigurationKey(this, StandardParametersKey.ConnectionTimeOut) != null) {
-      return convertToInt(
-        getConfigurationKey(this, StandardParametersKey.ConnectionTimeOut)?.value ??
-          Constants.DEFAULT_CONNECTION_TIMEOUT
-      )
-    }
-    return Constants.DEFAULT_CONNECTION_TIMEOUT
-  }
-
   private getCurrentOutType (stationInfo?: ChargingStationInfo): CurrentType {
     return (
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -1439,12 +1444,6 @@ export class ChargingStation extends EventEmitter {
       (stationInfo ?? this.stationInfo!).voltageOut ??
       getDefaultVoltageOut(this.getCurrentOutType(stationInfo), this.logPrefix(), this.templateFile)
     )
-  }
-
-  private getWebSocketPingInterval (): number {
-    return getConfigurationKey(this, StandardParametersKey.WebSocketPingInterval) != null
-      ? convertToInt(getConfigurationKey(this, StandardParametersKey.WebSocketPingInterval)?.value)
-      : 0
   }
 
   private handleErrorMessage (errorResponse: ErrorResponse): void {

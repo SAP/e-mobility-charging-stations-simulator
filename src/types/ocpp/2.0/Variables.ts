@@ -1,6 +1,36 @@
 import type { JsonObject } from '../../JsonType.js'
 import type { ComponentType, StatusInfoType } from './Common.js'
 
+export enum AttributeEnumType {
+  Actual = 'Actual',
+  MaxSet = 'MaxSet',
+  MinSet = 'MinSet',
+  Target = 'Target',
+}
+
+export enum GetVariableStatusEnumType {
+  Accepted = 'Accepted',
+  NotSupportedAttributeType = 'NotSupportedAttributeType',
+  Rejected = 'Rejected',
+  UnknownComponent = 'UnknownComponent',
+  UnknownVariable = 'UnknownVariable',
+}
+
+export enum MutabilityEnumType {
+  ReadOnly = 'ReadOnly',
+  ReadWrite = 'ReadWrite',
+  WriteOnly = 'WriteOnly',
+}
+
+export enum OCPP20DeviceInfoVariableName {
+  AvailabilityState = 'AvailabilityState',
+  ConnectorType = 'ConnectorType',
+  FirmwareVersion = 'FirmwareVersion',
+  Model = 'Model',
+  SerialNumber = 'SerialNumber',
+  VendorName = 'VendorName',
+}
+
 export enum OCPP20OptionalVariableName {
   HeartbeatInterval = 'HeartbeatInterval',
   WebSocketPingInterval = 'WebSocketPingInterval',
@@ -41,13 +71,6 @@ export enum OCPP20VendorVariableName {
   ConnectionUrl = 'ConnectionUrl',
 }
 
-enum AttributeEnumType {
-  Actual = 'Actual',
-  MaxSet = 'MaxSet',
-  MinSet = 'MinSet',
-  Target = 'Target',
-}
-
 enum SetVariableStatusEnumType {
   Accepted = 'Accepted',
   NotSupportedAttributeType = 'NotSupportedAttributeType',
@@ -60,6 +83,21 @@ enum SetVariableStatusEnumType {
 export interface OCPP20ComponentVariableType extends JsonObject {
   component: ComponentType
   variable?: VariableType
+}
+
+export interface OCPP20GetVariableDataType extends JsonObject {
+  attributeType?: AttributeEnumType
+  component: ComponentType
+  variable: VariableType
+}
+
+export interface OCPP20GetVariableResultType extends JsonObject {
+  attributeStatus: GetVariableStatusEnumType
+  attributeStatusInfo?: StatusInfoType
+  attributeType?: AttributeEnumType
+  attributeValue?: string
+  component: ComponentType
+  variable: VariableType
 }
 
 export interface OCPP20SetVariableDataType extends JsonObject {
@@ -83,6 +121,7 @@ export interface VariableType extends JsonObject {
 }
 
 type VariableName =
+  | OCPP20DeviceInfoVariableName
   | OCPP20OptionalVariableName
   | OCPP20RequiredVariableName
   | OCPP20VendorVariableName
