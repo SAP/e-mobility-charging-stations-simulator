@@ -23,7 +23,6 @@
 
 - [ ] Update relevant documentation if public API changed
 - [ ] Ensure commit messages follow Conventional Commits format
-- [ ] Update CHANGELOG.md if needed for user-facing changes
 
 ### 5. OCPP Compliance (if applicable)
 
