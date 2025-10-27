@@ -6,7 +6,6 @@ import {
   AttributeEnumType,
   type ComponentType,
   GetVariableStatusEnumType,
-  MutabilityEnumType,
   OCPP20ComponentName,
   type OCPP20GetVariableDataType,
   type OCPP20GetVariableResultType,
@@ -26,33 +25,37 @@ import {
   addConfigurationKey,
   getConfigurationKey,
   setConfigurationKeyValue,
+  validateConfigurationValue,
 } from '../../ConfigurationKeyUtils.js'
 
-/**
- * Configuration for a standard or vendor OCPP 2.0 variable
- */
-interface StandardVariableConfig {
-  attributeTypes: AttributeEnumType[]
-  defaultValue?: string
-  mutability: MutabilityEnumType
-  persistent: boolean
-}
+// Translation-only refactor eliminating duplicated persistence/validation logic.
+// Persistent configuration-backed variables.
+const PERSISTENT_VARIABLES = new Set<string>([
+  OCPP20OptionalVariableName.HeartbeatInterval as string,
+  OCPP20OptionalVariableName.WebSocketPingInterval as string,
+  OCPP20RequiredVariableName.EVConnectionTimeOut as string,
+  OCPP20RequiredVariableName.MessageTimeout as string,
+  OCPP20VendorVariableName.ConnectionUrl as string,
+])
+// Write-only variables.
+const WRITE_ONLY_VARIABLES = new Set<string>([OCPP20VendorVariableName.ConnectionUrl as string])
+// Non-persistent runtime variables (transient overrides allowed).
+const RUNTIME_VARIABLES = new Set<string>([
+  OCPP20RequiredVariableName.AuthorizeRemoteStart as string,
+  OCPP20RequiredVariableName.DateTime as string,
+  OCPP20RequiredVariableName.TxUpdatedInterval as string,
+])
 
-/**
- * OCPP 2.0 Variable Manager acting strictly as a translation proxy between
- * OCPP component/variable identifiers and existing configuration helpers.
- * It delegates persistence, mutability and validation semantics to
- * configuration key utilities and only assembles OCPP-compliant responses.
- */
 export class OCPP20VariableManager {
   private static instance: null | OCPP20VariableManager = null
 
-  // runtime (non-persistent) variable values kept across lifetime until restart (transient only)
-  private readonly runtimeVariables = new Map<string, string>()
-  private readonly standardVariables = new Map<string, StandardVariableConfig>()
+  // Track invalid mappings discovered at startup self-check (transient only).
+  private readonly invalidVariables = new Set<string>()
+  // Transient runtime overrides for non-persistent variables.
+  private readonly runtimeOverrides = new Map<string, string>() // key format: component[.instance].variable
 
   private constructor () {
-    this.initializeStandardVariables()
+    // Lazy mapping check occurs on first request via performMappingSelfCheck.
   }
 
   public static getInstance (): OCPP20VariableManager {
@@ -64,8 +67,8 @@ export class OCPP20VariableManager {
     chargingStation: ChargingStation,
     getVariableData: OCPP20GetVariableDataType[]
   ): OCPP20GetVariableResultType[] {
+    this.performMappingSelfCheck(chargingStation)
     const results: OCPP20GetVariableResultType[] = []
-
     for (const variableData of getVariableData) {
       try {
         const result = this.getVariable(chargingStation, variableData)
@@ -87,20 +90,75 @@ export class OCPP20VariableManager {
         })
       }
     }
-
     return results
   }
 
+  public performMappingSelfCheck (chargingStation: ChargingStation): void {
+    for (const variableName of PERSISTENT_VARIABLES) {
+      if (variableName === (OCPP20VendorVariableName.ConnectionUrl as string)) {
+        continue
+      }
+      const existing = getConfigurationKey(
+        chargingStation,
+        variableName as unknown as StandardParametersKey
+      )
+      const variableKey = `${OCPP20ComponentName.ChargingStation as string}.${variableName}`
+      if (existing == null) {
+        let defaultValue: string | undefined
+        switch (variableName) {
+          case OCPP20OptionalVariableName.HeartbeatInterval as string:
+            defaultValue = millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL).toString()
+            break
+          case OCPP20OptionalVariableName.WebSocketPingInterval as string:
+            defaultValue = Constants.DEFAULT_WEBSOCKET_PING_INTERVAL.toString()
+            break
+          case OCPP20RequiredVariableName.EVConnectionTimeOut as string:
+            defaultValue = Constants.DEFAULT_EV_CONNECTION_TIMEOUT.toString()
+            break
+          case OCPP20RequiredVariableName.MessageTimeout as string:
+            defaultValue = Constants.DEFAULT_CONNECTION_TIMEOUT.toString()
+            break
+        }
+        if (defaultValue != null) {
+          addConfigurationKey(
+            chargingStation,
+            variableName as unknown as StandardParametersKey,
+            defaultValue,
+            undefined,
+            { overwrite: false }
+          )
+          logger.info(
+            `${chargingStation.logPrefix()} Added missing configuration key for variable '${variableName}' with default '${defaultValue}'`
+          )
+          this.invalidVariables.delete(variableKey)
+        } else {
+          this.invalidVariables.add(variableKey)
+          logger.error(
+            `${chargingStation.logPrefix()} Missing configuration key mapping and no default for variable '${variableName}', marking as INTERNAL ERROR`
+          )
+        }
+      } else {
+        this.invalidVariables.delete(variableKey)
+      }
+    }
+  }
+
+  public resetRuntimeOverrides (): void {
+    this.resetRuntimeVariables()
+  }
+
+  // Compatibility method retained for existing callers (ChargingStation.reset())
+  // Clears transient runtime overrides for non-persistent variables.
   public resetRuntimeVariables (): void {
-    this.runtimeVariables.clear()
+    this.runtimeOverrides.clear()
   }
 
   public setVariables (
     chargingStation: ChargingStation,
     setVariableData: OCPP20SetVariableDataType[]
   ): OCPP20SetVariableResultType[] {
+    this.performMappingSelfCheck(chargingStation)
     const results: OCPP20SetVariableResultType[] = []
-
     for (const variableData of setVariableData) {
       try {
         const result = this.setVariable(chargingStation, variableData)
@@ -122,7 +180,6 @@ export class OCPP20VariableManager {
         })
       }
     }
-
     return results
   }
 
@@ -133,245 +190,77 @@ export class OCPP20VariableManager {
     const { attributeType, component, variable } = variableData
 
     if (!this.isComponentValid(chargingStation, component)) {
-      return {
-        attributeStatus: GetVariableStatusEnumType.UnknownComponent,
-        attributeStatusInfo: {
-          additionalInfo: `Component ${component.name} is not supported by this charging station`,
-          reasonCode: ReasonCodeEnumType.NotFound,
-        },
-        attributeType,
-        component,
+      return this.rejectGet(
         variable,
-      }
+        component,
+        attributeType,
+        GetVariableStatusEnumType.UnknownComponent,
+        ReasonCodeEnumType.NotFound,
+        `Component ${component.name} is not supported by this charging station`
+      )
     }
 
-    if (!this.isVariableSupported(chargingStation, component, variable)) {
-      return {
-        attributeStatus: GetVariableStatusEnumType.UnknownVariable,
-        attributeStatusInfo: {
-          additionalInfo: `Variable ${variable.name} is not supported for component ${component.name}`,
-          reasonCode: ReasonCodeEnumType.NotFound,
-        },
-        attributeType,
-        component,
+    if (!this.isVariableSupported(component, variable)) {
+      return this.rejectGet(
         variable,
-      }
+        component,
+        attributeType,
+        GetVariableStatusEnumType.UnknownVariable,
+        ReasonCodeEnumType.NotFound,
+        `Variable ${variable.name} is not supported for component ${component.name}`
+      )
     }
 
-    if (attributeType && !this.isAttributeTypeSupported(variable, attributeType)) {
-      return {
-        attributeStatus: GetVariableStatusEnumType.NotSupportedAttributeType,
-        attributeStatusInfo: {
-          additionalInfo: `Attribute type ${attributeType} is not supported for variable ${variable.name}`,
-          reasonCode: ReasonCodeEnumType.UnsupportedParam,
-        },
-        attributeType,
-        component,
+    // Enforce write-only semantics: reject GetVariables on write-only variables.
+    if (WRITE_ONLY_VARIABLES.has(variable.name)) {
+      return this.rejectGet(
         variable,
-      }
+        component,
+        attributeType,
+        GetVariableStatusEnumType.Rejected,
+        ReasonCodeEnumType.UnsupportedParam,
+        `Variable ${variable.name} is write-only and cannot be retrieved`
+      )
+    }
+    if (attributeType && attributeType !== AttributeEnumType.Actual) {
+      return this.rejectGet(
+        variable,
+        component,
+        attributeType,
+        GetVariableStatusEnumType.NotSupportedAttributeType,
+        ReasonCodeEnumType.UnsupportedParam,
+        `Attribute type ${attributeType} is not supported for variable ${variable.name}`
+      )
     }
 
-    // WriteOnly get rejection
-    const variableKey = `${component.name}.${variable.name}`
-    const standardConfig = this.standardVariables.get(variableKey)
-    if (standardConfig && standardConfig.mutability === MutabilityEnumType.WriteOnly) {
-      return {
-        attributeStatus: GetVariableStatusEnumType.Rejected,
-        attributeStatusInfo: {
-          additionalInfo: `Variable ${variable.name} is write-only`,
-          reasonCode: ReasonCodeEnumType.UnsupportedParam,
-        },
-        attributeType,
-        component,
+    const variableKey = `${component.name}${component.instance ? '.' + component.instance : ''}.${variable.name}`
+    if (this.invalidVariables.has(variableKey)) {
+      return this.rejectGet(
         variable,
-      }
+        component,
+        attributeType,
+        GetVariableStatusEnumType.Rejected,
+        ReasonCodeEnumType.InternalError,
+        'Variable mapping invalid (startup self-check failed)'
+      )
     }
 
-    const variableValue = this.getVariableValue(chargingStation, component, variable, attributeType)
+    const value = this.resolveVariableValue(chargingStation, component, variable)
 
     return {
       attributeStatus: GetVariableStatusEnumType.Accepted,
       attributeType,
-      attributeValue: variableValue,
+      attributeValue: value,
       component,
       variable,
     }
   }
 
-  private getVariableValue (
-    chargingStation: ChargingStation,
-    component: ComponentType,
-    variable: VariableType,
-    attributeType?: AttributeEnumType
-  ): string {
-    const variableName = variable.name
-    const componentName = component.name
-    const variableKey = `${componentName}.${variableName}`
-
-    if (componentName === (OCPP20ComponentName.ChargingStation as string)) {
-      // Dynamic DateTime retrieval (UTC RFC3339)
-      if (variableName === (OCPP20RequiredVariableName.DateTime as string)) {
-        return new Date().toISOString()
-      }
-
-      if (variableName === (OCPP20OptionalVariableName.HeartbeatInterval as string)) {
-        const hbConfigKey = chargingStation.ocppConfiguration?.configurationKey?.find(
-          key => key.key === (OCPP20OptionalVariableName.HeartbeatInterval as string)
-        )
-        return (
-          hbConfigKey?.value ??
-          millisecondsToSeconds(chargingStation.getHeartbeatInterval()).toString()
-        )
-      }
-
-      if (variableName === (OCPP20OptionalVariableName.WebSocketPingInterval as string)) {
-        const wsConfigKey = chargingStation.ocppConfiguration?.configurationKey?.find(
-          key => key.key === (OCPP20OptionalVariableName.WebSocketPingInterval as string)
-        )
-        return wsConfigKey?.value ?? chargingStation.getWebSocketPingInterval().toString()
-      }
-
-      if (variableName === (OCPP20RequiredVariableName.EVConnectionTimeOut as string)) {
-        return Constants.DEFAULT_EV_CONNECTION_TIMEOUT.toString()
-      }
-
-      if (variableName === (OCPP20RequiredVariableName.MessageTimeout as string)) {
-        return chargingStation.getConnectionTimeout().toString()
-      }
-
-      // Non-persistent runtime variables
-      const config = this.standardVariables.get(variableKey)
-      if (config && !config.persistent && this.runtimeVariables.has(variableKey)) {
-        return this.runtimeVariables.get(variableKey) ?? ''
-      }
-
-      const configKey = chargingStation.ocppConfiguration?.configurationKey?.find(
-        key => key.key === variableName
-      )
-      if (configKey?.value) {
-        return configKey.value
-      }
-      return config?.defaultValue ?? ''
-    }
-
-    if (componentName === (OCPP20ComponentName.Connector as string)) {
-      const connectorId = component.instance ? parseInt(component.instance, 10) : 1
-      const connector = chargingStation.connectors.get(connectorId)
-
-      if (connector) {
-        switch (variableName) {
-          default:
-            return ''
-        }
-      }
-    }
-
-    if (componentName === (OCPP20ComponentName.EVSE as string)) {
-      const evseId = component.instance ? parseInt(component.instance, 10) : 1
-      const evse = chargingStation.evses.get(evseId)
-
-      if (evse) {
-        switch (variableName) {
-          default:
-            return ''
-        }
-      }
-    }
-
-    return ''
-  }
-
-  private initializeStandardVariables (): void {
-    this.standardVariables.set(
-      `${OCPP20ComponentName.ChargingStation}.${OCPP20OptionalVariableName.HeartbeatInterval}`,
-      {
-        attributeTypes: [AttributeEnumType.Actual],
-        defaultValue: millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL).toString(),
-        mutability: MutabilityEnumType.ReadWrite,
-        persistent: true,
-      }
-    )
-
-    this.standardVariables.set(
-      `${OCPP20ComponentName.ChargingStation}.${OCPP20OptionalVariableName.WebSocketPingInterval}`,
-      {
-        attributeTypes: [AttributeEnumType.Actual],
-        defaultValue: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL.toString(),
-        mutability: MutabilityEnumType.ReadWrite,
-        persistent: true,
-      }
-    )
-
-    this.standardVariables.set(
-      `${OCPP20ComponentName.ChargingStation}.${OCPP20RequiredVariableName.EVConnectionTimeOut}`,
-      {
-        attributeTypes: [AttributeEnumType.Actual],
-        defaultValue: Constants.DEFAULT_EV_CONNECTION_TIMEOUT.toString(),
-        mutability: MutabilityEnumType.ReadWrite,
-        persistent: true,
-      }
-    )
-
-    this.standardVariables.set(
-      `${OCPP20ComponentName.ChargingStation}.${OCPP20RequiredVariableName.MessageTimeout}`,
-      {
-        attributeTypes: [AttributeEnumType.Actual],
-        defaultValue: Constants.DEFAULT_CONNECTION_TIMEOUT.toString(),
-        mutability: MutabilityEnumType.ReadWrite,
-        persistent: true,
-      }
-    )
-
-    // New variables
-    this.standardVariables.set(
-      `${OCPP20ComponentName.ChargingStation}.${OCPP20RequiredVariableName.DateTime}`,
-      {
-        attributeTypes: [AttributeEnumType.Actual],
-        mutability: MutabilityEnumType.ReadOnly,
-        persistent: false,
-      }
-    )
-
-    this.standardVariables.set(
-      `${OCPP20ComponentName.ChargingStation}.${OCPP20RequiredVariableName.TxUpdatedInterval}`,
-      {
-        attributeTypes: [AttributeEnumType.Actual],
-        defaultValue: '30', // implementation-defined baseline
-        mutability: MutabilityEnumType.ReadWrite,
-        persistent: false, // non-persistent, revert after restart
-      }
-    )
-
-    this.standardVariables.set(
-      `${OCPP20ComponentName.ChargingStation}.${OCPP20VendorVariableName.ConnectionUrl}`,
-      {
-        attributeTypes: [AttributeEnumType.Actual],
-        mutability: MutabilityEnumType.WriteOnly,
-        persistent: true,
-      }
-    )
-  }
-
-  private isAttributeTypeSupported (
-    variable: VariableType,
-    attributeType: AttributeEnumType
-  ): boolean {
-    if (attributeType === AttributeEnumType.Actual) {
-      return true
-    }
-
-    const variablesWithConfigurableAttributes: string[] = []
-
-    return variablesWithConfigurableAttributes.includes(variable.name)
-  }
-
   private isComponentValid (chargingStation: ChargingStation, component: ComponentType): boolean {
     const componentName = component.name
-
     if (componentName === (OCPP20ComponentName.ChargingStation as string)) {
       return true
     }
-
     if (
       componentName === (OCPP20ComponentName.Connector as string) &&
       chargingStation.connectors.size > 0
@@ -382,7 +271,6 @@ export class OCPP20VariableManager {
       }
       return true
     }
-
     if (componentName === (OCPP20ComponentName.EVSE as string) && chargingStation.hasEvses) {
       if (component.instance != null) {
         const evseId = parseInt(component.instance, 10)
@@ -390,33 +278,125 @@ export class OCPP20VariableManager {
       }
       return true
     }
-
     return false
   }
 
-  private isVariableSupported (
+  private isVariableSupported (component: ComponentType, variable: VariableType): boolean {
+    if (component.name === (OCPP20ComponentName.ChargingStation as string)) {
+      const supported = [...PERSISTENT_VARIABLES.values(), ...RUNTIME_VARIABLES.values()]
+      return supported.includes(variable.name)
+    }
+    if (component.name === (OCPP20ComponentName.Connector as string)) {
+      // AuthorizeRemoteStart supported on Connector component
+      return variable.name === (OCPP20RequiredVariableName.AuthorizeRemoteStart as string)
+    }
+    if (component.name === (OCPP20ComponentName.EVSE as string)) {
+      // AuthorizeRemoteStart supported on EVSE component
+      return variable.name === (OCPP20RequiredVariableName.AuthorizeRemoteStart as string)
+    }
+    return false
+  }
+
+  private rejectGet (
+    variable: VariableType,
+    component: ComponentType,
+    attributeType: AttributeEnumType | undefined,
+    status: GetVariableStatusEnumType,
+    reason: ReasonCodeEnumType,
+    info: string
+  ): OCPP20GetVariableResultType {
+    return {
+      attributeStatus: status,
+      attributeStatusInfo: {
+        additionalInfo: info,
+        reasonCode: reason,
+      },
+      attributeType,
+      component,
+      variable,
+    }
+  }
+
+  private rejectSet (
+    variable: VariableType,
+    component: ComponentType,
+    attributeType: AttributeEnumType,
+    status: SetVariableStatusEnumType,
+    reason: ReasonCodeEnumType,
+    info: string
+  ): OCPP20SetVariableResultType {
+    return {
+      attributeStatus: status,
+      attributeStatusInfo: {
+        additionalInfo: info,
+        reasonCode: reason,
+      },
+      attributeType,
+      component,
+      variable,
+    }
+  }
+
+  private resolveVariableValue (
     chargingStation: ChargingStation,
     component: ComponentType,
     variable: VariableType
-  ): boolean {
-    const variableKey = `${component.name}.${variable.name}`
+  ): string {
+    const variableName = variable.name
+    const componentName = component.name
+    const variableKey = `${componentName}${component.instance ? '.' + component.instance : ''}.${variableName}`
 
-    if (this.standardVariables.has(variableKey)) {
-      return true
+    if (componentName === (OCPP20ComponentName.ChargingStation as string)) {
+      if (variableName === (OCPP20RequiredVariableName.DateTime as string)) {
+        return new Date().toISOString()
+      }
+      if (variableName === (OCPP20OptionalVariableName.HeartbeatInterval as string)) {
+        const hbConfigKey = getConfigurationKey(
+          chargingStation,
+          variableName as unknown as StandardParametersKey
+        )
+        return (
+          hbConfigKey?.value ??
+          millisecondsToSeconds(chargingStation.getHeartbeatInterval()).toString()
+        )
+      }
+      if (variableName === (OCPP20OptionalVariableName.WebSocketPingInterval as string)) {
+        const wsConfigKey = getConfigurationKey(
+          chargingStation,
+          variableName as unknown as StandardParametersKey
+        )
+        return wsConfigKey?.value ?? chargingStation.getWebSocketPingInterval().toString()
+      }
+      if (variableName === (OCPP20RequiredVariableName.EVConnectionTimeOut as string)) {
+        const cfg = getConfigurationKey(
+          chargingStation,
+          variableName as unknown as StandardParametersKey
+        )
+        return cfg?.value ?? Constants.DEFAULT_EV_CONNECTION_TIMEOUT.toString()
+      }
+      if (variableName === (OCPP20RequiredVariableName.MessageTimeout as string)) {
+        const cfg = getConfigurationKey(
+          chargingStation,
+          variableName as unknown as StandardParametersKey
+        )
+        return cfg?.value ?? chargingStation.getConnectionTimeout().toString()
+      }
+      if (RUNTIME_VARIABLES.has(variableName) && this.runtimeOverrides.has(variableKey)) {
+        return this.runtimeOverrides.get(variableKey) ?? ''
+      }
+      // Default fallback for TxUpdatedInterval runtime variable after reset
+      if (variableName === (OCPP20RequiredVariableName.TxUpdatedInterval as string)) {
+        return Constants.DEFAULT_TX_UPDATED_INTERVAL.toString()
+      }
+      const configKey = getConfigurationKey(
+        chargingStation,
+        variableName as unknown as StandardParametersKey
+      )
+      return configKey?.value ?? ''
     }
 
-    const knownVariables = [
-      ...Object.values(OCPP20OptionalVariableName),
-      ...Object.values(OCPP20RequiredVariableName),
-      ...Object.values(OCPP20VendorVariableName),
-    ]
-
-    return knownVariables.includes(
-      variable.name as
-        | OCPP20OptionalVariableName
-        | OCPP20RequiredVariableName
-        | OCPP20VendorVariableName
-    )
+    // Future: Connector/EVSE variables support.
+    return ''
   }
 
   private setVariable (
@@ -427,95 +407,94 @@ export class OCPP20VariableManager {
     const resolvedAttributeType = attributeType ?? AttributeEnumType.Actual
 
     if (!this.isComponentValid(chargingStation, component)) {
-      return {
-        attributeStatus: SetVariableStatusEnumType.UnknownComponent,
-        attributeStatusInfo: {
-          additionalInfo: `Component ${component.name} is not supported by this charging station`,
-          reasonCode: ReasonCodeEnumType.NotFound,
-        },
-        attributeType: resolvedAttributeType,
-        component,
+      return this.rejectSet(
         variable,
+        component,
+        resolvedAttributeType,
+        SetVariableStatusEnumType.UnknownComponent,
+        ReasonCodeEnumType.NotFound,
+        `Component ${component.name} is not supported by this charging station`
+      )
+    }
+    if (!this.isVariableSupported(component, variable)) {
+      return this.rejectSet(
+        variable,
+        component,
+        resolvedAttributeType,
+        SetVariableStatusEnumType.UnknownVariable,
+        ReasonCodeEnumType.NotFound,
+        `Variable ${variable.name} is not supported for component ${component.name}`
+      )
+    }
+    if (resolvedAttributeType !== AttributeEnumType.Actual) {
+      return this.rejectSet(
+        variable,
+        component,
+        resolvedAttributeType,
+        SetVariableStatusEnumType.NotSupportedAttributeType,
+        ReasonCodeEnumType.UnsupportedParam,
+        `Attribute type ${resolvedAttributeType} is not supported for variable ${variable.name}`
+      )
+    }
+
+    const variableKey = `${component.name}${component.instance ? '.' + component.instance : ''}.${variable.name}`
+    if (this.invalidVariables.has(variableKey)) {
+      if (!WRITE_ONLY_VARIABLES.has(variable.name)) {
+        return this.rejectSet(
+          variable,
+          component,
+          resolvedAttributeType,
+          SetVariableStatusEnumType.Rejected,
+          ReasonCodeEnumType.InternalError,
+          'Variable mapping invalid (startup self-check failed)'
+        )
+      } else {
+        this.invalidVariables.delete(variableKey)
       }
     }
 
-    if (!this.isVariableSupported(chargingStation, component, variable)) {
-      return {
-        attributeStatus: SetVariableStatusEnumType.UnknownVariable,
-        attributeStatusInfo: {
-          additionalInfo: `Variable ${variable.name} is not supported for component ${component.name}`,
-          reasonCode: ReasonCodeEnumType.NotFound,
-        },
-        attributeType: resolvedAttributeType,
-        component,
+    if (
+      !WRITE_ONLY_VARIABLES.has(variable.name) &&
+      !PERSISTENT_VARIABLES.has(variable.name) &&
+      !RUNTIME_VARIABLES.has(variable.name)
+    ) {
+      return this.rejectSet(
         variable,
-      }
+        component,
+        resolvedAttributeType,
+        SetVariableStatusEnumType.Rejected,
+        ReasonCodeEnumType.UnsupportedParam,
+        `Variable ${variable.name} unsupported for write operations`
+      )
     }
 
-    if (!this.isAttributeTypeSupported(variable, resolvedAttributeType)) {
-      return {
-        attributeStatus: SetVariableStatusEnumType.NotSupportedAttributeType,
-        attributeStatusInfo: {
-          additionalInfo: `Attribute type ${resolvedAttributeType} is not supported for variable ${variable.name}`,
-          reasonCode: ReasonCodeEnumType.UnsupportedParam,
-        },
-        attributeType: resolvedAttributeType,
-        component,
+    const validation = validateConfigurationValue(variable.name, attributeValue)
+    if (!validation.valid) {
+      return this.rejectSet(
         variable,
-      }
+        component,
+        resolvedAttributeType,
+        SetVariableStatusEnumType.Rejected,
+        ReasonCodeEnumType.PropertyConstraintViolation,
+        validation.additionalInfo ?? 'Property constraint violation'
+      )
     }
 
-    const variableKey = `${component.name}.${variable.name}`
-    const standardConfig = this.standardVariables.get(variableKey)
-    if (standardConfig && standardConfig.mutability === MutabilityEnumType.ReadOnly) {
-      return {
-        attributeStatus: SetVariableStatusEnumType.Rejected,
-        attributeStatusInfo: {
-          additionalInfo: `Variable ${variable.name} is immutable`,
-          reasonCode: ReasonCodeEnumType.ImmutableVariable,
-        },
-        attributeType: resolvedAttributeType,
-        component,
+    // Immutable DateTime enforcement
+    if (variable.name === (OCPP20RequiredVariableName.DateTime as string)) {
+      return this.rejectSet(
         variable,
-      }
-    }
-
-    if (attributeValue.length > 1000) {
-      return {
-        attributeStatus: SetVariableStatusEnumType.Rejected,
-        attributeStatusInfo: {
-          additionalInfo: `Attribute value length ${attributeValue.length.toString()} exceeds maximum allowed`,
-          reasonCode: ReasonCodeEnumType.PropertyConstraintViolation,
-        },
-        attributeType: resolvedAttributeType,
         component,
-        variable,
-      }
-    }
-
-    // Central basic format/range validation (mapped to PropertyConstraintViolation on failure)
-    const validationOk = this.validateBasicValue(variable, attributeValue)
-    if (!validationOk.valid) {
-      return {
-        attributeStatus: SetVariableStatusEnumType.Rejected,
-        attributeStatusInfo: {
-          additionalInfo: validationOk.additionalInfo,
-          reasonCode: ReasonCodeEnumType.PropertyConstraintViolation,
-        },
-        attributeType: resolvedAttributeType,
-        component,
-        variable,
-      }
+        resolvedAttributeType,
+        SetVariableStatusEnumType.Rejected,
+        ReasonCodeEnumType.ImmutableVariable,
+        'Variable DateTime is immutable'
+      )
     }
 
     let rebootRequired = false
-
     if (component.name === (OCPP20ComponentName.ChargingStation as string)) {
-      // Delegate persistence to configuration helpers for persistent variables
-      if (
-        standardConfig?.persistent === true &&
-        resolvedAttributeType === AttributeEnumType.Actual
-      ) {
+      if (PERSISTENT_VARIABLES.has(variable.name)) {
         const configKeyName = variable.name as unknown as StandardParametersKey
         let configKey = getConfigurationKey(chargingStation, configKeyName)
         const previousValue = configKey?.value
@@ -528,27 +507,28 @@ export class OCPP20VariableManager {
           setConfigurationKeyValue(chargingStation, configKeyName, attributeValue)
         }
         rebootRequired = configKey?.reboot === true && previousValue !== attributeValue
-      } else if (standardConfig && !standardConfig.persistent) {
-        // Store non-persistent runtime value (transient only)
-        this.runtimeVariables.set(variableKey, attributeValue)
+      } else if (RUNTIME_VARIABLES.has(variable.name)) {
+        this.runtimeOverrides.set(variableKey, attributeValue)
       }
-
       if (
         variable.name === (OCPP20OptionalVariableName.HeartbeatInterval as string) &&
-        resolvedAttributeType === AttributeEnumType.Actual &&
         !Number.isNaN(parseInt(attributeValue, 10)) &&
         parseInt(attributeValue, 10) > 0
       ) {
         chargingStation.restartHeartbeat()
       }
-
       if (
         variable.name === (OCPP20OptionalVariableName.WebSocketPingInterval as string) &&
-        resolvedAttributeType === AttributeEnumType.Actual &&
         !Number.isNaN(parseInt(attributeValue, 10)) &&
         parseInt(attributeValue, 10) >= 0
       ) {
         chargingStation.restartWebSocketPing()
+      }
+    }
+    // Support runtime override on Connector for AuthorizeRemoteStart
+    if (component.name === (OCPP20ComponentName.Connector as string)) {
+      if (variable.name === (OCPP20RequiredVariableName.AuthorizeRemoteStart as string)) {
+        this.runtimeOverrides.set(variableKey, attributeValue)
       }
     }
 
@@ -565,57 +545,11 @@ export class OCPP20VariableManager {
       }
     }
 
-    // Accepted without reboot: omit attributeStatusInfo to conform & avoid non-standard reason codes
     return {
       attributeStatus: SetVariableStatusEnumType.Accepted,
       attributeType: resolvedAttributeType,
       component,
       variable,
     }
-  }
-
-  private validateBasicValue (
-    variable: VariableType,
-    value: string
-  ): { additionalInfo?: string; valid: boolean } {
-    // Positive integer > 0 requirements
-    const positiveIntegerVariables: string[] = [
-      OCPP20RequiredVariableName.TxUpdatedInterval as string,
-      OCPP20OptionalVariableName.HeartbeatInterval as string,
-      OCPP20RequiredVariableName.EVConnectionTimeOut as string,
-      OCPP20RequiredVariableName.MessageTimeout as string,
-    ]
-    if (positiveIntegerVariables.includes(variable.name)) {
-      if (!/^[0-9]+$/.test(value)) {
-        return { additionalInfo: 'Positive integer > 0 required', valid: false }
-      }
-      if (parseInt(value, 10) <= 0) {
-        return { additionalInfo: 'Positive integer > 0 required', valid: false }
-      }
-    }
-
-    // WebSocketPingInterval: integer >= 0
-    if (variable.name === (OCPP20OptionalVariableName.WebSocketPingInterval as string)) {
-      if (!/^[0-9]+$/.test(value)) {
-        return { additionalInfo: 'Integer >= 0 required', valid: false }
-      }
-      if (parseInt(value, 10) < 0) {
-        return { additionalInfo: 'Integer >= 0 required', valid: false }
-      }
-    }
-
-    // ConnectionUrl basic URL format (map invalid to PropertyConstraintViolation)
-    if (variable.name === (OCPP20VendorVariableName.ConnectionUrl as string)) {
-      try {
-        const url = new URL(value)
-        if (!['http:', 'https:', 'ws:', 'wss:'].includes(url.protocol)) {
-          return { additionalInfo: 'Unsupported URL scheme', valid: false }
-        }
-      } catch {
-        return { additionalInfo: 'Invalid URL format', valid: false }
-      }
-    }
-
-    return { valid: true }
   }
 }

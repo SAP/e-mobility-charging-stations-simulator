@@ -77,6 +77,18 @@ export const addConfigurationKey = (
         visible: options.visible,
       }
     } else {
+      // Allow metadata update (e.g. reboot flag) without overwriting value when overwrite=false
+      const existing = chargingStation.ocppConfiguration.configurationKey[keyIndex]
+      if (options.reboot && existing.reboot !== options.reboot) {
+        existing.reboot = options.reboot
+      }
+      if (options.readonly != null && existing.readonly !== options.readonly) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        existing.readonly = options.readonly!
+      }
+      if (options.visible != null && existing.visible !== options.visible) {
+        existing.visible = options.visible
+      }
       logger.error(
         `${chargingStation.logPrefix()} Trying to add an already existing configuration key: %j`,
         chargingStation.ocppConfiguration.configurationKey[keyIndex]
@@ -138,4 +150,41 @@ export const deleteConfigurationKey = (
     return deletedConfigurationKey
   }
   return undefined
+}
+
+export const validateConfigurationValue = (
+  variableName: string,
+  value: string
+): { additionalInfo?: string; valid: boolean } => {
+  // Generic maximum length safeguard (OpenSpec tests expect oversize rejection ~1000 chars)
+  if (value.length > 1000) {
+    return { additionalInfo: 'Value exceeds maximum length (1000)', valid: false }
+  }
+  const positiveIntegerVariables = [
+    'TxUpdatedInterval',
+    'HeartbeatInterval',
+    'EVConnectionTimeOut',
+    'MessageTimeout',
+  ]
+  if (positiveIntegerVariables.includes(variableName)) {
+    if (!/^[0-9]+$/.test(value) || parseInt(value, 10) <= 0) {
+      return { additionalInfo: 'Positive integer > 0 required', valid: false }
+    }
+  }
+  if (variableName === 'WebSocketPingInterval') {
+    if (!/^[0-9]+$/.test(value) || parseInt(value, 10) < 0) {
+      return { additionalInfo: 'Integer >= 0 required', valid: false }
+    }
+  }
+  if (variableName === 'ConnectionUrl') {
+    try {
+      const url = new URL(value)
+      if (!['http:', 'https:', 'ws:', 'wss:'].includes(url.protocol)) {
+        return { additionalInfo: 'Unsupported URL scheme', valid: false }
+      }
+    } catch {
+      return { additionalInfo: 'Invalid URL format', valid: false }
+    }
+  }
+  return { valid: true }
 }

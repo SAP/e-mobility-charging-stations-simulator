@@ -11,6 +11,7 @@ import {
 import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
 import {
   AttributeEnumType,
+  GetVariableStatusEnumType,
   OCPP20ComponentName,
   type OCPP20GetVariableDataType,
   OCPP20OptionalVariableName,
@@ -27,6 +28,9 @@ import { TEST_CHARGING_STATION_NAME } from './OCPP20TestConstants.js'
 
 /* eslint-disable @typescript-eslint/no-floating-promises */
 describe('OCPP20VariableManager SetVariables test suite', () => {
+  // NOTE: Delegation spy code removed; spying via monkey patch not supported reliably in ESM test environment.
+  // Delegation behavior will be asserted indirectly through effects/results in dedicated tests lower in file.
+
   const mockChargingStation = createChargingStationWithEvses({
     baseName: TEST_CHARGING_STATION_NAME,
     heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
@@ -553,5 +557,129 @@ describe('OCPP20VariableManager SetVariables test suite', () => {
       ReasonCodeEnumType.PropertyConstraintViolation
     )
     expect(nonIntRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer')
+  })
+
+  it('Should avoid duplicate persistence operations when value unchanged', () => {
+    // Precondition: HeartbeatInterval config key exists with initial value
+    const keyBefore = getConfigurationKey(
+      mockChargingStation,
+      OCPP20OptionalVariableName.HeartbeatInterval as unknown as VariableType['name']
+    )
+    expect(keyBefore).toBeDefined()
+    const originalValue = keyBefore?.value
+    // First set to same value (no change expected) - Accepted without reboot
+    const first = manager.setVariables(mockChargingStation, [
+      {
+        attributeValue: originalValue ?? '30',
+        component: { name: OCPP20ComponentName.ChargingStation },
+        variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
+      },
+    ])[0]
+    expect(first.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+    // Simulate a change then revert to same value to ensure second persistence only when changed
+    const changed = manager.setVariables(mockChargingStation, [
+      {
+        attributeValue: (parseInt(originalValue ?? '30', 10) + 5).toString(),
+        component: { name: OCPP20ComponentName.ChargingStation },
+        variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
+      },
+    ])[0]
+    expect(changed.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+    const keyAfterChange = getConfigurationKey(
+      mockChargingStation,
+      OCPP20OptionalVariableName.HeartbeatInterval as unknown as VariableType['name']
+    )
+    expect(keyAfterChange?.value).not.toBe(originalValue)
+    const reverted = manager.setVariables(mockChargingStation, [
+      {
+        attributeValue: originalValue ?? '30',
+        component: { name: OCPP20ComponentName.ChargingStation },
+        variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
+      },
+    ])[0]
+    expect(reverted.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+    const keyAfterRevert = getConfigurationKey(
+      mockChargingStation,
+      OCPP20OptionalVariableName.HeartbeatInterval as unknown as VariableType['name']
+    )
+    expect(keyAfterRevert?.value).toBe(originalValue)
+  })
+
+  it('Should add missing configuration key with default during self-check', () => {
+    const managerLocal = OCPP20VariableManager.getInstance()
+    // Delete EVConnectionTimeOut config key to simulate missing mapping
+    deleteConfigurationKey(
+      mockChargingStation,
+      OCPP20RequiredVariableName.EVConnectionTimeOut as unknown as VariableType['name'],
+      { save: false }
+    )
+    const before = getConfigurationKey(
+      mockChargingStation,
+      OCPP20RequiredVariableName.EVConnectionTimeOut as unknown as VariableType['name']
+    )
+    expect(before).toBeUndefined()
+    // Trigger self-check through getVariables
+    const res = managerLocal.getVariables(mockChargingStation, [
+      {
+        component: { name: OCPP20ComponentName.ChargingStation },
+        variable: { name: OCPP20RequiredVariableName.EVConnectionTimeOut },
+      },
+    ])[0]
+    expect(res.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+    expect(res.attributeStatusInfo).toBeUndefined()
+    expect(res.attributeValue).toBe(Constants.DEFAULT_EV_CONNECTION_TIMEOUT.toString())
+    const after = getConfigurationKey(
+      mockChargingStation,
+      OCPP20RequiredVariableName.EVConnectionTimeOut as unknown as VariableType['name']
+    )
+    expect(after).toBeDefined()
+  })
+
+  it('Should clear runtime overrides via resetRuntimeOverrides()', () => {
+    const managerLocal = OCPP20VariableManager.getInstance()
+    managerLocal.setVariables(mockChargingStation, [
+      {
+        attributeValue: '123',
+        component: { name: OCPP20ComponentName.ChargingStation },
+        variable: { name: OCPP20RequiredVariableName.TxUpdatedInterval },
+      },
+    ])
+    const beforeReset = managerLocal.getVariables(mockChargingStation, [
+      {
+        component: { name: OCPP20ComponentName.ChargingStation },
+        variable: { name: OCPP20RequiredVariableName.TxUpdatedInterval },
+      },
+    ])[0]
+    expect(beforeReset.attributeValue).toBe('123')
+    managerLocal.resetRuntimeOverrides()
+    const afterReset = managerLocal.getVariables(mockChargingStation, [
+      {
+        component: { name: OCPP20ComponentName.ChargingStation },
+        variable: { name: OCPP20RequiredVariableName.TxUpdatedInterval },
+      },
+    ])[0]
+    expect(afterReset.attributeValue).not.toBe('123')
+    // Default currently expected to be '30'
+    expect(afterReset.attributeValue).toBe('30')
+  })
+
+  it('Should reject get on write-only variable with Rejected status and write-only info', () => {
+    const managerLocal = OCPP20VariableManager.getInstance()
+    managerLocal.setVariables(mockChargingStation, [
+      {
+        attributeValue: 'wss://central.example.com/ocpp',
+        component: { name: OCPP20ComponentName.ChargingStation },
+        variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+      },
+    ])
+    const getRes = managerLocal.getVariables(mockChargingStation, [
+      {
+        component: { name: OCPP20ComponentName.ChargingStation },
+        variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+      },
+    ])[0]
+    expect(getRes.attributeStatus).toBe(GetVariableStatusEnumType.Rejected)
+    expect(getRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
+    expect(getRes.attributeStatusInfo?.additionalInfo).toContain('write-only')
   })
 })

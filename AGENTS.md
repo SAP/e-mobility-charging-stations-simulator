@@ -20,4 +20,4 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 
 <!-- OPENSPEC:END -->
 
-Open`@/.github/copilot-instructions.md`, read it and strictly follow the instructions.
+Open `@/.github/copilot-instructions.md`, read it and strictly follow the instructions.
