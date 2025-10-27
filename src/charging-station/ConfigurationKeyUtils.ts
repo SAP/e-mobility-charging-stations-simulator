@@ -175,7 +175,7 @@ export const validateConfigurationValue = (
   ]
   if (positiveIntegerVariables.includes(variableName)) {
     const numValue = Number(valueTrimmed)
-    if (!Number.isInteger(numValue) || numValue <= 0 || !/^\d+$/.test(valueTrimmed)) {
+    if (!Number.isInteger(numValue) || numValue <= 0) {
       return { additionalInfo: 'Positive integer > 0 required', valid: false }
     }
   }
