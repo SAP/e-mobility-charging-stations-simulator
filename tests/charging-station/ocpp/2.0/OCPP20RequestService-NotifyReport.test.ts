@@ -28,7 +28,7 @@ import {
   TEST_FIRMWARE_VERSION,
 } from './OCPP20TestConstants.js'
 
-await describe('B07 - Get Base Report (NotifyReport)', async () => {
+await describe('B08 - NotifyReport', async () => {
   const mockResponseService = new OCPP20ResponseService()
   const requestService = new OCPP20RequestService(mockResponseService)
 

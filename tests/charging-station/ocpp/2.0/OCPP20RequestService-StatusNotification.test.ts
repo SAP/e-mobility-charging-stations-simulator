@@ -40,6 +40,7 @@ await describe('G01 - Status Notification', async () => {
     websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
   })
 
+  // FR: G01.FR.01
   await it('Should build StatusNotification request payload correctly with Available status', () => {
     const testTimestamp = new Date('2024-01-15T10:30:00.000Z')
 
@@ -64,6 +65,7 @@ await describe('G01 - Status Notification', async () => {
     expect(payload.timestamp).toBe(testTimestamp)
   })
 
+  // FR: G01.FR.02
   await it('Should build StatusNotification request payload correctly with Occupied status', () => {
     const testTimestamp = new Date('2024-01-15T11:45:30.000Z')
 
@@ -87,6 +89,7 @@ await describe('G01 - Status Notification', async () => {
     expect(payload.timestamp).toBe(testTimestamp)
   })
 
+  // FR: G01.FR.03
   await it('Should build StatusNotification request payload correctly with Faulted status', () => {
     const testTimestamp = new Date('2024-01-15T12:15:45.500Z')
 
@@ -110,6 +113,7 @@ await describe('G01 - Status Notification', async () => {
     expect(payload.timestamp).toBe(testTimestamp)
   })
 
+  // FR: G01.FR.04
   await it('Should handle all OCPP20ConnectorStatusEnumType values correctly', () => {
     const testTimestamp = new Date('2024-01-15T13:00:00.000Z')
 
@@ -143,6 +147,7 @@ await describe('G01 - Status Notification', async () => {
     })
   })
 
+  // FR: G01.FR.05
   await it('Should validate payload structure matches OCPP20StatusNotificationRequest interface', () => {
     const testTimestamp = new Date('2024-01-15T14:30:15.123Z')
 
@@ -180,6 +185,7 @@ await describe('G01 - Status Notification', async () => {
     expect(payload.timestamp).toBe(testTimestamp)
   })
 
+  // FR: G01.FR.06
   await it('Should handle edge case connector and EVSE IDs correctly', () => {
     const testTimestamp = new Date('2024-01-15T15:45:00.000Z')
 
@@ -224,6 +230,7 @@ await describe('G01 - Status Notification', async () => {
     expect(payloadEvse0.timestamp).toBe(testTimestamp)
   })
 
+  // FR: G01.FR.07
   await it('Should handle different timestamp formats correctly', () => {
     const testCases = [
       new Date('2024-01-01T00:00:00.000Z'), // Start of year

@@ -1,11 +1,6 @@
 import type { ConfigurationKey, ConfigurationKeyType } from '../types/index.js'
 import type { ChargingStation } from './ChargingStation.js'
 
-import {
-  OCPP20OptionalVariableName,
-  OCPP20RequiredVariableName,
-  OCPP20VendorVariableName,
-} from '../types/ocpp/2.0/Variables.js'
 import { logger } from '../utils/index.js'
 
 interface AddConfigurationKeyParams {
@@ -154,69 +149,4 @@ export const deleteConfigurationKey = (
     return deletedConfigurationKey
   }
   return undefined
-}
-
-export const validateConfigurationValue = (
-  variableName: string,
-  value: string
-): { additionalInfo?: string; valid: boolean } => {
-  if (value.length > 1000) {
-    return { additionalInfo: 'Value exceeds maximum length (1000)', valid: false }
-  }
-  const valueTrimmed = value.trim()
-  // Leading/trailing whitespace or empty => reject with digits-only message (tests expectation)
-  if (valueTrimmed !== value || valueTrimmed.length === 0) {
-    return { additionalInfo: 'Non-empty digits only string required', valid: false }
-  }
-  const positiveIntegerVariables: string[] = [
-    OCPP20RequiredVariableName.TxUpdatedInterval,
-    OCPP20OptionalVariableName.HeartbeatInterval,
-    OCPP20RequiredVariableName.EVConnectionTimeOut,
-    OCPP20RequiredVariableName.MessageTimeout,
-  ]
-  if (positiveIntegerVariables.includes(variableName)) {
-    // Reject plus sign prefix and internal spaces with digits-only message
-    const isDigitsOnly = /^\d+$/.test(valueTrimmed)
-    if (!isDigitsOnly) {
-      const isSignedInteger = /^[+-]?\d+$/.test(valueTrimmed)
-      const isDecimal = /^[+-]?\d+\.\d+$/.test(valueTrimmed)
-      // '+' prefix should trigger digits-only rejection, tests expect this
-      if (valueTrimmed.startsWith('+')) {
-        return { additionalInfo: 'Non-empty digits only string required', valid: false }
-      }
-      // Negative integers and decimals should yield positive integer constraint message
-      if (isSignedInteger || isDecimal) {
-        return { additionalInfo: 'Positive integer > 0 required', valid: false }
-      }
-      // Any other non-digit composition (spaces, mixed chars) => digits-only rejection
-      return { additionalInfo: 'Non-empty digits only string required', valid: false }
-    }
-    // Digits only: verify > 0
-    const numValue = Number(valueTrimmed)
-    if (!Number.isInteger(numValue) || numValue <= 0) {
-      return { additionalInfo: 'Positive integer > 0 required', valid: false }
-    }
-  }
-  if (variableName === (OCPP20OptionalVariableName.WebSocketPingInterval as string)) {
-    const isDigitsOnly = /^\d+$/.test(valueTrimmed)
-    if (!isDigitsOnly) {
-      // Specific message for WebSocketPingInterval is integer >= 0
-      return { additionalInfo: 'Integer >= 0 required', valid: false }
-    }
-    const numValue = Number(valueTrimmed)
-    if (!Number.isInteger(numValue) || numValue < 0) {
-      return { additionalInfo: 'Integer >= 0 required', valid: false }
-    }
-  }
-  if (variableName === (OCPP20VendorVariableName.ConnectionUrl as string)) {
-    try {
-      const url = new URL(valueTrimmed)
-      if (!['http:', 'https:', 'ws:', 'wss:'].includes(url.protocol)) {
-        return { additionalInfo: 'Unsupported URL scheme', valid: false }
-      }
-    } catch {
-      return { additionalInfo: 'Invalid URL format', valid: false }
-    }
-  }
-  return { valid: true }
 }

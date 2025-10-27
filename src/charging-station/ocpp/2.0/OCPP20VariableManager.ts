@@ -25,8 +25,8 @@ import {
   addConfigurationKey,
   getConfigurationKey,
   setConfigurationKeyValue,
-  validateConfigurationValue,
 } from '../../ConfigurationKeyUtils.js'
+import { DEFAULT_MAX_LENGTH, VARIABLE_CONSTRAINTS } from './OCPP20VariableMetadata.js'
 
 // Persistent configuration-backed variables.
 const PERSISTENT_VARIABLES = new Set<string>([
@@ -49,15 +49,75 @@ export class OCPP20VariableManager {
   private static instance: null | OCPP20VariableManager = null
 
   private readonly invalidVariables = new Set<string>()
-  private readonly runtimeOverrides = new Map<string, string>() // key format: component[.instance].variable
+  private readonly runtimeOverrides = new Map<string, string>()
 
   private constructor () {
-    // Lazy mapping check occurs on first request via performMappingSelfCheck.
+    /* This is intentional */
   }
 
   public static getInstance (): OCPP20VariableManager {
     OCPP20VariableManager.instance ??= new OCPP20VariableManager()
     return OCPP20VariableManager.instance
+  }
+
+  public static validateConfigurationValue (
+    variableName: string,
+    value: string
+  ): { additionalInfo?: string; valid: boolean } {
+    const variableConstraintMetadata = VARIABLE_CONSTRAINTS[variableName]
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    const effectiveMaxLength = variableConstraintMetadata?.maxLength ?? DEFAULT_MAX_LENGTH
+    if (value.length > effectiveMaxLength) {
+      return {
+        additionalInfo: `Value exceeds maximum length (${effectiveMaxLength.toString()})`,
+        valid: false,
+      }
+    }
+    const valueTrimmed = value.trim()
+    if (valueTrimmed !== value || valueTrimmed.length === 0) {
+      return { additionalInfo: 'Non-empty digits only string required', valid: false }
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (variableConstraintMetadata?.integer) {
+      const isDigitsOnly = /^\d+$/.test(valueTrimmed)
+      if (!isDigitsOnly) {
+        const isSignedInteger = /^[+-]?\d+$/.test(valueTrimmed)
+        const isDecimal = /^[+-]?\d+\.\d+$/.test(valueTrimmed)
+        if (valueTrimmed.startsWith('+')) {
+          return { additionalInfo: 'Non-empty digits only string required', valid: false }
+        }
+        if (isSignedInteger || isDecimal) {
+          if (variableConstraintMetadata.positive) {
+            return { additionalInfo: 'Positive integer > 0 required', valid: false }
+          } else {
+            return { additionalInfo: 'Integer >= 0 required', valid: false }
+          }
+        }
+        return { additionalInfo: 'Non-empty digits only string required', valid: false }
+      }
+      const numValue = Number(valueTrimmed)
+      if (variableConstraintMetadata.positive) {
+        if (!Number.isInteger(numValue) || numValue <= 0) {
+          return { additionalInfo: 'Positive integer > 0 required', valid: false }
+        }
+      } else if (variableConstraintMetadata.allowZero) {
+        if (!Number.isInteger(numValue) || numValue < 0) {
+          return { additionalInfo: 'Integer >= 0 required', valid: false }
+        }
+      }
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (variableConstraintMetadata?.urlProtocols) {
+      try {
+        const url = new URL(valueTrimmed)
+        if (!variableConstraintMetadata.urlProtocols.includes(url.protocol)) {
+          return { additionalInfo: 'Unsupported URL scheme', valid: false }
+        }
+      } catch {
+        return { additionalInfo: 'Invalid URL format', valid: false }
+      }
+    }
+    return { valid: true }
   }
 
   public getVariables (
@@ -458,7 +518,10 @@ export class OCPP20VariableManager {
       )
     }
 
-    const validation = validateConfigurationValue(variable.name, attributeValue)
+    const validation = OCPP20VariableManager.validateConfigurationValue(
+      variable.name,
+      attributeValue
+    )
     if (!validation.valid) {
       return this.rejectSet(
         variable,

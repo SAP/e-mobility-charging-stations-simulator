@@ -56,6 +56,7 @@ describe('B07 - Set Variables', () => {
   const incomingRequestService = new OCPP20IncomingRequestService()
   const svc = incomingRequestService as unknown as IncomingRequestServicePrivate
 
+  // FR: B07.FR.01
   it('Should handle SetVariables request with valid writable variables', () => {
     const request: OCPP20SetVariablesRequest = {
       setVariableData: [
@@ -99,6 +100,7 @@ describe('B07 - Set Variables', () => {
     expect(secondResult.attributeStatusInfo).toBeUndefined()
   })
 
+  // FR: B07.FR.02
   it('Should handle SetVariables request with invalid variables/components', () => {
     const request: OCPP20SetVariablesRequest = {
       setVariableData: [
@@ -127,6 +129,7 @@ describe('B07 - Set Variables', () => {
     expect(secondResult.attributeStatusInfo).toBeDefined()
   })
 
+  // FR: B07.FR.03
   it('Should handle SetVariables request with unsupported attribute type', () => {
     const request: OCPP20SetVariablesRequest = {
       setVariableData: [
@@ -148,6 +151,7 @@ describe('B07 - Set Variables', () => {
     expect(result.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
   })
 
+  // FR: B07.FR.04
   it('Should handle SetVariables request with Connector components (valid & invalid)', () => {
     const request: OCPP20SetVariablesRequest = {
       setVariableData: [
@@ -180,6 +184,7 @@ describe('B07 - Set Variables', () => {
     expect(secondResult.attributeStatus).toBe(SetVariableStatusEnumType.UnknownComponent)
   })
 
+  // FR: B07.FR.05
   it('Should reject value exceeding max length at service level', () => {
     const longValue = 'x'.repeat(1001)
     const request: OCPP20SetVariablesRequest = {
@@ -203,6 +208,7 @@ describe('B07 - Set Variables', () => {
     )
   })
 
+  // FR: B07.FR.06
   it('Should flag reboot required when setting a reboot flagged configuration key', () => {
     addConfigurationKey(
       mockChargingStation,
@@ -232,6 +238,7 @@ describe('B07 - Set Variables', () => {
     expect(result.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ChangeRequiresReboot)
   })
 
+  // FR: B07.FR.07
   it('Should handle mixed SetVariables request with multiple outcomes', () => {
     const longValue = 'y'.repeat(1001)
     const request: OCPP20SetVariablesRequest = {
@@ -289,6 +296,7 @@ describe('B07 - Set Variables', () => {
     expect(oversize.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
   })
 
+  // FR: B07.FR.08
   it('Should reject Target attribute for WebSocketPingInterval explicitly', () => {
     const request: OCPP20SetVariablesRequest = {
       setVariableData: [
@@ -308,6 +316,7 @@ describe('B07 - Set Variables', () => {
     expect(result.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
   })
 
+  // FR: B07.FR.09
   it('Should reject immutable DateTime variable', () => {
     const request: OCPP20SetVariablesRequest = {
       setVariableData: [
@@ -327,6 +336,7 @@ describe('B07 - Set Variables', () => {
     expect(result.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ImmutableVariable)
   })
 
+  // FR: B07.FR.10
   it('Should persist HeartbeatInterval and WebSocketPingInterval after setting', () => {
     const hbNew = (millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL) + 20).toString()
     const wsNew = (Constants.DEFAULT_WEBSOCKET_PING_INTERVAL + 20).toString()
@@ -370,6 +380,7 @@ describe('B07 - Set Variables', () => {
     expect(wsResult.attributeValue).toBe(wsNew)
   })
 
+  // FR: B07.FR.11
   it('Should revert non-persistent TxUpdatedInterval after runtime reset', async () => {
     const txValue = '77'
     const setRequest: OCPP20SetVariablesRequest = {
@@ -412,6 +423,7 @@ describe('B07 - Set Variables', () => {
     expect(getAfter.getVariableResult[0].attributeValue).toBe('30') // default
   })
 
+  // FR: B07.FR.12
   it('Should enforce ConnectionUrl write-only on GetVariables', () => {
     const url = 'wss://central.example.com/ocpp'
     const setRequest: OCPP20SetVariablesRequest = {

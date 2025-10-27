@@ -24,7 +24,7 @@ import {
   TEST_FIRMWARE_VERSION,
 } from './OCPP20TestConstants.js'
 
-await describe('B07 - Get Base Report', async () => {
+await describe('B08 - Get Base Report', async () => {
   const mockChargingStation = createChargingStationWithEvses({
     baseName: TEST_CHARGING_STATION_NAME,
     heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
@@ -40,6 +40,7 @@ await describe('B07 - Get Base Report', async () => {
 
   const incomingRequestService = new OCPP20IncomingRequestService()
 
+  // FR: B08.FR.01
   await it('Should handle GetBaseReport request with ConfigurationInventory', () => {
     const request: OCPP20GetBaseReportRequest = {
       reportBase: ReportBaseEnumType.ConfigurationInventory,
@@ -55,6 +56,7 @@ await describe('B07 - Get Base Report', async () => {
     expect(response.status).toBe(GenericDeviceModelStatusEnumType.Accepted)
   })
 
+  // FR: B08.FR.02
   await it('Should handle GetBaseReport request with FullInventory', () => {
     const request: OCPP20GetBaseReportRequest = {
       reportBase: ReportBaseEnumType.FullInventory,
@@ -70,6 +72,7 @@ await describe('B07 - Get Base Report', async () => {
     expect(response.status).toBe(GenericDeviceModelStatusEnumType.Accepted)
   })
 
+  // FR: B08.FR.03
   await it('Should handle GetBaseReport request with SummaryInventory', () => {
     const request: OCPP20GetBaseReportRequest = {
       reportBase: ReportBaseEnumType.SummaryInventory,
@@ -85,6 +88,7 @@ await describe('B07 - Get Base Report', async () => {
     expect(response.status).toBe(GenericDeviceModelStatusEnumType.Accepted)
   })
 
+  // FR: B08.FR.04
   await it('Should return NotSupported for unsupported reportBase', () => {
     const request: OCPP20GetBaseReportRequest = {
       reportBase: 'UnsupportedReportBase' as any,
@@ -100,6 +104,7 @@ await describe('B07 - Get Base Report', async () => {
     expect(response.status).toBe(GenericDeviceModelStatusEnumType.NotSupported)
   })
 
+  // FR: B08.FR.05
   await it('Should return EmptyResultSet when no data is available', () => {
     // Create a charging station with minimal configuration
     const minimalChargingStation = createChargingStationWithEvses({
@@ -126,6 +131,7 @@ await describe('B07 - Get Base Report', async () => {
     expect(response.status).toBe(GenericDeviceModelStatusEnumType.EmptyResultSet)
   })
 
+  // FR: B08.FR.06
   await it('Should build correct report data for ConfigurationInventory', () => {
     const request: OCPP20GetBaseReportRequest = {
       reportBase: ReportBaseEnumType.ConfigurationInventory,
@@ -163,6 +169,7 @@ await describe('B07 - Get Base Report', async () => {
     }
   })
 
+  // FR: B08.FR.07
   await it('Should build correct report data for FullInventory with station info', () => {
     const reportData = (incomingRequestService as any).buildReportData(
       mockChargingStation,
@@ -190,6 +197,7 @@ await describe('B07 - Get Base Report', async () => {
     expect(vendorVariable.variableAttribute[0].value).toBe(TEST_CHARGE_POINT_VENDOR)
   })
 
+  // FR: B08.FR.08
   await it('Should build correct report data for SummaryInventory', () => {
     const reportData = (incomingRequestService as any).buildReportData(
       mockChargingStation,
@@ -209,6 +217,7 @@ await describe('B07 - Get Base Report', async () => {
     expect(availabilityVariable.variableCharacteristics.supportsMonitoring).toBe(true)
   })
 
+  // FR: B08.FR.09
   await it('Should handle GetBaseReport with EVSE structure', () => {
     // The createChargingStationWithEvses should create a station with EVSEs
     const stationWithEvses = createChargingStationWithEvses({
@@ -238,6 +247,7 @@ await describe('B07 - Get Base Report', async () => {
     }
   })
 
+  // FR: B08.FR.10
   await it('Should validate unsupported reportBase correctly', () => {
     const reportData = (incomingRequestService as any).buildReportData(
       mockChargingStation,

@@ -1115,5 +1115,36 @@ await describe('OCPP20VariableManager test suite', async () => {
       )
       expect(res.attributeStatusInfo?.additionalInfo).toContain('Invalid URL format')
     })
+
+    await it('Should reject ConnectionUrl exceeding max length', () => {
+      const longUrl = 'wss://example.com/' + 'a'.repeat(600)
+      const res = manager.setVariables(mockChargingStation, [
+        {
+          attributeValue: longUrl,
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+        },
+      ])[0]
+      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(res.attributeStatusInfo?.reasonCode).toBe(
+        ReasonCodeEnumType.PropertyConstraintViolation
+      )
+      expect(res.attributeStatusInfo?.additionalInfo).toContain('exceeds maximum length (512)')
+    })
+
+    await it('Should reject HeartbeatInterval exceeding max length', () => {
+      const res = manager.setVariables(mockChargingStation, [
+        {
+          attributeValue: '1'.repeat(11),
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
+        },
+      ])[0]
+      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(res.attributeStatusInfo?.reasonCode).toBe(
+        ReasonCodeEnumType.PropertyConstraintViolation
+      )
+      expect(res.attributeStatusInfo?.additionalInfo).toContain('exceeds maximum length (10)')
+    })
   })
 })

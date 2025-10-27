@@ -33,6 +33,7 @@ await describe('B06 - Get Variables', async () => {
 
   const incomingRequestService = new OCPP20IncomingRequestService()
 
+  // FR: B06.FR.01
   await it('Should handle GetVariables request with valid variables', async () => {
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
@@ -82,6 +83,7 @@ await describe('B06 - Get Variables', async () => {
     expect(secondResult.attributeStatusInfo).toBeUndefined()
   })
 
+  // FR: B06.FR.02
   await it('Should handle GetVariables request with invalid variables', async () => {
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
@@ -130,6 +132,7 @@ await describe('B06 - Get Variables', async () => {
     expect(secondResult.attributeStatusInfo).toBeDefined()
   })
 
+  // FR: B06.FR.03
   await it('Should handle GetVariables request with unsupported attribute types', async () => {
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
@@ -157,6 +160,7 @@ await describe('B06 - Get Variables', async () => {
     expect(result.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
   })
 
+  // FR: B06.FR.04
   await it('Should handle GetVariables request with Connector components', async () => {
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
@@ -202,6 +206,7 @@ await describe('B06 - Get Variables', async () => {
     expect(secondResult.component.instance).toBe(TEST_CONNECTOR_INVALID_INSTANCE)
   })
 
+  // FR: B06.FR.05
   await it('Should reject Target attribute for WebSocketPingInterval', async () => {
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
