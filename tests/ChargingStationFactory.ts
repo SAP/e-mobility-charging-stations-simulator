@@ -1,3 +1,5 @@
+import { millisecondsToSeconds } from 'date-fns'
+
 import type { ChargingStation } from '../src/charging-station/index.js'
 import type {
   ChargingStationConfiguration,
@@ -59,7 +61,7 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
         },
         {
           key: OCPP20OptionalVariableName.HeartbeatInterval,
-          value: Math.floor(heartbeatInterval / 1000).toString(),
+          value: millisecondsToSeconds(heartbeatInterval).toString(),
         },
       ],
     },
