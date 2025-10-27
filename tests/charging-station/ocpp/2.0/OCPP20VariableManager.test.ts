@@ -1003,5 +1003,117 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(getRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
       expect(getRes.attributeStatusInfo?.additionalInfo).toContain('write-only')
     })
+
+    await it('Should reject HeartbeatInterval with leading whitespace', () => {
+      const res = manager.setVariables(mockChargingStation, [
+        {
+          attributeValue: ' 60',
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
+        },
+      ])[0]
+      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(res.attributeStatusInfo?.reasonCode).toBe(
+        ReasonCodeEnumType.PropertyConstraintViolation
+      )
+      expect(res.attributeStatusInfo?.additionalInfo).toContain(
+        'Non-empty digits only string required'
+      )
+    })
+
+    await it('Should reject HeartbeatInterval with trailing whitespace', () => {
+      const res = manager.setVariables(mockChargingStation, [
+        {
+          attributeValue: '60 ',
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
+        },
+      ])[0]
+      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(res.attributeStatusInfo?.reasonCode).toBe(
+        ReasonCodeEnumType.PropertyConstraintViolation
+      )
+      expect(res.attributeStatusInfo?.additionalInfo).toContain(
+        'Non-empty digits only string required'
+      )
+    })
+
+    await it('Should reject HeartbeatInterval with plus sign prefix', () => {
+      const res = manager.setVariables(mockChargingStation, [
+        {
+          attributeValue: '+10',
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
+        },
+      ])[0]
+      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(res.attributeStatusInfo?.reasonCode).toBe(
+        ReasonCodeEnumType.PropertyConstraintViolation
+      )
+      expect(res.attributeStatusInfo?.additionalInfo).toContain(
+        'Non-empty digits only string required'
+      )
+    })
+
+    await it('Should accept HeartbeatInterval with leading zeros', () => {
+      const res = manager.setVariables(mockChargingStation, [
+        {
+          attributeValue: '007',
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
+        },
+      ])[0]
+      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      expect(res.attributeStatusInfo).toBeUndefined()
+    })
+
+    await it('Should reject HeartbeatInterval blank string', () => {
+      const res = manager.setVariables(mockChargingStation, [
+        {
+          attributeValue: '',
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
+        },
+      ])[0]
+      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(res.attributeStatusInfo?.reasonCode).toBe(
+        ReasonCodeEnumType.PropertyConstraintViolation
+      )
+      expect(res.attributeStatusInfo?.additionalInfo).toContain(
+        'Non-empty digits only string required'
+      )
+    })
+
+    await it('Should reject HeartbeatInterval with internal space', () => {
+      const res = manager.setVariables(mockChargingStation, [
+        {
+          attributeValue: '6 0',
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
+        },
+      ])[0]
+      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(res.attributeStatusInfo?.reasonCode).toBe(
+        ReasonCodeEnumType.PropertyConstraintViolation
+      )
+      expect(res.attributeStatusInfo?.additionalInfo).toContain(
+        'Non-empty digits only string required'
+      )
+    })
+
+    await it('Should reject ConnectionUrl missing scheme', () => {
+      const res = manager.setVariables(mockChargingStation, [
+        {
+          attributeValue: 'example.com/ocpp',
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+        },
+      ])[0]
+      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(res.attributeStatusInfo?.reasonCode).toBe(
+        ReasonCodeEnumType.PropertyConstraintViolation
+      )
+      expect(res.attributeStatusInfo?.additionalInfo).toContain('Invalid URL format')
+    })
   })
 })

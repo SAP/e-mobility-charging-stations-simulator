@@ -163,8 +163,8 @@ export const validateConfigurationValue = (
   if (value.length > 1000) {
     return { additionalInfo: 'Value exceeds maximum length (1000)', valid: false }
   }
-  const trimmed = value.trim()
-  if (trimmed !== value || trimmed.length === 0) {
+  const valueTrimmed = value.trim()
+  if (valueTrimmed !== value || valueTrimmed.length === 0) {
     return { additionalInfo: 'Non-empty digits only string required', valid: false }
   }
   const positiveIntegerVariables: string[] = [
@@ -174,20 +174,20 @@ export const validateConfigurationValue = (
     OCPP20RequiredVariableName.MessageTimeout,
   ]
   if (positiveIntegerVariables.includes(variableName)) {
-    const numValue = Number(trimmed)
-    if (!Number.isInteger(numValue) || numValue <= 0 || !/^\d+$/.test(trimmed)) {
+    const numValue = Number(valueTrimmed)
+    if (!Number.isInteger(numValue) || numValue <= 0 || !/^\d+$/.test(valueTrimmed)) {
       return { additionalInfo: 'Positive integer > 0 required', valid: false }
     }
   }
   if (variableName === (OCPP20OptionalVariableName.WebSocketPingInterval as string)) {
-    const numValue = Number(trimmed)
-    if (!Number.isInteger(numValue) || numValue < 0 || !/^\d+$/.test(trimmed)) {
+    const numValue = Number(valueTrimmed)
+    if (!Number.isInteger(numValue) || numValue < 0 || !/^\d+$/.test(valueTrimmed)) {
       return { additionalInfo: 'Integer >= 0 required', valid: false }
     }
   }
   if (variableName === (OCPP20VendorVariableName.ConnectionUrl as string)) {
     try {
-      const url = new URL(trimmed)
+      const url = new URL(valueTrimmed)
       if (!['http:', 'https:', 'ws:', 'wss:'].includes(url.protocol)) {
         return { additionalInfo: 'Unsupported URL scheme', valid: false }
       }
