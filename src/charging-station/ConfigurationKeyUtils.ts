@@ -164,6 +164,7 @@ export const validateConfigurationValue = (
     return { additionalInfo: 'Value exceeds maximum length (1000)', valid: false }
   }
   const valueTrimmed = value.trim()
+  // Leading/trailing whitespace or empty => reject with digits-only message (tests expectation)
   if (valueTrimmed !== value || valueTrimmed.length === 0) {
     return { additionalInfo: 'Non-empty digits only string required', valid: false }
   }
@@ -174,14 +175,36 @@ export const validateConfigurationValue = (
     OCPP20RequiredVariableName.MessageTimeout,
   ]
   if (positiveIntegerVariables.includes(variableName)) {
+    // Reject plus sign prefix and internal spaces with digits-only message
+    const isDigitsOnly = /^\d+$/.test(valueTrimmed)
+    if (!isDigitsOnly) {
+      const isSignedInteger = /^[+-]?\d+$/.test(valueTrimmed)
+      const isDecimal = /^[+-]?\d+\.\d+$/.test(valueTrimmed)
+      // '+' prefix should trigger digits-only rejection, tests expect this
+      if (valueTrimmed.startsWith('+')) {
+        return { additionalInfo: 'Non-empty digits only string required', valid: false }
+      }
+      // Negative integers and decimals should yield positive integer constraint message
+      if (isSignedInteger || isDecimal) {
+        return { additionalInfo: 'Positive integer > 0 required', valid: false }
+      }
+      // Any other non-digit composition (spaces, mixed chars) => digits-only rejection
+      return { additionalInfo: 'Non-empty digits only string required', valid: false }
+    }
+    // Digits only: verify > 0
     const numValue = Number(valueTrimmed)
     if (!Number.isInteger(numValue) || numValue <= 0) {
       return { additionalInfo: 'Positive integer > 0 required', valid: false }
     }
   }
   if (variableName === (OCPP20OptionalVariableName.WebSocketPingInterval as string)) {
+    const isDigitsOnly = /^\d+$/.test(valueTrimmed)
+    if (!isDigitsOnly) {
+      // Specific message for WebSocketPingInterval is integer >= 0
+      return { additionalInfo: 'Integer >= 0 required', valid: false }
+    }
     const numValue = Number(valueTrimmed)
-    if (!Number.isInteger(numValue) || numValue < 0 || !/^\d+$/.test(valueTrimmed)) {
+    if (!Number.isInteger(numValue) || numValue < 0) {
       return { additionalInfo: 'Integer >= 0 required', valid: false }
     }
   }
