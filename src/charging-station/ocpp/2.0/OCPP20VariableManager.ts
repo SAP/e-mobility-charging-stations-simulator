@@ -88,8 +88,6 @@ const RUNTIME_VARIABLES_CANONICAL = new Set<string>(
   [...RUNTIME_VARIABLES].map(v => v.toLowerCase())
 )
 
-const toIntOrNaN = convertToIntOrNaN
-
 export class OCPP20VariableManager {
   private static instance: null | OCPP20VariableManager = null
 
@@ -393,7 +391,7 @@ export class OCPP20VariableManager {
         OCPP20RequiredVariableName.ReportingValueSize as unknown as StandardParametersKey
       )
       const maxSizeRaw = reportingValueSizeConfigKey?.value ?? '2500'
-      const maxSize = toIntOrNaN(maxSizeRaw)
+      const maxSize = convertToIntOrNaN(maxSizeRaw)
       if (!Number.isNaN(maxSize) && maxSize > 0 && value.length > maxSize) {
         value = value.slice(0, maxSize)
       }
@@ -806,16 +804,16 @@ export class OCPP20VariableManager {
       if (
         mappedCanonical ===
           this.canonicalVariableName(OCPP20OptionalVariableName.HeartbeatInterval as string) &&
-        !Number.isNaN(toIntOrNaN(attributeValue)) &&
-        toIntOrNaN(attributeValue) > 0
+        !Number.isNaN(convertToIntOrNaN(attributeValue)) &&
+        convertToIntOrNaN(attributeValue) > 0
       ) {
         chargingStation.restartHeartbeat()
       }
       if (
         mappedCanonical ===
           this.canonicalVariableName(OCPP20OptionalVariableName.WebSocketPingInterval as string) &&
-        !Number.isNaN(toIntOrNaN(attributeValue)) &&
-        toIntOrNaN(attributeValue) >= 0
+        !Number.isNaN(convertToIntOrNaN(attributeValue)) &&
+        convertToIntOrNaN(attributeValue) >= 0
       ) {
         chargingStation.restartWebSocketPing()
       }

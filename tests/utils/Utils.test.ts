@@ -16,6 +16,7 @@ import {
   convertToDate,
   convertToFloat,
   convertToInt,
+  convertToIntOrNaN,
   extractTimeSeriesValues,
   formatDurationMilliSeconds,
   formatDurationSeconds,
@@ -412,6 +413,17 @@ await describe('Utils test suite', async () => {
     expect(insertAt('test', 'ing', 'test'.length)).toBe('testing')
     // eslint-disable-next-line @cspell/spellchecker
     expect(insertAt('test', 'ing', 2)).toBe('teingst')
+  })
+
+  await it('Verify convertToIntOrNaN()', () => {
+    expect(convertToIntOrNaN(undefined)).toBe(0)
+    expect(convertToIntOrNaN(null)).toBe(0)
+    expect(convertToIntOrNaN('0')).toBe(0)
+    expect(convertToIntOrNaN('42')).toBe(42)
+    expect(convertToIntOrNaN('-7')).toBe(-7)
+    expect(convertToIntOrNaN('10.9')).toBe(10)
+    expect(Number.isNaN(convertToIntOrNaN('NaN'))).toBe(true)
+    expect(Number.isNaN(convertToIntOrNaN('abc'))).toBe(true)
   })
 
   await it('Verify isArraySorted()', () => {

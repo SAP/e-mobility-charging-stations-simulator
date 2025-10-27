@@ -48,8 +48,6 @@ import { OCPP20VariableManager } from './OCPP20VariableManager.js'
 
 const moduleName = 'OCPP20IncomingRequestService'
 
-const toIntOrNaN = convertToIntOrNaN
-
 export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   protected payloadValidateFunctions: Map<OCPP20IncomingRequestCommand, ValidateFunction<JsonType>>
 
@@ -184,10 +182,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         k => (k.key as OCPP20RequiredVariableName) === OCPP20RequiredVariableName.BytesPerMessage
       )?.value
       if (itemsCfg && /^\d+$/.test(itemsCfg)) {
-        enforceItemsLimit = toIntOrNaN(itemsCfg)
+        enforceItemsLimit = convertToIntOrNaN(itemsCfg)
       }
       if (bytesCfg && /^\d+$/.test(bytesCfg)) {
-        enforceBytesLimit = toIntOrNaN(bytesCfg)
+        enforceBytesLimit = convertToIntOrNaN(bytesCfg)
       }
     } catch {
       /* ignore */
@@ -289,10 +287,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         k => (k.key as OCPP20RequiredVariableName) === OCPP20RequiredVariableName.BytesPerMessage
       )?.value
       if (itemsCfg && /^\d+$/.test(itemsCfg)) {
-        enforceItemsLimit = toIntOrNaN(itemsCfg)
+        enforceItemsLimit = convertToIntOrNaN(itemsCfg)
       }
       if (bytesCfg && /^\d+$/.test(bytesCfg)) {
-        enforceBytesLimit = toIntOrNaN(bytesCfg)
+        enforceBytesLimit = convertToIntOrNaN(bytesCfg)
       }
     } catch {
       /* ignore */
