@@ -19,7 +19,7 @@ import {
 } from '../../../types/index.js'
 import { OCPP20VendorVariableName } from '../../../types/ocpp/2.0/Variables.js'
 import { StandardParametersKey } from '../../../types/ocpp/Configuration.js'
-import { Constants, logger } from '../../../utils/index.js'
+import { Constants, convertToInt, logger } from '../../../utils/index.js'
 import { type ChargingStation } from '../../ChargingStation.js'
 import {
   addConfigurationKey,
@@ -87,6 +87,14 @@ const READ_ONLY_VARIABLES_CANONICAL = new Set<string>(
 const RUNTIME_VARIABLES_CANONICAL = new Set<string>(
   [...RUNTIME_VARIABLES].map(v => v.toLowerCase())
 )
+
+const toIntOrNaN = (value: string): number => {
+  try {
+    return convertToInt(value)
+  } catch {
+    return Number.NaN
+  }
+}
 
 export class OCPP20VariableManager {
   private static instance: null | OCPP20VariableManager = null
@@ -391,7 +399,7 @@ export class OCPP20VariableManager {
         OCPP20RequiredVariableName.ReportingValueSize as unknown as StandardParametersKey
       )
       const maxSizeRaw = reportingValueSizeConfigKey?.value ?? '2500'
-      const maxSize = parseInt(maxSizeRaw, 10)
+      const maxSize = toIntOrNaN(maxSizeRaw)
       if (!Number.isNaN(maxSize) && maxSize > 0 && value.length > maxSize) {
         value = value.slice(0, maxSize)
       }
@@ -804,16 +812,16 @@ export class OCPP20VariableManager {
       if (
         mappedCanonical ===
           this.canonicalVariableName(OCPP20OptionalVariableName.HeartbeatInterval as string) &&
-        !Number.isNaN(parseInt(attributeValue, 10)) &&
-        parseInt(attributeValue, 10) > 0
+        !Number.isNaN(toIntOrNaN(attributeValue)) &&
+        toIntOrNaN(attributeValue) > 0
       ) {
         chargingStation.restartHeartbeat()
       }
       if (
         mappedCanonical ===
           this.canonicalVariableName(OCPP20OptionalVariableName.WebSocketPingInterval as string) &&
-        !Number.isNaN(parseInt(attributeValue, 10)) &&
-        parseInt(attributeValue, 10) >= 0
+        !Number.isNaN(toIntOrNaN(attributeValue)) &&
+        toIntOrNaN(attributeValue) >= 0
       ) {
         chargingStation.restartWebSocketPing()
       }
