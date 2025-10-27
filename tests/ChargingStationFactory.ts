@@ -57,8 +57,20 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
           key: OCPP20OptionalVariableName.WebSocketPingInterval,
           value: websocketPingInterval.toString(),
         },
-        { key: OCPP20OptionalVariableName.HeartbeatInterval, value: heartbeatInterval.toString() },
+        {
+          key: OCPP20OptionalVariableName.HeartbeatInterval,
+          value: Math.floor(heartbeatInterval / 1000).toString(),
+        },
       ],
+    },
+    restartHeartbeat: () => {
+      /* no-op for tests */
+    },
+    restartWebSocketPing: () => {
+      /* no-op for tests */
+    },
+    saveOcppConfiguration: () => {
+      /* no-op for tests */
     },
     started: options.started ?? false,
     starting: options.starting,

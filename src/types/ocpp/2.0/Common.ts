@@ -202,11 +202,13 @@ export enum OperationalStatusEnumType {
 }
 
 export enum ReasonCodeEnumType {
+  ChangeRequiresReboot = 'ChangeRequiresReboot',
   CSNotAccepted = 'CSNotAccepted',
   DuplicateProfile = 'DuplicateProfile',
   DuplicateRequestId = 'DuplicateRequestId',
   FixedCable = 'FixedCable',
   FwUpdateInProgress = 'FwUpdateInProgress',
+  ImmutableVariable = 'ImmutableVariable',
   InternalError = 'InternalError',
   InvalidCertificate = 'InvalidCertificate',
   InvalidCSR = 'InvalidCSR',
@@ -225,6 +227,7 @@ export enum ReasonCodeEnumType {
   NotFound = 'NotFound',
   OutOfMemory = 'OutOfMemory',
   OutOfStorage = 'OutOfStorage',
+  PropertyConstraintViolation = 'PropertyConstraintViolation',
   ReadOnly = 'ReadOnly',
   TooLargeElement = 'TooLargeElement',
   TooManyElements = 'TooManyElements',

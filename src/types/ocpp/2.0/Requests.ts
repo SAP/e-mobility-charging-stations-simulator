@@ -18,6 +18,7 @@ export enum OCPP20IncomingRequestCommand {
   REQUEST_START_TRANSACTION = 'RequestStartTransaction',
   REQUEST_STOP_TRANSACTION = 'RequestStopTransaction',
   RESET = 'Reset',
+  SET_VARIABLES = 'SetVariables',
 }
 
 export enum OCPP20RequestCommand {

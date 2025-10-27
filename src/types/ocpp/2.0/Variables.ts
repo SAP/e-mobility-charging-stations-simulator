@@ -71,7 +71,7 @@ export enum OCPP20VendorVariableName {
   ConnectionUrl = 'ConnectionUrl',
 }
 
-enum SetVariableStatusEnumType {
+export enum SetVariableStatusEnumType {
   Accepted = 'Accepted',
   NotSupportedAttributeType = 'NotSupportedAttributeType',
   RebootRequired = 'RebootRequired',

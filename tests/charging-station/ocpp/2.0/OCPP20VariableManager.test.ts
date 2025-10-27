@@ -175,6 +175,20 @@ await describe('OCPP20VariableManager test suite', async () => {
       )
     })
 
+    await it('Should reject Target attribute for WebSocketPingInterval', () => {
+      const request: OCPP20GetVariableDataType[] = [
+        {
+          attributeType: AttributeEnumType.Target,
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20OptionalVariableName.WebSocketPingInterval },
+        },
+      ]
+      const result = manager.getVariables(mockChargingStation, request)
+      expect(result).toHaveLength(1)
+      expect(result[0].attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
+      expect(result[0].variable.name).toBe(OCPP20OptionalVariableName.WebSocketPingInterval)
+    })
+
     await it('Should handle non-existent connector instance', () => {
       const request: OCPP20GetVariableDataType[] = [
         {

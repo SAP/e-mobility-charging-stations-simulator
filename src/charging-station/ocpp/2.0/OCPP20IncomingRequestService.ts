@@ -28,6 +28,8 @@ import {
   OCPP20RequestCommand,
   type OCPP20ResetRequest,
   type OCPP20ResetResponse,
+  type OCPP20SetVariablesRequest,
+  type OCPP20SetVariablesResponse,
   OCPPVersion,
   ReasonCodeEnumType,
   ReportBaseEnumType,
@@ -57,10 +59,26 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     // }
     super(OCPPVersion.VERSION_201)
     this.incomingRequestHandlers = new Map<OCPP20IncomingRequestCommand, IncomingRequestHandler>([
-      [OCPP20IncomingRequestCommand.CLEAR_CACHE, super.handleRequestClearCache.bind(this)],
-      [OCPP20IncomingRequestCommand.GET_BASE_REPORT, this.handleRequestGetBaseReport.bind(this)],
-      [OCPP20IncomingRequestCommand.GET_VARIABLES, this.handleRequestGetVariables.bind(this)],
-      [OCPP20IncomingRequestCommand.RESET, this.handleRequestReset.bind(this)],
+      [
+        OCPP20IncomingRequestCommand.CLEAR_CACHE,
+        super.handleRequestClearCache.bind(this) as IncomingRequestHandler,
+      ],
+      [
+        OCPP20IncomingRequestCommand.GET_BASE_REPORT,
+        this.handleRequestGetBaseReport.bind(this) as unknown as IncomingRequestHandler,
+      ],
+      [
+        OCPP20IncomingRequestCommand.GET_VARIABLES,
+        this.handleRequestGetVariables.bind(this) as unknown as IncomingRequestHandler,
+      ],
+      [
+        OCPP20IncomingRequestCommand.RESET,
+        this.handleRequestReset.bind(this) as unknown as IncomingRequestHandler,
+      ],
+      [
+        OCPP20IncomingRequestCommand.SET_VARIABLES,
+        this.handleRequestSetVariables.bind(this) as unknown as IncomingRequestHandler,
+      ],
     ])
     this.payloadValidateFunctions = new Map<
       OCPP20IncomingRequestCommand,
@@ -101,6 +119,16 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         this.ajv.compile(
           OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20ResetRequest>(
             'assets/json-schemas/ocpp/2.0/ResetRequest.json',
+            moduleName,
+            'constructor'
+          )
+        ),
+      ],
+      [
+        OCPP20IncomingRequestCommand.SET_VARIABLES,
+        this.ajv.compile(
+          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20SetVariablesRequest>(
+            'assets/json-schemas/ocpp/2.0/SetVariablesRequest.json',
             moduleName,
             'constructor'
           )
@@ -150,6 +178,25 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     )
 
     return getVariablesResponse
+  }
+
+  public handleRequestSetVariables (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20SetVariablesRequest
+  ): OCPP20SetVariablesResponse {
+    const setVariablesResponse: OCPP20SetVariablesResponse = {
+      setVariableResult: [],
+    }
+
+    const variableManager = OCPP20VariableManager.getInstance()
+    const results = variableManager.setVariables(chargingStation, commandPayload.setVariableData)
+    setVariablesResponse.setVariableResult = results
+
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestSetVariables: Processed ${String(commandPayload.setVariableData.length)} variable requests, returning ${String(results.length)} results`
+    )
+
+    return setVariablesResponse
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters

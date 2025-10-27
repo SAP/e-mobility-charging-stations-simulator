@@ -201,4 +201,25 @@ await describe('B06 - Get Variables', async () => {
     expect(secondResult.attributeStatus).toBe(GetVariableStatusEnumType.UnknownComponent)
     expect(secondResult.component.instance).toBe(TEST_CONNECTOR_INVALID_INSTANCE)
   })
+
+  await it('Should reject Target attribute for WebSocketPingInterval', async () => {
+    const request: OCPP20GetVariablesRequest = {
+      getVariableData: [
+        {
+          attributeType: AttributeEnumType.Target,
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20OptionalVariableName.WebSocketPingInterval },
+        },
+      ],
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
+    const response = await (incomingRequestService as any).handleRequestGetVariables(
+      mockChargingStation,
+      request
+    )
+    expect(response.getVariableResult).toHaveLength(1)
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const result = response.getVariableResult[0]
+    expect(result.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
+  })
 })

@@ -165,6 +165,7 @@ export {
   type OCPP20NotifyReportRequest,
   OCPP20RequestCommand,
   type OCPP20ResetRequest,
+  type OCPP20SetVariablesRequest,
   type OCPP20StatusNotificationRequest,
 } from './ocpp/2.0/Requests.js'
 export type {
@@ -175,6 +176,7 @@ export type {
   OCPP20HeartbeatResponse,
   OCPP20NotifyReportResponse,
   OCPP20ResetResponse,
+  OCPP20SetVariablesResponse,
   OCPP20StatusNotificationResponse,
 } from './ocpp/2.0/Responses.js'
 export {
@@ -186,6 +188,10 @@ export {
   type OCPP20GetVariableResultType,
   OCPP20OptionalVariableName,
   OCPP20RequiredVariableName,
+  type OCPP20SetVariableDataType,
+  type OCPP20SetVariableResultType,
+  OCPP20VendorVariableName,
+  SetVariableStatusEnumType,
   type VariableType,
 } from './ocpp/2.0/Variables.js'
 export { ChargePointErrorCode } from './ocpp/ChargePointErrorCode.js'

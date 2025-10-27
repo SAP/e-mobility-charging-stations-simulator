@@ -793,6 +793,13 @@ export class ChargingStation extends EventEmitter {
     await this.stop(reason)
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     await sleep(this.stationInfo!.resetTime!)
+    // Clear non-persistent OCPP 2.0 runtime variables
+    try {
+      const variableManager = await import('./ocpp/2.0/OCPP20VariableManager.js')
+      variableManager.OCPP20VariableManager.getInstance().resetRuntimeVariables()
+    } catch {
+      /* ignore if module not available */
+    }
     this.initialize()
     this.start()
   }
