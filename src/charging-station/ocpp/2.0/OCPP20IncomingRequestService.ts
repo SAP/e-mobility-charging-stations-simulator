@@ -288,6 +288,18 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
+  public override stop (chargingStation: ChargingStation): void {
+    try {
+      OCPP20VariableManager.getInstance().resetRuntimeOverrides()
+      logger.debug(`${chargingStation.logPrefix()} ${moduleName}.stop: Runtime overrides cleared`)
+    } catch (error) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.stop: Error clearing runtime overrides:`,
+        error
+      )
+    }
+  }
+
   private buildReportData (
     chargingStation: ChargingStation,
     reportBase: ReportBaseEnumType
