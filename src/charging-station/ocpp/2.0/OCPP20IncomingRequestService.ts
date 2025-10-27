@@ -12,6 +12,7 @@ import {
   DataEnumType,
   ErrorType,
   GenericDeviceModelStatusEnumType,
+  GetVariableStatusEnumType,
   type IncomingRequestHandler,
   type JsonType,
   type OCPP20ClearCacheRequest,
@@ -26,6 +27,7 @@ import {
   type OCPP20NotifyReportRequest,
   type OCPP20NotifyReportResponse,
   OCPP20RequestCommand,
+  OCPP20RequiredVariableName,
   type OCPP20ResetRequest,
   type OCPP20ResetResponse,
   type OCPP20SetVariablesRequest,
@@ -36,6 +38,7 @@ import {
   type ReportDataType,
   ResetEnumType,
   ResetStatusEnumType,
+  SetVariableStatusEnumType,
   StopTransactionReason,
 } from '../../../types/index.js'
 import { isAsyncFunction, logger } from '../../../utils/index.js'
@@ -168,8 +171,95 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     const variableManager = OCPP20VariableManager.getInstance()
 
-    const results = variableManager.getVariables(chargingStation, commandPayload.getVariableData)
+    // Enforce ItemsPerMessage and BytesPerMessage limits if configured
+    let enforceItemsLimit = 0
+    let enforceBytesLimit = 0
+    try {
+      const itemsCfg = chargingStation.ocppConfiguration?.configurationKey?.find(
+        k => (k.key as OCPP20RequiredVariableName) === OCPP20RequiredVariableName.ItemsPerMessage
+      )?.value
+      const bytesCfg = chargingStation.ocppConfiguration?.configurationKey?.find(
+        k => (k.key as OCPP20RequiredVariableName) === OCPP20RequiredVariableName.BytesPerMessage
+      )?.value
+      if (itemsCfg && /^\d+$/.test(itemsCfg)) {
+        enforceItemsLimit = parseInt(itemsCfg, 10)
+      }
+      if (bytesCfg && /^\d+$/.test(bytesCfg)) {
+        enforceBytesLimit = parseInt(bytesCfg, 10)
+      }
+    } catch {
+      /* ignore */
+    }
+
+    const variableData = commandPayload.getVariableData
+    if (enforceItemsLimit > 0 && variableData.length > enforceItemsLimit) {
+      // Reject all with TooManyElements
+      getVariablesResponse.getVariableResult = variableData.map(v => ({
+        attributeStatus: GetVariableStatusEnumType.Rejected,
+        attributeStatusInfo: {
+          additionalInfo: `ItemsPerMessage limit ${enforceItemsLimit.toString()} exceeded (${variableData.length.toString()} requested)`,
+          reasonCode: ReasonCodeEnumType.TooManyElements,
+        },
+        attributeType: v.attributeType,
+        component: v.component,
+        variable: v.variable,
+      }))
+      logger.debug(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetVariables: Rejected all variables due to ItemsPerMessage limit (${enforceItemsLimit.toString()})`
+      )
+      return getVariablesResponse
+    }
+
+    // Approximate bytes size: JSON stringify of request variableData entries only (attributes used for response payload sizing guidance)
+    if (enforceBytesLimit > 0) {
+      const estimatedSize = Buffer.byteLength(JSON.stringify(variableData), 'utf8')
+      if (estimatedSize > enforceBytesLimit) {
+        getVariablesResponse.getVariableResult = variableData.map(v => ({
+          attributeStatus: GetVariableStatusEnumType.Rejected,
+          attributeStatusInfo: {
+            additionalInfo: `BytesPerMessage limit ${enforceBytesLimit.toString()} exceeded (estimated ${estimatedSize.toString()} bytes)`,
+            reasonCode: ReasonCodeEnumType.TooLargeElement,
+          },
+          attributeType: v.attributeType,
+          component: v.component,
+          variable: v.variable,
+        }))
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetVariables: Rejected all variables due to BytesPerMessage limit (${enforceBytesLimit.toString()})`
+        )
+        return getVariablesResponse
+      }
+    }
+
+    const results = variableManager.getVariables(chargingStation, variableData)
     getVariablesResponse.getVariableResult = results
+
+    // Post-calculation bytes limit enforcement with actual response size
+    if (enforceBytesLimit > 0) {
+      try {
+        const actualSize = Buffer.byteLength(
+          JSON.stringify(getVariablesResponse.getVariableResult),
+          'utf8'
+        )
+        if (actualSize > enforceBytesLimit) {
+          getVariablesResponse.getVariableResult = commandPayload.getVariableData.map(v => ({
+            attributeStatus: GetVariableStatusEnumType.Rejected,
+            attributeStatusInfo: {
+              additionalInfo: `BytesPerMessage limit ${enforceBytesLimit.toString()} exceeded (actual ${actualSize.toString()} bytes)`,
+              reasonCode: ReasonCodeEnumType.TooLargeElement,
+            },
+            attributeType: v.attributeType,
+            component: v.component,
+            variable: v.variable,
+          }))
+          logger.debug(
+            `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetVariables: Rejected all variables due to BytesPerMessage limit post calculation (${enforceBytesLimit.toString()})`
+          )
+        }
+      } catch {
+        /* ignore */
+      }
+    }
 
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetVariables: Processed ${String(commandPayload.getVariableData.length)} variable requests, returning ${String(results.length)} results`
@@ -186,9 +276,97 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       setVariableResult: [],
     }
 
+    // Enforce ItemsPerMessageSetVariables and BytesPerMessageSetVariables limits if configured
+    let enforceItemsLimit = 0
+    let enforceBytesLimit = 0
+    try {
+      const itemsCfg = chargingStation.ocppConfiguration?.configurationKey?.find(
+        k => (k.key as OCPP20RequiredVariableName) === OCPP20RequiredVariableName.ItemsPerMessage
+      )?.value
+      const bytesCfg = chargingStation.ocppConfiguration?.configurationKey?.find(
+        k => (k.key as OCPP20RequiredVariableName) === OCPP20RequiredVariableName.BytesPerMessage
+      )?.value
+      if (itemsCfg && /^\d+$/.test(itemsCfg)) {
+        enforceItemsLimit = parseInt(itemsCfg, 10)
+      }
+      if (bytesCfg && /^\d+$/.test(bytesCfg)) {
+        enforceBytesLimit = parseInt(bytesCfg, 10)
+      }
+    } catch {
+      /* ignore */
+    }
+
     const variableManager = OCPP20VariableManager.getInstance()
-    const results = variableManager.setVariables(chargingStation, commandPayload.setVariableData)
+
+    // Items per message enforcement
+    const variableData = commandPayload.setVariableData
+    if (enforceItemsLimit > 0 && variableData.length > enforceItemsLimit) {
+      setVariablesResponse.setVariableResult = variableData.map(v => ({
+        attributeStatus: SetVariableStatusEnumType.Rejected, // SetVariables rejection
+        attributeStatusInfo: {
+          additionalInfo: `ItemsPerMessage limit ${enforceItemsLimit.toString()} exceeded (${variableData.length.toString()} requested)`,
+          reasonCode: ReasonCodeEnumType.TooManyElements,
+        },
+        attributeType: v.attributeType ?? AttributeEnumType.Actual,
+        component: v.component,
+        variable: v.variable,
+      }))
+      logger.debug(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestSetVariables: Rejected all variables due to ItemsPerMessage limit (${enforceItemsLimit.toString()})`
+      )
+      return setVariablesResponse
+    }
+
+    // Pre-calculation bytes size enforcement (approximate based on request payload)
+    if (enforceBytesLimit > 0) {
+      const estimatedSize = Buffer.byteLength(JSON.stringify(variableData), 'utf8')
+      if (estimatedSize > enforceBytesLimit) {
+        setVariablesResponse.setVariableResult = variableData.map(v => ({
+          attributeStatus: SetVariableStatusEnumType.Rejected,
+          attributeStatusInfo: {
+            additionalInfo: `BytesPerMessage limit ${enforceBytesLimit.toString()} exceeded (estimated ${estimatedSize.toString()} bytes)`,
+            reasonCode: ReasonCodeEnumType.TooLargeElement,
+          },
+          attributeType: v.attributeType ?? AttributeEnumType.Actual,
+          component: v.component,
+          variable: v.variable,
+        }))
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestSetVariables: Rejected all variables due to BytesPerMessage limit (${enforceBytesLimit.toString()})`
+        )
+        return setVariablesResponse
+      }
+    }
+
+    const results = variableManager.setVariables(chargingStation, variableData)
     setVariablesResponse.setVariableResult = results
+
+    // Post-calculation bytes limit enforcement with actual response size
+    if (enforceBytesLimit > 0) {
+      try {
+        const actualSize = Buffer.byteLength(
+          JSON.stringify(setVariablesResponse.setVariableResult),
+          'utf8'
+        )
+        if (actualSize > enforceBytesLimit) {
+          setVariablesResponse.setVariableResult = variableData.map(v => ({
+            attributeStatus: SetVariableStatusEnumType.Rejected,
+            attributeStatusInfo: {
+              additionalInfo: `BytesPerMessage limit ${enforceBytesLimit.toString()} exceeded (actual ${actualSize.toString()} bytes)`,
+              reasonCode: ReasonCodeEnumType.TooLargeElement,
+            },
+            attributeType: v.attributeType ?? AttributeEnumType.Actual,
+            component: v.component,
+            variable: v.variable,
+          }))
+          logger.debug(
+            `${chargingStation.logPrefix()} ${moduleName}.handleRequestSetVariables: Rejected all variables due to BytesPerMessage limit post calculation (${enforceBytesLimit.toString()})`
+          )
+        }
+      } catch {
+        /* ignore */
+      }
+    }
 
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestSetVariables: Processed ${String(commandPayload.setVariableData.length)} variable requests, returning ${String(results.length)} results`

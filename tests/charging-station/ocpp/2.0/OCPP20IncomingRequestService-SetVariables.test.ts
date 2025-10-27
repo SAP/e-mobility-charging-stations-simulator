@@ -19,11 +19,8 @@ import {
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { createChargingStationWithEvses } from '../../../ChargingStationFactory.js'
-import {
-  TEST_CHARGING_STATION_NAME,
-  TEST_CONNECTOR_INVALID_INSTANCE,
-  TEST_CONNECTOR_VALID_INSTANCE,
-} from './OCPP20TestConstants.js'
+import { TEST_CHARGING_STATION_NAME, TEST_CONNECTOR_VALID_INSTANCE } from './OCPP20TestConstants.js'
+import { resetLimits, setStrictLimits, upsertConfigurationKey } from './OCPP20TestUtils.js'
 
 interface IncomingRequestServicePrivate {
   handleRequestGetVariables: (
@@ -152,36 +149,24 @@ describe('B07 - Set Variables', () => {
   })
 
   // FR: B07.FR.04
-  it('Should handle SetVariables request with Connector components (valid & invalid)', () => {
+  it('Should reject AuthorizeRemoteStart under Connector component for write', () => {
     const request: OCPP20SetVariablesRequest = {
       setVariableData: [
         {
-          attributeValue: '1',
+          attributeValue: 'true',
           component: {
             instance: TEST_CONNECTOR_VALID_INSTANCE,
             name: OCPP20ComponentName.Connector,
           },
           variable: { name: OCPP20RequiredVariableName.AuthorizeRemoteStart },
         },
-        {
-          attributeValue: '1',
-          component: {
-            instance: TEST_CONNECTOR_INVALID_INSTANCE,
-            name: OCPP20ComponentName.Connector,
-          },
-          variable: { name: OCPP20RequiredVariableName.AuthorizeRemoteStart },
-        },
       ],
     }
-
     const response: { setVariableResult: OCPP20SetVariableResultType[] } =
       svc.handleRequestSetVariables(mockChargingStation, request)
-
-    expect(response.setVariableResult).toHaveLength(2)
-    const firstResult = response.setVariableResult[0]
-    expect(firstResult.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
-    const secondResult = response.setVariableResult[1]
-    expect(secondResult.attributeStatus).toBe(SetVariableStatusEnumType.UnknownComponent)
+    expect(response.setVariableResult).toHaveLength(1)
+    const result = response.setVariableResult[0]
+    expect(result.attributeStatus).toBe(SetVariableStatusEnumType.UnknownComponent)
   })
 
   // FR: B07.FR.05
@@ -422,7 +407,131 @@ describe('B07 - Set Variables', () => {
   })
 
   // FR: B07.FR.12
+  it('Should reject all SetVariables when ItemsPerMessage limit exceeded', () => {
+    setStrictLimits(mockChargingStation, 1, 10000)
+    const request: OCPP20SetVariablesRequest = {
+      setVariableData: [
+        {
+          attributeValue: (Constants.DEFAULT_WEBSOCKET_PING_INTERVAL + 2).toString(),
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20OptionalVariableName.WebSocketPingInterval },
+        },
+        {
+          attributeValue: (
+            millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL) + 2
+          ).toString(),
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
+        },
+      ],
+    }
+    const response: { setVariableResult: OCPP20SetVariableResultType[] } =
+      svc.handleRequestSetVariables(mockChargingStation, request)
+    expect(response.setVariableResult).toHaveLength(2)
+    response.setVariableResult.forEach(r => {
+      expect(r.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(r.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooManyElements)
+      expect(r.attributeStatusInfo?.additionalInfo).toMatch(/ItemsPerMessage limit 1 exceeded/)
+    })
+    resetLimits(mockChargingStation)
+  })
+
+  it('Should reject all SetVariables when BytesPerMessage limit exceeded (pre-calculation)', () => {
+    // Set strict bytes limit low enough for request pre-estimate to exceed
+    setStrictLimits(mockChargingStation, 100, 10)
+    const request: OCPP20SetVariablesRequest = {
+      setVariableData: [
+        {
+          attributeValue: '5',
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20OptionalVariableName.WebSocketPingInterval },
+        },
+        {
+          attributeValue: '10',
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
+        },
+      ],
+    }
+    const response: { setVariableResult: OCPP20SetVariableResultType[] } =
+      svc.handleRequestSetVariables(mockChargingStation, request)
+    expect(response.setVariableResult).toHaveLength(2)
+    response.setVariableResult.forEach(r => {
+      expect(r.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(r.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
+      expect(r.attributeStatusInfo?.additionalInfo).toMatch(/BytesPerMessage limit 10 exceeded/)
+    })
+    resetLimits(mockChargingStation)
+  })
+
+  it('Should reject all SetVariables when BytesPerMessage limit exceeded (post-calculation)', () => {
+    const request: OCPP20SetVariablesRequest = {
+      setVariableData: [
+        {
+          attributeType: AttributeEnumType.Target,
+          attributeValue: '60',
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20OptionalVariableName.WebSocketPingInterval },
+        },
+        {
+          attributeValue: '10',
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: 'UnknownVariableA' },
+        },
+        {
+          attributeValue: '11',
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: 'UnknownVariableB' },
+        },
+        {
+          attributeValue: '12',
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: 'UnknownVariableC' },
+        },
+        {
+          attributeValue: '13',
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: 'UnknownVariableD' },
+        },
+        {
+          attributeValue: '14',
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: 'UnknownVariableE' },
+        },
+        {
+          attributeValue: '15',
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: 'UnknownVariableF' },
+        },
+      ],
+    }
+    const preEstimate = Buffer.byteLength(JSON.stringify(request.setVariableData), 'utf8')
+    const postCalcLimit = preEstimate + 10
+    upsertConfigurationKey(
+      mockChargingStation,
+      OCPP20RequiredVariableName.BytesPerMessage,
+      postCalcLimit.toString(),
+      false
+    )
+    expect(preEstimate).toBeLessThan(postCalcLimit)
+    const response: { setVariableResult: OCPP20SetVariableResultType[] } =
+      svc.handleRequestSetVariables(mockChargingStation, request)
+    const actualSize = Buffer.byteLength(JSON.stringify(response.setVariableResult), 'utf8')
+    expect(actualSize).toBeGreaterThan(postCalcLimit)
+    expect(response.setVariableResult).toHaveLength(request.setVariableData.length)
+    response.setVariableResult.forEach(r => {
+      expect(r.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(r.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
+      expect(r.attributeStatusInfo?.additionalInfo).toMatch(
+        new RegExp(`BytesPerMessage limit ${postCalcLimit.toString()} exceeded`)
+      )
+    })
+    resetLimits(mockChargingStation)
+  })
+
+  // FR: B07.FR.12
   it('Should enforce ConnectionUrl write-only on GetVariables', () => {
+    resetLimits(mockChargingStation)
     const url = 'wss://central.example.com/ocpp'
     const setRequest: OCPP20SetVariablesRequest = {
       setVariableData: [
@@ -434,7 +543,6 @@ describe('B07 - Set Variables', () => {
       ],
     }
     svc.handleRequestSetVariables(mockChargingStation, setRequest)
-
     const getResponse: { getVariableResult: OCPP20GetVariableResultType[] } =
       svc.handleRequestGetVariables(mockChargingStation, {
         getVariableData: [
@@ -448,5 +556,6 @@ describe('B07 - Set Variables', () => {
     expect(getResponse.getVariableResult).toHaveLength(1)
     const result = getResponse.getVariableResult[0]
     expect(result.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.WriteOnly)
+    resetLimits(mockChargingStation)
   })
 })

@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-
 import { expect } from '@std/expect'
 import { millisecondsToSeconds } from 'date-fns'
 import { describe, it } from 'node:test'
@@ -12,16 +10,19 @@ import {
   type OCPP20GetVariablesRequest,
   OCPP20OptionalVariableName,
   OCPP20RequiredVariableName,
+  ReasonCodeEnumType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { createChargingStationWithEvses } from '../../../ChargingStationFactory.js'
+import { TEST_CHARGING_STATION_NAME, TEST_CONNECTOR_VALID_INSTANCE } from './OCPP20TestConstants.js'
 import {
-  TEST_CHARGING_STATION_NAME,
-  TEST_CONNECTOR_INVALID_INSTANCE,
-  TEST_CONNECTOR_VALID_INSTANCE,
-} from './OCPP20TestConstants.js'
+  resetLimits,
+  resetReportingValueSize,
+  setReportingValueSize,
+  setStrictLimits,
+} from './OCPP20TestUtils.js'
 
-await describe('B06 - Get Variables', async () => {
+void describe('B06 - Get Variables', () => {
   const mockChargingStation = createChargingStationWithEvses({
     baseName: TEST_CHARGING_STATION_NAME,
     heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
@@ -34,7 +35,7 @@ await describe('B06 - Get Variables', async () => {
   const incomingRequestService = new OCPP20IncomingRequestService()
 
   // FR: B06.FR.01
-  await it('Should handle GetVariables request with valid variables', async () => {
+  void it('Should handle GetVariables request with valid variables', () => {
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
         {
@@ -49,11 +50,7 @@ await describe('B06 - Get Variables', async () => {
       ],
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
-    const response = await (incomingRequestService as any).handleRequestGetVariables(
-      mockChargingStation,
-      request
-    )
+    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
 
     expect(response).toBeDefined()
     expect(response.getVariableResult).toBeDefined()
@@ -61,7 +58,6 @@ await describe('B06 - Get Variables', async () => {
     expect(response.getVariableResult).toHaveLength(2)
 
     // Check first variable (HeartbeatInterval)
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const firstResult = response.getVariableResult[0]
     expect(firstResult.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
     expect(firstResult.attributeType).toBe(AttributeEnumType.Actual)
@@ -73,7 +69,6 @@ await describe('B06 - Get Variables', async () => {
     expect(firstResult.attributeStatusInfo).toBeUndefined()
 
     // Check second variable (WebSocketPingInterval)
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const secondResult = response.getVariableResult[1]
     expect(secondResult.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
     expect(secondResult.attributeType).toBeUndefined()
@@ -84,27 +79,21 @@ await describe('B06 - Get Variables', async () => {
   })
 
   // FR: B06.FR.02
-  await it('Should handle GetVariables request with invalid variables', async () => {
+  void it('Should handle GetVariables request with invalid variables', () => {
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
         {
           component: { name: OCPP20ComponentName.ChargingStation },
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-          variable: { name: 'InvalidVariable' as any },
+          variable: { name: 'InvalidVariable' },
         },
         {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-          component: { name: 'InvalidComponent' as any },
+          component: { name: 'InvalidComponent' },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ],
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
-    const response = await (incomingRequestService as any).handleRequestGetVariables(
-      mockChargingStation,
-      request
-    )
+    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
 
     expect(response).toBeDefined()
     expect(response.getVariableResult).toBeDefined()
@@ -112,7 +101,6 @@ await describe('B06 - Get Variables', async () => {
     expect(response.getVariableResult).toHaveLength(2)
 
     // Check first variable (should be UnknownVariable)
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const firstResult = response.getVariableResult[0]
     expect(firstResult.attributeStatus).toBe(GetVariableStatusEnumType.UnknownVariable)
     expect(firstResult.attributeType).toBeUndefined()
@@ -122,7 +110,6 @@ await describe('B06 - Get Variables', async () => {
     expect(firstResult.attributeStatusInfo).toBeDefined()
 
     // Check second variable (should be UnknownComponent)
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const secondResult = response.getVariableResult[1]
     expect(secondResult.attributeStatus).toBe(GetVariableStatusEnumType.UnknownComponent)
     expect(secondResult.attributeType).toBeUndefined()
@@ -133,7 +120,7 @@ await describe('B06 - Get Variables', async () => {
   })
 
   // FR: B06.FR.03
-  await it('Should handle GetVariables request with unsupported attribute types', async () => {
+  void it('Should handle GetVariables request with unsupported attribute types', () => {
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
         {
@@ -144,24 +131,21 @@ await describe('B06 - Get Variables', async () => {
       ],
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
-    const response = await (incomingRequestService as any).handleRequestGetVariables(
-      mockChargingStation,
-      request
-    )
+    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
 
     expect(response).toBeDefined()
     expect(response.getVariableResult).toBeDefined()
     expect(Array.isArray(response.getVariableResult)).toBe(true)
     expect(response.getVariableResult).toHaveLength(1)
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const result = response.getVariableResult[0]
     expect(result.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
   })
 
   // FR: B06.FR.04
-  await it('Should handle GetVariables request with Connector components', async () => {
+  void it('Should reject AuthorizeRemoteStart under Connector component', () => {
+    resetLimits(mockChargingStation)
+    resetReportingValueSize(mockChargingStation)
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
         {
@@ -171,43 +155,16 @@ await describe('B06 - Get Variables', async () => {
           },
           variable: { name: OCPP20RequiredVariableName.AuthorizeRemoteStart },
         },
-        {
-          component: {
-            instance: TEST_CONNECTOR_INVALID_INSTANCE, // Non-existent connector
-            name: OCPP20ComponentName.Connector,
-          },
-          variable: { name: OCPP20RequiredVariableName.AuthorizeRemoteStart },
-        },
       ],
     }
-
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
-    const response = await (incomingRequestService as any).handleRequestGetVariables(
-      mockChargingStation,
-      request
-    )
-
-    expect(response).toBeDefined()
-    expect(response.getVariableResult).toBeDefined()
-    expect(Array.isArray(response.getVariableResult)).toBe(true)
-    expect(response.getVariableResult).toHaveLength(2)
-
-    // Check valid connector
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const firstResult = response.getVariableResult[0]
-    expect(firstResult.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-    expect(firstResult.component.name).toBe(OCPP20ComponentName.Connector)
-    expect(firstResult.component.instance).toBe(TEST_CONNECTOR_VALID_INSTANCE)
-
-    // Check invalid connector
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const secondResult = response.getVariableResult[1]
-    expect(secondResult.attributeStatus).toBe(GetVariableStatusEnumType.UnknownComponent)
-    expect(secondResult.component.instance).toBe(TEST_CONNECTOR_INVALID_INSTANCE)
+    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    expect(response.getVariableResult).toHaveLength(1)
+    const result = response.getVariableResult[0]
+    expect(result.attributeStatus).toBe(GetVariableStatusEnumType.UnknownComponent)
   })
 
   // FR: B06.FR.05
-  await it('Should reject Target attribute for WebSocketPingInterval', async () => {
+  void it('Should reject Target attribute for WebSocketPingInterval', () => {
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
         {
@@ -217,14 +174,131 @@ await describe('B06 - Get Variables', async () => {
         },
       ],
     }
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
-    const response = await (incomingRequestService as any).handleRequestGetVariables(
-      mockChargingStation,
-      request
-    )
+    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
     expect(response.getVariableResult).toHaveLength(1)
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const result = response.getVariableResult[0]
     expect(result.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
+  })
+
+  void it('Should truncate variable value based on ReportingValueSize', () => {
+    // Set size below actual value length to force truncation
+    setReportingValueSize(mockChargingStation, 2)
+    const request: OCPP20GetVariablesRequest = {
+      getVariableData: [
+        {
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20OptionalVariableName.WebSocketPingInterval },
+        },
+      ],
+    }
+    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    const result = response.getVariableResult[0]
+    expect(result.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+    expect(result.attributeValue?.length).toBe(2)
+    resetReportingValueSize(mockChargingStation)
+  })
+
+  void it('Should allow ReportingValueSize retrieval from DeviceDataCtrlr', () => {
+    const request: OCPP20GetVariablesRequest = {
+      getVariableData: [
+        {
+          component: { name: OCPP20ComponentName.DeviceDataCtrlr },
+          variable: { name: OCPP20RequiredVariableName.ReportingValueSize },
+        },
+      ],
+    }
+    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    const result = response.getVariableResult[0]
+    expect(result.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+    expect(result.attributeValue).toBeDefined()
+  })
+
+  void it('Should enforce ItemsPerMessage limit', () => {
+    setStrictLimits(mockChargingStation, 1, 10000)
+    const request: OCPP20GetVariablesRequest = {
+      getVariableData: [
+        {
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20OptionalVariableName.WebSocketPingInterval },
+        },
+        {
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
+        },
+      ],
+    }
+    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    expect(response.getVariableResult.length).toBe(2)
+    for (const r of response.getVariableResult) {
+      expect(r.attributeStatus).toBe(GetVariableStatusEnumType.Rejected)
+      expect(r.attributeStatusInfo?.reasonCode).toBeDefined()
+    }
+    resetLimits(mockChargingStation)
+  })
+
+  void it('Should enforce BytesPerMessage limit (pre-calculation)', () => {
+    setStrictLimits(mockChargingStation, 100, 10)
+    const request: OCPP20GetVariablesRequest = {
+      getVariableData: [
+        {
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20OptionalVariableName.WebSocketPingInterval },
+        },
+        {
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
+        },
+      ],
+    }
+    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    expect(response.getVariableResult.length).toBe(2)
+    response.getVariableResult.forEach(r => {
+      expect(r.attributeStatus).toBe(GetVariableStatusEnumType.Rejected)
+      expect(r.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
+    })
+    resetLimits(mockChargingStation)
+  })
+
+  void it('Should enforce BytesPerMessage limit (post-calculation)', () => {
+    // Build request likely to produce larger response due to status info entries
+    const request: OCPP20GetVariablesRequest = {
+      getVariableData: [
+        // Unsupported attribute type (adds status info)
+        {
+          attributeType: AttributeEnumType.Target,
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
+        },
+        // Unknown variable
+        {
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: 'UnknownVariableA' },
+        },
+        {
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: 'UnknownVariableB' },
+        },
+        {
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: 'UnknownVariableC' },
+        },
+        {
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: 'UnknownVariableD' },
+        },
+      ],
+    }
+    const preEstimate = Buffer.byteLength(JSON.stringify(request.getVariableData), 'utf8')
+    const limit = preEstimate + 5 // allow pre-check pass, fail post-check
+    setStrictLimits(mockChargingStation, 100, limit)
+    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    const actualSize = Buffer.byteLength(JSON.stringify(response.getVariableResult), 'utf8')
+    expect(actualSize).toBeGreaterThan(limit)
+    expect(response.getVariableResult).toHaveLength(request.getVariableData.length)
+    response.getVariableResult.forEach(r => {
+      expect(r.attributeStatus).toBe(GetVariableStatusEnumType.Rejected)
+      expect(r.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
+    })
+    resetLimits(mockChargingStation)
   })
 })

@@ -2327,13 +2327,16 @@ export class ChargingStation extends EventEmitter {
             error
           )
         }
-        // eslint-disable-next-line promise/catch-or-return, @typescript-eslint/no-floating-promises, promise/no-promise-in-callback
+        // eslint-disable-next-line promise/no-promise-in-callback
         sleep(exponentialDelay(messageIdx))
-          // eslint-disable-next-line promise/always-return
           .then(() => {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             ++messageIdx!
             this.sendMessageBuffer(onCompleteCallback, messageIdx)
+            return undefined
+          })
+          .catch((error: unknown) => {
+            throw error
           })
       })
     } else {

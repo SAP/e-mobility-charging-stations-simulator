@@ -53,6 +53,7 @@ export enum OCPP20RequiredVariableName {
   NetworkProfileConnectionAttempts = 'NetworkProfileConnectionAttempts',
   OfflineThreshold = 'OfflineThreshold',
   OrganizationName = 'OrganizationName',
+  ReportingValueSize = 'ReportingValueSize',
   ResetRetries = 'ResetRetries',
   SecurityProfile = 'SecurityProfile',
   StopTxOnEVSideDisconnect = 'StopTxOnEVSideDisconnect',

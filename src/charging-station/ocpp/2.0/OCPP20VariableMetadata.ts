@@ -19,12 +19,15 @@ export const VARIABLE_CONSTRAINTS: Record<string, OCPP20VariableConstraintMetada
     integer: true,
     maxLength: 10,
   },
+  [OCPP20RequiredVariableName.BytesPerMessage]: { integer: true, maxLength: 7, positive: true },
   [OCPP20RequiredVariableName.EVConnectionTimeOut]: {
     integer: true,
     maxLength: 10,
     positive: true,
   },
+  [OCPP20RequiredVariableName.ItemsPerMessage]: { integer: true, maxLength: 5, positive: true },
   [OCPP20RequiredVariableName.MessageTimeout]: { integer: true, maxLength: 10, positive: true },
+  [OCPP20RequiredVariableName.ReportingValueSize]: { integer: true, maxLength: 5, positive: true },
   [OCPP20RequiredVariableName.TxUpdatedInterval]: { integer: true, maxLength: 10, positive: true },
   [OCPP20VendorVariableName.ConnectionUrl]: {
     maxLength: 512,

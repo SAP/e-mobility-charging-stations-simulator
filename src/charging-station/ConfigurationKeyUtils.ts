@@ -78,7 +78,7 @@ export const addConfigurationKey = (
       }
     } else {
       const configurationKey = chargingStation.ocppConfiguration.configurationKey[keyIndex]
-      if (options.reboot && configurationKey.reboot !== options.reboot) {
+      if (options.reboot != null && configurationKey.reboot !== options.reboot) {
         configurationKey.reboot = options.reboot
       }
       if (options.readonly != null && configurationKey.readonly !== options.readonly) {

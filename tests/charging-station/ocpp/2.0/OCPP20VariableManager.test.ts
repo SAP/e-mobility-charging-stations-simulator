@@ -83,28 +83,53 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(result[1].attributeStatusInfo).toBeUndefined()
     })
 
-    await it('Should handle valid Connector component requests', () => {
+    await it('Should accept default true value for AuthorizeRemoteStart (AuthCtrlr)', () => {
+      const manager = OCPP20VariableManager.getInstance()
       const request: OCPP20GetVariableDataType[] = [
         {
-          component: {
-            instance: '1',
-            name: OCPP20ComponentName.Connector,
-          },
+          component: { name: OCPP20ComponentName.AuthCtrlr },
           variable: { name: OCPP20RequiredVariableName.AuthorizeRemoteStart },
         },
       ]
-
       const result = manager.getVariables(mockChargingStation, request)
-
-      expect(Array.isArray(result)).toBe(true)
       expect(result).toHaveLength(1)
       expect(result[0].attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(result[0].attributeType).toBeUndefined()
-      expect(result[0].attributeValue).toBe('')
-      expect(result[0].component.name).toBe(OCPP20ComponentName.Connector)
-      expect(result[0].component.instance).toBe('1')
-      expect(result[0].variable.name).toBe(OCPP20RequiredVariableName.AuthorizeRemoteStart)
-      expect(result[0].attributeStatusInfo).toBeUndefined()
+      expect(result[0].attributeValue).toBe('true')
+      expect(result[0].component.name).toBe(OCPP20ComponentName.AuthCtrlr)
+    })
+
+    await it('Should accept setting and getting AuthorizeRemoteStart = true (AuthCtrlr)', () => {
+      const setRes = manager.setVariables(mockChargingStation, [
+        {
+          attributeValue: 'true',
+          component: { name: OCPP20ComponentName.AuthCtrlr },
+          variable: { name: OCPP20RequiredVariableName.AuthorizeRemoteStart },
+        },
+      ])[0]
+      expect(setRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      const getRes = manager.getVariables(mockChargingStation, [
+        {
+          component: { name: OCPP20ComponentName.AuthCtrlr },
+          variable: { name: OCPP20RequiredVariableName.AuthorizeRemoteStart },
+        },
+      ])[0]
+      expect(getRes.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      expect(getRes.attributeValue).toBe('true')
+    })
+
+    await it('Should reject invalid values for AuthorizeRemoteStart (AuthCtrlr)', () => {
+      const invalidValues = ['', '1', 'TRUE', 'False', 'yes']
+      for (const val of invalidValues) {
+        const res = manager.setVariables(mockChargingStation, [
+          {
+            attributeValue: val,
+            component: { name: OCPP20ComponentName.AuthCtrlr },
+            variable: { name: OCPP20RequiredVariableName.AuthorizeRemoteStart },
+          },
+        ])[0]
+        expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+        expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
+      }
     })
 
     await it('Should handle invalid component gracefully', () => {
@@ -271,7 +296,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(result[2].attributeStatusInfo).toBeUndefined()
     })
 
-    await it('Should handle EVSE component when supported', () => {
+    await it('Should reject EVSE component as unsupported', () => {
       const request: OCPP20GetVariableDataType[] = [
         {
           component: {
@@ -286,14 +311,14 @@ await describe('OCPP20VariableManager test suite', async () => {
 
       expect(Array.isArray(result)).toBe(true)
       expect(result).toHaveLength(1)
-      // Should be accepted since mockChargingStation has EVSEs
-      expect(result[0].attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      expect(result[0].attributeStatus).toBe(GetVariableStatusEnumType.UnknownComponent)
       expect(result[0].attributeType).toBeUndefined()
-      expect(result[0].attributeValue).toBe('')
+      expect(result[0].attributeValue).toBeUndefined()
       expect(result[0].component.name).toBe(OCPP20ComponentName.EVSE)
       expect(result[0].component.instance).toBe('1')
       expect(result[0].variable.name).toBe(OCPP20RequiredVariableName.AuthorizeRemoteStart)
-      expect(result[0].attributeStatusInfo).toBeUndefined()
+      expect(result[0].attributeStatusInfo).toBeDefined()
+      expect(result[0].attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.NotFound)
     })
   })
 
@@ -301,6 +326,8 @@ await describe('OCPP20VariableManager test suite', async () => {
     const manager = OCPP20VariableManager.getInstance()
 
     await it('Should validate ChargingStation component as always valid', () => {
+      // NOTE: Connector components currently unsupported in isComponentValid. Submit OpenSpec proposal before changing behavior.
+      // Future OCPP 2.0 per-connector variable support would require updating related tests.
       const component: ComponentType = { name: OCPP20ComponentName.ChargingStation }
 
       // Access private method through any casting for testing
@@ -309,12 +336,14 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(isValid).toBe(true)
     })
 
-    await it('Should validate Connector component when connectors exist', () => {
+    // NOTE: Connector component currently unsupported in isComponentValid.
+    // Future support for per-connector variables must follow an OpenSpec proposal.
+    await it('Should reject Connector component as unsupported even when connectors exist', () => {
       const component: ComponentType = { instance: '1', name: OCPP20ComponentName.Connector }
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
       const isValid = (manager as any).isComponentValid(mockChargingStation, component)
-      expect(isValid).toBe(true)
+      expect(isValid).toBe(false)
     })
 
     await it('Should reject invalid connector instance', () => {
@@ -1210,33 +1239,22 @@ await describe('OCPP20VariableManager test suite', async () => {
       }
     })
 
-    await it('Should validate component name casing for ChargingStation, Connector, EVSE', () => {
-      const componentVariants = ['ChargingStation', 'chargingstation', 'CHARGINGSTATION']
-      for (const componentVariant of componentVariants) {
+    await it('Should validate component name casing for ChargingStation and AuthCtrlr', () => {
+      const chargingStationVariants = ['ChargingStation', 'chargingstation', 'CHARGINGSTATION']
+      for (const variant of chargingStationVariants) {
         const res = manager.getVariables(mockChargingStation, [
           {
-            component: { name: componentVariant as unknown as OCPP20ComponentName },
+            component: { name: variant as unknown as OCPP20ComponentName },
             variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
           },
         ])[0]
         expect(res.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
       }
-      // Connector and EVSE with instance casing variants
-      const connectorVariants = ['Connector', 'connector', 'CONNECTOR']
-      for (const connectorVariant of connectorVariants) {
+      const authCtrlrVariants = ['AuthCtrlr', 'authctrlr', 'AUTHCTRLR']
+      for (const variant of authCtrlrVariants) {
         const res = manager.getVariables(mockChargingStation, [
           {
-            component: { instance: '1', name: connectorVariant as unknown as OCPP20ComponentName },
-            variable: { name: OCPP20RequiredVariableName.AuthorizeRemoteStart },
-          },
-        ])[0]
-        expect(res.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      }
-      const evseVariants = ['EVSE', 'evse', 'Evse']
-      for (const evseVariant of evseVariants) {
-        const res = manager.getVariables(mockChargingStation, [
-          {
-            component: { instance: '1', name: evseVariant as unknown as OCPP20ComponentName },
+            component: { name: variant as unknown as OCPP20ComponentName },
             variable: { name: OCPP20RequiredVariableName.AuthorizeRemoteStart },
           },
         ])[0]

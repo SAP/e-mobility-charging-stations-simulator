@@ -30,19 +30,46 @@ import { DEFAULT_MAX_LENGTH, VARIABLE_CONSTRAINTS } from './OCPP20VariableMetada
 
 // Persistent configuration-backed variables (original case).
 const PERSISTENT_VARIABLES = new Set<string>([
+  // Optional configuration keys
   OCPP20OptionalVariableName.HeartbeatInterval as string,
   OCPP20OptionalVariableName.WebSocketPingInterval as string,
+  OCPP20RequiredVariableName.BytesPerMessage as string,
+  // Required configuration keys
   OCPP20RequiredVariableName.EVConnectionTimeOut as string,
+  OCPP20RequiredVariableName.ItemsPerMessage as string,
+  OCPP20RequiredVariableName.LocalAuthorizeOffline as string,
+  OCPP20RequiredVariableName.LocalPreAuthorize as string,
+  OCPP20RequiredVariableName.MessageAttemptInterval as string,
+  OCPP20RequiredVariableName.MessageAttempts as string,
   OCPP20RequiredVariableName.MessageTimeout as string,
+  OCPP20RequiredVariableName.NetworkConfigurationPriority as string,
+  OCPP20RequiredVariableName.NetworkProfileConnectionAttempts as string,
+  OCPP20RequiredVariableName.OfflineThreshold as string,
+  OCPP20RequiredVariableName.OrganizationName as string,
+  OCPP20RequiredVariableName.ReportingValueSize as string,
+  OCPP20RequiredVariableName.ResetRetries as string,
+  OCPP20RequiredVariableName.SecurityProfile as string,
+  OCPP20RequiredVariableName.StopTxOnEVSideDisconnect as string,
+  OCPP20RequiredVariableName.StopTxOnInvalidId as string,
+  OCPP20RequiredVariableName.TimeSource as string,
+  OCPP20RequiredVariableName.TxEndedMeasurands as string,
+  OCPP20RequiredVariableName.TxStartedMeasurands as string,
+  OCPP20RequiredVariableName.TxStartPoint as string,
+  OCPP20RequiredVariableName.TxStopPoint as string,
+  OCPP20RequiredVariableName.TxUpdatedMeasurands as string,
+  OCPP20RequiredVariableName.UnlockOnEVSideDisconnect as string,
+  // Vendor specific configuration keys
   OCPP20VendorVariableName.ConnectionUrl as string,
 ])
 // Write-only variables (original case).
 const WRITE_ONLY_VARIABLES = new Set<string>([OCPP20VendorVariableName.ConnectionUrl as string])
 // Read-only variables (original case).
-const READ_ONLY_VARIABLES = new Set<string>([OCPP20RequiredVariableName.DateTime as string])
-// Non-persistent runtime variables (original case).
+const READ_ONLY_VARIABLES = new Set<string>([
+  OCPP20RequiredVariableName.DateTime as string,
+  OCPP20RequiredVariableName.ReportingValueSize as string,
+])
+// Non-persistent runtime variables (original case, excluding AuthorizeRemoteStart migrated to AuthCtrlr).
 const RUNTIME_VARIABLES = new Set<string>([
-  OCPP20RequiredVariableName.AuthorizeRemoteStart as string,
   OCPP20RequiredVariableName.DateTime as string,
   OCPP20RequiredVariableName.TxUpdatedInterval as string,
 ])
@@ -197,6 +224,10 @@ export class OCPP20VariableManager {
           case OCPP20RequiredVariableName.MessageTimeout as string:
             defaultValue = Constants.DEFAULT_CONNECTION_TIMEOUT.toString()
             break
+          case OCPP20RequiredVariableName.ReportingValueSize as string:
+            // Spec max limit 2500; choose full limit as default
+            defaultValue = '2500'
+            break
         }
         if (defaultValue != null) {
           addConfigurationKey(
@@ -334,7 +365,37 @@ export class OCPP20VariableManager {
       )
     }
 
-    const value = this.resolveVariableValue(chargingStation, component, variable)
+    let value = this.resolveVariableValue(chargingStation, component, variable)
+
+    // Enforce non-empty Accepted values (reject if empty string)
+    if (value.length === 0) {
+      return this.rejectGet(
+        variable,
+        component,
+        attributeType,
+        GetVariableStatusEnumType.Rejected,
+        ReasonCodeEnumType.InvalidValue,
+        'Resolved variable value is empty'
+      )
+    }
+
+    // Apply ReportingValueSize truncation if defined
+    const reportingValueSizeKey = this.buildKeyFromNames(
+      OCPP20ComponentName.ChargingStation as string,
+      undefined,
+      OCPP20RequiredVariableName.ReportingValueSize as string
+    )
+    if (!this.invalidVariables.has(reportingValueSizeKey)) {
+      const reportingValueSizeConfigKey = getConfigurationKey(
+        chargingStation,
+        OCPP20RequiredVariableName.ReportingValueSize as unknown as StandardParametersKey
+      )
+      const maxSizeRaw = reportingValueSizeConfigKey?.value ?? '2500'
+      const maxSize = parseInt(maxSizeRaw, 10)
+      if (!Number.isNaN(maxSize) && maxSize > 0 && value.length > maxSize) {
+        value = value.slice(0, maxSize)
+      }
+    }
 
     return {
       attributeStatus: GetVariableStatusEnumType.Accepted,
@@ -355,23 +416,15 @@ export class OCPP20VariableManager {
     }
     if (
       componentNameCanonical ===
-        this.canonicalComponentName(OCPP20ComponentName.Connector as string) &&
-      chargingStation.connectors.size > 0
+      this.canonicalComponentName(OCPP20ComponentName.AuthCtrlr as string)
     ) {
-      if (component.instance != null) {
-        const connectorId = parseInt(component.instance, 10)
-        return chargingStation.connectors.has(connectorId)
-      }
+      // AuthCtrlr has no instance-specific validation in this implementation
       return true
     }
     if (
-      componentNameCanonical === this.canonicalComponentName(OCPP20ComponentName.EVSE as string) &&
-      chargingStation.hasEvses
+      componentNameCanonical ===
+      this.canonicalComponentName(OCPP20ComponentName.DeviceDataCtrlr as string)
     ) {
-      if (component.instance != null) {
-        const evseId = parseInt(component.instance, 10)
-        return chargingStation.evses.has(evseId)
-      }
       return true
     }
     return false
@@ -391,7 +444,7 @@ export class OCPP20VariableManager {
     }
     if (
       componentNameCanonical ===
-      this.canonicalComponentName(OCPP20ComponentName.Connector as string)
+      this.canonicalComponentName(OCPP20ComponentName.AuthCtrlr as string)
     ) {
       return (
         variableNameCanonical ===
@@ -399,11 +452,12 @@ export class OCPP20VariableManager {
       )
     }
     if (
-      componentNameCanonical === this.canonicalComponentName(OCPP20ComponentName.EVSE as string)
+      componentNameCanonical ===
+      this.canonicalComponentName(OCPP20ComponentName.DeviceDataCtrlr as string)
     ) {
       return (
         variableNameCanonical ===
-        this.canonicalVariableName(OCPP20RequiredVariableName.AuthorizeRemoteStart as string)
+        this.canonicalVariableName(OCPP20RequiredVariableName.ReportingValueSize as string)
       )
     }
     return false
@@ -538,6 +592,36 @@ export class OCPP20VariableManager {
       return mappedConfigKey?.value ?? ''
     }
 
+    if (
+      componentNameCanonical ===
+      this.canonicalComponentName(OCPP20ComponentName.DeviceDataCtrlr as string)
+    ) {
+      if (
+        variableNameCanonical ===
+        this.canonicalVariableName(OCPP20RequiredVariableName.ReportingValueSize as string)
+      ) {
+        const cfg = getConfigurationKey(
+          chargingStation,
+          OCPP20RequiredVariableName.ReportingValueSize as unknown as StandardParametersKey
+        )
+        return cfg?.value ?? '2500'
+      }
+    }
+
+    if (
+      componentNameCanonical ===
+      this.canonicalComponentName(OCPP20ComponentName.AuthCtrlr as string)
+    ) {
+      const variableKey = this.buildKey(component, variable)
+      if (
+        variableNameCanonical ===
+        this.canonicalVariableName(OCPP20RequiredVariableName.AuthorizeRemoteStart as string)
+      ) {
+        // Return runtime override if present; otherwise default to 'true' per spec implicit default
+        return this.runtimeOverrides.get(variableKey) ?? 'true'
+      }
+    }
+
     // Future: Connector/EVSE variables support.
     return ''
   }
@@ -610,7 +694,13 @@ export class OCPP20VariableManager {
     if (
       !WRITE_ONLY_VARIABLES_CANONICAL.has(this.canonicalVariableName(variable.name)) &&
       !PERSISTENT_VARIABLES_CANONICAL.has(this.canonicalVariableName(variable.name)) &&
-      !RUNTIME_VARIABLES_CANONICAL.has(this.canonicalVariableName(variable.name))
+      !RUNTIME_VARIABLES_CANONICAL.has(this.canonicalVariableName(variable.name)) &&
+      !(
+        this.canonicalComponentName(component.name) ===
+          this.canonicalComponentName(OCPP20ComponentName.AuthCtrlr as string) &&
+        this.canonicalVariableName(variable.name) ===
+          this.canonicalVariableName(OCPP20RequiredVariableName.AuthorizeRemoteStart as string)
+      )
     ) {
       return this.rejectSet(
         variable,
@@ -622,34 +712,53 @@ export class OCPP20VariableManager {
       )
     }
 
-    const validation = OCPP20VariableManager.validateConfigurationValue(
-      variable.name,
-      attributeValue
-    )
-    if (!validation.valid) {
-      let mappedReason = ReasonCodeEnumType.InvalidValue
-      if (validation.additionalInfo?.includes('Positive integer > 0')) {
-        if (attributeValue.includes('.') || attributeValue.startsWith('+')) {
-          mappedReason = ReasonCodeEnumType.InvalidValue
-        } else {
-          mappedReason = ReasonCodeEnumType.ValuePositiveOnly
-        }
-      } else if (validation.additionalInfo?.includes('Integer >= 0')) {
-        mappedReason = ReasonCodeEnumType.ValueZeroNotAllowed
-      } else if (
-        validation.additionalInfo?.includes('Invalid URL') ||
-        validation.additionalInfo?.includes('Unsupported URL scheme')
-      ) {
-        mappedReason = ReasonCodeEnumType.InvalidURL
+    // Early boolean semantics for AuthCtrlr.AuthorizeRemoteStart
+    if (
+      this.canonicalComponentName(component.name) ===
+        this.canonicalComponentName(OCPP20ComponentName.AuthCtrlr as string) &&
+      this.canonicalVariableName(variable.name) ===
+        this.canonicalVariableName(OCPP20RequiredVariableName.AuthorizeRemoteStart as string)
+    ) {
+      if (attributeValue !== 'true' && attributeValue !== 'false') {
+        return this.rejectSet(
+          variable,
+          component,
+          resolvedAttributeType,
+          SetVariableStatusEnumType.Rejected,
+          ReasonCodeEnumType.InvalidValue,
+          'AuthorizeRemoteStart must be "true" or "false"'
+        )
       }
-      return this.rejectSet(
-        variable,
-        component,
-        resolvedAttributeType,
-        SetVariableStatusEnumType.Rejected,
-        mappedReason,
-        validation.additionalInfo ?? 'Invalid value'
+    } else {
+      const validation = OCPP20VariableManager.validateConfigurationValue(
+        variable.name,
+        attributeValue
       )
+      if (!validation.valid) {
+        let mappedReason = ReasonCodeEnumType.InvalidValue
+        if (validation.additionalInfo?.includes('Positive integer > 0')) {
+          if (attributeValue.includes('.') || attributeValue.startsWith('+')) {
+            mappedReason = ReasonCodeEnumType.InvalidValue
+          } else {
+            mappedReason = ReasonCodeEnumType.ValuePositiveOnly
+          }
+        } else if (validation.additionalInfo?.includes('Integer >= 0')) {
+          mappedReason = ReasonCodeEnumType.ValueZeroNotAllowed
+        } else if (
+          validation.additionalInfo?.includes('Invalid URL') ||
+          validation.additionalInfo?.includes('Unsupported URL scheme')
+        ) {
+          mappedReason = ReasonCodeEnumType.InvalidURL
+        }
+        return this.rejectSet(
+          variable,
+          component,
+          resolvedAttributeType,
+          SetVariableStatusEnumType.Rejected,
+          mappedReason,
+          validation.additionalInfo ?? 'Invalid value'
+        )
+      }
     }
 
     if (READ_ONLY_VARIABLES_CANONICAL.has(this.canonicalVariableName(variable.name))) {
@@ -711,11 +820,12 @@ export class OCPP20VariableManager {
     }
     if (
       this.canonicalComponentName(component.name) ===
-      this.canonicalComponentName(OCPP20ComponentName.Connector as string)
+        this.canonicalComponentName(OCPP20ComponentName.AuthCtrlr as string) &&
+      this.canonicalVariableName(variable.name) ===
+        this.canonicalVariableName(OCPP20RequiredVariableName.AuthorizeRemoteStart as string)
     ) {
-      if (variable.name === (OCPP20RequiredVariableName.AuthorizeRemoteStart as string)) {
-        this.runtimeOverrides.set(variableKey, attributeValue)
-      }
+      // Store override after early validation
+      this.runtimeOverrides.set(variableKey, attributeValue)
     }
 
     if (rebootRequired) {
