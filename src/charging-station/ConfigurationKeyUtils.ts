@@ -1,6 +1,11 @@
 import type { ConfigurationKey, ConfigurationKeyType } from '../types/index.js'
 import type { ChargingStation } from './ChargingStation.js'
 
+import {
+  OCPP20OptionalVariableName,
+  OCPP20RequiredVariableName,
+  OCPP20VendorVariableName,
+} from '../types/ocpp/2.0/Variables.js'
 import { logger } from '../utils/index.js'
 
 interface AddConfigurationKeyParams {
@@ -160,23 +165,23 @@ export const validateConfigurationValue = (
   if (value.length > 1000) {
     return { additionalInfo: 'Value exceeds maximum length (1000)', valid: false }
   }
-  const positiveIntegerVariables = [
-    'TxUpdatedInterval',
-    'HeartbeatInterval',
-    'EVConnectionTimeOut',
-    'MessageTimeout',
+  const positiveIntegerVariables: string[] = [
+    OCPP20RequiredVariableName.TxUpdatedInterval,
+    OCPP20OptionalVariableName.HeartbeatInterval,
+    OCPP20RequiredVariableName.EVConnectionTimeOut,
+    OCPP20RequiredVariableName.MessageTimeout,
   ]
   if (positiveIntegerVariables.includes(variableName)) {
     if (!/^[0-9]+$/.test(value) || parseInt(value, 10) <= 0) {
       return { additionalInfo: 'Positive integer > 0 required', valid: false }
     }
   }
-  if (variableName === 'WebSocketPingInterval') {
+  if (variableName === (OCPP20OptionalVariableName.WebSocketPingInterval as string)) {
     if (!/^[0-9]+$/.test(value) || parseInt(value, 10) < 0) {
       return { additionalInfo: 'Integer >= 0 required', valid: false }
     }
   }
-  if (variableName === 'ConnectionUrl') {
+  if (variableName === (OCPP20VendorVariableName.ConnectionUrl as string)) {
     try {
       const url = new URL(value)
       if (!['http:', 'https:', 'ws:', 'wss:'].includes(url.protocol)) {
