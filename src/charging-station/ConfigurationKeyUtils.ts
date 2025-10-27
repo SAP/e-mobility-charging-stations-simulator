@@ -82,17 +82,16 @@ export const addConfigurationKey = (
         visible: options.visible,
       }
     } else {
-      // Allow metadata update (e.g. reboot flag) without overwriting value when overwrite=false
-      const existing = chargingStation.ocppConfiguration.configurationKey[keyIndex]
-      if (options.reboot && existing.reboot !== options.reboot) {
-        existing.reboot = options.reboot
+      const configurationKey = chargingStation.ocppConfiguration.configurationKey[keyIndex]
+      if (options.reboot && configurationKey.reboot !== options.reboot) {
+        configurationKey.reboot = options.reboot
       }
-      if (options.readonly != null && existing.readonly !== options.readonly) {
+      if (options.readonly != null && configurationKey.readonly !== options.readonly) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        existing.readonly = options.readonly!
+        configurationKey.readonly = options.readonly!
       }
-      if (options.visible != null && existing.visible !== options.visible) {
-        existing.visible = options.visible
+      if (options.visible != null && configurationKey.visible !== options.visible) {
+        configurationKey.visible = options.visible
       }
       logger.error(
         `${chargingStation.logPrefix()} Trying to add an already existing configuration key: %j`,
