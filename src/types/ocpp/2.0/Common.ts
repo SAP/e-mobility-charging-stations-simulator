@@ -202,13 +202,11 @@ export enum OperationalStatusEnumType {
 }
 
 export enum ReasonCodeEnumType {
-  ChangeRequiresReboot = 'ChangeRequiresReboot',
   CSNotAccepted = 'CSNotAccepted',
   DuplicateProfile = 'DuplicateProfile',
   DuplicateRequestId = 'DuplicateRequestId',
   FixedCable = 'FixedCable',
   FwUpdateInProgress = 'FwUpdateInProgress',
-  ImmutableVariable = 'ImmutableVariable',
   InternalError = 'InternalError',
   InvalidCertificate = 'InvalidCertificate',
   InvalidCSR = 'InvalidCSR',
@@ -217,15 +215,16 @@ export enum ReasonCodeEnumType {
   InvalidProfile = 'InvalidProfile',
   InvalidSchedule = 'InvalidSchedule',
   InvalidStackLevel = 'InvalidStackLevel',
+  InvalidURL = 'InvalidURL',
   InvalidValue = 'InvalidValue',
   MissingDevModelInfo = 'MissingDevModelInfo',
   MissingParam = 'MissingParam',
   NoCable = 'NoCable',
+  NoError = 'NoError',
   NotEnabled = 'NotEnabled',
   NotFound = 'NotFound',
   OutOfMemory = 'OutOfMemory',
   OutOfStorage = 'OutOfStorage',
-  PropertyConstraintViolation = 'PropertyConstraintViolation',
   ReadOnly = 'ReadOnly',
   TooLargeElement = 'TooLargeElement',
   TooManyElements = 'TooManyElements',
@@ -241,8 +240,11 @@ export enum ReasonCodeEnumType {
   UnsupportedRateUnit = 'UnsupportedRateUnit',
   UnsupportedRequest = 'UnsupportedRequest',
   ValueOutOfRange = 'ValueOutOfRange',
+  ValuePositiveOnly = 'ValuePositiveOnly',
   ValueTooHigh = 'ValueTooHigh',
   ValueTooLow = 'ValueTooLow',
+  ValueZeroNotAllowed = 'ValueZeroNotAllowed',
+  WriteOnly = 'WriteOnly',
 }
 
 export enum ReportBaseEnumType {

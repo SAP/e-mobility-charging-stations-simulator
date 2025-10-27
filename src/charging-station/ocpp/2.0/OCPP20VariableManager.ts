@@ -38,6 +38,8 @@ const PERSISTENT_VARIABLES = new Set<string>([
 ])
 // Write-only variables.
 const WRITE_ONLY_VARIABLES = new Set<string>([OCPP20VendorVariableName.ConnectionUrl as string])
+// Read-only variables.
+const READ_ONLY_VARIABLES = new Set<string>([OCPP20RequiredVariableName.DateTime as string])
 // Non-persistent runtime variables.
 const RUNTIME_VARIABLES = new Set<string>([
   OCPP20RequiredVariableName.AuthorizeRemoteStart as string,
@@ -268,7 +270,7 @@ export class OCPP20VariableManager {
         component,
         attributeType,
         GetVariableStatusEnumType.Rejected,
-        ReasonCodeEnumType.UnsupportedParam,
+        ReasonCodeEnumType.WriteOnly,
         `Variable ${variable.name} is write-only and cannot be retrieved`
       )
     }
@@ -487,6 +489,18 @@ export class OCPP20VariableManager {
       )
     }
 
+    // Enforce read-only variables early for write attempts
+    if (READ_ONLY_VARIABLES.has(variable.name)) {
+      return this.rejectSet(
+        variable,
+        component,
+        resolvedAttributeType,
+        SetVariableStatusEnumType.Rejected,
+        ReasonCodeEnumType.ReadOnly,
+        `Variable ${variable.name} is read-only`
+      )
+    }
+
     const variableKey = `${component.name}${component.instance ? '.' + component.instance : ''}.${variable.name}`
     if (this.invalidVariables.has(variableKey)) {
       if (!WRITE_ONLY_VARIABLES.has(variable.name)) {
@@ -523,25 +537,42 @@ export class OCPP20VariableManager {
       attributeValue
     )
     if (!validation.valid) {
+      // Map validation failures to specific reason codes when possible
+      let mappedReason = ReasonCodeEnumType.InvalidValue
+      if (validation.additionalInfo?.includes('Positive integer > 0')) {
+        // Differentiate decimal/non-integer vs zero/negative for positive-only integers
+        if (attributeValue.includes('.') || attributeValue.startsWith('+')) {
+          mappedReason = ReasonCodeEnumType.InvalidValue
+        } else {
+          mappedReason = ReasonCodeEnumType.ValuePositiveOnly
+        }
+      } else if (validation.additionalInfo?.includes('Integer >= 0')) {
+        mappedReason = ReasonCodeEnumType.ValueZeroNotAllowed
+      } else if (
+        validation.additionalInfo?.includes('Invalid URL') ||
+        validation.additionalInfo?.includes('Unsupported URL scheme')
+      ) {
+        mappedReason = ReasonCodeEnumType.InvalidURL
+      }
       return this.rejectSet(
         variable,
         component,
         resolvedAttributeType,
         SetVariableStatusEnumType.Rejected,
-        ReasonCodeEnumType.PropertyConstraintViolation,
-        validation.additionalInfo ?? 'Property constraint violation'
+        mappedReason,
+        validation.additionalInfo ?? 'Invalid value'
       )
     }
 
-    // Immutable DateTime enforcement
-    if (variable.name === (OCPP20RequiredVariableName.DateTime as string)) {
+    // Read-only variables enforcement
+    if (READ_ONLY_VARIABLES.has(variable.name)) {
       return this.rejectSet(
         variable,
         component,
         resolvedAttributeType,
         SetVariableStatusEnumType.Rejected,
-        ReasonCodeEnumType.ImmutableVariable,
-        'Variable DateTime is immutable'
+        ReasonCodeEnumType.ReadOnly,
+        `Variable ${variable.name} is read-only`
       )
     }
 
@@ -590,7 +621,7 @@ export class OCPP20VariableManager {
         attributeStatus: SetVariableStatusEnumType.RebootRequired,
         attributeStatusInfo: {
           additionalInfo: 'Value changed, reboot required to take effect',
-          reasonCode: ReasonCodeEnumType.ChangeRequiresReboot,
+          reasonCode: ReasonCodeEnumType.NoError,
         },
         attributeType: resolvedAttributeType,
         component,

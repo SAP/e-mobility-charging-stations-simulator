@@ -203,9 +203,7 @@ describe('B07 - Set Variables', () => {
     expect(response.setVariableResult).toHaveLength(1)
     const result = response.setVariableResult[0]
     expect(result.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-    expect(result.attributeStatusInfo?.reasonCode).toBe(
-      ReasonCodeEnumType.PropertyConstraintViolation
-    )
+    expect(result.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
   })
 
   // FR: B07.FR.06
@@ -235,7 +233,7 @@ describe('B07 - Set Variables', () => {
     expect(response.setVariableResult).toHaveLength(1)
     const result = response.setVariableResult[0]
     expect(result.attributeStatus).toBe(SetVariableStatusEnumType.RebootRequired)
-    expect(result.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ChangeRequiresReboot)
+    expect(result.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.NoError)
   })
 
   // FR: B07.FR.07
@@ -333,7 +331,7 @@ describe('B07 - Set Variables', () => {
     expect(response.setVariableResult).toHaveLength(1)
     const result = response.setVariableResult[0]
     expect(result.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-    expect(result.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ImmutableVariable)
+    expect(result.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ReadOnly)
   })
 
   // FR: B07.FR.10
@@ -449,6 +447,6 @@ describe('B07 - Set Variables', () => {
       })
     expect(getResponse.getVariableResult).toHaveLength(1)
     const result = getResponse.getVariableResult[0]
-    expect(result.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
+    expect(result.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.WriteOnly)
   })
 })

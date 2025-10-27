@@ -452,9 +452,7 @@ await describe('OCPP20VariableManager test suite', async () => {
 
       expect(result).toHaveLength(1)
       expect(result[0].attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(result[0].attributeStatusInfo?.reasonCode).toBe(
-        ReasonCodeEnumType.PropertyConstraintViolation
-      )
+      expect(result[0].attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
       expect(result[0].attributeStatusInfo?.additionalInfo).toContain('exceeds maximum')
     })
 
@@ -487,9 +485,7 @@ await describe('OCPP20VariableManager test suite', async () => {
 
       expect(result).toHaveLength(1)
       expect(result[0].attributeStatus).toBe(SetVariableStatusEnumType.RebootRequired)
-      expect(result[0].attributeStatusInfo?.reasonCode).toBe(
-        ReasonCodeEnumType.ChangeRequiresReboot
-      )
+      expect(result[0].attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.NoError)
       expect(result[0].attributeStatusInfo?.additionalInfo).toContain('reboot required')
 
       deleteConfigurationKey(mockChargingStation, variableName as unknown as VariableType['name'], {
@@ -538,7 +534,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       const result = manager.setVariables(mockChargingStation, request)
       expect(result).toHaveLength(1)
       expect(result[0].attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(result[0].attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ImmutableVariable)
+      expect(result[0].attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ReadOnly)
     })
 
     await it('Should validate TxUpdatedInterval positive integer >0', () => {
@@ -580,19 +576,13 @@ await describe('OCPP20VariableManager test suite', async () => {
       const negRes = manager.setVariables(mockChargingStation, negReq)[0]
       const nonIntRes = manager.setVariables(mockChargingStation, nonIntReq)[0]
       expect(zeroRes.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(zeroRes.attributeStatusInfo?.reasonCode).toBe(
-        ReasonCodeEnumType.PropertyConstraintViolation
-      )
+      expect(zeroRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValuePositiveOnly)
       expect(zeroRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer > 0 required')
       expect(negRes.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(negRes.attributeStatusInfo?.reasonCode).toBe(
-        ReasonCodeEnumType.PropertyConstraintViolation
-      )
+      expect(negRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValuePositiveOnly)
       expect(negRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer > 0 required')
       expect(nonIntRes.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(nonIntRes.attributeStatusInfo?.reasonCode).toBe(
-        ReasonCodeEnumType.PropertyConstraintViolation
-      )
+      expect(nonIntRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
       expect(nonIntRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer')
     })
 
@@ -619,9 +609,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       ]
       const res = manager.setVariables(mockChargingStation, req)[0]
       expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(res.attributeStatusInfo?.reasonCode).toBe(
-        ReasonCodeEnumType.PropertyConstraintViolation
-      )
+      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidURL)
       expect(res.attributeStatusInfo?.additionalInfo).toContain('Unsupported URL scheme')
     })
 
@@ -641,7 +629,7 @@ await describe('OCPP20VariableManager test suite', async () => {
         },
       ]
       const getResult = manager.getVariables(mockChargingStation, getData)[0]
-      expect(getResult.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
+      expect(getResult.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.WriteOnly)
     })
 
     await it('Should revert non-persistent TxUpdatedInterval after simulated restart', () => {
@@ -684,7 +672,7 @@ await describe('OCPP20VariableManager test suite', async () => {
           variable: { name: OCPP20VendorVariableName.ConnectionUrl },
         },
       ])[0]
-      expect(getResult.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
+      expect(getResult.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.WriteOnly)
     })
 
     await it('Should reject Target attribute for WebSocketPingInterval', () => {
@@ -739,17 +727,11 @@ await describe('OCPP20VariableManager test suite', async () => {
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ])[0]
-      expect(zeroRes.attributeStatusInfo?.reasonCode).toBe(
-        ReasonCodeEnumType.PropertyConstraintViolation
-      )
+      expect(zeroRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValuePositiveOnly)
       expect(zeroRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer > 0 required')
-      expect(negRes.attributeStatusInfo?.reasonCode).toBe(
-        ReasonCodeEnumType.PropertyConstraintViolation
-      )
+      expect(negRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValuePositiveOnly)
       expect(negRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer > 0 required')
-      expect(nonIntRes.attributeStatusInfo?.reasonCode).toBe(
-        ReasonCodeEnumType.PropertyConstraintViolation
-      )
+      expect(nonIntRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
       expect(nonIntRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer')
     })
 
@@ -789,13 +771,9 @@ await describe('OCPP20VariableManager test suite', async () => {
           variable: { name: OCPP20OptionalVariableName.WebSocketPingInterval },
         },
       ])[0]
-      expect(negRes.attributeStatusInfo?.reasonCode).toBe(
-        ReasonCodeEnumType.PropertyConstraintViolation
-      )
+      expect(negRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValueZeroNotAllowed)
       expect(negRes.attributeStatusInfo?.additionalInfo).toContain('Integer >= 0 required')
-      expect(nonIntRes.attributeStatusInfo?.reasonCode).toBe(
-        ReasonCodeEnumType.PropertyConstraintViolation
-      )
+      expect(nonIntRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValueZeroNotAllowed)
       expect(nonIntRes.attributeStatusInfo?.additionalInfo).toContain('Integer >= 0 required')
     })
 
@@ -830,17 +808,11 @@ await describe('OCPP20VariableManager test suite', async () => {
           variable: { name: OCPP20RequiredVariableName.EVConnectionTimeOut },
         },
       ])[0]
-      expect(zeroRes.attributeStatusInfo?.reasonCode).toBe(
-        ReasonCodeEnumType.PropertyConstraintViolation
-      )
+      expect(zeroRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValuePositiveOnly)
       expect(zeroRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer > 0 required')
-      expect(negRes.attributeStatusInfo?.reasonCode).toBe(
-        ReasonCodeEnumType.PropertyConstraintViolation
-      )
+      expect(negRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValuePositiveOnly)
       expect(negRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer > 0 required')
-      expect(nonIntRes.attributeStatusInfo?.reasonCode).toBe(
-        ReasonCodeEnumType.PropertyConstraintViolation
-      )
+      expect(nonIntRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
       expect(nonIntRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer')
     })
 
@@ -875,17 +847,11 @@ await describe('OCPP20VariableManager test suite', async () => {
           variable: { name: OCPP20RequiredVariableName.MessageTimeout },
         },
       ])[0]
-      expect(zeroRes.attributeStatusInfo?.reasonCode).toBe(
-        ReasonCodeEnumType.PropertyConstraintViolation
-      )
+      expect(zeroRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValuePositiveOnly)
       expect(zeroRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer > 0 required')
-      expect(negRes.attributeStatusInfo?.reasonCode).toBe(
-        ReasonCodeEnumType.PropertyConstraintViolation
-      )
+      expect(negRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValuePositiveOnly)
       expect(negRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer > 0 required')
-      expect(nonIntRes.attributeStatusInfo?.reasonCode).toBe(
-        ReasonCodeEnumType.PropertyConstraintViolation
-      )
+      expect(nonIntRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
       expect(nonIntRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer')
     })
 
@@ -1000,7 +966,7 @@ await describe('OCPP20VariableManager test suite', async () => {
         },
       ])[0]
       expect(getRes.attributeStatus).toBe(GetVariableStatusEnumType.Rejected)
-      expect(getRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
+      expect(getRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.WriteOnly)
       expect(getRes.attributeStatusInfo?.additionalInfo).toContain('write-only')
     })
 
@@ -1013,9 +979,7 @@ await describe('OCPP20VariableManager test suite', async () => {
         },
       ])[0]
       expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(res.attributeStatusInfo?.reasonCode).toBe(
-        ReasonCodeEnumType.PropertyConstraintViolation
-      )
+      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
       expect(res.attributeStatusInfo?.additionalInfo).toContain(
         'Non-empty digits only string required'
       )
@@ -1030,9 +994,7 @@ await describe('OCPP20VariableManager test suite', async () => {
         },
       ])[0]
       expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(res.attributeStatusInfo?.reasonCode).toBe(
-        ReasonCodeEnumType.PropertyConstraintViolation
-      )
+      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
       expect(res.attributeStatusInfo?.additionalInfo).toContain(
         'Non-empty digits only string required'
       )
@@ -1047,9 +1009,7 @@ await describe('OCPP20VariableManager test suite', async () => {
         },
       ])[0]
       expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(res.attributeStatusInfo?.reasonCode).toBe(
-        ReasonCodeEnumType.PropertyConstraintViolation
-      )
+      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
       expect(res.attributeStatusInfo?.additionalInfo).toContain(
         'Non-empty digits only string required'
       )
@@ -1076,9 +1036,7 @@ await describe('OCPP20VariableManager test suite', async () => {
         },
       ])[0]
       expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(res.attributeStatusInfo?.reasonCode).toBe(
-        ReasonCodeEnumType.PropertyConstraintViolation
-      )
+      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
       expect(res.attributeStatusInfo?.additionalInfo).toContain(
         'Non-empty digits only string required'
       )
@@ -1093,9 +1051,7 @@ await describe('OCPP20VariableManager test suite', async () => {
         },
       ])[0]
       expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(res.attributeStatusInfo?.reasonCode).toBe(
-        ReasonCodeEnumType.PropertyConstraintViolation
-      )
+      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
       expect(res.attributeStatusInfo?.additionalInfo).toContain(
         'Non-empty digits only string required'
       )
@@ -1110,9 +1066,7 @@ await describe('OCPP20VariableManager test suite', async () => {
         },
       ])[0]
       expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(res.attributeStatusInfo?.reasonCode).toBe(
-        ReasonCodeEnumType.PropertyConstraintViolation
-      )
+      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidURL)
       expect(res.attributeStatusInfo?.additionalInfo).toContain('Invalid URL format')
     })
 
@@ -1126,9 +1080,7 @@ await describe('OCPP20VariableManager test suite', async () => {
         },
       ])[0]
       expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(res.attributeStatusInfo?.reasonCode).toBe(
-        ReasonCodeEnumType.PropertyConstraintViolation
-      )
+      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
       expect(res.attributeStatusInfo?.additionalInfo).toContain('exceeds maximum length (512)')
     })
 
@@ -1141,9 +1093,7 @@ await describe('OCPP20VariableManager test suite', async () => {
         },
       ])[0]
       expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(res.attributeStatusInfo?.reasonCode).toBe(
-        ReasonCodeEnumType.PropertyConstraintViolation
-      )
+      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
       expect(res.attributeStatusInfo?.additionalInfo).toContain('exceeds maximum length (10)')
     })
   })
