@@ -1097,4 +1097,151 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(res.attributeStatusInfo?.additionalInfo).toContain('exceeds maximum length (10)')
     })
   })
+
+  await describe('Case-insensitive variable/component name tests', async () => {
+    const manager = OCPP20VariableManager.getInstance()
+
+    await it('Should resolve variables irrespective of variable name casing (getVariables)', () => {
+      const variants = [
+        'HeartbeatInterval',
+        'heartbeatinterval',
+        'HEARTBEATINTERVAL',
+        'HeartBeatInterval',
+        'hEaRtBeAtInTeRvAl',
+      ]
+      const hbKey = getConfigurationKey(
+        mockChargingStation,
+        OCPP20OptionalVariableName.HeartbeatInterval as unknown as VariableType['name']
+      )
+      const expectedValue =
+        hbKey?.value ?? millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL).toString()
+      for (const variant of variants) {
+        const res = manager.getVariables(mockChargingStation, [
+          {
+            component: { name: OCPP20ComponentName.ChargingStation },
+            variable: { name: variant as unknown as VariableType['name'] },
+          },
+        ])[0]
+        expect(res.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+        expect(res.attributeValue).toBe(expectedValue)
+      }
+    })
+
+    await it('Should accept setVariables irrespective of variable name casing (HeartbeatInterval)', () => {
+      const variants = ['HeartbeatInterval', 'heartbeatinterval', 'HEARTBEATINTERVAL']
+      for (const variant of variants) {
+        const res = manager.setVariables(mockChargingStation, [
+          {
+            attributeValue: (
+              millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL) + 1
+            ).toString(),
+            component: { name: OCPP20ComponentName.ChargingStation },
+            variable: { name: variant as unknown as VariableType['name'] },
+          },
+        ])[0]
+        expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      }
+    })
+
+    await it('Should persist value when set with uppercase and retrieve with mixed camel case', () => {
+      // Set using uppercase
+      const setRes = manager.setVariables(mockChargingStation, [
+        {
+          attributeValue: (
+            millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL) + 2
+          ).toString(),
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: 'HEARTBEATINTERVAL' as unknown as VariableType['name'] },
+        },
+      ])[0]
+      expect(setRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      // Get using mixed camel case
+      const getRes = manager.getVariables(mockChargingStation, [
+        {
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: 'HeartBeatInterval' as unknown as VariableType['name'] },
+        },
+      ])[0]
+      expect(getRes.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      expect(getRes.attributeValue).toBe(
+        (millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL) + 2).toString()
+      )
+    })
+
+    await it('Should handle WebSocketPingInterval casing variants', () => {
+      const variants = ['WebSocketPingInterval', 'websocketpinginterval', 'WEBSOCKETPINGINTERVAL']
+      for (const variant of variants) {
+        const getRes = manager.getVariables(mockChargingStation, [
+          {
+            component: { name: OCPP20ComponentName.ChargingStation },
+            variable: { name: variant as unknown as VariableType['name'] },
+          },
+        ])[0]
+        expect(getRes.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+        const setRes = manager.setVariables(mockChargingStation, [
+          {
+            attributeValue: (Constants.DEFAULT_WEBSOCKET_PING_INTERVAL + 1).toString(),
+            component: { name: OCPP20ComponentName.ChargingStation },
+            variable: { name: variant as unknown as VariableType['name'] },
+          },
+        ])[0]
+        expect(setRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      }
+    })
+
+    await it('Should treat ConnectionUrl as write-only regardless of casing on get', () => {
+      const variants = ['ConnectionUrl', 'connectionurl', 'CONNECTIONURL']
+      for (const variant of variants) {
+        manager.setVariables(mockChargingStation, [
+          {
+            attributeValue: 'wss://example.com/ocpp',
+            component: { name: OCPP20ComponentName.ChargingStation },
+            variable: { name: variant as unknown as VariableType['name'] },
+          },
+        ])
+        const getRes = manager.getVariables(mockChargingStation, [
+          {
+            component: { name: OCPP20ComponentName.ChargingStation },
+            variable: { name: variant as unknown as VariableType['name'] },
+          },
+        ])[0]
+        expect(getRes.attributeStatus).toBe(GetVariableStatusEnumType.Rejected)
+        expect(getRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.WriteOnly)
+      }
+    })
+
+    await it('Should validate component name casing for ChargingStation, Connector, EVSE', () => {
+      const componentVariants = ['ChargingStation', 'chargingstation', 'CHARGINGSTATION']
+      for (const componentVariant of componentVariants) {
+        const res = manager.getVariables(mockChargingStation, [
+          {
+            component: { name: componentVariant as unknown as OCPP20ComponentName },
+            variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
+          },
+        ])[0]
+        expect(res.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      }
+      // Connector and EVSE with instance casing variants
+      const connectorVariants = ['Connector', 'connector', 'CONNECTOR']
+      for (const connectorVariant of connectorVariants) {
+        const res = manager.getVariables(mockChargingStation, [
+          {
+            component: { instance: '1', name: connectorVariant as unknown as OCPP20ComponentName },
+            variable: { name: OCPP20RequiredVariableName.AuthorizeRemoteStart },
+          },
+        ])[0]
+        expect(res.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      }
+      const evseVariants = ['EVSE', 'evse', 'Evse']
+      for (const evseVariant of evseVariants) {
+        const res = manager.getVariables(mockChargingStation, [
+          {
+            component: { instance: '1', name: evseVariant as unknown as OCPP20ComponentName },
+            variable: { name: OCPP20RequiredVariableName.AuthorizeRemoteStart },
+          },
+        ])[0]
+        expect(res.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      }
+    })
+  })
 })

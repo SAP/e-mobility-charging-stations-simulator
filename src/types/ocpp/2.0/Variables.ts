@@ -47,7 +47,7 @@ export enum OCPP20RequiredVariableName {
   LocalAuthorizeOffline = 'LocalAuthorizeOffline',
   LocalPreAuthorize = 'LocalPreAuthorize',
   MessageAttemptInterval = 'MessageAttemptInterval',
-  MessageAttempts = 'TransactionEvent',
+  MessageAttempts = 'MessageAttempts',
   MessageTimeout = 'MessageTimeout',
   NetworkConfigurationPriority = 'NetworkConfigurationPriority',
   NetworkProfileConnectionAttempts = 'NetworkProfileConnectionAttempts',

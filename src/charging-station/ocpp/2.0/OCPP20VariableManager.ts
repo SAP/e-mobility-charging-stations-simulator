@@ -28,7 +28,7 @@ import {
 } from '../../ConfigurationKeyUtils.js'
 import { DEFAULT_MAX_LENGTH, VARIABLE_CONSTRAINTS } from './OCPP20VariableMetadata.js'
 
-// Persistent configuration-backed variables.
+// Persistent configuration-backed variables (original case).
 const PERSISTENT_VARIABLES = new Set<string>([
   OCPP20OptionalVariableName.HeartbeatInterval as string,
   OCPP20OptionalVariableName.WebSocketPingInterval as string,
@@ -36,22 +36,36 @@ const PERSISTENT_VARIABLES = new Set<string>([
   OCPP20RequiredVariableName.MessageTimeout as string,
   OCPP20VendorVariableName.ConnectionUrl as string,
 ])
-// Write-only variables.
+// Write-only variables (original case).
 const WRITE_ONLY_VARIABLES = new Set<string>([OCPP20VendorVariableName.ConnectionUrl as string])
-// Read-only variables.
+// Read-only variables (original case).
 const READ_ONLY_VARIABLES = new Set<string>([OCPP20RequiredVariableName.DateTime as string])
-// Non-persistent runtime variables.
+// Non-persistent runtime variables (original case).
 const RUNTIME_VARIABLES = new Set<string>([
   OCPP20RequiredVariableName.AuthorizeRemoteStart as string,
   OCPP20RequiredVariableName.DateTime as string,
   OCPP20RequiredVariableName.TxUpdatedInterval as string,
 ])
 
+// Canonical (lowercase) sets for case-insensitive matching.
+const PERSISTENT_VARIABLES_CANONICAL = new Set<string>(
+  [...PERSISTENT_VARIABLES].map(v => v.toLowerCase())
+)
+const WRITE_ONLY_VARIABLES_CANONICAL = new Set<string>(
+  [...WRITE_ONLY_VARIABLES].map(v => v.toLowerCase())
+)
+const READ_ONLY_VARIABLES_CANONICAL = new Set<string>(
+  [...READ_ONLY_VARIABLES].map(v => v.toLowerCase())
+)
+const RUNTIME_VARIABLES_CANONICAL = new Set<string>(
+  [...RUNTIME_VARIABLES].map(v => v.toLowerCase())
+)
+
 export class OCPP20VariableManager {
   private static instance: null | OCPP20VariableManager = null
 
-  private readonly invalidVariables = new Set<string>()
-  private readonly runtimeOverrides = new Map<string, string>()
+  private readonly invalidVariables = new Set<string>() // keyed by canonical composite key
+  private readonly runtimeOverrides = new Map<string, string>() // keyed by canonical composite key
 
   private constructor () {
     /* This is intentional */
@@ -153,6 +167,8 @@ export class OCPP20VariableManager {
   }
 
   public performMappingSelfCheck (chargingStation: ChargingStation): void {
+    // Clear invalidVariables; rebuild based on current configuration state in canonical form.
+    this.invalidVariables.clear()
     for (const variableName of PERSISTENT_VARIABLES) {
       if (variableName === (OCPP20VendorVariableName.ConnectionUrl as string)) {
         continue
@@ -161,7 +177,11 @@ export class OCPP20VariableManager {
         chargingStation,
         variableName as unknown as StandardParametersKey
       )
-      const variableKey = `${OCPP20ComponentName.ChargingStation as string}.${variableName}`
+      const variableKey = this.buildKeyFromNames(
+        OCPP20ComponentName.ChargingStation as string,
+        undefined,
+        variableName
+      )
       if (existing == null) {
         let defaultValue: string | undefined
         switch (variableName) {
@@ -189,15 +209,12 @@ export class OCPP20VariableManager {
           logger.info(
             `${chargingStation.logPrefix()} Added missing configuration key for variable '${variableName}' with default '${defaultValue}'`
           )
-          this.invalidVariables.delete(variableKey)
         } else {
           this.invalidVariables.add(variableKey)
           logger.error(
             `${chargingStation.logPrefix()} Missing configuration key mapping and no default for variable '${variableName}', marking as INTERNAL ERROR`
           )
         }
-      } else {
-        this.invalidVariables.delete(variableKey)
       }
     }
   }
@@ -236,6 +253,26 @@ export class OCPP20VariableManager {
     return results
   }
 
+  private buildKey (component: ComponentType, variable: VariableType): string {
+    return `${this.canonicalComponentName(component.name)}${component.instance ? '.' + component.instance : ''}.${this.canonicalVariableName(variable.name)}`
+  }
+
+  private buildKeyFromNames (
+    componentName: string,
+    instance: string | undefined,
+    variableName: string
+  ): string {
+    return `${this.canonicalComponentName(componentName)}${instance ? '.' + instance : ''}.${this.canonicalVariableName(variableName)}`
+  }
+
+  private canonicalComponentName (name: string): string {
+    return name.toLowerCase()
+  }
+
+  private canonicalVariableName (name: string): string {
+    return name.toLowerCase()
+  }
+
   private getVariable (
     chargingStation: ChargingStation,
     variableData: OCPP20GetVariableDataType
@@ -264,7 +301,7 @@ export class OCPP20VariableManager {
       )
     }
 
-    if (WRITE_ONLY_VARIABLES.has(variable.name)) {
+    if (WRITE_ONLY_VARIABLES_CANONICAL.has(this.canonicalVariableName(variable.name))) {
       return this.rejectGet(
         variable,
         component,
@@ -285,7 +322,7 @@ export class OCPP20VariableManager {
       )
     }
 
-    const variableKey = `${component.name}${component.instance ? '.' + component.instance : ''}.${variable.name}`
+    const variableKey = this.buildKey(component, variable)
     if (this.invalidVariables.has(variableKey)) {
       return this.rejectGet(
         variable,
@@ -309,12 +346,16 @@ export class OCPP20VariableManager {
   }
 
   private isComponentValid (chargingStation: ChargingStation, component: ComponentType): boolean {
-    const componentName = component.name
-    if (componentName === (OCPP20ComponentName.ChargingStation as string)) {
+    const componentNameCanonical = this.canonicalComponentName(component.name)
+    if (
+      componentNameCanonical ===
+      this.canonicalComponentName(OCPP20ComponentName.ChargingStation as string)
+    ) {
       return true
     }
     if (
-      componentName === (OCPP20ComponentName.Connector as string) &&
+      componentNameCanonical ===
+        this.canonicalComponentName(OCPP20ComponentName.Connector as string) &&
       chargingStation.connectors.size > 0
     ) {
       if (component.instance != null) {
@@ -323,7 +364,10 @@ export class OCPP20VariableManager {
       }
       return true
     }
-    if (componentName === (OCPP20ComponentName.EVSE as string) && chargingStation.hasEvses) {
+    if (
+      componentNameCanonical === this.canonicalComponentName(OCPP20ComponentName.EVSE as string) &&
+      chargingStation.hasEvses
+    ) {
       if (component.instance != null) {
         const evseId = parseInt(component.instance, 10)
         return chargingStation.evses.has(evseId)
@@ -334,17 +378,33 @@ export class OCPP20VariableManager {
   }
 
   private isVariableSupported (component: ComponentType, variable: VariableType): boolean {
-    if (component.name === (OCPP20ComponentName.ChargingStation as string)) {
-      const supported = [...PERSISTENT_VARIABLES.values(), ...RUNTIME_VARIABLES.values()]
-      return supported.includes(variable.name)
+    const componentNameCanonical = this.canonicalComponentName(component.name)
+    const variableNameCanonical = this.canonicalVariableName(variable.name)
+    if (
+      componentNameCanonical ===
+      this.canonicalComponentName(OCPP20ComponentName.ChargingStation as string)
+    ) {
+      return (
+        PERSISTENT_VARIABLES_CANONICAL.has(variableNameCanonical) ||
+        RUNTIME_VARIABLES_CANONICAL.has(variableNameCanonical)
+      )
     }
-    if (component.name === (OCPP20ComponentName.Connector as string)) {
-      // AuthorizeRemoteStart supported on Connector component
-      return variable.name === (OCPP20RequiredVariableName.AuthorizeRemoteStart as string)
+    if (
+      componentNameCanonical ===
+      this.canonicalComponentName(OCPP20ComponentName.Connector as string)
+    ) {
+      return (
+        variableNameCanonical ===
+        this.canonicalVariableName(OCPP20RequiredVariableName.AuthorizeRemoteStart as string)
+      )
     }
-    if (component.name === (OCPP20ComponentName.EVSE as string)) {
-      // AuthorizeRemoteStart supported on EVSE component
-      return variable.name === (OCPP20RequiredVariableName.AuthorizeRemoteStart as string)
+    if (
+      componentNameCanonical === this.canonicalComponentName(OCPP20ComponentName.EVSE as string)
+    ) {
+      return (
+        variableNameCanonical ===
+        this.canonicalVariableName(OCPP20RequiredVariableName.AuthorizeRemoteStart as string)
+      )
     }
     return false
   }
@@ -394,57 +454,88 @@ export class OCPP20VariableManager {
     component: ComponentType,
     variable: VariableType
   ): string {
-    const variableName = variable.name
-    const componentName = component.name
-    const variableKey = `${componentName}${component.instance ? '.' + component.instance : ''}.${variableName}`
+    const variableNameOriginalCase = variable.name
+    const variableNameCanonical = this.canonicalVariableName(variableNameOriginalCase)
+    const componentNameCanonical = this.canonicalComponentName(component.name)
 
-    if (componentName === (OCPP20ComponentName.ChargingStation as string)) {
-      if (variableName === (OCPP20RequiredVariableName.DateTime as string)) {
+    if (
+      componentNameCanonical ===
+      this.canonicalComponentName(OCPP20ComponentName.ChargingStation as string)
+    ) {
+      // Find the original mapped variable name (persistent or runtime) ignoring case
+      const mappedOriginalName =
+        [...PERSISTENT_VARIABLES, ...RUNTIME_VARIABLES].find(
+          v => this.canonicalVariableName(v) === variableNameCanonical
+        ) ?? variableNameOriginalCase
+
+      if (
+        this.canonicalVariableName(mappedOriginalName) ===
+        this.canonicalVariableName(OCPP20RequiredVariableName.DateTime as string)
+      ) {
         return new Date().toISOString()
       }
-      if (variableName === (OCPP20OptionalVariableName.HeartbeatInterval as string)) {
+      if (
+        this.canonicalVariableName(mappedOriginalName) ===
+        this.canonicalVariableName(OCPP20OptionalVariableName.HeartbeatInterval as string)
+      ) {
         const hbConfigKey = getConfigurationKey(
           chargingStation,
-          variableName as unknown as StandardParametersKey
+          OCPP20OptionalVariableName.HeartbeatInterval as unknown as StandardParametersKey
         )
         return (
           hbConfigKey?.value ??
           millisecondsToSeconds(chargingStation.getHeartbeatInterval()).toString()
         )
       }
-      if (variableName === (OCPP20OptionalVariableName.WebSocketPingInterval as string)) {
+      if (
+        this.canonicalVariableName(mappedOriginalName) ===
+        this.canonicalVariableName(OCPP20OptionalVariableName.WebSocketPingInterval as string)
+      ) {
         const wsConfigKey = getConfigurationKey(
           chargingStation,
-          variableName as unknown as StandardParametersKey
+          OCPP20OptionalVariableName.WebSocketPingInterval as unknown as StandardParametersKey
         )
         return wsConfigKey?.value ?? chargingStation.getWebSocketPingInterval().toString()
       }
-      if (variableName === (OCPP20RequiredVariableName.EVConnectionTimeOut as string)) {
+      if (
+        this.canonicalVariableName(mappedOriginalName) ===
+        this.canonicalVariableName(OCPP20RequiredVariableName.EVConnectionTimeOut as string)
+      ) {
         const cfg = getConfigurationKey(
           chargingStation,
-          variableName as unknown as StandardParametersKey
+          OCPP20RequiredVariableName.EVConnectionTimeOut as unknown as StandardParametersKey
         )
         return cfg?.value ?? Constants.DEFAULT_EV_CONNECTION_TIMEOUT.toString()
       }
-      if (variableName === (OCPP20RequiredVariableName.MessageTimeout as string)) {
+      if (
+        this.canonicalVariableName(mappedOriginalName) ===
+        this.canonicalVariableName(OCPP20RequiredVariableName.MessageTimeout as string)
+      ) {
         const cfg = getConfigurationKey(
           chargingStation,
-          variableName as unknown as StandardParametersKey
+          OCPP20RequiredVariableName.MessageTimeout as unknown as StandardParametersKey
         )
         return cfg?.value ?? chargingStation.getConnectionTimeout().toString()
       }
-      if (RUNTIME_VARIABLES.has(variableName) && this.runtimeOverrides.has(variableKey)) {
+      const variableKey = this.buildKey(component, variable)
+      if (
+        RUNTIME_VARIABLES_CANONICAL.has(variableNameCanonical) &&
+        this.runtimeOverrides.has(variableKey)
+      ) {
         return this.runtimeOverrides.get(variableKey) ?? ''
       }
-      // Default fallback for TxUpdatedInterval runtime variable after reset
-      if (variableName === (OCPP20RequiredVariableName.TxUpdatedInterval as string)) {
+      if (
+        this.canonicalVariableName(mappedOriginalName) ===
+        this.canonicalVariableName(OCPP20RequiredVariableName.TxUpdatedInterval as string)
+      ) {
         return Constants.DEFAULT_TX_UPDATED_INTERVAL.toString()
       }
-      const configKey = getConfigurationKey(
+      // Fallback to configuration key lookup using mapped original variable name
+      const mappedConfigKey = getConfigurationKey(
         chargingStation,
-        variableName as unknown as StandardParametersKey
+        mappedOriginalName as unknown as StandardParametersKey
       )
-      return configKey?.value ?? ''
+      return mappedConfigKey?.value ?? ''
     }
 
     // Future: Connector/EVSE variables support.
@@ -489,8 +580,7 @@ export class OCPP20VariableManager {
       )
     }
 
-    // Enforce read-only variables early for write attempts
-    if (READ_ONLY_VARIABLES.has(variable.name)) {
+    if (READ_ONLY_VARIABLES_CANONICAL.has(this.canonicalVariableName(variable.name))) {
       return this.rejectSet(
         variable,
         component,
@@ -501,9 +591,9 @@ export class OCPP20VariableManager {
       )
     }
 
-    const variableKey = `${component.name}${component.instance ? '.' + component.instance : ''}.${variable.name}`
+    const variableKey = this.buildKey(component, variable)
     if (this.invalidVariables.has(variableKey)) {
-      if (!WRITE_ONLY_VARIABLES.has(variable.name)) {
+      if (!WRITE_ONLY_VARIABLES_CANONICAL.has(this.canonicalVariableName(variable.name))) {
         return this.rejectSet(
           variable,
           component,
@@ -518,9 +608,9 @@ export class OCPP20VariableManager {
     }
 
     if (
-      !WRITE_ONLY_VARIABLES.has(variable.name) &&
-      !PERSISTENT_VARIABLES.has(variable.name) &&
-      !RUNTIME_VARIABLES.has(variable.name)
+      !WRITE_ONLY_VARIABLES_CANONICAL.has(this.canonicalVariableName(variable.name)) &&
+      !PERSISTENT_VARIABLES_CANONICAL.has(this.canonicalVariableName(variable.name)) &&
+      !RUNTIME_VARIABLES_CANONICAL.has(this.canonicalVariableName(variable.name))
     ) {
       return this.rejectSet(
         variable,
@@ -537,10 +627,8 @@ export class OCPP20VariableManager {
       attributeValue
     )
     if (!validation.valid) {
-      // Map validation failures to specific reason codes when possible
       let mappedReason = ReasonCodeEnumType.InvalidValue
       if (validation.additionalInfo?.includes('Positive integer > 0')) {
-        // Differentiate decimal/non-integer vs zero/negative for positive-only integers
         if (attributeValue.includes('.') || attributeValue.startsWith('+')) {
           mappedReason = ReasonCodeEnumType.InvalidValue
         } else {
@@ -564,8 +652,7 @@ export class OCPP20VariableManager {
       )
     }
 
-    // Read-only variables enforcement
-    if (READ_ONLY_VARIABLES.has(variable.name)) {
+    if (READ_ONLY_VARIABLES_CANONICAL.has(this.canonicalVariableName(variable.name))) {
       return this.rejectSet(
         variable,
         component,
@@ -577,9 +664,19 @@ export class OCPP20VariableManager {
     }
 
     let rebootRequired = false
-    if (component.name === (OCPP20ComponentName.ChargingStation as string)) {
-      if (PERSISTENT_VARIABLES.has(variable.name)) {
-        const configKeyName = variable.name as unknown as StandardParametersKey
+    if (
+      this.canonicalComponentName(component.name) ===
+      this.canonicalComponentName(OCPP20ComponentName.ChargingStation as string)
+    ) {
+      // Map incoming variable name to original defined variable name for persistence/runtime operations (case-insensitive)
+      const incomingCanonical = this.canonicalVariableName(variable.name)
+      const mappedOriginalName =
+        [...PERSISTENT_VARIABLES, ...RUNTIME_VARIABLES].find(
+          v => this.canonicalVariableName(v) === incomingCanonical
+        ) ?? variable.name
+      const mappedCanonical = this.canonicalVariableName(mappedOriginalName)
+      if (PERSISTENT_VARIABLES_CANONICAL.has(mappedCanonical)) {
+        const configKeyName = mappedOriginalName as unknown as StandardParametersKey
         let configKey = getConfigurationKey(chargingStation, configKeyName)
         const previousValue = configKey?.value
         if (configKey == null) {
@@ -591,26 +688,31 @@ export class OCPP20VariableManager {
           setConfigurationKeyValue(chargingStation, configKeyName, attributeValue)
         }
         rebootRequired = configKey?.reboot === true && previousValue !== attributeValue
-      } else if (RUNTIME_VARIABLES.has(variable.name)) {
+      } else if (RUNTIME_VARIABLES_CANONICAL.has(mappedCanonical)) {
+        // For runtime variables keep key built from incoming variable for override map consistency
         this.runtimeOverrides.set(variableKey, attributeValue)
       }
       if (
-        variable.name === (OCPP20OptionalVariableName.HeartbeatInterval as string) &&
+        mappedCanonical ===
+          this.canonicalVariableName(OCPP20OptionalVariableName.HeartbeatInterval as string) &&
         !Number.isNaN(parseInt(attributeValue, 10)) &&
         parseInt(attributeValue, 10) > 0
       ) {
         chargingStation.restartHeartbeat()
       }
       if (
-        variable.name === (OCPP20OptionalVariableName.WebSocketPingInterval as string) &&
+        mappedCanonical ===
+          this.canonicalVariableName(OCPP20OptionalVariableName.WebSocketPingInterval as string) &&
         !Number.isNaN(parseInt(attributeValue, 10)) &&
         parseInt(attributeValue, 10) >= 0
       ) {
         chargingStation.restartWebSocketPing()
       }
     }
-    // Support runtime override on Connector for AuthorizeRemoteStart
-    if (component.name === (OCPP20ComponentName.Connector as string)) {
+    if (
+      this.canonicalComponentName(component.name) ===
+      this.canonicalComponentName(OCPP20ComponentName.Connector as string)
+    ) {
       if (variable.name === (OCPP20RequiredVariableName.AuthorizeRemoteStart as string)) {
         this.runtimeOverrides.set(variableKey, attributeValue)
       }
