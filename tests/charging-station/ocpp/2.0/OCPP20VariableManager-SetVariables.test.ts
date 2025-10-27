@@ -1,6 +1,7 @@
 // Tests for OCPP20VariableManager SetVariables behavior
 
 import { expect } from '@std/expect'
+import { millisecondsToSeconds } from 'date-fns'
 import { describe, it } from 'node:test'
 
 import {
@@ -48,7 +49,9 @@ describe('OCPP20VariableManager SetVariables test suite', () => {
       },
       {
         attributeType: AttributeEnumType.Actual,
-        attributeValue: (Math.floor(Constants.DEFAULT_HEARTBEAT_INTERVAL / 1000) + 1).toString(),
+        attributeValue: (
+          millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL) + 1
+        ).toString(),
         component: { name: OCPP20ComponentName.ChargingStation },
         variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
       },
@@ -377,7 +380,9 @@ describe('OCPP20VariableManager SetVariables test suite', () => {
   it('Should validate HeartbeatInterval positive integer >0', () => {
     const req: OCPP20SetVariableDataType[] = [
       {
-        attributeValue: (Math.floor(Constants.DEFAULT_HEARTBEAT_INTERVAL / 1000) + 10).toString(),
+        attributeValue: (
+          millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL) + 10
+        ).toString(),
         component: { name: OCPP20ComponentName.ChargingStation },
         variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
       },

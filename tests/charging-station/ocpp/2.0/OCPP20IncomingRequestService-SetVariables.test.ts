@@ -1,4 +1,5 @@
 import { expect } from '@std/expect'
+import { millisecondsToSeconds } from 'date-fns'
 import { describe, it } from 'node:test'
 
 import { addConfigurationKey } from '../../../../src/charging-station/ConfigurationKeyUtils.js'
@@ -66,7 +67,9 @@ describe('B07 - Set Variables', () => {
         },
         {
           attributeType: AttributeEnumType.Actual,
-          attributeValue: (Math.floor(Constants.DEFAULT_HEARTBEAT_INTERVAL / 1000) + 1).toString(),
+          attributeValue: (
+            millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL) + 1
+          ).toString(),
           component: { name: OCPP20ComponentName.ChargingStation },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
@@ -325,7 +328,7 @@ describe('B07 - Set Variables', () => {
   })
 
   it('Should persist HeartbeatInterval and WebSocketPingInterval after setting', () => {
-    const hbNew = (Math.floor(Constants.DEFAULT_HEARTBEAT_INTERVAL / 1000) + 20).toString()
+    const hbNew = (millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL) + 20).toString()
     const wsNew = (Constants.DEFAULT_WEBSOCKET_PING_INTERVAL + 20).toString()
     const setRequest: OCPP20SetVariablesRequest = {
       setVariableData: [

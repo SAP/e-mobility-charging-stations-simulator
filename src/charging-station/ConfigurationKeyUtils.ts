@@ -161,7 +161,6 @@ export const validateConfigurationValue = (
   variableName: string,
   value: string
 ): { additionalInfo?: string; valid: boolean } => {
-  // Generic maximum length safeguard (OpenSpec tests expect oversize rejection ~1000 chars)
   if (value.length > 1000) {
     return { additionalInfo: 'Value exceeds maximum length (1000)', valid: false }
   }
