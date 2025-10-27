@@ -41,20 +41,14 @@ import {
   SetVariableStatusEnumType,
   StopTransactionReason,
 } from '../../../types/index.js'
-import { convertToInt, isAsyncFunction, logger } from '../../../utils/index.js'
+import { convertToIntOrNaN, isAsyncFunction, logger } from '../../../utils/index.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 import { OCPP20VariableManager } from './OCPP20VariableManager.js'
 
 const moduleName = 'OCPP20IncomingRequestService'
 
-const toIntOrNaN = (value: string): number => {
-  try {
-    return convertToInt(value)
-  } catch {
-    return Number.NaN
-  }
-}
+const toIntOrNaN = convertToIntOrNaN
 
 export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   protected payloadValidateFunctions: Map<OCPP20IncomingRequestCommand, ValidateFunction<JsonType>>

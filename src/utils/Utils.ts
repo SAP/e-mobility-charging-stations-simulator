@@ -224,6 +224,14 @@ export const convertToInt = (value: unknown): number => {
   return changedValue
 }
 
+export const convertToIntOrNaN = (value: unknown): number => {
+  try {
+    return convertToInt(value)
+  } catch {
+    return Number.NaN
+  }
+}
+
 export const convertToFloat = (value: unknown): number => {
   if (value == null) {
     return 0

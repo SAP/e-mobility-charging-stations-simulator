@@ -19,7 +19,7 @@ import {
 } from '../../../types/index.js'
 import { OCPP20VendorVariableName } from '../../../types/ocpp/2.0/Variables.js'
 import { StandardParametersKey } from '../../../types/ocpp/Configuration.js'
-import { Constants, convertToInt, logger } from '../../../utils/index.js'
+import { Constants, convertToIntOrNaN, logger } from '../../../utils/index.js'
 import { type ChargingStation } from '../../ChargingStation.js'
 import {
   addConfigurationKey,
@@ -88,13 +88,7 @@ const RUNTIME_VARIABLES_CANONICAL = new Set<string>(
   [...RUNTIME_VARIABLES].map(v => v.toLowerCase())
 )
 
-const toIntOrNaN = (value: string): number => {
-  try {
-    return convertToInt(value)
-  } catch {
-    return Number.NaN
-  }
-}
+const toIntOrNaN = convertToIntOrNaN
 
 export class OCPP20VariableManager {
   private static instance: null | OCPP20VariableManager = null
