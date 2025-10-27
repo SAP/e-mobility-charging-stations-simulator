@@ -15,6 +15,7 @@ The e-Mobility Charging Stations Simulator provides a scalable, configurable loa
 - Formatting: Prettier (printWidth 100, singleQuote, no semicolons, trailingComma es5)
 - UI: Vue-based Web UI (under `ui/web`) communicating via HTTP or WebSocket SRPC protocol
 - Protocol Simulation: OCPP-J 1.6 (core + profiles) and partial 2.0.x; JSON Schema validation (ajv + ajv-formats)
+- Mock OCPP 2.0.x server: Python (>=3.11), Poetry (>=2) (under `tests/ocpp-server`)
 - Concurrency & Pools: Worker Threads + `poolifier` for dynamic/fixed/workerSet strategies
 - Persistence / Storage: Optional performance storage (JSON file / MongoDB) + Mikro-ORM (MariaDB / SQLite drivers available) for entity modeling if enabled
 - Logging: winston + winston-daily-rotate-file (structured, rotating logs)
@@ -60,7 +61,7 @@ The e-Mobility Charging Stations Simulator provides a scalable, configurable loa
 
 ### Git Workflow
 
-- Branching model: `main` for active development; maintenance branches `vX` (major) and `vX.Y` (minor) for released lines.
+- Branching model: `main` for active development; maintenance branches `vX` (major) and `vX.Y` (minor) for released lines; feature / experiment branches should be: `feat/<concise-topic>`, `exp/<strategy-or-reward-param>`; fix branches should be: `fix/<bug>`..
 - Commits follow Conventional Commits and validated by commitlint (`@commitlint/config-conventional`).
 - Pre-commit hooks (husky): Lint & formatting (lint-staged) + commit message validation.
 - PR process: CI (lint, type-check, tests, build) + CodeQL security analysis; release-please manages automated versioning/changelogs.
