@@ -39,13 +39,15 @@ interface StandardVariableConfig {
 }
 
 /**
- * Centralized manager for OCPP 2.0 variables handling.
- * Manages standard variables and provides unified access to variable data.
+ * OCPP 2.0 Variable Manager acting strictly as a translation proxy between
+ * OCPP component/variable identifiers and existing configuration helpers.
+ * It delegates persistence, mutability and validation semantics to
+ * configuration key utilities and only assembles OCPP-compliant responses.
  */
 export class OCPP20VariableManager {
   private static instance: null | OCPP20VariableManager = null
 
-  // runtime (non-persistent) variable values kept across lifetime until restart
+  // runtime (non-persistent) variable values kept across lifetime until restart (transient only)
   private readonly runtimeVariables = new Map<string, string>()
   private readonly standardVariables = new Map<string, StandardVariableConfig>()
 
@@ -177,7 +179,7 @@ export class OCPP20VariableManager {
         attributeStatus: GetVariableStatusEnumType.Rejected,
         attributeStatusInfo: {
           additionalInfo: `Variable ${variable.name} is write-only`,
-          reasonCode: ReasonCodeEnumType.WriteOnly,
+          reasonCode: ReasonCodeEnumType.UnsupportedParam,
         },
         attributeType,
         component,
@@ -491,14 +493,14 @@ export class OCPP20VariableManager {
       }
     }
 
-    // Central validation
-    const validation = this.validateValue(variableKey, variable, attributeValue)
-    if (!validation.valid) {
+    // Central basic format/range validation (mapped to PropertyConstraintViolation on failure)
+    const validationOk = this.validateBasicValue(variable, attributeValue)
+    if (!validationOk.valid) {
       return {
         attributeStatus: SetVariableStatusEnumType.Rejected,
         attributeStatusInfo: {
-          additionalInfo: validation.additionalInfo,
-          reasonCode: validation.reasonCode ?? ReasonCodeEnumType.PropertyConstraintViolation,
+          additionalInfo: validationOk.additionalInfo,
+          reasonCode: ReasonCodeEnumType.PropertyConstraintViolation,
         },
         attributeType: resolvedAttributeType,
         component,
@@ -507,29 +509,27 @@ export class OCPP20VariableManager {
     }
 
     let rebootRequired = false
-    let previousValue: string | undefined
 
     if (component.name === (OCPP20ComponentName.ChargingStation as string)) {
-      // Only persist if configured as persistent and Actual attribute
+      // Delegate persistence to configuration helpers for persistent variables
       if (
         standardConfig?.persistent === true &&
         resolvedAttributeType === AttributeEnumType.Actual
       ) {
         const configKeyName = variable.name as unknown as StandardParametersKey
         let configKey = getConfigurationKey(chargingStation, configKeyName)
-        previousValue = configKey?.value
+        const previousValue = configKey?.value
         if (configKey == null) {
           addConfigurationKey(chargingStation, configKeyName, attributeValue, undefined, {
             overwrite: false,
           })
           configKey = getConfigurationKey(chargingStation, configKeyName)
-          previousValue = configKey?.value
         } else if (configKey.value !== attributeValue) {
           setConfigurationKeyValue(chargingStation, configKeyName, attributeValue)
         }
         rebootRequired = configKey?.reboot === true && previousValue !== attributeValue
       } else if (standardConfig && !standardConfig.persistent) {
-        // store runtime only
+        // Store non-persistent runtime value (transient only)
         this.runtimeVariables.set(variableKey, attributeValue)
       }
 
@@ -546,177 +546,73 @@ export class OCPP20VariableManager {
         variable.name === (OCPP20OptionalVariableName.WebSocketPingInterval as string) &&
         resolvedAttributeType === AttributeEnumType.Actual &&
         !Number.isNaN(parseInt(attributeValue, 10)) &&
-        parseInt(attributeValue, 10) > 0
+        parseInt(attributeValue, 10) >= 0
       ) {
         chargingStation.restartWebSocketPing()
       }
     }
 
+    if (rebootRequired) {
+      return {
+        attributeStatus: SetVariableStatusEnumType.RebootRequired,
+        attributeStatusInfo: {
+          additionalInfo: 'Value changed, reboot required to take effect',
+          reasonCode: ReasonCodeEnumType.ChangeRequiresReboot,
+        },
+        attributeType: resolvedAttributeType,
+        component,
+        variable,
+      }
+    }
+
+    // Accepted without reboot: omit attributeStatusInfo to conform & avoid non-standard reason codes
     return {
-      attributeStatus: rebootRequired
-        ? SetVariableStatusEnumType.RebootRequired
-        : SetVariableStatusEnumType.Accepted,
-      attributeStatusInfo: {
-        additionalInfo: rebootRequired
-          ? 'Value changed, reboot required to take effect'
-          : 'Value accepted',
-        reasonCode: rebootRequired
-          ? ReasonCodeEnumType.ChangeRequiresReboot
-          : ReasonCodeEnumType.NoError,
-      },
+      attributeStatus: SetVariableStatusEnumType.Accepted,
       attributeType: resolvedAttributeType,
       component,
       variable,
     }
   }
 
-  private validateValue (
-    variableKey: string,
+  private validateBasicValue (
     variable: VariableType,
     value: string
-  ): { additionalInfo?: string; reasonCode?: ReasonCodeEnumType; valid: boolean } {
-    // Variable-specific validation per OCPP 2.0.1 semantics
-
-    // SampledDataCtrlr.TxUpdatedInterval: positive integer > 0
-    if (variable.name === (OCPP20RequiredVariableName.TxUpdatedInterval as string)) {
-      if (!/^-?[0-9]+$/.test(value)) {
-        return {
-          additionalInfo: 'Positive integer > 0 required',
-          reasonCode: ReasonCodeEnumType.PropertyConstraintViolation,
-          valid: false,
-        }
+  ): { additionalInfo?: string; valid: boolean } {
+    // Positive integer > 0 requirements
+    const positiveIntegerVariables: string[] = [
+      OCPP20RequiredVariableName.TxUpdatedInterval as string,
+      OCPP20OptionalVariableName.HeartbeatInterval as string,
+      OCPP20RequiredVariableName.EVConnectionTimeOut as string,
+      OCPP20RequiredVariableName.MessageTimeout as string,
+    ]
+    if (positiveIntegerVariables.includes(variable.name)) {
+      if (!/^[0-9]+$/.test(value)) {
+        return { additionalInfo: 'Positive integer > 0 required', valid: false }
       }
-      const intValue = parseInt(value, 10)
-      if (intValue === 0) {
-        return {
-          additionalInfo: 'Zero not allowed',
-          reasonCode: ReasonCodeEnumType.ValueZeroNotAllowed,
-          valid: false,
-        }
-      }
-      if (intValue < 0) {
-        return {
-          additionalInfo: 'Negative not allowed',
-          reasonCode: ReasonCodeEnumType.ValuePositiveOnly,
-          valid: false,
-        }
+      if (parseInt(value, 10) <= 0) {
+        return { additionalInfo: 'Positive integer > 0 required', valid: false }
       }
     }
 
-    // OCPPCommCtrlr.HeartbeatInterval: must be positive integer > 0
-    if (variable.name === (OCPP20OptionalVariableName.HeartbeatInterval as string)) {
-      if (!/^-?[0-9]+$/.test(value)) {
-        return {
-          additionalInfo: 'Positive integer > 0 required',
-          reasonCode: ReasonCodeEnumType.PropertyConstraintViolation,
-          valid: false,
-        }
-      }
-      const intValue = parseInt(value, 10)
-      if (intValue === 0) {
-        return {
-          additionalInfo: 'Zero not allowed',
-          reasonCode: ReasonCodeEnumType.ValueZeroNotAllowed,
-          valid: false,
-        }
-      }
-      if (intValue < 0) {
-        return {
-          additionalInfo: 'Negative not allowed',
-          reasonCode: ReasonCodeEnumType.ValuePositiveOnly,
-          valid: false,
-        }
-      }
-    }
-
-    // OCPPCommCtrlr.WebSocketPingInterval: integer; 0 disables; negative not allowed
+    // WebSocketPingInterval: integer >= 0
     if (variable.name === (OCPP20OptionalVariableName.WebSocketPingInterval as string)) {
-      if (!/^-?[0-9]+$/.test(value)) {
-        return {
-          additionalInfo: 'Integer >= 0 required',
-          reasonCode: ReasonCodeEnumType.PropertyConstraintViolation,
-          valid: false,
-        }
+      if (!/^[0-9]+$/.test(value)) {
+        return { additionalInfo: 'Integer >= 0 required', valid: false }
       }
-      const intValue = parseInt(value, 10)
-      if (intValue < 0) {
-        return {
-          additionalInfo: 'Negative not allowed',
-          reasonCode: ReasonCodeEnumType.ValuePositiveOnly,
-          valid: false,
-        }
+      if (parseInt(value, 10) < 0) {
+        return { additionalInfo: 'Integer >= 0 required', valid: false }
       }
     }
 
-    // TxCtrlr.EVConnectionTimeOut: positive integer > 0
-    if (variable.name === (OCPP20RequiredVariableName.EVConnectionTimeOut as string)) {
-      if (!/^-?[0-9]+$/.test(value)) {
-        return {
-          additionalInfo: 'Positive integer > 0 required',
-          reasonCode: ReasonCodeEnumType.PropertyConstraintViolation,
-          valid: false,
-        }
-      }
-      const intValue = parseInt(value, 10)
-      if (intValue === 0) {
-        return {
-          additionalInfo: 'Zero not allowed',
-          reasonCode: ReasonCodeEnumType.ValueZeroNotAllowed,
-          valid: false,
-        }
-      }
-      if (intValue < 0) {
-        return {
-          additionalInfo: 'Negative not allowed',
-          reasonCode: ReasonCodeEnumType.ValuePositiveOnly,
-          valid: false,
-        }
-      }
-    }
-
-    // OCPPCommCtrlr.MessageTimeout (Default attribute): positive integer > 0
-    if (variable.name === (OCPP20RequiredVariableName.MessageTimeout as string)) {
-      if (!/^-?[0-9]+$/.test(value)) {
-        return {
-          additionalInfo: 'Positive integer > 0 required',
-          reasonCode: ReasonCodeEnumType.PropertyConstraintViolation,
-          valid: false,
-        }
-      }
-      const intValue = parseInt(value, 10)
-      if (intValue === 0) {
-        return {
-          additionalInfo: 'Zero not allowed',
-          reasonCode: ReasonCodeEnumType.ValueZeroNotAllowed,
-          valid: false,
-        }
-      }
-      if (intValue < 0) {
-        return {
-          additionalInfo: 'Negative not allowed',
-          reasonCode: ReasonCodeEnumType.ValuePositiveOnly,
-          valid: false,
-        }
-      }
-    }
-
-    // Vendor variable ChargingStation.ConnectionUrl: validate URL and scheme
+    // ConnectionUrl basic URL format (map invalid to PropertyConstraintViolation)
     if (variable.name === (OCPP20VendorVariableName.ConnectionUrl as string)) {
       try {
         const url = new URL(value)
         if (!['http:', 'https:', 'ws:', 'wss:'].includes(url.protocol)) {
-          return {
-            additionalInfo: 'Unsupported URL scheme',
-            reasonCode: ReasonCodeEnumType.InvalidURL,
-            valid: false,
-          }
+          return { additionalInfo: 'Unsupported URL scheme', valid: false }
         }
       } catch {
-        return {
-          additionalInfo: 'Invalid URL format',
-          reasonCode: ReasonCodeEnumType.InvalidURL,
-          valid: false,
-        }
+        return { additionalInfo: 'Invalid URL format', valid: false }
       }
     }
 

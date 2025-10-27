@@ -217,12 +217,10 @@ export enum ReasonCodeEnumType {
   InvalidProfile = 'InvalidProfile',
   InvalidSchedule = 'InvalidSchedule',
   InvalidStackLevel = 'InvalidStackLevel',
-  InvalidURL = 'InvalidURL',
   InvalidValue = 'InvalidValue',
   MissingDevModelInfo = 'MissingDevModelInfo',
   MissingParam = 'MissingParam',
   NoCable = 'NoCable',
-  NoError = 'NoError',
   NotEnabled = 'NotEnabled',
   NotFound = 'NotFound',
   OutOfMemory = 'OutOfMemory',
@@ -243,11 +241,8 @@ export enum ReasonCodeEnumType {
   UnsupportedRateUnit = 'UnsupportedRateUnit',
   UnsupportedRequest = 'UnsupportedRequest',
   ValueOutOfRange = 'ValueOutOfRange',
-  ValuePositiveOnly = 'ValuePositiveOnly',
   ValueTooHigh = 'ValueTooHigh',
   ValueTooLow = 'ValueTooLow',
-  ValueZeroNotAllowed = 'ValueZeroNotAllowed',
-  WriteOnly = 'WriteOnly',
 }
 
 export enum ReportBaseEnumType {

@@ -55,11 +55,10 @@ describe('OCPP20VariableManager SetVariables test suite', () => {
     expect(result).toHaveLength(2)
     expect(result[0].attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
     expect(result[0].attributeType).toBe(AttributeEnumType.Actual)
-    expect(result[0].attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.NoError)
-    expect(result[0].attributeStatusInfo?.additionalInfo).toContain('Value accepted')
+    expect(result[0].attributeStatusInfo).toBeUndefined()
     expect(result[1].attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
     expect(result[1].attributeType).toBe(AttributeEnumType.Actual)
-    expect(result[1].attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.NoError)
+    expect(result[1].attributeStatusInfo).toBeUndefined()
   })
 
   it('Should reject setting variable on unknown component', () => {
@@ -192,6 +191,7 @@ describe('OCPP20VariableManager SetVariables test suite', () => {
 
     expect(result).toHaveLength(3)
     expect(result[0].attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+    expect(result[0].attributeStatusInfo).toBeUndefined()
     expect(result[1].attributeStatus).toBe(SetVariableStatusEnumType.UnknownVariable)
     expect(result[2].attributeStatus).toBe(SetVariableStatusEnumType.NotSupportedAttributeType)
   })
@@ -221,7 +221,7 @@ describe('OCPP20VariableManager SetVariables test suite', () => {
     ]
     const result = manager.setVariables(mockChargingStation, request)
     expect(result[0].attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
-    expect(result[0].attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.NoError)
+    expect(result[0].attributeStatusInfo).toBeUndefined()
   })
 
   it('Should reject TxUpdatedInterval zero and negative and non-integer', () => {
@@ -250,13 +250,20 @@ describe('OCPP20VariableManager SetVariables test suite', () => {
     const negRes = manager.setVariables(mockChargingStation, negReq)[0]
     const nonIntRes = manager.setVariables(mockChargingStation, nonIntReq)[0]
     expect(zeroRes.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-    expect(zeroRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValueZeroNotAllowed)
+    expect(zeroRes.attributeStatusInfo?.reasonCode).toBe(
+      ReasonCodeEnumType.PropertyConstraintViolation
+    )
+    expect(zeroRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer > 0 required')
     expect(negRes.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-    expect(negRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValuePositiveOnly)
+    expect(negRes.attributeStatusInfo?.reasonCode).toBe(
+      ReasonCodeEnumType.PropertyConstraintViolation
+    )
+    expect(negRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer > 0 required')
     expect(nonIntRes.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
     expect(nonIntRes.attributeStatusInfo?.reasonCode).toBe(
       ReasonCodeEnumType.PropertyConstraintViolation
     )
+    expect(nonIntRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer')
   })
 
   it('Should accept setting ConnectionUrl with valid ws URL', () => {
@@ -269,7 +276,7 @@ describe('OCPP20VariableManager SetVariables test suite', () => {
     ]
     const res = manager.setVariables(mockChargingStation, req)[0]
     expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
-    expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.NoError)
+    expect(res.attributeStatusInfo).toBeUndefined()
   })
 
   it('Should reject ConnectionUrl with invalid scheme', () => {
@@ -282,7 +289,8 @@ describe('OCPP20VariableManager SetVariables test suite', () => {
     ]
     const res = manager.setVariables(mockChargingStation, req)[0]
     expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-    expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidURL)
+    expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.PropertyConstraintViolation)
+    expect(res.attributeStatusInfo?.additionalInfo).toContain('Unsupported URL scheme')
   })
 
   it('Should enforce ConnectionUrl write-only on get', () => {
@@ -301,7 +309,7 @@ describe('OCPP20VariableManager SetVariables test suite', () => {
       },
     ]
     const getResult = manager.getVariables(mockChargingStation, getData)[0]
-    expect(getResult.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.WriteOnly)
+    expect(getResult.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
   })
 
   it('Should revert non-persistent TxUpdatedInterval after simulated restart', () => {
@@ -344,7 +352,7 @@ describe('OCPP20VariableManager SetVariables test suite', () => {
         variable: { name: OCPP20VendorVariableName.ConnectionUrl },
       },
     ])[0]
-    expect(getResult.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.WriteOnly)
+    expect(getResult.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
   })
 
   it('Should reject Target attribute for WebSocketPingInterval', () => {
@@ -372,7 +380,7 @@ describe('OCPP20VariableManager SetVariables test suite', () => {
     ]
     const res = manager.setVariables(mockChargingStation, req)[0]
     expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
-    expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.NoError)
+    expect(res.attributeStatusInfo).toBeUndefined()
   })
 
   it('Should reject HeartbeatInterval zero, negative, non-integer', () => {
@@ -397,11 +405,18 @@ describe('OCPP20VariableManager SetVariables test suite', () => {
         variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
       },
     ])[0]
-    expect(zeroRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValueZeroNotAllowed)
-    expect(negRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValuePositiveOnly)
+    expect(zeroRes.attributeStatusInfo?.reasonCode).toBe(
+      ReasonCodeEnumType.PropertyConstraintViolation
+    )
+    expect(zeroRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer > 0 required')
+    expect(negRes.attributeStatusInfo?.reasonCode).toBe(
+      ReasonCodeEnumType.PropertyConstraintViolation
+    )
+    expect(negRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer > 0 required')
     expect(nonIntRes.attributeStatusInfo?.reasonCode).toBe(
       ReasonCodeEnumType.PropertyConstraintViolation
     )
+    expect(nonIntRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer')
   })
 
   it('Should accept WebSocketPingInterval zero (disable) and positive', () => {
@@ -420,9 +435,9 @@ describe('OCPP20VariableManager SetVariables test suite', () => {
       },
     ])[0]
     expect(zeroRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
-    expect(zeroRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.NoError)
+    expect(zeroRes.attributeStatusInfo).toBeUndefined()
     expect(posRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
-    expect(posRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.NoError)
+    expect(posRes.attributeStatusInfo).toBeUndefined()
   })
 
   it('Should reject WebSocketPingInterval negative and non-integer', () => {
@@ -440,10 +455,14 @@ describe('OCPP20VariableManager SetVariables test suite', () => {
         variable: { name: OCPP20OptionalVariableName.WebSocketPingInterval },
       },
     ])[0]
-    expect(negRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValuePositiveOnly)
+    expect(negRes.attributeStatusInfo?.reasonCode).toBe(
+      ReasonCodeEnumType.PropertyConstraintViolation
+    )
+    expect(negRes.attributeStatusInfo?.additionalInfo).toContain('Integer >= 0 required')
     expect(nonIntRes.attributeStatusInfo?.reasonCode).toBe(
       ReasonCodeEnumType.PropertyConstraintViolation
     )
+    expect(nonIntRes.attributeStatusInfo?.additionalInfo).toContain('Integer >= 0 required')
   })
 
   it('Should validate EVConnectionTimeOut positive integer >0 and reject invalid', () => {
@@ -455,6 +474,7 @@ describe('OCPP20VariableManager SetVariables test suite', () => {
       },
     ])[0]
     expect(okRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+    expect(okRes.attributeStatusInfo).toBeUndefined()
     const zeroRes = manager.setVariables(mockChargingStation, [
       {
         attributeValue: '0',
@@ -476,11 +496,18 @@ describe('OCPP20VariableManager SetVariables test suite', () => {
         variable: { name: OCPP20RequiredVariableName.EVConnectionTimeOut },
       },
     ])[0]
-    expect(zeroRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValueZeroNotAllowed)
-    expect(negRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValuePositiveOnly)
+    expect(zeroRes.attributeStatusInfo?.reasonCode).toBe(
+      ReasonCodeEnumType.PropertyConstraintViolation
+    )
+    expect(zeroRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer > 0 required')
+    expect(negRes.attributeStatusInfo?.reasonCode).toBe(
+      ReasonCodeEnumType.PropertyConstraintViolation
+    )
+    expect(negRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer > 0 required')
     expect(nonIntRes.attributeStatusInfo?.reasonCode).toBe(
       ReasonCodeEnumType.PropertyConstraintViolation
     )
+    expect(nonIntRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer')
   })
 
   it('Should validate MessageTimeout positive integer >0 and reject invalid', () => {
@@ -492,6 +519,7 @@ describe('OCPP20VariableManager SetVariables test suite', () => {
       },
     ])[0]
     expect(okRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+    expect(okRes.attributeStatusInfo).toBeUndefined()
     const zeroRes = manager.setVariables(mockChargingStation, [
       {
         attributeValue: '0',
@@ -513,10 +541,17 @@ describe('OCPP20VariableManager SetVariables test suite', () => {
         variable: { name: OCPP20RequiredVariableName.MessageTimeout },
       },
     ])[0]
-    expect(zeroRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValueZeroNotAllowed)
-    expect(negRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValuePositiveOnly)
+    expect(zeroRes.attributeStatusInfo?.reasonCode).toBe(
+      ReasonCodeEnumType.PropertyConstraintViolation
+    )
+    expect(zeroRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer > 0 required')
+    expect(negRes.attributeStatusInfo?.reasonCode).toBe(
+      ReasonCodeEnumType.PropertyConstraintViolation
+    )
+    expect(negRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer > 0 required')
     expect(nonIntRes.attributeStatusInfo?.reasonCode).toBe(
       ReasonCodeEnumType.PropertyConstraintViolation
     )
+    expect(nonIntRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer')
   })
 })

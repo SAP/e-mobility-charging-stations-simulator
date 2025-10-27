@@ -674,10 +674,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
             return {
               status: ResetStatusEnumType.Accepted,
-              statusInfo: {
-                additionalInfo: `EVSE ${evseId.toString()} reset initiated, active transaction will be terminated`,
-                reasonCode: ReasonCodeEnumType.NoError,
-              },
             }
           } else {
             // Reset EVSE immediately
@@ -689,10 +685,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
             return {
               status: ResetStatusEnumType.Accepted,
-              statusInfo: {
-                additionalInfo: `EVSE ${evseId.toString()} reset initiated`,
-                reasonCode: ReasonCodeEnumType.NoError,
-              },
             }
           }
         } else {
@@ -713,10 +705,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
             return {
               status: ResetStatusEnumType.Accepted,
-              statusInfo: {
-                additionalInfo: 'Immediate reset initiated, active transactions will be terminated',
-                reasonCode: ReasonCodeEnumType.NoError,
-              },
             }
           } else {
             logger.info(
@@ -750,10 +738,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
             return {
               status: ResetStatusEnumType.Scheduled,
-              statusInfo: {
-                additionalInfo: `EVSE ${evseId.toString()} reset scheduled after transaction completion`,
-                reasonCode: ReasonCodeEnumType.NoError,
-              },
             }
           } else {
             // No active transactions on EVSE, reset immediately
@@ -765,10 +749,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
             return {
               status: ResetStatusEnumType.Accepted,
-              statusInfo: {
-                additionalInfo: `EVSE ${evseId.toString()} reset initiated`,
-                reasonCode: ReasonCodeEnumType.NoError,
-              },
             }
           }
         } else {
@@ -782,10 +762,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
             return {
               status: ResetStatusEnumType.Scheduled,
-              statusInfo: {
-                additionalInfo: 'Reset scheduled after all transactions complete',
-                reasonCode: ReasonCodeEnumType.NoError,
-              },
             }
           } else {
             // No active transactions, reset immediately

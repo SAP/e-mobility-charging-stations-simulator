@@ -86,14 +86,14 @@ describe('B07 - Set Variables', () => {
     expect(firstResult.attributeType).toBe(AttributeEnumType.Actual)
     expect(firstResult.component.name).toBe(OCPP20ComponentName.ChargingStation)
     expect(firstResult.variable.name).toBe(OCPP20OptionalVariableName.WebSocketPingInterval)
-    expect(firstResult.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.NoError)
+    expect(firstResult.attributeStatusInfo).toBeUndefined()
 
     const secondResult = response.setVariableResult[1]
     expect(secondResult.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
     expect(secondResult.attributeType).toBe(AttributeEnumType.Actual)
     expect(secondResult.component.name).toBe(OCPP20ComponentName.ChargingStation)
     expect(secondResult.variable.name).toBe(OCPP20OptionalVariableName.HeartbeatInterval)
-    expect(secondResult.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.NoError)
+    expect(secondResult.attributeStatusInfo).toBeUndefined()
   })
 
   it('Should handle SetVariables request with invalid variables/components', () => {
@@ -275,6 +275,7 @@ describe('B07 - Set Variables', () => {
     const [accepted, unknownVariable, unsupportedAttrHeartbeat, unsupportedAttrWs, oversize] =
       response.setVariableResult
     expect(accepted.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+    expect(accepted.attributeStatusInfo).toBeUndefined()
     expect(unknownVariable.attributeStatus).toBe(SetVariableStatusEnumType.UnknownVariable)
     expect(unsupportedAttrHeartbeat.attributeStatus).toBe(
       SetVariableStatusEnumType.NotSupportedAttributeType
@@ -433,6 +434,6 @@ describe('B07 - Set Variables', () => {
       })
     expect(getResponse.getVariableResult).toHaveLength(1)
     const result = getResponse.getVariableResult[0]
-    expect(result.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.WriteOnly)
+    expect(result.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
   })
 })

@@ -180,9 +180,7 @@ await describe('B11 & B12 - Reset', async () => {
 
       expect(response).toBeDefined()
       expect(response.status).toBe(ResetStatusEnumType.Accepted)
-      expect(response.statusInfo).toBeDefined()
-      expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.NoError)
-      expect(response.statusInfo?.additionalInfo).toContain('EVSE 1 reset initiated')
+      expect(response.statusInfo).toBeUndefined()
     })
   })
 
@@ -201,11 +199,7 @@ await describe('B11 & B12 - Reset', async () => {
 
       expect(response).toBeDefined()
       expect(response.status).toBe(ResetStatusEnumType.Accepted) // Should accept immediate reset
-      expect(response.statusInfo).toBeDefined()
-      expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.NoError)
-      expect(response.statusInfo?.additionalInfo).toContain(
-        'active transactions will be terminated'
-      )
+      expect(response.statusInfo).toBeUndefined()
 
       // Reset mock
       ;(mockChargingStation as any).getNumberOfRunningTransactions = () => 0
@@ -225,11 +219,7 @@ await describe('B11 & B12 - Reset', async () => {
 
       expect(response).toBeDefined()
       expect(response.status).toBe(ResetStatusEnumType.Scheduled) // Should schedule OnIdle reset
-      expect(response.statusInfo).toBeDefined()
-      expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.NoError)
-      expect(response.statusInfo?.additionalInfo).toContain(
-        'scheduled after all transactions complete'
-      )
+      expect(response.statusInfo).toBeUndefined()
 
       // Reset mock
       ;(mockChargingStation as any).getNumberOfRunningTransactions = () => 0
