@@ -166,10 +166,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       getVariableResult: [],
     }
 
-    // Use VariableManager to get variables
     const variableManager = OCPP20VariableManager.getInstance()
 
-    // Get variables using VariableManager
     const results = variableManager.getVariables(chargingStation, commandPayload.getVariableData)
     getVariablesResponse.getVariableResult = results
 

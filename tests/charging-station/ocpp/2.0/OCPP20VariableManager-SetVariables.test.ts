@@ -331,7 +331,7 @@ describe('OCPP20VariableManager SetVariables test suite', () => {
       },
     ])[0]
     expect(beforeReset.attributeValue).toBe('99')
-    manager.resetRuntimeVariables()
+    manager.resetRuntimeOverrides()
     const afterReset = manager.getVariables(mockChargingStation, [
       {
         component: { name: OCPP20ComponentName.ChargingStation },
@@ -349,7 +349,7 @@ describe('OCPP20VariableManager SetVariables test suite', () => {
         variable: { name: OCPP20VendorVariableName.ConnectionUrl },
       },
     ])
-    manager.resetRuntimeVariables()
+    manager.resetRuntimeOverrides()
     const getResult = manager.getVariables(mockChargingStation, [
       {
         component: { name: OCPP20ComponentName.ChargingStation },

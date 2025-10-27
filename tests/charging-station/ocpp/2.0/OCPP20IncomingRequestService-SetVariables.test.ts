@@ -395,7 +395,7 @@ describe('B07 - Set Variables', () => {
     const { OCPP20VariableManager } = await import(
       '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
     )
-    OCPP20VariableManager.getInstance().resetRuntimeVariables()
+    OCPP20VariableManager.getInstance().resetRuntimeOverrides()
 
     const getAfter: { getVariableResult: OCPP20GetVariableResultType[] } =
       svc.handleRequestGetVariables(mockChargingStation, {

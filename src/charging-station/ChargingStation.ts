@@ -796,7 +796,7 @@ export class ChargingStation extends EventEmitter {
     // Clear non-persistent OCPP 2.0 runtime variables
     try {
       const variableManager = await import('./ocpp/2.0/OCPP20VariableManager.js')
-      variableManager.OCPP20VariableManager.getInstance().resetRuntimeVariables()
+      variableManager.OCPP20VariableManager.getInstance().resetRuntimeOverrides()
     } catch {
       /* ignore if module not available */
     }

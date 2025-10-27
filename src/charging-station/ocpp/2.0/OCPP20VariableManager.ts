@@ -28,7 +28,6 @@ import {
   validateConfigurationValue,
 } from '../../ConfigurationKeyUtils.js'
 
-// Translation-only refactor eliminating duplicated persistence/validation logic.
 // Persistent configuration-backed variables.
 const PERSISTENT_VARIABLES = new Set<string>([
   OCPP20OptionalVariableName.HeartbeatInterval as string,
@@ -39,7 +38,7 @@ const PERSISTENT_VARIABLES = new Set<string>([
 ])
 // Write-only variables.
 const WRITE_ONLY_VARIABLES = new Set<string>([OCPP20VendorVariableName.ConnectionUrl as string])
-// Non-persistent runtime variables (transient overrides allowed).
+// Non-persistent runtime variables.
 const RUNTIME_VARIABLES = new Set<string>([
   OCPP20RequiredVariableName.AuthorizeRemoteStart as string,
   OCPP20RequiredVariableName.DateTime as string,
@@ -49,9 +48,7 @@ const RUNTIME_VARIABLES = new Set<string>([
 export class OCPP20VariableManager {
   private static instance: null | OCPP20VariableManager = null
 
-  // Track invalid mappings discovered at startup self-check (transient only).
   private readonly invalidVariables = new Set<string>()
-  // Transient runtime overrides for non-persistent variables.
   private readonly runtimeOverrides = new Map<string, string>() // key format: component[.instance].variable
 
   private constructor () {
@@ -144,12 +141,6 @@ export class OCPP20VariableManager {
   }
 
   public resetRuntimeOverrides (): void {
-    this.resetRuntimeVariables()
-  }
-
-  // Compatibility method retained for existing callers (ChargingStation.reset())
-  // Clears transient runtime overrides for non-persistent variables.
-  public resetRuntimeVariables (): void {
     this.runtimeOverrides.clear()
   }
 
@@ -211,7 +202,6 @@ export class OCPP20VariableManager {
       )
     }
 
-    // Enforce write-only semantics: reject GetVariables on write-only variables.
     if (WRITE_ONLY_VARIABLES.has(variable.name)) {
       return this.rejectGet(
         variable,

@@ -326,11 +326,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       const variable: VariableType = { name: OCPP20OptionalVariableName.HeartbeatInterval }
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
-      const isSupported = (manager as any).isVariableSupported(
-        mockChargingStation,
-        component,
-        variable
-      )
+      const isSupported = (manager as any).isVariableSupported(component, variable)
       expect(isSupported).toBe(true)
     })
 
@@ -339,11 +335,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       const variable: VariableType = { name: OCPP20OptionalVariableName.WebSocketPingInterval }
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
-      const isSupported = (manager as any).isVariableSupported(
-        mockChargingStation,
-        component,
-        variable
-      )
+      const isSupported = (manager as any).isVariableSupported(component, variable)
       expect(isSupported).toBe(true)
     })
 
@@ -353,11 +345,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       const variable: VariableType = { name: 'UnknownVariable' as any }
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
-      const isSupported = (manager as any).isVariableSupported(
-        mockChargingStation,
-        component,
-        variable
-      )
+      const isSupported = (manager as any).isVariableSupported(component, variable)
       expect(isSupported).toBe(false)
     })
   })
