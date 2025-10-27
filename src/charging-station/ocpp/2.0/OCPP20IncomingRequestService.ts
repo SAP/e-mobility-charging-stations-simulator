@@ -41,12 +41,20 @@ import {
   SetVariableStatusEnumType,
   StopTransactionReason,
 } from '../../../types/index.js'
-import { isAsyncFunction, logger } from '../../../utils/index.js'
+import { convertToInt, isAsyncFunction, logger } from '../../../utils/index.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 import { OCPP20VariableManager } from './OCPP20VariableManager.js'
 
 const moduleName = 'OCPP20IncomingRequestService'
+
+const toIntOrNaN = (value: string): number => {
+  try {
+    return convertToInt(value)
+  } catch {
+    return Number.NaN
+  }
+}
 
 export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   protected payloadValidateFunctions: Map<OCPP20IncomingRequestCommand, ValidateFunction<JsonType>>
@@ -182,10 +190,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         k => (k.key as OCPP20RequiredVariableName) === OCPP20RequiredVariableName.BytesPerMessage
       )?.value
       if (itemsCfg && /^\d+$/.test(itemsCfg)) {
-        enforceItemsLimit = parseInt(itemsCfg, 10)
+        enforceItemsLimit = toIntOrNaN(itemsCfg)
       }
       if (bytesCfg && /^\d+$/.test(bytesCfg)) {
-        enforceBytesLimit = parseInt(bytesCfg, 10)
+        enforceBytesLimit = toIntOrNaN(bytesCfg)
       }
     } catch {
       /* ignore */
@@ -287,10 +295,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         k => (k.key as OCPP20RequiredVariableName) === OCPP20RequiredVariableName.BytesPerMessage
       )?.value
       if (itemsCfg && /^\d+$/.test(itemsCfg)) {
-        enforceItemsLimit = parseInt(itemsCfg, 10)
+        enforceItemsLimit = toIntOrNaN(itemsCfg)
       }
       if (bytesCfg && /^\d+$/.test(bytesCfg)) {
-        enforceBytesLimit = parseInt(bytesCfg, 10)
+        enforceBytesLimit = toIntOrNaN(bytesCfg)
       }
     } catch {
       /* ignore */
