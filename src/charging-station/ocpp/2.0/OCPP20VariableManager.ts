@@ -5,7 +5,9 @@ import { millisecondsToSeconds } from 'date-fns'
 import {
   AttributeEnumType,
   type ComponentType,
+  DataTypeEnumType,
   GetVariableStatusEnumType,
+  MutabilityEnumType,
   OCPP20ComponentName,
   type OCPP20GetVariableDataType,
   type OCPP20GetVariableResultType,
@@ -13,6 +15,7 @@ import {
   OCPP20RequiredVariableName,
   type OCPP20SetVariableDataType,
   type OCPP20SetVariableResultType,
+  PersistenceEnumType,
   ReasonCodeEnumType,
   SetVariableStatusEnumType,
   type VariableType,
@@ -313,7 +316,7 @@ export class OCPP20VariableManager {
     }
 
     const characteristics = getVariableCharacteristics(component.name, variable.name)
-    if (characteristics?.mutability === 'WriteOnly') {
+    if (characteristics?.mutability === MutabilityEnumType.WriteOnly) {
       return this.rejectGet(
         variable,
         component,
@@ -473,7 +476,10 @@ export class OCPP20VariableManager {
       this.canonicalComponentName(OCPP20ComponentName.ChargingStation as string)
     ) {
       // Special dynamic values
-      if (characteristics?.dataType === 'dateTime' && characteristics.mutability === 'ReadOnly') {
+      if (
+        characteristics?.dataType === DataTypeEnumType.DateTime &&
+        characteristics.mutability === MutabilityEnumType.ReadOnly
+      ) {
         return new Date().toISOString()
       }
 
@@ -539,14 +545,14 @@ export class OCPP20VariableManager {
       if (characteristics) {
         const variableKey = this.buildKey(component, variable)
         switch (characteristics.persistence) {
-          case 'Persistent': {
+          case PersistenceEnumType.Persistent: {
             const cfg = getConfigurationKey(
               chargingStation,
               variable.name as unknown as StandardParametersKey
             )
             return cfg?.value ?? ''
           }
-          case 'Volatile': {
+          case PersistenceEnumType.Volatile: {
             if (
               variableNameCanonical ===
               this.canonicalVariableName(OCPP20RequiredVariableName.TxUpdatedInterval as string)
@@ -646,7 +652,7 @@ export class OCPP20VariableManager {
     }
 
     /* characteristics already retrieved above */
-    if (characteristics?.mutability === 'ReadOnly') {
+    if (characteristics?.mutability === MutabilityEnumType.ReadOnly) {
       return this.rejectSet(
         variable,
         component,
@@ -673,7 +679,7 @@ export class OCPP20VariableManager {
       }
     }
 
-    if (characteristics?.mutability === 'WriteOnly') {
+    if (characteristics?.mutability === MutabilityEnumType.WriteOnly) {
       // WriteOnly is allowed for set; skip unsupported check.
     } else if (!characteristics) {
       return this.rejectSet(
@@ -718,7 +724,7 @@ export class OCPP20VariableManager {
           )
         }
         switch (characteristics.dataType) {
-          case 'boolean': {
+          case DataTypeEnumType.Boolean: {
             if (raw !== 'true' && raw !== 'false') {
               return this.rejectSet(
                 variable,
@@ -731,7 +737,7 @@ export class OCPP20VariableManager {
             }
             break
           }
-          case 'dateTime': {
+          case DataTypeEnumType.DateTime: {
             // Setting dateTime not supported (read-only) but validate fallback if attempted
             if (isNaN(Date.parse(raw))) {
               return this.rejectSet(
@@ -745,13 +751,10 @@ export class OCPP20VariableManager {
             }
             break
           }
-          case 'integer': {
-            // Accept optional leading '-' for signed integers at parsing stage
-            // Distinguish decimals and plus sign early to retain legacy InvalidValue mapping
+          case DataTypeEnumType.Integer: {
             const signedIntegerPattern = /^-?\d+$/
             const decimalPattern = /^-?\d+\.\d+$/
             if (!signedIntegerPattern.test(raw)) {
-              // Reject plus sign prefix explicitly with Non-empty digits message (tests expect this for '+10')
               if (raw.startsWith('+')) {
                 return this.rejectSet(
                   variable,
@@ -762,7 +765,6 @@ export class OCPP20VariableManager {
                   'Non-empty digits only string required'
                 )
               }
-              // Reject decimals or malformed signed numbers with specialized messages
               if (decimalPattern.test(raw) || /^[+-]?\d+\.\d+$/.test(raw)) {
                 if (characteristics.min === 1) {
                   return this.rejectSet(
@@ -803,7 +805,6 @@ export class OCPP20VariableManager {
               )
             }
             const num = Number(raw)
-            // Specialized positive-only rejection (min === 1) covers zero and negatives
             if (characteristics.min === 1 && num <= 0) {
               return this.rejectSet(
                 variable,
@@ -814,7 +815,6 @@ export class OCPP20VariableManager {
                 'Positive integer > 0 required'
               )
             }
-            // allowZero (min === 0) rejection for negatives only (zero accepted)
             if (characteristics.min === 0 && num < 0) {
               return this.rejectSet(
                 variable,
@@ -850,7 +850,7 @@ export class OCPP20VariableManager {
             }
             break
           }
-          case 'URI': {
+          case DataTypeEnumType.URI: {
             try {
               const url = new URL(raw)
               if (
@@ -882,11 +882,7 @@ export class OCPP20VariableManager {
             break
         }
       }
-      // Perform legacy validation only if registry did not already reject integer/boolean/URI/dateTime
-      // This avoids overriding specialized reason codes (e.g., ValuePositiveOnly) set above.
-      // Perform legacy validation ONLY for integer variables needing digit-only checks not already rejected
-      // Skip for URI, boolean, dateTime to avoid duplicate URL/boolean errors and preserve specialized reason codes
-      if (characteristics.dataType === 'integer') {
+      if (characteristics.dataType === DataTypeEnumType.Integer) {
         const validation = OCPP20VariableManager.validateConfigurationValue(
           variable.name,
           attributeValue
@@ -902,7 +898,6 @@ export class OCPP20VariableManager {
           } else if (validation.additionalInfo?.includes('Integer >= 0')) {
             mappedReason = ReasonCodeEnumType.ValueZeroNotAllowed
           }
-          // URL related messages should not occur here for integer dataType, but safeguard
           return this.rejectSet(
             variable,
             component,
@@ -915,7 +910,6 @@ export class OCPP20VariableManager {
       }
     }
 
-    // read-only already handled above via characteristics
     let rebootRequired = false
     if (
       this.canonicalComponentName(component.name) ===
@@ -924,7 +918,7 @@ export class OCPP20VariableManager {
       const configKeyName = characteristics.variable as unknown as StandardParametersKey
       const previousValue = getConfigurationKey(chargingStation, configKeyName)?.value
       switch (characteristics.persistence) {
-        case 'Persistent': {
+        case PersistenceEnumType.Persistent: {
           let configKey = getConfigurationKey(chargingStation, configKeyName)
           if (configKey == null) {
             addConfigurationKey(chargingStation, configKeyName, attributeValue, undefined, {
@@ -940,7 +934,7 @@ export class OCPP20VariableManager {
             previousValue !== attributeValue
           break
         }
-        case 'Volatile': {
+        case PersistenceEnumType.Volatile: {
           this.runtimeOverrides.set(variableKey, attributeValue)
           break
         }
@@ -968,7 +962,6 @@ export class OCPP20VariableManager {
       this.canonicalVariableName(variable.name) ===
         this.canonicalVariableName(OCPP20RequiredVariableName.AuthorizeRemoteStart as string)
     ) {
-      // Store override after early validation
       this.runtimeOverrides.set(variableKey, attributeValue)
     }
 

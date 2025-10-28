@@ -8,6 +8,16 @@ export enum AttributeEnumType {
   Target = 'Target',
 }
 
+export enum DataTypeEnumType {
+  Boolean = 'boolean',
+  DateTime = 'dateTime',
+  Decimal = 'decimal',
+  Integer = 'integer',
+  Sequence = 'sequence',
+  String = 'string',
+  URI = 'URI',
+}
+
 export enum GetVariableStatusEnumType {
   Accepted = 'Accepted',
   NotSupportedAttributeType = 'NotSupportedAttributeType',
@@ -70,6 +80,11 @@ export enum OCPP20RequiredVariableName {
 
 export enum OCPP20VendorVariableName {
   ConnectionUrl = 'ConnectionUrl',
+}
+
+export enum PersistenceEnumType {
+  Persistent = 'Persistent',
+  Volatile = 'Volatile',
 }
 
 export enum SetVariableStatusEnumType {

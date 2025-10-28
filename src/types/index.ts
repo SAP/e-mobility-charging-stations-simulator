@@ -181,6 +181,7 @@ export type {
 } from './ocpp/2.0/Responses.js'
 export {
   AttributeEnumType,
+  DataTypeEnumType,
   GetVariableStatusEnumType,
   MutabilityEnumType,
   OCPP20DeviceInfoVariableName,
@@ -191,6 +192,7 @@ export {
   type OCPP20SetVariableDataType,
   type OCPP20SetVariableResultType,
   OCPP20VendorVariableName,
+  PersistenceEnumType,
   SetVariableStatusEnumType,
   type VariableType,
 } from './ocpp/2.0/Variables.js'
