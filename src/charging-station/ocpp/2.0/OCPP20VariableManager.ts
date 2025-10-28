@@ -26,6 +26,7 @@ import {
   getConfigurationKey,
   setConfigurationKeyValue,
 } from '../../ConfigurationKeyUtils.js'
+import { getVariableCharacteristics } from './OCPP20VariableCharacteristicsRegistry.js'
 import { DEFAULT_MAX_LENGTH, VARIABLE_CONSTRAINTS } from './OCPP20VariableMetadata.js'
 
 // Persistent configuration-backed variables (original case).
@@ -63,29 +64,9 @@ const PERSISTENT_VARIABLES = new Set<string>([
 ])
 // Write-only variables (original case).
 const WRITE_ONLY_VARIABLES = new Set<string>([OCPP20VendorVariableName.ConnectionUrl as string])
-// Read-only variables (original case).
-const READ_ONLY_VARIABLES = new Set<string>([
-  OCPP20RequiredVariableName.DateTime as string,
-  OCPP20RequiredVariableName.ReportingValueSize as string,
-])
-// Non-persistent runtime variables (original case, excluding AuthorizeRemoteStart migrated to AuthCtrlr).
-const RUNTIME_VARIABLES = new Set<string>([
-  OCPP20RequiredVariableName.DateTime as string,
-  OCPP20RequiredVariableName.TxUpdatedInterval as string,
-])
-
-// Canonical (lowercase) sets for case-insensitive matching.
-const PERSISTENT_VARIABLES_CANONICAL = new Set<string>(
-  [...PERSISTENT_VARIABLES].map(v => v.toLowerCase())
-)
+// Canonical (lowercase) set for case-insensitive matching of write-only variables.
 const WRITE_ONLY_VARIABLES_CANONICAL = new Set<string>(
   [...WRITE_ONLY_VARIABLES].map(v => v.toLowerCase())
-)
-const READ_ONLY_VARIABLES_CANONICAL = new Set<string>(
-  [...READ_ONLY_VARIABLES].map(v => v.toLowerCase())
-)
-const RUNTIME_VARIABLES_CANONICAL = new Set<string>(
-  [...RUNTIME_VARIABLES].map(v => v.toLowerCase())
 )
 
 export class OCPP20VariableManager {
@@ -121,7 +102,7 @@ export class OCPP20VariableManager {
       return { additionalInfo: 'Non-empty digits only string required', valid: false }
     }
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (variableConstraintMetadata?.integer) {
+    if (variableConstraintMetadata?.integer === true) {
       const isDigitsOnly = /^\d+$/.test(valueTrimmed)
       if (!isDigitsOnly) {
         const isSignedInteger = /^[+-]?\d+$/.test(valueTrimmed)
@@ -139,18 +120,18 @@ export class OCPP20VariableManager {
         return { additionalInfo: 'Non-empty digits only string required', valid: false }
       }
       const numValue = Number(valueTrimmed)
-      if (variableConstraintMetadata.positive) {
+      if (variableConstraintMetadata.positive === true) {
         if (!Number.isInteger(numValue) || numValue <= 0) {
           return { additionalInfo: 'Positive integer > 0 required', valid: false }
         }
-      } else if (variableConstraintMetadata.allowZero) {
+      } else if (variableConstraintMetadata.allowZero === true) {
         if (!Number.isInteger(numValue) || numValue < 0) {
           return { additionalInfo: 'Integer >= 0 required', valid: false }
         }
       }
     }
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (variableConstraintMetadata?.urlProtocols) {
+    if (variableConstraintMetadata?.urlProtocols != null) {
       try {
         const url = new URL(valueTrimmed)
         if (!variableConstraintMetadata.urlProtocols.includes(url.protocol)) {
@@ -194,7 +175,6 @@ export class OCPP20VariableManager {
   }
 
   public performMappingSelfCheck (chargingStation: ChargingStation): void {
-    // Clear invalidVariables; rebuild based on current configuration state in canonical form.
     this.invalidVariables.clear()
     for (const variableName of PERSISTENT_VARIABLES) {
       if (variableName === (OCPP20VendorVariableName.ConnectionUrl as string)) {
@@ -332,7 +312,8 @@ export class OCPP20VariableManager {
       )
     }
 
-    if (WRITE_ONLY_VARIABLES_CANONICAL.has(this.canonicalVariableName(variable.name))) {
+    const characteristics = getVariableCharacteristics(component.name, variable.name)
+    if (characteristics?.mutability === 'WriteOnly') {
       return this.rejectGet(
         variable,
         component,
@@ -342,7 +323,7 @@ export class OCPP20VariableManager {
         `Variable ${variable.name} is write-only and cannot be retrieved`
       )
     }
-    if (attributeType && attributeType !== AttributeEnumType.Actual) {
+    if (attributeType && !characteristics?.supportedAttributes.includes(attributeType)) {
       return this.rejectGet(
         variable,
         component,
@@ -431,36 +412,7 @@ export class OCPP20VariableManager {
   }
 
   private isVariableSupported (component: ComponentType, variable: VariableType): boolean {
-    const componentNameCanonical = this.canonicalComponentName(component.name)
-    const variableNameCanonical = this.canonicalVariableName(variable.name)
-    if (
-      componentNameCanonical ===
-      this.canonicalComponentName(OCPP20ComponentName.ChargingStation as string)
-    ) {
-      return (
-        PERSISTENT_VARIABLES_CANONICAL.has(variableNameCanonical) ||
-        RUNTIME_VARIABLES_CANONICAL.has(variableNameCanonical)
-      )
-    }
-    if (
-      componentNameCanonical ===
-      this.canonicalComponentName(OCPP20ComponentName.AuthCtrlr as string)
-    ) {
-      return (
-        variableNameCanonical ===
-        this.canonicalVariableName(OCPP20RequiredVariableName.AuthorizeRemoteStart as string)
-      )
-    }
-    if (
-      componentNameCanonical ===
-      this.canonicalComponentName(OCPP20ComponentName.DeviceDataCtrlr as string)
-    ) {
-      return (
-        variableNameCanonical ===
-        this.canonicalVariableName(OCPP20RequiredVariableName.ReportingValueSize as string)
-      )
-    }
-    return false
+    return getVariableCharacteristics(component.name, variable.name) != null
   }
 
   private rejectGet (
@@ -471,10 +423,11 @@ export class OCPP20VariableManager {
     reason: ReasonCodeEnumType,
     info: string
   ): OCPP20GetVariableResultType {
+    const truncatedInfo = info.length > 50 ? info.slice(0, 50) : info
     return {
       attributeStatus: status,
       attributeStatusInfo: {
-        additionalInfo: info,
+        additionalInfo: truncatedInfo,
         reasonCode: reason,
       },
       attributeType,
@@ -491,10 +444,11 @@ export class OCPP20VariableManager {
     reason: ReasonCodeEnumType,
     info: string
   ): OCPP20SetVariableResultType {
+    const truncatedInfo = info.length > 50 ? info.slice(0, 50) : info
     return {
       attributeStatus: status,
       attributeStatusInfo: {
-        additionalInfo: info,
+        additionalInfo: truncatedInfo,
         reasonCode: reason,
       },
       attributeType,
@@ -508,28 +462,24 @@ export class OCPP20VariableManager {
     component: ComponentType,
     variable: VariableType
   ): string {
-    const variableNameOriginalCase = variable.name
-    const variableNameCanonical = this.canonicalVariableName(variableNameOriginalCase)
     const componentNameCanonical = this.canonicalComponentName(component.name)
+    const variableNameCanonical = this.canonicalVariableName(variable.name)
+
+    // Fetch characteristics strictly from registry
+    const characteristics = getVariableCharacteristics(component.name, variable.name)
 
     if (
       componentNameCanonical ===
       this.canonicalComponentName(OCPP20ComponentName.ChargingStation as string)
     ) {
-      // Find the original mapped variable name (persistent or runtime) ignoring case
-      const mappedOriginalName =
-        [...PERSISTENT_VARIABLES, ...RUNTIME_VARIABLES].find(
-          v => this.canonicalVariableName(v) === variableNameCanonical
-        ) ?? variableNameOriginalCase
-
-      if (
-        this.canonicalVariableName(mappedOriginalName) ===
-        this.canonicalVariableName(OCPP20RequiredVariableName.DateTime as string)
-      ) {
+      // Special dynamic values
+      if (characteristics?.dataType === 'dateTime' && characteristics.mutability === 'ReadOnly') {
         return new Date().toISOString()
       }
+
+      // HeartbeatInterval / WebSocketPingInterval need dynamic fallback to running timers when no config key value yet
       if (
-        this.canonicalVariableName(mappedOriginalName) ===
+        variableNameCanonical ===
         this.canonicalVariableName(OCPP20OptionalVariableName.HeartbeatInterval as string)
       ) {
         const hbConfigKey = getConfigurationKey(
@@ -542,7 +492,7 @@ export class OCPP20VariableManager {
         )
       }
       if (
-        this.canonicalVariableName(mappedOriginalName) ===
+        variableNameCanonical ===
         this.canonicalVariableName(OCPP20OptionalVariableName.WebSocketPingInterval as string)
       ) {
         const wsConfigKey = getConfigurationKey(
@@ -551,8 +501,10 @@ export class OCPP20VariableManager {
         )
         return wsConfigKey?.value ?? chargingStation.getWebSocketPingInterval().toString()
       }
+
+      // Configuration-backed persistent integer defaults when not yet mapped
       if (
-        this.canonicalVariableName(mappedOriginalName) ===
+        variableNameCanonical ===
         this.canonicalVariableName(OCPP20RequiredVariableName.EVConnectionTimeOut as string)
       ) {
         const cfg = getConfigurationKey(
@@ -562,7 +514,7 @@ export class OCPP20VariableManager {
         return cfg?.value ?? Constants.DEFAULT_EV_CONNECTION_TIMEOUT.toString()
       }
       if (
-        this.canonicalVariableName(mappedOriginalName) ===
+        variableNameCanonical ===
         this.canonicalVariableName(OCPP20RequiredVariableName.MessageTimeout as string)
       ) {
         const cfg = getConfigurationKey(
@@ -571,25 +523,43 @@ export class OCPP20VariableManager {
         )
         return cfg?.value ?? chargingStation.getConnectionTimeout().toString()
       }
-      const variableKey = this.buildKey(component, variable)
+
       if (
-        RUNTIME_VARIABLES_CANONICAL.has(variableNameCanonical) &&
-        this.runtimeOverrides.has(variableKey)
+        variableNameCanonical ===
+        this.canonicalVariableName(OCPP20RequiredVariableName.ReportingValueSize as string)
       ) {
-        return this.runtimeOverrides.get(variableKey) ?? ''
+        const cfg = getConfigurationKey(
+          chargingStation,
+          OCPP20RequiredVariableName.ReportingValueSize as unknown as StandardParametersKey
+        )
+        return cfg?.value ?? '2500'
       }
-      if (
-        this.canonicalVariableName(mappedOriginalName) ===
-        this.canonicalVariableName(OCPP20RequiredVariableName.TxUpdatedInterval as string)
-      ) {
-        return Constants.DEFAULT_TX_UPDATED_INTERVAL.toString()
+
+      // Persistence strategy: Persistent uses configuration, Volatile uses runtime override map
+      if (characteristics) {
+        const variableKey = this.buildKey(component, variable)
+        switch (characteristics.persistence) {
+          case 'Persistent': {
+            const cfg = getConfigurationKey(
+              chargingStation,
+              variable.name as unknown as StandardParametersKey
+            )
+            return cfg?.value ?? ''
+          }
+          case 'Volatile': {
+            if (
+              variableNameCanonical ===
+              this.canonicalVariableName(OCPP20RequiredVariableName.TxUpdatedInterval as string)
+            ) {
+              return (
+                this.runtimeOverrides.get(variableKey) ??
+                Constants.DEFAULT_TX_UPDATED_INTERVAL.toString()
+              )
+            }
+            return this.runtimeOverrides.get(variableKey) ?? ''
+          }
+        }
       }
-      // Fallback to configuration key lookup using mapped original variable name
-      const mappedConfigKey = getConfigurationKey(
-        chargingStation,
-        mappedOriginalName as unknown as StandardParametersKey
-      )
-      return mappedConfigKey?.value ?? ''
     }
 
     if (
@@ -612,12 +582,11 @@ export class OCPP20VariableManager {
       componentNameCanonical ===
       this.canonicalComponentName(OCPP20ComponentName.AuthCtrlr as string)
     ) {
-      const variableKey = this.buildKey(component, variable)
       if (
         variableNameCanonical ===
         this.canonicalVariableName(OCPP20RequiredVariableName.AuthorizeRemoteStart as string)
       ) {
-        // Return runtime override if present; otherwise default to 'true' per spec implicit default
+        const variableKey = this.buildKey(component, variable)
         return this.runtimeOverrides.get(variableKey) ?? 'true'
       }
     }
@@ -632,6 +601,7 @@ export class OCPP20VariableManager {
   ): OCPP20SetVariableResultType {
     const { attributeType, attributeValue, component, variable } = variableData
     const resolvedAttributeType = attributeType ?? AttributeEnumType.Actual
+    const variableCanonical = this.canonicalVariableName(variable.name)
 
     if (!this.isComponentValid(chargingStation, component)) {
       return this.rejectSet(
@@ -653,6 +623,17 @@ export class OCPP20VariableManager {
         `Variable ${variable.name} is not supported for component ${component.name}`
       )
     }
+    const characteristics = getVariableCharacteristics(component.name, variable.name)
+    if (characteristics && !characteristics.supportedAttributes.includes(resolvedAttributeType)) {
+      return this.rejectSet(
+        variable,
+        component,
+        resolvedAttributeType,
+        SetVariableStatusEnumType.NotSupportedAttributeType,
+        ReasonCodeEnumType.UnsupportedParam,
+        `Attribute type ${resolvedAttributeType} is not supported for variable ${variable.name}`
+      )
+    }
     if (resolvedAttributeType !== AttributeEnumType.Actual) {
       return this.rejectSet(
         variable,
@@ -664,7 +645,8 @@ export class OCPP20VariableManager {
       )
     }
 
-    if (READ_ONLY_VARIABLES_CANONICAL.has(this.canonicalVariableName(variable.name))) {
+    /* characteristics already retrieved above */
+    if (characteristics?.mutability === 'ReadOnly') {
       return this.rejectSet(
         variable,
         component,
@@ -691,17 +673,9 @@ export class OCPP20VariableManager {
       }
     }
 
-    if (
-      !WRITE_ONLY_VARIABLES_CANONICAL.has(this.canonicalVariableName(variable.name)) &&
-      !PERSISTENT_VARIABLES_CANONICAL.has(this.canonicalVariableName(variable.name)) &&
-      !RUNTIME_VARIABLES_CANONICAL.has(this.canonicalVariableName(variable.name)) &&
-      !(
-        this.canonicalComponentName(component.name) ===
-          this.canonicalComponentName(OCPP20ComponentName.AuthCtrlr as string) &&
-        this.canonicalVariableName(variable.name) ===
-          this.canonicalVariableName(OCPP20RequiredVariableName.AuthorizeRemoteStart as string)
-      )
-    ) {
+    if (characteristics?.mutability === 'WriteOnly') {
+      // WriteOnly is allowed for set; skip unsupported check.
+    } else if (!characteristics) {
       return this.rejectSet(
         variable,
         component,
@@ -730,79 +704,249 @@ export class OCPP20VariableManager {
         )
       }
     } else {
-      const validation = OCPP20VariableManager.validateConfigurationValue(
-        variable.name,
-        attributeValue
-      )
-      if (!validation.valid) {
-        let mappedReason = ReasonCodeEnumType.InvalidValue
-        if (validation.additionalInfo?.includes('Positive integer > 0')) {
-          if (attributeValue.includes('.') || attributeValue.startsWith('+')) {
-            mappedReason = ReasonCodeEnumType.InvalidValue
-          } else {
-            mappedReason = ReasonCodeEnumType.ValuePositiveOnly
-          }
-        } else if (validation.additionalInfo?.includes('Integer >= 0')) {
-          mappedReason = ReasonCodeEnumType.ValueZeroNotAllowed
-        } else if (
-          validation.additionalInfo?.includes('Invalid URL') ||
-          validation.additionalInfo?.includes('Unsupported URL scheme')
-        ) {
-          mappedReason = ReasonCodeEnumType.InvalidURL
+      // Registry-driven validation
+      {
+        const raw = attributeValue
+        if (characteristics.maxLength != null && raw.length > characteristics.maxLength) {
+          return this.rejectSet(
+            variable,
+            component,
+            resolvedAttributeType,
+            SetVariableStatusEnumType.Rejected,
+            ReasonCodeEnumType.InvalidValue,
+            `Value exceeds maximum length (${characteristics.maxLength.toString()})`
+          )
         }
-        return this.rejectSet(
-          variable,
-          component,
-          resolvedAttributeType,
-          SetVariableStatusEnumType.Rejected,
-          mappedReason,
-          validation.additionalInfo ?? 'Invalid value'
+        switch (characteristics.dataType) {
+          case 'boolean': {
+            if (raw !== 'true' && raw !== 'false') {
+              return this.rejectSet(
+                variable,
+                component,
+                resolvedAttributeType,
+                SetVariableStatusEnumType.Rejected,
+                ReasonCodeEnumType.InvalidValue,
+                'Boolean must be "true" or "false"'
+              )
+            }
+            break
+          }
+          case 'dateTime': {
+            // Setting dateTime not supported (read-only) but validate fallback if attempted
+            if (isNaN(Date.parse(raw))) {
+              return this.rejectSet(
+                variable,
+                component,
+                resolvedAttributeType,
+                SetVariableStatusEnumType.Rejected,
+                ReasonCodeEnumType.InvalidValue,
+                'Invalid dateTime format'
+              )
+            }
+            break
+          }
+          case 'integer': {
+            // Accept optional leading '-' for signed integers at parsing stage
+            // Distinguish decimals and plus sign early to retain legacy InvalidValue mapping
+            const signedIntegerPattern = /^-?\d+$/
+            const decimalPattern = /^-?\d+\.\d+$/
+            if (!signedIntegerPattern.test(raw)) {
+              // Reject plus sign prefix explicitly with Non-empty digits message (tests expect this for '+10')
+              if (raw.startsWith('+')) {
+                return this.rejectSet(
+                  variable,
+                  component,
+                  resolvedAttributeType,
+                  SetVariableStatusEnumType.Rejected,
+                  ReasonCodeEnumType.InvalidValue,
+                  'Non-empty digits only string required'
+                )
+              }
+              // Reject decimals or malformed signed numbers with specialized messages
+              if (decimalPattern.test(raw) || /^[+-]?\d+\.\d+$/.test(raw)) {
+                if (characteristics.min === 1) {
+                  return this.rejectSet(
+                    variable,
+                    component,
+                    resolvedAttributeType,
+                    SetVariableStatusEnumType.Rejected,
+                    ReasonCodeEnumType.InvalidValue,
+                    'Positive integer > 0 required'
+                  )
+                }
+                if (characteristics.min === 0) {
+                  return this.rejectSet(
+                    variable,
+                    component,
+                    resolvedAttributeType,
+                    SetVariableStatusEnumType.Rejected,
+                    ReasonCodeEnumType.ValueZeroNotAllowed,
+                    'Integer >= 0 required'
+                  )
+                }
+                return this.rejectSet(
+                  variable,
+                  component,
+                  resolvedAttributeType,
+                  SetVariableStatusEnumType.Rejected,
+                  ReasonCodeEnumType.InvalidValue,
+                  'Non-empty digits only string required'
+                )
+              }
+              return this.rejectSet(
+                variable,
+                component,
+                resolvedAttributeType,
+                SetVariableStatusEnumType.Rejected,
+                ReasonCodeEnumType.InvalidValue,
+                'Non-empty digits only string required'
+              )
+            }
+            const num = Number(raw)
+            // Specialized positive-only rejection (min === 1) covers zero and negatives
+            if (characteristics.min === 1 && num <= 0) {
+              return this.rejectSet(
+                variable,
+                component,
+                resolvedAttributeType,
+                SetVariableStatusEnumType.Rejected,
+                ReasonCodeEnumType.ValuePositiveOnly,
+                'Positive integer > 0 required'
+              )
+            }
+            // allowZero (min === 0) rejection for negatives only (zero accepted)
+            if (characteristics.min === 0 && num < 0) {
+              return this.rejectSet(
+                variable,
+                component,
+                resolvedAttributeType,
+                SetVariableStatusEnumType.Rejected,
+                ReasonCodeEnumType.ValueZeroNotAllowed,
+                'Integer >= 0 required'
+              )
+            }
+            if (
+              (characteristics.min != null && num < characteristics.min) ||
+              (characteristics.max != null && num > characteristics.max)
+            ) {
+              return this.rejectSet(
+                variable,
+                component,
+                resolvedAttributeType,
+                SetVariableStatusEnumType.Rejected,
+                ReasonCodeEnumType.ValueOutOfRange,
+                `Integer value out of range (${characteristics.min?.toString() ?? ''}-${characteristics.max?.toString() ?? ''})`
+              )
+            }
+            if (characteristics.enumeration && !characteristics.enumeration.includes(raw)) {
+              return this.rejectSet(
+                variable,
+                component,
+                resolvedAttributeType,
+                SetVariableStatusEnumType.Rejected,
+                ReasonCodeEnumType.InvalidValue,
+                'Value not in enumeration'
+              )
+            }
+            break
+          }
+          case 'URI': {
+            try {
+              const url = new URL(raw)
+              if (
+                characteristics.enumeration &&
+                !characteristics.enumeration.some(p => url.protocol === p)
+              ) {
+                return this.rejectSet(
+                  variable,
+                  component,
+                  resolvedAttributeType,
+                  SetVariableStatusEnumType.Rejected,
+                  ReasonCodeEnumType.InvalidURL,
+                  'Unsupported URL scheme'
+                )
+              }
+            } catch {
+              return this.rejectSet(
+                variable,
+                component,
+                resolvedAttributeType,
+                SetVariableStatusEnumType.Rejected,
+                ReasonCodeEnumType.InvalidURL,
+                'Invalid URL format'
+              )
+            }
+            break
+          }
+          default:
+            break
+        }
+      }
+      // Perform legacy validation only if registry did not already reject integer/boolean/URI/dateTime
+      // This avoids overriding specialized reason codes (e.g., ValuePositiveOnly) set above.
+      // Perform legacy validation ONLY for integer variables needing digit-only checks not already rejected
+      // Skip for URI, boolean, dateTime to avoid duplicate URL/boolean errors and preserve specialized reason codes
+      if (characteristics.dataType === 'integer') {
+        const validation = OCPP20VariableManager.validateConfigurationValue(
+          variable.name,
+          attributeValue
         )
+        if (!validation.valid) {
+          let mappedReason = ReasonCodeEnumType.InvalidValue
+          if (validation.additionalInfo?.includes('Positive integer > 0')) {
+            if (attributeValue.includes('.') || attributeValue.startsWith('+')) {
+              mappedReason = ReasonCodeEnumType.InvalidValue
+            } else {
+              mappedReason = ReasonCodeEnumType.ValuePositiveOnly
+            }
+          } else if (validation.additionalInfo?.includes('Integer >= 0')) {
+            mappedReason = ReasonCodeEnumType.ValueZeroNotAllowed
+          }
+          // URL related messages should not occur here for integer dataType, but safeguard
+          return this.rejectSet(
+            variable,
+            component,
+            resolvedAttributeType,
+            SetVariableStatusEnumType.Rejected,
+            mappedReason,
+            validation.additionalInfo ?? 'Invalid value'
+          )
+        }
       }
     }
 
-    if (READ_ONLY_VARIABLES_CANONICAL.has(this.canonicalVariableName(variable.name))) {
-      return this.rejectSet(
-        variable,
-        component,
-        resolvedAttributeType,
-        SetVariableStatusEnumType.Rejected,
-        ReasonCodeEnumType.ReadOnly,
-        `Variable ${variable.name} is read-only`
-      )
-    }
-
+    // read-only already handled above via characteristics
     let rebootRequired = false
     if (
       this.canonicalComponentName(component.name) ===
       this.canonicalComponentName(OCPP20ComponentName.ChargingStation as string)
     ) {
-      // Map incoming variable name to original defined variable name for persistence/runtime operations (case-insensitive)
-      const incomingCanonical = this.canonicalVariableName(variable.name)
-      const mappedOriginalName =
-        [...PERSISTENT_VARIABLES, ...RUNTIME_VARIABLES].find(
-          v => this.canonicalVariableName(v) === incomingCanonical
-        ) ?? variable.name
-      const mappedCanonical = this.canonicalVariableName(mappedOriginalName)
-      if (PERSISTENT_VARIABLES_CANONICAL.has(mappedCanonical)) {
-        const configKeyName = mappedOriginalName as unknown as StandardParametersKey
-        let configKey = getConfigurationKey(chargingStation, configKeyName)
-        const previousValue = configKey?.value
-        if (configKey == null) {
-          addConfigurationKey(chargingStation, configKeyName, attributeValue, undefined, {
-            overwrite: false,
-          })
-          configKey = getConfigurationKey(chargingStation, configKeyName)
-        } else if (configKey.value !== attributeValue) {
-          setConfigurationKeyValue(chargingStation, configKeyName, attributeValue)
+      const configKeyName = characteristics.variable as unknown as StandardParametersKey
+      const previousValue = getConfigurationKey(chargingStation, configKeyName)?.value
+      switch (characteristics.persistence) {
+        case 'Persistent': {
+          let configKey = getConfigurationKey(chargingStation, configKeyName)
+          if (configKey == null) {
+            addConfigurationKey(chargingStation, configKeyName, attributeValue, undefined, {
+              overwrite: false,
+            })
+            configKey = getConfigurationKey(chargingStation, configKeyName)
+          } else if (configKey.value !== attributeValue) {
+            setConfigurationKeyValue(chargingStation, configKeyName, attributeValue)
+          }
+          rebootRequired =
+            (characteristics.rebootRequired === true ||
+              getConfigurationKey(chargingStation, configKeyName)?.reboot === true) &&
+            previousValue !== attributeValue
+          break
         }
-        rebootRequired = configKey?.reboot === true && previousValue !== attributeValue
-      } else if (RUNTIME_VARIABLES_CANONICAL.has(mappedCanonical)) {
-        // For runtime variables keep key built from incoming variable for override map consistency
-        this.runtimeOverrides.set(variableKey, attributeValue)
+        case 'Volatile': {
+          this.runtimeOverrides.set(variableKey, attributeValue)
+          break
+        }
       }
       if (
-        mappedCanonical ===
+        variableCanonical ===
           this.canonicalVariableName(OCPP20OptionalVariableName.HeartbeatInterval as string) &&
         !Number.isNaN(convertToIntOrNaN(attributeValue)) &&
         convertToIntOrNaN(attributeValue) > 0
@@ -810,7 +954,7 @@ export class OCPP20VariableManager {
         chargingStation.restartHeartbeat()
       }
       if (
-        mappedCanonical ===
+        variableCanonical ===
           this.canonicalVariableName(OCPP20OptionalVariableName.WebSocketPingInterval as string) &&
         !Number.isNaN(convertToIntOrNaN(attributeValue)) &&
         convertToIntOrNaN(attributeValue) >= 0
