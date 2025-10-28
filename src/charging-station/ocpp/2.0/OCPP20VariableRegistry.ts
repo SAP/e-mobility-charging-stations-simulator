@@ -38,9 +38,10 @@ export interface VariableMetadata {
 }
 
 /**
- *
- * @param component
- * @param variable
+ * Build unique registry key from component and variable names.
+ * @param component Component name (case-sensitive original form).
+ * @param variable Variable name (case-sensitive original form).
+ * @returns Composite key `${component}::${variable}`.
  */
 function key (component: string, variable: string): string {
   return `${component}::${variable}`
@@ -570,10 +571,12 @@ const VARIABLE_REGISTRY_CANONICAL: Record<string, VariableMetadata> = Object.fro
 )
 
 /**
- *
- * @param chargingStation
- * @param meta
- * @param value
+ * Apply optional metadata post-processing to a resolved variable value.
+ * Executes `meta.postProcess` if defined; otherwise returns the original value.
+ * @param chargingStation ChargingStation instance for context.
+ * @param meta Variable metadata definition.
+ * @param value Raw value prior to post processing.
+ * @returns Post-processed value.
  */
 export function applyPostProcess (
   chargingStation: ChargingStation,
@@ -587,10 +590,12 @@ export function applyPostProcess (
 }
 
 /**
- *
- * @param component
- * @param instance
- * @param variable
+ * Build composite lookup key (lower-cased) including optional instance.
+ * Format: `component[.instance].variable` all lower case.
+ * @param component Component name.
+ * @param instance Optional instance identifier.
+ * @param variable Variable name.
+ * @returns Composite lower-cased key string.
  */
 export function buildVariableCompositeKey (
   component: string,
@@ -601,9 +606,10 @@ export function buildVariableCompositeKey (
 }
 
 /**
- *
- * @param value
- * @param sizeRaw
+ * Truncate a reported value string to the configured maximum size.
+ * @param value Original value string.
+ * @param sizeRaw Raw size metadata value (string) or undefined.
+ * @returns Possibly truncated value (enforced size) or original.
  */
 export function enforceReportingValueSize (value: string, sizeRaw: string | undefined): string {
   const size = convertToIntOrNaN(sizeRaw ?? '2500')
@@ -614,9 +620,11 @@ export function enforceReportingValueSize (value: string, sizeRaw: string | unde
 }
 
 /**
- *
- * @param component
- * @param variable
+ * Retrieve variable metadata with case-insensitive fallback.
+ * First tries exact case then canonical lower-cased registry.
+ * @param component Component name.
+ * @param variable Variable name.
+ * @returns VariableMetadata or undefined if not registered.
  */
 export function getVariableMetadata (
   component: string,
@@ -628,33 +636,37 @@ export function getVariableMetadata (
 }
 
 /**
- *
- * @param meta
+ * Check if variable persistence type is Persistent.
+ * @param meta Variable metadata.
+ * @returns True if persistence is Persistent.
  */
 export function isPersistent (meta: VariableMetadata): boolean {
   return meta.persistence === PersistenceEnumType.Persistent
 }
 
 /**
- *
- * @param meta
+ * Check if variable mutability type is ReadOnly.
+ * @param meta Variable metadata.
+ * @returns True if mutability is ReadOnly.
  */
 export function isReadOnly (meta: VariableMetadata): boolean {
   return meta.mutability === MutabilityEnumType.ReadOnly
 }
 
 /**
- *
- * @param meta
+ * Check if variable mutability type is WriteOnly.
+ * @param meta Variable metadata.
+ * @returns True if mutability is WriteOnly.
  */
 export function isWriteOnly (meta: VariableMetadata): boolean {
   return meta.mutability === MutabilityEnumType.WriteOnly
 }
 
 /**
- *
- * @param chargingStation
- * @param meta
+ * Resolve value for variable (dynamic or default).
+ * @param chargingStation ChargingStation instance.
+ * @param meta Variable metadata.
+ * @returns Resolved value (dynamic or default or empty string).
  */
 export function resolveValue (chargingStation: ChargingStation, meta: VariableMetadata): string {
   if (meta.dynamicValueResolver) {
@@ -665,9 +677,11 @@ export function resolveValue (chargingStation: ChargingStation, meta: VariableMe
 }
 
 /**
- *
- * @param meta
- * @param raw
+ * Validate a raw variable value against metadata constraints.
+ * Checks length, data type, range, enumeration, formatting rules.
+ * @param meta Variable metadata definition.
+ * @param raw Raw string value to validate.
+ * @returns Validation result with ok flag and optional reason/info.
  */
 export function validateValue (
   meta: VariableMetadata,

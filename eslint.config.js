@@ -65,6 +65,8 @@ export default defineConfig([
               'authctrlr',
               'AUTHCTRLR',
               'recloser',
+              'deauthorize',
+              'DEAUTHORIZE',
             ],
           },
         },
