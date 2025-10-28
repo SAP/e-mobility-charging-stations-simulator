@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-
 import { expect } from '@std/expect'
 import { describe, it } from 'node:test'
 
@@ -22,11 +20,11 @@ await describe('ErrorUtils test suite', async () => {
   const chargingStation = createChargingStation({ baseName: 'CS-TEST' })
 
   await it('Verify handleFileException()', t => {
-    t.mock.method(console, 'warn')
-    t.mock.method(console, 'error')
-    t.mock.method(logger, 'warn')
-    t.mock.method(logger, 'error')
-    const error = new Error()
+    const consoleWarnMock = t.mock.method(console, 'warn')
+    const consoleErrorMock = t.mock.method(console, 'error')
+    const warnMock = t.mock.method(logger, 'warn')
+    const errorMock = t.mock.method(logger, 'error')
+    const error = new Error() as NodeJS.ErrnoException
     error.code = 'ENOENT'
     expect(() => {
       handleFileException('path/to/module.js', FileType.Authorization, error, 'log prefix |', {})
@@ -36,8 +34,8 @@ await describe('ErrorUtils test suite', async () => {
         throwError: false,
       })
     }).not.toThrow()
-    expect(logger.warn.mock.calls.length).toBe(1)
-    expect(logger.error.mock.calls.length).toBe(1)
+    expect(warnMock.mock.calls.length).toBe(1)
+    expect(errorMock.mock.calls.length).toBe(1)
     expect(() => {
       handleFileException('path/to/module.js', FileType.Authorization, error, 'log prefix |', {
         consoleOut: true,
@@ -49,13 +47,13 @@ await describe('ErrorUtils test suite', async () => {
         throwError: false,
       })
     }).not.toThrow()
-    expect(console.warn.mock.calls.length).toBe(1)
-    expect(console.error.mock.calls.length).toBe(1)
+    expect(consoleWarnMock.mock.calls.length).toBe(1)
+    expect(consoleErrorMock.mock.calls.length).toBe(1)
   })
 
   await it('Verify handleSendMessageError()', t => {
-    t.mock.method(logger, 'error')
-    t.mock.method(chargingStation, 'logPrefix')
+    const errorMock = t.mock.method(logger, 'error')
+    const logPrefixMock = t.mock.method(chargingStation, 'logPrefix')
     const error = new Error()
     expect(() => {
       handleSendMessageError(
@@ -74,13 +72,13 @@ await describe('ErrorUtils test suite', async () => {
         { throwError: true }
       )
     }).toThrow(error)
-    expect(chargingStation.logPrefix.mock.calls.length).toBe(2)
-    expect(logger.error.mock.calls.length).toBe(2)
+    expect(logPrefixMock.mock.calls.length).toBe(2)
+    expect(errorMock.mock.calls.length).toBe(2)
   })
 
   await it('Verify handleIncomingRequestError()', t => {
-    t.mock.method(logger, 'error')
-    t.mock.method(chargingStation, 'logPrefix')
+    const errorMock = t.mock.method(logger, 'error')
+    const logPrefixMock = t.mock.method(chargingStation, 'logPrefix')
     const error = new Error()
     expect(() => {
       handleIncomingRequestError(chargingStation, IncomingRequestCommand.CLEAR_CACHE, error)
@@ -98,7 +96,7 @@ await describe('ErrorUtils test suite', async () => {
         errorResponse,
       })
     ).toStrictEqual(errorResponse)
-    expect(chargingStation.logPrefix.mock.calls.length).toBe(3)
-    expect(logger.error.mock.calls.length).toBe(3)
+    expect(logPrefixMock.mock.calls.length).toBe(3)
+    expect(errorMock.mock.calls.length).toBe(3)
   })
 })

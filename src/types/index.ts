@@ -181,7 +181,6 @@ export type {
 } from './ocpp/2.0/Responses.js'
 export {
   AttributeEnumType,
-  DataTypeEnumType,
   GetVariableStatusEnumType,
   MutabilityEnumType,
   OCPP20DeviceInfoVariableName,

@@ -12,7 +12,7 @@ import { availableParallelism, type MessageHandler } from 'poolifier'
 
 import type { AbstractUIServer } from './ui-server/AbstractUIServer.js'
 
-import { version } from '../../package.json'
+import packageJson from '../../package.json' with { type: 'json' }
 import { BaseError } from '../exception/index.js'
 import { type Storage, StorageFactory } from '../performance/index.js'
 import {
@@ -87,7 +87,7 @@ export class Bootstrap extends EventEmitter {
   private readonly templateStatistics: Map<string, TemplateStatistics>
   private readonly uiServer: AbstractUIServer
   private uiServerStarted: boolean
-  private readonly version: string = version
+  private readonly version: string = packageJson.version
   private workerImplementation?: WorkerAbstract<ChargingStationWorkerData, ChargingStationInfo>
 
   private get numberOfAddedChargingStations (): number {

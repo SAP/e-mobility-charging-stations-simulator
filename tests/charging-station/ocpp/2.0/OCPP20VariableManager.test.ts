@@ -1262,4 +1262,182 @@ await describe('OCPP20VariableManager test suite', async () => {
       }
     })
   })
+
+  await describe('Alias precedence tests', async () => {
+    const manager = OCPP20VariableManager.getInstance()
+
+    await it('Should reject setting ReportingValueSize via ChargingStation due to DeviceDataCtrlr read-only metadata', () => {
+      const setRes = manager.setVariables(mockChargingStation, [
+        {
+          attributeType: AttributeEnumType.Actual,
+          attributeValue: '2000',
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20RequiredVariableName.ReportingValueSize },
+        },
+      ])[0]
+      expect(setRes.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(setRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ReadOnly)
+      // Getting should still succeed (read-only)
+      const getRes = manager.getVariables(mockChargingStation, [
+        {
+          attributeType: AttributeEnumType.Actual,
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20RequiredVariableName.ReportingValueSize },
+        },
+      ])[0]
+      expect(getRes.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      expect(getRes.attributeValue?.length).toBeGreaterThan(0)
+    })
+
+    await it('Should use SecurityCtrlr metadata when setting SecurityProfile via ChargingStation and enforce enumeration + rebootRequired', () => {
+      // First set to 2 (from default 1) -> rebootRequired as value changes
+      const first = manager.setVariables(mockChargingStation, [
+        {
+          attributeType: AttributeEnumType.Actual,
+          attributeValue: '2',
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20RequiredVariableName.SecurityProfile },
+        },
+      ])[0]
+      expect([
+        SetVariableStatusEnumType.RebootRequired,
+        SetVariableStatusEnumType.Accepted,
+      ]).toContain(first.attributeStatus)
+      // Setting again to same value should be Accepted (no reboot)
+      const second = manager.setVariables(mockChargingStation, [
+        {
+          attributeType: AttributeEnumType.Actual,
+          attributeValue: '2',
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20RequiredVariableName.SecurityProfile },
+        },
+      ])[0]
+      expect(second.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      // Change to 3 should trigger rebootRequired
+      const third = manager.setVariables(mockChargingStation, [
+        {
+          attributeType: AttributeEnumType.Actual,
+          attributeValue: '3',
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20RequiredVariableName.SecurityProfile },
+        },
+      ])[0]
+      expect([
+        SetVariableStatusEnumType.RebootRequired,
+        SetVariableStatusEnumType.Accepted,
+      ]).toContain(third.attributeStatus)
+      // Invalid enumeration value
+      const invalid = manager.setVariables(mockChargingStation, [
+        {
+          attributeType: AttributeEnumType.Actual,
+          attributeValue: '5',
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20RequiredVariableName.SecurityProfile },
+        },
+      ])[0]
+      expect(invalid.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(invalid.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
+      expect(invalid.attributeStatusInfo?.additionalInfo).toContain('enumeration')
+    })
+  })
+
+  await describe('List validation tests', async () => {
+    const manager = OCPP20VariableManager.getInstance()
+
+    await it('Should accept valid updates to list/sequence list variables', () => {
+      const validUpdates: OCPP20SetVariableDataType[] = [
+        {
+          attributeValue: 'HTTP,HTTPS',
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
+          variable: { name: OCPP20RequiredVariableName.FileTransferProtocols },
+        },
+        {
+          attributeValue: 'GPS,NTP,RTC', // reorder TimeSource
+          component: { name: OCPP20ComponentName.ClockCtrlr },
+          variable: { name: OCPP20RequiredVariableName.TimeSource },
+        },
+        {
+          attributeValue: 'CablePluggedIn,EnergyTransfer,Authorized',
+          component: { name: OCPP20ComponentName.TxCtrlr },
+          variable: { name: OCPP20RequiredVariableName.TxStartPoint },
+        },
+        {
+          attributeValue: 'EVSEIdle,CableUnplugged', // keep same
+          component: { name: OCPP20ComponentName.TxCtrlr },
+          variable: { name: OCPP20RequiredVariableName.TxStopPoint },
+        },
+        {
+          attributeValue: 'Energy.Active.Import.Register,Power.Active.Import,Voltage',
+          component: { name: OCPP20ComponentName.SampledDataCtrlr },
+          variable: { name: OCPP20RequiredVariableName.TxStartedMeasurands },
+        },
+        {
+          attributeValue:
+            'Energy.Active.Import.Register,Current.Import,Energy.Active.Import.Interval',
+          component: { name: OCPP20ComponentName.SampledDataCtrlr },
+          variable: { name: OCPP20RequiredVariableName.TxEndedMeasurands },
+        },
+        {
+          attributeValue: 'Energy.Active.Import.Register,Current.Import',
+          component: { name: OCPP20ComponentName.SampledDataCtrlr },
+          variable: { name: OCPP20RequiredVariableName.TxUpdatedMeasurands },
+        },
+      ]
+      const results = manager.setVariables(mockChargingStation, validUpdates)
+      for (const r of results) {
+        expect(r.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      }
+    })
+
+    await it('Should reject invalid list formats and members', () => {
+      interface ListVar {
+        component: OCPP20ComponentName
+        name: OCPP20RequiredVariableName
+      }
+      const listVariables: ListVar[] = [
+        {
+          component: OCPP20ComponentName.OCPPCommCtrlr,
+          name: OCPP20RequiredVariableName.FileTransferProtocols,
+        },
+        { component: OCPP20ComponentName.ClockCtrlr, name: OCPP20RequiredVariableName.TimeSource },
+        { component: OCPP20ComponentName.TxCtrlr, name: OCPP20RequiredVariableName.TxStartPoint },
+        { component: OCPP20ComponentName.TxCtrlr, name: OCPP20RequiredVariableName.TxStopPoint },
+        {
+          component: OCPP20ComponentName.SampledDataCtrlr,
+          name: OCPP20RequiredVariableName.TxStartedMeasurands,
+        },
+        {
+          component: OCPP20ComponentName.SampledDataCtrlr,
+          name: OCPP20RequiredVariableName.TxEndedMeasurands,
+        },
+        {
+          component: OCPP20ComponentName.SampledDataCtrlr,
+          name: OCPP20RequiredVariableName.TxUpdatedMeasurands,
+        },
+      ]
+      const invalidPatterns = ['', ',HTTP', 'HTTP,', 'HTTP,,FTP', 'HTTP,HTTP']
+      for (const lv of listVariables) {
+        for (const pattern of invalidPatterns) {
+          const res = manager.setVariables(mockChargingStation, [
+            {
+              attributeValue: pattern,
+              component: { name: lv.component },
+              variable: { name: lv.name },
+            },
+          ])[0]
+          expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+          expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
+          if (pattern === '') {
+            expect(res.attributeStatusInfo?.additionalInfo).toContain('List cannot be empty')
+          } else if (pattern.startsWith(',') || pattern.endsWith(',')) {
+            expect(res.attributeStatusInfo?.additionalInfo).toContain('No leading/trailing comma')
+          } else if (pattern.includes(',,')) {
+            expect(res.attributeStatusInfo?.additionalInfo).toContain('Empty list member')
+          } else if (pattern === 'HTTP,HTTP') {
+            expect(res.attributeStatusInfo?.additionalInfo).toContain('Duplicate list member')
+          }
+        }
+      }
+    })
+  })
 })

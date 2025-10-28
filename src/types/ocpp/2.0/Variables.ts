@@ -8,16 +8,6 @@ export enum AttributeEnumType {
   Target = 'Target',
 }
 
-export enum DataTypeEnumType {
-  Boolean = 'boolean',
-  DateTime = 'dateTime',
-  Decimal = 'decimal',
-  Integer = 'integer',
-  Sequence = 'sequence',
-  String = 'string',
-  URI = 'URI',
-}
-
 export enum GetVariableStatusEnumType {
   Accepted = 'Accepted',
   NotSupportedAttributeType = 'NotSupportedAttributeType',
