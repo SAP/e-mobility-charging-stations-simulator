@@ -326,8 +326,6 @@ await describe('OCPP20VariableManager test suite', async () => {
     const manager = OCPP20VariableManager.getInstance()
 
     await it('Should validate ChargingStation component as always valid', () => {
-      // NOTE: Connector components currently unsupported in isComponentValid. Submit OpenSpec proposal before changing behavior.
-      // Future OCPP 2.0 per-connector variable support would require updating related tests.
       const component: ComponentType = { name: OCPP20ComponentName.ChargingStation }
 
       // Access private method through any casting for testing
