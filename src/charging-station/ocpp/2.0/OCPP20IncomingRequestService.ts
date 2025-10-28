@@ -41,7 +41,9 @@ import {
   SetVariableStatusEnumType,
   StopTransactionReason,
 } from '../../../types/index.js'
+import { StandardParametersKey } from '../../../types/ocpp/Configuration.js'
 import { convertToIntOrNaN, isAsyncFunction, logger } from '../../../utils/index.js'
+import { getConfigurationKey } from '../../ConfigurationKeyUtils.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 import { OCPP20VariableManager } from './OCPP20VariableManager.js'
@@ -175,11 +177,13 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     let enforceItemsLimit = 0
     let enforceBytesLimit = 0
     try {
-      const itemsCfg = chargingStation.ocppConfiguration?.configurationKey?.find(
-        k => (k.key as OCPP20RequiredVariableName) === OCPP20RequiredVariableName.ItemsPerMessage
+      const itemsCfg = getConfigurationKey(
+        chargingStation,
+        OCPP20RequiredVariableName.ItemsPerMessage as unknown as StandardParametersKey
       )?.value
-      const bytesCfg = chargingStation.ocppConfiguration?.configurationKey?.find(
-        k => (k.key as OCPP20RequiredVariableName) === OCPP20RequiredVariableName.BytesPerMessage
+      const bytesCfg = getConfigurationKey(
+        chargingStation,
+        OCPP20RequiredVariableName.BytesPerMessage as unknown as StandardParametersKey
       )?.value
       if (itemsCfg && /^\d+$/.test(itemsCfg)) {
         enforceItemsLimit = convertToIntOrNaN(itemsCfg)
@@ -280,11 +284,13 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     let enforceItemsLimit = 0
     let enforceBytesLimit = 0
     try {
-      const itemsCfg = chargingStation.ocppConfiguration?.configurationKey?.find(
-        k => (k.key as OCPP20RequiredVariableName) === OCPP20RequiredVariableName.ItemsPerMessage
+      const itemsCfg = getConfigurationKey(
+        chargingStation,
+        OCPP20RequiredVariableName.ItemsPerMessage as unknown as StandardParametersKey
       )?.value
-      const bytesCfg = chargingStation.ocppConfiguration?.configurationKey?.find(
-        k => (k.key as OCPP20RequiredVariableName) === OCPP20RequiredVariableName.BytesPerMessage
+      const bytesCfg = getConfigurationKey(
+        chargingStation,
+        OCPP20RequiredVariableName.BytesPerMessage as unknown as StandardParametersKey
       )?.value
       if (itemsCfg && /^\d+$/.test(itemsCfg)) {
         enforceItemsLimit = convertToIntOrNaN(itemsCfg)
