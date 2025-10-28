@@ -117,17 +117,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     unit: 'seconds',
     variable: OCPP20OptionalVariableName.WebSocketPingInterval as string,
   },
-  // DateTime should be on ClockCtrlr per spec; keep ChargingStation entry for backward compatibility but add ClockCtrlr mapping below
-  [key(OCPP20ComponentName.ChargingStation as string, OCPP20RequiredVariableName.DateTime)]: {
-    component: OCPP20ComponentName.ChargingStation as string,
-    dataType: DataEnumType.dateTime,
-    description: 'Current station date-time in ISO8601.',
-    dynamicValueResolver: () => new Date().toISOString(),
-    mutability: MutabilityEnumType.ReadOnly,
-    persistence: PersistenceEnumType.Volatile,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: OCPP20RequiredVariableName.DateTime as string,
-  },
+
   [key(
     OCPP20ComponentName.ChargingStation as string,
     OCPP20RequiredVariableName.EVConnectionTimeOut
@@ -146,75 +136,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     unit: 'seconds',
     variable: OCPP20RequiredVariableName.EVConnectionTimeOut as string,
   },
-  // MessageTimeout belongs to OCPPCommCtrlr(Default) per spec; retain ChargingStation mapping for compatibility
-  [key(OCPP20ComponentName.ChargingStation as string, OCPP20RequiredVariableName.MessageTimeout)]: {
-    component: OCPP20ComponentName.ChargingStation as string,
-    dataType: DataEnumType.integer,
-    defaultValue: Constants.DEFAULT_CONNECTION_TIMEOUT.toString(),
-    description: 'Timeout for OCPP message response waiting.',
-    max: 3600,
-    maxLength: 10,
-    min: 1,
-    mutability: MutabilityEnumType.ReadWrite,
-    persistence: PersistenceEnumType.Persistent,
-    positive: true,
-    supportedAttributes: [AttributeEnumType.Actual],
-    unit: 'seconds',
-    variable: OCPP20RequiredVariableName.MessageTimeout as string,
-  },
-  [key(
-    OCPP20ComponentName.ChargingStation as string,
-    OCPP20RequiredVariableName.ReportingValueSize
-  )]: {
-    component: OCPP20ComponentName.ChargingStation as string,
-    dataType: DataEnumType.integer,
-    defaultValue: '2500',
-    description: 'Maximum size of reported values.',
-    max: 2500,
-    maxLength: 5,
-    min: 1,
-    mutability: MutabilityEnumType.ReadWrite,
-    persistence: PersistenceEnumType.Persistent,
-    positive: true,
-    supportedAttributes: [AttributeEnumType.Actual],
-    unit: 'chars',
-    variable: OCPP20RequiredVariableName.ReportingValueSize as string,
-  },
-  [key(OCPP20ComponentName.ChargingStation as string, OCPP20RequiredVariableName.SecurityProfile)]:
-    {
-      component: OCPP20ComponentName.ChargingStation as string,
-      dataType: DataEnumType.integer,
-      description: 'Selected security profile.',
-      enumeration: ['1', '2', '3', '4'],
-      max: 4,
-      maxLength: 1,
-      min: 1,
-      mutability: MutabilityEnumType.ReadWrite,
-      persistence: PersistenceEnumType.Persistent,
-      positive: true,
-      rebootRequired: true,
-      supportedAttributes: [AttributeEnumType.Actual],
-      variable: OCPP20RequiredVariableName.SecurityProfile as string,
-    },
-  // TxUpdatedInterval belongs to SampledDataCtrlr per spec; keep ChargingStation mapping for compatibility
-  [key(
-    OCPP20ComponentName.ChargingStation as string,
-    OCPP20RequiredVariableName.TxUpdatedInterval
-  )]: {
-    component: OCPP20ComponentName.ChargingStation as string,
-    dataType: DataEnumType.integer,
-    defaultValue: Constants.DEFAULT_TX_UPDATED_INTERVAL.toString(),
-    description: 'Interval for transaction update events.',
-    max: 3600,
-    maxLength: 10,
-    min: 1,
-    mutability: MutabilityEnumType.ReadWrite,
-    persistence: PersistenceEnumType.Volatile,
-    positive: true,
-    supportedAttributes: [AttributeEnumType.Actual],
-    unit: 'seconds',
-    variable: OCPP20RequiredVariableName.TxUpdatedInterval as string,
-  },
+
   [key(OCPP20ComponentName.ChargingStation as string, OCPP20VendorVariableName.ConnectionUrl)]: {
     component: OCPP20ComponentName.ChargingStation as string,
     dataType: DataEnumType.string,
@@ -566,10 +488,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   },
 }
 
-const VARIABLE_REGISTRY_CANONICAL: Record<string, VariableMetadata> = Object.fromEntries(
-  Object.entries(VARIABLE_REGISTRY).map(([k, v]) => [k.toLowerCase(), v])
-)
-
 /**
  * Apply optional metadata post-processing to a resolved variable value.
  * Executes `meta.postProcess` if defined; otherwise returns the original value.
@@ -630,9 +548,7 @@ export function getVariableMetadata (
   component: string,
   variable: string
 ): undefined | VariableMetadata {
-  const exact = VARIABLE_REGISTRY[key(component, variable)] as undefined | VariableMetadata
-  if (exact) return exact
-  return VARIABLE_REGISTRY_CANONICAL[key(component.toLowerCase(), variable.toLowerCase())]
+  return VARIABLE_REGISTRY[key(component, variable)] as undefined | VariableMetadata
 }
 
 /**

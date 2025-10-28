@@ -301,4 +301,62 @@ void describe('B06 - Get Variables', () => {
     })
     resetLimits(mockChargingStation)
   })
+
+  // Added tests for relocated components
+  void it('Should retrieve immutable DateTime from ClockCtrlr', () => {
+    const request: OCPP20GetVariablesRequest = {
+      getVariableData: [
+        {
+          attributeType: AttributeEnumType.Actual,
+          component: { name: OCPP20ComponentName.ClockCtrlr },
+          variable: { name: OCPP20RequiredVariableName.DateTime },
+        },
+      ],
+    }
+    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    expect(response.getVariableResult).toHaveLength(1)
+    const result = response.getVariableResult[0]
+    expect(result.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+    expect(result.component.name).toBe(OCPP20ComponentName.ClockCtrlr)
+    expect(result.variable.name).toBe(OCPP20RequiredVariableName.DateTime)
+    expect(result.attributeValue).toBeDefined()
+  })
+
+  void it('Should retrieve MessageTimeout from OCPPCommCtrlr', () => {
+    const request: OCPP20GetVariablesRequest = {
+      getVariableData: [
+        {
+          attributeType: AttributeEnumType.Actual,
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
+          variable: { name: OCPP20RequiredVariableName.MessageTimeout },
+        },
+      ],
+    }
+    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    expect(response.getVariableResult).toHaveLength(1)
+    const result = response.getVariableResult[0]
+    expect(result.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+    expect(result.component.name).toBe(OCPP20ComponentName.OCPPCommCtrlr)
+    expect(result.variable.name).toBe(OCPP20RequiredVariableName.MessageTimeout)
+    expect(result.attributeValue).toBeDefined()
+  })
+
+  void it('Should retrieve TxUpdatedInterval from SampledDataCtrlr and show default value', () => {
+    const request: OCPP20GetVariablesRequest = {
+      getVariableData: [
+        {
+          attributeType: AttributeEnumType.Actual,
+          component: { name: OCPP20ComponentName.SampledDataCtrlr },
+          variable: { name: OCPP20RequiredVariableName.TxUpdatedInterval },
+        },
+      ],
+    }
+    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    expect(response.getVariableResult).toHaveLength(1)
+    const result = response.getVariableResult[0]
+    expect(result.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+    expect(result.component.name).toBe(OCPP20ComponentName.SampledDataCtrlr)
+    expect(result.variable.name).toBe(OCPP20RequiredVariableName.TxUpdatedInterval)
+    expect(result.attributeValue).toBe('30')
+  })
 })

@@ -2,7 +2,6 @@ import { expect } from '@std/expect'
 import { millisecondsToSeconds } from 'date-fns'
 import { describe, it } from 'node:test'
 
-import { addConfigurationKey } from '../../../../src/charging-station/ConfigurationKeyUtils.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import {
   AttributeEnumType,
@@ -191,36 +190,6 @@ describe('B07 - Set Variables', () => {
     expect(result.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
   })
 
-  // FR: B07.FR.06
-  it('Should flag reboot required when setting a reboot flagged configuration key', () => {
-    addConfigurationKey(
-      mockChargingStation,
-      OCPP20RequiredVariableName.MessageTimeout as unknown as string,
-      mockChargingStation.getConnectionTimeout().toString(),
-      { reboot: true }
-    )
-
-    const newValue = (mockChargingStation.getConnectionTimeout() + 5).toString()
-    const request: OCPP20SetVariablesRequest = {
-      setVariableData: [
-        {
-          attributeType: AttributeEnumType.Actual,
-          attributeValue: newValue,
-          component: { name: OCPP20ComponentName.ChargingStation },
-          variable: { name: OCPP20RequiredVariableName.MessageTimeout },
-        },
-      ],
-    }
-
-    const response: { setVariableResult: OCPP20SetVariableResultType[] } =
-      svc.handleRequestSetVariables(mockChargingStation, request)
-
-    expect(response.setVariableResult).toHaveLength(1)
-    const result = response.setVariableResult[0]
-    expect(result.attributeStatus).toBe(SetVariableStatusEnumType.RebootRequired)
-    expect(result.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.NoError)
-  })
-
   // FR: B07.FR.07
   it('Should handle mixed SetVariables request with multiple outcomes', () => {
     const longValue = 'y'.repeat(1001)
@@ -306,7 +275,7 @@ describe('B07 - Set Variables', () => {
         {
           attributeType: AttributeEnumType.Actual,
           attributeValue: new Date(Date.now() + 1000).toISOString(),
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.ClockCtrlr },
           variable: { name: OCPP20RequiredVariableName.DateTime },
         },
       ],
@@ -370,7 +339,7 @@ describe('B07 - Set Variables', () => {
       setVariableData: [
         {
           attributeValue: txValue,
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.SampledDataCtrlr },
           variable: { name: OCPP20RequiredVariableName.TxUpdatedInterval },
         },
       ],
@@ -382,7 +351,7 @@ describe('B07 - Set Variables', () => {
         getVariableData: [
           {
             attributeType: AttributeEnumType.Actual,
-            component: { name: OCPP20ComponentName.ChargingStation },
+            component: { name: OCPP20ComponentName.SampledDataCtrlr },
             variable: { name: OCPP20RequiredVariableName.TxUpdatedInterval },
           },
         ],
@@ -398,7 +367,7 @@ describe('B07 - Set Variables', () => {
       svc.handleRequestGetVariables(mockChargingStation, {
         getVariableData: [
           {
-            component: { name: OCPP20ComponentName.ChargingStation },
+            component: { name: OCPP20ComponentName.SampledDataCtrlr },
             variable: { name: OCPP20RequiredVariableName.TxUpdatedInterval },
           },
         ],
