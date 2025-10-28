@@ -490,19 +490,19 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
 
 /**
  * Apply optional metadata post-processing to a resolved variable value.
- * Executes `meta.postProcess` if defined; otherwise returns the original value.
+ * Executes `variableMetaData.postProcess` if defined; otherwise returns the original value.
  * @param chargingStation ChargingStation instance for context.
- * @param meta Variable metadata definition.
+ * @param variableMetaData Variable metadata definition.
  * @param value Raw value prior to post processing.
  * @returns Post-processed value.
  */
 export function applyPostProcess (
   chargingStation: ChargingStation,
-  meta: VariableMetadata,
+  variableMetaData: VariableMetadata,
   value: string
 ): string {
-  if (meta.postProcess) {
-    return meta.postProcess(value, { chargingStation })
+  if (variableMetaData.postProcess) {
+    return variableMetaData.postProcess(value, { chargingStation })
   }
   return value
 }
@@ -553,64 +553,67 @@ export function getVariableMetadata (
 
 /**
  * Check if variable persistence type is Persistent.
- * @param meta Variable metadata.
+ * @param variableMetaData Variable metadata.
  * @returns True if persistence is Persistent.
  */
-export function isPersistent (meta: VariableMetadata): boolean {
-  return meta.persistence === PersistenceEnumType.Persistent
+export function isPersistent (variableMetaData: VariableMetadata): boolean {
+  return variableMetaData.persistence === PersistenceEnumType.Persistent
 }
 
 /**
  * Check if variable mutability type is ReadOnly.
- * @param meta Variable metadata.
+ * @param variableMetaData Variable metadata.
  * @returns True if mutability is ReadOnly.
  */
-export function isReadOnly (meta: VariableMetadata): boolean {
-  return meta.mutability === MutabilityEnumType.ReadOnly
+export function isReadOnly (variableMetaData: VariableMetadata): boolean {
+  return variableMetaData.mutability === MutabilityEnumType.ReadOnly
 }
 
 /**
  * Check if variable mutability type is WriteOnly.
- * @param meta Variable metadata.
+ * @param variableMetaData Variable metadata.
  * @returns True if mutability is WriteOnly.
  */
-export function isWriteOnly (meta: VariableMetadata): boolean {
-  return meta.mutability === MutabilityEnumType.WriteOnly
+export function isWriteOnly (variableMetaData: VariableMetadata): boolean {
+  return variableMetaData.mutability === MutabilityEnumType.WriteOnly
 }
 
 /**
  * Resolve value for variable (dynamic or default).
  * @param chargingStation ChargingStation instance.
- * @param meta Variable metadata.
+ * @param variableMetaData Variable metadata.
  * @returns Resolved value (dynamic or default or empty string).
  */
-export function resolveValue (chargingStation: ChargingStation, meta: VariableMetadata): string {
-  if (meta.dynamicValueResolver) {
-    return meta.dynamicValueResolver({ chargingStation })
+export function resolveValue (
+  chargingStation: ChargingStation,
+  variableMetaData: VariableMetadata
+): string {
+  if (variableMetaData.dynamicValueResolver) {
+    return variableMetaData.dynamicValueResolver({ chargingStation })
   }
   // All defined persistence variants return defaultValue or empty
-  return meta.defaultValue ?? ''
+  return variableMetaData.defaultValue ?? ''
 }
 
 /**
  * Validate a raw variable value against metadata constraints.
  * Checks length, data type, range, enumeration, formatting rules.
- * @param meta Variable metadata definition.
+ * @param variableMetaData Variable metadata definition.
  * @param raw Raw string value to validate.
  * @returns Validation result with ok flag and optional reason/info.
  */
 export function validateValue (
-  meta: VariableMetadata,
+  variableMetaData: VariableMetadata,
   raw: string
 ): { info?: string; ok: boolean; reason?: ReasonCodeEnumType } {
-  if (meta.maxLength != null && raw.length > meta.maxLength) {
+  if (variableMetaData.maxLength != null && raw.length > variableMetaData.maxLength) {
     return {
-      info: 'Value exceeds maximum length (' + String(meta.maxLength) + ')',
+      info: 'Value exceeds maximum length (' + String(variableMetaData.maxLength) + ')',
       ok: false,
       reason: ReasonCodeEnumType.InvalidValue,
     }
   }
-  switch (meta.dataType) {
+  switch (variableMetaData.dataType) {
     case DataEnumType.boolean: {
       if (raw !== 'true' && raw !== 'false') {
         return {
@@ -644,38 +647,41 @@ export function validateValue (
         }
       }
       const num = Number(raw)
-      if (meta.positive && num <= 0) {
+      if (variableMetaData.positive && num <= 0) {
         return {
           info: 'Positive integer > 0 required',
           ok: false,
           reason: ReasonCodeEnumType.ValuePositiveOnly,
         }
       }
-      if (meta.allowZero && num < 0) {
+      if (variableMetaData.allowZero && num < 0) {
         return {
           info: 'Integer >= 0 required',
           ok: false,
           reason: ReasonCodeEnumType.ValueZeroNotAllowed,
         }
       }
-      if ((meta.min != null && num < meta.min) || (meta.max != null && num > meta.max)) {
+      if (
+        (variableMetaData.min != null && num < variableMetaData.min) ||
+        (variableMetaData.max != null && num > variableMetaData.max)
+      ) {
         return {
           info:
             'Integer value out of range (' +
-            (meta.min != null ? String(meta.min) : '') +
+            (variableMetaData.min != null ? String(variableMetaData.min) : '') +
             '-' +
-            (meta.max != null ? String(meta.max) : '') +
+            (variableMetaData.max != null ? String(variableMetaData.max) : '') +
             ')',
           ok: false,
           reason: ReasonCodeEnumType.ValueOutOfRange,
         }
       }
       if (
-        meta.enumeration &&
-        meta.enumeration.length > 0 &&
-        meta.enumeration[0] !== 'ws:' &&
-        meta.enumeration[0] !== 'wss:' &&
-        !meta.enumeration.includes(raw)
+        variableMetaData.enumeration &&
+        variableMetaData.enumeration.length > 0 &&
+        variableMetaData.enumeration[0] !== 'ws:' &&
+        variableMetaData.enumeration[0] !== 'wss:' &&
+        !variableMetaData.enumeration.includes(raw)
       ) {
         return {
           info: 'Value not in enumeration',
@@ -714,9 +720,9 @@ export function validateValue (
         seen.add(t)
       }
       // Optional enumeration enforcement if provided on metadata (not currently used for list variables)
-      if (meta.enumeration?.length) {
+      if (variableMetaData.enumeration?.length) {
         for (const t of tokens) {
-          if (!meta.enumeration.includes(t)) {
+          if (!variableMetaData.enumeration.includes(t)) {
             return {
               info: 'Member not in enumeration',
               ok: false,
@@ -729,12 +735,12 @@ export function validateValue (
     }
     case DataEnumType.string: {
       if (
-        meta.enumeration?.length &&
-        ['http:', 'https:', 'ws:', 'wss:'].includes(meta.enumeration[0])
+        variableMetaData.enumeration?.length &&
+        ['http:', 'https:', 'ws:', 'wss:'].includes(variableMetaData.enumeration[0])
       ) {
         try {
           const url = new URL(raw)
-          if (!meta.enumeration.includes(url.protocol)) {
+          if (!variableMetaData.enumeration.includes(url.protocol)) {
             return {
               info: 'Unsupported URL scheme',
               ok: false,

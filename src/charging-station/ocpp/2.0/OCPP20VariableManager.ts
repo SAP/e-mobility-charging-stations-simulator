@@ -85,43 +85,43 @@ export class OCPP20VariableManager {
   public performMappingSelfCheck (chargingStation: ChargingStation): void {
     this.invalidVariables.clear()
     for (const metaKey of Object.keys(VARIABLE_REGISTRY)) {
-      const variableMetadata = VARIABLE_REGISTRY[metaKey]
+      const variableMetaData = VARIABLE_REGISTRY[metaKey]
       // Only enforce persistent RW variables on ChargingStation base component
-      if (variableMetadata.component !== (OCPP20ComponentName.ChargingStation as string)) {
+      if (variableMetaData.component !== (OCPP20ComponentName.ChargingStation as string)) {
         continue
       }
-      if (variableMetadata.persistence !== PersistenceEnumType.Persistent) {
+      if (variableMetaData.persistence !== PersistenceEnumType.Persistent) {
         continue
       }
-      if (variableMetadata.mutability === MutabilityEnumType.WriteOnly) {
+      if (variableMetaData.mutability === MutabilityEnumType.WriteOnly) {
         continue
       }
       const configurationKey = getConfigurationKey(
         chargingStation,
-        variableMetadata.variable as unknown as StandardParametersKey
+        variableMetaData.variable as unknown as StandardParametersKey
       )
       const variableKey = buildVariableCompositeKey(
-        variableMetadata.component,
+        variableMetaData.component,
         undefined,
-        variableMetadata.variable
+        variableMetaData.variable
       )
       if (configurationKey == null) {
-        const defaultValue = variableMetadata.defaultValue
+        const defaultValue = variableMetaData.defaultValue
         if (defaultValue != null) {
           addConfigurationKey(
             chargingStation,
-            variableMetadata.variable as unknown as StandardParametersKey,
+            variableMetaData.variable as unknown as StandardParametersKey,
             defaultValue,
             undefined,
             { overwrite: false }
           )
           logger.info(
-            `${chargingStation.logPrefix()} Added missing configuration key for variable '${variableMetadata.variable}' with default '${defaultValue}'`
+            `${chargingStation.logPrefix()} Added missing configuration key for variable '${variableMetaData.variable}' with default '${defaultValue}'`
           )
         } else {
           this.invalidVariables.add(variableKey)
           logger.error(
-            `${chargingStation.logPrefix()} Missing configuration key mapping and no default for variable '${variableMetadata.variable}', marking as INTERNAL ERROR`
+            `${chargingStation.logPrefix()} Missing configuration key mapping and no default for variable '${variableMetaData.variable}', marking as INTERNAL ERROR`
           )
         }
       }
@@ -325,8 +325,8 @@ export class OCPP20VariableManager {
     component: ComponentType,
     variable: VariableType
   ): string {
-    const variableMetadata = getVariableMetadata(component.name, variable.name)
-    if (!variableMetadata) return ''
+    const variableMetaData = getVariableMetadata(component.name, variable.name)
+    if (!variableMetaData) return ''
 
     const compositeKey = buildVariableCompositeKey(
       component.name,
@@ -334,15 +334,15 @@ export class OCPP20VariableManager {
       variable.name
     )
 
-    let value = resolveValue(chargingStation, variableMetadata)
+    let value = resolveValue(chargingStation, variableMetaData)
 
     if (
-      variableMetadata.persistence === PersistenceEnumType.Persistent &&
-      variableMetadata.mutability !== MutabilityEnumType.WriteOnly
+      variableMetaData.persistence === PersistenceEnumType.Persistent &&
+      variableMetaData.mutability !== MutabilityEnumType.WriteOnly
     ) {
       const cfg = getConfigurationKey(
         chargingStation,
-        variableMetadata.variable as unknown as StandardParametersKey
+        variableMetaData.variable as unknown as StandardParametersKey
       )
       if (cfg?.value) {
         value = cfg.value
@@ -350,8 +350,8 @@ export class OCPP20VariableManager {
     }
 
     if (
-      variableMetadata.persistence === PersistenceEnumType.Volatile &&
-      variableMetadata.mutability !== MutabilityEnumType.ReadOnly
+      variableMetaData.persistence === PersistenceEnumType.Volatile &&
+      variableMetaData.mutability !== MutabilityEnumType.ReadOnly
     ) {
       const override = this.runtimeOverrides.get(compositeKey)
       if (override != null) {
@@ -360,25 +360,25 @@ export class OCPP20VariableManager {
     }
 
     if (
-      variableMetadata.variable === (OCPP20OptionalVariableName.HeartbeatInterval as string) &&
+      variableMetaData.variable === (OCPP20OptionalVariableName.HeartbeatInterval as string) &&
       !value
     ) {
       value = millisecondsToSeconds(chargingStation.getHeartbeatInterval()).toString()
     }
     if (
-      variableMetadata.variable === (OCPP20OptionalVariableName.WebSocketPingInterval as string) &&
+      variableMetaData.variable === (OCPP20OptionalVariableName.WebSocketPingInterval as string) &&
       !value
     ) {
       value = chargingStation.getWebSocketPingInterval().toString()
     }
     if (
-      variableMetadata.variable === (OCPP20RequiredVariableName.TxUpdatedInterval as string) &&
+      variableMetaData.variable === (OCPP20RequiredVariableName.TxUpdatedInterval as string) &&
       !value
     ) {
       value = Constants.DEFAULT_TX_UPDATED_INTERVAL.toString()
     }
 
-    value = applyPostProcess(chargingStation, variableMetadata, value)
+    value = applyPostProcess(chargingStation, variableMetaData, value)
     return value
   }
 
@@ -411,8 +411,8 @@ export class OCPP20VariableManager {
       )
     }
 
-    const variableMetadata = getVariableMetadata(component.name, variable.name)
-    if (variableMetadata && !variableMetadata.supportedAttributes.includes(resolvedAttributeType)) {
+    const variableMetaData = getVariableMetadata(component.name, variable.name)
+    if (variableMetaData && !variableMetaData.supportedAttributes.includes(resolvedAttributeType)) {
       return this.rejectSet(
         variable,
         component,
@@ -433,7 +433,7 @@ export class OCPP20VariableManager {
       )
     }
 
-    if (variableMetadata?.mutability === MutabilityEnumType.ReadOnly) {
+    if (variableMetaData?.mutability === MutabilityEnumType.ReadOnly) {
       return this.rejectSet(
         variable,
         component,
@@ -446,7 +446,7 @@ export class OCPP20VariableManager {
 
     const variableKey = buildVariableCompositeKey(component.name, component.instance, variable.name)
     if (this.invalidVariables.has(variableKey)) {
-      if (variableMetadata?.mutability !== MutabilityEnumType.WriteOnly) {
+      if (variableMetaData?.mutability !== MutabilityEnumType.WriteOnly) {
         return this.rejectSet(
           variable,
           component,
@@ -460,9 +460,9 @@ export class OCPP20VariableManager {
       }
     }
 
-    if (variableMetadata?.mutability === MutabilityEnumType.WriteOnly) {
+    if (variableMetaData?.mutability === MutabilityEnumType.WriteOnly) {
       // proceed
-    } else if (!variableMetadata) {
+    } else if (!variableMetaData) {
       return this.rejectSet(
         variable,
         component,
@@ -488,7 +488,7 @@ export class OCPP20VariableManager {
         )
       }
     } else {
-      const validation = validateValue(variableMetadata, attributeValue)
+      const validation = validateValue(variableMetaData, attributeValue)
       if (!validation.ok) {
         return this.rejectSet(
           variable,
@@ -503,9 +503,9 @@ export class OCPP20VariableManager {
 
     let rebootRequired = false
     if (component.name === (OCPP20ComponentName.ChargingStation as string)) {
-      const configKeyName = variableMetadata.variable as unknown as StandardParametersKey
+      const configKeyName = variableMetaData.variable as unknown as StandardParametersKey
       const previousValue = getConfigurationKey(chargingStation, configKeyName)?.value
-      switch (variableMetadata.persistence) {
+      switch (variableMetaData.persistence) {
         case PersistenceEnumType.Persistent: {
           let configKey = getConfigurationKey(chargingStation, configKeyName)
           if (configKey == null) {
@@ -517,7 +517,7 @@ export class OCPP20VariableManager {
             setConfigurationKeyValue(chargingStation, configKeyName, attributeValue)
           }
           rebootRequired =
-            (variableMetadata.rebootRequired === true ||
+            (variableMetaData.rebootRequired === true ||
               getConfigurationKey(chargingStation, configKeyName)?.reboot === true) &&
             previousValue !== attributeValue
           break
@@ -543,7 +543,7 @@ export class OCPP20VariableManager {
       }
     }
     // Apply volatile runtime override generically (single location)
-    if (variableMetadata.persistence === PersistenceEnumType.Volatile) {
+    if (variableMetaData.persistence === PersistenceEnumType.Volatile) {
       this.runtimeOverrides.set(variableKey, attributeValue)
     }
 
