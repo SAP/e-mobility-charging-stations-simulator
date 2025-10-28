@@ -5,6 +5,7 @@ import { describe, it } from 'node:test'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import {
   AttributeEnumType,
+  GetVariableStatusEnumType,
   OCPP20ComponentName,
   type OCPP20GetVariableDataType,
   type OCPP20GetVariableResultType,
@@ -19,7 +20,14 @@ import {
 import { Constants } from '../../../../src/utils/index.js'
 import { createChargingStationWithEvses } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_NAME, TEST_CONNECTOR_VALID_INSTANCE } from './OCPP20TestConstants.js'
-import { resetLimits, setStrictLimits, upsertConfigurationKey } from './OCPP20TestUtils.js'
+import {
+  resetLimits,
+  resetValueSizeLimits,
+  setConfigurationValueSize,
+  setStrictLimits,
+  setValueSize,
+  upsertConfigurationKey,
+} from './OCPP20TestUtils.js'
 
 interface IncomingRequestServicePrivate {
   handleRequestGetVariables: (
@@ -67,7 +75,7 @@ describe('B07 - Set Variables', () => {
           attributeValue: (
             millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL) + 1
           ).toString(),
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ],
@@ -91,7 +99,7 @@ describe('B07 - Set Variables', () => {
     const secondResult = response.setVariableResult[1]
     expect(secondResult.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
     expect(secondResult.attributeType).toBe(AttributeEnumType.Actual)
-    expect(secondResult.component.name).toBe(OCPP20ComponentName.ChargingStation)
+    expect(secondResult.component.name).toBe(OCPP20ComponentName.OCPPCommCtrlr)
     expect(secondResult.variable.name).toBe(OCPP20OptionalVariableName.HeartbeatInterval)
     expect(secondResult.attributeStatusInfo).toBeUndefined()
   })
@@ -132,7 +140,7 @@ describe('B07 - Set Variables', () => {
         {
           attributeType: AttributeEnumType.Target, // Not supported for HeartbeatInterval
           attributeValue: '30',
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ],
@@ -211,7 +219,7 @@ describe('B07 - Set Variables', () => {
         {
           attributeType: AttributeEnumType.Target,
           attributeValue: '35',
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
         // Unsupported attribute type (WebSocketPingInterval)
@@ -296,7 +304,7 @@ describe('B07 - Set Variables', () => {
       setVariableData: [
         {
           attributeValue: hbNew,
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
         {
@@ -313,7 +321,7 @@ describe('B07 - Set Variables', () => {
         getVariableData: [
           {
             attributeType: AttributeEnumType.Actual,
-            component: { name: OCPP20ComponentName.ChargingStation },
+            component: { name: OCPP20ComponentName.OCPPCommCtrlr },
             variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
           },
           {
@@ -389,7 +397,7 @@ describe('B07 - Set Variables', () => {
           attributeValue: (
             millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL) + 2
           ).toString(),
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ],
@@ -417,7 +425,7 @@ describe('B07 - Set Variables', () => {
         },
         {
           attributeValue: '10',
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ],
@@ -498,8 +506,162 @@ describe('B07 - Set Variables', () => {
     resetLimits(mockChargingStation)
   })
 
-  // FR: B07.FR.12
-  it('Should enforce ConnectionUrl write-only on GetVariables', () => {
+  // Effective ConfigurationValueSize / ValueSize propagation tests
+  it('Should enforce ConfigurationValueSize when ValueSize unset (service propagation)', () => {
+    resetValueSizeLimits(mockChargingStation)
+    setConfigurationValueSize(mockChargingStation, 100)
+    upsertConfigurationKey(mockChargingStation, OCPP20RequiredVariableName.ValueSize, '')
+    const prefix = 'wss://example.com/'
+    const withinLimit = prefix + 'a'.repeat(100 - prefix.length)
+    const overLimit = prefix + 'a'.repeat(100 - prefix.length + 1)
+    let response = svc.handleRequestSetVariables(mockChargingStation, {
+      setVariableData: [
+        {
+          attributeValue: withinLimit,
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+        },
+      ],
+    })
+    expect(response.setVariableResult[0].attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+    response = svc.handleRequestSetVariables(mockChargingStation, {
+      setVariableData: [
+        {
+          attributeValue: overLimit,
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+        },
+      ],
+    })
+    const res = response.setVariableResult[0]
+    expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+    expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
+    resetValueSizeLimits(mockChargingStation)
+  })
+
+  it('Should enforce ValueSize when ConfigurationValueSize unset (service propagation)', () => {
+    resetValueSizeLimits(mockChargingStation)
+    upsertConfigurationKey(
+      mockChargingStation,
+      OCPP20RequiredVariableName.ConfigurationValueSize,
+      ''
+    )
+    setValueSize(mockChargingStation, 120)
+    const prefix = 'wss://example.com/'
+    const withinLimit = prefix + 'b'.repeat(120 - prefix.length)
+    const overLimit = prefix + 'b'.repeat(120 - prefix.length + 1)
+    let response = svc.handleRequestSetVariables(mockChargingStation, {
+      setVariableData: [
+        {
+          attributeValue: withinLimit,
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+        },
+      ],
+    })
+    expect(response.setVariableResult[0].attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+    response = svc.handleRequestSetVariables(mockChargingStation, {
+      setVariableData: [
+        {
+          attributeValue: overLimit,
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+        },
+      ],
+    })
+    const res = response.setVariableResult[0]
+    expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+    expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
+    resetValueSizeLimits(mockChargingStation)
+  })
+
+  it('Should use smaller ValueSize when ValueSize < ConfigurationValueSize (service propagation)', () => {
+    resetValueSizeLimits(mockChargingStation)
+    setConfigurationValueSize(mockChargingStation, 400)
+    setValueSize(mockChargingStation, 350)
+    const prefix = 'wss://example.com/'
+    const withinLimit = prefix + 'c'.repeat(350 - prefix.length)
+    const overLimit = prefix + 'c'.repeat(350 - prefix.length + 1)
+    let response = svc.handleRequestSetVariables(mockChargingStation, {
+      setVariableData: [
+        {
+          attributeValue: withinLimit,
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+        },
+      ],
+    })
+    expect(response.setVariableResult[0].attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+    response = svc.handleRequestSetVariables(mockChargingStation, {
+      setVariableData: [
+        {
+          attributeValue: overLimit,
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+        },
+      ],
+    })
+    const res = response.setVariableResult[0]
+    expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+    expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
+    resetValueSizeLimits(mockChargingStation)
+  })
+
+  it('Should use smaller ConfigurationValueSize when ConfigurationValueSize < ValueSize (service propagation)', () => {
+    resetValueSizeLimits(mockChargingStation)
+    setConfigurationValueSize(mockChargingStation, 260)
+    setValueSize(mockChargingStation, 500)
+    const prefix = 'wss://example.com/'
+    const withinLimit = prefix + 'd'.repeat(260 - prefix.length)
+    const overLimit = prefix + 'd'.repeat(260 - prefix.length + 1)
+    let response = svc.handleRequestSetVariables(mockChargingStation, {
+      setVariableData: [
+        {
+          attributeValue: withinLimit,
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+        },
+      ],
+    })
+    expect(response.setVariableResult[0].attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+    response = svc.handleRequestSetVariables(mockChargingStation, {
+      setVariableData: [
+        {
+          attributeValue: overLimit,
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+        },
+      ],
+    })
+    const res = response.setVariableResult[0]
+    expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+    expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
+    resetValueSizeLimits(mockChargingStation)
+  })
+
+  it('Should fallback to default 2500 when both limits invalid/non-positive', () => {
+    resetValueSizeLimits(mockChargingStation)
+    setConfigurationValueSize(mockChargingStation, 0)
+    setValueSize(mockChargingStation, -5)
+    const prefix = 'wss://example.com/'
+    const validValue = prefix + 'e'.repeat(300 - prefix.length) // 300 < default 2500 and < ConnectionUrl maxLength
+    const response = svc.handleRequestSetVariables(mockChargingStation, {
+      setVariableData: [
+        {
+          attributeValue: validValue,
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+        },
+      ],
+    })
+    const res = response.setVariableResult[0]
+    expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+    expect(res.attributeStatusInfo).toBeUndefined()
+    resetValueSizeLimits(mockChargingStation)
+  })
+
+  // FR: B07.FR.12 (updated behavior: ConnectionUrl now readable after set)
+  it('Should allow ConnectionUrl read-back after setting', () => {
     resetLimits(mockChargingStation)
     const url = 'wss://central.example.com/ocpp'
     const setRequest: OCPP20SetVariablesRequest = {
@@ -524,7 +686,9 @@ describe('B07 - Set Variables', () => {
       })
     expect(getResponse.getVariableResult).toHaveLength(1)
     const result = getResponse.getVariableResult[0]
-    expect(result.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.WriteOnly)
+    expect(result.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+    expect(result.attributeValue).toBe(url)
+    expect(result.attributeStatusInfo).toBeUndefined()
     resetLimits(mockChargingStation)
   })
 })
