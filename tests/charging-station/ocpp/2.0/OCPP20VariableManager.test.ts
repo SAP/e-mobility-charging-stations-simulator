@@ -482,7 +482,9 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(result).toHaveLength(1)
       expect(result[0].attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
       expect(result[0].attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
-      expect(result[0].attributeStatusInfo?.additionalInfo).toContain('exceeds maximum')
+      expect(result[0].attributeStatusInfo?.additionalInfo).toContain(
+        'exceeds effective size limit'
+      )
     })
 
     await it('Should handle multiple mixed SetVariables in one call', () => {
@@ -1526,7 +1528,7 @@ await describe('OCPP20VariableManager test suite', async () => {
         },
       ])[0]
       expect(getRes.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(getRes.attributeValue?.length).toBe(2500)
+      expect(getRes.attributeValue?.length).toBe(1400)
       expect(overLongValue.startsWith(getRes.attributeValue ?? '')).toBe(true)
       resetValueSizeLimits(mockChargingStation)
       resetReportingValueSize(mockChargingStation)
@@ -1623,7 +1625,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(res.attributeValue).toBe('ChangeMeOrg')
     })
 
-    await it('Should not create configuration key for instance-scoped MessageAttemptInterval and enforce MinSet/MaxSet overrides', () => {
+    await it('Should create configuration key for instance-scoped MessageAttemptInterval and persist Actual value', () => {
       // Ensure no configuration key exists before operations
       const cfgBefore = getConfigurationKey(
         mockChargingStation,
@@ -1711,7 +1713,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       ])[0]
       expect(withinRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
 
-      // Retrieval still returns default due to lack of persistence/storage path for non-ChargingStation components
+      // Retrieval now returns persisted value '7'
       const afterSetGet = manager.getVariables(mockChargingStation, [
         {
           component: { instance: 'TransactionEvent', name: OCPP20ComponentName.OCPPCommCtrlr },
@@ -1719,13 +1721,14 @@ await describe('OCPP20VariableManager test suite', async () => {
         },
       ])[0]
       expect(afterSetGet.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(afterSetGet.attributeValue).toBe('5')
+      expect(afterSetGet.attributeValue).toBe('7')
 
       const cfgAfter = getConfigurationKey(
         mockChargingStation,
         OCPP20RequiredVariableName.MessageAttemptInterval as unknown as VariableType['name']
       )
-      expect(cfgAfter).toBeUndefined()
+      expect(cfgAfter).toBeDefined()
+      expect(cfgAfter?.value).toBe('7')
     })
   })
 })

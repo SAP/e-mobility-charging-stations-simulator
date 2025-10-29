@@ -348,9 +348,9 @@ export class OCPP20VariableManager {
       variableValue = enforceReportingValueSize(variableValue, reportingValueSize)
     }
 
-    // Final absolute length enforcement (spec maxLength 2500)
-    if (variableValue.length > 2500) {
-      variableValue = variableValue.slice(0, 2500)
+    // Final absolute length enforcement (spec maxLength Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH)
+    if (variableValue.length > Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH) {
+      variableValue = variableValue.slice(0, Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH)
     }
     return {
       attributeStatus: GetVariableStatusEnumType.Accepted,
@@ -682,8 +682,8 @@ export class OCPP20VariableManager {
     // 1. Read ConfigurationValueSize and ValueSize if present and valid (>0).
     // 2. If both valid, use the smaller positive value.
     // 3. If only one valid, use that value.
-    // 4. If neither valid/positive, fallback to spec maxLength (2500).
-    // 5. Enforce absolute upper cap of 2500 (spec).
+    // 4. If neither valid/positive, fallback to spec maxLength (Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH).
+    // 5. Enforce absolute upper cap of Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH (spec).
     // 6. Reject with TooLargeElement when attributeValue length strictly exceeds effectiveLimit.
     if (resolvedAttributeType === AttributeEnumType.Actual) {
       const configurationValueSizeKey = buildVariableCompositeKey(
@@ -720,10 +720,10 @@ export class OCPP20VariableManager {
         effectiveLimit = effectiveLimit != null ? Math.min(effectiveLimit, valLimit) : valLimit
       }
       if (effectiveLimit == null || effectiveLimit <= 0) {
-        effectiveLimit = 2500
+        effectiveLimit = Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH
       }
-      if (effectiveLimit > 2500) {
-        effectiveLimit = 2500
+      if (effectiveLimit > Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH) {
+        effectiveLimit = Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH
       }
       if (attributeValue.length > effectiveLimit) {
         return this.rejectSet(

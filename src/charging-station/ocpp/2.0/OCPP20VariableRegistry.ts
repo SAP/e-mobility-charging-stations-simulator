@@ -796,7 +796,7 @@ export function buildVariableCompositeKey (
  * @returns Possibly truncated value (enforced size) or original.
  */
 export function enforceReportingValueSize (value: string, sizeRaw: string | undefined): string {
-  const size = convertToIntOrNaN(sizeRaw ?? '2500')
+  const size = convertToIntOrNaN(sizeRaw ?? Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH.toString())
   if (!Number.isNaN(size) && size > 0 && value.length > size) {
     return value.slice(0, size)
   }

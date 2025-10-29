@@ -98,6 +98,8 @@ export class Constants {
 
   static readonly MAX_RANDOM_INTEGER = 281474976710655 // 2^48 - 1 (randomInit() limit)
 
+  static readonly OCPP_VALUE_ABSOLUTE_MAX_LENGTH = 2500
+
   static readonly PERFORMANCE_RECORDS_TABLE = 'performance_records'
 
   static readonly STOP_CHARGING_STATIONS_TIMEOUT = 60000 // Ms
