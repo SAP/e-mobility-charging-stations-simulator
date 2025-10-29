@@ -621,31 +621,32 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           const variableManager = OCPP20VariableManager.getInstance()
           // Build getVariableData array from VARIABLE_REGISTRY metadata
           const getVariableData: OCPP20GetVariablesRequest['getVariableData'] = []
-          for (const metaKey of Object.keys(VARIABLE_REGISTRY)) {
-            const meta = VARIABLE_REGISTRY[metaKey]
+          for (const variableMetadata of Object.values(VARIABLE_REGISTRY)) {
             // Include instance-scoped metadata; the OCPP Variable type supports instance under variable
-            const variableDescriptor: { instance?: string; name: string } = { name: meta.variable }
-            if (meta.instance) {
-              variableDescriptor.instance = meta.instance
+            const variableDescriptor: { instance?: string; name: string } = {
+              name: variableMetadata.variable,
+            }
+            if (variableMetadata.instance) {
+              variableDescriptor.instance = variableMetadata.instance
             }
             // Always request Actual first
             getVariableData.push({
               attributeType: AttributeEnumType.Actual,
-              component: { name: meta.component },
+              component: { name: variableMetadata.component },
               variable: variableDescriptor,
             })
             // Request MinSet/MaxSet only if supported by metadata
-            if (meta.supportedAttributes.includes(AttributeEnumType.MinSet)) {
+            if (variableMetadata.supportedAttributes.includes(AttributeEnumType.MinSet)) {
               getVariableData.push({
                 attributeType: AttributeEnumType.MinSet,
-                component: { name: meta.component },
+                component: { name: variableMetadata.component },
                 variable: variableDescriptor,
               })
             }
-            if (meta.supportedAttributes.includes(AttributeEnumType.MaxSet)) {
+            if (variableMetadata.supportedAttributes.includes(AttributeEnumType.MaxSet)) {
               getVariableData.push({
                 attributeType: AttributeEnumType.MaxSet,
-                component: { name: meta.component },
+                component: { name: variableMetadata.component },
                 variable: variableDescriptor,
               })
             }
