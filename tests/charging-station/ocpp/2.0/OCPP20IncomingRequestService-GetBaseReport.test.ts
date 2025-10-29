@@ -280,7 +280,8 @@ await describe('B08 - Get Base Report', async () => {
 
     // Choose TimeSource (SequenceList) and construct an artificially long ordered list value > 10 chars
     const variableManager = OCPP20VariableManager.getInstance()
-    const longValue = 'NTP,GPS,RTC,Manual'
+    // Use members exceeding 10 chars total; exclude removed RTC/Manual.
+    const longValue = 'Heartbeat,NTP,GPS,RealTimeClock,MobileNetwork,RadioTimeTransmitter'
     // Set Actual (SequenceList). Should accept full value internally.
     const setResult: OCPP20SetVariableResultType[] = variableManager.setVariables(
       mockChargingStation,

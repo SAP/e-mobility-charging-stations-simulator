@@ -1189,15 +1189,15 @@ await describe('OCPP20VariableManager test suite', async () => {
   await describe('List validation tests', async () => {
     const manager = OCPP20VariableManager.getInstance()
 
-    await it('Should accept valid updates to list/sequence list variables', () => {
-      const validUpdates: OCPP20SetVariableDataType[] = [
+    await it('Should accept valid updates to writable list/sequence list variables and reject read-only', () => {
+      const updateAttempts: OCPP20SetVariableDataType[] = [
         {
-          attributeValue: 'HTTP,HTTPS',
+          attributeValue: 'HTTP,HTTPS', // FileTransferProtocols now ReadOnly -> expect rejection
           component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20RequiredVariableName.FileTransferProtocols },
         },
         {
-          attributeValue: 'GPS,NTP,RTC', // reorder TimeSource
+          attributeValue: 'Heartbeat,NTP,GPS', // valid TimeSource reorder (RTC & Manual removed, RealTimeClock optional)
           component: { name: OCPP20ComponentName.ClockCtrlr },
           variable: { name: OCPP20RequiredVariableName.TimeSource },
         },
@@ -1228,10 +1228,48 @@ await describe('OCPP20VariableManager test suite', async () => {
           variable: { name: OCPP20RequiredVariableName.TxUpdatedMeasurands },
         },
       ]
-      const results = manager.setVariables(mockChargingStation, validUpdates)
-      for (const r of results) {
+      const results = manager.setVariables(mockChargingStation, updateAttempts)
+      // First (FileTransferProtocols) should be rejected (ReadOnly); others accepted
+      expect(results[0].attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(results[0].attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ReadOnly)
+      for (const r of results.slice(1)) {
         expect(r.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
       }
+    })
+
+    await it('Should retrieve FileTransferProtocols default including FTPS (ReadOnly)', () => {
+      const getRes = manager.getVariables(mockChargingStation, [
+        {
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
+          variable: { name: OCPP20RequiredVariableName.FileTransferProtocols },
+        },
+      ])[0]
+      expect(getRes.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      expect(getRes.attributeValue).toBe('HTTPS,FTPS,SFTP')
+    })
+
+    await it('Should reject removed TimeSource members RTC and Manual', () => {
+      const res = manager.setVariables(mockChargingStation, [
+        {
+          attributeValue: 'NTP,GPS,RTC,Manual', // RTC & Manual no longer valid
+          component: { name: OCPP20ComponentName.ClockCtrlr },
+          variable: { name: OCPP20RequiredVariableName.TimeSource },
+        },
+      ])[0]
+      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
+      expect(res.attributeStatusInfo?.additionalInfo).toContain('Member not in enumeration')
+    })
+
+    await it('Should accept extended TimeSource including RealTimeClock and MobileNetwork', () => {
+      const res = manager.setVariables(mockChargingStation, [
+        {
+          attributeValue: 'MobileNetwork,Heartbeat,NTP,GPS,RealTimeClock',
+          component: { name: OCPP20ComponentName.ClockCtrlr },
+          variable: { name: OCPP20RequiredVariableName.TimeSource },
+        },
+      ])[0]
+      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
     })
 
     await it('Should reject invalid list formats and members', () => {

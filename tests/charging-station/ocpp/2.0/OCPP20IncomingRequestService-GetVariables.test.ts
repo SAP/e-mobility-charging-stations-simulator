@@ -365,6 +365,70 @@ void describe('B06 - Get Variables', () => {
     expect(result.attributeValue).toBe('30')
   })
 
+  void it('Should retrieve list/sequence defaults for FileTransferProtocols, TimeSource, NetworkConfigurationPriority', () => {
+    const request: OCPP20GetVariablesRequest = {
+      getVariableData: [
+        {
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
+          variable: { name: OCPP20RequiredVariableName.FileTransferProtocols },
+        },
+        {
+          component: { name: OCPP20ComponentName.ClockCtrlr },
+          variable: { name: OCPP20RequiredVariableName.TimeSource },
+        },
+        {
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
+          variable: { name: OCPP20RequiredVariableName.NetworkConfigurationPriority },
+        },
+      ],
+    }
+    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    expect(response.getVariableResult).toHaveLength(3)
+    const fileTransfer = response.getVariableResult[0]
+    expect(fileTransfer.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+    expect(fileTransfer.attributeValue).toBe('HTTPS,FTPS,SFTP')
+    const timeSource = response.getVariableResult[1]
+    expect(timeSource.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+    expect(timeSource.attributeValue).toBe('NTP,GPS,RealTimeClock,Heartbeat')
+    const netConfigPriority = response.getVariableResult[2]
+    expect(netConfigPriority.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+    expect(netConfigPriority.attributeValue).toBe('1,2,3')
+  })
+
+  void it('Should retrieve list defaults for TxStartedMeasurands, TxEndedMeasurands, TxUpdatedMeasurands', () => {
+    const request: OCPP20GetVariablesRequest = {
+      getVariableData: [
+        {
+          component: { name: OCPP20ComponentName.SampledDataCtrlr },
+          variable: { name: OCPP20RequiredVariableName.TxStartedMeasurands },
+        },
+        {
+          component: { name: OCPP20ComponentName.SampledDataCtrlr },
+          variable: { name: OCPP20RequiredVariableName.TxEndedMeasurands },
+        },
+        {
+          component: { name: OCPP20ComponentName.SampledDataCtrlr },
+          variable: { name: OCPP20RequiredVariableName.TxUpdatedMeasurands },
+        },
+      ],
+    }
+    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    expect(response.getVariableResult).toHaveLength(3)
+    const txStarted = response.getVariableResult[0]
+    expect(txStarted.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+    expect(txStarted.attributeValue).toBe(
+      'Energy.Active.Import.Register,Power.Active.Import,Voltage'
+    )
+    const txEnded = response.getVariableResult[1]
+    expect(txEnded.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+    expect(txEnded.attributeValue).toBe(
+      'Energy.Active.Import.Register,Energy.Active.Import.Interval,Voltage'
+    )
+    const txUpdated = response.getVariableResult[2]
+    expect(txUpdated.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+    expect(txUpdated.attributeValue).toBe('Energy.Active.Import.Register,Current.Import,Voltage')
+  })
+
   // FR: B06.FR.13
   void it('Should reject Target attribute for NetworkConfigurationPriority', () => {
     const request: OCPP20GetVariablesRequest = {

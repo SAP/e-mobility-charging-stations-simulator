@@ -229,9 +229,16 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   )]: {
     component: OCPP20ComponentName.ClockCtrlr as string,
     dataType: DataEnumType.SequenceList,
-    defaultValue: 'NTP,GPS,RTC',
+    defaultValue: 'NTP,GPS,RealTimeClock,Heartbeat',
     description: 'Ordered list of clock sources by preference.',
-    enumeration: ['NTP', 'GPS', 'RTC', 'Manual'],
+    enumeration: [
+      'Heartbeat',
+      'NTP',
+      'GPS',
+      'RealTimeClock',
+      'MobileNetwork',
+      'RadioTimeTransmitter',
+    ],
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
@@ -444,10 +451,10 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   )]: {
     component: OCPP20ComponentName.OCPPCommCtrlr as string,
     dataType: DataEnumType.MemberList,
-    defaultValue: 'HTTP',
+    defaultValue: 'HTTPS,FTPS,SFTP',
     description: 'Supported file transfer protocols.',
-    enumeration: ['HTTP', 'HTTPS', 'FTP', 'SFTP'],
-    mutability: MutabilityEnumType.ReadWrite,
+    enumeration: ['HTTP', 'HTTPS', 'FTP', 'FTPS', 'SFTP'],
+    mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.FileTransferProtocols as string,
@@ -514,8 +521,9 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   )]: {
     component: OCPP20ComponentName.OCPPCommCtrlr as string,
     dataType: DataEnumType.SequenceList,
-    defaultValue: '',
+    defaultValue: '1,2,3',
     description: 'Comma separated ordered list of network profile priorities.',
+    enumeration: ['1', '2', '3'],
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
@@ -583,7 +591,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     variable: OCPP20RequiredVariableName.UnlockOnEVSideDisconnect as string,
   },
 
-  // SampledDataCtrlr variables (simulation measurands)
+  // SampledDataCtrlr variables
   [buildRegistryKey(OCPP20ComponentName.SampledDataCtrlr as string, 'Current.Import')]: {
     component: OCPP20ComponentName.SampledDataCtrlr as string,
     dataType: DataEnumType.decimal,
@@ -637,7 +645,8 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   )]: {
     component: OCPP20ComponentName.SampledDataCtrlr as string,
     dataType: DataEnumType.MemberList,
-    defaultValue: 'Energy.Active.Import.Register,Current.Import',
+    // Default includes cumulative energy and interval energy plus voltage for billing context
+    defaultValue: 'Energy.Active.Import.Register,Energy.Active.Import.Interval,Voltage',
     description: 'Measurands sampled at transaction end.',
     enumeration: [
       'Energy.Active.Import.Register',
@@ -668,16 +677,25 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   )]: {
     component: OCPP20ComponentName.SampledDataCtrlr as string,
     dataType: DataEnumType.MemberList,
-    defaultValue: 'Energy.Active.Import.Register,Power.Active.Import',
+    defaultValue: 'Energy.Active.Import.Register,Power.Active.Import,Voltage',
     description: 'Measurands sampled at transaction start.',
     enumeration: [
       'Energy.Active.Import.Register',
+      'Energy.Active.Import.Interval',
       'Energy.Active.Export.Register',
       'Power.Active.Import',
       'Power.Active.Export',
+      'Power.Reactive.Import',
+      'Power.Reactive.Export',
+      'Power.Offered',
       'Current.Import',
+      'Current.Export',
       'Voltage',
+      'Frequency',
+      'Temperature',
       'SoC',
+      'RPM',
+      'Power.Factor',
     ],
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
@@ -709,16 +727,25 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   )]: {
     component: OCPP20ComponentName.SampledDataCtrlr as string,
     dataType: DataEnumType.MemberList,
-    defaultValue: 'Energy.Active.Import.Register',
+    defaultValue: 'Energy.Active.Import.Register,Current.Import,Voltage',
     description: 'Measurands included in periodic updates.',
     enumeration: [
       'Energy.Active.Import.Register',
+      'Energy.Active.Import.Interval',
       'Energy.Active.Export.Register',
       'Power.Active.Import',
       'Power.Active.Export',
+      'Power.Reactive.Import',
+      'Power.Reactive.Export',
+      'Power.Offered',
       'Current.Import',
+      'Current.Export',
       'Voltage',
+      'Frequency',
+      'Temperature',
       'SoC',
+      'RPM',
+      'Power.Factor',
     ],
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
@@ -844,10 +871,8 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   )]: {
     component: OCPP20ComponentName.TxCtrlr as string,
     dataType: DataEnumType.MemberList,
-    // Spec-aligned default (exclude EnergyTransfer & DataSigned due to measurement skew and signed data optionality)
     defaultValue: 'Authorized,EVConnected',
     description: 'Trigger conditions for starting a transaction.',
-    // Spec-aligned enumeration per errata: Authorized, EVConnected, PowerPathClosed, EnergyTransfer, ParkingBayOccupancy plus DataSigned (start only)
     enumeration: [
       'Authorized',
       'EVConnected',
@@ -865,10 +890,8 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     {
       component: OCPP20ComponentName.TxCtrlr as string,
       dataType: DataEnumType.MemberList,
-      // Spec-aligned default stop triggers (exclude Authorized by default to avoid id re-presentation auto-stop)
       defaultValue: 'EVConnected,PowerPathClosed',
       description: 'Trigger conditions for ending a transaction.',
-      // Spec-aligned enumeration per errata: Authorized, EVConnected, PowerPathClosed, EnergyTransfer, ParkingBayOccupancy (DataSigned excluded as invalid stop point)
       enumeration: [
         'Authorized',
         'EVConnected',
