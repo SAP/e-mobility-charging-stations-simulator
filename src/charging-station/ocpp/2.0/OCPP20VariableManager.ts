@@ -104,8 +104,10 @@ export class OCPP20VariableManager {
         continue
       }
       // Instance-scoped persistent variables are also auto-created when defaultValue is defined
+      const flattenInstance =
+        variableMetadata.variable === (OCPP20RequiredVariableName.MessageAttemptInterval as string)
       const configurationKeyName =
-        variableMetadata.instance != null
+        variableMetadata.instance != null && !flattenInstance
           ? `${variableMetadata.variable}.${variableMetadata.instance}`
           : variableMetadata.variable
       const configurationKey = getConfigurationKey(
@@ -448,8 +450,10 @@ export class OCPP20VariableManager {
       variableMetadata.persistence === PersistenceEnumType.Persistent &&
       variableMetadata.mutability !== MutabilityEnumType.WriteOnly
     ) {
+      const flattenInstance =
+        variableMetadata.variable === (OCPP20RequiredVariableName.MessageAttemptInterval as string)
       const configurationKeyName =
-        variableMetadata.instance != null
+        variableMetadata.instance != null && !flattenInstance
           ? `${variableMetadata.variable}.${variableMetadata.instance}`
           : variableMetadata.variable
       const cfg = getConfigurationKey(
@@ -803,8 +807,10 @@ export class OCPP20VariableManager {
     }
 
     let rebootRequired = false
+    const flattenInstance =
+      variableMetadata.variable === (OCPP20RequiredVariableName.MessageAttemptInterval as string)
     const configurationKeyName =
-      variableMetadata.instance != null
+      variableMetadata.instance != null && !flattenInstance
         ? `${variableMetadata.variable}.${variableMetadata.instance}`
         : variableMetadata.variable
     const previousValue = getConfigurationKey(
