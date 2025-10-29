@@ -7,6 +7,7 @@ import {
   DataEnumType,
   MutabilityEnumType,
   OCPP20ComponentName,
+  OCPP20DeviceInfoVariableName,
   OCPP20OptionalVariableName,
   OCPP20RequiredVariableName,
   OCPP20VendorVariableName,
@@ -89,7 +90,43 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     variable: OCPP20RequiredVariableName.LocalPreAuthorize as string,
   },
 
+  [key(OCPP20ComponentName.ChargingStation as string, 'Available')]: {
+    component: OCPP20ComponentName.ChargingStation as string,
+    dataType: DataEnumType.boolean,
+    defaultValue: 'true',
+    description: 'Component exists (ChargingStation level).',
+    mutability: MutabilityEnumType.ReadOnly,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: 'Available',
+  },
+  [key(OCPP20ComponentName.ChargingStation as string, 'SupplyPhases')]: {
+    component: OCPP20ComponentName.ChargingStation as string,
+    dataType: DataEnumType.integer,
+    defaultValue: '3',
+    description: 'Number of alternating current phases connected/available.',
+    max: 3,
+    min: 1,
+    mutability: MutabilityEnumType.ReadOnly,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: 'SupplyPhases',
+  },
   // ChargingStation variables
+  [key(
+    OCPP20ComponentName.ChargingStation as string,
+    OCPP20DeviceInfoVariableName.AvailabilityState
+  )]: {
+    component: OCPP20ComponentName.ChargingStation as string,
+    dataType: DataEnumType.OptionList,
+    description: 'Current availability state for the ChargingStation.',
+    // Spec requires OptionList; simulator exposes limited states
+    enumeration: ['Operative', 'Inoperative'],
+    mutability: MutabilityEnumType.ReadOnly,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20DeviceInfoVariableName.AvailabilityState as string,
+  },
   [key(
     OCPP20ComponentName.ChargingStation as string,
     OCPP20OptionalVariableName.WebSocketPingInterval
