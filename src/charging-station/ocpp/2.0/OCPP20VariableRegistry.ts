@@ -47,7 +47,7 @@ export interface VariableMetadata {
  * @param instance Optional instance identifier appended to component name before separator.
  * @returns Composite key `${component}[.<instance>]::${variable}`.
  */
-function key (component: string, variable: string, instance?: string): string {
+function key(component: string, variable: string, instance?: string): string {
   return `${component}${instance ? '.' + instance : ''}::${variable}`
 }
 
@@ -433,7 +433,8 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     description: 'Comma separated ordered list of network profile priorities.',
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [AttributeEnumType.Actual],
+    supportedAttributes: [AttributeEnumType.Actual, AttributeEnumType.Target],
+    supportsTarget: true,
     variable: OCPP20RequiredVariableName.NetworkConfigurationPriority as string,
   },
   [key(
@@ -762,7 +763,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
  * @param value Raw value prior to post processing.
  * @returns Post-processed value.
  */
-export function applyPostProcess (
+export function applyPostProcess(
   chargingStation: ChargingStation,
   variableMetadata: VariableMetadata,
   value: string
@@ -781,7 +782,7 @@ export function applyPostProcess (
  * @param variable Variable name.
  * @returns Composite lower-cased key string.
  */
-export function buildVariableCompositeKey (
+export function buildVariableCompositeKey(
   component: string,
   instance: string | undefined,
   variable: string
@@ -795,7 +796,7 @@ export function buildVariableCompositeKey (
  * @param sizeRaw Raw size metadata value (string) or undefined.
  * @returns Possibly truncated value (enforced size) or original.
  */
-export function enforceReportingValueSize (value: string, sizeRaw: string | undefined): string {
+export function enforceReportingValueSize(value: string, sizeRaw: string | undefined): string {
   const size = convertToIntOrNaN(sizeRaw ?? Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH.toString())
   if (!Number.isNaN(size) && size > 0 && value.length > size) {
     return value.slice(0, size)
@@ -811,7 +812,7 @@ export function enforceReportingValueSize (value: string, sizeRaw: string | unde
  * @param instance Optional instance identifier when variable metadata is instance-scoped.
  * @returns VariableMetadata or undefined if not registered.
  */
-export function getVariableMetadata (
+export function getVariableMetadata(
   component: string,
   variable: string,
   instance?: string
@@ -825,7 +826,7 @@ export function getVariableMetadata (
  * @param variableMetadata Variable metadata.
  * @returns True if persistence is Persistent.
  */
-export function isPersistent (variableMetadata: VariableMetadata): boolean {
+export function isPersistent(variableMetadata: VariableMetadata): boolean {
   return variableMetadata.persistence === PersistenceEnumType.Persistent
 }
 
@@ -834,7 +835,7 @@ export function isPersistent (variableMetadata: VariableMetadata): boolean {
  * @param variableMetadata Variable metadata.
  * @returns True if mutability is ReadOnly.
  */
-export function isReadOnly (variableMetadata: VariableMetadata): boolean {
+export function isReadOnly(variableMetadata: VariableMetadata): boolean {
   return variableMetadata.mutability === MutabilityEnumType.ReadOnly
 }
 
@@ -843,7 +844,7 @@ export function isReadOnly (variableMetadata: VariableMetadata): boolean {
  * @param variableMetadata Variable metadata.
  * @returns True if mutability is WriteOnly.
  */
-export function isWriteOnly (variableMetadata: VariableMetadata): boolean {
+export function isWriteOnly(variableMetadata: VariableMetadata): boolean {
   return variableMetadata.mutability === MutabilityEnumType.WriteOnly
 }
 
@@ -853,7 +854,7 @@ export function isWriteOnly (variableMetadata: VariableMetadata): boolean {
  * @param variableMetadata Variable metadata.
  * @returns Resolved value (dynamic or default or empty string).
  */
-export function resolveValue (
+export function resolveValue(
   chargingStation: ChargingStation,
   variableMetadata: VariableMetadata
 ): string {
@@ -868,14 +869,14 @@ export function resolveValue (
  * Validate a raw variable value against metadata constraints.
  * Checks length, data type, range, enumeration, formatting rules.
  * @param variableMetadata Variable metadata definition.
- * @param raw Raw string value to validate.
+ * @param rawValue Raw string value to validate.
  * @returns Validation result with ok flag and optional reason/info.
  */
-export function validateValue (
+export function validateValue(
   variableMetadata: VariableMetadata,
-  raw: string
+  rawValue: string
 ): { info?: string; ok: boolean; reason?: ReasonCodeEnumType } {
-  if (variableMetadata.maxLength != null && raw.length > variableMetadata.maxLength) {
+  if (variableMetadata.maxLength != null && rawValue.length > variableMetadata.maxLength) {
     return {
       info: 'Value exceeds maximum length (' + String(variableMetadata.maxLength) + ')',
       ok: false,
@@ -884,7 +885,7 @@ export function validateValue (
   }
   switch (variableMetadata.dataType) {
     case DataEnumType.boolean: {
-      if (raw !== 'true' && raw !== 'false') {
+      if (rawValue !== 'true' && rawValue !== 'false') {
         return {
           info: 'Boolean must be "true" or "false"',
           ok: false,
@@ -894,7 +895,7 @@ export function validateValue (
       break
     }
     case DataEnumType.dateTime: {
-      if (isNaN(Date.parse(raw))) {
+      if (isNaN(Date.parse(rawValue))) {
         return {
           info: 'Invalid dateTime format',
           ok: false,
@@ -905,14 +906,14 @@ export function validateValue (
     }
     case DataEnumType.decimal: {
       const decimalPattern = /^-?\d+(?:\.\d+)?$/
-      if (!decimalPattern.test(raw)) {
+      if (!decimalPattern.test(rawValue)) {
         return {
           info: 'Invalid decimal format',
           ok: false,
           reason: ReasonCodeEnumType.InvalidValue,
         }
       }
-      const num = Number(raw)
+      const num = Number(rawValue)
       if (variableMetadata.positive && num <= 0) {
         return {
           info: 'Positive decimal > 0 required',
@@ -941,7 +942,10 @@ export function validateValue (
           reason: ReasonCodeEnumType.ValueTooHigh,
         }
       }
-      if (variableMetadata.enumeration?.length && !variableMetadata.enumeration.includes(raw)) {
+      if (
+        variableMetadata.enumeration?.length &&
+        !variableMetadata.enumeration.includes(rawValue)
+      ) {
         return {
           info: 'Value not in enumeration',
           ok: false,
@@ -956,7 +960,7 @@ export function validateValue (
       // Special zero-or-positive handling: negative or decimal value rejected with ValueZeroNotAllowed
       // for allowZero integer variables (e.g. WebSocketPingInterval) per test expectations.
       if (variableMetadata.allowZero && !variableMetadata.positive) {
-        if (decimalPattern.test(raw)) {
+        if (decimalPattern.test(rawValue)) {
           return {
             info: 'Integer >= 0 required',
             ok: false,
@@ -964,8 +968,8 @@ export function validateValue (
           }
         }
       }
-      if (!signedIntegerPattern.test(raw)) {
-        if (decimalPattern.test(raw)) {
+      if (!signedIntegerPattern.test(rawValue)) {
+        if (decimalPattern.test(rawValue)) {
           return {
             info: variableMetadata.positive
               ? 'Positive integer > 0 required (no decimals)'
@@ -983,7 +987,7 @@ export function validateValue (
           reason: ReasonCodeEnumType.InvalidValue,
         }
       }
-      const num = Number(raw)
+      const num = Number(rawValue)
       if (variableMetadata.allowZero && !variableMetadata.positive && num < 0) {
         return {
           info: 'Integer >= 0 required',
@@ -1023,7 +1027,7 @@ export function validateValue (
       if (
         variableMetadata.enumeration &&
         variableMetadata.enumeration.length > 0 &&
-        !variableMetadata.enumeration.includes(raw)
+        !variableMetadata.enumeration.includes(rawValue)
       ) {
         return {
           info: 'Value not in enumeration',
@@ -1035,17 +1039,17 @@ export function validateValue (
     }
     case DataEnumType.MemberList:
     case DataEnumType.SequenceList: {
-      if (raw.trim().length === 0) {
+      if (rawValue.trim().length === 0) {
         return { info: 'List cannot be empty', ok: false, reason: ReasonCodeEnumType.InvalidValue }
       }
-      if (raw.startsWith(',') || raw.endsWith(',')) {
+      if (rawValue.startsWith(',') || rawValue.endsWith(',')) {
         return {
           info: 'No leading/trailing comma',
           ok: false,
           reason: ReasonCodeEnumType.InvalidValue,
         }
       }
-      const tokens = raw.split(',').map(t => t.trim())
+      const tokens = rawValue.split(',').map(t => t.trim())
       if (tokens.some(t => t.length === 0)) {
         return { info: 'Empty list member', ok: false, reason: ReasonCodeEnumType.InvalidValue }
       }
@@ -1081,7 +1085,7 @@ export function validateValue (
         )
         if (isUrlSchemeEnumeration) {
           try {
-            const url = new URL(raw)
+            const url = new URL(rawValue)
             if (!variableMetadata.enumeration.includes(url.protocol)) {
               return {
                 info: 'Unsupported URL scheme',
@@ -1092,7 +1096,7 @@ export function validateValue (
           } catch {
             return { info: 'Invalid URL format', ok: false, reason: ReasonCodeEnumType.InvalidURL }
           }
-        } else if (!variableMetadata.enumeration.includes(raw)) {
+        } else if (!variableMetadata.enumeration.includes(rawValue)) {
           return {
             info: 'Value not in enumeration',
             ok: false,

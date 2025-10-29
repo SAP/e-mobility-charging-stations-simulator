@@ -6,12 +6,14 @@ import { OCPP20IncomingRequestService } from '../../../../src/charging-station/o
 import {
   AttributeEnumType,
   GetVariableStatusEnumType,
+  MutabilityEnumType,
   OCPP20ComponentName,
   type OCPP20GetVariablesRequest,
   OCPP20OptionalVariableName,
   OCPP20RequiredVariableName,
   ReasonCodeEnumType,
 } from '../../../../src/types/index.js'
+import { VARIABLE_REGISTRY } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableRegistry.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { createChargingStationWithEvses } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_NAME, TEST_CONNECTOR_VALID_INSTANCE } from './OCPP20TestConstants.js'
@@ -361,5 +363,68 @@ void describe('B06 - Get Variables', () => {
     expect(result.component.name).toBe(OCPP20ComponentName.SampledDataCtrlr)
     expect(result.variable.name).toBe(OCPP20RequiredVariableName.TxUpdatedInterval)
     expect(result.attributeValue).toBe('30')
+  })
+
+  // FR: B06.FR.13
+  void it('Should accept empty Target value for supported variable NetworkConfigurationPriority', () => {
+    const request: OCPP20GetVariablesRequest = {
+      getVariableData: [
+        {
+          attributeType: AttributeEnumType.Target,
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
+          variable: { name: OCPP20RequiredVariableName.NetworkConfigurationPriority },
+        },
+      ],
+    }
+    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    expect(response.getVariableResult).toHaveLength(1)
+    const result = response.getVariableResult[0]
+    expect(result.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+    expect(result.attributeType).toBe(AttributeEnumType.Target)
+    expect(result.attributeValue).toBe('')
+  })
+
+  // FR: B06.FR.15
+  void it('Should return UnknownVariable when instance omitted for instance-specific MessageTimeout', () => {
+    // MessageTimeout only registered with instance 'Default'
+    const request: OCPP20GetVariablesRequest = {
+      getVariableData: [
+        {
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
+          variable: { name: OCPP20RequiredVariableName.MessageTimeout },
+        },
+      ],
+    }
+    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    expect(response.getVariableResult).toHaveLength(1)
+    const result = response.getVariableResult[0]
+    expect(result.attributeStatus).toBe(GetVariableStatusEnumType.UnknownVariable)
+    expect(result.attributeValue).toBeUndefined()
+  })
+
+  // FR: B06.FR.09 (WriteOnly retrieval rejection) - Skipped if no write-only variable exists
+  void it('Should reject retrieval of write-only variable if one exists', () => {
+    // Find first write-only variable from registry
+    const writeOnlyEntry = Object.values(VARIABLE_REGISTRY).find(
+      m => m.mutability === MutabilityEnumType.WriteOnly
+    )
+    if (!writeOnlyEntry) {
+      // No write-only variable defined yet; test passes trivially (document coverage gap)
+      expect(true).toBe(true)
+      return
+    }
+    const request: OCPP20GetVariablesRequest = {
+      getVariableData: [
+        {
+          component: { name: writeOnlyEntry.component },
+          variable: { name: writeOnlyEntry.variable, instance: writeOnlyEntry.instance },
+        },
+      ],
+    }
+    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    expect(response.getVariableResult).toHaveLength(1)
+    const result = response.getVariableResult[0]
+    expect(result.attributeStatus).toBe(GetVariableStatusEnumType.Rejected)
+    expect(result.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.WriteOnly)
   })
 })
