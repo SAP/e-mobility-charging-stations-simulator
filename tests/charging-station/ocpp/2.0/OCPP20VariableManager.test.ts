@@ -1339,7 +1339,15 @@ await describe('OCPP20VariableManager test suite', async () => {
             },
           ])[0]
           expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-          expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
+          if (lv.name === OCPP20RequiredVariableName.FileTransferProtocols) {
+            expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ReadOnly)
+          } else {
+            expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
+          }
+          if (lv.name === OCPP20RequiredVariableName.FileTransferProtocols) {
+            // Read-only variable: additionalInfo reflects read-only status, skip format/member detail assertions
+            continue
+          }
           if (pattern === '') {
             expect(res.attributeStatusInfo?.additionalInfo).toContain('List cannot be empty')
           } else if (pattern.startsWith(',') || pattern.endsWith(',')) {
