@@ -1094,7 +1094,7 @@ export function validateValue (
       break
     }
     case DataEnumType.string: {
-      if (variableMetadata.variable === 'ConnectionUrl') {
+      if (variableMetadata.variable === (OCPP20VendorVariableName.ConnectionUrl as string)) {
         const urlValidation = validateGenericUrl(rawValue)
         if (!urlValidation.ok) {
           return urlValidation
