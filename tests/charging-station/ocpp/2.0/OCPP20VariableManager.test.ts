@@ -1409,8 +1409,8 @@ await describe('OCPP20VariableManager test suite', async () => {
       const minRes = manager.setVariables(mmChargingStation, [
         { attributeType: AttributeEnumType.MinSet, attributeValue: '1', component, variable },
       ])[0]
-      expect(minRes.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(minRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
+      expect(minRes.attributeStatus).toBe(SetVariableStatusEnumType.NotSupportedAttributeType)
+      expect(minRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
     })
 
     await it('Returns NotSupportedAttributeType when requesting MinSet for ConnectionUrl', () => {

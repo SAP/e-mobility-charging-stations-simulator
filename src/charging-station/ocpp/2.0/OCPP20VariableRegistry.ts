@@ -332,11 +332,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
       mutability: MutabilityEnumType.ReadWrite,
       persistence: PersistenceEnumType.Persistent,
       positive: true,
-      supportedAttributes: [
-        AttributeEnumType.Actual,
-        AttributeEnumType.MinSet,
-        AttributeEnumType.MaxSet,
-      ],
+      supportedAttributes: [AttributeEnumType.Actual],
       unit: 'seconds',
       variable: OCPP20OptionalVariableName.HeartbeatInterval as string,
     },
