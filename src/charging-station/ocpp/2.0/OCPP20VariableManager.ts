@@ -151,7 +151,7 @@ export class OCPP20VariableManager {
           // Mark invalid
           this.invalidVariables.add(variableKey)
           logger.error(
-            `${chargingStation.logPrefix()} Missing configuration key mapping and no default for variable '${configurationKeyName}', marking as INTERNAL ERROR`
+            `${chargingStation.logPrefix()} Missing configuration key mapping and no default for variable '${configurationKeyName}'`
           )
         }
       }

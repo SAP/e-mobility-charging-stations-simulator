@@ -120,7 +120,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     component: OCPP20ComponentName.ChargingStation as string,
     dataType: DataEnumType.OptionList,
     description: 'Current availability state for the ChargingStation.',
-    // Spec requires OptionList; simulator exposes limited states
     enumeration: ['Operative', 'Inoperative'],
     mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Persistent,
