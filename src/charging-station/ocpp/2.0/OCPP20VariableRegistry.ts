@@ -14,7 +14,7 @@ import {
   PersistenceEnumType,
   ReasonCodeEnumType,
 } from '../../../types/index.js'
-import { Constants, convertToIntOrNaN } from '../../../utils/index.js'
+import { Constants, convertToIntOrNaN, has } from '../../../utils/index.js'
 
 /**
  * Metadata describing a variable (component-level configuration or runtime state).
@@ -935,15 +935,15 @@ export function getVariableMetadata (
   instance?: string
 ): undefined | VariableMetadata {
   const withInstanceKey = buildRegistryKey(component, variable, instance)
-  if (Object.prototype.hasOwnProperty.call(VARIABLE_REGISTRY, withInstanceKey)) {
+  if (has(withInstanceKey, VARIABLE_REGISTRY)) {
     return VARIABLE_REGISTRY[withInstanceKey]
   }
   const withoutInstanceKey = buildRegistryKey(component, variable)
-  if (Object.prototype.hasOwnProperty.call(VARIABLE_REGISTRY, withoutInstanceKey)) {
+  if (has(withoutInstanceKey, VARIABLE_REGISTRY)) {
     return VARIABLE_REGISTRY[withoutInstanceKey]
   }
   const lcWithKey = buildCaseInsensitiveCompositeKey(component, instance, variable)
-  if (Object.prototype.hasOwnProperty.call(VARIABLE_REGISTRY_LOOKUP_CI, lcWithKey)) {
+  if (has(lcWithKey, VARIABLE_REGISTRY_LOOKUP_CI)) {
     return VARIABLE_REGISTRY_LOOKUP_CI[lcWithKey]
   }
   return VARIABLE_REGISTRY_LOOKUP_CI[

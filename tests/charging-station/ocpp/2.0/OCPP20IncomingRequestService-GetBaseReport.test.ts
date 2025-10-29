@@ -84,7 +84,6 @@ await describe('B08 - Get Base Report', async () => {
     expect(response.status).toBe(GenericDeviceModelStatusEnumType.Accepted)
   })
 
-  // Extended FullInventory validation: presence & attribute ordering
   await it('Should include registry variables with Actual attribute only for unsupported types', () => {
     const reportData: ReportDataType[] = (incomingRequestService as any).buildReportData(
       mockChargingStation,

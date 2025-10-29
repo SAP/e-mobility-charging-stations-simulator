@@ -9,7 +9,7 @@ import { describe, it } from 'node:test'
 import { OCPP20RequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20RequestService.js'
 import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
 import { type OCPP20HeartbeatRequest, OCPP20RequestCommand } from '../../../../src/types/index.js'
-import { Constants } from '../../../../src/utils/index.js'
+import { Constants, has } from '../../../../src/utils/index.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
 import {
   TEST_CHARGE_POINT_MODEL,
@@ -157,7 +157,7 @@ await describe('G02 - Heartbeat', async () => {
     // This validates compliance with the official OCPP 2.0 standard
     expect(payload).toBeDefined()
     expect(payload).toEqual({})
-    expect(Object.prototype.hasOwnProperty.call(payload, 'constructor')).toBe(false)
+    expect(has('constructor', payload)).toBe(false)
 
     // Ensure it's a plain object and not an instance of another type
     expect(Object.getPrototypeOf(payload)).toBe(Object.prototype)

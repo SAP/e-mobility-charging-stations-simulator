@@ -1,11 +1,5 @@
 # Changelog
 
-## [Unreleased]
-
-### 🐞 Bug Fixes
-
-- **ocpp20:** restrict GetBaseReport and variable registry to Actual attribute only to align with OCPP 2.0.1 attribute support; removes unsupported Target/MinSet/MaxSet from reports
-
 ## [2.1.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v2.0.10...simulator@v2.1.0) (2025-07-24)
 
 ### 🚀 Features
