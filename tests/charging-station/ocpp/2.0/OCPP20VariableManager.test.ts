@@ -933,8 +933,6 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(afterReset.attributeValue).toBe('30')
     })
 
-    // Current behavior: ConnectionUrl is readable (Actual attribute); write-only rejection test removed.
-
     await it('Should reject HeartbeatInterval with leading whitespace', () => {
       const res = manager.setVariables(mockChargingStation, [
         {
