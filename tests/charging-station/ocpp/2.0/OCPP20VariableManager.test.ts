@@ -171,7 +171,7 @@ await describe('OCPP20VariableManager test suite', async () => {
 
       expect(Array.isArray(result)).toBe(true)
       expect(result).toHaveLength(1)
-      // New behavior: invalid component rejected before variable support check
+      // Behavior: invalid component is rejected before variable support check
       expect(result[0].attributeStatus).toBe(GetVariableStatusEnumType.UnknownComponent)
       expect(result[0].attributeType).toBe(AttributeEnumType.Actual)
       expect(result[0].attributeValue).toBeUndefined()
@@ -326,8 +326,8 @@ await describe('OCPP20VariableManager test suite', async () => {
     const manager = OCPP20VariableManager.getInstance()
 
     await it('Should validate OCPPCommCtrlr component as always valid', () => {
-      // NOTE: Connector components currently unsupported in isComponentValid. Submit OpenSpec proposal before changing behavior.
-      // Future OCPP 2.0 per-connector variable support would require updating related tests.
+      // Behavior: Connector components are unsupported and isComponentValid returns false.
+      // Scope: Per-connector variable validation not implemented; tests assert current behavior.
       const component: ComponentType = { name: OCPP20ComponentName.OCPPCommCtrlr }
 
       // Access private method through any casting for testing
@@ -336,8 +336,8 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(isValid).toBe(true)
     })
 
-    // NOTE: Connector component currently unsupported in isComponentValid.
-    // Future support for per-connector variables must follow an OpenSpec proposal.
+    // Behavior: Connector component validation returns false (unsupported).
+    // Change process: Enable via OpenSpec proposal before altering this expectation.
     await it('Should reject Connector component as unsupported even when connectors exist', () => {
       const component: ComponentType = { instance: '1', name: OCPP20ComponentName.Connector }
 
@@ -916,7 +916,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(afterReset.attributeValue).toBe('30')
     })
 
-    // Removed outdated write-only ConnectionUrl get rejection test: variable now retrievable as Actual attribute
+    // Current behavior: ConnectionUrl is readable (Actual attribute); write-only rejection test removed.
 
     await it('Should reject HeartbeatInterval with leading whitespace', () => {
       const res = manager.setVariables(mockChargingStation, [
@@ -1154,7 +1154,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       setValueSize(mockChargingStation, -5)
       const okRes = manager.setVariables(mockChargingStation, [
         {
-          attributeValue: buildWsExampleUrl(300, 'v'), // below default 2500
+          attributeValue: buildWsExampleUrl(300, 'v'), // below default absolute max length
           component: { name: OCPP20ComponentName.ChargingStation },
           variable: { name: OCPP20VendorVariableName.ConnectionUrl },
         },
@@ -1508,17 +1508,17 @@ await describe('OCPP20VariableManager test suite', async () => {
       resetReportingValueSize(mockChargingStation)
     })
 
-    await it('Should enforce absolute 2500 character cap after truncation chain', () => {
+    await it('Should enforce absolute max character cap after truncation chain', () => {
       resetValueSizeLimits(mockChargingStation)
       resetReportingValueSize(mockChargingStation)
-      // Directly upsert configuration key with >2500 length value bypassing set-time limit (which rejects >2500)
+      // Directly upsert configuration key with > absolute max length value bypassing set-time limit (which rejects > absolute max length)
       const overLongValue = buildWsExampleUrl(3000, 'c')
       upsertConfigurationKey(
         mockChargingStation,
         OCPP20VendorVariableName.ConnectionUrl as unknown as VariableType['name'],
         overLongValue
       )
-      // Set generous ValueSize (1500) and ReportingValueSize (1400) so only absolute cap applies (since both < 2500)
+      // Set generous ValueSize (1500) and ReportingValueSize (1400) so only absolute cap applies (since both < Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH)
       setValueSize(mockChargingStation, 1500)
       setReportingValueSize(mockChargingStation, 1400)
       const getRes = manager.getVariables(mockChargingStation, [
@@ -1534,11 +1534,11 @@ await describe('OCPP20VariableManager test suite', async () => {
       resetReportingValueSize(mockChargingStation)
     })
 
-    await it('Should not exceed 2500 even if ValueSize and ReportingValueSize set above 2500', () => {
+    await it('Should not exceed absolute max length even if ValueSize and ReportingValueSize set above it', () => {
       resetValueSizeLimits(mockChargingStation)
       resetReportingValueSize(mockChargingStation)
-      // Store exactly 2500 length value via setVariables (allowed)
-      const value2500 = buildWsExampleUrl(2500, 'd')
+      // Store exactly absolute max length value via setVariables (allowed)
+      const value2500 = buildWsExampleUrl(Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH, 'd')
       const setRes = manager.setVariables(mockChargingStation, [
         {
           attributeValue: value2500,
@@ -1556,7 +1556,7 @@ await describe('OCPP20VariableManager test suite', async () => {
         },
       ])[0]
       expect(getRes.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(getRes.attributeValue?.length).toBe(2500)
+      expect(getRes.attributeValue?.length).toBe(Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH)
       expect(getRes.attributeValue).toBe(value2500)
       resetValueSizeLimits(mockChargingStation)
       resetReportingValueSize(mockChargingStation)

@@ -2,6 +2,7 @@ import type { ChargingStation } from '../../../../src/charging-station/ChargingS
 import type { ConfigurationKey } from '../../../../src/types/ChargingStationOcppConfiguration.js'
 
 import { OCPP20RequiredVariableName } from '../../../../src/types/index.js'
+import { Constants } from '../../../../src/utils/index.js'
 
 /**
  * Reset message size and element limits to generous defaults after tests manipulating them.
@@ -18,7 +19,11 @@ export function resetLimits (chargingStation: ChargingStation) {
  * @param chargingStation Charging station test instance whose ReportingValueSize is adjusted.
  */
 export function resetReportingValueSize (chargingStation: ChargingStation) {
-  upsertConfigurationKey(chargingStation, OCPP20RequiredVariableName.ReportingValueSize, '2500')
+  upsertConfigurationKey(
+    chargingStation,
+    OCPP20RequiredVariableName.ReportingValueSize,
+    Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH.toString()
+  )
 }
 
 /**
@@ -27,8 +32,16 @@ export function resetReportingValueSize (chargingStation: ChargingStation) {
  * @param chargingStation Charging station instance.
  */
 export function resetValueSizeLimits (chargingStation: ChargingStation) {
-  upsertConfigurationKey(chargingStation, OCPP20RequiredVariableName.ConfigurationValueSize, '2500')
-  upsertConfigurationKey(chargingStation, OCPP20RequiredVariableName.ValueSize, '2500')
+  upsertConfigurationKey(
+    chargingStation,
+    OCPP20RequiredVariableName.ConfigurationValueSize,
+    Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH.toString()
+  )
+  upsertConfigurationKey(
+    chargingStation,
+    OCPP20RequiredVariableName.ValueSize,
+    Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH.toString()
+  )
 }
 
 /**

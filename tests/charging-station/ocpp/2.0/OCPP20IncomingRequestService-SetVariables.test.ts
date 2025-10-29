@@ -640,12 +640,12 @@ describe('B07 - Set Variables', () => {
     resetValueSizeLimits(mockChargingStation)
   })
 
-  it('Should fallback to default 2500 when both limits invalid/non-positive', () => {
+  it('Should fallback to default absolute max length when both limits invalid/non-positive', () => {
     resetValueSizeLimits(mockChargingStation)
     setConfigurationValueSize(mockChargingStation, 0)
     setValueSize(mockChargingStation, -5)
     const prefix = 'wss://example.com/'
-    const validValue = prefix + 'e'.repeat(300 - prefix.length) // 300 < default 2500 and < ConnectionUrl maxLength
+    const validValue = prefix + 'e'.repeat(300 - prefix.length) // 300 < default absolute max length and < ConnectionUrl maxLength
     const response = svc.handleRequestSetVariables(mockChargingStation, {
       setVariableData: [
         {

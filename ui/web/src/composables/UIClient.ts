@@ -12,6 +12,7 @@ import {
   type UIServerConfigurationSection,
 } from '@/types'
 
+import { UI_WEBSOCKET_REQUEST_TIMEOUT_MS } from './Constants'
 import { randomUUID, validateUUID } from './Utils'
 
 interface ResponseHandler {
@@ -290,7 +291,8 @@ export class UIClient {
         const sendTimeout = setTimeout(() => {
           this.responseHandlers.delete(uuid)
           reject(new Error(`Send request '${procedureName}' message: connection timeout`))
-        }, 60000)
+          // Timeout value sourced from local UI constant; backend constants are not accessible in this standalone project.
+        }, UI_WEBSOCKET_REQUEST_TIMEOUT_MS)
         try {
           this.ws.send(msg)
           this.responseHandlers.set(uuid, { procedureName, reject, resolve })

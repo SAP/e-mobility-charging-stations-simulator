@@ -378,7 +378,7 @@ await describe('B08 - Get Base Report', async () => {
 
   // ReportingValueSize truncation test
   await it('Should truncate long SequenceList/MemberList values per ReportingValueSize', () => {
-    // Ensure ReportingValueSize is at a small value (default is 2500). We will override configuration key if absent.
+    // Ensure ReportingValueSize is at a small value (default is Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH). We will override configuration key if absent.
     const reportingSizeKey = StandardParametersKey.ReportingValueSize
     // Add or lower configuration key to 10 to force truncation
     addConfigurationKey(mockChargingStation, reportingSizeKey, '10', undefined, {
