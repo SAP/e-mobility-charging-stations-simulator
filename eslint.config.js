@@ -67,6 +67,8 @@ export default defineConfig([
               'recloser',
               'deauthorize',
               'DEAUTHORIZE',
+              'deauthorized',
+              'DEAUTHORIZED',
             ],
           },
         },

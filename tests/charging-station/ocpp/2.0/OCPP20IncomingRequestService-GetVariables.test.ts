@@ -40,7 +40,7 @@ void describe('B06 - Get Variables', () => {
       getVariableData: [
         {
           attributeType: AttributeEnumType.Actual,
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
         {
@@ -64,14 +64,14 @@ void describe('B06 - Get Variables', () => {
     expect(firstResult.attributeValue).toBe(
       millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL).toString()
     )
-    expect(firstResult.component.name).toBe(OCPP20ComponentName.ChargingStation)
+    expect(firstResult.component.name).toBe(OCPP20ComponentName.OCPPCommCtrlr)
     expect(firstResult.variable.name).toBe(OCPP20OptionalVariableName.HeartbeatInterval)
     expect(firstResult.attributeStatusInfo).toBeUndefined()
 
     // Check second variable (WebSocketPingInterval)
     const secondResult = response.getVariableResult[1]
     expect(secondResult.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-    expect(secondResult.attributeType).toBeUndefined()
+    expect(secondResult.attributeType).toBe(AttributeEnumType.Actual)
     expect(secondResult.attributeValue).toBe(Constants.DEFAULT_WEBSOCKET_PING_INTERVAL.toString())
     expect(secondResult.component.name).toBe(OCPP20ComponentName.ChargingStation)
     expect(secondResult.variable.name).toBe(OCPP20OptionalVariableName.WebSocketPingInterval)
@@ -103,7 +103,8 @@ void describe('B06 - Get Variables', () => {
     // Check first variable (should be UnknownVariable)
     const firstResult = response.getVariableResult[0]
     expect(firstResult.attributeStatus).toBe(GetVariableStatusEnumType.UnknownVariable)
-    expect(firstResult.attributeType).toBeUndefined()
+    // Defaulted attributeType now Actual, not undefined
+    expect(firstResult.attributeType).toBe(AttributeEnumType.Actual)
     expect(firstResult.attributeValue).toBeUndefined()
     expect(firstResult.component.name).toBe(OCPP20ComponentName.ChargingStation)
     expect(firstResult.variable.name).toBe('InvalidVariable')
@@ -112,7 +113,8 @@ void describe('B06 - Get Variables', () => {
     // Check second variable (should be UnknownComponent)
     const secondResult = response.getVariableResult[1]
     expect(secondResult.attributeStatus).toBe(GetVariableStatusEnumType.UnknownComponent)
-    expect(secondResult.attributeType).toBeUndefined()
+    // Defaulted attributeType now Actual, not undefined
+    expect(secondResult.attributeType).toBe(AttributeEnumType.Actual)
     expect(secondResult.attributeValue).toBeUndefined()
     expect(secondResult.component.name).toBe('InvalidComponent')
     expect(secondResult.variable.name).toBe(OCPP20OptionalVariableName.HeartbeatInterval)
@@ -125,7 +127,7 @@ void describe('B06 - Get Variables', () => {
       getVariableData: [
         {
           attributeType: AttributeEnumType.Target, // Not supported for HeartbeatInterval
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ],
@@ -222,7 +224,7 @@ void describe('B06 - Get Variables', () => {
           variable: { name: OCPP20OptionalVariableName.WebSocketPingInterval },
         },
         {
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ],
@@ -245,7 +247,7 @@ void describe('B06 - Get Variables', () => {
           variable: { name: OCPP20OptionalVariableName.WebSocketPingInterval },
         },
         {
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ],
@@ -266,7 +268,7 @@ void describe('B06 - Get Variables', () => {
         // Unsupported attribute type (adds status info)
         {
           attributeType: AttributeEnumType.Target,
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
         // Unknown variable
@@ -327,7 +329,7 @@ void describe('B06 - Get Variables', () => {
       getVariableData: [
         {
           attributeType: AttributeEnumType.Actual,
-          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
+          component: { instance: 'Default', name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20RequiredVariableName.MessageTimeout },
         },
       ],
@@ -337,6 +339,7 @@ void describe('B06 - Get Variables', () => {
     const result = response.getVariableResult[0]
     expect(result.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
     expect(result.component.name).toBe(OCPP20ComponentName.OCPPCommCtrlr)
+    expect(result.component.instance).toBe('Default')
     expect(result.variable.name).toBe(OCPP20RequiredVariableName.MessageTimeout)
     expect(result.attributeValue).toBeDefined()
   })

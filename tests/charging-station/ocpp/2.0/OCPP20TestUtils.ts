@@ -22,6 +22,29 @@ export function resetReportingValueSize (chargingStation: ChargingStation) {
 }
 
 /**
+ * Reset configuration/storage value size limits to generous defaults.
+ * Applies both ConfigurationValueSize and ValueSize (DeviceDataCtrlr).
+ * @param chargingStation Charging station instance.
+ */
+export function resetValueSizeLimits (chargingStation: ChargingStation) {
+  upsertConfigurationKey(chargingStation, OCPP20RequiredVariableName.ConfigurationValueSize, '2500')
+  upsertConfigurationKey(chargingStation, OCPP20RequiredVariableName.ValueSize, '2500')
+}
+
+/**
+ * Set ConfigurationValueSize (used at set-time) to specified positive integer.
+ * @param chargingStation Charging station instance.
+ * @param size Effective configuration value size limit.
+ */
+export function setConfigurationValueSize (chargingStation: ChargingStation, size: number) {
+  upsertConfigurationKey(
+    chargingStation,
+    OCPP20RequiredVariableName.ConfigurationValueSize,
+    size.toString()
+  )
+}
+
+/**
  * Set a small ReportingValueSize for truncation tests.
  * @param chargingStation Charging station instance.
  * @param size Desired reporting value size limit (positive integer).
@@ -55,6 +78,15 @@ export function setStrictLimits (
     OCPP20RequiredVariableName.BytesPerMessage,
     bytesLimit.toString()
   )
+}
+
+/**
+ * Set ValueSize (applied before ReportingValueSize for get-time truncation and effective set-time limit computation).
+ * @param chargingStation Charging station instance.
+ * @param size Desired stored value size limit.
+ */
+export function setValueSize (chargingStation: ChargingStation, size: number) {
+  upsertConfigurationKey(chargingStation, OCPP20RequiredVariableName.ValueSize, size.toString())
 }
 
 /**

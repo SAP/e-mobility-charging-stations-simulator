@@ -461,8 +461,7 @@ export class Bootstrap extends EventEmitter {
     //   )}`
     // )
     // Skip worker message events processing
-    // eslint-disable-next-line @typescript-eslint/dot-notation
-    if (msg['uuid'] != null) {
+    if (msg.uuid != null) {
       return
     }
     const { data, event } = msg

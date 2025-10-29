@@ -51,11 +51,11 @@ export const once = <T extends (...args: any[]) => any>(fn: T): T => {
   } as T
 }
 
-export const has = (property: PropertyKey, object: null | object | undefined): boolean => {
-  if (object == null) {
+export const has = (property: PropertyKey, object: unknown): boolean => {
+  if (object == null || (typeof object !== 'object' && typeof object !== 'function')) {
     return false
   }
-  return Object.hasOwn(object, property)
+  return Object.hasOwn(object as Record<PropertyKey, unknown>, property)
 }
 
 const type = (value: unknown): string => {
@@ -100,36 +100,32 @@ const isObject = (value: unknown): value is object => {
   return type(value) === 'Object'
 }
 
-export const mergeDeepRight = <T extends Record<string, unknown>>(
-  target: T,
-  source: Partial<T>
-): T => {
-  const output = { ...target }
+export const mergeDeepRight = <A extends object, B extends object>(target: A, source: B): A & B => {
+  const output: Record<string, unknown> = { ...(target as Record<string, unknown>) }
 
   if (isObject(target) && isObject(source)) {
-    Object.keys(source).forEach(key => {
-      if (isObject(source[key])) {
-        if (!(key in target)) {
-          Object.assign(output, { [key]: source[key] })
-        } else {
-          output[key] = mergeDeepRight(target[key], source[key])
-        }
+    Object.keys(source as Record<string, unknown>).forEach(key => {
+      const sourceValue = (source as Record<string, unknown>)[key]
+      const targetValue = (target as Record<string, unknown>)[key]
+      if (isObject(sourceValue) && isObject(targetValue)) {
+        output[key] = mergeDeepRight(
+          targetValue as Record<string, unknown>,
+          sourceValue as Record<string, unknown>
+        )
       } else {
-        Object.assign(output, { [key]: source[key] })
+        output[key] = sourceValue
       }
     })
   }
 
-  return output
+  return output as A & B
 }
 
 export const generateUUID = (): `${string}-${string}-${string}-${string}-${string}` => {
   return randomUUID()
 }
 
-export const validateUUID = (
-  uuid: `${string}-${string}-${string}-${string}-${string}`
-): uuid is `${string}-${string}-${string}-${string}-${string}` => {
+export const validateUUID = (uuid: string): boolean => {
   return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(
     uuid
   )

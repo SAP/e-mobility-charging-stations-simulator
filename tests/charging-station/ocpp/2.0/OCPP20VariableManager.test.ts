@@ -24,8 +24,27 @@ import {
   type VariableType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { createChargingStationWithEvses } from '../../../ChargingStationFactory.js'
+import {
+  createChargingStation,
+  createChargingStationWithEvses,
+} from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_NAME } from './OCPP20TestConstants.js'
+import { resetValueSizeLimits, setConfigurationValueSize, setValueSize } from './OCPP20TestUtils.js'
+
+/**
+ * Build a syntactically valid ws://example URL of desired length.
+ * Keeps prefix constant then pads remainder with a filler character.
+ * @param targetLength Desired total length of the URL string.
+ * @param fillerChar Character used to pad after the base prefix.
+ * @returns Valid WebSocket URL string of exact targetLength.
+ */
+function buildWsExampleUrl (targetLength: number, fillerChar = 'a'): string {
+  const base = 'ws://example/'
+  if (targetLength <= base.length) {
+    throw new Error('targetLength too small')
+  }
+  return base + fillerChar.repeat(targetLength - base.length)
+}
 
 await describe('OCPP20VariableManager test suite', async () => {
   // Create mock ChargingStation with EVSEs for OCPP 2.0 testing
@@ -46,16 +65,16 @@ await describe('OCPP20VariableManager test suite', async () => {
   await describe('getVariables method tests', async () => {
     const manager = OCPP20VariableManager.getInstance()
 
-    await it('Should handle valid ChargingStation component requests', () => {
+    await it('Should handle valid OCPPCommCtrlr and TxCtrlr component requests', () => {
       const request: OCPP20GetVariableDataType[] = [
         {
           attributeType: AttributeEnumType.Actual,
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
         {
           attributeType: AttributeEnumType.Actual,
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.TxCtrlr },
           variable: { name: OCPP20RequiredVariableName.EVConnectionTimeOut },
         },
       ]
@@ -70,14 +89,14 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(result[0].attributeValue).toBe(
         millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL).toString()
       )
-      expect(result[0].component.name).toBe(OCPP20ComponentName.ChargingStation)
+      expect(result[0].component.name).toBe(OCPP20ComponentName.OCPPCommCtrlr)
       expect(result[0].variable.name).toBe(OCPP20OptionalVariableName.HeartbeatInterval)
       expect(result[0].attributeStatusInfo).toBeUndefined()
       // Second variable: EVConnectionTimeOut
       expect(result[1].attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
       expect(result[1].attributeType).toBe(AttributeEnumType.Actual)
       expect(result[1].attributeValue).toBe(Constants.DEFAULT_EV_CONNECTION_TIMEOUT.toString())
-      expect(result[1].component.name).toBe(OCPP20ComponentName.ChargingStation)
+      expect(result[1].component.name).toBe(OCPP20ComponentName.TxCtrlr)
       expect(result[1].variable.name).toBe(OCPP20RequiredVariableName.EVConnectionTimeOut)
       expect(result[1].attributeStatusInfo).toBeUndefined()
     })
@@ -145,48 +164,22 @@ await describe('OCPP20VariableManager test suite', async () => {
 
       expect(Array.isArray(result)).toBe(true)
       expect(result).toHaveLength(1)
+      // New behavior: invalid component rejected before variable support check
       expect(result[0].attributeStatus).toBe(GetVariableStatusEnumType.UnknownComponent)
-      expect(result[0].attributeType).toBeUndefined()
+      expect(result[0].attributeType).toBe(AttributeEnumType.Actual)
       expect(result[0].attributeValue).toBeUndefined()
       expect(result[0].component.name).toBe('InvalidComponent')
       expect(result[0].variable.name).toBe('SomeVariable')
       expect(result[0].attributeStatusInfo).toBeDefined()
       expect(result[0].attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.NotFound)
-      expect(result[0].attributeStatusInfo?.additionalInfo).toContain(
-        'Component InvalidComponent is not supported'
-      )
-    })
-
-    await it('Should handle invalid variable gracefully', () => {
-      const request: OCPP20GetVariableDataType[] = [
-        {
-          component: { name: OCPP20ComponentName.ChargingStation },
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-          variable: { name: 'InvalidVariable' as any },
-        },
-      ]
-
-      const result = manager.getVariables(mockChargingStation, request)
-
-      expect(Array.isArray(result)).toBe(true)
-      expect(result).toHaveLength(1)
-      expect(result[0].attributeStatus).toBe(GetVariableStatusEnumType.UnknownVariable)
-      expect(result[0].attributeType).toBeUndefined()
-      expect(result[0].attributeValue).toBeUndefined()
-      expect(result[0].component.name).toBe(OCPP20ComponentName.ChargingStation)
-      expect(result[0].variable.name).toBe('InvalidVariable')
-      expect(result[0].attributeStatusInfo).toBeDefined()
-      expect(result[0].attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.NotFound)
-      expect(result[0].attributeStatusInfo?.additionalInfo).toContain(
-        'Variable InvalidVariable is not supported'
-      )
+      expect(result[0].attributeStatusInfo?.additionalInfo).toContain('Component InvalidComponent')
     })
 
     await it('Should handle unsupported attribute type gracefully', () => {
       const request: OCPP20GetVariableDataType[] = [
         {
           attributeType: AttributeEnumType.Target, // Not supported for this variable
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ]
@@ -198,7 +191,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(result[0].attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
       expect(result[0].attributeType).toBe(AttributeEnumType.Target)
       expect(result[0].attributeValue).toBeUndefined()
-      expect(result[0].component.name).toBe(OCPP20ComponentName.ChargingStation)
+      expect(result[0].component.name).toBe(OCPP20ComponentName.OCPPCommCtrlr)
       expect(result[0].variable.name).toBe(OCPP20OptionalVariableName.HeartbeatInterval)
       expect(result[0].attributeStatusInfo).toBeDefined()
       expect(result[0].attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
@@ -237,7 +230,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(Array.isArray(result)).toBe(true)
       expect(result).toHaveLength(1)
       expect(result[0].attributeStatus).toBe(GetVariableStatusEnumType.UnknownComponent)
-      expect(result[0].attributeType).toBeUndefined()
+      expect(result[0].attributeType).toBe(AttributeEnumType.Actual)
       expect(result[0].attributeValue).toBeUndefined()
       expect(result[0].component.name).toBe(OCPP20ComponentName.Connector)
       expect(result[0].component.instance).toBe('999')
@@ -252,7 +245,7 @@ await describe('OCPP20VariableManager test suite', async () => {
     await it('Should handle multiple variables in single request', () => {
       const request: OCPP20GetVariableDataType[] = [
         {
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
         {
@@ -261,7 +254,7 @@ await describe('OCPP20VariableManager test suite', async () => {
         },
         {
           attributeType: AttributeEnumType.Actual,
-          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
+          component: { instance: 'Default', name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20RequiredVariableName.MessageTimeout },
         },
       ]
@@ -272,16 +265,16 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(result).toHaveLength(3)
       // First variable: HeartbeatInterval
       expect(result[0].attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(result[0].attributeType).toBeUndefined()
+      expect(result[0].attributeType).toBe(AttributeEnumType.Actual)
       expect(result[0].attributeValue).toBe(
         millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL).toString()
       )
-      expect(result[0].component.name).toBe(OCPP20ComponentName.ChargingStation)
+      expect(result[0].component.name).toBe(OCPP20ComponentName.OCPPCommCtrlr)
       expect(result[0].variable.name).toBe(OCPP20OptionalVariableName.HeartbeatInterval)
       expect(result[0].attributeStatusInfo).toBeUndefined()
       // Second variable: WebSocketPingInterval
       expect(result[1].attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(result[1].attributeType).toBeUndefined()
+      expect(result[1].attributeType).toBe(AttributeEnumType.Actual)
       expect(result[1].attributeValue).toBe(Constants.DEFAULT_WEBSOCKET_PING_INTERVAL.toString())
       expect(result[1].component.name).toBe(OCPP20ComponentName.ChargingStation)
       expect(result[1].variable.name).toBe(OCPP20OptionalVariableName.WebSocketPingInterval)
@@ -291,6 +284,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(result[2].attributeType).toBe(AttributeEnumType.Actual)
       expect(result[2].attributeValue).toBe(mockChargingStation.getConnectionTimeout().toString())
       expect(result[2].component.name).toBe(OCPP20ComponentName.OCPPCommCtrlr)
+      expect(result[2].component.instance).toBe('Default')
       expect(result[2].variable.name).toBe(OCPP20RequiredVariableName.MessageTimeout)
       expect(result[2].attributeStatusInfo).toBeUndefined()
     })
@@ -311,7 +305,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(Array.isArray(result)).toBe(true)
       expect(result).toHaveLength(1)
       expect(result[0].attributeStatus).toBe(GetVariableStatusEnumType.UnknownComponent)
-      expect(result[0].attributeType).toBeUndefined()
+      expect(result[0].attributeType).toBe(AttributeEnumType.Actual)
       expect(result[0].attributeValue).toBeUndefined()
       expect(result[0].component.name).toBe(OCPP20ComponentName.EVSE)
       expect(result[0].component.instance).toBe('1')
@@ -324,10 +318,10 @@ await describe('OCPP20VariableManager test suite', async () => {
   await describe('Component validation tests', async () => {
     const manager = OCPP20VariableManager.getInstance()
 
-    await it('Should validate ChargingStation component as always valid', () => {
+    await it('Should validate OCPPCommCtrlr component as always valid', () => {
       // NOTE: Connector components currently unsupported in isComponentValid. Submit OpenSpec proposal before changing behavior.
       // Future OCPP 2.0 per-connector variable support would require updating related tests.
-      const component: ComponentType = { name: OCPP20ComponentName.ChargingStation }
+      const component: ComponentType = { name: OCPP20ComponentName.OCPPCommCtrlr }
 
       // Access private method through any casting for testing
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
@@ -358,7 +352,7 @@ await describe('OCPP20VariableManager test suite', async () => {
     const manager = OCPP20VariableManager.getInstance()
 
     await it('Should support standard HeartbeatInterval variable', () => {
-      const component: ComponentType = { name: OCPP20ComponentName.ChargingStation }
+      const component: ComponentType = { name: OCPP20ComponentName.OCPPCommCtrlr }
       const variable: VariableType = { name: OCPP20OptionalVariableName.HeartbeatInterval }
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
@@ -376,7 +370,7 @@ await describe('OCPP20VariableManager test suite', async () => {
     })
 
     await it('Should reject unknown variables', () => {
-      const component: ComponentType = { name: OCPP20ComponentName.ChargingStation }
+      const component: ComponentType = { name: OCPP20ComponentName.OCPPCommCtrlr }
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
       const variable: VariableType = { name: 'UnknownVariable' as any }
 
@@ -389,7 +383,7 @@ await describe('OCPP20VariableManager test suite', async () => {
   await describe('setVariables method tests', async () => {
     const manager = OCPP20VariableManager.getInstance()
 
-    await it('Should accept setting writable ChargingStation variables (Actual default)', () => {
+    await it('Should accept setting writable variables (Actual default)', () => {
       const request: OCPP20SetVariableDataType[] = [
         {
           attributeValue: (Constants.DEFAULT_WEBSOCKET_PING_INTERVAL + 1).toString(),
@@ -401,7 +395,7 @@ await describe('OCPP20VariableManager test suite', async () => {
           attributeValue: (
             millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL) + 1
           ).toString(),
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ]
@@ -437,7 +431,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       const request: OCPP20SetVariableDataType[] = [
         {
           attributeValue: '10',
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: 'UnknownVariable' as unknown as VariableType['name'] },
         },
       ]
@@ -454,7 +448,7 @@ await describe('OCPP20VariableManager test suite', async () => {
         {
           attributeType: AttributeEnumType.Target,
           attributeValue: '30',
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ]
@@ -493,7 +487,7 @@ await describe('OCPP20VariableManager test suite', async () => {
         },
         {
           attributeValue: '10',
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: 'InvalidVariable' as unknown as VariableType['name'] },
         },
         {
@@ -571,7 +565,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(res.attributeStatusInfo?.additionalInfo).toContain('Unsupported URL scheme')
     })
 
-    await it('Should enforce ConnectionUrl write-only on get', () => {
+    await it('Should allow ConnectionUrl retrieval after set', () => {
       manager.setVariables(mockChargingStation, [
         {
           attributeValue: 'wss://example.com/ocpp',
@@ -587,7 +581,9 @@ await describe('OCPP20VariableManager test suite', async () => {
         },
       ]
       const getResult = manager.getVariables(mockChargingStation, getData)[0]
-      expect(getResult.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.WriteOnly)
+      expect(getResult.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      expect(getResult.attributeValue).toBe('wss://example.com/ocpp')
+      expect(getResult.attributeStatusInfo).toBeUndefined()
     })
 
     await it('Should revert non-persistent TxUpdatedInterval after simulated restart', () => {
@@ -630,7 +626,9 @@ await describe('OCPP20VariableManager test suite', async () => {
           variable: { name: OCPP20VendorVariableName.ConnectionUrl },
         },
       ])[0]
-      expect(getResult.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.WriteOnly)
+      expect(getResult.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      expect(getResult.attributeValue).toBe('https://central.example.com/ocpp')
+      expect(getResult.attributeStatusInfo).toBeUndefined()
     })
 
     await it('Should reject Target attribute for WebSocketPingInterval', () => {
@@ -654,7 +652,7 @@ await describe('OCPP20VariableManager test suite', async () => {
           attributeValue: (
             millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL) + 10
           ).toString(),
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ]
@@ -667,21 +665,21 @@ await describe('OCPP20VariableManager test suite', async () => {
       const zeroRes = manager.setVariables(mockChargingStation, [
         {
           attributeValue: '0',
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ])[0]
       const negRes = manager.setVariables(mockChargingStation, [
         {
           attributeValue: '-1',
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ])[0]
       const nonIntRes = manager.setVariables(mockChargingStation, [
         {
           attributeValue: '10.5',
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ])[0]
@@ -739,7 +737,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       const okRes = manager.setVariables(mockChargingStation, [
         {
           attributeValue: (Constants.DEFAULT_EV_CONNECTION_TIMEOUT + 5).toString(),
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.TxCtrlr },
           variable: { name: OCPP20RequiredVariableName.EVConnectionTimeOut },
         },
       ])[0]
@@ -748,21 +746,21 @@ await describe('OCPP20VariableManager test suite', async () => {
       const zeroRes = manager.setVariables(mockChargingStation, [
         {
           attributeValue: '0',
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.TxCtrlr },
           variable: { name: OCPP20RequiredVariableName.EVConnectionTimeOut },
         },
       ])[0]
       const negRes = manager.setVariables(mockChargingStation, [
         {
           attributeValue: '-10',
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.TxCtrlr },
           variable: { name: OCPP20RequiredVariableName.EVConnectionTimeOut },
         },
       ])[0]
       const nonIntRes = manager.setVariables(mockChargingStation, [
         {
           attributeValue: '15.2',
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.TxCtrlr },
           variable: { name: OCPP20RequiredVariableName.EVConnectionTimeOut },
         },
       ])[0]
@@ -778,7 +776,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       const okRes = manager.setVariables(mockChargingStation, [
         {
           attributeValue: (mockChargingStation.getConnectionTimeout() + 5).toString(),
-          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
+          component: { instance: 'Default', name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20RequiredVariableName.MessageTimeout },
         },
       ])[0]
@@ -787,21 +785,21 @@ await describe('OCPP20VariableManager test suite', async () => {
       const zeroRes = manager.setVariables(mockChargingStation, [
         {
           attributeValue: '0',
-          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
+          component: { instance: 'Default', name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20RequiredVariableName.MessageTimeout },
         },
       ])[0]
       const negRes = manager.setVariables(mockChargingStation, [
         {
           attributeValue: '-25',
-          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
+          component: { instance: 'Default', name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20RequiredVariableName.MessageTimeout },
         },
       ])[0]
       const nonIntRes = manager.setVariables(mockChargingStation, [
         {
           attributeValue: '30.9',
-          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
+          component: { instance: 'Default', name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20RequiredVariableName.MessageTimeout },
         },
       ])[0]
@@ -823,7 +821,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       const first = manager.setVariables(mockChargingStation, [
         {
           attributeValue: originalValue ?? '30',
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ])[0]
@@ -831,7 +829,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       const changed = manager.setVariables(mockChargingStation, [
         {
           attributeValue: (parseInt(originalValue ?? '30', 10) + 5).toString(),
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ])[0]
@@ -844,7 +842,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       const reverted = manager.setVariables(mockChargingStation, [
         {
           attributeValue: originalValue ?? '30',
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ])[0]
@@ -869,7 +867,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(before).toBeUndefined()
       const res = manager.getVariables(mockChargingStation, [
         {
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.TxCtrlr },
           variable: { name: OCPP20RequiredVariableName.EVConnectionTimeOut },
         },
       ])[0]
@@ -909,30 +907,13 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(afterReset.attributeValue).toBe('30')
     })
 
-    await it('Should reject get on write-only variable with Rejected status and write-only info', () => {
-      manager.setVariables(mockChargingStation, [
-        {
-          attributeValue: 'wss://central.example.com/ocpp',
-          component: { name: OCPP20ComponentName.ChargingStation },
-          variable: { name: OCPP20VendorVariableName.ConnectionUrl },
-        },
-      ])
-      const getRes = manager.getVariables(mockChargingStation, [
-        {
-          component: { name: OCPP20ComponentName.ChargingStation },
-          variable: { name: OCPP20VendorVariableName.ConnectionUrl },
-        },
-      ])[0]
-      expect(getRes.attributeStatus).toBe(GetVariableStatusEnumType.Rejected)
-      expect(getRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.WriteOnly)
-      expect(getRes.attributeStatusInfo?.additionalInfo).toContain('write-only')
-    })
+    // Removed outdated write-only ConnectionUrl get rejection test: variable now retrievable as Actual attribute
 
     await it('Should reject HeartbeatInterval with leading whitespace', () => {
       const res = manager.setVariables(mockChargingStation, [
         {
           attributeValue: ' 60',
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ])[0]
@@ -947,7 +928,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       const res = manager.setVariables(mockChargingStation, [
         {
           attributeValue: '60 ',
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ])[0]
@@ -962,7 +943,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       const res = manager.setVariables(mockChargingStation, [
         {
           attributeValue: '+10',
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ])[0]
@@ -977,7 +958,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       const res = manager.setVariables(mockChargingStation, [
         {
           attributeValue: '007',
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ])[0]
@@ -989,7 +970,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       const res = manager.setVariables(mockChargingStation, [
         {
           attributeValue: '',
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ])[0]
@@ -1004,7 +985,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       const res = manager.setVariables(mockChargingStation, [
         {
           attributeValue: '6 0',
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ])[0]
@@ -1046,13 +1027,130 @@ await describe('OCPP20VariableManager test suite', async () => {
       const res = manager.setVariables(mockChargingStation, [
         {
           attributeValue: '1'.repeat(11),
-          component: { name: OCPP20ComponentName.ChargingStation },
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ])[0]
       expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
       expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
       expect(res.attributeStatusInfo?.additionalInfo).toContain('exceeds maximum length (10)')
+    })
+
+    // Effective value size limit tests combining ConfigurationValueSize and ValueSize
+    await it('Should enforce ConfigurationValueSize when ValueSize unset', () => {
+      resetValueSizeLimits(mockChargingStation)
+      setConfigurationValueSize(mockChargingStation, 50)
+      // remove ValueSize to simulate unset
+      deleteConfigurationKey(
+        mockChargingStation,
+        OCPP20RequiredVariableName.ValueSize as unknown as VariableType['name'],
+        { save: false }
+      )
+      const okRes = manager.setVariables(mockChargingStation, [
+        {
+          attributeValue: buildWsExampleUrl(50, 'x'),
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+        },
+      ])[0]
+      expect(okRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      const tooLongRes = manager.setVariables(mockChargingStation, [
+        {
+          attributeValue: buildWsExampleUrl(51, 'x'),
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+        },
+      ])[0]
+      expect(tooLongRes.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(tooLongRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
+    })
+
+    await it('Should enforce ValueSize when ConfigurationValueSize unset', () => {
+      resetValueSizeLimits(mockChargingStation)
+      setValueSize(mockChargingStation, 40)
+      deleteConfigurationKey(
+        mockChargingStation,
+        OCPP20RequiredVariableName.ConfigurationValueSize as unknown as VariableType['name'],
+        { save: false }
+      )
+      const okRes = manager.setVariables(mockChargingStation, [
+        {
+          attributeValue: buildWsExampleUrl(40, 'y'),
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+        },
+      ])[0]
+      expect(okRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      const tooLongRes = manager.setVariables(mockChargingStation, [
+        {
+          attributeValue: buildWsExampleUrl(41, 'y'),
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+        },
+      ])[0]
+      expect(tooLongRes.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(tooLongRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
+    })
+
+    await it('Should use smaller of ConfigurationValueSize and ValueSize (ValueSize smaller)', () => {
+      resetValueSizeLimits(mockChargingStation)
+      setConfigurationValueSize(mockChargingStation, 60)
+      setValueSize(mockChargingStation, 55)
+      const okRes = manager.setVariables(mockChargingStation, [
+        {
+          attributeValue: buildWsExampleUrl(55, 'z'),
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+        },
+      ])[0]
+      expect(okRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      const tooLongRes = manager.setVariables(mockChargingStation, [
+        {
+          attributeValue: buildWsExampleUrl(56, 'z'),
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+        },
+      ])[0]
+      expect(tooLongRes.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(tooLongRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
+    })
+
+    await it('Should use smaller of ConfigurationValueSize and ValueSize (ConfigurationValueSize smaller)', () => {
+      resetValueSizeLimits(mockChargingStation)
+      setConfigurationValueSize(mockChargingStation, 30)
+      setValueSize(mockChargingStation, 100)
+      const okRes = manager.setVariables(mockChargingStation, [
+        {
+          attributeValue: buildWsExampleUrl(30, 'w'),
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+        },
+      ])[0]
+      expect(okRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      const tooLongRes = manager.setVariables(mockChargingStation, [
+        {
+          attributeValue: buildWsExampleUrl(31, 'w'),
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+        },
+      ])[0]
+      expect(tooLongRes.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(tooLongRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
+    })
+
+    await it('Should fallback to default limit when both invalid/non-positive', () => {
+      resetValueSizeLimits(mockChargingStation)
+      // set invalid values
+      setConfigurationValueSize(mockChargingStation, 0)
+      setValueSize(mockChargingStation, -5)
+      const okRes = manager.setVariables(mockChargingStation, [
+        {
+          attributeValue: buildWsExampleUrl(300, 'v'), // below default 2500
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+        },
+      ])[0]
+      expect(okRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
     })
   })
 
@@ -1153,6 +1251,352 @@ await describe('OCPP20VariableManager test suite', async () => {
           }
         }
       }
+    })
+  })
+
+  await describe('MinSet/MaxSet validation tests', async () => {
+    const manager = OCPP20VariableManager.getInstance()
+    const mmChargingStation = createChargingStation({
+      baseName: 'MMStation',
+      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+    })
+
+    await it('Accepts setting MinSet then MaxSet for HeartbeatInterval', () => {
+      const component = { name: OCPP20ComponentName.OCPPCommCtrlr }
+      const variable = { name: OCPP20OptionalVariableName.HeartbeatInterval }
+      const minRes = manager.setVariables(mmChargingStation, [
+        { attributeType: AttributeEnumType.MinSet, attributeValue: '10', component, variable },
+      ])[0]
+      expect(minRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      const maxRes = manager.setVariables(mmChargingStation, [
+        { attributeType: AttributeEnumType.MaxSet, attributeValue: '100', component, variable },
+      ])[0]
+      expect(maxRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+    })
+
+    await it('Retrieves MinSet and MaxSet for HeartbeatInterval after set', () => {
+      const component = { name: OCPP20ComponentName.OCPPCommCtrlr }
+      const variable = { name: OCPP20OptionalVariableName.HeartbeatInterval }
+      const getMin = manager.getVariables(mmChargingStation, [
+        { attributeType: AttributeEnumType.MinSet, component, variable },
+      ])[0]
+      expect(getMin.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      expect(getMin.attributeValue).toBe('10')
+      const getMax = manager.getVariables(mmChargingStation, [
+        { attributeType: AttributeEnumType.MaxSet, component, variable },
+      ])[0]
+      expect(getMax.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      expect(getMax.attributeValue).toBe('100')
+    })
+
+    await it('Rejects non-integer MaxSet for MessageAttemptInterval', () => {
+      const component = { instance: 'TransactionEvent', name: OCPP20ComponentName.OCPPCommCtrlr }
+      const variable = { name: OCPP20RequiredVariableName.MessageAttemptInterval }
+      const res = manager.setVariables(mmChargingStation, [
+        { attributeType: AttributeEnumType.MaxSet, attributeValue: '10.5', component, variable },
+      ])[0]
+      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
+    })
+
+    await it('Rejects MinSet higher than existing MaxSet', () => {
+      const component = { name: OCPP20ComponentName.ChargingStation }
+      const variable = { name: OCPP20OptionalVariableName.WebSocketPingInterval }
+      manager.setVariables(mmChargingStation, [
+        { attributeType: AttributeEnumType.MaxSet, attributeValue: '50', component, variable },
+      ])
+      const badMin = manager.setVariables(mmChargingStation, [
+        { attributeType: AttributeEnumType.MinSet, attributeValue: '51', component, variable },
+      ])[0]
+      expect(badMin.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(badMin.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
+    })
+
+    await it('Rejects MaxSet lower than existing MinSet', () => {
+      const component = { name: OCPP20ComponentName.TxCtrlr }
+      const variable = { name: OCPP20RequiredVariableName.EVConnectionTimeOut }
+      manager.setVariables(mmChargingStation, [
+        { attributeType: AttributeEnumType.MinSet, attributeValue: '30', component, variable },
+      ])
+      const badMax = manager.setVariables(mmChargingStation, [
+        { attributeType: AttributeEnumType.MaxSet, attributeValue: '29', component, variable },
+      ])[0]
+      expect(badMax.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(badMax.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
+    })
+
+    await it('Rejects non-integer MinSet for MessageAttemptInterval', () => {
+      const component = { instance: 'TransactionEvent', name: OCPP20ComponentName.OCPPCommCtrlr }
+      const variable = { name: OCPP20RequiredVariableName.MessageAttemptInterval }
+      const res = manager.setVariables(mmChargingStation, [
+        { attributeType: AttributeEnumType.MinSet, attributeValue: '5.5', component, variable },
+      ])[0]
+      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
+    })
+
+    await it('Rejects MinSet below metadata minimum (MessageAttempts)', () => {
+      const component = { instance: 'TransactionEvent', name: OCPP20ComponentName.OCPPCommCtrlr }
+      const variable = { name: OCPP20RequiredVariableName.MessageAttempts }
+      const res = manager.setVariables(mmChargingStation, [
+        { attributeType: AttributeEnumType.MinSet, attributeValue: '0', component, variable },
+      ])[0]
+      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValueTooLow)
+    })
+
+    await it('Rejects MaxSet above metadata maximum (MessageAttempts)', () => {
+      const component = { instance: 'TransactionEvent', name: OCPP20ComponentName.OCPPCommCtrlr }
+      const variable = { name: OCPP20RequiredVariableName.MessageAttempts }
+      const res = manager.setVariables(mmChargingStation, [
+        { attributeType: AttributeEnumType.MaxSet, attributeValue: '999', component, variable },
+      ])[0]
+      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValueTooHigh)
+    })
+
+    await it('Enforces MinSet/MaxSet bounds for MessageTimeout Actual', () => {
+      const component = { instance: 'Default', name: OCPP20ComponentName.OCPPCommCtrlr }
+      const variable = { name: OCPP20RequiredVariableName.MessageTimeout }
+      manager.setVariables(mmChargingStation, [
+        { attributeType: AttributeEnumType.MinSet, attributeValue: '10', component, variable },
+      ])
+      manager.setVariables(mmChargingStation, [
+        { attributeType: AttributeEnumType.MaxSet, attributeValue: '20', component, variable },
+      ])
+      const below = manager.setVariables(mmChargingStation, [
+        { attributeType: AttributeEnumType.Actual, attributeValue: '9', component, variable },
+      ])[0]
+      expect(below.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(below.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValueTooLow)
+      const above = manager.setVariables(mmChargingStation, [
+        { attributeType: AttributeEnumType.Actual, attributeValue: '21', component, variable },
+      ])[0]
+      expect(above.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(above.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValueTooHigh)
+      const within = manager.setVariables(mmChargingStation, [
+        { attributeType: AttributeEnumType.Actual, attributeValue: '15', component, variable },
+      ])[0]
+      expect(within.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+    })
+
+    await it('Rejects MinSet/MaxSet for non-integer data type ConnectionUrl', () => {
+      const component = { name: OCPP20ComponentName.ChargingStation }
+      const variable = { name: OCPP20VendorVariableName.ConnectionUrl }
+      const minRes = manager.setVariables(mmChargingStation, [
+        { attributeType: AttributeEnumType.MinSet, attributeValue: '1', component, variable },
+      ])[0]
+      expect(minRes.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(minRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
+    })
+
+    await it('Returns NotSupportedAttributeType when requesting MinSet for ConnectionUrl', () => {
+      const component = { name: OCPP20ComponentName.ChargingStation }
+      const variable = { name: OCPP20VendorVariableName.ConnectionUrl }
+      const getMin = manager.getVariables(mmChargingStation, [
+        { attributeType: AttributeEnumType.MinSet, component, variable },
+      ])[0]
+      expect(getMin.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
+      expect(getMin.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
+    })
+
+    await it('Rejects HeartbeatInterval Actual above metadata maximum', () => {
+      const component = { name: OCPP20ComponentName.OCPPCommCtrlr }
+      const variable = { name: OCPP20OptionalVariableName.HeartbeatInterval }
+      const tooHigh = manager.setVariables(mmChargingStation, [
+        { attributeType: AttributeEnumType.Actual, attributeValue: '999999', component, variable },
+      ])[0]
+      expect(tooHigh.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(tooHigh.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValueTooHigh)
+    })
+
+    await it('Rejects setting Actual for read-only BytesPerMessage', () => {
+      const component = { name: OCPP20ComponentName.DeviceDataCtrlr }
+      const variable = { name: OCPP20RequiredVariableName.BytesPerMessage }
+      const res = manager.setVariables(mmChargingStation, [
+        { attributeType: AttributeEnumType.Actual, attributeValue: '10000', component, variable },
+      ])[0]
+      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ReadOnly)
+    })
+
+    await it('Retrieves dynamic DateTime Actual value', () => {
+      const component = { name: OCPP20ComponentName.ClockCtrlr }
+      const variable = { name: OCPP20RequiredVariableName.DateTime }
+      const res = manager.getVariables(mmChargingStation, [
+        { attributeType: AttributeEnumType.Actual, component, variable },
+      ])[0]
+      expect(res.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      expect(res.attributeValue).toMatch(/\d{4}-\d{2}-\d{2}T/)
+    })
+  })
+
+  await describe('Additional persistence and instance-scoped variable tests', async () => {
+    const manager = OCPP20VariableManager.getInstance()
+
+    await it('Should auto-create persistent OrganizationName configuration key during self-check', () => {
+      deleteConfigurationKey(
+        mockChargingStation,
+        OCPP20RequiredVariableName.OrganizationName as unknown as VariableType['name'],
+        { save: false }
+      )
+      const before = getConfigurationKey(
+        mockChargingStation,
+        OCPP20RequiredVariableName.OrganizationName as unknown as VariableType['name']
+      )
+      expect(before).toBeUndefined()
+      const res = manager.getVariables(mockChargingStation, [
+        {
+          component: { name: OCPP20ComponentName.SecurityCtrlr },
+          variable: { name: OCPP20RequiredVariableName.OrganizationName },
+        },
+      ])[0]
+      expect(res.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      expect(res.attributeValue).toBe('ChangeMeOrg')
+      const after = getConfigurationKey(
+        mockChargingStation,
+        OCPP20RequiredVariableName.OrganizationName as unknown as VariableType['name']
+      )
+      expect(after).toBeDefined()
+      expect(after?.value).toBe('ChangeMeOrg')
+    })
+
+    await it('Should accept setting OrganizationName but not persist new value (current limitation)', () => {
+      const setRes = manager.setVariables(mockChargingStation, [
+        {
+          attributeValue: 'NewOrgName',
+          component: { name: OCPP20ComponentName.SecurityCtrlr },
+          variable: { name: OCPP20RequiredVariableName.OrganizationName },
+        },
+      ])[0]
+      // Current implementation only marks rebootRequired for ChargingStation component variables
+      expect(setRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      const getRes = manager.getVariables(mockChargingStation, [
+        {
+          component: { name: OCPP20ComponentName.SecurityCtrlr },
+          variable: { name: OCPP20RequiredVariableName.OrganizationName },
+        },
+      ])[0]
+      // Value remains the configuration key default due to lack of persistence path for non-ChargingStation components
+      expect(getRes.attributeValue).toBe('ChangeMeOrg')
+    })
+
+    await it('Should preserve OrganizationName value after resetRuntimeOverrides()', () => {
+      manager.resetRuntimeOverrides()
+      const res = manager.getVariables(mockChargingStation, [
+        {
+          component: { name: OCPP20ComponentName.SecurityCtrlr },
+          variable: { name: OCPP20RequiredVariableName.OrganizationName },
+        },
+      ])[0]
+      expect(res.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      expect(res.attributeValue).toBe('ChangeMeOrg')
+    })
+
+    await it('Should not create configuration key for instance-scoped MessageAttemptInterval and enforce MinSet/MaxSet overrides', () => {
+      // Ensure no configuration key exists before operations
+      const cfgBefore = getConfigurationKey(
+        mockChargingStation,
+        OCPP20RequiredVariableName.MessageAttemptInterval as unknown as VariableType['name']
+      )
+      expect(cfgBefore).toBeUndefined()
+      const initialGet = manager.getVariables(mockChargingStation, [
+        {
+          component: { instance: 'TransactionEvent', name: OCPP20ComponentName.OCPPCommCtrlr },
+          variable: { name: OCPP20RequiredVariableName.MessageAttemptInterval },
+        },
+      ])[0]
+      expect(initialGet.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      expect(initialGet.attributeValue).toBe('5')
+
+      // Set MinSet override to 6
+      const minSetRes = manager.setVariables(mockChargingStation, [
+        {
+          attributeType: AttributeEnumType.MinSet,
+          attributeValue: '6',
+          component: { instance: 'TransactionEvent', name: OCPP20ComponentName.OCPPCommCtrlr },
+          variable: { name: OCPP20RequiredVariableName.MessageAttemptInterval },
+        },
+      ])[0]
+      expect(minSetRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      const getMin = manager.getVariables(mockChargingStation, [
+        {
+          attributeType: AttributeEnumType.MinSet,
+          component: { instance: 'TransactionEvent', name: OCPP20ComponentName.OCPPCommCtrlr },
+          variable: { name: OCPP20RequiredVariableName.MessageAttemptInterval },
+        },
+      ])[0]
+      expect(getMin.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      expect(getMin.attributeValue).toBe('6')
+
+      // Set MaxSet override to 10
+      const maxSetRes = manager.setVariables(mockChargingStation, [
+        {
+          attributeType: AttributeEnumType.MaxSet,
+          attributeValue: '10',
+          component: { instance: 'TransactionEvent', name: OCPP20ComponentName.OCPPCommCtrlr },
+          variable: { name: OCPP20RequiredVariableName.MessageAttemptInterval },
+        },
+      ])[0]
+      expect(maxSetRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      const getMax = manager.getVariables(mockChargingStation, [
+        {
+          attributeType: AttributeEnumType.MaxSet,
+          component: { instance: 'TransactionEvent', name: OCPP20ComponentName.OCPPCommCtrlr },
+          variable: { name: OCPP20RequiredVariableName.MessageAttemptInterval },
+        },
+      ])[0]
+      expect(getMax.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      expect(getMax.attributeValue).toBe('10')
+
+      // Attempt Actual value below MinSet override
+      const belowMinRes = manager.setVariables(mockChargingStation, [
+        {
+          attributeValue: '5',
+          component: { instance: 'TransactionEvent', name: OCPP20ComponentName.OCPPCommCtrlr },
+          variable: { name: OCPP20RequiredVariableName.MessageAttemptInterval },
+        },
+      ])[0]
+      expect(belowMinRes.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(belowMinRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValueTooLow)
+
+      // Attempt Actual value above MaxSet override
+      const aboveMaxRes = manager.setVariables(mockChargingStation, [
+        {
+          attributeValue: '11',
+          component: { instance: 'TransactionEvent', name: OCPP20ComponentName.OCPPCommCtrlr },
+          variable: { name: OCPP20RequiredVariableName.MessageAttemptInterval },
+        },
+      ])[0]
+      expect(aboveMaxRes.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(aboveMaxRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValueTooHigh)
+
+      // Accept Actual value within overrides
+      const withinRes = manager.setVariables(mockChargingStation, [
+        {
+          attributeValue: '7',
+          component: { instance: 'TransactionEvent', name: OCPP20ComponentName.OCPPCommCtrlr },
+          variable: { name: OCPP20RequiredVariableName.MessageAttemptInterval },
+        },
+      ])[0]
+      expect(withinRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+
+      // Retrieval still returns default due to lack of persistence/storage path for non-ChargingStation components
+      const afterSetGet = manager.getVariables(mockChargingStation, [
+        {
+          component: { instance: 'TransactionEvent', name: OCPP20ComponentName.OCPPCommCtrlr },
+          variable: { name: OCPP20RequiredVariableName.MessageAttemptInterval },
+        },
+      ])[0]
+      expect(afterSetGet.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      expect(afterSetGet.attributeValue).toBe('5')
+
+      const cfgAfter = getConfigurationKey(
+        mockChargingStation,
+        OCPP20RequiredVariableName.MessageAttemptInterval as unknown as VariableType['name']
+      )
+      expect(cfgAfter).toBeUndefined()
     })
   })
 })

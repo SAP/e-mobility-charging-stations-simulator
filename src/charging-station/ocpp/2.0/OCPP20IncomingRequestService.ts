@@ -47,6 +47,7 @@ import { getConfigurationKey } from '../../ConfigurationKeyUtils.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 import { OCPP20VariableManager } from './OCPP20VariableManager.js'
+import { getVariableMetadata, VARIABLE_REGISTRY } from './OCPP20VariableRegistry.js'
 
 const moduleName = 'OCPP20IncomingRequestService'
 
@@ -161,6 +162,20 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     )
     this.validatePayload = this.validatePayload.bind(this)
+  }
+
+  public getBaseReportStatus (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20GetBaseReportRequest
+  ): OCPP20GetBaseReportResponse {
+    return this.handleRequestGetBaseReport(chargingStation, commandPayload)
+  }
+
+  public getReportData (
+    chargingStation: ChargingStation,
+    reportBase: ReportBaseEnumType
+  ): ReportDataType[] {
+    return this.buildReportData(chargingStation, reportBase)
   }
 
   public handleRequestGetVariables (
@@ -601,7 +616,100 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           }
         }
 
-        // 3. EVSE and connector information
+        // 3. Registered OCPP 2.0.1 variables (Actual + MinSet/MaxSet)
+        try {
+          const variableManager = OCPP20VariableManager.getInstance()
+          // Build getVariableData array from VARIABLE_REGISTRY metadata
+          const getVariableData: OCPP20GetVariablesRequest['getVariableData'] = []
+          for (const metaKey of Object.keys(VARIABLE_REGISTRY)) {
+            const meta = VARIABLE_REGISTRY[metaKey]
+            // Include instance-scoped metadata; the OCPP Variable type supports instance under variable
+            const variableDescriptor: { instance?: string; name: string } = { name: meta.variable }
+            if (meta.instance) {
+              variableDescriptor.instance = meta.instance
+            }
+            // Always request Actual first
+            getVariableData.push({
+              attributeType: AttributeEnumType.Actual,
+              component: { name: meta.component },
+              variable: variableDescriptor,
+            })
+            // Request MinSet/MaxSet only if supported by metadata
+            if (meta.supportedAttributes.includes(AttributeEnumType.MinSet)) {
+              getVariableData.push({
+                attributeType: AttributeEnumType.MinSet,
+                component: { name: meta.component },
+                variable: variableDescriptor,
+              })
+            }
+            if (meta.supportedAttributes.includes(AttributeEnumType.MaxSet)) {
+              getVariableData.push({
+                attributeType: AttributeEnumType.MaxSet,
+                component: { name: meta.component },
+                variable: variableDescriptor,
+              })
+            }
+          }
+          const getResults = variableManager.getVariables(chargingStation, getVariableData)
+          // Group results by component+variable preserving attribute ordering Actual, MinSet, MaxSet
+          const grouped = new Map<
+            string,
+            {
+              attributes: { type: string; value?: string }[]
+              component: ReportDataType['component']
+              dataType: DataEnumType
+              variable: ReportDataType['variable']
+            }
+          >()
+          for (const r of getResults) {
+            const key = `${r.component.name}::${r.variable.name}${r.variable.instance ? '::' + r.variable.instance : ''}`
+            const meta = getVariableMetadata(r.component.name, r.variable.name, r.variable.instance)
+            if (!meta) continue
+            if (!grouped.has(key)) {
+              grouped.set(key, {
+                attributes: [],
+                component: r.component,
+                dataType: meta.dataType,
+                variable: r.variable,
+              })
+            }
+            if (r.attributeStatus === GetVariableStatusEnumType.Accepted) {
+              const entry = grouped.get(key)
+              if (entry) {
+                entry.attributes.push({ type: r.attributeType as string, value: r.attributeValue })
+              }
+            }
+          }
+          // Normalize attribute ordering
+          for (const entry of grouped.values()) {
+            entry.attributes.sort((a, b) => {
+              const order = [
+                AttributeEnumType.Actual,
+                AttributeEnumType.MinSet,
+                AttributeEnumType.MaxSet,
+              ]
+              return (
+                order.indexOf(a.type as AttributeEnumType) -
+                order.indexOf(b.type as AttributeEnumType)
+              )
+            })
+            if (entry.attributes.length > 0) {
+              reportData.push({
+                component: entry.component,
+                variable: entry.variable,
+                variableAttribute: entry.attributes,
+                variableCharacteristics: { dataType: entry.dataType, supportsMonitoring: false },
+              })
+            }
+          }
+        } catch (error) {
+          logger.error(
+            `${chargingStation.logPrefix()} ${moduleName}.buildReportData: Error enriching FullInventory with registry variables:`,
+            error
+          )
+        }
+
+        // 4. EVSE and connector information
         if (chargingStation.evses.size > 0) {
           for (const [evseId, evse] of chargingStation.evses) {
             reportData.push({

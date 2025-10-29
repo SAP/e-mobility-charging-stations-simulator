@@ -23,7 +23,10 @@ export class WorkerFactory {
     if (!isMainThread) {
       throw new Error('Cannot get a worker implementation outside the main thread')
     }
-    workerOptions = mergeDeepRight<WorkerOptions>(DEFAULT_WORKER_OPTIONS, workerOptions ?? {})
+    workerOptions = mergeDeepRight<WorkerOptions, WorkerOptions>(
+      DEFAULT_WORKER_OPTIONS,
+      (workerOptions ?? {}) as WorkerOptions
+    )
     switch (workerProcessType) {
       case WorkerProcessType.dynamicPool:
         return new WorkerDynamicPool<D, R>(workerScript, workerOptions)

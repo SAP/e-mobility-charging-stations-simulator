@@ -2,6 +2,7 @@
 
 import { type Options as MariaDbOptions, MikroORM as MariaDbORM } from '@mikro-orm/mariadb'
 import { type Options as SqliteOptions, MikroORM as SqliteORM } from '@mikro-orm/sqlite'
+import { CircularBuffer } from 'mnemonist'
 
 import { type PerformanceRecord, type Statistics, StorageType } from '../../types/index.js'
 import { Constants } from '../../utils/index.js'
@@ -52,10 +53,21 @@ export class MikroOrmStorage extends Storage {
       this.setPerformanceStatistics(performanceStatistics)
       await this.orm?.em.upsert({
         ...performanceStatistics,
-        statisticsData: Array.from(performanceStatistics.statisticsData, ([name, value]) => ({
-          name,
-          ...value,
-        })),
+        statisticsData: Array.from(
+          performanceStatistics.statisticsData,
+          ([name, { measurementTimeSeries, ...rest }]) => ({
+            name,
+            ...rest,
+            ...(measurementTimeSeries != null && {
+              measurementTimeSeries:
+                measurementTimeSeries instanceof Array
+                  ? measurementTimeSeries
+                  : measurementTimeSeries instanceof CircularBuffer
+                    ? (measurementTimeSeries.toArray() as { timestamp: number; value: number }[])
+                    : undefined,
+            }),
+          })
+        ),
       } satisfies PerformanceRecord)
     } catch (error) {
       this.handleDBStorageError(
