@@ -16,6 +16,35 @@ import {
 } from '../../../types/index.js'
 import { Constants, convertToIntOrNaN } from '../../../utils/index.js'
 
+/**
+ * Metadata describing a variable (component-level configuration or runtime state).
+ *
+ * Field notes:
+ * - component: OCPP 2.0.1 Component name (registry key part)
+ * - variable: Variable name (registry key part)
+ * - instance: Optional instance qualifier (registry key part)
+ * - mutability: ReadOnly | ReadWrite | WriteOnly (affects Get/SetVariables behavior)
+ * - persistence: Persistent values survive restart; Volatile resolved dynamically or reset
+ * - dataType: OCPP DataEnumType classification (string, integer, decimal, boolean, dateTime, list types)
+ * - defaultValue: Used when no persistent value stored and no dynamicValueResolver provided
+ * - dynamicValueResolver: Function returning a fresh value each resolution (overrides defaultValue)
+ * - enumeration: Allowed discrete values for scalar types or list members (validated centrally)
+ * - maxLength: Character length constraint applied before dataType-specific parsing
+ * - min/max: Numeric bounds for integer/decimal
+ * - positive: Enforces > 0 (combined with allowZero)
+ * - allowZero: Permit zero when positive not set
+ * - characteristics: Subset of OCPP characteristics currently modelled (maxLimit/minLimit/supportsMonitoring)
+ * - supportedAttributes: Which OCPP attributes (Actual, Target, etc.) are supported
+ * - supportsTarget: Allows Target attribute writes where applicable
+ * - unit: Informational; not validated
+ * - postProcess: Final transform applied on successful validation before persistence
+ * - rebootRequired: Indicates changes require reboot (returned via SetVariablesResult)
+ * - vendorSpecific: True when variable is not defined by core specification
+ * - urlSchemes: (Deprecated usage) Optional list of allowed URL schemes including trailing colon, e.g. ['ws:', 'wss:'].
+ *               If present, scheme-restricted URL validation is enforced.
+ * - isUrl: When true (and urlSchemes absent) apply generic URL format validation only (any scheme allowed).
+ *          Introduced to relax overly restrictive scheme lists for vendor variables like ConnectionUrl.
+ */
 export interface VariableMetadata {
   allowZero?: boolean
   characteristics?: { maxLimit?: number; minLimit?: number; supportsMonitoring?: boolean }
@@ -26,6 +55,7 @@ export interface VariableMetadata {
   dynamicValueResolver?: (ctx: { chargingStation: ChargingStation }) => string
   enumeration?: string[]
   instance?: string
+  isUrl?: boolean
   max?: number
   maxLength?: number
   min?: number
@@ -37,20 +67,31 @@ export interface VariableMetadata {
   supportedAttributes: AttributeEnumType[]
   supportsTarget?: boolean
   unit?: string
+  urlSchemes?: string[]
   variable: string
   vendorSpecific?: boolean
 }
 
 /**
- * Build unique registry key from component and variable names.
- * @param component Component name (case-sensitive original form).
- * @param variable Variable name (case-sensitive original form).
- * @param instance Optional instance identifier appended to component name before separator.
- * @returns Composite key `${component}[.<instance>]::${variable}`.
+ * KEY SCHEMES
+ * 1. Primary registry key (internal map key): `${component}[.<instance>]::${variable}` (case sensitive)
+ *    - Built with buildRegistryKey().
+ * 2. Case-insensitive composite key (lookup convenience): `${component}[.<instance>].${variable}` all lower case
+ *    - Built with buildCaseInsensitiveCompositeKey().
+ * Rationale: Maintain original case for canonical metadata storage while offering tolerant lookups.
+ * @param component Component name.
+ * @param variable Variable name.
+ * @param instance Optional instance qualifier.
+ * @returns Primary registry key string.
  */
-function key (component: string, variable: string, instance?: string): string {
+function buildRegistryKey (component: string, variable: string, instance?: string): string {
   return `${component}${instance ? '.' + instance : ''}::${variable}`
 }
+
+// Hoisted regex patterns (avoid recreation per validation call)
+const DECIMAL_PATTERN = /^-?\d+(?:\.\d+)?$/
+const SIGNED_INTEGER_PATTERN = /^-?\d+$/
+const DECIMAL_ONLY_PATTERN = /^-?\d+\.\d+$/
 
 // Spec references policy:
 // - CSV (dm_components_vars.csv) is the canonical source for standard variables.
@@ -58,7 +99,10 @@ function key (component: string, variable: string, instance?: string): string {
 // - Avoid verbose line or row numbers; keep comments concise.
 export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   // AuthCtrlr variables
-  [key(OCPP20ComponentName.AuthCtrlr as string, OCPP20RequiredVariableName.AuthorizeRemoteStart)]: {
+  [buildRegistryKey(
+    OCPP20ComponentName.AuthCtrlr as string,
+    OCPP20RequiredVariableName.AuthorizeRemoteStart
+  )]: {
     component: OCPP20ComponentName.AuthCtrlr as string,
     dataType: DataEnumType.boolean,
     defaultValue: 'true',
@@ -68,18 +112,23 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.AuthorizeRemoteStart as string,
   },
-  [key(OCPP20ComponentName.AuthCtrlr as string, OCPP20RequiredVariableName.LocalAuthorizeOffline)]:
-    {
-      component: OCPP20ComponentName.AuthCtrlr as string,
-      dataType: DataEnumType.boolean,
-      defaultValue: 'true',
-      description: 'Start transaction offline for locally authorized identifiers.',
-      mutability: MutabilityEnumType.ReadWrite,
-      persistence: PersistenceEnumType.Persistent,
-      supportedAttributes: [AttributeEnumType.Actual],
-      variable: OCPP20RequiredVariableName.LocalAuthorizeOffline as string,
-    },
-  [key(OCPP20ComponentName.AuthCtrlr as string, OCPP20RequiredVariableName.LocalPreAuthorize)]: {
+  [buildRegistryKey(
+    OCPP20ComponentName.AuthCtrlr as string,
+    OCPP20RequiredVariableName.LocalAuthorizeOffline
+  )]: {
+    component: OCPP20ComponentName.AuthCtrlr as string,
+    dataType: DataEnumType.boolean,
+    defaultValue: 'true',
+    description: 'Start transaction offline for locally authorized identifiers.',
+    mutability: MutabilityEnumType.ReadWrite,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20RequiredVariableName.LocalAuthorizeOffline as string,
+  },
+  [buildRegistryKey(
+    OCPP20ComponentName.AuthCtrlr as string,
+    OCPP20RequiredVariableName.LocalPreAuthorize
+  )]: {
     component: OCPP20ComponentName.AuthCtrlr as string,
     dataType: DataEnumType.boolean,
     defaultValue: 'false',
@@ -90,7 +139,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     variable: OCPP20RequiredVariableName.LocalPreAuthorize as string,
   },
 
-  [key(OCPP20ComponentName.ChargingStation as string, 'Available')]: {
+  [buildRegistryKey(OCPP20ComponentName.ChargingStation as string, 'Available')]: {
     component: OCPP20ComponentName.ChargingStation as string,
     dataType: DataEnumType.boolean,
     defaultValue: 'true',
@@ -100,7 +149,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'Available',
   },
-  [key(OCPP20ComponentName.ChargingStation as string, 'SupplyPhases')]: {
+  [buildRegistryKey(OCPP20ComponentName.ChargingStation as string, 'SupplyPhases')]: {
     component: OCPP20ComponentName.ChargingStation as string,
     dataType: DataEnumType.integer,
     defaultValue: '3',
@@ -113,7 +162,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     variable: 'SupplyPhases',
   },
   // ChargingStation variables
-  [key(
+  [buildRegistryKey(
     OCPP20ComponentName.ChargingStation as string,
     OCPP20DeviceInfoVariableName.AvailabilityState
   )]: {
@@ -126,7 +175,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20DeviceInfoVariableName.AvailabilityState as string,
   },
-  [key(
+  [buildRegistryKey(
     OCPP20ComponentName.ChargingStation as string,
     OCPP20OptionalVariableName.WebSocketPingInterval
   )]: {
@@ -145,11 +194,15 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     unit: 'seconds',
     variable: OCPP20OptionalVariableName.WebSocketPingInterval as string,
   },
-  [key(OCPP20ComponentName.ChargingStation as string, OCPP20VendorVariableName.ConnectionUrl)]: {
+  [buildRegistryKey(
+    OCPP20ComponentName.ChargingStation as string,
+    OCPP20VendorVariableName.ConnectionUrl
+  )]: {
     component: OCPP20ComponentName.ChargingStation as string,
     dataType: DataEnumType.string,
     defaultValue: 'ws://localhost',
     description: 'Central system connection URL.',
+    isUrl: true,
     maxLength: 512,
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
@@ -159,17 +212,21 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   },
 
   // ClockCtrlr variables
-  [key(OCPP20ComponentName.ClockCtrlr as string, OCPP20RequiredVariableName.DateTime)]: {
-    component: OCPP20ComponentName.ClockCtrlr as string,
-    dataType: DataEnumType.dateTime,
-    description: 'Contains the current date and time (ClockCtrlr).',
-    dynamicValueResolver: () => new Date().toISOString(),
-    mutability: MutabilityEnumType.ReadOnly,
-    persistence: PersistenceEnumType.Volatile,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: OCPP20RequiredVariableName.DateTime as string,
-  },
-  [key(OCPP20ComponentName.ClockCtrlr as string, OCPP20RequiredVariableName.TimeSource)]: {
+  [buildRegistryKey(OCPP20ComponentName.ClockCtrlr as string, OCPP20RequiredVariableName.DateTime)]:
+    {
+      component: OCPP20ComponentName.ClockCtrlr as string,
+      dataType: DataEnumType.dateTime,
+      description: 'Contains the current date and time (ClockCtrlr).',
+      dynamicValueResolver: () => new Date().toISOString(),
+      mutability: MutabilityEnumType.ReadOnly,
+      persistence: PersistenceEnumType.Volatile,
+      supportedAttributes: [AttributeEnumType.Actual],
+      variable: OCPP20RequiredVariableName.DateTime as string,
+    },
+  [buildRegistryKey(
+    OCPP20ComponentName.ClockCtrlr as string,
+    OCPP20RequiredVariableName.TimeSource
+  )]: {
     component: OCPP20ComponentName.ClockCtrlr as string,
     dataType: DataEnumType.SequenceList,
     defaultValue: 'NTP,GPS,RTC',
@@ -182,21 +239,23 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   },
 
   // DeviceDataCtrlr variables
-  [key(OCPP20ComponentName.DeviceDataCtrlr as string, OCPP20RequiredVariableName.BytesPerMessage)]:
-    {
-      component: OCPP20ComponentName.DeviceDataCtrlr as string,
-      dataType: DataEnumType.integer,
-      defaultValue: '8192',
-      description: 'Maximum number of bytes in a message (base).',
-      max: 65535,
-      min: 1,
-      mutability: MutabilityEnumType.ReadOnly,
-      persistence: PersistenceEnumType.Persistent,
-      positive: true,
-      supportedAttributes: [AttributeEnumType.Actual],
-      variable: OCPP20RequiredVariableName.BytesPerMessage as string,
-    },
-  [key(
+  [buildRegistryKey(
+    OCPP20ComponentName.DeviceDataCtrlr as string,
+    OCPP20RequiredVariableName.BytesPerMessage
+  )]: {
+    component: OCPP20ComponentName.DeviceDataCtrlr as string,
+    dataType: DataEnumType.integer,
+    defaultValue: '8192',
+    description: 'Maximum number of bytes in a message.',
+    max: 65535,
+    min: 1,
+    mutability: MutabilityEnumType.ReadOnly,
+    persistence: PersistenceEnumType.Persistent,
+    positive: true,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20RequiredVariableName.BytesPerMessage as string,
+  },
+  [buildRegistryKey(
     OCPP20ComponentName.DeviceDataCtrlr as string,
     OCPP20RequiredVariableName.BytesPerMessage,
     'GetReport'
@@ -214,7 +273,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.BytesPerMessage as string,
   },
-  [key(
+  [buildRegistryKey(
     OCPP20ComponentName.DeviceDataCtrlr as string,
     OCPP20RequiredVariableName.BytesPerMessage,
     'GetVariables'
@@ -232,7 +291,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.BytesPerMessage as string,
   },
-  [key(
+  [buildRegistryKey(
     OCPP20ComponentName.DeviceDataCtrlr as string,
     OCPP20RequiredVariableName.BytesPerMessage,
     'SetVariables'
@@ -251,7 +310,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     variable: OCPP20RequiredVariableName.BytesPerMessage as string,
   },
   // Value size family: ValueSize (broadest), ConfigurationValueSize (affects setting), ReportingValueSize (affects reporting). Simulator sets same absolute cap; truncate occurs at reporting step.
-  [key(
+  [buildRegistryKey(
     OCPP20ComponentName.DeviceDataCtrlr as string,
     OCPP20RequiredVariableName.ConfigurationValueSize
   )]: {
@@ -269,7 +328,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     unit: 'chars',
     variable: OCPP20RequiredVariableName.ConfigurationValueSize as string,
   },
-  [key(
+  [buildRegistryKey(
     OCPP20ComponentName.DeviceDataCtrlr as string,
     OCPP20RequiredVariableName.ItemsPerMessage,
     'GetReport'
@@ -287,7 +346,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.ItemsPerMessage as string,
   },
-  [key(
+  [buildRegistryKey(
     OCPP20ComponentName.DeviceDataCtrlr as string,
     OCPP20RequiredVariableName.ItemsPerMessage,
     'GetVariables'
@@ -305,7 +364,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.ItemsPerMessage as string,
   },
-  [key(
+  [buildRegistryKey(
     OCPP20ComponentName.DeviceDataCtrlr as string,
     OCPP20RequiredVariableName.ItemsPerMessage,
     'SetVariables'
@@ -323,7 +382,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.ItemsPerMessage as string,
   },
-  [key(
+  [buildRegistryKey(
     OCPP20ComponentName.DeviceDataCtrlr as string,
     OCPP20RequiredVariableName.ReportingValueSize
   )]: {
@@ -341,7 +400,10 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     unit: 'chars',
     variable: OCPP20RequiredVariableName.ReportingValueSize as string,
   },
-  [key(OCPP20ComponentName.DeviceDataCtrlr as string, OCPP20RequiredVariableName.ValueSize)]: {
+  [buildRegistryKey(
+    OCPP20ComponentName.DeviceDataCtrlr as string,
+    OCPP20RequiredVariableName.ValueSize
+  )]: {
     component: OCPP20ComponentName.DeviceDataCtrlr as string,
     dataType: DataEnumType.integer,
     defaultValue: Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH.toString(),
@@ -358,23 +420,25 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   },
 
   // OCPPCommCtrlr variables
-  [key(OCPP20ComponentName.OCPPCommCtrlr as string, OCPP20OptionalVariableName.HeartbeatInterval)]:
-    {
-      component: OCPP20ComponentName.OCPPCommCtrlr as string,
-      dataType: DataEnumType.integer,
-      defaultValue: millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL).toString(),
-      description: 'Interval between Heartbeat messages.',
-      max: 86400,
-      maxLength: 10,
-      min: 1,
-      mutability: MutabilityEnumType.ReadWrite,
-      persistence: PersistenceEnumType.Persistent,
-      positive: true,
-      supportedAttributes: [AttributeEnumType.Actual],
-      unit: 'seconds',
-      variable: OCPP20OptionalVariableName.HeartbeatInterval as string,
-    },
-  [key(
+  [buildRegistryKey(
+    OCPP20ComponentName.OCPPCommCtrlr as string,
+    OCPP20OptionalVariableName.HeartbeatInterval
+  )]: {
+    component: OCPP20ComponentName.OCPPCommCtrlr as string,
+    dataType: DataEnumType.integer,
+    defaultValue: millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL).toString(),
+    description: 'Interval between Heartbeat messages.',
+    max: 86400,
+    maxLength: 10,
+    min: 1,
+    mutability: MutabilityEnumType.ReadWrite,
+    persistence: PersistenceEnumType.Persistent,
+    positive: true,
+    supportedAttributes: [AttributeEnumType.Actual],
+    unit: 'seconds',
+    variable: OCPP20OptionalVariableName.HeartbeatInterval as string,
+  },
+  [buildRegistryKey(
     OCPP20ComponentName.OCPPCommCtrlr as string,
     OCPP20RequiredVariableName.FileTransferProtocols
   )]: {
@@ -388,7 +452,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.FileTransferProtocols as string,
   },
-  [key(
+  [buildRegistryKey(
     OCPP20ComponentName.OCPPCommCtrlr as string,
     OCPP20RequiredVariableName.MessageAttemptInterval,
     'TransactionEvent'
@@ -407,7 +471,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     unit: 'seconds',
     variable: OCPP20RequiredVariableName.MessageAttemptInterval as string,
   },
-  [key(
+  [buildRegistryKey(
     OCPP20ComponentName.OCPPCommCtrlr as string,
     OCPP20RequiredVariableName.MessageAttempts,
     'TransactionEvent'
@@ -425,7 +489,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.MessageAttempts as string,
   },
-  [key(
+  [buildRegistryKey(
     OCPP20ComponentName.OCPPCommCtrlr as string,
     OCPP20RequiredVariableName.MessageTimeout,
     'Default'
@@ -444,7 +508,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     unit: 'seconds',
     variable: OCPP20RequiredVariableName.MessageTimeout as string,
   },
-  [key(
+  [buildRegistryKey(
     OCPP20ComponentName.OCPPCommCtrlr as string,
     OCPP20RequiredVariableName.NetworkConfigurationPriority
   )]: {
@@ -457,7 +521,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.NetworkConfigurationPriority as string,
   },
-  [key(
+  [buildRegistryKey(
     OCPP20ComponentName.OCPPCommCtrlr as string,
     OCPP20RequiredVariableName.NetworkProfileConnectionAttempts
   )]: {
@@ -469,11 +533,13 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     min: 1,
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
-    positive: true,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.NetworkProfileConnectionAttempts as string,
   },
-  [key(OCPP20ComponentName.OCPPCommCtrlr as string, OCPP20RequiredVariableName.OfflineThreshold)]: {
+  [buildRegistryKey(
+    OCPP20ComponentName.OCPPCommCtrlr as string,
+    OCPP20RequiredVariableName.OfflineThreshold
+  )]: {
     component: OCPP20ComponentName.OCPPCommCtrlr as string,
     dataType: DataEnumType.integer,
     defaultValue: '300',
@@ -487,7 +553,10 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     unit: 'seconds',
     variable: OCPP20RequiredVariableName.OfflineThreshold as string,
   },
-  [key(OCPP20ComponentName.OCPPCommCtrlr as string, OCPP20RequiredVariableName.ResetRetries)]: {
+  [buildRegistryKey(
+    OCPP20ComponentName.OCPPCommCtrlr as string,
+    OCPP20RequiredVariableName.ResetRetries
+  )]: {
     allowZero: true,
     component: OCPP20ComponentName.OCPPCommCtrlr as string,
     dataType: DataEnumType.integer,
@@ -500,7 +569,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.ResetRetries as string,
   },
-  [key(
+  [buildRegistryKey(
     OCPP20ComponentName.OCPPCommCtrlr as string,
     OCPP20RequiredVariableName.UnlockOnEVSideDisconnect
   )]: {
@@ -515,7 +584,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   },
 
   // SampledDataCtrlr variables (simulation measurands)
-  [key(OCPP20ComponentName.SampledDataCtrlr as string, 'Current.Import')]: {
+  [buildRegistryKey(OCPP20ComponentName.SampledDataCtrlr as string, 'Current.Import')]: {
     component: OCPP20ComponentName.SampledDataCtrlr as string,
     dataType: DataEnumType.decimal,
     description: 'Instantaneous import current (A).',
@@ -526,7 +595,10 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     unit: 'A',
     variable: 'Current.Import',
   },
-  [key(OCPP20ComponentName.SampledDataCtrlr as string, 'Energy.Active.Import.Register')]: {
+  [buildRegistryKey(
+    OCPP20ComponentName.SampledDataCtrlr as string,
+    'Energy.Active.Import.Register'
+  )]: {
     component: OCPP20ComponentName.SampledDataCtrlr as string,
     dataType: DataEnumType.decimal,
     description: 'Cumulative active energy imported (Wh).',
@@ -537,7 +609,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     unit: 'Wh',
     variable: 'Energy.Active.Import.Register',
   },
-  [key(OCPP20ComponentName.SampledDataCtrlr as string, 'Power.Active.Import')]: {
+  [buildRegistryKey(OCPP20ComponentName.SampledDataCtrlr as string, 'Power.Active.Import')]: {
     component: OCPP20ComponentName.SampledDataCtrlr as string,
     dataType: DataEnumType.decimal,
     description: 'Instantaneous active power import (W).',
@@ -548,7 +620,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     unit: 'W',
     variable: 'Power.Active.Import',
   },
-  [key(OCPP20ComponentName.SampledDataCtrlr as string, 'Voltage')]: {
+  [buildRegistryKey(OCPP20ComponentName.SampledDataCtrlr as string, 'Voltage')]: {
     component: OCPP20ComponentName.SampledDataCtrlr as string,
     dataType: DataEnumType.decimal,
     description: 'RMS voltage (V).',
@@ -559,7 +631,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     unit: 'V',
     variable: 'Voltage',
   },
-  [key(
+  [buildRegistryKey(
     OCPP20ComponentName.SampledDataCtrlr as string,
     OCPP20RequiredVariableName.TxEndedMeasurands
   )]: {
@@ -590,7 +662,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.TxEndedMeasurands as string,
   },
-  [key(
+  [buildRegistryKey(
     OCPP20ComponentName.SampledDataCtrlr as string,
     OCPP20RequiredVariableName.TxStartedMeasurands
   )]: {
@@ -613,7 +685,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     variable: OCPP20RequiredVariableName.TxStartedMeasurands as string,
   },
   // Volatile rationale: sampling interval affects runtime only; simulator does not persist across restarts.
-  [key(
+  [buildRegistryKey(
     OCPP20ComponentName.SampledDataCtrlr as string,
     OCPP20RequiredVariableName.TxUpdatedInterval
   )]: {
@@ -631,7 +703,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     unit: 'seconds',
     variable: OCPP20RequiredVariableName.TxUpdatedInterval as string,
   },
-  [key(
+  [buildRegistryKey(
     OCPP20ComponentName.SampledDataCtrlr as string,
     OCPP20RequiredVariableName.TxUpdatedMeasurands
   )]: {
@@ -655,20 +727,25 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   },
 
   // SecurityCtrlr variables
-  [key(OCPP20ComponentName.SecurityCtrlr as string, OCPP20RequiredVariableName.CertificateEntries)]:
-    {
-      allowZero: true,
-      component: OCPP20ComponentName.SecurityCtrlr as string,
-      dataType: DataEnumType.integer,
-      defaultValue: '0',
-      description: 'Count of installed certificates.',
-      min: 0,
-      mutability: MutabilityEnumType.ReadOnly,
-      persistence: PersistenceEnumType.Persistent,
-      supportedAttributes: [AttributeEnumType.Actual],
-      variable: OCPP20RequiredVariableName.CertificateEntries as string,
-    },
-  [key(OCPP20ComponentName.SecurityCtrlr as string, OCPP20RequiredVariableName.OrganizationName)]: {
+  [buildRegistryKey(
+    OCPP20ComponentName.SecurityCtrlr as string,
+    OCPP20RequiredVariableName.CertificateEntries
+  )]: {
+    allowZero: true,
+    component: OCPP20ComponentName.SecurityCtrlr as string,
+    dataType: DataEnumType.integer,
+    defaultValue: '0',
+    description: 'Count of installed certificates.',
+    min: 0,
+    mutability: MutabilityEnumType.ReadOnly,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20RequiredVariableName.CertificateEntries as string,
+  },
+  [buildRegistryKey(
+    OCPP20ComponentName.SecurityCtrlr as string,
+    OCPP20RequiredVariableName.OrganizationName
+  )]: {
     component: OCPP20ComponentName.SecurityCtrlr as string,
     dataType: DataEnumType.string,
     defaultValue: 'ChangeMeOrg',
@@ -681,7 +758,10 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     variable: OCPP20RequiredVariableName.OrganizationName as string,
   },
   // Enumeration limited to profiles 1..3 commonly used; spec allows additional profiles via extensions.
-  [key(OCPP20ComponentName.SecurityCtrlr as string, OCPP20RequiredVariableName.SecurityProfile)]: {
+  [buildRegistryKey(
+    OCPP20ComponentName.SecurityCtrlr as string,
+    OCPP20RequiredVariableName.SecurityProfile
+  )]: {
     component: OCPP20ComponentName.SecurityCtrlr as string,
     dataType: DataEnumType.integer,
     defaultValue: '1',
@@ -698,7 +778,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     variable: OCPP20RequiredVariableName.SecurityProfile as string,
   },
   // Vendor-specific write-only placeholder to exercise WriteOnly path.
-  [key(
+  [buildRegistryKey(
     OCPP20ComponentName.SecurityCtrlr as string,
     OCPP20VendorVariableName.CertificatePrivateKey
   )]: {
@@ -714,7 +794,10 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   },
 
   // TxCtrlr variables
-  [key(OCPP20ComponentName.TxCtrlr as string, OCPP20RequiredVariableName.EVConnectionTimeOut)]: {
+  [buildRegistryKey(
+    OCPP20ComponentName.TxCtrlr as string,
+    OCPP20RequiredVariableName.EVConnectionTimeOut
+  )]: {
     component: OCPP20ComponentName.TxCtrlr as string,
     dataType: DataEnumType.integer,
     defaultValue: Constants.DEFAULT_EV_CONNECTION_TIMEOUT.toString(),
@@ -729,18 +812,23 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     unit: 'seconds',
     variable: OCPP20RequiredVariableName.EVConnectionTimeOut as string,
   },
-  [key(OCPP20ComponentName.TxCtrlr as string, OCPP20RequiredVariableName.StopTxOnEVSideDisconnect)]:
-    {
-      component: OCPP20ComponentName.TxCtrlr as string,
-      dataType: DataEnumType.boolean,
-      defaultValue: 'true',
-      description: 'Deauthorize transaction when cable unplugged at EV.',
-      mutability: MutabilityEnumType.ReadWrite,
-      persistence: PersistenceEnumType.Persistent,
-      supportedAttributes: [AttributeEnumType.Actual],
-      variable: OCPP20RequiredVariableName.StopTxOnEVSideDisconnect as string,
-    },
-  [key(OCPP20ComponentName.TxCtrlr as string, OCPP20RequiredVariableName.StopTxOnInvalidId)]: {
+  [buildRegistryKey(
+    OCPP20ComponentName.TxCtrlr as string,
+    OCPP20RequiredVariableName.StopTxOnEVSideDisconnect
+  )]: {
+    component: OCPP20ComponentName.TxCtrlr as string,
+    dataType: DataEnumType.boolean,
+    defaultValue: 'true',
+    description: 'Deauthorize transaction when cable unplugged at EV.',
+    mutability: MutabilityEnumType.ReadWrite,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20RequiredVariableName.StopTxOnEVSideDisconnect as string,
+  },
+  [buildRegistryKey(
+    OCPP20ComponentName.TxCtrlr as string,
+    OCPP20RequiredVariableName.StopTxOnInvalidId
+  )]: {
     component: OCPP20ComponentName.TxCtrlr as string,
     dataType: DataEnumType.boolean,
     defaultValue: 'true',
@@ -750,7 +838,10 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.StopTxOnInvalidId as string,
   },
-  [key(OCPP20ComponentName.TxCtrlr as string, OCPP20RequiredVariableName.TxStartPoint)]: {
+  [buildRegistryKey(
+    OCPP20ComponentName.TxCtrlr as string,
+    OCPP20RequiredVariableName.TxStartPoint
+  )]: {
     component: OCPP20ComponentName.TxCtrlr as string,
     dataType: DataEnumType.MemberList,
     defaultValue: 'CablePluggedIn,EnergyTransfer',
@@ -761,26 +852,50 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.TxStartPoint as string,
   },
-  [key(OCPP20ComponentName.TxCtrlr as string, OCPP20RequiredVariableName.TxStopPoint)]: {
-    component: OCPP20ComponentName.TxCtrlr as string,
-    dataType: DataEnumType.MemberList,
-    defaultValue: 'EVSEIdle,CableUnplugged',
-    description: 'Trigger conditions for ending a transaction.',
-    enumeration: ['EVSEIdle', 'CableUnplugged', 'Deauthorized', 'PowerPathOpened'],
-    mutability: MutabilityEnumType.ReadWrite,
-    persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: OCPP20RequiredVariableName.TxStopPoint as string,
-  },
+  [buildRegistryKey(OCPP20ComponentName.TxCtrlr as string, OCPP20RequiredVariableName.TxStopPoint)]:
+    {
+      component: OCPP20ComponentName.TxCtrlr as string,
+      dataType: DataEnumType.MemberList,
+      defaultValue: 'EVSEIdle,CableUnplugged',
+      description: 'Trigger conditions for ending a transaction.',
+      enumeration: ['EVSEIdle', 'CableUnplugged', 'Deauthorized', 'PowerPathOpened'],
+      mutability: MutabilityEnumType.ReadWrite,
+      persistence: PersistenceEnumType.Persistent,
+      supportedAttributes: [AttributeEnumType.Actual],
+      variable: OCPP20RequiredVariableName.TxStopPoint as string,
+    },
 }
 
 /**
+ * Build composite lookup key (lower-cased) including optional instance.
+ * Format: `component[.instance].variable` all lower case.
+ * @param component Component name.
+ * @param instance Optional instance qualifier.
+ * @param variable Variable name.
+ * @returns Lower-case composite key for lookup.
+ */
+export function buildCaseInsensitiveCompositeKey (
+  component: string,
+  instance: string | undefined,
+  variable: string
+): string {
+  return `${component.toLowerCase()}${instance ? '.' + instance : ''}.${variable.toLowerCase()}`
+}
+
+// Lowercase fallback registry (composite key) for case-insensitive lookups.
+const VARIABLE_REGISTRY_LOOKUP_CI: Record<string, VariableMetadata> = Object.values(
+  VARIABLE_REGISTRY
+).reduce<Record<string, VariableMetadata>>((acc, vm) => {
+  acc[buildCaseInsensitiveCompositeKey(vm.component, vm.instance, vm.variable)] = vm
+  return acc
+}, {})
+
+/**
  * Apply optional metadata post-processing to a resolved variable value.
- * Executes `variableMetadata.postProcess` if defined; otherwise returns the original value.
- * @param chargingStation ChargingStation instance for context.
- * @param variableMetadata Variable metadata definition.
- * @param value Raw value prior to post processing.
- * @returns Post-processed value.
+ * @param chargingStation Charging station context.
+ * @param variableMetadata Variable metadata entry.
+ * @param value Resolved raw value.
+ * @returns Post-processed value (or original when no postProcess defined).
  */
 export function applyPostProcess (
   chargingStation: ChargingStation,
@@ -794,84 +909,80 @@ export function applyPostProcess (
 }
 
 /**
- * Build composite lookup key (lower-cased) including optional instance.
- * Format: `component[.instance].variable` all lower case.
- * @param component Component name.
- * @param instance Optional instance identifier.
- * @param variable Variable name.
- * @returns Composite lower-cased key string.
+ * Enforce reporting/value size limit on a string.
+ * @param value Incoming value string.
+ * @param sizeLimitRaw Raw size limit value (string form).
+ * @returns Possibly truncated value respecting size limit.
  */
-export function buildVariableCompositeKey (
-  component: string,
-  instance: string | undefined,
-  variable: string
-): string {
-  return `${component.toLowerCase()}${instance ? '.' + instance : ''}.${variable.toLowerCase()}`
-}
-
-/**
- * Truncate a reported value string to the configured maximum size.
- * @param value Original value string.
- * @param sizeRaw Raw size metadata value (string) or undefined.
- * @returns Possibly truncated value (enforced size) or original.
- */
-export function enforceReportingValueSize (value: string, sizeRaw: string | undefined): string {
-  const size = convertToIntOrNaN(sizeRaw ?? Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH.toString())
-  if (!Number.isNaN(size) && size > 0 && value.length > size) {
-    return value.slice(0, size)
+export function enforceReportingValueSize (value: string, sizeLimitRaw: string): string {
+  const sizeLimit = convertToIntOrNaN(sizeLimitRaw)
+  if (!Number.isNaN(sizeLimit) && sizeLimit > 0 && value.length > sizeLimit) {
+    return value.slice(0, sizeLimit)
   }
   return value
 }
 
 /**
  * Retrieve variable metadata with case-insensitive fallback.
- * First tries exact case then canonical lower-cased registry.
  * @param component Component name.
  * @param variable Variable name.
- * @param instance Optional instance identifier when variable metadata is instance-scoped.
- * @returns VariableMetadata or undefined if not registered.
+ * @param instance Optional instance qualifier.
+ * @returns Matching variable metadata or undefined.
  */
 export function getVariableMetadata (
   component: string,
   variable: string,
   instance?: string
 ): undefined | VariableMetadata {
-  return (VARIABLE_REGISTRY[key(component, variable, instance)] ??
-    VARIABLE_REGISTRY[key(component, variable)]) as undefined | VariableMetadata
+  const withInstanceKey = buildRegistryKey(component, variable, instance)
+  if (Object.prototype.hasOwnProperty.call(VARIABLE_REGISTRY, withInstanceKey)) {
+    return VARIABLE_REGISTRY[withInstanceKey]
+  }
+  const withoutInstanceKey = buildRegistryKey(component, variable)
+  if (Object.prototype.hasOwnProperty.call(VARIABLE_REGISTRY, withoutInstanceKey)) {
+    return VARIABLE_REGISTRY[withoutInstanceKey]
+  }
+  const lcWithKey = buildCaseInsensitiveCompositeKey(component, instance, variable)
+  if (Object.prototype.hasOwnProperty.call(VARIABLE_REGISTRY_LOOKUP_CI, lcWithKey)) {
+    return VARIABLE_REGISTRY_LOOKUP_CI[lcWithKey]
+  }
+  return VARIABLE_REGISTRY_LOOKUP_CI[
+    buildCaseInsensitiveCompositeKey(component, undefined, variable)
+  ] as undefined | VariableMetadata
 }
 
 /**
- * Check if variable persistence type is Persistent.
- * @param variableMetadata Variable metadata.
- * @returns True if persistence is Persistent.
+ * Check if variable metadata is persistent.
+ * @param variableMetadata Variable metadata entry.
+ * @returns True when persistence is Persistent.
  */
 export function isPersistent (variableMetadata: VariableMetadata): boolean {
   return variableMetadata.persistence === PersistenceEnumType.Persistent
 }
 
 /**
- * Check if variable mutability type is ReadOnly.
- * @param variableMetadata Variable metadata.
- * @returns True if mutability is ReadOnly.
+ * Check if variable metadata is read-only.
+ * @param variableMetadata Variable metadata entry.
+ * @returns True when mutability is ReadOnly.
  */
 export function isReadOnly (variableMetadata: VariableMetadata): boolean {
   return variableMetadata.mutability === MutabilityEnumType.ReadOnly
 }
 
 /**
- * Check if variable mutability type is WriteOnly.
- * @param variableMetadata Variable metadata.
- * @returns True if mutability is WriteOnly.
+ * Check if variable metadata is write-only.
+ * @param variableMetadata Variable metadata entry.
+ * @returns True when mutability is WriteOnly.
  */
 export function isWriteOnly (variableMetadata: VariableMetadata): boolean {
   return variableMetadata.mutability === MutabilityEnumType.WriteOnly
 }
 
 /**
- * Resolve value for variable (dynamic or default).
- * @param chargingStation ChargingStation instance.
- * @param variableMetadata Variable metadata.
- * @returns Resolved value (dynamic or default or empty string).
+ * Resolve variable value using dynamicValueResolver if present else defaultValue.
+ * @param chargingStation Charging station context.
+ * @param variableMetadata Variable metadata entry.
+ * @returns Resolved value string (empty when no default).
  */
 export function resolveValue (
   chargingStation: ChargingStation,
@@ -884,11 +995,11 @@ export function resolveValue (
 }
 
 /**
- * Validate a raw variable value against metadata constraints.
- * Checks length, data type, range, enumeration and formatting rules.
- * @param variableMetadata Variable metadata definition used for constraints.
- * @param rawValue Raw string value to validate against metadata.
- * @returns Validation result object with ok flag; on failure reason and info populated.
+ * Validate raw value against variable metadata constraints.
+ * Performs length, datatype specific and enumeration checks.
+ * @param variableMetadata Variable metadata entry.
+ * @param rawValue Raw value string to validate.
+ * @returns Validation result with ok flag and optional reason/info.
  */
 export function validateValue (
   variableMetadata: VariableMetadata,
@@ -923,8 +1034,7 @@ export function validateValue (
       break
     }
     case DataEnumType.decimal: {
-      const decimalPattern = /^-?\d+(?:\.\d+)?$/
-      if (!decimalPattern.test(rawValue)) {
+      if (!DECIMAL_PATTERN.test(rawValue)) {
         return {
           info: 'Invalid decimal format',
           ok: false,
@@ -960,23 +1070,11 @@ export function validateValue (
           reason: ReasonCodeEnumType.ValueTooHigh,
         }
       }
-      if (
-        variableMetadata.enumeration?.length &&
-        !variableMetadata.enumeration.includes(rawValue)
-      ) {
-        return {
-          info: 'Value not in enumeration',
-          ok: false,
-          reason: ReasonCodeEnumType.InvalidValue,
-        }
-      }
       break
     }
     case DataEnumType.integer: {
-      const signedIntegerPattern = /^-?\d+$/
-      const decimalPattern = /^-?\d+\.\d+$/
       if (variableMetadata.allowZero && !variableMetadata.positive) {
-        if (decimalPattern.test(rawValue)) {
+        if (DECIMAL_ONLY_PATTERN.test(rawValue)) {
           return {
             info: 'Integer >= 0 required',
             ok: false,
@@ -984,8 +1082,8 @@ export function validateValue (
           }
         }
       }
-      if (!signedIntegerPattern.test(rawValue)) {
-        if (decimalPattern.test(rawValue)) {
+      if (!SIGNED_INTEGER_PATTERN.test(rawValue)) {
+        if (DECIMAL_ONLY_PATTERN.test(rawValue)) {
           return {
             info: variableMetadata.positive
               ? 'Positive integer > 0 required (no decimals)'
@@ -1039,17 +1137,6 @@ export function validateValue (
           reason: ReasonCodeEnumType.ValueZeroNotAllowed,
         }
       }
-      if (
-        variableMetadata.enumeration &&
-        variableMetadata.enumeration.length > 0 &&
-        !variableMetadata.enumeration.includes(rawValue)
-      ) {
-        return {
-          info: 'Value not in enumeration',
-          ok: false,
-          reason: ReasonCodeEnumType.InvalidValue,
-        }
-      }
       break
     }
     case DataEnumType.MemberList:
@@ -1093,28 +1180,15 @@ export function validateValue (
       break
     }
     case DataEnumType.string: {
-      if (variableMetadata.variable === (OCPP20VendorVariableName.ConnectionUrl as string)) {
-        const urlValidation = validateGenericUrl(rawValue)
-        if (!urlValidation.ok) {
-          return urlValidation
+      if (variableMetadata.urlSchemes?.length) {
+        const schemeValidation = validateUrlScheme(rawValue, variableMetadata.urlSchemes)
+        if (!schemeValidation.ok) {
+          return schemeValidation
         }
-      }
-      if (variableMetadata.enumeration?.length) {
-        const enumeration = variableMetadata.enumeration ?? []
-        const isUrlSchemeEnumeration = ['http:', 'https:', 'ws:', 'wss:'].every(s =>
-          enumeration.includes(s)
-        )
-        if (isUrlSchemeEnumeration) {
-          const schemeValidation = validateUrlScheme(rawValue, enumeration)
-          if (!schemeValidation.ok) {
-            return schemeValidation
-          }
-        } else if (!enumeration.includes(rawValue)) {
-          return {
-            info: 'Value not in enumeration',
-            ok: false,
-            reason: ReasonCodeEnumType.InvalidValue,
-          }
+      } else if (variableMetadata.isUrl) {
+        const generic = validateGenericUrl(rawValue)
+        if (!generic.ok) {
+          return generic
         }
       }
       break
@@ -1122,14 +1196,27 @@ export function validateValue (
     default:
       break
   }
+  // Centralized enumeration membership for scalar (non-list) types including string.
+  if (
+    variableMetadata.enumeration?.length &&
+    variableMetadata.dataType !== DataEnumType.MemberList &&
+    variableMetadata.dataType !== DataEnumType.SequenceList
+  ) {
+    if (!variableMetadata.enumeration.includes(rawValue)) {
+      return {
+        info: 'Value not in enumeration',
+        ok: false,
+        reason: ReasonCodeEnumType.InvalidValue,
+      }
+    }
+  }
   return { ok: true }
 }
 
 /**
- * Generic absolute URL validation helper.
- * Ensures value parses as an absolute URL with a scheme.
- * @param value Raw URL string to validate.
- * @returns Result ok=true when parse succeeds; otherwise InvalidURL with info.
+ * Validate URL using generic parsing (any scheme accepted).
+ * @param value Raw URL string.
+ * @returns Validation result with ok flag and optional reason/info.
  */
 function validateGenericUrl (value: string): {
   info?: string
@@ -1143,10 +1230,10 @@ function validateGenericUrl (value: string): {
 }
 
 /**
- * Validate absolute URL and optionally restrict to allowed schemes.
- * @param value Raw URL string to validate.
- * @param allowedSchemes List of allowed URL protocol schemes (with trailing colon).
- * @returns Result ok=true when valid and scheme allowed; otherwise InvalidURL with info.
+ * Validate URL scheme against an allowed list after generic format check.
+ * @param value Raw URL string.
+ * @param allowedSchemes Allowed protocol schemes (with trailing colon).
+ * @returns Validation result with ok flag and optional reason/info.
  */
 function validateUrlScheme (
   value: string,

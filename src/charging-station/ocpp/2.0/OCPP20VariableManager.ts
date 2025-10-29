@@ -30,12 +30,13 @@ import {
 } from '../../ConfigurationKeyUtils.js'
 import {
   applyPostProcess,
-  buildVariableCompositeKey,
+  buildCaseInsensitiveCompositeKey,
   enforceReportingValueSize,
   getVariableMetadata,
   resolveValue,
   validateValue,
   VARIABLE_REGISTRY,
+  type VariableMetadata,
 } from './OCPP20VariableRegistry.js'
 
 const isOCPP20ComponentName = (name: string): name is OCPP20ComponentName => {
@@ -45,6 +46,15 @@ const isOCPP20RequiredVariableName = (name: string): name is OCPP20RequiredVaria
   return Object.values(OCPP20RequiredVariableName).includes(name as OCPP20RequiredVariableName)
 }
 
+const shouldFlattenInstance = (variableMetadata: VariableMetadata): boolean => {
+  // TODO: Generalize instance flattening via registry metadata
+  return variableMetadata.variable === (OCPP20RequiredVariableName.MessageAttemptInterval as string)
+}
+const computeConfigurationKeyName = (variableMetadata: VariableMetadata): string => {
+  return variableMetadata.instance != null && !shouldFlattenInstance(variableMetadata)
+    ? `${variableMetadata.variable}.${variableMetadata.instance}`
+    : variableMetadata.variable
+}
 export class OCPP20VariableManager {
   private static instance: null | OCPP20VariableManager = null
 
@@ -66,7 +76,7 @@ export class OCPP20VariableManager {
     chargingStation: ChargingStation,
     getVariableData: OCPP20GetVariableDataType[]
   ): OCPP20GetVariableResultType[] {
-    this.performMappingSelfCheck(chargingStation)
+    this.validatePersistentMappings(chargingStation)
     const results: OCPP20GetVariableResultType[] = []
     for (const variableData of getVariableData) {
       try {
@@ -92,7 +102,41 @@ export class OCPP20VariableManager {
     return results
   }
 
-  public performMappingSelfCheck (chargingStation: ChargingStation): void {
+  public resetRuntimeOverrides (): void {
+    this.runtimeOverrides.clear()
+  }
+
+  public setVariables (
+    chargingStation: ChargingStation,
+    setVariableData: OCPP20SetVariableDataType[]
+  ): OCPP20SetVariableResultType[] {
+    this.validatePersistentMappings(chargingStation)
+    const results: OCPP20SetVariableResultType[] = []
+    for (const variableData of setVariableData) {
+      try {
+        const result = this.setVariable(chargingStation, variableData)
+        results.push(result)
+      } catch (error) {
+        logger.error(
+          `${chargingStation.logPrefix()} Error setting variable ${variableData.variable.name}:`,
+          error
+        )
+        results.push({
+          attributeStatus: SetVariableStatusEnumType.Rejected,
+          attributeStatusInfo: {
+            additionalInfo: 'Internal error occurred while setting variable',
+            reasonCode: ReasonCodeEnumType.InternalError,
+          },
+          attributeType: variableData.attributeType ?? AttributeEnumType.Actual,
+          component: variableData.component,
+          variable: variableData.variable,
+        })
+      }
+    }
+    return results
+  }
+
+  public validatePersistentMappings (chargingStation: ChargingStation): void {
     this.invalidVariables.clear()
     for (const metaKey of Object.keys(VARIABLE_REGISTRY)) {
       const variableMetadata = VARIABLE_REGISTRY[metaKey]
@@ -104,18 +148,12 @@ export class OCPP20VariableManager {
         continue
       }
       // Instance-scoped persistent variables are also auto-created when defaultValue is defined
-      // TODO: Generalize instance flattening via registry metadata (e.g. flattenInstance flag) instead of hard-coding MessageAttemptInterval.
-      const flattenInstance =
-        variableMetadata.variable === (OCPP20RequiredVariableName.MessageAttemptInterval as string)
-      const configurationKeyName =
-        variableMetadata.instance != null && !flattenInstance
-          ? `${variableMetadata.variable}.${variableMetadata.instance}`
-          : variableMetadata.variable
+      const configurationKeyName = computeConfigurationKeyName(variableMetadata)
       const configurationKey = getConfigurationKey(
         chargingStation,
         configurationKeyName as unknown as StandardParametersKey
       )
-      const variableKey = buildVariableCompositeKey(
+      const variableKey = buildCaseInsensitiveCompositeKey(
         variableMetadata.component,
         variableMetadata.instance,
         variableMetadata.variable
@@ -156,40 +194,6 @@ export class OCPP20VariableManager {
         }
       }
     }
-  }
-
-  public resetRuntimeOverrides (): void {
-    this.runtimeOverrides.clear()
-  }
-
-  public setVariables (
-    chargingStation: ChargingStation,
-    setVariableData: OCPP20SetVariableDataType[]
-  ): OCPP20SetVariableResultType[] {
-    this.performMappingSelfCheck(chargingStation)
-    const results: OCPP20SetVariableResultType[] = []
-    for (const variableData of setVariableData) {
-      try {
-        const result = this.setVariable(chargingStation, variableData)
-        results.push(result)
-      } catch (error) {
-        logger.error(
-          `${chargingStation.logPrefix()} Error setting variable ${variableData.variable.name}:`,
-          error
-        )
-        results.push({
-          attributeStatus: SetVariableStatusEnumType.Rejected,
-          attributeStatusInfo: {
-            additionalInfo: 'Internal error occurred while setting variable',
-            reasonCode: ReasonCodeEnumType.InternalError,
-          },
-          attributeType: variableData.attributeType ?? AttributeEnumType.Actual,
-          component: variableData.component,
-          variable: variableData.variable,
-        })
-      }
-    }
-    return results
   }
 
   private getVariable (
@@ -251,7 +255,11 @@ export class OCPP20VariableManager {
       )
     }
 
-    const variableKey = buildVariableCompositeKey(component.name, component.instance, variable.name)
+    const variableKey = buildCaseInsensitiveCompositeKey(
+      component.name,
+      component.instance,
+      variable.name
+    )
     if (this.invalidVariables.has(variableKey)) {
       return this.rejectGet(
         variable,
@@ -336,13 +344,13 @@ export class OCPP20VariableManager {
     }
 
     // ReportingValueSize truncation (DeviceDataCtrlr authoritative)
-    const reportingValueSizeKey = buildVariableCompositeKey(
+    const reportingValueSizeKey = buildCaseInsensitiveCompositeKey(
       OCPP20ComponentName.DeviceDataCtrlr as string,
       undefined,
       OCPP20RequiredVariableName.ReportingValueSize as string
     )
     // ValueSize truncation applied before ReportingValueSize if present
-    const valueSizeKey = buildVariableCompositeKey(
+    const valueSizeKey = buildCaseInsensitiveCompositeKey(
       OCPP20ComponentName.DeviceDataCtrlr as string,
       undefined,
       OCPP20RequiredVariableName.ValueSize as string
@@ -457,7 +465,7 @@ export class OCPP20VariableManager {
     )
     if (!variableMetadata) return ''
 
-    const compositeKey = buildVariableCompositeKey(
+    const compositeKey = buildCaseInsensitiveCompositeKey(
       component.name,
       component.instance,
       variable.name
@@ -469,13 +477,7 @@ export class OCPP20VariableManager {
       variableMetadata.persistence === PersistenceEnumType.Persistent &&
       variableMetadata.mutability !== MutabilityEnumType.WriteOnly
     ) {
-      // TODO: Generalize instance flattening via registry metadata (e.g. flattenInstance flag) instead of hard-coding MessageAttemptInterval.
-      const flattenInstance =
-        variableMetadata.variable === (OCPP20RequiredVariableName.MessageAttemptInterval as string)
-      const configurationKeyName =
-        variableMetadata.instance != null && !flattenInstance
-          ? `${variableMetadata.variable}.${variableMetadata.instance}`
-          : variableMetadata.variable
+      const configurationKeyName = computeConfigurationKeyName(variableMetadata)
       const cfg = getConfigurationKey(
         chargingStation,
         configurationKeyName as unknown as StandardParametersKey
@@ -524,7 +526,6 @@ export class OCPP20VariableManager {
   ): OCPP20SetVariableResultType {
     const { attributeType, attributeValue, component, variable } = variableData
     const resolvedAttributeType = attributeType ?? AttributeEnumType.Actual
-    const variableName = variable.name
 
     if (!this.isComponentValid(chargingStation, component)) {
       return this.rejectSet(
@@ -563,7 +564,11 @@ export class OCPP20VariableManager {
       )
     }
 
-    const variableKey = buildVariableCompositeKey(component.name, component.instance, variable.name)
+    const variableKey = buildCaseInsensitiveCompositeKey(
+      component.name,
+      component.instance,
+      variable.name
+    )
     if (
       this.invalidVariables.has(variableKey) &&
       resolvedAttributeType === AttributeEnumType.Actual
@@ -710,12 +715,12 @@ export class OCPP20VariableManager {
     // 5. Enforce absolute upper cap of Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH (spec).
     // 6. Reject with TooLargeElement when attributeValue length strictly exceeds effectiveLimit.
     if (resolvedAttributeType === AttributeEnumType.Actual) {
-      const configurationValueSizeKey = buildVariableCompositeKey(
+      const configurationValueSizeKey = buildCaseInsensitiveCompositeKey(
         OCPP20ComponentName.DeviceDataCtrlr as string,
         undefined,
         OCPP20RequiredVariableName.ConfigurationValueSize as string
       )
-      const valueSizeKey = buildVariableCompositeKey(
+      const valueSizeKey = buildCaseInsensitiveCompositeKey(
         OCPP20ComponentName.DeviceDataCtrlr as string,
         undefined,
         OCPP20RequiredVariableName.ValueSize as string
@@ -761,12 +766,12 @@ export class OCPP20VariableManager {
       }
     }
 
-    // Narrow component.name and variableName for enum-safe comparison
+    // Narrow component.name and variable.name for enum-safe comparison
     if (
       isOCPP20ComponentName(component.name) &&
       component.name === OCPP20ComponentName.AuthCtrlr &&
-      isOCPP20RequiredVariableName(variableName) &&
-      variableName === OCPP20RequiredVariableName.AuthorizeRemoteStart
+      isOCPP20RequiredVariableName(variable.name) &&
+      variable.name === OCPP20RequiredVariableName.AuthorizeRemoteStart
     ) {
       if (attributeValue !== 'true' && attributeValue !== 'false') {
         return this.rejectSet(
@@ -827,13 +832,7 @@ export class OCPP20VariableManager {
     }
 
     let rebootRequired = false
-    // TODO: Generalize instance flattening via registry metadata (e.g. flattenInstance flag) instead of hard-coding MessageAttemptInterval.
-    const flattenInstance =
-      variableMetadata.variable === (OCPP20RequiredVariableName.MessageAttemptInterval as string)
-    const configurationKeyName =
-      variableMetadata.instance != null && !flattenInstance
-        ? `${variableMetadata.variable}.${variableMetadata.instance}`
-        : variableMetadata.variable
+    const configurationKeyName = computeConfigurationKeyName(variableMetadata)
     const previousValue = getConfigurationKey(
       chargingStation,
       configurationKeyName as unknown as StandardParametersKey
@@ -889,14 +888,14 @@ export class OCPP20VariableManager {
     }
     // Heartbeat & WS ping interval dynamic restarts
     if (
-      variableName === (OCPP20OptionalVariableName.HeartbeatInterval as string) &&
+      variable.name === (OCPP20OptionalVariableName.HeartbeatInterval as string) &&
       !Number.isNaN(convertToIntOrNaN(attributeValue)) &&
       convertToIntOrNaN(attributeValue) > 0
     ) {
       chargingStation.restartHeartbeat()
     }
     if (
-      variableName === (OCPP20OptionalVariableName.WebSocketPingInterval as string) &&
+      variable.name === (OCPP20OptionalVariableName.WebSocketPingInterval as string) &&
       !Number.isNaN(convertToIntOrNaN(attributeValue)) &&
       convertToIntOrNaN(attributeValue) >= 0
     ) {
