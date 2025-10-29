@@ -583,10 +583,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               type: AttributeEnumType.Actual as string,
               value: configKey.value,
             })
-            // Only include Actual for configuration keys as Target is not a supported attribute in GetBaseReport
-            // Future enhancement: include Target if metadata defines it explicitly
-            // (no change to readonly behavior; we always expose Actual current value)
-            // Removed unconditional Target attribute emission.
 
             reportData.push({
               component: { name: OCPP20ComponentName.OCPPCommCtrlr },
