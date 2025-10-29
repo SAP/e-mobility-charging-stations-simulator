@@ -616,7 +616,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           }
         }
 
-        // 3. Registered OCPP 2.0.1 variables (Actual + MinSet/MaxSet)
+        // 3. Registered OCPP 2.0.1 variables
         try {
           const variableManager = OCPP20VariableManager.getInstance()
           // Build getVariableData array from VARIABLE_REGISTRY metadata
@@ -663,13 +663,17 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           >()
           for (const r of getResults) {
             const key = `${r.component.name}::${r.variable.name}${r.variable.instance ? '::' + r.variable.instance : ''}`
-            const meta = getVariableMetadata(r.component.name, r.variable.name, r.variable.instance)
-            if (!meta) continue
+            const variableMetadata = getVariableMetadata(
+              r.component.name,
+              r.variable.name,
+              r.variable.instance
+            )
+            if (!variableMetadata) continue
             if (!grouped.has(key)) {
               grouped.set(key, {
                 attributes: [],
                 component: r.component,
-                dataType: meta.dataType,
+                dataType: variableMetadata.dataType,
                 variable: r.variable,
               })
             }
