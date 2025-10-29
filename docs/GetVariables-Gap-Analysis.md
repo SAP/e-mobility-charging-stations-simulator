@@ -82,7 +82,7 @@ Phase 2 (Optional / Deferred):
 
 ## 8. Summary
 
-Current implementation meets mandatory behaviors. Remaining divergences are limited to stylistic choices (blanket rejection vs optional CALLERROR for constraint/format violations). Tests now cover Target unset (B06.FR.13), instance-only missing instance (B06.FR.15), and write-only retrieval (B06.FR.09). Truncation behavior documented with spec citations. Future optional enhancement: configurable CALLERROR response style and partial acceptance for limit violations.
+Current implementation meets mandatory behaviors. Remaining divergences are limited to stylistic choices (blanket rejection vs optional CALLERROR for constraint/format violations). Tests now cover Target unset (B06.FR.13), instance-only missing instance (B06.FR.15), and write-only retrieval (B06.FR.09). Truncation behavior documented with spec citations. Vendor-specific string variable ConnectionUrl had MinSet/MaxSet attributes erroneously listed; these have been removed (string data type does not support MinSet/MaxSet). Future optional enhancement: configurable CALLERROR response style and partial acceptance for limit violations.
 
 ## 9. Next Actions
 
