@@ -9,6 +9,7 @@ import {
   getConfigurationKey,
 } from '../../../../src/charging-station/ConfigurationKeyUtils.js'
 import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
+import { VARIABLE_REGISTRY } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableRegistry.js'
 import {
   AttributeEnumType,
   type ComponentType,
@@ -37,6 +38,10 @@ import {
   setValueSize,
   upsertConfigurationKey,
 } from './OCPP20TestUtils.js'
+const CONNECTION_URL_MAX_LENGTH =
+  VARIABLE_REGISTRY[
+    `${OCPP20ComponentName.ChargingStation}::${OCPP20VendorVariableName.ConnectionUrl}`
+  ].maxLength ?? 512
 
 /**
  * Build a syntactically valid ws://example URL of desired length.
@@ -1029,7 +1034,9 @@ await describe('OCPP20VariableManager test suite', async () => {
       ])[0]
       expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
       expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
-      expect(res.attributeStatusInfo?.additionalInfo).toContain('exceeds maximum length (512)')
+      expect(res.attributeStatusInfo?.additionalInfo).toContain(
+        `exceeds maximum length (${CONNECTION_URL_MAX_LENGTH.toString()})`
+      )
     })
 
     await it('Should reject HeartbeatInterval exceeding max length', () => {
@@ -1042,7 +1049,13 @@ await describe('OCPP20VariableManager test suite', async () => {
       ])[0]
       expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
       expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
-      expect(res.attributeStatusInfo?.additionalInfo).toContain('exceeds maximum length (10)')
+      const HEARTBEAT_INTERVAL_MAX_LENGTH =
+        VARIABLE_REGISTRY[
+          `${OCPP20ComponentName.OCPPCommCtrlr}::${OCPP20OptionalVariableName.HeartbeatInterval}`
+        ].maxLength ?? 10
+      expect(res.attributeStatusInfo?.additionalInfo).toContain(
+        `exceeds maximum length (${HEARTBEAT_INTERVAL_MAX_LENGTH.toString()})`
+      )
     })
 
     // Effective value size limit tests combining ConfigurationValueSize and ValueSize
@@ -1534,19 +1547,24 @@ await describe('OCPP20VariableManager test suite', async () => {
       resetReportingValueSize(mockChargingStation)
     })
 
-    await it('Should not exceed absolute max length even if ValueSize and ReportingValueSize set above it', () => {
+    await it('Should not exceed variable maxLength even if ValueSize and ReportingValueSize set above it', () => {
       resetValueSizeLimits(mockChargingStation)
       resetReportingValueSize(mockChargingStation)
-      // Store exactly absolute max length value via setVariables (allowed)
-      const value2500 = buildWsExampleUrl(Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH, 'd')
+      // Store exactly variable maxLength value via setVariables (allowed per registry/spec)
+      const connectionUrlMaxLength =
+        VARIABLE_REGISTRY[
+          `${OCPP20ComponentName.ChargingStation}::${OCPP20VendorVariableName.ConnectionUrl}`
+        ].maxLength ?? 512
+      const maxLenValue = buildWsExampleUrl(connectionUrlMaxLength, 'd')
       const setRes = manager.setVariables(mockChargingStation, [
         {
-          attributeValue: value2500,
+          attributeValue: maxLenValue,
           component: { name: OCPP20ComponentName.ChargingStation },
           variable: { name: OCPP20VendorVariableName.ConnectionUrl },
         },
       ])[0]
       expect(setRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      // Set larger limits that would allow a bigger value if not for variable-level maxLength
       setValueSize(mockChargingStation, 3000)
       setReportingValueSize(mockChargingStation, 2800)
       const getRes = manager.getVariables(mockChargingStation, [
@@ -1556,8 +1574,8 @@ await describe('OCPP20VariableManager test suite', async () => {
         },
       ])[0]
       expect(getRes.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(getRes.attributeValue?.length).toBe(Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH)
-      expect(getRes.attributeValue).toBe(value2500)
+      expect(getRes.attributeValue?.length).toBe(connectionUrlMaxLength)
+      expect(getRes.attributeValue).toBe(maxLenValue)
       resetValueSizeLimits(mockChargingStation)
       resetReportingValueSize(mockChargingStation)
     })

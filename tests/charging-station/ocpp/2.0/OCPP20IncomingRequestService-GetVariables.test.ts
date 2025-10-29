@@ -3,15 +3,14 @@ import { millisecondsToSeconds } from 'date-fns'
 import { describe, it } from 'node:test'
 
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
-import { VARIABLE_REGISTRY } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableRegistry.js'
 import {
   AttributeEnumType,
   GetVariableStatusEnumType,
-  MutabilityEnumType,
   OCPP20ComponentName,
   type OCPP20GetVariablesRequest,
   OCPP20OptionalVariableName,
   OCPP20RequiredVariableName,
+  OCPP20VendorVariableName,
   ReasonCodeEnumType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
@@ -22,6 +21,7 @@ import {
   resetReportingValueSize,
   setReportingValueSize,
   setStrictLimits,
+  setValueSize,
 } from './OCPP20TestUtils.js'
 
 void describe('B06 - Get Variables', () => {
@@ -402,22 +402,14 @@ void describe('B06 - Get Variables', () => {
     expect(result.attributeValue).toBeUndefined()
   })
 
-  // FR: B06.FR.09 (WriteOnly retrieval rejection) - Skipped if no write-only variable exists
-  void it('Should reject retrieval of write-only variable if one exists', () => {
-    // Find first write-only variable from registry
-    const writeOnlyEntry = Object.values(VARIABLE_REGISTRY).find(
-      m => m.mutability === MutabilityEnumType.WriteOnly
-    )
-    if (!writeOnlyEntry) {
-      // No write-only variable defined yet; test passes trivially (document coverage gap)
-      expect(true).toBe(true)
-      return
-    }
+  // FR: B06.FR.09
+  void it('Should reject retrieval of explicit write-only variable CertificatePrivateKey', () => {
+    // Explicit vendor-specific write-only variable from SecurityCtrlr
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
         {
-          component: { name: writeOnlyEntry.component },
-          variable: { instance: writeOnlyEntry.instance, name: writeOnlyEntry.variable },
+          component: { name: OCPP20ComponentName.SecurityCtrlr },
+          variable: { name: OCPP20VendorVariableName.CertificatePrivateKey },
         },
       ],
     }
@@ -426,5 +418,84 @@ void describe('B06 - Get Variables', () => {
     const result = response.getVariableResult[0]
     expect(result.attributeStatus).toBe(GetVariableStatusEnumType.Rejected)
     expect(result.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.WriteOnly)
+  })
+
+  void it('Should retrieve MinSet and MaxSet for WebSocketPingInterval', () => {
+    const request: OCPP20GetVariablesRequest = {
+      getVariableData: [
+        {
+          attributeType: AttributeEnumType.MinSet,
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20OptionalVariableName.WebSocketPingInterval },
+        },
+        {
+          attributeType: AttributeEnumType.MaxSet,
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20OptionalVariableName.WebSocketPingInterval },
+        },
+      ],
+    }
+    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    expect(response.getVariableResult).toHaveLength(2)
+    const minSet = response.getVariableResult[0]
+    const maxSet = response.getVariableResult[1]
+    expect(minSet.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+    expect(minSet.attributeType).toBe(AttributeEnumType.MinSet)
+    expect(minSet.attributeValue).toBeDefined()
+    expect(maxSet.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+    expect(maxSet.attributeType).toBe(AttributeEnumType.MaxSet)
+    expect(maxSet.attributeValue).toBeDefined()
+  })
+
+  void it('Should reject MinSet for MemberList variable TxStartPoint', () => {
+    const request: OCPP20GetVariablesRequest = {
+      getVariableData: [
+        {
+          attributeType: AttributeEnumType.MinSet,
+          component: { name: OCPP20ComponentName.TxCtrlr },
+          variable: { name: OCPP20RequiredVariableName.TxStartPoint },
+        },
+      ],
+    }
+    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    expect(response.getVariableResult).toHaveLength(1)
+    const result = response.getVariableResult[0]
+    expect(result.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
+  })
+
+  void it('Should reject MaxSet for variable SecurityProfile (Actual only)', () => {
+    const request: OCPP20GetVariablesRequest = {
+      getVariableData: [
+        {
+          attributeType: AttributeEnumType.MaxSet,
+          component: { name: OCPP20ComponentName.SecurityCtrlr },
+          variable: { name: OCPP20RequiredVariableName.SecurityProfile },
+        },
+      ],
+    }
+    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    expect(response.getVariableResult).toHaveLength(1)
+    const result = response.getVariableResult[0]
+    expect(result.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
+  })
+
+  void it('Should apply ValueSize then ReportingValueSize sequential truncation', () => {
+    // First apply a smaller ValueSize (5) then a smaller ReportingValueSize (3)
+    setValueSize(mockChargingStation, 5)
+    setReportingValueSize(mockChargingStation, 3)
+    const request: OCPP20GetVariablesRequest = {
+      getVariableData: [
+        {
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20OptionalVariableName.WebSocketPingInterval },
+        },
+      ],
+    }
+    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    const result = response.getVariableResult[0]
+    expect(result.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+    expect(result.attributeValue).toBeDefined()
+    expect(result.attributeValue?.length).toBeLessThanOrEqual(3)
+    resetReportingValueSize(mockChargingStation)
   })
 })

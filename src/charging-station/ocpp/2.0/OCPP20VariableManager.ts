@@ -121,13 +121,18 @@ export class OCPP20VariableManager {
         variableMetadata.variable
       )
       if (configurationKey == null) {
-        // Allow size limit variables to remain intentionally unset (tests may delete them).
+        // Allow size limit variables to remain intentionally unset.
         if (
           variableMetadata.variable ===
             (OCPP20RequiredVariableName.ConfigurationValueSize as string) ||
           variableMetadata.variable === (OCPP20RequiredVariableName.ValueSize as string) ||
           variableMetadata.variable === (OCPP20RequiredVariableName.ReportingValueSize as string)
         ) {
+          continue
+        }
+        // Skip auto-creation for instance-scoped persistent variables (e.g. MessageAttemptInterval)
+        // so that first getVariables call returns default without persisting; persistence occurs on first successful set.
+        if (variableMetadata.instance != null) {
           continue
         }
         const defaultValue = variableMetadata.defaultValue

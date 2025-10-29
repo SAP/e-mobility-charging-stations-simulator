@@ -113,13 +113,16 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     description: 'Central system connection URL.',
     enumeration: ['ws:', 'wss:', 'http:', 'https:'],
     maxLength: 512,
-    mutability: MutabilityEnumType.ReadWrite, // restored to ReadWrite per OCPP spec for ConnectionUrl
+    mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [AttributeEnumType.Actual],
+    supportedAttributes: [
+      AttributeEnumType.Actual,
+      AttributeEnumType.MinSet,
+      AttributeEnumType.MaxSet,
+    ],
     variable: OCPP20VendorVariableName.ConnectionUrl as string,
     vendorSpecific: true,
   },
-
   // ClockCtrlr variable
   [key(OCPP20ComponentName.ClockCtrlr as string, OCPP20RequiredVariableName.DateTime)]: {
     component: OCPP20ComponentName.ClockCtrlr as string,
@@ -131,7 +134,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.DateTime as string,
   },
-
   [key(OCPP20ComponentName.ClockCtrlr as string, OCPP20RequiredVariableName.TimeSource)]: {
     component: OCPP20ComponentName.ClockCtrlr as string,
     dataType: DataEnumType.SequenceList,
@@ -143,8 +145,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.TimeSource as string,
   },
-  // DeviceDataCtrlr BytesPerMessage instances per spec (GetReport, GetVariables, SetVariables)
-  // Base BytesPerMessage metadata (non-instance) for read-only rejection semantics
   [key(OCPP20ComponentName.DeviceDataCtrlr as string, OCPP20RequiredVariableName.BytesPerMessage)]:
     {
       component: OCPP20ComponentName.DeviceDataCtrlr as string,
@@ -319,7 +319,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     unit: 'chars',
     variable: OCPP20RequiredVariableName.ValueSize as string,
   },
-  // ChargingStation base component
+  // OCPPCommCtrlr variables
   [key(OCPP20ComponentName.OCPPCommCtrlr as string, OCPP20OptionalVariableName.HeartbeatInterval)]:
     {
       component: OCPP20ComponentName.OCPPCommCtrlr as string,
@@ -354,7 +354,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.FileTransferProtocols as string,
   },
-  // OCPPCommCtrlr variables
   [key(
     OCPP20ComponentName.OCPPCommCtrlr as string,
     OCPP20RequiredVariableName.MessageAttemptInterval,
@@ -677,6 +676,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   [key(OCPP20ComponentName.SecurityCtrlr as string, OCPP20RequiredVariableName.SecurityProfile)]: {
     component: OCPP20ComponentName.SecurityCtrlr as string,
     dataType: DataEnumType.integer,
+    defaultValue: '1',
     description: 'Selected security profile.',
     enumeration: ['1', '2', '3'], // restricted to common profiles
     max: 3,
@@ -689,6 +689,22 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.SecurityProfile as string,
   },
+  // Write-only variable for SecurityCtrlr to exercise WriteOnly rejection path
+  [key(
+    OCPP20ComponentName.SecurityCtrlr as string,
+    OCPP20VendorVariableName.CertificatePrivateKey
+  )]: {
+    component: OCPP20ComponentName.SecurityCtrlr as string,
+    dataType: DataEnumType.string,
+    description: 'Private key material upload placeholder; write-only for security.',
+    maxLength: 2048,
+    mutability: MutabilityEnumType.WriteOnly,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20VendorVariableName.CertificatePrivateKey as string,
+    vendorSpecific: true,
+  },
+  // TxCtrlr variables
   [key(OCPP20ComponentName.TxCtrlr as string, OCPP20RequiredVariableName.EVConnectionTimeOut)]: {
     component: OCPP20ComponentName.TxCtrlr as string,
     dataType: DataEnumType.integer,
@@ -708,8 +724,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     unit: 'seconds',
     variable: OCPP20RequiredVariableName.EVConnectionTimeOut as string,
   },
-
-  // TxCtrlr variables
   [key(OCPP20ComponentName.TxCtrlr as string, OCPP20RequiredVariableName.StopTxOnEVSideDisconnect)]:
     {
       component: OCPP20ComponentName.TxCtrlr as string,
