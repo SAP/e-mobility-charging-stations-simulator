@@ -1207,7 +1207,7 @@ await describe('OCPP20VariableManager test suite', async () => {
           variable: { name: OCPP20RequiredVariableName.TxStartPoint },
         },
         {
-          attributeValue: 'EVConnected,PowerPathClosed', // updated default
+          attributeValue: 'EVConnected,PowerPathClosed',
           component: { name: OCPP20ComponentName.TxCtrlr },
           variable: { name: OCPP20RequiredVariableName.TxStopPoint },
         },
@@ -1246,6 +1246,36 @@ await describe('OCPP20VariableManager test suite', async () => {
       ])[0]
       expect(getRes.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
       expect(getRes.attributeValue).toBe('HTTPS,FTPS,SFTP')
+    })
+
+    await it('Should keep FileTransferProtocols value unchanged after rejected update attempt', () => {
+      const beforeCfg = getConfigurationKey(
+        mockChargingStation,
+        OCPP20RequiredVariableName.FileTransferProtocols as unknown as VariableType['name']
+      )
+      expect(beforeCfg?.value).toBe('HTTPS,FTPS,SFTP')
+      const rejected = manager.setVariables(mockChargingStation, [
+        {
+          attributeValue: 'HTTP,HTTPS',
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
+          variable: { name: OCPP20RequiredVariableName.FileTransferProtocols },
+        },
+      ])[0]
+      expect(rejected.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+      expect(rejected.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ReadOnly)
+      const afterGet = manager.getVariables(mockChargingStation, [
+        {
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
+          variable: { name: OCPP20RequiredVariableName.FileTransferProtocols },
+        },
+      ])[0]
+      expect(afterGet.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      expect(afterGet.attributeValue).toBe('HTTPS,FTPS,SFTP')
+      const afterCfg = getConfigurationKey(
+        mockChargingStation,
+        OCPP20RequiredVariableName.FileTransferProtocols as unknown as VariableType['name']
+      )
+      expect(afterCfg?.value).toBe(beforeCfg?.value)
     })
 
     await it('Should reject removed TimeSource members RTC and Manual', () => {
