@@ -366,7 +366,7 @@ void describe('B06 - Get Variables', () => {
   })
 
   // FR: B06.FR.13
-  void it('Should accept empty Target value for supported variable NetworkConfigurationPriority', () => {
+  void it('Should reject Target attribute for NetworkConfigurationPriority', () => {
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
         {
@@ -379,9 +379,9 @@ void describe('B06 - Get Variables', () => {
     const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
     expect(response.getVariableResult).toHaveLength(1)
     const result = response.getVariableResult[0]
-    expect(result.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+    expect(result.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
     expect(result.attributeType).toBe(AttributeEnumType.Target)
-    expect(result.attributeValue).toBe('')
+    expect(result.attributeValue).toBeUndefined()
   })
 
   // FR: B06.FR.15
@@ -420,7 +420,7 @@ void describe('B06 - Get Variables', () => {
     expect(result.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.WriteOnly)
   })
 
-  void it('Should retrieve MinSet and MaxSet for WebSocketPingInterval', () => {
+  void it('Should reject MinSet and MaxSet for WebSocketPingInterval', () => {
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
         {
@@ -439,12 +439,12 @@ void describe('B06 - Get Variables', () => {
     expect(response.getVariableResult).toHaveLength(2)
     const minSet = response.getVariableResult[0]
     const maxSet = response.getVariableResult[1]
-    expect(minSet.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+    expect(minSet.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
     expect(minSet.attributeType).toBe(AttributeEnumType.MinSet)
-    expect(minSet.attributeValue).toBeDefined()
-    expect(maxSet.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+    expect(minSet.attributeValue).toBeUndefined()
+    expect(maxSet.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
     expect(maxSet.attributeType).toBe(AttributeEnumType.MaxSet)
-    expect(maxSet.attributeValue).toBeDefined()
+    expect(maxSet.attributeValue).toBeUndefined()
   })
 
   void it('Should reject MinSet for MemberList variable TxStartPoint', () => {

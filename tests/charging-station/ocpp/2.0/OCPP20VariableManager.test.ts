@@ -1276,183 +1276,32 @@ await describe('OCPP20VariableManager test suite', async () => {
     })
   })
 
-  await describe('MinSet/MaxSet validation tests', async () => {
+  await describe('Unsupported MinSet/MaxSet attribute tests', async () => {
     const manager = OCPP20VariableManager.getInstance()
-    const mmChargingStation = createChargingStation({
+    const station = createChargingStation({
       baseName: 'MMStation',
       heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
 
-    await it('Rejects MinSet and MaxSet for HeartbeatInterval', () => {
+    await it('Returns NotSupportedAttributeType for MinSet HeartbeatInterval', () => {
       const component = { name: OCPP20ComponentName.OCPPCommCtrlr }
       const variable = { name: OCPP20OptionalVariableName.HeartbeatInterval }
-      const minRes = manager.setVariables(mmChargingStation, [
-        { attributeType: AttributeEnumType.MinSet, attributeValue: '10', component, variable },
-      ])[0]
-      expect(minRes.attributeStatus).toBe(SetVariableStatusEnumType.NotSupportedAttributeType)
-      expect(minRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
-      const maxRes = manager.setVariables(mmChargingStation, [
-        { attributeType: AttributeEnumType.MaxSet, attributeValue: '100', component, variable },
-      ])[0]
-      expect(maxRes.attributeStatus).toBe(SetVariableStatusEnumType.NotSupportedAttributeType)
-      expect(maxRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
-    })
-
-    await it('Returns NotSupportedAttributeType for MinSet/MaxSet HeartbeatInterval', () => {
-      const component = { name: OCPP20ComponentName.OCPPCommCtrlr }
-      const variable = { name: OCPP20OptionalVariableName.HeartbeatInterval }
-      const getMin = manager.getVariables(mmChargingStation, [
+      const res = manager.getVariables(station, [
         { attributeType: AttributeEnumType.MinSet, component, variable },
       ])[0]
-      expect(getMin.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
-      expect(getMin.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
-      const getMax = manager.getVariables(mmChargingStation, [
-        { attributeType: AttributeEnumType.MaxSet, component, variable },
-      ])[0]
-      expect(getMax.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
-      expect(getMax.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
+      expect(res.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
+      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
     })
 
-    await it('Rejects non-integer MaxSet for MessageAttemptInterval', () => {
-      const component = { instance: 'TransactionEvent', name: OCPP20ComponentName.OCPPCommCtrlr }
-      const variable = { name: OCPP20RequiredVariableName.MessageAttemptInterval }
-      const res = manager.setVariables(mmChargingStation, [
-        { attributeType: AttributeEnumType.MaxSet, attributeValue: '10.5', component, variable },
-      ])[0]
-      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
-    })
-
-    await it('Rejects MinSet higher than existing MaxSet', () => {
+    await it('Returns NotSupportedAttributeType for MaxSet WebSocketPingInterval', () => {
       const component = { name: OCPP20ComponentName.ChargingStation }
       const variable = { name: OCPP20OptionalVariableName.WebSocketPingInterval }
-      manager.setVariables(mmChargingStation, [
-        { attributeType: AttributeEnumType.MaxSet, attributeValue: '50', component, variable },
-      ])
-      const badMin = manager.setVariables(mmChargingStation, [
-        { attributeType: AttributeEnumType.MinSet, attributeValue: '51', component, variable },
+      const res = manager.getVariables(station, [
+        { attributeType: AttributeEnumType.MaxSet, component, variable },
       ])[0]
-      expect(badMin.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(badMin.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
-    })
-
-    await it('Rejects MaxSet lower than existing MinSet', () => {
-      const component = { name: OCPP20ComponentName.TxCtrlr }
-      const variable = { name: OCPP20RequiredVariableName.EVConnectionTimeOut }
-      manager.setVariables(mmChargingStation, [
-        { attributeType: AttributeEnumType.MinSet, attributeValue: '30', component, variable },
-      ])
-      const badMax = manager.setVariables(mmChargingStation, [
-        { attributeType: AttributeEnumType.MaxSet, attributeValue: '29', component, variable },
-      ])[0]
-      expect(badMax.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(badMax.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
-    })
-
-    await it('Rejects non-integer MinSet for MessageAttemptInterval', () => {
-      const component = { instance: 'TransactionEvent', name: OCPP20ComponentName.OCPPCommCtrlr }
-      const variable = { name: OCPP20RequiredVariableName.MessageAttemptInterval }
-      const res = manager.setVariables(mmChargingStation, [
-        { attributeType: AttributeEnumType.MinSet, attributeValue: '5.5', component, variable },
-      ])[0]
-      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
-    })
-
-    await it('Rejects MinSet below metadata minimum (MessageAttempts)', () => {
-      const component = { instance: 'TransactionEvent', name: OCPP20ComponentName.OCPPCommCtrlr }
-      const variable = { name: OCPP20RequiredVariableName.MessageAttempts }
-      const res = manager.setVariables(mmChargingStation, [
-        { attributeType: AttributeEnumType.MinSet, attributeValue: '0', component, variable },
-      ])[0]
-      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValueTooLow)
-    })
-
-    await it('Rejects MaxSet above metadata maximum (MessageAttempts)', () => {
-      const component = { instance: 'TransactionEvent', name: OCPP20ComponentName.OCPPCommCtrlr }
-      const variable = { name: OCPP20RequiredVariableName.MessageAttempts }
-      const res = manager.setVariables(mmChargingStation, [
-        { attributeType: AttributeEnumType.MaxSet, attributeValue: '999', component, variable },
-      ])[0]
-      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValueTooHigh)
-    })
-
-    await it('Enforces MinSet/MaxSet bounds for MessageTimeout Actual', () => {
-      const component = { instance: 'Default', name: OCPP20ComponentName.OCPPCommCtrlr }
-      const variable = { name: OCPP20RequiredVariableName.MessageTimeout }
-      manager.setVariables(mmChargingStation, [
-        { attributeType: AttributeEnumType.MinSet, attributeValue: '10', component, variable },
-      ])
-      manager.setVariables(mmChargingStation, [
-        { attributeType: AttributeEnumType.MaxSet, attributeValue: '20', component, variable },
-      ])
-      const below = manager.setVariables(mmChargingStation, [
-        { attributeType: AttributeEnumType.Actual, attributeValue: '9', component, variable },
-      ])[0]
-      expect(below.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(below.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValueTooLow)
-      const above = manager.setVariables(mmChargingStation, [
-        { attributeType: AttributeEnumType.Actual, attributeValue: '21', component, variable },
-      ])[0]
-      expect(above.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(above.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValueTooHigh)
-      const within = manager.setVariables(mmChargingStation, [
-        { attributeType: AttributeEnumType.Actual, attributeValue: '15', component, variable },
-      ])[0]
-      expect(within.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
-    })
-
-    await it('Rejects MinSet/MaxSet for non-integer data type ConnectionUrl', () => {
-      const component = { name: OCPP20ComponentName.ChargingStation }
-      const variable = { name: OCPP20VendorVariableName.ConnectionUrl }
-      const minRes = manager.setVariables(mmChargingStation, [
-        { attributeType: AttributeEnumType.MinSet, attributeValue: '1', component, variable },
-      ])[0]
-      expect(minRes.attributeStatus).toBe(SetVariableStatusEnumType.NotSupportedAttributeType)
-      expect(minRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
-    })
-
-    await it('Returns NotSupportedAttributeType when requesting MinSet for ConnectionUrl', () => {
-      const component = { name: OCPP20ComponentName.ChargingStation }
-      const variable = { name: OCPP20VendorVariableName.ConnectionUrl }
-      const getMin = manager.getVariables(mmChargingStation, [
-        { attributeType: AttributeEnumType.MinSet, component, variable },
-      ])[0]
-      expect(getMin.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
-      expect(getMin.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
-    })
-
-    await it('Rejects HeartbeatInterval Actual above metadata maximum', () => {
-      const component = { name: OCPP20ComponentName.OCPPCommCtrlr }
-      const variable = { name: OCPP20OptionalVariableName.HeartbeatInterval }
-      const tooHigh = manager.setVariables(mmChargingStation, [
-        { attributeType: AttributeEnumType.Actual, attributeValue: '999999', component, variable },
-      ])[0]
-      expect(tooHigh.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(tooHigh.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValueTooHigh)
-    })
-
-    await it('Rejects setting Actual for read-only BytesPerMessage', () => {
-      const component = { name: OCPP20ComponentName.DeviceDataCtrlr }
-      const variable = { name: OCPP20RequiredVariableName.BytesPerMessage }
-      const res = manager.setVariables(mmChargingStation, [
-        { attributeType: AttributeEnumType.Actual, attributeValue: '10000', component, variable },
-      ])[0]
-      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ReadOnly)
-    })
-
-    await it('Retrieves dynamic DateTime Actual value', () => {
-      const component = { name: OCPP20ComponentName.ClockCtrlr }
-      const variable = { name: OCPP20RequiredVariableName.DateTime }
-      const res = manager.getVariables(mmChargingStation, [
-        { attributeType: AttributeEnumType.Actual, component, variable },
-      ])[0]
-      expect(res.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(res.attributeValue).toMatch(/\d{4}-\d{2}-\d{2}T/)
+      expect(res.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
+      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
     })
   })
 

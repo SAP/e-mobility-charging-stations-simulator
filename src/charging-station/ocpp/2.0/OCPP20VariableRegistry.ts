@@ -92,17 +92,15 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     component: OCPP20ComponentName.ChargingStation as string,
     dataType: DataEnumType.integer,
     defaultValue: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL.toString(),
-    description: 'Interval between WS ping frames.',
+    description:
+      'Interval in seconds between WebSocket ping (keep-alive) frames. 0 disables pings.',
     max: 3600,
     maxLength: 10,
     min: 0,
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [
-      AttributeEnumType.Actual,
-      AttributeEnumType.MinSet,
-      AttributeEnumType.MaxSet,
-    ],
+    // Spec: Only Actual supported; MinSet/MaxSet not defined
+    supportedAttributes: [AttributeEnumType.Actual],
     unit: 'seconds',
     variable: OCPP20OptionalVariableName.WebSocketPingInterval as string,
   },
@@ -153,7 +151,8 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
       mutability: MutabilityEnumType.ReadOnly,
       persistence: PersistenceEnumType.Persistent,
       positive: true,
-      supportedAttributes: [AttributeEnumType.Actual, AttributeEnumType.MaxSet],
+      // Spec: Only Actual attribute; MinSet/MaxSet/Target not meaningful
+      supportedAttributes: [AttributeEnumType.Actual],
       variable: OCPP20RequiredVariableName.BytesPerMessage as string,
     },
   [key(
@@ -171,7 +170,8 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Persistent,
     positive: true,
-    supportedAttributes: [AttributeEnumType.Actual, AttributeEnumType.MaxSet],
+    // Spec: Only Actual attribute; MinSet/MaxSet/Target not meaningful
+    supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.BytesPerMessage as string,
   },
   [key(
@@ -189,7 +189,8 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Persistent,
     positive: true,
-    supportedAttributes: [AttributeEnumType.Actual, AttributeEnumType.MaxSet],
+    // Spec: Only Actual attribute; MinSet/MaxSet/Target not meaningful
+    supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.BytesPerMessage as string,
   },
   [key(
@@ -207,7 +208,8 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Persistent,
     positive: true,
-    supportedAttributes: [AttributeEnumType.Actual, AttributeEnumType.MaxSet],
+    // Spec: Only Actual attribute; MinSet/MaxSet/Target not meaningful
+    supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.BytesPerMessage as string,
   },
   [key(
@@ -224,7 +226,8 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Persistent,
     positive: true,
-    supportedAttributes: [AttributeEnumType.Actual, AttributeEnumType.MaxSet],
+    // Spec: Only Actual attribute; MinSet/MaxSet/Target not meaningful
+    supportedAttributes: [AttributeEnumType.Actual],
     unit: 'chars',
     variable: OCPP20RequiredVariableName.ConfigurationValueSize as string,
   },
@@ -243,7 +246,8 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Persistent,
     positive: true,
-    supportedAttributes: [AttributeEnumType.Actual, AttributeEnumType.MaxSet],
+    // Spec: Only Actual attribute; MinSet/MaxSet/Target not meaningful
+    supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.ItemsPerMessage as string,
   },
   [key(
@@ -261,7 +265,8 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Persistent,
     positive: true,
-    supportedAttributes: [AttributeEnumType.Actual, AttributeEnumType.MaxSet],
+    // Spec: Only Actual attribute; MinSet/MaxSet/Target not meaningful
+    supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.ItemsPerMessage as string,
   },
   [key(
@@ -279,7 +284,8 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Persistent,
     positive: true,
-    supportedAttributes: [AttributeEnumType.Actual, AttributeEnumType.MaxSet],
+    // Spec: Only Actual attribute; MinSet/MaxSet/Target not meaningful
+    supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.ItemsPerMessage as string,
   },
   // DeviceDataCtrlr base + new limits
@@ -297,7 +303,8 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Persistent,
     positive: true,
-    supportedAttributes: [AttributeEnumType.Actual, AttributeEnumType.MaxSet],
+    // Spec: Only Actual attribute; MinSet/MaxSet/Target not meaningful
+    supportedAttributes: [AttributeEnumType.Actual],
     unit: 'chars',
     variable: OCPP20RequiredVariableName.ReportingValueSize as string,
   },
@@ -312,7 +319,8 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Persistent,
     positive: true,
-    supportedAttributes: [AttributeEnumType.Actual, AttributeEnumType.MaxSet],
+    // Spec: Only Actual attribute; MinSet/MaxSet/Target not meaningful
+    supportedAttributes: [AttributeEnumType.Actual],
     unit: 'chars',
     variable: OCPP20RequiredVariableName.ValueSize as string,
   },
@@ -355,18 +363,15 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     component: OCPP20ComponentName.OCPPCommCtrlr as string,
     dataType: DataEnumType.integer,
     defaultValue: '5',
-    description: 'Retry interval for TransactionEvent message attempts before resubmitting.',
+    description: 'Interval (seconds) between retry attempts for TransactionEvent messages.',
     instance: 'TransactionEvent',
     max: 3600,
     min: 1,
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
     positive: true,
-    supportedAttributes: [
-      AttributeEnumType.Actual,
-      AttributeEnumType.MinSet,
-      AttributeEnumType.MaxSet,
-    ],
+    // Spec: Only Actual supported
+    supportedAttributes: [AttributeEnumType.Actual],
     unit: 'seconds',
     variable: OCPP20RequiredVariableName.MessageAttemptInterval as string,
   },
@@ -385,11 +390,8 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
     positive: true,
-    supportedAttributes: [
-      AttributeEnumType.Actual,
-      AttributeEnumType.MinSet,
-      AttributeEnumType.MaxSet,
-    ],
+    // Spec: Only Actual supported; MinSet/MaxSet not defined
+    supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.MessageAttempts as string,
   },
   [key(
@@ -407,11 +409,8 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
     positive: true,
-    supportedAttributes: [
-      AttributeEnumType.Actual,
-      AttributeEnumType.MinSet,
-      AttributeEnumType.MaxSet,
-    ],
+    // Spec: Only Actual supported; MinSet/MaxSet not defined
+    supportedAttributes: [AttributeEnumType.Actual],
     unit: 'seconds',
     variable: OCPP20RequiredVariableName.MessageTimeout as string,
   },
@@ -425,8 +424,8 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     description: 'Comma separated ordered list of network profile priorities.',
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [AttributeEnumType.Actual, AttributeEnumType.Target],
-    supportsTarget: true,
+    // Spec: Only Actual supported; Target not defined
+    supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.NetworkConfigurationPriority as string,
   },
   [key(
@@ -442,11 +441,8 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
     positive: true,
-    supportedAttributes: [
-      AttributeEnumType.Actual,
-      AttributeEnumType.MinSet,
-      AttributeEnumType.MaxSet,
-    ],
+    // Spec: Only Actual supported; MinSet/MaxSet not defined
+    supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.NetworkProfileConnectionAttempts as string,
   },
   [key(OCPP20ComponentName.OCPPCommCtrlr as string, OCPP20RequiredVariableName.OfflineThreshold)]: {
@@ -459,11 +455,8 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
     positive: true,
-    supportedAttributes: [
-      AttributeEnumType.Actual,
-      AttributeEnumType.MinSet,
-      AttributeEnumType.MaxSet,
-    ],
+    // Spec: Only Actual supported; MinSet/MaxSet not defined
+    supportedAttributes: [AttributeEnumType.Actual],
     unit: 'seconds',
     variable: OCPP20RequiredVariableName.OfflineThreshold as string,
   },
@@ -477,11 +470,8 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     min: 0,
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [
-      AttributeEnumType.Actual,
-      AttributeEnumType.MinSet,
-      AttributeEnumType.MaxSet,
-    ],
+    // Spec: Only Actual supported; MinSet/MaxSet not defined
+    supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.ResetRetries as string,
   },
   [key(
@@ -610,11 +600,8 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Volatile,
     positive: true,
-    supportedAttributes: [
-      AttributeEnumType.Actual,
-      AttributeEnumType.MinSet,
-      AttributeEnumType.MaxSet,
-    ],
+    // Spec: Only Actual supported; MinSet/MaxSet not defined
+    supportedAttributes: [AttributeEnumType.Actual],
     unit: 'seconds',
     variable: OCPP20RequiredVariableName.TxUpdatedInterval as string,
   },
@@ -651,7 +638,8 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
       min: 0,
       mutability: MutabilityEnumType.ReadOnly,
       persistence: PersistenceEnumType.Persistent,
-      supportedAttributes: [AttributeEnumType.Actual, AttributeEnumType.MaxSet],
+      // Spec: Only Actual attribute; MinSet/MaxSet/Target not meaningful
+      supportedAttributes: [AttributeEnumType.Actual],
       variable: OCPP20RequiredVariableName.CertificateEntries as string,
     },
   [key(OCPP20ComponentName.SecurityCtrlr as string, OCPP20RequiredVariableName.OrganizationName)]: {
@@ -709,11 +697,8 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
     positive: true,
-    supportedAttributes: [
-      AttributeEnumType.Actual,
-      AttributeEnumType.MinSet,
-      AttributeEnumType.MaxSet,
-    ],
+    // Spec: Only Actual supported; MinSet/MaxSet not defined
+    supportedAttributes: [AttributeEnumType.Actual],
     unit: 'seconds',
     variable: OCPP20RequiredVariableName.EVConnectionTimeOut as string,
   },

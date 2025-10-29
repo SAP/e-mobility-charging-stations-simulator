@@ -85,12 +85,12 @@ await describe('B08 - Get Base Report', async () => {
   })
 
   // Extended FullInventory validation: presence & attribute ordering
-  await it('Should include registry integer variables with ordered Actual/MinSet/MaxSet attributes', () => {
+  await it('Should include registry variables with Actual attribute only for unsupported types', () => {
     const reportData: ReportDataType[] = (incomingRequestService as any).buildReportData(
       mockChargingStation,
       ReportBaseEnumType.FullInventory
     )
-    // Find HeartbeatInterval (integer with potential MinSet/MaxSet metadata)
+    // HeartbeatInterval should expose Actual only (MinSet/MaxSet no longer supported)
     const heartbeatEntry = reportData.find(
       (item: ReportDataType) =>
         item.variable.name === (OCPP20OptionalVariableName.HeartbeatInterval as string) &&
@@ -101,22 +101,7 @@ await describe('B08 - Get Base Report', async () => {
       const types =
         heartbeatEntry.variableAttribute?.map((a: { type?: string; value?: string }) => a.type) ??
         []
-      // Expect Actual first; MinSet/MaxSet may be absent if not supported but ordering must preserve order if present
-      const actualIndex = types.indexOf(AttributeEnumType.Actual)
-      expect(actualIndex).toBe(0)
-      const minIndex = types.indexOf(AttributeEnumType.MinSet)
-      const maxIndex = types.indexOf(AttributeEnumType.MaxSet)
-      if (minIndex !== -1) {
-        expect(minIndex).toBeGreaterThan(actualIndex)
-      }
-      if (maxIndex !== -1) {
-        // MaxSet must come after MinSet if both present, else after Actual
-        if (minIndex !== -1) {
-          expect(maxIndex).toBeGreaterThan(minIndex)
-        } else {
-          expect(maxIndex).toBeGreaterThan(actualIndex)
-        }
-      }
+      expect(types).toEqual([AttributeEnumType.Actual])
     }
     // Boolean variable (AuthorizeRemoteStart) should only include Actual
     const authorizeRemoteStartEntry = reportData.find(
@@ -286,117 +271,7 @@ await describe('B08 - Get Base Report', async () => {
   })
 
   // MinSet/MaxSet override persistence and ordering
-  await it('Should reflect MinSet/MaxSet overrides and enforce them for integer Actual', () => {
-    const variableManager = OCPP20VariableManager.getInstance()
-    // Target integer variable from registry with min/max metadata
-    const targetVariable = OCPP20RequiredVariableName.MessageAttempts
-    const componentName = OCPP20ComponentName.OCPPCommCtrlr
-
-    // 1. Set MinSet higher than default min but lower than default max
-    const minSetValue = '2'
-    const minSetSetResult: OCPP20SetVariableResultType[] = variableManager.setVariables(
-      mockChargingStation,
-      [
-        {
-          attributeType: AttributeEnumType.MinSet,
-          attributeValue: minSetValue,
-          component: { name: componentName },
-          variable: { instance: 'TransactionEvent', name: targetVariable },
-        },
-      ]
-    )
-    expect(minSetSetResult[0].attributeStatus).toBe('Accepted')
-
-    // 2. Set MaxSet lower than default max but higher than MinSet
-    const maxSetValue = '5'
-    const maxSetSetResult: OCPP20SetVariableResultType[] = variableManager.setVariables(
-      mockChargingStation,
-      [
-        {
-          attributeType: AttributeEnumType.MaxSet,
-          attributeValue: maxSetValue,
-          component: { name: componentName },
-          variable: { instance: 'TransactionEvent', name: targetVariable },
-        },
-      ]
-    )
-    expect(maxSetSetResult[0].attributeStatus).toBe('Accepted')
-
-    // 3. Attempt to set Actual below MinSet override (should reject ValueTooLow)
-    const belowMinActual: OCPP20SetVariableResultType[] = variableManager.setVariables(
-      mockChargingStation,
-      [
-        {
-          attributeType: AttributeEnumType.Actual,
-          attributeValue: '1',
-          component: { name: componentName },
-          variable: { instance: 'TransactionEvent', name: targetVariable },
-        },
-      ]
-    )
-    expect(belowMinActual[0].attributeStatus).toBe('Rejected')
-    expect(belowMinActual[0].attributeStatusInfo?.reasonCode).toBe('ValueTooLow')
-
-    // 4. Attempt to set Actual above MaxSet override (should reject ValueTooHigh)
-    const aboveMaxActual: OCPP20SetVariableResultType[] = variableManager.setVariables(
-      mockChargingStation,
-      [
-        {
-          attributeType: AttributeEnumType.Actual,
-          attributeValue: '10',
-          component: { name: componentName },
-          variable: { instance: 'TransactionEvent', name: targetVariable },
-        },
-      ]
-    )
-    expect(aboveMaxActual[0].attributeStatus).toBe('Rejected')
-    expect(aboveMaxActual[0].attributeStatusInfo?.reasonCode).toBe('ValueTooHigh')
-
-    // 5. Set Actual within override bounds
-    const withinBoundsActual: OCPP20SetVariableResultType[] = variableManager.setVariables(
-      mockChargingStation,
-      [
-        {
-          attributeType: AttributeEnumType.Actual,
-          attributeValue: '3',
-          component: { name: componentName },
-          variable: { instance: 'TransactionEvent', name: targetVariable },
-        },
-      ]
-    )
-    expect(withinBoundsActual[0].attributeStatus).toBe('Accepted')
-
-    // 6. Build FullInventory report and verify attributes ordering + overridden values
-    const reportData: ReportDataType[] = (incomingRequestService as any).buildReportData(
-      mockChargingStation,
-      ReportBaseEnumType.FullInventory
-    )
-    const entry = reportData.find(
-      (item: ReportDataType) =>
-        item.variable.name === (targetVariable as string) &&
-        item.component.name === (componentName as string) &&
-        item.variable.instance === 'TransactionEvent'
-    )
-    expect(entry).toBeDefined()
-    if (entry) {
-      const types =
-        entry.variableAttribute?.map((a: { type?: string; value?: string }) => a.type) ?? []
-      expect(types).toEqual([
-        AttributeEnumType.Actual,
-        AttributeEnumType.MinSet,
-        AttributeEnumType.MaxSet,
-      ])
-      const valuesMap: Record<string, string | undefined> = {}
-      for (const attr of entry.variableAttribute ?? []) {
-        if (attr.type) {
-          valuesMap[attr.type] = attr.value
-        }
-      }
-      expect(valuesMap[AttributeEnumType.MinSet]).toBe(minSetValue)
-      expect(valuesMap[AttributeEnumType.MaxSet]).toBe(maxSetValue)
-      expect(valuesMap[AttributeEnumType.Actual]).toBe('3')
-    }
-  })
+  // MinSet/MaxSet overrides no longer supported; removed test validating dynamic enforcement
 
   // ReportingValueSize truncation test
   await it('Should truncate long SequenceList/MemberList values per ReportingValueSize', () => {
