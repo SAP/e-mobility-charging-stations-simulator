@@ -1494,7 +1494,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(res.attributeValue).toBe('ChangeMeOrg')
     })
 
-    await it('Should create configuration key for instance-scoped MessageAttemptInterval and persist Actual value', () => {
+    await it('Should create configuration key for instance-scoped MessageAttemptInterval and persist Actual value (Actual-only, no MinSet/MaxSet)', () => {
       // Ensure no configuration key exists before operations
       const cfgBefore = getConfigurationKey(
         mockChargingStation,
@@ -1510,7 +1510,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(initialGet.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
       expect(initialGet.attributeValue).toBe('5')
 
-      // Set MinSet override to 6
+      // Negative: MinSet not supported
       const minSetRes = manager.setVariables(mockChargingStation, [
         {
           attributeType: AttributeEnumType.MinSet,
@@ -1519,7 +1519,7 @@ await describe('OCPP20VariableManager test suite', async () => {
           variable: { name: OCPP20RequiredVariableName.MessageAttemptInterval },
         },
       ])[0]
-      expect(minSetRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      expect(minSetRes.attributeStatus).toBe(SetVariableStatusEnumType.NotSupportedAttributeType)
       const getMin = manager.getVariables(mockChargingStation, [
         {
           attributeType: AttributeEnumType.MinSet,
@@ -1527,10 +1527,9 @@ await describe('OCPP20VariableManager test suite', async () => {
           variable: { name: OCPP20RequiredVariableName.MessageAttemptInterval },
         },
       ])[0]
-      expect(getMin.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(getMin.attributeValue).toBe('6')
+      expect(getMin.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
 
-      // Set MaxSet override to 10
+      // Negative: MaxSet not supported
       const maxSetRes = manager.setVariables(mockChargingStation, [
         {
           attributeType: AttributeEnumType.MaxSet,
@@ -1539,7 +1538,7 @@ await describe('OCPP20VariableManager test suite', async () => {
           variable: { name: OCPP20RequiredVariableName.MessageAttemptInterval },
         },
       ])[0]
-      expect(maxSetRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      expect(maxSetRes.attributeStatus).toBe(SetVariableStatusEnumType.NotSupportedAttributeType)
       const getMax = manager.getVariables(mockChargingStation, [
         {
           attributeType: AttributeEnumType.MaxSet,
@@ -1547,24 +1546,23 @@ await describe('OCPP20VariableManager test suite', async () => {
           variable: { name: OCPP20RequiredVariableName.MessageAttemptInterval },
         },
       ])[0]
-      expect(getMax.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(getMax.attributeValue).toBe('10')
+      expect(getMax.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
 
-      // Attempt Actual value below MinSet override
+      // Attempt Actual value below registry min (min=1) -> reject
       const belowMinRes = manager.setVariables(mockChargingStation, [
         {
-          attributeValue: '5',
+          attributeValue: '0',
           component: { instance: 'TransactionEvent', name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20RequiredVariableName.MessageAttemptInterval },
         },
       ])[0]
       expect(belowMinRes.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(belowMinRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValueTooLow)
+      expect(belowMinRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValuePositiveOnly)
 
-      // Attempt Actual value above MaxSet override
+      // Attempt Actual value above registry max (max=3600) -> reject
       const aboveMaxRes = manager.setVariables(mockChargingStation, [
         {
-          attributeValue: '11',
+          attributeValue: '3601',
           component: { instance: 'TransactionEvent', name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20RequiredVariableName.MessageAttemptInterval },
         },
@@ -1572,7 +1570,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(aboveMaxRes.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
       expect(aboveMaxRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValueTooHigh)
 
-      // Accept Actual value within overrides
+      // Accept Actual value within metadata bounds
       const withinRes = manager.setVariables(mockChargingStation, [
         {
           attributeValue: '7',

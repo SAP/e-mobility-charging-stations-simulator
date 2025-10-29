@@ -90,7 +90,6 @@ await describe('B08 - Get Base Report', async () => {
       mockChargingStation,
       ReportBaseEnumType.FullInventory
     )
-    // HeartbeatInterval should expose Actual only (MinSet/MaxSet no longer supported)
     const heartbeatEntry = reportData.find(
       (item: ReportDataType) =>
         item.variable.name === (OCPP20OptionalVariableName.HeartbeatInterval as string) &&
@@ -269,9 +268,6 @@ await describe('B08 - Get Base Report', async () => {
       expect(availabilityVariable.variableCharacteristics?.supportsMonitoring).toBe(true)
     }
   })
-
-  // MinSet/MaxSet override persistence and ordering
-  // MinSet/MaxSet overrides no longer supported; removed test validating dynamic enforcement
 
   // ReportingValueSize truncation test
   await it('Should truncate long SequenceList/MemberList values per ReportingValueSize', () => {
