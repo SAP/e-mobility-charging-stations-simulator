@@ -212,32 +212,4 @@ await describe('B01 - Cold Boot Charging Station', async () => {
       expect(typeof payload.chargingStation.customData).toBe('object')
     }
   })
-
-  // FR: B01.FR.06
-  await it('Should simulate retry attempts until Accepted within max retries', () => {
-    const statuses = ['Pending', 'Pending', 'Accepted']
-    const maxRetries = 2
-    let attempt = 0
-    let registrationRetryCount = 0
-    let status = statuses[attempt]
-    do {
-      attempt++
-      status = statuses[attempt - 1]
-      if (status !== 'Accepted') {
-        registrationRetryCount++
-      }
-    } while (status !== 'Accepted' && registrationRetryCount <= maxRetries)
-    expect(attempt).toBe(3) // two pending + one accepted
-    expect(status).toBe('Accepted')
-  })
-
-  // FR: B01.FR.07
-  await it('Should pick interval from response or default', () => {
-    const responseWithInterval = { interval: 15 }
-    const pickedIntervalMs = responseWithInterval.interval * 1000
-    expect(pickedIntervalMs).toBe(15000)
-
-    const pickedIntervalMsDefault = Constants.DEFAULT_BOOT_NOTIFICATION_INTERVAL
-    expect(pickedIntervalMsDefault).toBe(Constants.DEFAULT_BOOT_NOTIFICATION_INTERVAL)
-  })
 })
