@@ -565,7 +565,7 @@ await describe('OCPP20VariableManager test suite', async () => {
       expect(res.attributeStatusInfo).toBeUndefined()
     })
 
-    await it('Should reject ConnectionUrl with invalid scheme', () => {
+    await it('Should accept ConnectionUrl with ftp scheme (no scheme restriction)', () => {
       const req: OCPP20SetVariableDataType[] = [
         {
           attributeValue: 'ftp://example.com/ocpp',
@@ -574,9 +574,21 @@ await describe('OCPP20VariableManager test suite', async () => {
         },
       ]
       const res = manager.setVariables(mockChargingStation, req)[0]
-      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidURL)
-      expect(res.attributeStatusInfo?.additionalInfo).toContain('Unsupported URL scheme')
+      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      expect(res.attributeStatusInfo).toBeUndefined()
+    })
+
+    await it('Should accept ConnectionUrl with custom mqtt scheme', () => {
+      const req: OCPP20SetVariableDataType[] = [
+        {
+          attributeValue: 'mqtt://broker.example.com/ocpp',
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+        },
+      ]
+      const res = manager.setVariables(mockChargingStation, req)[0]
+      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      expect(res.attributeStatusInfo).toBeUndefined()
     })
 
     await it('Should allow ConnectionUrl retrieval after set', () => {

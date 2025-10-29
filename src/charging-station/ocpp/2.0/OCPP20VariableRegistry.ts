@@ -151,7 +151,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     dataType: DataEnumType.string,
     defaultValue: 'ws://localhost',
     description: 'Central system connection URL.',
-    enumeration: ['ws:', 'wss:', 'http:', 'https:'],
     maxLength: 512,
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
@@ -887,10 +886,10 @@ export function resolveValue (
 
 /**
  * Validate a raw variable value against metadata constraints.
- * Checks length, data type, range, enumeration, formatting rules.
- * @param variableMetadata Variable metadata definition.
- * @param rawValue Raw string value to validate.
- * @returns Validation result with ok flag and optional reason/info.
+ * Checks length, data type, range, enumeration and formatting rules.
+ * @param variableMetadata Variable metadata definition used for constraints.
+ * @param rawValue Raw string value to validate against metadata.
+ * @returns Validation result object with ok flag; on failure reason and info populated.
  */
 export function validateValue (
   variableMetadata: VariableMetadata,
@@ -1095,25 +1094,23 @@ export function validateValue (
       break
     }
     case DataEnumType.string: {
+      if (variableMetadata.variable === 'ConnectionUrl') {
+        const urlValidation = validateGenericUrl(rawValue)
+        if (!urlValidation.ok) {
+          return urlValidation
+        }
+      }
       if (variableMetadata.enumeration?.length) {
         const enumeration = variableMetadata.enumeration ?? []
         const isUrlSchemeEnumeration = ['http:', 'https:', 'ws:', 'wss:'].every(s =>
           enumeration.includes(s)
         )
         if (isUrlSchemeEnumeration) {
-          try {
-            const url = new URL(rawValue)
-            if (!variableMetadata.enumeration.includes(url.protocol)) {
-              return {
-                info: 'Unsupported URL scheme',
-                ok: false,
-                reason: ReasonCodeEnumType.InvalidURL,
-              }
-            }
-          } catch {
-            return { info: 'Invalid URL format', ok: false, reason: ReasonCodeEnumType.InvalidURL }
+          const schemeValidation = validateUrlScheme(rawValue, enumeration)
+          if (!schemeValidation.ok) {
+            return schemeValidation
           }
-        } else if (!variableMetadata.enumeration.includes(rawValue)) {
+        } else if (!enumeration.includes(rawValue)) {
           return {
             info: 'Value not in enumeration',
             ok: false,
@@ -1125,6 +1122,44 @@ export function validateValue (
     }
     default:
       break
+  }
+  return { ok: true }
+}
+
+/**
+ * Generic absolute URL validation helper.
+ * Ensures value parses as an absolute URL with a scheme.
+ * @param value Raw URL string to validate.
+ * @returns Result ok=true when parse succeeds; otherwise InvalidURL with info.
+ */
+function validateGenericUrl (value: string): {
+  info?: string
+  ok: boolean
+  reason?: ReasonCodeEnumType
+} {
+  if (!URL.canParse(value)) {
+    return { info: 'Invalid URL format', ok: false, reason: ReasonCodeEnumType.InvalidURL }
+  }
+  return { ok: true }
+}
+
+/**
+ * Validate absolute URL and optionally restrict to allowed schemes.
+ * @param value Raw URL string to validate.
+ * @param allowedSchemes List of allowed URL protocol schemes (with trailing colon).
+ * @returns Result ok=true when valid and scheme allowed; otherwise InvalidURL with info.
+ */
+function validateUrlScheme (
+  value: string,
+  allowedSchemes: string[]
+): { info?: string; ok: boolean; reason?: ReasonCodeEnumType } {
+  const generic = validateGenericUrl(value)
+  if (!generic.ok) {
+    return generic
+  }
+  const url = new URL(value)
+  if (!allowedSchemes.includes(url.protocol)) {
+    return { info: 'Unsupported URL scheme', ok: false, reason: ReasonCodeEnumType.InvalidURL }
   }
   return { ok: true }
 }

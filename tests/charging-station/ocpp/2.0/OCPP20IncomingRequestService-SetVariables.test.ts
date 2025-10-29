@@ -692,4 +692,40 @@ describe('B07 - Set Variables', () => {
     expect(result.attributeStatusInfo).toBeUndefined()
     resetLimits(mockChargingStation)
   })
+
+  it('Should accept ConnectionUrl with custom mqtt scheme (no scheme restriction)', () => {
+    resetLimits(mockChargingStation)
+    const url = 'mqtt://broker.internal:1883/ocpp'
+    const setRequest: OCPP20SetVariablesRequest = {
+      setVariableData: [
+        {
+          attributeValue: url,
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+        },
+      ],
+    }
+    const response: { setVariableResult: OCPP20SetVariableResultType[] } =
+      svc.handleRequestSetVariables(mockChargingStation, setRequest)
+    expect(response.setVariableResult).toHaveLength(1)
+    const setResult = response.setVariableResult[0]
+    expect(setResult.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+    expect(setResult.attributeStatusInfo).toBeUndefined()
+    const getResponse: { getVariableResult: OCPP20GetVariableResultType[] } =
+      svc.handleRequestGetVariables(mockChargingStation, {
+        getVariableData: [
+          {
+            attributeType: AttributeEnumType.Actual,
+            component: { name: OCPP20ComponentName.ChargingStation },
+            variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+          },
+        ],
+      })
+    expect(getResponse.getVariableResult).toHaveLength(1)
+    const getResult = getResponse.getVariableResult[0]
+    expect(getResult.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+    expect(getResult.attributeValue).toBe(url)
+    expect(getResult.attributeStatusInfo).toBeUndefined()
+    resetLimits(mockChargingStation)
+  })
 })
