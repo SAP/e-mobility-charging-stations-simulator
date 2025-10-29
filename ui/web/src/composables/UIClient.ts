@@ -291,7 +291,6 @@ export class UIClient {
         const sendTimeout = setTimeout(() => {
           this.responseHandlers.delete(uuid)
           reject(new Error(`Send request '${procedureName}' message: connection timeout`))
-          // Timeout value sourced from local UI constant; backend constants are not accessible in this standalone project.
         }, UI_WEBSOCKET_REQUEST_TIMEOUT_MS)
         try {
           this.ws.send(msg)

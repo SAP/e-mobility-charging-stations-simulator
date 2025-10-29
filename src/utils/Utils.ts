@@ -100,7 +100,8 @@ const isObject = (value: unknown): value is object => {
   return type(value) === 'Object'
 }
 
-export const mergeDeepRight = <A extends object, B extends object>(target: A, source: B): A & B => {
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+export const mergeDeepRight = <T extends object, S extends object>(target: T, source: S): T => {
   const output: Record<string, unknown> = { ...(target as Record<string, unknown>) }
 
   if (isObject(target) && isObject(source)) {
@@ -118,14 +119,16 @@ export const mergeDeepRight = <A extends object, B extends object>(target: A, so
     })
   }
 
-  return output as A & B
+  return output as T
 }
 
 export const generateUUID = (): `${string}-${string}-${string}-${string}-${string}` => {
   return randomUUID()
 }
 
-export const validateUUID = (uuid: string): boolean => {
+export const validateUUID = (
+  uuid: `${string}-${string}-${string}-${string}-${string}`
+): uuid is `${string}-${string}-${string}-${string}-${string}` => {
   return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(
     uuid
   )

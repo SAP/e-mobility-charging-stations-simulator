@@ -1334,10 +1334,10 @@ export class ChargingStation extends EventEmitter {
         propagateSerialNumber(this.getTemplateFromFile(), stationInfoFromFile, stationInfo)
     }
     return setChargingStationOptions(
-      mergeDeepRight<Partial<ChargingStationInfo>, ChargingStationInfo>(
-        Constants.DEFAULT_STATION_INFO,
+      mergeDeepRight<ChargingStationInfo, ChargingStationInfo>(
+        Constants.DEFAULT_STATION_INFO as ChargingStationInfo,
         stationInfo
-      ) as ChargingStationInfo,
+      ),
       options
     )
   }

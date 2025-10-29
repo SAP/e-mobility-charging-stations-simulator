@@ -298,7 +298,7 @@ export class Configuration {
       uiServerConfiguration = mergeDeepRight<UIServerConfiguration, Partial<UIServerConfiguration>>(
         uiServerConfiguration,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        Configuration.getConfigurationData()!.uiServer! as Partial<UIServerConfiguration>
+        Configuration.getConfigurationData()!.uiServer!
       )
     }
     if (isCFEnvironment()) {
