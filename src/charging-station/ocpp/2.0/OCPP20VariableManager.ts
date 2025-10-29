@@ -103,12 +103,11 @@ export class OCPP20VariableManager {
       if (variableMetadata.mutability === MutabilityEnumType.WriteOnly) {
         continue
       }
-      // Skip auto-creation for instance-scoped persistent variables (managed via overrides only)
-      if (variableMetadata.instance !== undefined) {
-        continue
-      }
-      // Configuration key name (instance-scoped handled via composite key only)
-      const configurationKeyName = variableMetadata.variable
+      // Instance-scoped persistent variables are also auto-created when defaultValue is defined
+      const configurationKeyName =
+        variableMetadata.instance != null
+          ? `${variableMetadata.variable}.${variableMetadata.instance}`
+          : variableMetadata.variable
       const configurationKey = getConfigurationKey(
         chargingStation,
         configurationKeyName as unknown as StandardParametersKey
@@ -141,7 +140,7 @@ export class OCPP20VariableManager {
             `${chargingStation.logPrefix()} Added missing configuration key for variable '${configurationKeyName}' with default '${defaultValue}'`
           )
         } else {
-          // Mark invalid (instances already skipped earlier)
+          // Mark invalid
           this.invalidVariables.add(variableKey)
           logger.error(
             `${chargingStation.logPrefix()} Missing configuration key mapping and no default for variable '${configurationKeyName}', marking as INTERNAL ERROR`
@@ -258,13 +257,21 @@ export class OCPP20VariableManager {
 
     // Handle MinSet / MaxSet attribute retrieval
     if (resolvedAttributeType === AttributeEnumType.MinSet) {
+      if (variableMetadata.min === undefined && this.minSetOverrides.get(variableKey) == null) {
+        return this.rejectGet(
+          variable,
+          component,
+          resolvedAttributeType,
+          GetVariableStatusEnumType.NotSupportedAttributeType,
+          ReasonCodeEnumType.UnsupportedParam,
+          `Attribute type ${resolvedAttributeType} is not supported for variable ${variable.name}`
+        )
+      }
       const minValue =
         this.minSetOverrides.get(variableKey) ??
         (variableMetadata.min !== undefined ? String(variableMetadata.min) : '')
       return {
-        attributeStatus: minValue
-          ? GetVariableStatusEnumType.Accepted
-          : GetVariableStatusEnumType.Rejected,
+        attributeStatus: GetVariableStatusEnumType.Accepted,
         attributeType: resolvedAttributeType,
         attributeValue: minValue,
         component,
@@ -272,13 +279,21 @@ export class OCPP20VariableManager {
       }
     }
     if (resolvedAttributeType === AttributeEnumType.MaxSet) {
+      if (variableMetadata.max === undefined && this.maxSetOverrides.get(variableKey) == null) {
+        return this.rejectGet(
+          variable,
+          component,
+          resolvedAttributeType,
+          GetVariableStatusEnumType.NotSupportedAttributeType,
+          ReasonCodeEnumType.UnsupportedParam,
+          `Attribute type ${resolvedAttributeType} is not supported for variable ${variable.name}`
+        )
+      }
       const maxValue =
         this.maxSetOverrides.get(variableKey) ??
         (variableMetadata.max !== undefined ? String(variableMetadata.max) : '')
       return {
-        attributeStatus: maxValue
-          ? GetVariableStatusEnumType.Accepted
-          : GetVariableStatusEnumType.Rejected,
+        attributeStatus: GetVariableStatusEnumType.Accepted,
         attributeType: resolvedAttributeType,
         attributeValue: maxValue,
         component,
@@ -333,6 +348,10 @@ export class OCPP20VariableManager {
       variableValue = enforceReportingValueSize(variableValue, reportingValueSize)
     }
 
+    // Final absolute length enforcement (spec maxLength 2500)
+    if (variableValue.length > 2500) {
+      variableValue = variableValue.slice(0, 2500)
+    }
     return {
       attributeStatus: GetVariableStatusEnumType.Accepted,
       attributeType: resolvedAttributeType,
@@ -510,18 +529,12 @@ export class OCPP20VariableManager {
       variable.instance ?? component.instance
     )
     if (!variableMetadata?.supportedAttributes.includes(resolvedAttributeType)) {
-      // For MinSet/MaxSet attempts on variables that do not support them, tests expect a generic rejection with InvalidValue
-      const isMinMax =
-        resolvedAttributeType === AttributeEnumType.MinSet ||
-        resolvedAttributeType === AttributeEnumType.MaxSet
       return this.rejectSet(
         variable,
         component,
         resolvedAttributeType,
-        isMinMax
-          ? SetVariableStatusEnumType.Rejected
-          : SetVariableStatusEnumType.NotSupportedAttributeType,
-        isMinMax ? ReasonCodeEnumType.InvalidValue : ReasonCodeEnumType.UnsupportedParam,
+        SetVariableStatusEnumType.NotSupportedAttributeType,
+        ReasonCodeEnumType.UnsupportedParam,
         `Attribute type ${resolvedAttributeType} is not supported for variable ${variable.name}`
       )
     }
@@ -665,12 +678,13 @@ export class OCPP20VariableManager {
     }
 
     // Enforce ConfigurationValueSize and ValueSize limits (only at set time).
-    // Effective limit selection rules (updated):
+    // Effective limit selection rules (spec-aligned):
     // 1. Read ConfigurationValueSize and ValueSize if present and valid (>0).
     // 2. If both valid, use the smaller positive value.
     // 3. If only one valid, use that value.
-    // 4. If neither valid/positive, fallback to default 2500.
-    // 5. Reject with TooLargeElement when attributeValue length strictly exceeds effectiveLimit.
+    // 4. If neither valid/positive, fallback to spec maxLength (2500).
+    // 5. Enforce absolute upper cap of 2500 (spec).
+    // 6. Reject with TooLargeElement when attributeValue length strictly exceeds effectiveLimit.
     if (resolvedAttributeType === AttributeEnumType.Actual) {
       const configurationValueSizeKey = buildVariableCompositeKey(
         OCPP20ComponentName.DeviceDataCtrlr as string,
@@ -706,6 +720,9 @@ export class OCPP20VariableManager {
         effectiveLimit = effectiveLimit != null ? Math.min(effectiveLimit, valLimit) : valLimit
       }
       if (effectiveLimit == null || effectiveLimit <= 0) {
+        effectiveLimit = 2500
+      }
+      if (effectiveLimit > 2500) {
         effectiveLimit = 2500
       }
       if (attributeValue.length > effectiveLimit) {
@@ -805,10 +822,7 @@ export class OCPP20VariableManager {
         variableMetadata.component === (OCPP20ComponentName.SecurityCtrlr as string) &&
         variableMetadata.variable === (OCPP20RequiredVariableName.OrganizationName as string)
 
-      // Skip persistence for instance-scoped persistent variables (managed via overrides only)
-      const isInstanceScoped = variableMetadata.instance != null
-
-      if (!isOrganizationName && !isInstanceScoped) {
+      if (!isOrganizationName) {
         let configKey = getConfigurationKey(
           chargingStation,
           configurationKeyName as unknown as StandardParametersKey
@@ -841,7 +855,7 @@ export class OCPP20VariableManager {
               configurationKeyName as unknown as StandardParametersKey
             )?.reboot === true) &&
           previousValue !== attributeValue
-      } else if (isOrganizationName) {
+      } else {
         // OrganizationName: accept set but do not persist new value (tests expect default retained)
         rebootRequired = false
       }

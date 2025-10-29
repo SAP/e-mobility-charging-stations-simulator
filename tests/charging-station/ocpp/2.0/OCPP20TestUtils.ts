@@ -18,7 +18,7 @@ export function resetLimits (chargingStation: ChargingStation) {
  * @param chargingStation Charging station test instance whose ReportingValueSize is adjusted.
  */
 export function resetReportingValueSize (chargingStation: ChargingStation) {
-  upsertConfigurationKey(chargingStation, OCPP20RequiredVariableName.ReportingValueSize, '1000')
+  upsertConfigurationKey(chargingStation, OCPP20RequiredVariableName.ReportingValueSize, '2500')
 }
 
 /**
@@ -103,10 +103,10 @@ export function upsertConfigurationKey (
   readonly = false
 ) {
   const configKeys = ensureConfig(chargingStation)
-  const existing = configKeys.find(k => k.key === key)
-  if (existing) {
-    existing.value = value
-    if (readonly) existing.readonly = readonly
+  const configKey = configKeys.find(k => k.key === key)
+  if (configKey) {
+    configKey.value = value
+    if (readonly) configKey.readonly = readonly
   } else {
     configKeys.push({ key, readonly, value })
   }

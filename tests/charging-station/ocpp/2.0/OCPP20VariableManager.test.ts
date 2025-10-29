@@ -29,7 +29,14 @@ import {
   createChargingStationWithEvses,
 } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_NAME } from './OCPP20TestConstants.js'
-import { resetValueSizeLimits, setConfigurationValueSize, setValueSize } from './OCPP20TestUtils.js'
+import {
+  resetReportingValueSize,
+  resetValueSizeLimits,
+  setConfigurationValueSize,
+  setReportingValueSize,
+  setValueSize,
+  upsertConfigurationKey,
+} from './OCPP20TestUtils.js'
 
 /**
  * Build a syntactically valid ws://example URL of desired length.
@@ -461,7 +468,7 @@ await describe('OCPP20VariableManager test suite', async () => {
     })
 
     await it('Should reject value exceeding max length', () => {
-      const longValue = 'x'.repeat(1001)
+      const longValue = 'x'.repeat(2501)
       const request: OCPP20SetVariableDataType[] = [
         {
           attributeValue: longValue,
@@ -474,7 +481,7 @@ await describe('OCPP20VariableManager test suite', async () => {
 
       expect(result).toHaveLength(1)
       expect(result[0].attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(result[0].attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
+      expect(result[0].attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
       expect(result[0].attributeStatusInfo?.additionalInfo).toContain('exceeds maximum')
     })
 
@@ -1429,6 +1436,128 @@ await describe('OCPP20VariableManager test suite', async () => {
       ])[0]
       expect(res.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
       expect(res.attributeValue).toMatch(/\d{4}-\d{2}-\d{2}T/)
+    })
+  })
+
+  await describe('Get-time value truncation tests', async () => {
+    const manager = OCPP20VariableManager.getInstance()
+
+    await it('Should truncate retrieved value using ValueSize only when ReportingValueSize absent', () => {
+      resetValueSizeLimits(mockChargingStation)
+      // Ensure ReportingValueSize unset
+      deleteConfigurationKey(
+        mockChargingStation,
+        OCPP20RequiredVariableName.ReportingValueSize as unknown as VariableType['name'],
+        { save: false }
+      )
+      // Temporarily set large ValueSize to allow storing long value
+      setValueSize(mockChargingStation, 200)
+      const longUrl = buildWsExampleUrl(180, 'a')
+      const setRes = manager.setVariables(mockChargingStation, [
+        {
+          attributeValue: longUrl,
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+        },
+      ])[0]
+      expect(setRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      // Now reduce ValueSize to 50 to force truncation at get-time
+      setValueSize(mockChargingStation, 50)
+      const getRes = manager.getVariables(mockChargingStation, [
+        {
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+        },
+      ])[0]
+      expect(getRes.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      expect(getRes.attributeValue?.length).toBe(50)
+      // First 50 chars should match original long value prefix
+      expect(longUrl.startsWith(getRes.attributeValue ?? '')).toBe(true)
+      resetValueSizeLimits(mockChargingStation)
+    })
+
+    await it('Should apply ValueSize then ReportingValueSize sequential truncation', () => {
+      resetValueSizeLimits(mockChargingStation)
+      // Store long value with large limits
+      setValueSize(mockChargingStation, 300)
+      setReportingValueSize(mockChargingStation, 250) // will be applied second
+      const longUrl = buildWsExampleUrl(260, 'b')
+      const setRes = manager.setVariables(mockChargingStation, [
+        {
+          attributeValue: longUrl,
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+        },
+      ])[0]
+      expect(setRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      // Reduce ValueSize below ReportingValueSize to 200 so first truncation occurs at 200, then second at 150
+      setValueSize(mockChargingStation, 200)
+      setReportingValueSize(mockChargingStation, 150)
+      const getRes = manager.getVariables(mockChargingStation, [
+        {
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+        },
+      ])[0]
+      expect(getRes.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      expect(getRes.attributeValue?.length).toBe(150)
+      expect(longUrl.startsWith(getRes.attributeValue ?? '')).toBe(true)
+      resetValueSizeLimits(mockChargingStation)
+      resetReportingValueSize(mockChargingStation)
+    })
+
+    await it('Should enforce absolute 2500 character cap after truncation chain', () => {
+      resetValueSizeLimits(mockChargingStation)
+      resetReportingValueSize(mockChargingStation)
+      // Directly upsert configuration key with >2500 length value bypassing set-time limit (which rejects >2500)
+      const overLongValue = buildWsExampleUrl(3000, 'c')
+      upsertConfigurationKey(
+        mockChargingStation,
+        OCPP20VendorVariableName.ConnectionUrl as unknown as VariableType['name'],
+        overLongValue
+      )
+      // Set generous ValueSize (1500) and ReportingValueSize (1400) so only absolute cap applies (since both < 2500)
+      setValueSize(mockChargingStation, 1500)
+      setReportingValueSize(mockChargingStation, 1400)
+      const getRes = manager.getVariables(mockChargingStation, [
+        {
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+        },
+      ])[0]
+      expect(getRes.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      expect(getRes.attributeValue?.length).toBe(2500)
+      expect(overLongValue.startsWith(getRes.attributeValue ?? '')).toBe(true)
+      resetValueSizeLimits(mockChargingStation)
+      resetReportingValueSize(mockChargingStation)
+    })
+
+    await it('Should not exceed 2500 even if ValueSize and ReportingValueSize set above 2500', () => {
+      resetValueSizeLimits(mockChargingStation)
+      resetReportingValueSize(mockChargingStation)
+      // Store exactly 2500 length value via setVariables (allowed)
+      const value2500 = buildWsExampleUrl(2500, 'd')
+      const setRes = manager.setVariables(mockChargingStation, [
+        {
+          attributeValue: value2500,
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+        },
+      ])[0]
+      expect(setRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      setValueSize(mockChargingStation, 3000)
+      setReportingValueSize(mockChargingStation, 2800)
+      const getRes = manager.getVariables(mockChargingStation, [
+        {
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: OCPP20VendorVariableName.ConnectionUrl },
+        },
+      ])[0]
+      expect(getRes.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      expect(getRes.attributeValue?.length).toBe(2500)
+      expect(getRes.attributeValue).toBe(value2500)
+      resetValueSizeLimits(mockChargingStation)
+      resetReportingValueSize(mockChargingStation)
     })
   })
 

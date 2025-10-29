@@ -178,7 +178,7 @@ describe('B07 - Set Variables', () => {
 
   // FR: B07.FR.05
   it('Should reject value exceeding max length at service level', () => {
-    const longValue = 'x'.repeat(1001)
+    const longValue = 'x'.repeat(2501)
     const request: OCPP20SetVariablesRequest = {
       setVariableData: [
         {
@@ -195,12 +195,12 @@ describe('B07 - Set Variables', () => {
     expect(response.setVariableResult).toHaveLength(1)
     const result = response.setVariableResult[0]
     expect(result.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-    expect(result.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
+    expect(result.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
   })
 
   // FR: B07.FR.07
   it('Should handle mixed SetVariables request with multiple outcomes', () => {
-    const longValue = 'y'.repeat(1001)
+    const longValue = 'y'.repeat(2501)
     const request: OCPP20SetVariablesRequest = {
       setVariableData: [
         // Accepted
@@ -254,6 +254,7 @@ describe('B07 - Set Variables', () => {
       SetVariableStatusEnumType.NotSupportedAttributeType
     )
     expect(oversize.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+    expect(oversize.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
   })
 
   // FR: B07.FR.08
