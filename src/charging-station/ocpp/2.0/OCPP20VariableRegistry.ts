@@ -844,9 +844,18 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   )]: {
     component: OCPP20ComponentName.TxCtrlr as string,
     dataType: DataEnumType.MemberList,
-    defaultValue: 'CablePluggedIn,EnergyTransfer',
+    // Spec-aligned default (exclude EnergyTransfer & DataSigned due to measurement skew and signed data optionality)
+    defaultValue: 'Authorized,EVConnected',
     description: 'Trigger conditions for starting a transaction.',
-    enumeration: ['CablePluggedIn', 'EnergyTransfer', 'Authorized', 'PowerPathClosed'],
+    // Spec-aligned enumeration per errata: Authorized, EVConnected, PowerPathClosed, EnergyTransfer, ParkingBayOccupancy plus DataSigned (start only)
+    enumeration: [
+      'Authorized',
+      'EVConnected',
+      'PowerPathClosed',
+      'EnergyTransfer',
+      'ParkingBayOccupancy',
+      'DataSigned',
+    ],
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
@@ -856,9 +865,17 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     {
       component: OCPP20ComponentName.TxCtrlr as string,
       dataType: DataEnumType.MemberList,
-      defaultValue: 'EVSEIdle,CableUnplugged',
+      // Spec-aligned default stop triggers (exclude Authorized by default to avoid id re-presentation auto-stop)
+      defaultValue: 'EVConnected,PowerPathClosed',
       description: 'Trigger conditions for ending a transaction.',
-      enumeration: ['EVSEIdle', 'CableUnplugged', 'Deauthorized', 'PowerPathOpened'],
+      // Spec-aligned enumeration per errata: Authorized, EVConnected, PowerPathClosed, EnergyTransfer, ParkingBayOccupancy (DataSigned excluded as invalid stop point)
+      enumeration: [
+        'Authorized',
+        'EVConnected',
+        'PowerPathClosed',
+        'EnergyTransfer',
+        'ParkingBayOccupancy',
+      ],
       mutability: MutabilityEnumType.ReadWrite,
       persistence: PersistenceEnumType.Persistent,
       supportedAttributes: [AttributeEnumType.Actual],

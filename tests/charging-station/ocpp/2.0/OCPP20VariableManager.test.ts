@@ -1202,12 +1202,12 @@ await describe('OCPP20VariableManager test suite', async () => {
           variable: { name: OCPP20RequiredVariableName.TimeSource },
         },
         {
-          attributeValue: 'CablePluggedIn,EnergyTransfer,Authorized',
+          attributeValue: 'Authorized,EVConnected,PowerPathClosed',
           component: { name: OCPP20ComponentName.TxCtrlr },
           variable: { name: OCPP20RequiredVariableName.TxStartPoint },
         },
         {
-          attributeValue: 'EVSEIdle,CableUnplugged', // keep same
+          attributeValue: 'EVConnected,PowerPathClosed', // updated default
           component: { name: OCPP20ComponentName.TxCtrlr },
           variable: { name: OCPP20RequiredVariableName.TxStopPoint },
         },
@@ -1284,6 +1284,20 @@ await describe('OCPP20VariableManager test suite', async () => {
         }
       }
     })
+  })
+
+  await it('Should reject DataSigned in TxStopPoint list value', () => {
+    const manager = OCPP20VariableManager.getInstance()
+    const res = manager.setVariables(mockChargingStation, [
+      {
+        attributeValue: 'Authorized,EVConnected,DataSigned', // DataSigned invalid for stop point enumeration
+        component: { name: OCPP20ComponentName.TxCtrlr },
+        variable: { name: OCPP20RequiredVariableName.TxStopPoint },
+      },
+    ])[0]
+    expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+    expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
+    expect(res.attributeStatusInfo?.additionalInfo).toContain('Member not in enumeration')
   })
 
   await describe('Unsupported MinSet/MaxSet attribute tests', async () => {
