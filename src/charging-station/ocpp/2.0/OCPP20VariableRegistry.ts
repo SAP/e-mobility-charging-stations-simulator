@@ -115,11 +115,8 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     maxLength: 512,
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [
-      AttributeEnumType.Actual,
-      AttributeEnumType.MinSet,
-      AttributeEnumType.MaxSet,
-    ],
+    // MinSet/MaxSet removed: string type does not support numeric bounds
+    supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20VendorVariableName.ConnectionUrl as string,
     vendorSpecific: true,
   },

@@ -1284,32 +1284,34 @@ await describe('OCPP20VariableManager test suite', async () => {
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
 
-    await it('Accepts setting MinSet then MaxSet for HeartbeatInterval', () => {
+    await it('Rejects MinSet and MaxSet for HeartbeatInterval', () => {
       const component = { name: OCPP20ComponentName.OCPPCommCtrlr }
       const variable = { name: OCPP20OptionalVariableName.HeartbeatInterval }
       const minRes = manager.setVariables(mmChargingStation, [
         { attributeType: AttributeEnumType.MinSet, attributeValue: '10', component, variable },
       ])[0]
-      expect(minRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      expect(minRes.attributeStatus).toBe(SetVariableStatusEnumType.NotSupportedAttributeType)
+      expect(minRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
       const maxRes = manager.setVariables(mmChargingStation, [
         { attributeType: AttributeEnumType.MaxSet, attributeValue: '100', component, variable },
       ])[0]
-      expect(maxRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      expect(maxRes.attributeStatus).toBe(SetVariableStatusEnumType.NotSupportedAttributeType)
+      expect(maxRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
     })
 
-    await it('Retrieves MinSet and MaxSet for HeartbeatInterval after set', () => {
+    await it('Returns NotSupportedAttributeType for MinSet/MaxSet HeartbeatInterval', () => {
       const component = { name: OCPP20ComponentName.OCPPCommCtrlr }
       const variable = { name: OCPP20OptionalVariableName.HeartbeatInterval }
       const getMin = manager.getVariables(mmChargingStation, [
         { attributeType: AttributeEnumType.MinSet, component, variable },
       ])[0]
-      expect(getMin.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(getMin.attributeValue).toBe('10')
+      expect(getMin.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
+      expect(getMin.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
       const getMax = manager.getVariables(mmChargingStation, [
         { attributeType: AttributeEnumType.MaxSet, component, variable },
       ])[0]
-      expect(getMax.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(getMax.attributeValue).toBe('100')
+      expect(getMax.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
+      expect(getMax.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
     })
 
     await it('Rejects non-integer MaxSet for MessageAttemptInterval', () => {
