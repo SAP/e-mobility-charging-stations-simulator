@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { expect } from '@std/expect'
 import { describe, it } from 'node:test'
 
@@ -55,7 +59,10 @@ await describe('B08 - Get Base Report', async () => {
       requestId: 1,
     }
 
-    const response = incomingRequestService.getBaseReportStatus(mockChargingStation, request)
+    const response = (incomingRequestService as any).handleRequestGetBaseReport(
+      mockChargingStation,
+      request
+    )
 
     expect(response).toBeDefined()
     expect(response.status).toBe(GenericDeviceModelStatusEnumType.Accepted)
@@ -68,7 +75,10 @@ await describe('B08 - Get Base Report', async () => {
       requestId: 2,
     }
 
-    const response = incomingRequestService.getBaseReportStatus(mockChargingStation, request)
+    const response = (incomingRequestService as any).handleRequestGetBaseReport(
+      mockChargingStation,
+      request
+    )
 
     expect(response).toBeDefined()
     expect(response.status).toBe(GenericDeviceModelStatusEnumType.Accepted)
@@ -76,7 +86,7 @@ await describe('B08 - Get Base Report', async () => {
 
   // Extended FullInventory validation: presence & attribute ordering
   await it('Should include registry integer variables with ordered Actual/MinSet/MaxSet attributes', () => {
-    const reportData: ReportDataType[] = incomingRequestService.getReportData(
+    const reportData: ReportDataType[] = (incomingRequestService as any).buildReportData(
       mockChargingStation,
       ReportBaseEnumType.FullInventory
     )
@@ -131,7 +141,10 @@ await describe('B08 - Get Base Report', async () => {
       requestId: 3,
     }
 
-    const response = incomingRequestService.getBaseReportStatus(mockChargingStation, request)
+    const response = (incomingRequestService as any).handleRequestGetBaseReport(
+      mockChargingStation,
+      request
+    )
 
     expect(response).toBeDefined()
     expect(response.status).toBe(GenericDeviceModelStatusEnumType.Accepted)
@@ -144,7 +157,10 @@ await describe('B08 - Get Base Report', async () => {
       requestId: 4,
     }
 
-    const response = incomingRequestService.getBaseReportStatus(mockChargingStation, request)
+    const response = (incomingRequestService as any).handleRequestGetBaseReport(
+      mockChargingStation,
+      request
+    )
 
     expect(response).toBeDefined()
     expect(response.status).toBe(GenericDeviceModelStatusEnumType.NotSupported)
@@ -168,7 +184,10 @@ await describe('B08 - Get Base Report', async () => {
       requestId: 5,
     }
 
-    const response = incomingRequestService.getBaseReportStatus(minimalChargingStation, request)
+    const response = (incomingRequestService as any).handleRequestGetBaseReport(
+      minimalChargingStation,
+      request
+    )
 
     expect(response).toBeDefined()
     expect(response.status).toBe(GenericDeviceModelStatusEnumType.EmptyResultSet)
@@ -183,13 +202,16 @@ await describe('B08 - Get Base Report', async () => {
 
     // Test the buildReportData method indirectly by calling handleRequestGetBaseReport
     // and checking if it returns Accepted status (which means data was built successfully)
-    const response = incomingRequestService.getBaseReportStatus(mockChargingStation, request)
+    const response = (incomingRequestService as any).handleRequestGetBaseReport(
+      mockChargingStation,
+      request
+    )
 
     expect(response).toBeDefined()
     expect(response.status).toBe(GenericDeviceModelStatusEnumType.Accepted)
 
     // We can also test the buildReportData method directly if needed
-    const reportData: ReportDataType[] = incomingRequestService.getReportData(
+    const reportData: ReportDataType[] = (incomingRequestService as any).buildReportData(
       mockChargingStation,
       ReportBaseEnumType.ConfigurationInventory
     )
@@ -211,7 +233,7 @@ await describe('B08 - Get Base Report', async () => {
 
   // FR: B08.FR.07
   await it('Should build correct report data for FullInventory with station info', () => {
-    const reportData: ReportDataType[] = incomingRequestService.getReportData(
+    const reportData: ReportDataType[] = (incomingRequestService as any).buildReportData(
       mockChargingStation,
       ReportBaseEnumType.FullInventory
     )
@@ -243,7 +265,7 @@ await describe('B08 - Get Base Report', async () => {
 
   // FR: B08.FR.08
   await it('Should build correct report data for SummaryInventory', () => {
-    const reportData: ReportDataType[] = incomingRequestService.getReportData(
+    const reportData: ReportDataType[] = (incomingRequestService as any).buildReportData(
       mockChargingStation,
       ReportBaseEnumType.SummaryInventory
     )
@@ -345,7 +367,7 @@ await describe('B08 - Get Base Report', async () => {
     expect(withinBoundsActual[0].attributeStatus).toBe('Accepted')
 
     // 6. Build FullInventory report and verify attributes ordering + overridden values
-    const reportData: ReportDataType[] = incomingRequestService.getReportData(
+    const reportData: ReportDataType[] = (incomingRequestService as any).buildReportData(
       mockChargingStation,
       ReportBaseEnumType.FullInventory
     )
@@ -404,7 +426,7 @@ await describe('B08 - Get Base Report', async () => {
     expect(setResult[0].attributeStatus).toBe('Accepted')
 
     // Build report; value should be truncated to length 10
-    const reportData: ReportDataType[] = incomingRequestService.getReportData(
+    const reportData: ReportDataType[] = (incomingRequestService as any).buildReportData(
       mockChargingStation,
       ReportBaseEnumType.FullInventory
     )
@@ -439,7 +461,7 @@ await describe('B08 - Get Base Report', async () => {
       },
     })
 
-    const reportData: ReportDataType[] = incomingRequestService.getReportData(
+    const reportData: ReportDataType[] = (incomingRequestService as any).buildReportData(
       stationWithEvses,
       ReportBaseEnumType.FullInventory
     )
@@ -458,7 +480,7 @@ await describe('B08 - Get Base Report', async () => {
 
   // FR: B08.FR.10
   await it('Should validate unsupported reportBase correctly', () => {
-    const reportData: ReportDataType[] = incomingRequestService.getReportData(
+    const reportData: ReportDataType[] = (incomingRequestService as any).buildReportData(
       mockChargingStation,
       'InvalidReportBase' as unknown as ReportBaseEnumType
     )

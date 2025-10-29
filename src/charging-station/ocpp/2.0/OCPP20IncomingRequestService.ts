@@ -164,20 +164,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     this.validatePayload = this.validatePayload.bind(this)
   }
 
-  public getBaseReportStatus (
-    chargingStation: ChargingStation,
-    commandPayload: OCPP20GetBaseReportRequest
-  ): OCPP20GetBaseReportResponse {
-    return this.handleRequestGetBaseReport(chargingStation, commandPayload)
-  }
-
-  public getReportData (
-    chargingStation: ChargingStation,
-    reportBase: ReportBaseEnumType
-  ): ReportDataType[] {
-    return this.buildReportData(chargingStation, reportBase)
-  }
-
   public handleRequestGetVariables (
     chargingStation: ChargingStation,
     commandPayload: OCPP20GetVariablesRequest
