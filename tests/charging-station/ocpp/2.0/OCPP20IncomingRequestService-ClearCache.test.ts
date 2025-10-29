@@ -27,6 +27,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
 
   const incomingRequestService = new OCPP20IncomingRequestService()
 
+  // FR: C11.FR.01
   await it('Should handle ClearCache request successfully', async () => {
     const response = await (incomingRequestService as any).handleRequestClearCache(
       mockChargingStation
@@ -39,6 +40,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
     expect(['Accepted', 'Rejected']).toContain(response.status)
   })
 
+  // FR: C11.FR.02
   await it('Should return correct status based on cache clearing result', async () => {
     // Test the actual behavior - ClearCache should work with ID tags cache
 

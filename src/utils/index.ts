@@ -32,6 +32,7 @@ export {
   convertToDate,
   convertToFloat,
   convertToInt,
+  convertToIntOrNaN,
   exponentialDelay,
   extractTimeSeriesValues,
   formatDurationMilliSeconds,

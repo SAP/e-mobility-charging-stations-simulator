@@ -1020,6 +1020,7 @@ export class ChargingStation extends EventEmitter {
       if (!this.stopping) {
         this.stopping = true
         await this.stopMessageSequence(reason, stopTransactions)
+        this.ocppIncomingRequestService.stop(this)
         this.closeWSConnection()
         if (this.stationInfo?.enableStatistics === true) {
           this.performanceStatistics?.stop()
@@ -1333,7 +1334,10 @@ export class ChargingStation extends EventEmitter {
         propagateSerialNumber(this.getTemplateFromFile(), stationInfoFromFile, stationInfo)
     }
     return setChargingStationOptions(
-      mergeDeepRight(Constants.DEFAULT_STATION_INFO, stationInfo),
+      mergeDeepRight<ChargingStationInfo, ChargingStationInfo>(
+        Constants.DEFAULT_STATION_INFO as ChargingStationInfo,
+        stationInfo
+      ),
       options
     )
   }
@@ -2192,7 +2196,10 @@ export class ChargingStation extends EventEmitter {
         } else {
           delete configurationData.configurationKey
         }
-        configurationData = mergeDeepRight<ChargingStationConfiguration>(
+        configurationData = mergeDeepRight<
+          ChargingStationConfiguration,
+          Partial<ChargingStationConfiguration>
+        >(
           configurationData,
           buildChargingStationAutomaticTransactionGeneratorConfiguration(
             this
@@ -2326,13 +2333,16 @@ export class ChargingStation extends EventEmitter {
             error
           )
         }
-        // eslint-disable-next-line promise/catch-or-return, @typescript-eslint/no-floating-promises, promise/no-promise-in-callback
+        // eslint-disable-next-line promise/no-promise-in-callback
         sleep(exponentialDelay(messageIdx))
-          // eslint-disable-next-line promise/always-return
           .then(() => {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             ++messageIdx!
             this.sendMessageBuffer(onCompleteCallback, messageIdx)
+            return undefined
+          })
+          .catch((error: unknown) => {
+            throw error
           })
       })
     } else {

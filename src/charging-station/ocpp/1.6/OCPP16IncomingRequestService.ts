@@ -661,6 +661,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
+  public override stop (chargingStation: ChargingStation): void {
+    /* no-op for OCPP 1.6 */
+  }
+
   private async handleRequestCancelReservation (
     chargingStation: ChargingStation,
     commandPayload: OCPP16CancelReservationRequest

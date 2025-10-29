@@ -5,8 +5,10 @@ import { env } from 'node:process'
 import { fileURLToPath } from 'node:url'
 import serveStatic from 'serve-static'
 
+const UI_DEV_SERVER_PORT = 3030
+
 const isCFEnvironment = env.VCAP_APPLICATION != null
-const PORT = isCFEnvironment ? Number.parseInt(env.PORT) : 3030
+const PORT = isCFEnvironment ? Number.parseInt(env.PORT) : UI_DEV_SERVER_PORT
 const uiPath = join(dirname(fileURLToPath(import.meta.url)), './dist')
 
 const serve = serveStatic(uiPath)

@@ -522,7 +522,7 @@ make SUBMODULES_INIT=true
 #### G. Monitoring
 
 - :white_check_mark: GetVariables
-- :x: SetVariables
+- :white_check_mark: SetVariables
 
 #### H. FirmwareManagement
 

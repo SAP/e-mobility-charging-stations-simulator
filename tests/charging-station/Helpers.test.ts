@@ -130,15 +130,15 @@ await describe('Helpers test suite', async () => {
   })
 
   await it('Verify checkChargingStationState()', t => {
-    t.mock.method(logger, 'warn')
+    const warnMock = t.mock.method(logger, 'warn')
     expect(checkChargingStationState(chargingStation, 'log prefix |')).toBe(false)
-    expect(logger.warn.mock.calls.length).toBe(1)
+    expect(warnMock.mock.calls.length).toBe(1)
     chargingStation.starting = true
     expect(checkChargingStationState(chargingStation, 'log prefix |')).toBe(true)
-    expect(logger.warn.mock.calls.length).toBe(1)
+    expect(warnMock.mock.calls.length).toBe(1)
     chargingStation.started = true
     expect(checkChargingStationState(chargingStation, 'log prefix |')).toBe(true)
-    expect(logger.warn.mock.calls.length).toBe(1)
+    expect(warnMock.mock.calls.length).toBe(1)
   })
 
   await it('Verify getPhaseRotationValue()', () => {
@@ -162,45 +162,45 @@ await describe('Helpers test suite', async () => {
   })
 
   await it('Verify checkTemplate()', t => {
-    t.mock.method(logger, 'warn')
-    t.mock.method(logger, 'error')
+    const warnMock = t.mock.method(logger, 'warn')
+    const errorMock = t.mock.method(logger, 'error')
     expect(() => {
       checkTemplate(undefined, 'log prefix |', 'test-template.json')
     }).toThrow(new BaseError('Failed to read charging station template file test-template.json'))
-    expect(logger.error.mock.calls.length).toBe(1)
+    expect(errorMock.mock.calls.length).toBe(1)
     expect(() => {
       checkTemplate({} as ChargingStationTemplate, 'log prefix |', 'test-template.json')
     }).toThrow(
       new BaseError('Empty charging station information from template file test-template.json')
     )
-    expect(logger.error.mock.calls.length).toBe(2)
+    expect(errorMock.mock.calls.length).toBe(2)
     checkTemplate(chargingStationTemplate, 'log prefix |', 'test-template.json')
-    expect(logger.warn.mock.calls.length).toBe(1)
+    expect(warnMock.mock.calls.length).toBe(1)
   })
 
   await it('Verify checkConfiguration()', t => {
-    t.mock.method(logger, 'error')
+    const errorMock = t.mock.method(logger, 'error')
     expect(() => {
       checkConfiguration(undefined, 'log prefix |', 'configuration.json')
     }).toThrow(
       new BaseError('Failed to read charging station configuration file configuration.json')
     )
-    expect(logger.error.mock.calls.length).toBe(1)
+    expect(errorMock.mock.calls.length).toBe(1)
     expect(() => {
       checkConfiguration({} as ChargingStationConfiguration, 'log prefix |', 'configuration.json')
     }).toThrow(new BaseError('Empty charging station configuration from file configuration.json'))
-    expect(logger.error.mock.calls.length).toBe(2)
+    expect(errorMock.mock.calls.length).toBe(2)
   })
 
   await it('Verify checkStationInfoConnectorStatus()', t => {
-    t.mock.method(logger, 'warn')
+    const warnMock = t.mock.method(logger, 'warn')
     checkStationInfoConnectorStatus(1, {} as ConnectorStatus, 'log prefix |', 'test-template.json')
-    expect(logger.warn.mock.calls.length).toBe(0)
+    expect(warnMock.mock.calls.length).toBe(0)
     const connectorStatus = {
       status: ConnectorStatusEnum.Available,
     } as ConnectorStatus
     checkStationInfoConnectorStatus(1, connectorStatus, 'log prefix |', 'test-template.json')
-    expect(logger.warn.mock.calls.length).toBe(1)
+    expect(warnMock.mock.calls.length).toBe(1)
     expect(connectorStatus.status).toBeUndefined()
   })
 })

@@ -36,7 +36,8 @@ await describe('B11 & B12 - Reset', async () => {
   const incomingRequestService = new OCPP20IncomingRequestService()
 
   await describe('B11 - Reset - Without Ongoing Transaction', async () => {
-    await it('B11.FR.01 - Should handle Reset request with Immediate type when no transactions', async () => {
+    // FR: B11.FR.01
+    await it('Should handle Reset request with Immediate type when no transactions', async () => {
       const resetRequest: OCPP20ResetRequest = {
         type: ResetEnumType.Immediate,
       }
@@ -56,7 +57,7 @@ await describe('B11 & B12 - Reset', async () => {
       ]).toContain(response.status)
     })
 
-    await it('B11.FR.01 - Should handle Reset request with OnIdle type when no transactions', async () => {
+    await it('Should handle Reset request with OnIdle type when no transactions', async () => {
       const resetRequest: OCPP20ResetRequest = {
         type: ResetEnumType.OnIdle,
       }
@@ -74,7 +75,8 @@ await describe('B11 & B12 - Reset', async () => {
       ]).toContain(response.status)
     })
 
-    await it('B11.FR.03+ - Should handle EVSE-specific reset request when no transactions', async () => {
+    // FR: B11.FR.03
+    await it('Should handle EVSE-specific reset request when no transactions', async () => {
       const resetRequest: OCPP20ResetRequest = {
         evseId: 1,
         type: ResetEnumType.Immediate,
@@ -93,7 +95,7 @@ await describe('B11 & B12 - Reset', async () => {
       ]).toContain(response.status)
     })
 
-    await it('B11.FR.03+ - Should reject reset for non-existent EVSE when no transactions', async () => {
+    await it('Should reject reset for non-existent EVSE when no transactions', async () => {
       const resetRequest: OCPP20ResetRequest = {
         evseId: 999, // Non-existent EVSE
         type: ResetEnumType.Immediate,
@@ -110,7 +112,7 @@ await describe('B11 & B12 - Reset', async () => {
       expect(response.statusInfo?.additionalInfo).toContain('EVSE 999')
     })
 
-    await it('B11.FR.01+ - Should return proper response structure for immediate reset without transactions', async () => {
+    await it('Should return proper response structure for immediate reset without transactions', async () => {
       const resetRequest: OCPP20ResetRequest = {
         type: ResetEnumType.Immediate,
       }
@@ -129,7 +131,7 @@ await describe('B11 & B12 - Reset', async () => {
       }
     })
 
-    await it('B11.FR.01+ - Should return proper response structure for OnIdle reset without transactions', async () => {
+    await it('Should return proper response structure for OnIdle reset without transactions', async () => {
       const resetRequest: OCPP20ResetRequest = {
         type: ResetEnumType.OnIdle,
       }
@@ -142,7 +144,7 @@ await describe('B11 & B12 - Reset', async () => {
       expect(response.status).toBe(ResetStatusEnumType.Accepted)
     })
 
-    await it('B11.FR.03+ - Should reject EVSE reset when not supported and no transactions', async () => {
+    await it('Should reject EVSE reset when not supported and no transactions', async () => {
       // Mock charging station without EVSE support
       const originalHasEvses = mockChargingStation.hasEvses
       ;(mockChargingStation as any).hasEvses = false
@@ -168,7 +170,7 @@ await describe('B11 & B12 - Reset', async () => {
       ;(mockChargingStation as any).hasEvses = originalHasEvses
     })
 
-    await it('B11.FR.03+ - Should handle EVSE-specific reset without transactions', async () => {
+    await it('Should handle EVSE-specific reset without transactions', async () => {
       const resetRequest: OCPP20ResetRequest = {
         evseId: 1,
         type: ResetEnumType.Immediate,
@@ -180,14 +182,13 @@ await describe('B11 & B12 - Reset', async () => {
 
       expect(response).toBeDefined()
       expect(response.status).toBe(ResetStatusEnumType.Accepted)
-      expect(response.statusInfo).toBeDefined()
-      expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.NoError)
-      expect(response.statusInfo?.additionalInfo).toContain('EVSE 1 reset initiated')
+      expect(response.statusInfo).toBeUndefined()
     })
   })
 
   await describe('B12 - Reset - With Ongoing Transaction', async () => {
-    await it('B12.FR.02 - Should handle immediate reset with active transactions', async () => {
+    // FR: B12.FR.02
+    await it('Should handle immediate reset with active transactions', async () => {
       // Mock active transactions
       ;(mockChargingStation as any).getNumberOfRunningTransactions = () => 1
 
@@ -201,17 +202,14 @@ await describe('B11 & B12 - Reset', async () => {
 
       expect(response).toBeDefined()
       expect(response.status).toBe(ResetStatusEnumType.Accepted) // Should accept immediate reset
-      expect(response.statusInfo).toBeDefined()
-      expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.NoError)
-      expect(response.statusInfo?.additionalInfo).toContain(
-        'active transactions will be terminated'
-      )
+      expect(response.statusInfo).toBeUndefined()
 
       // Reset mock
       ;(mockChargingStation as any).getNumberOfRunningTransactions = () => 0
     })
 
-    await it('B12.FR.01 - Should handle OnIdle reset with active transactions', async () => {
+    // FR: B12.FR.01
+    await it('Should handle OnIdle reset with active transactions', async () => {
       // Mock active transactions
       ;(mockChargingStation as any).getNumberOfRunningTransactions = () => 1
 
@@ -225,17 +223,14 @@ await describe('B11 & B12 - Reset', async () => {
 
       expect(response).toBeDefined()
       expect(response.status).toBe(ResetStatusEnumType.Scheduled) // Should schedule OnIdle reset
-      expect(response.statusInfo).toBeDefined()
-      expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.NoError)
-      expect(response.statusInfo?.additionalInfo).toContain(
-        'scheduled after all transactions complete'
-      )
+      expect(response.statusInfo).toBeUndefined()
 
       // Reset mock
       ;(mockChargingStation as any).getNumberOfRunningTransactions = () => 0
     })
 
-    await it('B12.FR.03+ - Should handle EVSE-specific reset with active transactions', async () => {
+    // FR: B12.FR.03
+    await it('Should handle EVSE-specific reset with active transactions', async () => {
       // Mock active transactions
       ;(mockChargingStation as any).getNumberOfRunningTransactions = () => 1
 
@@ -258,7 +253,7 @@ await describe('B11 & B12 - Reset', async () => {
       ;(mockChargingStation as any).getNumberOfRunningTransactions = () => 0
     })
 
-    await it('B12.FR.03+ - Should reject EVSE reset when not supported with active transactions', async () => {
+    await it('Should reject EVSE reset when not supported with active transactions', async () => {
       // Mock charging station without EVSE support and active transactions
       const originalHasEvses = mockChargingStation.hasEvses
       ;(mockChargingStation as any).hasEvses = false

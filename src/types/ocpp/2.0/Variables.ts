@@ -40,6 +40,7 @@ export enum OCPP20RequiredVariableName {
   AuthorizeRemoteStart = 'AuthorizeRemoteStart',
   BytesPerMessage = 'BytesPerMessage',
   CertificateEntries = 'CertificateEntries',
+  ConfigurationValueSize = 'ConfigurationValueSize',
   DateTime = 'DateTime',
   EVConnectionTimeOut = 'EVConnectionTimeOut',
   FileTransferProtocols = 'FileTransferProtocols',
@@ -47,12 +48,13 @@ export enum OCPP20RequiredVariableName {
   LocalAuthorizeOffline = 'LocalAuthorizeOffline',
   LocalPreAuthorize = 'LocalPreAuthorize',
   MessageAttemptInterval = 'MessageAttemptInterval',
-  MessageAttempts = 'TransactionEvent',
+  MessageAttempts = 'MessageAttempts',
   MessageTimeout = 'MessageTimeout',
   NetworkConfigurationPriority = 'NetworkConfigurationPriority',
   NetworkProfileConnectionAttempts = 'NetworkProfileConnectionAttempts',
   OfflineThreshold = 'OfflineThreshold',
   OrganizationName = 'OrganizationName',
+  ReportingValueSize = 'ReportingValueSize',
   ResetRetries = 'ResetRetries',
   SecurityProfile = 'SecurityProfile',
   StopTxOnEVSideDisconnect = 'StopTxOnEVSideDisconnect',
@@ -65,13 +67,20 @@ export enum OCPP20RequiredVariableName {
   TxUpdatedInterval = 'TxUpdatedInterval',
   TxUpdatedMeasurands = 'TxUpdatedMeasurands',
   UnlockOnEVSideDisconnect = 'UnlockOnEVSideDisconnect',
+  ValueSize = 'ValueSize',
 }
 
 export enum OCPP20VendorVariableName {
+  CertificatePrivateKey = 'CertificatePrivateKey',
   ConnectionUrl = 'ConnectionUrl',
 }
 
-enum SetVariableStatusEnumType {
+export enum PersistenceEnumType {
+  Persistent = 'Persistent',
+  Volatile = 'Volatile',
+}
+
+export enum SetVariableStatusEnumType {
   Accepted = 'Accepted',
   NotSupportedAttributeType = 'NotSupportedAttributeType',
   RebootRequired = 'RebootRequired',

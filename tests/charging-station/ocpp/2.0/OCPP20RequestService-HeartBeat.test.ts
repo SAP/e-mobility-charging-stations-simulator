@@ -9,7 +9,7 @@ import { describe, it } from 'node:test'
 import { OCPP20RequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20RequestService.js'
 import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
 import { type OCPP20HeartbeatRequest, OCPP20RequestCommand } from '../../../../src/types/index.js'
-import { Constants } from '../../../../src/utils/index.js'
+import { Constants, has } from '../../../../src/utils/index.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
 import {
   TEST_CHARGE_POINT_MODEL,
@@ -36,6 +36,7 @@ await describe('G02 - Heartbeat', async () => {
     websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
   })
 
+  // FR: G02.FR.01
   await it('Should build HeartBeat request payload correctly with empty object', () => {
     const requestParams: OCPP20HeartbeatRequest = {}
 
@@ -51,6 +52,7 @@ await describe('G02 - Heartbeat', async () => {
     expect(Object.keys(payload as object)).toHaveLength(0)
   })
 
+  // FR: G02.FR.02
   await it('Should build HeartBeat request payload correctly without parameters', () => {
     // Test without passing any request parameters
     const payload = (requestService as any).buildRequestPayload(
@@ -63,6 +65,7 @@ await describe('G02 - Heartbeat', async () => {
     expect(Object.keys(payload as object)).toHaveLength(0)
   })
 
+  // FR: G02.FR.03
   await it('Should validate payload structure matches OCPP20HeartbeatRequest interface', () => {
     const requestParams: OCPP20HeartbeatRequest = {}
 
@@ -80,6 +83,7 @@ await describe('G02 - Heartbeat', async () => {
     expect(JSON.stringify(payload)).toBe('{}')
   })
 
+  // FR: G02.FR.04
   await it('Should handle HeartBeat request consistently across multiple calls', () => {
     const requestParams: OCPP20HeartbeatRequest = {}
 
@@ -109,6 +113,7 @@ await describe('G02 - Heartbeat', async () => {
     expect(JSON.stringify(payload3)).toBe('{}')
   })
 
+  // FR: G02.FR.05
   await it('Should handle HeartBeat request with different charging station configurations', () => {
     const alternativeChargingStation = createChargingStation({
       baseName: 'CS-ALTERNATIVE-002',
@@ -138,6 +143,7 @@ await describe('G02 - Heartbeat', async () => {
     expect(JSON.stringify(payload)).toBe('{}')
   })
 
+  // FR: G02.FR.06
   await it('Should verify HeartBeat request conforms to OCPP 2.0 specification', () => {
     const requestParams: OCPP20HeartbeatRequest = {}
 
@@ -151,7 +157,7 @@ await describe('G02 - Heartbeat', async () => {
     // This validates compliance with the official OCPP 2.0 standard
     expect(payload).toBeDefined()
     expect(payload).toEqual({})
-    expect(Object.prototype.hasOwnProperty.call(payload, 'constructor')).toBe(false)
+    expect(has('constructor', payload)).toBe(false)
 
     // Ensure it's a plain object and not an instance of another type
     expect(Object.getPrototypeOf(payload)).toBe(Object.prototype)

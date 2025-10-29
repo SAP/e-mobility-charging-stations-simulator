@@ -28,7 +28,7 @@ import {
   TEST_FIRMWARE_VERSION,
 } from './OCPP20TestConstants.js'
 
-await describe('B07 - Get Base Report (NotifyReport)', async () => {
+await describe('B08 - NotifyReport', async () => {
   const mockResponseService = new OCPP20ResponseService()
   const requestService = new OCPP20RequestService(mockResponseService)
 
@@ -163,10 +163,6 @@ await describe('B07 - Get Base Report (NotifyReport)', async () => {
             type: AttributeEnumType.Actual,
             value: '60',
           },
-          {
-            type: AttributeEnumType.Target,
-            value: '60',
-          },
         ],
         variableCharacteristics: {
           dataType: DataEnumType.integer,
@@ -271,12 +267,7 @@ await describe('B07 - Get Base Report (NotifyReport)', async () => {
   })
 
   await it('Should handle different AttributeEnumType values correctly', () => {
-    const testAttributes = [
-      AttributeEnumType.Actual,
-      AttributeEnumType.Target,
-      AttributeEnumType.MinSet,
-      AttributeEnumType.MaxSet,
-    ]
+    const testAttributes = [AttributeEnumType.Actual]
 
     testAttributes.forEach((attributeType, index) => {
       const reportData: ReportDataType[] = [
@@ -452,18 +443,6 @@ await describe('B07 - Get Base Report (NotifyReport)', async () => {
             type: AttributeEnumType.Actual,
             value: 'actual value',
           },
-          {
-            type: AttributeEnumType.Target,
-            value: 'target value',
-          },
-          {
-            type: AttributeEnumType.MinSet,
-            value: '0',
-          },
-          {
-            type: AttributeEnumType.MaxSet,
-            value: '100',
-          },
         ],
         variableCharacteristics: {
           dataType: DataEnumType.integer,
@@ -487,11 +466,8 @@ await describe('B07 - Get Base Report (NotifyReport)', async () => {
     )
 
     expect(payload).toBeDefined()
-    expect(payload.reportData[0].variableAttribute).toHaveLength(4)
+    expect(payload.reportData[0].variableAttribute).toHaveLength(1)
     expect(payload.reportData[0].variableAttribute[0].type).toBe(AttributeEnumType.Actual)
-    expect(payload.reportData[0].variableAttribute[1].type).toBe(AttributeEnumType.Target)
-    expect(payload.reportData[0].variableAttribute[2].type).toBe(AttributeEnumType.MinSet)
-    expect(payload.reportData[0].variableAttribute[3].type).toBe(AttributeEnumType.MaxSet)
   })
 
   await it('Should preserve all payload properties correctly', () => {

@@ -52,6 +52,7 @@ export interface ChargingStationWorkerData extends WorkerData {
 export interface ChargingStationWorkerMessage<T extends ChargingStationWorkerMessageData> {
   data: T
   event: ChargingStationWorkerMessageEvents
+  uuid?: string
 }
 
 export type ChargingStationWorkerMessageData = ChargingStationData | Statistics

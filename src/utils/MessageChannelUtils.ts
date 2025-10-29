@@ -64,12 +64,14 @@ export const buildUpdatedMessage = (
 export const buildPerformanceStatisticsMessage = (
   statistics: Statistics
 ): ChargingStationWorkerMessage<Statistics> => {
-  const statisticsData = [...statistics.statisticsData].map(([key, value]) => {
-    if (value.measurementTimeSeries instanceof CircularBuffer) {
-      value.measurementTimeSeries = value.measurementTimeSeries.toArray() as TimestampedData[]
-    }
-    return [key, value]
-  })
+  const statisticsData = new Map(
+    [...statistics.statisticsData].map(([key, value]) => {
+      if (value.measurementTimeSeries instanceof CircularBuffer) {
+        value.measurementTimeSeries = value.measurementTimeSeries.toArray() as TimestampedData[]
+      }
+      return [key, value]
+    })
+  )
   return {
     data: {
       createdAt: statistics.createdAt,

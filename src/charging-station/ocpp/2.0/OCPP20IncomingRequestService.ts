@@ -12,6 +12,7 @@ import {
   DataEnumType,
   ErrorType,
   GenericDeviceModelStatusEnumType,
+  GetVariableStatusEnumType,
   type IncomingRequestHandler,
   type JsonType,
   type OCPP20ClearCacheRequest,
@@ -26,20 +27,27 @@ import {
   type OCPP20NotifyReportRequest,
   type OCPP20NotifyReportResponse,
   OCPP20RequestCommand,
+  OCPP20RequiredVariableName,
   type OCPP20ResetRequest,
   type OCPP20ResetResponse,
+  type OCPP20SetVariablesRequest,
+  type OCPP20SetVariablesResponse,
   OCPPVersion,
   ReasonCodeEnumType,
   ReportBaseEnumType,
   type ReportDataType,
   ResetEnumType,
   ResetStatusEnumType,
+  SetVariableStatusEnumType,
   StopTransactionReason,
 } from '../../../types/index.js'
-import { isAsyncFunction, logger } from '../../../utils/index.js'
+import { StandardParametersKey } from '../../../types/ocpp/Configuration.js'
+import { convertToIntOrNaN, isAsyncFunction, logger } from '../../../utils/index.js'
+import { getConfigurationKey } from '../../ConfigurationKeyUtils.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 import { OCPP20VariableManager } from './OCPP20VariableManager.js'
+import { getVariableMetadata, VARIABLE_REGISTRY } from './OCPP20VariableRegistry.js'
 
 const moduleName = 'OCPP20IncomingRequestService'
 
@@ -51,16 +59,35 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     IncomingRequestHandler
   >
 
+  private readonly reportDataCache: Map<number, ReportDataType[]>
+
   public constructor () {
     // if (new.target.name === moduleName) {
     //   throw new TypeError(`Cannot construct ${new.target.name} instances directly`)
     // }
     super(OCPPVersion.VERSION_201)
+    this.reportDataCache = new Map<number, ReportDataType[]>()
     this.incomingRequestHandlers = new Map<OCPP20IncomingRequestCommand, IncomingRequestHandler>([
-      [OCPP20IncomingRequestCommand.CLEAR_CACHE, super.handleRequestClearCache.bind(this)],
-      [OCPP20IncomingRequestCommand.GET_BASE_REPORT, this.handleRequestGetBaseReport.bind(this)],
-      [OCPP20IncomingRequestCommand.GET_VARIABLES, this.handleRequestGetVariables.bind(this)],
-      [OCPP20IncomingRequestCommand.RESET, this.handleRequestReset.bind(this)],
+      [
+        OCPP20IncomingRequestCommand.CLEAR_CACHE,
+        super.handleRequestClearCache.bind(this) as IncomingRequestHandler,
+      ],
+      [
+        OCPP20IncomingRequestCommand.GET_BASE_REPORT,
+        this.handleRequestGetBaseReport.bind(this) as unknown as IncomingRequestHandler,
+      ],
+      [
+        OCPP20IncomingRequestCommand.GET_VARIABLES,
+        this.handleRequestGetVariables.bind(this) as unknown as IncomingRequestHandler,
+      ],
+      [
+        OCPP20IncomingRequestCommand.RESET,
+        this.handleRequestReset.bind(this) as unknown as IncomingRequestHandler,
+      ],
+      [
+        OCPP20IncomingRequestCommand.SET_VARIABLES,
+        this.handleRequestSetVariables.bind(this) as unknown as IncomingRequestHandler,
+      ],
     ])
     this.payloadValidateFunctions = new Map<
       OCPP20IncomingRequestCommand,
@@ -106,6 +133,16 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           )
         ),
       ],
+      [
+        OCPP20IncomingRequestCommand.SET_VARIABLES,
+        this.ajv.compile(
+          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20SetVariablesRequest>(
+            'assets/json-schemas/ocpp/2.0/SetVariablesRequest.json',
+            moduleName,
+            'constructor'
+          )
+        ),
+      ],
     ])
     // Handle incoming request events
     this.on(
@@ -138,18 +175,175 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       getVariableResult: [],
     }
 
-    // Use VariableManager to get variables
     const variableManager = OCPP20VariableManager.getInstance()
 
-    // Get variables using VariableManager
-    const results = variableManager.getVariables(chargingStation, commandPayload.getVariableData)
+    // Enforce ItemsPerMessage and BytesPerMessage limits if configured
+    let enforceItemsLimit = 0
+    let enforceBytesLimit = 0
+    try {
+      const itemsCfg = getConfigurationKey(
+        chargingStation,
+        OCPP20RequiredVariableName.ItemsPerMessage as unknown as StandardParametersKey
+      )?.value
+      const bytesCfg = getConfigurationKey(
+        chargingStation,
+        OCPP20RequiredVariableName.BytesPerMessage as unknown as StandardParametersKey
+      )?.value
+      if (itemsCfg && /^\d+$/.test(itemsCfg)) {
+        enforceItemsLimit = convertToIntOrNaN(itemsCfg)
+      }
+      if (bytesCfg && /^\d+$/.test(bytesCfg)) {
+        enforceBytesLimit = convertToIntOrNaN(bytesCfg)
+      }
+    } catch {
+      /* ignore */
+    }
+
+    const variableData = commandPayload.getVariableData
+    const preEnforcement = OCPP20ServiceUtils.enforceMessageLimits(
+      chargingStation,
+      moduleName,
+      'handleRequestGetVariables',
+      variableData,
+      enforceItemsLimit,
+      enforceBytesLimit,
+      (v, reason) => ({
+        attributeStatus: GetVariableStatusEnumType.Rejected,
+        attributeStatusInfo: {
+          additionalInfo: reason.info,
+
+          reasonCode: ReasonCodeEnumType[reason.reasonCode as keyof typeof ReasonCodeEnumType],
+        },
+        attributeType: v.attributeType,
+        component: v.component,
+        variable: v.variable,
+      }),
+      logger
+    )
+    if (preEnforcement.rejected) {
+      getVariablesResponse.getVariableResult =
+        preEnforcement.results as typeof getVariablesResponse.getVariableResult
+      return getVariablesResponse
+    }
+
+    const results = variableManager.getVariables(chargingStation, variableData)
     getVariablesResponse.getVariableResult = results
+
+    getVariablesResponse.getVariableResult = OCPP20ServiceUtils.enforcePostCalculationBytesLimit(
+      chargingStation,
+      moduleName,
+      'handleRequestGetVariables',
+      variableData,
+      results,
+      enforceBytesLimit,
+      (v, reason) => ({
+        attributeStatus: GetVariableStatusEnumType.Rejected,
+        attributeStatusInfo: {
+          additionalInfo: reason.info,
+
+          reasonCode: ReasonCodeEnumType[reason.reasonCode as keyof typeof ReasonCodeEnumType],
+        },
+        attributeType: v.attributeType,
+        component: v.component,
+        variable: v.variable,
+      }),
+      logger
+    ) as typeof getVariablesResponse.getVariableResult
 
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetVariables: Processed ${String(commandPayload.getVariableData.length)} variable requests, returning ${String(results.length)} results`
     )
 
     return getVariablesResponse
+  }
+
+  public handleRequestSetVariables (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20SetVariablesRequest
+  ): OCPP20SetVariablesResponse {
+    const setVariablesResponse: OCPP20SetVariablesResponse = {
+      setVariableResult: [],
+    }
+
+    // Enforce ItemsPerMessageSetVariables and BytesPerMessageSetVariables limits if configured
+    let enforceItemsLimit = 0
+    let enforceBytesLimit = 0
+    try {
+      const itemsCfg = getConfigurationKey(
+        chargingStation,
+        OCPP20RequiredVariableName.ItemsPerMessage as unknown as StandardParametersKey
+      )?.value
+      const bytesCfg = getConfigurationKey(
+        chargingStation,
+        OCPP20RequiredVariableName.BytesPerMessage as unknown as StandardParametersKey
+      )?.value
+      if (itemsCfg && /^\d+$/.test(itemsCfg)) {
+        enforceItemsLimit = convertToIntOrNaN(itemsCfg)
+      }
+      if (bytesCfg && /^\d+$/.test(bytesCfg)) {
+        enforceBytesLimit = convertToIntOrNaN(bytesCfg)
+      }
+    } catch {
+      /* ignore */
+    }
+
+    const variableManager = OCPP20VariableManager.getInstance()
+
+    // Items per message enforcement
+    const variableData = commandPayload.setVariableData
+    const preEnforcement = OCPP20ServiceUtils.enforceMessageLimits(
+      chargingStation,
+      moduleName,
+      'handleRequestSetVariables',
+      variableData,
+      enforceItemsLimit,
+      enforceBytesLimit,
+      (v, reason) => ({
+        attributeStatus: SetVariableStatusEnumType.Rejected,
+        attributeStatusInfo: {
+          additionalInfo: reason.info,
+
+          reasonCode: ReasonCodeEnumType[reason.reasonCode as keyof typeof ReasonCodeEnumType],
+        },
+        attributeType: v.attributeType ?? AttributeEnumType.Actual,
+        component: v.component,
+        variable: v.variable,
+      }),
+      logger
+    )
+    if (preEnforcement.rejected) {
+      setVariablesResponse.setVariableResult =
+        preEnforcement.results as typeof setVariablesResponse.setVariableResult
+      return setVariablesResponse
+    }
+
+    const results = variableManager.setVariables(chargingStation, variableData)
+    setVariablesResponse.setVariableResult = OCPP20ServiceUtils.enforcePostCalculationBytesLimit(
+      chargingStation,
+      moduleName,
+      'handleRequestSetVariables',
+      variableData,
+      results,
+      enforceBytesLimit,
+      (v, reason) => ({
+        attributeStatus: SetVariableStatusEnumType.Rejected,
+        attributeStatusInfo: {
+          additionalInfo: reason.info,
+
+          reasonCode: ReasonCodeEnumType[reason.reasonCode as keyof typeof ReasonCodeEnumType],
+        },
+        attributeType: v.attributeType ?? AttributeEnumType.Actual,
+        component: v.component,
+        variable: v.variable,
+      }),
+      logger
+    ) as typeof setVariablesResponse.setVariableResult
+
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestSetVariables: Processed ${String(commandPayload.setVariableData.length)} variable requests, returning ${String(results.length)} results`
+    )
+
+    return setVariablesResponse
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
@@ -189,7 +383,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       ) {
         try {
           this.validatePayload(chargingStation, commandName, commandPayload)
-          // Call the method to build the response
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const incomingRequestHandler = this.incomingRequestHandlers.get(commandName)!
           if (isAsyncFunction(incomingRequestHandler)) {
@@ -240,6 +433,18 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     // Emit command name event to allow delayed handling only if there are listeners
     if (this.listenerCount(commandName) > 0) {
       this.emit(commandName, chargingStation, commandPayload, response)
+    }
+  }
+
+  public override stop (chargingStation: ChargingStation): void {
+    try {
+      OCPP20VariableManager.getInstance().resetRuntimeOverrides()
+      logger.debug(`${chargingStation.logPrefix()} ${moduleName}.stop: Runtime overrides cleared`)
+    } catch (error) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.stop: Error clearing runtime overrides:`,
+        error
+      )
     }
   }
 
@@ -341,12 +546,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               type: AttributeEnumType.Actual as string,
               value: configKey.value,
             })
-            if (!configKey.readonly) {
-              variableAttributes.push({
-                type: AttributeEnumType.Target as string,
-                value: undefined,
-              })
-            }
 
             reportData.push({
               component: { name: OCPP20ComponentName.OCPPCommCtrlr },
@@ -360,7 +559,105 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           }
         }
 
-        // 3. EVSE and connector information
+        // 3. Registered OCPP 2.0.1 variables
+        try {
+          const variableManager = OCPP20VariableManager.getInstance()
+          // Build getVariableData array from VARIABLE_REGISTRY metadata
+          const getVariableData: OCPP20GetVariablesRequest['getVariableData'] = []
+          for (const variableMetadata of Object.values(VARIABLE_REGISTRY)) {
+            // Include instance-scoped metadata; the OCPP Variable type supports instance under variable
+            const variableDescriptor: { instance?: string; name: string } = {
+              name: variableMetadata.variable,
+            }
+            if (variableMetadata.instance) {
+              variableDescriptor.instance = variableMetadata.instance
+            }
+            // Always request Actual first
+            getVariableData.push({
+              attributeType: AttributeEnumType.Actual,
+              component: { name: variableMetadata.component },
+              variable: variableDescriptor,
+            })
+            // Request MinSet/MaxSet only if supported by metadata
+            if (variableMetadata.supportedAttributes.includes(AttributeEnumType.MinSet)) {
+              getVariableData.push({
+                attributeType: AttributeEnumType.MinSet,
+                component: { name: variableMetadata.component },
+                variable: variableDescriptor,
+              })
+            }
+            if (variableMetadata.supportedAttributes.includes(AttributeEnumType.MaxSet)) {
+              getVariableData.push({
+                attributeType: AttributeEnumType.MaxSet,
+                component: { name: variableMetadata.component },
+                variable: variableDescriptor,
+              })
+            }
+          }
+          const getResults = variableManager.getVariables(chargingStation, getVariableData)
+          // Group results by component+variable preserving attribute ordering Actual, MinSet, MaxSet
+          const grouped = new Map<
+            string,
+            {
+              attributes: { type: string; value?: string }[]
+              component: ReportDataType['component']
+              dataType: DataEnumType
+              variable: ReportDataType['variable']
+            }
+          >()
+          for (const r of getResults) {
+            const key = `${r.component.name}::${r.variable.name}${r.variable.instance ? '::' + r.variable.instance : ''}`
+            const variableMetadata = getVariableMetadata(
+              r.component.name,
+              r.variable.name,
+              r.variable.instance
+            )
+            if (!variableMetadata) continue
+            if (!grouped.has(key)) {
+              grouped.set(key, {
+                attributes: [],
+                component: r.component,
+                dataType: variableMetadata.dataType,
+                variable: r.variable,
+              })
+            }
+            if (r.attributeStatus === GetVariableStatusEnumType.Accepted) {
+              const entry = grouped.get(key)
+              if (entry) {
+                entry.attributes.push({ type: r.attributeType as string, value: r.attributeValue })
+              }
+            }
+          }
+          // Normalize attribute ordering
+          for (const entry of grouped.values()) {
+            entry.attributes.sort((a, b) => {
+              const order = [
+                AttributeEnumType.Actual,
+                AttributeEnumType.MinSet,
+                AttributeEnumType.MaxSet,
+              ]
+              return (
+                order.indexOf(a.type as AttributeEnumType) -
+                order.indexOf(b.type as AttributeEnumType)
+              )
+            })
+            if (entry.attributes.length > 0) {
+              reportData.push({
+                component: entry.component,
+                variable: entry.variable,
+                variableAttribute: entry.attributes,
+                variableCharacteristics: { dataType: entry.dataType, supportsMonitoring: false },
+              })
+            }
+          }
+        } catch (error) {
+          logger.error(
+            `${chargingStation.logPrefix()} ${moduleName}.buildReportData: Error enriching FullInventory with registry variables:`,
+            error
+          )
+        }
+
+        // 4. EVSE and connector information
         if (chargingStation.evses.size > 0) {
           for (const [evseId, evse] of chargingStation.evses) {
             reportData.push({
@@ -539,7 +836,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
-    const reportData = this.buildReportData(chargingStation, commandPayload.reportBase)
+    // Cache report data for subsequent NotifyReport requests to avoid recomputation
+    const cached = this.reportDataCache.get(commandPayload.requestId)
+    const reportData = cached ?? this.buildReportData(chargingStation, commandPayload.reportBase)
+    if (!cached && reportData.length > 0) {
+      this.reportDataCache.set(commandPayload.requestId, reportData)
+    }
     if (reportData.length === 0) {
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetBaseReport: No data available for reportBase ${commandPayload.reportBase}`
@@ -627,10 +929,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
             return {
               status: ResetStatusEnumType.Accepted,
-              statusInfo: {
-                additionalInfo: `EVSE ${evseId.toString()} reset initiated, active transaction will be terminated`,
-                reasonCode: ReasonCodeEnumType.NoError,
-              },
             }
           } else {
             // Reset EVSE immediately
@@ -642,10 +940,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
             return {
               status: ResetStatusEnumType.Accepted,
-              statusInfo: {
-                additionalInfo: `EVSE ${evseId.toString()} reset initiated`,
-                reasonCode: ReasonCodeEnumType.NoError,
-              },
             }
           }
         } else {
@@ -666,10 +960,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
             return {
               status: ResetStatusEnumType.Accepted,
-              statusInfo: {
-                additionalInfo: 'Immediate reset initiated, active transactions will be terminated',
-                reasonCode: ReasonCodeEnumType.NoError,
-              },
             }
           } else {
             logger.info(
@@ -703,10 +993,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
             return {
               status: ResetStatusEnumType.Scheduled,
-              statusInfo: {
-                additionalInfo: `EVSE ${evseId.toString()} reset scheduled after transaction completion`,
-                reasonCode: ReasonCodeEnumType.NoError,
-              },
             }
           } else {
             // No active transactions on EVSE, reset immediately
@@ -718,10 +1004,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
             return {
               status: ResetStatusEnumType.Accepted,
-              statusInfo: {
-                additionalInfo: `EVSE ${evseId.toString()} reset initiated`,
-                reasonCode: ReasonCodeEnumType.NoError,
-              },
             }
           }
         } else {
@@ -735,10 +1017,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
             return {
               status: ResetStatusEnumType.Scheduled,
-              statusInfo: {
-                additionalInfo: 'Reset scheduled after all transactions complete',
-                reasonCode: ReasonCodeEnumType.NoError,
-              },
             }
           } else {
             // No active transactions, reset immediately
@@ -854,7 +1132,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     response: OCPP20GetBaseReportResponse
   ): Promise<void> {
     const { reportBase, requestId } = request
-    const reportData = this.buildReportData(chargingStation, reportBase)
+    // Use cached report data if available (computed during GetBaseReport handling)
+    const cached = this.reportDataCache.get(requestId)
+    const reportData = cached ?? this.buildReportData(chargingStation, reportBase)
 
     // Fragment report data if needed (OCPP2 spec recommends max 100 items per message)
     const maxItemsPerMessage = 100
@@ -897,6 +1177,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       `${chargingStation.logPrefix()} ${moduleName}.sendNotifyReportRequest: Completed NotifyReport for requestId ${requestId} with ${reportData.length} total items in ${chunks.length} message(s)`
     )
+    // Clear cache for requestId after successful completion
+    this.reportDataCache.delete(requestId)
   }
 
   private validatePayload (

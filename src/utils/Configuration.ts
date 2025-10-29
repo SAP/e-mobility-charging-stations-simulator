@@ -295,7 +295,7 @@ export class Configuration {
   private static buildUIServerSection (): UIServerConfiguration {
     let uiServerConfiguration: UIServerConfiguration = defaultUIServerConfiguration
     if (has(ConfigurationSection.uiServer, Configuration.getConfigurationData())) {
-      uiServerConfiguration = mergeDeepRight(
+      uiServerConfiguration = mergeDeepRight<UIServerConfiguration, Partial<UIServerConfiguration>>(
         uiServerConfiguration,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         Configuration.getConfigurationData()!.uiServer!

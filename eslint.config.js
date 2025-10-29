@@ -53,7 +53,22 @@ export default defineConfig([
               'workerd',
               // OCPP 2.0.x Component Names
               'cppwm',
+              // OCPP variable names and domain terms
+              'heartbeatinterval',
+              'HEARTBEATINTERVAL',
+              'websocketpinginterval',
+              'WEBSOCKETPINGINTERVAL',
+              'connectionurl',
+              'CONNECTIONURL',
+              'chargingstation',
+              'CHARGINGSTATION',
+              'authctrlr',
+              'AUTHCTRLR',
               'recloser',
+              'deauthorize',
+              'DEAUTHORIZE',
+              'deauthorized',
+              'DEAUTHORIZED',
             ],
           },
         },
@@ -146,6 +161,13 @@ export default defineConfig([
     files: ['ui/web/src/components/Container.vue', 'ui/web/src/components/buttons/Button.vue'],
     rules: {
       'vue/multi-word-component-names': 'off',
+    },
+  },
+  {
+    files: ['tests/**/*.test.ts', 'tests/**/*.test.mts', 'tests/**/*.test.cts'],
+    rules: {
+      '@typescript-eslint/no-floating-promises': ['error', { ignoreVoid: true }],
+      'no-void': 'off',
     },
   },
 ])

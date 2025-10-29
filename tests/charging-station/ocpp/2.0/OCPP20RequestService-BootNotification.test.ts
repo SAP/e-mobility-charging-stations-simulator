@@ -41,6 +41,7 @@ await describe('B01 - Cold Boot Charging Station', async () => {
     websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
   })
 
+  // FR: B01.FR.01
   await it('Should build BootNotification request payload correctly with PowerUp reason', () => {
     const chargingStationInfo: ChargingStationType = {
       firmwareVersion: TEST_FIRMWARE_VERSION,
@@ -70,6 +71,7 @@ await describe('B01 - Cold Boot Charging Station', async () => {
     expect(payload.reason).toBe(BootReasonEnumType.PowerUp)
   })
 
+  // FR: B01.FR.02
   await it('Should build BootNotification request payload correctly with ApplicationReset reason', () => {
     const chargingStationInfo: ChargingStationType = {
       firmwareVersion: '2.1.3',
@@ -98,6 +100,7 @@ await describe('B01 - Cold Boot Charging Station', async () => {
     expect(payload.reason).toBe(BootReasonEnumType.ApplicationReset)
   })
 
+  // FR: B01.FR.03
   await it('Should build BootNotification request payload correctly with minimal required fields', () => {
     const chargingStationInfo: ChargingStationType = {
       model: 'Basic Model',
@@ -125,6 +128,7 @@ await describe('B01 - Cold Boot Charging Station', async () => {
     expect(payload.reason).toBe(BootReasonEnumType.FirmwareUpdate)
   })
 
+  // FR: B01.FR.04
   await it('Should handle all BootReasonEnumType values correctly', () => {
     const chargingStationInfo: ChargingStationType = {
       model: TEST_CHARGE_POINT_MODEL,
@@ -161,6 +165,7 @@ await describe('B01 - Cold Boot Charging Station', async () => {
     })
   })
 
+  // FR: B01.FR.05
   await it('Should validate payload structure matches OCPP20BootNotificationRequest interface', () => {
     const chargingStationInfo: ChargingStationType = {
       customData: {

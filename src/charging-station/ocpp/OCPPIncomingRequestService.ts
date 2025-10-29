@@ -57,6 +57,8 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
     commandPayload: ReqType
   ): Promise<void>
 
+  public abstract stop (chargingStation: ChargingStation): void
+
   protected handleRequestClearCache (chargingStation: ChargingStation): ClearCacheResponse {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     if (chargingStation.idTagsCache.deleteIdTags(getIdTagsFile(chargingStation.stationInfo!)!)) {

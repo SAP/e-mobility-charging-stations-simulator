@@ -51,11 +51,11 @@ export const once = <T extends (...args: any[]) => any>(fn: T): T => {
   } as T
 }
 
-export const has = (property: PropertyKey, object: null | object | undefined): boolean => {
-  if (object == null) {
+export const has = (property: PropertyKey, object: unknown): boolean => {
+  if (object == null || (typeof object !== 'object' && typeof object !== 'function')) {
     return false
   }
-  return Object.hasOwn(object, property)
+  return Object.hasOwn(object as Record<PropertyKey, unknown>, property)
 }
 
 const type = (value: unknown): string => {
@@ -100,27 +100,26 @@ const isObject = (value: unknown): value is object => {
   return type(value) === 'Object'
 }
 
-export const mergeDeepRight = <T extends Record<string, unknown>>(
-  target: T,
-  source: Partial<T>
-): T => {
-  const output = { ...target }
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+export const mergeDeepRight = <T extends object, S extends object>(target: T, source: S): T => {
+  const output: Record<string, unknown> = { ...(target as Record<string, unknown>) }
 
   if (isObject(target) && isObject(source)) {
-    Object.keys(source).forEach(key => {
-      if (isObject(source[key])) {
-        if (!(key in target)) {
-          Object.assign(output, { [key]: source[key] })
-        } else {
-          output[key] = mergeDeepRight(target[key], source[key])
-        }
+    Object.keys(source as Record<string, unknown>).forEach(key => {
+      const sourceValue = (source as Record<string, unknown>)[key]
+      const targetValue = (target as Record<string, unknown>)[key]
+      if (isObject(sourceValue) && isObject(targetValue)) {
+        output[key] = mergeDeepRight(
+          targetValue as Record<string, unknown>,
+          sourceValue as Record<string, unknown>
+        )
       } else {
-        Object.assign(output, { [key]: source[key] })
+        output[key] = sourceValue
       }
     })
   }
 
-  return output
+  return output as T
 }
 
 export const generateUUID = (): `${string}-${string}-${string}-${string}-${string}` => {
@@ -222,6 +221,14 @@ export const convertToInt = (value: unknown): number => {
     throw new Error(`Cannot convert to integer: '${value.toString()}'`)
   }
   return changedValue
+}
+
+export const convertToIntOrNaN = (value: unknown): number => {
+  try {
+    return convertToInt(value)
+  } catch {
+    return Number.NaN
+  }
 }
 
 export const convertToFloat = (value: unknown): number => {

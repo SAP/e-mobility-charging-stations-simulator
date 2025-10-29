@@ -83,6 +83,8 @@ export class Constants {
     useConnectorId0: true,
   })
 
+  static readonly DEFAULT_TX_UPDATED_INTERVAL = 30 // Seconds
+
   static readonly DEFAULT_UI_SERVER_HOST = 'localhost'
   static readonly DEFAULT_UI_SERVER_PORT = 8080
 
@@ -95,6 +97,8 @@ export class Constants {
   })
 
   static readonly MAX_RANDOM_INTEGER = 281474976710655 // 2^48 - 1 (randomInit() limit)
+
+  static readonly OCPP_VALUE_ABSOLUTE_MAX_LENGTH = 2500
 
   static readonly PERFORMANCE_RECORDS_TABLE = 'performance_records'
 
