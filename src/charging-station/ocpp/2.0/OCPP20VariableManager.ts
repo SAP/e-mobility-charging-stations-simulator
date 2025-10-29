@@ -53,16 +53,16 @@ export class OCPP20VariableManager {
   private readonly minSetOverrides = new Map<string, string>() // composite key (lower case)
   private readonly runtimeOverrides = new Map<string, string>() // composite key (lower case)
 
-  private constructor() {
+  private constructor () {
     /* This is intentional */
   }
 
-  public static getInstance(): OCPP20VariableManager {
+  public static getInstance (): OCPP20VariableManager {
     OCPP20VariableManager.instance ??= new OCPP20VariableManager()
     return OCPP20VariableManager.instance
   }
 
-  public getVariables(
+  public getVariables (
     chargingStation: ChargingStation,
     getVariableData: OCPP20GetVariableDataType[]
   ): OCPP20GetVariableResultType[] {
@@ -92,7 +92,7 @@ export class OCPP20VariableManager {
     return results
   }
 
-  public performMappingSelfCheck(chargingStation: ChargingStation): void {
+  public performMappingSelfCheck (chargingStation: ChargingStation): void {
     this.invalidVariables.clear()
     for (const metaKey of Object.keys(VARIABLE_REGISTRY)) {
       const variableMetadata = VARIABLE_REGISTRY[metaKey]
@@ -153,11 +153,11 @@ export class OCPP20VariableManager {
     }
   }
 
-  public resetRuntimeOverrides(): void {
+  public resetRuntimeOverrides (): void {
     this.runtimeOverrides.clear()
   }
 
-  public setVariables(
+  public setVariables (
     chargingStation: ChargingStation,
     setVariableData: OCPP20SetVariableDataType[]
   ): OCPP20SetVariableResultType[] {
@@ -187,7 +187,7 @@ export class OCPP20VariableManager {
     return results
   }
 
-  private getVariable(
+  private getVariable (
     chargingStation: ChargingStation,
     variableData: OCPP20GetVariableDataType
   ): OCPP20GetVariableResultType {
@@ -309,7 +309,6 @@ export class OCPP20VariableManager {
     if (variableValue.length === 0) {
       if (
         resolvedAttributeType === AttributeEnumType.Target &&
-        variableMetadata != null &&
         variableMetadata.supportsTarget === true
       ) {
         // Accept empty Target value when target is unset (B06.FR.13)
@@ -378,7 +377,7 @@ export class OCPP20VariableManager {
     }
   }
 
-  private isComponentValid(_chargingStation: ChargingStation, component: ComponentType): boolean {
+  private isComponentValid (_chargingStation: ChargingStation, component: ComponentType): boolean {
     const supported = new Set<string>([
       OCPP20ComponentName.AuthCtrlr as string,
       OCPP20ComponentName.ChargingStation as string,
@@ -392,14 +391,14 @@ export class OCPP20VariableManager {
     return supported.has(component.name)
   }
 
-  private isVariableSupported(component: ComponentType, variable: VariableType): boolean {
+  private isVariableSupported (component: ComponentType, variable: VariableType): boolean {
     return (
       getVariableMetadata(component.name, variable.name, variable.instance ?? component.instance) !=
         null || getVariableMetadata(component.name, variable.name) != null
     )
   }
 
-  private rejectGet(
+  private rejectGet (
     variable: VariableType,
     component: ComponentType,
     attributeType: AttributeEnumType | undefined,
@@ -420,7 +419,7 @@ export class OCPP20VariableManager {
     }
   }
 
-  private rejectSet(
+  private rejectSet (
     variable: VariableType,
     component: ComponentType,
     attributeType: AttributeEnumType,
@@ -441,7 +440,7 @@ export class OCPP20VariableManager {
     }
   }
 
-  private resolveVariableValue(
+  private resolveVariableValue (
     chargingStation: ChargingStation,
     component: ComponentType,
     variable: VariableType
@@ -514,7 +513,7 @@ export class OCPP20VariableManager {
     return value
   }
 
-  private setVariable(
+  private setVariable (
     chargingStation: ChargingStation,
     variableData: OCPP20SetVariableDataType
   ): OCPP20SetVariableResultType {

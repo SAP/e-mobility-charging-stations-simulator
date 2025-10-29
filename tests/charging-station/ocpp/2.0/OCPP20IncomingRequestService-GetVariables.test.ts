@@ -3,6 +3,7 @@ import { millisecondsToSeconds } from 'date-fns'
 import { describe, it } from 'node:test'
 
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
+import { VARIABLE_REGISTRY } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableRegistry.js'
 import {
   AttributeEnumType,
   GetVariableStatusEnumType,
@@ -13,7 +14,6 @@ import {
   OCPP20RequiredVariableName,
   ReasonCodeEnumType,
 } from '../../../../src/types/index.js'
-import { VARIABLE_REGISTRY } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableRegistry.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { createChargingStationWithEvses } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_NAME, TEST_CONNECTOR_VALID_INSTANCE } from './OCPP20TestConstants.js'
@@ -417,7 +417,7 @@ void describe('B06 - Get Variables', () => {
       getVariableData: [
         {
           component: { name: writeOnlyEntry.component },
-          variable: { name: writeOnlyEntry.variable, instance: writeOnlyEntry.instance },
+          variable: { instance: writeOnlyEntry.instance, name: writeOnlyEntry.variable },
         },
       ],
     }

@@ -47,7 +47,7 @@ export interface VariableMetadata {
  * @param instance Optional instance identifier appended to component name before separator.
  * @returns Composite key `${component}[.<instance>]::${variable}`.
  */
-function key(component: string, variable: string, instance?: string): string {
+function key (component: string, variable: string, instance?: string): string {
   return `${component}${instance ? '.' + instance : ''}::${variable}`
 }
 
@@ -763,7 +763,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
  * @param value Raw value prior to post processing.
  * @returns Post-processed value.
  */
-export function applyPostProcess(
+export function applyPostProcess (
   chargingStation: ChargingStation,
   variableMetadata: VariableMetadata,
   value: string
@@ -782,7 +782,7 @@ export function applyPostProcess(
  * @param variable Variable name.
  * @returns Composite lower-cased key string.
  */
-export function buildVariableCompositeKey(
+export function buildVariableCompositeKey (
   component: string,
   instance: string | undefined,
   variable: string
@@ -796,7 +796,7 @@ export function buildVariableCompositeKey(
  * @param sizeRaw Raw size metadata value (string) or undefined.
  * @returns Possibly truncated value (enforced size) or original.
  */
-export function enforceReportingValueSize(value: string, sizeRaw: string | undefined): string {
+export function enforceReportingValueSize (value: string, sizeRaw: string | undefined): string {
   const size = convertToIntOrNaN(sizeRaw ?? Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH.toString())
   if (!Number.isNaN(size) && size > 0 && value.length > size) {
     return value.slice(0, size)
@@ -812,7 +812,7 @@ export function enforceReportingValueSize(value: string, sizeRaw: string | undef
  * @param instance Optional instance identifier when variable metadata is instance-scoped.
  * @returns VariableMetadata or undefined if not registered.
  */
-export function getVariableMetadata(
+export function getVariableMetadata (
   component: string,
   variable: string,
   instance?: string
@@ -826,7 +826,7 @@ export function getVariableMetadata(
  * @param variableMetadata Variable metadata.
  * @returns True if persistence is Persistent.
  */
-export function isPersistent(variableMetadata: VariableMetadata): boolean {
+export function isPersistent (variableMetadata: VariableMetadata): boolean {
   return variableMetadata.persistence === PersistenceEnumType.Persistent
 }
 
@@ -835,7 +835,7 @@ export function isPersistent(variableMetadata: VariableMetadata): boolean {
  * @param variableMetadata Variable metadata.
  * @returns True if mutability is ReadOnly.
  */
-export function isReadOnly(variableMetadata: VariableMetadata): boolean {
+export function isReadOnly (variableMetadata: VariableMetadata): boolean {
   return variableMetadata.mutability === MutabilityEnumType.ReadOnly
 }
 
@@ -844,7 +844,7 @@ export function isReadOnly(variableMetadata: VariableMetadata): boolean {
  * @param variableMetadata Variable metadata.
  * @returns True if mutability is WriteOnly.
  */
-export function isWriteOnly(variableMetadata: VariableMetadata): boolean {
+export function isWriteOnly (variableMetadata: VariableMetadata): boolean {
   return variableMetadata.mutability === MutabilityEnumType.WriteOnly
 }
 
@@ -854,7 +854,7 @@ export function isWriteOnly(variableMetadata: VariableMetadata): boolean {
  * @param variableMetadata Variable metadata.
  * @returns Resolved value (dynamic or default or empty string).
  */
-export function resolveValue(
+export function resolveValue (
   chargingStation: ChargingStation,
   variableMetadata: VariableMetadata
 ): string {
@@ -872,7 +872,7 @@ export function resolveValue(
  * @param rawValue Raw string value to validate.
  * @returns Validation result with ok flag and optional reason/info.
  */
-export function validateValue(
+export function validateValue (
   variableMetadata: VariableMetadata,
   rawValue: string
 ): { info?: string; ok: boolean; reason?: ReasonCodeEnumType } {
