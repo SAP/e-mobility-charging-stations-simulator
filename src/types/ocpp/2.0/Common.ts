@@ -196,6 +196,34 @@ export enum OCPP20ConnectorStatusEnumType {
   Unavailable = 'Unavailable',
 }
 
+export enum OCPP20MeasurandEnumType {
+  CURRENT_EXPORT = 'Current.Export',
+  CURRENT_IMPORT = 'Current.Import',
+  CURRENT_OFFERED = 'Current.Offered',
+  ENERGY_ACTIVE_EXPORT_INTERVAL = 'Energy.Active.Export.Interval',
+  ENERGY_ACTIVE_EXPORT_REGISTER = 'Energy.Active.Export.Register',
+  ENERGY_ACTIVE_IMPORT_INTERVAL = 'Energy.Active.Import.Interval',
+  ENERGY_ACTIVE_IMPORT_REGISTER = 'Energy.Active.Import.Register',
+  ENERGY_ACTIVE_NET = 'Energy.Active.Net',
+  ENERGY_APPARENT_EXPORT = 'Energy.Apparent.Export',
+  ENERGY_APPARENT_IMPORT = 'Energy.Apparent.Import',
+  ENERGY_APPARENT_NET = 'Energy.Apparent.Net',
+  ENERGY_REACTIVE_EXPORT_INTERVAL = 'Energy.Reactive.Export.Interval',
+  ENERGY_REACTIVE_EXPORT_REGISTER = 'Energy.Reactive.Export.Register',
+  ENERGY_REACTIVE_IMPORT_INTERVAL = 'Energy.Reactive.Import.Interval',
+  ENERGY_REACTIVE_IMPORT_REGISTER = 'Energy.Reactive.Import.Register',
+  ENERGY_REACTIVE_NET = 'Energy.Reactive.Net',
+  FREQUENCY = 'Frequency',
+  POWER_ACTIVE_EXPORT = 'Power.Active.Export',
+  POWER_ACTIVE_IMPORT = 'Power.Active.Import',
+  POWER_FACTOR = 'Power.Factor',
+  POWER_OFFERED = 'Power.Offered',
+  POWER_REACTIVE_EXPORT = 'Power.Reactive.Export',
+  POWER_REACTIVE_IMPORT = 'Power.Reactive.Import',
+  STATE_OF_CHARGE = 'SoC',
+  VOLTAGE = 'Voltage',
+}
+
 export enum OperationalStatusEnumType {
   Inoperative = 'Inoperative',
   Operative = 'Operative',

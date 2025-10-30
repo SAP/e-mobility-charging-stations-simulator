@@ -16,6 +16,7 @@ import {
   GetVariableStatusEnumType,
   OCPP20ComponentName,
   type OCPP20GetVariableDataType,
+  OCPP20MeasurandEnumType,
   OCPP20OptionalVariableName,
   OCPP20RequiredVariableName,
   type OCPP20SetVariableDataType,
@@ -1212,18 +1213,17 @@ await describe('OCPP20VariableManager test suite', async () => {
           variable: { name: OCPP20RequiredVariableName.TxStopPoint },
         },
         {
-          attributeValue: 'Energy.Active.Import.Register,Power.Active.Import,Voltage',
+          attributeValue: `${OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER},${OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT},${OCPP20MeasurandEnumType.VOLTAGE}`,
           component: { name: OCPP20ComponentName.SampledDataCtrlr },
           variable: { name: OCPP20RequiredVariableName.TxStartedMeasurands },
         },
         {
-          attributeValue:
-            'Energy.Active.Import.Register,Current.Import,Energy.Active.Import.Interval',
+          attributeValue: `${OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER},${OCPP20MeasurandEnumType.CURRENT_IMPORT},${OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL}`,
           component: { name: OCPP20ComponentName.SampledDataCtrlr },
           variable: { name: OCPP20RequiredVariableName.TxEndedMeasurands },
         },
         {
-          attributeValue: 'Energy.Active.Import.Register,Current.Import',
+          attributeValue: `${OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER},${OCPP20MeasurandEnumType.CURRENT_IMPORT}`,
           component: { name: OCPP20ComponentName.SampledDataCtrlr },
           variable: { name: OCPP20RequiredVariableName.TxUpdatedMeasurands },
         },

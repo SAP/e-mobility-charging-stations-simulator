@@ -8,6 +8,7 @@ import {
   GetVariableStatusEnumType,
   OCPP20ComponentName,
   type OCPP20GetVariablesRequest,
+  OCPP20MeasurandEnumType,
   OCPP20OptionalVariableName,
   OCPP20RequiredVariableName,
   OCPP20VendorVariableName,
@@ -417,16 +418,18 @@ void describe('B06 - Get Variables', () => {
     const txStarted = response.getVariableResult[0]
     expect(txStarted.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
     expect(txStarted.attributeValue).toBe(
-      'Energy.Active.Import.Register,Power.Active.Import,Voltage'
+      `${OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER},${OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT},${OCPP20MeasurandEnumType.VOLTAGE}`
     )
     const txEnded = response.getVariableResult[1]
     expect(txEnded.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
     expect(txEnded.attributeValue).toBe(
-      'Energy.Active.Import.Register,Energy.Active.Import.Interval,Voltage'
+      `${OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER},${OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL},${OCPP20MeasurandEnumType.VOLTAGE}`
     )
     const txUpdated = response.getVariableResult[2]
     expect(txUpdated.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-    expect(txUpdated.attributeValue).toBe('Energy.Active.Import.Register,Current.Import,Voltage')
+    expect(txUpdated.attributeValue).toBe(
+      `${OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER},${OCPP20MeasurandEnumType.CURRENT_IMPORT},${OCPP20MeasurandEnumType.VOLTAGE}`
+    )
   })
 
   // FR: B06.FR.13

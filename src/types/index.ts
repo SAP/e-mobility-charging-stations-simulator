@@ -149,6 +149,7 @@ export {
   GenericDeviceModelStatusEnumType,
   OCPP20ComponentName,
   OCPP20ConnectorStatusEnumType,
+  OCPP20MeasurandEnumType,
   ReasonCodeEnumType,
   ReportBaseEnumType,
   type ReportDataType,

@@ -7,6 +7,7 @@ import {
   OCPP16MeterValueUnit,
   type OCPP16SampledValue,
 } from './1.6/MeterValues.js'
+import { OCPP20MeasurandEnumType } from './2.0/Common.js'
 
 export type MeterValue = OCPP16MeterValue
 
@@ -30,9 +31,10 @@ export type MeterValueLocation = OCPP16MeterValueLocation
 
 export const MeterValueMeasurand = {
   ...OCPP16MeterValueMeasurand,
+  ...OCPP20MeasurandEnumType,
 } as const
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type MeterValueMeasurand = OCPP16MeterValueMeasurand
+export type MeterValueMeasurand = OCPP16MeterValueMeasurand | OCPP20MeasurandEnumType
 
 export const MeterValuePhase = {
   ...OCPP16MeterValuePhase,
