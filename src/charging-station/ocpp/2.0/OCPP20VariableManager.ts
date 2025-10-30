@@ -478,10 +478,27 @@ export class OCPP20VariableManager {
       variableMetadata.mutability !== MutabilityEnumType.WriteOnly
     ) {
       const configurationKeyName = computeConfigurationKeyName(variableMetadata)
-      const cfg = getConfigurationKey(
+      let cfg = getConfigurationKey(
         chargingStation,
         configurationKeyName as unknown as StandardParametersKey
       )
+
+      if (cfg == null) {
+        addConfigurationKey(
+          chargingStation,
+          configurationKeyName as unknown as StandardParametersKey,
+          value, // Use the resolved default value
+          undefined,
+          {
+            overwrite: false,
+          }
+        )
+        cfg = getConfigurationKey(
+          chargingStation,
+          configurationKeyName as unknown as StandardParametersKey
+        )
+      }
+
       if (cfg?.value) {
         value = cfg.value
       }
@@ -838,53 +855,42 @@ export class OCPP20VariableManager {
       configurationKeyName as unknown as StandardParametersKey
     )?.value
 
-    // Generalized persistence for persistent, non write-only variables (including instance-scoped)
     if (
       variableMetadata.persistence === PersistenceEnumType.Persistent &&
       variableMetadata.mutability !== MutabilityEnumType.WriteOnly
     ) {
-      // Special-case: OrganizationName persistence limitation (do not update stored value once created)
-      const isOrganizationName =
-        variableMetadata.component === (OCPP20ComponentName.SecurityCtrlr as string) &&
-        variableMetadata.variable === (OCPP20RequiredVariableName.OrganizationName as string)
-
-      if (!isOrganizationName) {
-        let configKey = getConfigurationKey(
+      let configKey = getConfigurationKey(
+        chargingStation,
+        configurationKeyName as unknown as StandardParametersKey
+      )
+      if (configKey == null) {
+        addConfigurationKey(
+          chargingStation,
+          configurationKeyName as unknown as StandardParametersKey,
+          attributeValue,
+          undefined,
+          {
+            overwrite: false,
+          }
+        )
+        configKey = getConfigurationKey(
           chargingStation,
           configurationKeyName as unknown as StandardParametersKey
         )
-        if (configKey == null) {
-          addConfigurationKey(
-            chargingStation,
-            configurationKeyName as unknown as StandardParametersKey,
-            attributeValue,
-            undefined,
-            {
-              overwrite: false,
-            }
-          )
-          configKey = getConfigurationKey(
+      } else if (configKey.value !== attributeValue) {
+        setConfigurationKeyValue(
+          chargingStation,
+          configurationKeyName as unknown as StandardParametersKey,
+          attributeValue
+        )
+      }
+      rebootRequired =
+        (variableMetadata.rebootRequired === true ||
+          getConfigurationKey(
             chargingStation,
             configurationKeyName as unknown as StandardParametersKey
-          )
-        } else if (configKey.value !== attributeValue) {
-          setConfigurationKeyValue(
-            chargingStation,
-            configurationKeyName as unknown as StandardParametersKey,
-            attributeValue
-          )
-        }
-        rebootRequired =
-          (variableMetadata.rebootRequired === true ||
-            getConfigurationKey(
-              chargingStation,
-              configurationKeyName as unknown as StandardParametersKey
-            )?.reboot === true) &&
-          previousValue !== attributeValue
-      } else {
-        // OrganizationName: accept set but do not persist new value (tests expect default retained)
-        rebootRequired = false
-      }
+          )?.reboot === true) &&
+        previousValue !== attributeValue
     }
     // Heartbeat & WS ping interval dynamic restarts
     if (

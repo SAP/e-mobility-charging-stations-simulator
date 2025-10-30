@@ -1553,16 +1553,16 @@ await describe('OCPP20VariableManager test suite', async () => {
         },
       ])[0]
       expect(res.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(res.attributeValue).toBe('ChangeMeOrg')
+      expect(res.attributeValue).toBe('Example Charging Services Ltd')
       const after = getConfigurationKey(
         mockChargingStation,
         OCPP20RequiredVariableName.OrganizationName as unknown as VariableType['name']
       )
       expect(after).toBeDefined()
-      expect(after?.value).toBe('ChangeMeOrg')
+      expect(after?.value).toBe('Example Charging Services Ltd')
     })
 
-    await it('Should accept setting OrganizationName but not persist new value (current limitation)', () => {
+    await it('Should accept setting OrganizationName and require reboot per OCPP 2.0.1 specification', () => {
       const setRes = manager.setVariables(mockChargingStation, [
         {
           attributeValue: 'NewOrgName',
@@ -1570,16 +1570,15 @@ await describe('OCPP20VariableManager test suite', async () => {
           variable: { name: OCPP20RequiredVariableName.OrganizationName },
         },
       ])[0]
-      // Current implementation only marks rebootRequired for ChargingStation component variables
-      expect(setRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      // OCPP 2.0.1 compliant behavior: OrganizationName changes require reboot
+      expect(setRes.attributeStatus).toBe(SetVariableStatusEnumType.RebootRequired)
       const getRes = manager.getVariables(mockChargingStation, [
         {
           component: { name: OCPP20ComponentName.SecurityCtrlr },
           variable: { name: OCPP20RequiredVariableName.OrganizationName },
         },
       ])[0]
-      // Value remains the configuration key default due to lack of persistence path for non-ChargingStation components
-      expect(getRes.attributeValue).toBe('ChangeMeOrg')
+      expect(getRes.attributeValue).toBe('NewOrgName')
     })
 
     await it('Should preserve OrganizationName value after resetRuntimeOverrides()', () => {
@@ -1591,7 +1590,8 @@ await describe('OCPP20VariableManager test suite', async () => {
         },
       ])[0]
       expect(res.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(res.attributeValue).toBe('ChangeMeOrg')
+      // Value should persist as 'NewOrgName' from previous test (OCPP 2.0.1 compliant persistence)
+      expect(res.attributeValue).toBe('NewOrgName')
     })
 
     await it('Should create configuration key for instance-scoped MessageAttemptInterval and persist Actual value (Actual-only, no MinSet/MaxSet)', () => {
