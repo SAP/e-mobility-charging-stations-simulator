@@ -29,7 +29,6 @@ import { createChargingStation, createChargingStationTemplate } from '../Chargin
 await describe('Helpers test suite', async () => {
   const baseName = 'CS-TEST'
   const chargingStationTemplate = createChargingStationTemplate(baseName)
-  const chargingStation = createChargingStation({ baseName })
 
   await it('Verify getChargingStationId()', () => {
     expect(getChargingStationId(1, chargingStationTemplate)).toBe(`${baseName}-00001`)
@@ -41,87 +40,249 @@ await describe('Helpers test suite', async () => {
     )
   })
 
-  await it('Verify validateStationInfo()', () => {
+  await it('Verify validateStationInfo() - Missing stationInfo', () => {
+    // For validation edge cases, we need to manually create invalid states
+    // since the factory is designed to create valid configurations
+    const stationNoInfo = createChargingStation({ baseName })
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    delete (chargingStation as any).stationInfo
+    delete (stationNoInfo as any).stationInfo
     expect(() => {
-      validateStationInfo(chargingStation)
+      validateStationInfo(stationNoInfo)
     }).toThrow(new BaseError('Missing charging station information'))
-    chargingStation.stationInfo = {} as ChargingStationInfo
+  })
+
+  await it('Verify validateStationInfo() - Empty stationInfo', () => {
+    // For validation edge cases, manually create empty stationInfo
+    const stationEmptyInfo = createChargingStation({ baseName })
+    stationEmptyInfo.stationInfo = {} as ChargingStationInfo
     expect(() => {
-      validateStationInfo(chargingStation)
+      validateStationInfo(stationEmptyInfo)
     }).toThrow(new BaseError('Missing charging station information'))
-    chargingStation.stationInfo.baseName = baseName
+  })
+
+  await it('Verify validateStationInfo() - Missing chargingStationId', () => {
+    const stationMissingId = createChargingStation({
+      baseName,
+      stationInfo: { baseName, chargingStationId: undefined },
+    })
     expect(() => {
-      validateStationInfo(chargingStation)
+      validateStationInfo(stationMissingId)
     }).toThrow(new BaseError('Missing chargingStationId in stationInfo properties'))
-    chargingStation.stationInfo.chargingStationId = ''
+  })
+
+  await it('Verify validateStationInfo() - Empty chargingStationId', () => {
+    const stationEmptyId = createChargingStation({
+      baseName,
+      stationInfo: { baseName, chargingStationId: '' },
+    })
     expect(() => {
-      validateStationInfo(chargingStation)
+      validateStationInfo(stationEmptyId)
     }).toThrow(new BaseError('Missing chargingStationId in stationInfo properties'))
-    chargingStation.stationInfo.chargingStationId = getChargingStationId(1, chargingStationTemplate)
+  })
+
+  await it('Verify validateStationInfo() - Missing hashId', () => {
+    const stationMissingHash = createChargingStation({
+      baseName,
+      stationInfo: {
+        baseName,
+        chargingStationId: getChargingStationId(1, chargingStationTemplate),
+        hashId: undefined,
+      },
+    })
     expect(() => {
-      validateStationInfo(chargingStation)
+      validateStationInfo(stationMissingHash)
     }).toThrow(new BaseError(`${baseName}-00001: Missing hashId in stationInfo properties`))
-    chargingStation.stationInfo.hashId = ''
+  })
+
+  await it('Verify validateStationInfo() - Empty hashId', () => {
+    const stationEmptyHash = createChargingStation({
+      baseName,
+      stationInfo: {
+        baseName,
+        chargingStationId: getChargingStationId(1, chargingStationTemplate),
+        hashId: '',
+      },
+    })
     expect(() => {
-      validateStationInfo(chargingStation)
+      validateStationInfo(stationEmptyHash)
     }).toThrow(new BaseError(`${baseName}-00001: Missing hashId in stationInfo properties`))
-    chargingStation.stationInfo.hashId = getHashId(1, chargingStationTemplate)
+  })
+
+  await it('Verify validateStationInfo() - Missing templateIndex', () => {
+    const stationMissingTemplate = createChargingStation({
+      baseName,
+      stationInfo: {
+        baseName,
+        chargingStationId: getChargingStationId(1, chargingStationTemplate),
+        hashId: getHashId(1, chargingStationTemplate),
+        templateIndex: undefined,
+      },
+    })
     expect(() => {
-      validateStationInfo(chargingStation)
+      validateStationInfo(stationMissingTemplate)
     }).toThrow(new BaseError(`${baseName}-00001: Missing templateIndex in stationInfo properties`))
-    chargingStation.stationInfo.templateIndex = 0
+  })
+
+  await it('Verify validateStationInfo() - Invalid templateIndex (zero)', () => {
+    const stationInvalidTemplate = createChargingStation({
+      baseName,
+      stationInfo: {
+        baseName,
+        chargingStationId: getChargingStationId(1, chargingStationTemplate),
+        hashId: getHashId(1, chargingStationTemplate),
+        templateIndex: 0,
+      },
+    })
     expect(() => {
-      validateStationInfo(chargingStation)
+      validateStationInfo(stationInvalidTemplate)
     }).toThrow(
       new BaseError(`${baseName}-00001: Invalid templateIndex value in stationInfo properties`)
     )
-    chargingStation.stationInfo.templateIndex = 1
+  })
+
+  await it('Verify validateStationInfo() - Missing templateName', () => {
+    const stationMissingName = createChargingStation({
+      baseName,
+      stationInfo: {
+        baseName,
+        chargingStationId: getChargingStationId(1, chargingStationTemplate),
+        hashId: getHashId(1, chargingStationTemplate),
+        templateIndex: 1,
+        templateName: undefined,
+      },
+    })
     expect(() => {
-      validateStationInfo(chargingStation)
+      validateStationInfo(stationMissingName)
     }).toThrow(new BaseError(`${baseName}-00001: Missing templateName in stationInfo properties`))
-    chargingStation.stationInfo.templateName = ''
+  })
+
+  await it('Verify validateStationInfo() - Empty templateName', () => {
+    const stationEmptyName = createChargingStation({
+      baseName,
+      stationInfo: {
+        baseName,
+        chargingStationId: getChargingStationId(1, chargingStationTemplate),
+        hashId: getHashId(1, chargingStationTemplate),
+        templateIndex: 1,
+        templateName: '',
+      },
+    })
     expect(() => {
-      validateStationInfo(chargingStation)
+      validateStationInfo(stationEmptyName)
     }).toThrow(new BaseError(`${baseName}-00001: Missing templateName in stationInfo properties`))
-    chargingStation.stationInfo.templateName = 'test-template.json'
+  })
+
+  await it('Verify validateStationInfo() - Missing maximumPower', () => {
+    const stationMissingPower = createChargingStation({
+      baseName,
+      stationInfo: {
+        baseName,
+        chargingStationId: getChargingStationId(1, chargingStationTemplate),
+        hashId: getHashId(1, chargingStationTemplate),
+        maximumPower: undefined,
+        templateIndex: 1,
+        templateName: 'test-template.json',
+      },
+    })
     expect(() => {
-      validateStationInfo(chargingStation)
+      validateStationInfo(stationMissingPower)
     }).toThrow(new BaseError(`${baseName}-00001: Missing maximumPower in stationInfo properties`))
-    chargingStation.stationInfo.maximumPower = 0
+  })
+
+  await it('Verify validateStationInfo() - Invalid maximumPower (zero)', () => {
+    const stationInvalidPower = createChargingStation({
+      baseName,
+      stationInfo: {
+        baseName,
+        chargingStationId: getChargingStationId(1, chargingStationTemplate),
+        hashId: getHashId(1, chargingStationTemplate),
+        maximumPower: 0,
+        templateIndex: 1,
+        templateName: 'test-template.json',
+      },
+    })
     expect(() => {
-      validateStationInfo(chargingStation)
+      validateStationInfo(stationInvalidPower)
     }).toThrow(
       new RangeError(`${baseName}-00001: Invalid maximumPower value in stationInfo properties`)
     )
-    chargingStation.stationInfo.maximumPower = 12000
+  })
+
+  await it('Verify validateStationInfo() - Missing maximumAmperage', () => {
+    const stationMissingAmperage = createChargingStation({
+      baseName,
+      stationInfo: {
+        baseName,
+        chargingStationId: getChargingStationId(1, chargingStationTemplate),
+        hashId: getHashId(1, chargingStationTemplate),
+        maximumAmperage: undefined,
+        maximumPower: 12000,
+        templateIndex: 1,
+        templateName: 'test-template.json',
+      },
+    })
     expect(() => {
-      validateStationInfo(chargingStation)
+      validateStationInfo(stationMissingAmperage)
     }).toThrow(
       new BaseError(`${baseName}-00001: Missing maximumAmperage in stationInfo properties`)
     )
-    chargingStation.stationInfo.maximumAmperage = 0
+  })
+
+  await it('Verify validateStationInfo() - Invalid maximumAmperage (zero)', () => {
+    const stationInvalidAmperage = createChargingStation({
+      baseName,
+      stationInfo: {
+        baseName,
+        chargingStationId: getChargingStationId(1, chargingStationTemplate),
+        hashId: getHashId(1, chargingStationTemplate),
+        maximumAmperage: 0,
+        maximumPower: 12000,
+        templateIndex: 1,
+        templateName: 'test-template.json',
+      },
+    })
     expect(() => {
-      validateStationInfo(chargingStation)
+      validateStationInfo(stationInvalidAmperage)
     }).toThrow(
       new RangeError(`${baseName}-00001: Invalid maximumAmperage value in stationInfo properties`)
     )
-    chargingStation.stationInfo.maximumAmperage = 16
+  })
+
+  await it('Verify validateStationInfo() - Valid configuration passes', () => {
+    const validStation = createChargingStation({
+      baseName,
+      stationInfo: {
+        baseName,
+        chargingStationId: getChargingStationId(1, chargingStationTemplate),
+        hashId: getHashId(1, chargingStationTemplate),
+        maximumAmperage: 16,
+        maximumPower: 12000,
+        templateIndex: 1,
+        templateName: 'test-template.json',
+      },
+    })
     expect(() => {
-      validateStationInfo(chargingStation)
+      validateStationInfo(validStation)
     }).not.toThrow()
-    chargingStation.stationInfo.ocppVersion = OCPPVersion.VERSION_20
+  })
+
+  await it('Verify validateStationInfo() - OCPP 2.0 requires EVSE', () => {
+    const stationOcpp20 = createChargingStation({
+      baseName,
+      connectorsCount: 0, // Ensure no EVSEs are created
+      stationInfo: {
+        baseName,
+        chargingStationId: getChargingStationId(1, chargingStationTemplate),
+        hashId: getHashId(1, chargingStationTemplate),
+        maximumAmperage: 16,
+        maximumPower: 12000,
+        ocppVersion: OCPPVersion.VERSION_20,
+        templateIndex: 1,
+        templateName: 'test-template.json',
+      },
+    })
     expect(() => {
-      validateStationInfo(chargingStation)
-    }).toThrow(
-      new BaseError(
-        `${baseName}-00001: OCPP 2.0.x requires at least one EVSE defined in the charging station template/configuration`
-      )
-    )
-    chargingStation.stationInfo.ocppVersion = OCPPVersion.VERSION_201
-    expect(() => {
-      validateStationInfo(chargingStation)
+      validateStationInfo(stationOcpp20)
     }).toThrow(
       new BaseError(
         `${baseName}-00001: OCPP 2.0.x requires at least one EVSE defined in the charging station template/configuration`
@@ -129,16 +290,49 @@ await describe('Helpers test suite', async () => {
     )
   })
 
-  await it('Verify checkChargingStationState()', t => {
+  await it('Verify validateStationInfo() - OCPP 2.0.1 requires EVSE', () => {
+    const stationOcpp201 = createChargingStation({
+      baseName,
+      connectorsCount: 0, // Ensure no EVSEs are created
+      stationInfo: {
+        baseName,
+        chargingStationId: getChargingStationId(1, chargingStationTemplate),
+        hashId: getHashId(1, chargingStationTemplate),
+        maximumAmperage: 16,
+        maximumPower: 12000,
+        ocppVersion: OCPPVersion.VERSION_201,
+        templateIndex: 1,
+        templateName: 'test-template.json',
+      },
+    })
+    expect(() => {
+      validateStationInfo(stationOcpp201)
+    }).toThrow(
+      new BaseError(
+        `${baseName}-00001: OCPP 2.0.x requires at least one EVSE defined in the charging station template/configuration`
+      )
+    )
+  })
+
+  await it('Verify checkChargingStationState() - Not started or starting', t => {
     const warnMock = t.mock.method(logger, 'warn')
-    expect(checkChargingStationState(chargingStation, 'log prefix |')).toBe(false)
+    const stationNotStarted = createChargingStation({ baseName, started: false, starting: false })
+    expect(checkChargingStationState(stationNotStarted, 'log prefix |')).toBe(false)
     expect(warnMock.mock.calls.length).toBe(1)
-    chargingStation.starting = true
-    expect(checkChargingStationState(chargingStation, 'log prefix |')).toBe(true)
-    expect(warnMock.mock.calls.length).toBe(1)
-    chargingStation.started = true
-    expect(checkChargingStationState(chargingStation, 'log prefix |')).toBe(true)
-    expect(warnMock.mock.calls.length).toBe(1)
+  })
+
+  await it('Verify checkChargingStationState() - Starting returns true', t => {
+    const warnMock = t.mock.method(logger, 'warn')
+    const stationStarting = createChargingStation({ baseName, started: false, starting: true })
+    expect(checkChargingStationState(stationStarting, 'log prefix |')).toBe(true)
+    expect(warnMock.mock.calls.length).toBe(0)
+  })
+
+  await it('Verify checkChargingStationState() - Started returns true', t => {
+    const warnMock = t.mock.method(logger, 'warn')
+    const stationStarted = createChargingStation({ baseName, started: true, starting: false })
+    expect(checkChargingStationState(stationStarted, 'log prefix |')).toBe(true)
+    expect(warnMock.mock.calls.length).toBe(0)
   })
 
   await it('Verify getPhaseRotationValue()', () => {

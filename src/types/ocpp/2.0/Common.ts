@@ -24,6 +24,12 @@ export enum CertificateSigningUseEnumType {
   V2GCertificate = 'V2GCertificate',
 }
 
+export enum CostKindEnumType {
+  CarbonDioxideEmission = 'CarbonDioxideEmission',
+  RelativePricePercentage = 'RelativePricePercentage',
+  RenewableGenerationPercentage = 'RenewableGenerationPercentage',
+}
+
 export enum DataEnumType {
   boolean = 'boolean',
   dateTime = 'dateTime',
@@ -72,6 +78,17 @@ export enum HashAlgorithmEnumType {
   SHA512 = 'SHA512',
 }
 
+export enum IdTokenEnumType {
+  Central = 'Central',
+  eMAID = 'eMAID',
+  ISO14443 = 'ISO14443',
+  ISO15693 = 'ISO15693',
+  KeyCode = 'KeyCode',
+  Local = 'Local',
+  MacAddress = 'MacAddress',
+  NoAuthorization = 'NoAuthorization',
+}
+
 export enum InstallCertificateStatusEnumType {
   Accepted = 'Accepted',
   Failed = 'Failed',
@@ -83,6 +100,24 @@ export enum InstallCertificateUseEnumType {
   ManufacturerRootCertificate = 'ManufacturerRootCertificate',
   MORootCertificate = 'MORootCertificate',
   V2GRootCertificate = 'V2GRootCertificate',
+}
+
+export enum OCPP20ChargingProfileKindEnumType {
+  Absolute = 'Absolute',
+  Recurring = 'Recurring',
+  Relative = 'Relative',
+}
+
+export enum OCPP20ChargingProfilePurposeEnumType {
+  ChargingStationExternalConstraints = 'ChargingStationExternalConstraints',
+  ChargingStationMaxProfile = 'ChargingStationMaxProfile',
+  TxDefaultProfile = 'TxDefaultProfile',
+  TxProfile = 'TxProfile',
+}
+
+export enum OCPP20ChargingRateUnitEnumType {
+  A = 'A',
+  W = 'W',
 }
 
 export enum OCPP20ComponentName {
@@ -224,6 +259,11 @@ export enum OCPP20MeasurandEnumType {
   VOLTAGE = 'Voltage',
 }
 
+export enum OCPP20RecurrencyKindEnumType {
+  Daily = 'Daily',
+  Weekly = 'Weekly',
+}
+
 export enum OperationalStatusEnumType {
   Inoperative = 'Inoperative',
   Operative = 'Operative',
@@ -281,6 +321,11 @@ export enum ReportBaseEnumType {
   SummaryInventory = 'SummaryInventory',
 }
 
+export enum RequestStartStopStatusEnumType {
+  Accepted = 'Accepted',
+  Rejected = 'Rejected',
+}
+
 export enum ResetEnumType {
   Immediate = 'Immediate',
   OnIdle = 'OnIdle',
@@ -290,6 +335,12 @@ export enum ResetStatusEnumType {
   Accepted = 'Accepted',
   Rejected = 'Rejected',
   Scheduled = 'Scheduled',
+}
+
+export interface AdditionalInfoType extends JsonObject {
+  additionalIdToken: string
+  customData?: CustomDataType
+  type: string
 }
 
 export interface CertificateHashDataChainType extends JsonObject {
@@ -322,11 +373,63 @@ export interface ComponentType extends JsonObject {
   name: OCPP20ComponentName | string
 }
 
+export interface ConsumptionCostType extends JsonObject {
+  cost: CostType[]
+  customData?: CustomDataType
+  startValue: number
+}
+
+export interface CostType extends JsonObject {
+  amount: number
+  amountMultiplier?: number
+  costKind: CostKindEnumType
+  customData?: CustomDataType
+}
+
 export interface CustomDataType extends JsonObject {
   vendorId: string
 }
 
 export type GenericStatusEnumType = GenericStatus
+
+export interface IdTokenType extends JsonObject {
+  additionalInfo?: AdditionalInfoType[]
+  customData?: CustomDataType
+  idToken: string
+  type: IdTokenEnumType
+}
+
+export interface OCPP20ChargingProfileType extends JsonObject {
+  chargingProfileKind: OCPP20ChargingProfileKindEnumType
+  chargingProfilePurpose: OCPP20ChargingProfilePurposeEnumType
+  chargingSchedule: OCPP20ChargingScheduleType[]
+  customData?: CustomDataType
+  id: number
+  recurrencyKind?: OCPP20RecurrencyKindEnumType
+  stackLevel: number
+  transactionId?: string
+  validFrom?: Date
+  validTo?: Date
+}
+
+export interface OCPP20ChargingSchedulePeriodType extends JsonObject {
+  customData?: CustomDataType
+  limit: number
+  numberPhases?: number
+  phaseToUse?: number
+  startPeriod: number
+}
+
+export interface OCPP20ChargingScheduleType extends JsonObject {
+  chargingRateUnit: OCPP20ChargingRateUnitEnumType
+  chargingSchedulePeriod: OCPP20ChargingSchedulePeriodType[]
+  customData?: CustomDataType
+  duration?: number
+  id: number
+  minChargingRate?: number
+  salesTariff?: SalesTariffType
+  startSchedule?: Date
+}
 
 export interface OCSPRequestDataType extends JsonObject {
   hashAlgorithm: HashAlgorithmEnumType
@@ -336,11 +439,32 @@ export interface OCSPRequestDataType extends JsonObject {
   serialNumber: string
 }
 
+export interface RelativeTimeIntervalType extends JsonObject {
+  customData?: CustomDataType
+  duration?: number
+  start: number
+}
+
 export interface ReportDataType extends JsonObject {
   component: ComponentType
   variable: VariableType
   variableAttribute?: VariableAttributeType[]
   variableCharacteristics?: VariableCharacteristicsType
+}
+
+export interface SalesTariffEntryType extends JsonObject {
+  consumptionCost?: ConsumptionCostType[]
+  customData?: CustomDataType
+  ePriceLevel?: number
+  relativeTimeInterval: RelativeTimeIntervalType
+}
+
+export interface SalesTariffType extends JsonObject {
+  customData?: CustomDataType
+  id: number
+  numEPriceLevels?: number
+  salesTariffDescription?: string
+  salesTariffEntry: SalesTariffEntryType[]
 }
 
 export interface StatusInfoType extends JsonObject {

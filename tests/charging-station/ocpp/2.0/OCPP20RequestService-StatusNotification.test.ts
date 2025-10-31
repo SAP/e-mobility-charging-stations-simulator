@@ -12,23 +12,26 @@ import {
   OCPP20ConnectorStatusEnumType,
   OCPP20RequestCommand,
   type OCPP20StatusNotificationRequest,
+  OCPPVersion,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { createChargingStationWithEvses } from '../../../ChargingStationFactory.js'
+import { createChargingStation } from '../../../ChargingStationFactory.js'
 import {
   TEST_FIRMWARE_VERSION,
   TEST_STATUS_CHARGE_POINT_MODEL,
   TEST_STATUS_CHARGE_POINT_SERIAL_NUMBER,
   TEST_STATUS_CHARGE_POINT_VENDOR,
-  TEST_STATUS_CHARGING_STATION_NAME,
+  TEST_STATUS_CHARGING_STATION_BASE_NAME,
 } from './OCPP20TestConstants.js'
 
 await describe('G01 - Status Notification', async () => {
   const mockResponseService = new OCPP20ResponseService()
   const requestService = new OCPP20RequestService(mockResponseService)
 
-  const mockChargingStation = createChargingStationWithEvses({
-    baseName: TEST_STATUS_CHARGING_STATION_NAME,
+  const mockChargingStation = createChargingStation({
+    baseName: TEST_STATUS_CHARGING_STATION_BASE_NAME,
+    connectorsCount: 3,
+    evseConfiguration: { evsesCount: 3 },
     heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
     stationInfo: {
       chargePointModel: TEST_STATUS_CHARGE_POINT_MODEL,
@@ -36,6 +39,7 @@ await describe('G01 - Status Notification', async () => {
       chargePointVendor: TEST_STATUS_CHARGE_POINT_VENDOR,
       firmwareVersion: TEST_FIRMWARE_VERSION,
       ocppStrictCompliance: false,
+      ocppVersion: OCPPVersion.VERSION_201,
     },
     websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
   })

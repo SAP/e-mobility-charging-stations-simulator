@@ -12,11 +12,15 @@ import {
   OCPP20OptionalVariableName,
   OCPP20RequiredVariableName,
   OCPP20VendorVariableName,
+  OCPPVersion,
   ReasonCodeEnumType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { createChargingStationWithEvses } from '../../../ChargingStationFactory.js'
-import { TEST_CHARGING_STATION_NAME, TEST_CONNECTOR_VALID_INSTANCE } from './OCPP20TestConstants.js'
+import { createChargingStation } from '../../../ChargingStationFactory.js'
+import {
+  TEST_CHARGING_STATION_BASE_NAME,
+  TEST_CONNECTOR_VALID_INSTANCE,
+} from './OCPP20TestConstants.js'
 import {
   resetLimits,
   resetReportingValueSize,
@@ -26,11 +30,14 @@ import {
 } from './OCPP20TestUtils.js'
 
 void describe('B06 - Get Variables', () => {
-  const mockChargingStation = createChargingStationWithEvses({
-    baseName: TEST_CHARGING_STATION_NAME,
+  const mockChargingStation = createChargingStation({
+    baseName: TEST_CHARGING_STATION_BASE_NAME,
+    connectorsCount: 3,
+    evseConfiguration: { evsesCount: 3 },
     heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
     stationInfo: {
       ocppStrictCompliance: false,
+      ocppVersion: OCPPVersion.VERSION_201,
     },
     websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
   })

@@ -51,9 +51,8 @@ export default defineConfig([
               'shutdowning',
               'VCAP',
               'workerd',
-              // OCPP 2.0.x Component Names
+              // OCPP 2.0.x domain terms
               'cppwm',
-              // OCPP variable names and domain terms
               'heartbeatinterval',
               'HEARTBEATINTERVAL',
               'websocketpinginterval',
@@ -69,6 +68,9 @@ export default defineConfig([
               'DEAUTHORIZE',
               'deauthorized',
               'DEAUTHORIZED',
+              'Selftest',
+              'SECC',
+              'Secc',
             ],
           },
         },

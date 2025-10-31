@@ -3,7 +3,10 @@ import type { JsonObject } from '../../JsonType.js'
 import type {
   BootReasonEnumType,
   ChargingStationType,
+  CustomDataType,
+  IdTokenType,
   InstallCertificateUseEnumType,
+  OCPP20ChargingProfileType,
   OCPP20ConnectorStatusEnumType,
   ReportBaseEnumType,
   ReportDataType,
@@ -57,6 +60,15 @@ export interface OCPP20NotifyReportRequest extends JsonObject {
   requestId: number
   seqNo: number
   tbc?: boolean
+}
+
+export interface OCPP20RequestStartTransactionRequest extends JsonObject {
+  chargingProfile?: OCPP20ChargingProfileType
+  customData?: CustomDataType
+  evseId?: number
+  groupIdToken?: IdTokenType
+  idToken: IdTokenType
+  remoteStartId?: number
 }
 
 export interface OCPP20ResetRequest extends JsonObject {

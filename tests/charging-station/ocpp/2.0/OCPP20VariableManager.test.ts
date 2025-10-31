@@ -21,16 +21,14 @@ import {
   OCPP20RequiredVariableName,
   type OCPP20SetVariableDataType,
   OCPP20VendorVariableName,
+  OCPPVersion,
   ReasonCodeEnumType,
   SetVariableStatusEnumType,
   type VariableType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import {
-  createChargingStation,
-  createChargingStationWithEvses,
-} from '../../../ChargingStationFactory.js'
-import { TEST_CHARGING_STATION_NAME } from './OCPP20TestConstants.js'
+import { createChargingStation } from '../../../ChargingStationFactory.js'
+import { TEST_CHARGING_STATION_BASE_NAME } from './OCPP20TestConstants.js'
 import {
   resetReportingValueSize,
   resetValueSizeLimits,
@@ -61,9 +59,14 @@ function buildWsExampleUrl (targetLength: number, fillerChar = 'a'): string {
 
 await describe('OCPP20VariableManager test suite', async () => {
   // Create mock ChargingStation with EVSEs for OCPP 2.0 testing
-  const mockChargingStation = createChargingStationWithEvses({
-    baseName: TEST_CHARGING_STATION_NAME,
+  const mockChargingStation = createChargingStation({
+    baseName: TEST_CHARGING_STATION_BASE_NAME,
+    connectorsCount: 3,
+    evseConfiguration: { evsesCount: 3 },
     heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+    stationInfo: {
+      ocppVersion: OCPPVersion.VERSION_201,
+    },
     websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
   })
 
@@ -1380,7 +1383,12 @@ await describe('OCPP20VariableManager test suite', async () => {
     const manager = OCPP20VariableManager.getInstance()
     const station = createChargingStation({
       baseName: 'MMStation',
+      connectorsCount: 3,
+      evseConfiguration: { evsesCount: 3 },
       heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+      stationInfo: {
+        ocppVersion: OCPPVersion.VERSION_201,
+      },
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
 

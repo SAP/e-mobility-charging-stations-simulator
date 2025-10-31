@@ -17,6 +17,7 @@ import {
   OCPP20DeviceInfoVariableName,
   type OCPP20GetBaseReportRequest,
   type OCPP20SetVariableResultType,
+  OCPPVersion,
   ReportBaseEnumType,
   type ReportDataType,
 } from '../../../../src/types/index.js'
@@ -27,18 +28,20 @@ import {
 } from '../../../../src/types/index.js'
 import { StandardParametersKey } from '../../../../src/types/ocpp/Configuration.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { createChargingStationWithEvses } from '../../../ChargingStationFactory.js'
+import { createChargingStation } from '../../../ChargingStationFactory.js'
 import {
   TEST_CHARGE_POINT_MODEL,
   TEST_CHARGE_POINT_SERIAL_NUMBER,
   TEST_CHARGE_POINT_VENDOR,
-  TEST_CHARGING_STATION_NAME,
+  TEST_CHARGING_STATION_BASE_NAME,
   TEST_FIRMWARE_VERSION,
 } from './OCPP20TestConstants.js'
 
 await describe('B08 - Get Base Report', async () => {
-  const mockChargingStation = createChargingStationWithEvses({
-    baseName: TEST_CHARGING_STATION_NAME,
+  const mockChargingStation = createChargingStation({
+    baseName: TEST_CHARGING_STATION_BASE_NAME,
+    connectorsCount: 3,
+    evseConfiguration: { evsesCount: 3 },
     heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
     stationInfo: {
       chargePointModel: TEST_CHARGE_POINT_MODEL,
@@ -46,6 +49,7 @@ await describe('B08 - Get Base Report', async () => {
       chargePointVendor: TEST_CHARGE_POINT_VENDOR,
       firmwareVersion: TEST_FIRMWARE_VERSION,
       ocppStrictCompliance: false,
+      ocppVersion: OCPPVersion.VERSION_201,
     },
     websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
   })
@@ -152,13 +156,16 @@ await describe('B08 - Get Base Report', async () => {
   // FR: B08.FR.05
   await it('Should return EmptyResultSet when no data is available', () => {
     // Create a charging station with minimal configuration
-    const minimalChargingStation = createChargingStationWithEvses({
+    const minimalChargingStation = createChargingStation({
       baseName: 'CS-MINIMAL',
+      connectorsCount: 3,
+      evseConfiguration: { evsesCount: 3 },
       ocppConfiguration: {
         configurationKey: [],
       },
       stationInfo: {
         ocppStrictCompliance: false,
+        ocppVersion: OCPPVersion.VERSION_201,
       },
     })
 
@@ -321,14 +328,16 @@ await describe('B08 - Get Base Report', async () => {
 
   // FR: B08.FR.09
   await it('Should handle GetBaseReport with EVSE structure', () => {
-    // The createChargingStationWithEvses should create a station with EVSEs
-    const stationWithEvses = createChargingStationWithEvses({
+    // The createChargingStation should create a station with EVSEs
+    const stationWithEvses = createChargingStation({
       baseName: 'CS-EVSE-001',
-      hasEvses: true,
+      connectorsCount: 3,
+      evseConfiguration: { evsesCount: 3 },
       stationInfo: {
         chargePointModel: 'EVSE Test Model',
         chargePointVendor: 'EVSE Test Vendor',
         ocppStrictCompliance: false,
+        ocppVersion: OCPPVersion.VERSION_201,
       },
     })
 
@@ -344,7 +353,7 @@ await describe('B08 - Get Base Report', async () => {
     const evseComponents = reportData.filter(
       (item: ReportDataType) => item.component.name === (OCPP20ComponentName.EVSE as string)
     )
-    if (stationWithEvses.evses.size > 0) {
+    if (stationWithEvses.hasEvses) {
       expect(evseComponents.length).toBeGreaterThan(0)
     }
   })

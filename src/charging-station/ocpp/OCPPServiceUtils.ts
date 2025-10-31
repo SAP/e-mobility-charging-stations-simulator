@@ -1245,6 +1245,7 @@ const getSampledValueTemplate = (
     } else if (
       measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER &&
       (sampledValueTemplates[index].measurand == null ||
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
         sampledValueTemplates[index].measurand === measurand)
     ) {
       return sampledValueTemplates[index]

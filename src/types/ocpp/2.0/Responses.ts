@@ -2,9 +2,11 @@ import type { EmptyObject } from '../../EmptyObject.js'
 import type { JsonObject } from '../../JsonType.js'
 import type { RegistrationStatusEnumType } from '../Common.js'
 import type {
+  CustomDataType,
   GenericDeviceModelStatusEnumType,
   GenericStatusEnumType,
   InstallCertificateStatusEnumType,
+  RequestStartStopStatusEnumType,
   ResetStatusEnumType,
   StatusInfoType,
 } from './Common.js'
@@ -41,6 +43,13 @@ export interface OCPP20InstallCertificateResponse extends JsonObject {
 }
 
 export type OCPP20NotifyReportResponse = EmptyObject
+
+export interface OCPP20RequestStartTransactionResponse extends JsonObject {
+  customData?: CustomDataType
+  status: RequestStartStopStatusEnumType
+  statusInfo?: StatusInfoType
+  transactionId?: string
+}
 
 export interface OCPP20ResetResponse extends JsonObject {
   status: ResetStatusEnumType
