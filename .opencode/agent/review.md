@@ -1,5 +1,5 @@
 ---
-description: Reviews code
+description: Reviews code.
 mode: subagent
 temperature: 0.1
 tools:
