@@ -1,5 +1,5 @@
 ---
-description: Run simulator tests
+description: Run simulator test suite
 ---
 
 Run the simulator test suite.
