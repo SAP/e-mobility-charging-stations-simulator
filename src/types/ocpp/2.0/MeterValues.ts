@@ -1,6 +1,6 @@
 import type { EmptyObject } from '../../EmptyObject.js'
 import type { JsonObject } from '../../JsonType.js'
-import type { CustomDataType } from './Common.js'
+import type { CustomDataType, OCPP20UnitEnumType } from './Common.js'
 
 export enum OCPP20LocationEnumType {
   Body = 'Body',
@@ -60,43 +60,6 @@ export enum OCPP20ReadingContextEnumType {
   TRANSACTION_BEGIN = 'Transaction.Begin',
   TRANSACTION_END = 'Transaction.End',
   TRIGGER = 'Trigger',
-}
-
-export enum OCPP20UnitEnumType {
-  AMP = 'A',
-  ARBITRARY_STRENGTH_UNIT = 'ASU',
-  BYTES = 'B',
-  CELSIUS = 'Celsius',
-  CHARS = 'chars', // Custom extension for character count measurements
-  DECIBEL = 'dB',
-  DECIBEL_MILLIWATT = 'dBm', // cspell:ignore MILLIWATT
-  DEGREES = 'Deg',
-  FAHRENHEIT = 'Fahrenheit',
-  HERTZ = 'Hz',
-  KELVIN = 'K',
-  KILO_PASCAL = 'kPa',
-  KILO_VAR = 'kvar',
-  KILO_VAR_HOUR = 'kvarh',
-  KILO_VOLT_AMP = 'kVA',
-  KILO_VOLT_AMP_HOUR = 'kVAh',
-  KILO_WATT = 'kW',
-  KILO_WATT_HOUR = 'kWh',
-  LUX = 'lx',
-  METER = 'm',
-  METER_PER_SECOND_SQUARED = 'ms2',
-  NEWTON = 'N',
-  OHM = 'Ohm',
-  PERCENT = 'Percent',
-  RELATIVE_HUMIDITY = 'RH',
-  REVOLUTIONS_PER_MINUTE = 'RPM',
-  SECONDS = 's',
-  VAR = 'var',
-  VAR_HOUR = 'varh',
-  VOLT = 'V',
-  VOLT_AMP = 'VA',
-  VOLT_AMP_HOUR = 'VAh',
-  WATT = 'W',
-  WATT_HOUR = 'Wh',
 }
 
 export interface OCPP20MeterValue extends JsonObject {
