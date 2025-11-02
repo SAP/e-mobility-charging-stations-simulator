@@ -262,6 +262,18 @@ export enum OCPP20MeasurandEnumType {
 export enum OCPP20RecurrencyKindEnumType {
   Daily = 'Daily',
   Weekly = 'Weekly',
+
+export enum OCPP20PhaseEnumType {
+  L1 = 'L1',
+  L1_L2 = 'L1-L2',
+  L1_N = 'L1-N',
+  L2 = 'L2',
+  L2_L3 = 'L2-L3',
+  L2_N = 'L2-N',
+  L3 = 'L3',
+  L3_L1 = 'L3-L1',
+  L3_N = 'L3-N',
+  N = 'N',
 }
 
 export enum OperationalStatusEnumType {
