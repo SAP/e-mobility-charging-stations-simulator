@@ -3,7 +3,10 @@
 import type { ValidateFunction } from 'ajv'
 
 import type { ChargingStation } from '../../../charging-station/index.js'
-import type { IdTokenType, OCPP20ChargingProfileType } from '../../../types/ocpp/2.0/Common.js'
+import type {
+  OCPP20ChargingProfileType,
+  OCPP20IdTokenType,
+} from '../../../types/ocpp/2.0/Transaction.js'
 
 import { OCPPError } from '../../../exception/index.js'
 import {
@@ -1297,7 +1300,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   // Helper methods for RequestStartTransaction
   private async isIdTokenAuthorized (
     chargingStation: ChargingStation,
-    idToken: IdTokenType
+    idToken: OCPP20IdTokenType
   ): Promise<boolean> {
     // TODO: Implement proper authorization logic
     // This should check:

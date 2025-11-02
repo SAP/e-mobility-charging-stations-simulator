@@ -1,5 +1,6 @@
 import type { JsonObject } from '../../JsonType.js'
-import type { ComponentType, StatusInfoType } from './Common.js'
+import type { StatusInfoType } from './Common.js'
+import type { ComponentType } from './Transaction.js'
 
 export enum AttributeEnumType {
   Actual = 'Actual',
@@ -124,9 +125,26 @@ export interface OCPP20SetVariableResultType extends JsonObject {
   variable: VariableType
 }
 
+export interface ReportDataType extends JsonObject {
+  component: ComponentType
+  variable: VariableType
+  variableAttribute?: VariableAttributeType[]
+  variableCharacteristics?: VariableCharacteristicsType
+}
+
 export interface VariableType extends JsonObject {
   instance?: string
   name: VariableName
+}
+
+interface VariableAttributeType extends JsonObject {
+  type?: string
+  value?: string
+}
+
+interface VariableCharacteristicsType extends JsonObject {
+  dataType: string
+  supportsMonitoring: boolean
 }
 
 type VariableName =

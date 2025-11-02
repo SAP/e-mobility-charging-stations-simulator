@@ -6,10 +6,10 @@ import type {
   GenericDeviceModelStatusEnumType,
   GenericStatusEnumType,
   InstallCertificateStatusEnumType,
-  RequestStartStopStatusEnumType,
   ResetStatusEnumType,
   StatusInfoType,
 } from './Common.js'
+import type { RequestStartStopStatusEnumType } from './Transaction.js'
 import type { OCPP20GetVariableResultType, OCPP20SetVariableResultType } from './Variables.js'
 
 export interface OCPP20BootNotificationResponse extends JsonObject {

@@ -1,4 +1,4 @@
-import { OCPP20ConnectorEnumType } from './2.0/Common.js'
+import { OCPP20ConnectorEnumType } from './2.0/Transaction.js'
 
 export const ConnectorEnumType = {
   ...OCPP20ConnectorEnumType,

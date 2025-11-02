@@ -4,15 +4,20 @@ import type {
   BootReasonEnumType,
   ChargingStationType,
   CustomDataType,
-  IdTokenType,
   InstallCertificateUseEnumType,
-  OCPP20ChargingProfileType,
-  OCPP20ConnectorStatusEnumType,
   ReportBaseEnumType,
-  ReportDataType,
   ResetEnumType,
 } from './Common.js'
-import type { OCPP20GetVariableDataType, OCPP20SetVariableDataType } from './Variables.js'
+import type {
+  OCPP20ChargingProfileType,
+  OCPP20ConnectorStatusEnumType,
+  OCPP20IdTokenType,
+} from './Transaction.js'
+import type {
+  OCPP20GetVariableDataType,
+  OCPP20SetVariableDataType,
+  ReportDataType,
+} from './Variables.js'
 
 export enum OCPP20IncomingRequestCommand {
   CLEAR_CACHE = 'ClearCache',
@@ -66,8 +71,8 @@ export interface OCPP20RequestStartTransactionRequest extends JsonObject {
   chargingProfile?: OCPP20ChargingProfileType
   customData?: CustomDataType
   evseId?: number
-  groupIdToken?: IdTokenType
-  idToken: IdTokenType
+  groupIdToken?: OCPP20IdTokenType
+  idToken: OCPP20IdTokenType
   remoteStartId?: number
 }
 

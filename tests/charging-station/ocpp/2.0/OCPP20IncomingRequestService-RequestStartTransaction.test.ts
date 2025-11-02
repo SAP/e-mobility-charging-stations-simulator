@@ -10,7 +10,7 @@ import type { OCPP20RequestStartTransactionRequest } from '../../../../src/types
 
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import { OCPPVersion, RequestStartStopStatusEnumType } from '../../../../src/types/index.js'
-import { IdTokenEnumType } from '../../../../src/types/ocpp/2.0/Common.js'
+import { OCPP20IdTokenEnumType } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from './OCPP20TestConstants.js'
@@ -46,7 +46,7 @@ await describe('E01 - Remote Start Transaction', async () => {
       evseId: 1,
       idToken: {
         idToken: 'VALID_TOKEN_123',
-        type: IdTokenEnumType.ISO14443,
+        type: OCPP20IdTokenEnumType.ISO14443,
       },
     }
 
@@ -66,7 +66,7 @@ await describe('E01 - Remote Start Transaction', async () => {
       evseId: 2,
       idToken: {
         idToken: 'REMOTE_TOKEN_456',
-        type: IdTokenEnumType.ISO15693,
+        type: OCPP20IdTokenEnumType.ISO15693,
       },
       remoteStartId: 42,
     }
@@ -86,11 +86,11 @@ await describe('E01 - Remote Start Transaction', async () => {
       evseId: 3,
       groupIdToken: {
         idToken: 'GROUP_TOKEN_789',
-        type: IdTokenEnumType.Local,
+        type: OCPP20IdTokenEnumType.Local,
       },
       idToken: {
         idToken: 'PRIMARY_TOKEN',
-        type: IdTokenEnumType.Central,
+        type: OCPP20IdTokenEnumType.Central,
       },
     }
 
@@ -111,7 +111,7 @@ await describe('E01 - Remote Start Transaction', async () => {
       evseId: 999, // Non-existent EVSE
       idToken: {
         idToken: 'VALID_TOKEN_123',
-        type: IdTokenEnumType.ISO14443,
+        type: OCPP20IdTokenEnumType.ISO14443,
       },
     }
 
@@ -130,7 +130,7 @@ await describe('E01 - Remote Start Transaction', async () => {
       evseId: 1,
       idToken: {
         idToken: 'FIRST_TOKEN',
-        type: IdTokenEnumType.ISO14443,
+        type: OCPP20IdTokenEnumType.ISO14443,
       },
     }
 
@@ -144,7 +144,7 @@ await describe('E01 - Remote Start Transaction', async () => {
       evseId: 1,
       idToken: {
         idToken: 'SECOND_TOKEN',
-        type: IdTokenEnumType.ISO14443,
+        type: OCPP20IdTokenEnumType.ISO14443,
       },
     }
 
@@ -163,7 +163,7 @@ await describe('E01 - Remote Start Transaction', async () => {
       evseId: 1,
       idToken: {
         idToken: 'STRUCTURE_TEST_TOKEN',
-        type: IdTokenEnumType.ISO14443,
+        type: OCPP20IdTokenEnumType.ISO14443,
       },
     }
 

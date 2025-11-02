@@ -13,7 +13,7 @@ import {
   OCPP20ChargingRateUnitEnumType,
   type OCPP20ChargingSchedulePeriodType,
   OCPP20RecurrencyKindEnumType,
-} from './2.0/Common.js'
+} from './2.0/Transaction.js'
 
 export type ChargingProfile = OCPP16ChargingProfile | OCPP20ChargingProfileType
 

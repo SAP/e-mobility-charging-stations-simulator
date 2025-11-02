@@ -143,28 +143,27 @@ export {
 } from './ocpp/1.6/Transaction.js'
 export {
   BootReasonEnumType,
-  type ComponentType,
   type CustomDataType,
   DataEnumType,
   GenericDeviceModelStatusEnumType,
-  type IdTokenType,
-  OCPP20ChargingProfileKindEnumType,
-  OCPP20ChargingProfilePurposeEnumType,
-  type OCPP20ChargingProfileType,
-  OCPP20ChargingRateUnitEnumType,
-  type OCPP20ChargingSchedulePeriodType,
-  type OCPP20ChargingScheduleType,
   OCPP20ComponentName,
-  OCPP20ConnectorStatusEnumType,
-  OCPP20MeasurandEnumType,
-  OCPP20RecurrencyKindEnumType,
   ReasonCodeEnumType,
   ReportBaseEnumType,
-  type ReportDataType,
-  RequestStartStopStatusEnumType,
   ResetEnumType,
   ResetStatusEnumType,
 } from './ocpp/2.0/Common.js'
+export {
+  OCPP20LocationEnumType,
+  OCPP20MeasurandEnumType,
+  type OCPP20MeterValue,
+  type OCPP20MeterValuesRequest,
+  type OCPP20MeterValuesResponse,
+  OCPP20PhaseEnumType,
+  OCPP20ReadingContextEnumType,
+  type OCPP20SampledValue,
+  type OCPP20SignedMeterValue,
+  type OCPP20UnitOfMeasure,
+} from './ocpp/2.0/MeterValues.js'
 export {
   type OCPP20BootNotificationRequest,
   type OCPP20ClearCacheRequest,
@@ -192,6 +191,18 @@ export type {
   OCPP20StatusNotificationResponse,
 } from './ocpp/2.0/Responses.js'
 export {
+  type ComponentType,
+  OCPP20ChargingProfileKindEnumType,
+  OCPP20ChargingProfilePurposeEnumType,
+  type OCPP20ChargingProfileType,
+  OCPP20ChargingRateUnitEnumType,
+  type OCPP20ChargingSchedulePeriodType,
+  type OCPP20ChargingScheduleType,
+  OCPP20ConnectorStatusEnumType,
+  type OCPP20IdTokenType,
+  RequestStartStopStatusEnumType,
+} from './ocpp/2.0/Transaction.js'
+export {
   AttributeEnumType,
   GetVariableStatusEnumType,
   MutabilityEnumType,
@@ -204,6 +215,7 @@ export {
   type OCPP20SetVariableResultType,
   OCPP20VendorVariableName,
   PersistenceEnumType,
+  type ReportDataType,
   SetVariableStatusEnumType,
   type VariableType,
 } from './ocpp/2.0/Variables.js'

@@ -7,7 +7,12 @@ import {
   OCPP16MeterValueUnit,
   type OCPP16SampledValue,
 } from './1.6/MeterValues.js'
-import { OCPP20MeasurandEnumType, OCPP20PhaseEnumType } from './2.0/Common.js'
+import {
+  OCPP20LocationEnumType,
+  OCPP20MeasurandEnumType,
+  OCPP20PhaseEnumType,
+  OCPP20ReadingContextEnumType,
+} from './2.0/MeterValues.js'
 
 export type MeterValue = OCPP16MeterValue
 
@@ -19,15 +24,17 @@ export type MeterValueUnit = OCPP16MeterValueUnit
 
 export const MeterValueContext = {
   ...OCPP16MeterValueContext,
+  ...OCPP20ReadingContextEnumType,
 } as const
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type MeterValueContext = OCPP16MeterValueContext
+export type MeterValueContext = OCPP16MeterValueContext | OCPP20ReadingContextEnumType
 
 export const MeterValueLocation = {
   ...OCPP16MeterValueLocation,
+  ...OCPP20LocationEnumType,
 } as const
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type MeterValueLocation = OCPP16MeterValueLocation
+export type MeterValueLocation = OCPP16MeterValueLocation | OCPP20LocationEnumType
 
 export const MeterValueMeasurand = {
   ...OCPP16MeterValueMeasurand,
