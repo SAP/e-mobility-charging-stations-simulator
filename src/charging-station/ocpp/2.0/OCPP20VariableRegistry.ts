@@ -15,6 +15,7 @@ import {
   OCPP20VendorVariableName,
   PersistenceEnumType,
   ReasonCodeEnumType,
+  type VariableName,
 } from '../../../types/index.js'
 import { Constants, convertToIntOrNaN, has } from '../../../utils/index.js'
 
@@ -68,9 +69,9 @@ export interface VariableMetadata {
   rebootRequired?: boolean
   supportedAttributes: AttributeEnumType[]
   supportsTarget?: boolean
-  unit?: string
+  unit?: OCPP20UnitEnumType
   urlSchemes?: string[]
-  variable: string
+  variable: VariableName
   vendorSpecific?: boolean
 }
 

@@ -137,6 +137,13 @@ export interface ReportDataType extends JsonObject {
   variableCharacteristics?: VariableCharacteristicsType
 }
 
+export type VariableName =
+  | OCPP20DeviceInfoVariableName
+  | OCPP20OptionalVariableName
+  | OCPP20RequiredVariableName
+  | OCPP20VendorVariableName
+  | string
+
 export interface VariableType extends JsonObject {
   customData?: CustomDataType
   instance?: string
@@ -152,10 +159,3 @@ interface VariableCharacteristicsType extends JsonObject {
   dataType: string
   supportsMonitoring: boolean
 }
-
-type VariableName =
-  | OCPP20DeviceInfoVariableName
-  | OCPP20OptionalVariableName
-  | OCPP20RequiredVariableName
-  | OCPP20VendorVariableName
-  | string

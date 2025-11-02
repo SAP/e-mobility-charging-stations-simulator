@@ -218,6 +218,7 @@ export {
   PersistenceEnumType,
   type ReportDataType,
   SetVariableStatusEnumType,
+  type VariableName,
   type VariableType,
 } from './ocpp/2.0/Variables.js'
 export { ChargePointErrorCode } from './ocpp/ChargePointErrorCode.js'
