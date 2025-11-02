@@ -78,7 +78,7 @@ export interface OCPP20RequestStartTransactionRequest extends JsonObject {
   evseId?: number
   groupIdToken?: OCPP20IdTokenType
   idToken: OCPP20IdTokenType
-  remoteStartId?: number
+  remoteStartId: number
 }
 
 export interface OCPP20ResetRequest extends JsonObject {
