@@ -2,7 +2,6 @@ import type { EmptyObject } from '../../EmptyObject.js'
 import type { JsonObject } from '../../JsonType.js'
 import type { CustomDataType } from './Common.js'
 import type { OCPP20MeterValue } from './MeterValues.js'
-
 export enum CostKindEnumType {
   CarbonDioxideEmission = 'CarbonDioxideEmission',
   RelativePricePercentage = 'RelativePricePercentage',

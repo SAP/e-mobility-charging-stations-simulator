@@ -11,6 +11,7 @@ import {
   OCPP20MeasurandEnumType,
   OCPP20OptionalVariableName,
   OCPP20RequiredVariableName,
+  OCPP20UnitEnumType,
   OCPP20VendorVariableName,
   PersistenceEnumType,
   ReasonCodeEnumType,
@@ -130,7 +131,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
-    unit: 's',
+    unit: OCPP20UnitEnumType.SECONDS,
     variable: 'Interval',
   },
   [buildRegistryKey(OCPP20ComponentName.AlignedDataCtrlr as string, 'Measurands')]: {
@@ -198,7 +199,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
-    unit: 's',
+    unit: OCPP20UnitEnumType.SECONDS,
     variable: 'TxEndedInterval',
   },
   [buildRegistryKey(OCPP20ComponentName.AlignedDataCtrlr as string, 'TxEndedMeasurands')]: {
@@ -304,7 +305,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Volatile,
     supportedAttributes: [AttributeEnumType.Actual, AttributeEnumType.MaxSet],
-    unit: 'B',
+    unit: OCPP20UnitEnumType.BYTES,
     variable: 'Storage',
   },
 
@@ -565,7 +566,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
-    unit: 's',
+    unit: OCPP20UnitEnumType.SECONDS,
     variable: OCPP20OptionalVariableName.WebSocketPingInterval as string,
   },
   [buildRegistryKey(
@@ -766,7 +767,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Persistent,
     positive: true,
     supportedAttributes: [AttributeEnumType.Actual],
-    unit: 'chars',
+    unit: OCPP20UnitEnumType.CHARS,
     variable: OCPP20RequiredVariableName.ConfigurationValueSize as string,
   },
   [buildRegistryKey(
@@ -838,7 +839,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Persistent,
     positive: true,
     supportedAttributes: [AttributeEnumType.Actual],
-    unit: 'chars',
+    unit: OCPP20UnitEnumType.CHARS,
     variable: OCPP20RequiredVariableName.ReportingValueSize as string,
   },
   [buildRegistryKey(
@@ -856,7 +857,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Persistent,
     positive: true,
     supportedAttributes: [AttributeEnumType.Actual],
-    unit: 'chars',
+    unit: OCPP20UnitEnumType.CHARS,
     variable: OCPP20RequiredVariableName.ValueSize as string,
   },
 
@@ -926,7 +927,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Volatile,
     supportedAttributes: [AttributeEnumType.Actual, AttributeEnumType.MaxSet],
     supportsTarget: false,
-    unit: 'W',
+    unit: OCPP20UnitEnumType.WATT,
     variable: 'Power',
   },
   [buildRegistryKey(OCPP20ComponentName.EVSE as string, 'SupplyPhases')]: {
@@ -1160,7 +1161,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Volatile,
     supportedAttributes: [AttributeEnumType.Actual, AttributeEnumType.MaxSet],
-    unit: 'B',
+    unit: OCPP20UnitEnumType.BYTES,
     variable: 'Storage',
   },
 
@@ -1400,7 +1401,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Persistent,
     positive: true,
     supportedAttributes: [AttributeEnumType.Actual],
-    unit: 's',
+    unit: OCPP20UnitEnumType.SECONDS,
     variable: OCPP20OptionalVariableName.HeartbeatInterval as string,
   },
   [buildRegistryKey(
@@ -1417,7 +1418,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
-    unit: 's',
+    unit: OCPP20UnitEnumType.SECONDS,
     variable: OCPP20OptionalVariableName.WebSocketPingInterval as string,
   },
   [buildRegistryKey(
@@ -1450,7 +1451,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Persistent,
     positive: true,
     supportedAttributes: [AttributeEnumType.Actual],
-    unit: 's',
+    unit: OCPP20UnitEnumType.SECONDS,
     variable: OCPP20RequiredVariableName.MessageAttemptInterval as string,
   },
   [buildRegistryKey(
@@ -1487,7 +1488,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Persistent,
     positive: true,
     supportedAttributes: [AttributeEnumType.Actual],
-    unit: 's',
+    unit: OCPP20UnitEnumType.SECONDS,
     variable: OCPP20RequiredVariableName.MessageTimeout as string,
   },
   [buildRegistryKey(
@@ -1533,7 +1534,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Persistent,
     positive: true,
     supportedAttributes: [AttributeEnumType.Actual],
-    unit: 's',
+    unit: OCPP20UnitEnumType.SECONDS,
     variable: OCPP20RequiredVariableName.OfflineThreshold as string,
   },
   [buildRegistryKey(
@@ -1653,7 +1654,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
-    unit: 's',
+    unit: OCPP20UnitEnumType.SECONDS,
     variable: 'TxEndedInterval',
   },
   [buildRegistryKey(
@@ -1667,7 +1668,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Volatile,
     supportedAttributes: [AttributeEnumType.Actual],
-    unit: 'A',
+    unit: OCPP20UnitEnumType.AMP,
     variable: OCPP20MeasurandEnumType.CURRENT_IMPORT,
   },
   [buildRegistryKey(
@@ -1681,7 +1682,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Volatile,
     supportedAttributes: [AttributeEnumType.Actual],
-    unit: 'Wh',
+    unit: OCPP20UnitEnumType.WATT_HOUR,
     variable: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
   },
   [buildRegistryKey(
@@ -1695,7 +1696,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Volatile,
     supportedAttributes: [AttributeEnumType.Actual],
-    unit: 'W',
+    unit: OCPP20UnitEnumType.WATT,
     variable: OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT,
   },
   [buildRegistryKey(
@@ -1709,7 +1710,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Volatile,
     supportedAttributes: [AttributeEnumType.Actual],
-    unit: 'V',
+    unit: OCPP20UnitEnumType.VOLT,
     variable: OCPP20MeasurandEnumType.VOLTAGE,
   },
   [buildRegistryKey(
@@ -1787,7 +1788,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Volatile,
     positive: true,
     supportedAttributes: [AttributeEnumType.Actual],
-    unit: 's',
+    unit: OCPP20UnitEnumType.SECONDS,
     variable: OCPP20RequiredVariableName.TxUpdatedInterval as string,
   },
   [buildRegistryKey(
@@ -1863,7 +1864,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
-    unit: 's',
+    unit: OCPP20UnitEnumType.SECONDS,
     variable: 'CertSigningWaitMinimum',
   },
   [buildRegistryKey(OCPP20ComponentName.SecurityCtrlr as string, 'Identity')]: {
@@ -2027,7 +2028,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
-    unit: 'Percent',
+    unit: OCPP20UnitEnumType.PERCENT,
     variable: 'LimitChangeSignificance',
   },
   [buildRegistryKey(
@@ -2180,7 +2181,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Volatile,
     supportedAttributes: [AttributeEnumType.Actual],
-    unit: 's',
+    unit: OCPP20UnitEnumType.SECONDS,
     variable: 'ChargingTime',
   },
   [buildRegistryKey(OCPP20ComponentName.TxCtrlr as string, 'MaxEnergyOnInvalidId')]: {
@@ -2192,7 +2193,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
-    unit: 'Wh',
+    unit: OCPP20UnitEnumType.WATT_HOUR,
     variable: 'MaxEnergyOnInvalidId',
   },
   [buildRegistryKey(OCPP20ComponentName.TxCtrlr as string, 'TxBeforeAcceptedEnabled')]: {
@@ -2221,7 +2222,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Persistent,
     positive: true,
     supportedAttributes: [AttributeEnumType.Actual],
-    unit: 's',
+    unit: OCPP20UnitEnumType.SECONDS,
     variable: OCPP20RequiredVariableName.EVConnectionTimeOut as string,
   },
   [buildRegistryKey(
