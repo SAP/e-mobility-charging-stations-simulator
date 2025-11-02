@@ -149,13 +149,24 @@ export {
   GenericDeviceModelStatusEnumType,
   OCPP20ComponentName,
   OCPP20ConnectorStatusEnumType,
-  OCPP20MeasurandEnumType,
   ReasonCodeEnumType,
   ReportBaseEnumType,
   type ReportDataType,
   ResetEnumType,
   ResetStatusEnumType,
 } from './ocpp/2.0/Common.js'
+export {
+  OCPP20LocationEnumType,
+  OCPP20MeasurandEnumType,
+  type OCPP20MeterValue,
+  type OCPP20MeterValuesRequest,
+  type OCPP20MeterValuesResponse,
+  OCPP20PhaseEnumType,
+  OCPP20ReadingContextEnumType,
+  type OCPP20SampledValue,
+  type OCPP20SignedMeterValue,
+  type OCPP20UnitOfMeasure,
+} from './ocpp/2.0/MeterValues.js'
 export {
   type OCPP20BootNotificationRequest,
   type OCPP20ClearCacheRequest,
