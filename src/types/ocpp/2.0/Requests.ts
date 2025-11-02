@@ -38,17 +38,20 @@ export enum OCPP20RequestCommand {
 
 export interface OCPP20BootNotificationRequest extends JsonObject {
   chargingStation: ChargingStationType
+  customData?: CustomDataType
   reason: BootReasonEnumType
 }
 
 export type OCPP20ClearCacheRequest = EmptyObject
 
 export interface OCPP20GetBaseReportRequest extends JsonObject {
+  customData?: CustomDataType
   reportBase: ReportBaseEnumType
   requestId: number
 }
 
 export interface OCPP20GetVariablesRequest extends JsonObject {
+  customData?: CustomDataType
   getVariableData: OCPP20GetVariableDataType[]
 }
 
@@ -57,9 +60,11 @@ export type OCPP20HeartbeatRequest = EmptyObject
 export interface OCPP20InstallCertificateRequest extends JsonObject {
   certificate: string
   certificateType: InstallCertificateUseEnumType
+  customData?: CustomDataType
 }
 
 export interface OCPP20NotifyReportRequest extends JsonObject {
+  customData?: CustomDataType
   generatedAt: Date
   reportData?: ReportDataType[]
   requestId: number
@@ -77,17 +82,20 @@ export interface OCPP20RequestStartTransactionRequest extends JsonObject {
 }
 
 export interface OCPP20ResetRequest extends JsonObject {
+  customData?: CustomDataType
   evseId?: number
   type: ResetEnumType
 }
 
 export interface OCPP20SetVariablesRequest extends JsonObject {
+  customData?: CustomDataType
   setVariableData: OCPP20SetVariableDataType[]
 }
 
 export interface OCPP20StatusNotificationRequest extends JsonObject {
   connectorId: number
   connectorStatus: OCPP20ConnectorStatusEnumType
+  customData?: CustomDataType
   evseId: number
   timestamp: Date
 }

@@ -260,6 +260,12 @@ export interface CustomDataType extends JsonObject {
 
 export type GenericStatusEnumType = GenericStatus
 
+export interface ModemType extends JsonObject {
+  customData?: CustomDataType
+  iccid?: string
+  imsi?: string
+}
+
 export interface OCSPRequestDataType extends JsonObject {
   hashAlgorithm: HashAlgorithmEnumType
   issuerKeyHash: string
@@ -272,10 +278,4 @@ export interface StatusInfoType extends JsonObject {
   additionalInfo?: string
   customData?: CustomDataType
   reasonCode: ReasonCodeEnumType
-}
-
-interface ModemType extends JsonObject {
-  customData?: CustomDataType
-  iccid?: string
-  imsi?: string
 }

@@ -71,6 +71,7 @@ export default defineConfig([
               'Selftest',
               'SECC',
               'Secc',
+              'Overcurrent',
             ],
           },
         },

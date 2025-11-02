@@ -10,11 +10,13 @@ import {
 import {
   OCPP20LocationEnumType,
   OCPP20MeasurandEnumType,
+  type OCPP20MeterValue,
   OCPP20PhaseEnumType,
   OCPP20ReadingContextEnumType,
+  type OCPP20SampledValue,
 } from './2.0/MeterValues.js'
 
-export type MeterValue = OCPP16MeterValue
+export type MeterValue = OCPP16MeterValue | OCPP20MeterValue
 
 export const MeterValueUnit = {
   ...OCPP16MeterValueUnit,
@@ -50,4 +52,4 @@ export const MeterValuePhase = {
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type MeterValuePhase = OCPP16MeterValuePhase | OCPP20PhaseEnumType
 
-export type SampledValue = OCPP16SampledValue
+export type SampledValue = OCPP16SampledValue | OCPP20SampledValue

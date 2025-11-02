@@ -36,8 +36,10 @@ import {
   MeterValuePhase,
   MeterValueUnit,
   type OCPP16ChargePointStatus,
+  type OCPP16SampledValue,
   type OCPP16StatusNotificationRequest,
   type OCPP20ConnectorStatusEnumType,
+  type OCPP20SampledValue,
   type OCPP20StatusNotificationRequest,
   OCPPVersion,
   RequestCommand,
@@ -355,7 +357,11 @@ export const buildMeterValue = (
           )
           : randomInt(socMinimumValue, socMaximumValue + 1)
         meterValue.sampledValue.push(
-          buildSampledValue(socSampledValueTemplate, socSampledValueTemplateValue)
+          buildSampledValue(
+            OCPPVersion.VERSION_16,
+            socSampledValueTemplate,
+            socSampledValueTemplateValue
+          )
         )
         const sampledValuesIndex = meterValue.sampledValue.length - 1
         if (
@@ -368,9 +374,9 @@ export const buildMeterValue = (
               meterValue.sampledValue[sampledValuesIndex].measurand ??
               MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
               // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            }: connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${socMinimumValue.toString()}/${
-              meterValue.sampledValue[sampledValuesIndex].value
-            }/${socMaximumValue.toString()}`
+            }: connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${socMinimumValue.toString()}/${meterValue.sampledValue[
+              sampledValuesIndex
+            ].value.toString()}/${socMaximumValue.toString()}`
           )
         }
       }
@@ -397,7 +403,11 @@ export const buildMeterValue = (
             chargingStation.stationInfo.mainVoltageMeterValues === true)
         ) {
           meterValue.sampledValue.push(
-            buildSampledValue(voltageSampledValueTemplate, voltageMeasurandValue)
+            buildSampledValue(
+              OCPPVersion.VERSION_16,
+              voltageSampledValueTemplate,
+              voltageMeasurandValue
+            )
           )
         }
         for (
@@ -430,6 +440,7 @@ export const buildMeterValue = (
           }
           meterValue.sampledValue.push(
             buildSampledValue(
+              OCPPVersion.VERSION_16,
               voltagePhaseLineToNeutralSampledValueTemplate ?? voltageSampledValueTemplate,
               voltagePhaseLineToNeutralMeasurandValue ?? voltageMeasurandValue,
               undefined,
@@ -475,6 +486,7 @@ export const buildMeterValue = (
             )
             meterValue.sampledValue.push(
               buildSampledValue(
+                OCPPVersion.VERSION_16,
                 voltagePhaseLineToLineSampledValueTemplate ?? voltageSampledValueTemplate,
                 voltagePhaseLineToLineMeasurandValue ?? defaultVoltagePhaseLineToLineMeasurandValue,
                 undefined,
@@ -684,7 +696,11 @@ export const buildMeterValue = (
             throw new OCPPError(ErrorType.INTERNAL_ERROR, errMsg, RequestCommand.METER_VALUES)
         }
         meterValue.sampledValue.push(
-          buildSampledValue(powerSampledValueTemplate, powerMeasurandValues.allPhases)
+          buildSampledValue(
+            OCPPVersion.VERSION_16,
+            powerSampledValueTemplate,
+            powerMeasurandValues.allPhases
+          )
         )
         const sampledValuesIndex = meterValue.sampledValue.length - 1
         const connectorMaximumPowerRounded = roundTo(connectorMaximumPower / unitDivider, 2)
@@ -701,9 +717,9 @@ export const buildMeterValue = (
               meterValue.sampledValue[sampledValuesIndex].measurand ??
               MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
               // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            }: connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${connectorMinimumPowerRounded.toString()}/${
-              meterValue.sampledValue[sampledValuesIndex].value
-            }/${connectorMaximumPowerRounded.toString()}`
+            }: connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${connectorMinimumPowerRounded.toString()}/${meterValue.sampledValue[
+              sampledValuesIndex
+            ].value.toString()}/${connectorMaximumPowerRounded.toString()}`
           )
         }
         for (
@@ -714,6 +730,7 @@ export const buildMeterValue = (
           const phaseValue = `L${phase.toString()}-N`
           meterValue.sampledValue.push(
             buildSampledValue(
+              OCPPVersion.VERSION_16,
               powerPerPhaseSampledValueTemplates[
                 `L${phase.toString()}` as keyof MeasurandPerPhaseSampledValueTemplates
               ] ?? powerSampledValueTemplate,
@@ -748,9 +765,9 @@ export const buildMeterValue = (
                 // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 meterValue.sampledValue[sampledValuesPerPhaseIndex].phase
                 // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              }, connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${connectorMinimumPowerPerPhaseRounded.toString()}/${
-                meterValue.sampledValue[sampledValuesPerPhaseIndex].value
-              }/${connectorMaximumPowerPerPhaseRounded.toString()}`
+              }, connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${connectorMinimumPowerPerPhaseRounded.toString()}/${meterValue.sampledValue[
+                sampledValuesPerPhaseIndex
+              ].value.toString()}/${connectorMaximumPowerPerPhaseRounded.toString()}`
             )
           }
         }
@@ -946,7 +963,11 @@ export const buildMeterValue = (
             throw new OCPPError(ErrorType.INTERNAL_ERROR, errMsg, RequestCommand.METER_VALUES)
         }
         meterValue.sampledValue.push(
-          buildSampledValue(currentSampledValueTemplate, currentMeasurandValues.allPhases)
+          buildSampledValue(
+            OCPPVersion.VERSION_16,
+            currentSampledValueTemplate,
+            currentMeasurandValues.allPhases
+          )
         )
         const sampledValuesIndex = meterValue.sampledValue.length - 1
         if (
@@ -961,9 +982,9 @@ export const buildMeterValue = (
               meterValue.sampledValue[sampledValuesIndex].measurand ??
               MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
               // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            }: connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${connectorMinimumAmperage.toString()}/${
-              meterValue.sampledValue[sampledValuesIndex].value
-            }/${connectorMaximumAmperage.toString()}`
+            }: connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${connectorMinimumAmperage.toString()}/${meterValue.sampledValue[
+              sampledValuesIndex
+            ].value.toString()}/${connectorMaximumAmperage.toString()}`
           )
         }
         for (
@@ -974,6 +995,7 @@ export const buildMeterValue = (
           const phaseValue = `L${phase.toString()}`
           meterValue.sampledValue.push(
             buildSampledValue(
+              OCPPVersion.VERSION_16,
               currentPerPhaseSampledValueTemplates[
                 phaseValue as keyof MeasurandPerPhaseSampledValueTemplates
               ] ?? currentSampledValueTemplate,
@@ -998,9 +1020,9 @@ export const buildMeterValue = (
                 // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 meterValue.sampledValue[sampledValuesPerPhaseIndex].phase
                 // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              }, connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${connectorMinimumAmperage.toString()}/${
-                meterValue.sampledValue[sampledValuesPerPhaseIndex].value
-              }/${connectorMaximumAmperage.toString()}`
+              }, connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${connectorMinimumAmperage.toString()}/${meterValue.sampledValue[
+                sampledValuesPerPhaseIndex
+              ].value.toString()}/${connectorMaximumAmperage.toString()}`
             )
           }
         }
@@ -1054,6 +1076,7 @@ export const buildMeterValue = (
         }
         meterValue.sampledValue.push(
           buildSampledValue(
+            OCPPVersion.VERSION_16,
             energySampledValueTemplate,
             roundTo(
               chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId) /
@@ -1107,6 +1130,7 @@ export const buildTransactionEndMeterValue = (
       unitDivider = sampledValueTemplate?.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1
       meterValue.sampledValue.push(
         buildSampledValue(
+          OCPPVersion.VERSION_16,
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           sampledValueTemplate!,
           roundTo((meterStop ?? 0) / unitDivider, 4),
@@ -1179,6 +1203,11 @@ const getLimitFromSampledValueTemplateCustomValue = (
   )
 }
 
+const isMeasurandSupported = (measurand: MeterValueMeasurand): boolean => {
+  const supportedMeasurands = OCPPConstants.OCPP_MEASURANDS_SUPPORTED as readonly string[]
+  return supportedMeasurands.includes(measurand as string)
+}
+
 const getSampledValueTemplate = (
   chargingStation: ChargingStation,
   connectorId: number,
@@ -1186,7 +1215,7 @@ const getSampledValueTemplate = (
   phase?: MeterValuePhase
 ): SampledValueTemplate | undefined => {
   const onPhaseStr = phase != null ? `on phase ${phase} ` : ''
-  if (!OCPPConstants.OCPP_MEASURANDS_SUPPORTED.includes(measurand)) {
+  if (!isMeasurandSupported(measurand)) {
     logger.warn(
       `${chargingStation.logPrefix()} Trying to get unsupported MeterValues measurand '${measurand}' ${onPhaseStr}in template on connector id ${connectorId.toString()}`
     )
@@ -1215,7 +1244,7 @@ const getSampledValueTemplate = (
     index++
   ) {
     if (
-      !OCPPConstants.OCPP_MEASURANDS_SUPPORTED.includes(
+      !isMeasurandSupported(
         sampledValueTemplates[index].measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
       )
     ) {
@@ -1245,7 +1274,6 @@ const getSampledValueTemplate = (
     } else if (
       measurand === MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER &&
       (sampledValueTemplates[index].measurand == null ||
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
         sampledValueTemplates[index].measurand === measurand)
     ) {
       return sampledValueTemplates[index]
@@ -1261,29 +1289,75 @@ const getSampledValueTemplate = (
   )
 }
 
-const buildSampledValue = (
+function buildSampledValue (
+  ocppVersion: OCPPVersion.VERSION_16,
   sampledValueTemplate: SampledValueTemplate,
   value: number,
   context?: MeterValueContext,
   phase?: MeterValuePhase
-): SampledValue => {
+): OCPP16SampledValue
+function buildSampledValue (
+  ocppVersion: OCPPVersion.VERSION_20 | OCPPVersion.VERSION_201,
+  sampledValueTemplate: SampledValueTemplate,
+  value: number,
+  context?: MeterValueContext,
+  phase?: MeterValuePhase
+): OCPP20SampledValue
+/**
+ * Builds a sampled value object according to the specified OCPP version
+ * @param ocppVersion - The OCPP version to use for formatting the sampled value
+ * @param sampledValueTemplate - Template containing measurement configuration and metadata
+ * @param value - The measured numeric value to be included in the sampled value
+ * @param context - Optional context specifying when the measurement was taken (e.g., Sample.Periodic)
+ * @param phase - Optional phase information for multi-phase electrical measurements
+ * @returns A sampled value object formatted according to the specified OCPP version
+ */
+function buildSampledValue (
+  ocppVersion: OCPPVersion,
+  sampledValueTemplate: SampledValueTemplate,
+  value: number,
+  context?: MeterValueContext,
+  phase?: MeterValuePhase
+): SampledValue {
   const sampledValueContext = context ?? sampledValueTemplate.context
   const sampledValueLocation =
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     sampledValueTemplate.location ?? getMeasurandDefaultLocation(sampledValueTemplate.measurand!)
   const sampledValuePhase = phase ?? sampledValueTemplate.phase
-  return {
-    ...(sampledValueTemplate.unit != null && {
-      unit: sampledValueTemplate.unit,
-    }),
-    ...(sampledValueContext != null && { context: sampledValueContext }),
-    ...(sampledValueTemplate.measurand != null && {
-      measurand: sampledValueTemplate.measurand,
-    }),
-    ...(sampledValueLocation != null && { location: sampledValueLocation }),
-    ...{ value: value.toString() },
-    ...(sampledValuePhase != null && { phase: sampledValuePhase }),
-  } satisfies SampledValue
+
+  switch (ocppVersion) {
+    case OCPPVersion.VERSION_20:
+    case OCPPVersion.VERSION_201:
+      // OCPP 2.0 format
+      return {
+        ...(sampledValueContext != null && { context: sampledValueContext }),
+        ...(sampledValueTemplate.measurand != null && {
+          measurand: sampledValueTemplate.measurand,
+        }),
+        ...(sampledValueLocation != null && { location: sampledValueLocation }),
+        value, // OCPP 2.0 uses number
+        ...(sampledValuePhase != null && { phase: sampledValuePhase }),
+        ...(sampledValueTemplate.unitOfMeasure != null && {
+          unitOfMeasure: sampledValueTemplate.unitOfMeasure,
+        }),
+      } as OCPP20SampledValue
+
+    case OCPPVersion.VERSION_16:
+    default:
+      // OCPP 1.6 format
+      return {
+        ...(sampledValueTemplate.unit != null && {
+          unit: sampledValueTemplate.unit,
+        }),
+        ...(sampledValueContext != null && { context: sampledValueContext }),
+        ...(sampledValueTemplate.measurand != null && {
+          measurand: sampledValueTemplate.measurand,
+        }),
+        ...(sampledValueLocation != null && { location: sampledValueLocation }),
+        value: value.toString(), // OCPP 1.6 uses string
+        ...(sampledValuePhase != null && { phase: sampledValuePhase }),
+      } as OCPP16SampledValue
+  }
 }
 
 const getMeasurandDefaultLocation = (

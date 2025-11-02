@@ -79,6 +79,28 @@ export enum OCPP20IdTokenEnumType {
   NoAuthorization = 'NoAuthorization',
 }
 
+export enum OCPP20ReasonEnumType {
+  DeAuthorized = 'DeAuthorized',
+  EmergencyStop = 'EmergencyStop',
+  EnergyLimitReached = 'EnergyLimitReached',
+  EVDisconnected = 'EVDisconnected',
+  GroundFault = 'GroundFault',
+  ImmediateReset = 'ImmediateReset',
+  Local = 'Local',
+  LocalOutOfCredit = 'LocalOutOfCredit',
+  MasterPass = 'MasterPass',
+  Other = 'Other',
+  OvercurrentFault = 'OvercurrentFault',
+  PowerLoss = 'PowerLoss',
+  PowerQuality = 'PowerQuality',
+  Reboot = 'Reboot',
+  Remote = 'Remote',
+  SOCLimitReached = 'SOCLimitReached',
+  StoppedByEV = 'StoppedByEV',
+  TimeLimitReached = 'TimeLimitReached',
+  Timeout = 'Timeout',
+}
+
 export enum OCPP20RecurrencyKindEnumType {
   Daily = 'Daily',
   Weekly = 'Weekly',
@@ -227,10 +249,10 @@ export type OCPP20TransactionEventResponse = EmptyObject
 export interface OCPP20TransactionType extends JsonObject {
   chargingState?: OCPP20ChargingStateEnumType
   customData?: CustomDataType
-  id: string
   remoteStartId?: number
-  stoppedReason?: OCPP20TriggerReasonEnumType
+  stoppedReason?: OCPP20ReasonEnumType
   timeSpentCharging?: number
+  transactionId: string
 }
 
 export interface RelativeTimeIntervalType extends JsonObject {
