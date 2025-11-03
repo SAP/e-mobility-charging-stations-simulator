@@ -234,7 +234,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'TxEndedMeasurands',
+    variable: OCPP20RequiredVariableName.TxEndedMeasurands,
   },
 
   // AuthCacheCtrlr Component
@@ -514,7 +514,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'Model',
+    variable: OCPP20DeviceInfoVariableName.Model,
   },
   [buildRegistryKey(OCPP20ComponentName.ChargingStation as string, 'SupplyPhases')]: {
     component: OCPP20ComponentName.ChargingStation as string,
@@ -536,7 +536,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'VendorName',
+    variable: OCPP20DeviceInfoVariableName.VendorName,
   },
   [buildRegistryKey(
     OCPP20ComponentName.ChargingStation as string,
@@ -882,7 +882,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Volatile,
     supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'AvailabilityState',
+    variable: OCPP20DeviceInfoVariableName.AvailabilityState,
   },
   [buildRegistryKey(OCPP20ComponentName.EVSE as string, 'Available')]: {
     component: OCPP20ComponentName.EVSE as string,
@@ -1017,7 +1017,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadWrite,
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'OrganizationName',
+    variable: OCPP20RequiredVariableName.OrganizationName,
   },
   [buildRegistryKey(OCPP20ComponentName.ISO15118Ctrlr as string, 'PnCEnabled')]: {
     component: OCPP20ComponentName.ISO15118Ctrlr as string,
@@ -1103,7 +1103,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'BytesPerMessage',
+    variable: OCPP20RequiredVariableName.BytesPerMessage,
   },
   [buildRegistryKey(OCPP20ComponentName.LocalAuthListCtrlr as string, 'DisablePostAuthorize')]: {
     component: OCPP20ComponentName.LocalAuthListCtrlr as string,
@@ -1147,7 +1147,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'ItemsPerMessage',
+    variable: OCPP20RequiredVariableName.ItemsPerMessage,
   },
   [buildRegistryKey(OCPP20ComponentName.LocalAuthListCtrlr as string, 'Storage')]: {
     characteristics: {
@@ -1216,7 +1216,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'BytesPerMessage',
+    variable: OCPP20RequiredVariableName.BytesPerMessage,
   },
   [buildRegistryKey(
     OCPP20ComponentName.MonitoringCtrlr as string,
@@ -1232,7 +1232,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'BytesPerMessage',
+    variable: OCPP20RequiredVariableName.BytesPerMessage,
   },
   [buildRegistryKey(OCPP20ComponentName.MonitoringCtrlr as string, 'Enabled')]: {
     component: OCPP20ComponentName.MonitoringCtrlr as string,
@@ -1258,7 +1258,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'ItemsPerMessage',
+    variable: OCPP20RequiredVariableName.ItemsPerMessage,
   },
   [buildRegistryKey(
     OCPP20ComponentName.MonitoringCtrlr as string,
@@ -1275,7 +1275,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'ItemsPerMessage',
+    variable: OCPP20RequiredVariableName.ItemsPerMessage,
   },
   [buildRegistryKey(OCPP20ComponentName.MonitoringCtrlr as string, 'MonitoringBase')]: {
     component: OCPP20ComponentName.MonitoringCtrlr as string,
