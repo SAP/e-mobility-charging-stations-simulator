@@ -8,14 +8,18 @@ import { describe, it } from 'node:test'
 
 import { OCPP20RequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20RequestService.js'
 import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
-import { type OCPP20HeartbeatRequest, OCPP20RequestCommand } from '../../../../src/types/index.js'
+import {
+  type OCPP20HeartbeatRequest,
+  OCPP20RequestCommand,
+  OCPPVersion,
+} from '../../../../src/types/index.js'
 import { Constants, has } from '../../../../src/utils/index.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
 import {
   TEST_CHARGE_POINT_MODEL,
   TEST_CHARGE_POINT_SERIAL_NUMBER,
   TEST_CHARGE_POINT_VENDOR,
-  TEST_CHARGING_STATION_NAME,
+  TEST_CHARGING_STATION_BASE_NAME,
   TEST_FIRMWARE_VERSION,
 } from './OCPP20TestConstants.js'
 
@@ -24,7 +28,9 @@ await describe('G02 - Heartbeat', async () => {
   const requestService = new OCPP20RequestService(mockResponseService)
 
   const mockChargingStation = createChargingStation({
-    baseName: TEST_CHARGING_STATION_NAME,
+    baseName: TEST_CHARGING_STATION_BASE_NAME,
+    connectorsCount: 3,
+    evseConfiguration: { evsesCount: 3 },
     heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
     stationInfo: {
       chargePointModel: TEST_CHARGE_POINT_MODEL,
@@ -32,6 +38,7 @@ await describe('G02 - Heartbeat', async () => {
       chargePointVendor: TEST_CHARGE_POINT_VENDOR,
       firmwareVersion: TEST_FIRMWARE_VERSION,
       ocppStrictCompliance: false,
+      ocppVersion: OCPPVersion.VERSION_201,
     },
     websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
   })
@@ -117,6 +124,8 @@ await describe('G02 - Heartbeat', async () => {
   await it('Should handle HeartBeat request with different charging station configurations', () => {
     const alternativeChargingStation = createChargingStation({
       baseName: 'CS-ALTERNATIVE-002',
+      connectorsCount: 3,
+      evseConfiguration: { evsesCount: 3 },
       heartbeatInterval: 120,
       stationInfo: {
         chargePointModel: 'Alternative Model',
@@ -124,6 +133,7 @@ await describe('G02 - Heartbeat', async () => {
         chargePointVendor: 'Alternative Vendor',
         firmwareVersion: '2.5.1',
         ocppStrictCompliance: true,
+        ocppVersion: OCPPVersion.VERSION_201,
       },
       websocketPingInterval: 45,
     })

@@ -12,6 +12,7 @@ import {
   BootReasonEnumType,
   type OCPP20BootNotificationRequest,
   OCPP20RequestCommand,
+  OCPPVersion,
 } from '../../../../src/types/index.js'
 import { type ChargingStationType } from '../../../../src/types/ocpp/2.0/Common.js'
 import { Constants } from '../../../../src/utils/index.js'
@@ -20,7 +21,7 @@ import {
   TEST_CHARGE_POINT_MODEL,
   TEST_CHARGE_POINT_SERIAL_NUMBER,
   TEST_CHARGE_POINT_VENDOR,
-  TEST_CHARGING_STATION_NAME,
+  TEST_CHARGING_STATION_BASE_NAME,
   TEST_FIRMWARE_VERSION,
 } from './OCPP20TestConstants.js'
 
@@ -29,7 +30,9 @@ await describe('B01 - Cold Boot Charging Station', async () => {
   const requestService = new OCPP20RequestService(mockResponseService)
 
   const mockChargingStation = createChargingStation({
-    baseName: TEST_CHARGING_STATION_NAME,
+    baseName: TEST_CHARGING_STATION_BASE_NAME,
+    connectorsCount: 3,
+    evseConfiguration: { evsesCount: 3 },
     heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
     stationInfo: {
       chargePointModel: TEST_CHARGE_POINT_MODEL,
@@ -37,6 +40,7 @@ await describe('B01 - Cold Boot Charging Station', async () => {
       chargePointVendor: TEST_CHARGE_POINT_VENDOR,
       firmwareVersion: TEST_FIRMWARE_VERSION,
       ocppStrictCompliance: false,
+      ocppVersion: OCPPVersion.VERSION_201,
     },
     websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
   })

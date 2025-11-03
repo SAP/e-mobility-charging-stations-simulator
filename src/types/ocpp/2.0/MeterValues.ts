@@ -1,6 +1,6 @@
 import type { EmptyObject } from '../../EmptyObject.js'
 import type { JsonObject } from '../../JsonType.js'
-import type { CustomDataType } from './Common.js'
+import type { CustomDataType, OCPP20UnitEnumType } from './Common.js'
 
 export enum OCPP20LocationEnumType {
   Body = 'Body',
@@ -98,5 +98,5 @@ export interface OCPP20SignedMeterValue extends JsonObject {
 export interface OCPP20UnitOfMeasure extends JsonObject {
   customData?: CustomDataType
   multiplier?: number // Default: 0
-  unit?: string // Default: "Wh"
+  unit?: OCPP20UnitEnumType
 }

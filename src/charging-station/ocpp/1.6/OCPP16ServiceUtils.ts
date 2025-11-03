@@ -61,6 +61,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       sampledValueTemplate?.unit === OCPP16MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1
     meterValue.sampledValue.push(
       OCPP16ServiceUtils.buildSampledValue(
+        chargingStation.stationInfo?.ocppVersion,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         sampledValueTemplate!,
         roundTo((meterStart ?? 0) / unitDivider, 4),

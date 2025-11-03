@@ -143,15 +143,13 @@ export {
 } from './ocpp/1.6/Transaction.js'
 export {
   BootReasonEnumType,
-  type ComponentType,
   type CustomDataType,
   DataEnumType,
   GenericDeviceModelStatusEnumType,
   OCPP20ComponentName,
-  OCPP20ConnectorStatusEnumType,
+  OCPP20UnitEnumType,
   ReasonCodeEnumType,
   ReportBaseEnumType,
-  type ReportDataType,
   ResetEnumType,
   ResetStatusEnumType,
 } from './ocpp/2.0/Common.js'
@@ -176,6 +174,7 @@ export {
   OCPP20IncomingRequestCommand,
   type OCPP20NotifyReportRequest,
   OCPP20RequestCommand,
+  type OCPP20RequestStartTransactionRequest,
   type OCPP20ResetRequest,
   type OCPP20SetVariablesRequest,
   type OCPP20StatusNotificationRequest,
@@ -187,10 +186,28 @@ export type {
   OCPP20GetVariablesResponse,
   OCPP20HeartbeatResponse,
   OCPP20NotifyReportResponse,
+  OCPP20RequestStartTransactionResponse,
   OCPP20ResetResponse,
   OCPP20SetVariablesResponse,
   OCPP20StatusNotificationResponse,
 } from './ocpp/2.0/Responses.js'
+export {
+  type ComponentType,
+  OCPP20ChargingProfileKindEnumType,
+  OCPP20ChargingProfilePurposeEnumType,
+  type OCPP20ChargingProfileType,
+  OCPP20ChargingRateUnitEnumType,
+  type OCPP20ChargingSchedulePeriodType,
+  type OCPP20ChargingScheduleType,
+  OCPP20ConnectorStatusEnumType,
+  type OCPP20IdTokenType,
+  OCPP20TransactionEventEnumType,
+  type OCPP20TransactionEventRequest,
+  type OCPP20TransactionEventResponse,
+  type OCPP20TransactionType,
+  OCPP20TriggerReasonEnumType,
+  RequestStartStopStatusEnumType,
+} from './ocpp/2.0/Transaction.js'
 export {
   AttributeEnumType,
   GetVariableStatusEnumType,
@@ -204,7 +221,9 @@ export {
   type OCPP20SetVariableResultType,
   OCPP20VendorVariableName,
   PersistenceEnumType,
+  type ReportDataType,
   SetVariableStatusEnumType,
+  type VariableName,
   type VariableType,
 } from './ocpp/2.0/Variables.js'
 export { ChargePointErrorCode } from './ocpp/ChargePointErrorCode.js'

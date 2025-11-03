@@ -1,5 +1,6 @@
 import type { JsonObject } from '../../JsonType.js'
-import type { ComponentType, StatusInfoType } from './Common.js'
+import type { CustomDataType, StatusInfoType } from './Common.js'
+import type { ComponentType } from './Transaction.js'
 
 export enum AttributeEnumType {
   Actual = 'Actual',
@@ -97,6 +98,7 @@ export interface OCPP20ComponentVariableType extends JsonObject {
 export interface OCPP20GetVariableDataType extends JsonObject {
   attributeType?: AttributeEnumType
   component: ComponentType
+  customData?: CustomDataType
   variable: VariableType
 }
 
@@ -106,6 +108,7 @@ export interface OCPP20GetVariableResultType extends JsonObject {
   attributeType?: AttributeEnumType
   attributeValue?: string
   component: ComponentType
+  customData?: CustomDataType
   variable: VariableType
 }
 
@@ -113,6 +116,7 @@ export interface OCPP20SetVariableDataType extends JsonObject {
   attributeType?: AttributeEnumType
   attributeValue: string
   component: ComponentType
+  customData?: CustomDataType
   variable: VariableType
 }
 
@@ -121,17 +125,37 @@ export interface OCPP20SetVariableResultType extends JsonObject {
   attributeStatusInfo?: StatusInfoType
   attributeType?: AttributeEnumType
   component: ComponentType
+  customData?: CustomDataType
   variable: VariableType
 }
 
-export interface VariableType extends JsonObject {
-  instance?: string
-  name: VariableName
+export interface ReportDataType extends JsonObject {
+  component: ComponentType
+  customData?: CustomDataType
+  variable: VariableType
+  variableAttribute?: VariableAttributeType[]
+  variableCharacteristics?: VariableCharacteristicsType
 }
 
-type VariableName =
+export type VariableName =
   | OCPP20DeviceInfoVariableName
   | OCPP20OptionalVariableName
   | OCPP20RequiredVariableName
   | OCPP20VendorVariableName
   | string
+
+export interface VariableType extends JsonObject {
+  customData?: CustomDataType
+  instance?: string
+  name: VariableName
+}
+
+interface VariableAttributeType extends JsonObject {
+  type?: string
+  value?: string
+}
+
+interface VariableCharacteristicsType extends JsonObject {
+  dataType: string
+  supportsMonitoring: boolean
+}

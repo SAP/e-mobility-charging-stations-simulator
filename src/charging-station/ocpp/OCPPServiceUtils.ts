@@ -36,8 +36,11 @@ import {
   MeterValuePhase,
   MeterValueUnit,
   type OCPP16ChargePointStatus,
+  type OCPP16SampledValue,
   type OCPP16StatusNotificationRequest,
   type OCPP20ConnectorStatusEnumType,
+  type OCPP20MeterValue,
+  type OCPP20SampledValue,
   type OCPP20StatusNotificationRequest,
   OCPPVersion,
   RequestCommand,
@@ -104,7 +107,12 @@ const buildStatusNotificationRequest = (
         timestamp: new Date(),
       } satisfies OCPP20StatusNotificationRequest
     default:
-      throw new BaseError('Cannot build status notification payload: OCPP version not supported')
+      throw new OCPPError(
+        ErrorType.INTERNAL_ERROR,
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        `Cannot build status notification payload: OCPP version ${chargingStation.stationInfo?.ocppVersion} not supported`,
+        RequestCommand.STATUS_NOTIFICATION
+      )
   }
 }
 
@@ -251,9 +259,11 @@ const checkConnectorStatusTransition = (
       }
       break
     default:
-      throw new BaseError(
+      throw new OCPPError(
+        ErrorType.INTERNAL_ERROR,
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        `Cannot check connector status transition: OCPP version ${chargingStation.stationInfo?.ocppVersion} not supported`
+        `Cannot check connector status transition: OCPP version ${chargingStation.stationInfo?.ocppVersion} not supported`,
+        RequestCommand.STATUS_NOTIFICATION
       )
   }
   if (!transitionAllowed) {
@@ -355,7 +365,11 @@ export const buildMeterValue = (
           )
           : randomInt(socMinimumValue, socMaximumValue + 1)
         meterValue.sampledValue.push(
-          buildSampledValue(socSampledValueTemplate, socSampledValueTemplateValue)
+          buildSampledValue(
+            chargingStation.stationInfo.ocppVersion,
+            socSampledValueTemplate,
+            socSampledValueTemplateValue
+          )
         )
         const sampledValuesIndex = meterValue.sampledValue.length - 1
         if (
@@ -368,9 +382,9 @@ export const buildMeterValue = (
               meterValue.sampledValue[sampledValuesIndex].measurand ??
               MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
               // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            }: connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${socMinimumValue.toString()}/${
-              meterValue.sampledValue[sampledValuesIndex].value
-            }/${socMaximumValue.toString()}`
+            }: connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${socMinimumValue.toString()}/${meterValue.sampledValue[
+              sampledValuesIndex
+            ].value.toString()}/${socMaximumValue.toString()}`
           )
         }
       }
@@ -397,7 +411,11 @@ export const buildMeterValue = (
             chargingStation.stationInfo.mainVoltageMeterValues === true)
         ) {
           meterValue.sampledValue.push(
-            buildSampledValue(voltageSampledValueTemplate, voltageMeasurandValue)
+            buildSampledValue(
+              chargingStation.stationInfo.ocppVersion,
+              voltageSampledValueTemplate,
+              voltageMeasurandValue
+            )
           )
         }
         for (
@@ -430,6 +448,7 @@ export const buildMeterValue = (
           }
           meterValue.sampledValue.push(
             buildSampledValue(
+              chargingStation.stationInfo.ocppVersion,
               voltagePhaseLineToNeutralSampledValueTemplate ?? voltageSampledValueTemplate,
               voltagePhaseLineToNeutralMeasurandValue ?? voltageMeasurandValue,
               undefined,
@@ -475,6 +494,7 @@ export const buildMeterValue = (
             )
             meterValue.sampledValue.push(
               buildSampledValue(
+                chargingStation.stationInfo.ocppVersion,
                 voltagePhaseLineToLineSampledValueTemplate ?? voltageSampledValueTemplate,
                 voltagePhaseLineToLineMeasurandValue ?? defaultVoltagePhaseLineToLineMeasurandValue,
                 undefined,
@@ -684,7 +704,11 @@ export const buildMeterValue = (
             throw new OCPPError(ErrorType.INTERNAL_ERROR, errMsg, RequestCommand.METER_VALUES)
         }
         meterValue.sampledValue.push(
-          buildSampledValue(powerSampledValueTemplate, powerMeasurandValues.allPhases)
+          buildSampledValue(
+            chargingStation.stationInfo.ocppVersion,
+            powerSampledValueTemplate,
+            powerMeasurandValues.allPhases
+          )
         )
         const sampledValuesIndex = meterValue.sampledValue.length - 1
         const connectorMaximumPowerRounded = roundTo(connectorMaximumPower / unitDivider, 2)
@@ -701,9 +725,9 @@ export const buildMeterValue = (
               meterValue.sampledValue[sampledValuesIndex].measurand ??
               MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
               // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            }: connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${connectorMinimumPowerRounded.toString()}/${
-              meterValue.sampledValue[sampledValuesIndex].value
-            }/${connectorMaximumPowerRounded.toString()}`
+            }: connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${connectorMinimumPowerRounded.toString()}/${meterValue.sampledValue[
+              sampledValuesIndex
+            ].value.toString()}/${connectorMaximumPowerRounded.toString()}`
           )
         }
         for (
@@ -714,6 +738,7 @@ export const buildMeterValue = (
           const phaseValue = `L${phase.toString()}-N`
           meterValue.sampledValue.push(
             buildSampledValue(
+              chargingStation.stationInfo.ocppVersion,
               powerPerPhaseSampledValueTemplates[
                 `L${phase.toString()}` as keyof MeasurandPerPhaseSampledValueTemplates
               ] ?? powerSampledValueTemplate,
@@ -748,9 +773,9 @@ export const buildMeterValue = (
                 // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 meterValue.sampledValue[sampledValuesPerPhaseIndex].phase
                 // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              }, connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${connectorMinimumPowerPerPhaseRounded.toString()}/${
-                meterValue.sampledValue[sampledValuesPerPhaseIndex].value
-              }/${connectorMaximumPowerPerPhaseRounded.toString()}`
+              }, connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${connectorMinimumPowerPerPhaseRounded.toString()}/${meterValue.sampledValue[
+                sampledValuesPerPhaseIndex
+              ].value.toString()}/${connectorMaximumPowerPerPhaseRounded.toString()}`
             )
           }
         }
@@ -946,7 +971,11 @@ export const buildMeterValue = (
             throw new OCPPError(ErrorType.INTERNAL_ERROR, errMsg, RequestCommand.METER_VALUES)
         }
         meterValue.sampledValue.push(
-          buildSampledValue(currentSampledValueTemplate, currentMeasurandValues.allPhases)
+          buildSampledValue(
+            chargingStation.stationInfo.ocppVersion,
+            currentSampledValueTemplate,
+            currentMeasurandValues.allPhases
+          )
         )
         const sampledValuesIndex = meterValue.sampledValue.length - 1
         if (
@@ -961,9 +990,9 @@ export const buildMeterValue = (
               meterValue.sampledValue[sampledValuesIndex].measurand ??
               MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
               // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            }: connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${connectorMinimumAmperage.toString()}/${
-              meterValue.sampledValue[sampledValuesIndex].value
-            }/${connectorMaximumAmperage.toString()}`
+            }: connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${connectorMinimumAmperage.toString()}/${meterValue.sampledValue[
+              sampledValuesIndex
+            ].value.toString()}/${connectorMaximumAmperage.toString()}`
           )
         }
         for (
@@ -974,6 +1003,7 @@ export const buildMeterValue = (
           const phaseValue = `L${phase.toString()}`
           meterValue.sampledValue.push(
             buildSampledValue(
+              chargingStation.stationInfo.ocppVersion,
               currentPerPhaseSampledValueTemplates[
                 phaseValue as keyof MeasurandPerPhaseSampledValueTemplates
               ] ?? currentSampledValueTemplate,
@@ -998,9 +1028,9 @@ export const buildMeterValue = (
                 // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 meterValue.sampledValue[sampledValuesPerPhaseIndex].phase
                 // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              }, connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${connectorMinimumAmperage.toString()}/${
-                meterValue.sampledValue[sampledValuesPerPhaseIndex].value
-              }/${connectorMaximumAmperage.toString()}`
+              }, connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${connectorMinimumAmperage.toString()}/${meterValue.sampledValue[
+                sampledValuesPerPhaseIndex
+              ].value.toString()}/${connectorMaximumAmperage.toString()}`
             )
           }
         }
@@ -1037,7 +1067,6 @@ export const buildMeterValue = (
             energySampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
           )
           : getRandomFloatRounded(connectorMaximumEnergyRounded, connectorMinimumEnergyRounded)
-        // Persist previous value on connector
         if (connector != null) {
           if (
             connector.energyActiveImportRegisterValue != null &&
@@ -1054,6 +1083,7 @@ export const buildMeterValue = (
         }
         meterValue.sampledValue.push(
           buildSampledValue(
+            chargingStation.stationInfo.ocppVersion,
             energySampledValueTemplate,
             roundTo(
               chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId) /
@@ -1079,11 +1109,246 @@ export const buildMeterValue = (
       }
       return meterValue
     case OCPPVersion.VERSION_20:
-    case OCPPVersion.VERSION_201:
+    case OCPPVersion.VERSION_201: {
+      const meterValue: OCPP20MeterValue = {
+        sampledValue: [],
+        timestamp: new Date(),
+      }
+      // SoC measurand
+      socSampledValueTemplate = getSampledValueTemplate(
+        chargingStation,
+        connectorId,
+        MeterValueMeasurand.STATE_OF_CHARGE
+      )
+      if (socSampledValueTemplate != null) {
+        const socMaximumValue = 100
+        const socMinimumValue = socSampledValueTemplate.minimumValue ?? 0
+        const socSampledValueTemplateValue = isNotEmptyString(socSampledValueTemplate.value)
+          ? getRandomFloatFluctuatedRounded(
+            Number.parseInt(socSampledValueTemplate.value),
+            socSampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
+          )
+          : randomInt(socMinimumValue, socMaximumValue + 1)
+        meterValue.sampledValue.push(
+          buildSampledValue(
+            chargingStation.stationInfo.ocppVersion,
+            socSampledValueTemplate,
+            socSampledValueTemplateValue
+          )
+        )
+        const sampledValuesIndex = meterValue.sampledValue.length - 1
+        if (
+          convertToInt(meterValue.sampledValue[sampledValuesIndex].value) > socMaximumValue ||
+          convertToInt(meterValue.sampledValue[sampledValuesIndex].value) < socMinimumValue ||
+          debug
+        ) {
+          logger.error(
+            `${chargingStation.logPrefix()} MeterValues measurand ${
+              meterValue.sampledValue[sampledValuesIndex].measurand ??
+              MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+            }: connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${socMinimumValue.toString()}/${meterValue.sampledValue[
+              sampledValuesIndex
+            ].value.toString()}/${socMaximumValue.toString()}`
+          )
+        }
+      }
+      // Voltage measurand
+      voltageSampledValueTemplate = getSampledValueTemplate(
+        chargingStation,
+        connectorId,
+        MeterValueMeasurand.VOLTAGE
+      )
+      if (voltageSampledValueTemplate != null) {
+        const voltageSampledValueTemplateValue = isNotEmptyString(voltageSampledValueTemplate.value)
+          ? Number.parseInt(voltageSampledValueTemplate.value)
+          : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          chargingStation.stationInfo.voltageOut!
+        const fluctuationPercent =
+          voltageSampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
+        const voltageMeasurandValue = getRandomFloatFluctuatedRounded(
+          voltageSampledValueTemplateValue,
+          fluctuationPercent
+        )
+        if (
+          chargingStation.getNumberOfPhases() !== 3 ||
+          (chargingStation.getNumberOfPhases() === 3 &&
+            chargingStation.stationInfo.mainVoltageMeterValues === true)
+        ) {
+          meterValue.sampledValue.push(
+            buildSampledValue(
+              chargingStation.stationInfo.ocppVersion,
+              voltageSampledValueTemplate,
+              voltageMeasurandValue
+            )
+          )
+        }
+        for (
+          let phase = 1;
+          chargingStation.getNumberOfPhases() === 3 && phase <= chargingStation.getNumberOfPhases();
+          phase++
+        ) {
+          const phaseLineToNeutralValue = `L${phase.toString()}-N`
+          const voltagePhaseLineToNeutralSampledValueTemplate = getSampledValueTemplate(
+            chargingStation,
+            connectorId,
+            MeterValueMeasurand.VOLTAGE,
+            phaseLineToNeutralValue as MeterValuePhase
+          )
+          let voltagePhaseLineToNeutralMeasurandValue: number | undefined
+          if (voltagePhaseLineToNeutralSampledValueTemplate != null) {
+            const voltagePhaseLineToNeutralSampledValueTemplateValue = isNotEmptyString(
+              voltagePhaseLineToNeutralSampledValueTemplate.value
+            )
+              ? Number.parseInt(voltagePhaseLineToNeutralSampledValueTemplate.value)
+              : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              chargingStation.stationInfo.voltageOut!
+            const fluctuationPhaseToNeutralPercent =
+              voltagePhaseLineToNeutralSampledValueTemplate.fluctuationPercent ??
+              Constants.DEFAULT_FLUCTUATION_PERCENT
+            voltagePhaseLineToNeutralMeasurandValue = getRandomFloatFluctuatedRounded(
+              voltagePhaseLineToNeutralSampledValueTemplateValue,
+              fluctuationPhaseToNeutralPercent
+            )
+          }
+          meterValue.sampledValue.push(
+            buildSampledValue(
+              chargingStation.stationInfo.ocppVersion,
+              voltagePhaseLineToNeutralSampledValueTemplate ?? voltageSampledValueTemplate,
+              voltagePhaseLineToNeutralMeasurandValue ?? voltageMeasurandValue,
+              undefined,
+              phaseLineToNeutralValue as MeterValuePhase
+            )
+          )
+          if (chargingStation.stationInfo.phaseLineToLineVoltageMeterValues === true) {
+            const phaseLineToLineValue = `L${phase.toString()}-L${
+              (phase + 1) % chargingStation.getNumberOfPhases() !== 0
+                ? ((phase + 1) % chargingStation.getNumberOfPhases()).toString()
+                : chargingStation.getNumberOfPhases().toString()
+            }`
+            const voltagePhaseLineToLineValueRounded = roundTo(
+              Math.sqrt(chargingStation.getNumberOfPhases()) *
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                chargingStation.stationInfo.voltageOut!,
+              2
+            )
+            const voltagePhaseLineToLineSampledValueTemplate = getSampledValueTemplate(
+              chargingStation,
+              connectorId,
+              MeterValueMeasurand.VOLTAGE,
+              phaseLineToLineValue as MeterValuePhase
+            )
+            let voltagePhaseLineToLineMeasurandValue: number | undefined
+            if (voltagePhaseLineToLineSampledValueTemplate != null) {
+              const voltagePhaseLineToLineSampledValueTemplateValue = isNotEmptyString(
+                voltagePhaseLineToLineSampledValueTemplate.value
+              )
+                ? Number.parseInt(voltagePhaseLineToLineSampledValueTemplate.value)
+                : voltagePhaseLineToLineValueRounded
+              const fluctuationPhaseLineToLinePercent =
+                voltagePhaseLineToLineSampledValueTemplate.fluctuationPercent ??
+                Constants.DEFAULT_FLUCTUATION_PERCENT
+              voltagePhaseLineToLineMeasurandValue = getRandomFloatFluctuatedRounded(
+                voltagePhaseLineToLineSampledValueTemplateValue,
+                fluctuationPhaseLineToLinePercent
+              )
+            }
+            const defaultVoltagePhaseLineToLineMeasurandValue = getRandomFloatFluctuatedRounded(
+              voltagePhaseLineToLineValueRounded,
+              fluctuationPercent
+            )
+            meterValue.sampledValue.push(
+              buildSampledValue(
+                chargingStation.stationInfo.ocppVersion,
+                voltagePhaseLineToLineSampledValueTemplate ?? voltageSampledValueTemplate,
+                voltagePhaseLineToLineMeasurandValue ?? defaultVoltagePhaseLineToLineMeasurandValue,
+                undefined,
+                phaseLineToLineValue as MeterValuePhase
+              )
+            )
+          }
+        }
+      }
+      // Energy.Active.Import.Register measurand
+      energySampledValueTemplate = getSampledValueTemplate(chargingStation, connectorId)
+      if (energySampledValueTemplate != null) {
+        checkMeasurandPowerDivider(chargingStation, energySampledValueTemplate.measurand)
+        const unitDivider =
+          energySampledValueTemplate.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1
+        connectorMaximumAvailablePower == null &&
+          (connectorMaximumAvailablePower =
+            chargingStation.getConnectorMaximumAvailablePower(connectorId))
+        const connectorMaximumEnergyRounded = roundTo(
+          (connectorMaximumAvailablePower * interval) / (3600 * 1000),
+          2
+        )
+        const connectorMinimumEnergyRounded = roundTo(
+          energySampledValueTemplate.minimumValue ?? 0,
+          2
+        )
+        const energyValueRounded = isNotEmptyString(energySampledValueTemplate.value)
+          ? getRandomFloatFluctuatedRounded(
+            getLimitFromSampledValueTemplateCustomValue(
+              energySampledValueTemplate.value,
+              connectorMaximumEnergyRounded,
+              connectorMinimumEnergyRounded,
+              {
+                fallbackValue: connectorMinimumEnergyRounded,
+                limitationEnabled: chargingStation.stationInfo.customValueLimitationMeterValues,
+                unitMultiplier: unitDivider,
+              }
+            ),
+            energySampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
+          )
+          : getRandomFloatRounded(connectorMaximumEnergyRounded, connectorMinimumEnergyRounded)
+        if (connector != null) {
+          if (
+            connector.energyActiveImportRegisterValue != null &&
+            connector.energyActiveImportRegisterValue >= 0 &&
+            connector.transactionEnergyActiveImportRegisterValue != null &&
+            connector.transactionEnergyActiveImportRegisterValue >= 0
+          ) {
+            connector.energyActiveImportRegisterValue += energyValueRounded
+            connector.transactionEnergyActiveImportRegisterValue += energyValueRounded
+          } else {
+            connector.energyActiveImportRegisterValue = 0
+            connector.transactionEnergyActiveImportRegisterValue = 0
+          }
+        }
+        meterValue.sampledValue.push(
+          buildSampledValue(
+            chargingStation.stationInfo.ocppVersion,
+            energySampledValueTemplate,
+            roundTo(
+              chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId) /
+                unitDivider,
+              2
+            )
+          )
+        )
+        const sampledValuesIndex = meterValue.sampledValue.length - 1
+        if (
+          energyValueRounded > connectorMaximumEnergyRounded ||
+          energyValueRounded < connectorMinimumEnergyRounded ||
+          debug
+        ) {
+          logger.error(
+            `${chargingStation.logPrefix()} MeterValues measurand ${
+              meterValue.sampledValue[sampledValuesIndex].measurand ??
+              MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+            }: connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${connectorMinimumEnergyRounded.toString()}/${energyValueRounded.toString()}/${connectorMaximumEnergyRounded.toString()}, duration: ${interval.toString()}ms`
+          )
+        }
+      }
+      return meterValue
+    }
     default:
-      throw new BaseError(
+      throw new OCPPError(
+        ErrorType.INTERNAL_ERROR,
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        `Cannot build meterValue: OCPP version ${chargingStation.stationInfo?.ocppVersion} not supported`
+        `Cannot build meterValue: OCPP version ${chargingStation.stationInfo?.ocppVersion} not supported`,
+        RequestCommand.METER_VALUES
       )
   }
 }
@@ -1098,6 +1363,8 @@ export const buildTransactionEndMeterValue = (
   let unitDivider: number
   switch (chargingStation.stationInfo?.ocppVersion) {
     case OCPPVersion.VERSION_16:
+    case OCPPVersion.VERSION_20:
+    case OCPPVersion.VERSION_201:
       meterValue = {
         sampledValue: [],
         timestamp: new Date(),
@@ -1107,6 +1374,7 @@ export const buildTransactionEndMeterValue = (
       unitDivider = sampledValueTemplate?.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1
       meterValue.sampledValue.push(
         buildSampledValue(
+          chargingStation.stationInfo.ocppVersion,
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           sampledValueTemplate!,
           roundTo((meterStop ?? 0) / unitDivider, 4),
@@ -1114,12 +1382,12 @@ export const buildTransactionEndMeterValue = (
         )
       )
       return meterValue
-    case OCPPVersion.VERSION_20:
-    case OCPPVersion.VERSION_201:
     default:
-      throw new BaseError(
+      throw new OCPPError(
+        ErrorType.INTERNAL_ERROR,
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        `Cannot build meterValue: OCPP version ${chargingStation.stationInfo?.ocppVersion} not supported`
+        `Cannot build meterValue: OCPP version ${chargingStation.stationInfo?.ocppVersion} not supported`,
+        RequestCommand.METER_VALUES
       )
   }
 }
@@ -1179,6 +1447,11 @@ const getLimitFromSampledValueTemplateCustomValue = (
   )
 }
 
+const isMeasurandSupported = (measurand: MeterValueMeasurand): boolean => {
+  const supportedMeasurands = OCPPConstants.OCPP_MEASURANDS_SUPPORTED as readonly string[]
+  return supportedMeasurands.includes(measurand as string)
+}
+
 const getSampledValueTemplate = (
   chargingStation: ChargingStation,
   connectorId: number,
@@ -1186,7 +1459,7 @@ const getSampledValueTemplate = (
   phase?: MeterValuePhase
 ): SampledValueTemplate | undefined => {
   const onPhaseStr = phase != null ? `on phase ${phase} ` : ''
-  if (!OCPPConstants.OCPP_MEASURANDS_SUPPORTED.includes(measurand)) {
+  if (!isMeasurandSupported(measurand)) {
     logger.warn(
       `${chargingStation.logPrefix()} Trying to get unsupported MeterValues measurand '${measurand}' ${onPhaseStr}in template on connector id ${connectorId.toString()}`
     )
@@ -1215,7 +1488,7 @@ const getSampledValueTemplate = (
     index++
   ) {
     if (
-      !OCPPConstants.OCPP_MEASURANDS_SUPPORTED.includes(
+      !isMeasurandSupported(
         sampledValueTemplates[index].measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
       )
     ) {
@@ -1260,29 +1533,79 @@ const getSampledValueTemplate = (
   )
 }
 
-const buildSampledValue = (
+function buildSampledValue (
+  ocppVersion: OCPPVersion.VERSION_16 | undefined,
   sampledValueTemplate: SampledValueTemplate,
   value: number,
   context?: MeterValueContext,
   phase?: MeterValuePhase
-): SampledValue => {
+): OCPP16SampledValue
+function buildSampledValue (
+  ocppVersion: OCPPVersion.VERSION_20 | OCPPVersion.VERSION_201 | undefined,
+  sampledValueTemplate: SampledValueTemplate,
+  value: number,
+  context?: MeterValueContext,
+  phase?: MeterValuePhase
+): OCPP20SampledValue
+/**
+ * Builds a sampled value object according to the specified OCPP version
+ * @param ocppVersion - The OCPP version to use for formatting the sampled value
+ * @param sampledValueTemplate - Template containing measurement configuration and metadata
+ * @param value - The measured numeric value to be included in the sampled value
+ * @param context - Optional context specifying when the measurement was taken (e.g., Sample.Periodic)
+ * @param phase - Optional phase information for multi-phase electrical measurements
+ * @returns A sampled value object formatted according to the specified OCPP version
+ */
+function buildSampledValue (
+  ocppVersion: OCPPVersion | undefined,
+  sampledValueTemplate: SampledValueTemplate,
+  value: number,
+  context?: MeterValueContext,
+  phase?: MeterValuePhase
+): SampledValue {
   const sampledValueContext = context ?? sampledValueTemplate.context
   const sampledValueLocation =
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    sampledValueTemplate.location ?? getMeasurandDefaultLocation(sampledValueTemplate.measurand!)
+    sampledValueTemplate.location ?? getMeasurandDefaultLocation(sampledValueTemplate.measurand)
   const sampledValuePhase = phase ?? sampledValueTemplate.phase
-  return {
-    ...(sampledValueTemplate.unit != null && {
-      unit: sampledValueTemplate.unit,
-    }),
-    ...(sampledValueContext != null && { context: sampledValueContext }),
-    ...(sampledValueTemplate.measurand != null && {
-      measurand: sampledValueTemplate.measurand,
-    }),
-    ...(sampledValueLocation != null && { location: sampledValueLocation }),
-    ...{ value: value.toString() },
-    ...(sampledValuePhase != null && { phase: sampledValuePhase }),
-  } satisfies SampledValue
+
+  switch (ocppVersion) {
+    case OCPPVersion.VERSION_16:
+      // OCPP 1.6 format
+      return {
+        ...(sampledValueTemplate.unit != null && {
+          unit: sampledValueTemplate.unit,
+        }),
+        ...(sampledValueContext != null && { context: sampledValueContext }),
+        ...(sampledValueTemplate.measurand != null && {
+          measurand: sampledValueTemplate.measurand,
+        }),
+        ...(sampledValueLocation != null && { location: sampledValueLocation }),
+        value: value.toString(), // OCPP 1.6 uses string
+        ...(sampledValuePhase != null && { phase: sampledValuePhase }),
+      } as OCPP16SampledValue
+    case OCPPVersion.VERSION_20:
+    case OCPPVersion.VERSION_201:
+      // OCPP 2.0 format
+      return {
+        ...(sampledValueContext != null && { context: sampledValueContext }),
+        ...(sampledValueTemplate.measurand != null && {
+          measurand: sampledValueTemplate.measurand,
+        }),
+        ...(sampledValueLocation != null && { location: sampledValueLocation }),
+        value, // OCPP 2.0 uses number
+        ...(sampledValuePhase != null && { phase: sampledValuePhase }),
+        ...(sampledValueTemplate.unitOfMeasure != null && {
+          unitOfMeasure: sampledValueTemplate.unitOfMeasure,
+        }),
+      } as OCPP20SampledValue
+    default:
+      throw new OCPPError(
+        ErrorType.INTERNAL_ERROR,
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        `Cannot build sampledValue: OCPP version ${ocppVersion} not supported`,
+        RequestCommand.METER_VALUES
+      )
+  }
 }
 
 const getMeasurandDefaultLocation = (

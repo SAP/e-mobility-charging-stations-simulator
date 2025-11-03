@@ -16,11 +16,12 @@ export interface ConnectorStatus {
   idTagLocalAuthorized?: boolean
   localAuthorizeIdTag?: string
   MeterValues: SampledValueTemplate[]
+  remoteStartId?: number
   reservation?: Reservation
   status?: ConnectorStatusEnum
   transactionBeginMeterValue?: MeterValue
   transactionEnergyActiveImportRegisterValue?: number // In Wh
-  transactionId?: number
+  transactionId?: number | string
   transactionIdTag?: string
   transactionRemoteStarted?: boolean
   transactionSetInterval?: NodeJS.Timeout

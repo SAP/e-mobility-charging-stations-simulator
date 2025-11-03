@@ -511,7 +511,7 @@ make SUBMODULES_INIT=true
 
 #### E. Transactions
 
-- :x: RequestStartTransaction
+- :white_check_mark: RequestStartTransaction
 - :x: RequestStopTransaction
 - :x: TransactionEvent
 

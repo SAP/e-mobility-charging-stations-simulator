@@ -6,7 +6,7 @@ export interface MeasurandPerPhaseSampledValueTemplates {
   L3?: SampledValueTemplate
 }
 
-export interface SampledValueTemplate extends SampledValue {
+export type SampledValueTemplate = SampledValue & {
   fluctuationPercent?: number
   minimumValue?: number
 }

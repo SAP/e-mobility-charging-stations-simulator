@@ -21,7 +21,7 @@
 - Use `describe()` and `it()` functions from Node.js test runner
 - Test files should be named `*.test.ts`
 - Use `@std/expect` for assertions
-- Mock charging stations with `createChargingStation()` or `createChargingStationWithEvses()`
+- Mock charging stations with `createChargingStation()`
 - Use `/* eslint-disable */` comments for specific test requirements
 - Async tests should use `await` in describe/it callbacks
 

@@ -6,24 +6,24 @@
 import { expect } from '@std/expect'
 import { describe, it } from 'node:test'
 
-import { IdTagsCache } from '../../../../src/charging-station/IdTagsCache.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
+import { OCPPVersion } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { createChargingStationWithEvses } from '../../../ChargingStationFactory.js'
-import { TEST_CHARGING_STATION_NAME } from './OCPP20TestConstants.js'
+import { createChargingStation } from '../../../ChargingStationFactory.js'
+import { TEST_CHARGING_STATION_BASE_NAME } from './OCPP20TestConstants.js'
 
 await describe('C11 - Clear Authorization Data in Authorization Cache', async () => {
-  const mockChargingStation = createChargingStationWithEvses({
-    baseName: TEST_CHARGING_STATION_NAME,
+  const mockChargingStation = createChargingStation({
+    baseName: TEST_CHARGING_STATION_BASE_NAME,
+    connectorsCount: 3,
+    evseConfiguration: { evsesCount: 3 },
     heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
     stationInfo: {
       ocppStrictCompliance: false,
+      ocppVersion: OCPPVersion.VERSION_201,
     },
     websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
   })
-
-  // Initialize idTagsCache to avoid undefined errors
-  mockChargingStation.idTagsCache = IdTagsCache.getInstance()
 
   const incomingRequestService = new OCPP20IncomingRequestService()
 
