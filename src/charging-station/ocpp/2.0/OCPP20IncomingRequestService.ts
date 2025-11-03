@@ -51,8 +51,9 @@ import {
 import { StandardParametersKey } from '../../../types/ocpp/Configuration.js'
 import { convertToIntOrNaN, generateUUID, isAsyncFunction, logger } from '../../../utils/index.js'
 import { getConfigurationKey } from '../../ConfigurationKeyUtils.js'
+import { resetConnectorStatus } from '../../Helpers.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
-import { sendAndSetConnectorStatus } from '../OCPPServiceUtils.js'
+import { restoreConnectorStatus, sendAndSetConnectorStatus } from '../OCPPServiceUtils.js'
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 import { OCPP20VariableManager } from './OCPP20VariableManager.js'
 import { getVariableMetadata, VARIABLE_REGISTRY } from './OCPP20VariableRegistry.js'
@@ -1013,18 +1014,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     const transactionId = generateUUID()
 
-    // Backup current connector state in case we need to rollback
-    const connectorBackup = {
-      remoteStartId: connectorStatus.remoteStartId,
-      status: connectorStatus.status,
-      transactionEnergyActiveImportRegisterValue:
-        connectorStatus.transactionEnergyActiveImportRegisterValue,
-      transactionId: connectorStatus.transactionId,
-      transactionIdTag: connectorStatus.transactionIdTag,
-      transactionStart: connectorStatus.transactionStart,
-      transactionStarted: connectorStatus.transactionStarted,
-    }
-
     try {
       // Set connector transaction state
       connectorStatus.transactionStarted = true
@@ -1061,16 +1050,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         transactionId,
       }
     } catch (error) {
-      // Rollback connector state on error
-      connectorStatus.transactionStarted = connectorBackup.transactionStarted
-      connectorStatus.transactionId = connectorBackup.transactionId
-      connectorStatus.transactionIdTag = connectorBackup.transactionIdTag
-      connectorStatus.transactionStart = connectorBackup.transactionStart
-      connectorStatus.transactionEnergyActiveImportRegisterValue =
-        connectorBackup.transactionEnergyActiveImportRegisterValue
-      connectorStatus.status = connectorBackup.status
-      connectorStatus.remoteStartId = connectorBackup.remoteStartId
-
+      await this.resetConnectorOnStartTransactionError(chargingStation, connectorId, evseId)
       logger.error(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestRequestStartTransaction: Error starting transaction:`,
         error
@@ -1299,6 +1279,23 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     // For now, return true to allow development/testing
     // TODO: Implement actual async authorization logic
     return await Promise.resolve(true)
+  }
+
+  /**
+   * Reset connector status on start transaction error
+   * @param chargingStation - The charging station instance
+   * @param connectorId - The connector ID that needs rollback
+   * @param evseId - The EVSE ID
+   */
+  private async resetConnectorOnStartTransactionError (
+    chargingStation: ChargingStation,
+    connectorId: number,
+    evseId?: number
+  ): Promise<void> {
+    chargingStation.stopMeterValues(connectorId)
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+    resetConnectorStatus(connectorStatus)
+    await restoreConnectorStatus(chargingStation, connectorId, connectorStatus)
   }
 
   private scheduleEvseReset (
