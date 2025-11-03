@@ -890,20 +890,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
     }
 
-    // Validate that the charging station has this EVSE/connector
-    if (!chargingStation.hasEvses) {
-      const errorMsg = `EVSE ${evseId.toString()} not found on charging station`
-      logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestRequestStartTransaction: ${errorMsg}`
-      )
-      throw new OCPPError(
-        ErrorType.PROPERTY_CONSTRAINT_VIOLATION,
-        errorMsg,
-        OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
-        commandPayload
-      )
-    }
-
     // Get the first connector for this EVSE
     const evse = chargingStation.evses.get(evseId)
     if (evse == null) {
