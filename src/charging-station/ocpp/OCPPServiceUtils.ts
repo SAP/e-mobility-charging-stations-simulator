@@ -107,7 +107,12 @@ const buildStatusNotificationRequest = (
         timestamp: new Date(),
       } satisfies OCPP20StatusNotificationRequest
     default:
-      throw new BaseError('Cannot build status notification payload: OCPP version not supported')
+      throw new OCPPError(
+        ErrorType.INTERNAL_ERROR,
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        `Cannot build status notification payload: OCPP version ${chargingStation.stationInfo?.ocppVersion} not supported`,
+        RequestCommand.STATUS_NOTIFICATION
+      )
   }
 }
 
@@ -254,9 +259,11 @@ const checkConnectorStatusTransition = (
       }
       break
     default:
-      throw new BaseError(
+      throw new OCPPError(
+        ErrorType.INTERNAL_ERROR,
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        `Cannot check connector status transition: OCPP version ${chargingStation.stationInfo?.ocppVersion} not supported`
+        `Cannot check connector status transition: OCPP version ${chargingStation.stationInfo?.ocppVersion} not supported`,
+        RequestCommand.STATUS_NOTIFICATION
       )
   }
   if (!transitionAllowed) {
@@ -1060,7 +1067,6 @@ export const buildMeterValue = (
             energySampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
           )
           : getRandomFloatRounded(connectorMaximumEnergyRounded, connectorMinimumEnergyRounded)
-        // Persist previous value on connector
         if (connector != null) {
           if (
             connector.energyActiveImportRegisterValue != null &&
@@ -1108,7 +1114,7 @@ export const buildMeterValue = (
         sampledValue: [],
         timestamp: new Date(),
       }
-      // SoC measurand - identical to OCPP16 logic
+      // SoC measurand
       socSampledValueTemplate = getSampledValueTemplate(
         chargingStation,
         connectorId,
@@ -1125,7 +1131,7 @@ export const buildMeterValue = (
           : randomInt(socMinimumValue, socMaximumValue + 1)
         meterValue.sampledValue.push(
           buildSampledValue(
-            chargingStation.stationInfo?.ocppVersion,
+            chargingStation.stationInfo.ocppVersion,
             socSampledValueTemplate,
             socSampledValueTemplateValue
           )
@@ -1147,7 +1153,7 @@ export const buildMeterValue = (
           )
         }
       }
-      // Voltage measurand - identical to OCPP16 logic
+      // Voltage measurand
       voltageSampledValueTemplate = getSampledValueTemplate(
         chargingStation,
         connectorId,
@@ -1171,7 +1177,7 @@ export const buildMeterValue = (
         ) {
           meterValue.sampledValue.push(
             buildSampledValue(
-              chargingStation.stationInfo?.ocppVersion,
+              chargingStation.stationInfo.ocppVersion,
               voltageSampledValueTemplate,
               voltageMeasurandValue
             )
@@ -1207,7 +1213,7 @@ export const buildMeterValue = (
           }
           meterValue.sampledValue.push(
             buildSampledValue(
-              chargingStation.stationInfo?.ocppVersion,
+              chargingStation.stationInfo.ocppVersion,
               voltagePhaseLineToNeutralSampledValueTemplate ?? voltageSampledValueTemplate,
               voltagePhaseLineToNeutralMeasurandValue ?? voltageMeasurandValue,
               undefined,
@@ -1253,7 +1259,7 @@ export const buildMeterValue = (
             )
             meterValue.sampledValue.push(
               buildSampledValue(
-                chargingStation.stationInfo?.ocppVersion,
+                chargingStation.stationInfo.ocppVersion,
                 voltagePhaseLineToLineSampledValueTemplate ?? voltageSampledValueTemplate,
                 voltagePhaseLineToLineMeasurandValue ?? defaultVoltagePhaseLineToLineMeasurandValue,
                 undefined,
@@ -1263,7 +1269,7 @@ export const buildMeterValue = (
           }
         }
       }
-      // Energy.Active.Import.Register measurand - identical to OCPP16 logic
+      // Energy.Active.Import.Register measurand
       energySampledValueTemplate = getSampledValueTemplate(chargingStation, connectorId)
       if (energySampledValueTemplate != null) {
         checkMeasurandPowerDivider(chargingStation, energySampledValueTemplate.measurand)
@@ -1295,7 +1301,6 @@ export const buildMeterValue = (
             energySampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
           )
           : getRandomFloatRounded(connectorMaximumEnergyRounded, connectorMinimumEnergyRounded)
-        // Persist previous value on connector
         if (connector != null) {
           if (
             connector.energyActiveImportRegisterValue != null &&
@@ -1312,7 +1317,7 @@ export const buildMeterValue = (
         }
         meterValue.sampledValue.push(
           buildSampledValue(
-            chargingStation.stationInfo?.ocppVersion,
+            chargingStation.stationInfo.ocppVersion,
             energySampledValueTemplate,
             roundTo(
               chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId) /
@@ -1339,9 +1344,11 @@ export const buildMeterValue = (
       return meterValue
     }
     default:
-      throw new BaseError(
+      throw new OCPPError(
+        ErrorType.INTERNAL_ERROR,
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        `Cannot build meterValue: OCPP version ${chargingStation.stationInfo?.ocppVersion} not supported`
+        `Cannot build meterValue: OCPP version ${chargingStation.stationInfo?.ocppVersion} not supported`,
+        RequestCommand.METER_VALUES
       )
   }
 }
@@ -1367,7 +1374,7 @@ export const buildTransactionEndMeterValue = (
       unitDivider = sampledValueTemplate?.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1
       meterValue.sampledValue.push(
         buildSampledValue(
-          chargingStation.stationInfo?.ocppVersion,
+          chargingStation.stationInfo.ocppVersion,
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           sampledValueTemplate!,
           roundTo((meterStop ?? 0) / unitDivider, 4),
@@ -1376,9 +1383,11 @@ export const buildTransactionEndMeterValue = (
       )
       return meterValue
     default:
-      throw new BaseError(
+      throw new OCPPError(
+        ErrorType.INTERNAL_ERROR,
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        `Cannot build meterValue: OCPP version ${chargingStation.stationInfo?.ocppVersion} not supported`
+        `Cannot build meterValue: OCPP version ${chargingStation.stationInfo?.ocppVersion} not supported`,
+        RequestCommand.METER_VALUES
       )
   }
 }
@@ -1525,14 +1534,14 @@ const getSampledValueTemplate = (
 }
 
 function buildSampledValue (
-  ocppVersion: OCPPVersion.VERSION_16,
+  ocppVersion: OCPPVersion.VERSION_16 | undefined,
   sampledValueTemplate: SampledValueTemplate,
   value: number,
   context?: MeterValueContext,
   phase?: MeterValuePhase
 ): OCPP16SampledValue
 function buildSampledValue (
-  ocppVersion: OCPPVersion.VERSION_20 | OCPPVersion.VERSION_201,
+  ocppVersion: OCPPVersion.VERSION_20 | OCPPVersion.VERSION_201 | undefined,
   sampledValueTemplate: SampledValueTemplate,
   value: number,
   context?: MeterValueContext,
@@ -1548,7 +1557,7 @@ function buildSampledValue (
  * @returns A sampled value object formatted according to the specified OCPP version
  */
 function buildSampledValue (
-  ocppVersion: OCPPVersion,
+  ocppVersion: OCPPVersion | undefined,
   sampledValueTemplate: SampledValueTemplate,
   value: number,
   context?: MeterValueContext,
@@ -1561,6 +1570,20 @@ function buildSampledValue (
   const sampledValuePhase = phase ?? sampledValueTemplate.phase
 
   switch (ocppVersion) {
+    case OCPPVersion.VERSION_16:
+      // OCPP 1.6 format
+      return {
+        ...(sampledValueTemplate.unit != null && {
+          unit: sampledValueTemplate.unit,
+        }),
+        ...(sampledValueContext != null && { context: sampledValueContext }),
+        ...(sampledValueTemplate.measurand != null && {
+          measurand: sampledValueTemplate.measurand,
+        }),
+        ...(sampledValueLocation != null && { location: sampledValueLocation }),
+        value: value.toString(), // OCPP 1.6 uses string
+        ...(sampledValuePhase != null && { phase: sampledValuePhase }),
+      } as OCPP16SampledValue
     case OCPPVersion.VERSION_20:
     case OCPPVersion.VERSION_201:
       // OCPP 2.0 format
@@ -1576,22 +1599,13 @@ function buildSampledValue (
           unitOfMeasure: sampledValueTemplate.unitOfMeasure,
         }),
       } as OCPP20SampledValue
-
-    case OCPPVersion.VERSION_16:
     default:
-      // OCPP 1.6 format
-      return {
-        ...(sampledValueTemplate.unit != null && {
-          unit: sampledValueTemplate.unit,
-        }),
-        ...(sampledValueContext != null && { context: sampledValueContext }),
-        ...(sampledValueTemplate.measurand != null && {
-          measurand: sampledValueTemplate.measurand,
-        }),
-        ...(sampledValueLocation != null && { location: sampledValueLocation }),
-        value: value.toString(), // OCPP 1.6 uses string
-        ...(sampledValuePhase != null && { phase: sampledValuePhase }),
-      } as OCPP16SampledValue
+      throw new OCPPError(
+        ErrorType.INTERNAL_ERROR,
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        `Cannot build sampledValue: OCPP version ${ocppVersion} not supported`,
+        RequestCommand.METER_VALUES
+      )
   }
 }
 

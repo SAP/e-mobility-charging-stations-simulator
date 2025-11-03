@@ -238,7 +238,7 @@ export const validateStationInfo = (chargingStation: ChargingStation): void => {
     case OCPPVersion.VERSION_201:
       if (isEmpty(chargingStation.evses)) {
         throw new BaseError(
-          `${chargingStationId}: OCPP 2.0.x requires at least one EVSE defined in the charging station template/configuration`
+          `${chargingStationId}: OCPP ${chargingStation.stationInfo.ocppVersion} requires at least one EVSE defined in the charging station template/configuration`
         )
       }
   }
