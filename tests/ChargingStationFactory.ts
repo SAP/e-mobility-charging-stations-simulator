@@ -274,16 +274,7 @@ function createConnectorsConfiguration (
  * @returns True if EVSEs should be used, false otherwise
  */
 function determineEvseUsage (options: ChargingStationOptions): boolean {
-  if (options.evseConfiguration?.evsesCount != null) {
-    return true
-  }
-
-  if (
+  return options.evseConfiguration?.evsesCount != null ||
     options.stationInfo?.ocppVersion === OCPPVersion.VERSION_20 ||
     options.stationInfo?.ocppVersion === OCPPVersion.VERSION_201
-  ) {
-    return true
-  }
-
-  return false
 }
