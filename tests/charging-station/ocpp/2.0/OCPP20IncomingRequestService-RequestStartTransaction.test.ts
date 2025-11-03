@@ -48,6 +48,7 @@ await describe('E01 - Remote Start Transaction', async () => {
         idToken: 'VALID_TOKEN_123',
         type: OCPP20IdTokenEnumType.ISO14443,
       },
+      remoteStartId: 1,
     }
 
     const response = await (incomingRequestService as any).handleRequestRequestStartTransaction(
@@ -92,6 +93,7 @@ await describe('E01 - Remote Start Transaction', async () => {
         idToken: 'PRIMARY_TOKEN',
         type: OCPP20IdTokenEnumType.Central,
       },
+      remoteStartId: 3,
     }
 
     const response = await (incomingRequestService as any).handleRequestRequestStartTransaction(
@@ -113,6 +115,7 @@ await describe('E01 - Remote Start Transaction', async () => {
         idToken: 'VALID_TOKEN_123',
         type: OCPP20IdTokenEnumType.ISO14443,
       },
+      remoteStartId: 999,
     }
 
     // Should throw OCPPError for invalid evseId
@@ -132,6 +135,7 @@ await describe('E01 - Remote Start Transaction', async () => {
         idToken: 'FIRST_TOKEN',
         type: OCPP20IdTokenEnumType.ISO14443,
       },
+      remoteStartId: 100,
     }
 
     await (incomingRequestService as any).handleRequestRequestStartTransaction(
@@ -146,6 +150,7 @@ await describe('E01 - Remote Start Transaction', async () => {
         idToken: 'SECOND_TOKEN',
         type: OCPP20IdTokenEnumType.ISO14443,
       },
+      remoteStartId: 101,
     }
 
     const response = await (incomingRequestService as any).handleRequestRequestStartTransaction(
@@ -165,6 +170,7 @@ await describe('E01 - Remote Start Transaction', async () => {
         idToken: 'STRUCTURE_TEST_TOKEN',
         type: OCPP20IdTokenEnumType.ISO14443,
       },
+      remoteStartId: 200,
     }
 
     const response = await (incomingRequestService as any).handleRequestRequestStartTransaction(
