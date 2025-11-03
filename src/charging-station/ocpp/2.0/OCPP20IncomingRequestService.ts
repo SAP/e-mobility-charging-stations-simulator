@@ -11,7 +11,6 @@ import type {
 import { OCPPError } from '../../../exception/index.js'
 import {
   AttributeEnumType,
-  type ChargingProfile,
   ConnectorEnumType,
   ConnectorStatusEnum,
   DataEnumType,
@@ -872,9 +871,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     chargingStation: ChargingStation,
     commandPayload: OCPP20RequestStartTransactionRequest
   ): Promise<OCPP20RequestStartTransactionResponse> {
-    const { chargingProfile, evseId, groupIdToken, idToken } = commandPayload
+    const { chargingProfile, evseId, groupIdToken, idToken, remoteStartId } = commandPayload
     logger.info(
-      `${chargingStation.logPrefix()} ${moduleName}.handleRequestRequestStartTransaction: Remote start transaction request received on EVSE ${evseId?.toString() ?? 'undefined'} with idToken ${idToken.idToken}`
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestRequestStartTransaction: Remote start transaction request received on EVSE ${evseId?.toString() ?? 'undefined'} with idToken ${idToken.idToken} and remoteStartId ${remoteStartId.toString()}`
     )
 
     // Validate that EVSE ID is provided
@@ -1043,7 +1042,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     try {
       // Set connector transaction state
       connectorStatus.transactionStarted = true
-      connectorStatus.transactionId = transactionId as unknown as number // TODO: Update ConnectorStatus type to support string transactionId for OCPP 2.0
+      connectorStatus.transactionId = transactionId
       connectorStatus.transactionIdTag = idToken.idToken
       connectorStatus.transactionStart = new Date()
       connectorStatus.transactionEnergyActiveImportRegisterValue = 0
@@ -1051,7 +1050,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       // Update connector status to Occupied
       await sendAndSetConnectorStatus(
         chargingStation,
-        connectorId, // Type assertion: connectorId is guaranteed to be non-null due to validation above
+        connectorId,
         ConnectorStatusEnum.Occupied,
         evseId
       )
@@ -1059,11 +1058,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       // Store charging profile if provided
       if (chargingProfile != null) {
         connectorStatus.chargingProfiles ??= []
-        // TODO: Fix ChargingProfile type compatibility between OCPP 1.6 and 2.0
-        // The ConnectorStatus expects OCPP 1.6 ChargingProfile type, but we have OCPP 2.0 OCPP20ChargingProfileType
-        // These types have different structures (e.g., chargingProfileId vs id), so this cast is unsafe
-        // but necessary until proper type conversion or unification is implemented
-        connectorStatus.chargingProfiles.push(chargingProfile as unknown as ChargingProfile)
+        connectorStatus.chargingProfiles.push(chargingProfile)
         // TODO: Implement charging profile storage
         logger.debug(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestRequestStartTransaction: Charging profile stored for transaction ${transactionId} (TODO: implement profile storage)`

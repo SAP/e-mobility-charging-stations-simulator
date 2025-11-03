@@ -20,7 +20,7 @@ export interface ConnectorStatus {
   status?: ConnectorStatusEnum
   transactionBeginMeterValue?: MeterValue
   transactionEnergyActiveImportRegisterValue?: number // In Wh
-  transactionId?: number
+  transactionId?: number | string
   transactionIdTag?: string
   transactionRemoteStarted?: boolean
   transactionSetInterval?: NodeJS.Timeout

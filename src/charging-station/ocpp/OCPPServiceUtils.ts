@@ -1565,8 +1565,7 @@ function buildSampledValue (
 ): SampledValue {
   const sampledValueContext = context ?? sampledValueTemplate.context
   const sampledValueLocation =
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    sampledValueTemplate.location ?? getMeasurandDefaultLocation(sampledValueTemplate.measurand!)
+    sampledValueTemplate.location ?? getMeasurandDefaultLocation(sampledValueTemplate.measurand)
   const sampledValuePhase = phase ?? sampledValueTemplate.phase
 
   switch (ocppVersion) {
