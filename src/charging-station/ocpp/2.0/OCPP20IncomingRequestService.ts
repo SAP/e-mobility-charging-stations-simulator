@@ -780,7 +780,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           variableCharacteristics: { dataType: DataEnumType.string, supportsMonitoring: true },
         })
 
-        if (chargingStation.evses.size > 0) {
+        if (chargingStation.hasEvses) {
           for (const [evseId, evse] of chargingStation.evses) {
             reportData.push({
               component: {
@@ -794,7 +794,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               variableCharacteristics: { dataType: DataEnumType.string, supportsMonitoring: true },
             })
           }
-        } else if (chargingStation.connectors.size > 0) {
+        } else {
           // Fallback to connectors if no EVSE structure
           for (const [connectorId, connector] of chargingStation.connectors) {
             if (connectorId > 0) {
@@ -1011,11 +1011,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
-    // Generate transaction ID (OCPP 2.0 uses string transaction IDs)
     const transactionId = generateUUID()
 
     // Backup current connector state in case we need to rollback
     const connectorBackup = {
+      remoteStartId: connectorStatus.remoteStartId,
       status: connectorStatus.status,
       transactionEnergyActiveImportRegisterValue:
         connectorStatus.transactionEnergyActiveImportRegisterValue,
@@ -1032,6 +1032,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       connectorStatus.transactionIdTag = idToken.idToken
       connectorStatus.transactionStart = new Date()
       connectorStatus.transactionEnergyActiveImportRegisterValue = 0
+      connectorStatus.remoteStartId = remoteStartId
 
       // Update connector status to Occupied
       await sendAndSetConnectorStatus(
@@ -1068,6 +1069,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       connectorStatus.transactionEnergyActiveImportRegisterValue =
         connectorBackup.transactionEnergyActiveImportRegisterValue
       connectorStatus.status = connectorBackup.status
+      connectorStatus.remoteStartId = connectorBackup.remoteStartId
 
       logger.error(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestRequestStartTransaction: Error starting transaction:`,

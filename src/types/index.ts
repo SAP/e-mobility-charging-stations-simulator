@@ -201,6 +201,11 @@ export {
   type OCPP20ChargingScheduleType,
   OCPP20ConnectorStatusEnumType,
   type OCPP20IdTokenType,
+  OCPP20TransactionEventEnumType,
+  type OCPP20TransactionEventRequest,
+  type OCPP20TransactionEventResponse,
+  type OCPP20TransactionType,
+  OCPP20TriggerReasonEnumType,
   RequestStartStopStatusEnumType,
 } from './ocpp/2.0/Transaction.js'
 export {

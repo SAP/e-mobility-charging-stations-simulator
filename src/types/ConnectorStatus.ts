@@ -16,6 +16,7 @@ export interface ConnectorStatus {
   idTagLocalAuthorized?: boolean
   localAuthorizeIdTag?: string
   MeterValues: SampledValueTemplate[]
+  remoteStartId?: number
   reservation?: Reservation
   status?: ConnectorStatusEnum
   transactionBeginMeterValue?: MeterValue
