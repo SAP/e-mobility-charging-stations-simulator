@@ -71,6 +71,17 @@ import { OCPP16Constants } from './1.6/OCPP16Constants.js'
 import { OCPP20Constants } from './2.0/OCPP20Constants.js'
 import { OCPPConstants } from './OCPPConstants.js'
 
+interface MultiPhaseMeasurandData {
+  perPhaseTemplates: MeasurandPerPhaseSampledValueTemplates
+  template: SampledValueTemplate
+  values: MeasurandValues
+}
+
+interface SingleValueMeasurandData {
+  template: SampledValueTemplate
+  value: number
+}
+
 export const getMessageTypeString = (messageType: MessageType | undefined): string => {
   switch (messageType) {
     case MessageType.CALL_ERROR_MESSAGE:
@@ -329,7 +340,7 @@ export const convertDateToISOString = <T extends JsonType>(object: T): void => {
 const buildSocMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number
-): null | { template: SampledValueTemplate; value: number } => {
+): null | SingleValueMeasurandData => {
   const socSampledValueTemplate = getSampledValueTemplate(
     chargingStation,
     connectorId,
@@ -380,7 +391,7 @@ const validateSocMeasurandValue = (
 const buildVoltageMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number
-): null | { template: SampledValueTemplate; value: number } => {
+): null | SingleValueMeasurandData => {
   const voltageSampledValueTemplate = getSampledValueTemplate(
     chargingStation,
     connectorId,
@@ -524,7 +535,7 @@ const buildEnergyMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number,
   interval: number
-): null | { template: SampledValueTemplate; value: number } => {
+): null | SingleValueMeasurandData => {
   const energyTemplate = getSampledValueTemplate(chargingStation, connectorId)
   if (energyTemplate == null) {
     return null
@@ -606,11 +617,7 @@ const validateEnergyMeasurandValue = (
 const buildPowerMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number
-): null | {
-  perPhaseTemplates: MeasurandPerPhaseSampledValueTemplates
-  template: SampledValueTemplate
-  values: MeasurandValues
-} => {
+): MultiPhaseMeasurandData | null => {
   const powerTemplate = getSampledValueTemplate(
     chargingStation,
     connectorId,
@@ -880,11 +887,7 @@ const validateCurrentMeasurandPhaseValue = (
 const buildCurrentMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number
-): null | {
-  perPhaseTemplates: MeasurandPerPhaseSampledValueTemplates
-  template: SampledValueTemplate
-  values: MeasurandValues
-} => {
+): MultiPhaseMeasurandData | null => {
   const currentTemplate = getSampledValueTemplate(
     chargingStation,
     connectorId,
