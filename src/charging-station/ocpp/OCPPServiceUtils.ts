@@ -1653,7 +1653,7 @@ function buildSampledValue (
         context: sampledValueContext,
         location: sampledValueLocation,
         measurand: sampledValueMeasurand,
-        unitOfMeasure: { unit: sampledValueUnit },
+        ...(sampledValueUnit !== undefined && { unitOfMeasure: { unit: sampledValueUnit } }),
         value, // OCPP 2.0 uses number
         ...(sampledValuePhase != null && { phase: sampledValuePhase }),
       } as OCPP20SampledValue
