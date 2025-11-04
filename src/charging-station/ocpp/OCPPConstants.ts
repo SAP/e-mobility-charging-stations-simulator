@@ -73,11 +73,11 @@ export class OCPPConstants {
   })
 
   static readonly OCPP_MEASURANDS_SUPPORTED = Object.freeze([
-    MeterValueMeasurand.STATE_OF_CHARGE,
-    MeterValueMeasurand.VOLTAGE,
+    MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
     MeterValueMeasurand.POWER_ACTIVE_IMPORT,
     MeterValueMeasurand.CURRENT_IMPORT,
-    MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+    MeterValueMeasurand.VOLTAGE,
+    MeterValueMeasurand.STATE_OF_CHARGE,
   ])
 
   static readonly OCPP_REQUEST_EMPTY = Constants.EMPTY_FROZEN_OBJECT

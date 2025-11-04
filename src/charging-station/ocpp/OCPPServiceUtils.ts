@@ -445,12 +445,12 @@ const addPhaseVoltageToMeterValue = (
   mainVoltageData: { template: SampledValueTemplate; value: number },
   phase: number
 ): void => {
-  const phaseLineToNeutralValue = `L${phase.toString()}-N`
+  const phaseLineToNeutralValue = `L${phase.toString()}-N` as MeterValuePhase
   const voltagePhaseLineToNeutralSampledValueTemplate = getSampledValueTemplate(
     chargingStation,
     connectorId,
     MeterValueMeasurand.VOLTAGE,
-    phaseLineToNeutralValue as MeterValuePhase
+    phaseLineToNeutralValue
   )
   let voltagePhaseLineToNeutralMeasurandValue: number | undefined
   if (voltagePhaseLineToNeutralSampledValueTemplate != null) {
@@ -474,7 +474,7 @@ const addPhaseVoltageToMeterValue = (
       voltagePhaseLineToNeutralSampledValueTemplate ?? mainVoltageData.template,
       voltagePhaseLineToNeutralMeasurandValue ?? mainVoltageData.value,
       undefined,
-      phaseLineToNeutralValue as MeterValuePhase
+      phaseLineToNeutralValue
     )
   )
 }
@@ -491,7 +491,7 @@ const addLineToLineVoltageToMeterValue = (
       (phase + 1) % chargingStation.getNumberOfPhases() !== 0
         ? ((phase + 1) % chargingStation.getNumberOfPhases()).toString()
         : chargingStation.getNumberOfPhases().toString()
-    }`
+    }` as MeterValuePhase
     const voltagePhaseLineToLineValueRounded = roundTo(
       Math.sqrt(chargingStation.getNumberOfPhases()) *
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -502,7 +502,7 @@ const addLineToLineVoltageToMeterValue = (
       chargingStation,
       connectorId,
       MeterValueMeasurand.VOLTAGE,
-      phaseLineToLineValue as MeterValuePhase
+      phaseLineToLineValue
     )
     let voltagePhaseLineToLineMeasurandValue: number | undefined
     if (voltagePhaseLineToLineSampledValueTemplate != null) {
@@ -525,7 +525,7 @@ const addLineToLineVoltageToMeterValue = (
         voltagePhaseLineToLineSampledValueTemplate ?? mainVoltageData.template,
         voltagePhaseLineToLineMeasurandValue ?? voltagePhaseLineToLineValueRounded,
         undefined,
-        phaseLineToLineValue as MeterValuePhase
+        phaseLineToLineValue
       )
     )
   }
@@ -1160,7 +1160,6 @@ export const buildMeterValue = (
           connectorMinimumPower / unitDivider,
           debug
         )
-        // Add phase-specific power values for 3-phase systems
         if (chargingStation.getNumberOfPhases() === 3) {
           const connectorMaximumPowerPerPhase = Math.round(
             connectorMaximumAvailablePower / chargingStation.getNumberOfPhases()
@@ -1242,7 +1241,7 @@ export const buildMeterValue = (
           chargingStation.getNumberOfPhases() === 3 && phase <= chargingStation.getNumberOfPhases();
           phase++
         ) {
-          const phaseValue = `L${phase.toString()}`
+          const phaseValue = `L${phase.toString()}` as MeterValuePhase
           meterValue.sampledValue.push(
             buildSampledValue(
               chargingStation.stationInfo.ocppVersion,
@@ -1251,7 +1250,7 @@ export const buildMeterValue = (
               ] ?? currentMeasurand.template,
               currentMeasurand.values[phaseValue as keyof MeasurandPerPhaseSampledValueTemplates],
               undefined,
-              phaseValue as MeterValuePhase
+              phaseValue
             )
           )
           const sampledValuesPerPhaseIndex = meterValue.sampledValue.length - 1
@@ -1627,23 +1626,23 @@ function buildSampledValue (
   context?: MeterValueContext,
   phase?: MeterValuePhase
 ): SampledValue {
-  const sampledValueContext = context ?? sampledValueTemplate.context
+  const sampledValueMeasurand = sampledValueTemplate.measurand ?? getMeasurandDefault()
+  const sampledValueUnit =
+    sampledValueTemplate.unit ?? getMeasurandDefaultUnit(sampledValueMeasurand)
+  const sampledValueContext =
+    context ?? sampledValueTemplate.context ?? getMeasurandDefaultContext(sampledValueMeasurand)
   const sampledValueLocation =
-    sampledValueTemplate.location ?? getMeasurandDefaultLocation(sampledValueTemplate.measurand)
+    sampledValueTemplate.location ?? getMeasurandDefaultLocation(sampledValueMeasurand)
   const sampledValuePhase = phase ?? sampledValueTemplate.phase
 
   switch (ocppVersion) {
     case OCPPVersion.VERSION_16:
       // OCPP 1.6 format
       return {
-        ...(sampledValueTemplate.unit != null && {
-          unit: sampledValueTemplate.unit,
-        }),
-        ...(sampledValueContext != null && { context: sampledValueContext }),
-        ...(sampledValueTemplate.measurand != null && {
-          measurand: sampledValueTemplate.measurand,
-        }),
-        ...(sampledValueLocation != null && { location: sampledValueLocation }),
+        context: sampledValueContext,
+        location: sampledValueLocation,
+        measurand: sampledValueMeasurand,
+        unit: sampledValueUnit,
         value: value.toString(), // OCPP 1.6 uses string
         ...(sampledValuePhase != null && { phase: sampledValuePhase }),
       } as OCPP16SampledValue
@@ -1651,16 +1650,12 @@ function buildSampledValue (
     case OCPPVersion.VERSION_201:
       // OCPP 2.0 format
       return {
-        ...(sampledValueContext != null && { context: sampledValueContext }),
-        ...(sampledValueTemplate.measurand != null && {
-          measurand: sampledValueTemplate.measurand,
-        }),
-        ...(sampledValueLocation != null && { location: sampledValueLocation }),
+        context: sampledValueContext,
+        location: sampledValueLocation,
+        measurand: sampledValueMeasurand,
+        unitOfMeasure: { unit: sampledValueUnit },
         value, // OCPP 2.0 uses number
         ...(sampledValuePhase != null && { phase: sampledValuePhase }),
-        ...(sampledValueTemplate.unitOfMeasure != null && {
-          unitOfMeasure: sampledValueTemplate.unitOfMeasure,
-        }),
       } as OCPP20SampledValue
     default:
       throw new OCPPError(
@@ -1672,36 +1667,123 @@ function buildSampledValue (
   }
 }
 
+const getMeasurandDefaultContext = (measurandType: MeterValueMeasurand): MeterValueContext => {
+  return MeterValueContext.SAMPLE_PERIODIC
+}
+
 const getMeasurandDefaultLocation = (
   measurandType: MeterValueMeasurand
 ): MeterValueLocation | undefined => {
   switch (measurandType) {
+    case MeterValueMeasurand.CURRENT_EXPORT:
+    case MeterValueMeasurand.CURRENT_IMPORT:
+    case MeterValueMeasurand.CURRENT_OFFERED:
+      return MeterValueLocation.OUTLET
+
+    case MeterValueMeasurand.ENERGY_ACTIVE_EXPORT_INTERVAL:
+    case MeterValueMeasurand.ENERGY_ACTIVE_EXPORT_REGISTER:
+    case MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL:
+    case MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER:
+    case MeterValueMeasurand.ENERGY_ACTIVE_NET:
+    case MeterValueMeasurand.ENERGY_APPARENT_EXPORT:
+    case MeterValueMeasurand.ENERGY_APPARENT_IMPORT:
+    case MeterValueMeasurand.ENERGY_APPARENT_NET:
+    case MeterValueMeasurand.ENERGY_REACTIVE_EXPORT_INTERVAL:
+    case MeterValueMeasurand.ENERGY_REACTIVE_EXPORT_REGISTER:
+    case MeterValueMeasurand.ENERGY_REACTIVE_IMPORT_INTERVAL:
+    case MeterValueMeasurand.ENERGY_REACTIVE_IMPORT_REGISTER:
+    case MeterValueMeasurand.ENERGY_REACTIVE_NET:
+      return MeterValueLocation.OUTLET
+
+    case MeterValueMeasurand.FAN_RPM:
+      return MeterValueLocation.BODY
+
+    case MeterValueMeasurand.FREQUENCY:
+      return MeterValueLocation.OUTLET
+
+    case MeterValueMeasurand.POWER_ACTIVE_EXPORT:
+    case MeterValueMeasurand.POWER_ACTIVE_IMPORT:
+    case MeterValueMeasurand.POWER_FACTOR:
+    case MeterValueMeasurand.POWER_OFFERED:
+    case MeterValueMeasurand.POWER_REACTIVE_EXPORT:
+    case MeterValueMeasurand.POWER_REACTIVE_IMPORT:
+      return MeterValueLocation.OUTLET
+
     case MeterValueMeasurand.STATE_OF_CHARGE:
       return MeterValueLocation.EV
+
+    case MeterValueMeasurand.TEMPERATURE:
+      return MeterValueLocation.OUTLET
+
+    case MeterValueMeasurand.VOLTAGE:
+      return MeterValueLocation.OUTLET
+
+    default:
+      return undefined
   }
 }
 
-// const getMeasurandDefaultUnit = (
-//   measurandType: MeterValueMeasurand
-// ): MeterValueUnit | undefined => {
-//   switch (measurandType) {
-//     case MeterValueMeasurand.CURRENT_EXPORT:
-//     case MeterValueMeasurand.CURRENT_IMPORT:
-//     case MeterValueMeasurand.CURRENT_OFFERED:
-//       return MeterValueUnit.AMP
-//     case MeterValueMeasurand.ENERGY_ACTIVE_EXPORT_REGISTER:
-//     case MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER:
-//       return MeterValueUnit.WATT_HOUR
-//     case MeterValueMeasurand.POWER_ACTIVE_EXPORT:
-//     case MeterValueMeasurand.POWER_ACTIVE_IMPORT:
-//     case MeterValueMeasurand.POWER_OFFERED:
-//       return MeterValueUnit.WATT
-//     case MeterValueMeasurand.STATE_OF_CHARGE:
-//       return MeterValueUnit.PERCENT
-//     case MeterValueMeasurand.VOLTAGE:
-//       return MeterValueUnit.VOLT
-//   }
-// }
+const getMeasurandDefault = (): MeterValueMeasurand => {
+  return MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+}
+
+const getMeasurandDefaultUnit = (
+  measurandType: MeterValueMeasurand
+): MeterValueUnit | undefined => {
+  switch (measurandType) {
+    case MeterValueMeasurand.CURRENT_EXPORT:
+    case MeterValueMeasurand.CURRENT_IMPORT:
+    case MeterValueMeasurand.CURRENT_OFFERED:
+      return MeterValueUnit.AMP
+
+    case MeterValueMeasurand.ENERGY_ACTIVE_EXPORT_INTERVAL:
+    case MeterValueMeasurand.ENERGY_ACTIVE_EXPORT_REGISTER:
+    case MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_INTERVAL:
+    case MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER:
+    case MeterValueMeasurand.ENERGY_ACTIVE_NET:
+    case MeterValueMeasurand.ENERGY_APPARENT_EXPORT:
+    case MeterValueMeasurand.ENERGY_APPARENT_IMPORT:
+    case MeterValueMeasurand.ENERGY_APPARENT_NET:
+      return MeterValueUnit.WATT_HOUR
+
+    case MeterValueMeasurand.ENERGY_REACTIVE_EXPORT_INTERVAL:
+    case MeterValueMeasurand.ENERGY_REACTIVE_EXPORT_REGISTER:
+    case MeterValueMeasurand.ENERGY_REACTIVE_IMPORT_INTERVAL:
+    case MeterValueMeasurand.ENERGY_REACTIVE_IMPORT_REGISTER:
+    case MeterValueMeasurand.ENERGY_REACTIVE_NET:
+      return MeterValueUnit.VAR_HOUR
+
+    case MeterValueMeasurand.FAN_RPM:
+      return MeterValueUnit.REVOLUTIONS_PER_MINUTE
+
+    case MeterValueMeasurand.FREQUENCY:
+      return MeterValueUnit.HERTZ
+
+    case MeterValueMeasurand.POWER_ACTIVE_EXPORT:
+    case MeterValueMeasurand.POWER_ACTIVE_IMPORT:
+    case MeterValueMeasurand.POWER_OFFERED:
+      return MeterValueUnit.WATT
+
+    case MeterValueMeasurand.POWER_FACTOR:
+      return undefined
+
+    case MeterValueMeasurand.POWER_REACTIVE_EXPORT:
+    case MeterValueMeasurand.POWER_REACTIVE_IMPORT:
+      return MeterValueUnit.VAR
+
+    case MeterValueMeasurand.STATE_OF_CHARGE:
+      return MeterValueUnit.PERCENT
+
+    case MeterValueMeasurand.TEMPERATURE:
+      return MeterValueUnit.TEMP_CELSIUS
+
+    case MeterValueMeasurand.VOLTAGE:
+      return MeterValueUnit.VOLT
+
+    default:
+      return undefined
+  }
+}
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class OCPPServiceUtils {
