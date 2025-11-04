@@ -354,7 +354,7 @@ const buildSocMeasurandValue = (
   }
 }
 
-const logSocValidationError = (
+const validateSocMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number,
   sampledValue: SampledValue,
@@ -582,7 +582,7 @@ const updateConnectorEnergyValues = (
   }
 }
 
-const logEnergyValidationError = (
+const validateEnergyMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number,
   sampledValue: SampledValue,
@@ -1097,7 +1097,7 @@ export const buildMeterValue = (
           socMeasurand.value
         )
         meterValue.sampledValue.push(socSampledValue)
-        logSocValidationError(
+        validateSocMeasurandValue(
           chargingStation,
           connectorId,
           socSampledValue,
@@ -1286,7 +1286,7 @@ export const buildMeterValue = (
           2
         )
         const connectorMinimumEnergyRounded = roundTo(energyMeasurand.template.minimumValue ?? 0, 2)
-        logEnergyValidationError(
+        validateEnergyMeasurandValue(
           chargingStation,
           connectorId,
           energySampledValue,
@@ -1314,7 +1314,7 @@ export const buildMeterValue = (
           socMeasurand.value
         )
         meterValue.sampledValue.push(socSampledValue)
-        logSocValidationError(
+        validateSocMeasurandValue(
           chargingStation,
           connectorId,
           socSampledValue,
@@ -1371,7 +1371,7 @@ export const buildMeterValue = (
           2
         )
         const connectorMinimumEnergyRounded = roundTo(energyMeasurand.template.minimumValue ?? 0, 2)
-        logEnergyValidationError(
+        validateEnergyMeasurandValue(
           chargingStation,
           connectorId,
           energySampledValue,
