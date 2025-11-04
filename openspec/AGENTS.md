@@ -174,6 +174,8 @@ New request?
 2. **Write proposal.md:**
 
 ```markdown
+# Change: [Brief description of change]
+
 ## Why
 
 [1-2 sentences on problem/opportunity]
