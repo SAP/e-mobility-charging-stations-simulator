@@ -326,6 +326,283 @@ export const convertDateToISOString = <T extends JsonType>(object: T): void => {
   }
 }
 
+const buildSocMeasurandValue = (
+  chargingStation: ChargingStation,
+  connectorId: number
+): null | { template: SampledValueTemplate; value: number } => {
+  const socSampledValueTemplate = getSampledValueTemplate(
+    chargingStation,
+    connectorId,
+    MeterValueMeasurand.STATE_OF_CHARGE
+  )
+  if (socSampledValueTemplate == null) {
+    return null
+  }
+
+  const socMaximumValue = 100
+  const socMinimumValue = socSampledValueTemplate.minimumValue ?? 0
+  const socSampledValueTemplateValue = isNotEmptyString(socSampledValueTemplate.value)
+    ? getRandomFloatFluctuatedRounded(
+      Number.parseInt(socSampledValueTemplate.value),
+      socSampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
+    )
+    : randomInt(socMinimumValue, socMaximumValue + 1)
+
+  return {
+    template: socSampledValueTemplate,
+    value: socSampledValueTemplateValue,
+  }
+}
+
+const logSocValidationError = (
+  chargingStation: ChargingStation,
+  connectorId: number,
+  sampledValue: SampledValue,
+  socMinimumValue: number,
+  socMaximumValue: number,
+  debug: boolean
+): void => {
+  const connector = chargingStation.getConnectorStatus(connectorId)
+  if (
+    convertToInt(sampledValue.value) > socMaximumValue ||
+    convertToInt(sampledValue.value) < socMinimumValue ||
+    debug
+  ) {
+    logger.error(
+      `${chargingStation.logPrefix()} MeterValues measurand ${
+        sampledValue.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+      }: connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${socMinimumValue.toString()}/${sampledValue.value.toString()}/${socMaximumValue.toString()}`
+    )
+  }
+}
+
+const buildVoltageMeasurandValue = (
+  chargingStation: ChargingStation,
+  connectorId: number
+): null | { template: SampledValueTemplate; value: number } => {
+  const voltageSampledValueTemplate = getSampledValueTemplate(
+    chargingStation,
+    connectorId,
+    MeterValueMeasurand.VOLTAGE
+  )
+  if (voltageSampledValueTemplate == null) {
+    return null
+  }
+
+  const voltageSampledValueTemplateValue = isNotEmptyString(voltageSampledValueTemplate.value)
+    ? Number.parseInt(voltageSampledValueTemplate.value)
+    : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    chargingStation.stationInfo.voltageOut!
+  const fluctuationPercent =
+    voltageSampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
+  const voltageMeasurandValue = getRandomFloatFluctuatedRounded(
+    voltageSampledValueTemplateValue,
+    fluctuationPercent
+  )
+
+  return {
+    template: voltageSampledValueTemplate,
+    value: voltageMeasurandValue,
+  }
+}
+
+const addMainVoltageToMeterValue = (
+  chargingStation: ChargingStation,
+  meterValue: MeterValue,
+  voltageData: { template: SampledValueTemplate; value: number }
+): void => {
+  if (
+    chargingStation.getNumberOfPhases() !== 3 ||
+    (chargingStation.getNumberOfPhases() === 3 &&
+      chargingStation.stationInfo.mainVoltageMeterValues === true)
+  ) {
+    meterValue.sampledValue.push(
+      buildSampledValue(
+        chargingStation.stationInfo.ocppVersion,
+        voltageData.template,
+        voltageData.value
+      )
+    )
+  }
+}
+
+const addPhaseVoltageToMeterValue = (
+  chargingStation: ChargingStation,
+  connectorId: number,
+  meterValue: MeterValue,
+  mainVoltageData: { template: SampledValueTemplate; value: number },
+  phase: number
+): void => {
+  const phaseLineToNeutralValue = `L${phase.toString()}-N`
+  const voltagePhaseLineToNeutralSampledValueTemplate = getSampledValueTemplate(
+    chargingStation,
+    connectorId,
+    MeterValueMeasurand.VOLTAGE,
+    phaseLineToNeutralValue as MeterValuePhase
+  )
+  let voltagePhaseLineToNeutralMeasurandValue: number | undefined
+  if (voltagePhaseLineToNeutralSampledValueTemplate != null) {
+    const voltagePhaseLineToNeutralSampledValueTemplateValue = isNotEmptyString(
+      voltagePhaseLineToNeutralSampledValueTemplate.value
+    )
+      ? Number.parseInt(voltagePhaseLineToNeutralSampledValueTemplate.value)
+      : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      chargingStation.stationInfo.voltageOut!
+    const fluctuationPhaseToNeutralPercent =
+      voltagePhaseLineToNeutralSampledValueTemplate.fluctuationPercent ??
+      Constants.DEFAULT_FLUCTUATION_PERCENT
+    voltagePhaseLineToNeutralMeasurandValue = getRandomFloatFluctuatedRounded(
+      voltagePhaseLineToNeutralSampledValueTemplateValue,
+      fluctuationPhaseToNeutralPercent
+    )
+  }
+  meterValue.sampledValue.push(
+    buildSampledValue(
+      chargingStation.stationInfo.ocppVersion,
+      voltagePhaseLineToNeutralSampledValueTemplate ?? mainVoltageData.template,
+      voltagePhaseLineToNeutralMeasurandValue ?? mainVoltageData.value,
+      undefined,
+      phaseLineToNeutralValue as MeterValuePhase
+    )
+  )
+}
+
+const addLineToLineVoltageToMeterValue = (
+  chargingStation: ChargingStation,
+  connectorId: number,
+  meterValue: MeterValue,
+  mainVoltageData: { template: SampledValueTemplate; value: number },
+  phase: number
+): void => {
+  if (chargingStation.stationInfo.phaseLineToLineVoltageMeterValues === true) {
+    const phaseLineToLineValue = `L${phase.toString()}-L${
+      (phase + 1) % chargingStation.getNumberOfPhases() !== 0
+        ? ((phase + 1) % chargingStation.getNumberOfPhases()).toString()
+        : chargingStation.getNumberOfPhases().toString()
+    }`
+    const voltagePhaseLineToLineValueRounded = roundTo(
+      Math.sqrt(chargingStation.getNumberOfPhases()) *
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        chargingStation.stationInfo.voltageOut!,
+      2
+    )
+    const voltagePhaseLineToLineSampledValueTemplate = getSampledValueTemplate(
+      chargingStation,
+      connectorId,
+      MeterValueMeasurand.VOLTAGE,
+      phaseLineToLineValue as MeterValuePhase
+    )
+    let voltagePhaseLineToLineMeasurandValue: number | undefined
+    if (voltagePhaseLineToLineSampledValueTemplate != null) {
+      const voltagePhaseLineToLineSampledValueTemplateValue = isNotEmptyString(
+        voltagePhaseLineToLineSampledValueTemplate.value
+      )
+        ? Number.parseInt(voltagePhaseLineToLineSampledValueTemplate.value)
+        : voltagePhaseLineToLineValueRounded
+      const fluctuationPhaseLineToLinePercent =
+        voltagePhaseLineToLineSampledValueTemplate.fluctuationPercent ??
+        Constants.DEFAULT_FLUCTUATION_PERCENT
+      voltagePhaseLineToLineMeasurandValue = getRandomFloatFluctuatedRounded(
+        voltagePhaseLineToLineSampledValueTemplateValue,
+        fluctuationPhaseLineToLinePercent
+      )
+    }
+    meterValue.sampledValue.push(
+      buildSampledValue(
+        chargingStation.stationInfo.ocppVersion,
+        voltagePhaseLineToLineSampledValueTemplate ?? mainVoltageData.template,
+        voltagePhaseLineToLineMeasurandValue ?? voltagePhaseLineToLineValueRounded,
+        undefined,
+        phaseLineToLineValue as MeterValuePhase
+      )
+    )
+  }
+}
+
+const buildEnergyMeasurandValue = (
+  chargingStation: ChargingStation,
+  connectorId: number,
+  interval: number
+): null | { template: SampledValueTemplate; value: number } => {
+  const energyTemplate = getSampledValueTemplate(chargingStation, connectorId)
+  if (energyTemplate == null) {
+    return null
+  }
+
+  checkMeasurandPowerDivider(chargingStation, energyTemplate.measurand)
+  const unitDivider = energyTemplate.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1
+  const connectorMaximumAvailablePower =
+    chargingStation.getConnectorMaximumAvailablePower(connectorId)
+  const connectorMaximumEnergyRounded = roundTo(
+    (connectorMaximumAvailablePower * interval) / (3600 * 1000),
+    2
+  )
+  const connectorMinimumEnergyRounded = roundTo(energyTemplate.minimumValue ?? 0, 2)
+
+  const energyValueRounded = isNotEmptyString(energyTemplate.value)
+    ? getRandomFloatFluctuatedRounded(
+      getLimitFromSampledValueTemplateCustomValue(
+        energyTemplate.value,
+        connectorMaximumEnergyRounded,
+        connectorMinimumEnergyRounded,
+        {
+          fallbackValue: connectorMinimumEnergyRounded,
+          limitationEnabled: chargingStation.stationInfo?.customValueLimitationMeterValues,
+          unitMultiplier: unitDivider,
+        }
+      ),
+      energyTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
+    )
+    : getRandomFloatRounded(connectorMaximumEnergyRounded, connectorMinimumEnergyRounded)
+
+  return {
+    template: energyTemplate,
+    value: energyValueRounded,
+  }
+}
+
+const updateConnectorEnergyValues = (
+  connector: ConnectorStatus | undefined,
+  energyValue: number
+): void => {
+  if (connector != null) {
+    if (
+      connector.energyActiveImportRegisterValue != null &&
+      connector.energyActiveImportRegisterValue >= 0 &&
+      connector.transactionEnergyActiveImportRegisterValue != null &&
+      connector.transactionEnergyActiveImportRegisterValue >= 0
+    ) {
+      connector.energyActiveImportRegisterValue += energyValue
+      connector.transactionEnergyActiveImportRegisterValue += energyValue
+    } else {
+      connector.energyActiveImportRegisterValue = 0
+      connector.transactionEnergyActiveImportRegisterValue = 0
+    }
+  }
+}
+
+const logEnergyValidationError = (
+  chargingStation: ChargingStation,
+  connectorId: number,
+  sampledValue: SampledValue,
+  energyValue: number,
+  minValue: number,
+  maxValue: number,
+  interval: number,
+  debug: boolean
+): void => {
+  if (energyValue > maxValue || energyValue < minValue || debug) {
+    const connector = chargingStation.getConnectorStatus(connectorId)
+    logger.error(
+      `${chargingStation.logPrefix()} MeterValues measurand ${
+        sampledValue.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+      }: connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${minValue.toString()}/${energyValue.toString()}/${maxValue.toString()}, duration: ${interval.toString()}ms`
+    )
+  }
+}
+
 export const buildMeterValue = (
   chargingStation: ChargingStation,
   connectorId: number,
@@ -336,172 +613,57 @@ export const buildMeterValue = (
   const connector = chargingStation.getConnectorStatus(connectorId)
   let meterValue: MeterValue
   let connectorMaximumAvailablePower: number | undefined
-  let socSampledValueTemplate: SampledValueTemplate | undefined
-  let voltageSampledValueTemplate: SampledValueTemplate | undefined
   let powerSampledValueTemplate: SampledValueTemplate | undefined
   let powerPerPhaseSampledValueTemplates: MeasurandPerPhaseSampledValueTemplates = {}
   let currentSampledValueTemplate: SampledValueTemplate | undefined
   let currentPerPhaseSampledValueTemplates: MeasurandPerPhaseSampledValueTemplates = {}
-  let energySampledValueTemplate: SampledValueTemplate | undefined
   switch (chargingStation.stationInfo?.ocppVersion) {
-    case OCPPVersion.VERSION_16:
+    case OCPPVersion.VERSION_16: {
       meterValue = {
         sampledValue: [],
         timestamp: new Date(),
       }
       // SoC measurand
-      socSampledValueTemplate = getSampledValueTemplate(
-        chargingStation,
-        connectorId,
-        MeterValueMeasurand.STATE_OF_CHARGE
-      )
-      if (socSampledValueTemplate != null) {
-        const socMaximumValue = 100
-        const socMinimumValue = socSampledValueTemplate.minimumValue ?? 0
-        const socSampledValueTemplateValue = isNotEmptyString(socSampledValueTemplate.value)
-          ? getRandomFloatFluctuatedRounded(
-            Number.parseInt(socSampledValueTemplate.value),
-            socSampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
-          )
-          : randomInt(socMinimumValue, socMaximumValue + 1)
-        meterValue.sampledValue.push(
-          buildSampledValue(
-            chargingStation.stationInfo.ocppVersion,
-            socSampledValueTemplate,
-            socSampledValueTemplateValue
-          )
+      const socMeasurand = buildSocMeasurandValue(chargingStation, connectorId)
+      if (socMeasurand != null) {
+        const socSampledValue = buildSampledValue(
+          chargingStation.stationInfo.ocppVersion,
+          socMeasurand.template,
+          socMeasurand.value
         )
-        const sampledValuesIndex = meterValue.sampledValue.length - 1
-        if (
-          convertToInt(meterValue.sampledValue[sampledValuesIndex].value) > socMaximumValue ||
-          convertToInt(meterValue.sampledValue[sampledValuesIndex].value) < socMinimumValue ||
+        meterValue.sampledValue.push(socSampledValue)
+        logSocValidationError(
+          chargingStation,
+          connectorId,
+          socSampledValue,
+          socMeasurand.template.minimumValue ?? 0,
+          100,
           debug
-        ) {
-          logger.error(
-            `${chargingStation.logPrefix()} MeterValues measurand ${
-              meterValue.sampledValue[sampledValuesIndex].measurand ??
-              MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            }: connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${socMinimumValue.toString()}/${meterValue.sampledValue[
-              sampledValuesIndex
-            ].value.toString()}/${socMaximumValue.toString()}`
-          )
-        }
+        )
       }
       // Voltage measurand
-      voltageSampledValueTemplate = getSampledValueTemplate(
-        chargingStation,
-        connectorId,
-        MeterValueMeasurand.VOLTAGE
-      )
-      if (voltageSampledValueTemplate != null) {
-        const voltageSampledValueTemplateValue = isNotEmptyString(voltageSampledValueTemplate.value)
-          ? Number.parseInt(voltageSampledValueTemplate.value)
-          : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          chargingStation.stationInfo.voltageOut!
-        const fluctuationPercent =
-          voltageSampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
-        const voltageMeasurandValue = getRandomFloatFluctuatedRounded(
-          voltageSampledValueTemplateValue,
-          fluctuationPercent
-        )
-        if (
-          chargingStation.getNumberOfPhases() !== 3 ||
-          (chargingStation.getNumberOfPhases() === 3 &&
-            chargingStation.stationInfo.mainVoltageMeterValues === true)
-        ) {
-          meterValue.sampledValue.push(
-            buildSampledValue(
-              chargingStation.stationInfo.ocppVersion,
-              voltageSampledValueTemplate,
-              voltageMeasurandValue
-            )
-          )
-        }
+      const voltageMeasurand = buildVoltageMeasurandValue(chargingStation, connectorId)
+      if (voltageMeasurand != null) {
+        addMainVoltageToMeterValue(chargingStation, meterValue, voltageMeasurand)
         for (
           let phase = 1;
           chargingStation.getNumberOfPhases() === 3 && phase <= chargingStation.getNumberOfPhases();
           phase++
         ) {
-          const phaseLineToNeutralValue = `L${phase.toString()}-N`
-          const voltagePhaseLineToNeutralSampledValueTemplate = getSampledValueTemplate(
+          addPhaseVoltageToMeterValue(
             chargingStation,
             connectorId,
-            MeterValueMeasurand.VOLTAGE,
-            phaseLineToNeutralValue as MeterValuePhase
+            meterValue,
+            voltageMeasurand,
+            phase
           )
-          let voltagePhaseLineToNeutralMeasurandValue: number | undefined
-          if (voltagePhaseLineToNeutralSampledValueTemplate != null) {
-            const voltagePhaseLineToNeutralSampledValueTemplateValue = isNotEmptyString(
-              voltagePhaseLineToNeutralSampledValueTemplate.value
-            )
-              ? Number.parseInt(voltagePhaseLineToNeutralSampledValueTemplate.value)
-              : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              chargingStation.stationInfo.voltageOut!
-            const fluctuationPhaseToNeutralPercent =
-              voltagePhaseLineToNeutralSampledValueTemplate.fluctuationPercent ??
-              Constants.DEFAULT_FLUCTUATION_PERCENT
-            voltagePhaseLineToNeutralMeasurandValue = getRandomFloatFluctuatedRounded(
-              voltagePhaseLineToNeutralSampledValueTemplateValue,
-              fluctuationPhaseToNeutralPercent
-            )
-          }
-          meterValue.sampledValue.push(
-            buildSampledValue(
-              chargingStation.stationInfo.ocppVersion,
-              voltagePhaseLineToNeutralSampledValueTemplate ?? voltageSampledValueTemplate,
-              voltagePhaseLineToNeutralMeasurandValue ?? voltageMeasurandValue,
-              undefined,
-              phaseLineToNeutralValue as MeterValuePhase
-            )
+          addLineToLineVoltageToMeterValue(
+            chargingStation,
+            connectorId,
+            meterValue,
+            voltageMeasurand,
+            phase
           )
-          if (chargingStation.stationInfo.phaseLineToLineVoltageMeterValues === true) {
-            const phaseLineToLineValue = `L${phase.toString()}-L${
-              (phase + 1) % chargingStation.getNumberOfPhases() !== 0
-                ? ((phase + 1) % chargingStation.getNumberOfPhases()).toString()
-                : chargingStation.getNumberOfPhases().toString()
-            }`
-            const voltagePhaseLineToLineValueRounded = roundTo(
-              Math.sqrt(chargingStation.getNumberOfPhases()) *
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                chargingStation.stationInfo.voltageOut!,
-              2
-            )
-            const voltagePhaseLineToLineSampledValueTemplate = getSampledValueTemplate(
-              chargingStation,
-              connectorId,
-              MeterValueMeasurand.VOLTAGE,
-              phaseLineToLineValue as MeterValuePhase
-            )
-            let voltagePhaseLineToLineMeasurandValue: number | undefined
-            if (voltagePhaseLineToLineSampledValueTemplate != null) {
-              const voltagePhaseLineToLineSampledValueTemplateValue = isNotEmptyString(
-                voltagePhaseLineToLineSampledValueTemplate.value
-              )
-                ? Number.parseInt(voltagePhaseLineToLineSampledValueTemplate.value)
-                : voltagePhaseLineToLineValueRounded
-              const fluctuationPhaseLineToLinePercent =
-                voltagePhaseLineToLineSampledValueTemplate.fluctuationPercent ??
-                Constants.DEFAULT_FLUCTUATION_PERCENT
-              voltagePhaseLineToLineMeasurandValue = getRandomFloatFluctuatedRounded(
-                voltagePhaseLineToLineSampledValueTemplateValue,
-                fluctuationPhaseLineToLinePercent
-              )
-            }
-            const defaultVoltagePhaseLineToLineMeasurandValue = getRandomFloatFluctuatedRounded(
-              voltagePhaseLineToLineValueRounded,
-              fluctuationPercent
-            )
-            meterValue.sampledValue.push(
-              buildSampledValue(
-                chargingStation.stationInfo.ocppVersion,
-                voltagePhaseLineToLineSampledValueTemplate ?? voltageSampledValueTemplate,
-                voltagePhaseLineToLineMeasurandValue ?? defaultVoltagePhaseLineToLineMeasurandValue,
-                undefined,
-                phaseLineToLineValue as MeterValuePhase
-              )
-            )
-          }
         }
       }
       // Power.Active.Import measurand
@@ -1036,78 +1198,41 @@ export const buildMeterValue = (
         }
       }
       // Energy.Active.Import.Register measurand (default)
-      energySampledValueTemplate = getSampledValueTemplate(chargingStation, connectorId)
-      if (energySampledValueTemplate != null) {
-        checkMeasurandPowerDivider(chargingStation, energySampledValueTemplate.measurand)
+      const energyMeasurand = buildEnergyMeasurandValue(chargingStation, connectorId, interval)
+      if (energyMeasurand != null) {
+        updateConnectorEnergyValues(connector, energyMeasurand.value)
         const unitDivider =
-          energySampledValueTemplate.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1
-        connectorMaximumAvailablePower == null &&
-          (connectorMaximumAvailablePower =
-            chargingStation.getConnectorMaximumAvailablePower(connectorId))
+          energyMeasurand.template.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1
+        const energySampledValue = buildSampledValue(
+          chargingStation.stationInfo.ocppVersion,
+          energyMeasurand.template,
+          roundTo(
+            chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId) /
+              unitDivider,
+            2
+          )
+        )
+        meterValue.sampledValue.push(energySampledValue)
+        const connectorMaximumAvailablePower =
+          chargingStation.getConnectorMaximumAvailablePower(connectorId)
         const connectorMaximumEnergyRounded = roundTo(
           (connectorMaximumAvailablePower * interval) / (3600 * 1000),
           2
         )
-        const connectorMinimumEnergyRounded = roundTo(
-          energySampledValueTemplate.minimumValue ?? 0,
-          2
-        )
-        const energyValueRounded = isNotEmptyString(energySampledValueTemplate.value)
-          ? getRandomFloatFluctuatedRounded(
-            getLimitFromSampledValueTemplateCustomValue(
-              energySampledValueTemplate.value,
-              connectorMaximumEnergyRounded,
-              connectorMinimumEnergyRounded,
-              {
-                fallbackValue: connectorMinimumEnergyRounded,
-                limitationEnabled: chargingStation.stationInfo.customValueLimitationMeterValues,
-                unitMultiplier: unitDivider,
-              }
-            ),
-            energySampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
-          )
-          : getRandomFloatRounded(connectorMaximumEnergyRounded, connectorMinimumEnergyRounded)
-        if (connector != null) {
-          if (
-            connector.energyActiveImportRegisterValue != null &&
-            connector.energyActiveImportRegisterValue >= 0 &&
-            connector.transactionEnergyActiveImportRegisterValue != null &&
-            connector.transactionEnergyActiveImportRegisterValue >= 0
-          ) {
-            connector.energyActiveImportRegisterValue += energyValueRounded
-            connector.transactionEnergyActiveImportRegisterValue += energyValueRounded
-          } else {
-            connector.energyActiveImportRegisterValue = 0
-            connector.transactionEnergyActiveImportRegisterValue = 0
-          }
-        }
-        meterValue.sampledValue.push(
-          buildSampledValue(
-            chargingStation.stationInfo.ocppVersion,
-            energySampledValueTemplate,
-            roundTo(
-              chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId) /
-                unitDivider,
-              2
-            )
-          )
-        )
-        const sampledValuesIndex = meterValue.sampledValue.length - 1
-        if (
-          energyValueRounded > connectorMaximumEnergyRounded ||
-          energyValueRounded < connectorMinimumEnergyRounded ||
+        const connectorMinimumEnergyRounded = roundTo(energyMeasurand.template.minimumValue ?? 0, 2)
+        logEnergyValidationError(
+          chargingStation,
+          connectorId,
+          energySampledValue,
+          energyMeasurand.value,
+          connectorMinimumEnergyRounded,
+          connectorMaximumEnergyRounded,
+          interval,
           debug
-        ) {
-          logger.error(
-            `${chargingStation.logPrefix()} MeterValues measurand ${
-              meterValue.sampledValue[sampledValuesIndex].measurand ??
-              MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            }: connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${connectorMinimumEnergyRounded.toString()}/${energyValueRounded.toString()}/${connectorMaximumEnergyRounded.toString()}, duration: ${interval.toString()}ms`
-          )
-        }
+        )
       }
       return meterValue
+    }
     case OCPPVersion.VERSION_20:
     case OCPPVersion.VERSION_201: {
       const meterValue: OCPP20MeterValue = {
@@ -1115,231 +1240,81 @@ export const buildMeterValue = (
         timestamp: new Date(),
       }
       // SoC measurand
-      socSampledValueTemplate = getSampledValueTemplate(
-        chargingStation,
-        connectorId,
-        MeterValueMeasurand.STATE_OF_CHARGE
-      )
-      if (socSampledValueTemplate != null) {
-        const socMaximumValue = 100
-        const socMinimumValue = socSampledValueTemplate.minimumValue ?? 0
-        const socSampledValueTemplateValue = isNotEmptyString(socSampledValueTemplate.value)
-          ? getRandomFloatFluctuatedRounded(
-            Number.parseInt(socSampledValueTemplate.value),
-            socSampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
-          )
-          : randomInt(socMinimumValue, socMaximumValue + 1)
-        meterValue.sampledValue.push(
-          buildSampledValue(
-            chargingStation.stationInfo.ocppVersion,
-            socSampledValueTemplate,
-            socSampledValueTemplateValue
-          )
+      const socMeasurand = buildSocMeasurandValue(chargingStation, connectorId)
+      if (socMeasurand != null) {
+        const socSampledValue = buildSampledValue(
+          chargingStation.stationInfo.ocppVersion,
+          socMeasurand.template,
+          socMeasurand.value
         )
-        const sampledValuesIndex = meterValue.sampledValue.length - 1
-        if (
-          convertToInt(meterValue.sampledValue[sampledValuesIndex].value) > socMaximumValue ||
-          convertToInt(meterValue.sampledValue[sampledValuesIndex].value) < socMinimumValue ||
+        meterValue.sampledValue.push(socSampledValue)
+        logSocValidationError(
+          chargingStation,
+          connectorId,
+          socSampledValue,
+          socMeasurand.template.minimumValue ?? 0,
+          100,
           debug
-        ) {
-          logger.error(
-            `${chargingStation.logPrefix()} MeterValues measurand ${
-              meterValue.sampledValue[sampledValuesIndex].measurand ??
-              MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            }: connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${socMinimumValue.toString()}/${meterValue.sampledValue[
-              sampledValuesIndex
-            ].value.toString()}/${socMaximumValue.toString()}`
-          )
-        }
+        )
       }
       // Voltage measurand
-      voltageSampledValueTemplate = getSampledValueTemplate(
-        chargingStation,
-        connectorId,
-        MeterValueMeasurand.VOLTAGE
-      )
-      if (voltageSampledValueTemplate != null) {
-        const voltageSampledValueTemplateValue = isNotEmptyString(voltageSampledValueTemplate.value)
-          ? Number.parseInt(voltageSampledValueTemplate.value)
-          : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          chargingStation.stationInfo.voltageOut!
-        const fluctuationPercent =
-          voltageSampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
-        const voltageMeasurandValue = getRandomFloatFluctuatedRounded(
-          voltageSampledValueTemplateValue,
-          fluctuationPercent
-        )
-        if (
-          chargingStation.getNumberOfPhases() !== 3 ||
-          (chargingStation.getNumberOfPhases() === 3 &&
-            chargingStation.stationInfo.mainVoltageMeterValues === true)
-        ) {
-          meterValue.sampledValue.push(
-            buildSampledValue(
-              chargingStation.stationInfo.ocppVersion,
-              voltageSampledValueTemplate,
-              voltageMeasurandValue
-            )
-          )
-        }
+      const voltageMeasurand = buildVoltageMeasurandValue(chargingStation, connectorId)
+      if (voltageMeasurand != null) {
+        addMainVoltageToMeterValue(chargingStation, meterValue, voltageMeasurand)
         for (
           let phase = 1;
           chargingStation.getNumberOfPhases() === 3 && phase <= chargingStation.getNumberOfPhases();
           phase++
         ) {
-          const phaseLineToNeutralValue = `L${phase.toString()}-N`
-          const voltagePhaseLineToNeutralSampledValueTemplate = getSampledValueTemplate(
+          addPhaseVoltageToMeterValue(
             chargingStation,
             connectorId,
-            MeterValueMeasurand.VOLTAGE,
-            phaseLineToNeutralValue as MeterValuePhase
+            meterValue,
+            voltageMeasurand,
+            phase
           )
-          let voltagePhaseLineToNeutralMeasurandValue: number | undefined
-          if (voltagePhaseLineToNeutralSampledValueTemplate != null) {
-            const voltagePhaseLineToNeutralSampledValueTemplateValue = isNotEmptyString(
-              voltagePhaseLineToNeutralSampledValueTemplate.value
-            )
-              ? Number.parseInt(voltagePhaseLineToNeutralSampledValueTemplate.value)
-              : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              chargingStation.stationInfo.voltageOut!
-            const fluctuationPhaseToNeutralPercent =
-              voltagePhaseLineToNeutralSampledValueTemplate.fluctuationPercent ??
-              Constants.DEFAULT_FLUCTUATION_PERCENT
-            voltagePhaseLineToNeutralMeasurandValue = getRandomFloatFluctuatedRounded(
-              voltagePhaseLineToNeutralSampledValueTemplateValue,
-              fluctuationPhaseToNeutralPercent
-            )
-          }
-          meterValue.sampledValue.push(
-            buildSampledValue(
-              chargingStation.stationInfo.ocppVersion,
-              voltagePhaseLineToNeutralSampledValueTemplate ?? voltageSampledValueTemplate,
-              voltagePhaseLineToNeutralMeasurandValue ?? voltageMeasurandValue,
-              undefined,
-              phaseLineToNeutralValue as MeterValuePhase
-            )
+          addLineToLineVoltageToMeterValue(
+            chargingStation,
+            connectorId,
+            meterValue,
+            voltageMeasurand,
+            phase
           )
-          if (chargingStation.stationInfo.phaseLineToLineVoltageMeterValues === true) {
-            const phaseLineToLineValue = `L${phase.toString()}-L${
-              (phase + 1) % chargingStation.getNumberOfPhases() !== 0
-                ? ((phase + 1) % chargingStation.getNumberOfPhases()).toString()
-                : chargingStation.getNumberOfPhases().toString()
-            }`
-            const voltagePhaseLineToLineValueRounded = roundTo(
-              Math.sqrt(chargingStation.getNumberOfPhases()) *
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                chargingStation.stationInfo.voltageOut!,
-              2
-            )
-            const voltagePhaseLineToLineSampledValueTemplate = getSampledValueTemplate(
-              chargingStation,
-              connectorId,
-              MeterValueMeasurand.VOLTAGE,
-              phaseLineToLineValue as MeterValuePhase
-            )
-            let voltagePhaseLineToLineMeasurandValue: number | undefined
-            if (voltagePhaseLineToLineSampledValueTemplate != null) {
-              const voltagePhaseLineToLineSampledValueTemplateValue = isNotEmptyString(
-                voltagePhaseLineToLineSampledValueTemplate.value
-              )
-                ? Number.parseInt(voltagePhaseLineToLineSampledValueTemplate.value)
-                : voltagePhaseLineToLineValueRounded
-              const fluctuationPhaseLineToLinePercent =
-                voltagePhaseLineToLineSampledValueTemplate.fluctuationPercent ??
-                Constants.DEFAULT_FLUCTUATION_PERCENT
-              voltagePhaseLineToLineMeasurandValue = getRandomFloatFluctuatedRounded(
-                voltagePhaseLineToLineSampledValueTemplateValue,
-                fluctuationPhaseLineToLinePercent
-              )
-            }
-            const defaultVoltagePhaseLineToLineMeasurandValue = getRandomFloatFluctuatedRounded(
-              voltagePhaseLineToLineValueRounded,
-              fluctuationPercent
-            )
-            meterValue.sampledValue.push(
-              buildSampledValue(
-                chargingStation.stationInfo.ocppVersion,
-                voltagePhaseLineToLineSampledValueTemplate ?? voltageSampledValueTemplate,
-                voltagePhaseLineToLineMeasurandValue ?? defaultVoltagePhaseLineToLineMeasurandValue,
-                undefined,
-                phaseLineToLineValue as MeterValuePhase
-              )
-            )
-          }
         }
       }
       // Energy.Active.Import.Register measurand
-      energySampledValueTemplate = getSampledValueTemplate(chargingStation, connectorId)
-      if (energySampledValueTemplate != null) {
-        checkMeasurandPowerDivider(chargingStation, energySampledValueTemplate.measurand)
+      const energyMeasurand = buildEnergyMeasurandValue(chargingStation, connectorId, interval)
+      if (energyMeasurand != null) {
+        updateConnectorEnergyValues(connector, energyMeasurand.value)
         const unitDivider =
-          energySampledValueTemplate.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1
-        connectorMaximumAvailablePower == null &&
-          (connectorMaximumAvailablePower =
-            chargingStation.getConnectorMaximumAvailablePower(connectorId))
+          energyMeasurand.template.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1
+        const energySampledValue = buildSampledValue(
+          chargingStation.stationInfo.ocppVersion,
+          energyMeasurand.template,
+          roundTo(
+            chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId) /
+              unitDivider,
+            2
+          )
+        )
+        meterValue.sampledValue.push(energySampledValue)
+        const connectorMaximumAvailablePower =
+          chargingStation.getConnectorMaximumAvailablePower(connectorId)
         const connectorMaximumEnergyRounded = roundTo(
           (connectorMaximumAvailablePower * interval) / (3600 * 1000),
           2
         )
-        const connectorMinimumEnergyRounded = roundTo(
-          energySampledValueTemplate.minimumValue ?? 0,
-          2
-        )
-        const energyValueRounded = isNotEmptyString(energySampledValueTemplate.value)
-          ? getRandomFloatFluctuatedRounded(
-            getLimitFromSampledValueTemplateCustomValue(
-              energySampledValueTemplate.value,
-              connectorMaximumEnergyRounded,
-              connectorMinimumEnergyRounded,
-              {
-                fallbackValue: connectorMinimumEnergyRounded,
-                limitationEnabled: chargingStation.stationInfo.customValueLimitationMeterValues,
-                unitMultiplier: unitDivider,
-              }
-            ),
-            energySampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
-          )
-          : getRandomFloatRounded(connectorMaximumEnergyRounded, connectorMinimumEnergyRounded)
-        if (connector != null) {
-          if (
-            connector.energyActiveImportRegisterValue != null &&
-            connector.energyActiveImportRegisterValue >= 0 &&
-            connector.transactionEnergyActiveImportRegisterValue != null &&
-            connector.transactionEnergyActiveImportRegisterValue >= 0
-          ) {
-            connector.energyActiveImportRegisterValue += energyValueRounded
-            connector.transactionEnergyActiveImportRegisterValue += energyValueRounded
-          } else {
-            connector.energyActiveImportRegisterValue = 0
-            connector.transactionEnergyActiveImportRegisterValue = 0
-          }
-        }
-        meterValue.sampledValue.push(
-          buildSampledValue(
-            chargingStation.stationInfo.ocppVersion,
-            energySampledValueTemplate,
-            roundTo(
-              chargingStation.getEnergyActiveImportRegisterByTransactionId(transactionId) /
-                unitDivider,
-              2
-            )
-          )
-        )
-        const sampledValuesIndex = meterValue.sampledValue.length - 1
-        if (
-          energyValueRounded > connectorMaximumEnergyRounded ||
-          energyValueRounded < connectorMinimumEnergyRounded ||
+        const connectorMinimumEnergyRounded = roundTo(energyMeasurand.template.minimumValue ?? 0, 2)
+        logEnergyValidationError(
+          chargingStation,
+          connectorId,
+          energySampledValue,
+          energyMeasurand.value,
+          connectorMinimumEnergyRounded,
+          connectorMaximumEnergyRounded,
+          interval,
           debug
-        ) {
-          logger.error(
-            `${chargingStation.logPrefix()} MeterValues measurand ${
-              meterValue.sampledValue[sampledValuesIndex].measurand ??
-              MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
-              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            }: connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${connectorMinimumEnergyRounded.toString()}/${energyValueRounded.toString()}/${connectorMaximumEnergyRounded.toString()}, duration: ${interval.toString()}ms`
-          )
-        }
+        )
       }
       return meterValue
     }
