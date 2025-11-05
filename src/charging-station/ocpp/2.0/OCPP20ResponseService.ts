@@ -16,6 +16,8 @@ import {
   type OCPP20NotifyReportResponse,
   OCPP20OptionalVariableName,
   OCPP20RequestCommand,
+  type OCPP20RequestStartTransactionResponse,
+  type OCPP20RequestStopTransactionResponse,
   type OCPP20StatusNotificationResponse,
   OCPPVersion,
   RegistrationStatusEnumType,
@@ -111,6 +113,26 @@ export class OCPP20ResponseService extends OCPPResponseService {
         this.ajvIncomingRequest.compile(
           OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20GetBaseReportResponse>(
             'assets/json-schemas/ocpp/2.0/GetBaseReportResponse.json',
+            moduleName,
+            'constructor'
+          )
+        ),
+      ],
+      [
+        OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
+        this.ajvIncomingRequest.compile(
+          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20RequestStartTransactionResponse>(
+            'assets/json-schemas/ocpp/2.0/RequestStartTransactionResponse.json',
+            moduleName,
+            'constructor'
+          )
+        ),
+      ],
+      [
+        OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION,
+        this.ajvIncomingRequest.compile(
+          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20RequestStopTransactionResponse>(
+            'assets/json-schemas/ocpp/2.0/RequestStopTransactionResponse.json',
             moduleName,
             'constructor'
           )

@@ -396,7 +396,9 @@ export class ChargingStation extends EventEmitter {
     return Constants.DEFAULT_CONNECTION_TIMEOUT
   }
 
-  public getConnectorIdByTransactionId (transactionId: number | undefined): number | undefined {
+  public getConnectorIdByTransactionId (
+    transactionId: number | string | undefined
+  ): number | undefined {
     if (transactionId == null) {
       return undefined
     } else if (this.hasEvses) {
@@ -475,7 +477,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   public getEnergyActiveImportRegisterByTransactionId (
-    transactionId: number | undefined,
+    transactionId: number | string | undefined,
     rounded = false
   ): number {
     return this.getEnergyActiveImportRegister(

@@ -16,6 +16,7 @@ import {
   DataEnumType,
   ErrorType,
   GenericDeviceModelStatusEnumType,
+  GenericStatus,
   GetVariableStatusEnumType,
   type IncomingRequestHandler,
   type JsonType,
@@ -33,6 +34,8 @@ import {
   OCPP20RequestCommand,
   type OCPP20RequestStartTransactionRequest,
   type OCPP20RequestStartTransactionResponse,
+  type OCPP20RequestStopTransactionRequest,
+  type OCPP20RequestStopTransactionResponse,
   OCPP20RequiredVariableName,
   type OCPP20ResetRequest,
   type OCPP20ResetResponse,
@@ -49,7 +52,13 @@ import {
   StopTransactionReason,
 } from '../../../types/index.js'
 import { StandardParametersKey } from '../../../types/ocpp/Configuration.js'
-import { convertToIntOrNaN, generateUUID, isAsyncFunction, logger } from '../../../utils/index.js'
+import {
+  convertToIntOrNaN,
+  generateUUID,
+  isAsyncFunction,
+  logger,
+  validateUUID,
+} from '../../../utils/index.js'
 import { getConfigurationKey } from '../../ConfigurationKeyUtils.js'
 import { resetConnectorStatus } from '../../Helpers.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
@@ -94,6 +103,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         this.handleRequestRequestStartTransaction.bind(this) as unknown as IncomingRequestHandler,
       ],
       [
+        OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION,
+        this.handleRequestRequestStopTransaction.bind(this) as unknown as IncomingRequestHandler,
+      ],
+      [
         OCPP20IncomingRequestCommand.RESET,
         this.handleRequestReset.bind(this) as unknown as IncomingRequestHandler,
       ],
@@ -131,6 +144,16 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         this.ajv.compile(
           OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20GetVariablesRequest>(
             'assets/json-schemas/ocpp/2.0/GetVariablesRequest.json',
+            moduleName,
+            'constructor'
+          )
+        ),
+      ],
+      [
+        OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION,
+        this.ajv.compile(
+          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20RequestStopTransactionRequest>(
+            'assets/json-schemas/ocpp/2.0/RequestStopTransactionRequest.json',
             moduleName,
             'constructor'
           )
@@ -1058,6 +1081,67 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return {
         status: RequestStartStopStatusEnumType.Rejected,
         transactionId: generateUUID(),
+      }
+    }
+  }
+
+  private async handleRequestRequestStopTransaction (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20RequestStopTransactionRequest
+  ): Promise<OCPP20RequestStopTransactionResponse> {
+    const { transactionId } = commandPayload
+    logger.info(
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestRequestStopTransaction: Remote stop transaction request received for transaction ID ${transactionId}`
+    )
+
+    if (!validateUUID(transactionId)) {
+      logger.warn(
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestRequestStopTransaction: Invalid transaction ID format (expected UUID): ${transactionId}`
+      )
+      return {
+        status: RequestStartStopStatusEnumType.Rejected,
+      }
+    }
+
+    const connectorId = chargingStation.getConnectorIdByTransactionId(transactionId)
+    if (connectorId == null) {
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestRequestStopTransaction: Transaction ID ${transactionId} not found on any connector`
+      )
+      return {
+        status: RequestStartStopStatusEnumType.Rejected,
+      }
+    }
+
+    try {
+      const stopResponse = await OCPP20ServiceUtils.requestStopTransaction(
+        chargingStation,
+        connectorId
+      )
+
+      if (stopResponse.status === GenericStatus.Accepted) {
+        logger.info(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestRequestStopTransaction: Remote stop transaction accepted for transaction ID ${transactionId} on connector ${connectorId.toString()}`
+        )
+        return {
+          status: RequestStartStopStatusEnumType.Accepted,
+        }
+      }
+
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestRequestStopTransaction: Remote stop transaction rejected for transaction ID ${transactionId} on connector ${connectorId.toString()}`
+      )
+      return {
+        status: RequestStartStopStatusEnumType.Rejected,
+      }
+    } catch (error) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestRequestStopTransaction: Error occurred during remote stop transaction for transaction ID ${transactionId} on connector ${connectorId.toString()}:`,
+        error
+      )
+      return {
+        status: RequestStartStopStatusEnumType.Rejected,
       }
     }
   }

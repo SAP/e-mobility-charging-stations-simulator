@@ -2,8 +2,22 @@
 
 import type { JSONSchemaType } from 'ajv'
 
-import { type JsonType, OCPPVersion } from '../../../types/index.js'
-import { OCPPServiceUtils } from '../OCPPServiceUtils.js'
+import type { ChargingStation } from '../../../charging-station/index.js'
+
+import {
+  ConnectorStatusEnum,
+  type GenericResponse,
+  type JsonType,
+  OCPP20RequestCommand,
+  OCPP20TransactionEventEnumType,
+  type OCPP20TransactionEventRequest,
+  OCPP20TriggerReasonEnumType,
+  OCPPVersion,
+} from '../../../types/index.js'
+import { OCPP20ReasonEnumType } from '../../../types/ocpp/2.0/Transaction.js'
+import { logger, validateUUID } from '../../../utils/index.js'
+import { OCPPServiceUtils, sendAndSetConnectorStatus } from '../OCPPServiceUtils.js'
+import { OCPP20Constants } from './OCPP20Constants.js'
 
 export class OCPP20ServiceUtils extends OCPPServiceUtils {
   public static enforceMessageLimits<
@@ -93,5 +107,55 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       moduleName,
       methodName
     )
+  }
+
+  public static requestStopTransaction = async (
+    chargingStation: ChargingStation,
+    connectorId: number
+  ): Promise<GenericResponse> => {
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+    if (connectorStatus?.transactionStarted && connectorStatus.transactionId != null) {
+      // OCPP 2.0 validation: transactionId should be a valid UUID format
+      let transactionId: string
+      if (typeof connectorStatus.transactionId === 'string') {
+        transactionId = connectorStatus.transactionId
+      } else {
+        transactionId = connectorStatus.transactionId.toString()
+        logger.warn(
+          `${chargingStation.logPrefix()} OCPP20ServiceUtils.remoteStopTransaction: Non-string transaction ID ${transactionId} converted to string for OCPP 2.0`
+        )
+      }
+
+      if (!validateUUID(transactionId)) {
+        logger.error(
+          `${chargingStation.logPrefix()} OCPP20ServiceUtils.remoteStopTransaction: Invalid transaction ID format (expected UUID): ${transactionId}`
+        )
+        return OCPP20Constants.OCPP_RESPONSE_REJECTED
+      }
+
+      const transactionEventRequest: OCPP20TransactionEventRequest = {
+        eventType: OCPP20TransactionEventEnumType.Ended,
+        evse: {
+          id: connectorId,
+        },
+        seqNo: 0, // This should be managed by the transaction sequence
+        timestamp: new Date(),
+        transactionInfo: {
+          stoppedReason: OCPP20ReasonEnumType.Remote,
+          transactionId,
+        },
+        triggerReason: OCPP20TriggerReasonEnumType.RemoteStop,
+      }
+
+      await chargingStation.ocppRequestService.requestHandler<
+        OCPP20TransactionEventRequest,
+        OCPP20TransactionEventRequest
+      >(chargingStation, OCPP20RequestCommand.TRANSACTION_EVENT, transactionEventRequest)
+
+      await sendAndSetConnectorStatus(chargingStation, connectorId, ConnectorStatusEnum.Available)
+
+      return OCPP20Constants.OCPP_RESPONSE_ACCEPTED
+    }
+    return OCPP20Constants.OCPP_RESPONSE_REJECTED
   }
 }

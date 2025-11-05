@@ -34,6 +34,7 @@ export enum OCPP20RequestCommand {
   HEARTBEAT = 'Heartbeat',
   NOTIFY_REPORT = 'NotifyReport',
   STATUS_NOTIFICATION = 'StatusNotification',
+  TRANSACTION_EVENT = 'TransactionEvent',
 }
 
 export interface OCPP20BootNotificationRequest extends JsonObject {
@@ -79,6 +80,11 @@ export interface OCPP20RequestStartTransactionRequest extends JsonObject {
   groupIdToken?: OCPP20IdTokenType
   idToken: OCPP20IdTokenType
   remoteStartId: number
+}
+
+export interface OCPP20RequestStopTransactionRequest extends JsonObject {
+  customData?: CustomDataType
+  transactionId: `${string}-${string}-${string}-${string}-${string}`
 }
 
 export interface OCPP20ResetRequest extends JsonObject {

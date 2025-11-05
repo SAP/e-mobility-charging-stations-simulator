@@ -78,6 +78,25 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
     },
     evses,
     getConnectionTimeout: () => connectionTimeout,
+    getConnectorIdByTransactionId: (transactionId: string) => {
+      // Search through connectors to find one with matching transaction ID
+      if (chargingStation.hasEvses) {
+        for (const evseStatus of chargingStation.evses.values()) {
+          for (const [connectorId, connectorStatus] of evseStatus.connectors.entries()) {
+            if (connectorStatus.transactionId === transactionId) {
+              return connectorId
+            }
+          }
+        }
+      } else {
+        for (const [connectorId, connectorStatus] of chargingStation.connectors.entries()) {
+          if (connectorStatus.transactionId === transactionId) {
+            return connectorId
+          }
+        }
+      }
+      return undefined
+    },
     getConnectorStatus: (connectorId: number) => {
       if (chargingStation.hasEvses) {
         for (const evseStatus of chargingStation.evses.values()) {
@@ -89,6 +108,19 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
       }
       return chargingStation.connectors.get(connectorId)
     },
+    getEvseIdByTransactionId: (transactionId: string) => {
+      // Search through EVSEs to find one with matching transaction ID
+      if (chargingStation.hasEvses) {
+        for (const [evseId, evseStatus] of chargingStation.evses.entries()) {
+          for (const connectorStatus of evseStatus.connectors.values()) {
+            if (connectorStatus.transactionId === transactionId) {
+              return evseId
+            }
+          }
+        }
+      }
+      return undefined
+    },
     getHeartbeatInterval: () => heartbeatInterval,
     getWebSocketPingInterval: () => websocketPingInterval,
     hasEvses: useEvses,
@@ -96,6 +128,13 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
     inAcceptedState: (): boolean => {
       return (
         chargingStation.bootNotificationResponse?.status === RegistrationStatusEnumType.ACCEPTED
+      )
+    },
+    isConnectorAvailable: (connectorId: number) => {
+      const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+      return (
+        connectorStatus?.availability === AvailabilityType.Operative &&
+        connectorStatus.status === ConnectorStatusEnum.Available
       )
     },
     logPrefix: (): string => {
