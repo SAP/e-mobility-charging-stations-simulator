@@ -78,7 +78,10 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
     },
     evses,
     getConnectionTimeout: () => connectionTimeout,
-    getConnectorIdByTransactionId: (transactionId: string) => {
+    getConnectorIdByTransactionId: (transactionId: number | string | undefined) => {
+      if (transactionId == null) {
+        return undefined
+      }
       // Search through connectors to find one with matching transaction ID
       if (chargingStation.hasEvses) {
         for (const evseStatus of chargingStation.evses.values()) {
@@ -131,10 +134,9 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
       )
     },
     isConnectorAvailable: (connectorId: number) => {
-      const connectorStatus = chargingStation.getConnectorStatus(connectorId)
       return (
-        connectorStatus?.availability === AvailabilityType.Operative &&
-        connectorStatus.status === ConnectorStatusEnum.Available
+        connectorId > 0 &&
+        chargingStation.getConnectorStatus(connectorId)?.availability === AvailabilityType.Operative
       )
     },
     logPrefix: (): string => {
