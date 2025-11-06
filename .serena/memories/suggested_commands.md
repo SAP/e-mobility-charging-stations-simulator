@@ -5,7 +5,7 @@
 ### Package Management
 
 ```bash
-pnpm install                 # Install dependencies
+pnpm install                # Install dependencies
 pnpm clean:node_modules     # Clean node_modules
 ```
 
@@ -39,8 +39,7 @@ pnpm coverage:html          # Generate HTML coverage report
 
 ```bash
 pnpm lint                   # Run linter
-pnpm lint:fix               # Fix linting issues
-pnpm format                 # Format code with Prettier and fix ESLint issues
+pnpm format                 # Format with Prettier and lint with ESLint with autofixes
 ```
 
 ### UI Development

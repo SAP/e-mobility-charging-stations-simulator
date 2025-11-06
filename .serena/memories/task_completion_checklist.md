@@ -4,8 +4,7 @@
 
 ### 1. Code Quality Checks
 
-- [ ] Run `pnpm lint` to check for linting issues
-- [ ] Run `pnpm format` to format code and fix auto-fixable issues
+- [ ] Run `pnpm format` to format code, fix autofixable issues and check for remaining linting issues
 - [ ] Ensure TypeScript compilation passes (part of build process)
 
 ### 2. Testing
