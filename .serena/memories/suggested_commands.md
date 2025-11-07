@@ -39,7 +39,7 @@ pnpm coverage:html          # Generate HTML coverage report
 
 ```bash
 pnpm lint                   # Run linter
-pnpm format                 # Format with Prettier and lint with ESLint with autofixes
+pnpm format                 # Format with Prettier and lint with ESLint and autofixes
 ```
 
 ### UI Development
