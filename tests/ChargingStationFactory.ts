@@ -111,6 +111,17 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
       }
       return chargingStation.connectors.get(connectorId)
     },
+    getEvseIdByConnectorId: (connectorId: number) => {
+      if (!chargingStation.hasEvses) {
+        return undefined
+      }
+      for (const [evseId, evseStatus] of chargingStation.evses.entries()) {
+        if (evseStatus.connectors.has(connectorId)) {
+          return evseId
+        }
+      }
+      return undefined
+    },
     getEvseIdByTransactionId: (transactionId: string) => {
       // Search through EVSEs to find one with matching transaction ID
       if (chargingStation.hasEvses) {

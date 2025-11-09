@@ -487,6 +487,18 @@ export class ChargingStation extends EventEmitter {
     )
   }
 
+  public getEvseIdByConnectorId (connectorId: number): number | undefined {
+    if (!this.hasEvses) {
+      return undefined
+    }
+    for (const [evseId, evseStatus] of this.evses) {
+      if (evseStatus.connectors.has(connectorId)) {
+        return evseId
+      }
+    }
+    return undefined
+  }
+
   public getHeartbeatInterval (): number {
     const HeartbeatInterval = getConfigurationKey(this, StandardParametersKey.HeartbeatInterval)
     if (HeartbeatInterval != null) {

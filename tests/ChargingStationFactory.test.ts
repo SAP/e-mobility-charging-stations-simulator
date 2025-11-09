@@ -469,6 +469,61 @@ await describe('ChargingStationFactory', async () => {
       })
     })
 
+    await describe('getEvseIdByConnectorId', async () => {
+      await it('Should return undefined for stations without EVSEs', () => {
+        const station = createChargingStation({
+          connectorsCount: 3,
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_16 }, // OCPP 1.6 doesn't use EVSEs
+        })
+
+        expect(station.getEvseIdByConnectorId(1)).toBeUndefined()
+        expect(station.getEvseIdByConnectorId(2)).toBeUndefined()
+      })
+
+      await it('Should return correct EVSE ID for connectors in EVSE mode', () => {
+        const station = createChargingStation({
+          connectorsCount: 6,
+          evseConfiguration: { evsesCount: 2 }, // 2 EVSEs with 3 connectors each
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        })
+
+        // EVSE 1 should have connectors 1, 2, 3
+        expect(station.getEvseIdByConnectorId(1)).toBe(1)
+        expect(station.getEvseIdByConnectorId(2)).toBe(1)
+        expect(station.getEvseIdByConnectorId(3)).toBe(1)
+
+        // EVSE 2 should have connectors 4, 5, 6
+        expect(station.getEvseIdByConnectorId(4)).toBe(2)
+        expect(station.getEvseIdByConnectorId(5)).toBe(2)
+        expect(station.getEvseIdByConnectorId(6)).toBe(2)
+      })
+
+      await it('Should return undefined for non-existent connector IDs', () => {
+        const station = createChargingStation({
+          connectorsCount: 4,
+          evseConfiguration: { evsesCount: 2 },
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        })
+
+        expect(station.getEvseIdByConnectorId(0)).toBeUndefined() // Connector 0 not in EVSEs
+        expect(station.getEvseIdByConnectorId(99)).toBeUndefined() // Non-existent connector
+        expect(station.getEvseIdByConnectorId(-1)).toBeUndefined() // Invalid connector ID
+      })
+
+      await it('Should handle single EVSE with multiple connectors', () => {
+        const station = createChargingStation({
+          connectorsCount: 3,
+          evseConfiguration: { evsesCount: 1 }, // Single EVSE with all connectors
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        })
+
+        // All connectors should belong to EVSE 1
+        expect(station.getEvseIdByConnectorId(1)).toBe(1)
+        expect(station.getEvseIdByConnectorId(2)).toBe(1)
+        expect(station.getEvseIdByConnectorId(3)).toBe(1)
+      })
+    })
+
     await describe('isConnectorAvailable', async () => {
       await it('Should return false for connector ID 0', () => {
         const station = createChargingStation({ connectorsCount: 2 })

@@ -114,7 +114,7 @@ const buildStatusNotificationRequest = (
         connectorId,
         connectorStatus: status as OCPP20ConnectorStatusEnumType,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        evseId: evseId!,
+        evseId: evseId ?? chargingStation.getEvseIdByConnectorId(connectorId)!,
         timestamp: new Date(),
       } satisfies OCPP20StatusNotificationRequest
     default:

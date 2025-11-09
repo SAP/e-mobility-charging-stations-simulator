@@ -109,7 +109,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     )
   }
 
-  public static async requestStopTransaction(
+  public static async requestStopTransaction (
     chargingStation: ChargingStation,
     connectorId: number
   ): Promise<GenericResponse> {
@@ -133,10 +133,18 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         return OCPP20Constants.OCPP_RESPONSE_REJECTED
       }
 
+      const evseId = chargingStation.getEvseIdByConnectorId(connectorId)
+      if (evseId == null) {
+        logger.error(
+          `${chargingStation.logPrefix()} OCPP20ServiceUtils.requestStopTransaction: Cannot find EVSE ID for connector ${connectorId.toString()}`
+        )
+        return OCPP20Constants.OCPP_RESPONSE_REJECTED
+      }
+
       const transactionEventRequest: OCPP20TransactionEventRequest = {
         eventType: OCPP20TransactionEventEnumType.Ended,
         evse: {
-          id: connectorId,
+          id: evseId,
         },
         seqNo: 0, // This should be managed by the transaction sequence
         timestamp: new Date(),
