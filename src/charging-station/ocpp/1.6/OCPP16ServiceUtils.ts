@@ -42,6 +42,8 @@ import { convertToDate, isNotEmptyArray, logger, roundTo } from '../../../utils/
 import { OCPPServiceUtils } from '../OCPPServiceUtils.js'
 import { OCPP16Constants } from './OCPP16Constants.js'
 
+const moduleName = 'OCPP16ServiceUtils'
+
 export class OCPP16ServiceUtils extends OCPPServiceUtils {
   public static buildTransactionBeginMeterValue (
     chargingStation: ChargingStation,
@@ -119,7 +121,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
   ): boolean {
     if (!hasFeatureProfile(chargingStation, featureProfile)) {
       logger.warn(
-        `${chargingStation.logPrefix()} Trying to '${command}' without '${featureProfile}' feature enabled in ${
+        `${chargingStation.logPrefix()} ${moduleName}.checkFeatureProfile: Trying to '${command}' without '${featureProfile}' feature enabled in ${
           OCPP16StandardParametersKey.SupportedFeatureProfiles
         } in configuration`
       )
@@ -159,7 +161,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
         if (clearCurrentCP) {
           chargingProfiles.splice(index, 1)
           logger.debug(
-            `${chargingStation.logPrefix()} Matching charging profile(s) cleared: %j`,
+            `${chargingStation.logPrefix()} ${moduleName}.clearChargingProfiles: Matching charging profile(s) cleared: %j`,
             chargingProfile
           )
           clearedCP = true
@@ -396,7 +398,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
         chargingStationReservation.idTag === idTag)
     ) {
       logger.debug(
-        `${chargingStation.logPrefix()} Connector id ${connectorId.toString()} has a valid reservation for idTag ${idTag}: %j`,
+        `${chargingStation.logPrefix()} ${moduleName}.hasReservation: Connector id ${connectorId.toString()} has a valid reservation for idTag ${idTag}: %j`,
         connectorReservation ?? chargingStationReservation
       )
       return true
@@ -450,14 +452,14 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
   ): void {
     if (chargingStation.getConnectorStatus(connectorId)?.chargingProfiles == null) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to set a charging profile on connector id ${connectorId.toString()} with an uninitialized charging profiles array attribute, applying deferred initialization`
+        `${chargingStation.logPrefix()} ${moduleName}.setChargingProfile: Trying to set a charging profile on connector id ${connectorId.toString()} with an uninitialized charging profiles array attribute, applying deferred initialization`
       )
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       chargingStation.getConnectorStatus(connectorId)!.chargingProfiles = []
     }
     if (!Array.isArray(chargingStation.getConnectorStatus(connectorId)?.chargingProfiles)) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to set a charging profile on connector id ${connectorId.toString()} with an improper attribute type for the charging profiles array, applying proper type deferred initialization`
+        `${chargingStation.logPrefix()} ${moduleName}.setChargingProfile: Trying to set a charging profile on connector id ${connectorId.toString()} with an improper attribute type for the charging profiles array, applying proper type deferred initialization`
       )
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       chargingStation.getConnectorStatus(connectorId)!.chargingProfiles = []

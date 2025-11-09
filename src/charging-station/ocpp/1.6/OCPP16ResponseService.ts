@@ -480,7 +480,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       if (payload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED) {
         authorizeConnectorStatus.idTagAuthorized = true
         logger.debug(
-          `${chargingStation.logPrefix()} idTag '${
+          `${chargingStation.logPrefix()} ${moduleName}.handleResponseAuthorize: idTag '${
             requestPayload.idTag
           }' accepted on connector id ${authorizeConnectorId.toString()}`
         )
@@ -488,14 +488,14 @@ export class OCPP16ResponseService extends OCPPResponseService {
         authorizeConnectorStatus.idTagAuthorized = false
         delete authorizeConnectorStatus.authorizeIdTag
         logger.debug(
-          `${chargingStation.logPrefix()} idTag '${
+          `${chargingStation.logPrefix()} ${moduleName}.handleResponseAuthorize: idTag '${
             requestPayload.idTag
           }' rejected with status '${payload.idTagInfo.status}'`
         )
       }
     } else {
       logger.error(
-        `${chargingStation.logPrefix()} idTag '${
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseAuthorize: idTag '${
           requestPayload.idTag
         }' has no authorize request pending`
       )
@@ -532,7 +532,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       } else if (chargingStation.inRejectedState()) {
         chargingStation.emitChargingStationEvent(ChargingStationEvents.rejected)
       }
-      const logMsg = `${chargingStation.logPrefix()} Charging station in '${
+      const logMsg = `${chargingStation.logPrefix()} ${moduleName}.handleResponseBootNotification: Charging station in '${
         payload.status
       }' state on the central server`
       payload.status === RegistrationStatusEnumType.REJECTED
@@ -541,7 +541,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     } else {
       delete chargingStation.bootNotificationResponse
       logger.error(
-        `${chargingStation.logPrefix()} Charging station boot notification response received: %j with undefined registration status`,
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseBootNotification: Charging station boot notification response received: %j with undefined registration status`,
         payload
       )
     }
@@ -555,7 +555,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     const { connectorId } = requestPayload
     if (connectorId === 0 || !chargingStation.hasConnector(connectorId)) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to start a transaction on a non existing connector id ${connectorId.toString()}`
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Trying to start a transaction on a non existing connector id ${connectorId.toString()}`
       )
       return
     }
@@ -568,7 +568,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       connectorStatus.idTagLocalAuthorized === false
     ) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to start a transaction with a not local authorized idTag ${
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Trying to start a transaction with a not local authorized idTag ${
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           connectorStatus.localAuthorizeIdTag
         } on connector id ${connectorId.toString()}`
@@ -584,7 +584,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       connectorStatus.idTagAuthorized === false
     ) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to start a transaction with a not authorized idTag ${
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Trying to start a transaction with a not authorized idTag ${
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           connectorStatus.authorizeIdTag
         } on connector id ${connectorId.toString()}`
@@ -598,7 +598,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       connectorStatus.authorizeIdTag !== requestPayload.idTag
     ) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to start a transaction with an idTag ${
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Trying to start a transaction with an idTag ${
           requestPayload.idTag
         } different from the authorize request one ${
           connectorStatus.authorizeIdTag
@@ -613,7 +613,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       connectorStatus.localAuthorizeIdTag !== requestPayload.idTag
     ) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to start a transaction with an idTag ${
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Trying to start a transaction with an idTag ${
           requestPayload.idTag
         } different from the local authorized one ${
           connectorStatus.localAuthorizeIdTag
@@ -624,7 +624,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     }
     if (connectorStatus?.transactionStarted === true) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to start a transaction on an already used connector id ${connectorId.toString()} by idTag ${
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Trying to start a transaction on an already used connector id ${connectorId.toString()} by idTag ${
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           connectorStatus.transactionIdTag
         }`
@@ -637,7 +637,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
           for (const [id, status] of evseStatus.connectors) {
             if (id !== connectorId && status.transactionStarted === true) {
               logger.error(
-                `${chargingStation.logPrefix()} Trying to start a transaction on an already used evse id ${evseId.toString()} by connector id ${id.toString()} with idTag ${
+                `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Trying to start a transaction on an already used evse id ${evseId.toString()} by connector id ${id.toString()} with idTag ${
                   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                   status.transactionIdTag
                 }`
@@ -654,7 +654,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       connectorStatus?.status !== OCPP16ChargePointStatus.Preparing
     ) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to start a transaction on connector id ${connectorId.toString()} with status ${
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Trying to start a transaction on connector id ${connectorId.toString()} with status ${
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           connectorStatus?.status
         }`
@@ -663,7 +663,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     }
     if (!Number.isSafeInteger(payload.transactionId)) {
       logger.warn(
-        `${chargingStation.logPrefix()} Trying to start a transaction on connector id ${connectorId.toString()} with a non integer transaction id ${payload.transactionId.toString()}, converting to integer`
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Trying to start a transaction on connector id ${connectorId.toString()} with a non integer transaction id ${payload.transactionId.toString()}, converting to integer`
       )
       payload.transactionId = convertToInt(payload.transactionId)
     }
@@ -688,14 +688,14 @@ export class OCPP16ResponseService extends OCPPResponseService {
         if (reservation != null) {
           if (reservation.idTag !== requestPayload.idTag) {
             logger.warn(
-              `${chargingStation.logPrefix()} Reserved transaction ${payload.transactionId.toString()} started with a different idTag ${
+              `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Reserved transaction ${payload.transactionId.toString()} started with a different idTag ${
                 requestPayload.idTag
               } than the reservation one ${reservation.idTag}`
             )
           }
           if (hasReservationExpired(reservation)) {
             logger.warn(
-              `${chargingStation.logPrefix()} Reserved transaction ${payload.transactionId.toString()} started with expired reservation ${requestPayload.reservationId.toString()} (expiry date: ${reservation.expiryDate.toISOString()}))`
+              `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Reserved transaction ${payload.transactionId.toString()} started with expired reservation ${requestPayload.reservationId.toString()} (expiry date: ${reservation.expiryDate.toISOString()}))`
             )
           }
           await chargingStation.removeReservation(
@@ -704,7 +704,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
           )
         } else {
           logger.warn(
-            `${chargingStation.logPrefix()} Reserved transaction ${payload.transactionId.toString()} started with unknown reservation ${requestPayload.reservationId.toString()}`
+            `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Reserved transaction ${payload.transactionId.toString()} started with unknown reservation ${requestPayload.reservationId.toString()}`
           )
         }
       }
@@ -723,7 +723,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ChargePointStatus.Charging
       )
       logger.info(
-        `${chargingStation.logPrefix()} Transaction with id ${payload.transactionId.toString()} STARTED on ${
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Transaction with id ${payload.transactionId.toString()} STARTED on ${
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           chargingStation.stationInfo?.chargingStationId
         }#${connectorId.toString()} for idTag '${requestPayload.idTag}'`
@@ -744,7 +744,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       )
     } else {
       logger.warn(
-        `${chargingStation.logPrefix()} Starting transaction with id ${payload.transactionId.toString()} REJECTED on ${
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Starting transaction with id ${payload.transactionId.toString()} REJECTED on ${
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           chargingStation.stationInfo?.chargingStationId
         }#${connectorId.toString()} with status '${payload.idTagInfo.status}', idTag '${
@@ -770,7 +770,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     )
     if (transactionConnectorId == null) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to stop a non existing transaction with id ${requestPayload.transactionId.toString()}`
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStopTransaction: Trying to stop a non existing transaction with id ${requestPayload.transactionId.toString()}`
       )
       return
     }
@@ -813,7 +813,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     }
     resetConnectorStatus(chargingStation.getConnectorStatus(transactionConnectorId))
     chargingStation.stopMeterValues(transactionConnectorId)
-    const logMsg = `${chargingStation.logPrefix()} Transaction with id ${requestPayload.transactionId.toString()} STOPPED on ${
+    const logMsg = `${chargingStation.logPrefix()} ${moduleName}.handleResponseStopTransaction: Transaction with id ${requestPayload.transactionId.toString()} STOPPED on ${
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       chargingStation.stationInfo?.chargingStationId
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
