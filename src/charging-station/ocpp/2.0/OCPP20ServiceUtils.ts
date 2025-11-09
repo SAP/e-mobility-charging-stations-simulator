@@ -109,7 +109,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     )
   }
 
-  public static async requestStopTransaction(
+  public static async requestStopTransaction (
     chargingStation: ChargingStation,
     connectorId: number
   ): Promise<GenericResponse> {
