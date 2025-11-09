@@ -87,7 +87,7 @@
     "http-status-codes": "^2.3.0",
     "logform": "^2.7.0",
     "mnemonist": "0.40.3",
-    "mongodb": "^6.20.0",
+    "mongodb": "^7.0.0",
     "poolifier": "^5.1.6",
     "tar": "^7.5.2",
     "winston": "^3.18.3",
