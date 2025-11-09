@@ -109,10 +109,10 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     )
   }
 
-  public static requestStopTransaction = async (
+  public static async requestStopTransaction(
     chargingStation: ChargingStation,
     connectorId: number
-  ): Promise<GenericResponse> => {
+  ): Promise<GenericResponse> {
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
     if (connectorStatus?.transactionStarted && connectorStatus.transactionId != null) {
       // OCPP 2.0 validation: transactionId should be a valid UUID format
