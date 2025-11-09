@@ -87,7 +87,7 @@
     "http-status-codes": "^2.3.0",
     "logform": "^2.7.0",
     "mnemonist": "0.40.3",
-    "mongodb": "^6.20.0",
+    "mongodb": "^7.0.0",
     "poolifier": "^5.1.6",
     "tar": "^7.5.2",
     "winston": "^3.18.3",
@@ -101,7 +101,7 @@
   "devDependencies": {
     "@commitlint/cli": "^20.1.0",
     "@commitlint/config-conventional": "^20.0.0",
-    "@cspell/eslint-plugin": "^9.2.2",
+    "@cspell/eslint-plugin": "^9.3.0",
     "@eslint/js": "^9.39.1",
     "@mikro-orm/cli": "^6.5.9",
     "@std/expect": "npm:@jsr/std__expect@^1.0.17",
