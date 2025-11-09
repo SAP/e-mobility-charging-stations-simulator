@@ -903,7 +903,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     // Validate that EVSE ID is provided
     if (evseId == null) {
       const errorMsg = 'EVSE ID is required for RequestStartTransaction'
-      logger.error(
+      logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestRequestStartTransaction: ${errorMsg}`
       )
       throw new OCPPError(
@@ -918,7 +918,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     const evse = chargingStation.evses.get(evseId)
     if (evse == null) {
       const errorMsg = `EVSE ${evseId.toString()} does not exist on charging station`
-      logger.error(
+      logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestRequestStartTransaction: ${errorMsg}`
       )
       throw new OCPPError(
@@ -934,7 +934,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     if (connectorStatus == null || connectorId == null) {
       const errorMsg = `Connector ${connectorId?.toString() ?? 'undefined'} status is undefined`
-      logger.error(
+      logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestRequestStartTransaction: ${errorMsg}`
       )
       throw new OCPPError(
@@ -1039,14 +1039,23 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     try {
       // Set connector transaction state
+      logger.debug(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestRequestStartTransaction: Setting transaction state for connector ${connectorId.toString()}, transaction ID: ${transactionId}`
+      )
       connectorStatus.transactionStarted = true
       connectorStatus.transactionId = transactionId
       connectorStatus.transactionIdTag = idToken.idToken
       connectorStatus.transactionStart = new Date()
       connectorStatus.transactionEnergyActiveImportRegisterValue = 0
       connectorStatus.remoteStartId = remoteStartId
+      logger.debug(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestRequestStartTransaction: Transaction state set successfully for connector ${connectorId.toString()}`
+      )
 
       // Update connector status to Occupied
+      logger.debug(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestRequestStartTransaction: Updating connector ${connectorId.toString()} status to Occupied`
+      )
       await sendAndSetConnectorStatus(
         chargingStation,
         connectorId,
@@ -1065,7 +1074,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
 
       logger.info(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestRequestStartTransaction: Remote start transaction accepted on EVSE ${evseId.toString()}, connector ${connectorId.toString()} with transaction ID ${transactionId} for idToken ${idToken.idToken}`
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestRequestStartTransaction: Remote start transaction ACCEPTED on #${connectorId.toString()} for idToken '${idToken.idToken}'`
       )
 
       return {
@@ -1122,7 +1131,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
       if (stopResponse.status === GenericStatus.Accepted) {
         logger.info(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestRequestStopTransaction: Remote stop transaction accepted for transaction ID ${transactionId} on connector ${connectorId.toString()}`
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestRequestStopTransaction: Remote stop transaction ACCEPTED for transactionId '${transactionId}'`
         )
         return {
           status: RequestStartStopStatusEnumType.Accepted,
@@ -1130,7 +1139,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
 
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestRequestStopTransaction: Remote stop transaction rejected for transaction ID ${transactionId} on connector ${connectorId.toString()}`
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestRequestStopTransaction: Remote stop transaction REJECTED for transactionId '${transactionId}'`
       )
       return {
         status: RequestStartStopStatusEnumType.Rejected,

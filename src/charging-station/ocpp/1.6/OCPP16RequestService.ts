@@ -17,6 +17,7 @@ import {
   type OCPP16DiagnosticsStatusNotificationRequest,
   type OCPP16FirmwareStatusNotificationRequest,
   type OCPP16HeartbeatRequest,
+  type OCPP16MeterValue,
   type OCPP16MeterValuesRequest,
   OCPP16RequestCommand,
   type OCPP16StartTransactionRequest,
@@ -25,7 +26,7 @@ import {
   OCPPVersion,
   type RequestParams,
 } from '../../../types/index.js'
-import { Constants, generateUUID } from '../../../utils/index.js'
+import { Constants, generateUUID, logger } from '../../../utils/index.js'
 import { OCPPRequestService } from '../OCPPRequestService.js'
 import { OCPP16Constants } from './OCPP16Constants.js'
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js'
@@ -152,33 +153,57 @@ export class OCPP16RequestService extends OCPPRequestService {
     commandParams?: RequestType,
     params?: RequestParams
   ): Promise<ResponseType> {
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestHandler: Processing '${commandName}' request`
+    )
     // FIXME?: add sanity checks on charging station availability, connector availability, connector status, etc.
     if (OCPP16ServiceUtils.isRequestCommandSupported(chargingStation, commandName)) {
-      // Pre request actions hook
-      switch (commandName) {
-        case OCPP16RequestCommand.START_TRANSACTION:
-          await OCPP16ServiceUtils.sendAndSetConnectorStatus(
-            chargingStation,
-            (commandParams as OCPP16StartTransactionRequest).connectorId,
-            OCPP16ChargePointStatus.Preparing
-          )
-          break
+      try {
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.requestHandler: Building request payload for '${commandName}'`
+        )
+        const requestPayload = this.buildRequestPayload<RequestType>(
+          chargingStation,
+          commandName,
+          commandParams
+        )
+        const messageId = generateUUID()
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.requestHandler: Sending '${commandName}' request with message ID '${messageId}'`
+        )
+        // Pre request actions hook
+        switch (commandName) {
+          case OCPP16RequestCommand.START_TRANSACTION:
+            await OCPP16ServiceUtils.sendAndSetConnectorStatus(
+              chargingStation,
+              (commandParams as OCPP16StartTransactionRequest).connectorId,
+              OCPP16ChargePointStatus.Preparing
+            )
+            break
+        }
+        const response = (await this.sendMessage(
+          chargingStation,
+          messageId,
+          requestPayload,
+          commandName,
+          params
+        )) as ResponseType
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.requestHandler: '${commandName}' request completed successfully`
+        )
+        return response
+      } catch (error) {
+        logger.error(
+          `${chargingStation.logPrefix()} ${moduleName}.requestHandler: Error processing '${commandName}' request:`,
+          error
+        )
+        throw error
       }
-      return (await this.sendMessage(
-        chargingStation,
-        generateUUID(),
-        this.buildRequestPayload<RequestType>(chargingStation, commandName, commandParams),
-        commandName,
-        params
-      )) as ResponseType
     }
     // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
-    throw new OCPPError(
-      ErrorType.NOT_SUPPORTED,
-      `Unsupported OCPP command ${commandName}`,
-      commandName,
-      commandParams
-    )
+    const errorMsg = `Unsupported OCPP command ${commandName}`
+    logger.error(`${chargingStation.logPrefix()} ${moduleName}.requestHandler: ${errorMsg}`)
+    throw new OCPPError(ErrorType.NOT_SUPPORTED, errorMsg, commandName, commandParams)
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
@@ -192,20 +217,47 @@ export class OCPP16RequestService extends OCPPRequestService {
     commandParams = commandParams as JsonObject
     switch (commandName) {
       case OCPP16RequestCommand.AUTHORIZE:
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Building ${OCPP16RequestCommand.AUTHORIZE} payload with default idTag`
+        )
         return {
           idTag: Constants.DEFAULT_IDTAG,
           ...commandParams,
         } as unknown as Request
       case OCPP16RequestCommand.BOOT_NOTIFICATION:
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Building ${OCPP16RequestCommand.BOOT_NOTIFICATION} payload`
+        )
+        return commandParams as unknown as Request
       case OCPP16RequestCommand.DATA_TRANSFER:
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Building ${OCPP16RequestCommand.DATA_TRANSFER} payload`
+        )
+        return commandParams as unknown as Request
       case OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION:
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Building ${OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION} payload`
+        )
+        return commandParams as unknown as Request
       case OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION:
-      case OCPP16RequestCommand.METER_VALUES:
-      case OCPP16RequestCommand.STATUS_NOTIFICATION:
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Building ${OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION} payload`
+        )
         return commandParams as unknown as Request
       case OCPP16RequestCommand.HEARTBEAT:
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Building ${OCPP16RequestCommand.HEARTBEAT} payload (empty)`
+        )
         return OCPP16Constants.OCPP_REQUEST_EMPTY as unknown as Request
+      case OCPP16RequestCommand.METER_VALUES:
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Building ${OCPP16RequestCommand.METER_VALUES} payload`
+        )
+        return commandParams as unknown as Request
       case OCPP16RequestCommand.START_TRANSACTION:
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Building ${OCPP16RequestCommand.START_TRANSACTION} payload with meter start and timestamp`
+        )
         return {
           idTag: Constants.DEFAULT_IDTAG,
           meterStart: chargingStation.getEnergyActiveImportRegisterByConnectorId(
@@ -228,7 +280,15 @@ export class OCPP16RequestService extends OCPPRequestService {
           }),
           ...commandParams,
         } as unknown as Request
+      case OCPP16RequestCommand.STATUS_NOTIFICATION:
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Building ${OCPP16RequestCommand.STATUS_NOTIFICATION} payload`
+        )
+        return commandParams as unknown as Request
       case OCPP16RequestCommand.STOP_TRANSACTION:
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Building ${OCPP16RequestCommand.STOP_TRANSACTION} payload with meter stop and timestamp`
+        )
         chargingStation.stationInfo?.transactionDataMeterValues === true &&
           (connectorId = chargingStation.getConnectorIdByTransactionId(
             commandParams.transactionId as number
@@ -244,26 +304,26 @@ export class OCPP16RequestService extends OCPPRequestService {
           ...(chargingStation.stationInfo?.transactionDataMeterValues === true && {
             transactionData: OCPP16ServiceUtils.buildTransactionDataMeterValues(
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              chargingStation.getConnectorStatus(connectorId!)!.transactionBeginMeterValue!,
+              chargingStation.getConnectorStatus(connectorId!)!
+                .transactionBeginMeterValue! as OCPP16MeterValue,
               OCPP16ServiceUtils.buildTransactionEndMeterValue(
                 chargingStation,
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 connectorId!,
                 energyActiveImportRegister
-              )
+              ) as OCPP16MeterValue
             ),
           }),
           ...commandParams,
         } as unknown as Request
-      default:
+      default: {
         // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
-        throw new OCPPError(
-          ErrorType.NOT_SUPPORTED,
-          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          `Unsupported OCPP command ${commandName}`,
-          commandName,
-          commandParams
+        const errorMsg = `Unsupported OCPP command ${commandName as string} for payload building`
+        logger.error(
+          `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: ${errorMsg}`
         )
+        throw new OCPPError(ErrorType.NOT_SUPPORTED, errorMsg, commandName, commandParams)
+      }
     }
   }
 }

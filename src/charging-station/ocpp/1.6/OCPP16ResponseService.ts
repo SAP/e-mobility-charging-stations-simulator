@@ -33,6 +33,7 @@ import {
   type OCPP16GetCompositeScheduleResponse,
   type OCPP16HeartbeatResponse,
   OCPP16IncomingRequestCommand,
+  type OCPP16MeterValue,
   type OCPP16MeterValuesRequest,
   type OCPP16MeterValuesResponse,
   OCPP16RequestCommand,
@@ -399,6 +400,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
       ) {
         try {
           this.validatePayload(chargingStation, commandName, payload)
+          logger.debug(
+            `${chargingStation.logPrefix()} ${moduleName}.responseHandler: Handling '${commandName}' response`
+          )
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const responseHandler = this.responseHandlers.get(commandName)!
           if (isAsyncFunction(responseHandler)) {
@@ -412,9 +416,12 @@ export class OCPP16ResponseService extends OCPPResponseService {
               ) => void
             )(chargingStation, payload, requestPayload)
           }
+          logger.debug(
+            `${chargingStation.logPrefix()} ${moduleName}.responseHandler: '${commandName}' response processed successfully`
+          )
         } catch (error) {
           logger.error(
-            `${chargingStation.logPrefix()} ${moduleName}.responseHandler: Handle response error:`,
+            `${chargingStation.logPrefix()} ${moduleName}.responseHandler: Handle '${commandName}' response error:`,
             error
           )
           throw error
@@ -510,6 +517,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
       chargingStation.bootNotificationResponse = payload
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       if (payload.interval != null) {
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.handleResponseBootNotification: Setting HeartbeatInterval to ${payload.interval.toString()}s`
+        )
         addConfigurationKey(
           chargingStation,
           OCPP16StandardParametersKey.HeartbeatInterval,
@@ -526,10 +536,19 @@ export class OCPP16ResponseService extends OCPPResponseService {
         )
       }
       if (chargingStation.inAcceptedState()) {
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.handleResponseBootNotification: Emitting '${RegistrationStatusEnumType.ACCEPTED}' event`
+        )
         chargingStation.emitChargingStationEvent(ChargingStationEvents.accepted)
       } else if (chargingStation.inPendingState()) {
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.handleResponseBootNotification: Emitting '${RegistrationStatusEnumType.REJECTED}' event`
+        )
         chargingStation.emitChargingStationEvent(ChargingStationEvents.pending)
       } else if (chargingStation.inRejectedState()) {
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.handleResponseBootNotification: Emitting '${RegistrationStatusEnumType.ACCEPTED}' event`
+        )
         chargingStation.emitChargingStationEvent(ChargingStationEvents.rejected)
       }
       const logMsg = `${chargingStation.logPrefix()} ${moduleName}.handleResponseBootNotification: Charging station in '${
@@ -787,7 +806,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
             chargingStation,
             transactionConnectorId,
             requestPayload.meterStop
-          ),
+          ) as OCPP16MeterValue,
         ],
         transactionId: requestPayload.transactionId,
       }))
@@ -844,7 +863,20 @@ export class OCPP16ResponseService extends OCPPResponseService {
     payload: JsonType
   ): boolean {
     if (this.payloadValidateFunctions.has(commandName)) {
-      return this.validateResponsePayload(chargingStation, commandName, payload)
+      logger.debug(
+        `${chargingStation.logPrefix()} ${moduleName}.validatePayload: Validating '${commandName}' response payload`
+      )
+      const isValid = this.validateResponsePayload(chargingStation, commandName, payload)
+      if (!isValid) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.validatePayload: '${commandName}' response payload validation failed`
+        )
+      } else {
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.validatePayload: '${commandName}' response payload validation successful`
+        )
+      }
+      return isValid
     }
     logger.warn(
       `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema validation function found for command '${commandName}' PDU validation`
