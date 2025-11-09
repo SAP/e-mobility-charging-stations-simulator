@@ -111,7 +111,8 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
 
   public static async requestStopTransaction (
     chargingStation: ChargingStation,
-    connectorId: number
+    connectorId: number,
+    evseId?: number
   ): Promise<GenericResponse> {
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
     if (connectorStatus?.transactionStarted && connectorStatus.transactionId != null) {
@@ -133,7 +134,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         return OCPP20Constants.OCPP_RESPONSE_REJECTED
       }
 
-      const evseId = chargingStation.getEvseIdByConnectorId(connectorId)
+      evseId = evseId ?? chargingStation.getEvseIdByConnectorId(connectorId)
       if (evseId == null) {
         logger.error(
           `${chargingStation.logPrefix()} OCPP20ServiceUtils.requestStopTransaction: Cannot find EVSE ID for connector ${connectorId.toString()}`

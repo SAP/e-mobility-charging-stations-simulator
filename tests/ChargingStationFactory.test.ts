@@ -524,6 +524,197 @@ await describe('ChargingStationFactory', async () => {
       })
     })
 
+    await describe('getEvseIdByTransactionId', async () => {
+      await it('Should return undefined for null transaction ID', () => {
+        const station = createChargingStation({
+          connectorsCount: 2,
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        })
+
+        // Test null handling (matches real class behavior)
+        expect(station.getEvseIdByTransactionId(null)).toBeUndefined()
+      })
+
+      await it('Should return undefined for undefined transaction ID', () => {
+        const station = createChargingStation({
+          connectorsCount: 2,
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        })
+
+        // Test undefined handling (matches real class behavior)
+        expect(station.getEvseIdByTransactionId(undefined)).toBeUndefined()
+      })
+
+      await it('Should return undefined for stations without EVSEs', () => {
+        const station = createChargingStation({
+          connectorsCount: 3,
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_16 }, // OCPP 1.6 doesn't use EVSEs
+        })
+
+        // Set up transactions on connectors (should still return undefined without EVSEs)
+        const connector1Status = station.getConnectorStatus(1)
+        if (connector1Status) {
+          connector1Status.transactionId = 'test-transaction-123'
+        }
+
+        expect(station.getEvseIdByTransactionId('test-transaction-123')).toBeUndefined()
+      })
+
+      await it('Should return correct EVSE ID when transaction ID matches (single EVSE)', () => {
+        const station = createChargingStation({
+          connectorsCount: 3,
+          evseConfiguration: { evsesCount: 1 }, // Single EVSE with all connectors
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        })
+
+        // Set up transactions on different connectors within the same EVSE
+        const connector1Status = station.getConnectorStatus(1)
+        const connector2Status = station.getConnectorStatus(2)
+        if (connector1Status) {
+          connector1Status.transactionId = 'transaction-on-connector-1'
+        }
+        if (connector2Status) {
+          connector2Status.transactionId = 456
+        }
+
+        // Both should return EVSE ID 1
+        expect(station.getEvseIdByTransactionId('transaction-on-connector-1')).toBe(1)
+        expect(station.getEvseIdByTransactionId(456)).toBe(1)
+      })
+
+      await it('Should return correct EVSE ID when transaction ID matches (multiple EVSEs)', () => {
+        const station = createChargingStation({
+          connectorsCount: 6,
+          evseConfiguration: { evsesCount: 2 }, // 2 EVSEs with 3 connectors each
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        })
+
+        // Set up transactions on connectors in different EVSEs
+        const connector1Status = station.getConnectorStatus(1) // EVSE 1
+        const connector4Status = station.getConnectorStatus(4) // EVSE 2
+        const connector5Status = station.getConnectorStatus(5) // EVSE 2
+
+        if (connector1Status) {
+          connector1Status.transactionId = 'evse1-transaction'
+        }
+        if (connector4Status) {
+          connector4Status.transactionId = 'evse2-transaction-a'
+        }
+        if (connector5Status) {
+          connector5Status.transactionId = 999
+        }
+
+        // Verify correct EVSE mapping
+        expect(station.getEvseIdByTransactionId('evse1-transaction')).toBe(1)
+        expect(station.getEvseIdByTransactionId('evse2-transaction-a')).toBe(2)
+        expect(station.getEvseIdByTransactionId(999)).toBe(2)
+      })
+
+      await it('Should return undefined when transaction ID does not match any connector', () => {
+        const station = createChargingStation({
+          connectorsCount: 4,
+          evseConfiguration: { evsesCount: 2 },
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        })
+
+        // Set up some transactions
+        const connector1Status = station.getConnectorStatus(1)
+        if (connector1Status) {
+          connector1Status.transactionId = 'existing-transaction'
+        }
+
+        expect(station.getEvseIdByTransactionId('non-existent-transaction')).toBeUndefined()
+        expect(station.getEvseIdByTransactionId(12345)).toBeUndefined()
+      })
+
+      await it('Should handle numeric transaction IDs', () => {
+        const station = createChargingStation({
+          connectorsCount: 4,
+          evseConfiguration: { evsesCount: 2 },
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        })
+
+        // Set up numeric transaction ID on connector in EVSE 2
+        const connector3Status = station.getConnectorStatus(3)
+        if (connector3Status) {
+          connector3Status.transactionId = 789
+        }
+
+        expect(station.getEvseIdByTransactionId(789)).toBe(2)
+      })
+
+      await it('Should handle string transaction IDs', () => {
+        const station = createChargingStation({
+          connectorsCount: 4,
+          evseConfiguration: { evsesCount: 2 },
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        })
+
+        // Set up string transaction ID on connector in EVSE 1
+        const connector2Status = station.getConnectorStatus(2)
+        if (connector2Status) {
+          connector2Status.transactionId = 'string-transaction-id-abc123'
+        }
+
+        expect(station.getEvseIdByTransactionId('string-transaction-id-abc123')).toBe(1)
+      })
+
+      await it('Should maintain consistency with getConnectorIdByTransactionId', () => {
+        const station = createChargingStation({
+          connectorsCount: 6,
+          evseConfiguration: { evsesCount: 3 },
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        })
+
+        const testTransactionId = 'consistency-test-transaction'
+
+        // Set up a transaction on connector 5 (which should be in EVSE 3)
+        const connector5Status = station.getConnectorStatus(5)
+        if (connector5Status) {
+          connector5Status.transactionId = testTransactionId
+        }
+
+        // Both methods should find the transaction
+        const foundConnectorId = station.getConnectorIdByTransactionId(testTransactionId)
+        const foundEvseId = station.getEvseIdByTransactionId(testTransactionId)
+
+        expect(foundConnectorId).toBe(5)
+        expect(foundEvseId).toBe(3)
+
+        // Verify consistency: getEvseIdByConnectorId should match
+        if (foundConnectorId !== undefined) {
+          expect(station.getEvseIdByConnectorId(foundConnectorId)).toBe(foundEvseId)
+        }
+      })
+
+      await it('Should handle mixed transaction ID types correctly', () => {
+        const station = createChargingStation({
+          connectorsCount: 4,
+          evseConfiguration: { evsesCount: 2 },
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        })
+
+        // Set up mixed types of transaction IDs
+        const connector1Status = station.getConnectorStatus(1)
+        const connector3Status = station.getConnectorStatus(3)
+
+        if (connector1Status) {
+          connector1Status.transactionId = 'string-transaction'
+        }
+        if (connector3Status) {
+          connector3Status.transactionId = 999
+        }
+
+        // Test string transaction ID
+        expect(station.getEvseIdByTransactionId('string-transaction')).toBe(1)
+        // Test numeric transaction ID
+        expect(station.getEvseIdByTransactionId(999)).toBe(2)
+        // Test wrong type should not match
+        expect(station.getEvseIdByTransactionId('999')).toBeUndefined() // String vs number
+        expect(station.getEvseIdByTransactionId(Number('string-transaction'))).toBeUndefined() // NaN
+      })
+    })
+
     await describe('isConnectorAvailable', async () => {
       await it('Should return false for connector ID 0', () => {
         const station = createChargingStation({ connectorsCount: 2 })

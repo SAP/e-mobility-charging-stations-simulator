@@ -1113,6 +1113,16 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
+    const evseId = chargingStation.getEvseIdByTransactionId(transactionId)
+    if (evseId == null) {
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestRequestStopTransaction: Transaction ID ${transactionId} does not exist on any EVSE`
+      )
+      return {
+        status: RequestStartStopStatusEnumType.Rejected,
+      }
+    }
+
     const connectorId = chargingStation.getConnectorIdByTransactionId(transactionId)
     if (connectorId == null) {
       logger.warn(
@@ -1126,7 +1136,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     try {
       const stopResponse = await OCPP20ServiceUtils.requestStopTransaction(
         chargingStation,
-        connectorId
+        connectorId,
+        evseId
       )
 
       if (stopResponse.status === GenericStatus.Accepted) {
