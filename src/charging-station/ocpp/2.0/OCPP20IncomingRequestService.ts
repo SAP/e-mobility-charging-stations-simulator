@@ -287,7 +287,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     ) as typeof getVariablesResponse.getVariableResult
 
     logger.debug(
-      `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetVariables: Processed ${String(commandPayload.getVariableData.length)} variable requests, returning ${String(results.length)} results`
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetVariables: Processed ${commandPayload.getVariableData.length.toString()} variable requests, returning ${results.length.toString()} results`
     )
 
     return getVariablesResponse
@@ -376,7 +376,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     ) as typeof setVariablesResponse.setVariableResult
 
     logger.debug(
-      `${chargingStation.logPrefix()} ${moduleName}.handleRequestSetVariables: Processed ${String(commandPayload.setVariableData.length)} variable requests, returning ${String(results.length)} results`
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestSetVariables: Processed ${commandPayload.setVariableData.length.toString()} variable requests, returning ${results.length.toString()} results`
     )
 
     return setVariablesResponse
@@ -917,7 +917,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     // Get the first connector for this EVSE
     const evse = chargingStation.evses.get(evseId)
     if (evse == null) {
-      const errorMsg = `EVSE ${String(evseId)} not found on charging station`
+      const errorMsg = `EVSE ${evseId.toString()} does not exist on charging station`
       logger.error(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestRequestStartTransaction: ${errorMsg}`
       )
@@ -1107,7 +1107,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     const connectorId = chargingStation.getConnectorIdByTransactionId(transactionId)
     if (connectorId == null) {
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestRequestStopTransaction: Transaction ID ${transactionId} not found on any connector`
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestRequestStopTransaction: Transaction ID ${transactionId} does not exist on any connector`
       )
       return {
         status: RequestStartStopStatusEnumType.Rejected,
@@ -1180,7 +1180,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         return {
           status: ResetStatusEnumType.Rejected,
           statusInfo: {
-            additionalInfo: `EVSE ${evseId.toString()} does not exist on this charging station`,
+            additionalInfo: `EVSE ${evseId.toString()} does not exist on charging station`,
             reasonCode: ReasonCodeEnumType.UnknownEvse,
           },
         }
@@ -1523,7 +1523,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     // 4. Time constraints and validity
 
     logger.debug(
-      `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfile: Validating charging profile ${String(chargingProfile.id)} for EVSE ${String(evseId)}`
+      `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfile: Validating charging profile ${chargingProfile.id.toString()} for EVSE ${evseId.toString()}`
     )
 
     // For now, return true to allow development/testing
