@@ -547,7 +547,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         chargingStation.emitChargingStationEvent(ChargingStationEvents.pending)
       } else if (chargingStation.inRejectedState()) {
         logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.handleResponseBootNotification: Emitting '${RegistrationStatusEnumType.ACCEPTED}' event`
+          `${chargingStation.logPrefix()} ${moduleName}.handleResponseBootNotification: Emitting '${RegistrationStatusEnumType.REJECTED}' event`
         )
         chargingStation.emitChargingStationEvent(ChargingStationEvents.rejected)
       }
