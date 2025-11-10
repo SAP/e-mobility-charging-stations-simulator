@@ -468,23 +468,6 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     )
 
   /**
-   * Factory options for OCPP 1.6 Incoming Request Response Service
-   * @param moduleName - Name of the OCPP module
-   * @param methodName - Name of the method/command
-   * @returns Factory options object for OCPP 1.6 incoming request response validators
-   */
-  public static createIncomingRequestResponseFactoryOptions = (
-    moduleName: string,
-    methodName: string
-  ) =>
-    OCPP16ServiceUtils.PayloadValidatorOptions(
-      OCPPVersion.VERSION_16,
-      'assets/json-schemas/ocpp/1.6',
-      moduleName,
-      methodName
-    )
-
-  /**
    * OCPP 1.6 Incoming Request Response Service validator configurations
    * @returns Array of validator configuration tuples
    */
@@ -563,12 +546,15 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
   ]
 
   /**
-   * Factory options for OCPP 1.6 Request Service
+   * Factory options for OCPP 1.6 Incoming Request Response Service
    * @param moduleName - Name of the OCPP module
    * @param methodName - Name of the method/command
-   * @returns Factory options object for OCPP 1.6 validators
+   * @returns Factory options object for OCPP 1.6 incoming request response validators
    */
-  public static createRequestFactoryOptions = (moduleName: string, methodName: string) =>
+  public static createIncomingRequestResponsePayloadOptions = (
+    moduleName: string,
+    methodName: string
+  ) =>
     OCPP16ServiceUtils.PayloadValidatorOptions(
       OCPPVersion.VERSION_16,
       'assets/json-schemas/ocpp/1.6',
@@ -621,12 +607,12 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
   ]
 
   /**
-   * Factory options for OCPP 1.6 Response Service
+   * Factory options for OCPP 1.6 Request Service
    * @param moduleName - Name of the OCPP module
    * @param methodName - Name of the method/command
-   * @returns Factory options object for OCPP 1.6 response validators
+   * @returns Factory options object for OCPP 1.6 validators
    */
-  public static createResponseFactoryOptions = (moduleName: string, methodName: string) =>
+  public static createRequestPayloadOptions = (moduleName: string, methodName: string) =>
     OCPP16ServiceUtils.PayloadValidatorOptions(
       OCPPVersion.VERSION_16,
       'assets/json-schemas/ocpp/1.6',
@@ -683,6 +669,20 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       OCPP16ServiceUtils.PayloadValidatorConfig('StopTransactionResponse.json'),
     ],
   ]
+
+  /**
+   * Factory options for OCPP 1.6 Response Service
+   * @param moduleName - Name of the OCPP module
+   * @param methodName - Name of the method/command
+   * @returns Factory options object for OCPP 1.6 response validators
+   */
+  public static createResponsePayloadOptions = (moduleName: string, methodName: string) =>
+    OCPP16ServiceUtils.PayloadValidatorOptions(
+      OCPPVersion.VERSION_16,
+      'assets/json-schemas/ocpp/1.6',
+      moduleName,
+      methodName
+    )
 
   public static hasReservation = (
     chargingStation: ChargingStation,

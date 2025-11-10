@@ -124,7 +124,7 @@ await describe('E01 - Remote Start Transaction', async () => {
         mockChargingStation,
         invalidEvseRequest
       )
-    ).rejects.toThrow('EVSE 999 not found on charging station')
+    ).rejects.toThrow('EVSE 999 does not exist on charging station')
   })
 
   await it('Should reject RequestStartTransaction when connector is already occupied', async () => {

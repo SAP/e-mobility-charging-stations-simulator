@@ -160,9 +160,6 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
   >
 
   public constructor () {
-    // if (new.target.name === moduleName) {
-    //   throw new TypeError(`Cannot construct ${new.target.name} instances directly`)
-    // }
     super(OCPPVersion.VERSION_16)
     this.incomingRequestHandlers = new Map<OCPP16IncomingRequestCommand, IncomingRequestHandler>([
       [
@@ -453,7 +450,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           commandPayload,
           undefined,
           2
-        )} while the charging station is in pending state on the central server`,
+        )} while the charging station is in pending state on the central system`,
         commandName,
         commandPayload
       )
@@ -506,7 +503,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           commandPayload,
           undefined,
           2
-        )} while the charging station is not registered on the central server`,
+        )} while the charging station is not registered on the central system`,
         commandName,
         commandPayload
       )
@@ -830,7 +827,6 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       end: addSeconds(currentDate, duration),
       start: currentDate,
     }
-    // FIXME: add and handle charging station charging profiles
     const chargingProfiles: OCPP16ChargingProfile[] = getConnectorChargingProfiles(
       chargingStation,
       connectorId
@@ -1160,12 +1156,12 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
   ): GenericResponse {
     const { transactionId } = commandPayload
     if (chargingStation.getConnectorIdByTransactionId(transactionId) != null) {
-      logger.debug(
+      logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestRemoteStopTransaction: Remote stop transaction ACCEPTED for transactionId '${transactionId.toString()}'`
       )
       return OCPP16Constants.OCPP_RESPONSE_ACCEPTED
     }
-    logger.debug(
+    logger.warn(
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestRemoteStopTransaction: Remote stop transaction REJECTED for transactionId '${transactionId.toString()}'`
     )
     return OCPP16Constants.OCPP_RESPONSE_REJECTED
@@ -1269,7 +1265,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       .reset(`${type}Reset` as OCPP16StopTransactionReason)
       .catch(Constants.EMPTY_FUNCTION)
     logger.info(
-      `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: ${type} reset command received, simulating it. The station will be back online in ${formatDurationMilliSeconds(
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: ${type} reset request received, simulating it. The station will be back online in ${formatDurationMilliSeconds(
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         chargingStation.stationInfo!.resetTime!
       )}`

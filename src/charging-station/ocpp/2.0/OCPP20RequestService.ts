@@ -21,22 +21,72 @@ import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 
 const moduleName = 'OCPP20RequestService'
 
+/**
+ * OCPP 2.0.1 Request Service
+ *
+ * Handles outgoing OCPP 2.0.1 requests from the charging station to the charging station management system (CSMS).
+ * This service is responsible for:
+ * - Building and validating request payloads according to OCPP 2.0.1 specification
+ * - Managing request-response cycles with enhanced error handling and status reporting
+ * - Ensuring message integrity through comprehensive JSON schema validation
+ * - Providing type-safe interfaces for all supported OCPP 2.0.1 commands
+ * - Supporting advanced OCPP 2.0.1 features like variables, components, and enhanced transaction management
+ *
+ * Key architectural improvements over OCPP 1.6:
+ * - Enhanced variable and component model support
+ * - Improved transaction lifecycle management with UUIDs
+ * - Advanced authorization capabilities with IdTokens
+ * - Comprehensive EVSE and connector state management
+ * - Extended security and certificate handling
+ * OCPPRequestService - Base class providing common OCPP functionality
+ */
 export class OCPP20RequestService extends OCPPRequestService {
   protected payloadValidatorFunctions: Map<OCPP20RequestCommand, ValidateFunction<JsonType>>
 
+  /**
+   * Constructs an OCPP 2.0.1 Request Service instance
+   *
+   * Initializes the service with OCPP 2.0.1-specific configurations including:
+   * - JSON schema validators for all supported OCPP 2.0.1 request commands
+   * - Enhanced payload validation with stricter type checking
+   * - Response service integration for comprehensive response handling
+   * - AJV validation setup optimized for OCPP 2.0.1's expanded message set
+   * - Support for advanced OCPP 2.0.1 features like variable management and enhanced security
+   * @param ocppResponseService - The response service instance for handling OCPP 2.0.1 responses
+   */
   public constructor (ocppResponseService: OCPPResponseService) {
-    // if (new.target.name === moduleName) {
-    //   throw new TypeError(`Cannot construct ${new.target.name} instances directly`)
-    // }
     super(OCPPVersion.VERSION_201, ocppResponseService)
     this.payloadValidatorFunctions = OCPP20ServiceUtils.createPayloadValidatorMap(
       OCPP20ServiceUtils.createRequestPayloadConfigs(),
-      OCPP20ServiceUtils.createRequestFactoryOptions(moduleName, 'constructor'),
+      OCPP20ServiceUtils.createRequestPayloadOptions(moduleName, 'constructor'),
       this.ajv
     )
     this.buildRequestPayload = this.buildRequestPayload.bind(this)
   }
 
+  /**
+   * Handles OCPP 2.0.1 request processing with enhanced validation and comprehensive error handling
+   *
+   * This method serves as the main entry point for all outgoing OCPP 2.0.1 requests to the CSMS.
+   * It performs advanced operations including:
+   * - Validates that the requested command is supported by the charging station configuration
+   * - Builds and validates request payloads according to strict OCPP 2.0.1 schemas
+   * - Handles OCPP 2.0.1-specific features like component/variable management and enhanced security
+   * - Sends requests with comprehensive error handling and detailed logging
+   * - Processes responses with full support for OCPP 2.0.1's enhanced status reporting
+   * - Manages advanced OCPP 2.0.1 concepts like EVSE management and transaction UUIDs
+   *
+   * The method ensures full compliance with OCPP 2.0.1 specification while providing
+   * enhanced type safety and detailed error reporting for debugging and monitoring.
+   * @template RequestType - The expected type of the request parameters
+   * @template ResponseType - The expected type of the response from the CSMS
+   * @param chargingStation - The charging station instance making the request
+   * @param commandName - The OCPP 2.0.1 command to execute (e.g., 'Authorize', 'TransactionEvent')
+   * @param commandParams - Optional parameters specific to the command being executed
+   * @param params - Optional request parameters for controlling request behavior
+   * @returns Promise resolving to the typed response from the CSMS
+   * @throws {OCPPError} When the command is not supported, validation fails, or CSMS returns an error
+   */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
   public async requestHandler<RequestType extends JsonType, ResponseType extends JsonType>(
     chargingStation: ChargingStation,
@@ -47,7 +97,6 @@ export class OCPP20RequestService extends OCPPRequestService {
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.requestHandler: Processing '${commandName}' request`
     )
-    // FIXME?: add sanity checks on charging station availability, connector availability, connector status, etc.
     if (OCPP20ServiceUtils.isRequestCommandSupported(chargingStation, commandName)) {
       try {
         logger.debug(

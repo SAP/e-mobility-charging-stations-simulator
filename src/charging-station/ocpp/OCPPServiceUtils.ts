@@ -70,6 +70,8 @@ import { OCPP16Constants } from './1.6/OCPP16Constants.js'
 import { OCPP20Constants } from './2.0/OCPP20Constants.js'
 import { OCPPConstants } from './OCPPConstants.js'
 
+const moduleName = 'OCPPServiceUtils'
+
 type Ajv = _Ajv.default
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 const Ajv = _Ajv.default
@@ -383,7 +385,7 @@ const validateSocMeasurandValue = (
     debug
   ) {
     logger.error(
-      `${chargingStation.logPrefix()} MeterValues measurand ${
+      `${chargingStation.logPrefix()} ${moduleName}.validateSocMeasurandValue: MeterValues measurand ${
         sampledValue.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       }: connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${socMinimumValue.toString()}/${sampledValue.value.toString()}/${socMaximumValue.toString()}`
@@ -605,7 +607,7 @@ const validateEnergyMeasurandValue = (
   if (energyValue > maxValue || energyValue < minValue || debug) {
     const connector = chargingStation.getConnectorStatus(connectorId)
     logger.error(
-      `${chargingStation.logPrefix()} MeterValues measurand ${
+      `${chargingStation.logPrefix()} ${moduleName}.validateEnergyMeasurandValue: MeterValues measurand ${
         sampledValue.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       }: connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${minValue.toString()}/${energyValue.toString()}/${maxValue.toString()}, duration: ${interval.toString()}ms`
@@ -826,7 +828,7 @@ const validatePowerMeasurandValue = (
     debug
   ) {
     logger.error(
-      `${chargingStation.logPrefix()} MeterValues measurand ${
+      `${chargingStation.logPrefix()} ${moduleName}.validatePowerMeasurandValue: MeterValues measurand ${
         sampledValue.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       }: connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${connectorMinimumPower.toString()}/${sampledValue.value.toString()}/${connectorMaximumPower.toString()}`
@@ -849,7 +851,7 @@ const validateCurrentMeasurandValue = (
     debug
   ) {
     logger.error(
-      `${chargingStation.logPrefix()} MeterValues measurand ${
+      `${chargingStation.logPrefix()} ${moduleName}.validateCurrentMeasurandValue: MeterValues measurand ${
         sampledValue.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       }: connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${connectorMinimumAmperage.toString()}/${sampledValue.value.toString()}/${connectorMaximumAmperage.toString()}`
@@ -872,7 +874,7 @@ const validateCurrentMeasurandPhaseValue = (
     debug
   ) {
     logger.error(
-      `${chargingStation.logPrefix()} MeterValues measurand ${
+      `${chargingStation.logPrefix()} ${moduleName}.validateCurrentMeasurandPhaseValue: MeterValues measurand ${
         sampledValue.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
       }: phase ${
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
@@ -1592,12 +1594,12 @@ const getSampledValueTemplate = (
 }
 
 /**
- * Builds a sampled value object according to the specified OCPP version
- * @param ocppVersion - The OCPP version to use for formatting the sampled value
- * @param sampledValueTemplate - Template containing measurement configuration and metadata
- * @param value - The measured numeric value to be included in the sampled value
- * @param context - Optional context specifying when the measurement was taken (e.g., Sample.Periodic)
- * @param phase - Optional phase information for multi-phase electrical measurements
+ * Builds a sampled value object according to the specified OCPP version.
+ * @param ocppVersion The OCPP version to use for formatting the sampled value
+ * @param sampledValueTemplate Template containing measurement configuration and metadata
+ * @param value The measured numeric value to be included in the sampled value
+ * @param context Optional context specifying when the measurement was taken (e.g., Sample.Periodic)
+ * @param phase Optional phase information for multi-phase electrical measurements
  * @returns A sampled value object formatted according to the specified OCPP version
  */
 function buildSampledValue (
@@ -1806,15 +1808,15 @@ export class OCPPServiceUtils {
   }
 
   /**
-   * Creates a Map of compiled OCPP payload validators from configurations
-   * Reduces code duplication across OCPP services
-   * @param configs - Array of tuples containing command and validator configuration
-   * @param options - Factory options including OCPP version, schema directory, etc.
-   * @param options.ocppVersion - The OCPP version for schema validation
-   * @param options.schemaDir - Directory path containing JSON schemas
-   * @param options.moduleName - Name of the module for logging
-   * @param options.methodName - Name of the method for logging
-   * @param ajvInstance - Configured Ajv instance for validation
+   * Creates a Map of compiled OCPP payload validators from configurations.
+   * Reduces code duplication across OCPP services.
+   * @param configs Array of tuples containing command and validator configuration
+   * @param options Factory options including OCPP version, schema directory, etc.
+   * @param options.ocppVersion The OCPP version for schema validation
+   * @param options.schemaDir Directory path containing JSON schemas
+   * @param options.moduleName Name of the module for logging
+   * @param options.methodName Name of the method for logging
+   * @param ajvInstance Configured Ajv instance for validation
    * @returns Map of commands to their compiled validation functions
    */
   public static createPayloadValidatorMap<Command extends JsonType>(
@@ -1916,8 +1918,8 @@ export class OCPPServiceUtils {
   }
 
   /**
-   * Configuration for a single payload validator
-   * @param schemaPath - Path to the JSON schema file
+   * Configuration for a single payload validator.
+   * @param schemaPath Path to the JSON schema file
    * @returns Configuration object for payload validator creation
    */
   public static readonly PayloadValidatorConfig = (schemaPath: string) =>
@@ -1926,11 +1928,11 @@ export class OCPPServiceUtils {
     }) as const
 
   /**
-   * Options for payload validator creation
-   * @param ocppVersion - The OCPP version
-   * @param schemaDir - Directory containing JSON schemas
-   * @param moduleName - Name of the OCPP module
-   * @param methodName - Name of the method/command
+   * Options for payload validator creation.
+   * @param ocppVersion The OCPP version
+   * @param schemaDir Directory containing JSON schemas
+   * @param moduleName Name of the OCPP module
+   * @param methodName Name of the method/command
    * @returns Options object for payload validator creation
    */
   public static readonly PayloadValidatorOptions = (
@@ -1947,12 +1949,12 @@ export class OCPPServiceUtils {
     }) as const
 
   /**
-   * Parses and loads a JSON schema file for OCPP payload validation
-   * Handles file reading, JSON parsing, and error recovery for schema validation
-   * @param relativePath - Path to the schema file relative to the OCPP utils directory
-   * @param ocppVersion - The OCPP version for error logging context
-   * @param moduleName - Optional module name for error logging
-   * @param methodName - Optional method name for error logging
+   * Parses and loads a JSON schema file for OCPP payload validation.
+   * Handles file reading, JSON parsing, and error recovery for schema validation.
+   * @param relativePath Path to the schema file relative to the OCPP utils directory
+   * @param ocppVersion The OCPP version for error logging context
+   * @param moduleName Optional module name for error logging
+   * @param methodName Optional method name for error logging
    * @returns Parsed JSON schema object or empty object if parsing fails
    */
   protected static parseJsonSchemaFile<T extends JsonType>(

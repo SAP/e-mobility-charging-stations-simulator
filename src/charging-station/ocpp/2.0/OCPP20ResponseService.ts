@@ -77,9 +77,6 @@ export class OCPP20ResponseService extends OCPPResponseService {
   private readonly responseHandlers: Map<OCPP20RequestCommand, ResponseHandler>
 
   public constructor () {
-    // if (new.target.name === moduleName) {
-    //   throw new TypeError(`Cannot construct ${new.target.name} instances directly`)
-    // }
     super(OCPPVersion.VERSION_201)
     this.responseHandlers = new Map<OCPP20RequestCommand, ResponseHandler>([
       [
@@ -98,13 +95,13 @@ export class OCPP20ResponseService extends OCPPResponseService {
     ])
     this.payloadValidatorFunctions = OCPP20ServiceUtils.createPayloadValidatorMap(
       OCPP20ServiceUtils.createResponsePayloadConfigs(),
-      OCPP20ServiceUtils.createResponseFactoryOptions(moduleName, 'constructor'),
+      OCPP20ServiceUtils.createResponsePayloadOptions(moduleName, 'constructor'),
       this.ajv
     )
     this.incomingRequestResponsePayloadValidateFunctions =
       OCPP20ServiceUtils.createPayloadValidatorMap(
         OCPP20ServiceUtils.createIncomingRequestResponsePayloadConfigs(),
-        OCPP20ServiceUtils.createIncomingRequestResponseFactoryOptions(moduleName, 'constructor'),
+        OCPP20ServiceUtils.createIncomingRequestResponsePayloadOptions(moduleName, 'constructor'),
         this.ajvIncomingRequest
       )
     this.validatePayload = this.validatePayload.bind(this)
@@ -176,7 +173,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
           payload,
           undefined,
           2
-        )} while the charging station is not registered on the central server`,
+        )} while the charging station is not registered on the CSMS`,
         commandName,
         payload
       )
@@ -220,7 +217,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
       }
       const logMsg = `${chargingStation.logPrefix()} ${moduleName}.handleResponseBootNotification: Charging station in '${
         payload.status
-      }' state on the central server`
+      }' state on the CSMS`
       payload.status === RegistrationStatusEnumType.REJECTED
         ? logger.warn(logMsg)
         : logger.info(logMsg)

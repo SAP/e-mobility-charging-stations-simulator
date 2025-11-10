@@ -74,23 +74,6 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     )
 
   /**
-   * Factory options for OCPP 2.0 Incoming Request Response Service
-   * @param moduleName - Name of the OCPP module
-   * @param methodName - Name of the method/command
-   * @returns Factory options object for OCPP 2.0 incoming request response validators
-   */
-  public static createIncomingRequestResponseFactoryOptions = (
-    moduleName: string,
-    methodName: string
-  ) =>
-    OCPP20ServiceUtils.PayloadValidatorOptions(
-      OCPPVersion.VERSION_201,
-      'assets/json-schemas/ocpp/2.0',
-      moduleName,
-      methodName
-    )
-
-  /**
    * Configuration for OCPP 2.0 Incoming Request Response validators
    * @returns Array of validator configuration tuples
    */
@@ -117,12 +100,15 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
   ]
 
   /**
-   * Factory options for OCPP 2.0 Request Service
+   * Factory options for OCPP 2.0 Incoming Request Response Service
    * @param moduleName - Name of the OCPP module
    * @param methodName - Name of the method/command
-   * @returns Factory options object for OCPP 2.0 validators
+   * @returns Factory options object for OCPP 2.0 incoming request response validators
    */
-  public static createRequestFactoryOptions = (moduleName: string, methodName: string) =>
+  public static createIncomingRequestResponsePayloadOptions = (
+    moduleName: string,
+    methodName: string
+  ) =>
     OCPP20ServiceUtils.PayloadValidatorOptions(
       OCPPVersion.VERSION_201,
       'assets/json-schemas/ocpp/2.0',
@@ -157,12 +143,12 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
   ]
 
   /**
-   * Factory options for OCPP 2.0 Response Service
+   * Factory options for OCPP 2.0 Request Service
    * @param moduleName - Name of the OCPP module
    * @param methodName - Name of the method/command
-   * @returns Factory options object for OCPP 2.0 response validators
+   * @returns Factory options object for OCPP 2.0 validators
    */
-  public static createResponseFactoryOptions = (moduleName: string, methodName: string) =>
+  public static createRequestPayloadOptions = (moduleName: string, methodName: string) =>
     OCPP20ServiceUtils.PayloadValidatorOptions(
       OCPPVersion.VERSION_201,
       'assets/json-schemas/ocpp/2.0',
@@ -195,6 +181,20 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       OCPP20ServiceUtils.PayloadValidatorConfig('StatusNotificationResponse.json'),
     ],
   ]
+
+  /**
+   * Factory options for OCPP 2.0 Response Service
+   * @param moduleName - Name of the OCPP module
+   * @param methodName - Name of the method/command
+   * @returns Factory options object for OCPP 2.0 response validators
+   */
+  public static createResponsePayloadOptions = (moduleName: string, methodName: string) =>
+    OCPP20ServiceUtils.PayloadValidatorOptions(
+      OCPPVersion.VERSION_201,
+      'assets/json-schemas/ocpp/2.0',
+      moduleName,
+      methodName
+    )
 
   public static enforceMessageLimits<
     T extends { attributeType?: unknown; component: unknown; variable: unknown }

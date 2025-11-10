@@ -22,7 +22,6 @@ import {
   type OCPP16BootNotificationResponse,
   OCPP16ChargePointStatus,
   OCPP16IncomingRequestCommand,
-  type OCPP16MeterValue,
   type OCPP16MeterValuesRequest,
   type OCPP16MeterValuesResponse,
   OCPP16RequestCommand,
@@ -86,9 +85,6 @@ export class OCPP16ResponseService extends OCPPResponseService {
   private readonly responseHandlers: Map<OCPP16RequestCommand, ResponseHandler>
 
   public constructor () {
-    // if (new.target.name === moduleName) {
-    //   throw new TypeError(`Cannot construct ${new.target.name} instances directly`)
-    // }
     super(OCPPVersion.VERSION_16)
     this.responseHandlers = new Map<OCPP16RequestCommand, ResponseHandler>([
       [OCPP16RequestCommand.AUTHORIZE, this.handleResponseAuthorize.bind(this) as ResponseHandler],
@@ -119,13 +115,13 @@ export class OCPP16ResponseService extends OCPPResponseService {
     ])
     this.payloadValidatorFunctions = OCPP16ServiceUtils.createPayloadValidatorMap(
       OCPP16ServiceUtils.createResponsePayloadConfigs(),
-      OCPP16ServiceUtils.createResponseFactoryOptions(moduleName, 'constructor'),
+      OCPP16ServiceUtils.createResponsePayloadOptions(moduleName, 'constructor'),
       this.ajv
     )
     this.incomingRequestResponsePayloadValidateFunctions =
       OCPP16ServiceUtils.createPayloadValidatorMap(
         OCPP16ServiceUtils.createIncomingRequestResponsePayloadConfigs(),
-        OCPP16ServiceUtils.createIncomingRequestResponseFactoryOptions(moduleName, 'constructor'),
+        OCPP16ServiceUtils.createIncomingRequestResponsePayloadOptions(moduleName, 'constructor'),
         this.ajvIncomingRequest
       )
     this.validatePayload = this.validatePayload.bind(this)
@@ -197,7 +193,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
           payload,
           undefined,
           2
-        )} while the charging station is not registered on the central server`,
+        )} while the charging station is not registered on the central system`,
         commandName,
         payload
       )
@@ -304,7 +300,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       }
       const logMsg = `${chargingStation.logPrefix()} ${moduleName}.handleResponseBootNotification: Charging station in '${
         payload.status
-      }' state on the central server`
+      }' state on the central system`
       payload.status === RegistrationStatusEnumType.REJECTED
         ? logger.warn(logMsg)
         : logger.info(logMsg)
@@ -557,7 +553,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
             chargingStation,
             transactionConnectorId,
             requestPayload.meterStop
-          ) as OCPP16MeterValue,
+          ),
         ],
         transactionId: requestPayload.transactionId,
       }))
