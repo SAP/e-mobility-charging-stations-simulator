@@ -30,7 +30,7 @@ export abstract class OCPPResponseService {
   protected readonly ajv: Ajv
   protected readonly ajvIncomingRequest: Ajv
   protected emptyResponseHandler = Constants.EMPTY_FUNCTION
-  protected abstract payloadValidateFunctions: Map<RequestCommand, ValidateFunction<JsonType>>
+  protected abstract payloadValidatorFunctions: Map<RequestCommand, ValidateFunction<JsonType>>
   private readonly version: OCPPVersion
 
   protected constructor (version: OCPPVersion) {
@@ -71,7 +71,7 @@ export abstract class OCPPResponseService {
     if (chargingStation.stationInfo?.ocppStrictCompliance === false) {
       return true
     }
-    const validate = this.payloadValidateFunctions.get(commandName)
+    const validate = this.payloadValidatorFunctions.get(commandName)
     if (validate?.(payload) === true) {
       return true
     }

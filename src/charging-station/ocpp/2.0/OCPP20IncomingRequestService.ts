@@ -20,7 +20,6 @@ import {
   GetVariableStatusEnumType,
   type IncomingRequestHandler,
   type JsonType,
-  type OCPP20ClearCacheRequest,
   OCPP20ComponentName,
   OCPP20ConnectorStatusEnumType,
   OCPP20DeviceInfoVariableName,
@@ -70,7 +69,7 @@ import { getVariableMetadata, VARIABLE_REGISTRY } from './OCPP20VariableRegistry
 const moduleName = 'OCPP20IncomingRequestService'
 
 export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
-  protected payloadValidateFunctions: Map<OCPP20IncomingRequestCommand, ValidateFunction<JsonType>>
+  protected payloadValidatorFunctions: Map<OCPP20IncomingRequestCommand, ValidateFunction<JsonType>>
 
   private readonly incomingRequestHandlers: Map<
     OCPP20IncomingRequestCommand,
@@ -115,71 +114,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         this.handleRequestSetVariables.bind(this) as unknown as IncomingRequestHandler,
       ],
     ])
-    this.payloadValidateFunctions = new Map<
-      OCPP20IncomingRequestCommand,
-      ValidateFunction<JsonType>
-    >([
-      [
-        OCPP20IncomingRequestCommand.CLEAR_CACHE,
-        this.ajv.compile(
-          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20ClearCacheRequest>(
-            'assets/json-schemas/ocpp/2.0/ClearCacheRequest.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP20IncomingRequestCommand.GET_BASE_REPORT,
-        this.ajv.compile(
-          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20GetBaseReportRequest>(
-            'assets/json-schemas/ocpp/2.0/GetBaseReportRequest.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP20IncomingRequestCommand.GET_VARIABLES,
-        this.ajv.compile(
-          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20GetVariablesRequest>(
-            'assets/json-schemas/ocpp/2.0/GetVariablesRequest.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION,
-        this.ajv.compile(
-          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20RequestStopTransactionRequest>(
-            'assets/json-schemas/ocpp/2.0/RequestStopTransactionRequest.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP20IncomingRequestCommand.RESET,
-        this.ajv.compile(
-          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20ResetRequest>(
-            'assets/json-schemas/ocpp/2.0/ResetRequest.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP20IncomingRequestCommand.SET_VARIABLES,
-        this.ajv.compile(
-          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20SetVariablesRequest>(
-            'assets/json-schemas/ocpp/2.0/SetVariablesRequest.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-    ])
+    this.payloadValidatorFunctions = OCPP20ServiceUtils.createPayloadValidatorMap(
+      OCPP20ServiceUtils.createIncomingRequestPayloadConfigs(),
+      OCPP20ServiceUtils.createIncomingRequestFactoryOptions(moduleName, 'constructor'),
+      this.ajv
+    )
     // Handle incoming request events
     this.on(
       OCPP20IncomingRequestCommand.GET_BASE_REPORT,
@@ -1555,7 +1494,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     commandName: OCPP20IncomingRequestCommand,
     commandPayload: JsonType
   ): boolean {
-    if (this.payloadValidateFunctions.has(commandName)) {
+    if (this.payloadValidatorFunctions.has(commandName)) {
       return this.validateIncomingRequestPayload(chargingStation, commandName, commandPayload)
     }
     logger.warn(

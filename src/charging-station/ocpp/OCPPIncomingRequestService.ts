@@ -25,7 +25,7 @@ const moduleName = 'OCPPIncomingRequestService'
 export abstract class OCPPIncomingRequestService extends EventEmitter {
   private static instance: null | OCPPIncomingRequestService = null
   protected readonly ajv: Ajv
-  protected abstract payloadValidateFunctions: Map<
+  protected abstract payloadValidatorFunctions: Map<
     IncomingRequestCommand,
     ValidateFunction<JsonType>
   >
@@ -76,7 +76,7 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
     if (chargingStation.stationInfo?.ocppStrictCompliance === false) {
       return true
     }
-    const validate = this.payloadValidateFunctions.get(commandName)
+    const validate = this.payloadValidatorFunctions.get(commandName)
     if (validate?.(payload) === true) {
       return true
     }

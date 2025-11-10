@@ -9,15 +9,11 @@ import {
   ErrorType,
   type JsonType,
   type OCPP20BootNotificationResponse,
-  type OCPP20ClearCacheResponse,
-  type OCPP20GetBaseReportResponse,
   type OCPP20HeartbeatResponse,
   OCPP20IncomingRequestCommand,
   type OCPP20NotifyReportResponse,
   OCPP20OptionalVariableName,
   OCPP20RequestCommand,
-  type OCPP20RequestStartTransactionResponse,
-  type OCPP20RequestStopTransactionResponse,
   type OCPP20StatusNotificationResponse,
   OCPPVersion,
   RegistrationStatusEnumType,
@@ -35,7 +31,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
     ValidateFunction<JsonType>
   >
 
-  protected payloadValidateFunctions: Map<OCPP20RequestCommand, ValidateFunction<JsonType>>
+  protected payloadValidatorFunctions: Map<OCPP20RequestCommand, ValidateFunction<JsonType>>
   private readonly responseHandlers: Map<OCPP20RequestCommand, ResponseHandler>
 
   public constructor () {
@@ -58,93 +54,17 @@ export class OCPP20ResponseService extends OCPPResponseService {
         this.handleResponseStatusNotification.bind(this) as ResponseHandler,
       ],
     ])
-    this.payloadValidateFunctions = new Map<OCPP20RequestCommand, ValidateFunction<JsonType>>([
-      [
-        OCPP20RequestCommand.BOOT_NOTIFICATION,
-        this.ajv.compile(
-          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20BootNotificationResponse>(
-            'assets/json-schemas/ocpp/2.0/BootNotificationResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP20RequestCommand.HEARTBEAT,
-        this.ajv.compile(
-          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20HeartbeatResponse>(
-            'assets/json-schemas/ocpp/2.0/HeartbeatResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP20RequestCommand.NOTIFY_REPORT,
-        this.ajv.compile(
-          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20NotifyReportResponse>(
-            'assets/json-schemas/ocpp/2.0/NotifyReportResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP20RequestCommand.STATUS_NOTIFICATION,
-        this.ajv.compile(
-          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20StatusNotificationResponse>(
-            'assets/json-schemas/ocpp/2.0/StatusNotificationResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-    ])
-    this.incomingRequestResponsePayloadValidateFunctions = new Map<
-      OCPP20IncomingRequestCommand,
-      ValidateFunction<JsonType>
-    >([
-      [
-        OCPP20IncomingRequestCommand.CLEAR_CACHE,
-        this.ajvIncomingRequest.compile(
-          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20ClearCacheResponse>(
-            'assets/json-schemas/ocpp/2.0/ClearCacheResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP20IncomingRequestCommand.GET_BASE_REPORT,
-        this.ajvIncomingRequest.compile(
-          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20GetBaseReportResponse>(
-            'assets/json-schemas/ocpp/2.0/GetBaseReportResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
-        this.ajvIncomingRequest.compile(
-          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20RequestStartTransactionResponse>(
-            'assets/json-schemas/ocpp/2.0/RequestStartTransactionResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION,
-        this.ajvIncomingRequest.compile(
-          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20RequestStopTransactionResponse>(
-            'assets/json-schemas/ocpp/2.0/RequestStopTransactionResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-    ])
+    this.payloadValidatorFunctions = OCPP20ServiceUtils.createPayloadValidatorMap(
+      OCPP20ServiceUtils.createResponsePayloadConfigs(),
+      OCPP20ServiceUtils.createResponseFactoryOptions(moduleName, 'constructor'),
+      this.ajv
+    )
+    this.incomingRequestResponsePayloadValidateFunctions =
+      OCPP20ServiceUtils.createPayloadValidatorMap(
+        OCPP20ServiceUtils.createIncomingRequestResponsePayloadConfigs(),
+        OCPP20ServiceUtils.createIncomingRequestResponseFactoryOptions(moduleName, 'constructor'),
+        this.ajvIncomingRequest
+      )
     this.validatePayload = this.validatePayload.bind(this)
   }
 
@@ -303,7 +223,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
     commandName: OCPP20RequestCommand,
     payload: JsonType
   ): boolean {
-    if (this.payloadValidateFunctions.has(commandName)) {
+    if (this.payloadValidatorFunctions.has(commandName)) {
       logger.debug(
         `${chargingStation.logPrefix()} ${moduleName}.validatePayload: Validating '${commandName}' response payload`
       )

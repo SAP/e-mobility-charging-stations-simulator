@@ -51,7 +51,7 @@ const defaultRequestParams: RequestParams = {
 export abstract class OCPPRequestService {
   private static instance: null | OCPPRequestService = null
   protected readonly ajv: Ajv
-  protected abstract payloadValidateFunctions: Map<RequestCommand, ValidateFunction<JsonType>>
+  protected abstract payloadValidatorFunctions: Map<RequestCommand, ValidateFunction<JsonType>>
   private readonly ocppResponseService: OCPPResponseService
   private readonly version: OCPPVersion
 
@@ -488,13 +488,13 @@ export abstract class OCPPRequestService {
     if (chargingStation.stationInfo?.ocppStrictCompliance === false) {
       return true
     }
-    if (!this.payloadValidateFunctions.has(commandName as RequestCommand)) {
+    if (!this.payloadValidatorFunctions.has(commandName as RequestCommand)) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.validateRequestPayload: No JSON schema found for command '${commandName}' PDU validation`
       )
       return true
     }
-    const validate = this.payloadValidateFunctions.get(commandName as RequestCommand)
+    const validate = this.payloadValidatorFunctions.get(commandName as RequestCommand)
     payload = clone<T>(payload)
     convertDateToISOString<T>(payload)
     if (validate?.(payload) === true) {

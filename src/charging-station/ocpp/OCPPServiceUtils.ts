@@ -1,5 +1,4 @@
-import type { ErrorObject, JSONSchemaType } from 'ajv'
-
+import _Ajv, { type ErrorObject, type JSONSchemaType, type ValidateFunction } from 'ajv'
 import { isDate } from 'date-fns'
 import { randomInt } from 'node:crypto'
 import { readFileSync } from 'node:fs'
@@ -70,6 +69,10 @@ import {
 import { OCPP16Constants } from './1.6/OCPP16Constants.js'
 import { OCPP20Constants } from './2.0/OCPP20Constants.js'
 import { OCPPConstants } from './OCPPConstants.js'
+
+type Ajv = _Ajv.default
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+const Ajv = _Ajv.default
 
 interface MultiPhaseMeasurandData {
   perPhaseTemplates: MeasurandPerPhaseSampledValueTemplates
@@ -403,8 +406,7 @@ const buildVoltageMeasurandValue = (
 
   const voltageSampledValueTemplateValue = isNotEmptyString(voltageSampledValueTemplate.value)
     ? Number.parseInt(voltageSampledValueTemplate.value)
-    : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    chargingStation.stationInfo.voltageOut!
+    : chargingStation.getVoltageOut()
   const fluctuationPercent =
     voltageSampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
   const voltageMeasurandValue = getRandomFloatFluctuatedRounded(
@@ -426,7 +428,7 @@ const addMainVoltageToMeterValue = (
   if (
     chargingStation.getNumberOfPhases() !== 3 ||
     (chargingStation.getNumberOfPhases() === 3 &&
-      chargingStation.stationInfo.mainVoltageMeterValues === true)
+      chargingStation.stationInfo?.mainVoltageMeterValues === true)
   ) {
     meterValue.sampledValue.push(
       buildSampledValue(
@@ -458,8 +460,7 @@ const addPhaseVoltageToMeterValue = (
       voltagePhaseLineToNeutralSampledValueTemplate.value
     )
       ? Number.parseInt(voltagePhaseLineToNeutralSampledValueTemplate.value)
-      : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      chargingStation.stationInfo.voltageOut!
+      : chargingStation.getVoltageOut()
     const fluctuationPhaseToNeutralPercent =
       voltagePhaseLineToNeutralSampledValueTemplate.fluctuationPercent ??
       Constants.DEFAULT_FLUCTUATION_PERCENT
@@ -493,9 +494,7 @@ const addLineToLineVoltageToMeterValue = (
         : chargingStation.getNumberOfPhases().toString()
     }` as MeterValuePhase
     const voltagePhaseLineToLineValueRounded = roundTo(
-      Math.sqrt(chargingStation.getNumberOfPhases()) *
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        chargingStation.stationInfo.voltageOut!,
+      Math.sqrt(chargingStation.getNumberOfPhases()) * chargingStation.getVoltageOut(),
       2
     )
     const voltagePhaseLineToLineSampledValueTemplate = getSampledValueTemplate(
@@ -933,8 +932,7 @@ const buildCurrentMeasurandValue = (
       connectorMaximumAmperage = ACElectricUtils.amperagePerPhaseFromPower(
         chargingStation.getNumberOfPhases(),
         connectorMaximumAvailablePower,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        chargingStation.stationInfo.voltageOut!
+        chargingStation.getVoltageOut()
       )
       if (chargingStation.getNumberOfPhases() === 3) {
         const defaultFluctuatedAmperagePerPhase = isNotEmptyString(currentTemplate.value)
@@ -1036,8 +1034,7 @@ const buildCurrentMeasurandValue = (
     case CurrentType.DC:
       connectorMaximumAmperage = DCElectricUtils.amperage(
         connectorMaximumAvailablePower,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        chargingStation.stationInfo.voltageOut!
+        chargingStation.getVoltageOut()
       )
       currentValues.allPhases = isNotEmptyString(currentTemplate.value)
         ? getRandomFloatFluctuatedRounded(
@@ -1209,13 +1206,11 @@ export const buildMeterValue = (
             ? ACElectricUtils.amperagePerPhaseFromPower(
               chargingStation.getNumberOfPhases(),
               connectorMaximumAvailablePower,
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              chargingStation.stationInfo.voltageOut!
+              chargingStation.getVoltageOut()
             )
             : DCElectricUtils.amperage(
               connectorMaximumAvailablePower,
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              chargingStation.stationInfo.voltageOut!
+              chargingStation.getVoltageOut()
             )
         const connectorMinimumAmperage = currentMeasurand.template.minimumValue ?? 0
 
@@ -1596,20 +1591,6 @@ const getSampledValueTemplate = (
   )
 }
 
-function buildSampledValue (
-  ocppVersion: OCPPVersion.VERSION_16 | undefined,
-  sampledValueTemplate: SampledValueTemplate,
-  value: number,
-  context?: MeterValueContext,
-  phase?: MeterValuePhase
-): OCPP16SampledValue
-function buildSampledValue (
-  ocppVersion: OCPPVersion.VERSION_20 | OCPPVersion.VERSION_201 | undefined,
-  sampledValueTemplate: SampledValueTemplate,
-  value: number,
-  context?: MeterValueContext,
-  phase?: MeterValuePhase
-): OCPP20SampledValue
 /**
  * Builds a sampled value object according to the specified OCPP version
  * @param ocppVersion - The OCPP version to use for formatting the sampled value
@@ -1799,6 +1780,42 @@ export class OCPPServiceUtils {
     // This is intentional
   }
 
+  /**
+   * Creates a Map of compiled OCPP payload validators from configurations
+   * Reduces code duplication across OCPP services
+   * @param configs - Array of tuples containing command and validator configuration
+   * @param options - Factory options including OCPP version, schema directory, etc.
+   * @param options.ocppVersion - The OCPP version for schema validation
+   * @param options.schemaDir - Directory path containing JSON schemas
+   * @param options.moduleName - Name of the module for logging
+   * @param options.methodName - Name of the method for logging
+   * @param ajvInstance - Configured Ajv instance for validation
+   * @returns Map of commands to their compiled validation functions
+   */
+  public static createPayloadValidatorMap<Command extends JsonType>(
+    configs: [Command, { schemaPath: string }][],
+    options: {
+      methodName: string
+      moduleName: string
+      ocppVersion: OCPPVersion
+      schemaDir: string
+    },
+    ajvInstance: Ajv
+  ): Map<Command, ValidateFunction<JsonType>> {
+    return new Map<Command, ValidateFunction<JsonType>>(
+      configs.map(([command, config]) => {
+        const fullSchemaPath = `${options.schemaDir}/${config.schemaPath}`
+        const schema = OCPPServiceUtils.parseJsonSchemaFile<JsonType>(
+          fullSchemaPath,
+          options.ocppVersion,
+          options.moduleName,
+          options.methodName
+        )
+        return [command, ajvInstance.compile(schema)]
+      })
+    )
+  }
+
   public static isConnectorIdValid (
     chargingStation: ChargingStation,
     ocppCommand: IncomingRequestCommand,
@@ -1872,6 +1889,37 @@ export class OCPPServiceUtils {
     logger.error(`${chargingStation.logPrefix()} Unknown outgoing OCPP command '${command}'`)
     return false
   }
+
+  /**
+   * Configuration for a single payload validator
+   * @param schemaPath - Path to the JSON schema file
+   * @returns Configuration object for payload validator creation
+   */
+  public static readonly PayloadValidatorConfig = (schemaPath: string) =>
+    ({
+      schemaPath,
+    }) as const
+
+  /**
+   * Options for payload validator creation
+   * @param ocppVersion - The OCPP version
+   * @param schemaDir - Directory containing JSON schemas
+   * @param moduleName - Name of the OCPP module
+   * @param methodName - Name of the method/command
+   * @returns Options object for payload validator creation
+   */
+  public static readonly PayloadValidatorOptions = (
+    ocppVersion: OCPPVersion,
+    schemaDir: string,
+    moduleName: string,
+    methodName: string
+  ) =>
+    ({
+      methodName,
+      moduleName,
+      ocppVersion,
+      schemaDir,
+    }) as const
 
   protected static parseJsonSchemaFile<T extends JsonType>(
     relativePath: string,

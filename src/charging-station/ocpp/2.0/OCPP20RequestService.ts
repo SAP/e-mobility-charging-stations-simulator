@@ -10,11 +10,7 @@ import {
   ErrorType,
   type JsonObject,
   type JsonType,
-  type OCPP20BootNotificationRequest,
-  type OCPP20HeartbeatRequest,
-  type OCPP20NotifyReportRequest,
   OCPP20RequestCommand,
-  type OCPP20StatusNotificationRequest,
   OCPPVersion,
   type RequestParams,
 } from '../../../types/index.js'
@@ -26,55 +22,18 @@ import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 const moduleName = 'OCPP20RequestService'
 
 export class OCPP20RequestService extends OCPPRequestService {
-  protected payloadValidateFunctions: Map<OCPP20RequestCommand, ValidateFunction<JsonType>>
+  protected payloadValidatorFunctions: Map<OCPP20RequestCommand, ValidateFunction<JsonType>>
 
   public constructor (ocppResponseService: OCPPResponseService) {
     // if (new.target.name === moduleName) {
     //   throw new TypeError(`Cannot construct ${new.target.name} instances directly`)
     // }
     super(OCPPVersion.VERSION_201, ocppResponseService)
-    this.payloadValidateFunctions = new Map<OCPP20RequestCommand, ValidateFunction<JsonType>>([
-      [
-        OCPP20RequestCommand.BOOT_NOTIFICATION,
-        this.ajv.compile(
-          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20BootNotificationRequest>(
-            'assets/json-schemas/ocpp/2.0/BootNotificationRequest.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP20RequestCommand.HEARTBEAT,
-        this.ajv.compile(
-          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20HeartbeatRequest>(
-            'assets/json-schemas/ocpp/2.0/HeartbeatRequest.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP20RequestCommand.NOTIFY_REPORT,
-        this.ajv.compile(
-          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20NotifyReportRequest>(
-            'assets/json-schemas/ocpp/2.0/NotifyReportRequest.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP20RequestCommand.STATUS_NOTIFICATION,
-        this.ajv.compile(
-          OCPP20ServiceUtils.parseJsonSchemaFile<OCPP20StatusNotificationRequest>(
-            'assets/json-schemas/ocpp/2.0/StatusNotificationRequest.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-    ])
+    this.payloadValidatorFunctions = OCPP20ServiceUtils.createPayloadValidatorMap(
+      OCPP20ServiceUtils.createRequestPayloadConfigs(),
+      OCPP20ServiceUtils.createRequestFactoryOptions(moduleName, 'constructor'),
+      this.ajv
+    )
     this.buildRequestPayload = this.buildRequestPayload.bind(this)
   }
 

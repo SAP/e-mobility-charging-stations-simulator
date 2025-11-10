@@ -55,7 +55,6 @@ import {
   type OCPP16ChargingProfile,
   OCPP16ChargingProfilePurposeType,
   type OCPP16ChargingSchedule,
-  type OCPP16ClearCacheRequest,
   type OCPP16ClearChargingProfileRequest,
   type OCPP16ClearChargingProfileResponse,
   type OCPP16DataTransferRequest,
@@ -119,7 +118,7 @@ import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js'
 const moduleName = 'OCPP16IncomingRequestService'
 
 export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
-  protected payloadValidateFunctions: Map<OCPP16IncomingRequestCommand, ValidateFunction<JsonType>>
+  protected payloadValidatorFunctions: Map<OCPP16IncomingRequestCommand, ValidateFunction<JsonType>>
 
   private readonly incomingRequestHandlers: Map<
     OCPP16IncomingRequestCommand,
@@ -201,181 +200,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         this.handleRequestUpdateFirmware.bind(this) as unknown as IncomingRequestHandler,
       ],
     ])
-    this.payloadValidateFunctions = new Map<
-      OCPP16IncomingRequestCommand,
-      ValidateFunction<JsonType>
-    >([
-      [
-        OCPP16IncomingRequestCommand.CANCEL_RESERVATION,
-        this.ajv.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16CancelReservationRequest>(
-            'assets/json-schemas/ocpp/1.6/CancelReservation.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16IncomingRequestCommand.CHANGE_AVAILABILITY,
-        this.ajv.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16ChangeAvailabilityRequest>(
-            'assets/json-schemas/ocpp/1.6/ChangeAvailability.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION,
-        this.ajv.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<ChangeConfigurationRequest>(
-            'assets/json-schemas/ocpp/1.6/ChangeConfiguration.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16IncomingRequestCommand.CLEAR_CACHE,
-        this.ajv.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16ClearCacheRequest>(
-            'assets/json-schemas/ocpp/1.6/ClearCache.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16IncomingRequestCommand.CLEAR_CHARGING_PROFILE,
-        this.ajv.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16ClearChargingProfileRequest>(
-            'assets/json-schemas/ocpp/1.6/ClearChargingProfile.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16IncomingRequestCommand.DATA_TRANSFER,
-        this.ajv.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16DataTransferRequest>(
-            'assets/json-schemas/ocpp/1.6/DataTransfer.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16IncomingRequestCommand.GET_COMPOSITE_SCHEDULE,
-        this.ajv.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16GetCompositeScheduleRequest>(
-            'assets/json-schemas/ocpp/1.6/GetCompositeSchedule.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16IncomingRequestCommand.GET_CONFIGURATION,
-        this.ajv.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<GetConfigurationRequest>(
-            'assets/json-schemas/ocpp/1.6/GetConfiguration.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16IncomingRequestCommand.GET_DIAGNOSTICS,
-        this.ajv.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<GetDiagnosticsRequest>(
-            'assets/json-schemas/ocpp/1.6/GetDiagnostics.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
-        this.ajv.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<RemoteStartTransactionRequest>(
-            'assets/json-schemas/ocpp/1.6/RemoteStartTransaction.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION,
-        this.ajv.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<RemoteStopTransactionRequest>(
-            'assets/json-schemas/ocpp/1.6/RemoteStopTransaction.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16IncomingRequestCommand.RESERVE_NOW,
-        this.ajv.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16ReserveNowRequest>(
-            'assets/json-schemas/ocpp/1.6/ReserveNow.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16IncomingRequestCommand.RESET,
-        this.ajv.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<ResetRequest>(
-            'assets/json-schemas/ocpp/1.6/Reset.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16IncomingRequestCommand.SET_CHARGING_PROFILE,
-        this.ajv.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<SetChargingProfileRequest>(
-            'assets/json-schemas/ocpp/1.6/SetChargingProfile.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
-        this.ajv.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16TriggerMessageRequest>(
-            'assets/json-schemas/ocpp/1.6/TriggerMessage.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16IncomingRequestCommand.UNLOCK_CONNECTOR,
-        this.ajv.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<UnlockConnectorRequest>(
-            'assets/json-schemas/ocpp/1.6/UnlockConnector.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16IncomingRequestCommand.UPDATE_FIRMWARE,
-        this.ajv.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16UpdateFirmwareRequest>(
-            'assets/json-schemas/ocpp/1.6/UpdateFirmware.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-    ])
+    this.payloadValidatorFunctions = OCPP16ServiceUtils.createPayloadValidatorMap(
+      OCPP16ServiceUtils.createIncomingRequestPayloadConfigs(),
+      OCPP16ServiceUtils.createIncomingRequestFactoryOptions(moduleName, 'constructor'),
+      this.ajv
+    )
     // Handle incoming request events
     this.on(
       OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
@@ -1781,7 +1610,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     commandName: OCPP16IncomingRequestCommand,
     commandPayload: JsonType
   ): boolean {
-    if (this.payloadValidateFunctions.has(commandName)) {
+    if (this.payloadValidatorFunctions.has(commandName)) {
       return this.validateIncomingRequestPayload(chargingStation, commandName, commandPayload)
     }
     logger.warn(
