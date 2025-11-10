@@ -42,6 +42,40 @@ import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js'
 
 const moduleName = 'OCPP16ResponseService'
 
+/**
+ * OCPP 1.6 Response Service - handles and processes all outgoing request responses
+ * from the Charging Station (CP) to the Central System (CS) using OCPP 1.6 protocol.
+ *
+ * This service class is responsible for:
+ * - **Response Reception**: Receiving responses to requests sent from the Charging Station
+ * - **Payload Validation**: Validating response payloads against OCPP 1.6 JSON schemas
+ * - **Response Processing**: Processing Central System responses and updating station state
+ * - **Error Handling**: Managing response errors and protocol-level exceptions
+ * - **State Synchronization**: Ensuring charging station state reflects Central System responses
+ *
+ * Supported OCPP 1.6 Response Types:
+ * - **Authentication**: Authorize responses with authorization status updates
+ * - **Transaction Management**: StartTransaction, StopTransaction response handling
+ * - **Status Updates**: BootNotification, StatusNotification, MeterValues responses
+ * - **Configuration**: Responses to configuration queries and updates
+ * - **Heartbeat**: Heartbeat response processing for connection maintenance
+ * - **Data Transfer**: Custom data transfer response handling
+ *
+ * Architecture Pattern:
+ * This class extends OCPPResponseService and implements OCPP 1.6-specific response
+ * processing logic. It follows a handler mapping pattern where each response type
+ * is processed by dedicated handler methods that manage charging station state updates.
+ *
+ * Response Validation Workflow:
+ * 1. Response received from Central System for previously sent request
+ * 2. Response payload validated against OCPP 1.6 JSON schema
+ * 3. Response routed to appropriate handler based on original request type
+ * 4. Charging station state updated based on response content
+ * 5. Any follow-up actions triggered (transactions, status changes, etc.)
+ * @see {@link validatePayload} Response payload validation method
+ * @see {@link handleResponse} Response processing methods
+ */
+
 export class OCPP16ResponseService extends OCPPResponseService {
   public incomingRequestResponsePayloadValidateFunctions: Map<
     OCPP16IncomingRequestCommand,
@@ -574,6 +608,13 @@ export class OCPP16ResponseService extends OCPPResponseService {
     await OCPP16ServiceUtils.restoreConnectorStatus(chargingStation, connectorId, connectorStatus)
   }
 
+  /**
+   * Validates incoming OCPP 1.6 response payload against JSON schema
+   * @param chargingStation - The charging station instance receiving the response
+   * @param commandName - OCPP 1.6 command name to validate against
+   * @param payload - JSON response payload to validate
+   * @returns True if payload validation succeeds, false otherwise
+   */
   private validatePayload (
     chargingStation: ChargingStation,
     commandName: OCPP16RequestCommand,

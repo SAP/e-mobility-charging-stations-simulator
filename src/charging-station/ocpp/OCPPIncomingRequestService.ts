@@ -67,6 +67,13 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
     return OCPPConstants.OCPP_RESPONSE_REJECTED
   }
 
+  /**
+   * Validates incoming request payload against JSON schema
+   * @param chargingStation - The charging station instance processing the request
+   * @param commandName - OCPP command name to validate against
+   * @param payload - JSON payload to validate
+   * @returns True if payload validation succeeds, false otherwise
+   */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
   protected validateIncomingRequestPayload<T extends JsonType>(
     chargingStation: ChargingStation,

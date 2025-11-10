@@ -25,6 +25,48 @@ import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 
 const moduleName = 'OCPP20ResponseService'
 
+/**
+ * OCPP 2.0+ Response Service - handles and processes all outgoing request responses
+ * from the Charging Station to the Central System Management System (CSMS) using OCPP 2.0+ protocol.
+ *
+ * This service class is responsible for:
+ * - **Response Reception**: Receiving responses to requests sent from the Charging Station
+ * - **Payload Validation**: Validating response payloads against OCPP 2.0+ JSON schemas
+ * - **Response Processing**: Processing CSMS responses and updating station state
+ * - **Variable Management**: Handling variable-based configuration responses
+ * - **Enhanced State Management**: Managing OCPP 2.0+ advanced state and feature coordination
+ *
+ * Supported OCPP 2.0+ Response Types:
+ * - **Authentication**: Authorize responses with enhanced authorization mechanisms
+ * - **Transaction Management**: TransactionEvent responses for flexible transaction handling
+ * - **Status Updates**: BootNotification, StatusNotification, NotifyReport responses
+ * - **Variable Operations**: Responses to GetVariables, SetVariables operations
+ * - **Security**: Responses to security-related operations and certificate management
+ * - **Heartbeat**: Enhanced heartbeat response processing with additional metadata
+ *
+ * Key OCPP 2.0+ Features:
+ * - **Variable Model Integration**: Seamless integration with OCPP 2.0+ variable system
+ * - **Enhanced Transaction Model**: Support for flexible transaction event handling
+ * - **Security Framework**: Advanced security response processing and validation
+ * - **Rich Data Model**: Support for complex data structures and enhanced messaging
+ * - **Backward Compatibility**: Maintains compatibility concepts while extending functionality
+ *
+ * Architecture Pattern:
+ * This class extends OCPPResponseService and implements OCPP 2.0+-specific response
+ * processing logic. It works closely with OCPP20VariableManager and other OCPP 2.0+
+ * components to provide comprehensive protocol support with enhanced features.
+ *
+ * Response Validation Workflow:
+ * 1. Response received from CSMS for previously sent request
+ * 2. Response payload validated against OCPP 2.0+ JSON schema
+ * 3. Response routed to appropriate handler based on original request type
+ * 4. Charging station state and variable model updated based on response content
+ * 5. Enhanced follow-up actions triggered based on OCPP 2.0+ capabilities
+ * @see {@link validatePayload} Response payload validation method
+ * @see {@link handleResponse} Response processing methods
+ * @see {@link OCPP20VariableManager} Variable management integration
+ */
+
 export class OCPP20ResponseService extends OCPPResponseService {
   public incomingRequestResponsePayloadValidateFunctions: Map<
     OCPP20IncomingRequestCommand,
@@ -218,6 +260,13 @@ export class OCPP20ResponseService extends OCPPResponseService {
     )
   }
 
+  /**
+   * Validates incoming OCPP 2.0 response payload against JSON schema
+   * @param chargingStation - The charging station instance receiving the response
+   * @param commandName - OCPP 2.0 command name to validate against
+   * @param payload - JSON response payload to validate
+   * @returns True if payload validation succeeds, false otherwise
+   */
   private validatePayload (
     chargingStation: ChargingStation,
     commandName: OCPP20RequestCommand,

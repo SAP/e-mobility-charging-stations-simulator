@@ -22,20 +22,6 @@ import { OCPP20Constants } from './OCPP20Constants.js'
 
 export class OCPP20ServiceUtils extends OCPPServiceUtils {
   /**
-   * Factory options for OCPP 2.0 Incoming Request Service
-   * @param moduleName - Name of the OCPP module
-   * @param methodName - Name of the method/command
-   * @returns Factory options object for OCPP 2.0 incoming request validators
-   */
-  public static createIncomingRequestFactoryOptions = (moduleName: string, methodName: string) =>
-    OCPP20ServiceUtils.PayloadValidatorOptions(
-      OCPPVersion.VERSION_201,
-      'assets/json-schemas/ocpp/2.0',
-      moduleName,
-      methodName
-    )
-
-  /**
    * OCPP 2.0 Incoming Request Service validator configurations
    * @returns Array of validator configuration tuples
    */
@@ -72,6 +58,20 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       OCPP20ServiceUtils.PayloadValidatorConfig('SetVariablesRequest.json'),
     ],
   ]
+
+  /**
+   * Factory options for OCPP 2.0 Incoming Request Service
+   * @param moduleName - Name of the OCPP module
+   * @param methodName - Name of the method/command
+   * @returns Factory options object for OCPP 2.0 incoming request validators
+   */
+  public static createIncomingRequestPayloadOptions = (moduleName: string, methodName: string) =>
+    OCPP20ServiceUtils.PayloadValidatorOptions(
+      OCPPVersion.VERSION_201,
+      'assets/json-schemas/ocpp/2.0',
+      moduleName,
+      methodName
+    )
 
   /**
    * Factory options for OCPP 2.0 Incoming Request Response Service

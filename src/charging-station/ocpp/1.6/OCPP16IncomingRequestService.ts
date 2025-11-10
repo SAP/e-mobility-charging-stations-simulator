@@ -117,6 +117,40 @@ import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js'
 
 const moduleName = 'OCPP16IncomingRequestService'
 
+/**
+ * OCPP 1.6 Incoming Request Service - handles and processes all incoming requests
+ * from the Central System (CS) to the Charging Station (CP) using OCPP 1.6 protocol.
+ *
+ * This service class is responsible for:
+ * - **Request Reception**: Receiving and routing OCPP 1.6 incoming requests from Central System
+ * - **Payload Validation**: Validating incoming request payloads against OCPP 1.6 JSON schemas
+ * - **Request Processing**: Executing business logic for each OCPP 1.6 request type
+ * - **Response Generation**: Creating and sending appropriate responses back to Central System
+ * - **Error Handling**: Managing protocol-level and application-level errors
+ *
+ * Supported OCPP 1.6 Incoming Request Types:
+ * - **Configuration Management**: ChangeConfiguration, GetConfiguration, GetLocalListVersion
+ * - **Remote Operations**: RemoteStartTransaction, RemoteStopTransaction, UnlockConnector
+ * - **Firmware Management**: GetDiagnostics, UpdateFirmware, Reset
+ * - **Reservation Management**: ReserveNow, CancelReservation
+ * - **Charging Profiles**: SetChargingProfile, ClearChargingProfile, GetCompositeSchedule
+ * - **Monitoring**: GetLocalListVersion, TriggerMessage
+ *
+ * Architecture Pattern:
+ * This class extends OCPPIncomingRequestService and implements OCPP 1.6-specific
+ * request handling logic. It uses a handler mapping pattern where each request type
+ * is mapped to a specific handler method, providing clean separation of concerns.
+ *
+ * Validation Workflow:
+ * 1. Incoming request received and parsed
+ * 2. Payload validated against OCPP 1.6 JSON schema
+ * 3. Request routed to appropriate handler method
+ * 4. Business logic executed with charging station state management
+ * 5. Response payload validated and sent back to Central System
+ * @see {@link validatePayload} Request payload validation method
+ * @see {@link handleRequestRemoteStartTransaction} Example request handler
+ */
+
 export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
   protected payloadValidatorFunctions: Map<OCPP16IncomingRequestCommand, ValidateFunction<JsonType>>
 
@@ -202,7 +236,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     ])
     this.payloadValidatorFunctions = OCPP16ServiceUtils.createPayloadValidatorMap(
       OCPP16ServiceUtils.createIncomingRequestPayloadConfigs(),
-      OCPP16ServiceUtils.createIncomingRequestFactoryOptions(moduleName, 'constructor'),
+      OCPP16ServiceUtils.createIncomingRequestPayloadOptions(moduleName, 'constructor'),
       this.ajv
     )
     // Handle incoming request events
@@ -1033,6 +1067,13 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
+  /**
+   * Handles OCPP 1.6 RemoteStartTransaction request from central system
+   * Initiates charging transaction on specified or available connector
+   * @param chargingStation - The charging station instance processing the request
+   * @param commandPayload - RemoteStartTransaction request payload with connector and ID tag
+   * @returns Promise resolving to GenericResponse indicating operation success or failure
+   */
   private async handleRequestRemoteStartTransaction (
     chargingStation: ChargingStation,
     commandPayload: RemoteStartTransactionRequest
@@ -1213,7 +1254,12 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
-  // Simulate charging station restart
+  /**
+   * Handles incoming Reset request and initiates station reset
+   * @param chargingStation - The charging station instance processing the request
+   * @param commandPayload - Reset request payload containing reset type
+   * @returns OCPP response indicating acceptance of the reset request
+   */
   private handleRequestReset (
     chargingStation: ChargingStation,
     commandPayload: ResetRequest
@@ -1605,6 +1651,13 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
+  /**
+   * Validates incoming OCPP 1.6 request payload against JSON schema
+   * @param chargingStation - The charging station instance processing the request
+   * @param commandName - OCPP 1.6 command name to validate against
+   * @param commandPayload - JSON payload to validate
+   * @returns True if payload validation succeeds, false otherwise
+   */
   private validatePayload (
     chargingStation: ChargingStation,
     commandName: OCPP16IncomingRequestCommand,

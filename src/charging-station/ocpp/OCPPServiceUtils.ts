@@ -1766,6 +1766,31 @@ const getMeasurandDefaultUnit = (
   }
 }
 
+/**
+ * Utility class providing core OCPP (Open Charge Point Protocol) service functionality
+ * and common operations across all OCPP versions and protocol implementations.
+ *
+ * This class serves as the foundation for OCPP protocol handling, providing:
+ * - JSON schema-based payload validation using AJV (Another JSON Schema Validator)
+ * - Common OCPP operations like connector status management and transaction handling
+ * - Utility functions for meter value processing and ID tag authorization
+ * - Shared functionality between OCPP 1.6 and OCPP 2.0+ implementations
+ *
+ * Key Features:
+ * - **Schema Validation**: Centralized JSON schema loading and validation functions
+ * - **Protocol Agnostic**: Provides utilities that work across OCPP versions
+ * - **Transaction Management**: Utilities for transaction lifecycle and meter values
+ * - **Status Management**: Connector and charging station status operations
+ * - **Static Interface**: All functionality exposed as static methods for easy access
+ *
+ * Usage Pattern:
+ * This class is typically used by other OCPP service classes (incoming request services,
+ * response services) to perform common operations and validation. It acts as a shared
+ * utility layer that prevents code duplication across OCPP version-specific implementations.
+ * @see {@link parseJsonSchemaFile} Core JSON schema parsing functionality
+ * @see {@link validatePayload} Payload validation methods in service classes
+ */
+
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class OCPPServiceUtils {
   public static readonly buildTransactionEndMeterValue = buildTransactionEndMeterValue
@@ -1921,6 +1946,15 @@ export class OCPPServiceUtils {
       schemaDir,
     }) as const
 
+  /**
+   * Parses and loads a JSON schema file for OCPP payload validation
+   * Handles file reading, JSON parsing, and error recovery for schema validation
+   * @param relativePath - Path to the schema file relative to the OCPP utils directory
+   * @param ocppVersion - The OCPP version for error logging context
+   * @param moduleName - Optional module name for error logging
+   * @param methodName - Optional method name for error logging
+   * @returns Parsed JSON schema object or empty object if parsing fails
+   */
   protected static parseJsonSchemaFile<T extends JsonType>(
     relativePath: string,
     ocppVersion: OCPPVersion,

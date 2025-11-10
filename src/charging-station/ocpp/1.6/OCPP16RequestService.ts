@@ -11,7 +11,6 @@ import {
   type JsonObject,
   type JsonType,
   OCPP16ChargePointStatus,
-  type OCPP16MeterValue,
   OCPP16RequestCommand,
   type OCPP16StartTransactionRequest,
   OCPPVersion,
@@ -125,9 +124,6 @@ export class OCPP16RequestService extends OCPPRequestService {
       case OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION:
         return commandParams as unknown as Request
       case OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION:
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Building ${OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION} payload`
-        )
         return commandParams as unknown as Request
       case OCPP16RequestCommand.HEARTBEAT:
         return OCPP16Constants.OCPP_REQUEST_EMPTY as unknown as Request
@@ -174,14 +170,13 @@ export class OCPP16RequestService extends OCPPRequestService {
           ...(chargingStation.stationInfo?.transactionDataMeterValues === true && {
             transactionData: OCPP16ServiceUtils.buildTransactionDataMeterValues(
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              chargingStation.getConnectorStatus(connectorId!)!
-                .transactionBeginMeterValue! as OCPP16MeterValue,
+              chargingStation.getConnectorStatus(connectorId!)!.transactionBeginMeterValue!,
               OCPP16ServiceUtils.buildTransactionEndMeterValue(
                 chargingStation,
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 connectorId!,
                 energyActiveImportRegister
-              ) as OCPP16MeterValue
+              )
             ),
           }),
           ...commandParams,
