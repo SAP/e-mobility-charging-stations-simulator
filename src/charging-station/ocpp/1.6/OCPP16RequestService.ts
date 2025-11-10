@@ -109,29 +109,20 @@ export class OCPP16RequestService extends OCPPRequestService {
     let connectorId: number | undefined
     let energyActiveImportRegister: number
     commandParams = commandParams as JsonObject
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Building ${commandName} payload`
+    )
     switch (commandName) {
       case OCPP16RequestCommand.AUTHORIZE:
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Building ${OCPP16RequestCommand.AUTHORIZE} payload with default idTag`
-        )
         return {
           idTag: Constants.DEFAULT_IDTAG,
           ...commandParams,
         } as unknown as Request
       case OCPP16RequestCommand.BOOT_NOTIFICATION:
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Building ${OCPP16RequestCommand.BOOT_NOTIFICATION} payload`
-        )
         return commandParams as unknown as Request
       case OCPP16RequestCommand.DATA_TRANSFER:
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Building ${OCPP16RequestCommand.DATA_TRANSFER} payload`
-        )
         return commandParams as unknown as Request
       case OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION:
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Building ${OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION} payload`
-        )
         return commandParams as unknown as Request
       case OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION:
         logger.debug(
@@ -139,19 +130,10 @@ export class OCPP16RequestService extends OCPPRequestService {
         )
         return commandParams as unknown as Request
       case OCPP16RequestCommand.HEARTBEAT:
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Building ${OCPP16RequestCommand.HEARTBEAT} payload (empty)`
-        )
         return OCPP16Constants.OCPP_REQUEST_EMPTY as unknown as Request
       case OCPP16RequestCommand.METER_VALUES:
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Building ${OCPP16RequestCommand.METER_VALUES} payload`
-        )
         return commandParams as unknown as Request
       case OCPP16RequestCommand.START_TRANSACTION:
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Building ${OCPP16RequestCommand.START_TRANSACTION} payload with meter start and timestamp`
-        )
         return {
           idTag: Constants.DEFAULT_IDTAG,
           meterStart: chargingStation.getEnergyActiveImportRegisterByConnectorId(
@@ -175,14 +157,8 @@ export class OCPP16RequestService extends OCPPRequestService {
           ...commandParams,
         } as unknown as Request
       case OCPP16RequestCommand.STATUS_NOTIFICATION:
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Building ${OCPP16RequestCommand.STATUS_NOTIFICATION} payload`
-        )
         return commandParams as unknown as Request
       case OCPP16RequestCommand.STOP_TRANSACTION:
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Building ${OCPP16RequestCommand.STOP_TRANSACTION} payload with meter stop and timestamp`
-        )
         chargingStation.stationInfo?.transactionDataMeterValues === true &&
           (connectorId = chargingStation.getConnectorIdByTransactionId(
             commandParams.transactionId as number

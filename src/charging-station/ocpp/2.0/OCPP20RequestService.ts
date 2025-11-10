@@ -95,28 +95,19 @@ export class OCPP20RequestService extends OCPPRequestService {
     commandParams?: JsonType
   ): Request {
     commandParams = commandParams as JsonObject
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Building ${commandName} payload`
+    )
     switch (commandName) {
       case OCPP20RequestCommand.BOOT_NOTIFICATION:
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Building ${OCPP20RequestCommand.BOOT_NOTIFICATION} payload`
-        )
         return commandParams as unknown as Request
       case OCPP20RequestCommand.HEARTBEAT:
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Building ${OCPP20RequestCommand.HEARTBEAT} payload (empty)`
-        )
         return OCPP20Constants.OCPP_RESPONSE_EMPTY as unknown as Request
       case OCPP20RequestCommand.NOTIFY_REPORT:
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Building ${OCPP20RequestCommand.NOTIFY_REPORT} payload`
-        )
         return {
           ...commandParams,
         } as unknown as Request
       case OCPP20RequestCommand.STATUS_NOTIFICATION:
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: Building ${OCPP20RequestCommand.STATUS_NOTIFICATION} payload with timestamp`
-        )
         return {
           timestamp: new Date(),
           ...commandParams,
