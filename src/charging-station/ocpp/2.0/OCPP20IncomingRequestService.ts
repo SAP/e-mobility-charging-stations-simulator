@@ -1376,7 +1376,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
-  // Helper methods for RequestStartTransaction
   private isIdTokenAuthorized (
     chargingStation: ChargingStation,
     idToken: OCPP20IdTokenType

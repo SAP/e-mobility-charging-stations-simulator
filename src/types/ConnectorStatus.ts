@@ -24,6 +24,7 @@ export interface ConnectorStatus {
   transactionId?: number | string
   transactionIdTag?: string
   transactionRemoteStarted?: boolean
+  transactionSeqNo?: number
   transactionSetInterval?: NodeJS.Timeout
   transactionStart?: Date
   transactionStarted?: boolean

@@ -2,8 +2,7 @@
 
 import type { JSONSchemaType } from 'ajv'
 
-import type { ChargingStation } from '../../../charging-station/index.js'
-
+import { type ChargingStation, resetConnectorStatus } from '../../../charging-station/index.js'
 import {
   ConnectorStatusEnum,
   type GenericResponse,
@@ -277,7 +276,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     moduleName?: string,
     methodName?: string
   ): JSONSchemaType<T> {
-    return OCPP20ServiceUtils.parseJsonSchemaFile<T>(
+    return super.parseJsonSchemaFile<T>(
       relativePath,
       OCPPVersion.VERSION_201,
       moduleName,
@@ -318,12 +317,14 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         return OCPP20Constants.OCPP_RESPONSE_REJECTED
       }
 
+      connectorStatus.transactionSeqNo = (connectorStatus.transactionSeqNo ?? 0) + 1
+
       const transactionEventRequest: OCPP20TransactionEventRequest = {
         eventType: OCPP20TransactionEventEnumType.Ended,
         evse: {
           id: evseId,
         },
-        seqNo: 0, // This should be managed by the transaction sequence
+        seqNo: connectorStatus.transactionSeqNo,
         timestamp: new Date(),
         transactionInfo: {
           stoppedReason: OCPP20ReasonEnumType.Remote,
@@ -337,6 +338,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         OCPP20TransactionEventRequest
       >(chargingStation, OCPP20RequestCommand.TRANSACTION_EVENT, transactionEventRequest)
 
+      resetConnectorStatus(connectorStatus)
       await sendAndSetConnectorStatus(chargingStation, connectorId, ConnectorStatusEnum.Available)
 
       return OCPP20Constants.OCPP_RESPONSE_ACCEPTED

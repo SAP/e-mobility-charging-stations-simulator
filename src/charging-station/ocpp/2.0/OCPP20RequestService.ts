@@ -161,9 +161,14 @@ export class OCPP20RequestService extends OCPPRequestService {
           timestamp: new Date(),
           ...commandParams,
         } as unknown as Request
+      case OCPP20RequestCommand.TRANSACTION_EVENT:
+        return {
+          timestamp: new Date(),
+          ...commandParams,
+        } as unknown as Request
       default: {
         // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
-        const errorMsg = `Unsupported OCPP command ${commandName} for payload building`
+        const errorMsg = `Unsupported OCPP command ${commandName as string} for payload building`
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.buildRequestPayload: ${errorMsg}`
         )

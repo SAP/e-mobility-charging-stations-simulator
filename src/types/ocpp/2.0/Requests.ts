@@ -19,7 +19,7 @@ import type {
   ReportDataType,
 } from './Variables.js'
 
-export enum OCPP20IncomingRequestCommand {
+export const enum OCPP20IncomingRequestCommand {
   CLEAR_CACHE = 'ClearCache',
   GET_BASE_REPORT = 'GetBaseReport',
   GET_VARIABLES = 'GetVariables',
@@ -29,7 +29,7 @@ export enum OCPP20IncomingRequestCommand {
   SET_VARIABLES = 'SetVariables',
 }
 
-export enum OCPP20RequestCommand {
+export const enum OCPP20RequestCommand {
   BOOT_NOTIFICATION = 'BootNotification',
   HEARTBEAT = 'Heartbeat',
   NOTIFY_REPORT = 'NotifyReport',

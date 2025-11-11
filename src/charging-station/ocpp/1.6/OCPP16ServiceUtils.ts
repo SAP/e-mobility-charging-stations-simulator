@@ -723,7 +723,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     moduleName?: string,
     methodName?: string
   ): JSONSchemaType<T> {
-    return OCPP16ServiceUtils.parseJsonSchemaFile<T>(
+    return super.parseJsonSchemaFile<T>(
       relativePath,
       OCPPVersion.VERSION_16,
       moduleName,
