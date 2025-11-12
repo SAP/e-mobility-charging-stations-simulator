@@ -30,7 +30,7 @@ export abstract class OCPPResponseService {
   protected readonly ajv: Ajv
   protected readonly ajvIncomingRequest: Ajv
   protected emptyResponseHandler = Constants.EMPTY_FUNCTION
-  protected abstract payloadValidateFunctions: Map<RequestCommand, ValidateFunction<JsonType>>
+  protected abstract payloadValidatorFunctions: Map<RequestCommand, ValidateFunction<JsonType>>
   private readonly version: OCPPVersion
 
   protected constructor (version: OCPPVersion) {
@@ -62,6 +62,13 @@ export abstract class OCPPResponseService {
     requestPayload: ReqType
   ): Promise<void>
 
+  /**
+   * Validates incoming response payload against JSON schema
+   * @param chargingStation - The charging station instance receiving the response
+   * @param commandName - OCPP command name to validate against
+   * @param payload - JSON response payload to validate
+   * @returns True if payload validation succeeds, false otherwise
+   */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
   protected validateResponsePayload<T extends JsonType>(
     chargingStation: ChargingStation,
@@ -71,7 +78,7 @@ export abstract class OCPPResponseService {
     if (chargingStation.stationInfo?.ocppStrictCompliance === false) {
       return true
     }
-    const validate = this.payloadValidateFunctions.get(commandName)
+    const validate = this.payloadValidatorFunctions.get(commandName)
     if (validate?.(payload) === true) {
       return true
     }

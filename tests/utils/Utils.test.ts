@@ -50,6 +50,13 @@ await describe('Utils test suite', async () => {
     // Shall invalidate Nil UUID
     expect(validateUUID('00000000-0000-0000-0000-000000000000')).toBe(false)
     expect(validateUUID('987FBC9-4BED-3078-CF07A-9141BA07C9F3')).toBe(false)
+    // Shall invalidate non-string inputs
+    expect(validateUUID(123)).toBe(false)
+    expect(validateUUID(null)).toBe(false)
+    expect(validateUUID(undefined)).toBe(false)
+    expect(validateUUID({})).toBe(false)
+    expect(validateUUID([])).toBe(false)
+    expect(validateUUID(true)).toBe(false)
   })
 
   await it('Verify sleep()', async () => {

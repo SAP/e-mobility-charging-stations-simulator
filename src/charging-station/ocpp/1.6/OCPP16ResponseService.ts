@@ -13,44 +13,27 @@ import {
 } from '../../../charging-station/index.js'
 import { OCPPError } from '../../../exception/index.js'
 import {
-  type ChangeConfigurationResponse,
   ChargingStationEvents,
   ErrorType,
-  type GenericResponse,
-  type GetConfigurationResponse,
-  type GetDiagnosticsResponse,
   type JsonType,
   OCPP16AuthorizationStatus,
   type OCPP16AuthorizeRequest,
   type OCPP16AuthorizeResponse,
   type OCPP16BootNotificationResponse,
-  type OCPP16ChangeAvailabilityResponse,
   OCPP16ChargePointStatus,
-  type OCPP16ClearChargingProfileResponse,
-  type OCPP16DataTransferResponse,
-  type OCPP16DiagnosticsStatusNotificationResponse,
-  type OCPP16FirmwareStatusNotificationResponse,
-  type OCPP16GetCompositeScheduleResponse,
-  type OCPP16HeartbeatResponse,
   OCPP16IncomingRequestCommand,
   type OCPP16MeterValuesRequest,
   type OCPP16MeterValuesResponse,
   OCPP16RequestCommand,
-  type OCPP16ReserveNowResponse,
   OCPP16StandardParametersKey,
   type OCPP16StartTransactionRequest,
   type OCPP16StartTransactionResponse,
-  type OCPP16StatusNotificationResponse,
   type OCPP16StopTransactionRequest,
   type OCPP16StopTransactionResponse,
-  type OCPP16TriggerMessageResponse,
-  type OCPP16UpdateFirmwareResponse,
   OCPPVersion,
   RegistrationStatusEnumType,
   ReservationTerminationReason,
   type ResponseHandler,
-  type SetChargingProfileResponse,
-  type UnlockConnectorResponse,
 } from '../../../types/index.js'
 import { Constants, convertToInt, isAsyncFunction, logger } from '../../../utils/index.js'
 import { OCPPResponseService } from '../OCPPResponseService.js'
@@ -58,19 +41,50 @@ import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js'
 
 const moduleName = 'OCPP16ResponseService'
 
+/**
+ * OCPP 1.6 Response Service - handles and processes all outgoing request responses
+ * from the Charging Station (CP) to the Central System (CS) using OCPP 1.6 protocol.
+ *
+ * This service class is responsible for:
+ * - **Response Reception**: Receiving responses to requests sent from the Charging Station
+ * - **Payload Validation**: Validating response payloads against OCPP 1.6 JSON schemas
+ * - **Response Processing**: Processing Central System responses and updating station state
+ * - **Error Handling**: Managing response errors and protocol-level exceptions
+ * - **State Synchronization**: Ensuring charging station state reflects Central System responses
+ *
+ * Supported OCPP 1.6 Response Types:
+ * - **Authentication**: Authorize responses with authorization status updates
+ * - **Transaction Management**: StartTransaction, StopTransaction response handling
+ * - **Status Updates**: BootNotification, StatusNotification, MeterValues responses
+ * - **Configuration**: Responses to configuration queries and updates
+ * - **Heartbeat**: Heartbeat response processing for connection maintenance
+ * - **Data Transfer**: Custom data transfer response handling
+ *
+ * Architecture Pattern:
+ * This class extends OCPPResponseService and implements OCPP 1.6-specific response
+ * processing logic. It follows a handler mapping pattern where each response type
+ * is processed by dedicated handler methods that manage charging station state updates.
+ *
+ * Response Validation Workflow:
+ * 1. Response received from Central System for previously sent request
+ * 2. Response payload validated against OCPP 1.6 JSON schema
+ * 3. Response routed to appropriate handler based on original request type
+ * 4. Charging station state updated based on response content
+ * 5. Any follow-up actions triggered (transactions, status changes, etc.)
+ * @see {@link validatePayload} Response payload validation method
+ * @see {@link handleResponse} Response processing methods
+ */
+
 export class OCPP16ResponseService extends OCPPResponseService {
   public incomingRequestResponsePayloadValidateFunctions: Map<
     OCPP16IncomingRequestCommand,
     ValidateFunction<JsonType>
   >
 
-  protected payloadValidateFunctions: Map<OCPP16RequestCommand, ValidateFunction<JsonType>>
+  protected payloadValidatorFunctions: Map<OCPP16RequestCommand, ValidateFunction<JsonType>>
   private readonly responseHandlers: Map<OCPP16RequestCommand, ResponseHandler>
 
   public constructor () {
-    // if (new.target.name === moduleName) {
-    //   throw new TypeError(`Cannot construct ${new.target.name} instances directly`)
-    // }
     super(OCPPVersion.VERSION_16)
     this.responseHandlers = new Map<OCPP16RequestCommand, ResponseHandler>([
       [OCPP16RequestCommand.AUTHORIZE, this.handleResponseAuthorize.bind(this) as ResponseHandler],
@@ -99,283 +113,17 @@ export class OCPP16ResponseService extends OCPPResponseService {
         this.handleResponseStopTransaction.bind(this) as ResponseHandler,
       ],
     ])
-    this.payloadValidateFunctions = new Map<OCPP16RequestCommand, ValidateFunction<JsonType>>([
-      [
-        OCPP16RequestCommand.AUTHORIZE,
-        this.ajv.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16AuthorizeResponse>(
-            'assets/json-schemas/ocpp/1.6/AuthorizeResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16RequestCommand.BOOT_NOTIFICATION,
-        this.ajv.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16BootNotificationResponse>(
-            'assets/json-schemas/ocpp/1.6/BootNotificationResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16RequestCommand.DATA_TRANSFER,
-        this.ajv.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16DataTransferResponse>(
-            'assets/json-schemas/ocpp/1.6/DataTransferResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
-        this.ajv.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16DiagnosticsStatusNotificationResponse>(
-            'assets/json-schemas/ocpp/1.6/DiagnosticsStatusNotificationResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
-        this.ajv.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16FirmwareStatusNotificationResponse>(
-            'assets/json-schemas/ocpp/1.6/FirmwareStatusNotificationResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16RequestCommand.HEARTBEAT,
-        this.ajv.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16HeartbeatResponse>(
-            'assets/json-schemas/ocpp/1.6/HeartbeatResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16RequestCommand.METER_VALUES,
-        this.ajv.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16MeterValuesResponse>(
-            'assets/json-schemas/ocpp/1.6/MeterValuesResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16RequestCommand.START_TRANSACTION,
-        this.ajv.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16StartTransactionResponse>(
-            'assets/json-schemas/ocpp/1.6/StartTransactionResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16RequestCommand.STATUS_NOTIFICATION,
-        this.ajv.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16StatusNotificationResponse>(
-            'assets/json-schemas/ocpp/1.6/StatusNotificationResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16RequestCommand.STOP_TRANSACTION,
-        this.ajv.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16StopTransactionResponse>(
-            'assets/json-schemas/ocpp/1.6/StopTransactionResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-    ])
-    this.incomingRequestResponsePayloadValidateFunctions = new Map<
-      OCPP16IncomingRequestCommand,
-      ValidateFunction<JsonType>
-    >([
-      [
-        OCPP16IncomingRequestCommand.CANCEL_RESERVATION,
-        this.ajvIncomingRequest.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<GenericResponse>(
-            'assets/json-schemas/ocpp/1.6/CancelReservationResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16IncomingRequestCommand.CHANGE_AVAILABILITY,
-        this.ajvIncomingRequest.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16ChangeAvailabilityResponse>(
-            'assets/json-schemas/ocpp/1.6/ChangeAvailabilityResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION,
-        this.ajvIncomingRequest.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<ChangeConfigurationResponse>(
-            'assets/json-schemas/ocpp/1.6/ChangeConfigurationResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16IncomingRequestCommand.CLEAR_CACHE,
-        this.ajvIncomingRequest.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<GenericResponse>(
-            'assets/json-schemas/ocpp/1.6/ClearCacheResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16IncomingRequestCommand.CLEAR_CHARGING_PROFILE,
-        this.ajvIncomingRequest.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16ClearChargingProfileResponse>(
-            'assets/json-schemas/ocpp/1.6/ClearChargingProfileResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16IncomingRequestCommand.DATA_TRANSFER,
-        this.ajvIncomingRequest.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16DataTransferResponse>(
-            'assets/json-schemas/ocpp/1.6/DataTransferResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16IncomingRequestCommand.GET_COMPOSITE_SCHEDULE,
-        this.ajvIncomingRequest.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16GetCompositeScheduleResponse>(
-            'assets/json-schemas/ocpp/1.6/GetCompositeScheduleResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16IncomingRequestCommand.GET_CONFIGURATION,
-        this.ajvIncomingRequest.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<GetConfigurationResponse>(
-            'assets/json-schemas/ocpp/1.6/GetConfigurationResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16IncomingRequestCommand.GET_DIAGNOSTICS,
-        this.ajvIncomingRequest.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<GetDiagnosticsResponse>(
-            'assets/json-schemas/ocpp/1.6/GetDiagnosticsResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
-        this.ajvIncomingRequest.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<GenericResponse>(
-            'assets/json-schemas/ocpp/1.6/RemoteStartTransactionResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION,
-        this.ajvIncomingRequest.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<GenericResponse>(
-            'assets/json-schemas/ocpp/1.6/RemoteStopTransactionResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16IncomingRequestCommand.RESERVE_NOW,
-        this.ajvIncomingRequest.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16ReserveNowResponse>(
-            'assets/json-schemas/ocpp/1.6/ReserveNowResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16IncomingRequestCommand.RESET,
-        this.ajvIncomingRequest.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<GenericResponse>(
-            'assets/json-schemas/ocpp/1.6/ResetResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16IncomingRequestCommand.SET_CHARGING_PROFILE,
-        this.ajvIncomingRequest.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<SetChargingProfileResponse>(
-            'assets/json-schemas/ocpp/1.6/SetChargingProfileResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
-        this.ajvIncomingRequest.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16TriggerMessageResponse>(
-            'assets/json-schemas/ocpp/1.6/TriggerMessageResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16IncomingRequestCommand.UNLOCK_CONNECTOR,
-        this.ajvIncomingRequest.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<UnlockConnectorResponse>(
-            'assets/json-schemas/ocpp/1.6/UnlockConnectorResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-      [
-        OCPP16IncomingRequestCommand.UPDATE_FIRMWARE,
-        this.ajvIncomingRequest.compile(
-          OCPP16ServiceUtils.parseJsonSchemaFile<OCPP16UpdateFirmwareResponse>(
-            'assets/json-schemas/ocpp/1.6/UpdateFirmwareResponse.json',
-            moduleName,
-            'constructor'
-          )
-        ),
-      ],
-    ])
+    this.payloadValidatorFunctions = OCPP16ServiceUtils.createPayloadValidatorMap(
+      OCPP16ServiceUtils.createResponsePayloadConfigs(),
+      OCPP16ServiceUtils.createResponsePayloadOptions(moduleName, 'constructor'),
+      this.ajv
+    )
+    this.incomingRequestResponsePayloadValidateFunctions =
+      OCPP16ServiceUtils.createPayloadValidatorMap(
+        OCPP16ServiceUtils.createIncomingRequestResponsePayloadConfigs(),
+        OCPP16ServiceUtils.createIncomingRequestResponsePayloadOptions(moduleName, 'constructor'),
+        this.ajvIncomingRequest
+      )
     this.validatePayload = this.validatePayload.bind(this)
   }
 
@@ -399,6 +147,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
       ) {
         try {
           this.validatePayload(chargingStation, commandName, payload)
+          logger.debug(
+            `${chargingStation.logPrefix()} ${moduleName}.responseHandler: Handling '${commandName}' response`
+          )
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const responseHandler = this.responseHandlers.get(commandName)!
           if (isAsyncFunction(responseHandler)) {
@@ -412,9 +163,12 @@ export class OCPP16ResponseService extends OCPPResponseService {
               ) => void
             )(chargingStation, payload, requestPayload)
           }
+          logger.debug(
+            `${chargingStation.logPrefix()} ${moduleName}.responseHandler: '${commandName}' response processed successfully`
+          )
         } catch (error) {
           logger.error(
-            `${chargingStation.logPrefix()} ${moduleName}.responseHandler: Handle response error:`,
+            `${chargingStation.logPrefix()} ${moduleName}.responseHandler: Handle '${commandName}' response error:`,
             error
           )
           throw error
@@ -439,7 +193,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
           payload,
           undefined,
           2
-        )} while the charging station is not registered on the central server`,
+        )} while the charging station is not registered on the central system`,
         commandName,
         payload
       )
@@ -480,7 +234,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       if (payload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED) {
         authorizeConnectorStatus.idTagAuthorized = true
         logger.debug(
-          `${chargingStation.logPrefix()} idTag '${
+          `${chargingStation.logPrefix()} ${moduleName}.handleResponseAuthorize: idTag '${
             requestPayload.idTag
           }' accepted on connector id ${authorizeConnectorId.toString()}`
         )
@@ -488,14 +242,14 @@ export class OCPP16ResponseService extends OCPPResponseService {
         authorizeConnectorStatus.idTagAuthorized = false
         delete authorizeConnectorStatus.authorizeIdTag
         logger.debug(
-          `${chargingStation.logPrefix()} idTag '${
+          `${chargingStation.logPrefix()} ${moduleName}.handleResponseAuthorize: idTag '${
             requestPayload.idTag
           }' rejected with status '${payload.idTagInfo.status}'`
         )
       }
     } else {
       logger.error(
-        `${chargingStation.logPrefix()} idTag '${
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseAuthorize: idTag '${
           requestPayload.idTag
         }' has no authorize request pending`
       )
@@ -510,6 +264,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
       chargingStation.bootNotificationResponse = payload
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       if (payload.interval != null) {
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.handleResponseBootNotification: Setting HeartbeatInterval to ${payload.interval.toString()}s`
+        )
         addConfigurationKey(
           chargingStation,
           OCPP16StandardParametersKey.HeartbeatInterval,
@@ -526,22 +283,31 @@ export class OCPP16ResponseService extends OCPPResponseService {
         )
       }
       if (chargingStation.inAcceptedState()) {
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.handleResponseBootNotification: Emitting '${RegistrationStatusEnumType.ACCEPTED}' event`
+        )
         chargingStation.emitChargingStationEvent(ChargingStationEvents.accepted)
       } else if (chargingStation.inPendingState()) {
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.handleResponseBootNotification: Emitting '${RegistrationStatusEnumType.PENDING}' event`
+        )
         chargingStation.emitChargingStationEvent(ChargingStationEvents.pending)
       } else if (chargingStation.inRejectedState()) {
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.handleResponseBootNotification: Emitting '${RegistrationStatusEnumType.REJECTED}' event`
+        )
         chargingStation.emitChargingStationEvent(ChargingStationEvents.rejected)
       }
-      const logMsg = `${chargingStation.logPrefix()} Charging station in '${
+      const logMsg = `${chargingStation.logPrefix()} ${moduleName}.handleResponseBootNotification: Charging station in '${
         payload.status
-      }' state on the central server`
+      }' state on the central system`
       payload.status === RegistrationStatusEnumType.REJECTED
         ? logger.warn(logMsg)
         : logger.info(logMsg)
     } else {
       delete chargingStation.bootNotificationResponse
       logger.error(
-        `${chargingStation.logPrefix()} Charging station boot notification response received: %j with undefined registration status`,
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseBootNotification: Charging station boot notification response received: %j with undefined registration status`,
         payload
       )
     }
@@ -555,7 +321,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     const { connectorId } = requestPayload
     if (connectorId === 0 || !chargingStation.hasConnector(connectorId)) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to start a transaction on a non existing connector id ${connectorId.toString()}`
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Trying to start a transaction on a non existing connector id ${connectorId.toString()}`
       )
       return
     }
@@ -568,7 +334,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       connectorStatus.idTagLocalAuthorized === false
     ) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to start a transaction with a not local authorized idTag ${
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Trying to start a transaction with a not local authorized idTag ${
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           connectorStatus.localAuthorizeIdTag
         } on connector id ${connectorId.toString()}`
@@ -584,7 +350,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       connectorStatus.idTagAuthorized === false
     ) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to start a transaction with a not authorized idTag ${
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Trying to start a transaction with a not authorized idTag ${
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           connectorStatus.authorizeIdTag
         } on connector id ${connectorId.toString()}`
@@ -598,7 +364,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       connectorStatus.authorizeIdTag !== requestPayload.idTag
     ) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to start a transaction with an idTag ${
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Trying to start a transaction with an idTag ${
           requestPayload.idTag
         } different from the authorize request one ${
           connectorStatus.authorizeIdTag
@@ -613,7 +379,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       connectorStatus.localAuthorizeIdTag !== requestPayload.idTag
     ) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to start a transaction with an idTag ${
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Trying to start a transaction with an idTag ${
           requestPayload.idTag
         } different from the local authorized one ${
           connectorStatus.localAuthorizeIdTag
@@ -624,7 +390,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     }
     if (connectorStatus?.transactionStarted === true) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to start a transaction on an already used connector id ${connectorId.toString()} by idTag ${
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Trying to start a transaction on an already used connector id ${connectorId.toString()} by idTag ${
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           connectorStatus.transactionIdTag
         }`
@@ -637,7 +403,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
           for (const [id, status] of evseStatus.connectors) {
             if (id !== connectorId && status.transactionStarted === true) {
               logger.error(
-                `${chargingStation.logPrefix()} Trying to start a transaction on an already used evse id ${evseId.toString()} by connector id ${id.toString()} with idTag ${
+                `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Trying to start a transaction on an already used evse id ${evseId.toString()} by connector id ${id.toString()} with idTag ${
                   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                   status.transactionIdTag
                 }`
@@ -654,7 +420,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       connectorStatus?.status !== OCPP16ChargePointStatus.Preparing
     ) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to start a transaction on connector id ${connectorId.toString()} with status ${
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Trying to start a transaction on connector id ${connectorId.toString()} with status ${
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           connectorStatus?.status
         }`
@@ -663,7 +429,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     }
     if (!Number.isSafeInteger(payload.transactionId)) {
       logger.warn(
-        `${chargingStation.logPrefix()} Trying to start a transaction on connector id ${connectorId.toString()} with a non integer transaction id ${payload.transactionId.toString()}, converting to integer`
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Trying to start a transaction on connector id ${connectorId.toString()} with a non integer transaction id ${payload.transactionId.toString()}, converting to integer`
       )
       payload.transactionId = convertToInt(payload.transactionId)
     }
@@ -688,14 +454,14 @@ export class OCPP16ResponseService extends OCPPResponseService {
         if (reservation != null) {
           if (reservation.idTag !== requestPayload.idTag) {
             logger.warn(
-              `${chargingStation.logPrefix()} Reserved transaction ${payload.transactionId.toString()} started with a different idTag ${
+              `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Reserved transaction ${payload.transactionId.toString()} started with a different idTag ${
                 requestPayload.idTag
               } than the reservation one ${reservation.idTag}`
             )
           }
           if (hasReservationExpired(reservation)) {
             logger.warn(
-              `${chargingStation.logPrefix()} Reserved transaction ${payload.transactionId.toString()} started with expired reservation ${requestPayload.reservationId.toString()} (expiry date: ${reservation.expiryDate.toISOString()}))`
+              `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Reserved transaction ${payload.transactionId.toString()} started with expired reservation ${requestPayload.reservationId.toString()} (expiry date: ${reservation.expiryDate.toISOString()}))`
             )
           }
           await chargingStation.removeReservation(
@@ -704,7 +470,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
           )
         } else {
           logger.warn(
-            `${chargingStation.logPrefix()} Reserved transaction ${payload.transactionId.toString()} started with unknown reservation ${requestPayload.reservationId.toString()}`
+            `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Reserved transaction ${payload.transactionId.toString()} started with unknown reservation ${requestPayload.reservationId.toString()}`
           )
         }
       }
@@ -723,7 +489,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ChargePointStatus.Charging
       )
       logger.info(
-        `${chargingStation.logPrefix()} Transaction with id ${payload.transactionId.toString()} STARTED on ${
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Transaction with id ${payload.transactionId.toString()} STARTED on ${
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           chargingStation.stationInfo?.chargingStationId
         }#${connectorId.toString()} for idTag '${requestPayload.idTag}'`
@@ -744,7 +510,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       )
     } else {
       logger.warn(
-        `${chargingStation.logPrefix()} Starting transaction with id ${payload.transactionId.toString()} REJECTED on ${
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Starting transaction with id ${payload.transactionId.toString()} REJECTED on ${
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           chargingStation.stationInfo?.chargingStationId
         }#${connectorId.toString()} with status '${payload.idTagInfo.status}', idTag '${
@@ -770,7 +536,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     )
     if (transactionConnectorId == null) {
       logger.error(
-        `${chargingStation.logPrefix()} Trying to stop a non existing transaction with id ${requestPayload.transactionId.toString()}`
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseStopTransaction: Trying to stop a non existing transaction with id ${requestPayload.transactionId.toString()}`
       )
       return
     }
@@ -813,7 +579,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     }
     resetConnectorStatus(chargingStation.getConnectorStatus(transactionConnectorId))
     chargingStation.stopMeterValues(transactionConnectorId)
-    const logMsg = `${chargingStation.logPrefix()} Transaction with id ${requestPayload.transactionId.toString()} STOPPED on ${
+    const logMsg = `${chargingStation.logPrefix()} ${moduleName}.handleResponseStopTransaction: Transaction with id ${requestPayload.transactionId.toString()} STOPPED on ${
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       chargingStation.stationInfo?.chargingStationId
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
@@ -838,13 +604,33 @@ export class OCPP16ResponseService extends OCPPResponseService {
     await OCPP16ServiceUtils.restoreConnectorStatus(chargingStation, connectorId, connectorStatus)
   }
 
+  /**
+   * Validates incoming OCPP 1.6 response payload against JSON schema
+   * @param chargingStation - The charging station instance receiving the response
+   * @param commandName - OCPP 1.6 command name to validate against
+   * @param payload - JSON response payload to validate
+   * @returns True if payload validation succeeds, false otherwise
+   */
   private validatePayload (
     chargingStation: ChargingStation,
     commandName: OCPP16RequestCommand,
     payload: JsonType
   ): boolean {
-    if (this.payloadValidateFunctions.has(commandName)) {
-      return this.validateResponsePayload(chargingStation, commandName, payload)
+    if (this.payloadValidatorFunctions.has(commandName)) {
+      logger.debug(
+        `${chargingStation.logPrefix()} ${moduleName}.validatePayload: Validating '${commandName}' response payload`
+      )
+      const isValid = this.validateResponsePayload(chargingStation, commandName, payload)
+      if (!isValid) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.validatePayload: '${commandName}' response payload validation failed`
+        )
+      } else {
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.validatePayload: '${commandName}' response payload validation successful`
+        )
+      }
+      return isValid
     }
     logger.warn(
       `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema validation function found for command '${commandName}' PDU validation`

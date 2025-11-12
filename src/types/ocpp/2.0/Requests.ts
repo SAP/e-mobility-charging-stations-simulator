@@ -19,7 +19,7 @@ import type {
   ReportDataType,
 } from './Variables.js'
 
-export enum OCPP20IncomingRequestCommand {
+export const enum OCPP20IncomingRequestCommand {
   CLEAR_CACHE = 'ClearCache',
   GET_BASE_REPORT = 'GetBaseReport',
   GET_VARIABLES = 'GetVariables',
@@ -29,11 +29,12 @@ export enum OCPP20IncomingRequestCommand {
   SET_VARIABLES = 'SetVariables',
 }
 
-export enum OCPP20RequestCommand {
+export const enum OCPP20RequestCommand {
   BOOT_NOTIFICATION = 'BootNotification',
   HEARTBEAT = 'Heartbeat',
   NOTIFY_REPORT = 'NotifyReport',
   STATUS_NOTIFICATION = 'StatusNotification',
+  TRANSACTION_EVENT = 'TransactionEvent',
 }
 
 export interface OCPP20BootNotificationRequest extends JsonObject {
@@ -79,6 +80,11 @@ export interface OCPP20RequestStartTransactionRequest extends JsonObject {
   groupIdToken?: OCPP20IdTokenType
   idToken: OCPP20IdTokenType
   remoteStartId: number
+}
+
+export interface OCPP20RequestStopTransactionRequest extends JsonObject {
+  customData?: CustomDataType
+  transactionId: `${string}-${string}-${string}-${string}-${string}`
 }
 
 export interface OCPP20ResetRequest extends JsonObject {

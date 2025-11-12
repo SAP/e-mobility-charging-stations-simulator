@@ -2434,7 +2434,7 @@ export function validateValue (
 ): { info?: string; ok: boolean; reason?: ReasonCodeEnumType } {
   if (variableMetadata.maxLength != null && rawValue.length > variableMetadata.maxLength) {
     return {
-      info: 'Value exceeds maximum length (' + String(variableMetadata.maxLength) + ')',
+      info: 'Value exceeds maximum length (' + variableMetadata.maxLength.toString() + ')',
       ok: false,
       reason: ReasonCodeEnumType.InvalidValue,
     }
@@ -2485,14 +2485,14 @@ export function validateValue (
       }
       if (variableMetadata.min != null && num < variableMetadata.min) {
         return {
-          info: 'Decimal value below minimum (' + String(variableMetadata.min) + ')',
+          info: 'Decimal value below minimum (' + variableMetadata.min.toString() + ')',
           ok: false,
           reason: ReasonCodeEnumType.ValueTooLow,
         }
       }
       if (variableMetadata.max != null && num > variableMetadata.max) {
         return {
-          info: 'Decimal value above maximum (' + String(variableMetadata.max) + ')',
+          info: 'Decimal value above maximum (' + variableMetadata.max.toString() + ')',
           ok: false,
           reason: ReasonCodeEnumType.ValueTooHigh,
         }
@@ -2545,14 +2545,14 @@ export function validateValue (
       }
       if (variableMetadata.min != null && num < variableMetadata.min) {
         return {
-          info: 'Integer value below minimum (' + String(variableMetadata.min) + ')',
+          info: 'Integer value below minimum (' + variableMetadata.min.toString() + ')',
           ok: false,
           reason: ReasonCodeEnumType.ValueTooLow,
         }
       }
       if (variableMetadata.max != null && num > variableMetadata.max) {
         return {
-          info: 'Integer value above maximum (' + String(variableMetadata.max) + ')',
+          info: 'Integer value above maximum (' + variableMetadata.max.toString() + ')',
           ok: false,
           reason: ReasonCodeEnumType.ValueTooHigh,
         }

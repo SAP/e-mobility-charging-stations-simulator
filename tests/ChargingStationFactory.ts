@@ -2,6 +2,7 @@ import { millisecondsToSeconds } from 'date-fns'
 
 import type { ChargingStation } from '../src/charging-station/index.js'
 
+import { getConfigurationKey } from '../src/charging-station/ConfigurationKeyUtils.js'
 import { IdTagsCache } from '../src/charging-station/IdTagsCache.js'
 import {
   AvailabilityType,
@@ -15,8 +16,9 @@ import {
   OCPPVersion,
   RegistrationStatusEnumType,
   type SampledValueTemplate,
+  StandardParametersKey,
 } from '../src/types/index.js'
-import { clone, Constants } from '../src/utils/index.js'
+import { clone, Constants, convertToBoolean } from '../src/utils/index.js'
 
 /**
  * Options to customize the construction of a ChargingStation test instance
@@ -78,6 +80,28 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
     },
     evses,
     getConnectionTimeout: () => connectionTimeout,
+    getConnectorIdByTransactionId: (transactionId: number | string | undefined) => {
+      if (transactionId == null) {
+        return undefined
+      }
+      // Search through connectors to find one with matching transaction ID
+      if (chargingStation.hasEvses) {
+        for (const evseStatus of chargingStation.evses.values()) {
+          for (const [connectorId, connectorStatus] of evseStatus.connectors.entries()) {
+            if (connectorStatus.transactionId === transactionId) {
+              return connectorId
+            }
+          }
+        }
+      } else {
+        for (const [connectorId, connectorStatus] of chargingStation.connectors.entries()) {
+          if (connectorStatus.transactionId === transactionId) {
+            return connectorId
+          }
+        }
+      }
+      return undefined
+    },
     getConnectorStatus: (connectorId: number) => {
       if (chargingStation.hasEvses) {
         for (const evseStatus of chargingStation.evses.values()) {
@@ -89,13 +113,53 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
       }
       return chargingStation.connectors.get(connectorId)
     },
+    getEvseIdByConnectorId: (connectorId: number) => {
+      if (!chargingStation.hasEvses) {
+        return undefined
+      }
+      for (const [evseId, evseStatus] of chargingStation.evses.entries()) {
+        if (evseStatus.connectors.has(connectorId)) {
+          return evseId
+        }
+      }
+      return undefined
+    },
+    getEvseIdByTransactionId: (transactionId: number | string | undefined) => {
+      if (transactionId == null) {
+        return undefined
+      }
+      // Search through EVSEs to find one with matching transaction ID
+      if (chargingStation.hasEvses) {
+        for (const [evseId, evseStatus] of chargingStation.evses.entries()) {
+          for (const connectorStatus of evseStatus.connectors.values()) {
+            if (connectorStatus.transactionId === transactionId) {
+              return evseId
+            }
+          }
+        }
+      }
+      return undefined
+    },
     getHeartbeatInterval: () => heartbeatInterval,
+    getLocalAuthListEnabled: (): boolean => {
+      const localAuthListEnabled = getConfigurationKey(
+        chargingStation,
+        StandardParametersKey.LocalAuthListEnabled
+      )
+      return localAuthListEnabled != null ? convertToBoolean(localAuthListEnabled.value) : false
+    },
     getWebSocketPingInterval: () => websocketPingInterval,
     hasEvses: useEvses,
     idTagsCache: IdTagsCache.getInstance(),
     inAcceptedState: (): boolean => {
       return (
         chargingStation.bootNotificationResponse?.status === RegistrationStatusEnumType.ACCEPTED
+      )
+    },
+    isConnectorAvailable: (connectorId: number) => {
+      return (
+        connectorId > 0 &&
+        chargingStation.getConnectorStatus(connectorId)?.availability === AvailabilityType.Operative
       )
     },
     logPrefix: (): string => {
@@ -113,6 +177,10 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
         {
           key: OCPP20OptionalVariableName.HeartbeatInterval,
           value: millisecondsToSeconds(heartbeatInterval).toString(),
+        },
+        {
+          key: StandardParametersKey.LocalAuthListEnabled,
+          value: 'true',
         },
       ],
       ...options.ocppConfiguration,
@@ -172,6 +240,7 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
       maximumAmperage: 16,
       maximumPower: 12000,
       ocppVersion: OCPPVersion.VERSION_16,
+      remoteAuthorization: true,
       templateIndex,
       templateName: 'test-template.json',
       ...options.stationInfo,

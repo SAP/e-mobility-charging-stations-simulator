@@ -51,7 +51,7 @@ const defaultRequestParams: RequestParams = {
 export abstract class OCPPRequestService {
   private static instance: null | OCPPRequestService = null
   protected readonly ajv: Ajv
-  protected abstract payloadValidateFunctions: Map<RequestCommand, ValidateFunction<JsonType>>
+  protected abstract payloadValidatorFunctions: Map<RequestCommand, ValidateFunction<JsonType>>
   private readonly ocppResponseService: OCPPResponseService
   private readonly version: OCPPVersion
 
@@ -479,6 +479,13 @@ export abstract class OCPPRequestService {
     )
   }
 
+  /**
+   * Validates outgoing request payload against JSON schema
+   * @param chargingStation - The charging station instance sending the request
+   * @param commandName - OCPP command name to validate against
+   * @param payload - JSON payload to validate
+   * @returns True if payload validation succeeds, false otherwise
+   */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
   private validateRequestPayload<T extends JsonType>(
     chargingStation: ChargingStation,
@@ -488,13 +495,13 @@ export abstract class OCPPRequestService {
     if (chargingStation.stationInfo?.ocppStrictCompliance === false) {
       return true
     }
-    if (!this.payloadValidateFunctions.has(commandName as RequestCommand)) {
+    if (!this.payloadValidatorFunctions.has(commandName as RequestCommand)) {
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.validateRequestPayload: No JSON schema found for command '${commandName}' PDU validation`
+        `${chargingStation.logPrefix()} ${moduleName}.validateRequestPayload: No JSON schema validation function found for command '${commandName}' PDU validation`
       )
       return true
     }
-    const validate = this.payloadValidateFunctions.get(commandName as RequestCommand)
+    const validate = this.payloadValidatorFunctions.get(commandName as RequestCommand)
     payload = clone<T>(payload)
     convertDateToISOString<T>(payload)
     if (validate?.(payload) === true) {

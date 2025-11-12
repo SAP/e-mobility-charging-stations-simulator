@@ -4,13 +4,13 @@ import type { GenericStatus, RegistrationStatusEnumType } from '../Common.js'
 import type { OCPPConfigurationKey } from '../Configuration.js'
 import type { OCPP16ChargingSchedule } from './ChargingProfile.js'
 
-export enum OCPP16AvailabilityStatus {
+export const enum OCPP16AvailabilityStatus {
   ACCEPTED = 'Accepted',
   REJECTED = 'Rejected',
   SCHEDULED = 'Scheduled',
 }
 
-export enum OCPP16ChargingProfileStatus {
+export const enum OCPP16ChargingProfileStatus {
   ACCEPTED = 'Accepted',
   NOT_SUPPORTED = 'NotSupported',
   REJECTED = 'Rejected',
@@ -21,14 +21,14 @@ export enum OCPP16ClearChargingProfileStatus {
   UNKNOWN = 'Unknown',
 }
 
-export enum OCPP16ConfigurationStatus {
+export const enum OCPP16ConfigurationStatus {
   ACCEPTED = 'Accepted',
   NOT_SUPPORTED = 'NotSupported',
   REBOOT_REQUIRED = 'RebootRequired',
   REJECTED = 'Rejected',
 }
 
-export enum OCPP16DataTransferStatus {
+export const enum OCPP16DataTransferStatus {
   ACCEPTED = 'Accepted',
   REJECTED = 'Rejected',
   UNKNOWN_MESSAGE_ID = 'UnknownMessageId',
@@ -50,7 +50,7 @@ export enum OCPP16TriggerMessageStatus {
   REJECTED = 'Rejected',
 }
 
-export enum OCPP16UnlockStatus {
+export const enum OCPP16UnlockStatus {
   NOT_SUPPORTED = 'NotSupported',
   UNLOCK_FAILED = 'UnlockFailed',
   UNLOCKED = 'Unlocked',

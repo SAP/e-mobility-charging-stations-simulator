@@ -10,12 +10,12 @@ import type {
 import type { OCPP16StandardParametersKey, OCPP16VendorParametersKey } from './Configuration.js'
 import type { OCPP16DiagnosticsStatus } from './DiagnosticsStatus.js'
 
-export enum OCPP16AvailabilityType {
+export const enum OCPP16AvailabilityType {
   Inoperative = 'Inoperative',
   Operative = 'Operative',
 }
 
-export enum OCPP16FirmwareStatus {
+export const enum OCPP16FirmwareStatus {
   Downloaded = 'Downloaded',
   DownloadFailed = 'DownloadFailed',
   Downloading = 'Downloading',
@@ -25,7 +25,7 @@ export enum OCPP16FirmwareStatus {
   Installing = 'Installing',
 }
 
-export enum OCPP16IncomingRequestCommand {
+export const enum OCPP16IncomingRequestCommand {
   CANCEL_RESERVATION = 'CancelReservation',
   CHANGE_AVAILABILITY = 'ChangeAvailability',
   CHANGE_CONFIGURATION = 'ChangeConfiguration',
@@ -54,7 +54,7 @@ export enum OCPP16MessageTrigger {
   StatusNotification = 'StatusNotification',
 }
 
-export enum OCPP16RequestCommand {
+export const enum OCPP16RequestCommand {
   AUTHORIZE = 'Authorize',
   BOOT_NOTIFICATION = 'BootNotification',
   DATA_TRANSFER = 'DataTransfer',
@@ -67,7 +67,7 @@ export enum OCPP16RequestCommand {
   STOP_TRANSACTION = 'StopTransaction',
 }
 
-enum ResetType {
+export const enum ResetType {
   HARD = 'Hard',
   SOFT = 'Soft',
 }

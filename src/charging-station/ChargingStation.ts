@@ -396,7 +396,9 @@ export class ChargingStation extends EventEmitter {
     return Constants.DEFAULT_CONNECTION_TIMEOUT
   }
 
-  public getConnectorIdByTransactionId (transactionId: number | undefined): number | undefined {
+  public getConnectorIdByTransactionId (
+    transactionId: number | string | undefined
+  ): number | undefined {
     if (transactionId == null) {
       return undefined
     } else if (this.hasEvses) {
@@ -419,24 +421,19 @@ export class ChargingStation extends EventEmitter {
   public getConnectorMaximumAvailablePower (connectorId: number): number {
     let connectorAmperageLimitationLimit: number | undefined
     const amperageLimitation = this.getAmperageLimitation()
-    if (
-      amperageLimitation != null &&
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      amperageLimitation < this.stationInfo!.maximumAmperage!
-    ) {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    if (amperageLimitation != null && amperageLimitation < this.stationInfo!.maximumAmperage!) {
+      const voltageOut = this.getVoltageOut()
       connectorAmperageLimitationLimit =
         (this.stationInfo?.currentOutType === CurrentType.AC
           ? ACElectricUtils.powerTotal(
             this.getNumberOfPhases(),
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            this.stationInfo.voltageOut!,
+            voltageOut,
             amperageLimitation *
                 (this.hasEvses ? this.getNumberOfEvses() : this.getNumberOfConnectors())
           )
           : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          DCElectricUtils.power(this.stationInfo!.voltageOut!, amperageLimitation)) /
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.powerDivider!
+          DCElectricUtils.power(voltageOut, amperageLimitation)) / this.powerDivider!
     }
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const connectorMaximumPower = this.stationInfo!.maximumPower! / this.powerDivider!
@@ -475,7 +472,7 @@ export class ChargingStation extends EventEmitter {
   }
 
   public getEnergyActiveImportRegisterByTransactionId (
-    transactionId: number | undefined,
+    transactionId: number | string | undefined,
     rounded = false
   ): number {
     return this.getEnergyActiveImportRegister(
@@ -483,6 +480,33 @@ export class ChargingStation extends EventEmitter {
       this.getConnectorStatus(this.getConnectorIdByTransactionId(transactionId)!),
       rounded
     )
+  }
+
+  public getEvseIdByConnectorId (connectorId: number): number | undefined {
+    if (!this.hasEvses) {
+      return undefined
+    }
+    for (const [evseId, evseStatus] of this.evses) {
+      if (evseStatus.connectors.has(connectorId)) {
+        return evseId
+      }
+    }
+    return undefined
+  }
+
+  public getEvseIdByTransactionId (transactionId: number | string | undefined): number | undefined {
+    if (transactionId == null) {
+      return undefined
+    } else if (this.hasEvses) {
+      for (const [evseId, evseStatus] of this.evses) {
+        for (const connectorStatus of evseStatus.connectors.values()) {
+          if (connectorStatus.transactionId === transactionId) {
+            return evseId
+          }
+        }
+      }
+    }
+    return undefined
   }
 
   public getHeartbeatInterval (): number {
@@ -604,6 +628,14 @@ export class ChargingStation extends EventEmitter {
         }
       }
     }
+  }
+
+  public getVoltageOut (stationInfo?: ChargingStationInfo): Voltage {
+    return (
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      (stationInfo ?? this.stationInfo!).voltageOut ??
+      getDefaultVoltageOut(this.getCurrentOutType(stationInfo), this.logPrefix(), this.templateFile)
+    )
   }
 
   public getWebSocketPingInterval (): number {
@@ -1440,14 +1472,6 @@ export class ChargingStation extends EventEmitter {
   private getUseConnectorId0 (stationTemplate?: ChargingStationTemplate): boolean {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return stationTemplate?.useConnectorId0 ?? Constants.DEFAULT_STATION_INFO.useConnectorId0!
-  }
-
-  private getVoltageOut (stationInfo?: ChargingStationInfo): Voltage {
-    return (
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      (stationInfo ?? this.stationInfo!).voltageOut ??
-      getDefaultVoltageOut(this.getCurrentOutType(stationInfo), this.logPrefix(), this.templateFile)
-    )
   }
 
   private handleErrorMessage (errorResponse: ErrorResponse): void {

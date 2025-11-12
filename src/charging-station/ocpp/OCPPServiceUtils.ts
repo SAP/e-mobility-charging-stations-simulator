@@ -1,5 +1,4 @@
-import type { ErrorObject, JSONSchemaType } from 'ajv'
-
+import _Ajv, { type ErrorObject, type JSONSchemaType, type ValidateFunction } from 'ajv'
 import { isDate } from 'date-fns'
 import { randomInt } from 'node:crypto'
 import { readFileSync } from 'node:fs'
@@ -71,6 +70,12 @@ import { OCPP16Constants } from './1.6/OCPP16Constants.js'
 import { OCPP20Constants } from './2.0/OCPP20Constants.js'
 import { OCPPConstants } from './OCPPConstants.js'
 
+const moduleName = 'OCPPServiceUtils'
+
+type Ajv = _Ajv.default
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+const Ajv = _Ajv.default
+
 interface MultiPhaseMeasurandData {
   perPhaseTemplates: MeasurandPerPhaseSampledValueTemplates
   template: SampledValueTemplate
@@ -114,7 +119,7 @@ const buildStatusNotificationRequest = (
         connectorId,
         connectorStatus: status as OCPP20ConnectorStatusEnumType,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        evseId: evseId!,
+        evseId: evseId ?? chargingStation.getEvseIdByConnectorId(connectorId)!,
         timestamp: new Date(),
       } satisfies OCPP20StatusNotificationRequest
     default:
@@ -380,7 +385,7 @@ const validateSocMeasurandValue = (
     debug
   ) {
     logger.error(
-      `${chargingStation.logPrefix()} MeterValues measurand ${
+      `${chargingStation.logPrefix()} ${moduleName}.validateSocMeasurandValue: MeterValues measurand ${
         sampledValue.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       }: connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${socMinimumValue.toString()}/${sampledValue.value.toString()}/${socMaximumValue.toString()}`
@@ -403,8 +408,7 @@ const buildVoltageMeasurandValue = (
 
   const voltageSampledValueTemplateValue = isNotEmptyString(voltageSampledValueTemplate.value)
     ? Number.parseInt(voltageSampledValueTemplate.value)
-    : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    chargingStation.stationInfo.voltageOut!
+    : chargingStation.getVoltageOut()
   const fluctuationPercent =
     voltageSampledValueTemplate.fluctuationPercent ?? Constants.DEFAULT_FLUCTUATION_PERCENT
   const voltageMeasurandValue = getRandomFloatFluctuatedRounded(
@@ -426,7 +430,7 @@ const addMainVoltageToMeterValue = (
   if (
     chargingStation.getNumberOfPhases() !== 3 ||
     (chargingStation.getNumberOfPhases() === 3 &&
-      chargingStation.stationInfo.mainVoltageMeterValues === true)
+      chargingStation.stationInfo?.mainVoltageMeterValues === true)
   ) {
     meterValue.sampledValue.push(
       buildSampledValue(
@@ -458,8 +462,7 @@ const addPhaseVoltageToMeterValue = (
       voltagePhaseLineToNeutralSampledValueTemplate.value
     )
       ? Number.parseInt(voltagePhaseLineToNeutralSampledValueTemplate.value)
-      : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      chargingStation.stationInfo.voltageOut!
+      : chargingStation.getVoltageOut()
     const fluctuationPhaseToNeutralPercent =
       voltagePhaseLineToNeutralSampledValueTemplate.fluctuationPercent ??
       Constants.DEFAULT_FLUCTUATION_PERCENT
@@ -493,9 +496,7 @@ const addLineToLineVoltageToMeterValue = (
         : chargingStation.getNumberOfPhases().toString()
     }` as MeterValuePhase
     const voltagePhaseLineToLineValueRounded = roundTo(
-      Math.sqrt(chargingStation.getNumberOfPhases()) *
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        chargingStation.stationInfo.voltageOut!,
+      Math.sqrt(chargingStation.getNumberOfPhases()) * chargingStation.getVoltageOut(),
       2
     )
     const voltagePhaseLineToLineSampledValueTemplate = getSampledValueTemplate(
@@ -606,7 +607,7 @@ const validateEnergyMeasurandValue = (
   if (energyValue > maxValue || energyValue < minValue || debug) {
     const connector = chargingStation.getConnectorStatus(connectorId)
     logger.error(
-      `${chargingStation.logPrefix()} MeterValues measurand ${
+      `${chargingStation.logPrefix()} ${moduleName}.validateEnergyMeasurandValue: MeterValues measurand ${
         sampledValue.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       }: connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${minValue.toString()}/${energyValue.toString()}/${maxValue.toString()}, duration: ${interval.toString()}ms`
@@ -827,7 +828,7 @@ const validatePowerMeasurandValue = (
     debug
   ) {
     logger.error(
-      `${chargingStation.logPrefix()} MeterValues measurand ${
+      `${chargingStation.logPrefix()} ${moduleName}.validatePowerMeasurandValue: MeterValues measurand ${
         sampledValue.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       }: connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${connectorMinimumPower.toString()}/${sampledValue.value.toString()}/${connectorMaximumPower.toString()}`
@@ -850,7 +851,7 @@ const validateCurrentMeasurandValue = (
     debug
   ) {
     logger.error(
-      `${chargingStation.logPrefix()} MeterValues measurand ${
+      `${chargingStation.logPrefix()} ${moduleName}.validateCurrentMeasurandValue: MeterValues measurand ${
         sampledValue.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       }: connector id ${connectorId.toString()}, transaction id ${connector?.transactionId?.toString()}, value: ${connectorMinimumAmperage.toString()}/${sampledValue.value.toString()}/${connectorMaximumAmperage.toString()}`
@@ -873,7 +874,7 @@ const validateCurrentMeasurandPhaseValue = (
     debug
   ) {
     logger.error(
-      `${chargingStation.logPrefix()} MeterValues measurand ${
+      `${chargingStation.logPrefix()} ${moduleName}.validateCurrentMeasurandPhaseValue: MeterValues measurand ${
         sampledValue.measurand ?? MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER
       }: phase ${
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
@@ -933,8 +934,7 @@ const buildCurrentMeasurandValue = (
       connectorMaximumAmperage = ACElectricUtils.amperagePerPhaseFromPower(
         chargingStation.getNumberOfPhases(),
         connectorMaximumAvailablePower,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        chargingStation.stationInfo.voltageOut!
+        chargingStation.getVoltageOut()
       )
       if (chargingStation.getNumberOfPhases() === 3) {
         const defaultFluctuatedAmperagePerPhase = isNotEmptyString(currentTemplate.value)
@@ -1036,8 +1036,7 @@ const buildCurrentMeasurandValue = (
     case CurrentType.DC:
       connectorMaximumAmperage = DCElectricUtils.amperage(
         connectorMaximumAvailablePower,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        chargingStation.stationInfo.voltageOut!
+        chargingStation.getVoltageOut()
       )
       currentValues.allPhases = isNotEmptyString(currentTemplate.value)
         ? getRandomFloatFluctuatedRounded(
@@ -1209,13 +1208,11 @@ export const buildMeterValue = (
             ? ACElectricUtils.amperagePerPhaseFromPower(
               chargingStation.getNumberOfPhases(),
               connectorMaximumAvailablePower,
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              chargingStation.stationInfo.voltageOut!
+              chargingStation.getVoltageOut()
             )
             : DCElectricUtils.amperage(
               connectorMaximumAvailablePower,
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              chargingStation.stationInfo.voltageOut!
+              chargingStation.getVoltageOut()
             )
         const connectorMinimumAmperage = currentMeasurand.template.minimumValue ?? 0
 
@@ -1596,27 +1593,13 @@ const getSampledValueTemplate = (
   )
 }
 
-function buildSampledValue (
-  ocppVersion: OCPPVersion.VERSION_16 | undefined,
-  sampledValueTemplate: SampledValueTemplate,
-  value: number,
-  context?: MeterValueContext,
-  phase?: MeterValuePhase
-): OCPP16SampledValue
-function buildSampledValue (
-  ocppVersion: OCPPVersion.VERSION_20 | OCPPVersion.VERSION_201 | undefined,
-  sampledValueTemplate: SampledValueTemplate,
-  value: number,
-  context?: MeterValueContext,
-  phase?: MeterValuePhase
-): OCPP20SampledValue
 /**
- * Builds a sampled value object according to the specified OCPP version
- * @param ocppVersion - The OCPP version to use for formatting the sampled value
- * @param sampledValueTemplate - Template containing measurement configuration and metadata
- * @param value - The measured numeric value to be included in the sampled value
- * @param context - Optional context specifying when the measurement was taken (e.g., Sample.Periodic)
- * @param phase - Optional phase information for multi-phase electrical measurements
+ * Builds a sampled value object according to the specified OCPP version.
+ * @param ocppVersion The OCPP version to use for formatting the sampled value
+ * @param sampledValueTemplate Template containing measurement configuration and metadata
+ * @param value The measured numeric value to be included in the sampled value
+ * @param context Optional context specifying when the measurement was taken (e.g., Sample.Periodic)
+ * @param phase Optional phase information for multi-phase electrical measurements
  * @returns A sampled value object formatted according to the specified OCPP version
  */
 function buildSampledValue (
@@ -1785,6 +1768,31 @@ const getMeasurandDefaultUnit = (
   }
 }
 
+/**
+ * Utility class providing core OCPP (Open Charge Point Protocol) service functionality
+ * and common operations across all OCPP versions and protocol implementations.
+ *
+ * This class serves as the foundation for OCPP protocol handling, providing:
+ * - JSON schema-based payload validation using AJV (Another JSON Schema Validator)
+ * - Common OCPP operations like connector status management and transaction handling
+ * - Utility functions for meter value processing and ID tag authorization
+ * - Shared functionality between OCPP 1.6 and OCPP 2.0+ implementations
+ *
+ * Key Features:
+ * - **Schema Validation**: Centralized JSON schema loading and validation functions
+ * - **Protocol Agnostic**: Provides utilities that work across OCPP versions
+ * - **Transaction Management**: Utilities for transaction lifecycle and meter values
+ * - **Status Management**: Connector and charging station status operations
+ * - **Static Interface**: All functionality exposed as static methods for easy access
+ *
+ * Usage Pattern:
+ * This class is typically used by other OCPP service classes (incoming request services,
+ * response services) to perform common operations and validation. It acts as a shared
+ * utility layer that prevents code duplication across OCPP version-specific implementations.
+ * @see {@link parseJsonSchemaFile} Core JSON schema parsing functionality
+ * @see {@link validatePayload} Payload validation methods in service classes
+ */
+
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class OCPPServiceUtils {
   public static readonly buildTransactionEndMeterValue = buildTransactionEndMeterValue
@@ -1797,6 +1805,42 @@ export class OCPPServiceUtils {
 
   protected constructor () {
     // This is intentional
+  }
+
+  /**
+   * Creates a Map of compiled OCPP payload validators from configurations.
+   * Reduces code duplication across OCPP services.
+   * @param configs Array of tuples containing command and validator configuration
+   * @param options Factory options including OCPP version, schema directory, etc.
+   * @param options.ocppVersion The OCPP version for schema validation
+   * @param options.schemaDir Directory path containing JSON schemas
+   * @param options.moduleName Name of the module for logging
+   * @param options.methodName Name of the method for logging
+   * @param ajvInstance Configured Ajv instance for validation
+   * @returns Map of commands to their compiled validation functions
+   */
+  public static createPayloadValidatorMap<Command extends JsonType>(
+    configs: [Command, { schemaPath: string }][],
+    options: {
+      methodName: string
+      moduleName: string
+      ocppVersion: OCPPVersion
+      schemaDir: string
+    },
+    ajvInstance: Ajv
+  ): Map<Command, ValidateFunction<JsonType>> {
+    return new Map<Command, ValidateFunction<JsonType>>(
+      configs.map(([command, config]) => {
+        const fullSchemaPath = `${options.schemaDir}/${config.schemaPath}`
+        const schema = OCPPServiceUtils.parseJsonSchemaFile<JsonType>(
+          fullSchemaPath,
+          options.ocppVersion,
+          options.moduleName,
+          options.methodName
+        )
+        return [command, ajvInstance.compile(schema)]
+      })
+    )
   }
 
   public static isConnectorIdValid (
@@ -1873,6 +1917,46 @@ export class OCPPServiceUtils {
     return false
   }
 
+  /**
+   * Configuration for a single payload validator.
+   * @param schemaPath Path to the JSON schema file
+   * @returns Configuration object for payload validator creation
+   */
+  public static readonly PayloadValidatorConfig = (schemaPath: string) =>
+    ({
+      schemaPath,
+    }) as const
+
+  /**
+   * Options for payload validator creation.
+   * @param ocppVersion The OCPP version
+   * @param schemaDir Directory containing JSON schemas
+   * @param moduleName Name of the OCPP module
+   * @param methodName Name of the method/command
+   * @returns Options object for payload validator creation
+   */
+  public static readonly PayloadValidatorOptions = (
+    ocppVersion: OCPPVersion,
+    schemaDir: string,
+    moduleName: string,
+    methodName: string
+  ) =>
+    ({
+      methodName,
+      moduleName,
+      ocppVersion,
+      schemaDir,
+    }) as const
+
+  /**
+   * Parses and loads a JSON schema file for OCPP payload validation.
+   * Handles file reading, JSON parsing, and error recovery for schema validation.
+   * @param relativePath Path to the schema file relative to the OCPP utils directory
+   * @param ocppVersion The OCPP version for error logging context
+   * @param moduleName Optional module name for error logging
+   * @param methodName Optional method name for error logging
+   * @returns Parsed JSON schema object or empty object if parsing fails
+   */
   protected static parseJsonSchemaFile<T extends JsonType>(
     relativePath: string,
     ocppVersion: OCPPVersion,

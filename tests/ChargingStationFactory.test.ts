@@ -7,7 +7,7 @@ import { createChargingStation, createChargingStationTemplate } from './Charging
 
 await describe('ChargingStationFactory', async () => {
   await describe('OCPP Service Mocking', async () => {
-    await it('Should throw explicit error when ocppRequestService is accessed without being mocked', async () => {
+    await it('Should throw error when OCPPRequestService.requestHandler is not mocked', async () => {
       const station = createChargingStation({ connectorsCount: 1 })
 
       await expect(
@@ -18,7 +18,7 @@ await describe('ChargingStationFactory', async () => {
       )
     })
 
-    await it('Should throw explicit error when ocppIncomingRequestService is accessed without being mocked', () => {
+    await it('Should throw error when OCPPIncomingRequestService.stop is not mocked', () => {
       const station = createChargingStation({ connectorsCount: 1 })
 
       expect(() => {
@@ -29,7 +29,7 @@ await describe('ChargingStationFactory', async () => {
       )
     })
 
-    await it('Should allow custom ocppRequestService mock', async () => {
+    await it('Should allow custom OCPPRequestService.requestHandler mock', async () => {
       const mockRequestHandler = async () => {
         return Promise.resolve({ success: true })
       }
@@ -47,7 +47,7 @@ await describe('ChargingStationFactory', async () => {
       expect(result.success).toBe(true)
     })
 
-    await it('Should allow custom ocppIncomingRequestService mock', () => {
+    await it('Should allow custom OCPPIncomingRequestService.stop mock', () => {
       let stopCalled = false
       const station = createChargingStation({
         connectorsCount: 1,
@@ -63,7 +63,7 @@ await describe('ChargingStationFactory', async () => {
       expect(stopCalled).toBe(true)
     })
 
-    await it('Should throw explicit error when ocppRequestService.sendError is accessed without being mocked', async () => {
+    await it('Should throw error when OCPPRequestService.sendError is not mocked', async () => {
       const station = createChargingStation({ connectorsCount: 1 })
 
       await expect(
@@ -74,7 +74,7 @@ await describe('ChargingStationFactory', async () => {
       )
     })
 
-    await it('Should throw explicit error when ocppRequestService.sendResponse is accessed without being mocked', async () => {
+    await it('Should throw error when OCPPRequestService.sendResponse is not mocked', async () => {
       const station = createChargingStation({ connectorsCount: 1 })
 
       await expect(
@@ -85,7 +85,7 @@ await describe('ChargingStationFactory', async () => {
       )
     })
 
-    await it('Should allow custom ocppRequestService.sendError mock', async () => {
+    await it('Should allow custom OCPPRequestService.sendError mock', async () => {
       const mockSendError = async () => {
         return Promise.resolve({ error: 'test-error' })
       }
@@ -103,7 +103,7 @@ await describe('ChargingStationFactory', async () => {
       expect(result.error).toBe('test-error')
     })
 
-    await it('Should allow custom ocppRequestService.sendResponse mock', async () => {
+    await it('Should allow custom OCPPRequestService.sendResponse mock', async () => {
       const mockSendResponse = async () => {
         return Promise.resolve({ response: 'test-response' })
       }
@@ -121,7 +121,7 @@ await describe('ChargingStationFactory', async () => {
       expect(result.response).toBe('test-response')
     })
 
-    await it('Should throw explicit error when ocppIncomingRequestService.incomingRequestHandler is accessed without being mocked', async () => {
+    await it('Should throw error when OCPPIncomingRequestService.incomingRequestHandler is not mocked', async () => {
       const station = createChargingStation({ connectorsCount: 1 })
 
       await expect(
@@ -132,7 +132,7 @@ await describe('ChargingStationFactory', async () => {
       )
     })
 
-    await it('Should allow custom ocppIncomingRequestService.incomingRequestHandler mock', async () => {
+    await it('Should allow custom OCPPIncomingRequestService.incomingRequestHandler mock', async () => {
       const mockIncomingRequestHandler = async () => {
         return Promise.resolve({ handled: true })
       }
@@ -170,19 +170,6 @@ await describe('ChargingStationFactory', async () => {
         expect(station.stationInfo?.baseName).toBe('test-base')
         expect(station.stationInfo?.ocppVersion).toBe(OCPPVersion.VERSION_16)
         expect(station.stationInfo?.templateHash).toBe('template-hash-123')
-      })
-
-      await it('Should validate stationInfo properties via Helpers', () => {
-        // These tests are covered by the comprehensive validation tests
-        // in Helpers.test.ts where properties are tested with undefined values
-        const station = createChargingStation({
-          connectorsCount: 1,
-          stationInfo: {
-            ocppVersion: OCPPVersion.VERSION_201,
-          },
-        })
-
-        expect(station.stationInfo?.ocppVersion).toBe(OCPPVersion.VERSION_201)
       })
     })
 
@@ -413,6 +400,504 @@ await describe('ChargingStationFactory', async () => {
         const hashId = getHashId(1, template)
         expect(hashId).toBeDefined()
         expect(typeof hashId).toBe('string')
+      })
+    })
+  })
+
+  await describe('Mock Behavioral Parity', async () => {
+    await describe('getConnectorIdByTransactionId', async () => {
+      await it('Should return undefined for null transaction ID', () => {
+        const station = createChargingStation({ connectorsCount: 2 })
+
+        // Test null handling (matches real class behavior)
+        expect(station.getConnectorIdByTransactionId(null)).toBeUndefined()
+      })
+
+      await it('Should return undefined for undefined transaction ID', () => {
+        const station = createChargingStation({ connectorsCount: 2 })
+
+        // Test undefined handling (matches real class behavior)
+        expect(station.getConnectorIdByTransactionId(undefined)).toBeUndefined()
+      })
+
+      await it('Should return connector ID when transaction ID matches (standard connectors)', () => {
+        const station = createChargingStation({
+          connectorsCount: 2,
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_16 }, // Force non-EVSE mode
+        })
+
+        // Set up a transaction on connector 1
+        const connector1Status = station.getConnectorStatus(1)
+        if (connector1Status) {
+          connector1Status.transactionId = 'test-transaction-123'
+        }
+
+        expect(station.getConnectorIdByTransactionId('test-transaction-123')).toBe(1)
+      })
+
+      await it('Should return connector ID when transaction ID matches (EVSE mode)', () => {
+        const station = createChargingStation({
+          connectorsCount: 2,
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_201 }, // Force EVSE mode
+        })
+
+        // Set up a transaction on connector 1
+        const connector1Status = station.getConnectorStatus(1)
+        if (connector1Status) {
+          connector1Status.transactionId = 'test-evse-transaction-456'
+        }
+
+        expect(station.getConnectorIdByTransactionId('test-evse-transaction-456')).toBe(1)
+      })
+
+      await it('Should return undefined when transaction ID does not match any connector', () => {
+        const station = createChargingStation({ connectorsCount: 2 })
+
+        expect(station.getConnectorIdByTransactionId('non-existent-transaction')).toBeUndefined()
+      })
+
+      await it('Should handle numeric transaction IDs', () => {
+        const station = createChargingStation({ connectorsCount: 2 })
+
+        // Set up a transaction with numeric ID on connector 2
+        const connector2Status = station.getConnectorStatus(2)
+        if (connector2Status) {
+          connector2Status.transactionId = 12345
+        }
+
+        expect(station.getConnectorIdByTransactionId(12345)).toBe(2)
+      })
+    })
+
+    await describe('getEvseIdByConnectorId', async () => {
+      await it('Should return undefined for stations without EVSEs', () => {
+        const station = createChargingStation({
+          connectorsCount: 3,
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_16 }, // OCPP 1.6 doesn't use EVSEs
+        })
+
+        expect(station.getEvseIdByConnectorId(1)).toBeUndefined()
+        expect(station.getEvseIdByConnectorId(2)).toBeUndefined()
+      })
+
+      await it('Should return correct EVSE ID for connectors in EVSE mode', () => {
+        const station = createChargingStation({
+          connectorsCount: 6,
+          evseConfiguration: { evsesCount: 2 }, // 2 EVSEs with 3 connectors each
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        })
+
+        // EVSE 1 should have connectors 1, 2, 3
+        expect(station.getEvseIdByConnectorId(1)).toBe(1)
+        expect(station.getEvseIdByConnectorId(2)).toBe(1)
+        expect(station.getEvseIdByConnectorId(3)).toBe(1)
+
+        // EVSE 2 should have connectors 4, 5, 6
+        expect(station.getEvseIdByConnectorId(4)).toBe(2)
+        expect(station.getEvseIdByConnectorId(5)).toBe(2)
+        expect(station.getEvseIdByConnectorId(6)).toBe(2)
+      })
+
+      await it('Should return undefined for non-existent connector IDs', () => {
+        const station = createChargingStation({
+          connectorsCount: 4,
+          evseConfiguration: { evsesCount: 2 },
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        })
+
+        expect(station.getEvseIdByConnectorId(0)).toBeUndefined() // Connector 0 not in EVSEs
+        expect(station.getEvseIdByConnectorId(99)).toBeUndefined() // Non-existent connector
+        expect(station.getEvseIdByConnectorId(-1)).toBeUndefined() // Invalid connector ID
+      })
+
+      await it('Should handle single EVSE with multiple connectors', () => {
+        const station = createChargingStation({
+          connectorsCount: 3,
+          evseConfiguration: { evsesCount: 1 }, // Single EVSE with all connectors
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        })
+
+        // All connectors should belong to EVSE 1
+        expect(station.getEvseIdByConnectorId(1)).toBe(1)
+        expect(station.getEvseIdByConnectorId(2)).toBe(1)
+        expect(station.getEvseIdByConnectorId(3)).toBe(1)
+      })
+    })
+
+    await describe('getEvseIdByTransactionId', async () => {
+      await it('Should return undefined for null transaction ID', () => {
+        const station = createChargingStation({
+          connectorsCount: 2,
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        })
+
+        // Test null handling (matches real class behavior)
+        expect(station.getEvseIdByTransactionId(null)).toBeUndefined()
+      })
+
+      await it('Should return undefined for undefined transaction ID', () => {
+        const station = createChargingStation({
+          connectorsCount: 2,
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        })
+
+        // Test undefined handling (matches real class behavior)
+        expect(station.getEvseIdByTransactionId(undefined)).toBeUndefined()
+      })
+
+      await it('Should return undefined for stations without EVSEs', () => {
+        const station = createChargingStation({
+          connectorsCount: 3,
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_16 }, // OCPP 1.6 doesn't use EVSEs
+        })
+
+        // Set up transactions on connectors (should still return undefined without EVSEs)
+        const connector1Status = station.getConnectorStatus(1)
+        if (connector1Status) {
+          connector1Status.transactionId = 'test-transaction-123'
+        }
+
+        expect(station.getEvseIdByTransactionId('test-transaction-123')).toBeUndefined()
+      })
+
+      await it('Should return correct EVSE ID when transaction ID matches (single EVSE)', () => {
+        const station = createChargingStation({
+          connectorsCount: 3,
+          evseConfiguration: { evsesCount: 1 }, // Single EVSE with all connectors
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        })
+
+        // Set up transactions on different connectors within the same EVSE
+        const connector1Status = station.getConnectorStatus(1)
+        const connector2Status = station.getConnectorStatus(2)
+        if (connector1Status) {
+          connector1Status.transactionId = 'transaction-on-connector-1'
+        }
+        if (connector2Status) {
+          connector2Status.transactionId = 456
+        }
+
+        // Both should return EVSE ID 1
+        expect(station.getEvseIdByTransactionId('transaction-on-connector-1')).toBe(1)
+        expect(station.getEvseIdByTransactionId(456)).toBe(1)
+      })
+
+      await it('Should return correct EVSE ID when transaction ID matches (multiple EVSEs)', () => {
+        const station = createChargingStation({
+          connectorsCount: 6,
+          evseConfiguration: { evsesCount: 2 }, // 2 EVSEs with 3 connectors each
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        })
+
+        // Set up transactions on connectors in different EVSEs
+        const connector1Status = station.getConnectorStatus(1) // EVSE 1
+        const connector4Status = station.getConnectorStatus(4) // EVSE 2
+        const connector5Status = station.getConnectorStatus(5) // EVSE 2
+
+        if (connector1Status) {
+          connector1Status.transactionId = 'evse1-transaction'
+        }
+        if (connector4Status) {
+          connector4Status.transactionId = 'evse2-transaction-a'
+        }
+        if (connector5Status) {
+          connector5Status.transactionId = 999
+        }
+
+        // Verify correct EVSE mapping
+        expect(station.getEvseIdByTransactionId('evse1-transaction')).toBe(1)
+        expect(station.getEvseIdByTransactionId('evse2-transaction-a')).toBe(2)
+        expect(station.getEvseIdByTransactionId(999)).toBe(2)
+      })
+
+      await it('Should return undefined when transaction ID does not match any connector', () => {
+        const station = createChargingStation({
+          connectorsCount: 4,
+          evseConfiguration: { evsesCount: 2 },
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        })
+
+        // Set up some transactions
+        const connector1Status = station.getConnectorStatus(1)
+        if (connector1Status) {
+          connector1Status.transactionId = 'existing-transaction'
+        }
+
+        expect(station.getEvseIdByTransactionId('non-existent-transaction')).toBeUndefined()
+        expect(station.getEvseIdByTransactionId(12345)).toBeUndefined()
+      })
+
+      await it('Should handle numeric transaction IDs', () => {
+        const station = createChargingStation({
+          connectorsCount: 4,
+          evseConfiguration: { evsesCount: 2 },
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        })
+
+        // Set up numeric transaction ID on connector in EVSE 2
+        const connector3Status = station.getConnectorStatus(3)
+        if (connector3Status) {
+          connector3Status.transactionId = 789
+        }
+
+        expect(station.getEvseIdByTransactionId(789)).toBe(2)
+      })
+
+      await it('Should handle string transaction IDs', () => {
+        const station = createChargingStation({
+          connectorsCount: 4,
+          evseConfiguration: { evsesCount: 2 },
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        })
+
+        // Set up string transaction ID on connector in EVSE 1
+        const connector2Status = station.getConnectorStatus(2)
+        if (connector2Status) {
+          connector2Status.transactionId = 'string-transaction-id-abc123'
+        }
+
+        expect(station.getEvseIdByTransactionId('string-transaction-id-abc123')).toBe(1)
+      })
+
+      await it('Should maintain consistency with getConnectorIdByTransactionId', () => {
+        const station = createChargingStation({
+          connectorsCount: 6,
+          evseConfiguration: { evsesCount: 3 },
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        })
+
+        const testTransactionId = 'consistency-test-transaction'
+
+        // Set up a transaction on connector 5 (which should be in EVSE 3)
+        const connector5Status = station.getConnectorStatus(5)
+        if (connector5Status) {
+          connector5Status.transactionId = testTransactionId
+        }
+
+        // Both methods should find the transaction
+        const foundConnectorId = station.getConnectorIdByTransactionId(testTransactionId)
+        const foundEvseId = station.getEvseIdByTransactionId(testTransactionId)
+
+        expect(foundConnectorId).toBe(5)
+        expect(foundEvseId).toBe(3)
+
+        // Verify consistency: getEvseIdByConnectorId should match
+        if (foundConnectorId !== undefined) {
+          expect(station.getEvseIdByConnectorId(foundConnectorId)).toBe(foundEvseId)
+        }
+      })
+
+      await it('Should handle mixed transaction ID types correctly', () => {
+        const station = createChargingStation({
+          connectorsCount: 4,
+          evseConfiguration: { evsesCount: 2 },
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        })
+
+        // Set up mixed types of transaction IDs
+        const connector1Status = station.getConnectorStatus(1)
+        const connector3Status = station.getConnectorStatus(3)
+
+        if (connector1Status) {
+          connector1Status.transactionId = 'string-transaction'
+        }
+        if (connector3Status) {
+          connector3Status.transactionId = 999
+        }
+
+        // Test string transaction ID
+        expect(station.getEvseIdByTransactionId('string-transaction')).toBe(1)
+        // Test numeric transaction ID
+        expect(station.getEvseIdByTransactionId(999)).toBe(2)
+        // Test wrong type should not match
+        expect(station.getEvseIdByTransactionId('999')).toBeUndefined() // String vs number
+        expect(station.getEvseIdByTransactionId(Number('string-transaction'))).toBeUndefined() // NaN
+      })
+    })
+
+    await describe('isConnectorAvailable', async () => {
+      await it('Should return false for connector ID 0', () => {
+        const station = createChargingStation({ connectorsCount: 2 })
+
+        // Connector 0 should never be available (matches real class behavior)
+        expect(station.isConnectorAvailable(0)).toBe(false)
+      })
+
+      await it('Should return false for negative connector ID', () => {
+        const station = createChargingStation({ connectorsCount: 2 })
+
+        // Negative connectorId should return false (matches real class behavior)
+        expect(station.isConnectorAvailable(-1)).toBe(false)
+      })
+
+      await it('Should return true for available operative connector', () => {
+        const station = createChargingStation({
+          connectorDefaults: {
+            availability: AvailabilityType.Operative,
+            status: ConnectorStatusEnum.Available,
+          },
+          connectorsCount: 2,
+        })
+
+        expect(station.isConnectorAvailable(1)).toBe(true)
+        expect(station.isConnectorAvailable(2)).toBe(true)
+      })
+
+      await it('Should return false for inoperative connector', () => {
+        const station = createChargingStation({
+          connectorDefaults: {
+            availability: AvailabilityType.Inoperative,
+            status: ConnectorStatusEnum.Available,
+          },
+          connectorsCount: 2,
+        })
+
+        expect(station.isConnectorAvailable(1)).toBe(false)
+        expect(station.isConnectorAvailable(2)).toBe(false)
+      })
+
+      await it('Should check availability regardless of status (matches real class)', () => {
+        const station = createChargingStation({
+          connectorDefaults: {
+            availability: AvailabilityType.Operative,
+            status: ConnectorStatusEnum.Occupied, // Status should not affect availability check
+          },
+          connectorsCount: 2,
+        })
+
+        // Real class only checks availability, not status
+        expect(station.isConnectorAvailable(1)).toBe(true)
+        expect(station.isConnectorAvailable(2)).toBe(true)
+      })
+
+      await it('Should return false for non-existent connector', () => {
+        const station = createChargingStation({ connectorsCount: 2 })
+
+        // Connector 3 doesn't exist
+        expect(station.isConnectorAvailable(3)).toBe(false)
+      })
+
+      await it('Should work correctly in EVSE mode', () => {
+        const station = createChargingStation({
+          connectorDefaults: {
+            availability: AvailabilityType.Operative,
+            status: ConnectorStatusEnum.Available,
+          },
+          connectorsCount: 2,
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_201 }, // Force EVSE mode
+        })
+
+        expect(station.isConnectorAvailable(1)).toBe(true)
+        expect(station.isConnectorAvailable(2)).toBe(true)
+      })
+    })
+
+    await describe('getConnectorStatus behavioral parity', async () => {
+      await it('Should return undefined for non-existent connector in standard mode', () => {
+        const station = createChargingStation({
+          connectorsCount: 2,
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_16 },
+        })
+
+        expect(station.getConnectorStatus(999)).toBeUndefined()
+      })
+
+      await it('Should return undefined for non-existent connector in EVSE mode', () => {
+        const station = createChargingStation({
+          connectorsCount: 2,
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        })
+
+        expect(station.getConnectorStatus(999)).toBeUndefined()
+      })
+
+      await it('Should return connector status for valid connector in both modes', () => {
+        const stationStandard = createChargingStation({
+          connectorsCount: 2,
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_16 },
+        })
+        const stationEVSE = createChargingStation({
+          connectorsCount: 2,
+          stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        })
+
+        expect(stationStandard.getConnectorStatus(1)).toBeDefined()
+        expect(stationEVSE.getConnectorStatus(1)).toBeDefined()
+      })
+    })
+
+    await describe('Method interaction behavioral parity', async () => {
+      await it('Should maintain consistency between getConnectorStatus and isConnectorAvailable', () => {
+        const station = createChargingStation({ connectorsCount: 2 })
+
+        // Test consistency - if connector status exists and is operative, should be available
+        const connector1Status = station.getConnectorStatus(1)
+        expect(connector1Status).toBeDefined()
+        expect(station.isConnectorAvailable(1)).toBe(true)
+
+        // Make connector inoperative
+        if (connector1Status) {
+          connector1Status.availability = AvailabilityType.Inoperative
+        }
+        expect(station.isConnectorAvailable(1)).toBe(false)
+      })
+
+      await it('Should maintain consistency between getConnectorIdByTransactionId and getConnectorStatus', () => {
+        const station = createChargingStation({ connectorsCount: 2 })
+
+        // Set up transaction
+        const testTransactionId = 'test-consistency-transaction'
+        const connector2Status = station.getConnectorStatus(2)
+        if (connector2Status) {
+          connector2Status.transactionId = testTransactionId
+        }
+
+        // Both methods should work with the same transaction
+        const foundConnectorId = station.getConnectorIdByTransactionId(testTransactionId)
+        expect(foundConnectorId).toBe(2)
+
+        const foundConnectorStatus = station.getConnectorStatus(foundConnectorId)
+        expect(foundConnectorStatus?.transactionId).toBe(testTransactionId)
+      })
+    })
+
+    await describe('Edge Cases and Error Handling', async () => {
+      await it('Should handle empty station (no connectors)', () => {
+        const station = createChargingStation({ connectorsCount: 0 })
+
+        expect(station.getConnectorIdByTransactionId('any-transaction')).toBeUndefined()
+        expect(station.isConnectorAvailable(1)).toBe(false)
+        expect(station.getConnectorStatus(1)).toBeUndefined()
+      })
+
+      await it('Should handle mixed transaction ID types in search', () => {
+        const station = createChargingStation({ connectorsCount: 3 })
+
+        // Set up mixed transaction types
+        const connector1Status = station.getConnectorStatus(1)
+        const connector2Status = station.getConnectorStatus(2)
+        if (connector1Status && connector2Status) {
+          connector1Status.transactionId = 'string-transaction'
+          connector2Status.transactionId = 999
+        }
+
+        expect(station.getConnectorIdByTransactionId('string-transaction')).toBe(1)
+        expect(station.getConnectorIdByTransactionId(999)).toBe(2)
+        expect(station.getConnectorIdByTransactionId('999')).toBeUndefined() // String vs number
+      })
+
+      await it('Should handle partially configured connectors', () => {
+        const station = createChargingStation({ connectorsCount: 2 })
+
+        // Manually modify one connector to test resilience
+        const connector1Status = station.getConnectorStatus(1)
+        if (connector1Status) {
+          connector1Status.availability = undefined // Remove availability property
+        }
+
+        // Should handle missing availability gracefully
+        expect(station.isConnectorAvailable(1)).toBe(false)
+        expect(station.isConnectorAvailable(2)).toBe(true) // Other connector still works
       })
     })
   })

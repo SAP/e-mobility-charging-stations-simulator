@@ -810,15 +810,13 @@ const buildChargingProfilesLimit = (
         ? limit
         : ACElectricUtils.powerTotal(
           chargingStation.getNumberOfPhases(),
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          chargingStation.stationInfo.voltageOut!,
+          chargingStation.getVoltageOut(),
           limit
         )
     case CurrentType.DC:
       return chargingProfile.chargingSchedule.chargingRateUnit === ChargingRateUnitType.WATT
         ? limit
-        : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        DCElectricUtils.power(chargingStation.stationInfo.voltageOut!, limit)
+        : DCElectricUtils.power(chargingStation.getVoltageOut(), limit)
     default:
       logger.error(
         `${chargingStation.logPrefix()} ${moduleName}.buildChargingProfilesLimit: ${errorMsg}`

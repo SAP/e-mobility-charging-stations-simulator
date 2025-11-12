@@ -285,7 +285,7 @@ export class OCPP20VariableManager {
       }
       const minValue =
         this.minSetOverrides.get(variableKey) ??
-        (variableMetadata.min !== undefined ? String(variableMetadata.min) : '')
+        (variableMetadata.min !== undefined ? variableMetadata.min.toString() : '')
       return {
         attributeStatus: GetVariableStatusEnumType.Accepted,
         attributeType: resolvedAttributeType,
@@ -307,7 +307,7 @@ export class OCPP20VariableManager {
       }
       const maxValue =
         this.maxSetOverrides.get(variableKey) ??
-        (variableMetadata.max !== undefined ? String(variableMetadata.max) : '')
+        (variableMetadata.max !== undefined ? variableMetadata.max.toString() : '')
       return {
         attributeStatus: GetVariableStatusEnumType.Accepted,
         attributeType: resolvedAttributeType,
@@ -675,7 +675,7 @@ export class OCPP20VariableManager {
       if (resolvedAttributeType === AttributeEnumType.MinSet) {
         const currentMax =
           this.maxSetOverrides.get(variableKey) ??
-          (variableMetadata.max !== undefined ? String(variableMetadata.max) : undefined)
+          (variableMetadata.max !== undefined ? variableMetadata.max.toString() : undefined)
         if (currentMax != null && intValue > convertToIntOrNaN(currentMax)) {
           return this.rejectSet(
             variable,
@@ -690,7 +690,7 @@ export class OCPP20VariableManager {
       } else {
         const currentMin =
           this.minSetOverrides.get(variableKey) ??
-          (variableMetadata.min !== undefined ? String(variableMetadata.min) : undefined)
+          (variableMetadata.min !== undefined ? variableMetadata.min.toString() : undefined)
         if (currentMin != null && intValue < convertToIntOrNaN(currentMin)) {
           return this.rejectSet(
             variable,

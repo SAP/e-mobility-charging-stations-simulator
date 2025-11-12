@@ -142,7 +142,7 @@ make
 pnpm dev
 ```
 
-#### Formats files
+#### Formats, lints and fixes files
 
 ```shell
 pnpm format
