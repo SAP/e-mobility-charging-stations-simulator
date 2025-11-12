@@ -51,7 +51,7 @@ await describe('E01 - Remote Start Transaction', async () => {
       remoteStartId: 1,
     }
 
-    const response = await (incomingRequestService as any).handleRequestRequestStartTransaction(
+    const response = await (incomingRequestService as any).handleRequestStartTransaction(
       mockChargingStation,
       validRequest
     )
@@ -72,7 +72,7 @@ await describe('E01 - Remote Start Transaction', async () => {
       remoteStartId: 42,
     }
 
-    const response = await (incomingRequestService as any).handleRequestRequestStartTransaction(
+    const response = await (incomingRequestService as any).handleRequestStartTransaction(
       mockChargingStation,
       requestWithRemoteStartId
     )
@@ -96,7 +96,7 @@ await describe('E01 - Remote Start Transaction', async () => {
       remoteStartId: 3,
     }
 
-    const response = await (incomingRequestService as any).handleRequestRequestStartTransaction(
+    const response = await (incomingRequestService as any).handleRequestStartTransaction(
       mockChargingStation,
       requestWithGroupToken
     )
@@ -120,7 +120,7 @@ await describe('E01 - Remote Start Transaction', async () => {
 
     // Should throw OCPPError for invalid evseId
     await expect(
-      (incomingRequestService as any).handleRequestRequestStartTransaction(
+      (incomingRequestService as any).handleRequestStartTransaction(
         mockChargingStation,
         invalidEvseRequest
       )
@@ -138,7 +138,7 @@ await describe('E01 - Remote Start Transaction', async () => {
       remoteStartId: 100,
     }
 
-    await (incomingRequestService as any).handleRequestRequestStartTransaction(
+    await (incomingRequestService as any).handleRequestStartTransaction(
       mockChargingStation,
       firstRequest
     )
@@ -153,7 +153,7 @@ await describe('E01 - Remote Start Transaction', async () => {
       remoteStartId: 101,
     }
 
-    const response = await (incomingRequestService as any).handleRequestRequestStartTransaction(
+    const response = await (incomingRequestService as any).handleRequestStartTransaction(
       mockChargingStation,
       secondRequest
     )
@@ -173,7 +173,7 @@ await describe('E01 - Remote Start Transaction', async () => {
       remoteStartId: 200,
     }
 
-    const response = await (incomingRequestService as any).handleRequestRequestStartTransaction(
+    const response = await (incomingRequestService as any).handleRequestStartTransaction(
       mockChargingStation,
       validRequest
     )

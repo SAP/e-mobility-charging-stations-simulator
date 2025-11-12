@@ -2,6 +2,7 @@ import { millisecondsToSeconds } from 'date-fns'
 
 import type { ChargingStation } from '../src/charging-station/index.js'
 
+import { getConfigurationKey } from '../src/charging-station/ConfigurationKeyUtils.js'
 import { IdTagsCache } from '../src/charging-station/IdTagsCache.js'
 import {
   AvailabilityType,
@@ -15,8 +16,9 @@ import {
   OCPPVersion,
   RegistrationStatusEnumType,
   type SampledValueTemplate,
+  StandardParametersKey,
 } from '../src/types/index.js'
-import { clone, Constants } from '../src/utils/index.js'
+import { clone, Constants, convertToBoolean } from '../src/utils/index.js'
 
 /**
  * Options to customize the construction of a ChargingStation test instance
@@ -139,6 +141,13 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
       return undefined
     },
     getHeartbeatInterval: () => heartbeatInterval,
+    getLocalAuthListEnabled: (): boolean => {
+      const localAuthListEnabled = getConfigurationKey(
+        chargingStation,
+        StandardParametersKey.LocalAuthListEnabled
+      )
+      return localAuthListEnabled != null ? convertToBoolean(localAuthListEnabled.value) : false
+    },
     getWebSocketPingInterval: () => websocketPingInterval,
     hasEvses: useEvses,
     idTagsCache: IdTagsCache.getInstance(),
@@ -168,6 +177,10 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
         {
           key: OCPP20OptionalVariableName.HeartbeatInterval,
           value: millisecondsToSeconds(heartbeatInterval).toString(),
+        },
+        {
+          key: StandardParametersKey.LocalAuthListEnabled,
+          value: 'true',
         },
       ],
       ...options.ocppConfiguration,
@@ -227,6 +240,7 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
       maximumAmperage: 16,
       maximumPower: 12000,
       ocppVersion: OCPPVersion.VERSION_16,
+      remoteAuthorization: true,
       templateIndex,
       templateName: 'test-template.json',
       ...options.stationInfo,

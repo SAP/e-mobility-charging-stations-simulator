@@ -111,9 +111,10 @@ await describe('E02 - Remote Stop Transaction', async () => {
       remoteStartId,
     }
 
-    const startResponse = await (
-      incomingRequestService as any
-    ).handleRequestRequestStartTransaction(mockChargingStation, startRequest)
+    const startResponse = await (incomingRequestService as any).handleRequestStartTransaction(
+      mockChargingStation,
+      startRequest
+    )
 
     expect(startResponse.status).toBe(RequestStartStopStatusEnumType.Accepted)
     expect(startResponse.transactionId).toBeDefined()
@@ -133,7 +134,7 @@ await describe('E02 - Remote Stop Transaction', async () => {
     }
 
     // Execute stop transaction
-    const response = await (incomingRequestService as any).handleRequestRequestStopTransaction(
+    const response = await (incomingRequestService as any).handleRequestStopTransaction(
       mockChargingStation,
       stopRequest
     )
@@ -170,7 +171,7 @@ await describe('E02 - Remote Stop Transaction', async () => {
       transactionId: transactionId2 as `${string}-${string}-${string}-${string}-${string}`,
     }
 
-    const response = await (incomingRequestService as any).handleRequestRequestStopTransaction(
+    const response = await (incomingRequestService as any).handleRequestStopTransaction(
       mockChargingStation,
       stopRequest
     )
@@ -201,7 +202,7 @@ await describe('E02 - Remote Stop Transaction', async () => {
         nonExistentTransactionId as `${string}-${string}-${string}-${string}-${string}`,
     }
 
-    const response = await (incomingRequestService as any).handleRequestRequestStopTransaction(
+    const response = await (incomingRequestService as any).handleRequestStopTransaction(
       mockChargingStation,
       stopRequest
     )
@@ -222,7 +223,7 @@ await describe('E02 - Remote Stop Transaction', async () => {
       transactionId: '' as `${string}-${string}-${string}-${string}-${string}`,
     }
 
-    const response = await (incomingRequestService as any).handleRequestRequestStopTransaction(
+    const response = await (incomingRequestService as any).handleRequestStopTransaction(
       mockChargingStation,
       invalidRequest
     )
@@ -245,7 +246,7 @@ await describe('E02 - Remote Stop Transaction', async () => {
       transactionId: tooLongTransactionId as `${string}-${string}-${string}-${string}-${string}`,
     }
 
-    const response = await (incomingRequestService as any).handleRequestRequestStopTransaction(
+    const response = await (incomingRequestService as any).handleRequestStopTransaction(
       mockChargingStation,
       invalidRequest
     )
@@ -286,7 +287,7 @@ await describe('E02 - Remote Stop Transaction', async () => {
       transactionId: testTransactionId as `${string}-${string}-${string}-${string}-${string}`,
     }
 
-    const response = await (incomingRequestService as any).handleRequestRequestStopTransaction(
+    const response = await (incomingRequestService as any).handleRequestStopTransaction(
       mockChargingStation,
       stopRequest
     )
@@ -335,9 +336,10 @@ await describe('E02 - Remote Stop Transaction', async () => {
       remoteStartId: 999,
     }
 
-    const startResponse = await (
-      incomingRequestService as any
-    ).handleRequestRequestStartTransaction(failingChargingStation, startRequest)
+    const startResponse = await (incomingRequestService as any).handleRequestStartTransaction(
+      failingChargingStation,
+      startRequest
+    )
 
     const transactionId = startResponse.transactionId as string
 
@@ -346,7 +348,7 @@ await describe('E02 - Remote Stop Transaction', async () => {
       transactionId: transactionId as `${string}-${string}-${string}-${string}-${string}`,
     }
 
-    const response = await (incomingRequestService as any).handleRequestRequestStopTransaction(
+    const response = await (incomingRequestService as any).handleRequestStopTransaction(
       failingChargingStation,
       stopRequest
     )
@@ -367,7 +369,7 @@ await describe('E02 - Remote Stop Transaction', async () => {
       transactionId: transactionId as `${string}-${string}-${string}-${string}-${string}`,
     }
 
-    const response = await (incomingRequestService as any).handleRequestRequestStopTransaction(
+    const response = await (incomingRequestService as any).handleRequestStopTransaction(
       mockChargingStation,
       stopRequest
     )
@@ -399,7 +401,7 @@ await describe('E02 - Remote Stop Transaction', async () => {
       transactionId: transactionId as `${string}-${string}-${string}-${string}-${string}`,
     }
 
-    const response = await (incomingRequestService as any).handleRequestRequestStopTransaction(
+    const response = await (incomingRequestService as any).handleRequestStopTransaction(
       mockChargingStation,
       stopRequestWithCustomData
     )
@@ -423,7 +425,7 @@ await describe('E02 - Remote Stop Transaction', async () => {
       transactionId: transactionId as `${string}-${string}-${string}-${string}-${string}`,
     }
 
-    const response = await (incomingRequestService as any).handleRequestRequestStopTransaction(
+    const response = await (incomingRequestService as any).handleRequestStopTransaction(
       mockChargingStation,
       stopRequest
     )
