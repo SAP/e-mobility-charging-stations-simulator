@@ -84,7 +84,7 @@ export interface OCPP20RequestStartTransactionRequest extends JsonObject {
 
 export interface OCPP20RequestStopTransactionRequest extends JsonObject {
   customData?: CustomDataType
-  transactionId: `${string}-${string}-${string}-${string}-${string}`
+  transactionId: UUIDv4
 }
 
 export interface OCPP20ResetRequest extends JsonObject {

@@ -252,7 +252,7 @@ export interface OCPP20TransactionType extends JsonObject {
   remoteStartId?: number
   stoppedReason?: OCPP20ReasonEnumType
   timeSpentCharging?: number
-  transactionId: `${string}-${string}-${string}-${string}-${string}`
+  transactionId: UUIDv4
 }
 
 export interface RelativeTimeIntervalType extends JsonObject {

@@ -9,6 +9,7 @@ import type { EvseStatus } from './Evse.js'
 import type { JsonObject } from './JsonType.js'
 import type { BootNotificationResponse } from './ocpp/Responses.js'
 import type { Statistics } from './Statistics.js'
+import type { UUIDv4 } from './UUID.js'
 
 import { ChargingStationEvents } from './ChargingStationEvents.js'
 
@@ -52,7 +53,7 @@ export interface ChargingStationWorkerData extends WorkerData {
 export interface ChargingStationWorkerMessage<T extends ChargingStationWorkerMessageData> {
   data: T
   event: ChargingStationWorkerMessageEvents
-  uuid?: string
+  uuid?: UUIDv4
 }
 
 export type ChargingStationWorkerMessageData = ChargingStationData | Statistics

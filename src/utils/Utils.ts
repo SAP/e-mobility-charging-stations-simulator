@@ -18,6 +18,7 @@ import {
   type JsonType,
   MapStringifyFormat,
   type TimestampedData,
+  type UUIDv4,
   WebSocketCloseEventStatusString,
 } from '../types/index.js'
 
@@ -122,13 +123,11 @@ export const mergeDeepRight = <T extends object, S extends object>(target: T, so
   return output as T
 }
 
-export const generateUUID = (): `${string}-${string}-${string}-${string}-${string}` => {
+export const generateUUID = (): UUIDv4 => {
   return randomUUID()
 }
 
-export const validateUUID = (
-  uuid: unknown
-): uuid is `${string}-${string}-${string}-${string}-${string}` => {
+export const validateUUID = (uuid: unknown): uuid is UUIDv4 => {
   if (typeof uuid !== 'string') {
     return false
   }

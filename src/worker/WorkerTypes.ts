@@ -33,6 +33,13 @@ export interface SetInfo {
   worker: string
 }
 
+/**
+ * UUIDv4 type representing a standard UUID format
+ * Pattern: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+ * where x is any hexadecimal digit and y is one of 8, 9, A, or B
+ */
+export type UUIDv4 = `${string}-${string}-${string}-${string}-${string}`
+
 export type WorkerData = Record<string, unknown>
 
 export interface WorkerDataError extends WorkerData {
@@ -52,7 +59,7 @@ export type WorkerEvents = PoolEvent | WorkerSetEvents
 export interface WorkerMessage<T extends WorkerData> {
   data: T
   event: WorkerMessageEvents
-  uuid: `${string}-${string}-${string}-${string}-${string}`
+  uuid: UUIDv4
 }
 
 export interface WorkerOptions extends Record<string, unknown> {

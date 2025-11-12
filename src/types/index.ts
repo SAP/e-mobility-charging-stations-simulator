@@ -340,6 +340,7 @@ export {
   type ResponsePayload,
   ResponseStatus,
 } from './UIProtocol.js'
+export type { UUIDv4 } from './UUID.js'
 export {
   WebSocketCloseEventStatusCode,
   WebSocketCloseEventStatusString,

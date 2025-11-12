@@ -18,6 +18,7 @@ import {
   type ResponsePayload,
   ResponseStatus,
   type StorageConfiguration,
+  type UUIDv4,
 } from '../../../types/index.js'
 import { Configuration, isAsyncFunction, isNotEmptyArray, logger } from '../../../utils/index.js'
 import { Bootstrap } from '../../Bootstrap.js'
@@ -72,10 +73,7 @@ export abstract class AbstractUIService {
   ])
 
   protected readonly requestHandlers: Map<ProcedureName, ProtocolRequestHandler>
-  private readonly broadcastChannelRequests: Map<
-    `${string}-${string}-${string}-${string}-${string}`,
-    number
-  >
+  private readonly broadcastChannelRequests: Map<UUIDv4, number>
 
   private readonly uiServer: AbstractUIServer
   private readonly uiServiceWorkerBroadcastChannel: UIServiceWorkerBroadcastChannel
@@ -94,21 +92,14 @@ export abstract class AbstractUIService {
       [ProcedureName.STOP_SIMULATOR, this.handleStopSimulator.bind(this)],
     ])
     this.uiServiceWorkerBroadcastChannel = new UIServiceWorkerBroadcastChannel(this)
-    this.broadcastChannelRequests = new Map<
-      `${string}-${string}-${string}-${string}-${string}`,
-      number
-    >()
+    this.broadcastChannelRequests = new Map<UUIDv4, number>()
   }
 
-  public deleteBroadcastChannelRequest (
-    uuid: `${string}-${string}-${string}-${string}-${string}`
-  ): void {
+  public deleteBroadcastChannelRequest (uuid: UUIDv4): void {
     this.broadcastChannelRequests.delete(uuid)
   }
 
-  public getBroadcastChannelExpectedResponses (
-    uuid: `${string}-${string}-${string}-${string}-${string}`
-  ): number {
+  public getBroadcastChannelExpectedResponses (uuid: UUIDv4): number {
     return this.broadcastChannelRequests.get(uuid) ?? 0
   }
 
@@ -117,7 +108,7 @@ export abstract class AbstractUIService {
   }
 
   public async requestHandler (request: ProtocolRequest): Promise<ProtocolResponse | undefined> {
-    let uuid: `${string}-${string}-${string}-${string}-${string}` | undefined
+    let uuid: undefined | UUIDv4
     let command: ProcedureName | undefined
     let requestPayload: RequestPayload | undefined
     let responsePayload: ResponsePayload | undefined
@@ -175,7 +166,7 @@ export abstract class AbstractUIService {
   }
 
   // public sendRequest (
-  //   uuid: `${string}-${string}-${string}-${string}-${string}`,
+  //   uuid: UUIDv4,
   //   procedureName: ProcedureName,
   //   requestPayload: RequestPayload
   // ): void {
@@ -184,10 +175,7 @@ export abstract class AbstractUIService {
   //   )
   // }
 
-  public sendResponse (
-    uuid: `${string}-${string}-${string}-${string}-${string}`,
-    responsePayload: ResponsePayload
-  ): void {
+  public sendResponse (uuid: UUIDv4, responsePayload: ResponsePayload): void {
     if (this.uiServer.hasResponseHandler(uuid)) {
       this.uiServer.sendResponse(this.uiServer.buildProtocolResponse(uuid, responsePayload))
     } else {
@@ -204,7 +192,7 @@ export abstract class AbstractUIService {
   }
 
   protected handleProtocolRequest (
-    uuid: `${string}-${string}-${string}-${string}-${string}`,
+    uuid: UUIDv4,
     procedureName: ProcedureName,
     payload: RequestPayload
   ): void {
@@ -217,7 +205,7 @@ export abstract class AbstractUIService {
   }
 
   private async handleAddChargingStations (
-    _uuid?: `${string}-${string}-${string}-${string}-${string}`,
+    _uuid?: UUIDv4,
     _procedureName?: ProcedureName,
     requestPayload?: RequestPayload
   ): Promise<ResponsePayload> {
@@ -363,7 +351,7 @@ export abstract class AbstractUIService {
   }
 
   private sendBroadcastChannelRequest (
-    uuid: `${string}-${string}-${string}-${string}-${string}`,
+    uuid: UUIDv4,
     procedureName: BroadcastChannelProcedureName,
     payload: BroadcastChannelRequestPayload
   ): void {

@@ -8,6 +8,7 @@ import { WorkerAbstract } from './WorkerAbstract.js'
 import { EMPTY_FUNCTION, workerSetVersion } from './WorkerConstants.js'
 import {
   type SetInfo,
+  type UUIDv4,
   type WorkerData,
   type WorkerMessage,
   WorkerMessageEvents,
@@ -50,10 +51,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
     return this.workerSet.size
   }
 
-  private readonly promiseResponseMap: Map<
-    `${string}-${string}-${string}-${string}-${string}`,
-    ResponseWrapper<R>
-  >
+  private readonly promiseResponseMap: Map<UUIDv4, ResponseWrapper<R>>
 
   private started: boolean
   private readonly workerSet: Set<WorkerSetElement>
@@ -76,10 +74,7 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
       throw new RangeError('Elements per worker must be greater than zero')
     }
     this.workerSet = new Set<WorkerSetElement>()
-    this.promiseResponseMap = new Map<
-      `${string}-${string}-${string}-${string}-${string}`,
-      ResponseWrapper<R>
-    >()
+    this.promiseResponseMap = new Map<UUIDv4, ResponseWrapper<R>>()
     if (this.workerOptions.poolOptions?.enableEvents === true) {
       this.emitter = new EventEmitterAsyncResource({ name: 'workerset' })
     }

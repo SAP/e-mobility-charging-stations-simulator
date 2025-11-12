@@ -18,6 +18,7 @@ import {
   type RequestPayload,
   type ResponsePayload,
   type UIServerConfiguration,
+  type UUIDv4,
 } from '../../types/index.js'
 import { isEmpty, logger } from '../../utils/index.js'
 import { UIServiceFactory } from './ui-services/UIServiceFactory.js'
@@ -27,10 +28,7 @@ const moduleName = 'AbstractUIServer'
 
 export abstract class AbstractUIServer {
   protected readonly httpServer: Http2Server | Server
-  protected readonly responseHandlers: Map<
-    `${string}-${string}-${string}-${string}-${string}`,
-    ServerResponse | WebSocket
-  >
+  protected readonly responseHandlers: Map<UUIDv4, ServerResponse | WebSocket>
 
   protected readonly uiServices: Map<ProtocolVersion, AbstractUIService>
 
@@ -53,25 +51,19 @@ export abstract class AbstractUIServer {
           `Unsupported application protocol version ${this.uiServerConfiguration.version} in '${ConfigurationSection.uiServer}' configuration section`
         )
     }
-    this.responseHandlers = new Map<
-      `${string}-${string}-${string}-${string}-${string}`,
-      ServerResponse | WebSocket
-    >()
+    this.responseHandlers = new Map<UUIDv4, ServerResponse | WebSocket>()
     this.uiServices = new Map<ProtocolVersion, AbstractUIService>()
   }
 
   public buildProtocolRequest (
-    uuid: `${string}-${string}-${string}-${string}-${string}`,
+    uuid: UUIDv4,
     procedureName: ProcedureName,
     requestPayload: RequestPayload
   ): ProtocolRequest {
     return [uuid, procedureName, requestPayload]
   }
 
-  public buildProtocolResponse (
-    uuid: `${string}-${string}-${string}-${string}-${string}`,
-    responsePayload: ResponsePayload
-  ): ProtocolResponse {
+  public buildProtocolResponse (uuid: UUIDv4, responsePayload: ResponsePayload): ProtocolResponse {
     return [uuid, responsePayload]
   }
 
@@ -104,7 +96,7 @@ export abstract class AbstractUIServer {
     return this.chargingStationTemplates.has(template)
   }
 
-  public hasResponseHandler (uuid: `${string}-${string}-${string}-${string}-${string}`): boolean {
+  public hasResponseHandler (uuid: UUIDv4): boolean {
     return this.responseHandlers.has(uuid)
   }
 

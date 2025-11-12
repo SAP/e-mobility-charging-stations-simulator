@@ -1,4 +1,5 @@
 import type { JsonObject } from './JsonType.js'
+import type { UUIDv4 } from './UUID.js'
 import type { BroadcastChannelResponsePayload } from './WorkerBroadcastChannel.js'
 
 export enum ApplicationProtocol {
@@ -52,22 +53,15 @@ export enum ResponseStatus {
   SUCCESS = 'success',
 }
 
-export type ProtocolRequest = [
-  `${string}-${string}-${string}-${string}-${string}`,
-  ProcedureName,
-  RequestPayload
-]
+export type ProtocolRequest = [UUIDv4, ProcedureName, RequestPayload]
 
 export type ProtocolRequestHandler = (
-  uuid?: `${string}-${string}-${string}-${string}-${string}`,
+  uuid?: UUIDv4,
   procedureName?: ProcedureName,
   payload?: RequestPayload
 ) => Promise<ResponsePayload> | Promise<undefined> | ResponsePayload | undefined
 
-export type ProtocolResponse = [
-  `${string}-${string}-${string}-${string}-${string}`,
-  ResponsePayload
-]
+export type ProtocolResponse = [UUIDv4, ResponsePayload]
 
 export interface RequestPayload extends JsonObject {
   connectorIds?: number[]

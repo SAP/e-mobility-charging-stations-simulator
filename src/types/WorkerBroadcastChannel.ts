@@ -1,4 +1,5 @@
 import type { RequestPayload, ResponsePayload } from './UIProtocol.js'
+import type { UUIDv4 } from './UUID.js'
 
 export enum BroadcastChannelProcedureName {
   AUTHORIZE = 'authorize',
@@ -22,7 +23,7 @@ export enum BroadcastChannelProcedureName {
 }
 
 export type BroadcastChannelRequest = [
-  `${string}-${string}-${string}-${string}-${string}`,
+  UUIDv4,
   BroadcastChannelProcedureName,
   BroadcastChannelRequestPayload
 ]
@@ -32,10 +33,7 @@ export interface BroadcastChannelRequestPayload extends RequestPayload {
   transactionId?: number
 }
 
-export type BroadcastChannelResponse = [
-  `${string}-${string}-${string}-${string}-${string}`,
-  BroadcastChannelResponsePayload
-]
+export type BroadcastChannelResponse = [UUIDv4, BroadcastChannelResponsePayload]
 
 export interface BroadcastChannelResponsePayload
   extends Omit<ResponsePayload, 'hashIdsFailed' | 'hashIdsSucceeded' | 'responsesFailed'> {

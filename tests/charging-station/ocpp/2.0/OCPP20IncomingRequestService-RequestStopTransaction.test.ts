@@ -10,6 +10,7 @@ import type {
   OCPP20RequestStartTransactionRequest,
   OCPP20RequestStopTransactionRequest,
   OCPP20TransactionEventRequest,
+  UUIDv4,
 } from '../../../../src/types/index.js'
 
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
@@ -130,7 +131,7 @@ await describe('E02 - Remote Stop Transaction', async () => {
 
     // Create stop transaction request
     const stopRequest: OCPP20RequestStopTransactionRequest = {
-      transactionId: transactionId as `${string}-${string}-${string}-${string}-${string}`,
+      transactionId: transactionId as UUIDv4,
     }
 
     // Execute stop transaction
@@ -168,7 +169,7 @@ await describe('E02 - Remote Stop Transaction', async () => {
 
     // Stop the second transaction
     const stopRequest: OCPP20RequestStopTransactionRequest = {
-      transactionId: transactionId2 as `${string}-${string}-${string}-${string}-${string}`,
+      transactionId: transactionId2 as UUIDv4,
     }
 
     const response = await (incomingRequestService as any).handleRequestStopTransaction(
@@ -198,8 +199,7 @@ await describe('E02 - Remote Stop Transaction', async () => {
 
     const nonExistentTransactionId = 'non-existent-transaction-id'
     const stopRequest: OCPP20RequestStopTransactionRequest = {
-      transactionId:
-        nonExistentTransactionId as `${string}-${string}-${string}-${string}-${string}`,
+      transactionId: nonExistentTransactionId as UUIDv4,
     }
 
     const response = await (incomingRequestService as any).handleRequestStopTransaction(
@@ -220,7 +220,7 @@ await describe('E02 - Remote Stop Transaction', async () => {
     sentTransactionEvents = []
 
     const invalidRequest: OCPP20RequestStopTransactionRequest = {
-      transactionId: '' as `${string}-${string}-${string}-${string}-${string}`,
+      transactionId: '' as UUIDv4,
     }
 
     const response = await (incomingRequestService as any).handleRequestStopTransaction(
@@ -243,7 +243,7 @@ await describe('E02 - Remote Stop Transaction', async () => {
     // Create a transaction ID longer than 36 characters
     const tooLongTransactionId = 'a'.repeat(37)
     const invalidRequest: OCPP20RequestStopTransactionRequest = {
-      transactionId: tooLongTransactionId as `${string}-${string}-${string}-${string}-${string}`,
+      transactionId: tooLongTransactionId as UUIDv4,
     }
 
     const response = await (incomingRequestService as any).handleRequestStopTransaction(
@@ -284,7 +284,7 @@ await describe('E02 - Remote Stop Transaction', async () => {
     }
 
     const stopRequest: OCPP20RequestStopTransactionRequest = {
-      transactionId: testTransactionId as `${string}-${string}-${string}-${string}-${string}`,
+      transactionId: testTransactionId as UUIDv4,
     }
 
     const response = await (incomingRequestService as any).handleRequestStopTransaction(
@@ -345,7 +345,7 @@ await describe('E02 - Remote Stop Transaction', async () => {
 
     // Attempt to stop the transaction
     const stopRequest: OCPP20RequestStopTransactionRequest = {
-      transactionId: transactionId as `${string}-${string}-${string}-${string}-${string}`,
+      transactionId: transactionId as UUIDv4,
     }
 
     const response = await (incomingRequestService as any).handleRequestStopTransaction(
@@ -366,7 +366,7 @@ await describe('E02 - Remote Stop Transaction', async () => {
     const transactionId = await startTransaction(1, 400)
 
     const stopRequest: OCPP20RequestStopTransactionRequest = {
-      transactionId: transactionId as `${string}-${string}-${string}-${string}-${string}`,
+      transactionId: transactionId as UUIDv4,
     }
 
     const response = await (incomingRequestService as any).handleRequestStopTransaction(
@@ -398,7 +398,7 @@ await describe('E02 - Remote Stop Transaction', async () => {
         data: 'Custom stop transaction data',
         vendorId: 'TestVendor',
       },
-      transactionId: transactionId as `${string}-${string}-${string}-${string}-${string}`,
+      transactionId: transactionId as UUIDv4,
     }
 
     const response = await (incomingRequestService as any).handleRequestStopTransaction(
@@ -422,7 +422,7 @@ await describe('E02 - Remote Stop Transaction', async () => {
     const transactionId = await startTransaction(2, 600) // Use EVSE 2
 
     const stopRequest: OCPP20RequestStopTransactionRequest = {
-      transactionId: transactionId as `${string}-${string}-${string}-${string}-${string}`,
+      transactionId: transactionId as UUIDv4,
     }
 
     const response = await (incomingRequestService as any).handleRequestStopTransaction(

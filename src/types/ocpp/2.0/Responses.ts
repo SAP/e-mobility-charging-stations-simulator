@@ -54,7 +54,7 @@ export interface OCPP20RequestStartTransactionResponse extends JsonObject {
   customData?: CustomDataType
   status: RequestStartStopStatusEnumType
   statusInfo?: StatusInfoType
-  transactionId?: `${string}-${string}-${string}-${string}-${string}`
+  transactionId?: UUIDv4
 }
 
 export interface OCPP20RequestStopTransactionResponse extends JsonObject {
