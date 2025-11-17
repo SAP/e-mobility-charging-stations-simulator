@@ -23,6 +23,7 @@ export default defineConfig([
               'DECI',
               'CENTI',
               'MILLI',
+              'MILLIWATT',
               'Benoit',
               'chargingstations',
               'ctrlr',

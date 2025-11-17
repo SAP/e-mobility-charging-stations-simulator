@@ -169,7 +169,7 @@ export enum OCPP20UnitEnumType {
   CELSIUS = 'Celsius',
   CHARS = 'chars', // Custom extension for character count measurements
   DECIBEL = 'dB',
-  DECIBEL_MILLIWATT = 'dBm', // cspell:ignore MILLIWATT
+  DECIBEL_MILLIWATT = 'dBm',
   DEGREES = 'Deg',
   FAHRENHEIT = 'Fahrenheit',
   HERTZ = 'Hz',

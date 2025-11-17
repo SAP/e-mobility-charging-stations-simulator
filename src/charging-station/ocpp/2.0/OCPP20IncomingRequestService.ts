@@ -1308,15 +1308,15 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     chargingStation: ChargingStation,
     commandPayload: OCPP20RequestStopTransactionRequest
   ): Promise<OCPP20RequestStopTransactionResponse> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const { transactionId } = commandPayload
     logger.info(
-      `${chargingStation.logPrefix()} ${moduleName}.handleRequestStopTransaction: Remote stop transaction request received for transaction ID ${transactionId}`
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestStopTransaction: Remote stop transaction request received for transaction ID ${transactionId as string}`
     )
 
     if (!validateUUID(transactionId)) {
       logger.warn(
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStopTransaction: Invalid transaction ID format (expected UUID): ${transactionId}`
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStopTransaction: Invalid transaction ID format (expected UUID): ${transactionId as string}`
       )
       return {
         status: RequestStartStopStatusEnumType.Rejected,
@@ -1326,7 +1326,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     const evseId = chargingStation.getEvseIdByTransactionId(transactionId)
     if (evseId == null) {
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStopTransaction: Transaction ID ${transactionId} does not exist on any EVSE`
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStopTransaction: Transaction ID ${transactionId as string} does not exist on any EVSE`
       )
       return {
         status: RequestStartStopStatusEnumType.Rejected,
@@ -1336,7 +1336,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     const connectorId = chargingStation.getConnectorIdByTransactionId(transactionId)
     if (connectorId == null) {
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStopTransaction: Transaction ID ${transactionId} does not exist on any connector`
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStopTransaction: Transaction ID ${transactionId as string} does not exist on any connector`
       )
       return {
         status: RequestStartStopStatusEnumType.Rejected,
@@ -1352,7 +1352,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
       if (stopResponse.status === GenericStatus.Accepted) {
         logger.info(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestStopTransaction: Remote stop transaction ACCEPTED for transactionId '${transactionId}'`
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestStopTransaction: Remote stop transaction ACCEPTED for transactionId '${transactionId as string}'`
         )
         return {
           status: RequestStartStopStatusEnumType.Accepted,
@@ -1360,14 +1360,14 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
 
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStopTransaction: Remote stop transaction REJECTED for transactionId '${transactionId}'`
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStopTransaction: Remote stop transaction REJECTED for transactionId '${transactionId as string}'`
       )
       return {
         status: RequestStartStopStatusEnumType.Rejected,
       }
     } catch (error) {
       logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStopTransaction: Error occurred during remote stop transaction for transaction ID ${transactionId} on connector ${connectorId.toString()}:`,
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStopTransaction: Error occurred during remote stop transaction for transaction ID ${transactionId as string} on connector ${connectorId.toString()}:`,
         error
       )
       return {
