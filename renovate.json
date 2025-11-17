@@ -1,0 +1,14 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "group:allNonMajor", "schedule:daily"],
+  "lockFileMaintenance": {
+    "enabled": true
+  },
+  "packageRules": [
+    {
+      "matchFileNames": ["**/package.json"],
+      "matchDepTypes": ["dependencies", "devDependencies", "optionalDependencies"],
+      "rangeStrategy": "bump"
+    }
+  ]
+}
