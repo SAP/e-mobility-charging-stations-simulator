@@ -153,8 +153,13 @@ export const isIdTagAuthorizedUnified = async (
   connectorId: number,
   idTag: string
 ): Promise<boolean> => {
-  // Check if unified auth system is enabled
-  if (chargingStation.stationInfo?.useUnifiedAuth === true) {
+  // OCPP 2.0+ always uses unified auth system
+  // OCPP 1.6 can optionally use unified or legacy system
+  const shouldUseUnified =
+    chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_20 ||
+    chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_201
+
+  if (shouldUseUnified) {
     try {
       logger.debug(
         `${chargingStation.logPrefix()} Using unified auth system for idTag '${idTag}' on connector ${connectorId.toString()}`
@@ -196,12 +201,16 @@ export const isIdTagAuthorizedUnified = async (
         `${chargingStation.logPrefix()} Unified auth failed, falling back to legacy system`,
         error
       )
-      // Fall back to legacy system on error
-      return isIdTagAuthorized(chargingStation, connectorId, idTag)
+      // Fall back to legacy system on error (only for OCPP 1.6)
+      if (chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_16) {
+        return isIdTagAuthorized(chargingStation, connectorId, idTag)
+      }
+      // For OCPP 2.0, return false on error (no legacy fallback)
+      return false
     }
   }
 
-  // Use legacy auth system when unified auth not enabled
+  // Use legacy auth system for OCPP 1.6 when unified auth not explicitly enabled
   logger.debug(
     `${chargingStation.logPrefix()} Using legacy auth system for idTag '${idTag}' on connector ${connectorId.toString()}`
   )
@@ -209,7 +218,8 @@ export const isIdTagAuthorizedUnified = async (
 }
 
 /**
- * Legacy authorization function - delegates to unified system if enabled
+ * Legacy authorization function - used for OCPP 1.6 only
+ * OCPP 2.0+ always uses the unified system via isIdTagAuthorizedUnified
  * @param chargingStation - The charging station instance
  * @param connectorId - The connector ID for authorization context
  * @param idTag - The identifier to authorize
@@ -220,12 +230,15 @@ export const isIdTagAuthorized = async (
   connectorId: number,
   idTag: string
 ): Promise<boolean> => {
-  // If unified auth is enabled, delegate to unified system
-  if (chargingStation.stationInfo?.useUnifiedAuth === true) {
+  // OCPP 2.0+ always delegates to unified system
+  if (
+    chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_20 ||
+    chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_201
+  ) {
     return isIdTagAuthorizedUnified(chargingStation, connectorId, idTag)
   }
 
-  // Legacy authorization logic
+  // Legacy authorization logic for OCPP 1.6
   if (
     !chargingStation.getLocalAuthListEnabled() &&
     chargingStation.stationInfo?.remoteAuthorization === false

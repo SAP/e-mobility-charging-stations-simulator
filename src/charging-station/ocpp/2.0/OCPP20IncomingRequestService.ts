@@ -1173,20 +1173,15 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
-    // Authorize idToken using unified or legacy system
+    // Authorize idToken - OCPP 2.0 always uses unified auth system
     let isAuthorized = false
     try {
-      if (chargingStation.stationInfo?.useUnifiedAuth === true) {
-        // Use unified auth system - pass idToken.idToken as string
-        isAuthorized = await OCPPServiceUtils.isIdTagAuthorizedUnified(
-          chargingStation,
-          connectorId,
-          idToken.idToken
-        )
-      } else {
-        // Use legacy OCPP 2.0 auth logic
-        isAuthorized = this.isIdTokenAuthorized(chargingStation, idToken)
-      }
+      // Use unified auth system - pass idToken.idToken as string
+      isAuthorized = await OCPPServiceUtils.isIdTagAuthorizedUnified(
+        chargingStation,
+        connectorId,
+        idToken.idToken
+      )
     } catch (error) {
       logger.error(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Authorization error for ${idToken.idToken}:`,
@@ -1212,17 +1207,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     if (groupIdToken != null) {
       let isGroupAuthorized = false
       try {
-        if (chargingStation.stationInfo?.useUnifiedAuth === true) {
-          // Use unified auth system for group token
-          isGroupAuthorized = await OCPPServiceUtils.isIdTagAuthorizedUnified(
-            chargingStation,
-            connectorId,
-            groupIdToken.idToken
-          )
-        } else {
-          // Use legacy OCPP 2.0 auth logic
-          isGroupAuthorized = this.isIdTokenAuthorized(chargingStation, groupIdToken)
-        }
+        // Use unified auth system for group token
+        isGroupAuthorized = await OCPPServiceUtils.isIdTagAuthorizedUnified(
+          chargingStation,
+          connectorId,
+          groupIdToken.idToken
+        )
       } catch (error) {
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Group authorization error for ${groupIdToken.idToken}:`,
@@ -1414,105 +1404,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return {
         status: RequestStartStopStatusEnumType.Rejected,
       }
-    }
-  }
-
-  private isIdTokenAuthorized (
-    chargingStation: ChargingStation,
-    idToken: OCPP20IdTokenType
-  ): boolean {
-    /**
-     * OCPP 2.0 Authorization Logic Implementation
-     *
-     * OCPP 2.0 handles authorization differently from 1.6:
-     * 1. Check if authorization is required (LocalAuthorizeOffline, AuthorizeRemoteStart variables)
-     * 2. Local authorization list validation if enabled
-     * 3. For OCPP 2.0, there's no explicit AuthorizeRequest - authorization is validated
-     *    through configuration variables and local auth lists
-     * 4. Remote validation through TransactionEvent if needed
-     */
-
-    logger.debug(
-      `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: Validating idToken ${idToken.idToken} of type ${idToken.type}`
-    )
-
-    try {
-      // Check if local authorization is disabled and remote authorization is also disabled
-      const localAuthListEnabled = chargingStation.getLocalAuthListEnabled()
-      const remoteAuthorizationEnabled = chargingStation.stationInfo?.remoteAuthorization ?? true
-
-      if (!localAuthListEnabled && !remoteAuthorizationEnabled) {
-        logger.warn(
-          `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: Both local and remote authorization are disabled. Allowing access but this may indicate misconfiguration.`
-        )
-        return true
-      }
-
-      // 1. Check local authorization list first (if enabled)
-      if (localAuthListEnabled) {
-        const isLocalAuthorized = this.isIdTokenLocalAuthorized(chargingStation, idToken.idToken)
-        if (isLocalAuthorized) {
-          logger.debug(
-            `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: IdToken ${idToken.idToken} authorized via local auth list`
-          )
-          return true
-        }
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: IdToken ${idToken.idToken} not found in local auth list`
-        )
-      }
-
-      // 2. For OCPP 2.0, if we can't authorize locally and remote auth is enabled,
-      //    we should validate through TransactionEvent mechanism or return false
-      //    In OCPP 2.0, there's no explicit remote authorize - it's handled during transaction events
-      if (remoteAuthorizationEnabled) {
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: Remote authorization enabled but no explicit remote auth mechanism in OCPP 2.0 - deferring to transaction event validation`
-        )
-        // In OCPP 2.0, remote authorization happens during TransactionEvent processing
-        // For now, we'll allow the transaction to proceed and let the CSMS validate during TransactionEvent
-        return true
-      }
-
-      // 3. If we reach here, authorization failed
-      logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: IdToken ${idToken.idToken} authorization failed - not found in local list and remote auth not configured`
-      )
-      return false
-    } catch (error) {
-      logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: Error during authorization validation for ${idToken.idToken}:`,
-        error
-      )
-      // Fail securely - deny access on authorization errors
-      return false
-    }
-  }
-
-  /**
-   * Check if idToken is authorized in local authorization list
-   * @param chargingStation - The charging station instance
-   * @param idTokenString - The ID token string to validate
-   * @returns true if authorized locally, false otherwise
-   */
-  private isIdTokenLocalAuthorized (
-    chargingStation: ChargingStation,
-    idTokenString: string
-  ): boolean {
-    try {
-      return (
-        chargingStation.hasIdTags() &&
-        chargingStation.idTagsCache
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          .getIdTags(getIdTagsFile(chargingStation.stationInfo!)!)
-          ?.includes(idTokenString) === true
-      )
-    } catch (error) {
-      logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.isIdTokenLocalAuthorized: Error checking local authorization for ${idTokenString}:`,
-        error
-      )
-      return false
     }
   }
 

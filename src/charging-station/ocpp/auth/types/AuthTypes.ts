@@ -59,12 +59,14 @@ export enum AuthorizationStatus {
 
   INVALID = 'Invalid',
 
-  NOT_AT_THIS_LOCATION = 'NotAtThisLocation',
+  // OCPP 2.0 specific
+  NO_CREDIT = 'NoCredit',
 
+  NOT_ALLOWED_TYPE_EVSE = 'NotAllowedTypeEVSE',
+  NOT_AT_THIS_LOCATION = 'NotAtThisLocation',
   NOT_AT_THIS_TIME = 'NotAtThisTime',
   // Internal statuses for unified handling
   PENDING = 'Pending',
-  // OCPP 2.0 specific (future extension)
   UNKNOWN = 'Unknown',
 }
 

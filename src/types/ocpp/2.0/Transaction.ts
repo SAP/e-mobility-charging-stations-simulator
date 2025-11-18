@@ -10,6 +10,19 @@ export enum CostKindEnumType {
   RenewableGenerationPercentage = 'RenewableGenerationPercentage',
 }
 
+export enum OCPP20AuthorizationStatusEnumType {
+  Accepted = 'Accepted',
+  Blocked = 'Blocked',
+  ConcurrentTx = 'ConcurrentTx',
+  Expired = 'Expired',
+  Invalid = 'Invalid',
+  NoCredit = 'NoCredit',
+  NotAllowedTypeEVSE = 'NotAllowedTypeEVSE',
+  NotAtThisLocation = 'NotAtThisLocation',
+  NotAtThisTime = 'NotAtThisTime',
+  Unknown = 'Unknown',
+}
+
 export enum OCPP20ChargingProfileKindEnumType {
   Absolute = 'Absolute',
   Recurring = 'Recurring',
@@ -78,6 +91,13 @@ export enum OCPP20IdTokenEnumType {
   Local = 'Local',
   MacAddress = 'MacAddress',
   NoAuthorization = 'NoAuthorization',
+}
+
+export enum OCPP20MessageFormatEnumType {
+  ASCII = 'ASCII',
+  HTML = 'HTML',
+  URI = 'URI',
+  UTF8 = 'UTF8',
 }
 
 export enum OCPP20ReasonEnumType {
@@ -222,11 +242,30 @@ export interface OCPP20EVSEType extends JsonObject {
   id: number
 }
 
+export interface OCPP20IdTokenInfoType extends JsonObject {
+  cacheExpiryDateTime?: Date
+  chargingPriority?: number
+  customData?: CustomDataType
+  evseId?: number[]
+  groupIdToken?: OCPP20IdTokenType
+  language1?: string
+  language2?: string
+  personalMessage?: OCPP20MessageContentType
+  status: OCPP20AuthorizationStatusEnumType
+}
+
 export interface OCPP20IdTokenType extends JsonObject {
   additionalInfo?: AdditionalInfoType[]
   customData?: CustomDataType
   idToken: string
   type: OCPP20IdTokenEnumType
+}
+
+export interface OCPP20MessageContentType extends JsonObject {
+  content: string
+  customData?: CustomDataType
+  format: OCPP20MessageFormatEnumType
+  language?: string
 }
 
 /**
@@ -300,7 +339,13 @@ export interface OCPP20TransactionEventRequest extends JsonObject {
   triggerReason: OCPP20TriggerReasonEnumType
 }
 
-export type OCPP20TransactionEventResponse = EmptyObject
+export interface OCPP20TransactionEventResponse extends JsonObject {
+  chargingPriority?: number
+  customData?: CustomDataType
+  idTokenInfo?: OCPP20IdTokenInfoType
+  totalCost?: number
+  updatedPersonalMessage?: OCPP20MessageContentType
+}
 
 export interface OCPP20TransactionType extends JsonObject {
   chargingState?: OCPP20ChargingStateEnumType
