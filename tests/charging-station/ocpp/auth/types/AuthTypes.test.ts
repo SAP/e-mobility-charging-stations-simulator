@@ -9,8 +9,8 @@ import {
   AuthorizationStatus,
   IdentifierType,
   isCertificateBased,
-  isOCCP16Type,
-  isOCCP20Type,
+  isOCPP16Type,
+  isOCPP20Type,
   mapOCPP16Status,
   mapOCPP20TokenType,
   mapToOCPP16Status,
@@ -29,16 +29,16 @@ import { OCPPVersion } from '../../../../../src/types/ocpp/OCPPVersion.js'
 await describe('AuthTypes', async () => {
   await describe('IdentifierTypeGuards', async () => {
     await it('should correctly identify OCPP 1.6 types', () => {
-      expect(isOCCP16Type(IdentifierType.ID_TAG)).toBe(true)
-      expect(isOCCP16Type(IdentifierType.CENTRAL)).toBe(false)
-      expect(isOCCP16Type(IdentifierType.LOCAL)).toBe(false)
+      expect(isOCPP16Type(IdentifierType.ID_TAG)).toBe(true)
+      expect(isOCPP16Type(IdentifierType.CENTRAL)).toBe(false)
+      expect(isOCPP16Type(IdentifierType.LOCAL)).toBe(false)
     })
 
     await it('should correctly identify OCPP 2.0 types', () => {
-      expect(isOCCP20Type(IdentifierType.CENTRAL)).toBe(true)
-      expect(isOCCP20Type(IdentifierType.LOCAL)).toBe(true)
-      expect(isOCCP20Type(IdentifierType.E_MAID)).toBe(true)
-      expect(isOCCP20Type(IdentifierType.ID_TAG)).toBe(false)
+      expect(isOCPP20Type(IdentifierType.CENTRAL)).toBe(true)
+      expect(isOCPP20Type(IdentifierType.LOCAL)).toBe(true)
+      expect(isOCPP20Type(IdentifierType.E_MAID)).toBe(true)
+      expect(isOCPP20Type(IdentifierType.ID_TAG)).toBe(false)
     })
 
     await it('should correctly identify certificate-based types', () => {

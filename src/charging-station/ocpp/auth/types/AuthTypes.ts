@@ -300,20 +300,20 @@ export const isCertificateBased = (type: IdentifierType): boolean => {
 }
 
 /**
- * Check if identifier type is OCCP 1.6 compatible
+ * Check if identifier type is OCPP 1.6 compatible
  * @param type - Identifier type to check
  * @returns True if OCPP 1.6 type
  */
-export const isOCCP16Type = (type: IdentifierType): boolean => {
+export const isOCPP16Type = (type: IdentifierType): boolean => {
   return type === IdentifierType.ID_TAG
 }
 
 /**
- * Check if identifier type is OCCP 2.0 compatible
+ * Check if identifier type is OCPP 2.0 compatible
  * @param type - Identifier type to check
  * @returns True if OCPP 2.0 type
  */
-export const isOCCP20Type = (type: IdentifierType): boolean => {
+export const isOCPP20Type = (type: IdentifierType): boolean => {
   return Object.values(OCPP20IdTokenEnumType).includes(type as unknown as OCPP20IdTokenEnumType)
 }
 

@@ -72,8 +72,8 @@ export {
 } from './types/AuthTypes.js'
 export {
   isCertificateBased,
-  isOCCP16Type,
-  isOCCP20Type,
+  isOCPP16Type,
+  isOCPP20Type,
   mapOCPP16Status,
   mapOCPP20TokenType,
   mapToOCPP16Status,
