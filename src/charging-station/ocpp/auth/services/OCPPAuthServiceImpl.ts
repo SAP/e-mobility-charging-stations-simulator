@@ -335,8 +335,9 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
 
   /**
    * Get authentication statistics
+   * @returns Authentication statistics including cache and rate limiting metrics
    */
-  public getStats (): Promise<AuthStats> {
+  public async getStats (): Promise<AuthStats> {
     const avgResponseTime =
       this.metrics.totalRequests > 0
         ? this.metrics.totalResponseTime / this.metrics.totalRequests
@@ -353,16 +354,36 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
         ? this.metrics.successfulAuth / this.metrics.remoteAuthCount
         : 0
 
-    return Promise.resolve({
+    // Get rate limiting stats from cache via remote strategy
+    let rateLimitStats:
+      | undefined
+      | { blockedRequests: number; rateLimitedIdentifiers: number; totalChecks: number }
+    const remoteStrategy = this.strategies.get('remote')
+    if (remoteStrategy?.getStats) {
+      const strategyStats = await remoteStrategy.getStats()
+      if ('cache' in strategyStats) {
+        const cacheStats = strategyStats.cache as {
+          rateLimit?: {
+            blockedRequests: number
+            rateLimitedIdentifiers: number
+            totalChecks: number
+          }
+        }
+        rateLimitStats = cacheStats.rateLimit
+      }
+    }
+
+    return {
       avgResponseTime: Math.round(avgResponseTime * 100) / 100,
       cacheHitRate: Math.round(cacheHitRate * 10000) / 100,
       failedAuth: this.metrics.failedAuth,
       lastUpdated: this.metrics.lastReset,
       localUsageRate: Math.round(localUsageRate * 10000) / 100,
+      rateLimit: rateLimitStats,
       remoteSuccessRate: Math.round(remoteSuccessRate * 10000) / 100,
       successfulAuth: this.metrics.successfulAuth,
       totalRequests: this.metrics.totalRequests,
-    })
+    }
   }
 
   /**

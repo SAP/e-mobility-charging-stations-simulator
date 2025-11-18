@@ -9,6 +9,7 @@ import type {
 import type { AuthConfiguration } from '../types/AuthTypes.js'
 
 import { OCPPVersion } from '../../../../types/ocpp/OCPPVersion.js'
+import { InMemoryAuthCache } from '../cache/InMemoryAuthCache.js'
 import { AuthConfigValidator } from '../utils/ConfigValidator.js'
 
 /**
@@ -62,14 +63,20 @@ export class AuthComponentFactory {
   }
 
   /**
-   * Create authorization cache (delegated to service implementation)
+   * Create authorization cache with rate limiting
    * @param config - Authentication configuration
-   * @returns undefined (cache creation delegated to service)
+   * @returns AuthCache instance with configured TTL and rate limiting
    */
-  static createAuthCache (config: AuthConfiguration): undefined {
-    // Cache creation is delegated to OCPPAuthServiceImpl
-    // This method exists for API completeness
-    return undefined
+  static createAuthCache (config: AuthConfiguration): AuthCache {
+    return new InMemoryAuthCache({
+      defaultTtl: config.authorizationCacheLifetime ?? 3600,
+      maxEntries: config.maxCacheEntries ?? 1000,
+      rateLimit: {
+        enabled: true,
+        maxRequests: 10, // 10 requests per minute per identifier
+        windowMs: 60000, // 1 minute window
+      },
+    })
   }
 
   /**

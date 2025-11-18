@@ -61,7 +61,7 @@ await describe('AuthComponentFactory', async () => {
   })
 
   await describe('createAuthCache', async () => {
-    await it('should return undefined (delegated to service)', () => {
+    await it('should create InMemoryAuthCache instance', () => {
       const config: AuthConfiguration = {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: true,
@@ -74,7 +74,11 @@ await describe('AuthComponentFactory', async () => {
 
       const result = AuthComponentFactory.createAuthCache(config)
 
-      expect(result).toBeUndefined()
+      expect(result).toBeDefined()
+      expect(result).toHaveProperty('get')
+      expect(result).toHaveProperty('set')
+      expect(result).toHaveProperty('clear')
+      expect(result).toHaveProperty('getStats')
     })
   })
 

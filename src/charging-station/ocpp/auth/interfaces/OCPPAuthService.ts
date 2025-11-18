@@ -88,6 +88,18 @@ export interface AuthStats {
   /** Local authorization usage rate */
   localUsageRate: number
 
+  /** Rate limiting statistics */
+  rateLimit?: {
+    /** Number of requests blocked by rate limiting */
+    blockedRequests: number
+
+    /** Number of identifiers currently rate-limited */
+    rateLimitedIdentifiers: number
+
+    /** Total rate limit checks performed */
+    totalChecks: number
+  }
+
   /** Remote authorization success rate */
   remoteSuccessRate: number
 
@@ -161,6 +173,9 @@ export interface AuthStrategy {
 }
 
 export interface CacheStats {
+  /** Number of entries evicted due to capacity limits */
+  evictions: number
+
   /** Expired entries count */
   expiredEntries: number
 
