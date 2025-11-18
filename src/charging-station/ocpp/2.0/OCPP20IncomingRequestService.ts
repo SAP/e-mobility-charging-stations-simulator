@@ -7,6 +7,7 @@ import type {
   OCPP20ChargingProfileType,
   OCPP20ChargingScheduleType,
   OCPP20IdTokenType,
+  OCPP20TransactionContext,
 } from '../../../types/ocpp/2.0/Transaction.js'
 
 import { OCPPError } from '../../../exception/index.js'
@@ -41,6 +42,7 @@ import {
   type OCPP20ResetResponse,
   type OCPP20SetVariablesRequest,
   type OCPP20SetVariablesResponse,
+  OCPP20TransactionEventEnumType,
   OCPPVersion,
   ReasonCodeEnumType,
   ReportBaseEnumType,
@@ -68,7 +70,11 @@ import {
 import { getConfigurationKey } from '../../ConfigurationKeyUtils.js'
 import { getIdTagsFile, resetConnectorStatus } from '../../Helpers.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
-import { restoreConnectorStatus, sendAndSetConnectorStatus } from '../OCPPServiceUtils.js'
+import {
+  OCPPServiceUtils,
+  restoreConnectorStatus,
+  sendAndSetConnectorStatus,
+} from '../OCPPServiceUtils.js'
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 import { OCPP20VariableManager } from './OCPP20VariableManager.js'
 import { getVariableMetadata, VARIABLE_REGISTRY } from './OCPP20VariableRegistry.js'
@@ -1167,10 +1173,20 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
-    // Authorize idToken
+    // Authorize idToken using unified or legacy system
     let isAuthorized = false
     try {
-      isAuthorized = this.isIdTokenAuthorized(chargingStation, idToken)
+      if (chargingStation.stationInfo?.useUnifiedAuth === true) {
+        // Use unified auth system - pass idToken.idToken as string
+        isAuthorized = await OCPPServiceUtils.isIdTagAuthorizedUnified(
+          chargingStation,
+          connectorId,
+          idToken.idToken
+        )
+      } else {
+        // Use legacy OCPP 2.0 auth logic
+        isAuthorized = this.isIdTokenAuthorized(chargingStation, idToken)
+      }
     } catch (error) {
       logger.error(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Authorization error for ${idToken.idToken}:`,
@@ -1196,7 +1212,17 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     if (groupIdToken != null) {
       let isGroupAuthorized = false
       try {
-        isGroupAuthorized = this.isIdTokenAuthorized(chargingStation, groupIdToken)
+        if (chargingStation.stationInfo?.useUnifiedAuth === true) {
+          // Use unified auth system for group token
+          isGroupAuthorized = await OCPPServiceUtils.isIdTagAuthorizedUnified(
+            chargingStation,
+            connectorId,
+            groupIdToken.idToken
+          )
+        } else {
+          // Use legacy OCPP 2.0 auth logic
+          isGroupAuthorized = this.isIdTokenAuthorized(chargingStation, groupIdToken)
+        }
       } catch (error) {
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Group authorization error for ${groupIdToken.idToken}:`,
@@ -1255,6 +1281,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
       connectorStatus.transactionStarted = true
       connectorStatus.transactionId = transactionId
+      // Reset sequence number for new transaction (OCPP 2.0.1 compliance)
+      OCPP20ServiceUtils.resetTransactionSequenceNumber(chargingStation, connectorId)
       connectorStatus.transactionIdTag = idToken.idToken
       connectorStatus.transactionStart = new Date()
       connectorStatus.transactionEnergyActiveImportRegisterValue = 0
@@ -1283,6 +1311,20 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         )
       }
 
+      // Send TransactionEvent Started notification to CSMS with context-aware trigger reason selection
+      const context: OCPP20TransactionContext = {
+        command: 'RequestStartTransaction',
+        source: 'remote_command',
+      }
+
+      await OCPP20ServiceUtils.sendTransactionEventWithContext(
+        chargingStation,
+        OCPP20TransactionEventEnumType.Started,
+        context,
+        connectorId,
+        transactionId
+      )
+
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Remote start transaction ACCEPTED on #${connectorId.toString()} for idToken '${idToken.idToken}'`
       )
@@ -1308,7 +1350,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     chargingStation: ChargingStation,
     commandPayload: OCPP20RequestStopTransactionRequest
   ): Promise<OCPP20RequestStopTransactionResponse> {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const { transactionId } = commandPayload
     logger.info(
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestStopTransaction: Remote stop transaction request received for transaction ID ${transactionId as string}`

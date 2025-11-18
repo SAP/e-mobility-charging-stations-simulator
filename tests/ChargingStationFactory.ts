@@ -245,6 +245,12 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
       templateName: 'test-template.json',
       ...options.stationInfo,
     } as ChargingStationInfo,
+    stopMeterValues: (connectorId: number): void => {
+      const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+      if (connectorStatus?.transactionSetInterval != null) {
+        clearInterval(connectorStatus.transactionSetInterval)
+      }
+    },
   } as unknown as ChargingStation
 
   return chargingStation

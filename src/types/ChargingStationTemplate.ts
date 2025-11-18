@@ -112,6 +112,8 @@ export interface ChargingStationTemplate {
   templateHash?: string
   transactionDataMeterValues?: boolean
   useConnectorId0?: boolean
+  /** Enable unified authentication system (gradual migration feature flag) */
+  useUnifiedAuth?: boolean
   voltageOut?: Voltage
   wsOptions?: WsOptions
   x509Certificates?: Record<x509CertificateType, string>

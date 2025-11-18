@@ -1,3 +1,5 @@
+import type { UUIDv4 } from '@/types'
+
 import { UIClient } from './UIClient'
 
 export const convertToBoolean = (value: unknown): boolean => {
@@ -64,13 +66,14 @@ export const resetToggleButtonState = (id: string, shared = false): void => {
   deleteFromLocalStorage(key)
 }
 
-export const randomUUID = (): `${string}-${string}-${string}-${string}-${string}` => {
+export const randomUUID = (): UUIDv4 => {
   return crypto.randomUUID()
 }
 
-export const validateUUID = (
-  uuid: `${string}-${string}-${string}-${string}-${string}`
-): uuid is `${string}-${string}-${string}-${string}-${string}` => {
+export const validateUUID = (uuid: unknown): uuid is UUIDv4 => {
+  if (typeof uuid !== 'string') {
+    return false
+  }
   return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(
     uuid
   )
