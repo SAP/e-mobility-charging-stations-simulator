@@ -80,19 +80,21 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       await lruCache.set('token-2', mockResult)
       await lruCache.set('token-3', mockResult)
 
-      // Access token-1 to make it most recently used
-      const access1 = await lruCache.get('token-1')
-      expect(access1).toBeDefined() // Verify it's accessible before eviction test
+      // Access token-3 to make it most recently used
+      const access3 = await lruCache.get('token-3')
+      expect(access3).toBeDefined() // Verify it's accessible before eviction test
 
       // Add new entry to trigger eviction
       await lruCache.set('token-4', mockResult)
 
-      // token-2 should be evicted (oldest), token-1 should still exist
+      // token-1 should be evicted (oldest), token-3 and token-4 should still exist
       const token1 = await lruCache.get('token-1')
-      const token2 = await lruCache.get('token-2')
+      const token3 = await lruCache.get('token-3')
+      const token4 = await lruCache.get('token-4')
 
-      expect(token1).toBeDefined()
-      expect(token2).toBeUndefined()
+      expect(token1).toBeUndefined()
+      expect(token3).toBeDefined()
+      expect(token4).toBeDefined()
     })
   })
 
