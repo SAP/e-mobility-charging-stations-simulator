@@ -52,6 +52,7 @@ export default defineConfig([
               'shutdowning',
               'VCAP',
               'workerd',
+              'yxxx',
               // OCPP 2.0.x domain terms
               'cppwm',
               'heartbeatinterval',

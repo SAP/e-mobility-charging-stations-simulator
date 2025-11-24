@@ -12,9 +12,10 @@
 ### Progress Summary
 
 ✅ **COMPLETED**:
+
 - Phase 1.1: Strategic Decision (ADR created)
 - Phase 1.2: TransactionEvent Authorization Flow
-- Phase 1.3: OCPP20VariableManager Integration  
+- Phase 1.3: OCPP20VariableManager Integration
 - Phase 2.1: Remove useUnifiedAuth flag & legacy code
 
 🔄 **IN PROGRESS**: Phase 2.2-2.3 (Testing & Security)
@@ -42,7 +43,7 @@
 
 ### Quick Reference
 
-- Phase 1 (Sprints 1-2): ✅ Corrections Critiques (17.5j) 
+- Phase 1 (Sprints 1-2): ✅ Corrections Critiques (17.5j)
 - Phase 2 (Sprints 3-4): 🔄 Consolidation (27j) - 2.1 done, 2.2-2.3 todo
 - Phase 3 (Sprints 5-6): ⏳ Documentation (21.5j)
 
