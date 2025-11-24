@@ -6,7 +6,7 @@ The e-Mobility Charging Stations Simulator provides a scalable, configurable loa
 
 ## Tech Stack
 
-- Runtime: Node.js (>=20.11.0) + Worker Threads
+- Runtime: Node.js (>=22.0.0) + Worker Threads
 - Language: TypeScript (~5.9) (ESM modules; `type: module`)
 - Build: esbuild bundling (custom scripts) + PNPM workspaces
 - Package Manager: pnpm (>=9)
@@ -78,7 +78,7 @@ The e-Mobility Charging Stations Simulator provides a scalable, configurable loa
 
 ## Important Constraints
 
-- Node.js >=20.11 runtime features (Worker Threads, ESM) required.
+- Node.js >=22.0.0 runtime features (Worker Threads, ESM) required.
 - Strict OCPP JSON schema validation when `ocppStrictCompliance` is true; deviations require explicit config relaxation (e.g., out-of-order meter values).
 - Simulator must avoid blocking operations in worker threads; heavy tasks delegated or streamed.
 - Memory footprint scalability: workerSet auto sizing formula ensures balanced distribution.
