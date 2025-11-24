@@ -4,14 +4,14 @@
   "version": "2.1.0",
   "readme": "README.md",
   "engines": {
-    "node": ">=20.0.0",
+    "node": ">=22.0.0",
     "pnpm": ">=9.0.0"
   },
   "volta": {
     "node": "24.11.1",
-    "pnpm": "10.22.0"
+    "pnpm": "10.23.0"
   },
-  "packageManager": "pnpm@10.22.0",
+  "packageManager": "pnpm@10.23.0",
   "type": "module",
   "scripts": {
     "build": "vite build",
@@ -37,17 +37,17 @@
     "@tsconfig/node22": "^22.0.5",
     "@types/jsdom": "^27.0.0",
     "@types/node": "^24.10.1",
-    "@vitejs/plugin-vue": "^6.0.1",
-    "@vitejs/plugin-vue-jsx": "^5.1.1",
-    "@vitest/coverage-v8": "^4.0.10",
+    "@vitejs/plugin-vue": "^6.0.2",
+    "@vitejs/plugin-vue-jsx": "^5.1.2",
+    "@vitest/coverage-v8": "^4.0.13",
     "@vue/test-utils": "^2.4.6",
     "@vue/tsconfig": "^0.8.1",
     "cross-env": "^10.1.0",
     "jsdom": "^27.2.0",
     "prettier": "^3.6.2",
-    "rimraf": "^6.1.0",
+    "rimraf": "^6.1.2",
     "typescript": "~5.9.3",
-    "vite": "^7.2.2",
-    "vitest": "^4.0.10"
+    "vite": "^7.2.4",
+    "vitest": "^4.0.13"
   }
 }
