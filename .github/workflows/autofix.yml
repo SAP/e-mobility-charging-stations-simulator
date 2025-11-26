@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - run: pipx install poetry
       - uses: actions/setup-python@v6
         with:

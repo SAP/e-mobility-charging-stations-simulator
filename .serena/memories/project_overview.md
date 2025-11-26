@@ -6,7 +6,7 @@ Simple Node.js software to simulate and scale a set of charging stations based o
 
 ## Tech Stack
 
-- **Runtime**: Node.js (>=20.11.0)
+- **Runtime**: Node.js (>=22.0.0)
 - **Language**: TypeScript
 - **Package Manager**: pnpm (>=9.0.0)
 - **Testing Framework**: Node.js native test runner with @std/expect
