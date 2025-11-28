@@ -8,9 +8,9 @@
   },
   "volta": {
     "node": "24.11.1",
-    "pnpm": "10.23.0"
+    "pnpm": "10.24.0"
   },
-  "packageManager": "pnpm@10.23.0",
+  "packageManager": "pnpm@10.24.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/sap/e-mobility-charging-stations-simulator.git"
@@ -117,11 +117,11 @@
     "eslint": "^9.39.1",
     "eslint-plugin-jsdoc": "^61.4.1",
     "eslint-plugin-perfectionist": "^4.15.1",
-    "eslint-plugin-vue": "^10.6.1",
+    "eslint-plugin-vue": "^10.6.2",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "neostandard": "^0.12.2",
-    "prettier": "^3.6.2",
+    "prettier": "^3.7.1",
     "rimraf": "^6.1.2",
     "semver": "^7.7.3",
     "ts-node": "^10.9.2",
