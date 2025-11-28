@@ -35,8 +35,10 @@ export interface BroadcastChannelRequestPayload extends RequestPayload {
 
 export type BroadcastChannelResponse = [UUIDv4, BroadcastChannelResponsePayload]
 
-export interface BroadcastChannelResponsePayload
-  extends Omit<ResponsePayload, 'hashIdsFailed' | 'hashIdsSucceeded' | 'responsesFailed'> {
+export interface BroadcastChannelResponsePayload extends Omit<
+  ResponsePayload,
+  'hashIdsFailed' | 'hashIdsSucceeded' | 'responsesFailed'
+> {
   hashId: string | undefined
 }
 
