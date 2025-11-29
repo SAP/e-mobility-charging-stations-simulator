@@ -374,9 +374,8 @@ describe('B07 - Set Variables', () => {
       })
     expect(getBefore.getVariableResult[0].attributeValue).toBe(txValue)
 
-    const { OCPP20VariableManager } = await import(
-      '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
-    )
+    const { OCPP20VariableManager } =
+      await import('../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js')
     OCPP20VariableManager.getInstance().resetRuntimeOverrides()
 
     const getAfter: { getVariableResult: OCPP20GetVariableResultType[] } =
