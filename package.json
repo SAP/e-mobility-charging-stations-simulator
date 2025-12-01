@@ -121,11 +121,11 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "neostandard": "^0.12.2",
-    "prettier": "^3.7.1",
+    "prettier": "^3.7.3",
     "rimraf": "^6.1.2",
     "semver": "^7.7.3",
     "ts-node": "^10.9.2",
-    "tsx": "^4.20.6",
+    "tsx": "^4.21.0",
     "typescript": "~5.9.3",
     "vue-eslint-parser": "^10.2.0"
   }
