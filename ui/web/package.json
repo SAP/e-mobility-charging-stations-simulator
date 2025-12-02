@@ -27,7 +27,7 @@
     "coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "finalhandler": "^2.1.0",
+    "finalhandler": "^2.1.1",
     "serve-static": "^2.2.0",
     "vue": "^3.5.25",
     "vue-router": "^4.6.3",
@@ -44,10 +44,10 @@
     "@vue/tsconfig": "^0.8.1",
     "cross-env": "^10.1.0",
     "jsdom": "^27.2.0",
-    "prettier": "^3.7.1",
+    "prettier": "^3.7.3",
     "rimraf": "^6.1.2",
     "typescript": "~5.9.3",
-    "vite": "^7.2.4",
+    "vite": "^7.2.6",
     "vitest": "^4.0.14"
   }
 }
