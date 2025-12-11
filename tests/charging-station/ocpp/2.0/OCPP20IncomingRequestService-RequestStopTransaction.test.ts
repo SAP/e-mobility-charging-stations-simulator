@@ -123,11 +123,11 @@ await describe('E02 - Remote Stop Transaction', async () => {
   }
 
   await it('Should successfully stop an active transaction', async () => {
-    // Clear previous transaction events
-    sentTransactionEvents = []
-
     // Start a transaction first
     const transactionId = await startTransaction(1, 100)
+
+    // Clear transaction events after starting, before testing stop transaction
+    sentTransactionEvents = []
 
     // Create stop transaction request
     const stopRequest: OCPP20RequestStopTransactionRequest = {
@@ -156,9 +156,6 @@ await describe('E02 - Remote Stop Transaction', async () => {
   })
 
   await it('Should handle multiple active transactions correctly', async () => {
-    // Clear previous transaction events
-    sentTransactionEvents = []
-
     // Reset once before starting multiple transactions
     resetConnectorTransactionStates()
 
@@ -166,6 +163,9 @@ await describe('E02 - Remote Stop Transaction', async () => {
     const transactionId1 = await startTransaction(1, 200, true) // Skip reset since we just did it
     const transactionId2 = await startTransaction(2, 201, true) // Skip reset to keep transaction 1
     const transactionId3 = await startTransaction(3, 202, true) // Skip reset to keep transactions 1 & 2
+
+    // Clear transaction events after starting, before testing stop transaction
+    sentTransactionEvents = []
 
     // Stop the second transaction
     const stopRequest: OCPP20RequestStopTransactionRequest = {
@@ -260,11 +260,11 @@ await describe('E02 - Remote Stop Transaction', async () => {
   })
 
   await it('Should accept valid transaction ID format - exactly 36 characters', async () => {
-    // Clear previous transaction events
-    sentTransactionEvents = []
-
     // Start a transaction first
     const transactionId = await startTransaction(1, 300)
+
+    // Clear transaction events after starting, before testing stop transaction
+    sentTransactionEvents = []
 
     // Ensure the transaction ID is exactly 36 characters (pad if necessary for test)
     let testTransactionId = transactionId
@@ -387,11 +387,11 @@ await describe('E02 - Remote Stop Transaction', async () => {
   })
 
   await it('Should handle custom data in request payload', async () => {
-    // Clear previous transaction events
-    sentTransactionEvents = []
-
     // Start a transaction first
     const transactionId = await startTransaction(1, 500)
+
+    // Clear transaction events after starting, before testing stop transaction
+    sentTransactionEvents = []
 
     const stopRequestWithCustomData: OCPP20RequestStopTransactionRequest = {
       customData: {
@@ -415,11 +415,11 @@ await describe('E02 - Remote Stop Transaction', async () => {
   })
 
   await it('Should validate TransactionEvent content correctly', async () => {
-    // Clear previous transaction events
-    sentTransactionEvents = []
-
     // Start a transaction first
     const transactionId = await startTransaction(2, 600) // Use EVSE 2
+
+    // Clear transaction events after starting, before testing stop transaction
+    sentTransactionEvents = []
 
     const stopRequest: OCPP20RequestStopTransactionRequest = {
       transactionId: transactionId as UUIDv4,
