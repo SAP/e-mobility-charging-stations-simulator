@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "extends": ["@tsconfig/node22/tsconfig.json", "@vue/tsconfig/tsconfig.dom.json"],
+  "extends": ["@tsconfig/node24/tsconfig.json", "@vue/tsconfig/tsconfig.dom.json"],
   "compilerOptions": {
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
