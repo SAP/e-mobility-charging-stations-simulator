@@ -122,6 +122,7 @@ import type {
   ResponsePayload,
   SimulatorState,
   UIServerConfigurationSection,
+  UUIDv4,
 } from '@/types'
 
 import ReloadButton from '@/components/buttons/ReloadButton.vue'
@@ -153,9 +154,9 @@ const state = ref<{
   gettingChargingStations: boolean
   gettingSimulatorState: boolean
   gettingTemplates: boolean
-  renderAddChargingStations: `${string}-${string}-${string}-${string}-${string}`
-  renderChargingStations: `${string}-${string}-${string}-${string}-${string}`
-  renderSimulator: `${string}-${string}-${string}-${string}-${string}`
+  renderAddChargingStations: UUIDv4
+  renderChargingStations: UUIDv4
+  renderSimulator: UUIDv4
   uiServerIndex: number
 }>({
   gettingChargingStations: false,
