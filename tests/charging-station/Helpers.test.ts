@@ -8,6 +8,7 @@ import {
   checkConfiguration,
   checkStationInfoConnectorStatus,
   checkTemplate,
+  getBootConnectorStatus,
   getChargingStationId,
   getHashId,
   getMaxNumberOfEvses,
@@ -396,5 +397,83 @@ await describe('Helpers test suite', async () => {
     checkStationInfoConnectorStatus(1, connectorStatus, 'log prefix |', 'test-template.json')
     expect(warnMock.mock.calls.length).toBe(1)
     expect(connectorStatus.status).toBeUndefined()
+  })
+
+  await it('Verify getBootConnectorStatus() - bootStatus is null/undefined', () => {
+    const chargingStation = createChargingStation({ baseName })
+    const connectorStatus = {} as ConnectorStatus
+    expect(getBootConnectorStatus(chargingStation, 1, connectorStatus)).toBe(
+      ConnectorStatusEnum.Available
+    )
+  })
+
+  await it('Verify getBootConnectorStatus() - bootStatus is Available', () => {
+    const chargingStation = createChargingStation({ baseName })
+    const connectorStatus = {
+      bootStatus: ConnectorStatusEnum.Available,
+    } as ConnectorStatus
+    expect(getBootConnectorStatus(chargingStation, 1, connectorStatus)).toBe(
+      ConnectorStatusEnum.Available
+    )
+  })
+
+  await it('Verify getBootConnectorStatus() - bootStatus is Unavailable', () => {
+    const chargingStation = createChargingStation({ baseName })
+    const connectorStatus = {
+      bootStatus: ConnectorStatusEnum.Unavailable,
+    } as ConnectorStatus
+    expect(getBootConnectorStatus(chargingStation, 1, connectorStatus)).toBe(
+      ConnectorStatusEnum.Unavailable
+    )
+  })
+
+  await it('Verify getBootConnectorStatus() - bootStatus is Occupied', () => {
+    const chargingStation = createChargingStation({ baseName })
+    const connectorStatus = {
+      bootStatus: ConnectorStatusEnum.Occupied,
+    } as ConnectorStatus
+    expect(getBootConnectorStatus(chargingStation, 1, connectorStatus)).toBe(
+      ConnectorStatusEnum.Occupied
+    )
+  })
+
+  await it('Verify getBootConnectorStatus() - bootStatus is Reserved', () => {
+    const chargingStation = createChargingStation({ baseName })
+    const connectorStatus = {
+      bootStatus: ConnectorStatusEnum.Reserved,
+    } as ConnectorStatus
+    expect(getBootConnectorStatus(chargingStation, 1, connectorStatus)).toBe(
+      ConnectorStatusEnum.Reserved
+    )
+  })
+
+  await it('Verify getBootConnectorStatus() - bootStatus is Faulted', () => {
+    const chargingStation = createChargingStation({ baseName })
+    const connectorStatus = {
+      bootStatus: ConnectorStatusEnum.Faulted,
+    } as ConnectorStatus
+    expect(getBootConnectorStatus(chargingStation, 1, connectorStatus)).toBe(
+      ConnectorStatusEnum.Faulted
+    )
+  })
+
+  await it('Verify getBootConnectorStatus() - connector id 0', () => {
+    const chargingStation = createChargingStation({ baseName })
+    const connectorStatus = {
+      bootStatus: ConnectorStatusEnum.Unavailable,
+    } as ConnectorStatus
+    expect(getBootConnectorStatus(chargingStation, 0, connectorStatus)).toBe(
+      ConnectorStatusEnum.Unavailable
+    )
+  })
+
+  await it('Verify getBootConnectorStatus() - connector id 2', () => {
+    const chargingStation = createChargingStation({ baseName })
+    const connectorStatus = {
+      bootStatus: ConnectorStatusEnum.Available,
+    } as ConnectorStatus
+    expect(getBootConnectorStatus(chargingStation, 2, connectorStatus)).toBe(
+      ConnectorStatusEnum.Available
+    )
   })
 })
