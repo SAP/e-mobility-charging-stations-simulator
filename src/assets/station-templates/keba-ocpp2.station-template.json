@@ -1,0 +1,96 @@
+{
+  "supervisionUrls": ["ws://localhost:9000"],
+  "supervisionUrlOcppConfiguration": true,
+  "supervisionUrlOcppKey": "CentralSystemAddress",
+  "idTagsFile": "idtags.json",
+  "baseName": "CS-KEBA-OCPP2",
+  "chargePointModel": "KC-P30-ESS400C2-E0R",
+  "chargePointVendor": "Keba AG",
+  "firmwareVersion": "1.10.1",
+  "power": 22080,
+  "powerUnit": "W",
+  "numberOfConnectors": 1,
+  "randomConnectors": false,
+  "amperageLimitationOcppKey": "MaxAvailableCurrent",
+  "amperageLimitationUnit": "mA",
+  "ocppVersion": "2.0.1",
+  "Configuration": {
+    "configurationKey": [
+      {
+        "key": "MeterValuesSampledData",
+        "readonly": false,
+        "value": "Energy.Active.Import.Register,Power.Active.Import,Current.Import,Voltage"
+      },
+      {
+        "key": "MeterValueSampleInterval",
+        "readonly": false,
+        "value": "30"
+      },
+      {
+        "key": "SupportedFeatureProfiles",
+        "readonly": true,
+        "value": "Core,FirmwareManagement,LocalAuthListManagement,SmartCharging,RemoteTrigger,Reservation"
+      },
+      {
+        "key": "LocalAuthListEnabled",
+        "readonly": false,
+        "value": "false"
+      },
+      {
+        "key": "AuthorizeRemoteTxRequests",
+        "readonly": false,
+        "value": "false"
+      },
+      {
+        "key": "WebSocketPingInterval",
+        "readonly": false,
+        "value": "60"
+      },
+      {
+        "key": "ReserveConnectorZeroSupported",
+        "readonly": false,
+        "value": "false"
+      }
+    ]
+  },
+  "AutomaticTransactionGenerator": {
+    "enable": false,
+    "minDuration": 30,
+    "maxDuration": 60,
+    "minDelayBetweenTwoTransactions": 15,
+    "maxDelayBetweenTwoTransactions": 30,
+    "probabilityOfStart": 1,
+    "stopAfterHours": 0.3,
+    "requireAuthorize": true
+  },
+  "Evses": {
+    "0": {
+      "Connectors": {
+        "0": {}
+      }
+    },
+    "1": {
+      "Connectors": {
+        "1": {
+          "MeterValues": [
+            {
+              "unit": "V",
+              "measurand": "Voltage"
+            },
+            {
+              "unit": "W",
+              "measurand": "Power.Active.Import"
+            },
+            {
+              "unit": "A",
+              "measurand": "Current.Import"
+            },
+            {
+              "unit": "Wh"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
