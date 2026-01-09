@@ -126,12 +126,10 @@ await describe('UIHttpServer test suite', async () => {
     server.sendResponse([TEST_UUID, payload])
 
     expect(res.body).toBeDefined()
-    const parsedBody = res.getResponsePayload()
-    expect(parsedBody?.[1].status).toBe('success')
-    expect((parsedBody?.[1] as Record<string, unknown>).hashIdsSucceeded).toEqual([
-      'station-1',
-      'station-2',
-    ])
+    // HTTP server sends only the payload, not [uuid, payload]
+    const parsedBody = JSON.parse(res.body ?? '{}') as Record<string, unknown>
+    expect(parsedBody.status).toBe('success')
+    expect(parsedBody.hashIdsSucceeded).toEqual(['station-1', 'station-2'])
   })
 
   await it('Verify response with error details', () => {
@@ -148,10 +146,11 @@ await describe('UIHttpServer test suite', async () => {
     server.sendResponse([TEST_UUID, payload])
 
     expect(res.body).toBeDefined()
-    const parsedBody = res.getResponsePayload()
-    expect(parsedBody?.[1].status).toBe('failure')
-    expect((parsedBody?.[1] as Record<string, unknown>).errorMessage).toBe('Test error')
-    expect((parsedBody?.[1] as Record<string, unknown>).hashIdsFailed).toEqual(['station-1'])
+    // HTTP server sends only the payload, not [uuid, payload]
+    const parsedBody = JSON.parse(res.body ?? '{}') as Record<string, unknown>
+    expect(parsedBody.status).toBe('failure')
+    expect(parsedBody.errorMessage).toBe('Test error')
+    expect(parsedBody.hashIdsFailed).toEqual(['station-1'])
   })
 
   await it('Verify valid HTTP configuration', () => {
