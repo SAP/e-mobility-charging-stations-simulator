@@ -1,5 +1,63 @@
 # Changelog
 
+## [2.2.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v2.1.0...webui@v2.2.0) (2026-01-08)
+
+### 🚀 Features
+
+- **ocpp20:** add SetVariables handling with runtime + persistent var… ([#1576](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1576)) ([c3d9640](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c3d964087d7d0b5db5fed6a7c40c1f0b2a5f8b36))
+- **ocpp2:** add RequestStopTransaction command ([#1587](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1587)) ([8bc61e5](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/8bc61e540c72c810c8aa9eef65022ae536e2855b))
+
+### 🐞 Bug Fixes
+
+- **deps:** update all non-major dependencies ([11d2eb1](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/11d2eb146ff8bad3decbd97e6e8eae1b454e69c8))
+- **deps:** update all non-major dependencies ([cb73ee4](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/cb73ee48743b75b68faef8d9dbbdb1a982cbfc88))
+- **deps:** update all non-major dependencies ([#1601](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1601)) ([bb5126c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/bb5126cd4318269cd09a61aba493792fb5eca35e))
+- **deps:** update all non-major dependencies ([#1614](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1614)) ([37234cd](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/37234cddb01f034e783f5ad2c5f01f0f83770f1b))
+- **deps:** update all non-major dependencies ([#1618](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1618)) ([5d5c0c0](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/5d5c0c071f3b65029482c8ca1777f302f3ef19ff))
+- **deps:** update all non-major dependencies ([#1621](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1621)) ([48126f7](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/48126f770231fbcd3e844f93a9ba8fb379143fb7))
+- **deps:** update all non-major dependencies ([#1622](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1622)) ([e7a1428](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e7a142873e82ff5760ea4e6d25a46084f7aacc31))
+- **deps:** update all non-major dependencies ([#1627](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1627)) ([ed77cd6](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ed77cd602f7d6798896dbc45a55d73dbb055183d))
+- **deps:** update all non-major dependencies ([#1629](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1629)) ([e2a3122](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e2a3122f6c99e689126b40198144d68532ee9940))
+- **deps:** update all non-major dependencies ([#1634](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1634)) ([89a1c43](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/89a1c436162ca6d87af3ddbbcfbfa7f63d685c2c))
+- update tsconfig.json to use @tsconfig/node24 ([99dbfd7](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/99dbfd7b169676ee30ceefdccdf7490d49b85a98))
+- **webui:** reset toggle button state after action completion ([#1547](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1547)) ([cddc77d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/cddc77d5fc797b1a1ac928fa18e9d65dbf1d1abb))
+
+### 📚 Documentation
+
+- refine READMEs ([f5e46a7](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f5e46a70a391568b327bc1b6d88398bf710be035))
+
+### 🤖 Automation
+
+- **deps-dev:** bump @types/node from 24.8.0 to 24.8.1 in the regular group ([#1564](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1564)) ([fadd932](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/fadd93271a3abc64be5347adb6027fb078e30c9c))
+- **deps-dev:** bump @types/node in the regular group ([#1515](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1515)) ([ec8bf7f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ec8bf7f9c787bab3c11288dd1d4baa212a793e54))
+- **deps-dev:** bump @vitest/coverage-v8 from 3.2.4 to 4.0.1 ([e778f39](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e778f3930784c27cbaed0af9c4413648474a2382))
+- **deps-dev:** bump the regular group with 2 updates ([7d7ab44](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7d7ab4455cdee562d79c7bb519a643e30429c9b7))
+- **deps-dev:** bump the regular group with 2 updates ([#1567](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1567)) ([ada1284](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ada12847eb56b95ea2cc29ca963fc4ac32976614))
+- **deps-dev:** bump the regular group with 3 updates ([7633284](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7633284afa651091970e48b54d17a453ef3e6c97))
+- **deps-dev:** bump the regular group with 3 updates ([f96ef18](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f96ef1841a79e24f7bdfa5e3a0cb38ad21c3bf42))
+- **deps-dev:** bump the regular group with 3 updates ([033d483](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/033d483ef4a03d4bbb3777ae8e3b7f36f17df290))
+- **deps-dev:** bump the regular group with 3 updates ([#1574](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1574)) ([6ea3bc3](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6ea3bc3e68b5f3c76eb2008ed366e488e65b6344))
+- **deps-dev:** bump the regular group with 4 updates ([f406612](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f40661259d60b891432da9fad27460f2815288cd))
+- **deps-dev:** bump the regular group with 4 updates ([3967d3d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3967d3da2d6655f941e7a4d1b29da2a7925eca16))
+- **deps-dev:** bump the regular group with 4 updates ([05371a9](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/05371a9215139dcc5b47c1c3f118b63efd6276d7))
+- **deps-dev:** bump the regular group with 4 updates ([dae6b78](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/dae6b78c23e5219bdc8726b9a68c83b9b59152f6))
+- **deps-dev:** bump the regular group with 4 updates ([a047288](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/a047288fa24e8432a1ba24c6efe2e0e5c8772a5a))
+- **deps-dev:** bump the regular group with 6 updates ([#1566](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1566)) ([f93f64a](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f93f64a911d6cf868180358eae57c6adeb631a49))
+- **deps-dev:** bump typescript from 5.9.2 to 5.9.3 in the typescript group ([0f252f6](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/0f252f66fa26bb91fc233202586211efa2fd9ce9))
+- **deps-dev:** bump typescript in the typescript group ([c1a6a79](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c1a6a79ba81afebfcfc6ceba2ec619bf82b2bbe9))
+- **deps-dev:** bump typescript in the typescript group ([#1485](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1485)) ([622f9f6](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/622f9f6edb57daa3dacec4db8e411cbcefe7e0b3))
+- **deps-dev:** bump vitest from 3.2.4 to 4.0.1 in the vitest group ([#1570](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1570)) ([c27e4a4](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c27e4a49b4f33b03ddcec035b641ace01468c3a6))
+- **deps:** bump the regular group across 1 directory with 13 updates ([811efaa](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/811efaa7d46eca2262aac74806c190c111db147d))
+- **deps:** bump the regular group across 1 directory with 5 updates ([13b52ea](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/13b52eaf3b073f26b1440317587117d624b6f521))
+- **deps:** bump the regular group across 1 directory with 5 updates ([b1c10b5](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b1c10b5484de217457ea73d885701cb83a04d491))
+- **deps:** bump the regular group across 1 directory with 7 updates ([d6831c1](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/d6831c1072d8ddb737c2b784636e6770d87a6103))
+- **deps:** bump the regular group across 1 directory with 7 updates ([62eee6e](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/62eee6e7bac8bea9057ca7376d7a3e7ae89e4609))
+- **deps:** bump the regular group with 3 updates ([#1503](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1503)) ([d57c265](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/d57c265ec6e2a5fafa9e0cc2dfe7ec454602d652))
+- **deps:** bump the regular group with 6 updates ([#1507](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1507)) ([d5acbdc](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/d5acbdc3fd3c27abe5c2ba45ee1dabe0fc2ff4ae))
+- **deps:** bump the regular group with 7 updates ([0b14c0b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/0b14c0bac6be53bd2aaf13deb1bcf68d5a2d28c8))
+- **deps:** bump the regular group with 7 updates ([#1572](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1572)) ([a7c4809](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/a7c480973200c6b35df4d26a40c71a0ba78fb4a3))
+- **deps:** bump the regular group with 9 updates ([#1594](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1594)) ([8a274b6](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/8a274b6a22c8daed816535075e84da70c5b0776d))
+
 ## [2.1.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v2.0.10...webui@v2.1.0) (2025-07-24)
 
 ### 🚀 Features
