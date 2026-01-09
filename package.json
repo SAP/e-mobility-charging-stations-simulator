@@ -1,16 +1,16 @@
 {
   "$schema": "https://json.schemastore.org/package",
   "name": "e-mobility-charging-stations-simulator",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "engines": {
     "node": ">=22.0.0",
     "pnpm": ">=9.0.0"
   },
   "volta": {
     "node": "24.12.0",
-    "pnpm": "10.26.2"
+    "pnpm": "10.27.0"
   },
-  "packageManager": "pnpm@10.26.2",
+  "packageManager": "pnpm@10.27.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/sap/e-mobility-charging-stations-simulator.git"
@@ -75,13 +75,13 @@
     "sea": "pnpm exec rimraf ./dist/evse-simulator ./dist/evse-simulator.blob && node --experimental-sea-config sea-config.json && pnpm dlx ncp $(volta which node || n which lts || nvm which node || command -v node) ./dist/evse-simulator && pnpm dlx postject ./dist/evse-simulator NODE_SEA_BLOB ./dist/evse-simulator.blob --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2 && pnpm exec rimraf ./dist/evse-simulator.blob"
   },
   "dependencies": {
-    "@mikro-orm/core": "^6.6.2",
-    "@mikro-orm/mariadb": "^6.6.2",
-    "@mikro-orm/reflection": "^6.6.2",
-    "@mikro-orm/sqlite": "^6.6.2",
+    "@mikro-orm/core": "^6.6.3",
+    "@mikro-orm/mariadb": "^6.6.3",
+    "@mikro-orm/reflection": "^6.6.3",
+    "@mikro-orm/sqlite": "^6.6.3",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
-    "basic-ftp": "^5.0.5",
+    "basic-ftp": "^5.1.0",
     "chalk": "^5.6.2",
     "date-fns": "^4.1.0",
     "http-status-codes": "^2.3.0",
@@ -92,18 +92,18 @@
     "tar": "^7.5.2",
     "winston": "^3.19.0",
     "winston-daily-rotate-file": "^5.0.0",
-    "ws": "^8.18.3"
+    "ws": "^8.19.0"
   },
   "optionalDependencies": {
     "bufferutil": "^4.1.0",
     "utf-8-validate": "^6.0.6"
   },
   "devDependencies": {
-    "@commitlint/cli": "^20.2.0",
-    "@commitlint/config-conventional": "^20.2.0",
+    "@commitlint/cli": "^20.3.1",
+    "@commitlint/config-conventional": "^20.3.1",
     "@cspell/eslint-plugin": "^9.4.0",
     "@eslint/js": "^9.39.2",
-    "@mikro-orm/cli": "^6.6.2",
+    "@mikro-orm/cli": "^6.6.3",
     "@std/expect": "npm:@jsr/std__expect@^1.0.17",
     "@types/node": "^24.10.4",
     "@types/semver": "^7.7.1",
@@ -115,8 +115,8 @@
     "esbuild-plugin-clean": "^1.0.1",
     "esbuild-plugin-copy": "^2.1.1",
     "eslint": "^9.39.2",
-    "eslint-plugin-jsdoc": "^61.5.0",
-    "eslint-plugin-perfectionist": "^5.1.0",
+    "eslint-plugin-jsdoc": "^61.7.1",
+    "eslint-plugin-perfectionist": "^5.3.1",
     "eslint-plugin-vue": "^10.6.2",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",

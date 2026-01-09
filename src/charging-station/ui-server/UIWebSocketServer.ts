@@ -12,7 +12,6 @@ import {
   WebSocketCloseEventStatusCode,
 } from '../../types/index.js'
 import {
-  Constants,
   getWebSocketCloseEventStatusString,
   isNotEmptyString,
   JSONStringify,
@@ -123,8 +122,11 @@ export class UIWebSocketServer extends AbstractUIServer {
             }
             return undefined
           })
-          .catch(Constants.EMPTY_FUNCTION)
-          .finally(() => {
+          .catch((error: unknown) => {
+            logger.error(
+              `${this.logPrefix(moduleName, 'start.ws.onmessage')} Request handler error:`,
+              error
+            )
             this.responseHandlers.delete(requestId)
           })
       })
