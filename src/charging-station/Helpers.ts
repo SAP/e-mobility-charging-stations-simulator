@@ -295,22 +295,15 @@ export const getBootConnectorStatus = (
   connectorStatus: ConnectorStatus
 ): ConnectorStatusEnum => {
   let connectorBootStatus: ConnectorStatusEnum
-  if (
-    connectorStatus.status == null &&
-    (!chargingStation.isChargingStationAvailable() ||
-      !chargingStation.isConnectorAvailable(connectorId))
-  ) {
-    connectorBootStatus = ConnectorStatusEnum.Unavailable
-  } else if (connectorStatus.status == null && connectorStatus.bootStatus != null) {
-    // Set boot status in template at startup
-    connectorBootStatus = connectorStatus.bootStatus
-  } else if (connectorStatus.status != null) {
-    // Set previous status at startup
-    connectorBootStatus = connectorStatus.status
-  } else {
+
+  if (connectorStatus.bootStatus == null) {
     // Set default status
     connectorBootStatus = ConnectorStatusEnum.Available
+  } else {
+    // Set boot status in template at startup
+    connectorBootStatus = connectorStatus.bootStatus
   }
+
   return connectorBootStatus
 }
 
