@@ -33,6 +33,7 @@ await describe('AbstractUIService test suite', async () => {
     expect(service).toBeDefined()
     if (service != null) {
       service.sendResponse(TEST_UUID, { status: ResponseStatus.SUCCESS })
+      service.stop()
     }
 
     expect(server.hasResponseHandler(TEST_UUID)).toBe(false)
@@ -61,6 +62,7 @@ await describe('AbstractUIService test suite', async () => {
         expect(response[1].chargingStations).toBeDefined()
         expect(Array.isArray(response[1].chargingStations)).toBe(true)
       }
+      service.stop()
     }
   })
 
@@ -89,6 +91,7 @@ await describe('AbstractUIService test suite', async () => {
         expect(response[1].templates).toContain('template1.json')
         expect(response[1].templates).toContain('template2.json')
       }
+      service.stop()
     }
   })
 
@@ -112,6 +115,7 @@ await describe('AbstractUIService test suite', async () => {
         expect(response[1].status).toBe(ResponseStatus.FAILURE)
         expect(response[1].errorMessage).toBeDefined()
       }
+      service.stop()
     }
   })
 
@@ -126,6 +130,7 @@ await describe('AbstractUIService test suite', async () => {
     expect(service).toBeDefined()
     if (service != null) {
       expect(service.getBroadcastChannelExpectedResponses(TEST_UUID)).toBe(0)
+      service.stop()
     }
   })
 
@@ -163,6 +168,7 @@ await describe('AbstractUIService test suite', async () => {
         expect(response[0]).toBe(TEST_UUID)
         expect(response[1].status).toBe(ResponseStatus.FAILURE)
       }
+      service.stop()
     }
   })
 
@@ -175,6 +181,9 @@ await describe('AbstractUIService test suite', async () => {
     const service = server.getUIService(ProtocolVersion['0.0.1'])
 
     expect(service).toBeDefined()
+    if (service != null) {
+      service.stop()
+    }
   })
 
   await it('Verify multiple service registrations', () => {
@@ -187,5 +196,10 @@ await describe('AbstractUIService test suite', async () => {
     const uiServicesMap = Reflect.get(server, 'uiServices') as Map<unknown, unknown>
 
     expect(uiServicesMap.size).toBe(1)
+
+    const service = server.getUIService(ProtocolVersion['0.0.1'])
+    if (service != null) {
+      service.stop()
+    }
   })
 })
