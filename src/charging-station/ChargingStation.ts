@@ -1206,7 +1206,10 @@ export class ChargingStation extends EventEmitter {
     let configuration: ChargingStationConfiguration | undefined
     if (isNotEmptyString(this.configurationFile) && existsSync(this.configurationFile)) {
       try {
-        if (this.sharedLRUCache.hasChargingStationConfiguration(this.configurationFileHash)) {
+        if (
+          isNotEmptyString(this.configurationFileHash) &&
+          this.sharedLRUCache.hasChargingStationConfiguration(this.configurationFileHash)
+        ) {
           configuration = this.sharedLRUCache.getChargingStationConfiguration(
             this.configurationFileHash
           )
@@ -1217,9 +1220,25 @@ export class ChargingStation extends EventEmitter {
             readFileSync(this.configurationFile, 'utf8')
           ) as ChargingStationConfiguration
           PerformanceStatistics.endMeasure(measureId, beginId)
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+          if (configuration == null || isEmpty(configuration)) {
+            logger.error(
+              `${this.logPrefix()} Invalid charging station configuration file ${
+                this.configurationFile
+              }`
+            )
+            return undefined
+          }
+          if (!isNotEmptyString(configuration.configurationHash)) {
+            logger.error(
+              `${this.logPrefix()} Missing charging station configuration hash in file ${
+                this.configurationFile
+              }`
+            )
+            return undefined
+          }
+          this.configurationFileHash = configuration.configurationHash
           this.sharedLRUCache.setChargingStationConfiguration(configuration)
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          this.configurationFileHash = configuration.configurationHash!
         }
       } catch (error) {
         handleFileException(
@@ -1228,6 +1247,15 @@ export class ChargingStation extends EventEmitter {
           error as NodeJS.ErrnoException,
           this.logPrefix()
         )
+        if (
+          isNotEmptyString(this.configurationFileHash) &&
+          this.sharedLRUCache.hasChargingStationConfiguration(this.configurationFileHash)
+        ) {
+          logger.warn(
+            `${this.logPrefix()} Using cached charging station configuration due to file read error`
+          )
+          return this.sharedLRUCache.getChargingStationConfiguration(this.configurationFileHash)
+        }
       }
     }
     return configuration
