@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ocpp-server"
-version = "2.2.0"
+version = "2.2.1"
 description = "OCPP2 mock server"
 authors = ["Jérôme Benoit <jerome.benoit@sap.com>"]
 readme = "README.md"
