@@ -17,6 +17,7 @@ import {
 } from '../../src/charging-station/Helpers.js'
 import { BaseError } from '../../src/exception/index.js'
 import {
+  AvailabilityType,
   type ChargingStationConfiguration,
   type ChargingStationInfo,
   type ChargingStationTemplate,
@@ -399,26 +400,16 @@ await describe('Helpers test suite', async () => {
     expect(connectorStatus.status).toBeUndefined()
   })
 
-  await it('Verify getBootConnectorStatus() - bootStatus is null/undefined', () => {
-    const chargingStation = createChargingStation({ baseName })
+  await it('Verify getBootConnectorStatus() - default to Available when no bootStatus', () => {
+    const chargingStation = createChargingStation({ baseName, connectorsCount: 2 })
     const connectorStatus = {} as ConnectorStatus
     expect(getBootConnectorStatus(chargingStation, 1, connectorStatus)).toBe(
       ConnectorStatusEnum.Available
     )
   })
 
-  await it('Verify getBootConnectorStatus() - bootStatus is Available', () => {
-    const chargingStation = createChargingStation({ baseName })
-    const connectorStatus = {
-      bootStatus: ConnectorStatusEnum.Available,
-    } as ConnectorStatus
-    expect(getBootConnectorStatus(chargingStation, 1, connectorStatus)).toBe(
-      ConnectorStatusEnum.Available
-    )
-  })
-
-  await it('Verify getBootConnectorStatus() - bootStatus is Unavailable', () => {
-    const chargingStation = createChargingStation({ baseName })
+  await it('Verify getBootConnectorStatus() - use bootStatus from template', () => {
+    const chargingStation = createChargingStation({ baseName, connectorsCount: 2 })
     const connectorStatus = {
       bootStatus: ConnectorStatusEnum.Unavailable,
     } as ConnectorStatus
@@ -427,52 +418,55 @@ await describe('Helpers test suite', async () => {
     )
   })
 
-  await it('Verify getBootConnectorStatus() - bootStatus is Occupied', () => {
-    const chargingStation = createChargingStation({ baseName })
+  await it('Verify getBootConnectorStatus() - charging station unavailable overrides bootStatus', () => {
+    const chargingStation = createChargingStation({
+      baseName,
+      connectorDefaults: { availability: AvailabilityType.Inoperative },
+      connectorsCount: 2,
+    })
     const connectorStatus = {
-      bootStatus: ConnectorStatusEnum.Occupied,
+      bootStatus: ConnectorStatusEnum.Available,
     } as ConnectorStatus
     expect(getBootConnectorStatus(chargingStation, 1, connectorStatus)).toBe(
-      ConnectorStatusEnum.Occupied
-    )
-  })
-
-  await it('Verify getBootConnectorStatus() - bootStatus is Reserved', () => {
-    const chargingStation = createChargingStation({ baseName })
-    const connectorStatus = {
-      bootStatus: ConnectorStatusEnum.Reserved,
-    } as ConnectorStatus
-    expect(getBootConnectorStatus(chargingStation, 1, connectorStatus)).toBe(
-      ConnectorStatusEnum.Reserved
-    )
-  })
-
-  await it('Verify getBootConnectorStatus() - bootStatus is Faulted', () => {
-    const chargingStation = createChargingStation({ baseName })
-    const connectorStatus = {
-      bootStatus: ConnectorStatusEnum.Faulted,
-    } as ConnectorStatus
-    expect(getBootConnectorStatus(chargingStation, 1, connectorStatus)).toBe(
-      ConnectorStatusEnum.Faulted
-    )
-  })
-
-  await it('Verify getBootConnectorStatus() - connector id 0', () => {
-    const chargingStation = createChargingStation({ baseName })
-    const connectorStatus = {
-      bootStatus: ConnectorStatusEnum.Unavailable,
-    } as ConnectorStatus
-    expect(getBootConnectorStatus(chargingStation, 0, connectorStatus)).toBe(
       ConnectorStatusEnum.Unavailable
     )
   })
 
-  await it('Verify getBootConnectorStatus() - connector id 2', () => {
-    const chargingStation = createChargingStation({ baseName })
+  await it('Verify getBootConnectorStatus() - connector unavailable overrides bootStatus', () => {
+    const chargingStation = createChargingStation({
+      baseName,
+      connectorDefaults: { availability: AvailabilityType.Inoperative },
+      connectorsCount: 2,
+    })
     const connectorStatus = {
+      availability: AvailabilityType.Inoperative,
       bootStatus: ConnectorStatusEnum.Available,
     } as ConnectorStatus
-    expect(getBootConnectorStatus(chargingStation, 2, connectorStatus)).toBe(
+    expect(getBootConnectorStatus(chargingStation, 1, connectorStatus)).toBe(
+      ConnectorStatusEnum.Unavailable
+    )
+  })
+
+  await it('Verify getBootConnectorStatus() - transaction in progress restores previous status', () => {
+    const chargingStation = createChargingStation({ baseName, connectorsCount: 2 })
+    const connectorStatus = {
+      bootStatus: ConnectorStatusEnum.Available,
+      status: ConnectorStatusEnum.Charging,
+      transactionStarted: true,
+    } as ConnectorStatus
+    expect(getBootConnectorStatus(chargingStation, 1, connectorStatus)).toBe(
+      ConnectorStatusEnum.Charging
+    )
+  })
+
+  await it('Verify getBootConnectorStatus() - no transaction uses bootStatus over previous status', () => {
+    const chargingStation = createChargingStation({ baseName, connectorsCount: 2 })
+    const connectorStatus = {
+      bootStatus: ConnectorStatusEnum.Available,
+      status: ConnectorStatusEnum.Charging,
+      transactionStarted: false,
+    } as ConnectorStatus
+    expect(getBootConnectorStatus(chargingStation, 1, connectorStatus)).toBe(
       ConnectorStatusEnum.Available
     )
   })

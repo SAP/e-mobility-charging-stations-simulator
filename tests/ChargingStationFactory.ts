@@ -156,6 +156,9 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
         chargingStation.bootNotificationResponse?.status === RegistrationStatusEnumType.ACCEPTED
       )
     },
+    isChargingStationAvailable: (): boolean => {
+      return chargingStation.getConnectorStatus(0)?.availability === AvailabilityType.Operative
+    },
     isConnectorAvailable: (connectorId: number) => {
       return (
         connectorId > 0 &&
