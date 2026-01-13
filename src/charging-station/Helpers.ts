@@ -294,22 +294,18 @@ export const getBootConnectorStatus = (
   connectorId: number,
   connectorStatus: ConnectorStatus
 ): ConnectorStatusEnum => {
-  // Check charging station and connector availability first
   if (
     !chargingStation.isChargingStationAvailable() ||
     !chargingStation.isConnectorAvailable(connectorId)
   ) {
     return ConnectorStatusEnum.Unavailable
   }
-  // Restore previous status if transaction was in progress
   if (connectorStatus.transactionStarted === true && connectorStatus.status != null) {
     return connectorStatus.status
   }
-  // Set boot status from template at startup
   if (connectorStatus.bootStatus != null) {
     return connectorStatus.bootStatus
   }
-  // Set default status
   return ConnectorStatusEnum.Available
 }
 
