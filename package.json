@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/package",
   "name": "e-mobility-charging-stations-simulator",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "engines": {
     "node": ">=22.0.0",
     "pnpm": ">=9.0.0"
@@ -101,11 +101,11 @@
   "devDependencies": {
     "@commitlint/cli": "^20.3.1",
     "@commitlint/config-conventional": "^20.3.1",
-    "@cspell/eslint-plugin": "^9.4.0",
+    "@cspell/eslint-plugin": "^9.6.0",
     "@eslint/js": "^9.39.2",
     "@mikro-orm/cli": "^6.6.3",
     "@std/expect": "npm:@jsr/std__expect@^1.0.17",
-    "@types/node": "^24.10.6",
+    "@types/node": "^24.10.7",
     "@types/semver": "^7.7.1",
     "@types/ws": "^8.18.1",
     "c8": "^10.1.3",
