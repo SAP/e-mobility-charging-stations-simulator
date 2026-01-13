@@ -292,8 +292,14 @@ export class ChargingStation extends EventEmitter {
     if (reservationFound != null) {
       await this.removeReservation(reservationFound, ReservationTerminationReason.REPLACE_EXISTING)
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.getConnectorStatus(reservation.connectorId)!.reservation = reservation
+    const connectorStatus = this.getConnectorStatus(reservation.connectorId)
+    if (connectorStatus == null) {
+      logger.error(
+        `${this.logPrefix()} No connector ${reservation.connectorId.toString()} found during reservation ${reservation.reservationId.toString()} addition`
+      )
+      return
+    }
+    connectorStatus.reservation = reservation
     await sendAndSetConnectorStatus(
       this,
       reservation.connectorId,
@@ -309,8 +315,10 @@ export class ChargingStation extends EventEmitter {
   }
 
   public closeWSConnection (): void {
-    if (this.isWebSocketConnectionOpened()) {
-      this.wsConnection?.close()
+    if (this.wsConnection != null) {
+      if (this.isWebSocketConnectionOpened()) {
+        this.wsConnection.close()
+      }
       this.wsConnection = null
     }
   }
@@ -321,13 +329,31 @@ export class ChargingStation extends EventEmitter {
     }
     AutomaticTransactionGenerator.deleteInstance(this)
     PerformanceStatistics.deleteInstance(this.stationInfo?.hashId)
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    this.idTagsCache.deleteIdTags(getIdTagsFile(this.stationInfo!)!)
+    if (this.stationInfo != null) {
+      const idTagsFile = getIdTagsFile(this.stationInfo)
+      if (idTagsFile != null) {
+        this.idTagsCache.deleteIdTags(idTagsFile)
+      } else {
+        logger.warn(`${this.logPrefix()} No ID tags file found during deletion`)
+      }
+    } else {
+      logger.warn(`${this.logPrefix()} No station info available during deletion`)
+    }
     this.requests.clear()
     this.connectors.clear()
     this.evses.clear()
+    this.messageQueue.length = 0
     this.templateFileWatcher?.unref()
-    deleteConfiguration && rmSync(this.configurationFile, { force: true })
+    if (deleteConfiguration && existsSync(this.configurationFile)) {
+      try {
+        rmSync(this.configurationFile, { force: true })
+      } catch (error) {
+        logger.error(
+          `${this.logPrefix()} Failed to delete configuration file ${this.configurationFile}:`,
+          error
+        )
+      }
+    }
     this.chargingStationWorkerBroadcastChannel.unref()
     this.emitChargingStationEvent(ChargingStationEvents.deleted)
     this.removeAllListeners()
@@ -1180,7 +1206,10 @@ export class ChargingStation extends EventEmitter {
     let configuration: ChargingStationConfiguration | undefined
     if (isNotEmptyString(this.configurationFile) && existsSync(this.configurationFile)) {
       try {
-        if (this.sharedLRUCache.hasChargingStationConfiguration(this.configurationFileHash)) {
+        if (
+          isNotEmptyString(this.configurationFileHash) &&
+          this.sharedLRUCache.hasChargingStationConfiguration(this.configurationFileHash)
+        ) {
           configuration = this.sharedLRUCache.getChargingStationConfiguration(
             this.configurationFileHash
           )
@@ -1191,9 +1220,25 @@ export class ChargingStation extends EventEmitter {
             readFileSync(this.configurationFile, 'utf8')
           ) as ChargingStationConfiguration
           PerformanceStatistics.endMeasure(measureId, beginId)
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+          if (configuration == null || isEmpty(configuration)) {
+            logger.error(
+              `${this.logPrefix()} Invalid charging station configuration file ${
+                this.configurationFile
+              }`
+            )
+            return undefined
+          }
+          if (!isNotEmptyString(configuration.configurationHash)) {
+            logger.error(
+              `${this.logPrefix()} Missing charging station configuration hash in file ${
+                this.configurationFile
+              }`
+            )
+            return undefined
+          }
+          this.configurationFileHash = configuration.configurationHash
           this.sharedLRUCache.setChargingStationConfiguration(configuration)
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          this.configurationFileHash = configuration.configurationHash!
         }
       } catch (error) {
         handleFileException(
@@ -1202,6 +1247,15 @@ export class ChargingStation extends EventEmitter {
           error as NodeJS.ErrnoException,
           this.logPrefix()
         )
+        if (
+          isNotEmptyString(this.configurationFileHash) &&
+          this.sharedLRUCache.hasChargingStationConfiguration(this.configurationFileHash)
+        ) {
+          logger.warn(
+            `${this.logPrefix()} Using cached charging station configuration due to file read error`
+          )
+          return this.sharedLRUCache.getChargingStationConfiguration(this.configurationFileHash)
+        }
       }
     }
     return configuration
@@ -1786,16 +1840,16 @@ export class ChargingStation extends EventEmitter {
         if (templateMaxEvses > 0) {
           for (const evseKey in stationTemplate.Evses) {
             const evseId = convertToInt(evseKey)
-            this.evses.set(evseId, {
+            const evseStatus: EvseStatus = {
               availability: AvailabilityType.Operative,
               connectors: buildConnectorsMap(
                 stationTemplate.Evses[evseKey].Connectors,
                 this.logPrefix(),
                 this.templateFile
               ),
-            })
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            initializeConnectorsMapStatus(this.evses.get(evseId)!.connectors, this.logPrefix())
+            }
+            this.evses.set(evseId, evseStatus)
+            initializeConnectorsMapStatus(evseStatus.connectors, this.logPrefix())
           }
           this.saveEvsesStatus()
         } else {
@@ -2344,8 +2398,9 @@ export class ChargingStation extends EventEmitter {
         beginId = PerformanceStatistics.beginMeasure(commandName)
       }
       this.wsConnection?.send(message, (error?: Error) => {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        isRequest && PerformanceStatistics.endMeasure(commandName!, beginId!)
+        if (isRequest && commandName != null && beginId != null) {
+          PerformanceStatistics.endMeasure(commandName, beginId)
+        }
         if (error == null) {
           logger.debug(
             `${this.logPrefix()} >> Buffered ${getMessageTypeString(messageType)} OCPP message sent '${message}'`
@@ -2353,15 +2408,16 @@ export class ChargingStation extends EventEmitter {
           this.messageQueue.shift()
         } else {
           logger.error(
-            `${this.logPrefix()} >> Buffered ${getMessageTypeString(messageType)} OCPP message '${message}' send failed:`,
+            `${this.logPrefix()} Error while sending buffered ${getMessageTypeString(messageType)} OCPP message '${message}':`,
             error
           )
         }
         // eslint-disable-next-line promise/no-promise-in-callback
         sleep(exponentialDelay(messageIdx))
           .then(() => {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            ++messageIdx!
+            if (messageIdx != null) {
+              ++messageIdx
+            }
             this.sendMessageBuffer(onCompleteCallback, messageIdx)
             return undefined
           })
@@ -2419,15 +2475,17 @@ export class ChargingStation extends EventEmitter {
     } else {
       for (const connectorId of this.connectors.keys()) {
         if (connectorId > 0) {
+          const connectorStatus = this.getConnectorStatus(connectorId)
+          if (connectorStatus == null) {
+            logger.error(
+              `${this.logPrefix()} No connector ${connectorId.toString()} status found during message sequence start`
+            )
+            continue
+          }
           await sendAndSetConnectorStatus(
             this,
             connectorId,
-            getBootConnectorStatus(
-              this,
-              connectorId,
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              this.getConnectorStatus(connectorId)!
-            )
+            getBootConnectorStatus(this, connectorId, connectorStatus)
           )
         }
       }
