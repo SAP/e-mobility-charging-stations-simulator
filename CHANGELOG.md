@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.2.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v2.2.0...simulator@v2.2.1) (2026-01-13)
+
+
+### 🐞 Bug Fixes
+
+* Change connector boot status to be available at boot ([#1641](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1641)) ([bfa969d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/bfa969df43bd10de06ae3bc29f7d7707df853d77))
+* ensure proper cleanup of BroadcastChannel resources in AbstractUIService tests ([65bce4e](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/65bce4e9f012d56037dd989f68b0315e002bdd6a))
+* harden ChargingStation null-safety ([25c83d2](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/25c83d205b95c11f34c5bc5091f00ca405518f36))
+* improve configuration file validation and error handling ([eb0e74e](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/eb0e74e703460a3b87352eaee21d0376d68de983))
+
+
+### 🧪 Tests
+
+* adjust tolerance for delay checks ([cede720](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/cede720d9d53cfdd83483012de330fb833cda634))
+
 ## [2.2.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v2.1.0...simulator@v2.2.0) (2026-01-08)
 
 ### 🚀 Features
