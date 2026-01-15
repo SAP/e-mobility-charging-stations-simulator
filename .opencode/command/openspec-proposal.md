@@ -26,7 +26,7 @@ $ARGUMENTS
 4. Capture architectural reasoning in `design.md` when the solution spans multiple systems, introduces new patterns, or demands trade-off discussion before committing to specs.
 5. Draft spec deltas in `changes/<id>/specs/<capability>/spec.md` (one folder per capability) using `## ADDED|MODIFIED|REMOVED Requirements` with at least one `#### Scenario:` per requirement and cross-reference related capabilities when relevant.
 6. Draft `tasks.md` as an ordered list of small, verifiable work items that deliver user-visible progress, include validation (tests, tooling), and highlight dependencies or parallelizable work.
-7. Validate with `openspec validate <id> --strict` and resolve every issue before sharing the proposal.
+7. Validate with `openspec validate <id> --strict --no-interactive` and resolve every issue before sharing the proposal.
 
 **Reference**
 
