@@ -1,0 +1,51 @@
+schema: spec-driven
+
+context: |
+  ## Project
+  e-Mobility Charging Stations Simulator - Node.js software to simulate and scale
+  charging stations based on the OCPP-J protocol as part of SAP e-Mobility solution.
+
+  ## Tech Stack
+  - Runtime: Node.js (>=22.0.0)
+  - Language: TypeScript (strict mode)
+  - Package Manager: pnpm (>=9.0.0)
+  - Build Tool: esbuild
+  - Testing: Node.js native test runner with @std/expect
+  - Code Quality: ESLint, Prettier, neostandard
+
+  ## OCPP Protocol Support
+  - OCPP 1.6 (JSON/WebSocket)
+  - OCPP 2.0.x (JSON/WebSocket)
+
+  ## Architecture
+  - src/charging-station/: Core charging station implementation
+  - src/charging-station/ocpp/1.6/: OCPP 1.6 specific code
+  - src/charging-station/ocpp/2.0/: OCPP 2.0.x specific code
+  - src/types/: TypeScript type definitions
+  - src/utils/: Utility functions
+  - tests/: Test files mirroring source structure
+
+  ## Key Conventions
+  - Naming: camelCase for variables/functions, PascalCase for classes/types/enums
+  - Error handling: Use typed errors (BaseError, OCPPError), avoid generic Error
+  - Null safety: Use optional chaining (?.) and nullish coalescing (??)
+  - Type safety: Explicit types preferred, avoid 'any'
+  - Async: Prefer async/await over raw Promises
+  - OCPP: Follow standard naming exactly (e.g., RemoteStartTransaction, BootNotification)
+  - Commits: Follow Conventional Commits format
+  - Documentation: English only, concise, no marketing jargon
+
+  ## Quality Gates
+  - Build/lint/type checks must pass (pnpm build, pnpm lint, pnpm format)
+  - Tests must pass (pnpm test)
+  - PR titles follow Conventional Commits
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
