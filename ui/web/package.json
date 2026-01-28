@@ -9,9 +9,9 @@
   },
   "volta": {
     "node": "24.13.0",
-    "pnpm": "10.28.1"
+    "pnpm": "10.28.2"
   },
-  "packageManager": "pnpm@10.28.1",
+  "packageManager": "pnpm@10.28.2",
   "type": "module",
   "scripts": {
     "build": "vite build",
