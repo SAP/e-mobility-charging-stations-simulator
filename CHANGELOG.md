@@ -2,16 +2,14 @@
 
 ## [2.2.2](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v2.2.1...simulator@v2.2.2) (2026-01-31)
 
-
 ### 🐞 Bug Fixes
 
-* **deps:** update all non-major dependencies ([#1650](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1650)) ([067346d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/067346d6140374fdb8e4322d9a8dee523da6732b))
-* **deps:** update all non-major dependencies ([#1657](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1657)) ([36082b8](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/36082b8aba6c8d38511ca6357fb644ad1b7ca49d))
-
+- **deps:** update all non-major dependencies ([#1650](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1650)) ([067346d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/067346d6140374fdb8e4322d9a8dee523da6732b))
+- **deps:** update all non-major dependencies ([#1657](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1657)) ([36082b8](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/36082b8aba6c8d38511ca6357fb644ad1b7ca49d))
 
 ### 🤖 Automation
 
-* **deps:** bump tar from 7.5.3 to 7.5.4 ([#1658](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1658)) ([494b64c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/494b64c20716b633d427c6a2961d5e19b48d6f92))
+- **deps:** bump tar from 7.5.3 to 7.5.4 ([#1658](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1658)) ([494b64c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/494b64c20716b633d427c6a2961d5e19b48d6f92))
 
 ## [2.2.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v2.2.0...simulator@v2.2.1) (2026-01-13)
 
