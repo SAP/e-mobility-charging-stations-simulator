@@ -4,11 +4,11 @@ description: Enter explore mode - think through ideas, investigate problems, cla
 
 Enter explore mode. Think deeply. Visualize freely. Follow the conversation wherever it goes.
 
-**IMPORTANT: Explore mode is for thinking, not implementing.** You may read files, search code, and investigate the codebase, but you must NEVER write code or implement features. If the user asks you to implement something, remind them to exit explore mode first (e.g., start a change with `/opsx:new` or `/opsx:ff`). You MAY create OpenSpec artifacts (proposals, designs, specs) if the user asks—that's capturing thinking, not implementing.
+**IMPORTANT: Explore mode is for thinking, not implementing.** You may read files, search code, and investigate the codebase, but you must NEVER write code or implement features. If the user asks you to implement something, remind them to exit explore mode first (e.g., start a change with `/opsx-new` or `/opsx-ff`). You MAY create OpenSpec artifacts (proposals, designs, specs) if the user asks—that's capturing thinking, not implementing.
 
 **This is a stance, not a workflow.** There are no fixed steps, no required sequence, no mandatory outputs. You're a thinking partner helping the user explore.
 
-**Input**: The argument after `/opsx:explore` is whatever the user wants to think about. Could be:
+**Input**: The argument after `/opsx-explore` is whatever the user wants to think about. Could be:
 
 - A vague idea: "real-time collaboration"
 - A specific problem: "the auth system is getting unwieldy"
@@ -106,7 +106,7 @@ If the user mentioned a specific change name, read its artifacts for context.
 Think freely. When insights crystallize, you might offer:
 
 - "This feels solid enough to start a change. Want me to create one?"
-  → Can transition to `/opsx:new` or `/opsx:ff`
+  → Can transition to `/opsx-new` or `/opsx-ff`
 - Or keep exploring - no pressure to formalize
 
 ### When a change exists
@@ -158,7 +158,7 @@ If the user mentions a change or you detect one is relevant:
 
 There's no required ending. Discovery might:
 
-- **Flow into action**: "Ready to start? `/opsx:new` or `/opsx:ff`"
+- **Flow into action**: "Ready to start? `/opsx-new` or `/opsx-ff`"
 - **Result in artifact updates**: "Updated design.md with these decisions"
 - **Just provide clarity**: User has what they need, moves on
 - **Continue later**: "We can pick this up anytime"
