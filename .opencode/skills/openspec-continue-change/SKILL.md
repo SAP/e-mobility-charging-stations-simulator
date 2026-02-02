@@ -6,7 +6,7 @@ compatibility: Requires openspec CLI.
 metadata:
   author: openspec
   version: '1.0'
-  generatedBy: '1.0.2'
+  generatedBy: '1.1.1'
 ---
 
 Continue working on a change by creating the next artifact.

@@ -6,7 +6,7 @@ compatibility: Requires openspec CLI.
 metadata:
   author: openspec
   version: '1.0'
-  generatedBy: '1.0.2'
+  generatedBy: '1.1.1'
 ---
 
 Archive multiple completed changes in a single operation.
@@ -234,7 +234,7 @@ Failed K changes:
 ```
 ## No Changes to Archive
 
-No active changes found. Use `/opsx:new` to create a new change.
+No active changes found. Use `/opsx-new` to create a new change.
 ```
 
 **Guardrails**
