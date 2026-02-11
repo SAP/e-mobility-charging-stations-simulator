@@ -23,6 +23,7 @@ import {
 import { Configuration, isAsyncFunction, isNotEmptyArray, logger } from '../../../utils/index.js'
 import { Bootstrap } from '../../Bootstrap.js'
 import { UIServiceWorkerBroadcastChannel } from '../../broadcast-channel/UIServiceWorkerBroadcastChannel.js'
+import { DEFAULT_MAX_STATIONS, isValidNumberOfStations } from '../UIServerSecurity.js'
 
 const moduleName = 'AbstractUIService'
 
@@ -226,6 +227,12 @@ export abstract class AbstractUIService {
     ) {
       return {
         errorMessage: 'Invalid request payload',
+        status: ResponseStatus.FAILURE,
+      } satisfies ResponsePayload
+    }
+    if (!isValidNumberOfStations(numberOfStations, DEFAULT_MAX_STATIONS)) {
+      return {
+        errorMessage: `Number of stations must be between 1 and ${String(DEFAULT_MAX_STATIONS)}`,
         status: ResponseStatus.FAILURE,
       } satisfies ResponsePayload
     }
