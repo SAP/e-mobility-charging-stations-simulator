@@ -23,9 +23,18 @@ import {
   logPrefix,
 } from '../../utils/index.js'
 import { AbstractUIServer } from './AbstractUIServer.js'
+import {
+  createBodySizeLimiter,
+  createRateLimiter,
+  DEFAULT_MAX_BODY_SIZE,
+  DEFAULT_RATE_LIMIT,
+  DEFAULT_RATE_WINDOW,
+} from './UIServerSecurity.js'
 import { isProtocolAndVersionSupported } from './UIServerUtils.js'
 
 const moduleName = 'UIHttpServer'
+
+const rateLimiter = createRateLimiter(DEFAULT_RATE_LIMIT, DEFAULT_RATE_WINDOW)
 
 enum HttpMethods {
   GET = 'GET',
@@ -87,6 +96,20 @@ export class UIHttpServer extends AbstractUIServer {
   }
 
   private requestListener (req: IncomingMessage, res: ServerResponse): void {
+    // Rate limiting check
+    const clientIp = req.socket.remoteAddress ?? 'unknown'
+    if (!rateLimiter(clientIp)) {
+      res
+        .writeHead(StatusCodes.TOO_MANY_REQUESTS, {
+          'Content-Type': 'text/plain',
+          'Retry-After': '60',
+        })
+        .end(`${StatusCodes.TOO_MANY_REQUESTS.toString()} Too Many Requests`)
+      res.destroy()
+      req.destroy()
+      return
+    }
+
     this.authenticate(req, err => {
       if (err != null) {
         res
@@ -144,8 +167,19 @@ export class UIHttpServer extends AbstractUIServer {
         }
 
         const bodyBuffer: Uint8Array[] = []
+        const checkBodySize = createBodySizeLimiter(DEFAULT_MAX_BODY_SIZE)
         req
           .on('data', (chunk: Uint8Array) => {
+            if (!checkBodySize(chunk.length)) {
+              res
+                .writeHead(StatusCodes.REQUEST_TOO_LONG, {
+                  'Content-Type': 'text/plain',
+                })
+                .end(`${StatusCodes.REQUEST_TOO_LONG.toString()} Payload Too Large`)
+              res.destroy()
+              req.destroy()
+              return
+            }
             bodyBuffer.push(chunk)
           })
           .on('end', () => {
