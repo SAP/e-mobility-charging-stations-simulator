@@ -20,6 +20,7 @@ import {
   validateUUID,
 } from '../../utils/index.js'
 import { AbstractUIServer } from './AbstractUIServer.js'
+import { DEFAULT_WS_MAX_PAYLOAD } from './UIServerSecurity.js'
 import {
   getProtocolAndVersion,
   handleProtocols,
@@ -35,6 +36,7 @@ export class UIWebSocketServer extends AbstractUIServer {
     super(uiServerConfiguration)
     this.webSocketServer = new WebSocketServer({
       handleProtocols,
+      maxPayload: DEFAULT_WS_MAX_PAYLOAD,
       noServer: true,
     })
   }
