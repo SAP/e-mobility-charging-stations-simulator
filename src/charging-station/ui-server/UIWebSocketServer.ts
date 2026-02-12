@@ -20,6 +20,7 @@ import {
   validateUUID,
 } from '../../utils/index.js'
 import { AbstractUIServer } from './AbstractUIServer.js'
+import { DEFAULT_COMPRESSION_THRESHOLD, DEFAULT_MAX_PAYLOAD_SIZE } from './UIServerSecurity.js'
 import {
   getProtocolAndVersion,
   handleProtocols,
@@ -35,7 +36,23 @@ export class UIWebSocketServer extends AbstractUIServer {
     super(uiServerConfiguration)
     this.webSocketServer = new WebSocketServer({
       handleProtocols,
+      maxPayload: DEFAULT_MAX_PAYLOAD_SIZE,
       noServer: true,
+      perMessageDeflate: {
+        clientNoContextTakeover: true,
+        concurrencyLimit: 10,
+        serverMaxWindowBits: 12,
+        serverNoContextTakeover: true,
+        threshold: DEFAULT_COMPRESSION_THRESHOLD,
+        zlibDeflateOptions: {
+          chunkSize: 16 * 1024,
+          level: 6,
+          memLevel: 7,
+        },
+        zlibInflateOptions: {
+          chunkSize: 16 * 1024,
+        },
+      },
     })
   }
 

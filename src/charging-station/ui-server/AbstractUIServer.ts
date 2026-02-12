@@ -22,6 +22,7 @@ import {
 } from '../../types/index.js'
 import { isEmpty, logger } from '../../utils/index.js'
 import { UIServiceFactory } from './ui-services/UIServiceFactory.js'
+import { isValidCredential } from './UIServerSecurity.js'
 import { getUsernameAndPasswordFromAuthorizationToken } from './UIServerUtils.js'
 
 const moduleName = 'AbstractUIServer'
@@ -226,8 +227,8 @@ export abstract class AbstractUIServer {
 
   private isValidUsernameAndPassword (username: string, password: string): boolean {
     return (
-      this.uiServerConfiguration.authentication?.username === username &&
-      this.uiServerConfiguration.authentication.password === password
+      isValidCredential(username, this.uiServerConfiguration.authentication?.username ?? '') &&
+      isValidCredential(password, this.uiServerConfiguration.authentication?.password ?? '')
     )
   }
 

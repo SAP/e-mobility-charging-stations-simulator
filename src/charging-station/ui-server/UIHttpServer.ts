@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 
 import { StatusCodes } from 'http-status-codes'
+import { createGzip } from 'node:zlib'
 
 import { BaseError } from '../../exception/index.js'
 import {
@@ -14,6 +15,7 @@ import {
   type RequestPayload,
   ResponseStatus,
   type UIServerConfiguration,
+  type UUIDv4,
 } from '../../types/index.js'
 import {
   generateUUID,
@@ -23,9 +25,19 @@ import {
   logPrefix,
 } from '../../utils/index.js'
 import { AbstractUIServer } from './AbstractUIServer.js'
+import {
+  createBodySizeLimiter,
+  createRateLimiter,
+  DEFAULT_COMPRESSION_THRESHOLD,
+  DEFAULT_MAX_PAYLOAD_SIZE,
+  DEFAULT_RATE_LIMIT,
+  DEFAULT_RATE_WINDOW,
+} from './UIServerSecurity.js'
 import { isProtocolAndVersionSupported } from './UIServerUtils.js'
 
 const moduleName = 'UIHttpServer'
+
+const rateLimiter = createRateLimiter(DEFAULT_RATE_LIMIT, DEFAULT_RATE_WINDOW)
 
 enum HttpMethods {
   GET = 'GET',
@@ -35,8 +47,11 @@ enum HttpMethods {
 }
 
 export class UIHttpServer extends AbstractUIServer {
+  private readonly acceptsGzip: Map<UUIDv4, boolean>
+
   public constructor (protected override readonly uiServerConfiguration: UIServerConfiguration) {
     super(uiServerConfiguration)
+    this.acceptsGzip = new Map<UUIDv4, boolean>()
   }
 
   public logPrefix = (modName?: string, methodName?: string, prefixSuffix?: string): string => {
@@ -61,11 +76,27 @@ export class UIHttpServer extends AbstractUIServer {
     try {
       if (this.hasResponseHandler(uuid)) {
         const res = this.responseHandlers.get(uuid) as ServerResponse
-        res
-          .writeHead(this.responseStatusToStatusCode(payload.status), {
+        const body = JSONStringify(payload, undefined, MapStringifyFormat.object)
+        const shouldCompress =
+          this.acceptsGzip.get(uuid) === true &&
+          Buffer.byteLength(body) >= DEFAULT_COMPRESSION_THRESHOLD
+
+        if (shouldCompress) {
+          res.writeHead(this.responseStatusToStatusCode(payload.status), {
+            'Content-Encoding': 'gzip',
             'Content-Type': 'application/json',
+            Vary: 'Accept-Encoding',
           })
-          .end(JSONStringify(payload, undefined, MapStringifyFormat.object))
+          const gzip = createGzip()
+          gzip.pipe(res)
+          gzip.end(body)
+        } else {
+          res
+            .writeHead(this.responseStatusToStatusCode(payload.status), {
+              'Content-Type': 'application/json',
+            })
+            .end(body)
+        }
       } else {
         logger.error(
           `${this.logPrefix(moduleName, 'sendResponse')} Response for unknown request id: ${uuid}`
@@ -78,6 +109,7 @@ export class UIHttpServer extends AbstractUIServer {
       )
     } finally {
       this.responseHandlers.delete(uuid)
+      this.acceptsGzip.delete(uuid)
     }
   }
 
@@ -87,6 +119,20 @@ export class UIHttpServer extends AbstractUIServer {
   }
 
   private requestListener (req: IncomingMessage, res: ServerResponse): void {
+    // Rate limiting check
+    const clientIp = req.socket.remoteAddress ?? 'unknown'
+    if (!rateLimiter(clientIp)) {
+      res
+        .writeHead(StatusCodes.TOO_MANY_REQUESTS, {
+          'Content-Type': 'text/plain',
+          'Retry-After': '60',
+        })
+        .end(`${StatusCodes.TOO_MANY_REQUESTS.toString()} Too Many Requests`)
+      res.destroy()
+      req.destroy()
+      return
+    }
+
     this.authenticate(req, err => {
       if (err != null) {
         res
@@ -102,8 +148,11 @@ export class UIHttpServer extends AbstractUIServer {
 
       const uuid = generateUUID()
       this.responseHandlers.set(uuid, res)
+      const acceptEncoding = req.headers['accept-encoding'] ?? ''
+      this.acceptsGzip.set(uuid, /\bgzip\b/.test(acceptEncoding))
       res.on('close', () => {
         this.responseHandlers.delete(uuid)
+        this.acceptsGzip.delete(uuid)
       })
       try {
         // Expected request URL pathname: /ui/:version/:procedureName
@@ -144,8 +193,19 @@ export class UIHttpServer extends AbstractUIServer {
         }
 
         const bodyBuffer: Uint8Array[] = []
+        const checkBodySize = createBodySizeLimiter(DEFAULT_MAX_PAYLOAD_SIZE)
         req
           .on('data', (chunk: Uint8Array) => {
+            if (!checkBodySize(chunk.length)) {
+              res
+                .writeHead(StatusCodes.REQUEST_TOO_LONG, {
+                  'Content-Type': 'text/plain',
+                })
+                .end(`${StatusCodes.REQUEST_TOO_LONG.toString()} Payload Too Large`)
+              res.destroy()
+              req.destroy()
+              return
+            }
             bodyBuffer.push(chunk)
           })
           .on('end', () => {

@@ -2,28 +2,49 @@
 
 import { expect } from '@std/expect'
 import { describe, it } from 'node:test'
+import { gunzipSync } from 'node:zlib'
 
 import type { UUIDv4 } from '../../../src/types/index.js'
 
 import { UIHttpServer } from '../../../src/charging-station/ui-server/UIHttpServer.js'
+import { DEFAULT_COMPRESSION_THRESHOLD } from '../../../src/charging-station/ui-server/UIServerSecurity.js'
 import { ApplicationProtocol, ResponseStatus } from '../../../src/types/index.js'
-import { TEST_UUID } from './UIServerTestConstants.js'
-import { createMockUIServerConfiguration, MockServerResponse } from './UIServerTestUtils.js'
+import { GZIP_STREAM_FLUSH_DELAY_MS, TEST_UUID } from './UIServerTestConstants.js'
+import {
+  createMockUIServerConfiguration,
+  MockServerResponse,
+  waitForStreamFlush,
+} from './UIServerTestUtils.js'
 
 class TestableUIHttpServer extends UIHttpServer {
   public addResponseHandler (uuid: UUIDv4, res: MockServerResponse): void {
     this.responseHandlers.set(uuid, res as never)
   }
 
+  public getAcceptsGzip (): Map<UUIDv4, boolean> {
+    return Reflect.get(this, 'acceptsGzip') as Map<UUIDv4, boolean>
+  }
+
   public getResponseHandlersSize (): number {
     return this.responseHandlers.size
   }
+
+  public setAcceptsGzip (uuid: UUIDv4, value: boolean): void {
+    this.getAcceptsGzip().set(uuid, value)
+  }
 }
+
+const createHttpServerConfig = () =>
+  createMockUIServerConfiguration({ type: ApplicationProtocol.HTTP })
+
+const createLargePayload = (status: ResponseStatus = ResponseStatus.SUCCESS) => ({
+  data: 'x'.repeat(DEFAULT_COMPRESSION_THRESHOLD + 100),
+  status,
+})
 
 await describe('UIHttpServer test suite', async () => {
   await it('Verify sendResponse() deletes handler after sending', () => {
-    const config = createMockUIServerConfiguration({ type: ApplicationProtocol.HTTP })
-    const server = new TestableUIHttpServer(config)
+    const server = new TestableUIHttpServer(createHttpServerConfig())
     const res = new MockServerResponse()
 
     server.addResponseHandler(TEST_UUID, res)
@@ -37,8 +58,7 @@ await describe('UIHttpServer test suite', async () => {
   })
 
   await it('Verify sendResponse() logs error when handler not found', () => {
-    const config = createMockUIServerConfiguration({ type: ApplicationProtocol.HTTP })
-    const server = new TestableUIHttpServer(config)
+    const server = new TestableUIHttpServer(createHttpServerConfig())
 
     server.sendResponse([TEST_UUID, { status: ResponseStatus.SUCCESS }])
 
@@ -46,8 +66,7 @@ await describe('UIHttpServer test suite', async () => {
   })
 
   await it('Verify sendResponse() sets correct status code for failure', () => {
-    const config = createMockUIServerConfiguration({ type: ApplicationProtocol.HTTP })
-    const server = new TestableUIHttpServer(config)
+    const server = new TestableUIHttpServer(createHttpServerConfig())
     const res = new MockServerResponse()
 
     server.addResponseHandler(TEST_UUID, res)
@@ -59,8 +78,7 @@ await describe('UIHttpServer test suite', async () => {
   })
 
   await it('Verify sendResponse() handles send errors gracefully', () => {
-    const config = createMockUIServerConfiguration({ type: ApplicationProtocol.HTTP })
-    const server = new TestableUIHttpServer(config)
+    const server = new TestableUIHttpServer(createHttpServerConfig())
     const res = new MockServerResponse()
     res.end = (): never => {
       throw new Error('HTTP response end error')
@@ -73,8 +91,7 @@ await describe('UIHttpServer test suite', async () => {
   })
 
   await it('Verify sendResponse() sets correct Content-Type header', () => {
-    const config = createMockUIServerConfiguration({ type: ApplicationProtocol.HTTP })
-    const server = new TestableUIHttpServer(config)
+    const server = new TestableUIHttpServer(createHttpServerConfig())
     const res = new MockServerResponse()
 
     server.addResponseHandler(TEST_UUID, res)
@@ -84,8 +101,7 @@ await describe('UIHttpServer test suite', async () => {
   })
 
   await it('Verify response handlers cleanup', () => {
-    const config = createMockUIServerConfiguration({ type: ApplicationProtocol.HTTP })
-    const server = new TestableUIHttpServer(config)
+    const server = new TestableUIHttpServer(createHttpServerConfig())
     const res1 = new MockServerResponse()
     const res2 = new MockServerResponse()
 
@@ -101,8 +117,7 @@ await describe('UIHttpServer test suite', async () => {
   })
 
   await it('Verify handlers cleared on server stop', () => {
-    const config = createMockUIServerConfiguration({ type: ApplicationProtocol.HTTP })
-    const server = new TestableUIHttpServer(config)
+    const server = new TestableUIHttpServer(createHttpServerConfig())
     const res = new MockServerResponse()
 
     server.addResponseHandler(TEST_UUID, res)
@@ -114,8 +129,7 @@ await describe('UIHttpServer test suite', async () => {
   })
 
   await it('Verify response payload serialization', () => {
-    const config = createMockUIServerConfiguration({ type: ApplicationProtocol.HTTP })
-    const server = new TestableUIHttpServer(config)
+    const server = new TestableUIHttpServer(createHttpServerConfig())
     const res = new MockServerResponse()
     const payload = {
       hashIdsSucceeded: ['station-1', 'station-2'],
@@ -126,15 +140,13 @@ await describe('UIHttpServer test suite', async () => {
     server.sendResponse([TEST_UUID, payload])
 
     expect(res.body).toBeDefined()
-    // HTTP server sends only the payload, not [uuid, payload]
     const parsedBody = JSON.parse(res.body ?? '{}') as Record<string, unknown>
     expect(parsedBody.status).toBe('success')
     expect(parsedBody.hashIdsSucceeded).toEqual(['station-1', 'station-2'])
   })
 
   await it('Verify response with error details', () => {
-    const config = createMockUIServerConfiguration({ type: ApplicationProtocol.HTTP })
-    const server = new TestableUIHttpServer(config)
+    const server = new TestableUIHttpServer(createHttpServerConfig())
     const res = new MockServerResponse()
     const payload = {
       errorMessage: 'Test error',
@@ -146,7 +158,6 @@ await describe('UIHttpServer test suite', async () => {
     server.sendResponse([TEST_UUID, payload])
 
     expect(res.body).toBeDefined()
-    // HTTP server sends only the payload, not [uuid, payload]
     const parsedBody = JSON.parse(res.body ?? '{}') as Record<string, unknown>
     expect(parsedBody.status).toBe('failure')
     expect(parsedBody.errorMessage).toBe('Test error')
@@ -154,8 +165,7 @@ await describe('UIHttpServer test suite', async () => {
   })
 
   await it('Verify valid HTTP configuration', () => {
-    const config = createMockUIServerConfiguration({ type: ApplicationProtocol.HTTP })
-    const server = new UIHttpServer(config)
+    const server = new UIHttpServer(createHttpServerConfig())
 
     expect(server).toBeDefined()
   })
@@ -171,5 +181,108 @@ await describe('UIHttpServer test suite', async () => {
 
     const server = new UIHttpServer(config)
     expect(server).toBeDefined()
+  })
+
+  await describe('Gzip compression', async () => {
+    await it('Verify no compression when acceptsGzip is false', () => {
+      const server = new TestableUIHttpServer(createHttpServerConfig())
+      const res = new MockServerResponse()
+
+      server.addResponseHandler(TEST_UUID, res)
+      server.setAcceptsGzip(TEST_UUID, false)
+      server.sendResponse([TEST_UUID, createLargePayload()])
+
+      expect(res.headers['Content-Encoding']).toBeUndefined()
+      expect(res.headers['Content-Type']).toBe('application/json')
+    })
+
+    await it('Verify no compression for small responses', () => {
+      const server = new TestableUIHttpServer(createHttpServerConfig())
+      const res = new MockServerResponse()
+
+      server.addResponseHandler(TEST_UUID, res)
+      server.setAcceptsGzip(TEST_UUID, true)
+      server.sendResponse([TEST_UUID, { status: ResponseStatus.SUCCESS }])
+
+      expect(res.headers['Content-Encoding']).toBeUndefined()
+      expect(res.headers['Content-Type']).toBe('application/json')
+    })
+
+    await it('Verify no compression below threshold', () => {
+      const server = new TestableUIHttpServer(createHttpServerConfig())
+      const res = new MockServerResponse()
+      const smallPayload = {
+        data: 'x'.repeat(100),
+        status: ResponseStatus.SUCCESS,
+      }
+
+      server.addResponseHandler(TEST_UUID, res)
+      server.setAcceptsGzip(TEST_UUID, true)
+      server.sendResponse([TEST_UUID, smallPayload])
+
+      expect(res.headers['Content-Encoding']).toBeUndefined()
+    })
+
+    await it('Verify compression headers for large responses', async () => {
+      const server = new TestableUIHttpServer(createHttpServerConfig())
+      const res = new MockServerResponse()
+
+      server.addResponseHandler(TEST_UUID, res)
+      server.setAcceptsGzip(TEST_UUID, true)
+      server.sendResponse([TEST_UUID, createLargePayload()])
+
+      await waitForStreamFlush(GZIP_STREAM_FLUSH_DELAY_MS)
+
+      expect(res.headers['Content-Encoding']).toBe('gzip')
+      expect(res.headers['Content-Type']).toBe('application/json')
+      expect(res.headers.Vary).toBe('Accept-Encoding')
+    })
+
+    await it('Verify compressed response decompresses to original payload', async () => {
+      const server = new TestableUIHttpServer(createHttpServerConfig())
+      const res = new MockServerResponse()
+      const payload = createLargePayload()
+
+      server.addResponseHandler(TEST_UUID, res)
+      server.setAcceptsGzip(TEST_UUID, true)
+      server.sendResponse([TEST_UUID, payload])
+
+      await waitForStreamFlush(GZIP_STREAM_FLUSH_DELAY_MS)
+
+      expect(res.bodyBuffer).toBeDefined()
+      if (res.bodyBuffer == null) {
+        throw new Error('Expected bodyBuffer to be defined')
+      }
+      const decompressed = gunzipSync(res.bodyBuffer).toString('utf8')
+      const parsedBody = JSON.parse(decompressed) as Record<string, unknown>
+      expect(parsedBody.status).toBe('success')
+      expect(parsedBody.data).toBe(payload.data)
+    })
+
+    await it('Verify no compression when acceptsGzip context is missing', () => {
+      const server = new TestableUIHttpServer(createHttpServerConfig())
+      const res = new MockServerResponse()
+
+      server.addResponseHandler(TEST_UUID, res)
+      server.sendResponse([TEST_UUID, createLargePayload()])
+
+      expect(res.headers['Content-Encoding']).toBeUndefined()
+      expect(res.headers['Content-Type']).toBe('application/json')
+    })
+
+    await it('Verify acceptsGzip context cleanup after response', async () => {
+      const server = new TestableUIHttpServer(createHttpServerConfig())
+      const res = new MockServerResponse()
+
+      server.addResponseHandler(TEST_UUID, res)
+      server.setAcceptsGzip(TEST_UUID, true)
+      expect(server.getAcceptsGzip().has(TEST_UUID)).toBe(true)
+
+      server.sendResponse([TEST_UUID, createLargePayload()])
+
+      await waitForStreamFlush(GZIP_STREAM_FLUSH_DELAY_MS)
+
+      expect(server.getAcceptsGzip().has(TEST_UUID)).toBe(false)
+    })
   })
 })
