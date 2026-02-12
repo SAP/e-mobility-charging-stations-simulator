@@ -255,8 +255,9 @@ await describe('UIHttpServer test suite', async () => {
         setTimeout(resolve, 50)
       })
 
-      expect(res.body).toBeDefined()
-      const decompressed = gunzipSync(Buffer.from(res.body ?? '', 'binary')).toString('utf8')
+      expect(res.bodyBuffer).toBeDefined()
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const decompressed = gunzipSync(res.bodyBuffer!).toString('utf8')
       const parsedBody = JSON.parse(decompressed) as Record<string, unknown>
       expect(parsedBody.status).toBe('success')
       expect(parsedBody.data).toBe(largeData)

@@ -52,6 +52,7 @@ export const createMockUIServerConfigurationWithAuth = (
 
 export class MockServerResponse extends EventEmitter {
   public body?: string
+  public bodyBuffer?: Buffer
   public ended = false
   public headers: Record<string, string> = {}
   public statusCode?: number
@@ -61,7 +62,8 @@ export class MockServerResponse extends EventEmitter {
     if (data != null) {
       this.body = data
     } else if (this.chunks.length > 0) {
-      this.body = Buffer.concat(this.chunks).toString()
+      this.bodyBuffer = Buffer.concat(this.chunks)
+      this.body = this.bodyBuffer.toString('binary')
     }
     this.ended = true
     this.emit('finish')
