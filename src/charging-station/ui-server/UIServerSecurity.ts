@@ -1,10 +1,19 @@
 import { timingSafeEqual } from 'node:crypto'
 
+/**
+ * Per-IP rate limiter state
+ */
+interface RateLimitEntry {
+  count: number
+  resetTime: number
+}
+
 export const DEFAULT_MAX_BODY_SIZE = 1048576
 export const DEFAULT_RATE_LIMIT = 100
 export const DEFAULT_RATE_WINDOW = 60000
 export const DEFAULT_MAX_STATIONS = 100
 export const DEFAULT_WS_MAX_PAYLOAD = 102400
+export const DEFAULT_MAX_TRACKED_IPS = 10000
 
 /**
  * Constant-time credential comparison using crypto.timingSafeEqual
@@ -47,28 +56,40 @@ export const createBodySizeLimiter = (maxBytes: number): ((chunkSize: number) =>
 }
 
 /**
- * Per-IP rate limiter state
- */
-interface RateLimitEntry {
-  count: number
-  resetTime: number
-}
-
-/**
  * Creates a rate limiter function that tracks requests per IP address
- * Uses a simple fixed-window approach (not sliding window)
+ * Uses a simple fixed-window approach with lazy cleanup to prevent memory leaks
  * @param maxRequests - Maximum requests allowed per window
  * @param windowMs - Time window in milliseconds
+ * @param maxTrackedIps - Maximum number of IPs to track (prevents memory exhaustion)
  * @returns Function that checks if IP is within rate limit
  */
 export const createRateLimiter = (
   maxRequests: number,
-  windowMs: number
+  windowMs: number,
+  maxTrackedIps: number = DEFAULT_MAX_TRACKED_IPS
 ): ((ipAddress: string) => boolean) => {
   const trackedIps = new Map<string, RateLimitEntry>()
 
+  const cleanupExpiredEntries = (now: number): void => {
+    for (const [ip, entry] of trackedIps.entries()) {
+      if (now >= entry.resetTime) {
+        trackedIps.delete(ip)
+      }
+    }
+  }
+
   return (ipAddress: string): boolean => {
     const now = Date.now()
+
+    // Lazy cleanup: when at capacity and new IP arrives, clean expired entries
+    if (trackedIps.size >= maxTrackedIps && !trackedIps.has(ipAddress)) {
+      cleanupExpiredEntries(now)
+      // If still at capacity after cleanup, reject new IPs (DoS protection)
+      if (trackedIps.size >= maxTrackedIps) {
+        return false
+      }
+    }
+
     const entry = trackedIps.get(ipAddress)
 
     // First request from this IP or window expired

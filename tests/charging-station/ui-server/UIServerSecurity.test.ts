@@ -79,13 +79,39 @@ await describe('UIServerSecurity test suite', async () => {
       limiter('10.0.0.1')
       expect(limiter('10.0.0.1')).toBe(false)
 
-      // Wait for window to expire
       await new Promise(resolve => {
         setTimeout(resolve, 110)
       })
 
-      // Should allow request after window reset
       expect(limiter('10.0.0.1')).toBe(true)
+    })
+
+    await it('should reject new IPs when at max tracked IPs capacity', () => {
+      const limiter = createRateLimiter(10, 60000, 3)
+      expect(limiter('192.168.1.1')).toBe(true)
+      expect(limiter('192.168.1.2')).toBe(true)
+      expect(limiter('192.168.1.3')).toBe(true)
+      expect(limiter('192.168.1.4')).toBe(false)
+    })
+
+    await it('should still allow existing IPs when at capacity', () => {
+      const limiter = createRateLimiter(10, 60000, 2)
+      expect(limiter('192.168.1.1')).toBe(true)
+      expect(limiter('192.168.1.2')).toBe(true)
+      expect(limiter('192.168.1.1')).toBe(true)
+      expect(limiter('192.168.1.2')).toBe(true)
+    })
+
+    await it('should cleanup expired entries when at capacity', async () => {
+      const limiter = createRateLimiter(10, 50, 2)
+      expect(limiter('192.168.1.1')).toBe(true)
+      expect(limiter('192.168.1.2')).toBe(true)
+
+      await new Promise(resolve => {
+        setTimeout(resolve, 60)
+      })
+
+      expect(limiter('192.168.1.3')).toBe(true)
     })
   })
 

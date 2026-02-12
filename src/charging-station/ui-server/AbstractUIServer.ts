@@ -22,8 +22,8 @@ import {
 } from '../../types/index.js'
 import { isEmpty, logger } from '../../utils/index.js'
 import { UIServiceFactory } from './ui-services/UIServiceFactory.js'
-import { getUsernameAndPasswordFromAuthorizationToken } from './UIServerUtils.js'
 import { isValidCredential } from './UIServerSecurity.js'
+import { getUsernameAndPasswordFromAuthorizationToken } from './UIServerUtils.js'
 
 const moduleName = 'AbstractUIServer'
 
