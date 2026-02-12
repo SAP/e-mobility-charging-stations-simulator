@@ -6,7 +6,12 @@ import { describe, it } from 'node:test'
 import {
   createBodySizeLimiter,
   createRateLimiter,
+  DEFAULT_COMPRESSION_THRESHOLD,
+  DEFAULT_MAX_PAYLOAD_SIZE,
   DEFAULT_MAX_STATIONS,
+  DEFAULT_MAX_TRACKED_IPS,
+  DEFAULT_RATE_LIMIT,
+  DEFAULT_RATE_WINDOW,
   isValidCredential,
   isValidNumberOfStations,
 } from '../../../src/charging-station/ui-server/UIServerSecurity.js'
@@ -134,6 +139,32 @@ await describe('UIServerSecurity test suite', async () => {
     await it('should return false for negative stations', () => {
       const result = isValidNumberOfStations(-5, DEFAULT_MAX_STATIONS)
       expect(result).toBe(false)
+    })
+  })
+
+  await describe('Security constants', async () => {
+    await it('should have correct DEFAULT_MAX_PAYLOAD_SIZE value', () => {
+      expect(DEFAULT_MAX_PAYLOAD_SIZE).toBe(1048576) // 1MB
+    })
+
+    await it('should have correct DEFAULT_RATE_LIMIT value', () => {
+      expect(DEFAULT_RATE_LIMIT).toBe(100)
+    })
+
+    await it('should have correct DEFAULT_RATE_WINDOW value', () => {
+      expect(DEFAULT_RATE_WINDOW).toBe(60000) // 60 seconds
+    })
+
+    await it('should have correct DEFAULT_MAX_STATIONS value', () => {
+      expect(DEFAULT_MAX_STATIONS).toBe(100)
+    })
+
+    await it('should have correct DEFAULT_MAX_TRACKED_IPS value', () => {
+      expect(DEFAULT_MAX_TRACKED_IPS).toBe(10000)
+    })
+
+    await it('should have correct DEFAULT_COMPRESSION_THRESHOLD value', () => {
+      expect(DEFAULT_COMPRESSION_THRESHOLD).toBe(1024) // 1KB
     })
   })
 })

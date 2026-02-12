@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 
 import { StatusCodes } from 'http-status-codes'
+import { createGzip } from 'node:zlib'
 
 import { BaseError } from '../../exception/index.js'
 import {
@@ -14,6 +15,7 @@ import {
   type RequestPayload,
   ResponseStatus,
   type UIServerConfiguration,
+  type UUIDv4,
 } from '../../types/index.js'
 import {
   generateUUID,
@@ -26,6 +28,7 @@ import { AbstractUIServer } from './AbstractUIServer.js'
 import {
   createBodySizeLimiter,
   createRateLimiter,
+  DEFAULT_COMPRESSION_THRESHOLD,
   DEFAULT_MAX_PAYLOAD_SIZE,
   DEFAULT_RATE_LIMIT,
   DEFAULT_RATE_WINDOW,
@@ -44,8 +47,11 @@ enum HttpMethods {
 }
 
 export class UIHttpServer extends AbstractUIServer {
+  private readonly acceptsGzip: Map<UUIDv4, boolean>
+
   public constructor (protected override readonly uiServerConfiguration: UIServerConfiguration) {
     super(uiServerConfiguration)
+    this.acceptsGzip = new Map<UUIDv4, boolean>()
   }
 
   public logPrefix = (modName?: string, methodName?: string, prefixSuffix?: string): string => {
@@ -70,11 +76,27 @@ export class UIHttpServer extends AbstractUIServer {
     try {
       if (this.hasResponseHandler(uuid)) {
         const res = this.responseHandlers.get(uuid) as ServerResponse
-        res
-          .writeHead(this.responseStatusToStatusCode(payload.status), {
+        const body = JSONStringify(payload, undefined, MapStringifyFormat.object)
+        const shouldCompress =
+          this.acceptsGzip.get(uuid) === true &&
+          Buffer.byteLength(body) >= DEFAULT_COMPRESSION_THRESHOLD
+
+        if (shouldCompress) {
+          res.writeHead(this.responseStatusToStatusCode(payload.status), {
+            'Content-Encoding': 'gzip',
             'Content-Type': 'application/json',
+            Vary: 'Accept-Encoding',
           })
-          .end(JSONStringify(payload, undefined, MapStringifyFormat.object))
+          const gzip = createGzip()
+          gzip.pipe(res)
+          gzip.end(body)
+        } else {
+          res
+            .writeHead(this.responseStatusToStatusCode(payload.status), {
+              'Content-Type': 'application/json',
+            })
+            .end(body)
+        }
       } else {
         logger.error(
           `${this.logPrefix(moduleName, 'sendResponse')} Response for unknown request id: ${uuid}`
@@ -87,6 +109,7 @@ export class UIHttpServer extends AbstractUIServer {
       )
     } finally {
       this.responseHandlers.delete(uuid)
+      this.acceptsGzip.delete(uuid)
     }
   }
 
@@ -125,8 +148,11 @@ export class UIHttpServer extends AbstractUIServer {
 
       const uuid = generateUUID()
       this.responseHandlers.set(uuid, res)
+      const acceptEncoding = req.headers['accept-encoding'] ?? ''
+      this.acceptsGzip.set(uuid, /\bgzip\b/.test(acceptEncoding))
       res.on('close', () => {
         this.responseHandlers.delete(uuid)
+        this.acceptsGzip.delete(uuid)
       })
       try {
         // Expected request URL pathname: /ui/:version/:procedureName

@@ -10,6 +10,7 @@ export const DEFAULT_RATE_LIMIT = 100
 export const DEFAULT_RATE_WINDOW = 60000
 export const DEFAULT_MAX_STATIONS = 100
 export const DEFAULT_MAX_TRACKED_IPS = 10000
+export const DEFAULT_COMPRESSION_THRESHOLD = 1024
 
 export const isValidCredential = (provided: string, expected: string): boolean => {
   try {

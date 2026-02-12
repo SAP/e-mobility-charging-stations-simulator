@@ -2,10 +2,12 @@
 
 import { expect } from '@std/expect'
 import { describe, it } from 'node:test'
+import { gunzipSync } from 'node:zlib'
 
 import type { UUIDv4 } from '../../../src/types/index.js'
 
 import { UIHttpServer } from '../../../src/charging-station/ui-server/UIHttpServer.js'
+import { DEFAULT_COMPRESSION_THRESHOLD } from '../../../src/charging-station/ui-server/UIServerSecurity.js'
 import { ApplicationProtocol, ResponseStatus } from '../../../src/types/index.js'
 import { TEST_UUID } from './UIServerTestConstants.js'
 import { createMockUIServerConfiguration, MockServerResponse } from './UIServerTestUtils.js'
@@ -17,6 +19,10 @@ class TestableUIHttpServer extends UIHttpServer {
 
   public getResponseHandlersSize (): number {
     return this.responseHandlers.size
+  }
+
+  public setAcceptsGzip (uuid: UUIDv4, value: boolean): void {
+    ;(this as unknown as { acceptsGzip: Map<UUIDv4, boolean> }).acceptsGzip.set(uuid, value)
   }
 }
 
@@ -171,5 +177,89 @@ await describe('UIHttpServer test suite', async () => {
 
     const server = new UIHttpServer(config)
     expect(server).toBeDefined()
+  })
+
+  await describe('Gzip compression', async () => {
+    await it('Verify sendResponse() does not compress when acceptsGzip is false', () => {
+      const config = createMockUIServerConfiguration({ type: ApplicationProtocol.HTTP })
+      const server = new TestableUIHttpServer(config)
+      const res = new MockServerResponse()
+      const largeData = 'x'.repeat(DEFAULT_COMPRESSION_THRESHOLD + 100)
+      const payload = {
+        data: largeData,
+        status: ResponseStatus.SUCCESS,
+      }
+
+      server.addResponseHandler(TEST_UUID, res)
+      server.setAcceptsGzip(TEST_UUID, false)
+      server.sendResponse([TEST_UUID, payload])
+
+      expect(res.headers['Content-Encoding']).toBeUndefined()
+      expect(res.headers['Content-Type']).toBe('application/json')
+    })
+
+    await it('Verify sendResponse() does not compress small responses', () => {
+      const config = createMockUIServerConfiguration({ type: ApplicationProtocol.HTTP })
+      const server = new TestableUIHttpServer(config)
+      const res = new MockServerResponse()
+      const payload = {
+        status: ResponseStatus.SUCCESS,
+      }
+
+      server.addResponseHandler(TEST_UUID, res)
+      server.setAcceptsGzip(TEST_UUID, true)
+      server.sendResponse([TEST_UUID, payload])
+
+      expect(res.headers['Content-Encoding']).toBeUndefined()
+      expect(res.headers['Content-Type']).toBe('application/json')
+    })
+
+    await it('Verify sendResponse() compresses large responses when client accepts gzip', async () => {
+      const config = createMockUIServerConfiguration({ type: ApplicationProtocol.HTTP })
+      const server = new TestableUIHttpServer(config)
+      const res = new MockServerResponse()
+      const largeData = 'x'.repeat(DEFAULT_COMPRESSION_THRESHOLD + 100)
+      const payload = {
+        data: largeData,
+        status: ResponseStatus.SUCCESS,
+      }
+
+      server.addResponseHandler(TEST_UUID, res)
+      server.setAcceptsGzip(TEST_UUID, true)
+      server.sendResponse([TEST_UUID, payload])
+
+      await new Promise(resolve => {
+        setTimeout(resolve, 50)
+      })
+
+      expect(res.headers['Content-Encoding']).toBe('gzip')
+      expect(res.headers['Content-Type']).toBe('application/json')
+      expect(res.headers.Vary).toBe('Accept-Encoding')
+    })
+
+    await it('Verify compressed response can be decompressed to original payload', async () => {
+      const config = createMockUIServerConfiguration({ type: ApplicationProtocol.HTTP })
+      const server = new TestableUIHttpServer(config)
+      const res = new MockServerResponse()
+      const largeData = 'x'.repeat(DEFAULT_COMPRESSION_THRESHOLD + 100)
+      const payload = {
+        data: largeData,
+        status: ResponseStatus.SUCCESS,
+      }
+
+      server.addResponseHandler(TEST_UUID, res)
+      server.setAcceptsGzip(TEST_UUID, true)
+      server.sendResponse([TEST_UUID, payload])
+
+      await new Promise(resolve => {
+        setTimeout(resolve, 50)
+      })
+
+      expect(res.body).toBeDefined()
+      const decompressed = gunzipSync(Buffer.from(res.body ?? '', 'binary')).toString('utf8')
+      const parsedBody = JSON.parse(decompressed) as Record<string, unknown>
+      expect(parsedBody.status).toBe('success')
+      expect(parsedBody.data).toBe(largeData)
+    })
   })
 })

@@ -55,9 +55,14 @@ export class MockServerResponse extends EventEmitter {
   public ended = false
   public headers: Record<string, string> = {}
   public statusCode?: number
+  private chunks: Buffer[] = []
 
   public end (data?: string): this {
-    this.body = data
+    if (data != null) {
+      this.body = data
+    } else if (this.chunks.length > 0) {
+      this.body = Buffer.concat(this.chunks).toString()
+    }
     this.ended = true
     this.emit('finish')
     return this
@@ -68,6 +73,15 @@ export class MockServerResponse extends EventEmitter {
       return undefined
     }
     return JSON.parse(this.body) as ProtocolResponse
+  }
+
+  public write (chunk: Buffer | string): boolean {
+    if (typeof chunk === 'string') {
+      this.chunks.push(Buffer.from(chunk))
+    } else {
+      this.chunks.push(chunk)
+    }
+    return true
   }
 
   public writeHead (statusCode: number, headers?: Record<string, string>): this {
