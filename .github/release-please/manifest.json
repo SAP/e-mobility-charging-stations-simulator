@@ -1,5 +1,5 @@
 {
-  ".": "2.2.1",
-  "ui/web": "2.2.1",
-  "tests/ocpp-server": "2.2.1"
+  ".": "2.3.0",
+  "ui/web": "2.3.0",
+  "tests/ocpp-server": "2.3.0"
 }

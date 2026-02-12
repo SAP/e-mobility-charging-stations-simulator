@@ -1,5 +1,41 @@
 # Changelog
 
+## [2.3.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v2.2.1...simulator@v2.3.0) (2026-02-12)
+
+### 🚀 Features
+
+- **ui-server:** add HTTP body size and rate limiting ([790a5d0](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/790a5d086f1bca4296cddcc0d79e9cd7f4cf37a1))
+- **ui-server:** add numberOfStations upper bound validation ([836c8bc](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/836c8bc6c0510f709aa5a4525e4c1a1daecc5cd8))
+- **ui-server:** add transparent response compression ([2daee29](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/2daee295477607f5a727043f5d37348101be851e))
+- **ui-server:** add UIServerSecurity utility module ([3c8e242](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3c8e2428fd998e1d8c20ef9e72fa91aba09eb23a))
+- **ui-server:** configure WebSocket max payload limit ([8734440](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/873444005d366d86bead5ea5969359eaacb04ae2))
+
+### 🐞 Bug Fixes
+
+- **deps:** update all non-major dependencies ([#1650](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1650)) ([067346d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/067346d6140374fdb8e4322d9a8dee523da6732b))
+- **deps:** update all non-major dependencies ([#1657](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1657)) ([36082b8](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/36082b8aba6c8d38511ca6357fb644ad1b7ca49d))
+- **deps:** update all non-major dependencies ([#1662](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1662)) ([99a9634](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/99a9634a7133ba208d47e86aec5b04c2e4fabf85))
+- **deps:** update all non-major dependencies ([#1666](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1666)) ([6b0693f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6b0693f6f69edca2da61fa6cf73e78e520fa25fb))
+- **deps:** update all non-major dependencies ([#1673](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1673)) ([6edc495](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6edc495db6ab7f7e95d5af41a6b991e563231f46))
+- **deps:** update dependency vue-router to v5 ([#1663](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1663)) ([f4a083f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f4a083ffdab4c07ed475cdd906a61c75ca2c9db9))
+- **tests:** use bodyBuffer for binary gzip data in MockServerResponse ([6abbf54](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6abbf542c66ffe2f9461e5a66c18476d8b2b8389))
+- **tests:** use robust threshold test instead of exact boundary ([1ea2b77](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/1ea2b774baf108860b389759e12122fb3434528e))
+- **ui-server:** prevent rate limiter memory leak ([c24b8bd](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c24b8bda34512e4a2375644080e8061cfb71a2d1))
+- **ui-server:** use timing-safe credential comparison ([f436149](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f4361496a99566ab76b7e6ff9a37fa4060a84ae3))
+
+### ✨ Polish
+
+- **tests:** harmonize UI server tests with codebase style ([9cc9864](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/9cc9864ed9e6014a6cc678f1c5b55fa1012c79eb))
+- **ui-server:** unify HTTP and WebSocket payload size limits ([215f979](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/215f979f2745bd8e1f8b08c211def03d4a721206))
+
+### 🧪 Tests
+
+- **ui-server:** add UIServerSecurity unit tests ([3a4dfdf](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3a4dfdf971056ca6e4d93df485d26e8018a2f26e))
+
+### 🤖 Automation
+
+- **deps:** bump tar from 7.5.3 to 7.5.4 ([#1658](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1658)) ([494b64c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/494b64c20716b633d427c6a2961d5e19b48d6f92))
+
 ## [2.2.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v2.2.0...simulator@v2.2.1) (2026-01-13)
 
 ### 🐞 Bug Fixes
