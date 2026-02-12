@@ -222,3 +222,9 @@ export class MockUIServiceNonBroadcast {
     return Promise.resolve([request[0], { status: ResponseStatus.SUCCESS }])
   }
 }
+
+export const waitForStreamFlush = async (delayMs: number): Promise<void> => {
+  await new Promise(resolve => {
+    setTimeout(resolve, delayMs)
+  })
+}

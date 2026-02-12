@@ -15,3 +15,10 @@ export const TEST_PROCEDURES = {
 
 export const TEST_HASH_ID = 'test-station-001' as const
 export const TEST_HASH_ID_2 = 'test-station-002' as const
+
+/**
+ * Delay for gzip stream completion in tests.
+ * Gzip compression is asynchronous (stream-based), requiring a brief wait
+ * for the pipe to flush before asserting on the compressed output.
+ */
+export const GZIP_STREAM_FLUSH_DELAY_MS = 50
