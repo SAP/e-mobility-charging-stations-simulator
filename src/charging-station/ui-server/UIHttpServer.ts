@@ -26,7 +26,7 @@ import { AbstractUIServer } from './AbstractUIServer.js'
 import {
   createBodySizeLimiter,
   createRateLimiter,
-  DEFAULT_MAX_BODY_SIZE,
+  DEFAULT_MAX_PAYLOAD_SIZE,
   DEFAULT_RATE_LIMIT,
   DEFAULT_RATE_WINDOW,
 } from './UIServerSecurity.js'
@@ -167,7 +167,7 @@ export class UIHttpServer extends AbstractUIServer {
         }
 
         const bodyBuffer: Uint8Array[] = []
-        const checkBodySize = createBodySizeLimiter(DEFAULT_MAX_BODY_SIZE)
+        const checkBodySize = createBodySizeLimiter(DEFAULT_MAX_PAYLOAD_SIZE)
         req
           .on('data', (chunk: Uint8Array) => {
             if (!checkBodySize(chunk.length)) {

@@ -5,11 +5,10 @@ interface RateLimitEntry {
   resetTime: number
 }
 
-export const DEFAULT_MAX_BODY_SIZE = 1048576
+export const DEFAULT_MAX_PAYLOAD_SIZE = 1048576
 export const DEFAULT_RATE_LIMIT = 100
 export const DEFAULT_RATE_WINDOW = 60000
 export const DEFAULT_MAX_STATIONS = 100
-export const DEFAULT_WS_MAX_PAYLOAD = 102400
 export const DEFAULT_MAX_TRACKED_IPS = 10000
 
 export const isValidCredential = (provided: string, expected: string): boolean => {
