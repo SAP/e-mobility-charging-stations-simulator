@@ -1,8 +1,5 @@
 import { timingSafeEqual } from 'node:crypto'
 
-/**
- * Per-IP rate limiter state
- */
 interface RateLimitEntry {
   count: number
   resetTime: number
@@ -15,13 +12,6 @@ export const DEFAULT_MAX_STATIONS = 100
 export const DEFAULT_WS_MAX_PAYLOAD = 102400
 export const DEFAULT_MAX_TRACKED_IPS = 10000
 
-/**
- * Constant-time credential comparison using crypto.timingSafeEqual
- * Prevents timing attacks when comparing passwords/tokens
- * @param provided - The provided credential string
- * @param expected - The expected credential string
- * @returns true if credentials match, false otherwise
- */
 export const isValidCredential = (provided: string, expected: string): boolean => {
   try {
     const providedBuffer = Buffer.from(provided, 'utf8')
@@ -41,11 +31,6 @@ export const isValidCredential = (provided: string, expected: string): boolean =
   }
 }
 
-/**
- * Creates a body size limiter function that tracks accumulated bytes
- * @param maxBytes - Maximum allowed body size in bytes
- * @returns Function that accumulates size and returns true if within limit
- */
 export const createBodySizeLimiter = (maxBytes: number): ((chunkSize: number) => boolean) => {
   let accumulatedBytes = 0
 
@@ -55,14 +40,6 @@ export const createBodySizeLimiter = (maxBytes: number): ((chunkSize: number) =>
   }
 }
 
-/**
- * Creates a rate limiter function that tracks requests per IP address
- * Uses a simple fixed-window approach with lazy cleanup to prevent memory leaks
- * @param maxRequests - Maximum requests allowed per window
- * @param windowMs - Time window in milliseconds
- * @param maxTrackedIps - Maximum number of IPs to track (prevents memory exhaustion)
- * @returns Function that checks if IP is within rate limit
- */
 export const createRateLimiter = (
   maxRequests: number,
   windowMs: number,
@@ -92,7 +69,6 @@ export const createRateLimiter = (
 
     const entry = trackedIps.get(ipAddress)
 
-    // First request from this IP or window expired
     if (entry === undefined || now >= entry.resetTime) {
       trackedIps.set(ipAddress, {
         count: 1,
@@ -101,23 +77,15 @@ export const createRateLimiter = (
       return true
     }
 
-    // Within existing window
     if (entry.count < maxRequests) {
       entry.count++
       return true
     }
 
-    // Rate limit exceeded
     return false
   }
 }
 
-/**
- * Validates that the number of stations is within acceptable limits
- * @param numberOfStations - The number of stations to validate
- * @param maxStations - The maximum allowed number of stations
- * @returns true if valid, false otherwise
- */
 export const isValidNumberOfStations = (numberOfStations: number, maxStations: number): boolean => {
   return (
     Number.isInteger(numberOfStations) && numberOfStations > 0 && numberOfStations <= maxStations
