@@ -2,15 +2,14 @@
 
 ## [2.3.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v2.2.1...webui@v2.3.0) (2026-02-12)
 
-
 ### 🐞 Bug Fixes
 
-* **deps:** update all non-major dependencies ([#1650](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1650)) ([067346d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/067346d6140374fdb8e4322d9a8dee523da6732b))
-* **deps:** update all non-major dependencies ([#1657](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1657)) ([36082b8](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/36082b8aba6c8d38511ca6357fb644ad1b7ca49d))
-* **deps:** update all non-major dependencies ([#1662](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1662)) ([99a9634](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/99a9634a7133ba208d47e86aec5b04c2e4fabf85))
-* **deps:** update all non-major dependencies ([#1666](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1666)) ([6b0693f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6b0693f6f69edca2da61fa6cf73e78e520fa25fb))
-* **deps:** update all non-major dependencies ([#1673](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1673)) ([6edc495](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6edc495db6ab7f7e95d5af41a6b991e563231f46))
-* **deps:** update dependency vue-router to v5 ([#1663](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1663)) ([f4a083f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f4a083ffdab4c07ed475cdd906a61c75ca2c9db9))
+- **deps:** update all non-major dependencies ([#1650](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1650)) ([067346d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/067346d6140374fdb8e4322d9a8dee523da6732b))
+- **deps:** update all non-major dependencies ([#1657](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1657)) ([36082b8](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/36082b8aba6c8d38511ca6357fb644ad1b7ca49d))
+- **deps:** update all non-major dependencies ([#1662](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1662)) ([99a9634](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/99a9634a7133ba208d47e86aec5b04c2e4fabf85))
+- **deps:** update all non-major dependencies ([#1666](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1666)) ([6b0693f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6b0693f6f69edca2da61fa6cf73e78e520fa25fb))
+- **deps:** update all non-major dependencies ([#1673](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1673)) ([6edc495](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6edc495db6ab7f7e95d5af41a6b991e563231f46))
+- **deps:** update dependency vue-router to v5 ([#1663](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1663)) ([f4a083f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f4a083ffdab4c07ed475cdd906a61c75ca2c9db9))
 
 ## [2.2.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v2.2.0...webui@v2.2.1) (2026-01-13)
 
