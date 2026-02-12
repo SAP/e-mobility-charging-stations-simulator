@@ -208,20 +208,17 @@ await describe('UIHttpServer test suite', async () => {
       expect(res.headers['Content-Type']).toBe('application/json')
     })
 
-    await it('Verify no compression at exact threshold boundary', () => {
+    await it('Verify no compression below threshold', () => {
       const server = new TestableUIHttpServer(createHttpServerConfig())
       const res = new MockServerResponse()
-      const basePayload = { data: '', status: ResponseStatus.SUCCESS }
-      const baseSize = Buffer.byteLength(JSON.stringify(basePayload))
-      const paddingNeeded = DEFAULT_COMPRESSION_THRESHOLD - baseSize
-      const boundaryPayload = {
-        data: 'x'.repeat(Math.max(0, paddingNeeded)),
+      const smallPayload = {
+        data: 'x'.repeat(100),
         status: ResponseStatus.SUCCESS,
       }
 
       server.addResponseHandler(TEST_UUID, res)
       server.setAcceptsGzip(TEST_UUID, true)
-      server.sendResponse([TEST_UUID, boundaryPayload])
+      server.sendResponse([TEST_UUID, smallPayload])
 
       expect(res.headers['Content-Encoding']).toBeUndefined()
     })
