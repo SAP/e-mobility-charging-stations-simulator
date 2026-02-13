@@ -11,6 +11,7 @@ import type { TimestampedData } from '../../src/types/index.js'
 import { JSRuntime, runtime } from '../../scripts/runtime.js'
 import { Constants } from '../../src/utils/Constants.js'
 import {
+  clampToSafeTimerValue,
   clone,
   convertToBoolean,
   convertToDate,
@@ -439,5 +440,19 @@ await describe('Utils test suite', async () => {
     expect(isArraySorted<number>([1, 2, 3, 4, 5], (a, b) => a - b)).toBe(true)
     expect(isArraySorted<number>([1, 2, 3, 5, 4], (a, b) => a - b)).toBe(false)
     expect(isArraySorted<number>([2, 1, 3, 4, 5], (a, b) => a - b)).toBe(false)
+  })
+
+  await it('Verify clampToSafeTimerValue()', () => {
+    expect(clampToSafeTimerValue(0)).toBe(0)
+    expect(clampToSafeTimerValue(1000)).toBe(1000)
+    expect(clampToSafeTimerValue(Constants.MAX_SETINTERVAL_DELAY)).toBe(
+      Constants.MAX_SETINTERVAL_DELAY
+    )
+    expect(clampToSafeTimerValue(Constants.MAX_SETINTERVAL_DELAY + 1)).toBe(
+      Constants.MAX_SETINTERVAL_DELAY
+    )
+    expect(clampToSafeTimerValue(Number.MAX_SAFE_INTEGER)).toBe(Constants.MAX_SETINTERVAL_DELAY)
+    expect(clampToSafeTimerValue(-1)).toBe(0)
+    expect(clampToSafeTimerValue(-1000)).toBe(0)
   })
 })
