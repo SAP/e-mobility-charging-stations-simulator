@@ -2,10 +2,9 @@
 
 ## [2.3.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v2.3.0...simulator@v2.3.1) (2026-02-13)
 
-
 ### 🐞 Bug Fixes
 
-* guard setInterval delays against 32-bit integer overflow ([1f39a68](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/1f39a680df8b7fdbb673498edb9a6d42a3b40ea7))
+- guard setInterval delays against 32-bit integer overflow ([1f39a68](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/1f39a680df8b7fdbb673498edb9a6d42a3b40ea7))
 
 ## [2.3.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v2.2.1...simulator@v2.3.0) (2026-02-12)
 
