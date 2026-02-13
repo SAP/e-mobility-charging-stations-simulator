@@ -21,6 +21,7 @@ import {
   type UUIDv4,
   WebSocketCloseEventStatusString,
 } from '../types/index.js'
+import { Constants } from './Constants.js'
 
 type NonEmptyArray<T> = [T, ...T[]]
 type ReadonlyNonEmptyArray<T> = readonly [T, ...(readonly T[])]
@@ -378,6 +379,16 @@ export const exponentialDelay = (retryNumber = 0, delayFactor = 100): number => 
   const delay = 2 ** retryNumber * delayFactor
   const randomSum = delay * 0.2 * secureRandom() // 0-20% of the delay
   return delay + randomSum
+}
+
+/**
+ * Clamps a timer delay value to the safe range for Node.js setInterval/setTimeout.
+ * @param delayMs - The delay value in milliseconds.
+ * @returns The clamped delay value, guaranteed to be within [0, 2^31-1] ms.
+ * @see https://nodejs.org/api/timers.html#settimeoutcallback-delay-args
+ */
+export const clampToSafeTimerValue = (delayMs: number): number => {
+  return Math.min(Math.max(0, delayMs), Constants.MAX_SETINTERVAL_DELAY)
 }
 
 /**

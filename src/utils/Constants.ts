@@ -98,6 +98,10 @@ export class Constants {
 
   static readonly MAX_RANDOM_INTEGER = 281474976710655 // 2^48 - 1 (randomInit() limit)
 
+  // Node.js setInterval/setTimeout maximum safe delay value (2^31-1 ms ≈ 24.8 days)
+  // Values exceeding this limit cause Node.js to reset the delay to 1ms
+  static readonly MAX_SETINTERVAL_DELAY = 2147483647 // Ms
+
   static readonly OCPP_VALUE_ABSOLUTE_MAX_LENGTH = 2500
 
   static readonly PERFORMANCE_RECORDS_TABLE = 'performance_records'

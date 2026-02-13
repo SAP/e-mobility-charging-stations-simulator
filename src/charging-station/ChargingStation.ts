@@ -76,6 +76,7 @@ import {
   buildStartedMessage,
   buildStoppedMessage,
   buildUpdatedMessage,
+  clampToSafeTimerValue,
   clone,
   Configuration,
   Constants,
@@ -987,7 +988,7 @@ export class ChargingStation extends EventEmitter {
               error
             )
           })
-      }, heartbeatInterval)
+      }, clampToSafeTimerValue(heartbeatInterval))
       logger.info(
         `${this.logPrefix()} Heartbeat started every ${formatDurationMilliSeconds(
           heartbeatInterval
@@ -1060,7 +1061,7 @@ export class ChargingStation extends EventEmitter {
               error
             )
           })
-      }, interval)
+      }, clampToSafeTimerValue(interval))
     } else {
       logger.error(
         `${this.logPrefix()} Charging station ${
@@ -2510,11 +2511,14 @@ export class ChargingStation extends EventEmitter {
   private startWebSocketPing (): void {
     const webSocketPingInterval = this.getWebSocketPingInterval()
     if (webSocketPingInterval > 0 && this.wsPingSetInterval == null) {
-      this.wsPingSetInterval = setInterval(() => {
-        if (this.isWebSocketConnectionOpened()) {
-          this.wsConnection?.ping()
-        }
-      }, secondsToMilliseconds(webSocketPingInterval))
+      this.wsPingSetInterval = setInterval(
+        () => {
+          if (this.isWebSocketConnectionOpened()) {
+            this.wsConnection?.ping()
+          }
+        },
+        clampToSafeTimerValue(secondsToMilliseconds(webSocketPingInterval))
+      )
       logger.info(
         `${this.logPrefix()} WebSocket ping started every ${formatDurationSeconds(
           webSocketPingInterval

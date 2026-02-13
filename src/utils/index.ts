@@ -27,6 +27,7 @@ export {
 } from './MessageChannelUtils.js'
 export { average, max, median, min, percentile, std } from './StatisticUtils.js'
 export {
+  clampToSafeTimerValue,
   clone,
   convertToBoolean,
   convertToDate,
