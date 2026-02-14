@@ -10,10 +10,7 @@ import type { OCPP20RequestStartTransactionRequest } from '../../../../src/types
 
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'
-import {
-  AuthenticationMethod,
-  AuthorizationStatus,
-} from '../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
+import { AuthenticationMethod } from '../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import { OCPPVersion, RequestStartStopStatusEnumType } from '../../../../src/types/index.js'
 import { OCPP20IdTokenEnumType } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants } from '../../../../src/utils/index.js'
@@ -27,29 +24,31 @@ import { resetLimits, resetReportingValueSize } from './OCPP20TestUtils.js'
  */
 function createMockAuthService (): any {
   return {
-    authorize: async () => ({
-      expiresAt: new Date(Date.now() + 3600000), // 1 hour from now
-      method: AuthenticationMethod.LOCAL_LIST,
-      status: 'Accepted', // Use string directly to avoid enum import issues
-      timestamp: new Date(),
-    }),
-    clearCache: async () => {},
+    authorize: () =>
+      Promise.resolve({
+        expiresAt: new Date(Date.now() + 3600000), // 1 hour from now
+        method: AuthenticationMethod.LOCAL_LIST,
+        status: 'Accepted', // Use string directly to avoid enum import issues
+        timestamp: new Date(),
+      }),
+    clearCache: () => Promise.resolve(),
     getConfiguration: () => ({}),
-    getStats: async () => ({
-      avgResponseTime: 0,
-      cacheHitRate: 0,
-      failedAuth: 0,
-      lastUpdated: new Date(),
-      localUsageRate: 1,
-      remoteSuccessRate: 0,
-      successfulAuth: 0,
-      totalRequests: 0,
-    }),
-    initialize: async () => {},
-    invalidateCache: async () => {},
-    isLocallyAuthorized: async () => undefined,
-    testConnectivity: async () => true,
-    updateConfiguration: async () => {},
+    getStats: () =>
+      Promise.resolve({
+        avgResponseTime: 0,
+        cacheHitRate: 0,
+        failedAuth: 0,
+        lastUpdated: new Date(),
+        localUsageRate: 1,
+        remoteSuccessRate: 0,
+        successfulAuth: 0,
+        totalRequests: 0,
+      }),
+    initialize: () => Promise.resolve(),
+    invalidateCache: () => Promise.resolve(),
+    isLocallyAuthorized: () => Promise.resolve(undefined),
+    testConnectivity: () => Promise.resolve(true),
+    updateConfiguration: () => Promise.resolve(),
   }
 }
 
