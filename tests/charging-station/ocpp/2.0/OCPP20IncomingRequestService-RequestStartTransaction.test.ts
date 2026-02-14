@@ -74,7 +74,8 @@ await describe('E01 - Remote Start Transaction', async () => {
   beforeEach(async () => {
     const stationId = mockChargingStation.stationInfo?.chargingStationId ?? 'unknown'
     // Dynamic import to get the same module instance as the production code
-    const { OCPPAuthServiceFactory: DynamicOCPPAuthServiceFactory } = await import('../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js')
+    const { OCPPAuthServiceFactory: DynamicOCPPAuthServiceFactory } =
+      await import('../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js')
     ;(DynamicOCPPAuthServiceFactory as any).instances.set(stationId, createMockAuthService())
   })
 
