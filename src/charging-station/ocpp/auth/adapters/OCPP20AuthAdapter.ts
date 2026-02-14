@@ -742,7 +742,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
     }
 
     logger.warn(
-       `${this.chargingStation.logPrefix()} Invalid boolean value '${value}', using default: ${defaultValue.toString()}`
+      `${this.chargingStation.logPrefix()} Invalid boolean value '${value}', using default: ${defaultValue.toString()}`
     )
     return defaultValue
   }
@@ -769,7 +769,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
 
     if (isNaN(parsed)) {
       logger.warn(
-         `${this.chargingStation.logPrefix()} Invalid integer value '${value}', using default: ${defaultValue.toString()}`
+        `${this.chargingStation.logPrefix()} Invalid integer value '${value}', using default: ${defaultValue.toString()}`
       )
       return defaultValue
     }
@@ -777,14 +777,14 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
     // Validate range
     if (min != null && parsed < min) {
       logger.warn(
-         `${this.chargingStation.logPrefix()} Integer value ${parsed.toString()} below minimum ${min.toString()}, using minimum`
+        `${this.chargingStation.logPrefix()} Integer value ${parsed.toString()} below minimum ${min.toString()}, using minimum`
       )
       return min
     }
 
     if (max != null && parsed > max) {
       logger.warn(
-         `${this.chargingStation.logPrefix()} Integer value ${parsed.toString()} above maximum ${max.toString()}, using maximum`
+        `${this.chargingStation.logPrefix()} Integer value ${parsed.toString()} above maximum ${max.toString()}, using maximum`
       )
       return max
     }

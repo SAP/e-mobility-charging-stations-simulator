@@ -610,7 +610,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     context: OCPP20TransactionContext
   ): OCPP20TriggerReasonEnumType {
     const candidates = OCPP20Constants.TriggerReasonMapping.filter(
-      (entry) => entry.source === context.source
+      entry => entry.source === context.source
     )
 
     for (const entry of candidates) {
@@ -767,13 +767,13 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
 
       // Send the request to CSMS
       logger.debug(
-         `${chargingStation.logPrefix()} ${moduleName}.sendTransactionEvent: Sending TransactionEvent for trigger ${triggerReason}`
+        `${chargingStation.logPrefix()} ${moduleName}.sendTransactionEvent: Sending TransactionEvent for trigger ${triggerReason}`
       )
 
       const response = await chargingStation.ocppRequestService.requestHandler<
-         OCPP20TransactionEventRequest,
-         OCPP20TransactionEventResponse
-       >(chargingStation, OCPP20RequestCommand.TRANSACTION_EVENT, transactionEventRequest)
+        OCPP20TransactionEventRequest,
+        OCPP20TransactionEventResponse
+      >(chargingStation, OCPP20RequestCommand.TRANSACTION_EVENT, transactionEventRequest)
 
       return response
     } catch (error) {

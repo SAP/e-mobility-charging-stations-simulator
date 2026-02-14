@@ -12,6 +12,7 @@ This notepad records problems, gotchas, and workarounds.
 Phase 6 requires "PR CI passes (all GitHub Actions workflows green)" per plan line 808 and user requirement. CI is currently IN PROGRESS with 40+ parallel jobs running, estimated 30-45 minutes to complete.
 
 **Work Completed (Phase 6 partial)**:
+
 - ✅ Local quality gates: ALL PASSED
   - Install: exit 0
   - Build: SUCCESS (1.317s)
@@ -24,18 +25,21 @@ Phase 6 requires "PR CI passes (all GitHub Actions workflows green)" per plan li
 - ✅ Evidence file created: `.sisyphus/evidence/phase-6-in-progress.txt`
 
 **Pending (waiting on CI)**:
+
 - ⏸️ CI verification: All checks must show GREEN
 - ⏸️ Mark plan line 808: `- [ ]` → `- [x]`
 - ⏸️ Update learnings.md with Phase 6 final summary
 - ⏸️ Mark Definition of Done items (lines 56-61)
 
 **External Dependency**:
+
 - GitHub Actions CI on PR #1607
 - No control over execution speed
 - Early checks passed: check-secrets, CLA
 - In progress: CodeQL, Node builds, simulator builds
 
 **Options**:
+
 1. Wait for CI to complete (~30-45 min from 01:30 UTC)
 2. Check for alternative independent tasks in remaining plan
 3. If no alternatives: document completion point and pause

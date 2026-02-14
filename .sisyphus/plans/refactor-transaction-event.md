@@ -3,14 +3,15 @@
 ## TL;DR
 
 > **Quick Summary**: Refactor PR #1607's TransactionEvent implementation to improve code quality from 6.5/10 to 9/10 by eliminating DRY violations, converting a 180-line switch statement to a lookup table, and consolidating redundant methods—all while maintaining OCPP 2.0.1 compliance.
-> 
+>
 > **Deliverables**:
+>
 > - `OCPP20TransactionEventOptions` type extracted to `Transaction.ts`
 > - `TriggerReasonMapping` lookup table in `OCPP20Constants.ts`
 > - Refactored `selectTriggerReason()` method (~180 → ~40 lines)
 > - Consolidated build/send methods (4 → 2 with overloads)
 > - Reduced logging verbosity
-> 
+>
 > **Estimated Effort**: Medium (~14 hours)
 > **Parallel Execution**: NO - sequential (each phase depends on previous)
 > **Critical Path**: Phase 0 → Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5 → Phase 6 (CI)
@@ -20,21 +21,27 @@
 ## Context
 
 ### Original Request
+
 Refactor PR #1607 TransactionEvent implementation following OCPP 2.0.1 specification logic, implementing with elegance, best practices adherence, and harmonization with existing codebase design.
 
 ### Interview Summary
+
 **Key Discussions**:
+
 - OCPP 2.0.1 compliance verified (all 21 TriggerReasons, 5 ChargingStates, 3 EventTypes)
 - Code quality score: 6.5/10 with specific issues identified
 - Existing codebase uses frozen readonly array pattern (NOT Map)
 
 **Research Findings**:
+
 - `OCPP20Constants.ts` uses `Object.freeze([...])` on arrays, not Maps
 - Comprehensive test coverage exists in `OCPP20ServiceUtils-TransactionEvent.test.ts`
 - Project follows conventional commits and strict OCPP naming rules
 
 ### Metis Review
+
 **Identified Gaps** (addressed):
+
 - Pattern correction: Use frozen readonly arrays, not Maps (CORRECTED)
 - Missing baseline verification step (ADDED as Phase 0)
 - Missing per-phase test verification (ADDED to each phase)
@@ -45,14 +52,17 @@ Refactor PR #1607 TransactionEvent implementation following OCPP 2.0.1 specifica
 ## Work Objectives
 
 ### Core Objective
+
 Improve OCPP20ServiceUtils.ts TransactionEvent code quality from 6.5/10 to 9/10 while maintaining 100% backward compatibility and OCPP 2.0.1 compliance.
 
 ### Concrete Deliverables
+
 - `src/types/ocpp/2.0/Transaction.ts` - New `OCPP20TransactionEventOptions` type
 - `src/charging-station/ocpp/2.0/OCPP20Constants.ts` - New `TriggerReasonMapping` lookup table
 - `src/charging-station/ocpp/2.0/OCPP20ServiceUtils.ts` - Refactored methods
 
 ### Definition of Done
+
 - [ ] All 894 lines of existing tests pass unchanged
 - [ ] `pnpm run lint` passes with no new errors
 - [ ] `pnpm run build` succeeds
@@ -61,12 +71,14 @@ Improve OCPP20ServiceUtils.ts TransactionEvent code quality from 6.5/10 to 9/10 
 - [ ] **PR CI passes** (all GitHub Actions workflows green)
 
 ### Must Have
+
 - All 21 OCPP 2.0.1 TriggerReasons correctly mapped
 - Backward-compatible method signatures
 - Same logging prefix format: `${chargingStation.logPrefix()} ${moduleName}.methodName:`
 - All edge cases preserved (unknown context → Trigger fallback)
 
 ### Must NOT Have (Guardrails)
+
 - **NO Map pattern** - Use frozen readonly arrays per codebase convention
 - **NO changes to `requestStopTransaction`** method (out of scope)
 - **NO test file modifications** - Tests verify behavior, not implementation
@@ -83,11 +95,13 @@ Improve OCPP20ServiceUtils.ts TransactionEvent code quality from 6.5/10 to 9/10 
 > ALL tasks MUST be verifiable by running commands. No manual verification.
 
 ### Test Decision
+
 - **Infrastructure exists**: YES
 - **Automated tests**: Tests-after (existing tests serve as regression suite)
 - **Framework**: Node.js test runner (existing)
 
 ### Baseline Verification (MANDATORY before Phase 1)
+
 ```bash
 # Capture baseline - MUST pass before any changes
 pnpm test -- tests/charging-station/ocpp/2.0/OCPP20ServiceUtils-TransactionEvent.test.ts
@@ -96,12 +110,14 @@ pnpm test -- tests/charging-station/ocpp/2.0/OCPP20ServiceUtils-TransactionEvent
 pnpm run lint
 # Assert: No errors
 
-pnpm run build  
+pnpm run build
 # Assert: Build succeeds
 ```
 
 ### Per-Phase Verification
+
 After EACH phase:
+
 ```bash
 pnpm test -- tests/charging-station/ocpp/2.0/OCPP20ServiceUtils-TransactionEvent.test.ts
 # Assert: Same number of tests pass as baseline
@@ -134,14 +150,14 @@ Phase 5: Logging & Cleanup (LAST)
 
 ### Dependency Matrix
 
-| Phase | Depends On | Blocks | Can Parallelize With |
-|-------|------------|--------|---------------------|
-| 0 | None | 1, 2, 3, 4, 5 | None |
-| 1 | 0 | 4 | None (sequential) |
-| 2 | 0 | 3 | None (sequential) |
-| 3 | 2 | 4 | None (sequential) |
-| 4 | 1, 3 | 5 | None (sequential) |
-| 5 | 4 | None | None (sequential) |
+| Phase | Depends On | Blocks        | Can Parallelize With |
+| ----- | ---------- | ------------- | -------------------- |
+| 0     | None       | 1, 2, 3, 4, 5 | None                 |
+| 1     | 0          | 4             | None (sequential)    |
+| 2     | 0          | 3             | None (sequential)    |
+| 3     | 2          | 4             | None (sequential)    |
+| 4     | 1, 3       | 5             | None (sequential)    |
+| 5     | 4          | None          | None (sequential)    |
 
 ---
 
@@ -254,6 +270,7 @@ Phase 5: Logging & Cleanup (LAST)
   - `src/types/ocpp/2.0/index.ts` - Barrel export file to update
 
   **New Type Definition**:
+
   ```typescript
   /**
    * Optional parameters for building and sending TransactionEvent requests.
@@ -386,6 +403,7 @@ Phase 5: Logging & Cleanup (LAST)
   - StopAuthorized, TimeLimitReached, Trigger, UnlockCommand, AbnormalCondition
 
   **New Type and Constant Definition**:
+
   ```typescript
   /**
    * Mapping entry for trigger reason lookup.
@@ -502,13 +520,14 @@ Phase 5: Logging & Cleanup (LAST)
   - `src/charging-station/ocpp/2.0/OCPP20ServiceUtils.ts:100-102` - Existing log format example
 
   **Target Implementation**:
+
   ```typescript
   public static selectTriggerReason (
     context: TransactionEventContext
   ): OCPP20TriggerReasonEnumType {
     const key = this.buildTriggerReasonKey(context)
     const entry = OCPP20Constants.TriggerReasonMapping.find(
-      e => e.source === context.source && 
+      e => e.source === context.source &&
            (e.qualifier == null || e.qualifier === key.qualifier)
     )
     const triggerReason = entry?.triggerReason ?? OCPP20Constants.DefaultTriggerReason
@@ -617,6 +636,7 @@ Phase 5: Logging & Cleanup (LAST)
   - `src/types/ocpp/2.0/Transaction.ts:OCPP20TransactionEventOptions`
 
   **TypeScript Overload Pattern**:
+
   ```typescript
   // Overload signatures
   public static buildTransactionEvent (
@@ -885,21 +905,22 @@ Phase 5: Logging & Cleanup (LAST)
 
 ## Commit Strategy
 
-| After Phase | Message | Files | Verification |
-|-------------|---------|-------|--------------
-| 0 | (no commit - baseline only) | - | Tests pass |
-| 1 | `refactor(ocpp2): extract OCPP20TransactionEventOptions type` | Transaction.ts, index.ts, OCPP20ServiceUtils.ts | Tests pass |
-| 2 | `refactor(ocpp2): add TriggerReasonMapping lookup table` | OCPP20Constants.ts | Build + Lint |
-| 3 | `refactor(ocpp2): simplify selectTriggerReason with lookup table` | OCPP20ServiceUtils.ts | Tests pass |
-| 4 | `refactor(ocpp2): consolidate TransactionEvent build/send methods with overloads` | OCPP20ServiceUtils.ts | Tests pass |
-| 5 | `refactor(ocpp2): cleanup logging in TransactionEvent methods` | OCPP20ServiceUtils.ts | Tests + Lint + Build |
-| 6 | (push + CI verification) | - | **PR CI green** |
+| After Phase | Message                                                                           | Files                                           | Verification         |
+| ----------- | --------------------------------------------------------------------------------- | ----------------------------------------------- | -------------------- |
+| 0           | (no commit - baseline only)                                                       | -                                               | Tests pass           |
+| 1           | `refactor(ocpp2): extract OCPP20TransactionEventOptions type`                     | Transaction.ts, index.ts, OCPP20ServiceUtils.ts | Tests pass           |
+| 2           | `refactor(ocpp2): add TriggerReasonMapping lookup table`                          | OCPP20Constants.ts                              | Build + Lint         |
+| 3           | `refactor(ocpp2): simplify selectTriggerReason with lookup table`                 | OCPP20ServiceUtils.ts                           | Tests pass           |
+| 4           | `refactor(ocpp2): consolidate TransactionEvent build/send methods with overloads` | OCPP20ServiceUtils.ts                           | Tests pass           |
+| 5           | `refactor(ocpp2): cleanup logging in TransactionEvent methods`                    | OCPP20ServiceUtils.ts                           | Tests + Lint + Build |
+| 6           | (push + CI verification)                                                          | -                                               | **PR CI green**      |
 
 ---
 
 ## Success Criteria
 
 ### Verification Commands
+
 ```bash
 # All tests pass (same as baseline)
 pnpm test -- tests/charging-station/ocpp/2.0/OCPP20ServiceUtils-TransactionEvent.test.ts
@@ -916,6 +937,7 @@ wc -l src/charging-station/ocpp/2.0/OCPP20ServiceUtils.ts
 ```
 
 ### Final Checklist
+
 - [ ] All existing tests pass (894 lines of tests unchanged)
 - [ ] No new lint errors
 - [ ] Build succeeds
@@ -933,15 +955,16 @@ wc -l src/charging-station/ocpp/2.0/OCPP20ServiceUtils.ts
 
 The PR CI workflow (`.github/workflows/ci.yml`) must pass after all phases complete. This includes:
 
-| CI Check | Command | Expected |
-|----------|---------|----------|
-| Install | `pnpm install` | Success |
-| Build | `pnpm run build` | Success |
-| Lint | `pnpm run lint` | 0 errors |
-| Test | `pnpm test` | All pass |
-| Type Check | Implicit in build | Success |
+| CI Check   | Command           | Expected |
+| ---------- | ----------------- | -------- |
+| Install    | `pnpm install`    | Success  |
+| Build      | `pnpm run build`  | Success  |
+| Lint       | `pnpm run lint`   | 0 errors |
+| Test       | `pnpm test`       | All pass |
+| Type Check | Implicit in build | Success  |
 
 **Final Verification** (after Phase 5):
+
 ```bash
 # Run full quality gate suite (same as CI)
 pnpm install && pnpm run build && pnpm run lint && pnpm test
@@ -955,10 +978,10 @@ gh pr checks --watch  # Wait for CI to complete
 
 ### Metrics
 
-| Metric | Before | Target | Verification |
-|--------|--------|--------|--------------|
-| Code Quality Score | 6.5/10 | 9/10 | Qualitative |
-| `selectTriggerReason` LOC | ~180 | <60 | `wc -l` on method |
-| Duplicate Options Objects | 4 | 0 | `grep` count |
-| Public Method Count | 4 | 2 (+2 deprecated) | `grep` count |
-| File Total LOC | ~978 | <900 | `wc -l` |
+| Metric                    | Before | Target            | Verification      |
+| ------------------------- | ------ | ----------------- | ----------------- |
+| Code Quality Score        | 6.5/10 | 9/10              | Qualitative       |
+| `selectTriggerReason` LOC | ~180   | <60               | `wc -l` on method |
+| Duplicate Options Objects | 4      | 0                 | `grep` count      |
+| Public Method Count       | 4      | 2 (+2 deprecated) | `grep` count      |
+| File Total LOC            | ~978   | <900              | `wc -l`           |
