@@ -18,3 +18,4 @@ export {
   ResponseStatus,
   type SimulatorState,
 } from './UIProtocol'
+export type { UUIDv4 } from './UUID'

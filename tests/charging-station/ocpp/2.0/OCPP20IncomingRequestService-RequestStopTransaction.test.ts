@@ -4,7 +4,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { expect } from '@std/expect'
-import { describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type {
   OCPP20RequestStartTransactionRequest,
@@ -14,6 +14,8 @@ import type {
 } from '../../../../src/types/index.js'
 
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
+import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'
+import { AuthenticationMethod } from '../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import {
   OCPP20RequestCommand,
   OCPP20TransactionEventEnumType,
@@ -30,8 +32,40 @@ import { createChargingStation } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from './OCPP20TestConstants.js'
 import { resetLimits, resetReportingValueSize } from './OCPP20TestUtils.js'
 
+/**
+ *
+ */
+function createMockAuthService (): any {
+  return {
+    authorize: () =>
+      Promise.resolve({
+        expiresAt: new Date(Date.now() + 3600000),
+        method: AuthenticationMethod.LOCAL_LIST,
+        status: 'Accepted',
+        timestamp: new Date(),
+      }),
+    clearCache: () => Promise.resolve(),
+    getConfiguration: () => ({}),
+    getStats: () =>
+      Promise.resolve({
+        avgResponseTime: 0,
+        cacheHitRate: 0,
+        failedAuth: 0,
+        lastUpdated: new Date(),
+        localUsageRate: 1,
+        remoteSuccessRate: 0,
+        successfulAuth: 0,
+        totalRequests: 0,
+      }),
+    initialize: () => Promise.resolve(),
+    invalidateCache: () => Promise.resolve(),
+    isLocallyAuthorized: () => Promise.resolve(undefined),
+    testConnectivity: () => Promise.resolve(true),
+    updateConfiguration: () => Promise.resolve(),
+  }
+}
+
 await describe('E02 - Remote Stop Transaction', async () => {
-  // Track sent TransactionEvent requests for verification
   let sentTransactionEvents: OCPP20TransactionEventRequest[] = []
 
   const mockChargingStation = createChargingStation({
@@ -41,13 +75,10 @@ await describe('E02 - Remote Stop Transaction', async () => {
     heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
     ocppRequestService: {
       requestHandler: async (chargingStation: any, commandName: any, commandPayload: any) => {
-        // Mock successful OCPP request responses
         if (commandName === OCPP20RequestCommand.TRANSACTION_EVENT) {
-          // Capture the TransactionEvent for test verification
           sentTransactionEvents.push(commandPayload as OCPP20TransactionEventRequest)
-          return Promise.resolve({}) // OCPP 2.0 TransactionEvent response is empty object
+          return Promise.resolve({})
         }
-        // Mock other requests (StatusNotification, etc.)
         return Promise.resolve({})
       },
     },
@@ -60,7 +91,18 @@ await describe('E02 - Remote Stop Transaction', async () => {
 
   const incomingRequestService = new OCPP20IncomingRequestService()
 
-  // Reset limits before each test
+  beforeEach(async () => {
+    const stationId = mockChargingStation.stationInfo?.chargingStationId ?? 'unknown'
+    // Dynamic import to get the same module instance as the production code
+    const { OCPPAuthServiceFactory: DynamicOCPPAuthServiceFactory } =
+      await import('../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js')
+    ;(DynamicOCPPAuthServiceFactory as any).instances.set(stationId, createMockAuthService())
+  })
+
+  afterEach(() => {
+    OCPPAuthServiceFactory.clearAllInstances()
+  })
+
   resetLimits(mockChargingStation)
   resetReportingValueSize(mockChargingStation)
 
@@ -123,11 +165,11 @@ await describe('E02 - Remote Stop Transaction', async () => {
   }
 
   await it('Should successfully stop an active transaction', async () => {
-    // Clear previous transaction events
-    sentTransactionEvents = []
-
     // Start a transaction first
     const transactionId = await startTransaction(1, 100)
+
+    // Clear transaction events after starting, before testing stop transaction
+    sentTransactionEvents = []
 
     // Create stop transaction request
     const stopRequest: OCPP20RequestStopTransactionRequest = {
@@ -156,9 +198,6 @@ await describe('E02 - Remote Stop Transaction', async () => {
   })
 
   await it('Should handle multiple active transactions correctly', async () => {
-    // Clear previous transaction events
-    sentTransactionEvents = []
-
     // Reset once before starting multiple transactions
     resetConnectorTransactionStates()
 
@@ -166,6 +205,9 @@ await describe('E02 - Remote Stop Transaction', async () => {
     const transactionId1 = await startTransaction(1, 200, true) // Skip reset since we just did it
     const transactionId2 = await startTransaction(2, 201, true) // Skip reset to keep transaction 1
     const transactionId3 = await startTransaction(3, 202, true) // Skip reset to keep transactions 1 & 2
+
+    // Clear transaction events after starting, before testing stop transaction
+    sentTransactionEvents = []
 
     // Stop the second transaction
     const stopRequest: OCPP20RequestStopTransactionRequest = {
@@ -260,11 +302,11 @@ await describe('E02 - Remote Stop Transaction', async () => {
   })
 
   await it('Should accept valid transaction ID format - exactly 36 characters', async () => {
-    // Clear previous transaction events
-    sentTransactionEvents = []
-
     // Start a transaction first
     const transactionId = await startTransaction(1, 300)
+
+    // Clear transaction events after starting, before testing stop transaction
+    sentTransactionEvents = []
 
     // Ensure the transaction ID is exactly 36 characters (pad if necessary for test)
     let testTransactionId = transactionId
@@ -301,10 +343,8 @@ await describe('E02 - Remote Stop Transaction', async () => {
   })
 
   await it('Should handle TransactionEvent request failure gracefully', async () => {
-    // Clear previous transaction events
     sentTransactionEvents = []
 
-    // Create a mock charging station that fails TransactionEvent requests
     const failingChargingStation = createChargingStation({
       baseName: TEST_CHARGING_STATION_BASE_NAME + '-FAIL',
       connectorsCount: 1,
@@ -313,7 +353,6 @@ await describe('E02 - Remote Stop Transaction', async () => {
       ocppRequestService: {
         requestHandler: async (chargingStation: any, commandName: any, commandPayload: any) => {
           if (commandName === OCPP20RequestCommand.TRANSACTION_EVENT) {
-            // Simulate server rejection
             throw new Error('TransactionEvent rejected by server')
           }
           return Promise.resolve({})
@@ -326,7 +365,9 @@ await describe('E02 - Remote Stop Transaction', async () => {
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
 
-    // Start a transaction on the failing station
+    const failingStationId = failingChargingStation.stationInfo?.chargingStationId ?? 'unknown'
+    ;(OCPPAuthServiceFactory as any).instances.set(failingStationId, createMockAuthService())
+
     const startRequest: OCPP20RequestStartTransactionRequest = {
       evseId: 1,
       idToken: {
@@ -387,11 +428,11 @@ await describe('E02 - Remote Stop Transaction', async () => {
   })
 
   await it('Should handle custom data in request payload', async () => {
-    // Clear previous transaction events
-    sentTransactionEvents = []
-
     // Start a transaction first
     const transactionId = await startTransaction(1, 500)
+
+    // Clear transaction events after starting, before testing stop transaction
+    sentTransactionEvents = []
 
     const stopRequestWithCustomData: OCPP20RequestStopTransactionRequest = {
       customData: {
@@ -415,11 +456,11 @@ await describe('E02 - Remote Stop Transaction', async () => {
   })
 
   await it('Should validate TransactionEvent content correctly', async () => {
-    // Clear previous transaction events
-    sentTransactionEvents = []
-
     // Start a transaction first
     const transactionId = await startTransaction(2, 600) // Use EVSE 2
+
+    // Clear transaction events after starting, before testing stop transaction
+    sentTransactionEvents = []
 
     const stopRequest: OCPP20RequestStopTransactionRequest = {
       transactionId: transactionId as UUIDv4,

@@ -1,0 +1,106 @@
+PHASE 0 BASELINE - TransactionEvent Refactoring
+Timestamp: 2026-02-13T22:12:17.000Z
+Session: Phase 0 Baseline Establishment
+
+=== TEST RESULTS ===
+Status: ✅ PASSING (exit code 0)
+Tests: 153 passing
+Suites: 27
+Failed: 0
+Duration: 5077.567833 ms
+
+Test Output Summary:
+- ConfigurationKeyUtils test suite: PASSED (3 tests)
+- Helpers test suite: PASSED (34 tests)
+- OCPP 2.0.1 TransactionEvent Implementation: PASSED (58 tests)
+  - buildTransactionEvent: PASSED (5 tests)
+  - sendTransactionEvent: PASSED (2 tests)
+  - resetTransactionSequenceNumber: PASSED (2 tests)
+  - OCPP 2.0.1 Schema Compliance: PASSED (2 tests)
+  - Context-Aware TriggerReason Selection: PASSED (25 tests)
+  - Backward Compatibility: PASSED (2 tests)
+- BaseError test suite: PASSED (2 tests)
+- OCPPError test suite: PASSED (1 test)
+- ConfigurationData test suite: PASSED (1 test)
+- AsyncLock test suite: PASSED (1 test)
+- ConfigurationUtils test suite: PASSED (5 tests)
+- ElectricUtils test suite: PASSED (7 tests)
+- ErrorUtils test suite: PASSED (3 tests)
+- StatisticUtils test suite: PASSED (6 tests)
+- Utils test suite: PASSED (22 tests)
+- WorkerUtils test suite: PASSED (4 tests)
+
+Code Coverage:
+- Statements: 27.05%
+- Branches: 81.76%
+- Functions: 32.67%
+- Lines: 27.05%
+
+Key Test File:
+- tests/charging-station/ocpp/2.0/OCPP20ServiceUtils-TransactionEvent.test.ts: Executed
+
+=== LINT RESULTS ===
+Status: ❌ FAILED (exit code 1)
+Total Problems: 329 (63 errors, 266 warnings)
+
+Error Summary (63 errors):
+1. OCPP20IncomingRequestService.ts (2 errors):
+   - Unused import: 'OCPP20IdTokenType'
+   - Unused variable: 'getIdTagsFile'
+
+2. OCPP20ServiceUtils.ts (10 warnings - no errors):
+   - Missing JSDoc @param descriptions for TransactionEvent methods
+
+3. OCPP20AuthAdapter.ts (6 errors):
+   - Invalid template literal expressions (line 126, 132, 745, 772, 780x2, 787x2)
+   - Restrict template literal expressions to strings
+
+4. OCPP20ServiceUtils-TransactionEvent.test.ts (50 errors):
+   - No floating promises: Most test assertions not awaited
+   - 1 async method without await (requestHandler)
+   - Promises must be awaited or caught
+
+5. RemoteAuthStrategy.test.ts (1 error):
+   - Async arrow function has no await expression
+
+6. AuthValidators.test.ts (1 error):
+   - Unexpected any type without specification
+
+7. Transaction.ts (1 error):
+   - Unused import: 'EmptyObject'
+
+Warning Summary (266 warnings):
+- Missing JSDoc @param and @returns descriptions (primary issue)
+- Unknown words in spellchecker (OCSP, IDTOKEN, EMAID, deauthorization)
+- Invalid JSDoc tag names (@remarks instead of valid tag)
+- @throws without type specification
+
+Most Critical Issues for TransactionEvent:
+- OCPP20ServiceUtils-TransactionEvent.test.ts: 50 errors related to floating promises
+- OCPP20AuthAdapter.ts: 6 errors with template literal expressions
+- Missing JSDoc documentation in OCPP20ServiceUtils.ts (11 warnings)
+
+=== BUILD RESULTS ===
+Status: ⏸️  NOT RUN - BLOCKED by lint failures
+Reason: Lint command failed with exit code 1; build prerequisites not met
+
+Per requirements, build is skipped when lint fails. The lint errors MUST be fixed before build can proceed.
+
+=== SUMMARY ===
+Tests: 153 passing ✅
+Lint: 63 errors, 266 warnings ❌ FAILED
+Build: BLOCKED (skipped due to lint failure)
+
+Baseline Status: INCOMPLETE
+- Test baseline established: YES (153 tests passing)
+- Lint baseline established: NO (63 errors prevent progression)
+- Build baseline established: NO (blocked by lint failure)
+
+Next Steps:
+1. Fix lint errors in OCPP20ServiceUtils-TransactionEvent.test.ts (floating promises)
+2. Fix template literal expression errors in OCPP20AuthAdapter.ts
+3. Remove unused imports in OCPP20IncomingRequestService.ts and Transaction.ts
+4. Add missing JSDoc descriptions
+5. Rerun lint to verify fixes
+6. Then run build command
+7. Create final baseline evidence with all three commands passing
