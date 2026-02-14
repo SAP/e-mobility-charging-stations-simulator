@@ -1309,10 +1309,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       await OCPP20ServiceUtils.sendTransactionEvent(
         chargingStation,
         OCPP20TransactionEventEnumType.Started,
+        context,
         connectorId,
-        transactionId,
-        undefined,
-        context
+        transactionId
       )
 
       logger.info(

@@ -4,17 +4,54 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { expect } from '@std/expect'
-import { describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { OCPP20RequestStartTransactionRequest } from '../../../../src/types/index.js'
 
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
+import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'
+import {
+  AuthenticationMethod,
+  AuthorizationStatus,
+} from '../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import { OCPPVersion, RequestStartStopStatusEnumType } from '../../../../src/types/index.js'
 import { OCPP20IdTokenEnumType } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from './OCPP20TestConstants.js'
 import { resetLimits, resetReportingValueSize } from './OCPP20TestUtils.js'
+
+/**
+ * Creates a mock OCPPAuthService that always returns ACCEPTED status
+ * This bypasses the complex unified auth system for testing purposes
+ */
+function createMockAuthService (): any {
+  return {
+    authorize: async () => ({
+      expiresAt: new Date(Date.now() + 3600000), // 1 hour from now
+      method: AuthenticationMethod.LOCAL_LIST,
+      status: 'Accepted', // Use string directly to avoid enum import issues
+      timestamp: new Date(),
+    }),
+    clearCache: async () => {},
+    getConfiguration: () => ({}),
+    getStats: async () => ({
+      avgResponseTime: 0,
+      cacheHitRate: 0,
+      failedAuth: 0,
+      lastUpdated: new Date(),
+      localUsageRate: 1,
+      remoteSuccessRate: 0,
+      successfulAuth: 0,
+      totalRequests: 0,
+    }),
+    initialize: async () => {},
+    invalidateCache: async () => {},
+    isLocallyAuthorized: async () => undefined,
+    testConnectivity: async () => true,
+    updateConfiguration: async () => {},
+  }
+}
 
 await describe('E01 - Remote Start Transaction', async () => {
   const mockChargingStation = createChargingStation({
@@ -23,10 +60,7 @@ await describe('E01 - Remote Start Transaction', async () => {
     evseConfiguration: { evsesCount: 3 },
     heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
     ocppRequestService: {
-      requestHandler: async () => {
-        // Mock successful OCPP request responses for StatusNotification and other requests
-        return Promise.resolve({})
-      },
+      requestHandler: async () => Promise.resolve({}),
     },
     stationInfo: {
       ocppStrictCompliance: false,
@@ -36,6 +70,19 @@ await describe('E01 - Remote Start Transaction', async () => {
   })
 
   const incomingRequestService = new OCPP20IncomingRequestService()
+
+  // Inject mock auth service into factory's instances Map before tests
+  beforeEach(async () => {
+    const stationId = mockChargingStation.stationInfo?.chargingStationId ?? 'unknown'
+    // Dynamic import to get the same module instance as the production code
+    const { OCPPAuthServiceFactory: DynamicOCPPAuthServiceFactory } = await import('../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js')
+    ;(DynamicOCPPAuthServiceFactory as any).instances.set(stationId, createMockAuthService())
+  })
+
+  // Clean up after tests
+  afterEach(() => {
+    OCPPAuthServiceFactory.clearAllInstances()
+  })
 
   // Reset limits before each test
   resetLimits(mockChargingStation)
