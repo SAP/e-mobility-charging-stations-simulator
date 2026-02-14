@@ -79,7 +79,7 @@
     "@mikro-orm/mariadb": "^6.6.6",
     "@mikro-orm/reflection": "^6.6.6",
     "@mikro-orm/sqlite": "^6.6.6",
-    "ajv": "^8.17.1",
+    "ajv": "^8.18.0",
     "ajv-formats": "^3.0.1",
     "basic-ftp": "^5.1.0",
     "chalk": "^5.6.2",
@@ -117,7 +117,7 @@
     "eslint": "^9.39.2",
     "eslint-plugin-jsdoc": "^62.5.4",
     "eslint-plugin-perfectionist": "^5.5.0",
-    "eslint-plugin-vue": "^10.7.0",
+    "eslint-plugin-vue": "^10.8.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "neostandard": "^0.12.2",
@@ -127,6 +127,6 @@
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "typescript": "~5.9.3",
-    "vue-eslint-parser": "^10.2.0"
+    "vue-eslint-parser": "^10.4.0"
   }
 }
