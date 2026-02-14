@@ -731,7 +731,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
       })
     })
 
-    void describe('buildTransactionEventWithContext', () => {
+    void describe('buildTransactionEvent with context parameter', () => {
       void it('Should build TransactionEvent with auto-selected TriggerReason from context', () => {
         const connectorId = 1
         const transactionId = generateUUID()
@@ -789,7 +789,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
       })
     })
 
-    void describe('sendTransactionEventWithContext', () => {
+    void describe('sendTransactionEvent with context parameter', () => {
       void it('Should send TransactionEvent with context-aware TriggerReason selection', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
