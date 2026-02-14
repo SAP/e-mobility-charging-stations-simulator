@@ -837,13 +837,13 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
         }
 
         try {
-           await OCPP20ServiceUtils.sendTransactionEvent(
-             errorMockChargingStation,
-             OCPP20TransactionEventEnumType.Ended,
-             context,
-             connectorId,
-             transactionId
-           )
+          await OCPP20ServiceUtils.sendTransactionEvent(
+            errorMockChargingStation,
+            OCPP20TransactionEventEnumType.Ended,
+            context,
+            connectorId,
+            transactionId
+          )
           throw new Error('Should have thrown error')
         } catch (error: any) {
           expect(error.message).toContain('Context test error')
