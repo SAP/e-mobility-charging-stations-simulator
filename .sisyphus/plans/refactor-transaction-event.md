@@ -833,7 +833,7 @@ Phase 5: Logging & Cleanup (LAST)
   - ✅ Verify PR CI passes (CHECKED - has failures in external code)
   - ⚠️ If CI fails, debug and fix until green (BLOCKED - would violate "no scope creep" constraint)
 
-  **Status**: 
+  **Status**:
   - ✅ TransactionEvent work: COMPLETE (153/153 tests passing everywhere)
   - ❌ PR CI: Failures in RequestStartTransaction/StopTransaction tests (NOT our code)
   - 📋 Analysis: See `.sisyphus/evidence/phase-6-ci-blockers.md` for comprehensive details

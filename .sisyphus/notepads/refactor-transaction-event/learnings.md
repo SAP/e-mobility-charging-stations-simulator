@@ -743,6 +743,7 @@ Phase 6 goal was to verify all GitHub Actions CI checks pass green after pushing
 ### CI Investigation Findings
 
 **Our Work Status**: ✅ **COMPLETE and CORRECT**
+
 - TransactionEvent tests: 153/153 PASSING on ALL platforms (Ubuntu, macOS, Windows)
 - Local quality gates: ALL PASSING (lint 0 errors, build SUCCESS, tests PASS)
 - Code quality improvements: ALL ACHIEVED (161 lines saved, 68% logging reduction)
@@ -782,6 +783,7 @@ Phase 6 goal was to verify all GitHub Actions CI checks pass green after pushing
 ### Constraint Conflict Analysis
 
 **The Conflict**:
+
 - User requirement: "CI de la PR doit passer" (PR CI must pass) ❌
 - Plan Phase 6: "debug and fix until green" ⚠️
 - Plan Universal: "NO scope creep to adjacent methods, types, or files" ✅
@@ -792,30 +794,35 @@ Phase 6 goal was to verify all GitHub Actions CI checks pass green after pushing
 ### Key Learnings
 
 #### 1. Platform-Specific CI Behavior
+
 - **Local vs CI**: Local tests passing does NOT guarantee CI passes on all platforms
 - **Windows vs Unix**: Windows has different timing/authorization behavior
 - **Test Dependencies**: Authorization-dependent tests can fail on specific platforms even when core logic is correct
 - **Investigation Method**: Use `gh pr checks` to see detailed failure info, then `gh run view <run-id>` for logs
 
 #### 2. Branch Hygiene and Composition
+
 - **Multi-feature branches**: Mixing unrelated features complicates root cause analysis
 - **Independent verification**: Each feature should ideally have its own branch for isolated testing
 - **CI Baseline**: Check main branch CI status to determine if regression is from new code or pre-existing
 - **Blame Assignment**: Clear separation of features allows accurate attribution of failures
 
 #### 3. Constraint Management in Orchestration
+
 - **Competing constraints**: User requirements can conflict with scope constraints
 - **Escalation Path**: When constraints conflict, document and escalate rather than violating constraints
 - **Evidence Value**: Comprehensive documentation of blocker analysis helps maintainers make informed decisions
 - **Scope Discipline**: Maintaining "no scope creep" is more important than forcing green CI by fixing unrelated code
 
 #### 4. CI Debugging Strategy
+
 - **Pattern Recognition**: "Expected X, got Y" errors point to logic/state issues, not syntax
 - **Platform Isolation**: Failures on ONE platform suggest environmental/timing issues, not fundamental logic errors
 - **Test Coverage Analysis**: If YOUR tests pass 100% everywhere, failures in OTHER tests are not YOUR regression
 - **Tool Limitations**: Some CI info (like SonarCloud details) requires dashboard access beyond CLI tools
 
 #### 5. Definition of Done in Complex Scenarios
+
 - **Clear Completion**: Our TransactionEvent work IS complete by all measurable criteria
 - **External Blockers**: External blockers don't make complete work incomplete
 - **Pragmatic Documentation**: When "done" is blocked externally, document that work is complete and blockers are external
@@ -824,12 +831,14 @@ Phase 6 goal was to verify all GitHub Actions CI checks pass green after pushing
 ### Technical Insights
 
 #### Authorization System Behavior
+
 - **Windows-Specific**: Authorization responses differ between Windows and Unix platforms
 - **Test Design**: Tests expecting "Accepted" responses are too brittle if they don't account for platform differences
 - **Async Timing**: Windows may have different timing characteristics for auth cache or state management
 - **Investigation Needed**: Requires Windows-specific debugging to understand root cause
 
 #### CI Infrastructure Patterns
+
 - **GitHub Actions**: Each platform/Node version is isolated job - one failure doesn't stop others
 - **SonarCloud Integration**: Can have inconsistent results (generic check passes, specific checks fail)
 - **Diagnostic Access**: Not all CI failure details available via gh CLI - some require web dashboard
@@ -837,7 +846,7 @@ Phase 6 goal was to verify all GitHub Actions CI checks pass green after pushing
 
 ### Process Improvements for Future Work
 
-1. **Branch Strategy**: 
+1. **Branch Strategy**:
    - Keep feature branches focused on single feature
    - Don't merge unrelated features into same branch
    - Use separate PRs for independent features
@@ -865,6 +874,7 @@ Phase 6 goal was to verify all GitHub Actions CI checks pass green after pushing
 ### Recommendations for Maintainers
 
 **Option A (Recommended)**: Split PR
+
 - Create `feat/transaction-event-only` branch from clean base
 - Cherry-pick only TransactionEvent commits (6 commits)
 - Create new PR for clean TransactionEvent work
@@ -872,12 +882,14 @@ Phase 6 goal was to verify all GitHub Actions CI checks pass green after pushing
 - Benefit: TransactionEvent can merge immediately (all tests pass)
 
 **Option B**: Debug Windows Failures
+
 - Focus on RequestStartTransaction/StopTransaction authorization issues
 - Investigate Windows-specific authorization cache/timing behavior
 - May require platform-specific auth mocking or timing adjustments
 - Estimated effort: 2-4 hours
 
 **Option C**: Investigate SonarCloud
+
 - Requires SAP SonarCloud dashboard access
 - Check code coverage thresholds, code smells
 - May be quick wins or infrastructure noise
@@ -887,12 +899,14 @@ Phase 6 goal was to verify all GitHub Actions CI checks pass green after pushing
 
 **Investigation Time**: ~2 hours (CI analysis, root cause determination, documentation)  
 **CI Checks Analyzed**: 38 checks (26 passing, 4 failing, 8 cancelled)  
-**Documentation Created**: 
+**Documentation Created**:
+
 - CI blockers analysis: 300+ lines
 - Evidence file update: comprehensive CI status
-- Learnings file: this entry  
+- Learnings file: this entry
 
 **Key Metrics**:
+
 - TransactionEvent tests passing: 153/153 (100%)
 - Platforms tested: 3 (Ubuntu, macOS, Windows)
 - Node versions tested: 3 (22, 24, latest)
@@ -904,4 +918,3 @@ Phase 6 goal was to verify all GitHub Actions CI checks pass green after pushing
 Phase 6 revealed that **our TransactionEvent refactoring work is complete and correct**, but PR CI is blocked by failures in unrelated code merged into the branch. The investigation yielded valuable learnings about multi-feature branch management, platform-specific CI behavior, and constraint conflict resolution.
 
 **Status**: TransactionEvent refactoring is PRODUCTION READY. Awaiting maintainer decision on PR split or Windows authorization debugging.
-
