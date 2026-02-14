@@ -6,7 +6,6 @@ import type { ChargingStation } from '../../../charging-station/index.js'
 import type {
   OCPP20ChargingProfileType,
   OCPP20ChargingScheduleType,
-  OCPP20IdTokenType,
   OCPP20TransactionContext,
 } from '../../../types/ocpp/2.0/Transaction.js'
 
@@ -68,7 +67,7 @@ import {
   validateUUID,
 } from '../../../utils/index.js'
 import { getConfigurationKey } from '../../ConfigurationKeyUtils.js'
-import { getIdTagsFile, resetConnectorStatus } from '../../Helpers.js'
+import { resetConnectorStatus } from '../../Helpers.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
 import {
   OCPPServiceUtils,

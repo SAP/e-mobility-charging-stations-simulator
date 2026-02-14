@@ -123,13 +123,13 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
         // OCPP 2.0: Authorization through TransactionEvent
         // According to OCPP 2.0.1 spec section G03 - Authorization
         const tempTransactionId =
-          transactionId != null ? transactionId.toString() : `auth-${Date.now()}`
+          transactionId != null ? transactionId.toString() : `auth-${Date.now().toString()}`
 
         // Get EVSE ID from connector
         const evseId = connectorId // In OCPP 2.0, connector maps to EVSE
 
         logger.debug(
-          `${this.chargingStation.logPrefix()} ${moduleName}.${methodName}: Sending TransactionEvent for authorization (evseId: ${evseId}, idToken: ${idToken.idToken})`
+          `${this.chargingStation.logPrefix()} ${moduleName}.${methodName}: Sending TransactionEvent for authorization (evseId: ${evseId.toString()}, idToken: ${idToken.idToken})`
         )
 
         // Send TransactionEvent with idToken to request authorization
@@ -742,7 +742,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
     }
 
     logger.warn(
-      `${this.chargingStation.logPrefix()} Invalid boolean value '${value}', using default: ${defaultValue}`
+       `${this.chargingStation.logPrefix()} Invalid boolean value '${value}', using default: ${defaultValue.toString()}`
     )
     return defaultValue
   }
@@ -769,7 +769,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
 
     if (isNaN(parsed)) {
       logger.warn(
-        `${this.chargingStation.logPrefix()} Invalid integer value '${value}', using default: ${defaultValue}`
+         `${this.chargingStation.logPrefix()} Invalid integer value '${value}', using default: ${defaultValue.toString()}`
       )
       return defaultValue
     }
@@ -777,14 +777,14 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
     // Validate range
     if (min != null && parsed < min) {
       logger.warn(
-        `${this.chargingStation.logPrefix()} Integer value ${parsed} below minimum ${min}, using minimum`
+         `${this.chargingStation.logPrefix()} Integer value ${parsed.toString()} below minimum ${min.toString()}, using minimum`
       )
       return min
     }
 
     if (max != null && parsed > max) {
       logger.warn(
-        `${this.chargingStation.logPrefix()} Integer value ${parsed} above maximum ${max}, using maximum`
+         `${this.chargingStation.logPrefix()} Integer value ${parsed.toString()} above maximum ${max.toString()}, using maximum`
       )
       return max
     }

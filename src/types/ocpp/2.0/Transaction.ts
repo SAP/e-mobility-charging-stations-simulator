@@ -1,4 +1,3 @@
-import type { EmptyObject } from '../../EmptyObject.js'
 import type { JsonObject } from '../../JsonType.js'
 import type { UUIDv4 } from '../../UUID.js'
 import type { CustomDataType } from './Common.js'
@@ -321,6 +320,35 @@ export interface OCPP20TransactionContext {
     | 'time_limit'
   /** System event details (for system_event source) */
   systemEvent?: 'ev_communication_lost' | 'ev_connect_timeout' | 'ev_departed' | 'ev_detected'
+}
+
+/**
+ * Optional parameters for building and sending TransactionEvent requests.
+ * Aligned with OCPP 2.0.1 TransactionEvent.req optional fields.
+ */
+export interface OCPP20TransactionEventOptions {
+  /** Maximum current the cable can handle (A) */
+  cableMaxCurrent?: number
+  /** Current charging state per OCPP 2.0.1 ChargingStateEnumType */
+  chargingState?: OCPP20ChargingStateEnumType
+  /** Vendor-specific custom data */
+  customData?: CustomDataType
+  /** EVSE identifier (1-based) */
+  evseId?: number
+  /** Token used for authorization */
+  idToken?: OCPP20IdTokenType
+  /** Meter values associated with this event */
+  meterValue?: OCPP20MeterValue[]
+  /** Number of phases used for charging */
+  numberOfPhasesUsed?: number
+  /** Whether event occurred while offline */
+  offline?: boolean
+  /** Remote start transaction ID */
+  remoteStartId?: number
+  /** Reservation ID if applicable */
+  reservationId?: number
+  /** Reason for stopping transaction */
+  stoppedReason?: OCPP20ReasonEnumType
 }
 
 export interface OCPP20TransactionEventRequest extends JsonObject {

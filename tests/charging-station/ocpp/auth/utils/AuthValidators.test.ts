@@ -178,7 +178,6 @@ await describe('AuthValidators', async () => {
     })
 
     await it('should return false for missing enabled strategies', () => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const config = {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: true,
@@ -187,7 +186,7 @@ await describe('AuthValidators', async () => {
         localAuthListEnabled: true,
         localPreAuthorize: true,
         offlineAuthorizationEnabled: false,
-      } as any
+      } as Partial<AuthConfiguration>
 
       expect(AuthValidators.validateAuthConfiguration(config)).toBe(false)
     })

@@ -341,7 +341,7 @@ await describe('RemoteAuthStrategy', async () => {
     })
 
     await it('should handle remote authorization errors gracefully', async () => {
-      mockOCPP16Adapter.authorizeRemote = async () => {
+      mockOCPP16Adapter.authorizeRemote = () => {
         throw new Error('Network error')
       }
 
