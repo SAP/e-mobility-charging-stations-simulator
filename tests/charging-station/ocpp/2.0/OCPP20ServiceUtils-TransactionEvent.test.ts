@@ -745,10 +745,9 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
         const transactionEvent = OCPP20ServiceUtils.buildTransactionEvent(
           mockChargingStation,
           OCPP20TransactionEventEnumType.Started,
+          context,
           connectorId,
-          transactionId,
-          undefined,
-          context
+          transactionId
         )
 
         expect(transactionEvent.eventType).toBe(OCPP20TransactionEventEnumType.Started)
@@ -775,10 +774,10 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
         const transactionEvent = OCPP20ServiceUtils.buildTransactionEvent(
           mockChargingStation,
           OCPP20TransactionEventEnumType.Updated,
+          context,
           connectorId,
           transactionId,
-          options,
-          context
+          options
         )
 
         expect(transactionEvent.triggerReason).toBe(OCPP20TriggerReasonEnumType.Authorized)
@@ -801,10 +800,9 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
         const response = await OCPP20ServiceUtils.sendTransactionEvent(
           mockChargingStation,
           OCPP20TransactionEventEnumType.Started,
+          context,
           connectorId,
-          transactionId,
-          undefined,
-          context
+          transactionId
         )
 
         // Validate response structure
@@ -839,14 +837,13 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
         }
 
         try {
-          await OCPP20ServiceUtils.sendTransactionEvent(
-            errorMockChargingStation,
-            OCPP20TransactionEventEnumType.Ended,
-            connectorId,
-            transactionId,
-            undefined,
-            context
-          )
+           await OCPP20ServiceUtils.sendTransactionEvent(
+             errorMockChargingStation,
+             OCPP20TransactionEventEnumType.Ended,
+             context,
+             connectorId,
+             transactionId
+           )
           throw new Error('Should have thrown error')
         } catch (error: any) {
           expect(error.message).toContain('Context test error')
