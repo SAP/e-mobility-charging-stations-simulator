@@ -130,15 +130,9 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     if (connectorStatus.transactionSeqNo == null) {
       // First TransactionEvent for this EVSE/connector - start at 0
       connectorStatus.transactionSeqNo = 0
-      logger.debug(
-        `${chargingStation.logPrefix()} ${moduleName}.buildTransactionEvent: Initialized sequence number to 0 for new transaction on connector ${connectorId.toString()}`
-      )
     } else {
       // Increment for subsequent TransactionEvents
       connectorStatus.transactionSeqNo = connectorStatus.transactionSeqNo + 1
-      logger.debug(
-        `${chargingStation.logPrefix()} ${moduleName}.buildTransactionEvent: Incremented sequence number to ${connectorStatus.transactionSeqNo.toString()} for connector ${connectorId.toString()}`
-      )
     }
 
     // Build EVSE object
@@ -201,7 +195,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     }
 
     logger.debug(
-      `${chargingStation.logPrefix()} ${moduleName}.buildTransactionEvent: Built TransactionEvent - Type: ${eventType}, TriggerReason: ${triggerReason}, SeqNo: ${String(connectorStatus.transactionSeqNo)}, EVSE: ${String(evseId)}, Transaction: ${transactionId}`
+      `${chargingStation.logPrefix()} ${moduleName}.buildTransactionEvent: Building TransactionEvent for trigger ${triggerReason}`
     )
 
     return transactionEventRequest
@@ -633,9 +627,6 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
           (context.command === 'UnlockConnector' &&
             entry.triggerReason === OCPP20TriggerReasonEnumType.UnlockCommand)
         ) {
-          logger.debug(
-            `${moduleName}.selectTriggerReason: Selected ${entry.triggerReason} for ${entry.condition ?? 'unknown'}`
-          )
           return entry.triggerReason
         }
       }
@@ -643,9 +634,6 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       if (context.source === 'local_authorization' && context.authorizationMethod != null) {
         if (context.isDeauthorized === true) {
           if (entry.triggerReason === OCPP20TriggerReasonEnumType.Deauthorized) {
-            logger.debug(
-              `${moduleName}.selectTriggerReason: Selected ${entry.triggerReason} for ${entry.condition ?? 'unknown'}`
-            )
             return entry.triggerReason
           }
         } else if (
@@ -653,17 +641,11 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
             context.authorizationMethod === 'idToken') &&
           entry.triggerReason === OCPP20TriggerReasonEnumType.Authorized
         ) {
-          logger.debug(
-            `${moduleName}.selectTriggerReason: Selected ${entry.triggerReason} for ${entry.condition ?? 'unknown'}`
-          )
           return entry.triggerReason
         } else if (
           context.authorizationMethod === 'stopAuthorized' &&
           entry.triggerReason === OCPP20TriggerReasonEnumType.StopAuthorized
         ) {
-          logger.debug(
-            `${moduleName}.selectTriggerReason: Selected ${entry.triggerReason} for ${entry.condition ?? 'unknown'}`
-          )
           return entry.triggerReason
         }
       }
@@ -677,9 +659,6 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
           (context.cableState === 'unplugged' &&
             entry.triggerReason === OCPP20TriggerReasonEnumType.EVDeparted)
         ) {
-          logger.debug(
-            `${moduleName}.selectTriggerReason: Selected ${entry.triggerReason} for ${entry.condition ?? 'unknown'}`
-          )
           return entry.triggerReason
         }
       }
@@ -689,9 +668,6 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         context.chargingStateChange != null &&
         entry.triggerReason === OCPP20TriggerReasonEnumType.ChargingStateChanged
       ) {
-        logger.debug(
-          `${moduleName}.selectTriggerReason: Selected ${entry.triggerReason} for ${entry.condition ?? 'unknown'}`
-        )
         return entry.triggerReason
       }
 
@@ -706,9 +682,6 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
           (context.systemEvent === 'ev_detected' &&
             entry.triggerReason === OCPP20TriggerReasonEnumType.EVDetected)
         ) {
-          logger.debug(
-            `${moduleName}.selectTriggerReason: Selected ${entry.triggerReason} for ${entry.condition ?? 'unknown'}`
-          )
           return entry.triggerReason
         }
       }
@@ -723,9 +696,6 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
             context.isPeriodicMeterValue !== true &&
             entry.triggerReason === OCPP20TriggerReasonEnumType.MeterValueClock)
         ) {
-          logger.debug(
-            `${moduleName}.selectTriggerReason: Selected ${entry.triggerReason} for ${entry.condition ?? 'unknown'}`
-          )
           return entry.triggerReason
         }
       }
@@ -736,9 +706,6 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         (context.source === 'time_limit' &&
           entry.triggerReason === OCPP20TriggerReasonEnumType.TimeLimitReached)
       ) {
-        logger.debug(
-          `${moduleName}.selectTriggerReason: Selected ${entry.triggerReason} for ${entry.condition ?? 'unknown'}`
-        )
         return entry.triggerReason
       }
 
@@ -746,9 +713,6 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         context.source === 'abnormal_condition' &&
         entry.triggerReason === OCPP20TriggerReasonEnumType.AbnormalCondition
       ) {
-        logger.debug(
-          `${moduleName}.selectTriggerReason: Selected ${entry.triggerReason} for abnormal condition: ${context.abnormalCondition ?? 'unknown'}`
-        )
         return entry.triggerReason
       }
     }
@@ -803,17 +767,13 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
 
       // Send the request to CSMS
       logger.debug(
-        `${chargingStation.logPrefix()} ${moduleName}.sendTransactionEvent: Sending TransactionEvent - ${eventType} (${triggerReason}) for transaction ${transactionId}`
+         `${chargingStation.logPrefix()} ${moduleName}.sendTransactionEvent: Sending TransactionEvent for trigger ${triggerReason}`
       )
 
       const response = await chargingStation.ocppRequestService.requestHandler<
-        OCPP20TransactionEventRequest,
-        OCPP20TransactionEventResponse
-      >(chargingStation, OCPP20RequestCommand.TRANSACTION_EVENT, transactionEventRequest)
-
-      logger.debug(
-        `${chargingStation.logPrefix()} ${moduleName}.sendTransactionEvent: TransactionEvent completed successfully`
-      )
+         OCPP20TransactionEventRequest,
+         OCPP20TransactionEventResponse
+       >(chargingStation, OCPP20RequestCommand.TRANSACTION_EVENT, transactionEventRequest)
 
       return response
     } catch (error) {
