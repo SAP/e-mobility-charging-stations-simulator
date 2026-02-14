@@ -1306,12 +1306,13 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         source: 'remote_command',
       }
 
-      await OCPP20ServiceUtils.sendTransactionEventWithContext(
+      await OCPP20ServiceUtils.sendTransactionEvent(
         chargingStation,
         OCPP20TransactionEventEnumType.Started,
-        context,
         connectorId,
-        transactionId
+        transactionId,
+        undefined,
+        context
       )
 
       logger.info(

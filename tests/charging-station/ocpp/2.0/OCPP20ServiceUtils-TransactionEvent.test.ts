@@ -742,12 +742,13 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
 
         OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
 
-        const transactionEvent = OCPP20ServiceUtils.buildTransactionEventWithContext(
+        const transactionEvent = OCPP20ServiceUtils.buildTransactionEvent(
           mockChargingStation,
           OCPP20TransactionEventEnumType.Started,
-          context,
           connectorId,
-          transactionId
+          transactionId,
+          undefined,
+          context
         )
 
         expect(transactionEvent.eventType).toBe(OCPP20TransactionEventEnumType.Started)
@@ -771,13 +772,13 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
           },
         }
 
-        const transactionEvent = OCPP20ServiceUtils.buildTransactionEventWithContext(
+        const transactionEvent = OCPP20ServiceUtils.buildTransactionEvent(
           mockChargingStation,
           OCPP20TransactionEventEnumType.Updated,
-          context,
           connectorId,
           transactionId,
-          options
+          options,
+          context
         )
 
         expect(transactionEvent.triggerReason).toBe(OCPP20TriggerReasonEnumType.Authorized)
@@ -797,12 +798,13 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
           source: 'cable_action',
         }
 
-        const response = await OCPP20ServiceUtils.sendTransactionEventWithContext(
+        const response = await OCPP20ServiceUtils.sendTransactionEvent(
           mockChargingStation,
           OCPP20TransactionEventEnumType.Started,
-          context,
           connectorId,
-          transactionId
+          transactionId,
+          undefined,
+          context
         )
 
         // Validate response structure
@@ -837,12 +839,13 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
         }
 
         try {
-          await OCPP20ServiceUtils.sendTransactionEventWithContext(
+          await OCPP20ServiceUtils.sendTransactionEvent(
             errorMockChargingStation,
             OCPP20TransactionEventEnumType.Ended,
-            context,
             connectorId,
-            transactionId
+            transactionId,
+            undefined,
+            context
           )
           throw new Error('Should have thrown error')
         } catch (error: any) {
