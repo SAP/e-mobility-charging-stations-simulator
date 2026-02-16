@@ -65,7 +65,7 @@ function createMockAuthService (): any {
   }
 }
 
-await describe('E02 - Remote Stop Transaction', async () => {
+await describe('F03 - Remote Stop Transaction', async () => {
   let sentTransactionEvents: OCPP20TransactionEventRequest[] = []
 
   const mockChargingStation = createChargingStation({
@@ -164,6 +164,7 @@ await describe('E02 - Remote Stop Transaction', async () => {
     return startResponse.transactionId as string
   }
 
+  // FR: F03.FR.02, F03.FR.03, F03.FR.07, F03.FR.09
   await it('Should successfully stop an active transaction', async () => {
     // Start a transaction first
     const transactionId = await startTransaction(1, 100)
@@ -197,6 +198,7 @@ await describe('E02 - Remote Stop Transaction', async () => {
     expect(transactionEvent.evse?.id).toBe(1)
   })
 
+  // FR: F03.FR.02, F03.FR.03
   await it('Should handle multiple active transactions correctly', async () => {
     // Reset once before starting multiple transactions
     resetConnectorTransactionStates()
@@ -235,6 +237,7 @@ await describe('E02 - Remote Stop Transaction', async () => {
     expect(mockChargingStation.getConnectorIdByTransactionId(transactionId3)).toBe(3)
   })
 
+  // FR: F03.FR.08
   await it('Should reject stop transaction for non-existent transaction ID', async () => {
     // Clear previous transaction events
     sentTransactionEvents = []
@@ -257,6 +260,7 @@ await describe('E02 - Remote Stop Transaction', async () => {
     expect(sentTransactionEvents).toHaveLength(0)
   })
 
+  // FR: F03.FR.08
   await it('Should reject stop transaction for invalid transaction ID format - empty string', async () => {
     // Clear previous transaction events
     sentTransactionEvents = []
@@ -278,6 +282,7 @@ await describe('E02 - Remote Stop Transaction', async () => {
     expect(sentTransactionEvents).toHaveLength(0)
   })
 
+  // FR: F03.FR.08
   await it('Should reject stop transaction for invalid transaction ID format - too long', async () => {
     // Clear previous transaction events
     sentTransactionEvents = []
@@ -301,6 +306,7 @@ await describe('E02 - Remote Stop Transaction', async () => {
     expect(sentTransactionEvents).toHaveLength(0)
   })
 
+  // FR: F03.FR.02
   await it('Should accept valid transaction ID format - exactly 36 characters', async () => {
     // Start a transaction first
     const transactionId = await startTransaction(1, 300)
@@ -399,6 +405,7 @@ await describe('E02 - Remote Stop Transaction', async () => {
     expect(response.status).toBe(RequestStartStopStatusEnumType.Rejected)
   })
 
+  // FR: F04.FR.01
   await it('Should return proper response structure', async () => {
     // Clear previous transaction events
     sentTransactionEvents = []
@@ -455,6 +462,7 @@ await describe('E02 - Remote Stop Transaction', async () => {
     expect(sentTransactionEvents).toHaveLength(1)
   })
 
+  // FR: F03.FR.07, F03.FR.09
   await it('Should validate TransactionEvent content correctly', async () => {
     // Start a transaction first
     const transactionId = await startTransaction(2, 600) // Use EVSE 2

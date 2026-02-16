@@ -52,7 +52,7 @@ function createMockAuthService (): any {
   }
 }
 
-await describe('E01 - Remote Start Transaction', async () => {
+await describe('F01 & F02 - Remote Start Transaction', async () => {
   const mockChargingStation = createChargingStation({
     baseName: TEST_CHARGING_STATION_BASE_NAME,
     connectorsCount: 3,
@@ -88,6 +88,7 @@ await describe('E01 - Remote Start Transaction', async () => {
   resetLimits(mockChargingStation)
   resetReportingValueSize(mockChargingStation)
 
+  // FR: F01.FR.03, F01.FR.04, F01.FR.05, F01.FR.13
   await it('Should handle RequestStartTransaction with valid evseId and idToken', async () => {
     const validRequest: OCPP20RequestStartTransactionRequest = {
       evseId: 1,
@@ -109,6 +110,7 @@ await describe('E01 - Remote Start Transaction', async () => {
     expect(typeof response.transactionId).toBe('string')
   })
 
+  // FR: F01.FR.17
   await it('Should handle RequestStartTransaction with remoteStartId', async () => {
     const requestWithRemoteStartId: OCPP20RequestStartTransactionRequest = {
       evseId: 2,
@@ -129,6 +131,7 @@ await describe('E01 - Remote Start Transaction', async () => {
     expect(response.transactionId).toBeDefined()
   })
 
+  // FR: F01.FR.19
   await it('Should handle RequestStartTransaction with groupIdToken', async () => {
     const requestWithGroupToken: OCPP20RequestStartTransactionRequest = {
       evseId: 3,
@@ -155,6 +158,7 @@ await describe('E01 - Remote Start Transaction', async () => {
 
   // TODO: Implement proper OCPP 2.0 ChargingProfile types and test charging profile functionality
 
+  // FR: F01.FR.07
   await it('Should reject RequestStartTransaction for invalid evseId', async () => {
     const invalidEvseRequest: OCPP20RequestStartTransactionRequest = {
       evseId: 999, // Non-existent EVSE
@@ -174,6 +178,7 @@ await describe('E01 - Remote Start Transaction', async () => {
     ).rejects.toThrow('EVSE 999 does not exist on charging station')
   })
 
+  // FR: F01.FR.09, F01.FR.10
   await it('Should reject RequestStartTransaction when connector is already occupied', async () => {
     // First, start a transaction to occupy the connector
     const firstRequest: OCPP20RequestStartTransactionRequest = {
@@ -210,6 +215,7 @@ await describe('E01 - Remote Start Transaction', async () => {
     expect(response.transactionId).toBeDefined()
   })
 
+  // FR: F02.FR.01
   await it('Should return proper response structure', async () => {
     const validRequest: OCPP20RequestStartTransactionRequest = {
       evseId: 1,
