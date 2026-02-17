@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { expect } from '@std/expect'
@@ -193,7 +192,6 @@ await describe('OCPP20IncomingRequestService - G03.FR.03 Remote Start Pre-Author
       // Given: Request without evseId (null)
 
       const request: OCPP20RequestStartTransactionRequest = {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
         evseId: null as any,
         idToken: {
           idToken: 'VALID_TOKEN_005',
@@ -210,7 +208,6 @@ await describe('OCPP20IncomingRequestService - G03.FR.03 Remote Start Pre-Author
       // Given: Request without evseId (undefined)
 
       const request: OCPP20RequestStartTransactionRequest = {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
         evseId: undefined as any,
         idToken: {
           idToken: 'VALID_TOKEN_006',

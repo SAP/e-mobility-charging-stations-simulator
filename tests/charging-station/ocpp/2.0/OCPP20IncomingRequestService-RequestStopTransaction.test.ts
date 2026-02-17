@@ -478,7 +478,9 @@ await describe('F03 - Remote Stop Transaction', async () => {
 
     const connectorStatus = mockChargingStation.getConnectorStatus(3)
     expect(connectorStatus).toBeDefined()
-    connectorStatus!.transactionEnergyActiveImportRegisterValue = 12345.67
+    if (connectorStatus != null) {
+      connectorStatus.transactionEnergyActiveImportRegisterValue = 12345.67
+    }
 
     sentTransactionEvents = []
 
@@ -501,7 +503,9 @@ await describe('F03 - Remote Stop Transaction', async () => {
     expect(transactionEvent.meterValue).toBeDefined()
     expect(transactionEvent.meterValue).toHaveLength(1)
 
-    const meterValue = transactionEvent.meterValue![0]
+    const meterValue = transactionEvent.meterValue?.[0]
+    expect(meterValue).toBeDefined()
+    if (meterValue == null) return
     expect(meterValue.timestamp).toBeInstanceOf(Date)
     expect(meterValue.sampledValue).toBeDefined()
     expect(meterValue.sampledValue).toHaveLength(1)

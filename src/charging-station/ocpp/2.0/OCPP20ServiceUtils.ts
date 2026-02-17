@@ -18,17 +18,17 @@ import {
   OCPPVersion,
 } from '../../../types/index.js'
 import {
+  OCPP20MeasurandEnumType,
+  type OCPP20MeterValue,
+  OCPP20ReadingContextEnumType,
+} from '../../../types/ocpp/2.0/MeterValues.js'
+import {
   type OCPP20EVSEType,
   OCPP20ReasonEnumType,
   type OCPP20TransactionContext,
   type OCPP20TransactionEventOptions,
   type OCPP20TransactionType,
 } from '../../../types/ocpp/2.0/Transaction.js'
-import {
-  type OCPP20MeterValue,
-  OCPP20MeasurandEnumType,
-  OCPP20ReadingContextEnumType,
-} from '../../../types/ocpp/2.0/MeterValues.js'
 import { logger, validateUUID } from '../../../utils/index.js'
 import { OCPPServiceUtils, sendAndSetConnectorStatus } from '../OCPPServiceUtils.js'
 import { OCPP20Constants } from './OCPP20Constants.js'
