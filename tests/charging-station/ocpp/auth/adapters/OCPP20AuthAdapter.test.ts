@@ -15,7 +15,7 @@ import {
 import {
   OCPP20AuthorizationStatusEnumType,
   OCPP20IdTokenEnumType,
-  RequestStartStopStatusEnumType
+  RequestStartStopStatusEnumType,
 } from '../../../../../src/types/ocpp/2.0/Transaction.js'
 import { OCPPVersion } from '../../../../../src/types/ocpp/OCPPVersion.js'
 import {
