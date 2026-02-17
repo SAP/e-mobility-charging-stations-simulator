@@ -214,6 +214,12 @@ export class OCPP20Constants extends OCPPConstants {
       source: 'charging_state',
       triggerReason: OCPP20TriggerReasonEnumType.ChargingStateChanged,
     },
+    {
+      condition: 'External charging limit changed rate by more than LimitChangeSignificance',
+      priority: 4,
+      source: 'external_limit',
+      triggerReason: OCPP20TriggerReasonEnumType.ChargingRateChanged,
+    },
     // Priority 5: System Events
     {
       condition: 'EV communication lost',
