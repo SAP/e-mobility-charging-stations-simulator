@@ -1,5 +1,3 @@
-// Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
-
 import type { OCPP16AuthAdapter } from '../adapters/OCPP16AuthAdapter.js'
 import type { OCPP20AuthAdapter } from '../adapters/OCPP20AuthAdapter.js'
 

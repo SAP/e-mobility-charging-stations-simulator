@@ -1,5 +1,3 @@
-// Partial Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
-
 import type { ValidateFunction } from 'ajv'
 
 import { Client, type FTPResponse } from 'basic-ftp'

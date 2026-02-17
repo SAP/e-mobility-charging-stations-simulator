@@ -1,6 +1,3 @@
-// SPDX-License-Identifier: Apache-2.0
-// Copyright (c) 2025 SAP SE
-
 import type { ChargingStation } from '../../../ChargingStation.js'
 import type { AuthStrategy, OCPPAuthAdapter } from '../interfaces/OCPPAuthService.js'
 import type {

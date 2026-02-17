@@ -1,5 +1,3 @@
-// Partial Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
-
 /* eslint-disable @typescript-eslint/unified-signatures */
 
 import type { JSONSchemaType } from 'ajv'
