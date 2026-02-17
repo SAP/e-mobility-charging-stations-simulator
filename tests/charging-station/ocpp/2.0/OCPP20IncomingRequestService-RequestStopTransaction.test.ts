@@ -469,4 +469,46 @@ await describe('F03 - Remote Stop Transaction', async () => {
     expect(transactionEvent.evse).toBeDefined()
     expect(transactionEvent.evse?.id).toBe(2) // Should match the EVSE we used
   })
+
+  // FR: F03.FR.09
+  await it('Should include final meter values in TransactionEvent(Ended)', async () => {
+    resetConnectorTransactionStates()
+
+    const transactionId = await startTransaction(3, 700)
+
+    const connectorStatus = mockChargingStation.getConnectorStatus(3)
+    expect(connectorStatus).toBeDefined()
+    connectorStatus!.transactionEnergyActiveImportRegisterValue = 12345.67
+
+    sentTransactionEvents = []
+
+    const stopRequest: OCPP20RequestStopTransactionRequest = {
+      transactionId: transactionId as UUIDv4,
+    }
+
+    const response = await (incomingRequestService as any).handleRequestStopTransaction(
+      mockChargingStation,
+      stopRequest
+    )
+
+    expect(response.status).toBe(RequestStartStopStatusEnumType.Accepted)
+
+    expect(sentTransactionEvents).toHaveLength(1)
+    const transactionEvent = sentTransactionEvents[0]
+
+    expect(transactionEvent.eventType).toBe(OCPP20TransactionEventEnumType.Ended)
+
+    expect(transactionEvent.meterValue).toBeDefined()
+    expect(transactionEvent.meterValue).toHaveLength(1)
+
+    const meterValue = transactionEvent.meterValue![0]
+    expect(meterValue.timestamp).toBeInstanceOf(Date)
+    expect(meterValue.sampledValue).toBeDefined()
+    expect(meterValue.sampledValue).toHaveLength(1)
+
+    const sampledValue = meterValue.sampledValue[0]
+    expect(sampledValue.value).toBe(12345.67)
+    expect(sampledValue.context).toBe('Transaction.End')
+    expect(sampledValue.measurand).toBe('Energy.Active.Import.Register')
+  })
 })

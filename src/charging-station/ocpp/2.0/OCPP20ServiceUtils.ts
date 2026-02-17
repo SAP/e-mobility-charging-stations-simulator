@@ -26,6 +26,11 @@ import {
   type OCPP20TransactionEventOptions,
   type OCPP20TransactionType,
 } from '../../../types/ocpp/2.0/Transaction.js'
+import {
+  type OCPP20MeterValue,
+  OCPP20MeasurandEnumType,
+  OCPP20ReadingContextEnumType,
+} from '../../../types/ocpp/2.0/MeterValues.js'
 import { logger, validateUUID } from '../../../utils/index.js'
 import { OCPPServiceUtils, sendAndSetConnectorStatus } from '../OCPPServiceUtils.js'
 import { OCPP20Constants } from './OCPP20Constants.js'
@@ -539,6 +544,22 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
 
       connectorStatus.transactionSeqNo = (connectorStatus.transactionSeqNo ?? 0) + 1
 
+      // FR: F03.FR.09 - Build final meter values for TransactionEvent(Ended)
+      const finalMeterValues: OCPP20MeterValue[] = []
+      const energyValue = connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0
+      if (energyValue >= 0) {
+        finalMeterValues.push({
+          sampledValue: [
+            {
+              context: OCPP20ReadingContextEnumType.TRANSACTION_END,
+              measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
+              value: energyValue,
+            },
+          ],
+          timestamp: new Date(),
+        })
+      }
+
       const transactionEventRequest: OCPP20TransactionEventRequest = {
         eventType: OCPP20TransactionEventEnumType.Ended,
         evse: {
@@ -551,6 +572,11 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
           transactionId,
         },
         triggerReason: OCPP20TriggerReasonEnumType.RemoteStop,
+      }
+
+      // FR: F03.FR.09 - Include final meter values in TransactionEvent(Ended)
+      if (finalMeterValues.length > 0) {
+        transactionEventRequest.meterValue = finalMeterValues
       }
 
       await chargingStation.ocppRequestService.requestHandler<

@@ -76,10 +76,29 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     expect(typeof response.transactionId).toBe('string')
   })
 
-  // FR: F01.FR.17
-  await it('Should handle RequestStartTransaction with remoteStartId', async () => {
+  // FR: F01.FR.17, F02.FR.05
+  await it('Should include remoteStartId and idToken in TransactionEvent', async () => {
+    let capturedTransactionEvent: any = null
+    const spyChargingStation = createChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
+      connectorsCount: 3,
+      evseConfiguration: { evsesCount: 3 },
+      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+      ocppRequestService: {
+        requestHandler: async (_cs: any, _cmd: any, payload: any) => {
+          capturedTransactionEvent = payload
+          return Promise.resolve({})
+        },
+      },
+      stationInfo: {
+        ocppStrictCompliance: false,
+        ocppVersion: OCPPVersion.VERSION_201,
+      },
+      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+    })
+
     const requestWithRemoteStartId: OCPP20RequestStartTransactionRequest = {
-      evseId: 2,
+      evseId: 1,
       idToken: {
         idToken: 'REMOTE_TOKEN_456',
         type: OCPP20IdTokenEnumType.ISO15693,
@@ -88,13 +107,21 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     }
 
     const response = await (incomingRequestService as any).handleRequestStartTransaction(
-      mockChargingStation,
+      spyChargingStation,
       requestWithRemoteStartId
     )
 
     expect(response).toBeDefined()
     expect(response.status).toBe(RequestStartStopStatusEnumType.Accepted)
     expect(response.transactionId).toBeDefined()
+
+    expect(capturedTransactionEvent).toBeDefined()
+    expect(capturedTransactionEvent.transactionInfo).toBeDefined()
+    expect(capturedTransactionEvent.transactionInfo.remoteStartId).toBe(42)
+
+    expect(capturedTransactionEvent.idToken).toBeDefined()
+    expect(capturedTransactionEvent.idToken.idToken).toBe('REMOTE_TOKEN_456')
+    expect(capturedTransactionEvent.idToken.type).toBe(OCPP20IdTokenEnumType.ISO15693)
   })
 
   // FR: F01.FR.19

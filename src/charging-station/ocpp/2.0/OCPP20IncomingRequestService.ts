@@ -1301,6 +1301,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
 
       // Send TransactionEvent Started notification to CSMS with context-aware trigger reason selection
+      // FR: F01.FR.17 - remoteStartId SHALL be included in TransactionEventRequest
+      // FR: F02.FR.05 - idToken SHALL be included in TransactionEventRequest
       const context: OCPP20TransactionContext = {
         command: 'RequestStartTransaction',
         source: 'remote_command',
@@ -1311,7 +1313,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         OCPP20TransactionEventEnumType.Started,
         context,
         connectorId,
-        transactionId
+        transactionId,
+        {
+          idToken,
+          remoteStartId,
+        }
       )
 
       logger.info(
