@@ -3,6 +3,7 @@ import { beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../../src/charging-station/ChargingStation.js'
 
+import { OCPP20ServiceUtils } from '../../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import { OCPP20AuthAdapter } from '../../../../../src/charging-station/ocpp/auth/adapters/OCPP20AuthAdapter.js'
 import {
   type AuthConfiguration,
@@ -12,8 +13,9 @@ import {
   IdentifierType,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import {
+  OCPP20AuthorizationStatusEnumType,
   OCPP20IdTokenEnumType,
-  RequestStartStopStatusEnumType,
+  RequestStartStopStatusEnumType
 } from '../../../../../src/types/ocpp/2.0/Transaction.js'
 import { OCPPVersion } from '../../../../../src/types/ocpp/OCPPVersion.js'
 import {
@@ -198,7 +200,19 @@ await describe('OCPP20AuthAdapter', async () => {
   })
 
   await describe('authorizeRemote', async () => {
-    await it('should perform remote authorization successfully', async () => {
+    await it('should perform remote authorization successfully', async t => {
+      // Mock isRemoteAvailable to return true (avoids OCPP20VariableManager singleton issues)
+      t.mock.method(adapter, 'isRemoteAvailable', () => Promise.resolve(true))
+
+      // Mock sendTransactionEvent to return accepted authorization
+      t.mock.method(OCPP20ServiceUtils, 'sendTransactionEvent', () =>
+        Promise.resolve({
+          idTokenInfo: {
+            status: OCPP20AuthorizationStatusEnumType.Accepted,
+          },
+        })
+      )
+
       const identifier = createMockOCPP20Identifier('VALID_TOKEN', IdentifierType.CENTRAL)
 
       const result = await adapter.authorizeRemote(identifier, 1, 'tx_123')
@@ -220,13 +234,24 @@ await describe('OCPP20AuthAdapter', async () => {
   })
 
   await describe('isRemoteAvailable', async () => {
-    await it('should return true when station is online', async () => {
+    await it('should return true when station is online and remote start enabled', async t => {
+      t.mock.method(
+        adapter as unknown as { getVariableValue: () => Promise<string | undefined> },
+        'getVariableValue',
+        () => Promise.resolve('true')
+      )
+
       const isAvailable = await adapter.isRemoteAvailable()
       expect(isAvailable).toBe(true)
     })
 
-    await it('should return false when station is offline', async () => {
+    await it('should return false when station is offline', async t => {
       mockChargingStation.inAcceptedState = () => false
+      t.mock.method(
+        adapter as unknown as { getVariableValue: () => Promise<string | undefined> },
+        'getVariableValue',
+        () => Promise.resolve('true')
+      )
 
       const isAvailable = await adapter.isRemoteAvailable()
       expect(isAvailable).toBe(false)
