@@ -109,7 +109,6 @@ export class OCPP20RequestService extends OCPPRequestService {
         logger.debug(
           `${chargingStation.logPrefix()} ${moduleName}.requestHandler: Sending '${commandName}' request with message ID '${messageId}'`
         )
-        // TODO: pre request actions hook
         const response = (await this.sendMessage(
           chargingStation,
           messageId,
