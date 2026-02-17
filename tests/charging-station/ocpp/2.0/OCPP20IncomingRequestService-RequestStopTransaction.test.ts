@@ -15,7 +15,6 @@ import type {
 
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'
-import { AuthenticationMethod } from '../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import {
   OCPP20RequestCommand,
   OCPP20TransactionEventEnumType,
@@ -29,41 +28,9 @@ import {
 } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
+import { createMockAuthService } from '../auth/helpers/MockFactories.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from './OCPP20TestConstants.js'
 import { resetLimits, resetReportingValueSize } from './OCPP20TestUtils.js'
-
-/**
- *
- */
-function createMockAuthService (): any {
-  return {
-    authorize: () =>
-      Promise.resolve({
-        expiresAt: new Date(Date.now() + 3600000),
-        method: AuthenticationMethod.LOCAL_LIST,
-        status: 'Accepted',
-        timestamp: new Date(),
-      }),
-    clearCache: () => Promise.resolve(),
-    getConfiguration: () => ({}),
-    getStats: () =>
-      Promise.resolve({
-        avgResponseTime: 0,
-        cacheHitRate: 0,
-        failedAuth: 0,
-        lastUpdated: new Date(),
-        localUsageRate: 1,
-        remoteSuccessRate: 0,
-        successfulAuth: 0,
-        totalRequests: 0,
-      }),
-    initialize: () => Promise.resolve(),
-    invalidateCache: () => Promise.resolve(),
-    isLocallyAuthorized: () => Promise.resolve(undefined),
-    testConnectivity: () => Promise.resolve(true),
-    updateConfiguration: () => Promise.resolve(),
-  }
-}
 
 await describe('F03 - Remote Stop Transaction', async () => {
   let sentTransactionEvents: OCPP20TransactionEventRequest[] = []
