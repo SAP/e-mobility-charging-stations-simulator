@@ -1,4 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { expect } from '@std/expect'
 import { millisecondsToSeconds } from 'date-fns'
@@ -57,7 +60,7 @@ function buildWsExampleUrl (targetLength: number, fillerChar = 'a'): string {
   return base + fillerChar.repeat(targetLength - base.length)
 }
 
-await describe('OCPP20VariableManager test suite', async () => {
+await describe('B05/B06 - OCPP20VariableManager test suite', async () => {
   // Create mock ChargingStation with EVSEs for OCPP 2.0 testing
   const mockChargingStation = createChargingStation({
     baseName: TEST_CHARGING_STATION_BASE_NAME,
@@ -169,9 +172,7 @@ await describe('OCPP20VariableManager test suite', async () => {
     await it('Should handle invalid component gracefully', () => {
       const request: OCPP20GetVariableDataType[] = [
         {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
           component: { name: 'InvalidComponent' as any },
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
           variable: { name: 'SomeVariable' as any },
         },
       ]
@@ -340,7 +341,6 @@ await describe('OCPP20VariableManager test suite', async () => {
       const component: ComponentType = { name: OCPP20ComponentName.OCPPCommCtrlr }
 
       // Access private method through any casting for testing
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
       const isValid = (manager as any).isComponentValid(mockChargingStation, component)
       expect(isValid).toBe(true)
     })
@@ -350,7 +350,6 @@ await describe('OCPP20VariableManager test suite', async () => {
     await it('Should reject Connector component as unsupported even when connectors exist', () => {
       const component: ComponentType = { instance: '1', name: OCPP20ComponentName.Connector }
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
       const isValid = (manager as any).isComponentValid(mockChargingStation, component)
       expect(isValid).toBe(false)
     })
@@ -358,7 +357,6 @@ await describe('OCPP20VariableManager test suite', async () => {
     await it('Should reject invalid connector instance', () => {
       const component: ComponentType = { instance: '999', name: OCPP20ComponentName.Connector }
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
       const isValid = (manager as any).isComponentValid(mockChargingStation, component)
       expect(isValid).toBe(false)
     })
@@ -371,7 +369,6 @@ await describe('OCPP20VariableManager test suite', async () => {
       const component: ComponentType = { name: OCPP20ComponentName.OCPPCommCtrlr }
       const variable: VariableType = { name: OCPP20OptionalVariableName.HeartbeatInterval }
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
       const isSupported = (manager as any).isVariableSupported(component, variable)
       expect(isSupported).toBe(true)
     })
@@ -380,17 +377,14 @@ await describe('OCPP20VariableManager test suite', async () => {
       const component: ComponentType = { name: OCPP20ComponentName.ChargingStation }
       const variable: VariableType = { name: OCPP20OptionalVariableName.WebSocketPingInterval }
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
       const isSupported = (manager as any).isVariableSupported(component, variable)
       expect(isSupported).toBe(true)
     })
 
     await it('Should reject unknown variables', () => {
       const component: ComponentType = { name: OCPP20ComponentName.OCPPCommCtrlr }
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
       const variable: VariableType = { name: 'UnknownVariable' as any }
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
       const isSupported = (manager as any).isVariableSupported(component, variable)
       expect(isSupported).toBe(false)
     })

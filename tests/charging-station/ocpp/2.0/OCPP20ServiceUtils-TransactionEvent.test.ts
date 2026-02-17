@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { expect } from '@std/expect'
@@ -25,7 +25,7 @@ import { createChargingStation } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from './OCPP20TestConstants.js'
 import { resetLimits } from './OCPP20TestUtils.js'
 
-void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
+await describe('E01-E04 - OCPP 2.0.1 TransactionEvent Implementation', async () => {
   const mockChargingStation = createChargingStation({
     baseName: TEST_CHARGING_STATION_BASE_NAME,
     connectorsCount: 3,
@@ -47,8 +47,9 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
   // Reset limits before tests
   resetLimits(mockChargingStation)
 
-  void describe('buildTransactionEvent', () => {
-    void it('Should build valid TransactionEvent Started with sequence number 0', () => {
+  // FR: E01.FR.01 - TransactionEventRequest structure validation
+  await describe('buildTransactionEvent', async () => {
+    await it('Should build valid TransactionEvent Started with sequence number 0', () => {
       const connectorId = 1
       const transactionId = generateUUID()
       const triggerReason = OCPP20TriggerReasonEnumType.Authorized
@@ -81,7 +82,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
       expect(transactionEvent.seqNo).toBeGreaterThanOrEqual(0)
     })
 
-    void it('Should increment sequence number for subsequent events', () => {
+    await it('Should increment sequence number for subsequent events', () => {
       const connectorId = 2
       const transactionId = generateUUID()
 
@@ -127,7 +128,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
       expect(endEvent.transactionInfo.transactionId).toBe(transactionId)
     })
 
-    void it('Should handle optional parameters correctly', () => {
+    await it('Should handle optional parameters correctly', () => {
       const connectorId = 3
       const transactionId = generateUUID()
       const options = {
@@ -166,7 +167,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
       expect(transactionEvent.reservationId).toBe(67890)
     })
 
-    void it('Should validate transaction ID format (UUID)', () => {
+    await it('Should validate transaction ID format (UUID)', () => {
       const connectorId = 1
       const invalidTransactionId = 'invalid-uuid-format'
 
@@ -185,7 +186,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
       }
     })
 
-    void it('Should handle all TriggerReason enum values', () => {
+    await it('Should handle all TriggerReason enum values', () => {
       const connectorId = 1
       const transactionId = generateUUID()
 
@@ -232,8 +233,9 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
     })
   })
 
-  void describe('sendTransactionEvent', () => {
-    void it('Should send TransactionEvent and return response', async () => {
+  // FR: E02.FR.01 - TransactionEventRequest message sending
+  await describe('sendTransactionEvent', async () => {
+    await it('Should send TransactionEvent and return response', async () => {
       const connectorId = 1
       const transactionId = generateUUID()
 
@@ -250,7 +252,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
       expect(typeof response).toBe('object')
     })
 
-    void it('Should handle errors gracefully', async () => {
+    await it('Should handle errors gracefully', async () => {
       // Create a mock charging station that throws an error
       const errorMockChargingStation = createChargingStation({
         baseName: TEST_CHARGING_STATION_BASE_NAME,
@@ -287,8 +289,9 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
     })
   })
 
-  void describe('resetTransactionSequenceNumber', () => {
-    void it('Should reset sequence number to undefined', () => {
+  // FR: E01.FR.03 - Sequence number management
+  await describe('resetTransactionSequenceNumber', async () => {
+    await it('Should reset sequence number to undefined', () => {
       const connectorId = 1
 
       // First, build a transaction event to set sequence number
@@ -311,7 +314,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
       expect(connectorStatus?.transactionSeqNo).toBeUndefined()
     })
 
-    void it('Should handle non-existent connector gracefully', () => {
+    await it('Should handle non-existent connector gracefully', () => {
       const nonExistentConnectorId = 999
 
       // Should not throw error for non-existent connector
@@ -324,8 +327,9 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
     })
   })
 
-  void describe('OCPP 2.0.1 Schema Compliance', () => {
-    void it('Should produce schema-compliant TransactionEvent payloads', () => {
+  // FR: E01.FR.02 - Schema compliance verification
+  await describe('OCPP 2.0.1 Schema Compliance', async () => {
+    await it('Should produce schema-compliant TransactionEvent payloads', () => {
       const connectorId = 1
       const transactionId = generateUUID()
 
@@ -378,7 +382,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
       expect(Object.values(OCPP20TriggerReasonEnumType)).toContain(transactionEvent.triggerReason)
     })
 
-    void it('Should handle EVSE/connector mapping correctly', () => {
+    await it('Should handle EVSE/connector mapping correctly', () => {
       const connectorId = 2
       const transactionId = generateUUID()
 
@@ -400,9 +404,10 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
     })
   })
 
-  void describe('Context-Aware TriggerReason Selection', () => {
-    void describe('selectTriggerReason', () => {
-      void it('Should select RemoteStart for remote_command context with RequestStartTransaction', () => {
+  // FR: E01.FR.04 - TriggerReason selection based on transaction context
+  await describe('Context-Aware TriggerReason Selection', async () => {
+    await describe('selectTriggerReason', async () => {
+      await it('Should select RemoteStart for remote_command context with RequestStartTransaction', () => {
         const context: OCPP20TransactionContext = {
           command: 'RequestStartTransaction',
           source: 'remote_command',
@@ -416,7 +421,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
         expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.RemoteStart)
       })
 
-      void it('Should select RemoteStop for remote_command context with RequestStopTransaction', () => {
+      await it('Should select RemoteStop for remote_command context with RequestStopTransaction', () => {
         const context: OCPP20TransactionContext = {
           command: 'RequestStopTransaction',
           source: 'remote_command',
@@ -430,7 +435,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
         expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.RemoteStop)
       })
 
-      void it('Should select UnlockCommand for remote_command context with UnlockConnector', () => {
+      await it('Should select UnlockCommand for remote_command context with UnlockConnector', () => {
         const context: OCPP20TransactionContext = {
           command: 'UnlockConnector',
           source: 'remote_command',
@@ -444,7 +449,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
         expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.UnlockCommand)
       })
 
-      void it('Should select ResetCommand for remote_command context with Reset', () => {
+      await it('Should select ResetCommand for remote_command context with Reset', () => {
         const context: OCPP20TransactionContext = {
           command: 'Reset',
           source: 'remote_command',
@@ -458,7 +463,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
         expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.ResetCommand)
       })
 
-      void it('Should select Trigger for remote_command context with TriggerMessage', () => {
+      await it('Should select Trigger for remote_command context with TriggerMessage', () => {
         const context: OCPP20TransactionContext = {
           command: 'TriggerMessage',
           source: 'remote_command',
@@ -472,7 +477,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
         expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.Trigger)
       })
 
-      void it('Should select Authorized for local_authorization context with idToken', () => {
+      await it('Should select Authorized for local_authorization context with idToken', () => {
         const context: OCPP20TransactionContext = {
           authorizationMethod: 'idToken',
           source: 'local_authorization',
@@ -486,7 +491,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
         expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.Authorized)
       })
 
-      void it('Should select StopAuthorized for local_authorization context with stopAuthorized', () => {
+      await it('Should select StopAuthorized for local_authorization context with stopAuthorized', () => {
         const context: OCPP20TransactionContext = {
           authorizationMethod: 'stopAuthorized',
           source: 'local_authorization',
@@ -500,7 +505,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
         expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.StopAuthorized)
       })
 
-      void it('Should select Deauthorized when isDeauthorized flag is true', () => {
+      await it('Should select Deauthorized when isDeauthorized flag is true', () => {
         const context: OCPP20TransactionContext = {
           authorizationMethod: 'idToken',
           isDeauthorized: true,
@@ -515,7 +520,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
         expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.Deauthorized)
       })
 
-      void it('Should select CablePluggedIn for cable_action context with plugged_in', () => {
+      await it('Should select CablePluggedIn for cable_action context with plugged_in', () => {
         const context: OCPP20TransactionContext = {
           cableState: 'plugged_in',
           source: 'cable_action',
@@ -529,7 +534,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
         expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.CablePluggedIn)
       })
 
-      void it('Should select EVDetected for cable_action context with detected', () => {
+      await it('Should select EVDetected for cable_action context with detected', () => {
         const context: OCPP20TransactionContext = {
           cableState: 'detected',
           source: 'cable_action',
@@ -543,7 +548,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
         expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.EVDetected)
       })
 
-      void it('Should select EVDeparted for cable_action context with unplugged', () => {
+      await it('Should select EVDeparted for cable_action context with unplugged', () => {
         const context: OCPP20TransactionContext = {
           cableState: 'unplugged',
           source: 'cable_action',
@@ -557,7 +562,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
         expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.EVDeparted)
       })
 
-      void it('Should select ChargingStateChanged for charging_state context', () => {
+      await it('Should select ChargingStateChanged for charging_state context', () => {
         const context: OCPP20TransactionContext = {
           chargingStateChange: {
             from: OCPP20ChargingStateEnumType.Idle,
@@ -574,7 +579,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
         expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.ChargingStateChanged)
       })
 
-      void it('Should select MeterValuePeriodic for meter_value context with periodic flag', () => {
+      await it('Should select MeterValuePeriodic for meter_value context with periodic flag', () => {
         const context: OCPP20TransactionContext = {
           isPeriodicMeterValue: true,
           source: 'meter_value',
@@ -588,7 +593,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
         expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.MeterValuePeriodic)
       })
 
-      void it('Should select MeterValueClock for meter_value context without periodic flag', () => {
+      await it('Should select MeterValueClock for meter_value context without periodic flag', () => {
         const context: OCPP20TransactionContext = {
           isPeriodicMeterValue: false,
           source: 'meter_value',
@@ -602,7 +607,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
         expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.MeterValueClock)
       })
 
-      void it('Should select SignedDataReceived when isSignedDataReceived flag is true', () => {
+      await it('Should select SignedDataReceived when isSignedDataReceived flag is true', () => {
         const context: OCPP20TransactionContext = {
           isSignedDataReceived: true,
           source: 'meter_value',
@@ -616,7 +621,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
         expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.SignedDataReceived)
       })
 
-      void it('Should select appropriate system events for system_event context', () => {
+      await it('Should select appropriate system events for system_event context', () => {
         const testCases = [
           { expected: OCPP20TriggerReasonEnumType.EVDeparted, systemEvent: 'ev_departed' as const },
           { expected: OCPP20TriggerReasonEnumType.EVDetected, systemEvent: 'ev_detected' as const },
@@ -645,7 +650,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
         }
       })
 
-      void it('Should select EnergyLimitReached for energy_limit context', () => {
+      await it('Should select EnergyLimitReached for energy_limit context', () => {
         const context: OCPP20TransactionContext = {
           source: 'energy_limit',
         }
@@ -658,7 +663,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
         expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.EnergyLimitReached)
       })
 
-      void it('Should select TimeLimitReached for time_limit context', () => {
+      await it('Should select TimeLimitReached for time_limit context', () => {
         const context: OCPP20TransactionContext = {
           source: 'time_limit',
         }
@@ -671,7 +676,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
         expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.TimeLimitReached)
       })
 
-      void it('Should select AbnormalCondition for abnormal_condition context', () => {
+      await it('Should select AbnormalCondition for abnormal_condition context', () => {
         const context: OCPP20TransactionContext = {
           abnormalCondition: 'OverCurrent',
           source: 'abnormal_condition',
@@ -685,7 +690,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
         expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.AbnormalCondition)
       })
 
-      void it('Should handle priority ordering with multiple applicable contexts', () => {
+      await it('Should handle priority ordering with multiple applicable contexts', () => {
         // Test context with multiple applicable triggers - priority should be respected
         const context: OCPP20TransactionContext = {
           cableState: 'plugged_in', // Even lower priority
@@ -703,7 +708,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
         expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.RemoteStart)
       })
 
-      void it('Should fallback to Trigger for unknown context source', () => {
+      await it('Should fallback to Trigger for unknown context source', () => {
         const context: OCPP20TransactionContext = {
           source: 'unknown_source' as any, // Invalid source to test fallback
         }
@@ -716,7 +721,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
         expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.Trigger)
       })
 
-      void it('Should fallback to Trigger for incomplete context', () => {
+      await it('Should fallback to Trigger for incomplete context', () => {
         const context: OCPP20TransactionContext = {
           source: 'remote_command',
           // Missing command field
@@ -731,8 +736,8 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
       })
     })
 
-    void describe('buildTransactionEvent with context parameter', () => {
-      void it('Should build TransactionEvent with auto-selected TriggerReason from context', () => {
+    await describe('buildTransactionEvent with context parameter', async () => {
+      await it('Should build TransactionEvent with auto-selected TriggerReason from context', () => {
         const connectorId = 1
         const transactionId = generateUUID()
         const context: OCPP20TransactionContext = {
@@ -756,7 +761,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
         expect(transactionEvent.transactionInfo.transactionId).toBe(transactionId)
       })
 
-      void it('Should pass through optional parameters correctly', () => {
+      await it('Should pass through optional parameters correctly', () => {
         const connectorId = 2
         const transactionId = generateUUID()
         const context: OCPP20TransactionContext = {
@@ -788,8 +793,8 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
       })
     })
 
-    void describe('sendTransactionEvent with context parameter', () => {
-      void it('Should send TransactionEvent with context-aware TriggerReason selection', async () => {
+    await describe('sendTransactionEvent with context parameter', async () => {
+      await it('Should send TransactionEvent with context-aware TriggerReason selection', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
         const context: OCPP20TransactionContext = {
@@ -810,7 +815,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
         expect(typeof response).toBe('object')
       })
 
-      void it('Should handle context-aware error scenarios gracefully', async () => {
+      await it('Should handle context-aware error scenarios gracefully', async () => {
         // Create error mock for this test
         const errorMockChargingStation = createChargingStation({
           baseName: TEST_CHARGING_STATION_BASE_NAME,
@@ -851,8 +856,8 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
       })
     })
 
-    void describe('Backward Compatibility', () => {
-      void it('Should maintain compatibility with existing buildTransactionEvent calls', () => {
+    await describe('Backward Compatibility', async () => {
+      await it('Should maintain compatibility with existing buildTransactionEvent calls', () => {
         const connectorId = 1
         const transactionId = generateUUID()
 
@@ -872,7 +877,7 @@ void describe('OCPP 2.0.1 TransactionEvent Implementation', () => {
         expect(oldEvent.seqNo).toBe(0)
       })
 
-      void it('Should maintain compatibility with existing sendTransactionEvent calls', async () => {
+      await it('Should maintain compatibility with existing sendTransactionEvent calls', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
 

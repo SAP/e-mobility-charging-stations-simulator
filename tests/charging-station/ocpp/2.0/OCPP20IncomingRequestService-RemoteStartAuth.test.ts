@@ -1,22 +1,7 @@
-/**
- * G03.FR.03 - OCPP 2.0 Remote Start Pre-Authorization Tests
- *
- * Tests for RequestStartTransaction with pre-authorization:
- * - G03.FR.03.001: Successful remote start with valid token
- * - G03.FR.03.002: Remote start rejected with blocked token
- * - G03.FR.03.003: Remote start with group token validation
- * - G03.FR.03.004: Remote start without EVSE ID (error case)
- * - G03.FR.03.005: Remote start on occupied connector
- * - G03.FR.03.006: Remote start with charging profile
- *
- * OCPP 2.0.1 Specification References:
- * - Section G03 - Authorization
- * - RequestStartTransaction message specification
- * - TransactionEvent with RemoteStart trigger reason
- *
- * Note: These are unit tests focusing on data structure validation.
- * Integration tests with actual authorization service are in separate test suite.
- */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { expect } from '@std/expect'
 import { beforeEach, describe, it } from 'node:test'

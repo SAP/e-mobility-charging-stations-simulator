@@ -1,3 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { expect } from '@std/expect'
 import { millisecondsToSeconds } from 'date-fns'
 import { describe, it } from 'node:test'
@@ -50,8 +55,7 @@ interface OCPP20GetVariablesRequest {
   getVariableData: OCPP20GetVariableDataType[]
 }
 
-/* eslint-disable @typescript-eslint/no-floating-promises */
-describe('B07 - Set Variables', () => {
+await describe('B05 - Set Variables', async () => {
   const mockChargingStation = createChargingStation({
     baseName: TEST_CHARGING_STATION_BASE_NAME,
     connectorsCount: 3,
@@ -67,7 +71,7 @@ describe('B07 - Set Variables', () => {
   const incomingRequestService = new OCPP20IncomingRequestService()
   const svc = incomingRequestService as unknown as IncomingRequestServicePrivate
 
-  // FR: B07.FR.01
+  // FR: B05.FR.01, B05.FR.10
   it('Should handle SetVariables request with valid writable variables', () => {
     const request: OCPP20SetVariablesRequest = {
       setVariableData: [
