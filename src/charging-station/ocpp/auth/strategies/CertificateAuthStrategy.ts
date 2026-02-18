@@ -43,8 +43,9 @@ export class CertificateAuthStrategy implements AuthStrategy {
 
   /**
    * Execute certificate-based authorization
-   * @param request
-   * @param config
+   * @param request - Authorization request containing certificate identifier and context
+   * @param config - Authentication configuration settings
+   * @returns Authorization result with certificate validation status, or undefined if validation fails early
    */
   async authenticate (
     request: AuthRequest,
@@ -107,8 +108,9 @@ export class CertificateAuthStrategy implements AuthStrategy {
 
   /**
    * Check if this strategy can handle the given request
-   * @param request
-   * @param config
+   * @param request - Authorization request to evaluate for certificate-based handling
+   * @param config - Authentication configuration with certificate settings
+   * @returns True if the request contains valid certificate data and certificate auth is enabled
    */
   canHandle (request: AuthRequest, config: AuthConfiguration): boolean {
     // Only handle certificate-based authentication
@@ -163,7 +165,8 @@ export class CertificateAuthStrategy implements AuthStrategy {
 
   /**
    * Calculate certificate expiry information
-   * @param identifier
+   * @param identifier - Unified identifier containing certificate hash data
+   * @returns Expiry date extracted from certificate, or undefined if not determinable
    */
   private calculateCertificateExpiry (identifier: UnifiedIdentifier): Date | undefined {
     // In a real implementation, this would parse the actual certificate
@@ -184,10 +187,11 @@ export class CertificateAuthStrategy implements AuthStrategy {
 
   /**
    * Create a failure result with consistent format
-   * @param status
-   * @param reason
-   * @param identifier
-   * @param startTime
+   * @param status - Authorization status indicating the failure type
+   * @param reason - Human-readable description of why authorization failed
+   * @param identifier - Unified identifier from the original request
+   * @param startTime - Request start timestamp for response time calculation
+   * @returns Authorization result with failure status and diagnostic information
    */
   private createFailureResult (
     status: AuthorizationStatus,
@@ -213,7 +217,8 @@ export class CertificateAuthStrategy implements AuthStrategy {
 
   /**
    * Check if the identifier contains certificate data
-   * @param identifier
+   * @param identifier - Unified identifier to check for certificate hash data
+   * @returns True if all required certificate hash fields are present and non-empty
    */
   private hasCertificateData (identifier: UnifiedIdentifier): boolean {
     const certData = identifier.certificateHashData
@@ -229,8 +234,9 @@ export class CertificateAuthStrategy implements AuthStrategy {
 
   /**
    * Simulate certificate validation (in real implementation, this would involve crypto operations)
-   * @param request
-   * @param config
+   * @param request - Authorization request containing certificate data to validate
+   * @param config - Authentication configuration with validation strictness settings
+   * @returns True if the certificate passes simulated validation checks
    */
   private async simulateCertificateValidation (
     request: AuthRequest,
@@ -278,8 +284,8 @@ export class CertificateAuthStrategy implements AuthStrategy {
 
   /**
    * Update statistics based on result
-   * @param result
-   * @param startTime
+   * @param result - Authorization result to record in statistics
+   * @param startTime - Request start timestamp for response time calculation
    */
   private updateStatistics (result: AuthorizationResult, startTime: number): void {
     if (result.status === AuthorizationStatus.ACCEPTED) {
@@ -297,7 +303,8 @@ export class CertificateAuthStrategy implements AuthStrategy {
 
   /**
    * Validate certificate data structure and content
-   * @param identifier
+   * @param identifier - Unified identifier containing certificate hash data to validate
+   * @returns Validation result with isValid flag and optional reason on failure
    */
   private validateCertificateData (identifier: UnifiedIdentifier): {
     isValid: boolean
@@ -348,9 +355,10 @@ export class CertificateAuthStrategy implements AuthStrategy {
 
   /**
    * Validate certificate using OCPP 2.0 mechanisms
-   * @param request
-   * @param adapter
-   * @param config
+   * @param request - Authorization request with certificate identifier
+   * @param adapter - OCPP 2.0 adapter for protocol-specific operations
+   * @param config - Authentication configuration settings
+   * @returns Authorization result indicating certificate validation outcome
    */
   private async validateCertificateWithOCPP20 (
     request: AuthRequest,

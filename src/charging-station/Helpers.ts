@@ -493,6 +493,9 @@ export const resetConnectorStatus = (connectorStatus: ConnectorStatus | undefine
   delete connectorStatus.transactionIdTag
   connectorStatus.transactionEnergyActiveImportRegisterValue = 0
   delete connectorStatus.transactionBeginMeterValue
+  delete connectorStatus.transactionSeqNo
+  delete connectorStatus.transactionEvseSent
+  delete connectorStatus.transactionIdTokenSent
 }
 
 export const prepareConnectorStatus = (connectorStatus: ConnectorStatus): ConnectorStatus => {

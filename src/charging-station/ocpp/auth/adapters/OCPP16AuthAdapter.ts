@@ -41,9 +41,10 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter {
 
   /**
    * Perform remote authorization using OCPP 1.6 Authorize message
-   * @param identifier
-   * @param connectorId
-   * @param transactionId
+   * @param identifier - Unified identifier containing the idTag to authorize
+   * @param connectorId - Connector ID where authorization is requested
+   * @param transactionId - Active transaction ID if authorizing during a transaction
+   * @returns Authorization result with OCPP 1.6 status mapped to unified format
    */
   async authorizeRemote (
     identifier: UnifiedIdentifier,
@@ -116,7 +117,8 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter {
 
   /**
    * Convert unified identifier to OCPP 1.6 idTag string
-   * @param identifier
+   * @param identifier - Unified identifier to convert
+   * @returns OCPP 1.6 idTag string value
    */
   convertFromUnifiedIdentifier (identifier: UnifiedIdentifier): string {
     // For OCPP 1.6, we always return the string value
@@ -125,7 +127,8 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter {
 
   /**
    * Convert unified authorization result to OCPP 1.6 response format
-   * @param result
+   * @param result - Unified authorization result to convert
+   * @returns OCPP 1.6 AuthorizeResponse with idTagInfo structure
    */
   convertToOCPP16Response (result: AuthorizationResult): OCPP16AuthorizeResponse {
     return {
@@ -139,8 +142,9 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter {
 
   /**
    * Convert OCPP 1.6 idTag to unified identifier
-   * @param identifier
-   * @param additionalData
+   * @param identifier - OCPP 1.6 idTag string to convert
+   * @param additionalData - Optional metadata to include in unified identifier
+   * @returns Unified identifier with ID_TAG type and OCPP 1.6 version
    */
   convertToUnifiedIdentifier (
     identifier: string,
@@ -159,10 +163,11 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter {
 
   /**
    * Create authorization request from OCPP 1.6 context
-   * @param idTag
-   * @param connectorId
-   * @param transactionId
-   * @param context
+   * @param idTag - OCPP 1.6 idTag string for authorization
+   * @param connectorId - Connector where authorization is requested
+   * @param transactionId - Transaction ID if in transaction context
+   * @param context - Authorization context string (e.g., 'start', 'stop', 'remote_start')
+   * @returns Unified auth request with identifier and context information
    */
   createAuthRequest (
     idTag: string,
@@ -209,6 +214,7 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter {
 
   /**
    * Get OCPP 1.6 specific configuration schema
+   * @returns JSON schema object describing valid OCPP 1.6 auth configuration properties
    */
   getConfigurationSchema (): Record<string, unknown> {
     return {
@@ -251,6 +257,7 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter {
 
   /**
    * Get adapter-specific status information
+   * @returns Status object with online state, auth settings, and station identifier
    */
   getStatus (): Record<string, unknown> {
     return {
@@ -264,6 +271,7 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter {
 
   /**
    * Check if remote authorization is available
+   * @returns True if remote authorization is enabled and station is online
    */
   isRemoteAvailable (): Promise<boolean> {
     try {
@@ -285,7 +293,8 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter {
 
   /**
    * Check if identifier is valid for OCPP 1.6
-   * @param identifier
+   * @param identifier - Unified identifier to validate
+   * @returns True if identifier has valid ID_TAG type and length within OCPP 1.6 limits
    */
   isValidIdentifier (identifier: UnifiedIdentifier): boolean {
     // OCPP 1.6 idTag validation
@@ -311,7 +320,8 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter {
 
   /**
    * Validate adapter configuration for OCPP 1.6
-   * @param config
+   * @param config - Auth configuration to validate
+   * @returns True if configuration has valid auth methods and timeout values
    */
   validateConfiguration (config: AuthConfiguration): Promise<boolean> {
     try {
@@ -346,6 +356,7 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter {
 
   /**
    * Check if offline transactions are allowed for unknown IDs
+   * @returns True if offline transactions are allowed for unknown IDs
    */
   private getOfflineTransactionConfig (): boolean {
     try {

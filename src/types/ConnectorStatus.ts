@@ -21,8 +21,20 @@ export interface ConnectorStatus {
   status?: ConnectorStatusEnum
   transactionBeginMeterValue?: MeterValue
   transactionEnergyActiveImportRegisterValue?: number // In Wh
+  /**
+   * OCPP 2.0.1 E01.FR.16 compliance: Track if evse has been sent for current transaction.
+   * The evse field should only be provided in the first TransactionEventRequest
+   * that occurs after the EV has connected.
+   */
+  transactionEvseSent?: boolean
   transactionId?: number | string
   transactionIdTag?: string
+  /**
+   * OCPP 2.0.1 E03.FR.01 compliance: Track if idToken has been sent for current transaction.
+   * The idToken field should be provided once in the first TransactionEventRequest
+   * that occurs after the transaction has been authorized.
+   */
+  transactionIdTokenSent?: boolean
   transactionRemoteStarted?: boolean
   transactionSeqNo?: number
   transactionSetInterval?: NodeJS.Timeout

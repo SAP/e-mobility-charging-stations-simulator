@@ -313,6 +313,7 @@ export interface OCPP20TransactionContext {
     | 'cable_action'
     | 'charging_state'
     | 'energy_limit'
+    | 'external_limit'
     | 'local_authorization'
     | 'meter_value'
     | 'remote_command'

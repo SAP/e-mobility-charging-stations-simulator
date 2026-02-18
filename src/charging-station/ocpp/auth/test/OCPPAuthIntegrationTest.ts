@@ -35,6 +35,7 @@ export class OCPPAuthIntegrationTest {
 
   /**
    * Run comprehensive integration test suite
+   * @returns Test results with passed/failed counts and result messages
    */
   public async runTests (): Promise<{ failed: number; passed: number; results: string[] }> {
     const results: string[] = []
@@ -372,6 +373,7 @@ export class OCPPAuthIntegrationTest {
 
   /**
    * Test 1: Service Initialization
+   * @returns Promise that resolves when test passes
    */
   private testServiceInitialization (): Promise<void> {
     // Service is always initialized in constructor, no need to check
@@ -403,6 +405,7 @@ export class OCPPAuthIntegrationTest {
 
   /**
    * Test 3: Strategy Selection Logic
+   * @returns Promise that resolves when test passes
    */
   private testStrategySelection (): Promise<void> {
     const strategies = this.authService.getAvailableStrategies()
@@ -437,7 +440,7 @@ export class OCPPAuthIntegrationTest {
 
   /**
    * Validate authentication result structure
-   * @param result
+   * @param result - Authorization result to validate for required fields and valid enum values
    */
   private validateAuthenticationResult (result: AuthorizationResult): void {
     // Note: status, method, and timestamp are required by the AuthorizationResult interface
@@ -478,7 +481,8 @@ export class OCPPAuthIntegrationTest {
 
 /**
  * Factory function to create and run integration tests
- * @param chargingStation
+ * @param chargingStation - Charging station instance to run authentication integration tests against
+ * @returns Test results with pass/fail counts and individual test outcome messages
  */
 export async function runOCPPAuthIntegrationTests (chargingStation: ChargingStation): Promise<{
   failed: number

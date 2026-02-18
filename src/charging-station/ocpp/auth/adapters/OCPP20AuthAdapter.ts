@@ -53,9 +53,10 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
    *
    * Since OCPP 2.0 doesn't have Authorize, we simulate authorization
    * by checking if we can start a transaction with the identifier
-   * @param identifier
-   * @param connectorId
-   * @param transactionId
+   * @param identifier - Unified identifier containing the IdToken to authorize
+   * @param connectorId - EVSE/connector ID for the authorization context
+   * @param transactionId - Optional existing transaction ID for ongoing transactions
+   * @returns Authorization result with status, method, and OCPP 2.0 specific metadata
    */
   async authorizeRemote (
     identifier: UnifiedIdentifier,
@@ -229,7 +230,8 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
 
   /**
    * Convert unified identifier to OCPP 2.0 IdToken
-   * @param identifier
+   * @param identifier - Unified identifier to convert to OCPP 2.0 format
+   * @returns OCPP 2.0 IdTokenType with mapped type and additionalInfo
    */
   convertFromUnifiedIdentifier (identifier: UnifiedIdentifier): OCPP20IdTokenType {
     // Map unified type back to OCPP 2.0 type
@@ -261,7 +263,8 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
 
   /**
    * Convert unified authorization result to OCPP 2.0 response format
-   * @param result
+   * @param result - Unified authorization result to convert
+   * @returns OCPP 2.0 RequestStartStopStatusEnumType for transaction responses
    */
   convertToOCPP20Response (result: AuthorizationResult): RequestStartStopStatusEnumType {
     return mapToOCPP20Status(result.status)
@@ -269,8 +272,9 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
 
   /**
    * Convert OCPP 2.0 IdToken to unified identifier
-   * @param identifier
-   * @param additionalData
+   * @param identifier - OCPP 2.0 IdToken or raw string identifier
+   * @param additionalData - Optional metadata to include in the unified identifier
+   * @returns Unified identifier with normalized type and OCPP version metadata
    */
   convertToUnifiedIdentifier (
     identifier: OCPP20IdTokenType | string,
@@ -316,10 +320,11 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
 
   /**
    * Create authorization request from OCPP 2.0 context
-   * @param idTokenOrString
-   * @param connectorId
-   * @param transactionId
-   * @param context
+   * @param idTokenOrString - OCPP 2.0 IdToken or raw string identifier
+   * @param connectorId - Optional EVSE/connector ID for the request
+   * @param transactionId - Optional transaction ID for ongoing transactions
+   * @param context - Optional context string (e.g., 'start', 'stop', 'remote_start')
+   * @returns AuthRequest with unified identifier, context, and station metadata
    */
   createAuthRequest (
     idTokenOrString: OCPP20IdTokenType | string,
@@ -368,6 +373,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
 
   /**
    * Get OCPP 2.0 specific configuration schema
+   * @returns Configuration schema object for OCPP 2.0 authorization settings
    */
   getConfigurationSchema (): Record<string, unknown> {
     return {
@@ -410,6 +416,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
 
   /**
    * Get adapter-specific status information
+   * @returns Status object containing adapter state and capabilities
    */
   getStatus (): Record<string, unknown> {
     return {
@@ -432,6 +439,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
 
   /**
    * Check if remote authorization is available for OCPP 2.0
+   * @returns True if remote authorization is available and enabled
    */
   async isRemoteAvailable (): Promise<boolean> {
     try {
@@ -457,7 +465,8 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
 
   /**
    * Check if identifier is valid for OCPP 2.0
-   * @param identifier
+   * @param identifier - Unified identifier to validate against OCPP 2.0 rules
+   * @returns True if identifier meets OCPP 2.0 format requirements (max 36 chars, valid type)
    */
   isValidIdentifier (identifier: UnifiedIdentifier): boolean {
     // OCPP 2.0 idToken validation
@@ -487,7 +496,8 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
 
   /**
    * Validate adapter configuration for OCPP 2.0
-   * @param config
+   * @param config - Authentication configuration to validate
+   * @returns Promise resolving to true if configuration is valid for OCPP 2.0 operations
    */
   validateConfiguration (config: AuthConfiguration): Promise<boolean> {
     try {
@@ -523,10 +533,10 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
 
   /**
    * Get default variable value based on OCPP 2.0.1 specification
-   * @param component - Component name
-   * @param variable - Variable name
-   * @param useFallback - Whether to return fallback values
-   * @returns Default value according to OCPP 2.0.1 spec, or undefined
+   * @param component - OCPP component name (e.g., 'AuthCtrlr')
+   * @param variable - OCPP variable name (e.g., 'AuthorizeRemoteStart')
+   * @param useFallback - Whether to return fallback values when variable is not configured
+   * @returns Default value according to OCPP 2.0.1 spec, or undefined if no default exists
    */
   private getDefaultVariableValue (
     component: string,
@@ -560,6 +570,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
 
   /**
    * Check if offline authorization is allowed
+   * @returns True if offline authorization is enabled
    */
   private getOfflineAuthorizationConfig (): boolean {
     try {
@@ -577,10 +588,10 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
 
   /**
    * Get variable value from OCPP 2.0 variable system
-   * @param component - Component name (e.g., 'AuthCtrlr')
-   * @param variable - Variable name (e.g., 'AuthorizeRemoteStart')
+   * @param component - OCPP component name (e.g., 'AuthCtrlr')
+   * @param variable - OCPP variable name (e.g., 'AuthorizeRemoteStart')
    * @param useDefaultFallback - If true, use OCPP 2.0.1 spec default values when variable is not found
-   * @returns Variable value as string, or undefined if not found
+   * @returns Promise resolving to variable value as string, or undefined if not available
    */
   private getVariableValue (
     component: string,
@@ -634,7 +645,8 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
 
   /**
    * Map unified identifier type to OCPP 2.0 IdToken type
-   * @param unifiedType
+   * @param unifiedType - Unified identifier type to convert
+   * @returns Corresponding OCPP 2.0 IdTokenEnumType value
    */
   private mapFromUnifiedIdentifierType (unifiedType: IdentifierType): OCPP20IdTokenEnumType {
     switch (unifiedType) {
@@ -696,7 +708,8 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
 
   /**
    * Map OCPP 2.0 IdToken type to unified identifier type
-   * @param ocpp20Type
+   * @param ocpp20Type - OCPP 2.0 IdTokenEnumType to convert
+   * @returns Corresponding unified IdentifierType value
    */
   private mapToUnifiedIdentifierType (ocpp20Type: OCPP20IdTokenEnumType): IdentifierType {
     switch (ocpp20Type) {
@@ -723,8 +736,8 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
   /**
    * Parse and validate a boolean variable value
    * @param value - String value to parse ('true', 'false', '1', '0')
-   * @param defaultValue - Default value if parsing fails
-   * @returns Parsed boolean value
+   * @param defaultValue - Fallback value when parsing fails or value is undefined
+   * @returns Parsed boolean value, or defaultValue if parsing fails
    */
   private parseBooleanVariable (value: string | undefined, defaultValue: boolean): boolean {
     if (value == null) {
@@ -749,11 +762,11 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
 
   /**
    * Parse and validate an integer variable value
-   * @param value - String value to parse
-   * @param defaultValue - Default value if parsing fails
-   * @param min - Minimum allowed value (optional)
-   * @param max - Maximum allowed value (optional)
-   * @returns Parsed integer value
+   * @param value - String value to parse as integer
+   * @param defaultValue - Fallback value when parsing fails or value is undefined
+   * @param min - Optional minimum allowed value (clamped if exceeded)
+   * @param max - Optional maximum allowed value (clamped if exceeded)
+   * @returns Parsed integer value clamped to min/max bounds, or defaultValue if parsing fails
    */
   private parseIntegerVariable (
     value: string | undefined,

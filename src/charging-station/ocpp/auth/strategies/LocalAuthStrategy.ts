@@ -47,8 +47,9 @@ export class LocalAuthStrategy implements AuthStrategy {
 
   /**
    * Authenticate using local resources (local list, cache, offline fallback)
-   * @param request
-   * @param config
+   * @param request - Authorization request with identifier and context
+   * @param config - Authentication configuration controlling local auth behavior
+   * @returns Authorization result from local list, cache, or offline fallback; undefined if not found locally
    */
   public async authenticate (
     request: AuthRequest,
@@ -123,9 +124,9 @@ export class LocalAuthStrategy implements AuthStrategy {
 
   /**
    * Cache an authorization result
-   * @param identifier
-   * @param result
-   * @param ttl
+   * @param identifier - Unique identifier string to use as cache key
+   * @param result - Authorization result to store in cache
+   * @param ttl - Optional time-to-live in seconds for cache entry
    */
   public async cacheResult (
     identifier: string,
@@ -148,8 +149,9 @@ export class LocalAuthStrategy implements AuthStrategy {
 
   /**
    * Check if this strategy can handle the authentication request
-   * @param request
-   * @param config
+   * @param request - Authorization request to evaluate
+   * @param config - Authentication configuration with local auth settings
+   * @returns True if local list, cache, or offline authorization is enabled
    */
   public canHandle (request: AuthRequest, config: AuthConfiguration): boolean {
     // Can handle if local list is enabled OR cache is enabled OR offline is allowed
@@ -162,6 +164,7 @@ export class LocalAuthStrategy implements AuthStrategy {
 
   /**
    * Cleanup strategy resources
+   * @returns Promise that resolves when cleanup is complete
    */
   public cleanup (): Promise<void> {
     logger.info('LocalAuthStrategy: Cleaning up...')
@@ -182,6 +185,7 @@ export class LocalAuthStrategy implements AuthStrategy {
 
   /**
    * Get strategy statistics
+   * @returns Strategy statistics including hit rates, request counts, and cache status
    */
   public async getStats (): Promise<Record<string, unknown>> {
     const cacheStats = this.authCache ? await this.authCache.getStats() : null
@@ -207,7 +211,8 @@ export class LocalAuthStrategy implements AuthStrategy {
 
   /**
    * Initialize strategy with configuration and dependencies
-   * @param config
+   * @param config - Authentication configuration for strategy setup
+   * @returns Promise that resolves when initialization completes
    */
   public initialize (config: AuthConfiguration): Promise<void> {
     try {
@@ -248,7 +253,7 @@ export class LocalAuthStrategy implements AuthStrategy {
 
   /**
    * Invalidate cached result for identifier
-   * @param identifier
+   * @param identifier - Unique identifier string to remove from cache
    */
   public async invalidateCache (identifier: string): Promise<void> {
     if (!this.authCache) {
@@ -267,7 +272,8 @@ export class LocalAuthStrategy implements AuthStrategy {
 
   /**
    * Check if identifier is in local authorization list
-   * @param identifier
+   * @param identifier - Unique identifier string to look up
+   * @returns True if the identifier exists in the local authorization list
    */
   public async isInLocalList (identifier: string): Promise<boolean> {
     if (!this.localAuthListManager) {
@@ -286,7 +292,7 @@ export class LocalAuthStrategy implements AuthStrategy {
 
   /**
    * Set auth cache (for dependency injection)
-   * @param cache
+   * @param cache - Authorization cache instance to use for result caching
    */
   public setAuthCache (cache: AuthCache): void {
     this.authCache = cache
@@ -294,7 +300,7 @@ export class LocalAuthStrategy implements AuthStrategy {
 
   /**
    * Set local auth list manager (for dependency injection)
-   * @param manager
+   * @param manager - Local auth list manager instance for identifier lookups
    */
   public setLocalAuthListManager (manager: LocalAuthListManager): void {
     this.localAuthListManager = manager
@@ -302,8 +308,9 @@ export class LocalAuthStrategy implements AuthStrategy {
 
   /**
    * Check authorization cache for identifier
-   * @param request
-   * @param config
+   * @param request - Authorization request containing identifier to look up
+   * @param config - Authentication configuration (unused but required by interface)
+   * @returns Cached authorization result if found and not expired; undefined otherwise
    */
   private async checkAuthCache (
     request: AuthRequest,
@@ -348,8 +355,9 @@ export class LocalAuthStrategy implements AuthStrategy {
 
   /**
    * Check local authorization list for identifier
-   * @param request
-   * @param config
+   * @param request - Authorization request containing identifier to look up
+   * @param config - Authentication configuration (unused but required by interface)
+   * @returns Authorization result from local list if found; undefined otherwise
    */
   private async checkLocalAuthList (
     request: AuthRequest,
@@ -405,9 +413,10 @@ export class LocalAuthStrategy implements AuthStrategy {
 
   /**
    * Enhance authorization result with method and timing info
-   * @param result
-   * @param method
-   * @param startTime
+   * @param result - Original authorization result to enhance
+   * @param method - Authentication method used to obtain the result
+   * @param startTime - Request start timestamp for response time calculation
+   * @returns Enhanced authorization result with strategy metadata and timing
    */
   private enhanceResult (
     result: AuthorizationResult,
@@ -430,8 +439,9 @@ export class LocalAuthStrategy implements AuthStrategy {
 
   /**
    * Handle offline fallback behavior when remote services unavailable
-   * @param request
-   * @param config
+   * @param request - Authorization request with context information
+   * @param config - Authentication configuration with offline settings
+   * @returns Authorization result based on offline policy; always returns a result
    */
   private handleOfflineFallback (
     request: AuthRequest,
@@ -475,7 +485,8 @@ export class LocalAuthStrategy implements AuthStrategy {
 
   /**
    * Map local auth list entry status to unified authorization status
-   * @param status
+   * @param status - Status string from local auth list entry
+   * @returns Unified authorization status corresponding to the entry status
    */
   private mapEntryStatus (status: string): AuthorizationStatus {
     switch (status.toLowerCase()) {

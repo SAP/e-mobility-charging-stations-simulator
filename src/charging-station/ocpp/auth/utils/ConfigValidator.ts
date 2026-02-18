@@ -12,7 +12,7 @@ export class AuthConfigValidator {
   /**
    * Validate authentication configuration
    * @param config - Configuration to validate
-   * @throws AuthenticationError if configuration is invalid
+   * @throws {AuthenticationError} If configuration is invalid
    * @example
    * ```typescript
    * const config: AuthConfiguration = {
@@ -45,7 +45,7 @@ export class AuthConfigValidator {
 
   /**
    * Check if at least one authentication method is enabled
-   * @param config
+   * @param config - Authentication configuration to check for enabled methods
    */
   private static checkAuthMethodsEnabled (config: AuthConfiguration): void {
     const hasLocalList = config.localAuthListEnabled
@@ -77,7 +77,7 @@ export class AuthConfigValidator {
 
   /**
    * Validate cache-related configuration
-   * @param config
+   * @param config - Authentication configuration containing cache settings to validate
    */
   private static validateCacheConfig (config: AuthConfiguration): void {
     if (config.authorizationCacheLifetime !== undefined) {
@@ -136,7 +136,7 @@ export class AuthConfigValidator {
 
   /**
    * Validate offline-related configuration
-   * @param config
+   * @param config - Authentication configuration containing offline settings to validate
    */
   private static validateOfflineConfig (config: AuthConfiguration): void {
     // If offline transactions are allowed for unknown IDs, offline mode should be enabled
@@ -160,7 +160,7 @@ export class AuthConfigValidator {
 
   /**
    * Validate timeout configuration
-   * @param config
+   * @param config - Authentication configuration containing timeout value to validate
    */
   private static validateTimeout (config: AuthConfiguration): void {
     if (!Number.isInteger(config.authorizationTimeout)) {

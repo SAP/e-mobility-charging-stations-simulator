@@ -22,8 +22,8 @@ export class AuthValidators {
 
   /**
    * Validate cache TTL value
-   * @param ttl - The TTL value in seconds
-   * @returns True if valid, false otherwise
+   * @param ttl - Cache time-to-live duration in seconds, or undefined for optional parameter
+   * @returns True if the TTL is undefined or a valid non-negative finite number, false otherwise
    */
   static isValidCacheTTL (ttl: number | undefined): boolean {
     if (ttl === undefined) {
@@ -35,8 +35,8 @@ export class AuthValidators {
 
   /**
    * Validate connector ID
-   * @param connectorId - The connector ID to validate
-   * @returns True if valid, false otherwise
+   * @param connectorId - Charging connector identifier (0 or positive integer), or undefined for optional parameter
+   * @returns True if the connector ID is undefined or a valid non-negative integer, false otherwise
    */
   static isValidConnectorId (connectorId: number | undefined): boolean {
     if (connectorId === undefined) {
@@ -48,8 +48,8 @@ export class AuthValidators {
 
   /**
    * Validate that a string is a valid identifier value
-   * @param value - The value to validate
-   * @returns True if valid, false otherwise
+   * @param value - Authentication identifier string to validate (idTag or IdToken value)
+   * @returns True if the value is a non-empty string with at least one non-whitespace character, false otherwise
    */
   static isValidIdentifierValue (value: string): boolean {
     if (typeof value !== 'string' || value.length === 0) {
@@ -62,8 +62,8 @@ export class AuthValidators {
 
   /**
    * Sanitize idTag for OCPP 1.6 (max 20 characters)
-   * @param idTag - The idTag to sanitize
-   * @returns Sanitized idTag truncated to maximum length, or empty string for invalid input
+   * @param idTag - Raw idTag input to sanitize (may be any type)
+   * @returns Trimmed and truncated idTag string conforming to OCPP 1.6 length limit, or empty string for non-string input
    */
   static sanitizeIdTag (idTag: unknown): string {
     // Return empty string for non-string input
@@ -80,8 +80,8 @@ export class AuthValidators {
 
   /**
    * Sanitize IdToken for OCPP 2.0 (max 36 characters)
-   * @param idToken - The IdToken to sanitize
-   * @returns Sanitized IdToken truncated to maximum length, or empty string for invalid input
+   * @param idToken - Raw IdToken input to sanitize (may be any type)
+   * @returns Trimmed and truncated IdToken string conforming to OCPP 2.0 length limit, or empty string for non-string input
    */
   static sanitizeIdToken (idToken: unknown): string {
     // Return empty string for non-string input
@@ -98,8 +98,8 @@ export class AuthValidators {
 
   /**
    * Validate authentication configuration
-   * @param config - The authentication configuration to validate
-   * @returns True if the configuration is valid, false otherwise
+   * @param config - Authentication configuration object to validate (may be any type)
+   * @returns True if the configuration has valid enabled strategies, timeouts, and priority order, false otherwise
    */
   static validateAuthConfiguration (config: unknown): boolean {
     if (!config || typeof config !== 'object') {
@@ -149,8 +149,8 @@ export class AuthValidators {
 
   /**
    * Validate unified identifier format and constraints
-   * @param identifier - The unified identifier to validate
-   * @returns True if the identifier is valid, false otherwise
+   * @param identifier - Unified identifier object to validate (may be any type)
+   * @returns True if the identifier has a valid type and value within OCPP length constraints, false otherwise
    */
   static validateIdentifier (identifier: unknown): boolean {
     // Check if identifier itself is valid
