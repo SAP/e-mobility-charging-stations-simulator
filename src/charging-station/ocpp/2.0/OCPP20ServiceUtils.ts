@@ -138,14 +138,14 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       connectorStatus.transactionSeqNo = connectorStatus.transactionSeqNo + 1
     }
 
-    // Build EVSE object
-    const evse: OCPP20EVSEType = {
-      id: evseId,
-    }
-
-    // Add connector ID only if different from EVSE ID (OCPP 2.0.1 requirement)
-    if (connectorId !== evseId) {
-      evse.connectorId = connectorId
+    // Build EVSE object (E01.FR.16: only include in first TransactionEvent after EV connected)
+    let evse: OCPP20EVSEType | undefined
+    if (connectorStatus.transactionEvseSent !== true) {
+      evse = { id: evseId }
+      if (connectorId !== evseId) {
+        evse.connectorId = connectorId
+      }
+      connectorStatus.transactionEvseSent = true
     }
 
     // Build transaction info object
@@ -167,16 +167,21 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     // Build the complete TransactionEvent request
     const transactionEventRequest: OCPP20TransactionEventRequest = {
       eventType,
-      evse,
       seqNo: connectorStatus.transactionSeqNo,
       timestamp: new Date(),
       transactionInfo,
       triggerReason,
     }
 
-    // Add optional fields
-    if (options.idToken !== undefined) {
+    // E01.FR.16: Include evse only in first TransactionEvent
+    if (evse !== undefined) {
+      transactionEventRequest.evse = evse
+    }
+
+    // E03.FR.01: Include idToken only once per transaction (first event after authorization)
+    if (options.idToken !== undefined && connectorStatus.transactionIdTokenSent !== true) {
       transactionEventRequest.idToken = options.idToken
+      connectorStatus.transactionIdTokenSent = true
     }
     if (options.meterValue !== undefined && options.meterValue.length > 0) {
       transactionEventRequest.meterValue = options.meterValue
@@ -487,8 +492,11 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
           )
           return results
         }
-      } catch {
-        /* ignore */
+      } catch (error) {
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.${context}: BytesPerMessage limit calculation failed`,
+          error
+        )
       }
     }
     return currentResults
@@ -728,7 +736,9 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         (context.source === 'energy_limit' &&
           entry.triggerReason === OCPP20TriggerReasonEnumType.EnergyLimitReached) ||
         (context.source === 'time_limit' &&
-          entry.triggerReason === OCPP20TriggerReasonEnumType.TimeLimitReached)
+          entry.triggerReason === OCPP20TriggerReasonEnumType.TimeLimitReached) ||
+        (context.source === 'external_limit' &&
+          entry.triggerReason === OCPP20TriggerReasonEnumType.ChargingRateChanged)
       ) {
         return entry.triggerReason
       }

@@ -8,6 +8,8 @@ import type {
 } from '../interfaces/OCPPAuthService.js'
 import type { AuthConfiguration } from '../types/AuthTypes.js'
 
+import { OCPPError } from '../../../../exception/OCPPError.js'
+import { ErrorType } from '../../../../types/index.js'
 import { OCPPVersion } from '../../../../types/ocpp/OCPPVersion.js'
 import { InMemoryAuthCache } from '../cache/InMemoryAuthCache.js'
 import { AuthConfigValidator } from '../utils/ConfigValidator.js'
@@ -32,8 +34,9 @@ import { AuthConfigValidator } from '../utils/ConfigValidator.js'
 export class AuthComponentFactory {
   /**
    * Create OCPP adapters based on charging station version
-   * @param chargingStation - The charging station
-   * @returns Object with version-specific adapters
+   * @param chargingStation - Charging station instance used to determine OCPP version
+   * @returns Object containing version-specific adapter (OCPP 1.6 or 2.0.x)
+   * @throws {Error} When OCPP version is not found or unsupported
    */
   static async createAdapters (chargingStation: ChargingStation): Promise<{
     ocpp16Adapter?: OCPP16AuthAdapter
@@ -42,7 +45,7 @@ export class AuthComponentFactory {
     const ocppVersion = chargingStation.stationInfo?.ocppVersion
 
     if (!ocppVersion) {
-      throw new Error('OCPP version not found in charging station')
+      throw new OCPPError(ErrorType.INTERNAL_ERROR, 'OCPP version not found in charging station')
     }
 
     switch (ocppVersion) {
@@ -58,14 +61,17 @@ export class AuthComponentFactory {
         return { ocpp20Adapter: new OCPP20AuthAdapter(chargingStation) }
       }
       default:
-        throw new Error(`Unsupported OCPP version: ${String(ocppVersion)}`)
+        throw new OCPPError(
+          ErrorType.INTERNAL_ERROR,
+          `Unsupported OCPP version: ${String(ocppVersion)}`
+        )
     }
   }
 
   /**
    * Create authorization cache with rate limiting
-   * @param config - Authentication configuration
-   * @returns AuthCache instance with configured TTL and rate limiting
+   * @param config - Authentication configuration specifying cache TTL and size limits
+   * @returns In-memory cache instance with configured TTL and rate limiting
    */
   static createAuthCache (config: AuthConfiguration): AuthCache {
     return new InMemoryAuthCache({
@@ -81,12 +87,12 @@ export class AuthComponentFactory {
 
   /**
    * Create certificate authentication strategy
-   * @param chargingStation - The charging station
-   * @param adapters - OCPP adapters
-   * @param adapters.ocpp16Adapter
-   * @param adapters.ocpp20Adapter
-   * @param config - Authentication configuration
-   * @returns Certificate strategy
+   * @param chargingStation - Charging station instance for certificate validation
+   * @param adapters - Container holding OCPP version-specific adapters
+   * @param adapters.ocpp16Adapter - Optional OCPP 1.6 protocol adapter
+   * @param adapters.ocpp20Adapter - Optional OCPP 2.0.x protocol adapter
+   * @param config - Authentication configuration with certificate settings
+   * @returns Initialized certificate-based authentication strategy
    */
   static async createCertificateStrategy (
     chargingStation: ChargingStation,
@@ -110,9 +116,9 @@ export class AuthComponentFactory {
 
   /**
    * Create local auth list manager (delegated to service implementation)
-   * @param chargingStation - The charging station
-   * @param config - Authentication configuration
-   * @returns undefined (manager creation delegated to service)
+   * @param chargingStation - Charging station instance (unused, reserved for future use)
+   * @param config - Authentication configuration (unused, reserved for future use)
+   * @returns Always undefined as manager creation is delegated to service
    */
   static createLocalAuthListManager (
     chargingStation: ChargingStation,
@@ -125,10 +131,10 @@ export class AuthComponentFactory {
 
   /**
    * Create local authentication strategy
-   * @param manager - Local auth list manager
-   * @param cache - Authorization cache
-   * @param config - Authentication configuration
-   * @returns Local strategy or undefined if disabled
+   * @param manager - Local auth list manager for validating identifiers
+   * @param cache - Authorization cache for storing auth results
+   * @param config - Authentication configuration controlling local auth behavior
+   * @returns Local strategy instance or undefined if local auth disabled
    */
   static async createLocalStrategy (
     manager: LocalAuthListManager | undefined,
@@ -148,12 +154,12 @@ export class AuthComponentFactory {
 
   /**
    * Create remote authentication strategy
-   * @param adapters - OCPP adapters
-   * @param adapters.ocpp16Adapter
-   * @param adapters.ocpp20Adapter
-   * @param cache - Authorization cache
-   * @param config - Authentication configuration
-   * @returns Remote strategy or undefined if disabled
+   * @param adapters - Container holding OCPP version-specific adapters
+   * @param adapters.ocpp16Adapter - Optional OCPP 1.6 protocol adapter
+   * @param adapters.ocpp20Adapter - Optional OCPP 2.0.x protocol adapter
+   * @param cache - Authorization cache for storing remote auth results
+   * @param config - Authentication configuration controlling remote auth behavior
+   * @returns Remote strategy instance or undefined if remote auth disabled
    */
   static async createRemoteStrategy (
     adapters: { ocpp16Adapter?: OCPP16AuthAdapter; ocpp20Adapter?: OCPP20AuthAdapter },
@@ -181,14 +187,14 @@ export class AuthComponentFactory {
 
   /**
    * Create all authentication strategies based on configuration
-   * @param chargingStation - The charging station
-   * @param adapters - OCPP adapters
-   * @param adapters.ocpp16Adapter
-   * @param adapters.ocpp20Adapter
-   * @param manager - Local auth list manager
-   * @param cache - Authorization cache
-   * @param config - Authentication configuration
-   * @returns Array of strategies sorted by priority
+   * @param chargingStation - Charging station instance for strategy initialization
+   * @param adapters - Container holding OCPP version-specific adapters
+   * @param adapters.ocpp16Adapter - Optional OCPP 1.6 protocol adapter
+   * @param adapters.ocpp20Adapter - Optional OCPP 2.0.x protocol adapter
+   * @param manager - Local auth list manager for local strategy
+   * @param cache - Authorization cache shared across strategies
+   * @param config - Authentication configuration controlling strategy creation
+   * @returns Array of initialized strategies sorted by priority (lowest first)
    */
   static async createStrategies (
     chargingStation: ChargingStation,
@@ -221,8 +227,8 @@ export class AuthComponentFactory {
 
   /**
    * Validate authentication configuration
-   * @param config - Configuration to validate
-   * @throws Error if configuration is invalid
+   * @param config - Authentication configuration to validate against schema
+   * @throws {Error} When configuration contains invalid or missing required values
    */
   static validateConfiguration (config: AuthConfiguration): void {
     AuthConfigValidator.validate(config)

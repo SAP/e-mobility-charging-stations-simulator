@@ -1,6 +1,6 @@
 import type { AuthorizationResult, AuthRequest, UnifiedIdentifier } from '../types/AuthTypes.js'
 
-import { AuthContext, AuthorizationStatus } from '../types/AuthTypes.js'
+import { AuthContext, AuthenticationMethod, AuthorizationStatus } from '../types/AuthTypes.js'
 
 /**
  * Authentication helper functions
@@ -65,14 +65,13 @@ export class AuthHelpers {
    */
   static createRejectedResult (
     status: AuthorizationStatus,
-    method: string,
+    method: AuthenticationMethod,
     reason?: string
   ): AuthorizationResult {
     return {
       additionalInfo: reason ? { reason } : undefined,
       isOffline: false,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-      method: method as any, // Type assertion needed for method string
+      method,
       status,
       timestamp: new Date(),
     }

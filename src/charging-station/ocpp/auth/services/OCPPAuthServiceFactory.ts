@@ -1,6 +1,8 @@
 import type { ChargingStation } from '../../../ChargingStation.js'
 import type { OCPPAuthService } from '../interfaces/OCPPAuthService.js'
 
+import { OCPPError } from '../../../../exception/OCPPError.js'
+import { ErrorType } from '../../../../types/index.js'
 import { logger } from '../../../../utils/Logger.js'
 import { OCPPAuthServiceImpl } from './OCPPAuthServiceImpl.js'
 
@@ -79,7 +81,8 @@ export class OCPPAuthServiceFactory {
     if (this.instances.has(stationId)) {
       const existingInstance = this.instances.get(stationId)
       if (!existingInstance) {
-        throw new Error(
+        throw new OCPPError(
+          ErrorType.INTERNAL_ERROR,
           `${moduleName}.getInstance: No cached instance found for station ${stationId}`
         )
       }

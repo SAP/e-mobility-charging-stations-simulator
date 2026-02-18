@@ -49,8 +49,8 @@ export class RemoteAuthStrategy implements AuthStrategy {
 
   /**
    * Add an OCPP adapter for a specific version
-   * @param version
-   * @param adapter
+   * @param version - OCPP protocol version the adapter handles
+   * @param adapter - OCPP authentication adapter instance for remote operations
    */
   public addAdapter (version: OCPPVersion, adapter: OCPPAuthAdapter): void {
     this.adapters.set(version, adapter)
@@ -59,8 +59,9 @@ export class RemoteAuthStrategy implements AuthStrategy {
 
   /**
    * Authenticate using remote CSMS authorization
-   * @param request
-   * @param config
+   * @param request - Authorization request with identifier and context
+   * @param config - Authentication configuration with timeout and cache settings
+   * @returns Authorization result from CSMS, or undefined if remote service unavailable
    */
   public async authenticate (
     request: AuthRequest,
@@ -146,8 +147,9 @@ export class RemoteAuthStrategy implements AuthStrategy {
 
   /**
    * Check if this strategy can handle the authentication request
-   * @param request
-   * @param config
+   * @param request - Authorization request to evaluate
+   * @param config - Authentication configuration with remote authorization settings
+   * @returns True if an adapter exists for the OCPP version and remote auth is enabled
    */
   public canHandle (request: AuthRequest, config: AuthConfiguration): boolean {
     // Can handle if we have an adapter for the identifier's OCPP version
@@ -161,6 +163,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
 
   /**
    * Cleanup strategy resources
+   * @returns Promise that resolves when cleanup is complete
    */
   public cleanup (): Promise<void> {
     logger.info('RemoteAuthStrategy: Cleaning up...')
@@ -184,6 +187,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
 
   /**
    * Get strategy statistics
+   * @returns Strategy statistics including success rates, response times, and error counts
    */
   public async getStats (): Promise<Record<string, unknown>> {
     const cacheStats = this.authCache ? await this.authCache.getStats() : null
@@ -223,7 +227,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
 
   /**
    * Initialize strategy with configuration and adapters
-   * @param config
+   * @param config - Authentication configuration for adapter validation
    */
   public async initialize (config: AuthConfiguration): Promise<void> {
     try {
@@ -270,7 +274,8 @@ export class RemoteAuthStrategy implements AuthStrategy {
 
   /**
    * Remove an OCPP adapter
-   * @param version
+   * @param version - OCPP protocol version of the adapter to remove
+   * @returns True if the adapter was found and removed
    */
   public removeAdapter (version: OCPPVersion): boolean {
     const removed = this.adapters.delete(version)
@@ -282,7 +287,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
 
   /**
    * Set auth cache (for dependency injection)
-   * @param cache
+   * @param cache - Authorization cache instance for storing successful authorizations
    */
   public setAuthCache (cache: AuthCache): void {
     this.authCache = cache
@@ -290,6 +295,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
 
   /**
    * Test connectivity to remote authorization service
+   * @returns True if at least one OCPP adapter can reach its remote service
    */
   public async testConnectivity (): Promise<boolean> {
     if (!this.isInitialized || this.adapters.size === 0) {
@@ -313,9 +319,9 @@ export class RemoteAuthStrategy implements AuthStrategy {
 
   /**
    * Cache successful authorization results
-   * @param identifier
-   * @param result
-   * @param ttl
+   * @param identifier - Unique identifier string to use as cache key
+   * @param result - Authorization result to store in cache
+   * @param ttl - Optional time-to-live in seconds for cache entry
    */
   private async cacheResult (
     identifier: string,
@@ -342,8 +348,9 @@ export class RemoteAuthStrategy implements AuthStrategy {
 
   /**
    * Check if remote authorization service is available
-   * @param adapter
-   * @param config
+   * @param adapter - OCPP adapter to check for remote service availability
+   * @param config - Authentication configuration with timeout settings
+   * @returns True if the remote service responds within timeout
    */
   private async checkRemoteAvailability (
     adapter: OCPPAuthAdapter,
@@ -358,7 +365,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
         availabilityPromise,
         new Promise<boolean>((_resolve, reject) => {
           setTimeout(() => {
-            reject(new Error('Availability check timeout'))
+            reject(new AuthenticationError('Availability check timeout', AuthErrorCode.TIMEOUT))
           }, timeout)
         }),
       ])
@@ -373,8 +380,9 @@ export class RemoteAuthStrategy implements AuthStrategy {
 
   /**
    * Enhance authorization result with method and timing info
-   * @param result
-   * @param startTime
+   * @param result - Original authorization result from remote service
+   * @param startTime - Request start timestamp for response time calculation
+   * @returns Enhanced authorization result with strategy metadata and timing
    */
   private enhanceResult (result: AuthorizationResult, startTime: number): AuthorizationResult {
     const responseTime = Date.now() - startTime
@@ -393,10 +401,11 @@ export class RemoteAuthStrategy implements AuthStrategy {
 
   /**
    * Perform the actual remote authorization with timeout handling
-   * @param request
-   * @param adapter
-   * @param config
-   * @param startTime
+   * @param request - Authorization request with identifier and context
+   * @param adapter - OCPP adapter to use for remote authorization
+   * @param config - Authentication configuration with timeout settings
+   * @param startTime - Request start timestamp for logging
+   * @returns Authorization result from remote service, or undefined on timeout
    */
   private async performRemoteAuthorization (
     request: AuthRequest,
@@ -458,7 +467,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
 
   /**
    * Update response time statistics
-   * @param startTime
+   * @param startTime - Request start timestamp for calculating elapsed time
    */
   private updateResponseTimeStats (startTime: number): void {
     const responseTime = Date.now() - startTime
