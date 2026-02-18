@@ -333,6 +333,8 @@ await describe('E01-E04 - OCPP 2.0.1 TransactionEvent Implementation', async () 
       const connectorId = 1
       const transactionId = generateUUID()
 
+      OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+
       const transactionEvent = OCPP20ServiceUtils.buildTransactionEvent(
         mockChargingStation,
         OCPP20TransactionEventEnumType.Started,
@@ -385,6 +387,8 @@ await describe('E01-E04 - OCPP 2.0.1 TransactionEvent Implementation', async () 
     await it('Should handle EVSE/connector mapping correctly', () => {
       const connectorId = 2
       const transactionId = generateUUID()
+
+      OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
 
       const transactionEvent = OCPP20ServiceUtils.buildTransactionEvent(
         mockChargingStation,

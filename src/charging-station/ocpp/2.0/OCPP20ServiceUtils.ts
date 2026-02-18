@@ -599,10 +599,11 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
   }
 
   /**
-   * Resets the TransactionEvent sequence number for a connector when starting a new transaction.
+   * Resets all TransactionEvent-related state for a connector when starting a new transaction.
    * According to OCPP 2.0.1 Section 1.3.2.1, sequence numbers should start at 0 for new transactions.
+   * This also resets the EVSE and IdToken sent flags per E01.FR.16 and E03.FR.01.
    * @param chargingStation - The charging station instance
-   * @param connectorId - The connector ID for which to reset the sequence number
+   * @param connectorId - The connector ID for which to reset the transaction state
    */
   public static resetTransactionSequenceNumber (
     chargingStation: ChargingStation,
@@ -611,8 +612,10 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
     if (connectorStatus != null) {
       connectorStatus.transactionSeqNo = undefined // Reset to undefined, will be set to 0 on first use
+      connectorStatus.transactionEvseSent = undefined // E01.FR.16: EVSE must be sent in first event of new transaction
+      connectorStatus.transactionIdTokenSent = undefined // E03.FR.01: IdToken must be sent in first event after authorization
       logger.debug(
-        `${chargingStation.logPrefix()} OCPP20ServiceUtils.resetTransactionSequenceNumber: Reset sequence number for connector ${connectorId.toString()}`
+        `${chargingStation.logPrefix()} OCPP20ServiceUtils.resetTransactionSequenceNumber: Reset transaction state for connector ${connectorId.toString()}`
       )
     }
   }
