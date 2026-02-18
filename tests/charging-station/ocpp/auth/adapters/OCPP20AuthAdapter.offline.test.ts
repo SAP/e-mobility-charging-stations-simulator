@@ -13,7 +13,7 @@
  */
 
 import { expect } from '@std/expect'
-import { beforeEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../../src/charging-station/ChargingStation.js'
 
@@ -34,6 +34,11 @@ await describe('OCPP20AuthAdapter - G03.FR.02 Offline Authorization', async () =
     } as unknown as ChargingStation
 
     adapter = new OCPP20AuthAdapter(mockChargingStation)
+  })
+
+  afterEach(() => {
+    adapter = undefined as unknown as OCPP20AuthAdapter
+    mockChargingStation = undefined as unknown as ChargingStation
   })
 
   await describe('G03.FR.02.001 - Offline detection', async () => {

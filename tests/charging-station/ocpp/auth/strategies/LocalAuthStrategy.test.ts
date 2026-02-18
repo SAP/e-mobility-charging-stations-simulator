@@ -1,5 +1,5 @@
 import { expect } from '@std/expect'
-import { beforeEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type {
   AuthCache,
@@ -71,6 +71,11 @@ await describe('LocalAuthStrategy', async () => {
     }
 
     strategy = new LocalAuthStrategy(mockLocalAuthListManager, mockAuthCache)
+  })
+
+  afterEach(() => {
+    mockAuthCache = undefined as unknown as typeof mockAuthCache
+    mockLocalAuthListManager = undefined as unknown as typeof mockLocalAuthListManager
   })
 
   await describe('constructor', async () => {

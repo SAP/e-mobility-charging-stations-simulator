@@ -1,5 +1,5 @@
 import { expect } from '@std/expect'
-import { beforeEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../../src/charging-station/ChargingStation.js'
 import type { OCPP16AuthorizeResponse } from '../../../../../src/types/ocpp/1.6/Responses.js'
@@ -50,6 +50,11 @@ await describe('OCPP16AuthAdapter', async () => {
     } as unknown as ChargingStation
 
     adapter = new OCPP16AuthAdapter(mockChargingStation)
+  })
+
+  afterEach(() => {
+    adapter = undefined as unknown as OCPP16AuthAdapter
+    mockChargingStation = undefined as unknown as ChargingStation
   })
 
   await describe('constructor', async () => {

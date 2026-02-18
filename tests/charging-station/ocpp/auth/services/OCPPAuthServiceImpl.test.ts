@@ -1,5 +1,5 @@
 import { expect } from '@std/expect'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../../src/charging-station/ChargingStation.js'
 import type { OCPPAuthService } from '../../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
@@ -15,6 +15,10 @@ import {
 import { OCPPVersion } from '../../../../../src/types/ocpp/OCPPVersion.js'
 
 await describe('OCPPAuthServiceImpl', async () => {
+  afterEach(() => {
+    // Cleanup handled by test isolation - each test creates its own mock station
+  })
+
   await describe('constructor', async () => {
     await it('should initialize with OCPP 1.6 charging station', () => {
       const mockStation = {

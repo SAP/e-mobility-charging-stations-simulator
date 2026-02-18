@@ -1,5 +1,5 @@
 import { expect } from '@std/expect'
-import { beforeEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../../src/charging-station/ChargingStation.js'
 import type { OCPPAuthAdapter } from '../../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
@@ -53,6 +53,11 @@ await describe('CertificateAuthStrategy', async () => {
     adapters.set(OCPPVersion.VERSION_20, mockOCPP20Adapter)
 
     strategy = new CertificateAuthStrategy(mockChargingStation, adapters)
+  })
+
+  afterEach(() => {
+    mockChargingStation = undefined as unknown as typeof mockChargingStation
+    mockOCPP20Adapter = undefined as unknown as typeof mockOCPP20Adapter
   })
 
   await describe('constructor', async () => {

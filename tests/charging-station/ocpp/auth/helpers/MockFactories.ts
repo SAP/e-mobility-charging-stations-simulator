@@ -1,6 +1,9 @@
 // Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
 
+import { expect } from '@std/expect'
+
 import {
+  type AuthConfiguration,
   AuthContext,
   AuthenticationMethod,
   type AuthorizationResult,
@@ -18,8 +21,9 @@ import { OCPPVersion } from '../../../../../src/types/ocpp/OCPPVersion.js'
 
 /**
  * Create a mock UnifiedIdentifier for OCPP 1.6
- * @param value
- * @param type
+ * @param value - Identifier token value (defaults to 'TEST-TAG-001')
+ * @param type - Identifier type enum value (defaults to ID_TAG)
+ * @returns Mock UnifiedIdentifier configured for OCPP 1.6 protocol
  */
 export const createMockOCPP16Identifier = (
   value = 'TEST-TAG-001',
@@ -32,8 +36,9 @@ export const createMockOCPP16Identifier = (
 
 /**
  * Create a mock UnifiedIdentifier for OCPP 2.0
- * @param value
- * @param type
+ * @param value - Identifier token value (defaults to 'TEST-TAG-001')
+ * @param type - Identifier type enum value (defaults to ID_TAG)
+ * @returns Mock UnifiedIdentifier configured for OCPP 2.0 protocol
  */
 export const createMockOCPP20Identifier = (
   value = 'TEST-TAG-001',
@@ -46,7 +51,8 @@ export const createMockOCPP20Identifier = (
 
 /**
  * Create a mock AuthRequest
- * @param overrides
+ * @param overrides - Partial AuthRequest properties to override defaults
+ * @returns Mock AuthRequest with default OCPP 1.6 identifier and transaction start context
  */
 export const createMockAuthRequest = (overrides?: Partial<AuthRequest>): AuthRequest => ({
   allowOffline: false,
@@ -59,7 +65,8 @@ export const createMockAuthRequest = (overrides?: Partial<AuthRequest>): AuthReq
 
 /**
  * Create a mock successful AuthorizationResult
- * @param overrides
+ * @param overrides - Partial AuthorizationResult properties to override defaults
+ * @returns Mock AuthorizationResult with ACCEPTED status from local list method
  */
 export const createMockAuthorizationResult = (
   overrides?: Partial<AuthorizationResult>
@@ -73,7 +80,8 @@ export const createMockAuthorizationResult = (
 
 /**
  * Create a mock rejected AuthorizationResult
- * @param overrides
+ * @param overrides - Partial AuthorizationResult properties to override defaults
+ * @returns Mock AuthorizationResult with INVALID status from local list method
  */
 export const createMockRejectedAuthorizationResult = (
   overrides?: Partial<AuthorizationResult>
@@ -87,7 +95,8 @@ export const createMockRejectedAuthorizationResult = (
 
 /**
  * Create a mock blocked AuthorizationResult
- * @param overrides
+ * @param overrides - Partial AuthorizationResult properties to override defaults
+ * @returns Mock AuthorizationResult with BLOCKED status from local list method
  */
 export const createMockBlockedAuthorizationResult = (
   overrides?: Partial<AuthorizationResult>
@@ -101,7 +110,8 @@ export const createMockBlockedAuthorizationResult = (
 
 /**
  * Create a mock expired AuthorizationResult
- * @param overrides
+ * @param overrides - Partial AuthorizationResult properties to override defaults
+ * @returns Mock AuthorizationResult with EXPIRED status and past expiry date
  */
 export const createMockExpiredAuthorizationResult = (
   overrides?: Partial<AuthorizationResult>
@@ -116,7 +126,8 @@ export const createMockExpiredAuthorizationResult = (
 
 /**
  * Create a mock concurrent transaction limit AuthorizationResult
- * @param overrides
+ * @param overrides - Partial AuthorizationResult properties to override defaults
+ * @returns Mock AuthorizationResult with CONCURRENT_TX status from local list method
  */
 export const createMockConcurrentTxAuthorizationResult = (
   overrides?: Partial<AuthorizationResult>
@@ -132,6 +143,7 @@ export const createMockConcurrentTxAuthorizationResult = (
  * Create a mock OCPPAuthService that always returns ACCEPTED status.
  * Useful for testing OCPP handlers that need auth without the full auth stack.
  * @param overrides - Optional partial overrides for mock methods
+ * @returns Mock auth service object with stubbed authorize, cache, and stats methods
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const createMockAuthService = (overrides?: Record<string, any>): any => ({
@@ -160,5 +172,108 @@ export const createMockAuthService = (overrides?: Record<string, any>): any => (
   isLocallyAuthorized: () => Promise.resolve(undefined),
   testConnectivity: () => Promise.resolve(true),
   updateConfiguration: () => Promise.resolve(),
+  ...overrides,
+})
+
+// ============================================================================
+// Assertion Helpers
+// ============================================================================
+
+/**
+ * Assert that an AuthorizationResult indicates successful authorization.
+ * @param result - The authorization result to validate
+ * @param expectedMethod - Optional expected authentication method
+ */
+export const expectAcceptedAuthorization = (
+  result: AuthorizationResult,
+  expectedMethod?: AuthenticationMethod
+): void => {
+  expect(result.status).toBe(AuthorizationStatus.ACCEPTED)
+  expect(result.timestamp).toBeInstanceOf(Date)
+  if (expectedMethod !== undefined) {
+    expect(result.method).toBe(expectedMethod)
+  }
+}
+
+/**
+ * Assert that an AuthorizationResult indicates rejected authorization.
+ * @param result - The authorization result to validate
+ * @param expectedStatus - Optional expected rejection status (defaults to INVALID)
+ */
+export const expectRejectedAuthorization = (
+  result: AuthorizationResult,
+  expectedStatus: AuthorizationStatus = AuthorizationStatus.INVALID
+): void => {
+  expect(result.status).toBe(expectedStatus)
+  expect(result.status).not.toBe(AuthorizationStatus.ACCEPTED)
+  expect(result.timestamp).toBeInstanceOf(Date)
+}
+
+// ============================================================================
+// Configuration Builders
+// ============================================================================
+
+/**
+ * Create a test AuthConfiguration with safe defaults.
+ * All boolean flags default to false for predictable test behavior.
+ * @param overrides - Partial AuthConfiguration properties to override defaults
+ * @returns AuthConfiguration with test-safe defaults
+ */
+export const createTestAuthConfig = (
+  overrides?: Partial<AuthConfiguration>
+): AuthConfiguration => ({
+  allowOfflineTxForUnknownId: false,
+  authorizationCacheEnabled: false,
+  authorizationCacheLifetime: 3600,
+  authorizationTimeout: 30,
+  certificateAuthEnabled: false,
+  certificateValidationStrict: false,
+  localAuthListEnabled: false,
+  localPreAuthorize: false,
+  maxCacheEntries: 1000,
+  offlineAuthorizationEnabled: false,
+  remoteAuthorization: true,
+  ...overrides,
+})
+
+// ============================================================================
+// ChargingStation Mock
+// ============================================================================
+
+/**
+ * Minimal ChargingStation interface for auth module testing.
+ * Contains only the properties needed by auth strategies and services.
+ */
+export interface MockChargingStation {
+  getConnectorStatus: (connectorId: number) => undefined | { status: string }
+  idTagLocalAuthorized: (idTag: string) => boolean
+  isConnected: () => boolean
+  logPrefix: () => string
+  ocppVersion: OCPPVersion
+  sendRequest: (commandName: string, payload: unknown) => Promise<unknown>
+  stationInfo: {
+    chargingStationId: string
+    hashId: string
+  }
+}
+
+/**
+ * Create a mock ChargingStation for auth module testing.
+ * @param overrides - Partial MockChargingStation properties to override defaults
+ * @returns Mock ChargingStation object with stubbed methods
+ */
+export const createMockChargingStation = (
+  overrides?: Partial<MockChargingStation>
+): MockChargingStation => ({
+  getConnectorStatus: () => ({ status: 'Available' }),
+  idTagLocalAuthorized: () => false,
+  isConnected: () => true,
+  logPrefix: () => '[MockStation]',
+  ocppVersion: OCPPVersion.VERSION_16,
+  sendRequest: () => Promise.resolve({}),
+  stationInfo: {
+    chargingStationId: 'test-station-001',
+    hashId: 'test-hash-001',
+  },
   ...overrides,
 })

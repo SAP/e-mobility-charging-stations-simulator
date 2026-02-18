@@ -1,5 +1,5 @@
 import { expect } from '@std/expect'
-import { beforeEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import { InMemoryAuthCache } from '../../../../../src/charging-station/ocpp/auth/cache/InMemoryAuthCache.js'
 import {
@@ -32,6 +32,10 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
         windowMs: 1000, // 1 second window
       },
     })
+  })
+
+  afterEach(() => {
+    cache = undefined as unknown as InMemoryAuthCache
   })
 
   await describe('G03.FR.01.001 - Cache Hit Behavior', async () => {

@@ -1,5 +1,5 @@
 import { expect } from '@std/expect'
-import { beforeEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type {
   AuthCache,
@@ -103,6 +103,12 @@ await describe('RemoteAuthStrategy', async () => {
     adapters.set(OCPPVersion.VERSION_20, mockOCPP20Adapter)
 
     strategy = new RemoteAuthStrategy(adapters, mockAuthCache)
+  })
+
+  afterEach(() => {
+    mockAuthCache = undefined as unknown as typeof mockAuthCache
+    mockOCPP16Adapter = undefined as unknown as typeof mockOCPP16Adapter
+    mockOCPP20Adapter = undefined as unknown as typeof mockOCPP20Adapter
   })
 
   await describe('constructor', async () => {

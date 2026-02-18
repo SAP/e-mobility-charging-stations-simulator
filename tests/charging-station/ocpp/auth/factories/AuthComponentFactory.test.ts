@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-confusing-void-expression */
 import { expect } from '@std/expect'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 
 import type { AuthConfiguration } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 
@@ -9,6 +9,10 @@ import { OCPPVersion } from '../../../../../src/types/ocpp/OCPPVersion.js'
 import { createChargingStation } from '../../../../ChargingStationFactory.js'
 
 await describe('AuthComponentFactory', async () => {
+  afterEach(() => {
+    // Cleanup handled by test isolation - each test creates its own instances
+  })
+
   await describe('createAdapters', async () => {
     await it('should create OCPP 1.6 adapter', async () => {
       const chargingStation = createChargingStation({
