@@ -26,7 +26,10 @@ import type {
 
 export const enum OCPP20IncomingRequestCommand {
   CLEAR_CACHE = 'ClearCache',
+  DELETE_CERTIFICATE = 'DeleteCertificate',
   GET_BASE_REPORT = 'GetBaseReport',
+  GET_CERTIFICATE_STATUS = 'GetCertificateStatus',
+  GET_INSTALLED_CERTIFICATE_IDS = 'GetInstalledCertificateIds',
   GET_VARIABLES = 'GetVariables',
   INSTALL_CERTIFICATE = 'InstallCertificate',
   REQUEST_START_TRANSACTION = 'RequestStartTransaction',

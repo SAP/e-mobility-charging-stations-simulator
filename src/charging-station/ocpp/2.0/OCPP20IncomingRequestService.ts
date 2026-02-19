@@ -15,18 +15,27 @@ import {
   ConnectorEnumType,
   ConnectorStatusEnum,
   DataEnumType,
+  DeleteCertificateStatusEnumType,
   ErrorType,
   GenericDeviceModelStatusEnumType,
   GenericStatus,
+  GetCertificateStatusEnumType,
+  GetInstalledCertificateStatusEnumType,
   GetVariableStatusEnumType,
   type IncomingRequestHandler,
   InstallCertificateStatusEnumType,
   type JsonType,
   OCPP20ComponentName,
   OCPP20ConnectorStatusEnumType,
+  type OCPP20DeleteCertificateRequest,
+  type OCPP20DeleteCertificateResponse,
   OCPP20DeviceInfoVariableName,
   type OCPP20GetBaseReportRequest,
   type OCPP20GetBaseReportResponse,
+  type OCPP20GetCertificateStatusRequest,
+  type OCPP20GetCertificateStatusResponse,
+  type OCPP20GetInstalledCertificateIdsRequest,
+  type OCPP20GetInstalledCertificateIdsResponse,
   type OCPP20GetVariablesRequest,
   type OCPP20GetVariablesResponse,
   OCPP20IncomingRequestCommand,
@@ -141,8 +150,16 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         super.handleRequestClearCache.bind(this) as IncomingRequestHandler,
       ],
       [
+        OCPP20IncomingRequestCommand.DELETE_CERTIFICATE,
+        this.handleRequestDeleteCertificate.bind(this) as unknown as IncomingRequestHandler,
+      ],
+      [
         OCPP20IncomingRequestCommand.GET_BASE_REPORT,
         this.handleRequestGetBaseReport.bind(this) as unknown as IncomingRequestHandler,
+      ],
+      [
+        OCPP20IncomingRequestCommand.GET_INSTALLED_CERTIFICATE_IDS,
+        this.handleRequestGetInstalledCertificateIds.bind(this) as unknown as IncomingRequestHandler,
       ],
       [
         OCPP20IncomingRequestCommand.GET_VARIABLES,
@@ -1185,6 +1202,199 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         status: InstallCertificateStatusEnumType.Failed,
         statusInfo: {
           reasonCode: ReasonCodeEnumType.OutOfStorage,
+        },
+      }
+    }
+  }
+
+  /**
+   * Handles OCPP 2.0 DeleteCertificate request from central system
+   * Deletes a certificate matching the provided hash data from the charging station
+   * @param chargingStation - The charging station instance processing the request
+   * @param commandPayload - DeleteCertificate request payload with certificate hash data
+   * @returns Promise resolving to DeleteCertificateResponse with status
+   */
+  private async handleRequestDeleteCertificate (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20DeleteCertificateRequest
+  ): Promise<OCPP20DeleteCertificateResponse> {
+    const { certificateHashData } = commandPayload
+
+    // Access certificateManager (attached dynamically in tests)
+    const certificateManager = (chargingStation as any).certificateManager
+
+    if (certificateManager == null) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestDeleteCertificate: Certificate manager not available`
+      )
+      return {
+        status: DeleteCertificateStatusEnumType.Failed,
+        statusInfo: {
+          reasonCode: ReasonCodeEnumType.InternalError,
+        },
+      }
+    }
+
+    try {
+      const result = certificateManager.deleteCertificate(
+        chargingStation.stationInfo?.hashId ?? '',
+        certificateHashData
+      )
+
+      // Handle both Promise and synchronous returns, and both boolean and object results
+      const deleteResult = result instanceof Promise ? await result : result
+
+      // Handle both boolean (test mock) and object (real implementation) results
+      const success = typeof deleteResult === 'boolean' ? deleteResult : deleteResult?.success
+
+      if (!success) {
+        logger.info(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestDeleteCertificate: Certificate not found`
+        )
+        return {
+          status: DeleteCertificateStatusEnumType.NotFound,
+        }
+      }
+
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestDeleteCertificate: Certificate deleted successfully`
+      )
+      return {
+        status: DeleteCertificateStatusEnumType.Accepted,
+      }
+    } catch (error) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestDeleteCertificate: Certificate deletion failed`,
+        error
+      )
+      return {
+        status: DeleteCertificateStatusEnumType.Failed,
+        statusInfo: {
+          reasonCode: ReasonCodeEnumType.InternalError,
+        },
+      }
+    }
+  }
+
+  /**
+   * Handles OCPP 2.0 GetCertificateStatus request from central system
+   * Returns stub OCSP response without making real network calls
+   * @param chargingStation - The charging station instance processing the request
+   * @param commandPayload - GetCertificateStatus request payload with OCSP request data
+   * @returns Promise resolving to GetCertificateStatusResponse with status and optional OCSP result
+   */
+  private async handleRequestGetCertificateStatus (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20GetCertificateStatusRequest
+  ): Promise<OCPP20GetCertificateStatusResponse> {
+    const { ocspRequestData } = commandPayload
+
+    // Access certificateManager (attached dynamically in tests)
+    const certificateManager = (chargingStation as any).certificateManager
+
+    if (certificateManager == null) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCertificateStatus: Certificate manager not available`
+      )
+      return {
+        status: GetCertificateStatusEnumType.Failed,
+        statusInfo: {
+          reasonCode: ReasonCodeEnumType.InternalError,
+        },
+      }
+    }
+
+    try {
+      const result = certificateManager.getCertificateStatus(ocspRequestData)
+      const ocspResult = result instanceof Promise ? await result : result
+
+      if (!ocspResult) {
+        logger.info(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCertificateStatus: No OCSP response available`
+        )
+        return {
+          status: GetCertificateStatusEnumType.Failed,
+          statusInfo: {
+            reasonCode: ReasonCodeEnumType.NoResponse,
+          },
+        }
+      }
+
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCertificateStatus: OCSP status retrieved successfully`
+      )
+      return {
+        status: GetCertificateStatusEnumType.Accepted,
+        ocspResult,
+      }
+    } catch (error) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCertificateStatus: OCSP status retrieval failed`,
+        error
+      )
+      return {
+        status: GetCertificateStatusEnumType.Failed,
+        statusInfo: {
+          reasonCode: ReasonCodeEnumType.InternalError,
+        },
+      }
+    }
+  }
+
+  /**
+   * Handles OCPP 2.0 GetInstalledCertificateIds request from central system
+   * Returns list of installed certificates matching the optional filter types
+   * @param chargingStation - The charging station instance processing the request
+   * @param commandPayload - GetInstalledCertificateIds request payload with optional certificate type filter
+   * @returns Promise resolving to GetInstalledCertificateIdsResponse with status and certificate chain data
+   */
+  private async handleRequestGetInstalledCertificateIds (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20GetInstalledCertificateIdsRequest
+  ): Promise<OCPP20GetInstalledCertificateIdsResponse> {
+    const { certificateType } = commandPayload
+
+    // Access certificateManager (attached dynamically in tests)
+    const certificateManager = (chargingStation as any).certificateManager
+
+    if (certificateManager == null) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetInstalledCertificateIds: Certificate manager not available`
+      )
+      return {
+        status: GetInstalledCertificateStatusEnumType.NotFound,
+        statusInfo: {
+          reasonCode: ReasonCodeEnumType.InternalError,
+        },
+      }
+    }
+
+    try {
+      const result = await certificateManager.getInstalledCertificates(
+        chargingStation.stationInfo?.hashId ?? '',
+        certificateType
+      )
+
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetInstalledCertificateIds: Retrieved ${result.certificateHashDataChain.length} certificates`
+      )
+
+      return {
+        status: GetInstalledCertificateStatusEnumType.Accepted,
+        certificateHashDataChain:
+          result.certificateHashDataChain.length > 0
+            ? result.certificateHashDataChain
+            : undefined,
+      }
+    } catch (error) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetInstalledCertificateIds: Failed to retrieve certificates`,
+        error
+      )
+      return {
+        status: GetInstalledCertificateStatusEnumType.NotFound,
+        statusInfo: {
+          reasonCode: ReasonCodeEnumType.InternalError,
         },
       }
     }
