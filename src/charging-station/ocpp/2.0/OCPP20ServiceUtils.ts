@@ -559,6 +559,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         OCPP20TransactionEventRequest
       >(chargingStation, OCPP20RequestCommand.TRANSACTION_EVENT, transactionEventRequest)
 
+      chargingStation.stopTxUpdatedInterval(connectorId)
       resetConnectorStatus(connectorStatus)
       await sendAndSetConnectorStatus(chargingStation, connectorId, ConnectorStatusEnum.Available)
 

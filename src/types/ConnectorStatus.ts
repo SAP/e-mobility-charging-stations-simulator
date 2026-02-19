@@ -40,5 +40,6 @@ export interface ConnectorStatus {
   transactionSetInterval?: NodeJS.Timeout
   transactionStart?: Date
   transactionStarted?: boolean
+  transactionTxUpdatedSetInterval?: NodeJS.Timeout
   type?: ConnectorEnumType
 }

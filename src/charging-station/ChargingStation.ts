@@ -152,6 +152,9 @@ import {
   OCPP20IncomingRequestService,
   OCPP20RequestService,
   OCPP20ResponseService,
+  OCPP20ServiceUtils,
+  OCPP20TransactionEventEnumType,
+  OCPP20TriggerReasonEnumType,
   type OCPPIncomingRequestService,
   type OCPPRequestService,
   sendAndSetConnectorStatus,
@@ -1071,6 +1074,47 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
+  public startTxUpdatedInterval (connectorId: number, interval: number): void {
+    if (this.stationInfo?.ocppVersion !== OCPPVersion.VERSION_20) {
+      return
+    }
+    const connector = this.getConnectorStatus(connectorId)
+    if (connector == null) {
+      logger.error(`${this.logPrefix()} Connector ${connectorId.toString()} not found`)
+      return
+    }
+    if (interval <= 0) {
+      logger.debug(
+        `${this.logPrefix()} TxUpdatedInterval is ${interval.toString()}, not starting periodic TransactionEvent`
+      )
+      return
+    }
+    if (connector.transactionTxUpdatedSetInterval != null) {
+      logger.warn(`${this.logPrefix()} TxUpdatedInterval already started, stopping first`)
+      this.stopTxUpdatedInterval(connectorId)
+    }
+    connector.transactionTxUpdatedSetInterval = setInterval(() => {
+      const connectorStatus = this.getConnectorStatus(connectorId)
+      if (connectorStatus?.transactionStarted === true && connectorStatus.transactionId != null) {
+        OCPP20ServiceUtils.sendTransactionEvent(
+          this,
+          OCPP20TransactionEventEnumType.Updated,
+          OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+          connectorId,
+          connectorStatus.transactionId as string
+        ).catch((error: unknown) => {
+          logger.error(
+            `${this.logPrefix()} Error sending periodic TransactionEvent at TxUpdatedInterval:`,
+            error
+          )
+        })
+      }
+    }, clampToSafeTimerValue(interval))
+    logger.info(
+      `${this.logPrefix()} TxUpdatedInterval started every ${formatDurationMilliSeconds(interval)}`
+    )
+  }
+
   public async stop (
     reason?: StopTransactionReason,
     stopTransactions = this.stationInfo?.stopTransactionsOnStopped
@@ -1151,6 +1195,15 @@ export class ChargingStation extends EventEmitter {
       transactionId,
       ...(reason != null && { reason }),
     })
+  }
+
+  public stopTxUpdatedInterval (connectorId: number): void {
+    const connector = this.getConnectorStatus(connectorId)
+    if (connector?.transactionTxUpdatedSetInterval != null) {
+      clearInterval(connector.transactionTxUpdatedSetInterval)
+      delete connector.transactionTxUpdatedSetInterval
+      logger.info(`${this.logPrefix()} TxUpdatedInterval stopped`)
+    }
   }
 
   private add (): void {

@@ -1,5 +1,7 @@
 import type { ValidateFunction } from 'ajv'
 
+import { secondsToMilliseconds } from 'date-fns'
+
 import type { ChargingStation } from '../../../charging-station/index.js'
 import type {
   OCPP20ChargingProfileType,
@@ -58,6 +60,7 @@ import {
 } from '../../../types/ocpp/2.0/Transaction.js'
 import { StandardParametersKey } from '../../../types/ocpp/Configuration.js'
 import {
+  Constants,
   convertToIntOrNaN,
   generateUUID,
   isAsyncFunction,
@@ -844,6 +847,37 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     return reportData
   }
 
+  /**
+   * Get the TxUpdatedInterval value from the variable manager.
+   * This is used to determine the interval at which TransactionEvent(Updated) messages are sent.
+   * @param chargingStation - The charging station instance
+   * @returns The TxUpdatedInterval in milliseconds
+   */
+  private getTxUpdatedInterval (chargingStation: ChargingStation): number {
+    const variableManager = OCPP20VariableManager.getInstance()
+    const results = variableManager.getVariables(chargingStation, [
+      {
+        component: { name: OCPP20ComponentName.SampledDataCtrlr },
+        variable: { name: OCPP20RequiredVariableName.TxUpdatedInterval },
+      },
+    ])
+    if (results.length > 0 && results[0].attributeValue != null) {
+      const intervalSeconds = parseInt(results[0].attributeValue, 10)
+      if (!isNaN(intervalSeconds) && intervalSeconds > 0) {
+        return secondsToMilliseconds(intervalSeconds)
+      }
+    }
+    return secondsToMilliseconds(Constants.DEFAULT_TX_UPDATED_INTERVAL)
+  }
+
+  /**
+   * Handles OCPP 2.0 Reset request from central system with enhanced EVSE-specific support
+   * Initiates station or EVSE reset based on request parameters and transaction states
+   * @param chargingStation - The charging station instance processing the request
+   * @param commandPayload - Reset request payload with type and optional EVSE ID
+   * @returns Promise resolving to ResetResponse indicating operation status
+   */
+
   private handleRequestGetBaseReport (
     chargingStation: ChargingStation,
     commandPayload: OCPP20GetBaseReportRequest
@@ -880,14 +914,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       status: GenericDeviceModelStatusEnumType.Accepted,
     }
   }
-
-  /**
-   * Handles OCPP 2.0 Reset request from central system with enhanced EVSE-specific support
-   * Initiates station or EVSE reset based on request parameters and transaction states
-   * @param chargingStation - The charging station instance processing the request
-   * @param commandPayload - Reset request payload with type and optional EVSE ID
-   * @returns Promise resolving to ResetResponse indicating operation status
-   */
 
   private async handleRequestReset (
     chargingStation: ChargingStation,
@@ -1322,6 +1348,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           remoteStartId,
         }
       )
+
+      // Start TxUpdatedInterval timer for periodic TransactionEvent(Updated) messages
+      const txUpdatedInterval = this.getTxUpdatedInterval(chargingStation)
+      chargingStation.startTxUpdatedInterval(connectorId, txUpdatedInterval)
 
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Remote start transaction ACCEPTED on #${connectorId.toString()} for idToken '${idToken.idToken}'`
