@@ -145,6 +145,7 @@ export {
   BootReasonEnumType,
   type CertificateHashDataChainType,
   type CertificateHashDataType,
+  CertificateSigningUseEnumType,
   type CustomDataType,
   DataEnumType,
   DeleteCertificateStatusEnumType,
