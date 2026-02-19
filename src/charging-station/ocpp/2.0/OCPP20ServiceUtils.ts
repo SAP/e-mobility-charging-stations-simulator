@@ -210,37 +210,6 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
   }
 
   /**
-   * Build a TransactionEvent request with context-aware TriggerReason selection
-   * @deprecated Use buildTransactionEvent() with context parameter instead
-   * @see buildTransactionEvent
-   * @param chargingStation - The charging station instance
-   * @param eventType - Transaction event type (Started, Updated, Ended)
-   * @param context - Context information for intelligent TriggerReason selection
-   * @param connectorId - Connector identifier
-   * @param transactionId - Transaction UUID (required for all events)
-   * @param options - Optional parameters for the transaction event
-   * @returns OCPP20TransactionEventRequest - Built transaction event request
-   * @throws {OCPPError} When parameters are invalid or EVSE mapping fails
-   */
-  public static buildTransactionEventWithContext (
-    chargingStation: ChargingStation,
-    eventType: OCPP20TransactionEventEnumType,
-    context: OCPP20TransactionContext,
-    connectorId: number,
-    transactionId: string,
-    options: OCPP20TransactionEventOptions = {}
-  ): OCPP20TransactionEventRequest {
-    return OCPP20ServiceUtils.buildTransactionEvent(
-      chargingStation,
-      eventType,
-      context,
-      connectorId,
-      transactionId,
-      options
-    )
-  }
-
-  /**
    * OCPP 2.0 Incoming Request Service validator configurations
    * @returns Array of validator configuration tuples
    */
@@ -820,35 +789,5 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       )
       throw error
     }
-  }
-
-  /**
-   * Send a TransactionEvent request with context-aware TriggerReason selection
-   * @deprecated Use sendTransactionEvent() with context parameter instead
-   * @see sendTransactionEvent
-   * @param chargingStation - The charging station instance
-   * @param eventType - Transaction event type
-   * @param context - Context information for intelligent TriggerReason selection
-   * @param connectorId - Connector identifier
-   * @param transactionId - Transaction UUID
-   * @param options - Optional parameters
-   * @returns Promise<OCPP20TransactionEventResponse> - Response from CSMS
-   */
-  public static async sendTransactionEventWithContext (
-    chargingStation: ChargingStation,
-    eventType: OCPP20TransactionEventEnumType,
-    context: OCPP20TransactionContext,
-    connectorId: number,
-    transactionId: string,
-    options: OCPP20TransactionEventOptions = {}
-  ): Promise<OCPP20TransactionEventResponse> {
-    return OCPP20ServiceUtils.sendTransactionEvent(
-      chargingStation,
-      eventType,
-      context,
-      connectorId,
-      transactionId,
-      options
-    )
   }
 }
