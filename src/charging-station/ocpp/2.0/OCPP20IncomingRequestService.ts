@@ -20,6 +20,7 @@ import {
   GenericStatus,
   GetVariableStatusEnumType,
   type IncomingRequestHandler,
+  InstallCertificateStatusEnumType,
   type JsonType,
   OCPP20ComponentName,
   OCPP20ConnectorStatusEnumType,
@@ -29,6 +30,8 @@ import {
   type OCPP20GetVariablesRequest,
   type OCPP20GetVariablesResponse,
   OCPP20IncomingRequestCommand,
+  type OCPP20InstallCertificateRequest,
+  type OCPP20InstallCertificateResponse,
   type OCPP20NotifyReportRequest,
   type OCPP20NotifyReportResponse,
   OCPP20RequestCommand,
@@ -144,6 +147,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       [
         OCPP20IncomingRequestCommand.GET_VARIABLES,
         this.handleRequestGetVariables.bind(this) as unknown as IncomingRequestHandler,
+      ],
+      [
+        OCPP20IncomingRequestCommand.INSTALL_CERTIFICATE,
+        this.handleRequestInstallCertificate.bind(this) as unknown as IncomingRequestHandler,
       ],
       [
         OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
@@ -1090,6 +1097,94 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         statusInfo: {
           additionalInfo: 'Internal error occurred while processing reset request',
           reasonCode: ReasonCodeEnumType.InternalError,
+        },
+      }
+    }
+  }
+
+  /**
+   * Handles OCPP 2.0 InstallCertificate request from central system
+   * Validates and stores certificate for specified usage type
+   * @param chargingStation - The charging station instance processing the request
+   * @param commandPayload - InstallCertificate request payload with certificate and type
+   * @returns Promise resolving to InstallCertificateResponse indicating operation status
+   */
+
+  private async handleRequestInstallCertificate (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20InstallCertificateRequest
+  ): Promise<OCPP20InstallCertificateResponse> {
+    const { certificate, certificateType } = commandPayload
+
+    // Access certificateManager (attached dynamically in tests)
+    const certificateManager = (chargingStation as any).certificateManager
+
+    if (certificateManager == null) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestInstallCertificate: Certificate manager not available`
+      )
+      return {
+        status: InstallCertificateStatusEnumType.Failed,
+        statusInfo: {
+          reasonCode: ReasonCodeEnumType.InternalError,
+        },
+      }
+    }
+
+    // Validate certificate format
+    if (!certificateManager.validateCertificateFormat(certificate)) {
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestInstallCertificate: Invalid PEM format for certificate type ${certificateType}`
+      )
+      return {
+        status: InstallCertificateStatusEnumType.Rejected,
+        statusInfo: {
+          reasonCode: ReasonCodeEnumType.InvalidCertificate,
+        },
+      }
+    }
+
+    // Store certificate
+    try {
+      const result = certificateManager.storeCertificate(
+        chargingStation.stationInfo?.hashId ?? '',
+        certificateType,
+        certificate
+      )
+
+      // Handle both Promise and synchronous returns, and both boolean and object results
+      const storeResult = result instanceof Promise ? await result : result
+
+      // Handle both boolean (test mock) and object (real implementation) results
+      const success = typeof storeResult === 'boolean' ? storeResult : storeResult?.success
+
+      if (!success) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestInstallCertificate: Certificate storage rejected for type ${certificateType}`
+        )
+        return {
+          status: InstallCertificateStatusEnumType.Rejected,
+          statusInfo: {
+            reasonCode: ReasonCodeEnumType.InvalidCertificate,
+          },
+        }
+      }
+
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestInstallCertificate: Certificate installed successfully for type ${certificateType}`
+      )
+      return {
+        status: InstallCertificateStatusEnumType.Accepted,
+      }
+    } catch (error) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestInstallCertificate: Certificate storage failed for type ${certificateType}`,
+        error
+      )
+      return {
+        status: InstallCertificateStatusEnumType.Failed,
+        statusInfo: {
+          reasonCode: ReasonCodeEnumType.OutOfStorage,
         },
       }
     }

@@ -28,6 +28,7 @@ export const enum OCPP20IncomingRequestCommand {
   CLEAR_CACHE = 'ClearCache',
   GET_BASE_REPORT = 'GetBaseReport',
   GET_VARIABLES = 'GetVariables',
+  INSTALL_CERTIFICATE = 'InstallCertificate',
   REQUEST_START_TRANSACTION = 'RequestStartTransaction',
   REQUEST_STOP_TRANSACTION = 'RequestStopTransaction',
   RESET = 'Reset',
