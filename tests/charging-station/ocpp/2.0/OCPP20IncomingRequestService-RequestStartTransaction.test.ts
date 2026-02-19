@@ -7,11 +7,16 @@ import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { OCPP20RequestStartTransactionRequest } from '../../../../src/types/index.js'
+import type { OCPP20ChargingProfileType } from '../../../../src/types/ocpp/2.0/Transaction.js'
 
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'
 import { OCPPVersion, RequestStartStopStatusEnumType } from '../../../../src/types/index.js'
-import { OCPP20IdTokenEnumType } from '../../../../src/types/ocpp/2.0/Transaction.js'
+import {
+  OCPP20ChargingProfileKindEnumType,
+  OCPP20ChargingProfilePurposeEnumType,
+  OCPP20IdTokenEnumType,
+} from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
 import { createMockAuthService } from '../auth/helpers/MockFactories.js'
@@ -149,7 +154,127 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     expect(response.transactionId).toBeDefined()
   })
 
-  // TODO: Implement proper OCPP 2.0 ChargingProfile types and test charging profile functionality
+  // OCPP 2.0.1 §2.10 ChargingProfile validation tests
+  await it('Should accept RequestStartTransaction with valid TxProfile (no transactionId)', async () => {
+    const validChargingProfile: OCPP20ChargingProfileType = {
+      chargingProfileKind: OCPP20ChargingProfileKindEnumType.Relative,
+      chargingProfilePurpose: OCPP20ChargingProfilePurposeEnumType.TxProfile,
+      chargingSchedule: [
+        {
+          chargingRateUnit: 'A' as any,
+          chargingSchedulePeriod: [
+            {
+              limit: 30,
+              startPeriod: 0,
+            },
+          ],
+          id: 1,
+        },
+      ],
+      id: 1,
+      stackLevel: 0,
+    }
+
+    const requestWithValidProfile: OCPP20RequestStartTransactionRequest = {
+      chargingProfile: validChargingProfile,
+      evseId: 2,
+      idToken: {
+        idToken: 'PROFILE_VALID_TOKEN',
+        type: OCPP20IdTokenEnumType.ISO14443,
+      },
+      remoteStartId: 301,
+    }
+
+    const response = await (incomingRequestService as any).handleRequestStartTransaction(
+      mockChargingStation,
+      requestWithValidProfile
+    )
+
+    expect(response).toBeDefined()
+    expect(response.status).toBe(RequestStartStopStatusEnumType.Accepted)
+    expect(response.transactionId).toBeDefined()
+  })
+
+  // OCPP 2.0.1 §2.10: RequestStartTransaction requires chargingProfilePurpose=TxProfile
+  await it('Should reject RequestStartTransaction with non-TxProfile purpose (OCPP 2.0.1 §2.10)', async () => {
+    const invalidPurposeProfile: OCPP20ChargingProfileType = {
+      chargingProfileKind: OCPP20ChargingProfileKindEnumType.Relative,
+      chargingProfilePurpose: OCPP20ChargingProfilePurposeEnumType.TxDefaultProfile,
+      chargingSchedule: [
+        {
+          chargingRateUnit: 'A' as any,
+          chargingSchedulePeriod: [
+            {
+              limit: 25,
+              startPeriod: 0,
+            },
+          ],
+          id: 2,
+        },
+      ],
+      id: 2,
+      stackLevel: 0,
+    }
+
+    const requestWithInvalidProfile: OCPP20RequestStartTransactionRequest = {
+      chargingProfile: invalidPurposeProfile,
+      evseId: 2,
+      idToken: {
+        idToken: 'PROFILE_INVALID_PURPOSE',
+        type: OCPP20IdTokenEnumType.ISO14443,
+      },
+      remoteStartId: 302,
+    }
+
+    const response = await (incomingRequestService as any).handleRequestStartTransaction(
+      mockChargingStation,
+      requestWithInvalidProfile
+    )
+
+    expect(response).toBeDefined()
+    expect(response.status).toBe(RequestStartStopStatusEnumType.Rejected)
+  })
+
+  // OCPP 2.0.1 §2.10: transactionId MUST NOT be present at RequestStartTransaction time
+  await it('Should reject RequestStartTransaction with TxProfile having transactionId set (OCPP 2.0.1 §2.10)', async () => {
+    const profileWithTransactionId: OCPP20ChargingProfileType = {
+      chargingProfileKind: OCPP20ChargingProfileKindEnumType.Relative,
+      chargingProfilePurpose: OCPP20ChargingProfilePurposeEnumType.TxProfile,
+      chargingSchedule: [
+        {
+          chargingRateUnit: 'A' as any,
+          chargingSchedulePeriod: [
+            {
+              limit: 32,
+              startPeriod: 0,
+            },
+          ],
+          id: 3,
+        },
+      ],
+      id: 3,
+      stackLevel: 0,
+      transactionId: 'TX_123_INVALID',
+    }
+
+    const requestWithTransactionIdProfile: OCPP20RequestStartTransactionRequest = {
+      chargingProfile: profileWithTransactionId,
+      evseId: 2,
+      idToken: {
+        idToken: 'PROFILE_WITH_TXID',
+        type: OCPP20IdTokenEnumType.ISO14443,
+      },
+      remoteStartId: 303,
+    }
+
+    const response = await (incomingRequestService as any).handleRequestStartTransaction(
+      mockChargingStation,
+      requestWithTransactionIdProfile
+    )
+
+    expect(response).toBeDefined()
+    expect(response.status).toBe(RequestStartStopStatusEnumType.Rejected)
+  })
 
   // FR: F01.FR.07
   await it('Should reject RequestStartTransaction for invalid evseId', async () => {

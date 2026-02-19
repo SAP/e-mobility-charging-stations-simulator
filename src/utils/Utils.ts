@@ -137,6 +137,10 @@ export const validateUUID = (uuid: unknown): uuid is UUIDv4 => {
   )
 }
 
+export const validateIdentifierString = (value: string, maxLength: number): boolean => {
+  return isNotEmptyString(value) && value.length <= maxLength
+}
+
 export const sleep = async (milliSeconds: number): Promise<NodeJS.Timeout> => {
   return await new Promise<NodeJS.Timeout>(resolve => {
     const timeout = setTimeout(() => {

@@ -35,6 +35,7 @@ import {
   roundTo,
   secureRandom,
   sleep,
+  validateIdentifierString,
   validateUUID,
 } from '../../src/utils/Utils.js'
 
@@ -58,6 +59,21 @@ await describe('Utils test suite', async () => {
     expect(validateUUID({})).toBe(false)
     expect(validateUUID([])).toBe(false)
     expect(validateUUID(true)).toBe(false)
+  })
+
+  await it('Verify validateIdentifierString()', () => {
+    expect(validateIdentifierString('550e8400-e29b-41d4-a716-446655440000', 36)).toBe(true)
+    expect(validateIdentifierString('CSMS-TXN-12345', 36)).toBe(true)
+    expect(validateIdentifierString('a', 36)).toBe(true)
+    expect(validateIdentifierString('abc123', 36)).toBe(true)
+    expect(validateIdentifierString('valid-identifier', 36)).toBe(true)
+    expect(validateIdentifierString('a'.repeat(36), 36)).toBe(true)
+    expect(validateIdentifierString('', 36)).toBe(false)
+    expect(validateIdentifierString('a'.repeat(37), 36)).toBe(false)
+    expect(validateIdentifierString('a'.repeat(100), 36)).toBe(false)
+    expect(validateIdentifierString('  ', 36)).toBe(false)
+    expect(validateIdentifierString('\t\n', 36)).toBe(false)
+    expect(validateIdentifierString('valid', 4)).toBe(false)
   })
 
   await it('Verify sleep()', async () => {

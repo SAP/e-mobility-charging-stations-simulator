@@ -29,7 +29,7 @@ import {
   type OCPP20TransactionEventOptions,
   type OCPP20TransactionType,
 } from '../../../types/ocpp/2.0/Transaction.js'
-import { logger, validateUUID } from '../../../utils/index.js'
+import { logger, validateIdentifierString } from '../../../utils/index.js'
 import { OCPPServiceUtils, sendAndSetConnectorStatus } from '../OCPPServiceUtils.js'
 import { OCPP20Constants } from './OCPP20Constants.js'
 
@@ -99,9 +99,9 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       ? this.selectTriggerReason(eventType, triggerReasonOrContext)
       : triggerReasonOrContext
 
-    // Validate transaction ID format (must be UUID)
-    if (!validateUUID(transactionId)) {
-      const errorMsg = `Invalid transaction ID format (expected UUID): ${transactionId}`
+    // Validate transaction ID format (must be non-empty string ≤36 characters per OCPP 2.0.1)
+    if (!validateIdentifierString(transactionId, 36)) {
+      const errorMsg = `Invalid transaction ID format (must be non-empty string ≤36 characters): ${transactionId}`
       logger.error(
         `${chargingStation.logPrefix()} ${moduleName}.buildTransactionEvent: ${errorMsg}`
       )
@@ -502,9 +502,9 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         )
       }
 
-      if (!validateUUID(transactionId)) {
+      if (!validateIdentifierString(transactionId, 36)) {
         logger.error(
-          `${chargingStation.logPrefix()} OCPP20ServiceUtils.remoteStopTransaction: Invalid transaction ID format (expected UUID): ${transactionId}`
+          `${chargingStation.logPrefix()} OCPP20ServiceUtils.remoteStopTransaction: Invalid transaction ID format (must be non-empty string ≤36 characters): ${transactionId}`
         )
         return OCPP20Constants.OCPP_RESPONSE_REJECTED
       }

@@ -62,7 +62,7 @@ import {
   generateUUID,
   isAsyncFunction,
   logger,
-  validateUUID,
+  validateIdentifierString,
 } from '../../../utils/index.js'
 import { getConfigurationKey } from '../../ConfigurationKeyUtils.js'
 import { resetConnectorStatus } from '../../Helpers.js'
@@ -1236,7 +1236,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     if (chargingProfile != null) {
       let isValidProfile = false
       try {
-        isValidProfile = this.validateChargingProfile(chargingStation, chargingProfile, evseId)
+        isValidProfile = this.validateChargingProfile(
+          chargingStation,
+          chargingProfile,
+          evseId,
+          'RequestStartTransaction'
+        )
       } catch (error) {
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Charging profile validation error:`,
@@ -1348,9 +1353,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestStopTransaction: Remote stop transaction request received for transaction ID ${transactionId as string}`
     )
 
-    if (!validateUUID(transactionId)) {
+    if (!validateIdentifierString(transactionId, 36)) {
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStopTransaction: Invalid transaction ID format (expected UUID): ${transactionId as string}`
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStopTransaction: Invalid transaction ID format (must be non-empty string ≤36 characters): ${transactionId as string}`
       )
       return {
         status: RequestStartStopStatusEnumType.Rejected,
@@ -1727,13 +1732,13 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   private validateChargingProfile (
     chargingStation: ChargingStation,
     chargingProfile: OCPP20ChargingProfileType,
-    evseId: number
+    evseId: number,
+    context: 'RequestStartTransaction' | 'SetChargingProfile' = 'SetChargingProfile'
   ): boolean {
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfile: Validating charging profile ${chargingProfile.id.toString()} for EVSE ${evseId.toString()}`
     )
 
-    // Basic validation - check required fields
     if (!chargingProfile.id || !chargingProfile.stackLevel) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfile: Invalid charging profile - missing required fields`
@@ -1741,7 +1746,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
-    // Validate stack level range (OCPP 2.0 spec: 0-9)
     if (chargingProfile.stackLevel < 0 || chargingProfile.stackLevel > 9) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfile: Invalid stack level ${chargingProfile.stackLevel.toString()}, must be 0-9`
@@ -1749,7 +1753,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
-    // Validate charging profile ID is positive
     if (chargingProfile.id <= 0) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfile: Invalid charging profile ID ${chargingProfile.id.toString()}, must be positive`
@@ -1757,7 +1760,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
-    // Validate EVSE compatibility
     if (!chargingStation.hasEvses && evseId > 0) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfile: EVSE ${evseId.toString()} not supported by this charging station`
@@ -1772,7 +1774,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
-    // Validate charging schedules array is not empty
     if (chargingProfile.chargingSchedule.length === 0) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfile: Charging profile must contain at least one charging schedule`
@@ -1780,7 +1781,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
-    // Time constraints validation
     const now = new Date()
     if (chargingProfile.validFrom && chargingProfile.validTo) {
       if (chargingProfile.validFrom >= chargingProfile.validTo) {
@@ -1798,7 +1798,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
-    // Validate recurrency kind compatibility with profile kind
     if (
       chargingProfile.recurrencyKind &&
       chargingProfile.chargingProfileKind !== OCPP20ChargingProfileKindEnumType.Recurring
@@ -1819,7 +1818,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
-    // Validate each charging schedule
     for (const [scheduleIndex, schedule] of chargingProfile.chargingSchedule.entries()) {
       if (
         !this.validateChargingSchedule(
@@ -1834,8 +1832,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
-    // Profile purpose specific validations
-    if (!this.validateChargingProfilePurpose(chargingStation, chargingProfile, evseId)) {
+    if (!this.validateChargingProfilePurpose(chargingStation, chargingProfile, evseId, context)) {
       return false
     }
 
@@ -1847,19 +1844,45 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
   /**
    * Validates charging profile purpose-specific business rules
+   * Per OCPP 2.0.1 Part 2 §2.10:
+   * - RequestStartTransaction MUST use chargingProfilePurpose=TxProfile
+   * - RequestStartTransaction chargingProfile.transactionId MUST NOT be present
    * @param chargingStation - The charging station instance
    * @param chargingProfile - The charging profile to validate
    * @param evseId - EVSE identifier
+   * @param context - Request context ('RequestStartTransaction' or 'SetChargingProfile')
    * @returns True if purpose validation passes, false otherwise
    */
   private validateChargingProfilePurpose (
     chargingStation: ChargingStation,
     chargingProfile: OCPP20ChargingProfileType,
-    evseId: number
+    evseId: number,
+    context: 'RequestStartTransaction' | 'SetChargingProfile' = 'SetChargingProfile'
   ): boolean {
     logger.debug(
-      `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfilePurpose: Validating purpose-specific rules for profile ${chargingProfile.id.toString()} with purpose ${chargingProfile.chargingProfilePurpose}`
+      `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfilePurpose: Validating purpose-specific rules for profile ${chargingProfile.id.toString()} with purpose ${chargingProfile.chargingProfilePurpose} in context ${context}`
     )
+
+    // RequestStartTransaction context validation per OCPP 2.0.1 §2.10
+    if (context === 'RequestStartTransaction') {
+      // Requirement 1: ChargingProfile.chargingProfilePurpose SHALL be TxProfile
+      if (
+        chargingProfile.chargingProfilePurpose !== OCPP20ChargingProfilePurposeEnumType.TxProfile
+      ) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfilePurpose: RequestStartTransaction (OCPP 2.0.1 §2.10) requires chargingProfilePurpose to be TxProfile, got ${chargingProfile.chargingProfilePurpose}`
+        )
+        return false
+      }
+
+      // Requirement 2: ChargingProfile.transactionId SHALL NOT be present at RequestStartTransaction time
+      if (chargingProfile.transactionId != null) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfilePurpose: RequestStartTransaction (OCPP 2.0.1 §2.10) does not allow chargingProfile.transactionId (not yet known at start time)`
+        )
+        return false
+      }
+    }
 
     switch (chargingProfile.chargingProfilePurpose) {
       case OCPP20ChargingProfilePurposeEnumType.ChargingStationExternalConstraints:
@@ -1896,10 +1919,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           return false
         }
 
-        // TxProfile should have a transactionId when used with active transaction
-        if (!chargingProfile.transactionId) {
+        // TxProfile in SetChargingProfile context should have a transactionId
+        if (context === 'SetChargingProfile' && !chargingProfile.transactionId) {
           logger.debug(
-            `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfilePurpose: TxProfile without transactionId - may be for future use`
+            `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfilePurpose: TxProfile without transactionId in SetChargingProfile context - may be for future use`
           )
         }
         break
