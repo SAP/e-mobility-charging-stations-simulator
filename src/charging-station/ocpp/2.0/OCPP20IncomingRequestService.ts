@@ -154,6 +154,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         this.handleRequestDeleteCertificate.bind(this) as unknown as IncomingRequestHandler,
       ],
       [
+        OCPP20IncomingRequestCommand.GET_CERTIFICATE_STATUS,
+        this.handleRequestGetCertificateStatus.bind(this) as unknown as IncomingRequestHandler,
+      ],
+      [
         OCPP20IncomingRequestCommand.GET_BASE_REPORT,
         this.handleRequestGetBaseReport.bind(this) as unknown as IncomingRequestHandler,
       ],
