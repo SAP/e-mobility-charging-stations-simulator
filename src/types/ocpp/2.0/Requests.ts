@@ -2,9 +2,14 @@ import type { EmptyObject } from '../../EmptyObject.js'
 import type { JsonObject } from '../../JsonType.js'
 import type {
   BootReasonEnumType,
+  CertificateActionEnumType,
+  CertificateHashDataType,
+  CertificateSigningUseEnumType,
   ChargingStationType,
   CustomDataType,
+  GetCertificateIdUseEnumType,
   InstallCertificateUseEnumType,
+  OCSPRequestDataType,
   ReportBaseEnumType,
   ResetEnumType,
 } from './Common.js'
@@ -104,4 +109,38 @@ export interface OCPP20StatusNotificationRequest extends JsonObject {
   customData?: CustomDataType
   evseId: number
   timestamp: Date
+}
+
+export interface OCPP20CertificateSignedRequest extends JsonObject {
+  certificateChain: string
+  certificateType?: CertificateSigningUseEnumType
+  customData?: CustomDataType
+}
+
+export interface OCPP20DeleteCertificateRequest extends JsonObject {
+  certificateHashData: CertificateHashDataType
+  customData?: CustomDataType
+}
+
+export interface OCPP20Get15118EVCertificateRequest extends JsonObject {
+  action: CertificateActionEnumType
+  customData?: CustomDataType
+  exiRequest: string
+  iso15118SchemaVersion: string
+}
+
+export interface OCPP20GetCertificateStatusRequest extends JsonObject {
+  customData?: CustomDataType
+  ocspRequestData: OCSPRequestDataType
+}
+
+export interface OCPP20GetInstalledCertificateIdsRequest extends JsonObject {
+  certificateType?: GetCertificateIdUseEnumType[]
+  customData?: CustomDataType
+}
+
+export interface OCPP20SignCertificateRequest extends JsonObject {
+  certificateType?: CertificateSigningUseEnumType
+  csr: string
+  customData?: CustomDataType
 }

@@ -84,6 +84,11 @@ export enum InstallCertificateUseEnumType {
   V2GRootCertificate = 'V2GRootCertificate',
 }
 
+export enum Iso15118EVCertificateStatusEnumType {
+  Accepted = 'Accepted',
+  Failed = 'Failed',
+}
+
 export enum OCPP20ComponentName {
   // Physical and Logical Components
   AccessBarrier = 'AccessBarrier',
