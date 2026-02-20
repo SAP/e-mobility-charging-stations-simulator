@@ -1,0 +1,242 @@
+Name ; DataType ; Unit ; Description
+ACCurrent;decimal;A ; RMS AC Current (in amperes). For 3-phase circuits, each phase (and optional neutral) is represented by a Variable instance equal to a value of the PhaseEnumType (e.g. L1,N). Unkeyed values reported for a Component declared to be multi-phase are assumed to be an average of all per-phase readings and written values are common per-phase settings. Example(s): ChargingStation: Total AC current consumption (all EVSE’s, ancillaries), EVSE: Total current consumed by EVSE: includes losses (AC->DC) and EVSE specific ancillaries (e.g. fans), ElectricalFeed: Inflow AC current on feed
+ACPhaseSwitchingSupported;boolean;;If defined and true, this EVSE supports the selection of which phase to use for 1 phase AC charging.
+ACVoltage;decimal;V; RMS AC Voltage (in volts). For 3-phase circuits, each phase (and optional neutral) is represented by a Variable instance equal to a value of the PhaseEnumType (e.g. L1,N). Unkeyed values reported for a Component declared to be multi-phase are assumed to be an average ofall per-phase readings and written values are common per-phase settings. Example(s): ElectricalFeed: Input Voltage
+Active;boolean; ; Component is in its non-resting / active state: e.g: On, Engaged, Locked. Some Components may have secondary functions that have corresponding Active Variables with an explicit Variable instance., Note: Monitoring of changes in the Active state of any Component can be specified by setting Delta monitoring on the boolean value with a delta values of 1. Setting/clearing an Active Variable activates/stops the associated functionality, where remotely controllable. Only components that are Available and Enabled can be in the Active state.
+ActiveMonitoringBase;OptionList;;Shows the currently used MonitoringBase.
+ActiveMonitoringLevel;integer;;Shows the currently use MonitoringLevel.
+ActiveNetworkProfile;boolean;;Indicates the configuration profile the station uses to connect to the network.
+ActiveTransactionId;string;;Active transaction on charging station or EVSE.
+AdditionalInfoItemsPerMessage;integer;;Maximum number of _additionalInfo_ items that can be sent in one message.
+AdditionalRootCertificateCheck;boolean;;When set to true, only one certificate (plus a temporarily fallback certificate) of certificateType CSMSRootCertificate is allowed to be installed at a time.
+AllowEnergyTransferResumption;boolean;;This variable defines whether energy transfer is allowed to be resumed when the transaction is resumed after a reset or power outage.
+AllowNewSessionsPendingFirmwareUpdate;boolean;;Indicates whether new sessions can be started on EVSEs, while Charging Station is waiting for all EVSEs to become Available in order to start a pending firmware update.
+AllowReset ;boolean ; ; Component can be reset. Can be used to announce that an EVSE can be reset individually.
+AllowSecurityProfileDowngrade;boolean;;If this variable is implemented and set to _true_, then the Charging Station allows downgrading the security profile from 3 to 2.
+Angle;decimal; Deg ; Angle(s) relative to normal/design idle position. Multiple Variable instance values may be used to indicate angular position in multiple axes (e.g. Left-Right, Forward-Back).
+Attempts;integer ;; Number of attempts (INCLUDING the original attempt) in the last successful or attempted, cycle of operation. Applies typically to self-monitoring motorized electro-mechanical equipment, etc. {Null}: Unknown, 0: Not Attempted/Not allowed, 1: Single attempt/No retries [allowed], 2-N: [up to] N tries [allowed]
+AuthorizeRemoteStart;boolean;;Whether a remote request to start a transaction in the form of RequestStartTransactionRequest message should be authorized beforehand like a local action to start a transaction.
+AvailabilityState;OptionList; ; A value of ConnectorStatusEnumType (See part 2): replicates ConnectorStatus values reported in StatusNotification messages.
+Available;boolean; ; The Component exists and is locally configured/wired for use, but might not be (remotely) Enabled.
+BasicAuthPassword;string;;The basic authentication password is used for HTTP Basic Authentication.
+BytesPerMessage;integer;;Message Size (in bytes) - puts constraint on GetReportRequest, GetMonitoringReportRequest or GetVariableRequest message size.
+CentralContractValidationAllowed;boolean;;If this variable exists and has the value _true_, then Charging Station can provide a contract certificate that it cannot validate, to the CSMS for validation as part of the AuthorizeRequest.
+CertSigningRepeatTimes;integer;;This variable can be used to configure the amount of times the Charging Station SHALL double the previous back-off time, starting with the number of seconds configured at CertSigningWaitMinimum, every time the back-off time expires without having received the CertificateSignedRequest containing the from the CSR generated signed certificate.
+CertSigningWaitMinimum;integer;;This configuration variable defines how long the Charging Station has to wait before generating another CSR, in the case the CSMS accepts the SignCertificateRequest, but never returns the signed certificate.
+Certificate;string ; ;Digital Certificate (in Base64 encoding)
+CertificateEntries;integer;;Amount of Certificates currently installed on the Charging Station.
+CertificateStatusSource;string;;When present, this variable tells CSMS whether Charging Station uses OCSP or CRL to check for revoked certificates.
+ChargeProtocol;string; ;The Charging Control Protocol applicable to a Connector. CHAdeMO: CHAdeMO protocol, ISO15118: ISO15118 V2G protocol (wired or wireless) as used with CCS, CPPWM: IEC61851-1 / SAE J1772  protocol (ELV DC & PWM signalling via Control Pilot wire), Uncontrolled: No charging power management applies (e.g. Schuko socket), Undetermined: Yet to be determined (e.g. before plugged in), Unknown: Not determinable, NOTE: ChargeProtocol is distinct from and orthogonal to connectorType.
+ChargingCompleteBulk;boolean;;Charging up to StateOfChargeBulk has completed.
+ChargingCompleteFull;boolean;;Charging up to StateOfCharge.maxSet has completed.
+ChargingProfilePersistence;boolean;;If an instance of this variable is true, then charging profiles with the _chargingProfilePurpose_ mentioned in the *variableInstance* are persistent, i.e. they are stored persistently and will still exist after a reboot.
+ChargingState;OptionList;;This variable reports the current transaction charging state for an EVSE.
+ChargingTime;decimal;s ; Time from earliest to latest substantive energy transfer
+Color;string ;  ; Standard 24 bit hexadecimal RGB values. Reg Green Blue color intensity, expressed as standard 24 bit hexadecimal RGB values: 3  00-FF (0-255), in order RRGGBB). E.g. 000000: Black, FF0000: Red, 00FF00: Green, 0000FF: Blue, FFFF00:Yellow, FFFFFF: White, 008000: Medium intensity green.
+CommunicationParent;string;;Points to a communication parent component (data flow source), to allow rendering the communication hierarchy in a UI.
+Complete;boolean; ; Component’s operation cycle has completed. Used only in event notifications, where it is always true.
+ConditionsSupported;boolean;;If set to true the Charging Station supports tariffs with conditions.
+ConfigurationValueSize;integer;;This Configuration Variable can be used to limit the following fields: SetVariableData.attributeValue and VariableCharacteristics.valuesList.
+ConnectedTime;decimal;s ; Time since logical connection established
+ConnectorType;OptionList ; ; A value of ConnectorStringEnumType (See Appendix 7). Specific type of connector, including sub-variant information. Note: Distinct and orthogonal to Charging Protocol, Power Type, Phases.
+ContractCertificateInstallationEnabled;boolean;;If this variable is _true_, then ISO 15118 contract certificate installation/update as described by use case M01 - Certificate installation EV
+ContractValidationOffline;boolean;;If this variable is _true_, then Charging Station will try to validate a contract certificate when it is offline.
+Count;integer; ; General purpose integer count variable for Component state reporting
+CountryName;string;;The countryName of the SECC in the ISO 3166-1 format.
+Currency;string;;Currency in a ISO 4217 formatted currency code.
+CurrentImbalance;decimal;Percent ;Percentage current imbalance in an AC three phase supply.
+CustomImplementationEnabled;boolean;;This standard configuration variable is used to enable/disable the custom implementation named in the *variableInstance*.
+CustomTriggers;MemberList;;This variable defines the names of custom triggers that Charging Station supports in a _customTrigger_ field of TriggerMessageRequest.
+DCCurrent;decimal;A ; DC Current (in amperes). May be an instantaneous measurement, or a period average, depending on context/equipment.
+DCInputPhaseControl;boolean;;When DCInputPhaseControl is true, then the values of _numberPhases_ and _PhaseToUse_ in a ChargingSchedulePeriodType will select the input phases from the grid to be used by the DC EVSE.
+DCVoltage;decimal;V ; DC Voltage (volts). May be an instantaneous measurement, or a period average, depending on context/equipment.
+DataText ; string; ; Text associated with a Component, e.g. a Display.
+DateTime;dateTime;;Point in time value, in [RFC3339] datetime format. Time zone optional.
+DepartureTime;dateTime;;Time in [RFC3339] datetime format, when an EV intends to leave the charging station.
+DisablePostAuthorize;boolean;;When set to _true_ this variable disables the behavior to request authorization for an
+DisableRemoteAuthorization;boolean;;When set to _true_ this instructs the Charging Station to not issue any AuthorizationRequests, but only use Authorization Cache and Local Authorization List to determine validity of idTokens.
+DischargePower;decimal;;The variableCharacteristic _maxLimit_ holds the maximum rated discharge power that this EVSE can provide. The variableCharacteristic _maxSet_ holds the maximum configured discharge power that this EVSE can provide. The _Actual_ value of the instantaneous (real) discharge power is recommended to be supported, but not required. Discharge power is represented by a positive value.
+DisplayMessages;integer;;Maximum number of different messages that can configured in this Charging Station simultaneous, via SetDisplayMessageRequest.
+ECVariant;string; ; Production series variants reflecting internal design changes or sub-component substitutions not affecting external functionality.
+EVConnectionTimeOut;integer;s;Interval from between 'starting' of a transaction until incipient transaction is automatically canceled, due to failure of EV driver to (correctly) insert the charging cable connector(s) into the appropriate socket(s).
+ElectricalParent;string;;Points to a electrical parent component (energy flow source), to allow rendering the electrical hierarchy in a UI.
+Enabled;boolean; ; The Component is Enabled for operation. For Available components that cannot be selectively (remotely) enabled / disabled, this value is always true. Note: Available cannot be false of Enabled is true, so during inventory reporting, Enabled=1 also logically states Available=true
+Energy;decimal;Wh;Energy quantity (in Wh) for reporting/configuring values related to stored energy (i.e. not transferred energy).
+EnergyCapacity;decimal;Wh ;Energy capacity in Wh of an energy storage device.
+EnergyExport;decimal;Wh ; Total energy transferred: e.g.  from EV during (ongoing or terminated) charging session (in wH by default)
+EnergyExportRegister;decimal;Wh; Cumulative export kWh register value, such as from a (certified) fiscal energy meter.
+EnergyImport;decimal;Wh ; Total energy transferred.
+EnergyImportRegister;decimal;Wh ; Cumulative export kWh register value, such as from a (certified) fiscal energy meter.
+Entries;integer;;General purpose variable for reporting/managing numbers of entries in repetitive data structures. maxLimit characteristic reports maximum possible entries.
+ExternalConfigChangeDate;DateTime;;Date/time when the configuration was changed externally, i.e. outside of CSMS, for example by a local service action.
+ExternalConstraintsProfileDisallowed;boolean;;Indicates whether a Charging Station allows an external system to submit a `ChargingStationExternalConstraints` charging profile.
+ExternalControlSignalsEnabled;boolean;;Indicates whether a Charging Station is able to respond to external control signals that influence charging. If the variable is true, but CSMS has set <<configkey-external-constraints-profile-disallowed>> = true, then external control signals are only allowed during a charging profile with a _chargingProfilePeriod_ = `ExternalLimits` or `ExternalSetpoint`.
+Fallback;boolean; ; Component is operating in a fallback, or backup mode. In inventory reports, a Value of 1 for the maxLimit characteristic indicates that the component can enter a fallback state (i.e. a fallback mode is present).
+FanSpeed;decimal ;RPM ; Fan Speed (in RPM). A value of 0 represents stopped/stalled. An empty value indicates that fan speed cannot be read.
+FieldLength;integer;;This variable is used to report the length of <field> in <message> when it is larger
+FileTransferProtocols;MemberList;;List of supported file transfer protocols.
+FirmwareVersion;string ;; Version number of firmware.
+Force;decimal;N ; Reports (impact) force/ acceleration values (estimates) in one or more directions, in units of Newtons or “g”. Multiple force readings in different (orthogonal) dimensions may be reported using Variable instance values, such as Down, Right, Forward.
+Formats;MemberList;;List of message formats supported by this Charging Station. Possible values: ASCII, HTML, URI, UTF-8.
+Frequency;decimal;Hz ; Frequency of AC power, signal, or component operation.
+FrequencySchedule;string;;A JSON-formatted string with an array of { _time, freq_ } pairs, in which _time_ is
+FuseRating;decimal;A;Current rating of a fuse/breaker. Variable instances keyed by phase identifier (L1/L2/L3/N).
+HandleFailedTariff;OptionList;;This configuration determines how to act when a driver-specific tariff is received, which cannot be processed.
+HeartbeatInterval;integer;s;Interval of inactivity (no OCPP exchanges) with CSMS after which the Charging Station should send HeartbeatRequest.
+Height;decimal;m ; Height above(+)/below(-) reference level (ground level unless context demands otherwise).
+Humidity;decimal;RH; The relative humidity in %.
+Hysteresis;decimal;Percent;Specifies the width of a 'dead band' (as a percentage of the threshold) around the central value of a threshold setting (e.g. MinSet, MaxSet, monitor thresholds) to avoid repeated triggering when the measured quantity lies close to the threshold and is subject to small variations.
+ICCID; string ; ; ICCID (Integrated Circuit Card IDentifier) of mobile data SIM card.
+IMSI; string ;; IMSI (International Mobile Subscriber Identity) number of mobile data SIM card
+ISO15118EvseId;string;;EVSE ID in string format as used in ISO 15118 and IEC 63119-2
+IdToken;string;;The IdToken used to authorize a charging transaction.
+Identity;string;;The Charging Station identity.
+Impedance;decimal;Ohm ; Impedance: Primary value is real (resistive only) impedance. Where a complex impedance is to be reported, the imaginary part (reactance) must be represented with a separate Variable instance value of 'reactance'. Reactance values are expressed at the (nominal) relevant operating frequency of the Component (e.g. 50/60Hz for mains electricity feed).
+Interval;integer;s ; Minimum Interval (in seconds) between (attempted) operations.
+ItemsPerMessage;integer;;Maximum number of ComponentVariable entries that can be sent in one GetReportRequest or GetMonitoringReportRequest message.
+Label;string;;Label for a component. Specifies a non-unique label to be used in a hierarchy UI rendering, in place of the unique component name and instance
+Language;OptionList;;Default language code, per RFC 5646, of this Charging Station.
+Length ;decimal; m; General Purpose linear distance measure.
+LifeTime;integer;s;Indicates how long it takes until a token expires in the authorization cache since it is last used.
+Light;decimal;lx ; (Ambient) light level. The value is in Lux.
+LimitChangeSignificance;decimal;;If at the Charging Station side a change in the limit in a ChargingProfile is lower than this percentage, the Charging Station MAY skip sending a NotifyChargingLimitRequest or a TransactionEventRequest message to the CSMS.
+LocalAuthorizeOffline;boolean;;Whether the Charging Station, when _Offline_, will start a transaction for locally-authorized identifiers.
+LocalFrequencyUpdateThreshold;integer;mHz;The amount of change in net frequency in *mHz* is needed to trigger a recalculation of the setpoint.
+LocalLoadBalancing;decimal;;Variable with instances to control local load-balancing.
+LocalPreAuthorize;boolean;;Whether the Charging Station, when online, will start a transaction for locally-authorized identifiers without waiting for or requesting an AuthorizeResponse from the CSMS.
+LogicalParent;string;;Points to a logical parent component, to allow rendering a comprehensive overview of the Charging Station components in a UI.
+Manufacturer; string ; ; Component Manufacturer name
+MasterPassGroupId;string;;IdTokens that have this id as groupId belong to the Master Pass Group.
+MaxCertificateChainSize;integer;;This configuration variable can be used to limit the size of the 'certificateChain' field from the CertificateSignedRequest PDU.
+MaxElements;integer;;For TariffCostCtrlr: Specifies the maximum number of _prices_ elements that the Charging Station supports in each  _energy_, _chargingTime, _idleTime_ and _fixedFee_ of a TariffType.
+MaxEnergyOnInvalidId;integer;Wh;Maximum amount of energy in Wh delivered when an identifier is deauthorized by the CSMS after start of a transaction.
+MaxExternalConstraintsId;integer;;Defines the highest value that a charging profile id of a `ChargingStationExternalConstraints` profile in the Charging Station can have.
+MaxPeriodicEventStreams;integer;;The maximum number of open periodic event streams that Charging Station supports.
+MaxPriceElements;integer;;For ISO15118Ctrlr: The maximum number of _priceRuleStacks_ and _priceLevelScheduleEntries_ that Charging Station is able to accept in a ChargingScheduleType.
+MaxSoc;integer;;The maximum state of charge that a battery will be charged to.
+Measurands;MemberList;;Measurand(s) to be included in <<metervaluesrequest,MeterValuesRequest>> or <<transactioneventrequest,TransactionEventRequest>>
+Message;string;;Specific stored message for display.
+MessageAttemptInterval;integer;s;How long the Charging Station should wait before resubmitting a TransactionEventRequest message that the CSMS failed to process.
+MessageAttempts;integer;;How often the Charging Station should try to submit a TransactionEventRequest message when the CSMS fails to process it.
+MessageTimeout;integer;s;The purpose of the message timeout is to be able to consider a request message as not sent and continue with other tasks when the message did not arrive due to communication errors or software failure.
+MinimumStatusDuration;integer;s;Minimum duration that a Charging Station or EVSE status is stable before StatusNotificationRequest is sent to the CSMS.
+Mode;string; ; Operating mode string from among valid options (communicated by OptionList, etc. during capability/configuration  discovery).
+Model;string ; ; Manufacturer's Model code/number of Component, including suffixes etc. to identify functional, regional or linguistic variation, but NOT engineering change level internal 				variation not affecting external behaviour, etc.
+NetworkAddress ; string; ; Current network address of a Component.
+NetworkConfigurationPriority;SequenceList;;A comma separated ordered list of the priority of the possible Network Connection Profiles. The list of possible available profile slots for the network configuration profiles SHALL be reported, via the valuesList characteristic of this Variable.
+NetworkProfileConnectionAttempts;integer;;Specifies the number of connection attempts the Charging Station executes before switching to a different profile.
+NextTimeOffsetTransitionDateTime;DateTime;;Date time of the next time offset transition. On this date time, the clock displayed to the EV driver will be given the new offset as configured via `TimeOffsetNextTransition`.
+NonEvseSpecific;boolean;;For ReservationCtrlr: If this configuration variable is present and set to _true_: Charging Station supports reservation where EVSE id is not specified.
+NotificationMaxDelay;integer;s;For ISO15118Ctrlr: The SECC (EVSE) uses the NotificationMaxDelay element in the EVSEStatus to indicate the time in seconds until it expects the EVCC (EV) to react on the action request indicated in EVSENotification.
+NotifyChargingLimitWithSchedules;boolean;;Indicates if the Charging Station should include the externally set charging limit/schedule in the message when it sends a NotifyChargingLimitRequest message.
+NtpServerUri;string;;This contains the address of the NTP server.
+NtpSource;OptionList;;Use the NTP server provided via DHCP, or use the manually configured NTP server.
+OfflineQueuingSeverity;integer;;When set and the Charging Station is _offline_, the Charging Station shall queue any NotifyEventRequest messages triggered by a monitor with a severity number equal to or lower than the severity configured here.
+OfflineTariffFallbackMessage;string;;Message (and/or tariff information) to be shown to an EV Driver when Charging Station is offline.
+OfflineThreshold;integer;s;When the offline period of a Charging Station exceeds the `OfflineThreshold` it is recommended to send a StatusNotificationRequest for all its Connectors when the Charging Station is back online.
+OfflineTxForUnknownIdEnabled;boolean;;If this key exists and is true, the Charging Station supports Unknown Offline Authorization.
+Operated;boolean; ; The Component operated in an instantaneous, transient, or immediately self-resetting pattern. Used only in event notifications, where it is always true.
+OperatingTimes;string; ; Recurring operating times in iCalendar RRULE format.
+OrganizationName;string;;The organizationName of the CSO operating the charging station.
+Overload;boolean; ; Component is in Overload state.
+Percent;decimal;Percent ;Generic dimensionless value reporting/setting value.
+PeriodsPerSchedule;integer;;Maximum number of periods that may be defined per ChargingSchedule.
+PhaseRotation;string;;This variable describes the phase rotation of a Component relative to its parent Component, using a
+Phases3to1;boolean;;If defined and true, this Charging Station supports switching from 3 to 1 phase during a transaction.
+PhysicalParent;string;;Points to a physical parent component (container), to allow rendering an overview of the Charging Station component locations in a UI.
+PnCEnabled;boolean;;If this variable is _true_, then ISO 15118 plug and charge as described by use case C07 - Authorization using Contract Certificates is enabled.
+Policy;OptionList;;Cache Entry Replacement Policy: least recently used, least frequently used, first in first out, other custom mechanism.
+PostChargingTime;decimal;s ; Elapsed time in seconds since last substantive energy transfer
+Power;decimal;W,kW ; Instantaneous (real) Power (measured/calculated, including power factor for AC). Where a component (e.g. AC to DC Power Converter) has multiple power measurements, the default (unkeyed) instance is “input” power.
+Present;boolean; ; Component exists, but might not be locally configured/wired for use, nor (remotely) Enabled.
+Problem;boolean; ; Component itself has a 'Problem' condition that impacts in any significant way on its normal operation. By definition, 'Problem' state includes (logical OR) 'Fault' state. 'Problem' specifically INCLUDES inability to operate that is propagated (up/down/sideways) from any other associated/connected/containing/contained Component.
+ProfileStackLevel;integer;;Maximum acceptable value for _stackLevel_ in a ChargingProfile.
+Protecting;boolean;;Applies to 'sensor' type Components that have an associated protection capability, whereby they can  disconnect power (e.g. using the main PowerContactor) if the sensed quantity is outside preset/configured limits. If Protecting is true, the Component is actively preventing/interrupting charging.
+ProtocolAgreed;string;;For ConnectedEV: A string with the following comma-separated items: “<uri>,<major>,<minor>”. This is the protocol uri and version information that was agreed upon between EV and EVSE in the supportedAppProtocolReq handshake from ISO 15118.
+ProtocolSupported;string;;For ISO15118Ctrlr: A string with the following comma-separated items: “<uri>,<major>,<minor>”. <uri> is in the format as used in the SupportedAppProtocolReq message from ISO 15118-2 and ISO 15118-20. This variable has at most 20 instances, one for each supported protocol version.
+ProtocolSupportedByEV;string;;For ConnectedEV: A string with the following comma-separated items: “<uri>,<major>,<minor>”. This is information from the SupportedAppProtocolReq message from ISO 15118. Each priority is given its own variable instance. Priority is a number from 1 to 20 as a string.
+PublicKey;string;;Configuration variable that can be used to retrieve the public key for a meter connected to a specific EVSE.
+PublicKeyWithSignedMeterValue;boolean;;This Configuration Variable can be used to configure whether a public key needs to be sent with a signed meter value.
+QueueAllMessages;boolean;;When this variable is set to _true_, the Charging Station will queue all message until they are delivered to the CSMS.
+RateUnit;string;;A list of supported quantities (A, W) for use in a ChargingSchedule.
+RegisterValuesWithoutPhases;boolean;;If this variable reports a value of _true_, then meter values of measurand `Energy.Active.Import.Register` will only report the total energy over all phases without reporting the individual phase values.
+RemainingTimeBulk;integer;s;Number of seconds remaining to charge to bulk state of charge, given by StateOfChargeBulk.
+RemainingTimeFull;integer;s;Number of seconds remaining to charge to 100% state of charge.
+ReportingValueSize;integer;;This Configuration Variable can be used to limit the following fields: GetVariableResult.attributeValue, VariableAttribute.value and EventData.actualValue.
+RequestMeteringReceipt;boolean;;For ISO15118Ctrlr: If this variable is _true_, then Charging Station shall request a metering receipt
+ResetRetries;integer;;Number of times to retry a reset of the Charging Station when a reset was unsuccessful.
+ResumptionTimeout;integer;s;This variable defines the maximum number of seconds that a transaction may be interrupted by a power outage and still be resumed afterwards.
+SampledMeasurands;MemberList;;The set of measurands to be sampled by the DataCollector component.
+SamplingInterval;decimal;s;The sampling interval in *seconds*.
+SeccId;string;;The name of the SECC in the string format as required by ISO 15118.
+SecurityProfile;integer;;This configuration variable is used to report the security profile used by the Charging Station.
+SendDuringIdle;boolean;;For AlignedDataCtrlr: If set to _true_, the Charging Station SHALL only send clock aligned meter values when there is no transaction ongoing.
+SerialNumber;string ;; Serial number of Component.
+ServiceRenegotiationSupport;boolean;;For ISO15118Ctrlr: If set to 'True' the SECC (EVSE) is capable of ServiceRenegotiation.
+SetpointPriority;OptionList;;Defines which _setpoint_ shall be used when a `ChargingStationExternalConstraints` profile
+SignReadings;boolean;;If set to _true_, the Charging Station SHALL include signed meter values in the TransactionEventRequest(Ended).
+SignStartedReadings;boolean;;If set to _true_, the Charging Station SHALL include signed meter values for _context_ = `Transaction.Begin` in the _metervalues_ field in the TransactionEventRequest(Started or Updated).
+SignUpdatedReadings;boolean;;If set to _true_, the Charging Station SHALL include signed meter values in the _metervalues_ field in the TransactionEventRequest(Updated).
+SignalStrength;decimal;dBm ; (Radio/Wired/Optical) data signal strength, in ASU (typically 0-31 or 99 for unknown). Or dbmW (typically -140 to -50).
+SlotStatus;OptionList;;This variable represents the status of the door of the battery slot.
+SoC;integer;Percent;SoC of the component BatteryCartridge which refers to the battery that is inserted at the EVSE.
+SoH;integer;Percent;SoH of the component BatteryCartridge which refers to the battery that is inserted at the EVSE.
+State;string; ; A state code or name identifier string, to allow the internal state of  components to be reported and/or  controlled
+StateOfCharge;decimal;Percent ; Energy Storage Device (e.g. battery) state of charge, expressed as a percentage of nominal design 0-100% operating range. The value of StateOfCharge.maxSet represents the maximum state of charge for a full battery and is usually at or near 100%.
+StateOfChargeBulk;decimal;Percent; Energy Storage Device (e.g. battery) state of charge up to which fast charging is possible. Above this percentage charging speed will drop significantly.
+StopTxOnEVSideDisconnect;boolean;;When set to _true_, the Charging Station SHALL deauthorize the transaction when the cable is unplugged from the EV.
+StopTxOnInvalidId;boolean;;Whether the Charging Station will deauthorize an ongoing transaction when it receives a non- _Accepted_ authorization status in TransactionEventResponse for this transaction.
+Storage;integer;B; In bytes. Amount of storage occupied. Storage(maxLimit) specifies absolute limit Storage(MaxSet) restricts usage to specified Max, if supported.
+SupplyPhases; integer ; ; Number of alternating current phases connected/available. 1 or 3 for AC, 0 means DC (no alternating phases). Null value indicates that the number of phases (e.g. in use) is unknown.
+SupportedAdditionalPurposes;MemberList;;This configuration variable lists the additional charging profile purposes, that have been introduced in OCPP 2.1, that are supported by the Charging Station.
+SupportedEnergyTransferModes;MemberList;;Lists the energy transfer services that are supported by the Charging Station.
+SupportedFormats;MemberList;;For DisplayMessageCtrlr: List of message formats supported by this Charging Station.
+SupportedIdTokenTypes;MemberList;;The subset of the list of supported IdTokenTypes as defined in Appendix 7.
+SupportedLimits;MemberList;;This variable defines which transaction limits in TransactionLimitType are supported by the Charging Station.
+SupportedOperationModes;MemberList;;Lists the V2X operation modes that are supported by the Charging Station.
+SupportedPriorities;MemberList;;For DisplayMessageCtrlr: List of the priorities supported by this Charging Station.
+SupportedProviders;string;;A comma-separated list of all providers (eMSPs) that are supported on this Charging Station. The providers are listed using country and provider ID from the EMAID, as defined in ISO 15118-20.
+SupportedStates;MemberList;;For DisplayMessageCtrlr: List of the states during which to display a message supported by this Charging Station.
+SupportsDynamicProfiles;boolean;;When this variable has value True, then the Charging Station supports charging profiles of type `Dynamic`.
+SupportsEvseSleep;boolean;;When reported as true the Charging Station supports the _evseSleep_ flag in a ChargingSchedulePeriod, which requests the EVSE electronics to go to sleep during _operationMode_ = 'Idle'.
+SupportsExpiryDateTime;boolean;;For LocalAuthListCtrlr: When set to _true_ Charging Station will disregard idTokens for authorization as if not present in the Local Authorization List when current date/time is past the value of _cacheExpiryDateTime_.
+SupportsLimitAtSoC;boolean;;When this variable has value True, then the Charging Station supports the field _limitAtSoC_ in ChargingSchedul, which will cap the limit or setpoint in the ChargingSchedulePeriodType by the value of _limitAtSoC.limit._ 
+SupportsMaxOfflineDuration;boolean;;When this variable has value True, then the Charging Station supports the fields _maxOfflineDuration_ and _invalidAfterOfflineDuration_ in ChargingProfile.
+SupportsRandomizedDelay;boolean;;When this variable has value True, then the Charging Station supports the field _randomizedDelay_ in ChargingSchedule, which will delay the start of each charging schedule period by a random number between 0 and _randomizedDelay_. 
+SupportsUseLocalTime;boolean;;When this variable has value True, then the Charging Station supports the field _useLocalTime_ in ChargingSchedule.
+Suspending;boolean;;If Suspending is true, the Component can is currently suspending charging.
+Suspension;boolean;;Applies to 'sensor' type Components that have a charging suspension capability, typically for safety or equipment protection reasons. If Suspension is true, the component can suspend charging when the sensed quantity is outside preset/configured limits.
+TargetSoc;integer;Percent;For BatterySwapCtrlr: The state of charge that a battery must have in order to be eligible for swapping.
+TariffFallbackMessage;string;;Message (and/or tariff information) to be shown to an EV Driver when there is no driver specific tariff information available.
+Temperature;decimal;Celsius, Fahrenheit ; Temperature(s) of component (in Celsius, by default). Components may have multiple indexed temperature sensors.
+Time;dateTime;  ; Point in time value, in ISO 8601 datetime format. Time zone optional.
+TimeAdjustmentReportingThreshold;integer;s;When the clock time is adjusted forwards or backwards for more then TimeAdjustmentReportingThreshold number of seconds, a SecurityEventNotification( 'SettingSystemTime' ) is sent by the charging station.
+TimeOffset;string;; A Time Offset with respect to Coordinated Universal Time (aka UTC or Greenwich Mean Time) in the form of an [RFC3339] time (zone) offset suffix, including the mandatory “+” or “-“ prefix.
+TimeSource;SequenceList;;Via this variable, the Charging Station provides the CSMS with the option to configure a clock source.
+TimeZone;string;;Configured current local time zone in the format: 'Europe/Oslo', 'Asia/Singapore' etc.
+Timeout;decimal;s; Generic timeout value for Component operation (in seconds).
+Timeout;integer;s;For BatterySwapCtrlr: Timeout in seconds in which a set of batteries must be inserted or removed after successful authorization.
+Token;string ;; String of bytes representing an ID token.
+TokenType; OptionList;; Type of Token. Value is one of IdTokenEnumStringType (See Appendix 7).
+TotalCostFallbackMessage;string;;Message to be shown to an EV Driver when the Charging Station cannot retrieve the cost for a transaction at the end of the transaction.
+Tries ; integer; ; Number of attempts done by a Component.
+Tripped;boolean; ; Single-shot device requires explicit intervention to re-prime/activate to normal.
+TxBeforeAcceptedEnabled;boolean;;With this configuration variable the Charging Station can be configured to allow charging before having received a BootNotificationResponse with status: Accepted.
+TxEndedInterval;integer;s;Interval between sampling of metering (or other) data, intended to be transmitted in the TransactionEventRequest(Ended) message.
+TxEndedMeasurands;MemberList;;Sampled measurands to be included in the _meterValues_ element of TransactionEventRequest(Ended).
+TxStartPoint;MemberList;;Start points for a transaction.
+TxStartedMeasurands;MemberList;;Sampled measurands to be included in the _meterValues_ element of TransactionEventRequest(Started).
+TxStopPoint;MemberList;;Stop points of a transaction.
+TxUpdatedInterval;integer;s;Interval between sampling of metering (or other) data, intended to be transmitted in the TransactionEventRequest(Updated) message.
+TxUpdatedMeasurands;MemberList;;Sampled measurands to be included in the _meterValues_ element of TransactionEventRequest(Updated).
+UnlockOnEVSideDisconnect;boolean;;When set to true, the Charging Station SHALL unlock the cable on the Charging Station side when the cable is unplugged at the EV.
+UpstreamInterval;integer;s;Interval between sampling of metering (or other) data, intended to be transmitted via TransactionEventRequest(Updated) messages for location = `Upstream` only.
+UpstreamMeasurands;MemberList;;Sampled measurands to be included in the _meterValues_ element of every TransactionEventRequest(Updated) for location = `Upstream` only.
+V2GCertificateInstallationEnabled;boolean;;If this variable is _true_, then ISO 15118 V2G Charging Station certificate installation as described by use case A02 - Update Charging Station Certificate by request of CSMS
+VehicleCertificate;string;;For ConnectedEV: The PEM encoded X.509 leaf/intermediate/root certificate when present in the vehicle certificate chain.
+VehicleId;string;;For ConnectedEV: EVCCID from ISO 15118 or CHAdeMO.
+VehicleId;string;;ID that EV provides to charging station. Encoded as a hexbinary string. In ISO 15118 the EVCCID is 6 bytes (MAC address), in CHAdeMO the vehicle id can be 24 bytes.
+VersionDate;dateTime;;[RFC3339]
+VersionNumber;string;;Version number of hardware
+VoltageImbalance;decimal;Percent; Percentage voltage imbalance in three phase supply.
+WorkingMode;OptionList;;This variable represents the current working mode of the battery in BatteryCartridge component.

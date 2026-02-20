@@ -1,0 +1,66 @@
+Group;Reason code;Description;Typically used for
+Charging Profiles;;;
+;DuplicateProfile;A charging profile with same _stackLevel - chargingProfilePurpose_ combination already exists on the Charging Station and has an overlapping validity period.;SetChargingProfile
+;InvalidProfile;Provided _chargingProfile_ contains invalid elements.;SetChargingProfile, RequestStartTransaction
+;InvalidProfileId;Provided _chargingProfile_ has an id that is within an invalid range.;SetChargingProfile, RequestStartTransaction
+;InvalidSchedule;Provided _chargingSchedule_ contains invalid elements.;SetChargingProfile, RequestStartTransaction
+;InvalidStackLevel;Provided value for _stackLevel_ is invalid.;SetChargingProfile
+;NoFreqWattCurve;A frequency-watt curve is missing in a charging schedule period with operation mode = LocalFrequency.;SetChargingProfile
+;NoPhaseForDC;Phase selection for a DC EVSE is not supported;SetChargingProfile
+;NoSignalWattCurve;A signal-watt curve is missing in a charging schedule period when an AFRRSignalRequest is received.;AFRRSignal
+;RateLimitExceeded;A charging profile of the same purpose is submitted too frequently;SetChargingProfile
+;UnsupportedKind;The requested charging profile kind is not supported;SetChargingProfile
+;UnsupportedPurpose;The requested charging profile purpose is not supported;SetChargingProfile
+;UnsupportedRateUnit;A _chargingRateUnit_ is provided that is not supported.;SetChargingProfile
+Charging Station;;;
+;CSNotAccepted;BootNotification of Charging Station has not (yet) been accepted by CSMS.;RequestStartTransaction, RequestStopTransaction
+;FixedCable;The connector has its own fixed cable that cannot be unlocked.;UnlockConnector
+;NoCable;No cable is connected at this time.;UnlockConnector
+;UnknownConnectorId;Connector Id is not known on EVSE;ChangeAvailability, UnlockConnector
+;UnknownConnectorType;Connector type is not known on EVSE;ReserveNow
+;UnknownEvse;EVSE is not known on Charging Stations;ChangeAvailability, ReserveNow, RequestStartTransaction
+Swap Station;;;
+;BatterySoHLow;Battery State of Health is too low;BatterySwap
+;BatterySoC;Battery State of Charge has unacceptable value;BatterySwap
+;BatteryDamaged;Battery is damaged;BatterySwap
+;BatteryUnknown;Battery has unknown serial number;BatterySwap
+;BatteryType;Battery type not accepted;BatterySwap
+;NoBatteryAvailable;No battery available for swapping;BatterySwap, RequestBatterySwap
+Miscellaneous;;;
+;DuplicateRequestId;A _requestId_ is provided, that has already been used for this type of request.;UpdateFirmware, PublishFirmware and requests for reports.
+;InvalidMessageSeq;Message should not be sent at this moment in current scenario.;(generic), SetChargingProfile with ISO15118
+;MissingDevModelInfo;Information needed for operation is missing from Device Model;(generic)
+;NoError;No error has occurred, but some extra information is in _additionalInfo_ .;(generic)
+;NotFound;No object(s) found that match a provided ID or criteria.;ClearVariableMonitoring, CustomerInformation, GetChargingProfiles, GetDisplayMessages, GetInstalledCertificateIds, GetReport
+;Unspecified;No reason is specified, but some extra information is in _additionalInfo_;(generic)
+;UnsupportedRequest;This request is not supported.;(generic)
+Operations and Permissions;;;
+;FwUpdateInProgress;Operation is not possible, because a firmware update is in progress.;Reset
+;NotEnabled;Feature is not enabled.;ClearCache
+;ReadOnly;Targeted variable is read-only and cannot be set.;SetVariables
+;WriteOnly;Targeted variable is write-only and cannot be read.;GetVariables
+Security;;;
+;InvalidCSR;Provided CSR is invalid;SignCertificate
+;InvalidCertificate;Provided certificate is invalid.;CertificateSigned, InstallCertificate
+;InvalidURL;Provided URL is invalid.;UpdateFirmware, PublishFirmware
+;RedirectNotAllowed;HTTP Redirection is not allowed;LogStatusNotification
+System Errors;;;
+;InternalError;Operation cannot be completed due to an internal error.;(generic)
+;OutOfMemory;Operation not possible, because system does not have enough memory.;(generic)
+;OutOfStorage;Operation not possible, because system does not have enough storage.;(generic)
+Transactions;;;
+;InvalidIdToken;Provided _idToken_ is not valid.;RequestStartTransaction
+;TxInProgress;A transaction is in progress.;ChangeAvailability, Reset, RequestStartTransaction
+;TxNotFound;There is no such transaction.;RequestStopTransaction, SetChargingProfile, GetVehicleCertificate
+;TxStarted;A transaction had already started (e.g. due to cable being plugged in).;RequestStartTransaction
+Values and Ranges;;;
+;InvalidValue;An invalid value has been provided.;(generic)
+;MissingParam;A parameter that is required for the request is missing.;(generic)
+;TooLargeElement;Provided element is too large to handle.;CertificateSigned, InstallCertificate
+;TooManyElements;Too many elements have been provided.;SetChargingProfile, SetVariables, SendLocalList
+;UnsupportedParam;A parameter was provided that is not supported.;(generic)
+;ValueOutOfRange;Provided value is out of range.;SetVariables, SetVariableMonitoring
+;ValuePositiveOnly;Provided value is not greater than zero.;(generic)
+;ValueTooHigh;Provided value is too high.;(generic)
+;ValueTooLow;Provided value is too low.;(generic)
+;ValueZeroNotAllowed;Provided value cannot be zero.;(generic)

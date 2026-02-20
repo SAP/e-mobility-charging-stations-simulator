@@ -1,0 +1,5 @@
+Value;Description
+EMS;Indicates that an Energy Management System has sent a charging limit.
+Other;Indicates that an external source, not being an EMS or system operator, has sent a charging limit.
+SO;Indicates that a System Operator (DSO or TSO) has sent a charging limit.
+CSO;Indicates that the CSO has set this charging profile.

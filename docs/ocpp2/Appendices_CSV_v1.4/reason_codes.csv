@@ -1,0 +1,44 @@
+Reason Code;Description;Typically used for
+CSNotAccepted;BootNotification of Charging Station has not (yet) been accepted by CSMS.;RequestStartTransaction, RequestStopTransaction
+DuplicateProfile;A charging profile with same _stackLevel - chargingProfilePurpose_ combination already exists on the Charging Station and has an overlapping validity period.;SetChargingProfile
+DuplicateRequestId;A _requestId_ is provided, that has already been used for this type of request.;UpdateFirmware, PublishFirmware and requests for reports.
+FixedCable;The connector has its own fixed cable that cannot be unlocked.;UnlockConnector
+FwUpdateInProgress;Operation is not possible, because a firmware update is in progress.;Reset
+InternalError;Operation cannot be completed due to an internal error.;(generic)
+InvalidCertificate;Provided certificate is invalid.;CertificateSigned, InstallCertificate
+InvalidCSR;Provided CSR is invalid;SignCertificate
+InvalidIdToken;Provided _idToken_ is not valid.;RequestStartTransaction
+InvalidMessageSeq;Message should not be sent at this moment in current scenario.;(generic), SetChargingProfile with ISO15118
+InvalidProfile;Provided _chargingProfile_ contains invalid elements.;SetChargingProfile, RequestStartTransaction
+InvalidSchedule;Provided _chargingSchedule_ contains invalid elements.;SetChargingProfile, RequestStartTransaction
+InvalidStackLevel;Provided value for _stackLevel_ is invalid.;SetChargingProfile
+InvalidURL;Provided URL is invalid.;UpdateFirmware, PublishFirmware
+InvalidValue;An invalid value has been provided.;(generic)
+MissingDevModelInfo;Information needed for operation is missing from Device Model;(generic)
+MissingParam;A parameter that is required for the request is missing.;(generic)
+NoCable;No cable is connected at this time.;UnlockConnector
+NoError;No error has occurred, but some extra information is in _additionalInfo_ .;(generic)
+NotEnabled;Feature is not enabled.;ClearCache
+NotFound;No object(s) found that match a provided ID or criteria.;ClearVariableMonitoring, CustomerInformation, GetChargingProfiles, GetDisplayMessages, GetInstalledCertificateIds, GetReport
+OutOfMemory;Operation not possible, because system does not have enough memory.;(generic)
+OutOfStorage;Operation not possible, because system does not have enough storage.;(generic)
+ReadOnly;Targeted variable is read-only and cannot be set.;SetVariables
+TooLargeElement;Provided element is too large to handle.;CertificateSigned, InstallCertificate
+TooManyElements;Too many elements have been provided.;SetChargingProfile, SetVariables, SendLocalList
+TxInProgress;A transaction is in progress.;ChangeAvailability, Reset, RequestStartTransaction
+TxNotFound;There is no such transaction.;RequestStopTransaction, SetChargingProfile
+TxStarted;A transaction had already started (e.g. due to cable being plugged in).;RequestStartTransaction
+UnknownConnectorId;Connector Id is not known on EVSE;ChangeAvailability, UnlockConnector
+UnknownConnectorType;Connector type is not known on EVSE;ReserveNow
+UnknownEvse;EVSE is not known on Charging Stations;ChangeAvailability, ReserveNow, RequestStartTransaction
+UnknownTxId;Provided _transactionId_ is not known.;RequestStopTransaction
+Unspecified;No reason is specified, but some extra information is in _additionalInfo_;(generic)
+UnsupportedParam;A parameter was provided that is not supported.;(generic)
+UnsupportedRateUnit;A _chargingRateUnit_ is provided that is not supported.;SetChargingProfile
+UnsupportedRequest;This request is not supported.;(generic)
+ValueOutOfRange;Provided value is out of range.;SetVariables, SetVariableMonitoring
+ValuePositiveOnly;Provided value is not greater than zero.;(generic)
+ValueTooHigh;Provided value is too high.;(generic)
+ValueTooLow;Provided value is too low.;(generic)
+ValueZeroNotAllowed;Provided value cannot be zero.;(generic)
+WriteOnly;Targeted variable is write-only and cannot be read.;GetVariables

@@ -1,0 +1,8 @@
+SigningMethod;Algorithm;Curve;Key Length;Hash Algorithm
+ECDSA-secp192k1-SHA256;ECDSA;secp192k1;192 bits;SHA-256
+ECDSA-secp256k1-SHA256;ECDSA;secp256k1;256 bits;SHA-256
+ECDSA-secp192r1-SHA256;ECDSA;secp192r1;192 bits;SHA-256
+ECDSA-secp256r1-SHA256;ECDSA;secp256r1;256 bits;SHA-256
+ECDSA-brainpool256r1-SHA256;ECDSA;brainpool256r1;256 bits;SHA-256
+ECDSA-secp384r1-SHA256;ECDSA;secp384r1;384 bits;SHA-256
+ECDSA-brainpool384r1-SHA256;ECDSA;brainpool384r1;384 bits;SHA-256

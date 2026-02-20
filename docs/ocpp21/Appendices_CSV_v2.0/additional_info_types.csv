@@ -1,0 +1,3 @@
+additionalInfo.type;Description
+EVCCID;The EVCCID of EV is added as additionalInfo to an idToken for ISO 15118-20 sessions.
+ISO14443SubType;The subtype of an ISO 14443 RFID card. For example: 'VDE-AR-E-2532-100' (a secure variant of ISO 14443).

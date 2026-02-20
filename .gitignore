@@ -124,4 +124,3 @@ temp/
 performanceRecords.json
 performanceRecords.json.lock
 *.db
-docs/

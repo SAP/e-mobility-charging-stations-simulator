@@ -1,0 +1,12 @@
+additionalInfo.type;Description
+PspRef;Payment Service Provider reference id for payment session. Only use when PspRef is not in _idToken_.
+SessionRef;Payment session reference id from terminal (not the same as pspRef)
+MerchantRef;Merchant (CSO) reference id for payment session
+PaymentBrand;Brand of ad hoc payment card. See predefined list of values in table below.
+ReadingMethod;Contactless / Contact / Magstripe
+PaymentRecognition;Credit/debit card or digital wallet. See predefined list of values in table below.
+CardBin;Card first 6 digits
+CardLast4Digits;Card last 4 digits
+CardExpiryDate;The expiry date of the card. Format: YYYY/MM
+HashedCardNr;The hashed card number.
+WalletUserId;User ID for a digital wallet, e.g. Alipay.

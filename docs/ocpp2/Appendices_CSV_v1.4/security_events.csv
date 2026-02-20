@@ -1,0 +1,21 @@
+Security Event;Description;Critical
+FirmwareUpdated;The Charging Station firmware is updated;Yes
+FailedToAuthenticateAtCsms;The authentication credentials provided by the Charging Station were rejected by the CSMS;No
+CsmsFailedToAuthenticate;The authentication credentials provided by the CSMS were rejected by the Charging Station;No
+SettingSystemTime;The system time on the Charging Station was changed more than `ClockCtrlr.TimeAdjustmentReportingThreshold` seconds;Yes
+StartupOfTheDevice;The Charging Station has booted;Yes
+ResetOrReboot;The Charging Station was rebooted or reset;Yes
+SecurityLogWasCleared;The security log was cleared;Yes
+ReconfigurationOfSecurityParameters;Security parameters, such as keys or the security profile used, were changed;No
+MemoryExhaustion;The Flash or RAM memory of the Charging Station is getting full;Yes
+InvalidMessages;The Charging Station has received messages that are not valid OCPP messages, if signed messages, signage invalid/incorrect;No
+AttemptedReplayAttacks;The Charging Station has received a replayed message (other than the CSMS trying to resend a message because it there was for example a network problem);No
+TamperDetectionActivated;The physical tamper detection sensor was triggered;Yes
+InvalidFirmwareSignature;The firmware signature is not valid;Yes
+InvalidFirmwareSigningCertificate;The certificate used to verify the firmware signature is not valid;Yes
+InvalidCsmsCertificate;The certificate that the CSMS uses was not valid or could not be verified;Yes
+InvalidChargingStationCertificate;The certificate sent to the Charging Station using the CertificateSignedRequest message is not a valid certificate;Yes
+InvalidTLSVersion;The TLS version used by the CSMS is lower than 1.2 and is not allowed by the security specification;Yes
+InvalidTLSCipherSuite;The CSMS did only allow connections using TLS cipher suites that are not allowed by the security specification;Yes
+MaintenanceLoginAccepted;Successful login to the local maintenance interface. It is recommended to include information like the user identification and the origin of the login attempt, which can be an ip-address or a touch screen for example, to the techInfo field. For this the following format is strongly recommended: '{\'user\': \'...\', \'origin\': \'...\'}';Yes
+MaintenanceLoginFailed;Failed login attempt to the local maintenance interface. It is recommended to include information like the user identification and the origin of the login attempt, which can be an ip-address or a touch screen for example, to the techInfo field. For this the following format is strongly recommended: '{\'user\': \'...\', \'origin\': \'...\'}';Yes
