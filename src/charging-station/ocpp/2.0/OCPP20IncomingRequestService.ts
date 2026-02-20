@@ -23,7 +23,6 @@ import {
   GenericDeviceModelStatusEnumType,
   GenericStatus,
   GetCertificateIdUseEnumType,
-  GetCertificateStatusEnumType,
   GetInstalledCertificateStatusEnumType,
   GetVariableStatusEnumType,
   type IncomingRequestHandler,
@@ -39,8 +38,6 @@ import {
   OCPP20DeviceInfoVariableName,
   type OCPP20GetBaseReportRequest,
   type OCPP20GetBaseReportResponse,
-  type OCPP20GetCertificateStatusRequest,
-  type OCPP20GetCertificateStatusResponse,
   type OCPP20GetInstalledCertificateIdsRequest,
   type OCPP20GetInstalledCertificateIdsResponse,
   type OCPP20GetVariablesRequest,
@@ -174,10 +171,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         OCPP20IncomingRequestCommand.GET_BASE_REPORT,
         this.handleRequestGetBaseReport.bind(this) as unknown as IncomingRequestHandler,
       ],
-      [
-        OCPP20IncomingRequestCommand.GET_CERTIFICATE_STATUS,
-        this.handleRequestGetCertificateStatus.bind(this) as unknown as IncomingRequestHandler,
-      ],
+
       [
         OCPP20IncomingRequestCommand.GET_INSTALLED_CERTIFICATE_IDS,
         this.handleRequestGetInstalledCertificateIds.bind(
@@ -1108,40 +1102,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
     return {
       status: GenericDeviceModelStatusEnumType.Accepted,
-    }
-  }
-
-  /**
-   * Handles OCPP 2.0 GetCertificateStatus request from central system
-   * Returns stub OCSP response without making real network calls
-   * @param chargingStation - The charging station instance processing the request
-   * @param _commandPayload - GetCertificateStatus request payload with OCSP request data (unused - OCSP not implemented)
-   * @returns GetCertificateStatusResponse with status and optional OCSP result
-   */
-  private handleRequestGetCertificateStatus (
-    chargingStation: ChargingStation,
-    _commandPayload: OCPP20GetCertificateStatusRequest
-  ): OCPP20GetCertificateStatusResponse {
-    if (!hasCertificateManager(chargingStation)) {
-      logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCertificateStatus: Certificate manager not available`
-      )
-      return {
-        status: GetCertificateStatusEnumType.Failed,
-        statusInfo: {
-          reasonCode: ReasonCodeEnumType.InternalError,
-        },
-      }
-    }
-
-    logger.info(
-      `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCertificateStatus: OCSP status not implemented - returning stub response`
-    )
-    return {
-      status: GetCertificateStatusEnumType.Failed,
-      statusInfo: {
-        reasonCode: ReasonCodeEnumType.NotEnabled,
-      },
     }
   }
 
