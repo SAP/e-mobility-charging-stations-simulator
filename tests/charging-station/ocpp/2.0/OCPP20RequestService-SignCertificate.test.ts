@@ -53,9 +53,7 @@ await describe('I02 - SignCertificate Request', async () => {
 
   // Set up configuration with OrganizationName
   mockChargingStation.ocppConfiguration = {
-    configurationKey: [
-      { key: 'SecurityCtrlr.OrganizationName', value: MOCK_ORGANIZATION_NAME },
-    ],
+    configurationKey: [{ key: 'SecurityCtrlr.OrganizationName', value: MOCK_ORGANIZATION_NAME }],
   }
 
   await describe('CSR Generation', async () => {
@@ -92,7 +90,8 @@ await describe('I02 - SignCertificate Request', async () => {
       expect(sentPayload.csr).toBeDefined()
       expect(sentPayload.csr).toContain('-----BEGIN CERTIFICATE REQUEST-----')
 
-      const csrRegex = /-----BEGIN CERTIFICATE REQUEST-----\n(.+?)\n-----END CERTIFICATE REQUEST-----/
+      const csrRegex =
+        /-----BEGIN CERTIFICATE REQUEST-----\n(.+?)\n-----END CERTIFICATE REQUEST-----/
       const csrExecResult = csrRegex.exec(sentPayload.csr)
       expect(csrExecResult).toBeDefined()
       const csrData = csrExecResult?.[1]

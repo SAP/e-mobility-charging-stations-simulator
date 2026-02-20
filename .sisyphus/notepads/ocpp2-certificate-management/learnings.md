@@ -217,12 +217,12 @@ TypeError: incomingRequestService.handleRequestInstallCertificate is not a funct
 
 The OCPP 2.0 specification uses specific `ReasonCodeEnumType` values in `statusInfo`:
 
-| Scenario                    | status     | reasonCode          | Notes                              |
-| --------------------------- | ---------- | ------------------- | ---------------------------------- |
-| Invalid PEM format          | `Rejected` | `InvalidCertificate`| NOT `InvalidFormat`                |
-| Storage failure             | `Failed`   | `OutOfStorage`      | NOT `StorageFull`                  |
-| Missing certificate manager | `Failed`   | `InternalError`     | Internal configuration error       |
-| Success                     | `Accepted` | (none)              | No statusInfo needed               |
+| Scenario                    | status     | reasonCode           | Notes                        |
+| --------------------------- | ---------- | -------------------- | ---------------------------- |
+| Invalid PEM format          | `Rejected` | `InvalidCertificate` | NOT `InvalidFormat`          |
+| Storage failure             | `Failed`   | `OutOfStorage`       | NOT `StorageFull`            |
+| Missing certificate manager | `Failed`   | `InternalError`      | Internal configuration error |
+| Success                     | `Accepted` | (none)               | No statusInfo needed         |
 
 ### Handler Implementation Pattern
 
@@ -242,6 +242,7 @@ private async handleRequestInstallCertificate (
 ### Test Mock Pattern
 
 Tests inject `certificateManager` via `(mockChargingStation as any).certificateManager`:
+
 - Mock `storeCertificate()` returns **boolean** synchronously
 - Real implementation returns **Promise<{success: boolean, ...}>**
 - Handler must handle both: `const stored = await Promise.resolve(result)`
@@ -249,6 +250,7 @@ Tests inject `certificateManager` via `(mockChargingStation as any).certificateM
 ### Pre-existing TypeScript/Lint Errors
 
 The codebase has pre-existing errors unrelated to our changes:
+
 - `src/types/ocpp/2.0/Requests.ts:121` - `UUIDv4` type not found (pre-existing)
 - `src/charging-station/Helpers.ts` - Multiple type compatibility issues
 - `src/charging-station/ChargingStation.ts` - OCPP16/OCPP20 type conflicts
@@ -270,6 +272,7 @@ Our changes introduce no new TypeScript errors.
 ## [2026-02-20T00:14:22Z] Task 5 - InstallCertificate Handler Implementation
 
 ### Execution Summary
+
 - ✅ Handler method implemented at lines 1105-1194 in OCPP20IncomingRequestService.ts
 - ✅ Registered in incomingRequestHandlers map at lines 151-154
 - ✅ All 9 tests passing (TDD green phase)
@@ -278,6 +281,7 @@ Our changes introduce no new TypeScript errors.
 - ✅ Fixed polymorphic return type handling (boolean vs object)
 
 ### Handler Implementation
+
 - Method: `handleRequestInstallCertificate()`
 - Validates format via `CertificateManager.validateCertificateFormat()`
 - Stores via `CertificateManager.storeCertificate()`
@@ -290,15 +294,18 @@ Our changes introduce no new TypeScript errors.
 - Uses `(chargingStation as any).certificateManager` (property doesn't exist on type)
 
 ### Test Results
+
 - All 9 tests passing ✅
 - Build clean ✅
 - No lint/format errors ✅
 
 ### Files Modified
+
 1. `src/types/ocpp/2.0/Requests.ts`: +1 line (INSTALL_CERTIFICATE enum at line 30)
 2. `src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.ts`: +96 lines (imports + registration + handler method)
 
 ### Commit
+
 - SHA: `51201dbe`
 - Message: "feat(ocpp2): implement InstallCertificate handler"
 - Files: 2 changed, 96 insertions
@@ -308,6 +315,7 @@ Our changes introduce no new TypeScript errors.
 ## [2026-02-20T19:45:00Z] Task 8 - CertificateSigned Handler Implementation
 
 ### Execution Summary
+
 - ✅ Test file created at `tests/charging-station/ocpp/2.0/OCPP20IncomingRequestService-CertificateSigned.test.ts` (337 lines, 10 tests)
 - ✅ Handler implemented at lines ~996-1075 in `OCPP20IncomingRequestService.ts`
 - ✅ All 10 tests passing (125 total tests pass)
@@ -317,6 +325,7 @@ Our changes introduce no new TypeScript errors.
 - ✅ Lint fixes completed in follow-up session (4m 4s)
 
 ### Handler Implementation Details
+
 - Method: `handleRequestCertificateSigned()`
 - Validates PEM format via `CertificateManager.validateCertificateFormat()`
 - Stores via `CertificateManager.storeCertificate()`
@@ -326,27 +335,31 @@ Our changes introduce no new TypeScript errors.
 - Logs at info (success) and warn (failures)
 
 ### Test Coverage
-| Scenario | Expected Status | Notes |
-|----------|----------------|-------|
-| Valid ChargingStationCertificate | Accepted | Triggers reconnect |
-| Valid V2GCertificate | Accepted | No reconnect |
-| Invalid PEM format | Rejected | reasonCode: InvalidCertificate |
-| Missing certificateChain | Rejected | reasonCode: InvalidCertificate |
-| Storage failure | Failed | reasonCode: OutOfStorage |
-| Empty certificate chain | Rejected | reasonCode: InvalidCertificate |
-| Whitespace-only chain | Rejected | reasonCode: InvalidCertificate |
-| Multiple PEM blocks | Accepted | First cert stored |
-| No certificateManager | Failed | reasonCode: InternalError |
-| certificateType: V2GCertificate | Accepted | Explicit type test |
+
+| Scenario                         | Expected Status | Notes                          |
+| -------------------------------- | --------------- | ------------------------------ |
+| Valid ChargingStationCertificate | Accepted        | Triggers reconnect             |
+| Valid V2GCertificate             | Accepted        | No reconnect                   |
+| Invalid PEM format               | Rejected        | reasonCode: InvalidCertificate |
+| Missing certificateChain         | Rejected        | reasonCode: InvalidCertificate |
+| Storage failure                  | Failed          | reasonCode: OutOfStorage       |
+| Empty certificate chain          | Rejected        | reasonCode: InvalidCertificate |
+| Whitespace-only chain            | Rejected        | reasonCode: InvalidCertificate |
+| Multiple PEM blocks              | Accepted        | First cert stored              |
+| No certificateManager            | Failed          | reasonCode: InternalError      |
+| certificateType: V2GCertificate  | Accepted        | Explicit type test             |
 
 ### Linting Fixes Applied (Session ses_38794641fffeOWAVk2bSL7YCu6)
+
 **15 errors fixed in 4m 4s:**
+
 - Removed `await` from synchronous `storeCertificate()` calls (13 instances)
 - Removed `async` from test functions without await expressions (14 instances)
 - Fixed `Promise.all()` with non-Promise values in tests
 - Applied auto-formatting from `pnpm run lint:fix`
 
 **Files modified (uncommitted):**
+
 - `src/charging-station/ocpp/2.0/OCPP20CertificateManager.ts` (+111, -69)
 - `src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.ts` (+47, -78)
 - `src/types/ocpp/2.0/Requests.ts` (+34, -34)
@@ -354,6 +367,7 @@ Our changes introduce no new TypeScript errors.
 - All 6 test files (formatting + removed await/async)
 
 ### Reconnect Pattern
+
 ```typescript
 // For ChargingStationCertificate only:
 if (certificateType === CertificateSigningUseEnumType.ChargingStationCertificate) {
@@ -363,15 +377,18 @@ if (certificateType === CertificateSigningUseEnumType.ChargingStationCertificate
 ```
 
 ### Files Modified
+
 1. `src/types/ocpp/2.0/Requests.ts`: +1 line (CERTIFICATE_SIGNED enum)
 2. `src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.ts`: +82 lines (imports + registration + handler)
 3. `src/types/index.ts`: +2 lines (CertificateSignedRequest/Response exports)
 
 ### Commits
+
 - Initial implementation: `8c009a4c` (tests) + `eb584080` (handler)
 - Lint fixes: `f926982b` (10 files, 274 insertions, 267 deletions)
 
 ### Key Patterns
+
 - **ChargingStation has NO certificateManager property** - tests attach it dynamically via `(chargingStation as any).certificateManager`
 - **Certificate Manager methods are synchronous** - do NOT use `await`
 - **Test mocks return boolean** - `storeCertificate()` returns `true/false`, not objects
@@ -382,6 +399,7 @@ if (certificateType === CertificateSigningUseEnumType.ChargingStationCertificate
 ## Task 9: Mock CSR Implementation Success (2026-02-20)
 
 ### What Worked
+
 1. **Mock CSR Format**: Simplified JSON-based structure avoids need for ASN.1 DER encoding
    - Advantages: No external dependencies, self-documenting, easy to test/debug
    - Trade-off: Not PKCS#10 compliant (acceptable for simulator)
@@ -395,6 +413,7 @@ if (certificateType === CertificateSigningUseEnumType.ChargingStationCertificate
    - Valid JSDoc that passes linting
 
 ### Key Constraints Honored
+
 - ✅ No new dependencies added
 - ✅ No PKCS#10 ASN.1 encoding attempts
 - ✅ No OpenSSL child_process calls
@@ -402,6 +421,6 @@ if (certificateType === CertificateSigningUseEnumType.ChargingStationCertificate
 - ✅ Build passes
 
 ### Naming Convention Applied
+
 - CSR data structure: `mockCsrData` (snake_case for clarity of mock purpose)
 - Matches existing codebase patterns for temporary/mock objects
-

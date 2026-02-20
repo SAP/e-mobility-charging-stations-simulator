@@ -33,10 +33,12 @@ const NONEXISTENT_CERTIFICATE_HASH_DATA = {
   serialNumber: 'NONEXISTENT123456',
 }
 
-const createMockCertificateManager = (options: {
-  deleteCertificateError?: Error
-  deleteCertificateResult?: boolean | { success: boolean }
-} = {}) => ({
+const createMockCertificateManager = (
+  options: {
+    deleteCertificateError?: Error
+    deleteCertificateResult?: boolean | { success: boolean }
+  } = {}
+) => ({
   deleteCertificate: mock.fn(() => {
     if (options.deleteCertificateError) {
       throw options.deleteCertificateError

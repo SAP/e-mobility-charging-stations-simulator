@@ -30,10 +30,12 @@ const VALID_OCSP_REQUEST_DATA: OCSPRequestDataType = {
   serialNumber: '01AB02CD03EF04',
 }
 
-const createMockCertificateManager = (options: {
-  getCertificateStatusError?: Error
-  getCertificateStatusResult?: string
-} = {}) => ({
+const createMockCertificateManager = (
+  options: {
+    getCertificateStatusError?: Error
+    getCertificateStatusResult?: string
+  } = {}
+) => ({
   deleteCertificate: mock.fn(),
   getCertificateStatus: mock.fn(() => {
     if (options.getCertificateStatusError) {

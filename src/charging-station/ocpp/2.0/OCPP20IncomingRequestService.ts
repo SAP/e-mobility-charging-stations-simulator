@@ -175,7 +175,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       ],
       [
         OCPP20IncomingRequestCommand.GET_INSTALLED_CERTIFICATE_IDS,
-        this.handleRequestGetInstalledCertificateIds.bind(this) as unknown as IncomingRequestHandler,
+        this.handleRequestGetInstalledCertificateIds.bind(
+          this
+        ) as unknown as IncomingRequestHandler,
       ],
       [
         OCPP20IncomingRequestCommand.GET_VARIABLES,
@@ -1185,9 +1187,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
       return {
         certificateHashDataChain:
-          result.certificateHashDataChain.length > 0
-            ? result.certificateHashDataChain
-            : undefined,
+          result.certificateHashDataChain.length > 0 ? result.certificateHashDataChain : undefined,
         status: GetInstalledCertificateStatusEnumType.Accepted,
       }
     } catch (error) {

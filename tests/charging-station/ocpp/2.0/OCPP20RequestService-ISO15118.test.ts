@@ -182,7 +182,8 @@ await describe('M02 - Get15118EVCertificate Request', async () => {
 
   await describe('Base64 EXI Pass-Through', async () => {
     await it('Should pass Base64 EXI string unchanged', async () => {
-      const complexBase64EXI = 'VGhpcyBpcyBhIG1vcmUgY29tcGxleCBFWEkgcGF5bG9hZCB3aXRoIHNwZWNpYWwgY2hhcmFjdGVycyArLz0='
+      const complexBase64EXI =
+        'VGhpcyBpcyBhIG1vcmUgY29tcGxleCBFWEkgcGF5bG9hZCB3aXRoIHNwZWNpYWwgY2hhcmFjdGVycyArLz0='
 
       const requestService = createMockRequestService<OCPP20Get15118EVCertificateResponse>({
         exiResponse: MOCK_EXI_RESPONSE,
@@ -227,7 +228,10 @@ await describe('M03 - GetCertificateStatus Request', async () => {
 
       const ocspRequestData = createMockOCSPRequestData()
 
-      await (requestService as any).requestGetCertificateStatus(mockChargingStation, ocspRequestData)
+      await (requestService as any).requestGetCertificateStatus(
+        mockChargingStation,
+        ocspRequestData
+      )
 
       const sendMessageMock = (requestService as any).sendMessage
       expect(sendMessageMock.mock.calls.length).toBe(1)

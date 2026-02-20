@@ -278,7 +278,7 @@ export class OCPP20RequestService extends OCPPRequestService {
       })
 
       const configKey = chargingStation.ocppConfiguration?.configurationKey?.find(
-        (key) => key.key === 'SecurityCtrlr.OrganizationName'
+        key => key.key === 'SecurityCtrlr.OrganizationName'
       )
       const orgName = configKey?.value ?? 'Unknown'
       const stationId = chargingStation.stationInfo?.chargingStationId ?? 'Unknown'
@@ -302,11 +302,7 @@ export class OCPP20RequestService extends OCPPRequestService {
       logger.error(
         `${chargingStation.logPrefix()} ${moduleName}.requestSignCertificate: ${errorMsg}`
       )
-      throw new OCPPError(
-        ErrorType.INTERNAL_ERROR,
-        errorMsg,
-        OCPP20RequestCommand.SIGN_CERTIFICATE
-      )
+      throw new OCPPError(ErrorType.INTERNAL_ERROR, errorMsg, OCPP20RequestCommand.SIGN_CERTIFICATE)
     }
 
     // Build request payload

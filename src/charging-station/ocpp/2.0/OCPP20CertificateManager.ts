@@ -40,20 +40,20 @@ export interface GetInstalledCertificatesResult {
  * Used for type-safe access to certificate management functionality
  */
 export interface OCPP20CertificateManagerInterface {
-  deleteCertificate (
+  deleteCertificate(
     stationHashId: string,
     hashData: CertificateHashDataType
   ): DeleteCertificateResult | Promise<DeleteCertificateResult>
-  getInstalledCertificates (
+  getInstalledCertificates(
     stationHashId: string,
     filterTypes?: InstallCertificateUseEnumType[]
   ): GetInstalledCertificatesResult | Promise<GetInstalledCertificatesResult>
-  storeCertificate (
+  storeCertificate(
     stationHashId: string,
     certType: InstallCertificateUseEnumType,
     pemData: string
   ): Promise<StoreCertificateResult> | StoreCertificateResult
-  validateCertificateFormat (pemData: unknown): boolean
+  validateCertificateFormat(pemData: unknown): boolean
 }
 
 /**
@@ -102,10 +102,14 @@ export class OCPP20CertificateManager {
 
       const issuerNameHash = createHash(algorithmName).update(x509.issuer).digest('hex')
 
-      const issuerKeyHash = createHash(algorithmName).update(x509.publicKey.export({
-        format: 'der',
-        type: 'spki',
-      })).digest('hex')
+      const issuerKeyHash = createHash(algorithmName)
+        .update(
+          x509.publicKey.export({
+            format: 'der',
+            type: 'spki',
+          })
+        )
+        .digest('hex')
 
       const serialNumber = x509.serialNumber
 
@@ -248,15 +252,16 @@ export class OCPP20CertificateManager {
 
             certificateHashDataChain.push({
               certificateHashData: hashData,
-              certificateType: this.mapInstallTypeToGetType(certType as InstallCertificateUseEnumType),
+              certificateType: this.mapInstallTypeToGetType(
+                certType as InstallCertificateUseEnumType
+              ),
             })
           } catch {
             continue
           }
         }
       }
-    } catch {
-    }
+    } catch {}
 
     return { certificateHashDataChain }
   }
@@ -354,11 +359,17 @@ export class OCPP20CertificateManager {
 
     // Compute hashes from the certificate content
     const contentBuffer = Buffer.from(base64Content, 'base64')
-    const issuerNameHash = createHash(algorithmName).update(contentBuffer.subarray(0, Math.min(64, contentBuffer.length))).digest('hex')
+    const issuerNameHash = createHash(algorithmName)
+      .update(contentBuffer.subarray(0, Math.min(64, contentBuffer.length)))
+      .digest('hex')
     const issuerKeyHash = createHash(algorithmName).update(contentBuffer).digest('hex')
 
     // Generate a serial number from the content hash
-    const serialNumber = createHash('sha256').update(pemData).digest('hex').substring(0, 16).toUpperCase()
+    const serialNumber = createHash('sha256')
+      .update(pemData)
+      .digest('hex')
+      .substring(0, 16)
+      .toUpperCase()
 
     return {
       hashAlgorithm,
@@ -376,10 +387,7 @@ export class OCPP20CertificateManager {
       return pemData
     }
 
-    return pemData.substring(
-      beginIndex,
-      endIndex + OCPP20CertificateManager.PEM_END_MARKER.length
-    )
+    return pemData.substring(beginIndex, endIndex + OCPP20CertificateManager.PEM_END_MARKER.length)
   }
 
   private generateFallbackSerialNumber (pemData: string): string {
@@ -424,9 +432,7 @@ export class OCPP20CertificateManager {
   }
 
   private sanitizeSerial (serial: string): string {
-    return serial
-      .replace(/:/g, '-')
-      .replace(/[/\\<>"|?*]/g, '_')
+    return serial.replace(/:/g, '-').replace(/[/\\<>"|?*]/g, '_')
   }
 }
 

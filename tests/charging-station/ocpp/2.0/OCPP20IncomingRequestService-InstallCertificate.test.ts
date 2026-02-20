@@ -43,10 +43,12 @@ GDAWgBRc8RqFu0nnqJdw3f9nFVXm9BxeUDAPBgNVHRMBAf8EBTADAQH/MA0GCSqG
 SIb3DQEBCwUAA0EAexpired==
 -----END CERTIFICATE-----`
 
-const createMockCertificateManager = (options: {
-  storeCertificateError?: Error
-  storeCertificateResult?: boolean
-} = {}) => ({
+const createMockCertificateManager = (
+  options: {
+    storeCertificateError?: Error
+    storeCertificateResult?: boolean
+  } = {}
+) => ({
   deleteCertificate: mock.fn(),
   getInstalledCertificates: mock.fn(() => []),
   storeCertificate: mock.fn(() => {
@@ -56,8 +58,9 @@ const createMockCertificateManager = (options: {
     return options.storeCertificateResult ?? true
   }),
   validateCertificateFormat: mock.fn((cert: string) => {
-    return cert.includes('-----BEGIN CERTIFICATE-----') &&
-           cert.includes('-----END CERTIFICATE-----')
+    return (
+      cert.includes('-----BEGIN CERTIFICATE-----') && cert.includes('-----END CERTIFICATE-----')
+    )
   }),
 })
 

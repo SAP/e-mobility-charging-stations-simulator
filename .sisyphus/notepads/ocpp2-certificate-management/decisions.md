@@ -36,11 +36,13 @@
 ### Decision: Simplified Mock CSR (Not PKCS#10 Compliant)
 
 **Context:**
+
 - Original implementation generated invalid CSR format (just `base64(subject|signature)`)
 - Real PKCS#10 CSR requires ASN.1 DER encoding with CertificationRequestInfo structure
 - Node.js crypto module does NOT have built-in PKCS#10 CSR generation
 
 **Options Evaluated:**
+
 1. **Add library dependency** (`@peculiar/x509` or `node-forge`)
    - ❌ Violates plan constraint: "Must NOT Add new dependencies" (line 574)
 2. **Manual ASN.1 DER construction**
@@ -53,6 +55,7 @@
    - ✅ Aligns with project purpose (simulator, not production PKI)
 
 **Implementation:**
+
 - Generate RSA 2048 key pair
 - Create JSON structure with subject, publicKey, timestamp
 - Base64 encode JSON
@@ -60,18 +63,21 @@
 - Clearly document as NOT PKCS#10 compliant
 
 **Rationale:**
+
 - This is a **simulator** for testing OCPP message flows, not production PKI
 - Mock CSR tests OCPP protocol mechanics (message format, status codes, error handling)
 - Real CSMS would reject this CSR, but simulator testing doesn't need real certificate signing
 - Can be upgraded to library-based solution if production use needed (out of scope)
 
 **Limitations (MUST document in code):**
+
 - NOT cryptographically valid PKCS#10 CSR
 - Cannot be used with real CSMS requiring valid CSR
 - Public key is separate from signature (not properly embedded)
 - No ASN.1 DER encoding
 
 **Documentation Requirements:**
+
 - JSDoc warning on `requestSignCertificate()` method
 - Code comments explaining mock nature
 - Test file comments noting this is protocol testing only

@@ -337,11 +337,7 @@ await describe('OCPP20CertificateManager', async () => {
     await it('Should return correct file path for certificate', () => {
       const manager = new OCPP20CertificateManager()
 
-      const path = manager.getCertificatePath(
-        TEST_STATION_HASH_ID,
-        TEST_CERT_TYPE,
-        'SERIAL-12345'
-      )
+      const path = manager.getCertificatePath(TEST_STATION_HASH_ID, TEST_CERT_TYPE, 'SERIAL-12345')
 
       expect(path).toBeDefined()
       expect(path).toContain(TEST_STATION_HASH_ID)
@@ -388,11 +384,7 @@ await describe('OCPP20CertificateManager', async () => {
     await it('Should return path following project convention', () => {
       const manager = new OCPP20CertificateManager()
 
-      const path = manager.getCertificatePath(
-        TEST_STATION_HASH_ID,
-        TEST_CERT_TYPE,
-        'SERIAL-12345'
-      )
+      const path = manager.getCertificatePath(TEST_STATION_HASH_ID, TEST_CERT_TYPE, 'SERIAL-12345')
 
       expect(path).toMatch(/configurations/)
       expect(path).toMatch(/certs/)
@@ -427,15 +419,9 @@ await describe('OCPP20CertificateManager', async () => {
     await it('Should handle very long certificate chains', () => {
       const manager = new OCPP20CertificateManager()
 
-      const longChain = Array(5)
-        .fill(VALID_PEM_CERTIFICATE)
-        .join('\n')
+      const longChain = Array(5).fill(VALID_PEM_CERTIFICATE).join('\n')
 
-      const result = manager.storeCertificate(
-        TEST_STATION_HASH_ID,
-        TEST_CERT_TYPE,
-        longChain
-      )
+      const result = manager.storeCertificate(TEST_STATION_HASH_ID, TEST_CERT_TYPE, longChain)
 
       expect(result).toBeDefined()
     })
@@ -445,11 +431,7 @@ await describe('OCPP20CertificateManager', async () => {
 
       const maliciousHashId = '../../../etc/passwd'
 
-      const path = manager.getCertificatePath(
-        maliciousHashId,
-        TEST_CERT_TYPE,
-        'SERIAL-001'
-      )
+      const path = manager.getCertificatePath(maliciousHashId, TEST_CERT_TYPE, 'SERIAL-001')
 
       expect(path).not.toContain('..')
     })

@@ -54,10 +54,12 @@ const INVALID_PEM_CERTIFICATE_MISSING_MARKERS = `MIIBkTCB+wIJAKHBfpvPA0GXMA0GCSq
 Rlc3RDQTAeFw0yNDAxMDEwMDAwMDBaFw0yOTAxMDEwMDAwMDBaMBExDzANBgNVBA
 MMBnRlc3RDQTBcMA0GCSqGSIb3DQEBAQUAA0sAMEgCQQC5p8U8zTk8TT5H5s8mjx`
 
-const createMockCertificateManager = (options: {
-  storeCertificateError?: Error
-  storeCertificateResult?: boolean
-} = {}) => ({
+const createMockCertificateManager = (
+  options: {
+    storeCertificateError?: Error
+    storeCertificateResult?: boolean
+  } = {}
+) => ({
   deleteCertificate: mock.fn(),
   getInstalledCertificates: mock.fn(() => []),
   storeCertificate: mock.fn(() => {
@@ -67,8 +69,9 @@ const createMockCertificateManager = (options: {
     return options.storeCertificateResult ?? true
   }),
   validateCertificateFormat: mock.fn((cert: string) => {
-    return cert.includes('-----BEGIN CERTIFICATE-----') &&
-           cert.includes('-----END CERTIFICATE-----')
+    return (
+      cert.includes('-----BEGIN CERTIFICATE-----') && cert.includes('-----END CERTIFICATE-----')
+    )
   }),
 })
 
