@@ -20,11 +20,13 @@ import {
   ErrorType,
   GenericDeviceModelStatusEnumType,
   GenericStatus,
+  GetCertificateIdUseEnumType,
   GetCertificateStatusEnumType,
   GetInstalledCertificateStatusEnumType,
   GetVariableStatusEnumType,
   type IncomingRequestHandler,
   InstallCertificateStatusEnumType,
+  InstallCertificateUseEnumType,
   type JsonType,
   type OCPP20CertificateSignedRequest,
   type OCPP20CertificateSignedResponse,
@@ -1106,20 +1108,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   /**
-   * Handles OCPP 2.0 InstallCertificate request from central system
-   * Validates and stores certificate for specified usage type
-   * @param chargingStation - The charging station instance processing the request
-   * @param commandPayload - InstallCertificate request payload with certificate and type
-   * @returns Promise resolving to InstallCertificateResponse indicating operation status
-   */
-
-  /**
    * Handles OCPP 2.0 GetCertificateStatus request from central system
    * Returns stub OCSP response without making real network calls
    * @param chargingStation - The charging station instance processing the request
-   * @param commandPayload - GetCertificateStatus request payload with OCSP request data
-   * @param _commandPayload
-   * @returns Promise resolving to GetCertificateStatusResponse with status and optional OCSP result
+   * @param _commandPayload - GetCertificateStatus request payload with OCSP request data (unused - OCSP not implemented)
+   * @returns GetCertificateStatusResponse with status and optional OCSP result
    */
   private handleRequestGetCertificateStatus (
     chargingStation: ChargingStation,
@@ -1174,9 +1167,16 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
 
     try {
+      const filterTypes = certificateType?.map(ct => {
+        if (ct === GetCertificateIdUseEnumType.V2GCertificateChain) {
+          return InstallCertificateUseEnumType.V2GRootCertificate
+        }
+        return ct as unknown as InstallCertificateUseEnumType
+      })
+
       const methodResult = chargingStation.certificateManager.getInstalledCertificates(
         chargingStation.stationInfo?.hashId ?? '',
-        certificateType
+        filterTypes
       )
       const result: GetInstalledCertificatesResult =
         methodResult instanceof Promise ? await methodResult : methodResult
@@ -1188,7 +1188,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return {
         certificateHashDataChain:
           result.certificateHashDataChain.length > 0 ? result.certificateHashDataChain : undefined,
-        status: GetInstalledCertificateStatusEnumType.Accepted,
+        status:
+          result.certificateHashDataChain.length > 0
+            ? GetInstalledCertificateStatusEnumType.Accepted
+            : GetInstalledCertificateStatusEnumType.NotFound,
       }
     } catch (error) {
       logger.error(

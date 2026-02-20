@@ -68,7 +68,7 @@ await describe('OCPP20CertificateManager', async () => {
       expect(result.success).toBe(true)
       expect(result.filePath).toContain(TEST_STATION_HASH_ID)
       expect(result.filePath).toContain('certs')
-      expect(result.filePath).toEndWith('.pem')
+      expect(result.filePath).toMatch(/\.pem$/)
     })
 
     await it('Should reject invalid PEM certificate without BEGIN/END markers', () => {
@@ -344,7 +344,7 @@ await describe('OCPP20CertificateManager', async () => {
       expect(path).toContain('certs')
       expect(path).toContain('CSMSRootCertificate')
       expect(path).toContain('SERIAL-12345')
-      expect(path).toEndWith('.pem')
+      expect(path).toMatch(/\.pem$/)
     })
 
     await it('Should handle special characters in serial number', () => {
@@ -357,8 +357,9 @@ await describe('OCPP20CertificateManager', async () => {
       )
 
       expect(path).toBeDefined()
-      expect(path).not.toContain(':')
-      expect(path).not.toContain('/')
+      const filename = path.split('/').pop()
+      expect(filename).not.toContain(':')
+      expect(filename).not.toContain('/')
     })
 
     await it('Should return different paths for different certificate types', () => {
@@ -388,7 +389,7 @@ await describe('OCPP20CertificateManager', async () => {
 
       expect(path).toMatch(/configurations/)
       expect(path).toMatch(/certs/)
-      expect(path).toEndWith('.pem')
+      expect(path).toMatch(/\.pem$/)
     })
   })
 

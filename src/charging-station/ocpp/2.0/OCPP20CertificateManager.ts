@@ -98,7 +98,8 @@ export class OCPP20CertificateManager {
     const algorithmName = this.getHashAlgorithmName(hashAlgorithm)
 
     try {
-      const x509 = new X509Certificate(pemData)
+      const firstCertPem = this.extractFirstCertificate(pemData)
+      const x509 = new X509Certificate(firstCertPem)
 
       const issuerNameHash = createHash(algorithmName).update(x509.issuer).digest('hex')
 
@@ -178,7 +179,7 @@ export class OCPP20CertificateManager {
 
       return { status: 'NotFound' }
     } catch {
-      return { status: 'NotFound' }
+      return { status: 'Failed' }
     }
   }
 
