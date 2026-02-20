@@ -29,7 +29,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
   beforeEach(() => {
     sentRequests = []
     isOnline = true
-    requestHandlerMock = mock.fn(async (station: any, command: string, payload: any) => {
+    requestHandlerMock = mock.fn(async (_station: any, command: string, payload: any) => {
       sentRequests.push({ command, payload })
       return Promise.resolve({} as EmptyObject)
     })

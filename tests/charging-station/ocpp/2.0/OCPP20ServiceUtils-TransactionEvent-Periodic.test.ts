@@ -5,7 +5,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/require-await */
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-/* eslint-disable camelcase */
 
 import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
@@ -30,7 +29,7 @@ await describe('E02 - OCPP 2.0.1 Periodic TransactionEvent at TxUpdatedInterval'
 
   beforeEach(() => {
     sentRequests = []
-    requestHandlerMock = mock.fn(async (station: any, command: string, payload: any) => {
+    requestHandlerMock = mock.fn(async (_station: any, command: string, payload: any) => {
       sentRequests.push({ command, payload })
       return Promise.resolve({} as EmptyObject)
     })
@@ -288,14 +287,14 @@ await describe('E02 - OCPP 2.0.1 Periodic TransactionEvent at TxUpdatedInterval'
       OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, 2)
 
       // Build events for connector 1
-      const event1_0 = OCPP20ServiceUtils.buildTransactionEvent(
+      const event1Start = OCPP20ServiceUtils.buildTransactionEvent(
         mockChargingStation,
         OCPP20TransactionEventEnumType.Started,
         OCPP20TriggerReasonEnumType.Authorized,
         1,
         transactionId1
       )
-      const event1_1 = OCPP20ServiceUtils.buildTransactionEvent(
+      const event1Update = OCPP20ServiceUtils.buildTransactionEvent(
         mockChargingStation,
         OCPP20TransactionEventEnumType.Updated,
         OCPP20TriggerReasonEnumType.MeterValuePeriodic,
@@ -304,14 +303,14 @@ await describe('E02 - OCPP 2.0.1 Periodic TransactionEvent at TxUpdatedInterval'
       )
 
       // Build events for connector 2
-      const event2_0 = OCPP20ServiceUtils.buildTransactionEvent(
+      const event2Start = OCPP20ServiceUtils.buildTransactionEvent(
         mockChargingStation,
         OCPP20TransactionEventEnumType.Started,
         OCPP20TriggerReasonEnumType.Authorized,
         2,
         transactionId2
       )
-      const event2_1 = OCPP20ServiceUtils.buildTransactionEvent(
+      const event2Update = OCPP20ServiceUtils.buildTransactionEvent(
         mockChargingStation,
         OCPP20TransactionEventEnumType.Updated,
         OCPP20TriggerReasonEnumType.MeterValuePeriodic,
@@ -320,14 +319,14 @@ await describe('E02 - OCPP 2.0.1 Periodic TransactionEvent at TxUpdatedInterval'
       )
 
       // Verify independent sequence numbers
-      expect(event1_0.seqNo).toBe(0)
-      expect(event1_1.seqNo).toBe(1)
-      expect(event2_0.seqNo).toBe(0)
-      expect(event2_1.seqNo).toBe(1)
+      expect(event1Start.seqNo).toBe(0)
+      expect(event1Update.seqNo).toBe(1)
+      expect(event2Start.seqNo).toBe(0)
+      expect(event2Update.seqNo).toBe(1)
 
       // Verify different transaction IDs
-      expect(event1_0.transactionInfo.transactionId).toBe(transactionId1)
-      expect(event2_0.transactionInfo.transactionId).toBe(transactionId2)
+      expect(event1Start.transactionInfo.transactionId).toBe(transactionId1)
+      expect(event2Start.transactionInfo.transactionId).toBe(transactionId2)
     })
   })
 
