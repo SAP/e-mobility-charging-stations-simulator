@@ -36,7 +36,7 @@ const NONEXISTENT_CERTIFICATE_HASH_DATA = {
 const createMockCertificateManager = (
   options: {
     deleteCertificateError?: Error
-    deleteCertificateResult?: { status: 'Accepted' | 'NotFound' | 'Failed' }
+    deleteCertificateResult?: { status: 'Accepted' | 'Failed' | 'NotFound' }
   } = {}
 ) => ({
   deleteCertificate: mock.fn(() => {
