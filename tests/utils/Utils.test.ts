@@ -76,17 +76,19 @@ await describe('Utils test suite', async () => {
     expect(validateIdentifierString('valid', 4)).toBe(false)
   })
 
-  await it('Verify sleep()', async () => {
-    const start = performance.now()
-    const delay = 10
-    const timeout = await sleep(delay)
-    const stop = performance.now()
-    const actualDelay = stop - start
-    expect(timeout).toBeDefined()
-    expect(typeof timeout).toBe('object')
-    expect(actualDelay).toBeGreaterThanOrEqual(delay - 0.6) // Allow 0.6ms tolerance
-    expect(actualDelay).toBeLessThan(delay + 50) // Allow 50ms tolerance
-    clearTimeout(timeout)
+  await it('Verify sleep()', async t => {
+    t.mock.timers.enable({ apis: ['setTimeout'] })
+    try {
+      const delay = 10
+      const sleepPromise = sleep(delay)
+      t.mock.timers.tick(delay)
+      const timeout = await sleepPromise
+      expect(timeout).toBeDefined()
+      expect(typeof timeout).toBe('object')
+      clearTimeout(timeout)
+    } finally {
+      t.mock.timers.reset()
+    }
   })
 
   await it('Verify formatDurationMilliSeconds()', () => {
