@@ -69,6 +69,54 @@ poetry run task server --command GetBaseReport --period 5
 - `TriggerMessage` - Trigger a specific message
 - `DataTransfer` - Send custom data
 
+## Authorization Testing Modes
+
+The server supports configurable authorization behavior for testing OCPP 2.0 authentication scenarios:
+
+### Command Line Options
+
+```shell
+poetry run python server.py --auth-mode <MODE> [--whitelist TOKEN1 TOKEN2 ...] [--blacklist TOKEN1 TOKEN2 ...] [--offline]
+```
+
+**Auth Options:**
+
+- `--auth-mode <MODE>`: Authorization mode (default: `normal`)
+  - `normal` - Accept all authorization requests (default)
+  - `whitelist` - Only accept tokens in the whitelist
+  - `blacklist` - Block tokens in the blacklist, accept all others
+  - `rate_limit` - Reject all requests with `NotAtThisTime` (simulates rate limiting)
+  - `offline` - Not used directly (use `--offline` flag instead)
+- `--whitelist TOKEN1 TOKEN2 ...`: Space-separated list of authorized tokens (default: `valid_token test_token authorized_user`)
+- `--blacklist TOKEN1 TOKEN2 ...`: Space-separated list of blocked tokens (default: `blocked_token invalid_user`)
+- `--offline`: Simulate network failure (raises ConnectionError on Authorize requests)
+
+### Examples
+
+**Whitelist mode** (only accept specific tokens):
+
+```shell
+poetry run python server.py --auth-mode whitelist --whitelist valid_token test_token
+```
+
+**Blacklist mode** (block specific tokens):
+
+```shell
+poetry run python server.py --auth-mode blacklist --blacklist blocked_token invalid_user
+```
+
+**Offline mode** (simulate network failure):
+
+```shell
+poetry run python server.py --offline
+```
+
+**Rate limit simulation**:
+
+```shell
+poetry run python server.py --auth-mode rate_limit
+```
+
 ### Testing the Server
 
 To run the test suite and validate all implemented commands:

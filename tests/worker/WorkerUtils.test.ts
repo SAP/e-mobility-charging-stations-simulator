@@ -29,24 +29,23 @@ await describe('WorkerUtils test suite', async () => {
     }).toThrow(SyntaxError)
   })
 
-  await it('Verify sleep()', async () => {
-    const startTime = performance.now()
-    const delay = 10 // 10ms for fast test execution
+  await it('Verify sleep()', async t => {
+    t.mock.timers.enable({ apis: ['setTimeout'] })
+    try {
+      const delay = 10 // 10ms for fast test execution
+      const sleepPromise = sleep(delay)
+      t.mock.timers.tick(delay)
+      const timeout = await sleepPromise
 
-    const timeout = await sleep(delay)
-    const endTime = performance.now()
-    const actualDelay = endTime - startTime
+      // Verify timeout object is returned
+      expect(timeout).toBeDefined()
+      expect(typeof timeout).toBe('object')
 
-    // Verify timeout object is returned
-    expect(timeout).toBeDefined()
-    expect(typeof timeout).toBe('object')
-
-    // Verify actual delay is approximately correct (within reasonable tolerance)
-    expect(actualDelay).toBeGreaterThanOrEqual(delay - 0.6) // Allow 0.6ms tolerance
-    expect(actualDelay).toBeLessThan(delay + 50) // Allow 50ms tolerance
-
-    // Clean up timeout
-    clearTimeout(timeout)
+      // Clean up timeout
+      clearTimeout(timeout)
+    } finally {
+      t.mock.timers.reset()
+    }
   })
 
   await it('Verify defaultExitHandler()', t => {

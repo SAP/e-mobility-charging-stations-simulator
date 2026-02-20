@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { expect } from '@std/expect'
 import { millisecondsToSeconds } from 'date-fns'
 import { describe, it } from 'node:test'
@@ -35,12 +37,10 @@ import {
 
 interface IncomingRequestServicePrivate {
   handleRequestGetVariables: (
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     chargingStation: any,
     request: OCPP20GetVariablesRequest
   ) => { getVariableResult: OCPP20GetVariableResultType[] }
   handleRequestSetVariables: (
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     chargingStation: any,
     request: OCPP20SetVariablesRequest
   ) => { setVariableResult: OCPP20SetVariableResultType[] }
@@ -50,8 +50,7 @@ interface OCPP20GetVariablesRequest {
   getVariableData: OCPP20GetVariableDataType[]
 }
 
-/* eslint-disable @typescript-eslint/no-floating-promises */
-describe('B07 - Set Variables', () => {
+await describe('B05 - Set Variables', async () => {
   const mockChargingStation = createChargingStation({
     baseName: TEST_CHARGING_STATION_BASE_NAME,
     connectorsCount: 3,
@@ -67,8 +66,8 @@ describe('B07 - Set Variables', () => {
   const incomingRequestService = new OCPP20IncomingRequestService()
   const svc = incomingRequestService as unknown as IncomingRequestServicePrivate
 
-  // FR: B07.FR.01
-  it('Should handle SetVariables request with valid writable variables', () => {
+  // FR: B05.FR.01, B05.FR.10
+  await it('Should handle SetVariables request with valid writable variables', () => {
     const request: OCPP20SetVariablesRequest = {
       setVariableData: [
         {
@@ -112,7 +111,7 @@ describe('B07 - Set Variables', () => {
   })
 
   // FR: B07.FR.02
-  it('Should handle SetVariables request with invalid variables/components', () => {
+  await it('Should handle SetVariables request with invalid variables/components', () => {
     const request: OCPP20SetVariablesRequest = {
       setVariableData: [
         {
@@ -141,7 +140,7 @@ describe('B07 - Set Variables', () => {
   })
 
   // FR: B07.FR.03
-  it('Should handle SetVariables request with unsupported attribute type', () => {
+  await it('Should handle SetVariables request with unsupported attribute type', () => {
     const request: OCPP20SetVariablesRequest = {
       setVariableData: [
         {
@@ -163,7 +162,7 @@ describe('B07 - Set Variables', () => {
   })
 
   // FR: B07.FR.04
-  it('Should reject AuthorizeRemoteStart under Connector component for write', () => {
+  await it('Should reject AuthorizeRemoteStart under Connector component for write', () => {
     const request: OCPP20SetVariablesRequest = {
       setVariableData: [
         {
@@ -184,7 +183,7 @@ describe('B07 - Set Variables', () => {
   })
 
   // FR: B07.FR.05
-  it('Should reject value exceeding max length at service level', () => {
+  await it('Should reject value exceeding max length at service level', () => {
     const longValue = 'x'.repeat(2501)
     const request: OCPP20SetVariablesRequest = {
       setVariableData: [
@@ -206,7 +205,7 @@ describe('B07 - Set Variables', () => {
   })
 
   // FR: B07.FR.07
-  it('Should handle mixed SetVariables request with multiple outcomes', () => {
+  await it('Should handle mixed SetVariables request with multiple outcomes', () => {
     const longValue = 'y'.repeat(2501)
     const request: OCPP20SetVariablesRequest = {
       setVariableData: [
@@ -265,7 +264,7 @@ describe('B07 - Set Variables', () => {
   })
 
   // FR: B07.FR.08
-  it('Should reject Target attribute for WebSocketPingInterval explicitly', () => {
+  await it('Should reject Target attribute for WebSocketPingInterval explicitly', () => {
     const request: OCPP20SetVariablesRequest = {
       setVariableData: [
         {
@@ -285,7 +284,7 @@ describe('B07 - Set Variables', () => {
   })
 
   // FR: B07.FR.09
-  it('Should reject immutable DateTime variable', () => {
+  await it('Should reject immutable DateTime variable', () => {
     const request: OCPP20SetVariablesRequest = {
       setVariableData: [
         {
@@ -305,7 +304,7 @@ describe('B07 - Set Variables', () => {
   })
 
   // FR: B07.FR.10
-  it('Should persist HeartbeatInterval and WebSocketPingInterval after setting', () => {
+  await it('Should persist HeartbeatInterval and WebSocketPingInterval after setting', () => {
     const hbNew = (millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL) + 20).toString()
     const wsNew = (Constants.DEFAULT_WEBSOCKET_PING_INTERVAL + 20).toString()
     const setRequest: OCPP20SetVariablesRequest = {
@@ -349,7 +348,7 @@ describe('B07 - Set Variables', () => {
   })
 
   // FR: B07.FR.11
-  it('Should revert non-persistent TxUpdatedInterval after runtime reset', async () => {
+  await it('Should revert non-persistent TxUpdatedInterval after runtime reset', async () => {
     const txValue = '77'
     const setRequest: OCPP20SetVariablesRequest = {
       setVariableData: [
@@ -391,7 +390,7 @@ describe('B07 - Set Variables', () => {
   })
 
   // FR: B07.FR.12
-  it('Should reject all SetVariables when ItemsPerMessage limit exceeded', () => {
+  await it('Should reject all SetVariables when ItemsPerMessage limit exceeded', () => {
     setStrictLimits(mockChargingStation, 1, 10000)
     const request: OCPP20SetVariablesRequest = {
       setVariableData: [
@@ -420,7 +419,7 @@ describe('B07 - Set Variables', () => {
     resetLimits(mockChargingStation)
   })
 
-  it('Should reject all SetVariables when BytesPerMessage limit exceeded (pre-calculation)', () => {
+  await it('Should reject all SetVariables when BytesPerMessage limit exceeded (pre-calculation)', () => {
     // Set strict bytes limit low enough for request pre-estimate to exceed
     setStrictLimits(mockChargingStation, 100, 10)
     const request: OCPP20SetVariablesRequest = {
@@ -448,7 +447,7 @@ describe('B07 - Set Variables', () => {
     resetLimits(mockChargingStation)
   })
 
-  it('Should reject all SetVariables when BytesPerMessage limit exceeded (post-calculation)', () => {
+  await it('Should reject all SetVariables when BytesPerMessage limit exceeded (post-calculation)', () => {
     const request: OCPP20SetVariablesRequest = {
       setVariableData: [
         {
@@ -514,7 +513,7 @@ describe('B07 - Set Variables', () => {
   })
 
   // Effective ConfigurationValueSize / ValueSize propagation tests
-  it('Should enforce ConfigurationValueSize when ValueSize unset (service propagation)', () => {
+  await it('Should enforce ConfigurationValueSize when ValueSize unset (service propagation)', () => {
     resetValueSizeLimits(mockChargingStation)
     setConfigurationValueSize(mockChargingStation, 100)
     upsertConfigurationKey(mockChargingStation, OCPP20RequiredVariableName.ValueSize, '')
@@ -546,7 +545,7 @@ describe('B07 - Set Variables', () => {
     resetValueSizeLimits(mockChargingStation)
   })
 
-  it('Should enforce ValueSize when ConfigurationValueSize unset (service propagation)', () => {
+  await it('Should enforce ValueSize when ConfigurationValueSize unset (service propagation)', () => {
     resetValueSizeLimits(mockChargingStation)
     upsertConfigurationKey(
       mockChargingStation,
@@ -582,7 +581,7 @@ describe('B07 - Set Variables', () => {
     resetValueSizeLimits(mockChargingStation)
   })
 
-  it('Should use smaller ValueSize when ValueSize < ConfigurationValueSize (service propagation)', () => {
+  await it('Should use smaller ValueSize when ValueSize < ConfigurationValueSize (service propagation)', () => {
     resetValueSizeLimits(mockChargingStation)
     setConfigurationValueSize(mockChargingStation, 400)
     setValueSize(mockChargingStation, 350)
@@ -614,7 +613,7 @@ describe('B07 - Set Variables', () => {
     resetValueSizeLimits(mockChargingStation)
   })
 
-  it('Should use smaller ConfigurationValueSize when ConfigurationValueSize < ValueSize (service propagation)', () => {
+  await it('Should use smaller ConfigurationValueSize when ConfigurationValueSize < ValueSize (service propagation)', () => {
     resetValueSizeLimits(mockChargingStation)
     setConfigurationValueSize(mockChargingStation, 260)
     setValueSize(mockChargingStation, 500)
@@ -646,7 +645,7 @@ describe('B07 - Set Variables', () => {
     resetValueSizeLimits(mockChargingStation)
   })
 
-  it('Should fallback to default absolute max length when both limits invalid/non-positive', () => {
+  await it('Should fallback to default absolute max length when both limits invalid/non-positive', () => {
     resetValueSizeLimits(mockChargingStation)
     setConfigurationValueSize(mockChargingStation, 0)
     setValueSize(mockChargingStation, -5)
@@ -668,7 +667,7 @@ describe('B07 - Set Variables', () => {
   })
 
   // FR: B07.FR.12 (updated behavior: ConnectionUrl now readable after set)
-  it('Should allow ConnectionUrl read-back after setting', () => {
+  await it('Should allow ConnectionUrl read-back after setting', () => {
     resetLimits(mockChargingStation)
     const url = 'wss://central.example.com/ocpp'
     const setRequest: OCPP20SetVariablesRequest = {
@@ -699,7 +698,7 @@ describe('B07 - Set Variables', () => {
     resetLimits(mockChargingStation)
   })
 
-  it('Should accept ConnectionUrl with custom mqtt scheme (no scheme restriction)', () => {
+  await it('Should accept ConnectionUrl with custom mqtt scheme (no scheme restriction)', () => {
     resetLimits(mockChargingStation)
     const url = 'mqtt://broker.internal:1883/ocpp'
     const setRequest: OCPP20SetVariablesRequest = {

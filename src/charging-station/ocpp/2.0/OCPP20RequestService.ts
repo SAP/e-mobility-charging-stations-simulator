@@ -1,5 +1,3 @@
-// Partial Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
-
 import type { ValidateFunction } from 'ajv'
 
 import { generateKeyPairSync } from 'node:crypto'
@@ -219,7 +217,6 @@ export class OCPP20RequestService extends OCPPRequestService {
         logger.debug(
           `${chargingStation.logPrefix()} ${moduleName}.requestHandler: Sending '${commandName}' request with message ID '${messageId}'`
         )
-        // TODO: pre request actions hook
         const response = (await this.sendMessage(
           chargingStation,
           messageId,

@@ -37,7 +37,7 @@ import {
   TEST_FIRMWARE_VERSION,
 } from './OCPP20TestConstants.js'
 
-await describe('B08 - Get Base Report', async () => {
+await describe('B07 - Get Base Report', async () => {
   const mockChargingStation = createChargingStation({
     baseName: TEST_CHARGING_STATION_BASE_NAME,
     connectorsCount: 3,
@@ -56,7 +56,7 @@ await describe('B08 - Get Base Report', async () => {
 
   const incomingRequestService = new OCPP20IncomingRequestService()
 
-  // FR: B08.FR.01
+  // FR: B07.FR.01, B07.FR.07
   await it('Should handle GetBaseReport request with ConfigurationInventory', () => {
     const request: OCPP20GetBaseReportRequest = {
       reportBase: ReportBaseEnumType.ConfigurationInventory,

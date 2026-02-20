@@ -114,14 +114,22 @@ const buildStatusNotificationRequest = (
         status: status as OCPP16ChargePointStatus,
       } satisfies OCPP16StatusNotificationRequest
     case OCPPVersion.VERSION_20:
-    case OCPPVersion.VERSION_201:
+    case OCPPVersion.VERSION_201: {
+      const resolvedEvseId = evseId ?? chargingStation.getEvseIdByConnectorId(connectorId)
+      if (resolvedEvseId === undefined) {
+        throw new OCPPError(
+          ErrorType.INTERNAL_ERROR,
+          `Cannot build status notification payload: evseId is undefined for connector ${connectorId.toString()}`,
+          RequestCommand.STATUS_NOTIFICATION
+        )
+      }
       return {
         connectorId,
         connectorStatus: status as OCPP20ConnectorStatusEnumType,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        evseId: evseId ?? chargingStation.getEvseIdByConnectorId(connectorId)!,
+        evseId: resolvedEvseId,
         timestamp: new Date(),
       } satisfies OCPP20StatusNotificationRequest
+    }
     default:
       throw new OCPPError(
         ErrorType.INTERNAL_ERROR,
@@ -132,11 +140,105 @@ const buildStatusNotificationRequest = (
   }
 }
 
+/**
+ * Unified authorization function that uses the new OCPP authentication system
+ * when enabled, with automatic fallback to legacy system
+ * @param chargingStation - The charging station instance
+ * @param connectorId - The connector ID for authorization context
+ * @param idTag - The identifier to authorize
+ * @returns Promise resolving to authorization result
+ */
+export const isIdTagAuthorizedUnified = async (
+  chargingStation: ChargingStation,
+  connectorId: number,
+  idTag: string
+): Promise<boolean> => {
+  // OCPP 2.0+ always uses unified auth system
+  // OCPP 1.6 can optionally use unified or legacy system
+  const shouldUseUnified =
+    chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_20 ||
+    chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_201
+
+  if (shouldUseUnified) {
+    try {
+      logger.debug(
+        `${chargingStation.logPrefix()} Using unified auth system for idTag '${idTag}' on connector ${connectorId.toString()}`
+      )
+
+      // Dynamic import to avoid circular dependencies
+      const { OCPPAuthServiceFactory } = await import('./auth/services/OCPPAuthServiceFactory.js')
+      const {
+        AuthContext,
+        AuthorizationStatus: UnifiedAuthorizationStatus,
+        IdentifierType,
+      } = await import('./auth/types/AuthTypes.js')
+
+      // Get unified auth service
+      const authService = await OCPPAuthServiceFactory.getInstance(chargingStation)
+
+      // Create auth request with unified types
+      const authResult = await authService.authorize({
+        allowOffline: false,
+        connectorId,
+        context: AuthContext.TRANSACTION_START,
+        identifier: {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          ocppVersion: chargingStation.stationInfo.ocppVersion!,
+          type: IdentifierType.ID_TAG,
+          value: idTag,
+        },
+        timestamp: new Date(),
+      })
+
+      logger.debug(
+        `${chargingStation.logPrefix()} Unified auth result for idTag '${idTag}': ${authResult.status} using ${authResult.method} method`
+      )
+
+      // Use AuthorizationStatus enum from unified system
+      return authResult.status === UnifiedAuthorizationStatus.ACCEPTED
+    } catch (error) {
+      logger.error(
+        `${chargingStation.logPrefix()} Unified auth failed, falling back to legacy system`,
+        error
+      )
+      // Fall back to legacy system on error (only for OCPP 1.6)
+      if (chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_16) {
+        return isIdTagAuthorized(chargingStation, connectorId, idTag)
+      }
+      // For OCPP 2.0, return false on error (no legacy fallback)
+      return false
+    }
+  }
+
+  // Use legacy auth system for OCPP 1.6 when unified auth not explicitly enabled
+  logger.debug(
+    `${chargingStation.logPrefix()} Using legacy auth system for idTag '${idTag}' on connector ${connectorId.toString()}`
+  )
+  return isIdTagAuthorized(chargingStation, connectorId, idTag)
+}
+
+/**
+ * Legacy authorization function - used for OCPP 1.6 only
+ * OCPP 2.0+ always uses the unified system via isIdTagAuthorizedUnified
+ * @param chargingStation - The charging station instance
+ * @param connectorId - The connector ID for authorization context
+ * @param idTag - The identifier to authorize
+ * @returns Promise resolving to authorization result
+ */
 export const isIdTagAuthorized = async (
   chargingStation: ChargingStation,
   connectorId: number,
   idTag: string
 ): Promise<boolean> => {
+  // OCPP 2.0+ always delegates to unified system
+  if (
+    chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_20 ||
+    chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_201
+  ) {
+    return isIdTagAuthorizedUnified(chargingStation, connectorId, idTag)
+  }
+
+  // Legacy authorization logic for OCPP 1.6
   if (
     !chargingStation.getLocalAuthListEnabled() &&
     chargingStation.stationInfo?.remoteAuthorization === false
@@ -1797,6 +1899,7 @@ const getMeasurandDefaultUnit = (
 export class OCPPServiceUtils {
   public static readonly buildTransactionEndMeterValue = buildTransactionEndMeterValue
   public static readonly isIdTagAuthorized = isIdTagAuthorized
+  public static readonly isIdTagAuthorizedUnified = isIdTagAuthorizedUnified
   public static readonly restoreConnectorStatus = restoreConnectorStatus
   public static readonly sendAndSetConnectorStatus = sendAndSetConnectorStatus
 

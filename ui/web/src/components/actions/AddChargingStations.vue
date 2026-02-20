@@ -113,6 +113,8 @@
 <script setup lang="ts">
 import { getCurrentInstance, ref, watch } from 'vue'
 
+import type { UUIDv4 } from '@/types'
+
 import Button from '@/components/buttons/Button.vue'
 import { convertToBoolean, randomUUID, resetToggleButtonState } from '@/composables'
 
@@ -122,7 +124,7 @@ const state = ref<{
   numberOfStations: number
   ocppStrictCompliance: boolean
   persistentConfiguration: boolean
-  renderTemplates: `${string}-${string}-${string}-${string}-${string}`
+  renderTemplates: UUIDv4
   supervisionUrl: string
   template: string
 }>({

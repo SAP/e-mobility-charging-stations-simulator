@@ -1,5 +1,3 @@
-// Partial Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
-
 import { millisecondsToSeconds } from 'date-fns'
 
 import {

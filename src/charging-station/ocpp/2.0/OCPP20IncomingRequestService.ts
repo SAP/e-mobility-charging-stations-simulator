@@ -2,6 +2,8 @@
 
 import type { ValidateFunction } from 'ajv'
 
+import { secondsToMilliseconds } from 'date-fns'
+
 import type { ChargingStation } from '../../../charging-station/index.js'
 import type {
   OCPP20ChargingProfileType,
@@ -76,6 +78,7 @@ import {
 } from '../../../types/ocpp/2.0/Transaction.js'
 import { StandardParametersKey } from '../../../types/ocpp/Configuration.js'
 import {
+  Constants,
   convertToIntOrNaN,
   generateUUID,
   isAsyncFunction,
@@ -1062,13 +1065,22 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
-  /**
-   * Handles OCPP 2.0 Reset request from central system with enhanced EVSE-specific support
-   * Initiates station or EVSE reset based on request parameters and transaction states
-   * @param chargingStation - The charging station instance processing the request
-   * @param commandPayload - Reset request payload with type and optional EVSE ID
-   * @returns Promise resolving to ResetResponse indicating operation status
-   */
+  private getTxUpdatedInterval (chargingStation: ChargingStation): number {
+    const variableManager = OCPP20VariableManager.getInstance()
+    const results = variableManager.getVariables(chargingStation, [
+      {
+        component: { name: OCPP20ComponentName.SampledDataCtrlr },
+        variable: { name: OCPP20RequiredVariableName.TxUpdatedInterval },
+      },
+    ])
+    if (results.length > 0 && results[0].attributeValue != null) {
+      const intervalSeconds = parseInt(results[0].attributeValue, 10)
+      if (!isNaN(intervalSeconds) && intervalSeconds > 0) {
+        return secondsToMilliseconds(intervalSeconds)
+      }
+    }
+    return secondsToMilliseconds(Constants.DEFAULT_TX_UPDATED_INTERVAL)
+  }
 
   private handleRequestGetBaseReport (
     chargingStation: ChargingStation,

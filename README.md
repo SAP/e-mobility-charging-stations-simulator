@@ -512,8 +512,8 @@ make SUBMODULES_INIT=true
 #### E. Transactions
 
 - :white_check_mark: RequestStartTransaction
-- :x: RequestStopTransaction
-- :x: TransactionEvent
+- :white_check_mark: RequestStopTransaction
+- :white_check_mark: TransactionEvent
 
 #### F. RemoteControl
 

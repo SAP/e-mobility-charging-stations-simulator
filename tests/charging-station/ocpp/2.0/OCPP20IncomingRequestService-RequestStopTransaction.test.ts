@@ -4,7 +4,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { expect } from '@std/expect'
-import { describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type {
   OCPP20RequestStartTransactionRequest,
@@ -14,6 +14,7 @@ import type {
 } from '../../../../src/types/index.js'
 
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
+import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'
 import {
   OCPP20RequestCommand,
   OCPP20TransactionEventEnumType,
@@ -27,11 +28,11 @@ import {
 } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
+import { createMockAuthService } from '../auth/helpers/MockFactories.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from './OCPP20TestConstants.js'
 import { resetLimits, resetReportingValueSize } from './OCPP20TestUtils.js'
 
-await describe('E02 - Remote Stop Transaction', async () => {
-  // Track sent TransactionEvent requests for verification
+await describe('F03 - Remote Stop Transaction', async () => {
   let sentTransactionEvents: OCPP20TransactionEventRequest[] = []
 
   const mockChargingStation = createChargingStation({
@@ -41,13 +42,10 @@ await describe('E02 - Remote Stop Transaction', async () => {
     heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
     ocppRequestService: {
       requestHandler: async (chargingStation: any, commandName: any, commandPayload: any) => {
-        // Mock successful OCPP request responses
         if (commandName === OCPP20RequestCommand.TRANSACTION_EVENT) {
-          // Capture the TransactionEvent for test verification
           sentTransactionEvents.push(commandPayload as OCPP20TransactionEventRequest)
-          return Promise.resolve({}) // OCPP 2.0 TransactionEvent response is empty object
+          return Promise.resolve({})
         }
-        // Mock other requests (StatusNotification, etc.)
         return Promise.resolve({})
       },
     },
@@ -60,7 +58,15 @@ await describe('E02 - Remote Stop Transaction', async () => {
 
   const incomingRequestService = new OCPP20IncomingRequestService()
 
-  // Reset limits before each test
+  beforeEach(() => {
+    const stationId = mockChargingStation.stationInfo?.chargingStationId ?? 'unknown'
+    OCPPAuthServiceFactory.setInstanceForTesting(stationId, createMockAuthService())
+  })
+
+  afterEach(() => {
+    OCPPAuthServiceFactory.clearAllInstances()
+  })
+
   resetLimits(mockChargingStation)
   resetReportingValueSize(mockChargingStation)
 
@@ -122,12 +128,13 @@ await describe('E02 - Remote Stop Transaction', async () => {
     return startResponse.transactionId as string
   }
 
+  // FR: F03.FR.02, F03.FR.03, F03.FR.07, F03.FR.09
   await it('Should successfully stop an active transaction', async () => {
-    // Clear previous transaction events
-    sentTransactionEvents = []
-
     // Start a transaction first
     const transactionId = await startTransaction(1, 100)
+
+    // Clear transaction events after starting, before testing stop transaction
+    sentTransactionEvents = []
 
     // Create stop transaction request
     const stopRequest: OCPP20RequestStopTransactionRequest = {
@@ -155,10 +162,8 @@ await describe('E02 - Remote Stop Transaction', async () => {
     expect(transactionEvent.evse?.id).toBe(1)
   })
 
+  // FR: F03.FR.02, F03.FR.03
   await it('Should handle multiple active transactions correctly', async () => {
-    // Clear previous transaction events
-    sentTransactionEvents = []
-
     // Reset once before starting multiple transactions
     resetConnectorTransactionStates()
 
@@ -166,6 +171,9 @@ await describe('E02 - Remote Stop Transaction', async () => {
     const transactionId1 = await startTransaction(1, 200, true) // Skip reset since we just did it
     const transactionId2 = await startTransaction(2, 201, true) // Skip reset to keep transaction 1
     const transactionId3 = await startTransaction(3, 202, true) // Skip reset to keep transactions 1 & 2
+
+    // Clear transaction events after starting, before testing stop transaction
+    sentTransactionEvents = []
 
     // Stop the second transaction
     const stopRequest: OCPP20RequestStopTransactionRequest = {
@@ -193,6 +201,7 @@ await describe('E02 - Remote Stop Transaction', async () => {
     expect(mockChargingStation.getConnectorIdByTransactionId(transactionId3)).toBe(3)
   })
 
+  // FR: F03.FR.08
   await it('Should reject stop transaction for non-existent transaction ID', async () => {
     // Clear previous transaction events
     sentTransactionEvents = []
@@ -215,6 +224,7 @@ await describe('E02 - Remote Stop Transaction', async () => {
     expect(sentTransactionEvents).toHaveLength(0)
   })
 
+  // FR: F03.FR.08
   await it('Should reject stop transaction for invalid transaction ID format - empty string', async () => {
     // Clear previous transaction events
     sentTransactionEvents = []
@@ -236,6 +246,7 @@ await describe('E02 - Remote Stop Transaction', async () => {
     expect(sentTransactionEvents).toHaveLength(0)
   })
 
+  // FR: F03.FR.08
   await it('Should reject stop transaction for invalid transaction ID format - too long', async () => {
     // Clear previous transaction events
     sentTransactionEvents = []
@@ -259,12 +270,13 @@ await describe('E02 - Remote Stop Transaction', async () => {
     expect(sentTransactionEvents).toHaveLength(0)
   })
 
+  // FR: F03.FR.02
   await it('Should accept valid transaction ID format - exactly 36 characters', async () => {
-    // Clear previous transaction events
-    sentTransactionEvents = []
-
     // Start a transaction first
     const transactionId = await startTransaction(1, 300)
+
+    // Clear transaction events after starting, before testing stop transaction
+    sentTransactionEvents = []
 
     // Ensure the transaction ID is exactly 36 characters (pad if necessary for test)
     let testTransactionId = transactionId
@@ -301,10 +313,8 @@ await describe('E02 - Remote Stop Transaction', async () => {
   })
 
   await it('Should handle TransactionEvent request failure gracefully', async () => {
-    // Clear previous transaction events
     sentTransactionEvents = []
 
-    // Create a mock charging station that fails TransactionEvent requests
     const failingChargingStation = createChargingStation({
       baseName: TEST_CHARGING_STATION_BASE_NAME + '-FAIL',
       connectorsCount: 1,
@@ -313,7 +323,6 @@ await describe('E02 - Remote Stop Transaction', async () => {
       ocppRequestService: {
         requestHandler: async (chargingStation: any, commandName: any, commandPayload: any) => {
           if (commandName === OCPP20RequestCommand.TRANSACTION_EVENT) {
-            // Simulate server rejection
             throw new Error('TransactionEvent rejected by server')
           }
           return Promise.resolve({})
@@ -326,7 +335,9 @@ await describe('E02 - Remote Stop Transaction', async () => {
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
 
-    // Start a transaction on the failing station
+    const failingStationId = failingChargingStation.stationInfo?.chargingStationId ?? 'unknown'
+    OCPPAuthServiceFactory.setInstanceForTesting(failingStationId, createMockAuthService())
+
     const startRequest: OCPP20RequestStartTransactionRequest = {
       evseId: 1,
       idToken: {
@@ -358,6 +369,7 @@ await describe('E02 - Remote Stop Transaction', async () => {
     expect(response.status).toBe(RequestStartStopStatusEnumType.Rejected)
   })
 
+  // FR: F04.FR.01
   await it('Should return proper response structure', async () => {
     // Clear previous transaction events
     sentTransactionEvents = []
@@ -387,11 +399,11 @@ await describe('E02 - Remote Stop Transaction', async () => {
   })
 
   await it('Should handle custom data in request payload', async () => {
-    // Clear previous transaction events
-    sentTransactionEvents = []
-
     // Start a transaction first
     const transactionId = await startTransaction(1, 500)
+
+    // Clear transaction events after starting, before testing stop transaction
+    sentTransactionEvents = []
 
     const stopRequestWithCustomData: OCPP20RequestStopTransactionRequest = {
       customData: {
@@ -414,12 +426,13 @@ await describe('E02 - Remote Stop Transaction', async () => {
     expect(sentTransactionEvents).toHaveLength(1)
   })
 
+  // FR: F03.FR.07, F03.FR.09
   await it('Should validate TransactionEvent content correctly', async () => {
-    // Clear previous transaction events
-    sentTransactionEvents = []
-
     // Start a transaction first
     const transactionId = await startTransaction(2, 600) // Use EVSE 2
+
+    // Clear transaction events after starting, before testing stop transaction
+    sentTransactionEvents = []
 
     const stopRequest: OCPP20RequestStopTransactionRequest = {
       transactionId: transactionId as UUIDv4,
@@ -452,5 +465,51 @@ await describe('E02 - Remote Stop Transaction', async () => {
     // Validate EVSE info
     expect(transactionEvent.evse).toBeDefined()
     expect(transactionEvent.evse?.id).toBe(2) // Should match the EVSE we used
+  })
+
+  // FR: F03.FR.09
+  await it('Should include final meter values in TransactionEvent(Ended)', async () => {
+    resetConnectorTransactionStates()
+
+    const transactionId = await startTransaction(3, 700)
+
+    const connectorStatus = mockChargingStation.getConnectorStatus(3)
+    expect(connectorStatus).toBeDefined()
+    if (connectorStatus != null) {
+      connectorStatus.transactionEnergyActiveImportRegisterValue = 12345.67
+    }
+
+    sentTransactionEvents = []
+
+    const stopRequest: OCPP20RequestStopTransactionRequest = {
+      transactionId: transactionId as UUIDv4,
+    }
+
+    const response = await (incomingRequestService as any).handleRequestStopTransaction(
+      mockChargingStation,
+      stopRequest
+    )
+
+    expect(response.status).toBe(RequestStartStopStatusEnumType.Accepted)
+
+    expect(sentTransactionEvents).toHaveLength(1)
+    const transactionEvent = sentTransactionEvents[0]
+
+    expect(transactionEvent.eventType).toBe(OCPP20TransactionEventEnumType.Ended)
+
+    expect(transactionEvent.meterValue).toBeDefined()
+    expect(transactionEvent.meterValue).toHaveLength(1)
+
+    const meterValue = transactionEvent.meterValue?.[0]
+    expect(meterValue).toBeDefined()
+    if (meterValue == null) return
+    expect(meterValue.timestamp).toBeInstanceOf(Date)
+    expect(meterValue.sampledValue).toBeDefined()
+    expect(meterValue.sampledValue).toHaveLength(1)
+
+    const sampledValue = meterValue.sampledValue[0]
+    expect(sampledValue.value).toBe(12345.67)
+    expect(sampledValue.context).toBe('Transaction.End')
+    expect(sampledValue.measurand).toBe('Energy.Active.Import.Register')
   })
 })

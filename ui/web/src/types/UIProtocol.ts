@@ -1,4 +1,5 @@
 import type { JsonObject } from './JsonType'
+import type { UUIDv4 } from './UUID'
 
 export enum ApplicationProtocol {
   WS = 'ws',
@@ -42,20 +43,13 @@ export enum ResponseStatus {
   SUCCESS = 'success',
 }
 
-export type ProtocolRequest = [
-  `${string}-${string}-${string}-${string}-${string}`,
-  ProcedureName,
-  RequestPayload
-]
+export type ProtocolRequest = [UUIDv4, ProcedureName, RequestPayload]
 
 export type ProtocolRequestHandler = (
   payload: RequestPayload
 ) => Promise<ResponsePayload> | ResponsePayload
 
-export type ProtocolResponse = [
-  `${string}-${string}-${string}-${string}-${string}`,
-  ResponsePayload
-]
+export type ProtocolResponse = [UUIDv4, ResponsePayload]
 
 export interface RequestPayload extends JsonObject {
   connectorIds?: number[]

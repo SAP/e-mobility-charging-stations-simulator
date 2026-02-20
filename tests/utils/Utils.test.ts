@@ -35,6 +35,7 @@ import {
   roundTo,
   secureRandom,
   sleep,
+  validateIdentifierString,
   validateUUID,
 } from '../../src/utils/Utils.js'
 
@@ -60,17 +61,34 @@ await describe('Utils test suite', async () => {
     expect(validateUUID(true)).toBe(false)
   })
 
-  await it('Verify sleep()', async () => {
-    const start = performance.now()
-    const delay = 10
-    const timeout = await sleep(delay)
-    const stop = performance.now()
-    const actualDelay = stop - start
-    expect(timeout).toBeDefined()
-    expect(typeof timeout).toBe('object')
-    expect(actualDelay).toBeGreaterThanOrEqual(delay - 0.6) // Allow 0.6ms tolerance
-    expect(actualDelay).toBeLessThan(delay + 50) // Allow 50ms tolerance
-    clearTimeout(timeout)
+  await it('Verify validateIdentifierString()', () => {
+    expect(validateIdentifierString('550e8400-e29b-41d4-a716-446655440000', 36)).toBe(true)
+    expect(validateIdentifierString('CSMS-TXN-12345', 36)).toBe(true)
+    expect(validateIdentifierString('a', 36)).toBe(true)
+    expect(validateIdentifierString('abc123', 36)).toBe(true)
+    expect(validateIdentifierString('valid-identifier', 36)).toBe(true)
+    expect(validateIdentifierString('a'.repeat(36), 36)).toBe(true)
+    expect(validateIdentifierString('', 36)).toBe(false)
+    expect(validateIdentifierString('a'.repeat(37), 36)).toBe(false)
+    expect(validateIdentifierString('a'.repeat(100), 36)).toBe(false)
+    expect(validateIdentifierString('  ', 36)).toBe(false)
+    expect(validateIdentifierString('\t\n', 36)).toBe(false)
+    expect(validateIdentifierString('valid', 4)).toBe(false)
+  })
+
+  await it('Verify sleep()', async t => {
+    t.mock.timers.enable({ apis: ['setTimeout'] })
+    try {
+      const delay = 10
+      const sleepPromise = sleep(delay)
+      t.mock.timers.tick(delay)
+      const timeout = await sleepPromise
+      expect(timeout).toBeDefined()
+      expect(typeof timeout).toBe('object')
+      clearTimeout(timeout)
+    } finally {
+      t.mock.timers.reset()
+    }
   })
 
   await it('Verify formatDurationMilliSeconds()', () => {

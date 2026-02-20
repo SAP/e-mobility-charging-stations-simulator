@@ -1,5 +1,6 @@
 import type { EmptyObject } from '../../EmptyObject.js'
 import type { JsonObject } from '../../JsonType.js'
+import type { UUIDv4 } from '../../UUID.js'
 import type { RegistrationStatusEnumType } from '../Common.js'
 import type {
   CertificateHashDataChainType,

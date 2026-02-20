@@ -1,5 +1,3 @@
-// Partial Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
-
 import type { ValidateFunction } from 'ajv'
 
 import { Client, type FTPResponse } from 'basic-ftp'
@@ -112,6 +110,7 @@ import {
   sleep,
 } from '../../../utils/index.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
+import { OCPPServiceUtils } from '../OCPPServiceUtils.js'
 import { OCPP16Constants } from './OCPP16Constants.js'
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js'
 
@@ -737,7 +736,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
             const clearedConnectorCP = OCPP16ServiceUtils.clearChargingProfiles(
               chargingStation,
               commandPayload,
-              status.chargingProfiles
+              status.chargingProfiles as OCPP16ChargingProfile[]
             )
             if (clearedConnectorCP && !clearedCP) {
               clearedCP = true
@@ -749,7 +748,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           const clearedConnectorCP = OCPP16ServiceUtils.clearChargingProfiles(
             chargingStation,
             commandPayload,
-            chargingStation.getConnectorStatus(id)?.chargingProfiles
+            chargingStation.getConnectorStatus(id)?.chargingProfiles as OCPP16ChargingProfile[]
           )
           if (clearedConnectorCP && !clearedCP) {
             clearedCP = true
@@ -827,10 +826,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       end: addSeconds(currentDate, duration),
       start: currentDate,
     }
-    const chargingProfiles: OCPP16ChargingProfile[] = getConnectorChargingProfiles(
+    const chargingProfiles = getConnectorChargingProfiles(
       chargingStation,
       connectorId
-    )
+    ) as OCPP16ChargingProfile[]
     let previousCompositeSchedule: OCPP16ChargingSchedule | undefined
     let compositeSchedule: OCPP16ChargingSchedule | undefined
     for (const chargingProfile of chargingProfiles) {
@@ -1119,7 +1118,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     // idTag authorization check required
     if (
       chargingStation.getAuthorizeRemoteTxRequests() &&
-      !(await OCPP16ServiceUtils.isIdTagAuthorized(chargingStation, transactionConnectorId, idTag))
+      !(await OCPPServiceUtils.isIdTagAuthorizedUnified(
+        chargingStation,
+        transactionConnectorId,
+        idTag
+      ))
     ) {
       return this.notifyRemoteStartTransactionRejected(
         chargingStation,
@@ -1195,7 +1198,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     if (connectorId === 0 && !chargingStation.getReserveConnectorZeroSupported()) {
       return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED
     }
-    if (!(await OCPP16ServiceUtils.isIdTagAuthorized(chargingStation, connectorId, idTag))) {
+    if (!(await OCPPServiceUtils.isIdTagAuthorizedUnified(chargingStation, connectorId, idTag))) {
       return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED
     }
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

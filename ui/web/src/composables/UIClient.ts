@@ -1,6 +1,6 @@
 import { useToast } from 'vue-toast-notification'
 
-import {
+import type {
   ApplicationProtocol,
   AuthenticationType,
   type ChargingStationOptions,
@@ -10,6 +10,7 @@ import {
   type ResponsePayload,
   ResponseStatus,
   type UIServerConfigurationSection,
+  UUIDv4,
 } from '@/types'
 
 import { UI_WEBSOCKET_REQUEST_TIMEOUT_MS } from './Constants'
@@ -23,19 +24,13 @@ interface ResponseHandler {
 
 export class UIClient {
   private static instance: null | UIClient = null
-  private responseHandlers: Map<
-    `${string}-${string}-${string}-${string}-${string}`,
-    ResponseHandler
-  >
+  private responseHandlers: Map<UUIDv4, ResponseHandler>
 
   private ws?: WebSocket
 
   private constructor (private uiServerConfiguration: UIServerConfigurationSection) {
     this.openWS()
-    this.responseHandlers = new Map<
-      `${string}-${string}-${string}-${string}-${string}`,
-      ResponseHandler
-    >()
+    this.responseHandlers = new Map<UUIDv4, ResponseHandler>()
   }
 
   public static getInstance (uiServerConfiguration?: UIServerConfigurationSection): UIClient {
