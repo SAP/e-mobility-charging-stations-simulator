@@ -5,6 +5,40 @@ import { ConnectorStatusEnum, OCPP20RequiredVariableName } from '../../../../src
 import { Constants } from '../../../../src/utils/index.js'
 
 /**
+ * Reset connector transaction state for all connectors in the charging station.
+ * This ensures test isolation by clearing any transaction state from previous tests.
+ * @param chargingStation Charging station instance whose connector state should be reset.
+ */
+export function resetConnectorTransactionState (chargingStation: ChargingStation): void {
+  if (chargingStation.hasEvses) {
+    for (const evseStatus of chargingStation.evses.values()) {
+      for (const connectorStatus of evseStatus.connectors.values()) {
+        connectorStatus.transactionStarted = false
+        connectorStatus.transactionId = undefined
+        connectorStatus.transactionIdTag = undefined
+        connectorStatus.transactionStart = undefined
+        connectorStatus.transactionEnergyActiveImportRegisterValue = 0
+        connectorStatus.remoteStartId = undefined
+        connectorStatus.status = ConnectorStatusEnum.Available
+        connectorStatus.chargingProfiles = []
+      }
+    }
+  } else {
+    for (const [connectorId, connectorStatus] of chargingStation.connectors.entries()) {
+      if (connectorId === 0) continue // Skip connector 0 (charging station itself)
+      connectorStatus.transactionStarted = false
+      connectorStatus.transactionId = undefined
+      connectorStatus.transactionIdTag = undefined
+      connectorStatus.transactionStart = undefined
+      connectorStatus.transactionEnergyActiveImportRegisterValue = 0
+      connectorStatus.remoteStartId = undefined
+      connectorStatus.status = ConnectorStatusEnum.Available
+      connectorStatus.chargingProfiles = []
+    }
+  }
+}
+
+/**
  * Reset message size and element limits to generous defaults after tests manipulating them.
  * Defaults chosen to exceed any test constructed payload sizes.
  * @param chargingStation Charging station test instance whose configuration limits are reset.
@@ -134,38 +168,4 @@ function ensureConfig (chargingStation: ChargingStation): ConfigurationKey[] {
   chargingStation.ocppConfiguration ??= { configurationKey: [] }
   chargingStation.ocppConfiguration.configurationKey ??= []
   return chargingStation.ocppConfiguration.configurationKey
-}
-
-/**
- * Reset connector transaction state for all connectors in the charging station.
- * This ensures test isolation by clearing any transaction state from previous tests.
- * @param chargingStation Charging station instance whose connector state should be reset.
- */
-export function resetConnectorTransactionState (chargingStation: ChargingStation): void {
-  if (chargingStation.hasEvses) {
-    for (const evseStatus of chargingStation.evses.values()) {
-      for (const connectorStatus of evseStatus.connectors.values()) {
-        connectorStatus.transactionStarted = false
-        connectorStatus.transactionId = undefined
-        connectorStatus.transactionIdTag = undefined
-        connectorStatus.transactionStart = undefined
-        connectorStatus.transactionEnergyActiveImportRegisterValue = 0
-        connectorStatus.remoteStartId = undefined
-        connectorStatus.status = ConnectorStatusEnum.Available
-        connectorStatus.chargingProfiles = []
-      }
-    }
-  } else {
-    for (const [connectorId, connectorStatus] of chargingStation.connectors.entries()) {
-      if (connectorId === 0) continue // Skip connector 0 (charging station itself)
-      connectorStatus.transactionStarted = false
-      connectorStatus.transactionId = undefined
-      connectorStatus.transactionIdTag = undefined
-      connectorStatus.transactionStart = undefined
-      connectorStatus.transactionEnergyActiveImportRegisterValue = 0
-      connectorStatus.remoteStartId = undefined
-      connectorStatus.status = ConnectorStatusEnum.Available
-      connectorStatus.chargingProfiles = []
-    }
-  }
 }

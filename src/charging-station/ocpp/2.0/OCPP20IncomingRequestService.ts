@@ -2201,14 +2201,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfile: Validating charging profile ${chargingProfile.id.toString()} for EVSE ${evseId.toString()}`
     )
 
-    // Basic validation - check required fields (use null check, not falsy check, since stackLevel: 0 is valid)
-    if (chargingProfile.id == null || chargingProfile.stackLevel == null) {
-      logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfile: Invalid charging profile - missing required fields`
-      )
-      return false
-    }
-
     // Validate stack level range (OCPP 2.0 spec: 0-9)
     if (chargingProfile.stackLevel < 0 || chargingProfile.stackLevel > 9) {
       logger.warn(
