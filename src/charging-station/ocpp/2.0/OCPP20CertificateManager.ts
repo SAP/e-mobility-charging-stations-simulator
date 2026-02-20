@@ -1,7 +1,7 @@
 // Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
 
 import { createHash, X509Certificate } from 'node:crypto'
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 
 import type { ChargingStation } from '../../ChargingStation.js'
@@ -165,10 +165,10 @@ export class OCPP20CertificateManager {
    * @param hashData - Certificate hash data identifying the certificate to delete
    * @returns Delete operation result with status
    */
-  public deleteCertificate (
+  public async deleteCertificate (
     stationHashId: string,
     hashData: CertificateHashDataType
-  ): DeleteCertificateResult {
+  ): Promise<DeleteCertificateResult> {
     try {
       const sanitizedHashId = this.sanitizePath(stationHashId)
       const basePath = join(
@@ -179,23 +179,25 @@ export class OCPP20CertificateManager {
 
       this.validateCertificatePath(basePath, OCPP20CertificateManager.BASE_CERT_PATH)
 
-      if (!existsSync(basePath)) {
+      if (!(await this.pathExists(basePath))) {
         return { status: 'NotFound' }
       }
 
-      const certTypes = readdirSync(basePath, { withFileTypes: true })
+      const certTypeEntries = await readdir(basePath, { withFileTypes: true })
+      const certTypes = certTypeEntries
         .filter(dirent => dirent.isDirectory())
         .map(dirent => dirent.name)
 
       for (const certType of certTypes) {
         const certTypeDir = join(basePath, certType)
-        const files = readdirSync(certTypeDir).filter(f => f.endsWith('.pem'))
+        const allFiles = await readdir(certTypeDir)
+        const files = allFiles.filter(f => f.endsWith('.pem'))
 
         for (const file of files) {
           const filePath = join(certTypeDir, file)
           this.validateCertificatePath(filePath, OCPP20CertificateManager.BASE_CERT_PATH)
           try {
-            const pemData = readFileSync(filePath, 'utf8')
+            const pemData = await readFile(filePath, 'utf8')
             const certHash = this.computeCertificateHash(pemData, hashData.hashAlgorithm)
 
             if (
@@ -203,7 +205,7 @@ export class OCPP20CertificateManager {
               certHash.issuerNameHash === hashData.issuerNameHash &&
               certHash.issuerKeyHash === hashData.issuerKeyHash
             ) {
-              rmSync(filePath)
+              await rm(filePath)
               return { status: 'Accepted' }
             }
           } catch {
@@ -248,10 +250,10 @@ export class OCPP20CertificateManager {
    * @param filterTypes - Optional array of certificate types to filter
    * @returns List of installed certificate hash data chains
    */
-  public getInstalledCertificates (
+  public async getInstalledCertificates (
     stationHashId: string,
     filterTypes?: InstallCertificateUseEnumType[]
-  ): GetInstalledCertificatesResult {
+  ): Promise<GetInstalledCertificatesResult> {
     const certificateHashDataChain: CertificateHashDataChainType[] = []
 
     try {
@@ -264,11 +266,12 @@ export class OCPP20CertificateManager {
 
       this.validateCertificatePath(basePath, OCPP20CertificateManager.BASE_CERT_PATH)
 
-      if (!existsSync(basePath)) {
+      if (!(await this.pathExists(basePath))) {
         return { certificateHashDataChain }
       }
 
-      const certTypes = readdirSync(basePath, { withFileTypes: true })
+      const certTypeEntries = await readdir(basePath, { withFileTypes: true })
+      const certTypes = certTypeEntries
         .filter(dirent => dirent.isDirectory())
         .map(dirent => dirent.name)
 
@@ -280,13 +283,14 @@ export class OCPP20CertificateManager {
         }
 
         const certTypeDir = join(basePath, certType)
-        const files = readdirSync(certTypeDir).filter(f => f.endsWith('.pem'))
+        const allFiles = await readdir(certTypeDir)
+        const files = allFiles.filter(f => f.endsWith('.pem'))
 
         for (const file of files) {
           const filePath = join(certTypeDir, file)
           this.validateCertificatePath(filePath, OCPP20CertificateManager.BASE_CERT_PATH)
           try {
-            const pemData = readFileSync(filePath, 'utf8')
+            const pemData = await readFile(filePath, 'utf8')
             const hashData = this.computeCertificateHash(pemData)
 
             certificateHashDataChain.push({
@@ -313,11 +317,11 @@ export class OCPP20CertificateManager {
    * @param pemData - PEM-encoded certificate data
    * @returns Storage result with success status and file path or error
    */
-  public storeCertificate (
+  public async storeCertificate (
     stationHashId: string,
     certType: CertificateSigningUseEnumType | InstallCertificateUseEnumType,
     pemData: string
-  ): StoreCertificateResult {
+  ): Promise<StoreCertificateResult> {
     if (!this.validateCertificateFormat(pemData)) {
       return {
         error: 'Invalid PEM format: Certificate must have valid BEGIN and END markers',
@@ -341,11 +345,11 @@ export class OCPP20CertificateManager {
       this.validateCertificatePath(filePath, OCPP20CertificateManager.BASE_CERT_PATH)
 
       const dirPath = resolve(filePath, '..')
-      if (!existsSync(dirPath)) {
-        mkdirSync(dirPath, { recursive: true })
+      if (!(await this.pathExists(dirPath))) {
+        await mkdir(dirPath, { recursive: true })
       }
 
-      writeFileSync(filePath, pemData, 'utf8')
+      await writeFile(filePath, pemData, 'utf8')
 
       return {
         filePath,
@@ -471,10 +475,19 @@ export class OCPP20CertificateManager {
     }
   }
 
+  private async pathExists (path: string): Promise<boolean> {
+    try {
+      await stat(path)
+      return true
+    } catch {
+      return false
+    }
+  }
+
   private sanitizePath (input: string): string {
     return input
-      .replace(/\.\./g, '')
-      .replace(/[/\\]/g, '_')
+      .replace(/\\.\\./g, '')
+      .replace(/[/\\\\]/g, '_')
       .replace(/[<>:"|?*]/g, '_')
   }
 

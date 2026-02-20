@@ -55,10 +55,10 @@ const _EXPECTED_HASH_DATA: CertificateHashDataType = {
 
 await describe('OCPP20CertificateManager', async () => {
   await describe('storeCertificate', async () => {
-    await it('Should store a valid PEM certificate to the correct path', () => {
+    await it('Should store a valid PEM certificate to the correct path', async () => {
       const manager = new OCPP20CertificateManager()
 
-      const result = manager.storeCertificate(
+      const result = await manager.storeCertificate(
         TEST_STATION_HASH_ID,
         TEST_CERT_TYPE,
         VALID_PEM_CERTIFICATE
@@ -71,10 +71,10 @@ await describe('OCPP20CertificateManager', async () => {
       expect(result.filePath).toMatch(/\.pem$/)
     })
 
-    await it('Should reject invalid PEM certificate without BEGIN/END markers', () => {
+    await it('Should reject invalid PEM certificate without BEGIN/END markers', async () => {
       const manager = new OCPP20CertificateManager()
 
-      const result = manager.storeCertificate(
+      const result = await manager.storeCertificate(
         TEST_STATION_HASH_ID,
         TEST_CERT_TYPE,
         INVALID_PEM_NO_MARKERS
@@ -85,10 +85,10 @@ await describe('OCPP20CertificateManager', async () => {
       expect(result.error).toContain('Invalid PEM format')
     })
 
-    await it('Should reject empty certificate data', () => {
+    await it('Should reject empty certificate data', async () => {
       const manager = new OCPP20CertificateManager()
 
-      const result = manager.storeCertificate(
+      const result = await manager.storeCertificate(
         TEST_STATION_HASH_ID,
         TEST_CERT_TYPE,
         EMPTY_PEM_CERTIFICATE
@@ -99,10 +99,10 @@ await describe('OCPP20CertificateManager', async () => {
       expect(result.error).toBeDefined()
     })
 
-    await it('Should create certificate directory structure if not exists', () => {
+    await it('Should create certificate directory structure if not exists', async () => {
       const manager = new OCPP20CertificateManager()
 
-      const result = manager.storeCertificate(
+      const result = await manager.storeCertificate(
         TEST_STATION_HASH_ID,
         InstallCertificateUseEnumType.V2GRootCertificate,
         VALID_PEM_CERTIFICATE
@@ -115,7 +115,7 @@ await describe('OCPP20CertificateManager', async () => {
   })
 
   await describe('deleteCertificate', async () => {
-    await it('Should delete certificate by hash data', () => {
+    await it('Should delete certificate by hash data', async () => {
       const manager = new OCPP20CertificateManager()
 
       const hashData: CertificateHashDataType = {
@@ -125,14 +125,14 @@ await describe('OCPP20CertificateManager', async () => {
         serialNumber: 'SN-12345',
       }
 
-      const result = manager.deleteCertificate(TEST_STATION_HASH_ID, hashData)
+      const result = await manager.deleteCertificate(TEST_STATION_HASH_ID, hashData)
 
       expect(result).toBeDefined()
       expect(result.status).toBeDefined()
       expect(['Accepted', 'NotFound', 'Failed']).toContain(result.status)
     })
 
-    await it('Should return NotFound for non-existent certificate', () => {
+    await it('Should return NotFound for non-existent certificate', async () => {
       const manager = new OCPP20CertificateManager()
 
       const hashData: CertificateHashDataType = {
@@ -142,13 +142,13 @@ await describe('OCPP20CertificateManager', async () => {
         serialNumber: 'NON-EXISTENT-SN',
       }
 
-      const result = manager.deleteCertificate(TEST_STATION_HASH_ID, hashData)
+      const result = await manager.deleteCertificate(TEST_STATION_HASH_ID, hashData)
 
       expect(result).toBeDefined()
       expect(result.status).toBe('NotFound')
     })
 
-    await it('Should handle filesystem errors gracefully', () => {
+    await it('Should handle filesystem errors gracefully', async () => {
       const manager = new OCPP20CertificateManager()
 
       const hashData: CertificateHashDataType = {
@@ -158,7 +158,7 @@ await describe('OCPP20CertificateManager', async () => {
         serialNumber: 'VALID-SN',
       }
 
-      const result = manager.deleteCertificate('invalid-station-id', hashData)
+      const result = await manager.deleteCertificate('invalid-station-id', hashData)
 
       expect(result).toBeDefined()
       expect(['NotFound', 'Failed']).toContain(result.status)
@@ -166,35 +166,35 @@ await describe('OCPP20CertificateManager', async () => {
   })
 
   await describe('getInstalledCertificates', async () => {
-    await it('Should return list of installed certificates for station', () => {
+    await it('Should return list of installed certificates for station', async () => {
       const manager = new OCPP20CertificateManager()
 
-      const result = manager.getInstalledCertificates(TEST_STATION_HASH_ID)
+      const result = await manager.getInstalledCertificates(TEST_STATION_HASH_ID)
 
       expect(result).toBeDefined()
       expect(Array.isArray(result.certificateHashDataChain)).toBe(true)
     })
 
-    await it('Should filter certificates by type when filter provided', () => {
+    await it('Should filter certificates by type when filter provided', async () => {
       const manager = new OCPP20CertificateManager()
 
       const filterTypes = [InstallCertificateUseEnumType.CSMSRootCertificate]
-      const result = manager.getInstalledCertificates(TEST_STATION_HASH_ID, filterTypes)
+      const result = await manager.getInstalledCertificates(TEST_STATION_HASH_ID, filterTypes)
 
       expect(result).toBeDefined()
       expect(Array.isArray(result.certificateHashDataChain)).toBe(true)
     })
 
-    await it('Should return empty list when no certificates installed', () => {
+    await it('Should return empty list when no certificates installed', async () => {
       const manager = new OCPP20CertificateManager()
 
-      const result = manager.getInstalledCertificates('empty-station-hash-id')
+      const result = await manager.getInstalledCertificates('empty-station-hash-id')
 
       expect(result).toBeDefined()
       expect(result.certificateHashDataChain).toHaveLength(0)
     })
 
-    await it('Should support multiple certificate type filters', () => {
+    await it('Should support multiple certificate type filters', async () => {
       const manager = new OCPP20CertificateManager()
 
       const filterTypes = [
@@ -202,7 +202,7 @@ await describe('OCPP20CertificateManager', async () => {
         InstallCertificateUseEnumType.V2GRootCertificate,
         InstallCertificateUseEnumType.ManufacturerRootCertificate,
       ]
-      const result = manager.getInstalledCertificates(TEST_STATION_HASH_ID, filterTypes)
+      const result = await manager.getInstalledCertificates(TEST_STATION_HASH_ID, filterTypes)
 
       expect(result).toBeDefined()
       expect(Array.isArray(result.certificateHashDataChain)).toBe(true)
@@ -394,10 +394,10 @@ await describe('OCPP20CertificateManager', async () => {
   })
 
   await describe('Edge cases and error handling', async () => {
-    await it('Should handle concurrent certificate operations', () => {
+    await it('Should handle concurrent certificate operations', async () => {
       const manager = new OCPP20CertificateManager()
 
-      const results = [
+      const results = await Promise.all([
         manager.storeCertificate(
           TEST_STATION_HASH_ID,
           InstallCertificateUseEnumType.CSMSRootCertificate,
@@ -409,7 +409,7 @@ await describe('OCPP20CertificateManager', async () => {
           VALID_PEM_CERTIFICATE
         ),
         manager.getInstalledCertificates(TEST_STATION_HASH_ID),
-      ]
+      ])
 
       expect(results).toHaveLength(3)
       results.forEach(result => {
@@ -417,12 +417,12 @@ await describe('OCPP20CertificateManager', async () => {
       })
     })
 
-    await it('Should handle very long certificate chains', () => {
+    await it('Should handle very long certificate chains', async () => {
       const manager = new OCPP20CertificateManager()
 
       const longChain = Array(5).fill(VALID_PEM_CERTIFICATE).join('\n')
 
-      const result = manager.storeCertificate(TEST_STATION_HASH_ID, TEST_CERT_TYPE, longChain)
+      const result = await manager.storeCertificate(TEST_STATION_HASH_ID, TEST_CERT_TYPE, longChain)
 
       expect(result).toBeDefined()
     })
