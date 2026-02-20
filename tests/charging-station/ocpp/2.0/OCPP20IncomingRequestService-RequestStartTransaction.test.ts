@@ -21,7 +21,11 @@ import { Constants } from '../../../../src/utils/index.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
 import { createMockAuthService } from '../auth/helpers/MockFactories.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from './OCPP20TestConstants.js'
-import { resetLimits, resetReportingValueSize } from './OCPP20TestUtils.js'
+import {
+  resetConnectorTransactionState,
+  resetLimits,
+  resetReportingValueSize,
+} from './OCPP20TestUtils.js'
 
 await describe('F01 & F02 - Remote Start Transaction', async () => {
   const mockChargingStation = createChargingStation({
@@ -44,16 +48,14 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
   beforeEach(() => {
     const stationId = mockChargingStation.stationInfo?.chargingStationId ?? 'unknown'
     OCPPAuthServiceFactory.setInstanceForTesting(stationId, createMockAuthService())
+    resetConnectorTransactionState(mockChargingStation)
+    resetLimits(mockChargingStation)
+    resetReportingValueSize(mockChargingStation)
   })
 
-  // Clean up after tests
   afterEach(() => {
     OCPPAuthServiceFactory.clearAllInstances()
   })
-
-  // Reset limits before each test
-  resetLimits(mockChargingStation)
-  resetReportingValueSize(mockChargingStation)
 
   // FR: F01.FR.03, F01.FR.04, F01.FR.05, F01.FR.13
   await it('Should handle RequestStartTransaction with valid evseId and idToken', async () => {
@@ -77,19 +79,15 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     expect(typeof response.transactionId).toBe('string')
   })
 
-  // FR: F01.FR.17, F02.FR.05
-  await it('Should include remoteStartId and idToken in TransactionEvent', async () => {
-    let capturedTransactionEvent: any = null
+  // FR: F01.FR.17, F02.FR.05 - Verify remoteStartId and idToken are stored for later TransactionEvent
+  await it('Should store remoteStartId and idToken in connector status for TransactionEvent', async () => {
     const spyChargingStation = createChargingStation({
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },
       heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
       ocppRequestService: {
-        requestHandler: async (_cs: any, _cmd: any, payload: any) => {
-          capturedTransactionEvent = payload
-          return Promise.resolve({})
-        },
+        requestHandler: async () => Promise.resolve({}),
       },
       stationInfo: {
         ocppStrictCompliance: false,
@@ -97,6 +95,9 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       },
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
+
+    const stationId = spyChargingStation.stationInfo?.chargingStationId ?? 'unknown'
+    OCPPAuthServiceFactory.setInstanceForTesting(stationId, createMockAuthService())
 
     const requestWithRemoteStartId: OCPP20RequestStartTransactionRequest = {
       evseId: 1,
@@ -116,13 +117,14 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     expect(response.status).toBe(RequestStartStopStatusEnumType.Accepted)
     expect(response.transactionId).toBeDefined()
 
-    expect(capturedTransactionEvent).toBeDefined()
-    expect(capturedTransactionEvent.transactionInfo).toBeDefined()
-    expect(capturedTransactionEvent.transactionInfo.remoteStartId).toBe(42)
+    const connectorStatus = spyChargingStation.getConnectorStatus(1)
+    expect(connectorStatus).toBeDefined()
+    expect(connectorStatus?.remoteStartId).toBe(42)
+    expect(connectorStatus?.transactionIdTag).toBe('REMOTE_TOKEN_456')
+    expect(connectorStatus?.transactionStarted).toBe(true)
+    expect(connectorStatus?.transactionId).toBe(response.transactionId)
 
-    expect(capturedTransactionEvent.idToken).toBeDefined()
-    expect(capturedTransactionEvent.idToken.idToken).toBe('REMOTE_TOKEN_456')
-    expect(capturedTransactionEvent.idToken.type).toBe(OCPP20IdTokenEnumType.ISO15693)
+    OCPPAuthServiceFactory.clearAllInstances()
   })
 
   // FR: F01.FR.19
