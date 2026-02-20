@@ -148,6 +148,7 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
       )
       return localAuthListEnabled != null ? convertToBoolean(localAuthListEnabled.value) : false
     },
+    getNumberOfEvses: (): number => evses.size,
     getWebSocketPingInterval: () => websocketPingInterval,
     hasEvses: useEvses,
     idTagsCache: IdTagsCache.getInstance(),
@@ -165,6 +166,7 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
         chargingStation.getConnectorStatus(connectorId)?.availability === AvailabilityType.Operative
       )
     },
+    isWebSocketConnectionOpened: (): boolean => true,
     logPrefix: (): string => {
       const stationId =
         chargingStation.stationInfo?.chargingStationId ??
@@ -236,6 +238,9 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
     },
     started: options.started ?? false,
     starting: options.starting ?? false,
+    startTxUpdatedInterval: (_connectorId: number, _interval: number): void => {
+      /* no-op for tests */
+    },
     stationInfo: {
       baseName,
       chargingStationId: `${baseName}-00001`,
@@ -253,6 +258,9 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
       if (connectorStatus?.transactionSetInterval != null) {
         clearInterval(connectorStatus.transactionSetInterval)
       }
+    },
+    stopTxUpdatedInterval: (_connectorId: number): void => {
+      /* no-op for tests */
     },
   } as unknown as ChargingStation
 

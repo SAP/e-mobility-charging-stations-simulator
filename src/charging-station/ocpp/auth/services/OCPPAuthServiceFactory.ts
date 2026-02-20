@@ -9,6 +9,26 @@ import { OCPPAuthServiceImpl } from './OCPPAuthServiceImpl.js'
 const moduleName = 'OCPPAuthServiceFactory'
 
 /**
+ * Global symbol key for sharing auth service instances across module boundaries.
+ * This is required because dynamic imports (used in OCPPServiceUtils) create
+ * separate module instances, breaking test mock injection.
+ * Using globalThis ensures the same Map is shared regardless of import method.
+ */
+const INSTANCES_KEY = Symbol.for('OCPPAuthServiceFactory.instances')
+
+/**
+ * Get or create the shared instances Map.
+ * Uses globalThis to ensure the same Map is used across all module instances,
+ * which is critical for test mock injection to work with dynamic imports.
+ * @returns The shared instances Map for OCPPAuthService
+ */
+const getSharedInstances = (): Map<string, OCPPAuthService> => {
+  const globalAny = globalThis as Record<symbol, Map<string, OCPPAuthService> | undefined>
+  globalAny[INSTANCES_KEY] ??= new Map<string, OCPPAuthService>()
+  return globalAny[INSTANCES_KEY]
+}
+
+/**
  * Factory for creating OCPP Authentication Services with proper adapter configuration
  *
  * This factory ensures that the correct OCPP version-specific adapters are created
@@ -17,7 +37,9 @@ const moduleName = 'OCPPAuthServiceFactory'
  */
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class OCPPAuthServiceFactory {
-  private static instances = new Map<string, OCPPAuthService>()
+  private static get instances (): Map<string, OCPPAuthService> {
+    return getSharedInstances()
+  }
 
   /**
    * Clear all cached instances
