@@ -86,7 +86,7 @@ export class OCPP20CertificateManager {
    * @param pemData - PEM-encoded certificate data
    * @param hashAlgorithm - Hash algorithm to use (default: SHA256)
    * @returns Certificate hash data including issuerNameHash, issuerKeyHash, serialNumber
-   * @throws Error if PEM format is invalid or certificate cannot be parsed
+   * @throws {Error} If PEM format is invalid or certificate cannot be parsed
    */
   public computeCertificateHash (
     pemData: string,
@@ -345,9 +345,10 @@ export class OCPP20CertificateManager {
   /**
    * Computes fallback hash data when X509Certificate parsing fails.
    * Uses the raw PEM content to derive hash values.
-   * @param pemData
-   * @param hashAlgorithm
-   * @param algorithmName
+   * @param pemData - PEM-encoded certificate data
+   * @param hashAlgorithm - Hash algorithm enum type for the response
+   * @param algorithmName - Node.js crypto hash algorithm name
+   * @returns Certificate hash data derived from raw PEM content
    */
   private computeFallbackCertificateHash (
     pemData: string,

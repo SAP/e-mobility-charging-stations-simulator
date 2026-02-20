@@ -81,6 +81,8 @@ export default defineConfig([
               'emaid',
               'IDTOKEN',
               'idtoken',
+              'issuerkeyhash',
+              'issuernamehash',
             ],
           },
         },

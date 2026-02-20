@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* cspell:ignore Bvbn NQIF CBCYX */
 
 import { expect } from '@std/expect'
 import { describe, it, mock } from 'node:test'
@@ -20,6 +21,7 @@ import {
   OCPP20RequestCommand,
   OCPPVersion,
   type OCSPRequestDataType,
+  ReasonCodeEnumType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
@@ -140,7 +142,7 @@ await describe('M02 - Get15118EVCertificate Request', async () => {
         exiResponse: '',
         status: Iso15118EVCertificateStatusEnumType.Failed,
         statusInfo: {
-          reasonCode: 'CertificateExpired',
+          reasonCode: ReasonCodeEnumType.InvalidCertificate,
         },
       })
 
@@ -155,7 +157,7 @@ await describe('M02 - Get15118EVCertificate Request', async () => {
 
       expect(response).toBeDefined()
       expect(response.status).toBe(Iso15118EVCertificateStatusEnumType.Failed)
-      expect(response.statusInfo?.reasonCode).toBe('CertificateExpired')
+      expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidCertificate)
     })
   })
 
@@ -267,7 +269,7 @@ await describe('M03 - GetCertificateStatus Request', async () => {
       const requestService = createMockRequestService<OCPP20GetCertificateStatusResponse>({
         status: GetCertificateStatusEnumType.Failed,
         statusInfo: {
-          reasonCode: 'OCSPServerError',
+          reasonCode: ReasonCodeEnumType.InternalError,
         },
       })
 
@@ -277,7 +279,7 @@ await describe('M03 - GetCertificateStatus Request', async () => {
 
       expect(response).toBeDefined()
       expect(response.status).toBe(GetCertificateStatusEnumType.Failed)
-      expect(response.statusInfo?.reasonCode).toBe('OCSPServerError')
+      expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.InternalError)
     })
   })
 
