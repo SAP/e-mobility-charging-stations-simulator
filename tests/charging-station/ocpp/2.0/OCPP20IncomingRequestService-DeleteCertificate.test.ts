@@ -36,14 +36,14 @@ const NONEXISTENT_CERTIFICATE_HASH_DATA = {
 const createMockCertificateManager = (
   options: {
     deleteCertificateError?: Error
-    deleteCertificateResult?: boolean | { success: boolean }
+    deleteCertificateResult?: { status: 'Accepted' | 'NotFound' | 'Failed' }
   } = {}
 ) => ({
   deleteCertificate: mock.fn(() => {
     if (options.deleteCertificateError) {
       throw options.deleteCertificateError
     }
-    return options.deleteCertificateResult ?? true
+    return options.deleteCertificateResult ?? { status: 'Accepted' }
   }),
   getInstalledCertificates: mock.fn(() => []),
   storeCertificate: mock.fn(() => true),
@@ -70,7 +70,7 @@ await describe('I04 - DeleteCertificate', async () => {
   await describe('Valid Certificate Deletion', async () => {
     await it('Should accept deletion of existing certificate', async () => {
       ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
-        deleteCertificateResult: true,
+        deleteCertificateResult: { status: 'Accepted' },
       })
 
       const request: OCPP20DeleteCertificateRequest = {
@@ -91,7 +91,7 @@ await describe('I04 - DeleteCertificate', async () => {
 
     await it('Should accept deletion with SHA384 hash algorithm', async () => {
       ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
-        deleteCertificateResult: true,
+        deleteCertificateResult: { status: 'Accepted' },
       })
 
       const request: OCPP20DeleteCertificateRequest = {
@@ -112,7 +112,7 @@ await describe('I04 - DeleteCertificate', async () => {
 
     await it('Should accept deletion with SHA512 hash algorithm', async () => {
       ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
-        deleteCertificateResult: true,
+        deleteCertificateResult: { status: 'Accepted' },
       })
 
       const request: OCPP20DeleteCertificateRequest = {
@@ -135,7 +135,7 @@ await describe('I04 - DeleteCertificate', async () => {
   await describe('Certificate Not Found', async () => {
     await it('Should return NotFound for non-existent certificate', async () => {
       ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
-        deleteCertificateResult: false,
+        deleteCertificateResult: { status: 'NotFound' },
       })
 
       const request: OCPP20DeleteCertificateRequest = {
@@ -204,7 +204,7 @@ await describe('I04 - DeleteCertificate', async () => {
   await describe('Response Structure Validation', async () => {
     await it('Should return response matching DeleteCertificateResponse schema', async () => {
       ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
-        deleteCertificateResult: true,
+        deleteCertificateResult: { status: 'Accepted' },
       })
 
       const request: OCPP20DeleteCertificateRequest = {
