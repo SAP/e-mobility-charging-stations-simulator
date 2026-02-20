@@ -194,6 +194,7 @@ export {
   type OCPP20RequestStopTransactionRequest,
   type OCPP20ResetRequest,
   type OCPP20SetVariablesRequest,
+  type OCPP20SignCertificateRequest,
   type OCPP20StatusNotificationRequest,
 } from './ocpp/2.0/Requests.js'
 export type {
@@ -212,6 +213,7 @@ export type {
   OCPP20RequestStopTransactionResponse,
   OCPP20ResetResponse,
   OCPP20SetVariablesResponse,
+  OCPP20SignCertificateResponse,
   OCPP20StatusNotificationResponse,
 } from './ocpp/2.0/Responses.js'
 export {

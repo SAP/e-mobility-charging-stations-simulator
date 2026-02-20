@@ -43,6 +43,7 @@ export const enum OCPP20RequestCommand {
   BOOT_NOTIFICATION = 'BootNotification',
   HEARTBEAT = 'Heartbeat',
   NOTIFY_REPORT = 'NotifyReport',
+  SIGN_CERTIFICATE = 'SignCertificate',
   STATUS_NOTIFICATION = 'StatusNotification',
   TRANSACTION_EVENT = 'TransactionEvent',
 }

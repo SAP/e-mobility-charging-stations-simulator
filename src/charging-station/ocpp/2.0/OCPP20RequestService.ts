@@ -2,15 +2,20 @@
 
 import type { ValidateFunction } from 'ajv'
 
+import { generateKeyPairSync } from 'node:crypto'
+
 import type { ChargingStation } from '../../../charging-station/index.js'
 import type { OCPPResponseService } from '../OCPPResponseService.js'
 
 import { OCPPError } from '../../../exception/index.js'
 import {
+  type CertificateSigningUseEnumType,
   ErrorType,
   type JsonObject,
   type JsonType,
   OCPP20RequestCommand,
+  type OCPP20SignCertificateRequest,
+  type OCPP20SignCertificateResponse,
   OCPPVersion,
   type RequestParams,
 } from '../../../types/index.js'
@@ -65,7 +70,7 @@ export class OCPP20RequestService extends OCPPRequestService {
   }
 
   /**
-   * Handles OCPP 2.0.1 request processing with enhanced validation and comprehensive error handling
+    * Handles OCPP 2.0.1 request processing with enhanced validation and comprehensive error handling
    *
    * This method serves as the main entry point for all outgoing OCPP 2.0.1 requests to the CSMS.
    * It performs advanced operations including:
@@ -135,6 +140,100 @@ export class OCPP20RequestService extends OCPPRequestService {
     const errorMsg = `Unsupported OCPP command ${commandName}`
     logger.error(`${chargingStation.logPrefix()} ${moduleName}.requestHandler: ${errorMsg}`)
     throw new OCPPError(ErrorType.NOT_SUPPORTED, errorMsg, commandName, commandParams)
+  }
+
+  /**
+   * Request certificate signing from the CSMS.
+   *
+   * Generates a Certificate Signing Request (CSR) using the charging station's
+   * certificate manager and sends it to the CSMS for signing. Supports both
+   * ChargingStationCertificate and V2GCertificate types.
+   *
+   * IMPORTANT: This implementation generates a MOCK CSR for simulator testing purposes.
+   * It is NOT a cryptographically valid PKCS#10 CSR and MUST NOT be used in production.
+   * The generated CSR structure is simplified (JSON-based) for OCPP message testing only.
+   * Real CSMS expecting valid PKCS#10 CSR will reject this format.
+   *
+   * @param chargingStation - The charging station requesting the certificate
+   * @param certificateType - Optional certificate type (ChargingStationCertificate or V2GCertificate)
+   * @returns Promise resolving to the CSMS response with Accepted or Rejected status
+   * @throws {OCPPError} When certificate manager is unavailable or CSR generation fails
+   */
+  public async requestSignCertificate (
+    chargingStation: ChargingStation,
+    certificateType?: CertificateSigningUseEnumType
+  ): Promise<OCPP20SignCertificateResponse> {
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestSignCertificate: Requesting certificate signing`
+    )
+
+    let csr: string
+    try {
+      const { publicKey } = generateKeyPairSync('rsa', {
+        modulusLength: 2048,
+        privateKeyEncoding: { format: 'pem', type: 'pkcs8' },
+        publicKeyEncoding: { format: 'pem', type: 'spki' },
+      })
+
+      const configKey = chargingStation.ocppConfiguration?.configurationKey?.find(
+        (key) => key.key === 'SecurityCtrlr.OrganizationName'
+      )
+      const orgName = configKey?.value ?? 'Unknown'
+      const stationId = chargingStation.stationInfo?.chargingStationId ?? 'Unknown'
+      const subject = `CN=${stationId},O=${orgName}`
+
+      // Generate simplified mock CSR for simulator testing
+      // WARNING: This is NOT a cryptographically valid PKCS#10 CSR
+      // Structure: JSON with subject, publicKey, timestamp (NOT ASN.1 DER)
+      const mockCsrData = {
+        algorithm: 'RSA-SHA256',
+        keySize: 2048,
+        publicKey: publicKey.replace(/-----BEGIN PUBLIC KEY-----|-----END PUBLIC KEY-----|\n/g, ''),
+        subject,
+        timestamp: new Date().toISOString(),
+      }
+
+      const csrBase64 = Buffer.from(JSON.stringify(mockCsrData)).toString('base64')
+      csr = `-----BEGIN CERTIFICATE REQUEST-----\n${csrBase64}\n-----END CERTIFICATE REQUEST-----`
+    } catch (error) {
+      const errorMsg = `Failed to generate CSR: ${error instanceof Error ? error.message : 'Unknown error'}`
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.requestSignCertificate: ${errorMsg}`
+      )
+      throw new OCPPError(
+        ErrorType.INTERNAL_ERROR,
+        errorMsg,
+        OCPP20RequestCommand.SIGN_CERTIFICATE
+      )
+    }
+
+    // Build request payload
+    const requestPayload: OCPP20SignCertificateRequest = {
+      csr,
+    }
+
+    // Add certificate type if specified
+    if (certificateType != null) {
+      requestPayload.certificateType = certificateType
+    }
+
+    const messageId = generateUUID()
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestSignCertificate: Sending SignCertificate request with message ID '${messageId}'`
+    )
+
+    const response = (await this.sendMessage(
+      chargingStation,
+      messageId,
+      requestPayload,
+      OCPP20RequestCommand.SIGN_CERTIFICATE
+    )) as OCPP20SignCertificateResponse
+
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestSignCertificate: Received response with status '${response.status}'`
+    )
+
+    return response
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
