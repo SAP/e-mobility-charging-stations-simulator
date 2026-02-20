@@ -108,7 +108,6 @@ await describe('GetCertificateStatus', async () => {
       expect(response.ocspResult).toBeUndefined()
       expect(response.statusInfo).toBeDefined()
       expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.InternalError)
-
       ;(mockChargingStation as any).certificateManager = createMockCertificateManager()
     })
   })
