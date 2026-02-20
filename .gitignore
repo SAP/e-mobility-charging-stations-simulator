@@ -103,6 +103,9 @@ build/config.gypi
 .DS_Store
 Thumbs.db
 
+# oh-my-opencode
+.sisyphus/
+
 # Winston
 *-audit.json
 
