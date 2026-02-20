@@ -1,4 +1,5 @@
 import type { SampledValueTemplate } from './MeasurandPerPhaseSampledValueTemplates.js'
+import type { OCPP20TransactionEventRequest } from './ocpp/2.0/Transaction.js'
 import type { ChargingProfile } from './ocpp/ChargingProfile.js'
 import type { ConnectorEnumType } from './ocpp/ConnectorEnumType.js'
 import type { ConnectorStatusEnum } from './ocpp/ConnectorStatusEnum.js'
@@ -22,6 +23,12 @@ export interface ConnectorStatus {
   transactionBeginMeterValue?: MeterValue
   transactionEnergyActiveImportRegisterValue?: number // In Wh
   /**
+   * OCPP 2.0.1 offline-first: Queue of TransactionEvents waiting to be sent
+   * Events are queued when station is offline (websocket disconnected)
+   * and replayed in order when reconnected, with seqNo preserved
+   */
+  transactionEventQueue?: QueuedTransactionEvent[]
+  /**
    * OCPP 2.0.1 E01.FR.16 compliance: Track if evse has been sent for current transaction.
    * The evse field should only be provided in the first TransactionEventRequest
    * that occurs after the EV has connected.
@@ -42,4 +49,10 @@ export interface ConnectorStatus {
   transactionStarted?: boolean
   transactionTxUpdatedSetInterval?: NodeJS.Timeout
   type?: ConnectorEnumType
+}
+
+export interface QueuedTransactionEvent {
+  request: OCPP20TransactionEventRequest
+  seqNo: number
+  timestamp: Date
 }

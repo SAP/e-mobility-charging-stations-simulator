@@ -512,7 +512,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       evseId = evseId ?? chargingStation.getEvseIdByConnectorId(connectorId)
       if (evseId == null) {
         logger.error(
-          `${chargingStation.logPrefix()} OCPP20ServiceUtils.requestStopTransaction: Cannot find EVSE ID for connector ${connectorId.toString()}`
+          `${chargingStation.logPrefix()} ${moduleName}.sendTransactionEvent: Cannot find connector status for connector ${connectorId.toString()}: `
         )
         return OCPP20Constants.OCPP_RESPONSE_REJECTED
       }
@@ -730,6 +730,44 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     return OCPP20TriggerReasonEnumType.Trigger
   }
 
+  public static async sendQueuedTransactionEvents (
+    chargingStation: ChargingStation,
+    connectorId: number
+  ): Promise<void> {
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+    if (
+      connectorStatus?.transactionEventQueue == null ||
+      connectorStatus.transactionEventQueue.length === 0
+    ) {
+      return
+    }
+
+    const queueLength = connectorStatus.transactionEventQueue.length
+    logger.info(
+      `${chargingStation.logPrefix()} ${moduleName}.sendQueuedTransactionEvents: Sending ${queueLength.toString()} queued TransactionEvents for connector ${connectorId.toString()}`
+    )
+
+    const queue = [...connectorStatus.transactionEventQueue]
+    connectorStatus.transactionEventQueue = []
+
+    for (const queuedEvent of queue) {
+      try {
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.sendQueuedTransactionEvents: Sending queued event with seqNo=${queuedEvent.seqNo.toString()}`
+        )
+        await chargingStation.ocppRequestService.requestHandler<
+          OCPP20TransactionEventRequest,
+          OCPP20TransactionEventResponse
+        >(chargingStation, OCPP20RequestCommand.TRANSACTION_EVENT, queuedEvent.request)
+      } catch (error) {
+        logger.error(
+          `${chargingStation.logPrefix()} ${moduleName}.sendQueuedTransactionEvents: Failed to send queued TransactionEvent with seqNo=${queuedEvent.seqNo.toString()}:`,
+          error
+        )
+      }
+    }
+  }
+
   public static async sendTransactionEvent (
     chargingStation: ChargingStation,
     eventType: OCPP20TransactionEventEnumType,
@@ -771,6 +809,29 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         transactionId,
         options
       )
+
+      // OCPP 2.0.1 offline-first: Queue event if offline, send if online
+      const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+      if (connectorStatus == null) {
+        const errorMsg = `Cannot find connector status for connector ${connectorId.toString()}`
+        logger.error(
+          `${chargingStation.logPrefix()} ${moduleName}.sendTransactionEvent: ${errorMsg}`
+        )
+        throw new OCPPError(ErrorType.PROPERTY_CONSTRAINT_VIOLATION, errorMsg)
+      }
+
+      if (!chargingStation.isWebSocketConnectionOpened()) {
+        logger.info(
+          `${chargingStation.logPrefix()} ${moduleName}.sendTransactionEvent: Station offline, queueing TransactionEvent with seqNo=${transactionEventRequest.seqNo.toString()}`
+        )
+        connectorStatus.transactionEventQueue ??= []
+        connectorStatus.transactionEventQueue.push({
+          request: transactionEventRequest,
+          seqNo: transactionEventRequest.seqNo,
+          timestamp: new Date(),
+        })
+        return { idTokenInfo: undefined }
+      }
 
       // Send the request to CSMS
       logger.debug(
