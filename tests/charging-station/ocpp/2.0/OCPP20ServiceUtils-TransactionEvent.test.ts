@@ -167,9 +167,10 @@ await describe('E01-E04 - OCPP 2.0.1 TransactionEvent Implementation', async () 
       expect(transactionEvent.reservationId).toBe(67890)
     })
 
-    await it('Should validate transaction ID format (UUID)', () => {
+    await it('Should validate transaction ID format (identifier string ≤36 chars)', () => {
       const connectorId = 1
-      const invalidTransactionId = 'invalid-uuid-format'
+      const invalidTransactionId =
+        'this-string-is-way-too-long-for-a-valid-transaction-id-exceeds-36-chars'
 
       try {
         OCPP20ServiceUtils.buildTransactionEvent(
@@ -179,10 +180,10 @@ await describe('E01-E04 - OCPP 2.0.1 TransactionEvent Implementation', async () 
           connectorId,
           invalidTransactionId
         )
-        throw new Error('Should have thrown error for invalid UUID format')
+        throw new Error('Should have thrown error for invalid identifier string')
       } catch (error: any) {
         expect(error.message).toContain('Invalid transaction ID format')
-        expect(error.message).toContain('expected UUID')
+        expect(error.message).toContain('≤36 characters')
       }
     })
 
