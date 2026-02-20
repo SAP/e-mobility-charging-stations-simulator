@@ -82,15 +82,25 @@ export class OCPP20CertificateManager {
   private static readonly PEM_END_MARKER = '-----END CERTIFICATE-----'
 
   /**
-   * Computes hash data for a PEM certificate
+   * Computes hash data for a PEM certificate per RFC 6960 Section 4.1.1 CertID semantics
+   *
+   * Per RFC 6960, the CertID identifies a certificate by:
+   * - issuerNameHash: Hash of the issuer's DN (from the subject certificate)
+   * - issuerKeyHash: Hash of the issuer's public key (from the issuer certificate)
+   * - serialNumber: The certificate's serial number
    * @param pemData - PEM-encoded certificate data
    * @param hashAlgorithm - Hash algorithm to use (default: SHA256)
+   * @param issuerCertPem - Optional PEM-encoded issuer certificate for issuerKeyHash computation.
+   *   If not provided, attempts to detect self-signed certificates (issuer = subject)
+   *   and uses the subject certificate's public key. For non-self-signed certificates
+   *   without an issuer cert, uses the subject's public key as fallback.
    * @returns Certificate hash data including issuerNameHash, issuerKeyHash, serialNumber
    * @throws {Error} If PEM format is invalid or certificate cannot be parsed
    */
   public computeCertificateHash (
     pemData: string,
-    hashAlgorithm: HashAlgorithmEnumType = HashAlgorithmEnumType.SHA256
+    hashAlgorithm: HashAlgorithmEnumType = HashAlgorithmEnumType.SHA256,
+    issuerCertPem?: string
   ): CertificateHashDataType {
     if (!this.validateCertificateFormat(pemData)) {
       throw new Error('Invalid PEM certificate format')
@@ -102,16 +112,37 @@ export class OCPP20CertificateManager {
       const firstCertPem = this.extractFirstCertificate(pemData)
       const x509 = new X509Certificate(firstCertPem)
 
+      // RFC 6960 4.1.1: issuerNameHash is the hash of the issuer's DN from the subject certificate
+      // Node.js X509Certificate.issuer provides the string representation of the issuer DN
       const issuerNameHash = createHash(algorithmName).update(x509.issuer).digest('hex')
 
-      const issuerKeyHash = createHash(algorithmName)
-        .update(
-          x509.publicKey.export({
-            format: 'der',
-            type: 'spki',
-          })
-        )
-        .digest('hex')
+      // RFC 6960 4.1.1: issuerKeyHash is the hash of the issuer certificate's public key
+      // Determine which public key to use for issuerKeyHash
+      let issuerPublicKeyDer: Buffer
+
+      if (issuerCertPem != null && this.validateCertificateFormat(issuerCertPem)) {
+        // Use provided issuer certificate's public key
+        const issuerCert = new X509Certificate(this.extractFirstCertificate(issuerCertPem))
+        issuerPublicKeyDer = issuerCert.publicKey.export({
+          format: 'der',
+          type: 'spki',
+        }) as Buffer
+      } else if (this.isSelfSignedCertificate(x509)) {
+        // Self-signed certificate: issuer = subject, use the certificate's own public key
+        issuerPublicKeyDer = x509.publicKey.export({
+          format: 'der',
+          type: 'spki',
+        }) as Buffer
+      } else {
+        // Non-self-signed without issuer cert: use subject's public key as fallback
+        // This is technically incorrect per RFC 6960 but maintains backward compatibility
+        issuerPublicKeyDer = x509.publicKey.export({
+          format: 'der',
+          type: 'spki',
+        }) as Buffer
+      }
+
+      const issuerKeyHash = createHash(algorithmName).update(issuerPublicKeyDer).digest('hex')
 
       const serialNumber = x509.serialNumber
 
@@ -146,6 +177,8 @@ export class OCPP20CertificateManager {
         OCPP20CertificateManager.CERT_FOLDER
       )
 
+      this.validateCertificatePath(basePath, OCPP20CertificateManager.BASE_CERT_PATH)
+
       if (!existsSync(basePath)) {
         return { status: 'NotFound' }
       }
@@ -160,6 +193,7 @@ export class OCPP20CertificateManager {
 
         for (const file of files) {
           const filePath = join(certTypeDir, file)
+          this.validateCertificatePath(filePath, OCPP20CertificateManager.BASE_CERT_PATH)
           try {
             const pemData = readFileSync(filePath, 'utf8')
             const certHash = this.computeCertificateHash(pemData, hashData.hashAlgorithm)
@@ -228,6 +262,8 @@ export class OCPP20CertificateManager {
         OCPP20CertificateManager.CERT_FOLDER
       )
 
+      this.validateCertificatePath(basePath, OCPP20CertificateManager.BASE_CERT_PATH)
+
       if (!existsSync(basePath)) {
         return { certificateHashDataChain }
       }
@@ -248,6 +284,7 @@ export class OCPP20CertificateManager {
 
         for (const file of files) {
           const filePath = join(certTypeDir, file)
+          this.validateCertificatePath(filePath, OCPP20CertificateManager.BASE_CERT_PATH)
           try {
             const pemData = readFileSync(filePath, 'utf8')
             const hashData = this.computeCertificateHash(pemData)
@@ -300,6 +337,8 @@ export class OCPP20CertificateManager {
       }
 
       const filePath = this.getCertificatePath(stationHashId, certType, serialNumber)
+
+      this.validateCertificatePath(filePath, OCPP20CertificateManager.BASE_CERT_PATH)
 
       const dirPath = resolve(filePath, '..')
       if (!existsSync(dirPath)) {
@@ -411,6 +450,10 @@ export class OCPP20CertificateManager {
     }
   }
 
+  private isSelfSignedCertificate (x509: X509Certificate): boolean {
+    return x509.issuer === x509.subject
+  }
+
   private mapInstallTypeToGetType (
     installType: InstallCertificateUseEnumType
   ): GetCertificateIdUseEnumType {
@@ -437,6 +480,20 @@ export class OCPP20CertificateManager {
 
   private sanitizeSerial (serial: string): string {
     return serial.replace(/:/g, '-').replace(/[/\\<>"|?*]/g, '_')
+  }
+
+  private validateCertificatePath (certificateFileName: string, baseDir: string): string {
+    const baseResolved = resolve(baseDir)
+    const fileResolved = resolve(baseDir, certificateFileName)
+
+    // Check if resolved path is within the base directory
+    if (!fileResolved.startsWith(baseResolved + '/') && fileResolved !== baseResolved) {
+      throw new Error(
+        `Path traversal attempt detected: certificate path '${certificateFileName}' resolves outside base directory`
+      )
+    }
+
+    return fileResolved
   }
 }
 
