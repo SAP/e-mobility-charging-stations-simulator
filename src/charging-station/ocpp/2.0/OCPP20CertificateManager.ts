@@ -4,22 +4,21 @@ import { createHash, X509Certificate } from 'node:crypto'
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
+import type { ChargingStation } from '../../ChargingStation.js'
+
 import {
   type CertificateHashDataChainType,
   type CertificateHashDataType,
-  DeleteCertificateStatusEnumType,
   GetCertificateIdUseEnumType,
   HashAlgorithmEnumType,
-  type InstallCertificateUseEnumType,
+  InstallCertificateUseEnumType,
 } from '../../../types/ocpp/2.0/Common.js'
 
 /**
- * Result type for certificate storage operations
+ * Interface for ChargingStation with certificate manager
  */
-export interface StoreCertificateResult {
-  error?: string
-  filePath?: string
-  success: boolean
+export interface ChargingStationWithCertificateManager extends ChargingStation {
+  certificateManager: OCPP20CertificateManagerInterface
 }
 
 /**
@@ -34,6 +33,36 @@ export interface DeleteCertificateResult {
  */
 export interface GetInstalledCertificatesResult {
   certificateHashDataChain: CertificateHashDataChainType[]
+}
+
+/**
+ * Interface for OCPP 2.0 Certificate Manager operations
+ * Used for type-safe access to certificate management functionality
+ */
+export interface OCPP20CertificateManagerInterface {
+  deleteCertificate (
+    stationHashId: string,
+    hashData: CertificateHashDataType
+  ): DeleteCertificateResult | Promise<DeleteCertificateResult>
+  getInstalledCertificates (
+    stationHashId: string,
+    filterTypes?: InstallCertificateUseEnumType[]
+  ): GetInstalledCertificatesResult | Promise<GetInstalledCertificatesResult>
+  storeCertificate (
+    stationHashId: string,
+    certType: InstallCertificateUseEnumType,
+    pemData: string
+  ): Promise<StoreCertificateResult> | StoreCertificateResult
+  validateCertificateFormat (pemData: unknown): boolean
+}
+
+/**
+ * Result type for certificate storage operations
+ */
+export interface StoreCertificateResult {
+  error?: string
+  filePath?: string
+  success: boolean
 }
 
 /**
@@ -53,13 +82,12 @@ export class OCPP20CertificateManager {
 
   /**
    * Computes hash data for a PEM certificate
-   *
    * @param pemData - PEM-encoded certificate data
    * @param hashAlgorithm - Hash algorithm to use (default: SHA256)
    * @returns Certificate hash data including issuerNameHash, issuerKeyHash, serialNumber
    * @throws Error if PEM format is invalid or certificate cannot be parsed
    */
-  public computeCertificateHash(
+  public computeCertificateHash (
     pemData: string,
     hashAlgorithm: HashAlgorithmEnumType = HashAlgorithmEnumType.SHA256
   ): CertificateHashDataType {
@@ -95,47 +123,15 @@ export class OCPP20CertificateManager {
   }
 
   /**
-   * Computes fallback hash data when X509Certificate parsing fails.
-   * Uses the raw PEM content to derive hash values.
-   */
-  private computeFallbackCertificateHash(
-    pemData: string,
-    hashAlgorithm: HashAlgorithmEnumType,
-    algorithmName: string
-  ): CertificateHashDataType {
-    // Extract the base64 content between PEM markers
-    const base64Content = pemData
-      .replace(/-----BEGIN CERTIFICATE-----/, '')
-      .replace(/-----END CERTIFICATE-----/, '')
-      .replace(/\s/g, '')
-
-    // Compute hashes from the certificate content
-    const contentBuffer = Buffer.from(base64Content, 'base64')
-    const issuerNameHash = createHash(algorithmName).update(contentBuffer.subarray(0, Math.min(64, contentBuffer.length))).digest('hex')
-    const issuerKeyHash = createHash(algorithmName).update(contentBuffer).digest('hex')
-
-    // Generate a serial number from the content hash
-    const serialNumber = createHash('sha256').update(pemData).digest('hex').substring(0, 16).toUpperCase()
-
-    return {
-      hashAlgorithm,
-      issuerKeyHash,
-      issuerNameHash,
-      serialNumber,
-    }
-  }
-
-  /**
    * Deletes a certificate by its hash data
-   *
    * @param stationHashId - Charging station unique identifier
    * @param hashData - Certificate hash data identifying the certificate to delete
    * @returns Delete operation result with status
    */
-  public async deleteCertificate(
+  public deleteCertificate (
     stationHashId: string,
     hashData: CertificateHashDataType
-  ): Promise<DeleteCertificateResult> {
+  ): DeleteCertificateResult {
     try {
       const sanitizedHashId = this.sanitizePath(stationHashId)
       const basePath = join(
@@ -184,13 +180,12 @@ export class OCPP20CertificateManager {
 
   /**
    * Gets the filesystem path for a certificate
-   *
    * @param stationHashId - Charging station unique identifier
    * @param certType - Certificate type (e.g., CSMSRootCertificate)
    * @param serialNumber - Certificate serial number
    * @returns Full path where the certificate should be stored
    */
-  public getCertificatePath(
+  public getCertificatePath (
     stationHashId: string,
     certType: InstallCertificateUseEnumType,
     serialNumber: string
@@ -209,15 +204,14 @@ export class OCPP20CertificateManager {
 
   /**
    * Gets installed certificates for a charging station
-   *
    * @param stationHashId - Charging station unique identifier
    * @param filterTypes - Optional array of certificate types to filter
    * @returns List of installed certificate hash data chains
    */
-  public async getInstalledCertificates(
+  public getInstalledCertificates (
     stationHashId: string,
     filterTypes?: InstallCertificateUseEnumType[]
-  ): Promise<GetInstalledCertificatesResult> {
+  ): GetInstalledCertificatesResult {
     const certificateHashDataChain: CertificateHashDataChainType[] = []
 
     try {
@@ -269,17 +263,16 @@ export class OCPP20CertificateManager {
 
   /**
    * Stores a PEM certificate to the filesystem
-   *
    * @param stationHashId - Charging station unique identifier
    * @param certType - Certificate type (e.g., CSMSRootCertificate, V2GRootCertificate)
    * @param pemData - PEM-encoded certificate data
    * @returns Storage result with success status and file path or error
    */
-  public async storeCertificate(
+  public storeCertificate (
     stationHashId: string,
     certType: InstallCertificateUseEnumType,
     pemData: string
-  ): Promise<StoreCertificateResult> {
+  ): StoreCertificateResult {
     if (!this.validateCertificateFormat(pemData)) {
       return {
         error: 'Invalid PEM format: Certificate must have valid BEGIN and END markers',
@@ -321,11 +314,10 @@ export class OCPP20CertificateManager {
 
   /**
    * Validates PEM certificate format
-   *
    * @param pemData - PEM data to validate
    * @returns true if valid PEM certificate format, false otherwise
    */
-  public validateCertificateFormat(pemData: unknown): boolean {
+  public validateCertificateFormat (pemData: unknown): boolean {
     if (pemData == null || typeof pemData !== 'string') {
       return false
     }
@@ -342,7 +334,41 @@ export class OCPP20CertificateManager {
     )
   }
 
-  private extractFirstCertificate(pemData: string): string {
+  /**
+   * Computes fallback hash data when X509Certificate parsing fails.
+   * Uses the raw PEM content to derive hash values.
+   * @param pemData
+   * @param hashAlgorithm
+   * @param algorithmName
+   */
+  private computeFallbackCertificateHash (
+    pemData: string,
+    hashAlgorithm: HashAlgorithmEnumType,
+    algorithmName: string
+  ): CertificateHashDataType {
+    // Extract the base64 content between PEM markers
+    const base64Content = pemData
+      .replace(/-----BEGIN CERTIFICATE-----/, '')
+      .replace(/-----END CERTIFICATE-----/, '')
+      .replace(/\s/g, '')
+
+    // Compute hashes from the certificate content
+    const contentBuffer = Buffer.from(base64Content, 'base64')
+    const issuerNameHash = createHash(algorithmName).update(contentBuffer.subarray(0, Math.min(64, contentBuffer.length))).digest('hex')
+    const issuerKeyHash = createHash(algorithmName).update(contentBuffer).digest('hex')
+
+    // Generate a serial number from the content hash
+    const serialNumber = createHash('sha256').update(pemData).digest('hex').substring(0, 16).toUpperCase()
+
+    return {
+      hashAlgorithm,
+      issuerKeyHash,
+      issuerNameHash,
+      serialNumber,
+    }
+  }
+
+  private extractFirstCertificate (pemData: string): string {
     const beginIndex = pemData.indexOf(OCPP20CertificateManager.PEM_BEGIN_MARKER)
     const endIndex = pemData.indexOf(OCPP20CertificateManager.PEM_END_MARKER)
 
@@ -356,7 +382,11 @@ export class OCPP20CertificateManager {
     )
   }
 
-  private getHashAlgorithmName(hashAlgorithm: HashAlgorithmEnumType): string {
+  private generateFallbackSerialNumber (pemData: string): string {
+    return createHash('sha256').update(pemData).digest('hex').substring(0, 16).toUpperCase()
+  }
+
+  private getHashAlgorithmName (hashAlgorithm: HashAlgorithmEnumType): string {
     switch (hashAlgorithm) {
       case HashAlgorithmEnumType.SHA256:
         return 'sha256'
@@ -369,37 +399,49 @@ export class OCPP20CertificateManager {
     }
   }
 
-  private mapInstallTypeToGetType(
+  private mapInstallTypeToGetType (
     installType: InstallCertificateUseEnumType
   ): GetCertificateIdUseEnumType {
     switch (installType) {
-      case 'CSMSRootCertificate':
+      case InstallCertificateUseEnumType.CSMSRootCertificate:
         return GetCertificateIdUseEnumType.CSMSRootCertificate
-      case 'V2GRootCertificate':
-        return GetCertificateIdUseEnumType.V2GRootCertificate
-      case 'ManufacturerRootCertificate':
+      case InstallCertificateUseEnumType.ManufacturerRootCertificate:
         return GetCertificateIdUseEnumType.ManufacturerRootCertificate
-      case 'MORootCertificate':
+      case InstallCertificateUseEnumType.MORootCertificate:
         return GetCertificateIdUseEnumType.MORootCertificate
+      case InstallCertificateUseEnumType.V2GRootCertificate:
+        return GetCertificateIdUseEnumType.V2GRootCertificate
       default:
         return GetCertificateIdUseEnumType.CSMSRootCertificate
     }
   }
 
-  private sanitizePath(input: string): string {
+  private sanitizePath (input: string): string {
     return input
       .replace(/\.\./g, '')
-      .replace(/[\/\\]/g, '_')
+      .replace(/[/\\]/g, '_')
       .replace(/[<>:"|?*]/g, '_')
   }
 
-  private sanitizeSerial(serial: string): string {
+  private sanitizeSerial (serial: string): string {
     return serial
       .replace(/:/g, '-')
-      .replace(/[\\/\\\\<>\"|?*]/g, '_')
+      .replace(/[/\\<>"|?*]/g, '_')
   }
+}
 
-  private generateFallbackSerialNumber(pemData: string): string {
-    return createHash('sha256').update(pemData).digest('hex').substring(0, 16).toUpperCase()
-  }
+/**
+ * Type guard to check if a charging station has a certificate manager
+ * @param chargingStation - The charging station to check
+ * @returns true if the charging station has a certificate manager
+ */
+export function hasCertificateManager (
+  chargingStation: ChargingStation
+): chargingStation is ChargingStationWithCertificateManager {
+  return (
+    'certificateManager' in chargingStation &&
+    chargingStation.certificateManager != null &&
+    typeof (chargingStation as ChargingStationWithCertificateManager).certificateManager
+      .validateCertificateFormat === 'function'
+  )
 }

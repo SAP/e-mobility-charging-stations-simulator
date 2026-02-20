@@ -55,8 +55,8 @@ Rlc3RDQTAeFw0yNDAxMDEwMDAwMDBaFw0yOTAxMDEwMDAwMDBaMBExDzANBgNVBA
 MMBnRlc3RDQTBcMA0GCSqGSIb3DQEBAQUAA0sAMEgCQQC5p8U8zTk8TT5H5s8mjx`
 
 const createMockCertificateManager = (options: {
-  storeCertificateResult?: boolean
   storeCertificateError?: Error
+  storeCertificateResult?: boolean
 } = {}) => ({
   deleteCertificate: mock.fn(),
   getInstalledCertificates: mock.fn(() => []),

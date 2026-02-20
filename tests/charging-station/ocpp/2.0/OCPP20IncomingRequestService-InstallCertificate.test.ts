@@ -44,8 +44,8 @@ SIb3DQEBCwUAA0EAexpired==
 -----END CERTIFICATE-----`
 
 const createMockCertificateManager = (options: {
-  storeCertificateResult?: boolean
   storeCertificateError?: Error
+  storeCertificateResult?: boolean
 } = {}) => ({
   deleteCertificate: mock.fn(),
   getInstalledCertificates: mock.fn(() => []),

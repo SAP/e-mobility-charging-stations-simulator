@@ -22,7 +22,7 @@ import { createChargingStation } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from './OCPP20TestConstants.js'
 
 const createMockCertificateHashData = (
-  serialNumber: string = '123456789'
+  serialNumber = '123456789'
 ): CertificateHashDataType => ({
   hashAlgorithm: HashAlgorithmEnumType.SHA256,
   issuerKeyHash: 'abc123def456',
@@ -32,18 +32,18 @@ const createMockCertificateHashData = (
 
 const createMockCertificateHashDataChain = (
   certificateType: GetCertificateIdUseEnumType,
-  serialNumber: string = '123456789'
+  serialNumber = '123456789'
 ): CertificateHashDataChainType => ({
   certificateHashData: createMockCertificateHashData(serialNumber),
   certificateType,
 })
 
 const createMockCertificateManager = (options: {
-  getInstalledCertificatesResult?: CertificateHashDataChainType[]
   getInstalledCertificatesError?: Error
+  getInstalledCertificatesResult?: CertificateHashDataChainType[]
 } = {}) => ({
   deleteCertificate: mock.fn(),
-  getInstalledCertificates: mock.fn(async () => {
+  getInstalledCertificates: mock.fn(() => {
     if (options.getInstalledCertificatesError) {
       throw options.getInstalledCertificatesError
     }

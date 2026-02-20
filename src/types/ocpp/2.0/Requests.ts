@@ -53,12 +53,40 @@ export interface OCPP20BootNotificationRequest extends JsonObject {
   reason: BootReasonEnumType
 }
 
+export interface OCPP20CertificateSignedRequest extends JsonObject {
+  certificateChain: string
+  certificateType?: CertificateSigningUseEnumType
+  customData?: CustomDataType
+}
+
 export type OCPP20ClearCacheRequest = EmptyObject
+
+export interface OCPP20DeleteCertificateRequest extends JsonObject {
+  certificateHashData: CertificateHashDataType
+  customData?: CustomDataType
+}
+
+export interface OCPP20Get15118EVCertificateRequest extends JsonObject {
+  action: CertificateActionEnumType
+  customData?: CustomDataType
+  exiRequest: string
+  iso15118SchemaVersion: string
+}
 
 export interface OCPP20GetBaseReportRequest extends JsonObject {
   customData?: CustomDataType
   reportBase: ReportBaseEnumType
   requestId: number
+}
+
+export interface OCPP20GetCertificateStatusRequest extends JsonObject {
+  customData?: CustomDataType
+  ocspRequestData: OCSPRequestDataType
+}
+
+export interface OCPP20GetInstalledCertificateIdsRequest extends JsonObject {
+  certificateType?: GetCertificateIdUseEnumType[]
+  customData?: CustomDataType
 }
 
 export interface OCPP20GetVariablesRequest extends JsonObject {
@@ -108,44 +136,16 @@ export interface OCPP20SetVariablesRequest extends JsonObject {
   setVariableData: OCPP20SetVariableDataType[]
 }
 
+export interface OCPP20SignCertificateRequest extends JsonObject {
+  certificateType?: CertificateSigningUseEnumType
+  csr: string
+  customData?: CustomDataType
+}
+
 export interface OCPP20StatusNotificationRequest extends JsonObject {
   connectorId: number
   connectorStatus: OCPP20ConnectorStatusEnumType
   customData?: CustomDataType
   evseId: number
   timestamp: Date
-}
-
-export interface OCPP20CertificateSignedRequest extends JsonObject {
-  certificateChain: string
-  certificateType?: CertificateSigningUseEnumType
-  customData?: CustomDataType
-}
-
-export interface OCPP20DeleteCertificateRequest extends JsonObject {
-  certificateHashData: CertificateHashDataType
-  customData?: CustomDataType
-}
-
-export interface OCPP20Get15118EVCertificateRequest extends JsonObject {
-  action: CertificateActionEnumType
-  customData?: CustomDataType
-  exiRequest: string
-  iso15118SchemaVersion: string
-}
-
-export interface OCPP20GetCertificateStatusRequest extends JsonObject {
-  customData?: CustomDataType
-  ocspRequestData: OCSPRequestDataType
-}
-
-export interface OCPP20GetInstalledCertificateIdsRequest extends JsonObject {
-  certificateType?: GetCertificateIdUseEnumType[]
-  customData?: CustomDataType
-}
-
-export interface OCPP20SignCertificateRequest extends JsonObject {
-  certificateType?: CertificateSigningUseEnumType
-  csr: string
-  customData?: CustomDataType
 }

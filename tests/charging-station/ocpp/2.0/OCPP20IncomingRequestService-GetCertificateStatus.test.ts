@@ -10,10 +10,10 @@ import { OCPP20IncomingRequestService } from '../../../../src/charging-station/o
 import {
   GetCertificateStatusEnumType,
   HashAlgorithmEnumType,
-  type OCSPRequestDataType,
   type OCPP20GetCertificateStatusRequest,
   type OCPP20GetCertificateStatusResponse,
   OCPPVersion,
+  type OCSPRequestDataType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
@@ -31,8 +31,8 @@ const VALID_OCSP_REQUEST_DATA: OCSPRequestDataType = {
 }
 
 const createMockCertificateManager = (options: {
-  getCertificateStatusResult?: string
   getCertificateStatusError?: Error
+  getCertificateStatusResult?: string
 } = {}) => ({
   deleteCertificate: mock.fn(),
   getCertificateStatus: mock.fn(() => {
