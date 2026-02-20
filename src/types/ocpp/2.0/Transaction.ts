@@ -1,5 +1,5 @@
-import type { EmptyObject } from '../../EmptyObject.js'
 import type { JsonObject } from '../../JsonType.js'
+import type { UUIDv4 } from '../../UUID.js'
 import type { CustomDataType } from './Common.js'
 import type { OCPP20MeterValue } from './MeterValues.js'
 
@@ -7,6 +7,19 @@ export enum CostKindEnumType {
   CarbonDioxideEmission = 'CarbonDioxideEmission',
   RelativePricePercentage = 'RelativePricePercentage',
   RenewableGenerationPercentage = 'RenewableGenerationPercentage',
+}
+
+export enum OCPP20AuthorizationStatusEnumType {
+  Accepted = 'Accepted',
+  Blocked = 'Blocked',
+  ConcurrentTx = 'ConcurrentTx',
+  Expired = 'Expired',
+  Invalid = 'Invalid',
+  NoCredit = 'NoCredit',
+  NotAllowedTypeEVSE = 'NotAllowedTypeEVSE',
+  NotAtThisLocation = 'NotAtThisLocation',
+  NotAtThisTime = 'NotAtThisTime',
+  Unknown = 'Unknown',
 }
 
 export enum OCPP20ChargingProfileKindEnumType {
@@ -77,6 +90,13 @@ export enum OCPP20IdTokenEnumType {
   Local = 'Local',
   MacAddress = 'MacAddress',
   NoAuthorization = 'NoAuthorization',
+}
+
+export enum OCPP20MessageFormatEnumType {
+  ASCII = 'ASCII',
+  HTML = 'HTML',
+  URI = 'URI',
+  UTF8 = 'UTF8',
 }
 
 export enum OCPP20ReasonEnumType {
@@ -221,11 +241,115 @@ export interface OCPP20EVSEType extends JsonObject {
   id: number
 }
 
+export interface OCPP20IdTokenInfoType extends JsonObject {
+  cacheExpiryDateTime?: Date
+  chargingPriority?: number
+  customData?: CustomDataType
+  evseId?: number[]
+  groupIdToken?: OCPP20IdTokenType
+  language1?: string
+  language2?: string
+  personalMessage?: OCPP20MessageContentType
+  status: OCPP20AuthorizationStatusEnumType
+}
+
 export interface OCPP20IdTokenType extends JsonObject {
   additionalInfo?: AdditionalInfoType[]
   customData?: CustomDataType
   idToken: string
   type: OCPP20IdTokenEnumType
+}
+
+export interface OCPP20MessageContentType extends JsonObject {
+  content: string
+  customData?: CustomDataType
+  format: OCPP20MessageFormatEnumType
+  language?: string
+}
+
+/**
+ * Context information for intelligent TriggerReason selection
+ * Used by OCPP20ServiceUtils.selectTriggerReason() to determine appropriate trigger reason
+ */
+export interface OCPP20TransactionContext {
+  /** Abnormal condition type (for abnormal_condition source) */
+  abnormalCondition?: string
+
+  /** Authorization method used (for local_authorization source) */
+  authorizationMethod?: 'groupIdToken' | 'idToken' | 'stopAuthorized'
+
+  /** Cable connection state (for cable_action source) */
+  cableState?: 'detected' | 'plugged_in' | 'unplugged'
+
+  /** Charging state change details (for charging_state source) */
+  chargingStateChange?: {
+    from?: OCPP20ChargingStateEnumType
+    to?: OCPP20ChargingStateEnumType
+  }
+
+  /** Specific command that triggered the event (for remote_command source) */
+  command?:
+    | 'RequestStartTransaction'
+    | 'RequestStopTransaction'
+    | 'Reset'
+    | 'TriggerMessage'
+    | 'UnlockConnector'
+
+  hasRemoteStartId?: boolean
+
+  isDeauthorized?: boolean
+
+  /** Additional context flags */
+  isOffline?: boolean
+
+  /** Whether this is a periodic meter value event */
+  isPeriodicMeterValue?: boolean
+
+  /** Whether this is a signed data reception event */
+  isSignedDataReceived?: boolean
+  /** Source of the transaction event - command, authorization, physical action, etc. */
+  source:
+    | 'abnormal_condition'
+    | 'cable_action'
+    | 'charging_state'
+    | 'energy_limit'
+    | 'external_limit'
+    | 'local_authorization'
+    | 'meter_value'
+    | 'remote_command'
+    | 'system_event'
+    | 'time_limit'
+  /** System event details (for system_event source) */
+  systemEvent?: 'ev_communication_lost' | 'ev_connect_timeout' | 'ev_departed' | 'ev_detected'
+}
+
+/**
+ * Optional parameters for building and sending TransactionEvent requests.
+ * Aligned with OCPP 2.0.1 TransactionEvent.req optional fields.
+ */
+export interface OCPP20TransactionEventOptions {
+  /** Maximum current the cable can handle (A) */
+  cableMaxCurrent?: number
+  /** Current charging state per OCPP 2.0.1 ChargingStateEnumType */
+  chargingState?: OCPP20ChargingStateEnumType
+  /** Vendor-specific custom data */
+  customData?: CustomDataType
+  /** EVSE identifier (1-based) */
+  evseId?: number
+  /** Token used for authorization */
+  idToken?: OCPP20IdTokenType
+  /** Meter values associated with this event */
+  meterValue?: OCPP20MeterValue[]
+  /** Number of phases used for charging */
+  numberOfPhasesUsed?: number
+  /** Whether event occurred while offline */
+  offline?: boolean
+  /** Remote start transaction ID */
+  remoteStartId?: number
+  /** Reservation ID if applicable */
+  reservationId?: number
+  /** Reason for stopping transaction */
+  stoppedReason?: OCPP20ReasonEnumType
 }
 
 export interface OCPP20TransactionEventRequest extends JsonObject {
@@ -244,7 +368,13 @@ export interface OCPP20TransactionEventRequest extends JsonObject {
   triggerReason: OCPP20TriggerReasonEnumType
 }
 
-export type OCPP20TransactionEventResponse = EmptyObject
+export interface OCPP20TransactionEventResponse extends JsonObject {
+  chargingPriority?: number
+  customData?: CustomDataType
+  idTokenInfo?: OCPP20IdTokenInfoType
+  totalCost?: number
+  updatedPersonalMessage?: OCPP20MessageContentType
+}
 
 export interface OCPP20TransactionType extends JsonObject {
   chargingState?: OCPP20ChargingStateEnumType

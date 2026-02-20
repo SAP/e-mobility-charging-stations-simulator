@@ -29,7 +29,7 @@ import {
   setValueSize,
 } from './OCPP20TestUtils.js'
 
-void describe('B06 - Get Variables', () => {
+await describe('B06 - Get Variables', async () => {
   const mockChargingStation = createChargingStation({
     baseName: TEST_CHARGING_STATION_BASE_NAME,
     connectorsCount: 3,
@@ -45,7 +45,7 @@ void describe('B06 - Get Variables', () => {
   const incomingRequestService = new OCPP20IncomingRequestService()
 
   // FR: B06.FR.01
-  void it('Should handle GetVariables request with valid variables', () => {
+  await it('Should handle GetVariables request with valid variables', () => {
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
         {
@@ -89,7 +89,7 @@ void describe('B06 - Get Variables', () => {
   })
 
   // FR: B06.FR.02
-  void it('Should handle GetVariables request with invalid variables', () => {
+  await it('Should handle GetVariables request with invalid variables', () => {
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
         {
@@ -132,7 +132,7 @@ void describe('B06 - Get Variables', () => {
   })
 
   // FR: B06.FR.03
-  void it('Should handle GetVariables request with unsupported attribute types', () => {
+  await it('Should handle GetVariables request with unsupported attribute types', () => {
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
         {
@@ -155,7 +155,7 @@ void describe('B06 - Get Variables', () => {
   })
 
   // FR: B06.FR.04
-  void it('Should reject AuthorizeRemoteStart under Connector component', () => {
+  await it('Should reject AuthorizeRemoteStart under Connector component', () => {
     resetLimits(mockChargingStation)
     resetReportingValueSize(mockChargingStation)
     const request: OCPP20GetVariablesRequest = {
@@ -176,7 +176,7 @@ void describe('B06 - Get Variables', () => {
   })
 
   // FR: B06.FR.05
-  void it('Should reject Target attribute for WebSocketPingInterval', () => {
+  await it('Should reject Target attribute for WebSocketPingInterval', () => {
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
         {
@@ -192,7 +192,7 @@ void describe('B06 - Get Variables', () => {
     expect(result.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
   })
 
-  void it('Should truncate variable value based on ReportingValueSize', () => {
+  await it('Should truncate variable value based on ReportingValueSize', () => {
     // Set size below actual value length to force truncation
     setReportingValueSize(mockChargingStation, 2)
     const request: OCPP20GetVariablesRequest = {
@@ -210,7 +210,7 @@ void describe('B06 - Get Variables', () => {
     resetReportingValueSize(mockChargingStation)
   })
 
-  void it('Should allow ReportingValueSize retrieval from DeviceDataCtrlr', () => {
+  await it('Should allow ReportingValueSize retrieval from DeviceDataCtrlr', () => {
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
         {
@@ -225,7 +225,7 @@ void describe('B06 - Get Variables', () => {
     expect(result.attributeValue).toBeDefined()
   })
 
-  void it('Should enforce ItemsPerMessage limit', () => {
+  await it('Should enforce ItemsPerMessage limit', () => {
     setStrictLimits(mockChargingStation, 1, 10000)
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
@@ -248,7 +248,7 @@ void describe('B06 - Get Variables', () => {
     resetLimits(mockChargingStation)
   })
 
-  void it('Should enforce BytesPerMessage limit (pre-calculation)', () => {
+  await it('Should enforce BytesPerMessage limit (pre-calculation)', () => {
     setStrictLimits(mockChargingStation, 100, 10)
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
@@ -271,7 +271,7 @@ void describe('B06 - Get Variables', () => {
     resetLimits(mockChargingStation)
   })
 
-  void it('Should enforce BytesPerMessage limit (post-calculation)', () => {
+  await it('Should enforce BytesPerMessage limit (post-calculation)', () => {
     // Build request likely to produce larger response due to status info entries
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
@@ -315,7 +315,7 @@ void describe('B06 - Get Variables', () => {
   })
 
   // Added tests for relocated components
-  void it('Should retrieve immutable DateTime from ClockCtrlr', () => {
+  await it('Should retrieve immutable DateTime from ClockCtrlr', () => {
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
         {
@@ -334,7 +334,7 @@ void describe('B06 - Get Variables', () => {
     expect(result.attributeValue).toBeDefined()
   })
 
-  void it('Should retrieve MessageTimeout from OCPPCommCtrlr', () => {
+  await it('Should retrieve MessageTimeout from OCPPCommCtrlr', () => {
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
         {
@@ -354,7 +354,7 @@ void describe('B06 - Get Variables', () => {
     expect(result.attributeValue).toBeDefined()
   })
 
-  void it('Should retrieve TxUpdatedInterval from SampledDataCtrlr and show default value', () => {
+  await it('Should retrieve TxUpdatedInterval from SampledDataCtrlr and show default value', () => {
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
         {
@@ -373,7 +373,7 @@ void describe('B06 - Get Variables', () => {
     expect(result.attributeValue).toBe('30')
   })
 
-  void it('Should retrieve list/sequence defaults for FileTransferProtocols, TimeSource, NetworkConfigurationPriority', () => {
+  await it('Should retrieve list/sequence defaults for FileTransferProtocols, TimeSource, NetworkConfigurationPriority', () => {
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
         {
@@ -403,7 +403,7 @@ void describe('B06 - Get Variables', () => {
     expect(netConfigPriority.attributeValue).toBe('1,2,3')
   })
 
-  void it('Should retrieve list defaults for TxStartedMeasurands, TxEndedMeasurands, TxUpdatedMeasurands', () => {
+  await it('Should retrieve list defaults for TxStartedMeasurands, TxEndedMeasurands, TxUpdatedMeasurands', () => {
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
         {
@@ -440,7 +440,7 @@ void describe('B06 - Get Variables', () => {
   })
 
   // FR: B06.FR.13
-  void it('Should reject Target attribute for NetworkConfigurationPriority', () => {
+  await it('Should reject Target attribute for NetworkConfigurationPriority', () => {
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
         {
@@ -459,7 +459,7 @@ void describe('B06 - Get Variables', () => {
   })
 
   // FR: B06.FR.15
-  void it('Should return UnknownVariable when instance omitted for instance-specific MessageTimeout', () => {
+  await it('Should return UnknownVariable when instance omitted for instance-specific MessageTimeout', () => {
     // MessageTimeout only registered with instance 'Default'
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
@@ -477,7 +477,7 @@ void describe('B06 - Get Variables', () => {
   })
 
   // FR: B06.FR.09
-  void it('Should reject retrieval of explicit write-only variable CertificatePrivateKey', () => {
+  await it('Should reject retrieval of explicit write-only variable CertificatePrivateKey', () => {
     // Explicit vendor-specific write-only variable from SecurityCtrlr
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
@@ -494,7 +494,7 @@ void describe('B06 - Get Variables', () => {
     expect(result.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.WriteOnly)
   })
 
-  void it('Should reject MinSet and MaxSet for WebSocketPingInterval', () => {
+  await it('Should reject MinSet and MaxSet for WebSocketPingInterval', () => {
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
         {
@@ -521,7 +521,7 @@ void describe('B06 - Get Variables', () => {
     expect(maxSet.attributeValue).toBeUndefined()
   })
 
-  void it('Should reject MinSet for MemberList variable TxStartPoint', () => {
+  await it('Should reject MinSet for MemberList variable TxStartPoint', () => {
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
         {
@@ -537,7 +537,7 @@ void describe('B06 - Get Variables', () => {
     expect(result.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
   })
 
-  void it('Should reject MaxSet for variable SecurityProfile (Actual only)', () => {
+  await it('Should reject MaxSet for variable SecurityProfile (Actual only)', () => {
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
         {
@@ -553,7 +553,7 @@ void describe('B06 - Get Variables', () => {
     expect(result.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
   })
 
-  void it('Should apply ValueSize then ReportingValueSize sequential truncation', () => {
+  await it('Should apply ValueSize then ReportingValueSize sequential truncation', () => {
     // First apply a smaller ValueSize (5) then a smaller ReportingValueSize (3)
     setValueSize(mockChargingStation, 5)
     setReportingValueSize(mockChargingStation, 3)

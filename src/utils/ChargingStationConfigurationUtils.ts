@@ -21,7 +21,12 @@ export const buildChargingStationAutomaticTransactionGeneratorConfiguration = (
 
 export const buildConnectorsStatus = (chargingStation: ChargingStation): ConnectorStatus[] => {
   return [...chargingStation.connectors.values()].map(
-    ({ transactionSetInterval, ...connectorStatus }) => connectorStatus
+    ({
+      transactionEventQueue,
+      transactionSetInterval,
+      transactionTxUpdatedSetInterval,
+      ...connectorStatus
+    }) => connectorStatus
   )
 }
 
@@ -37,7 +42,12 @@ export const buildEvsesStatus = (
   // eslint-disable-next-line array-callback-return
   return [...chargingStation.evses.values()].map(evseStatus => {
     const connectorsStatus = [...evseStatus.connectors.values()].map(
-      ({ transactionSetInterval, ...connectorStatus }) => connectorStatus
+      ({
+        transactionEventQueue,
+        transactionSetInterval,
+        transactionTxUpdatedSetInterval,
+        ...connectorStatus
+      }) => connectorStatus
     )
     let status: EvseStatusConfiguration
     switch (outputFormat) {

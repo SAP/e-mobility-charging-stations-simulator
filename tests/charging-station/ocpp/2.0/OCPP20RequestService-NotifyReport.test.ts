@@ -29,7 +29,7 @@ import {
   TEST_FIRMWARE_VERSION,
 } from './OCPP20TestConstants.js'
 
-await describe('B08 - NotifyReport', async () => {
+await describe('B07/B08 - NotifyReport', async () => {
   const mockResponseService = new OCPP20ResponseService()
   const requestService = new OCPP20RequestService(mockResponseService)
 
@@ -49,6 +49,7 @@ await describe('B08 - NotifyReport', async () => {
     websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
   })
 
+  // FR: B07.FR.03, B07.FR.04
   await it('Should build NotifyReport request payload correctly with minimal required fields', () => {
     const requestParams: OCPP20NotifyReportRequest = {
       generatedAt: new Date('2023-10-22T10:30:00.000Z'),

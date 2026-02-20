@@ -1,12 +1,12 @@
-// Partial Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
-
 import type { ValidateFunction } from 'ajv'
+
+import { secondsToMilliseconds } from 'date-fns'
 
 import type { ChargingStation } from '../../../charging-station/index.js'
 import type {
   OCPP20ChargingProfileType,
   OCPP20ChargingScheduleType,
-  OCPP20IdTokenType,
+  OCPP20TransactionContext,
 } from '../../../types/ocpp/2.0/Transaction.js'
 
 import { OCPPError } from '../../../exception/index.js'
@@ -41,6 +41,7 @@ import {
   type OCPP20ResetResponse,
   type OCPP20SetVariablesRequest,
   type OCPP20SetVariablesResponse,
+  OCPP20TransactionEventEnumType,
   OCPPVersion,
   ReasonCodeEnumType,
   ReportBaseEnumType,
@@ -59,16 +60,21 @@ import {
 } from '../../../types/ocpp/2.0/Transaction.js'
 import { StandardParametersKey } from '../../../types/ocpp/Configuration.js'
 import {
+  Constants,
   convertToIntOrNaN,
   generateUUID,
   isAsyncFunction,
   logger,
-  validateUUID,
+  validateIdentifierString,
 } from '../../../utils/index.js'
 import { getConfigurationKey } from '../../ConfigurationKeyUtils.js'
-import { getIdTagsFile, resetConnectorStatus } from '../../Helpers.js'
+import { resetConnectorStatus } from '../../Helpers.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
-import { restoreConnectorStatus, sendAndSetConnectorStatus } from '../OCPPServiceUtils.js'
+import {
+  OCPPServiceUtils,
+  restoreConnectorStatus,
+  sendAndSetConnectorStatus,
+} from '../OCPPServiceUtils.js'
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 import { OCPP20VariableManager } from './OCPP20VariableManager.js'
 import { getVariableMetadata, VARIABLE_REGISTRY } from './OCPP20VariableRegistry.js'
@@ -841,6 +847,37 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     return reportData
   }
 
+  /**
+   * Get the TxUpdatedInterval value from the variable manager.
+   * This is used to determine the interval at which TransactionEvent(Updated) messages are sent.
+   * @param chargingStation - The charging station instance
+   * @returns The TxUpdatedInterval in milliseconds
+   */
+  private getTxUpdatedInterval (chargingStation: ChargingStation): number {
+    const variableManager = OCPP20VariableManager.getInstance()
+    const results = variableManager.getVariables(chargingStation, [
+      {
+        component: { name: OCPP20ComponentName.SampledDataCtrlr },
+        variable: { name: OCPP20RequiredVariableName.TxUpdatedInterval },
+      },
+    ])
+    if (results.length > 0 && results[0].attributeValue != null) {
+      const intervalSeconds = parseInt(results[0].attributeValue, 10)
+      if (!isNaN(intervalSeconds) && intervalSeconds > 0) {
+        return secondsToMilliseconds(intervalSeconds)
+      }
+    }
+    return secondsToMilliseconds(Constants.DEFAULT_TX_UPDATED_INTERVAL)
+  }
+
+  /**
+   * Handles OCPP 2.0 Reset request from central system with enhanced EVSE-specific support
+   * Initiates station or EVSE reset based on request parameters and transaction states
+   * @param chargingStation - The charging station instance processing the request
+   * @param commandPayload - Reset request payload with type and optional EVSE ID
+   * @returns Promise resolving to ResetResponse indicating operation status
+   */
+
   private handleRequestGetBaseReport (
     chargingStation: ChargingStation,
     commandPayload: OCPP20GetBaseReportRequest
@@ -877,14 +914,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       status: GenericDeviceModelStatusEnumType.Accepted,
     }
   }
-
-  /**
-   * Handles OCPP 2.0 Reset request from central system with enhanced EVSE-specific support
-   * Initiates station or EVSE reset based on request parameters and transaction states
-   * @param chargingStation - The charging station instance processing the request
-   * @param commandPayload - Reset request payload with type and optional EVSE ID
-   * @returns Promise resolving to ResetResponse indicating operation status
-   */
 
   private async handleRequestReset (
     chargingStation: ChargingStation,
@@ -1167,10 +1196,15 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
-    // Authorize idToken
+    // Authorize idToken - OCPP 2.0 always uses unified auth system
     let isAuthorized = false
     try {
-      isAuthorized = this.isIdTokenAuthorized(chargingStation, idToken)
+      // Use unified auth system - pass idToken.idToken as string
+      isAuthorized = await OCPPServiceUtils.isIdTagAuthorizedUnified(
+        chargingStation,
+        connectorId,
+        idToken.idToken
+      )
     } catch (error) {
       logger.error(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Authorization error for ${idToken.idToken}:`,
@@ -1196,7 +1230,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     if (groupIdToken != null) {
       let isGroupAuthorized = false
       try {
-        isGroupAuthorized = this.isIdTokenAuthorized(chargingStation, groupIdToken)
+        // Use unified auth system for group token
+        isGroupAuthorized = await OCPPServiceUtils.isIdTagAuthorizedUnified(
+          chargingStation,
+          connectorId,
+          groupIdToken.idToken
+        )
       } catch (error) {
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Group authorization error for ${groupIdToken.idToken}:`,
@@ -1223,7 +1262,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     if (chargingProfile != null) {
       let isValidProfile = false
       try {
-        isValidProfile = this.validateChargingProfile(chargingStation, chargingProfile, evseId)
+        isValidProfile = this.validateChargingProfile(
+          chargingStation,
+          chargingProfile,
+          evseId,
+          'RequestStartTransaction'
+        )
       } catch (error) {
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Charging profile validation error:`,
@@ -1255,6 +1299,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
       connectorStatus.transactionStarted = true
       connectorStatus.transactionId = transactionId
+      // Reset sequence number for new transaction (OCPP 2.0.1 compliance)
+      OCPP20ServiceUtils.resetTransactionSequenceNumber(chargingStation, connectorId)
       connectorStatus.transactionIdTag = idToken.idToken
       connectorStatus.transactionStart = new Date()
       connectorStatus.transactionEnergyActiveImportRegisterValue = 0
@@ -1283,6 +1329,30 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         )
       }
 
+      // Send TransactionEvent Started notification to CSMS with context-aware trigger reason selection
+      // FR: F01.FR.17 - remoteStartId SHALL be included in TransactionEventRequest
+      // FR: F02.FR.05 - idToken SHALL be included in TransactionEventRequest
+      const context: OCPP20TransactionContext = {
+        command: 'RequestStartTransaction',
+        source: 'remote_command',
+      }
+
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        chargingStation,
+        OCPP20TransactionEventEnumType.Started,
+        context,
+        connectorId,
+        transactionId,
+        {
+          idToken,
+          remoteStartId,
+        }
+      )
+
+      // Start TxUpdatedInterval timer for periodic TransactionEvent(Updated) messages
+      const txUpdatedInterval = this.getTxUpdatedInterval(chargingStation)
+      chargingStation.startTxUpdatedInterval(connectorId, txUpdatedInterval)
+
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Remote start transaction ACCEPTED on #${connectorId.toString()} for idToken '${idToken.idToken}'`
       )
@@ -1308,15 +1378,14 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     chargingStation: ChargingStation,
     commandPayload: OCPP20RequestStopTransactionRequest
   ): Promise<OCPP20RequestStopTransactionResponse> {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const { transactionId } = commandPayload
     logger.info(
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestStopTransaction: Remote stop transaction request received for transaction ID ${transactionId as string}`
     )
 
-    if (!validateUUID(transactionId)) {
+    if (!validateIdentifierString(transactionId, 36)) {
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStopTransaction: Invalid transaction ID format (expected UUID): ${transactionId as string}`
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStopTransaction: Invalid transaction ID format (must be non-empty string ≤36 characters): ${transactionId as string}`
       )
       return {
         status: RequestStartStopStatusEnumType.Rejected,
@@ -1373,105 +1442,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return {
         status: RequestStartStopStatusEnumType.Rejected,
       }
-    }
-  }
-
-  private isIdTokenAuthorized (
-    chargingStation: ChargingStation,
-    idToken: OCPP20IdTokenType
-  ): boolean {
-    /**
-     * OCPP 2.0 Authorization Logic Implementation
-     *
-     * OCPP 2.0 handles authorization differently from 1.6:
-     * 1. Check if authorization is required (LocalAuthorizeOffline, AuthorizeRemoteStart variables)
-     * 2. Local authorization list validation if enabled
-     * 3. For OCPP 2.0, there's no explicit AuthorizeRequest - authorization is validated
-     *    through configuration variables and local auth lists
-     * 4. Remote validation through TransactionEvent if needed
-     */
-
-    logger.debug(
-      `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: Validating idToken ${idToken.idToken} of type ${idToken.type}`
-    )
-
-    try {
-      // Check if local authorization is disabled and remote authorization is also disabled
-      const localAuthListEnabled = chargingStation.getLocalAuthListEnabled()
-      const remoteAuthorizationEnabled = chargingStation.stationInfo?.remoteAuthorization ?? true
-
-      if (!localAuthListEnabled && !remoteAuthorizationEnabled) {
-        logger.warn(
-          `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: Both local and remote authorization are disabled. Allowing access but this may indicate misconfiguration.`
-        )
-        return true
-      }
-
-      // 1. Check local authorization list first (if enabled)
-      if (localAuthListEnabled) {
-        const isLocalAuthorized = this.isIdTokenLocalAuthorized(chargingStation, idToken.idToken)
-        if (isLocalAuthorized) {
-          logger.debug(
-            `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: IdToken ${idToken.idToken} authorized via local auth list`
-          )
-          return true
-        }
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: IdToken ${idToken.idToken} not found in local auth list`
-        )
-      }
-
-      // 2. For OCPP 2.0, if we can't authorize locally and remote auth is enabled,
-      //    we should validate through TransactionEvent mechanism or return false
-      //    In OCPP 2.0, there's no explicit remote authorize - it's handled during transaction events
-      if (remoteAuthorizationEnabled) {
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: Remote authorization enabled but no explicit remote auth mechanism in OCPP 2.0 - deferring to transaction event validation`
-        )
-        // In OCPP 2.0, remote authorization happens during TransactionEvent processing
-        // For now, we'll allow the transaction to proceed and let the CSMS validate during TransactionEvent
-        return true
-      }
-
-      // 3. If we reach here, authorization failed
-      logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: IdToken ${idToken.idToken} authorization failed - not found in local list and remote auth not configured`
-      )
-      return false
-    } catch (error) {
-      logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: Error during authorization validation for ${idToken.idToken}:`,
-        error
-      )
-      // Fail securely - deny access on authorization errors
-      return false
-    }
-  }
-
-  /**
-   * Check if idToken is authorized in local authorization list
-   * @param chargingStation - The charging station instance
-   * @param idTokenString - The ID token string to validate
-   * @returns true if authorized locally, false otherwise
-   */
-  private isIdTokenLocalAuthorized (
-    chargingStation: ChargingStation,
-    idTokenString: string
-  ): boolean {
-    try {
-      return (
-        chargingStation.hasIdTags() &&
-        chargingStation.idTagsCache
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          .getIdTags(getIdTagsFile(chargingStation.stationInfo!)!)
-          ?.includes(idTokenString) === true
-      )
-    } catch (error) {
-      logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.isIdTokenLocalAuthorized: Error checking local authorization for ${idTokenString}:`,
-        error
-      )
-      return false
     }
   }
 
@@ -1792,21 +1762,13 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   private validateChargingProfile (
     chargingStation: ChargingStation,
     chargingProfile: OCPP20ChargingProfileType,
-    evseId: number
+    evseId: number,
+    context: 'RequestStartTransaction' | 'SetChargingProfile' = 'SetChargingProfile'
   ): boolean {
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfile: Validating charging profile ${chargingProfile.id.toString()} for EVSE ${evseId.toString()}`
     )
 
-    // Basic validation - check required fields
-    if (!chargingProfile.id || !chargingProfile.stackLevel) {
-      logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfile: Invalid charging profile - missing required fields`
-      )
-      return false
-    }
-
-    // Validate stack level range (OCPP 2.0 spec: 0-9)
     if (chargingProfile.stackLevel < 0 || chargingProfile.stackLevel > 9) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfile: Invalid stack level ${chargingProfile.stackLevel.toString()}, must be 0-9`
@@ -1814,7 +1776,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
-    // Validate charging profile ID is positive
     if (chargingProfile.id <= 0) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfile: Invalid charging profile ID ${chargingProfile.id.toString()}, must be positive`
@@ -1822,7 +1783,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
-    // Validate EVSE compatibility
     if (!chargingStation.hasEvses && evseId > 0) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfile: EVSE ${evseId.toString()} not supported by this charging station`
@@ -1837,7 +1797,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
-    // Validate charging schedules array is not empty
     if (chargingProfile.chargingSchedule.length === 0) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfile: Charging profile must contain at least one charging schedule`
@@ -1845,7 +1804,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
-    // Time constraints validation
     const now = new Date()
     if (chargingProfile.validFrom && chargingProfile.validTo) {
       if (chargingProfile.validFrom >= chargingProfile.validTo) {
@@ -1863,7 +1821,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
-    // Validate recurrency kind compatibility with profile kind
     if (
       chargingProfile.recurrencyKind &&
       chargingProfile.chargingProfileKind !== OCPP20ChargingProfileKindEnumType.Recurring
@@ -1884,7 +1841,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
-    // Validate each charging schedule
     for (const [scheduleIndex, schedule] of chargingProfile.chargingSchedule.entries()) {
       if (
         !this.validateChargingSchedule(
@@ -1899,8 +1855,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
-    // Profile purpose specific validations
-    if (!this.validateChargingProfilePurpose(chargingStation, chargingProfile, evseId)) {
+    if (!this.validateChargingProfilePurpose(chargingStation, chargingProfile, evseId, context)) {
       return false
     }
 
@@ -1912,19 +1867,45 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
   /**
    * Validates charging profile purpose-specific business rules
+   * Per OCPP 2.0.1 Part 2 §2.10:
+   * - RequestStartTransaction MUST use chargingProfilePurpose=TxProfile
+   * - RequestStartTransaction chargingProfile.transactionId MUST NOT be present
    * @param chargingStation - The charging station instance
    * @param chargingProfile - The charging profile to validate
    * @param evseId - EVSE identifier
+   * @param context - Request context ('RequestStartTransaction' or 'SetChargingProfile')
    * @returns True if purpose validation passes, false otherwise
    */
   private validateChargingProfilePurpose (
     chargingStation: ChargingStation,
     chargingProfile: OCPP20ChargingProfileType,
-    evseId: number
+    evseId: number,
+    context: 'RequestStartTransaction' | 'SetChargingProfile' = 'SetChargingProfile'
   ): boolean {
     logger.debug(
-      `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfilePurpose: Validating purpose-specific rules for profile ${chargingProfile.id.toString()} with purpose ${chargingProfile.chargingProfilePurpose}`
+      `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfilePurpose: Validating purpose-specific rules for profile ${chargingProfile.id.toString()} with purpose ${chargingProfile.chargingProfilePurpose} in context ${context}`
     )
+
+    // RequestStartTransaction context validation per OCPP 2.0.1 §2.10
+    if (context === 'RequestStartTransaction') {
+      // Requirement 1: ChargingProfile.chargingProfilePurpose SHALL be TxProfile
+      if (
+        chargingProfile.chargingProfilePurpose !== OCPP20ChargingProfilePurposeEnumType.TxProfile
+      ) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfilePurpose: RequestStartTransaction (OCPP 2.0.1 §2.10) requires chargingProfilePurpose to be TxProfile, got ${chargingProfile.chargingProfilePurpose}`
+        )
+        return false
+      }
+
+      // Requirement 2: ChargingProfile.transactionId SHALL NOT be present at RequestStartTransaction time
+      if (chargingProfile.transactionId != null) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfilePurpose: RequestStartTransaction (OCPP 2.0.1 §2.10) does not allow chargingProfile.transactionId (not yet known at start time)`
+        )
+        return false
+      }
+    }
 
     switch (chargingProfile.chargingProfilePurpose) {
       case OCPP20ChargingProfilePurposeEnumType.ChargingStationExternalConstraints:
@@ -1961,10 +1942,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           return false
         }
 
-        // TxProfile should have a transactionId when used with active transaction
-        if (!chargingProfile.transactionId) {
+        // TxProfile in SetChargingProfile context should have a transactionId
+        if (context === 'SetChargingProfile' && !chargingProfile.transactionId) {
           logger.debug(
-            `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfilePurpose: TxProfile without transactionId - may be for future use`
+            `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfilePurpose: TxProfile without transactionId in SetChargingProfile context - may be for future use`
           )
         }
         break

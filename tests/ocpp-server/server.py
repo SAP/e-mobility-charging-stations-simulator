@@ -38,10 +38,19 @@ ChargePoints = set()
 
 class ChargePoint(ocpp.v201.ChargePoint):
     _command_timer: Optional[Timer]
+    _auth_config: dict
 
-    def __init__(self, connection):
+    def __init__(self, connection, auth_config: Optional[dict] = None):
         super().__init__(connection.path.strip("/"), connection)
         self._command_timer = None
+        # Auth configuration for testing different scenarios
+        self._auth_config = auth_config or {
+            "mode": "normal",  # normal, offline, whitelist, blacklist, rate_limit
+            "whitelist": ["valid_token", "test_token", "authorized_user"],
+            "blacklist": ["blocked_token", "invalid_user"],
+            "offline": False,  # Simulate network failure
+            "default_status": AuthorizationStatusEnumType.accepted,
+        }
 
     # Message handlers to receive OCPP messages.
     @on(Action.boot_notification)
@@ -71,10 +80,41 @@ class ChargePoint(ocpp.v201.ChargePoint):
 
     @on(Action.authorize)
     async def on_authorize(self, id_token, **kwargs):
-        logging.info("Received %s", Action.authorize)
-        return ocpp.v201.call_result.Authorize(
-            id_token_info={"status": AuthorizationStatusEnumType.accepted}
+        logging.info(
+            "Received %s for token: %s", Action.authorize, id_token.get("idToken")
         )
+
+        # Simulate offline mode (network failure)
+        if self._auth_config.get("offline", False):
+            logging.warning("Offline mode - simulating network failure")
+            raise ConnectionError("Simulated network failure")
+
+        token_id = id_token.get("idToken", "")
+        mode = self._auth_config.get("mode", "normal")
+
+        # Determine authorization status based on mode
+        if mode == "whitelist":
+            status = (
+                AuthorizationStatusEnumType.accepted
+                if token_id in self._auth_config.get("whitelist", [])
+                else AuthorizationStatusEnumType.blocked
+            )
+        elif mode == "blacklist":
+            status = (
+                AuthorizationStatusEnumType.blocked
+                if token_id in self._auth_config.get("blacklist", [])
+                else AuthorizationStatusEnumType.accepted
+            )
+        elif mode == "rate_limit":
+            # Simulate rate limiting by rejecting with NotAtThisTime
+            status = AuthorizationStatusEnumType.not_at_this_time
+        else:  # normal mode
+            status = self._auth_config.get(
+                "default_status", AuthorizationStatusEnumType.accepted
+            )
+
+        logging.info("Authorization status for %s: %s", token_id, status)
+        return ocpp.v201.call_result.Authorize(id_token_info={"status": status})
 
     @on(Action.transaction_event)
     async def on_transaction_event(
@@ -89,8 +129,35 @@ class ChargePoint(ocpp.v201.ChargePoint):
         match event_type:
             case TransactionEventEnumType.started:
                 logging.info("Received %s Started", Action.transaction_event)
+
+                # Pre-authorization validation for remote start transactions
+                id_token = kwargs.get("id_token", {})
+                token_id = id_token.get("idToken", "")
+                mode = self._auth_config.get("mode", "normal")
+
+                # Apply whitelist/blacklist logic for transaction start
+                if mode == "whitelist":
+                    status = (
+                        AuthorizationStatusEnumType.accepted
+                        if token_id in self._auth_config.get("whitelist", [])
+                        else AuthorizationStatusEnumType.blocked
+                    )
+                elif mode == "blacklist":
+                    status = (
+                        AuthorizationStatusEnumType.blocked
+                        if token_id in self._auth_config.get("blacklist", [])
+                        else AuthorizationStatusEnumType.accepted
+                    )
+                else:
+                    status = self._auth_config.get(
+                        "default_status", AuthorizationStatusEnumType.accepted
+                    )
+
+                logging.info(
+                    "Transaction start auth status for %s: %s", token_id, status
+                )
                 return ocpp.v201.call_result.TransactionEvent(
-                    id_token_info={"status": AuthorizationStatusEnumType.accepted}
+                    id_token_info={"status": status}
                 )
             case TransactionEventEnumType.updated:
                 logging.info("Received %s Updated", Action.transaction_event)
@@ -319,6 +386,7 @@ async def on_connect(
     command_name: Optional[Action],
     delay: Optional[float],
     period: Optional[float],
+    auth_config: Optional[dict],
 ):
     """For every new charge point that connects, create a ChargePoint instance and start
     listening for messages.
@@ -340,7 +408,7 @@ async def on_connect(
         )
         return await websocket.close()
 
-    cp = ChargePoint(websocket)
+    cp = ChargePoint(websocket, auth_config)
     if command_name:
         await cp.send_command(command_name, delay, period)
 
@@ -379,14 +447,63 @@ async def main():
         type=check_positive_number,
         help="period in seconds",
     )
-    group.required = parser.parse_known_args()[0].command is not None
 
+    # Auth configuration arguments
+    parser.add_argument(
+        "--auth-mode",
+        type=str,
+        choices=["normal", "offline", "whitelist", "blacklist", "rate_limit"],
+        default="normal",
+        help="Authorization mode (default: normal)",
+    )
+    parser.add_argument(
+        "--whitelist",
+        type=str,
+        nargs="+",
+        default=["valid_token", "test_token", "authorized_user"],
+        help="Whitelist of authorized tokens (space-separated)",
+    )
+    parser.add_argument(
+        "--blacklist",
+        type=str,
+        nargs="+",
+        default=["blocked_token", "invalid_user"],
+        help="Blacklist of blocked tokens (space-separated)",
+    )
+    parser.add_argument(
+        "--offline",
+        action="store_true",
+        help="Simulate offline/network failure mode",
+    )
+
+    # Parse args to check if group.required should be set
+    args, _ = parser.parse_known_args()
+    group.required = args.command is not None
+
+    # Re-parse with full validation
     args = parser.parse_args()
+
+    # Build auth configuration from CLI args
+    auth_config = {
+        "mode": args.auth_mode,
+        "whitelist": args.whitelist,
+        "blacklist": args.blacklist,
+        "offline": args.offline,
+        "default_status": AuthorizationStatusEnumType.accepted,
+    }
+
+    logging.info(
+        "Auth configuration: mode=%s, offline=%s", args.auth_mode, args.offline
+    )
 
     # Create the WebSocket server and specify the handler for new connections.
     server = await websockets.serve(
         partial(
-            on_connect, command_name=args.command, delay=args.delay, period=args.period
+            on_connect,
+            command_name=args.command,
+            delay=args.delay,
+            period=args.period,
+            auth_config=auth_config,
         ),
         "127.0.0.1",  # Listen on loopback.
         9000,  # Port number.
