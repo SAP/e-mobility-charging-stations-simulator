@@ -55,7 +55,7 @@ const createMockCertificateManager = (
     if (options.storeCertificateError) {
       throw options.storeCertificateError
     }
-    return options.storeCertificateResult ?? true
+    return { success: options.storeCertificateResult ?? true }
   }),
   validateCertificateFormat: mock.fn((cert: string) => {
     return (

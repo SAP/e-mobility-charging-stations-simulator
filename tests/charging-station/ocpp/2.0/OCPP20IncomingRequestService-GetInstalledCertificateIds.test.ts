@@ -166,15 +166,13 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
       ).handleRequestGetInstalledCertificateIds(mockChargingStation, request)
 
       expect(response).toBeDefined()
-      expect(response.status).toBe(GetInstalledCertificateStatusEnumType.Accepted)
+      // Per OCPP 2.0.1 spec: NotFound is returned when no certificates match the request
+      expect(response.status).toBe(GetInstalledCertificateStatusEnumType.NotFound)
       // Per OCPP spec: certificateHashDataChain is omitted when empty, not an empty array
-      expect(
-        response.certificateHashDataChain === undefined ||
-          response.certificateHashDataChain.length === 0
-      ).toBe(true)
+      expect(response.certificateHashDataChain).toBeUndefined()
     })
 
-    await it('Should return Accepted when filtered type has no certificates', async () => {
+    await it('Should return NotFound when filtered type has no certificates', async () => {
       ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
         getInstalledCertificatesResult: [],
       })
@@ -188,7 +186,7 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
       ).handleRequestGetInstalledCertificateIds(mockChargingStation, request)
 
       expect(response).toBeDefined()
-      expect(response.status).toBe(GetInstalledCertificateStatusEnumType.Accepted)
+      expect(response.status).toBe(GetInstalledCertificateStatusEnumType.NotFound)
     })
   })
 

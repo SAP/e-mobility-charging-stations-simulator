@@ -14,13 +14,11 @@ import {
   type OCPP20GetCertificateStatusResponse,
   OCPPVersion,
   type OCSPRequestDataType,
+  ReasonCodeEnumType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from './OCPP20TestConstants.js'
-
-const STUB_OCSP_RESPONSE =
-  'MIIBkwoBATCCAYwwDQYJKoZIhvcNAQELBQAwITEfMB0GA1UEAwwWRHVtbXkgT0NTUCBSZXNwb25kZXI='
 
 const VALID_OCSP_REQUEST_DATA: OCSPRequestDataType = {
   hashAlgorithm: HashAlgorithmEnumType.SHA256,
@@ -30,21 +28,11 @@ const VALID_OCSP_REQUEST_DATA: OCSPRequestDataType = {
   serialNumber: '01AB02CD03EF04',
 }
 
-const createMockCertificateManager = (
-  options: {
-    getCertificateStatusError?: Error
-    getCertificateStatusResult?: string
-  } = {}
-) => ({
+const createMockCertificateManager = () => ({
   deleteCertificate: mock.fn(),
-  getCertificateStatus: mock.fn(() => {
-    if (options.getCertificateStatusError) {
-      throw options.getCertificateStatusError
-    }
-    return options.getCertificateStatusResult ?? STUB_OCSP_RESPONSE
-  }),
+  getCertificateStatus: mock.fn(),
   getInstalledCertificates: mock.fn(() => []),
-  storeCertificate: mock.fn(() => true),
+  storeCertificate: mock.fn(() => ({ success: true })),
   validateCertificateFormat: mock.fn(() => true),
 })
 
@@ -65,11 +53,9 @@ await describe('GetCertificateStatus', async () => {
 
   const incomingRequestService = new OCPP20IncomingRequestService()
 
-  await describe('Valid OCSP Request', async () => {
-    await it('Should return Accepted status with OCSP response for valid request', async () => {
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
-        getCertificateStatusResult: STUB_OCSP_RESPONSE,
-      })
+  await describe('Stub Implementation Behavior', async () => {
+    await it('Should return Failed with NotEnabled for valid OCSP request (stub implementation)', async () => {
+      ;(mockChargingStation as any).certificateManager = createMockCertificateManager()
 
       const request: OCPP20GetCertificateStatusRequest = {
         ocspRequestData: VALID_OCSP_REQUEST_DATA,
@@ -82,17 +68,14 @@ await describe('GetCertificateStatus', async () => {
       expect(response).toBeDefined()
       expect(typeof response).toBe('object')
       expect(response.status).toBeDefined()
-      expect(response.status).toBe(GetCertificateStatusEnumType.Accepted)
-      expect(response.ocspResult).toBeDefined()
-      expect(typeof response.ocspResult).toBe('string')
-      expect(response.ocspResult).toBe(STUB_OCSP_RESPONSE)
-      expect(response.statusInfo).toBeUndefined()
+      expect(response.status).toBe(GetCertificateStatusEnumType.Failed)
+      expect(response.ocspResult).toBeUndefined()
+      expect(response.statusInfo).toBeDefined()
+      expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.NotEnabled)
     })
 
-    await it('Should call certificateManager.getCertificateStatus with correct parameters', async () => {
-      const mockCertManager = createMockCertificateManager({
-        getCertificateStatusResult: STUB_OCSP_RESPONSE,
-      })
+    await it('Should not call certificateManager.getCertificateStatus (stub implementation)', async () => {
+      const mockCertManager = createMockCertificateManager()
       ;(mockChargingStation as any).certificateManager = mockCertManager
 
       const request: OCPP20GetCertificateStatusRequest = {
@@ -104,36 +87,12 @@ await describe('GetCertificateStatus', async () => {
         request
       )
 
-      expect(mockCertManager.getCertificateStatus.mock.calls.length).toBe(1)
-      expect(mockCertManager.getCertificateStatus.mock.calls[0]?.arguments[0]).toEqual(
-        VALID_OCSP_REQUEST_DATA
-      )
+      expect(mockCertManager.getCertificateStatus.mock.calls.length).toBe(0)
     })
   })
 
   await describe('Error Handling', async () => {
-    await it('Should return Failed status when certificate manager throws error', async () => {
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
-        getCertificateStatusError: new Error('OCSP responder unavailable'),
-      })
-
-      const request: OCPP20GetCertificateStatusRequest = {
-        ocspRequestData: VALID_OCSP_REQUEST_DATA,
-      }
-
-      const response: OCPP20GetCertificateStatusResponse = await (
-        incomingRequestService as any
-      ).handleRequestGetCertificateStatus(mockChargingStation, request)
-
-      expect(response).toBeDefined()
-      expect(response.status).toBe(GetCertificateStatusEnumType.Failed)
-      expect(response.ocspResult).toBeUndefined()
-      expect(response.statusInfo).toBeDefined()
-      expect(response.statusInfo?.reasonCode).toBeDefined()
-      expect(typeof response.statusInfo?.reasonCode).toBe('string')
-    })
-
-    await it('Should return Failed status when certificate manager is unavailable', async () => {
+    await it('Should return Failed status with InternalError when certificate manager is unavailable', async () => {
       ;(mockChargingStation as any).certificateManager = undefined
 
       const request: OCPP20GetCertificateStatusRequest = {
@@ -148,36 +107,15 @@ await describe('GetCertificateStatus', async () => {
       expect(response.status).toBe(GetCertificateStatusEnumType.Failed)
       expect(response.ocspResult).toBeUndefined()
       expect(response.statusInfo).toBeDefined()
-      expect(response.statusInfo?.reasonCode).toBeDefined()
+      expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.InternalError)
 
-      // Restore certificateManager for other tests
       ;(mockChargingStation as any).certificateManager = createMockCertificateManager()
-    })
-
-    await it('Should return Failed status when certificate manager returns empty result', async () => {
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
-        getCertificateStatusResult: '',
-      })
-
-      const request: OCPP20GetCertificateStatusRequest = {
-        ocspRequestData: VALID_OCSP_REQUEST_DATA,
-      }
-
-      const response: OCPP20GetCertificateStatusResponse = await (
-        incomingRequestService as any
-      ).handleRequestGetCertificateStatus(mockChargingStation, request)
-
-      expect(response).toBeDefined()
-      expect(response.status).toBe(GetCertificateStatusEnumType.Failed)
-      expect(response.statusInfo).toBeDefined()
     })
   })
 
   await describe('Response Structure Validation', async () => {
     await it('Should return response matching GetCertificateStatusResponse schema', async () => {
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
-        getCertificateStatusResult: STUB_OCSP_RESPONSE,
-      })
+      ;(mockChargingStation as any).certificateManager = createMockCertificateManager()
 
       const request: OCPP20GetCertificateStatusRequest = {
         ocspRequestData: VALID_OCSP_REQUEST_DATA,
@@ -190,39 +128,21 @@ await describe('GetCertificateStatus', async () => {
       expect(response).toBeDefined()
       expect(typeof response).toBe('object')
 
-      // status field is required
       expect(response.status).toBeDefined()
       expect([
         GetCertificateStatusEnumType.Accepted,
         GetCertificateStatusEnumType.Failed,
       ]).toContain(response.status)
 
-      // ocspResult is optional, but present for Accepted status
-      if (response.status === GetCertificateStatusEnumType.Accepted) {
-        expect(response.ocspResult).toBeDefined()
-        expect(typeof response.ocspResult).toBe('string')
-      }
-
-      // statusInfo is optional
-      if (response.statusInfo != null) {
-        expect(response.statusInfo.reasonCode).toBeDefined()
-        expect(typeof response.statusInfo.reasonCode).toBe('string')
-        if (response.statusInfo.additionalInfo != null) {
-          expect(typeof response.statusInfo.additionalInfo).toBe('string')
-        }
-      }
-
-      // customData is optional
-      if (response.customData != null) {
-        expect(response.customData.vendorId).toBeDefined()
-        expect(typeof response.customData.vendorId).toBe('string')
+      if (response.status === GetCertificateStatusEnumType.Failed) {
+        expect(response.statusInfo).toBeDefined()
+        expect(response.statusInfo?.reasonCode).toBeDefined()
+        expect(typeof response.statusInfo?.reasonCode).toBe('string')
       }
     })
 
-    await it('Should include statusInfo with reasonCode for failure', async () => {
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
-        getCertificateStatusError: new Error('OCSP lookup failed'),
-      })
+    await it('Should include statusInfo with valid reasonCode for stub response', async () => {
+      ;(mockChargingStation as any).certificateManager = createMockCertificateManager()
 
       const request: OCPP20GetCertificateStatusRequest = {
         ocspRequestData: VALID_OCSP_REQUEST_DATA,
@@ -242,10 +162,8 @@ await describe('GetCertificateStatus', async () => {
   })
 
   await describe('OCSP Request Data Variations', async () => {
-    await it('Should handle SHA384 hash algorithm', async () => {
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
-        getCertificateStatusResult: STUB_OCSP_RESPONSE,
-      })
+    await it('Should handle SHA384 hash algorithm with stub response', async () => {
+      ;(mockChargingStation as any).certificateManager = createMockCertificateManager()
 
       const request: OCPP20GetCertificateStatusRequest = {
         ocspRequestData: {
@@ -259,14 +177,12 @@ await describe('GetCertificateStatus', async () => {
       ).handleRequestGetCertificateStatus(mockChargingStation, request)
 
       expect(response).toBeDefined()
-      expect(response.status).toBe(GetCertificateStatusEnumType.Accepted)
-      expect(response.ocspResult).toBe(STUB_OCSP_RESPONSE)
+      expect(response.status).toBe(GetCertificateStatusEnumType.Failed)
+      expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.NotEnabled)
     })
 
-    await it('Should handle SHA512 hash algorithm', async () => {
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
-        getCertificateStatusResult: STUB_OCSP_RESPONSE,
-      })
+    await it('Should handle SHA512 hash algorithm with stub response', async () => {
+      ;(mockChargingStation as any).certificateManager = createMockCertificateManager()
 
       const request: OCPP20GetCertificateStatusRequest = {
         ocspRequestData: {
@@ -280,8 +196,8 @@ await describe('GetCertificateStatus', async () => {
       ).handleRequestGetCertificateStatus(mockChargingStation, request)
 
       expect(response).toBeDefined()
-      expect(response.status).toBe(GetCertificateStatusEnumType.Accepted)
-      expect(response.ocspResult).toBe(STUB_OCSP_RESPONSE)
+      expect(response.status).toBe(GetCertificateStatusEnumType.Failed)
+      expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.NotEnabled)
     })
   })
 })
