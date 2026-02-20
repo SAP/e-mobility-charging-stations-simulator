@@ -58,12 +58,9 @@ await describe('F03 - Remote Stop Transaction', async () => {
 
   const incomingRequestService = new OCPP20IncomingRequestService()
 
-  beforeEach(async () => {
+  beforeEach(() => {
     const stationId = mockChargingStation.stationInfo?.chargingStationId ?? 'unknown'
-    // Dynamic import to get the same module instance as the production code
-    const { OCPPAuthServiceFactory: DynamicOCPPAuthServiceFactory } =
-      await import('../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js')
-    ;(DynamicOCPPAuthServiceFactory as any).instances.set(stationId, createMockAuthService())
+    OCPPAuthServiceFactory.setInstanceForTesting(stationId, createMockAuthService())
   })
 
   afterEach(() => {
@@ -339,7 +336,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
     })
 
     const failingStationId = failingChargingStation.stationInfo?.chargingStationId ?? 'unknown'
-    ;(OCPPAuthServiceFactory as any).instances.set(failingStationId, createMockAuthService())
+    OCPPAuthServiceFactory.setInstanceForTesting(failingStationId, createMockAuthService())
 
     const startRequest: OCPP20RequestStartTransactionRequest = {
       evseId: 1,

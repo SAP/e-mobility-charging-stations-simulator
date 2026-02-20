@@ -2,6 +2,8 @@
 
 import { expect } from '@std/expect'
 
+import type { OCPPAuthService } from '../../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
+
 import {
   type AuthConfiguration,
   AuthContext,
@@ -145,35 +147,35 @@ export const createMockConcurrentTxAuthorizationResult = (
  * @param overrides - Optional partial overrides for mock methods
  * @returns Mock auth service object with stubbed authorize, cache, and stats methods
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const createMockAuthService = (overrides?: Record<string, any>): any => ({
-  authorize: () =>
-    Promise.resolve({
-      expiresAt: new Date(Date.now() + 3600000),
-      method: AuthenticationMethod.LOCAL_LIST,
-      status: AuthorizationStatus.ACCEPTED,
-      timestamp: new Date(),
-    }),
-  clearCache: () => Promise.resolve(),
-  getConfiguration: () => ({}),
-  getStats: () =>
-    Promise.resolve({
-      avgResponseTime: 0,
-      cacheHitRate: 0,
-      failedAuth: 0,
-      lastUpdated: new Date(),
-      localUsageRate: 1,
-      remoteSuccessRate: 0,
-      successfulAuth: 0,
-      totalRequests: 0,
-    }),
-  initialize: () => Promise.resolve(),
-  invalidateCache: () => Promise.resolve(),
-  isLocallyAuthorized: () => Promise.resolve(undefined),
-  testConnectivity: () => Promise.resolve(true),
-  updateConfiguration: () => Promise.resolve(),
-  ...overrides,
-})
+export const createMockAuthService = (overrides?: Partial<OCPPAuthService>): OCPPAuthService =>
+  ({
+    authorize: () =>
+      Promise.resolve({
+        expiresAt: new Date(Date.now() + 3600000),
+        isOffline: false,
+        method: AuthenticationMethod.LOCAL_LIST,
+        status: AuthorizationStatus.ACCEPTED,
+        timestamp: new Date(),
+      }),
+    clearCache: () => Promise.resolve(),
+    getConfiguration: () => ({}) as AuthConfiguration,
+    getStats: () =>
+      Promise.resolve({
+        avgResponseTime: 0,
+        cacheHitRate: 0,
+        failedAuth: 0,
+        lastUpdated: new Date(),
+        localUsageRate: 1,
+        remoteSuccessRate: 0,
+        successfulAuth: 0,
+        totalRequests: 0,
+      }),
+    invalidateCache: () => Promise.resolve(),
+    isLocallyAuthorized: () => Promise.resolve(undefined),
+    testConnectivity: () => Promise.resolve(true),
+    updateConfiguration: () => Promise.resolve(),
+    ...overrides,
+  }) as OCPPAuthService
 
 // ============================================================================
 // Assertion Helpers

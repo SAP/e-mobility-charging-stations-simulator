@@ -123,4 +123,17 @@ export class OCPPAuthServiceFactory {
       stationIds: Array.from(this.instances.keys()),
     }
   }
+
+  /**
+   * Set a cached instance for testing purposes only.
+   * This allows tests to inject mock auth services without relying on module internals.
+   * @param stationId - The station identifier to cache the instance for
+   * @param instance - The auth service instance to cache
+   */
+  static setInstanceForTesting (stationId: string, instance: OCPPAuthService): void {
+    this.instances.set(stationId, instance)
+    logger.debug(
+      `${moduleName}.setInstanceForTesting: Set mock auth service for station ${stationId}`
+    )
+  }
 }
