@@ -888,6 +888,23 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     return reportData
   }
 
+  private getTxUpdatedInterval (chargingStation: ChargingStation): number {
+    const variableManager = OCPP20VariableManager.getInstance()
+    const results = variableManager.getVariables(chargingStation, [
+      {
+        component: { name: OCPP20ComponentName.SampledDataCtrlr },
+        variable: { name: OCPP20RequiredVariableName.TxUpdatedInterval },
+      },
+    ])
+    if (results.length > 0 && results[0].attributeValue != null) {
+      const intervalSeconds = parseInt(results[0].attributeValue, 10)
+      if (!isNaN(intervalSeconds) && intervalSeconds > 0) {
+        return secondsToMilliseconds(intervalSeconds)
+      }
+    }
+    return secondsToMilliseconds(Constants.DEFAULT_TX_UPDATED_INTERVAL)
+  }
+
   /**
    * Handles OCPP 2.0 CertificateSigned request from central system
    * Receives signed certificate chain from CSMS and stores it in the charging station
@@ -1063,23 +1080,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         },
       }
     }
-  }
-
-  private getTxUpdatedInterval (chargingStation: ChargingStation): number {
-    const variableManager = OCPP20VariableManager.getInstance()
-    const results = variableManager.getVariables(chargingStation, [
-      {
-        component: { name: OCPP20ComponentName.SampledDataCtrlr },
-        variable: { name: OCPP20RequiredVariableName.TxUpdatedInterval },
-      },
-    ])
-    if (results.length > 0 && results[0].attributeValue != null) {
-      const intervalSeconds = parseInt(results[0].attributeValue, 10)
-      if (!isNaN(intervalSeconds) && intervalSeconds > 0) {
-        return secondsToMilliseconds(intervalSeconds)
-      }
-    }
-    return secondsToMilliseconds(Constants.DEFAULT_TX_UPDATED_INTERVAL)
   }
 
   private handleRequestGetBaseReport (
@@ -1712,7 +1712,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     chargingStation: ChargingStation,
     commandPayload: OCPP20RequestStopTransactionRequest
   ): Promise<OCPP20RequestStopTransactionResponse> {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const { transactionId } = commandPayload
     logger.info(
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestStopTransaction: Remote stop transaction request received for transaction ID ${transactionId as string}`
