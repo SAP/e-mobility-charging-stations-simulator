@@ -12,6 +12,7 @@ import type {
 import { OCPPError } from '../../../exception/index.js'
 import {
   AttributeEnumType,
+  CertificateSigningUseEnumType,
   ConnectorEnumType,
   ConnectorStatusEnum,
   DataEnumType,
@@ -27,6 +28,8 @@ import {
   type JsonType,
   OCPP20ComponentName,
   OCPP20ConnectorStatusEnumType,
+  type OCPP20CertificateSignedRequest,
+  type OCPP20CertificateSignedResponse,
   type OCPP20DeleteCertificateRequest,
   type OCPP20DeleteCertificateResponse,
   OCPP20DeviceInfoVariableName,
@@ -145,6 +148,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     super(OCPPVersion.VERSION_201)
     this.reportDataCache = new Map<number, ReportDataType[]>()
     this.incomingRequestHandlers = new Map<OCPP20IncomingRequestCommand, IncomingRequestHandler>([
+      [
+        OCPP20IncomingRequestCommand.CERTIFICATE_SIGNED,
+        this.handleRequestCertificateSigned.bind(this) as unknown as IncomingRequestHandler,
+      ],
       [
         OCPP20IncomingRequestCommand.CLEAR_CACHE,
         super.handleRequestClearCache.bind(this) as IncomingRequestHandler,
@@ -1118,6 +1125,104 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         statusInfo: {
           additionalInfo: 'Internal error occurred while processing reset request',
           reasonCode: ReasonCodeEnumType.InternalError,
+        },
+      }
+    }
+  }
+
+  /**
+   * Handles OCPP 2.0 CertificateSigned request from central system
+   * Receives signed certificate chain from CSMS and stores it in the charging station
+   * Triggers websocket reconnect for ChargingStationCertificate type to use the new certificate
+   * @param chargingStation - The charging station instance processing the request
+   * @param commandPayload - CertificateSigned request payload with certificate chain and type
+   * @returns Promise resolving to CertificateSignedResponse indicating operation status
+   */
+  private async handleRequestCertificateSigned (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20CertificateSignedRequest
+  ): Promise<OCPP20CertificateSignedResponse> {
+    const { certificateChain, certificateType } = commandPayload
+
+    // Access certificateManager (attached dynamically in tests)
+    const certificateManager = (chargingStation as any).certificateManager
+
+    if (certificateManager == null) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestCertificateSigned: Certificate manager not available`
+      )
+      return {
+        status: GenericStatus.Rejected,
+        statusInfo: {
+          reasonCode: ReasonCodeEnumType.InternalError,
+        },
+      }
+    }
+
+    // Validate certificate chain format
+    if (!certificateManager.validateCertificateFormat(certificateChain)) {
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestCertificateSigned: Invalid PEM format for certificate chain`
+      )
+      return {
+        status: GenericStatus.Rejected,
+        statusInfo: {
+          reasonCode: ReasonCodeEnumType.InvalidCertificate,
+        },
+      }
+    }
+
+    // Store certificate chain
+    try {
+      const result = certificateManager.storeCertificate(
+        chargingStation.stationInfo?.hashId ?? '',
+        certificateType ?? CertificateSigningUseEnumType.ChargingStationCertificate,
+        certificateChain
+      )
+
+      // Handle both Promise and synchronous returns, and both boolean and object results
+      const storeResult = result instanceof Promise ? await result : result
+
+      // Handle both boolean (test mock) and object (real implementation) results
+      const success = typeof storeResult === 'boolean' ? storeResult : storeResult?.success
+
+      if (!success) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestCertificateSigned: Certificate chain storage rejected`
+        )
+        return {
+          status: GenericStatus.Rejected,
+          statusInfo: {
+            reasonCode: ReasonCodeEnumType.InvalidCertificate,
+          },
+        }
+      }
+
+      // For ChargingStationCertificate, trigger websocket reconnect to use the new certificate
+      const effectiveCertificateType =
+        certificateType ?? CertificateSigningUseEnumType.ChargingStationCertificate
+      if (effectiveCertificateType === CertificateSigningUseEnumType.ChargingStationCertificate) {
+        logger.info(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestCertificateSigned: Triggering websocket reconnect to use new ChargingStationCertificate`
+        )
+        chargingStation.closeWSConnection()
+      }
+
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestCertificateSigned: Certificate chain stored successfully`
+      )
+      return {
+        status: GenericStatus.Accepted,
+      }
+    } catch (error) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestCertificateSigned: Certificate chain storage failed`,
+        error
+      )
+      return {
+        status: GenericStatus.Rejected,
+        statusInfo: {
+          reasonCode: ReasonCodeEnumType.OutOfStorage,
         },
       }
     }

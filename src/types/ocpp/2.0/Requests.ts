@@ -25,6 +25,7 @@ import type {
 } from './Variables.js'
 
 export const enum OCPP20IncomingRequestCommand {
+  CERTIFICATE_SIGNED = 'CertificateSigned',
   CLEAR_CACHE = 'ClearCache',
   DELETE_CERTIFICATE = 'DeleteCertificate',
   GET_BASE_REPORT = 'GetBaseReport',

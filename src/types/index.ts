@@ -178,6 +178,7 @@ export {
 } from './ocpp/2.0/MeterValues.js'
 export {
   type OCPP20BootNotificationRequest,
+  type OCPP20CertificateSignedRequest,
   type OCPP20ClearCacheRequest,
   type OCPP20DeleteCertificateRequest,
   type OCPP20GetBaseReportRequest,
@@ -197,6 +198,7 @@ export {
 } from './ocpp/2.0/Requests.js'
 export type {
   OCPP20BootNotificationResponse,
+  OCPP20CertificateSignedResponse,
   OCPP20ClearCacheResponse,
   OCPP20DeleteCertificateResponse,
   OCPP20GetBaseReportResponse,
