@@ -1,0 +1,15 @@
+
+> e-mobility-charging-stations-simulator@2.3.1 build /Users/I339261/SAPDevelop/e-mobility-charging-stations-simulator-git-worktrees/feat-certs-management
+> pnpm esbuild
+
+
+> e-mobility-charging-stations-simulator@2.3.1 esbuild /Users/I339261/SAPDevelop/e-mobility-charging-stations-simulator-git-worktrees/feat-certs-management
+> pnpm build-requirements && node scripts/bundle.js
+
+
+> e-mobility-charging-stations-simulator@2.3.1 build-requirements /Users/I339261/SAPDevelop/e-mobility-charging-stations-simulator-git-worktrees/feat-certs-management
+> node scripts/build-requirements.js
+
+Building in production mode
+Build time: 207.885ms
+Exit code: 0

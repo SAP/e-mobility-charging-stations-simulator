@@ -1,0 +1,51 @@
+=== OCPP20CertificateManager Test Structure Analysis ===
+Date: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+Test File: tests/charging-station/ocpp/2.0/OCPP20CertificateManager.test.ts
+
+=== Test Case Count ===
+30
+ test cases (await it)
+
+=== Describe Block Count ===
+9
+ describe blocks
+
+=== Mock References ===
+8
+ mock references
+
+=== Describe Blocks ===
+await describe('OCPP20CertificateManager', async () => {
+  await describe('storeCertificate', async () => {
+  await describe('deleteCertificate', async () => {
+  await describe('getInstalledCertificates', async () => {
+  await describe('computeCertificateHash', async () => {
+  await describe('validateCertificateFormat', async () => {
+  await describe('getCertificatePath', async () => {
+  await describe('Edge cases and error handling', async () => {
+
+=== Test Cases by Method ===
+storeCertificate: 4 tests
+deleteCertificate: 3 tests
+getInstalledCertificates: 4 tests
+computeCertificateHash: 6 tests
+validateCertificateFormat: 6 tests
+getCertificatePath: 4 tests
+Edge cases: 3 tests
+TOTAL: 30 tests
+
+=== Filesystem Mocking ===
+mockFs object defined with:
+- existsSync
+- mkdirSync
+- readdirSync
+- readFileSync
+- rmSync
+- writeFileSync
+
+=== Verification Result ===
+✅ Test file created at correct path
+✅ At least 10 test cases (actual: 30)
+✅ Tests use mocked filesystem (no actual file I/O)
+✅ Tests run and FAIL (TDD red phase confirmed)

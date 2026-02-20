@@ -1116,6 +1116,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * Returns stub OCSP response without making real network calls
    * @param chargingStation - The charging station instance processing the request
    * @param commandPayload - GetCertificateStatus request payload with OCSP request data
+   * @param _commandPayload
    * @returns Promise resolving to GetCertificateStatusResponse with status and optional OCSP result
    */
   private handleRequestGetCertificateStatus (

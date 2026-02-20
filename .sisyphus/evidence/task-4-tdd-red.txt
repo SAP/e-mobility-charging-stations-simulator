@@ -1,0 +1,515 @@
+
+> e-mobility-charging-stations-simulator@2.3.1 test /Users/I339261/SAPDevelop/e-mobility-charging-stations-simulator-git-worktrees/feat-certs-management
+> c8 node --import tsx --test tests/**/*.test.ts tests/charging-station/ocpp/2.0/OCPP20IncomingRequestService-InstallCertificate.test.ts
+
+2/19/2026, 8:32:52 PM Simulator configuration | Configuration file './src/assets/config.json' not found, using default configuration
+▶ ConfigurationKeyUtils test suite
+  ▶ getConfigurationKey()
+    ✔ returns undefined when configurationKey array is missing (1.093333ms)
+    ✔ finds existing key (case-sensitive) (0.220958ms)
+    ✔ respects case sensitivity (no match) (0.077333ms)
+    ✔ supports caseInsensitive lookup (0.082667ms)
+  ✔ getConfigurationKey() (2.006375ms)
+  ▶ addConfigurationKey()
+    ✔ no-op when configurationKey array missing (0.141792ms)
+    ✔ adds new key with default options (0.109333ms)
+    ✔ adds new key with custom options (0.087292ms)
+    ✔ logs error and does not overwrite value when key exists and overwrite=false (1.504167ms)
+    ✔ logs error and leaves key untouched when identical options & value attempted (overwrite=false) (0.188416ms)
+    ✔ overwrites existing key value and options when overwrite=true (0.080375ms)
+    ✔ caseInsensitive overwrite updates existing differently cased key (0.065667ms)
+    ✔ case-insensitive false creates separate key with different case (0.066292ms)
+    ✔ calls saveOcppConfiguration when params.save=true (new key) (0.070875ms)
+    ✔ calls saveOcppConfiguration when overwriting existing key and save=true (0.089208ms)
+  ✔ addConfigurationKey() (2.62275ms)
+  ▶ setConfigurationKeyValue()
+    ✔ returns undefined and logs error for non-existing key (0.245583ms)
+    ✔ returns undefined without logging when configurationKey array missing (0.064ms)
+    ✔ updates existing key value and saves (0.077542ms)
+    ✔ caseInsensitive value update works (0.048291ms)
+  ✔ setConfigurationKeyValue() (0.508958ms)
+  ▶ deleteConfigurationKey()
+    ✔ returns undefined when configurationKey array missing (0.092167ms)
+    ✔ returns undefined when key does not exist (0.053459ms)
+    ✔ deletes existing key and saves by default (0.115334ms)
+    ✔ does not save when params.save=false (0.065583ms)
+    ✔ caseInsensitive deletion removes key with different case (0.051708ms)
+  ✔ deleteConfigurationKey() (0.453083ms)
+  ▶ Combined scenarios
+    ✔ add then set then delete lifecycle (0.066417ms)
+  ✔ Combined scenarios (0.095459ms)
+✔ ConfigurationKeyUtils test suite (6.0615ms)
+2/19/2026, 8:32:52 PM Simulator configuration | Configuration file './src/assets/config.json' not found, using default configuration
+▶ Helpers test suite
+  ✔ Verify getChargingStationId() (0.905916ms)
+  ✔ Verify getHashId() (0.153459ms)
+  ✔ Verify validateStationInfo() - Missing stationInfo (0.682583ms)
+  ✔ Verify validateStationInfo() - Empty stationInfo (0.123542ms)
+  ✔ Verify validateStationInfo() - Missing chargingStationId (0.087792ms)
+  ✔ Verify validateStationInfo() - Empty chargingStationId (0.101542ms)
+  ✔ Verify validateStationInfo() - Missing hashId (0.121208ms)
+  ✔ Verify validateStationInfo() - Empty hashId (0.079875ms)
+  ✔ Verify validateStationInfo() - Missing templateIndex (0.133709ms)
+  ✔ Verify validateStationInfo() - Invalid templateIndex (zero) (0.08725ms)
+  ✔ Verify validateStationInfo() - Missing templateName (0.086208ms)
+  ✔ Verify validateStationInfo() - Empty templateName (0.09075ms)
+  ✔ Verify validateStationInfo() - Missing maximumPower (0.079834ms)
+  ✔ Verify validateStationInfo() - Invalid maximumPower (zero) (0.080167ms)
+  ✔ Verify validateStationInfo() - Missing maximumAmperage (0.078416ms)
+  ✔ Verify validateStationInfo() - Invalid maximumAmperage (zero) (0.107167ms)
+  ✔ Verify validateStationInfo() - Valid configuration passes (0.106375ms)
+  ✔ Verify validateStationInfo() - OCPP 2.0 requires EVSE (0.110917ms)
+  ✔ Verify validateStationInfo() - OCPP 2.0.1 requires EVSE (0.099167ms)
+  ✔ Verify checkChargingStationState() - Not started or starting (1.346583ms)
+  ✔ Verify checkChargingStationState() - Starting returns true (0.087209ms)
+  ✔ Verify checkChargingStationState() - Started returns true (0.075292ms)
+  ✔ Verify getPhaseRotationValue() (0.129167ms)
+  ✔ Verify getMaxNumberOfEvses() (0.057917ms)
+  ✔ Verify checkTemplate() (0.381083ms)
+  ✔ Verify checkConfiguration() (0.247791ms)
+  ✔ Verify checkStationInfoConnectorStatus() (0.13425ms)
+  ✔ Verify getBootConnectorStatus() - default to Available when no bootStatus (0.305584ms)
+  ✔ Verify getBootConnectorStatus() - use bootStatus from template (0.07275ms)
+  ✔ Verify getBootConnectorStatus() - charging station unavailable overrides bootStatus (0.071209ms)
+  ✔ Verify getBootConnectorStatus() - connector unavailable overrides bootStatus (0.064291ms)
+  ✔ Verify getBootConnectorStatus() - transaction in progress restores previous status (0.064875ms)
+  ✔ Verify getBootConnectorStatus() - no transaction uses bootStatus over previous status (0.069875ms)
+✔ Helpers test suite (7.503333ms)
+2/19/2026, 8:32:52 PM Simulator configuration | Configuration file './src/assets/config.json' not found, using default configuration
+▶ I03 - InstallCertificate
+  ▶ Valid Certificate Installation
+    ✖ Should accept valid V2GRootCertificate (0.549458ms)
+    ✖ Should accept valid MORootCertificate (0.123125ms)
+    ✖ Should accept valid CSMSRootCertificate (0.10075ms)
+    ✖ Should accept valid ManufacturerRootCertificate (0.078833ms)
+  ✖ Valid Certificate Installation (1.363042ms)
+  ▶ Invalid Certificate Handling
+    ✖ Should reject certificate with invalid PEM format (0.113416ms)
+    ✖ Should reject expired certificate when validation is enabled (0.092625ms)
+  ✖ Invalid Certificate Handling (0.279833ms)
+  ▶ Storage Failure Handling
+    ✖ Should return Failed status when storage is full (0.104959ms)
+  ✖ Storage Failure Handling (0.14725ms)
+  ▶ Response Structure Validation
+    ✖ Should return response matching InstallCertificateResponse schema (0.148917ms)
+    ✖ Should include statusInfo with reasonCode for rejection (0.10275ms)
+  ✖ Response Structure Validation (0.30375ms)
+✖ I03 - InstallCertificate (2.453875ms)
+▶ BaseError test suite
+  ✔ Verify that BaseError can be instantiated (1.518416ms)
+  ✔ Verify that BaseError can be instantiated with a message (0.089917ms)
+✔ BaseError test suite (2.212958ms)
+2/19/2026, 8:32:52 PM Simulator configuration | Configuration file './src/assets/config.json' not found, using default configuration
+▶ OCPPError test suite
+  ✔ Verify that OCPPError can be instantiated (1.441125ms)
+✔ OCPPError test suite (2.076708ms)
+▶ ConfigurationData test suite
+  ✔ Verify ConfigurationSection enumeration (0.657709ms)
+  ✔ Verify SupervisionUrlDistribution enumeration (0.085208ms)
+  ✔ Verify ApplicationProtocolVersion enumeration (0.056583ms)
+✔ ConfigurationData test suite (1.435333ms)
+▶ AsyncLock test suite
+  ✔ Verify runExclusive() on sync fn (1.318791ms)
+  ✔ Verify runExclusive() on async fn (0.232166ms)
+✔ AsyncLock test suite (2.445667ms)
+log prefix | authorization file path/to/module.js not found:  Error
+    at TestContext.<anonymous> (/Users/I339261/SAPDevelop/e-mobility-charging-stations-simulator-git-worktrees/feat-certs-management/tests/utils/ConfigurationUtils.test.ts:43:19)
+    at Test.runInAsyncScope (node:async_hooks:214:14)
+    at Test.run (node:internal/test_runner/test:1103:25)
+    at Suite.processPendingSubtests (node:internal/test_runner/test:785:18)
+    at Test.postRun (node:internal/test_runner/test:1232:19)
+    at Test.run (node:internal/test_runner/test:1160:12)
+    at async Suite.processPendingSubtests (node:internal/test_runner/test:785:7) {
+  code: 'ENOENT'
+}
+▶ ConfigurationUtils test suite
+  ✔ Verify logPrefix() (17.753375ms)
+  ✔ Verify buildPerformanceUriFilePath() (0.294083ms)
+  ✔ Verify getDefaultPerformanceStorageUri() (0.32975ms)
+  ✔ Verify handleFileException() (1.745875ms)
+  ✔ Verify checkWorkerElementsPerWorker() (0.191167ms)
+✔ ConfigurationUtils test suite (21.279041ms)
+▶ ElectricUtils test suite
+  ✔ Verify DCElectricUtils.power() (0.650209ms)
+  ✔ Verify DCElectricUtils.amperage() (0.083333ms)
+  ✔ Verify ACElectricUtils.powerTotal() (0.075417ms)
+  ✔ Verify ACElectricUtils.powerPerPhase() (0.065792ms)
+  ✔ Verify ACElectricUtils.amperageTotal() (0.068584ms)
+  ✔ Verify ACElectricUtils.amperageTotalFromPower() (0.074458ms)
+  ✔ Verify ACElectricUtils.amperagePerPhaseFromPower() (0.065084ms)
+✔ ElectricUtils test suite (1.738792ms)
+2/19/2026, 8:32:52 PM Simulator configuration | Configuration file './src/assets/config.json' not found, using default configuration
+log prefix | authorization file path/to/module.js not found:  Error
+    at TestContext.<anonymous> (/Users/I339261/SAPDevelop/e-mobility-charging-stations-simulator-git-worktrees/feat-certs-management/tests/utils/ErrorUtils.test.ts:27:19)
+    at Test.runInAsyncScope (node:async_hooks:214:14)
+    at Test.run (node:internal/test_runner/test:1103:25)
+    at Test.start (node:internal/test_runner/test:1000:17)
+    at node:internal/test_runner/test:1513:71
+    at node:internal/per_context/primordials:466:82
+    at new Promise (<anonymous>)
+    at new SafePromise (node:internal/per_context/primordials:435:3)
+    at node:internal/per_context/primordials:466:9
+    at Array.map (<anonymous>) {
+  code: 'ENOENT'
+}
+log prefix | authorization file path/to/module.js not found:  Error
+    at TestContext.<anonymous> (/Users/I339261/SAPDevelop/e-mobility-charging-stations-simulator-git-worktrees/feat-certs-management/tests/utils/ErrorUtils.test.ts:27:19)
+    at Test.runInAsyncScope (node:async_hooks:214:14)
+    at Test.run (node:internal/test_runner/test:1103:25)
+    at Test.start (node:internal/test_runner/test:1000:17)
+    at node:internal/test_runner/test:1513:71
+    at node:internal/per_context/primordials:466:82
+    at new Promise (<anonymous>)
+    at new SafePromise (node:internal/per_context/primordials:435:3)
+    at node:internal/per_context/primordials:466:9
+    at Array.map (<anonymous>) {
+  code: 'ENOENT'
+}
+▶ ErrorUtils test suite
+  ✔ Verify handleFileException() (3.4925ms)
+  ✔ Verify handleSendMessageError() (0.442792ms)
+  ✔ Verify handleIncomingRequestError() (0.7975ms)
+✔ ErrorUtils test suite (5.416292ms)
+▶ StatisticUtils test suite
+  ✔ Verify average() (0.713542ms)
+  ✔ Verify median() (0.111917ms)
+  ✔ Verify min() (0.08425ms)
+  ✔ Verify max() (0.078958ms)
+  ✔ Verify percentile() (0.141541ms)
+  ✔ Verify std() (0.077875ms)
+✔ StatisticUtils test suite (1.868375ms)
+▶ Utils test suite
+  ✔ Verify generateUUID()/validateUUID() (1.524708ms)
+  ✔ Verify sleep() (10.597958ms)
+  ✔ Verify formatDurationMilliSeconds() (0.420792ms)
+  ✔ Verify formatDurationSeconds() (0.092333ms)
+  ✔ Verify isValidDate() (0.085625ms)
+  ✔ Verify convertToDate() (0.406958ms)
+  ✔ Verify convertToInt() (0.2015ms)
+  ✔ Verify convertToFloat() (0.193792ms)
+  ✔ Verify convertToBoolean() (0.087417ms)
+  ✔ Verify secureRandom() (0.572083ms)
+  ✔ Verify roundTo() (0.088209ms)
+  ✔ Verify getRandomFloat() (0.166333ms)
+  ✔ Verify extractTimeSeriesValues() (0.195542ms)
+  ✔ Verify isAsyncFunction() (0.258042ms)
+  ✔ Verify clone() (1.83325ms)
+  ✔ Verify once() (0.090292ms)
+  ✔ Verify has() (0.079584ms)
+  ✔ Verify isEmpty() (0.118125ms)
+  ✔ Verify isNotEmptyString() (0.079083ms)
+  ✔ Verify isNotEmptyArray() (0.0685ms)
+  ✔ Verify insertAt() (0.040791ms)
+  ✔ Verify convertToIntOrNaN() (0.069417ms)
+  ✔ Verify isArraySorted() (0.0725ms)
+  ✔ Verify clampToSafeTimerValue() (0.05625ms)
+✔ Utils test suite (18.397ms)
+▶ WorkerUtils test suite
+  ✔ Verify checkWorkerProcessType() (0.784875ms)
+Worker exited successfully
+Worker terminated successfully
+Worker exited with exit code: 2
+Worker exited with exit code: 5
+Worker errored:  Error: Test error message
+    at TestContext.<anonymous> (/Users/I339261/SAPDevelop/e-mobility-charging-stations-simulator-git-worktrees/feat-certs-management/tests/worker/WorkerUtils.test.ts:87:23)
+    at Test.runInAsyncScope (node:async_hooks:214:14)
+    at Test.run (node:internal/test_runner/test:1103:25)
+    at Suite.processPendingSubtests (node:internal/test_runner/test:785:18)
+    at Test.postRun (node:internal/test_runner/test:1232:19)
+    at Test.run (node:internal/test_runner/test:1160:12)
+    at async Suite.processPendingSubtests (node:internal/test_runner/test:785:7)
+Worker errored:  SyntaxError: Syntax error
+    at TestContext.<anonymous> (/Users/I339261/SAPDevelop/e-mobility-charging-stations-simulator-git-worktrees/feat-certs-management/tests/worker/WorkerUtils.test.ts:94:25)
+    at Test.runInAsyncScope (node:async_hooks:214:14)
+    at Test.run (node:internal/test_runner/test:1103:25)
+    at Suite.processPendingSubtests (node:internal/test_runner/test:785:18)
+    at Test.postRun (node:internal/test_runner/test:1232:19)
+    at Test.run (node:internal/test_runner/test:1160:12)
+    at async Suite.processPendingSubtests (node:internal/test_runner/test:785:7)
+  ✔ Verify sleep() (11.402416ms)
+  ✔ Verify defaultExitHandler() (0.857708ms)
+  ✔ Verify defaultErrorHandler() (1.442625ms)
+  ✔ Verify randomizeDelay() (1.147084ms)
+✔ WorkerUtils test suite (16.406458ms)
+ℹ tests 124
+ℹ suites 22
+ℹ pass 115
+ℹ fail 9
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3675.711125
+
+✖ failing tests:
+
+test at tests/charging-station/ocpp/2.0/OCPP20IncomingRequestService-InstallCertificate.test.ts:20:1061
+✖ Should accept valid V2GRootCertificate (0.549458ms)
+  TypeError: incomingRequestService.handleRequestInstallCertificate is not a function
+      at TestContext.<anonymous> (/Users/I339261/SAPDevelop/e-mobility-charging-stations-simulator-git-worktrees/feat-certs-management/tests/charging-station/ocpp/2.0/OCPP20IncomingRequestService-InstallCertificate.test.ts:94:9)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1103:25)
+      at Test.start (node:internal/test_runner/test:1000:17)
+      at node:internal/test_runner/test:1513:71
+      at node:internal/per_context/primordials:466:82
+      at new Promise (<anonymous>)
+      at new SafePromise (node:internal/per_context/primordials:435:3)
+      at node:internal/per_context/primordials:466:9
+      at Array.map (<anonymous>)
+
+test at tests/charging-station/ocpp/2.0/OCPP20IncomingRequestService-InstallCertificate.test.ts:20:1713
+✖ Should accept valid MORootCertificate (0.123125ms)
+  TypeError: incomingRequestService.handleRequestInstallCertificate is not a function
+      at TestContext.<anonymous> (/Users/I339261/SAPDevelop/e-mobility-charging-stations-simulator-git-worktrees/feat-certs-management/tests/charging-station/ocpp/2.0/OCPP20IncomingRequestService-InstallCertificate.test.ts:116:9)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1103:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:785:18)
+      at Test.postRun (node:internal/test_runner/test:1232:19)
+      at Test.run (node:internal/test_runner/test:1160:12)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1515:7)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1515:7)
+
+test at tests/charging-station/ocpp/2.0/OCPP20IncomingRequestService-InstallCertificate.test.ts:20:2240
+✖ Should accept valid CSMSRootCertificate (0.10075ms)
+  TypeError: incomingRequestService.handleRequestInstallCertificate is not a function
+      at TestContext.<anonymous> (/Users/I339261/SAPDevelop/e-mobility-charging-stations-simulator-git-worktrees/feat-certs-management/tests/charging-station/ocpp/2.0/OCPP20IncomingRequestService-InstallCertificate.test.ts:135:9)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1103:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:785:18)
+      at Test.postRun (node:internal/test_runner/test:1232:19)
+      at Test.run (node:internal/test_runner/test:1160:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:785:7)
+
+test at tests/charging-station/ocpp/2.0/OCPP20IncomingRequestService-InstallCertificate.test.ts:20:2771
+✖ Should accept valid ManufacturerRootCertificate (0.078833ms)
+  TypeError: incomingRequestService.handleRequestInstallCertificate is not a function
+      at TestContext.<anonymous> (/Users/I339261/SAPDevelop/e-mobility-charging-stations-simulator-git-worktrees/feat-certs-management/tests/charging-station/ocpp/2.0/OCPP20IncomingRequestService-InstallCertificate.test.ts:154:9)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1103:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:785:18)
+      at Test.postRun (node:internal/test_runner/test:1232:19)
+      at Test.run (node:internal/test_runner/test:1160:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:785:7)
+
+test at tests/charging-station/ocpp/2.0/OCPP20IncomingRequestService-InstallCertificate.test.ts:20:3376
+✖ Should reject certificate with invalid PEM format (0.113416ms)
+  TypeError: incomingRequestService.handleRequestInstallCertificate is not a function
+      at TestContext.<anonymous> (/Users/I339261/SAPDevelop/e-mobility-charging-stations-simulator-git-worktrees/feat-certs-management/tests/charging-station/ocpp/2.0/OCPP20IncomingRequestService-InstallCertificate.test.ts:171:9)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1103:25)
+      at Test.start (node:internal/test_runner/test:1000:17)
+      at node:internal/test_runner/test:1513:71
+      at node:internal/per_context/primordials:466:82
+      at new Promise (<anonymous>)
+      at new SafePromise (node:internal/per_context/primordials:435:3)
+      at node:internal/per_context/primordials:466:9
+      at Array.map (<anonymous>)
+
+test at tests/charging-station/ocpp/2.0/OCPP20IncomingRequestService-InstallCertificate.test.ts:20:3948
+✖ Should reject expired certificate when validation is enabled (0.092625ms)
+  TypeError: incomingRequestService.handleRequestInstallCertificate is not a function
+      at TestContext.<anonymous> (/Users/I339261/SAPDevelop/e-mobility-charging-stations-simulator-git-worktrees/feat-certs-management/tests/charging-station/ocpp/2.0/OCPP20IncomingRequestService-InstallCertificate.test.ts:193:9)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1103:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:785:18)
+      at Test.postRun (node:internal/test_runner/test:1232:19)
+      at Test.run (node:internal/test_runner/test:1160:12)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1515:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:785:7)
+
+test at tests/charging-station/ocpp/2.0/OCPP20IncomingRequestService-InstallCertificate.test.ts:20:4737
+✖ Should return Failed status when storage is full (0.104959ms)
+  TypeError: incomingRequestService.handleRequestInstallCertificate is not a function
+      at TestContext.<anonymous> (/Users/I339261/SAPDevelop/e-mobility-charging-stations-simulator-git-worktrees/feat-certs-management/tests/charging-station/ocpp/2.0/OCPP20IncomingRequestService-InstallCertificate.test.ts:217:9)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1103:25)
+      at Test.start (node:internal/test_runner/test:1000:17)
+      at node:internal/test_runner/test:1513:71
+      at node:internal/per_context/primordials:466:82
+      at new Promise (<anonymous>)
+      at new SafePromise (node:internal/per_context/primordials:435:3)
+      at node:internal/per_context/primordials:466:9
+      at Array.map (<anonymous>)
+
+test at tests/charging-station/ocpp/2.0/OCPP20IncomingRequestService-InstallCertificate.test.ts:20:5404
+✖ Should return response matching InstallCertificateResponse schema (0.148917ms)
+  TypeError: incomingRequestService.handleRequestInstallCertificate is not a function
+      at TestContext.<anonymous> (/Users/I339261/SAPDevelop/e-mobility-charging-stations-simulator-git-worktrees/feat-certs-management/tests/charging-station/ocpp/2.0/OCPP20IncomingRequestService-InstallCertificate.test.ts:239:9)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1103:25)
+      at Test.start (node:internal/test_runner/test:1000:17)
+      at node:internal/test_runner/test:1513:71
+      at node:internal/per_context/primordials:466:82
+      at new Promise (<anonymous>)
+      at new SafePromise (node:internal/per_context/primordials:435:3)
+      at node:internal/per_context/primordials:466:9
+      at Array.map (<anonymous>)
+
+test at tests/charging-station/ocpp/2.0/OCPP20IncomingRequestService-InstallCertificate.test.ts:20:6478
+✖ Should include statusInfo with reasonCode for rejection (0.10275ms)
+  TypeError: incomingRequestService.handleRequestInstallCertificate is not a function
+      at TestContext.<anonymous> (/Users/I339261/SAPDevelop/e-mobility-charging-stations-simulator-git-worktrees/feat-certs-management/tests/charging-station/ocpp/2.0/OCPP20IncomingRequestService-InstallCertificate.test.ts:273:9)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1103:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:785:18)
+      at Test.postRun (node:internal/test_runner/test:1232:19)
+      at Test.run (node:internal/test_runner/test:1160:12)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1515:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:785:7)
+---------------------------------------|---------|----------|---------|---------|-------------------
+File                                   | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+---------------------------------------|---------|----------|---------|---------|-------------------
+All files                              |   45.53 |     85.4 |   28.93 |   45.53 |                   
+ src                                   |       0 |        0 |       0 |       0 |                   
+  start.ts                             |       0 |        0 |       0 |       0 | 1-11              
+ src/charging-station                  |   18.24 |    90.47 |   21.42 |   18.24 |                   
+  AutomaticTransactionGenerator.ts     |      11 |    66.66 |   18.18 |      11 | ...72-584,587-599 
+  Bootstrap.ts                         |   11.16 |      100 |   33.33 |   11.16 | ...2,75-79,82-650 
+  ChargingStation.ts                   |    9.07 |    66.66 |   18.18 |    9.07 | ...2604,2607-2611 
+  ChargingStationWorker.ts             |       0 |        0 |       0 |       0 | 1-91              
+  ConfigurationKeyUtils.ts             |   98.68 |    97.14 |     100 |   98.68 | 40-41             
+  Helpers.ts                           |   28.27 |    90.27 |     100 |   28.27 | ...1354,1357-1365 
+  IdTagsCache.ts                       |   37.93 |      100 |   27.77 |   37.93 | ...69-170,173-202 
+  SharedLRUCache.ts                    |   43.54 |       75 |    9.52 |   43.54 | ...07-119,122-123 
+  index.ts                             |     100 |      100 |     100 |     100 |                   
+ ...charging-station/broadcast-channel |   21.55 |    85.71 |   23.07 |   21.55 |                   
+  ...gStationWorkerBroadcastChannel.ts |   16.77 |    66.66 |      20 |   16.77 | ...98-402,405-464 
+  UIServiceWorkerBroadcastChannel.ts   |   26.05 |      100 |   28.57 |   26.05 | ...4,77-81,84-118 
+  WorkerBroadcastChannel.ts            |   49.18 |      100 |   22.22 |   49.18 | ...29,32-33,36-56 
+ src/charging-station/ocpp             |   80.05 |    79.16 |   35.89 |   80.05 |                   
+  OCPPConstants.ts                     |   98.75 |      100 |   66.66 |   98.75 | 159-160           
+  OCPPIncomingRequestService.ts        |    69.3 |      100 |   57.14 |    69.3 | ...0,63-68,79-100 
+  OCPPRequestService.ts                |   17.43 |    66.66 |   15.38 |   17.43 | ...44-480,491-521 
+  OCPPResponseService.ts               |    55.2 |    66.66 |   33.33 |    55.2 | ...50,53-55,74-95 
+  OCPPServiceUtils.ts                  |   96.53 |       75 |      40 |   96.53 | ...1901-1918,1989 
+  index.ts                             |     100 |      100 |     100 |     100 |                   
+ src/charging-station/ocpp/1.6         |   22.81 |    76.92 |   18.86 |   22.81 |                   
+  OCPP16Constants.ts                   |     100 |      100 |     100 |     100 |                   
+  OCPP16IncomingRequestService.ts      |   13.53 |    66.66 |    7.69 |   13.53 | ...1648,1658-1669 
+  OCPP16RequestService.ts              |   39.84 |    66.66 |   33.33 |   39.84 | ...88-143,166-255 
+  OCPP16ResponseService.ts             |   16.25 |    66.66 |   18.18 |   16.25 | ...98-605,615-639 
+  OCPP16ServiceUtils.ts                |   14.61 |      100 |      25 |   14.61 | ...54-793,796-868 
+ src/charging-station/ocpp/2.0         |   45.67 |    85.71 |   20.73 |   45.67 |                   
+  OCPP20CertificateManager.ts          |       0 |        0 |       0 |       0 | 1-360             
+  OCPP20Constants.ts                   |     100 |      100 |     100 |     100 |                   
+  OCPP20IncomingRequestService.ts      |   14.54 |      100 |   14.28 |   14.54 | ...2130,2140-2151 
+  OCPP20RequestService.ts              |    48.6 |    66.66 |   33.33 |    48.6 | ...92-138,142-178 
+  OCPP20ResponseService.ts             |   32.08 |    66.66 |      20 |   32.08 | ...52-258,268-292 
+  OCPP20ServiceUtils.ts                |   35.63 |      100 |   33.33 |   35.63 | ...75-285,288-347 
+  OCPP20VariableManager.ts             |    9.41 |    66.66 |    12.5 |    9.41 | ...57-538,541-934 
+  OCPP20VariableRegistry.ts            |   89.43 |      100 |   23.07 |   89.43 | ...2657,2665-2678 
+ src/charging-station/ui-server        |   26.19 |      100 |   19.23 |   26.19 |                   
+  AbstractUIServer.ts                  |   37.34 |      100 |    7.14 |   37.34 | ...29-233,236-240 
+  UIHttpServer.ts                      |   25.09 |      100 |   22.22 |   25.09 | ...22-263,266-274 
+  UIServerFactory.ts                   |   26.59 |      100 |      50 |   26.59 | 21-22,25-84,87-93 
+  UIServerSecurity.ts                  |   33.33 |      100 |     100 |   33.33 | ...56,59-86,90-93 
+  UIServerUtils.ts                     |   19.51 |      100 |     100 |   19.51 | ...60,64-78,81-82 
+  UIWebSocketServer.ts                 |   17.72 |      100 |   22.22 |   17.72 | ...12-217,220-298 
+ ...ging-station/ui-server/ui-services |   30.94 |      100 |   27.27 |   30.94 |                   
+  AbstractUIService.ts                 |   28.93 |      100 |   13.33 |   28.93 | ...48-358,361-393 
+  UIService001.ts                      |      50 |      100 |   66.66 |      50 | 8-15              
+  UIServiceFactory.ts                  |   52.17 |      100 |      50 |   52.17 | 10-11,14-22       
+ src/exception                         |     100 |      100 |     100 |     100 |                   
+  BaseError.ts                         |     100 |      100 |     100 |     100 |                   
+  OCPPError.ts                         |     100 |      100 |     100 |     100 |                   
+  index.ts                             |     100 |      100 |     100 |     100 |                   
+ src/performance                       |   17.88 |      100 |   33.33 |   17.88 |                   
+  PerformanceStatistics.ts             |   17.15 |      100 |   33.33 |   17.15 | ...06-330,333-337 
+  index.ts                             |     100 |      100 |     100 |     100 |                   
+ src/performance/storage               |   34.06 |      100 |   26.66 |   34.06 |                   
+  JsonFileStorage.ts                   |   28.04 |      100 |      25 |   28.04 | ...52,55-73,76-81 
+  MikroOrmStorage.ts                   |   27.95 |      100 |      20 |   27.95 | ...76,79-83,86-92 
+  MongoDBStorage.ts                    |   27.16 |      100 |      25 |   27.16 | ...42,45-61,64-80 
+  None.ts                              |   65.21 |      100 |   33.33 |   65.21 | ...14,17-18,21-22 
+  Storage.ts                           |   42.52 |      100 |   22.22 |   42.52 | ...52,55-82,85-86 
+  StorageFactory.ts                    |   37.77 |      100 |      50 |   37.77 | 15-16,19-44       
+ src/types                             |   82.23 |    63.88 |       0 |   82.23 |                   
+  AutomaticTransactionGenerator.ts     |     100 |      100 |     100 |     100 |                   
+  ChargingStationConfiguration.ts      |       0 |        0 |       0 |       0 | 1-26              
+  ChargingStationEvents.ts             |     100 |      100 |     100 |     100 |                   
+  ChargingStationInfo.ts               |       0 |        0 |       0 |       0 | 1-33              
+  ChargingStationOcppConfiguration.ts  |       0 |        0 |       0 |       0 | 1-10              
+  ChargingStationTemplate.ts           |     100 |      100 |     100 |     100 |                   
+  ChargingStationWorker.ts             |     100 |      100 |     100 |     100 |                   
+  ConfigurationData.ts                 |     100 |      100 |     100 |     100 |                   
+  ConnectorStatus.ts                   |       0 |        0 |       0 |       0 | 1-32              
+  EmptyObject.ts                       |       0 |        0 |       0 |       0 | 1                 
+  Error.ts                             |       0 |        0 |       0 |       0 | 1-7               
+  Evse.ts                              |       0 |        0 |       0 |       0 | 1-11              
+  FileType.ts                          |     100 |      100 |     100 |     100 |                   
+  JsonType.ts                          |       0 |        0 |       0 |       0 | 1-7               
+  MapStringifyFormat.ts                |     100 |      100 |     100 |     100 |                   
+  ...dPerPhaseSampledValueTemplates.ts |       0 |        0 |       0 |       0 | 1-12              
+  MeasurandValues.ts                   |       0 |        0 |       0 |       0 | 1-6               
+  SimulatorState.ts                    |       0 |        0 |       0 |       0 | 1-9               
+  Statistics.ts                        |       0 |        0 |       0 |       0 | 1-42              
+  Storage.ts                           |     100 |      100 |     100 |     100 |                   
+  UIProtocol.ts                        |     100 |      100 |     100 |     100 |                   
+  UUID.ts                              |       0 |        0 |       0 |       0 | 1-7               
+  WebSocket.ts                         |     100 |      100 |     100 |     100 |                   
+  WorkerBroadcastChannel.ts            |     100 |      100 |     100 |     100 |                   
+  index.ts                             |     100 |      100 |     100 |     100 |                   
+ src/types/ocpp                        |   99.41 |     87.5 |       0 |   99.41 |                   
+  ChargePointErrorCode.ts              |     100 |      100 |     100 |     100 |                   
+  ChargingProfile.ts                   |     100 |      100 |     100 |     100 |                   
+  Common.ts                            |     100 |      100 |     100 |     100 |                   
+  Configuration.ts                     |     100 |      100 |     100 |     100 |                   
+  ConnectorEnumType.ts                 |     100 |      100 |     100 |     100 |                   
+  ConnectorStatusEnum.ts               |     100 |      100 |     100 |     100 |                   
+  ErrorType.ts                         |     100 |      100 |     100 |     100 |                   
+  MessageType.ts                       |     100 |      100 |     100 |     100 |                   
+  MeterValues.ts                       |     100 |      100 |     100 |     100 |                   
+  OCPPProtocol.ts                      |       0 |        0 |       0 |       0 | 1-3               
+  OCPPVersion.ts                       |     100 |      100 |     100 |     100 |                   
+  Requests.ts                          |     100 |      100 |     100 |     100 |                   
+  Reservation.ts                       |     100 |      100 |     100 |     100 |                   
+  Responses.ts                         |     100 |      100 |     100 |     100 |                   
+  Transaction.ts                       |     100 |      100 |     100 |     100 |                   
+ src/types/ocpp/1.6                    |     100 |      100 |     100 |     100 |                   
+  ChargePointErrorCode.ts              |     100 |      100 |     100 |     100 |                   
+  ChargePointStatus.ts                 |     100 |      100 |     100 |     100 |                   
+  ChargingProfile.ts                   |     100 |      100 |     100 |     100 |                   
+  Configuration.ts                     |     100 |      100 |     100 |     100 |                   
+  DiagnosticsStatus.ts                 |     100 |      100 |     100 |     100 |                   
+  MeterValues.ts                       |     100 |      100 |     100 |     100 |                   
+  Requests.ts                          |     100 |      100 |     100 |     100 |                   
+  Responses.ts                         |     100 |      100 |     100 |     100 |                   
+  Transaction.ts                       |     100 |      100 |     100 |     100 |                   
+ src/types/ocpp/2.0                    |    89.2 |    98.03 |       0 |    89.2 |                   
+  Common.ts                            |     100 |      100 |     100 |     100 |                   
+  MeterValues.ts                       |     100 |      100 |     100 |     100 |                   
+  Requests.ts                          |     100 |      100 |     100 |     100 |                   
+  Responses.ts                         |       0 |        0 |       0 |       0 | 1-122             
+  Transaction.ts                       |     100 |      100 |     100 |     100 |                   
+  Variables.ts                         |     100 |      100 |     100 |     100 |                   
+ src/types/orm/entities                |   64.28 |    77.77 |   66.66 |   64.28 |                   
+  PerformanceRecord.ts                 |   64.28 |    77.77 |   66.66 |   64.28 | 27-41             
+ src/utils                             |   64.21 |    79.71 |   73.46 |   64.21 |                   
+  AsyncLock.ts                         |     100 |      100 |     100 |     100 |                   
+  ChargingStationConfigurationUtils.ts |   32.75 |      100 |     100 |   32.75 | 11-20,23-26,34-58 
+  Configuration.ts                     |   36.45 |    26.47 |   47.36 |   36.45 | ...78-623,630-660 
+  ConfigurationUtils.ts                |   77.65 |    83.33 |     100 |   77.65 | 48-55,60-72       
+  Constants.ts                         |   97.45 |      100 |   66.66 |   97.45 | 96,116-117        
+  ElectricUtils.ts                     |    92.4 |    58.82 |   83.33 |    92.4 | 62-63,67-68,71-72 
+  ErrorUtils.ts                        |   76.35 |    72.22 |     100 |   76.35 | ...,67-79,116,140 
+  FileUtils.ts                         |   23.07 |      100 |     100 |   23.07 | 10-39             
+  Logger.ts                            |   72.28 |        0 |     100 |   72.28 | 40-56,76-81       
+  MessageChannelUtils.ts               |    34.9 |      100 |     100 |    34.9 | ...2,66-86,89-106 
+  StatisticUtils.ts                    |   89.87 |    86.48 |     100 |   89.87 | ...37,70-71,73-74 
+  Utils.ts                             |      82 |    95.34 |     100 |      82 | ...40-460,475-478 
+  index.ts                             |     100 |      100 |     100 |     100 |                   
+ src/worker                            |   52.75 |      100 |      25 |   52.75 |                   
+  WorkerAbstract.ts                    |   64.28 |      100 |      50 |   64.28 | 15,23-41          
+  WorkerConstants.ts                   |   97.29 |      100 |     100 |   97.29 | 8                 
+  WorkerDynamicPool.ts                 |   59.09 |      100 |   18.18 |   59.09 | ...55,59-60,64-65 
+  WorkerFactory.ts                     |   40.47 |      100 |      50 |   40.47 | 15-16,19-41       
+  WorkerFixedPool.ts                   |      60 |      100 |   18.18 |      60 | ...54,58-59,63-64 
+  WorkerSet.ts                         |   20.53 |      100 |   15.38 |   20.53 | ...86-290,293-296 
+  WorkerTypes.ts                       |     100 |      100 |     100 |     100 |                   
+  WorkerUtils.ts                       |     100 |      100 |     100 |     100 |                   
+  index.ts                             |     100 |      100 |     100 |     100 |                   
+---------------------------------------|---------|----------|---------|---------|-------------------
+ ELIFECYCLE  Test failed. See above for more details.

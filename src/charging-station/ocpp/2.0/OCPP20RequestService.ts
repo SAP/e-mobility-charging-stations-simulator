@@ -9,14 +9,20 @@ import type { OCPPResponseService } from '../OCPPResponseService.js'
 
 import { OCPPError } from '../../../exception/index.js'
 import {
+  type CertificateActionEnumType,
   type CertificateSigningUseEnumType,
   ErrorType,
   type JsonObject,
   type JsonType,
+  type OCPP20Get15118EVCertificateRequest,
+  type OCPP20Get15118EVCertificateResponse,
+  type OCPP20GetCertificateStatusRequest,
+  type OCPP20GetCertificateStatusResponse,
   OCPP20RequestCommand,
   type OCPP20SignCertificateRequest,
   type OCPP20SignCertificateResponse,
   OCPPVersion,
+  type OCSPRequestDataType,
   type RequestParams,
 } from '../../../types/index.js'
 import { generateUUID, logger } from '../../../utils/index.js'
@@ -70,7 +76,104 @@ export class OCPP20RequestService extends OCPPRequestService {
   }
 
   /**
-    * Handles OCPP 2.0.1 request processing with enhanced validation and comprehensive error handling
+   * Request an ISO 15118 EV certificate from the CSMS.
+   *
+   * Forwards an EXI-encoded certificate request from the EV to the CSMS.
+   * The EXI payload is passed through unmodified (base64 string) without
+   * any decoding or validation - the CSMS is responsible for processing it.
+   *
+   * This is used during ISO 15118 Plug & Charge flows when the EV requests
+   * certificate installation or update from the Mobility Operator (MO).
+   * @param chargingStation - The charging station forwarding the request
+   * @param iso15118SchemaVersion - Schema version identifier (e.g., 'urn:iso:15118:2:2013:MsgDef')
+   * @param action - The certificate action type (Install or Update)
+   * @param exiRequest - Base64-encoded EXI request from the EV (passed through unchanged)
+   * @returns Promise resolving to the CSMS response with EXI-encoded certificate data
+   */
+  public async requestGet15118EVCertificate (
+    chargingStation: ChargingStation,
+    iso15118SchemaVersion: string,
+    action: CertificateActionEnumType,
+    exiRequest: string
+  ): Promise<OCPP20Get15118EVCertificateResponse> {
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestGet15118EVCertificate: Requesting ISO 15118 EV certificate`
+    )
+
+    const requestPayload: OCPP20Get15118EVCertificateRequest = {
+      action,
+      exiRequest,
+      iso15118SchemaVersion,
+    }
+
+    const messageId = generateUUID()
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestGet15118EVCertificate: Sending Get15118EVCertificate request with message ID '${messageId}'`
+    )
+
+    const response = (await this.sendMessage(
+      chargingStation,
+      messageId,
+      requestPayload,
+      OCPP20RequestCommand.GET_15118_EV_CERTIFICATE
+    )) as OCPP20Get15118EVCertificateResponse
+
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestGet15118EVCertificate: Received response with status '${response.status}'`
+    )
+
+    return response
+  }
+
+  /**
+   * Request OCSP certificate status from the CSMS.
+   *
+   * Sends an OCSP (Online Certificate Status Protocol) request to the CSMS
+   * to check the revocation status of a certificate. The CSMS will return
+   * the OCSP response data which can be used to verify certificate validity.
+   *
+   * This is used to validate certificates during ISO 15118 communication
+   * before accepting them for charging authorization.
+   *
+   * Note: This is a stub implementation for simulator testing. No real OCSP
+   * network calls are made - the CSMS provides the response.
+   * @param chargingStation - The charging station requesting the status
+   * @param ocspRequestData - OCSP request data including certificate hash and responder URL
+   * @returns Promise resolving to the CSMS response with OCSP result
+   */
+  public async requestGetCertificateStatus (
+    chargingStation: ChargingStation,
+    ocspRequestData: OCSPRequestDataType
+  ): Promise<OCPP20GetCertificateStatusResponse> {
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestGetCertificateStatus: Requesting certificate status`
+    )
+
+    const requestPayload: OCPP20GetCertificateStatusRequest = {
+      ocspRequestData,
+    }
+
+    const messageId = generateUUID()
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestGetCertificateStatus: Sending GetCertificateStatus request with message ID '${messageId}'`
+    )
+
+    const response = (await this.sendMessage(
+      chargingStation,
+      messageId,
+      requestPayload,
+      OCPP20RequestCommand.GET_CERTIFICATE_STATUS
+    )) as OCPP20GetCertificateStatusResponse
+
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestGetCertificateStatus: Received response with status '${response.status}'`
+    )
+
+    return response
+  }
+
+  /**
+   * Handles OCPP 2.0.1 request processing with enhanced validation and comprehensive error handling
    *
    * This method serves as the main entry point for all outgoing OCPP 2.0.1 requests to the CSMS.
    * It performs advanced operations including:
@@ -153,7 +256,6 @@ export class OCPP20RequestService extends OCPPRequestService {
    * It is NOT a cryptographically valid PKCS#10 CSR and MUST NOT be used in production.
    * The generated CSR structure is simplified (JSON-based) for OCPP message testing only.
    * Real CSMS expecting valid PKCS#10 CSR will reject this format.
-   *
    * @param chargingStation - The charging station requesting the certificate
    * @param certificateType - Optional certificate type (ChargingStationCertificate or V2GCertificate)
    * @returns Promise resolving to the CSMS response with Accepted or Rejected status

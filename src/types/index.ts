@@ -143,6 +143,7 @@ export {
 } from './ocpp/1.6/Transaction.js'
 export {
   BootReasonEnumType,
+  CertificateActionEnumType,
   type CertificateHashDataChainType,
   type CertificateHashDataType,
   CertificateSigningUseEnumType,
@@ -156,6 +157,7 @@ export {
   HashAlgorithmEnumType,
   InstallCertificateStatusEnumType,
   InstallCertificateUseEnumType,
+  Iso15118EVCertificateStatusEnumType,
   OCPP20ComponentName,
   OCPP20UnitEnumType,
   type OCSPRequestDataType,
@@ -181,6 +183,7 @@ export {
   type OCPP20CertificateSignedRequest,
   type OCPP20ClearCacheRequest,
   type OCPP20DeleteCertificateRequest,
+  type OCPP20Get15118EVCertificateRequest,
   type OCPP20GetBaseReportRequest,
   type OCPP20GetCertificateStatusRequest,
   type OCPP20GetInstalledCertificateIdsRequest,
@@ -202,6 +205,7 @@ export type {
   OCPP20CertificateSignedResponse,
   OCPP20ClearCacheResponse,
   OCPP20DeleteCertificateResponse,
+  OCPP20Get15118EVCertificateResponse,
   OCPP20GetBaseReportResponse,
   OCPP20GetCertificateStatusResponse,
   OCPP20GetInstalledCertificateIdsResponse,

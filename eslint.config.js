@@ -73,6 +73,9 @@ export default defineConfig([
               'SECC',
               'Secc',
               'Overcurrent',
+              // Certificate management terms
+              'ocsp',
+              'OCSP',
             ],
           },
         },

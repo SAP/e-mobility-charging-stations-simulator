@@ -41,6 +41,8 @@ export const enum OCPP20IncomingRequestCommand {
 
 export const enum OCPP20RequestCommand {
   BOOT_NOTIFICATION = 'BootNotification',
+  GET_15118_EV_CERTIFICATE = 'Get15118EVCertificate',
+  GET_CERTIFICATE_STATUS = 'GetCertificateStatus',
   HEARTBEAT = 'Heartbeat',
   NOTIFY_REPORT = 'NotifyReport',
   SIGN_CERTIFICATE = 'SignCertificate',
