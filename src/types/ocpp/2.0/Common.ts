@@ -275,7 +275,7 @@ export enum ResetStatusEnumType {
 export interface CertificateHashDataChainType extends JsonObject {
   certificateHashData: CertificateHashDataType
   certificateType: GetCertificateIdUseEnumType
-  childCertificateHashData?: CertificateHashDataType
+  childCertificateHashData?: CertificateHashDataType[]
 }
 
 export interface CertificateHashDataType extends JsonObject {

@@ -919,11 +919,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   ): Promise<OCPP20CertificateSignedResponse> {
     const { certificateChain, certificateType } = commandPayload
 
-    // Access certificateManager (attached dynamically in tests)
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-    const certificateManager = (chargingStation as any).certificateManager
-
-    if (certificateManager == null) {
+    if (!hasCertificateManager(chargingStation)) {
       logger.error(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestCertificateSigned: Certificate manager not available`
       )
@@ -936,8 +932,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
 
     // Validate certificate chain format
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-    if (!certificateManager.validateCertificateFormat(certificateChain)) {
+    if (!chargingStation.certificateManager.validateCertificateFormat(certificateChain)) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestCertificateSigned: Invalid PEM format for certificate chain`
       )
@@ -951,20 +946,17 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     // Store certificate chain
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-      const result = certificateManager.storeCertificate(
+      const result = chargingStation.certificateManager.storeCertificate(
         chargingStation.stationInfo?.hashId ?? '',
         certificateType ?? CertificateSigningUseEnumType.ChargingStationCertificate,
         certificateChain
       )
 
       // Handle both Promise and synchronous returns, and both boolean and object results
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const storeResult = result instanceof Promise ? await result : result
 
       // Handle both boolean (test mock) and object (real implementation) results
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-      const success = typeof storeResult === 'boolean' ? storeResult : storeResult?.success
+      const success = typeof storeResult === 'boolean' ? storeResult : storeResult.success
 
       if (!success) {
         logger.warn(

@@ -531,8 +531,16 @@ make SUBMODULES_INIT=true
 
 #### I. ISO15118CertificateManagement
 
-- :x: InstallCertificate
-- :x: DeleteCertificate
+- :white_check_mark: CertificateSigned
+- :white_check_mark: DeleteCertificate
+- :white_check_mark: GetInstalledCertificateIds
+- :white_check_mark: InstallCertificate
+- :white_check_mark: SignCertificate
+
+> **Note**: Certificate management implementation limitations:
+>
+> - **Mock CSR generation**: The `SignCertificate` command generates a mock Certificate Signing Request (CSR) for simulation purposes. In production, this should be replaced with actual cryptographic CSR generation.
+> - **OCSP stub**: Online Certificate Status Protocol (OCSP) validation is stubbed and always returns `Good` status. Full OCSP integration requires external OCSP responder configuration.
 
 #### J. LocalAuthorizationListManagement
 

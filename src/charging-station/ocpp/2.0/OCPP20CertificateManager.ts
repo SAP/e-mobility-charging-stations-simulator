@@ -9,6 +9,7 @@ import type { ChargingStation } from '../../ChargingStation.js'
 import {
   type CertificateHashDataChainType,
   type CertificateHashDataType,
+  CertificateSigningUseEnumType,
   GetCertificateIdUseEnumType,
   HashAlgorithmEnumType,
   InstallCertificateUseEnumType,
@@ -50,7 +51,7 @@ export interface OCPP20CertificateManagerInterface {
   ): GetInstalledCertificatesResult | Promise<GetInstalledCertificatesResult>
   storeCertificate(
     stationHashId: string,
-    certType: InstallCertificateUseEnumType,
+    certType: CertificateSigningUseEnumType | InstallCertificateUseEnumType,
     pemData: string
   ): Promise<StoreCertificateResult> | StoreCertificateResult
   validateCertificateFormat(pemData: unknown): boolean
@@ -186,13 +187,13 @@ export class OCPP20CertificateManager {
   /**
    * Gets the filesystem path for a certificate
    * @param stationHashId - Charging station unique identifier
-   * @param certType - Certificate type (e.g., CSMSRootCertificate)
+   * @param certType - Certificate type (e.g., CSMSRootCertificate, ChargingStationCertificate)
    * @param serialNumber - Certificate serial number
    * @returns Full path where the certificate should be stored
    */
   public getCertificatePath (
     stationHashId: string,
-    certType: InstallCertificateUseEnumType,
+    certType: CertificateSigningUseEnumType | InstallCertificateUseEnumType,
     serialNumber: string
   ): string {
     const sanitizedHashId = this.sanitizePath(stationHashId)
@@ -270,13 +271,14 @@ export class OCPP20CertificateManager {
   /**
    * Stores a PEM certificate to the filesystem
    * @param stationHashId - Charging station unique identifier
-   * @param certType - Certificate type (e.g., CSMSRootCertificate, V2GRootCertificate)
+   * @param certType - Certificate type for storage (InstallCertificateUseEnumType for root certificates
+   *   or CertificateSigningUseEnumType for signed leaf certificates)
    * @param pemData - PEM-encoded certificate data
    * @returns Storage result with success status and file path or error
    */
   public storeCertificate (
     stationHashId: string,
-    certType: InstallCertificateUseEnumType,
+    certType: CertificateSigningUseEnumType | InstallCertificateUseEnumType,
     pemData: string
   ): StoreCertificateResult {
     if (!this.validateCertificateFormat(pemData)) {
