@@ -1,9 +1,0 @@
-export interface OCPP20DeleteCertificateRequest extends JsonObject {
-  certificateHashData: CertificateHashDataType
-  customData?: CustomDataType
-}
-
-export interface OCPP20Get15118EVCertificateRequest extends JsonObject {
----SCHEMA CHECK---
-    "certificateHashData": {
-  "required": ["certificateHashData"]
