@@ -8,9 +8,9 @@
   },
   "volta": {
     "node": "24.13.1",
-    "pnpm": "10.30.0"
+    "pnpm": "10.30.1"
   },
-  "packageManager": "pnpm@10.30.0",
+  "packageManager": "pnpm@10.30.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/sap/e-mobility-charging-stations-simulator.git"
@@ -88,7 +88,7 @@
     "logform": "^2.7.0",
     "mnemonist": "0.40.3",
     "mongodb": "^7.1.0",
-    "poolifier": "^5.2.0",
+    "poolifier": "^5.3.1",
     "tar": "^7.5.9",
     "winston": "^3.19.0",
     "winston-daily-rotate-file": "^5.0.0",
@@ -99,12 +99,12 @@
     "utf-8-validate": "^6.0.6"
   },
   "devDependencies": {
-    "@commitlint/cli": "^20.4.1",
-    "@commitlint/config-conventional": "^20.4.1",
+    "@commitlint/cli": "^20.4.2",
+    "@commitlint/config-conventional": "^20.4.2",
     "@cspell/eslint-plugin": "^9.6.4",
-    "@eslint/js": "^9.39.2",
+    "@eslint/js": "^9.39.3",
     "@mikro-orm/cli": "^6.6.7",
-    "@std/expect": "npm:@jsr/std__expect@^1.0.17",
+    "@std/expect": "npm:@jsr/std__expect@^1.0.18",
     "@types/node": "^24.10.13",
     "@types/semver": "^7.7.1",
     "@types/ws": "^8.18.1",
@@ -114,8 +114,8 @@
     "esbuild": "^0.27.3",
     "esbuild-plugin-clean": "^1.0.1",
     "esbuild-plugin-copy": "^2.1.1",
-    "eslint": "^9.39.2",
-    "eslint-plugin-jsdoc": "^62.6.0",
+    "eslint": "^9.39.3",
+    "eslint-plugin-jsdoc": "^62.7.0",
     "eslint-plugin-perfectionist": "^5.6.0",
     "eslint-plugin-vue": "^10.8.0",
     "husky": "^9.1.7",
