@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.4.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v2.3.1...simulator@v2.4.0) (2026-02-21)
+
+### 🚀 Features
+
+- **ocpp2:** add TransactionEvent command support ([#1607](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1607)) ([369acbe](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/369acbe1b0f32ace25990d76535a7beeb5d7358e))
+
+### 🐞 Bug Fixes
+
+- **deps:** update all non-major dependencies ([#1678](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1678)) ([2eb72bf](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/2eb72bf9ffa3b5ec9c7aa91461ee1f5e26a98fd0))
+- **deps:** update all non-major dependencies ([#1680](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1680)) ([e100aef](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e100aef351c926a343e814ba23db7a2e758cd7ea))
+- **deps:** update all non-major dependencies ([#1683](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1683)) ([05b223b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/05b223be7730349077157e6440c7e0cd429aa36b))
+- make eslint works again ([c98fe49](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c98fe49960b77e726954d10a13967565d6361e45))
+- **tests:** use fake timers for sleep ([43042ee](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/43042ee0ae13ec462cf181e93733f05d9368f647))
+
 ## [2.3.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v2.3.0...simulator@v2.3.1) (2026-02-13)
 
 ### 🐞 Bug Fixes

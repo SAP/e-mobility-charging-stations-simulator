@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.4.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v2.3.1...webui@v2.4.0) (2026-02-21)
+
+### 🚀 Features
+
+- **ocpp2:** add TransactionEvent command support ([#1607](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1607)) ([369acbe](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/369acbe1b0f32ace25990d76535a7beeb5d7358e))
+
+### 🐞 Bug Fixes
+
+- **deps:** update all non-major dependencies ([#1680](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1680)) ([e100aef](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e100aef351c926a343e814ba23db7a2e758cd7ea))
+- **deps:** update all non-major dependencies ([#1683](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1683)) ([05b223b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/05b223be7730349077157e6440c7e0cd429aa36b))
+
 ## [2.3.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v2.3.0...webui@v2.3.1) (2026-02-13)
 
 ### 🧹 Chores
