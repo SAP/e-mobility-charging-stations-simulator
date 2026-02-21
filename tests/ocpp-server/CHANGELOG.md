@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.4.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ocpp-server@v2.3.1...ocpp-server@v2.4.0) (2026-02-21)
+
+
+### 🚀 Features
+
+* **ocpp2:** add TransactionEvent command support ([#1607](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1607)) ([369acbe](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/369acbe1b0f32ace25990d76535a7beeb5d7358e))
+
 ## [2.3.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ocpp-server@v2.3.0...ocpp-server@v2.3.1) (2026-02-13)
 
 ### 🧹 Chores
