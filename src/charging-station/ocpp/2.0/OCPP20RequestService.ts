@@ -1,15 +1,26 @@
 import type { ValidateFunction } from 'ajv'
 
+import { generateKeyPairSync } from 'node:crypto'
+
 import type { ChargingStation } from '../../../charging-station/index.js'
 import type { OCPPResponseService } from '../OCPPResponseService.js'
 
 import { OCPPError } from '../../../exception/index.js'
 import {
+  type CertificateActionEnumType,
+  type CertificateSigningUseEnumType,
   ErrorType,
   type JsonObject,
   type JsonType,
+  type OCPP20Get15118EVCertificateRequest,
+  type OCPP20Get15118EVCertificateResponse,
+  type OCPP20GetCertificateStatusRequest,
+  type OCPP20GetCertificateStatusResponse,
   OCPP20RequestCommand,
+  type OCPP20SignCertificateRequest,
+  type OCPP20SignCertificateResponse,
   OCPPVersion,
+  type OCSPRequestDataType,
   type RequestParams,
 } from '../../../types/index.js'
 import { generateUUID, logger } from '../../../utils/index.js'
@@ -60,6 +71,103 @@ export class OCPP20RequestService extends OCPPRequestService {
       this.ajv
     )
     this.buildRequestPayload = this.buildRequestPayload.bind(this)
+  }
+
+  /**
+   * Request an ISO 15118 EV certificate from the CSMS.
+   *
+   * Forwards an EXI-encoded certificate request from the EV to the CSMS.
+   * The EXI payload is passed through unmodified (base64 string) without
+   * any decoding or validation - the CSMS is responsible for processing it.
+   *
+   * This is used during ISO 15118 Plug & Charge flows when the EV requests
+   * certificate installation or update from the Mobility Operator (MO).
+   * @param chargingStation - The charging station forwarding the request
+   * @param iso15118SchemaVersion - Schema version identifier (e.g., 'urn:iso:15118:2:2013:MsgDef')
+   * @param action - The certificate action type (Install or Update)
+   * @param exiRequest - Base64-encoded EXI request from the EV (passed through unchanged)
+   * @returns Promise resolving to the CSMS response with EXI-encoded certificate data
+   */
+  public async requestGet15118EVCertificate (
+    chargingStation: ChargingStation,
+    iso15118SchemaVersion: string,
+    action: CertificateActionEnumType,
+    exiRequest: string
+  ): Promise<OCPP20Get15118EVCertificateResponse> {
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestGet15118EVCertificate: Requesting ISO 15118 EV certificate`
+    )
+
+    const requestPayload: OCPP20Get15118EVCertificateRequest = {
+      action,
+      exiRequest,
+      iso15118SchemaVersion,
+    }
+
+    const messageId = generateUUID()
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestGet15118EVCertificate: Sending Get15118EVCertificate request with message ID '${messageId}'`
+    )
+
+    const response = (await this.sendMessage(
+      chargingStation,
+      messageId,
+      requestPayload,
+      OCPP20RequestCommand.GET_15118_EV_CERTIFICATE
+    )) as OCPP20Get15118EVCertificateResponse
+
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestGet15118EVCertificate: Received response with status '${response.status}'`
+    )
+
+    return response
+  }
+
+  /**
+   * Request OCSP certificate status from the CSMS.
+   *
+   * Sends an OCSP (Online Certificate Status Protocol) request to the CSMS
+   * to check the revocation status of a certificate. The CSMS will return
+   * the OCSP response data which can be used to verify certificate validity.
+   *
+   * This is used to validate certificates during ISO 15118 communication
+   * before accepting them for charging authorization.
+   *
+   * Note: This is a stub implementation for simulator testing. No real OCSP
+   * network calls are made - the CSMS provides the response.
+   * @param chargingStation - The charging station requesting the status
+   * @param ocspRequestData - OCSP request data including certificate hash and responder URL
+   * @returns Promise resolving to the CSMS response with OCSP result
+   */
+  public async requestGetCertificateStatus (
+    chargingStation: ChargingStation,
+    ocspRequestData: OCSPRequestDataType
+  ): Promise<OCPP20GetCertificateStatusResponse> {
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestGetCertificateStatus: Requesting certificate status`
+    )
+
+    const requestPayload: OCPP20GetCertificateStatusRequest = {
+      ocspRequestData,
+    }
+
+    const messageId = generateUUID()
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestGetCertificateStatus: Sending GetCertificateStatus request with message ID '${messageId}'`
+    )
+
+    const response = (await this.sendMessage(
+      chargingStation,
+      messageId,
+      requestPayload,
+      OCPP20RequestCommand.GET_CERTIFICATE_STATUS
+    )) as OCPP20GetCertificateStatusResponse
+
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestGetCertificateStatus: Received response with status '${response.status}'`
+    )
+
+    return response
   }
 
   /**
@@ -132,6 +240,95 @@ export class OCPP20RequestService extends OCPPRequestService {
     const errorMsg = `Unsupported OCPP command ${commandName}`
     logger.error(`${chargingStation.logPrefix()} ${moduleName}.requestHandler: ${errorMsg}`)
     throw new OCPPError(ErrorType.NOT_SUPPORTED, errorMsg, commandName, commandParams)
+  }
+
+  /**
+   * Request certificate signing from the CSMS.
+   *
+   * Generates a Certificate Signing Request (CSR) using the charging station's
+   * certificate manager and sends it to the CSMS for signing. Supports both
+   * ChargingStationCertificate and V2GCertificate types.
+   *
+   * IMPORTANT: This implementation generates a MOCK CSR for simulator testing purposes.
+   * It is NOT a cryptographically valid PKCS#10 CSR and MUST NOT be used in production.
+   * The generated CSR structure is simplified (JSON-based) for OCPP message testing only.
+   * Real CSMS expecting valid PKCS#10 CSR will reject this format.
+   * @param chargingStation - The charging station requesting the certificate
+   * @param certificateType - Optional certificate type (ChargingStationCertificate or V2GCertificate)
+   * @returns Promise resolving to the CSMS response with Accepted or Rejected status
+   * @throws {OCPPError} When certificate manager is unavailable or CSR generation fails
+   */
+  public async requestSignCertificate (
+    chargingStation: ChargingStation,
+    certificateType?: CertificateSigningUseEnumType
+  ): Promise<OCPP20SignCertificateResponse> {
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestSignCertificate: Requesting certificate signing`
+    )
+
+    let csr: string
+    try {
+      const { publicKey } = generateKeyPairSync('rsa', {
+        modulusLength: 2048,
+        privateKeyEncoding: { format: 'pem', type: 'pkcs8' },
+        publicKeyEncoding: { format: 'pem', type: 'spki' },
+      })
+
+      const configKey = chargingStation.ocppConfiguration?.configurationKey?.find(
+        key => key.key === 'SecurityCtrlr.OrganizationName'
+      )
+      const orgName = configKey?.value ?? 'Unknown'
+      const stationId = chargingStation.stationInfo?.chargingStationId ?? 'Unknown'
+      const subject = `CN=${stationId},O=${orgName}`
+
+      // Generate simplified mock CSR for simulator testing
+      // WARNING: This is NOT a cryptographically valid PKCS#10 CSR
+      // Structure: JSON with subject, publicKey, timestamp (NOT ASN.1 DER)
+      const mockCsrData = {
+        algorithm: 'RSA-SHA256',
+        keySize: 2048,
+        publicKey: publicKey.replace(/-----BEGIN PUBLIC KEY-----|-----END PUBLIC KEY-----|\n/g, ''),
+        subject,
+        timestamp: new Date().toISOString(),
+      }
+
+      const csrBase64 = Buffer.from(JSON.stringify(mockCsrData)).toString('base64')
+      csr = `-----BEGIN CERTIFICATE REQUEST-----\n${csrBase64}\n-----END CERTIFICATE REQUEST-----`
+    } catch (error) {
+      const errorMsg = `Failed to generate CSR: ${error instanceof Error ? error.message : 'Unknown error'}`
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.requestSignCertificate: ${errorMsg}`
+      )
+      throw new OCPPError(ErrorType.INTERNAL_ERROR, errorMsg, OCPP20RequestCommand.SIGN_CERTIFICATE)
+    }
+
+    // Build request payload
+    const requestPayload: OCPP20SignCertificateRequest = {
+      csr,
+    }
+
+    // Add certificate type if specified
+    if (certificateType != null) {
+      requestPayload.certificateType = certificateType
+    }
+
+    const messageId = generateUUID()
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestSignCertificate: Sending SignCertificate request with message ID '${messageId}'`
+    )
+
+    const response = (await this.sendMessage(
+      chargingStation,
+      messageId,
+      requestPayload,
+      OCPP20RequestCommand.SIGN_CERTIFICATE
+    )) as OCPP20SignCertificateResponse
+
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestSignCertificate: Received response with status '${response.status}'`
+    )
+
+    return response
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters

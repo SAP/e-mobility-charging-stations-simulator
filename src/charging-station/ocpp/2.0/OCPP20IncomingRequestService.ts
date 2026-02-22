@@ -1,3 +1,5 @@
+// Partial Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
+
 import type { ValidateFunction } from 'ajv'
 
 import { secondsToMilliseconds } from 'date-fns'
@@ -6,29 +8,46 @@ import type { ChargingStation } from '../../../charging-station/index.js'
 import type {
   OCPP20ChargingProfileType,
   OCPP20ChargingScheduleType,
-  OCPP20TransactionContext,
+  OCPP20IdTokenType,
 } from '../../../types/ocpp/2.0/Transaction.js'
 
 import { OCPPError } from '../../../exception/index.js'
 import {
   AttributeEnumType,
+  CertificateSigningUseEnumType,
   ConnectorEnumType,
   ConnectorStatusEnum,
   DataEnumType,
+  DeleteCertificateStatusEnumType,
   ErrorType,
   GenericDeviceModelStatusEnumType,
   GenericStatus,
+  GetCertificateIdUseEnumType,
+  GetCertificateStatusEnumType,
+  GetInstalledCertificateStatusEnumType,
   GetVariableStatusEnumType,
   type IncomingRequestHandler,
+  InstallCertificateStatusEnumType,
+  InstallCertificateUseEnumType,
   type JsonType,
+  type OCPP20CertificateSignedRequest,
+  type OCPP20CertificateSignedResponse,
   OCPP20ComponentName,
   OCPP20ConnectorStatusEnumType,
+  type OCPP20DeleteCertificateRequest,
+  type OCPP20DeleteCertificateResponse,
   OCPP20DeviceInfoVariableName,
   type OCPP20GetBaseReportRequest,
   type OCPP20GetBaseReportResponse,
+  type OCPP20GetCertificateStatusRequest,
+  type OCPP20GetCertificateStatusResponse,
+  type OCPP20GetInstalledCertificateIdsRequest,
+  type OCPP20GetInstalledCertificateIdsResponse,
   type OCPP20GetVariablesRequest,
   type OCPP20GetVariablesResponse,
   OCPP20IncomingRequestCommand,
+  type OCPP20InstallCertificateRequest,
+  type OCPP20InstallCertificateResponse,
   type OCPP20NotifyReportRequest,
   type OCPP20NotifyReportResponse,
   OCPP20RequestCommand,
@@ -41,7 +60,6 @@ import {
   type OCPP20ResetResponse,
   type OCPP20SetVariablesRequest,
   type OCPP20SetVariablesResponse,
-  OCPP20TransactionEventEnumType,
   OCPPVersion,
   ReasonCodeEnumType,
   ReportBaseEnumType,
@@ -65,16 +83,17 @@ import {
   generateUUID,
   isAsyncFunction,
   logger,
-  validateIdentifierString,
+  validateUUID,
 } from '../../../utils/index.js'
 import { getConfigurationKey } from '../../ConfigurationKeyUtils.js'
-import { resetConnectorStatus } from '../../Helpers.js'
+import { getIdTagsFile, resetConnectorStatus } from '../../Helpers.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
+import { restoreConnectorStatus, sendAndSetConnectorStatus } from '../OCPPServiceUtils.js'
 import {
-  OCPPServiceUtils,
-  restoreConnectorStatus,
-  sendAndSetConnectorStatus,
-} from '../OCPPServiceUtils.js'
+  type GetInstalledCertificatesResult,
+  hasCertificateManager,
+  type StoreCertificateResult,
+} from './OCPP20CertificateManager.js'
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 import { OCPP20VariableManager } from './OCPP20VariableManager.js'
 import { getVariableMetadata, VARIABLE_REGISTRY } from './OCPP20VariableRegistry.js'
@@ -140,16 +159,38 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     this.reportDataCache = new Map<number, ReportDataType[]>()
     this.incomingRequestHandlers = new Map<OCPP20IncomingRequestCommand, IncomingRequestHandler>([
       [
+        OCPP20IncomingRequestCommand.CERTIFICATE_SIGNED,
+        this.handleRequestCertificateSigned.bind(this) as unknown as IncomingRequestHandler,
+      ],
+      [
         OCPP20IncomingRequestCommand.CLEAR_CACHE,
         super.handleRequestClearCache.bind(this) as IncomingRequestHandler,
+      ],
+      [
+        OCPP20IncomingRequestCommand.DELETE_CERTIFICATE,
+        this.handleRequestDeleteCertificate.bind(this) as unknown as IncomingRequestHandler,
       ],
       [
         OCPP20IncomingRequestCommand.GET_BASE_REPORT,
         this.handleRequestGetBaseReport.bind(this) as unknown as IncomingRequestHandler,
       ],
       [
+        OCPP20IncomingRequestCommand.GET_CERTIFICATE_STATUS,
+        this.handleRequestGetCertificateStatus.bind(this) as unknown as IncomingRequestHandler,
+      ],
+      [
+        OCPP20IncomingRequestCommand.GET_INSTALLED_CERTIFICATE_IDS,
+        this.handleRequestGetInstalledCertificateIds.bind(
+          this
+        ) as unknown as IncomingRequestHandler,
+      ],
+      [
         OCPP20IncomingRequestCommand.GET_VARIABLES,
         this.handleRequestGetVariables.bind(this) as unknown as IncomingRequestHandler,
+      ],
+      [
+        OCPP20IncomingRequestCommand.INSTALL_CERTIFICATE,
+        this.handleRequestInstallCertificate.bind(this) as unknown as IncomingRequestHandler,
       ],
       [
         OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
@@ -847,12 +888,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     return reportData
   }
 
-  /**
-   * Get the TxUpdatedInterval value from the variable manager.
-   * This is used to determine the interval at which TransactionEvent(Updated) messages are sent.
-   * @param chargingStation - The charging station instance
-   * @returns The TxUpdatedInterval in milliseconds
-   */
   private getTxUpdatedInterval (chargingStation: ChargingStation): number {
     const variableManager = OCPP20VariableManager.getInstance()
     const results = variableManager.getVariables(chargingStation, [
@@ -871,12 +906,173 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   /**
-   * Handles OCPP 2.0 Reset request from central system with enhanced EVSE-specific support
-   * Initiates station or EVSE reset based on request parameters and transaction states
+   * Handles OCPP 2.0 CertificateSigned request from central system
+   * Receives signed certificate chain from CSMS and stores it in the charging station
+   * Triggers websocket reconnect for ChargingStationCertificate type to use the new certificate
    * @param chargingStation - The charging station instance processing the request
-   * @param commandPayload - Reset request payload with type and optional EVSE ID
-   * @returns Promise resolving to ResetResponse indicating operation status
+   * @param commandPayload - CertificateSigned request payload with certificate chain and type
+   * @returns Promise resolving to CertificateSignedResponse indicating operation status
    */
+  private async handleRequestCertificateSigned (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20CertificateSignedRequest
+  ): Promise<OCPP20CertificateSignedResponse> {
+    const { certificateChain, certificateType } = commandPayload
+
+    if (!hasCertificateManager(chargingStation)) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestCertificateSigned: Certificate manager not available`
+      )
+      return {
+        status: GenericStatus.Rejected,
+        statusInfo: {
+          reasonCode: ReasonCodeEnumType.InternalError,
+        },
+      }
+    }
+
+    // Validate certificate chain format
+    if (!chargingStation.certificateManager.validateCertificateFormat(certificateChain)) {
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestCertificateSigned: Invalid PEM format for certificate chain`
+      )
+      return {
+        status: GenericStatus.Rejected,
+        statusInfo: {
+          reasonCode: ReasonCodeEnumType.InvalidCertificate,
+        },
+      }
+    }
+
+    // Store certificate chain
+    try {
+      const result = chargingStation.certificateManager.storeCertificate(
+        chargingStation.stationInfo?.hashId ?? '',
+        certificateType ?? CertificateSigningUseEnumType.ChargingStationCertificate,
+        certificateChain
+      )
+
+      // Handle both Promise and synchronous returns, and both boolean and object results
+      const storeResult = result instanceof Promise ? await result : result
+
+      // Handle both boolean (test mock) and object (real implementation) results
+      const success = typeof storeResult === 'boolean' ? storeResult : storeResult.success
+
+      if (!success) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestCertificateSigned: Certificate chain storage rejected`
+        )
+        return {
+          status: GenericStatus.Rejected,
+          statusInfo: {
+            reasonCode: ReasonCodeEnumType.InvalidCertificate,
+          },
+        }
+      }
+
+      // For ChargingStationCertificate, trigger websocket reconnect to use the new certificate
+      const effectiveCertificateType =
+        certificateType ?? CertificateSigningUseEnumType.ChargingStationCertificate
+      if (effectiveCertificateType === CertificateSigningUseEnumType.ChargingStationCertificate) {
+        logger.info(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestCertificateSigned: Triggering websocket reconnect to use new ChargingStationCertificate`
+        )
+        chargingStation.closeWSConnection()
+      }
+
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestCertificateSigned: Certificate chain stored successfully`
+      )
+      return {
+        status: GenericStatus.Accepted,
+      }
+    } catch (error) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestCertificateSigned: Certificate chain storage failed`,
+        error
+      )
+      return {
+        status: GenericStatus.Rejected,
+        statusInfo: {
+          reasonCode: ReasonCodeEnumType.OutOfStorage,
+        },
+      }
+    }
+  }
+
+  /**
+   * Handles OCPP 2.0 DeleteCertificate request from central system
+   * Deletes a certificate matching the provided hash data from the charging station
+   * @param chargingStation - The charging station instance processing the request
+   * @param commandPayload - DeleteCertificate request payload with certificate hash data
+   * @returns Promise resolving to DeleteCertificateResponse with status
+   */
+  private async handleRequestDeleteCertificate (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20DeleteCertificateRequest
+  ): Promise<OCPP20DeleteCertificateResponse> {
+    const { certificateHashData } = commandPayload
+
+    if (!hasCertificateManager(chargingStation)) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestDeleteCertificate: Certificate manager not available`
+      )
+      return {
+        status: DeleteCertificateStatusEnumType.Failed,
+        statusInfo: {
+          reasonCode: ReasonCodeEnumType.InternalError,
+        },
+      }
+    }
+
+    try {
+      const result = chargingStation.certificateManager.deleteCertificate(
+        chargingStation.stationInfo?.hashId ?? '',
+        certificateHashData
+      )
+
+      // Handle both Promise and synchronous returns
+      const deleteResult = result instanceof Promise ? await result : result
+
+      // Check the status field for the result
+      if (deleteResult.status === 'NotFound') {
+        logger.info(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestDeleteCertificate: Certificate not found`
+        )
+        return {
+          status: DeleteCertificateStatusEnumType.NotFound,
+        }
+      }
+
+      if (deleteResult.status === 'Accepted') {
+        logger.info(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestDeleteCertificate: Certificate deleted successfully`
+        )
+        return {
+          status: DeleteCertificateStatusEnumType.Accepted,
+        }
+      }
+
+      // Failed status
+      return {
+        status: DeleteCertificateStatusEnumType.Failed,
+        statusInfo: {
+          reasonCode: ReasonCodeEnumType.InternalError,
+        },
+      }
+    } catch (error) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestDeleteCertificate: Certificate deletion failed`,
+        error
+      )
+      return {
+        status: DeleteCertificateStatusEnumType.Failed,
+        statusInfo: {
+          reasonCode: ReasonCodeEnumType.InternalError,
+        },
+      }
+    }
+  }
 
   private handleRequestGetBaseReport (
     chargingStation: ChargingStation,
@@ -912,6 +1108,177 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
     return {
       status: GenericDeviceModelStatusEnumType.Accepted,
+    }
+  }
+
+  /**
+   * Handles OCPP 2.0 GetCertificateStatus request from central system
+   * Returns stub OCSP response without making real network calls
+   * @param chargingStation - The charging station instance processing the request
+   * @param _commandPayload - GetCertificateStatus request payload with OCSP request data (unused - OCSP not implemented)
+   * @returns GetCertificateStatusResponse with status and optional OCSP result
+   */
+  private handleRequestGetCertificateStatus (
+    chargingStation: ChargingStation,
+    _commandPayload: OCPP20GetCertificateStatusRequest
+  ): OCPP20GetCertificateStatusResponse {
+    if (!hasCertificateManager(chargingStation)) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCertificateStatus: Certificate manager not available`
+      )
+      return {
+        status: GetCertificateStatusEnumType.Failed,
+        statusInfo: {
+          reasonCode: ReasonCodeEnumType.InternalError,
+        },
+      }
+    }
+
+    logger.info(
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCertificateStatus: OCSP status not implemented - returning stub response`
+    )
+    return {
+      status: GetCertificateStatusEnumType.Failed,
+      statusInfo: {
+        reasonCode: ReasonCodeEnumType.NotEnabled,
+      },
+    }
+  }
+
+  /**
+   * Handles OCPP 2.0 GetInstalledCertificateIds request from central system
+   * Returns list of installed certificates matching the optional filter types
+   * @param chargingStation - The charging station instance processing the request
+   * @param commandPayload - GetInstalledCertificateIds request payload with optional certificate type filter
+   * @returns Promise resolving to GetInstalledCertificateIdsResponse with status and certificate chain data
+   */
+  private async handleRequestGetInstalledCertificateIds (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20GetInstalledCertificateIdsRequest
+  ): Promise<OCPP20GetInstalledCertificateIdsResponse> {
+    const { certificateType } = commandPayload
+
+    if (!hasCertificateManager(chargingStation)) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetInstalledCertificateIds: Certificate manager not available`
+      )
+      return {
+        status: GetInstalledCertificateStatusEnumType.NotFound,
+        statusInfo: {
+          reasonCode: ReasonCodeEnumType.InternalError,
+        },
+      }
+    }
+
+    try {
+      const filterTypes = certificateType?.map(ct => {
+        if (ct === GetCertificateIdUseEnumType.V2GCertificateChain) {
+          return InstallCertificateUseEnumType.V2GRootCertificate
+        }
+        return ct as unknown as InstallCertificateUseEnumType
+      })
+
+      const methodResult = chargingStation.certificateManager.getInstalledCertificates(
+        chargingStation.stationInfo?.hashId ?? '',
+        filterTypes
+      )
+      const result: GetInstalledCertificatesResult =
+        methodResult instanceof Promise ? await methodResult : methodResult
+
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetInstalledCertificateIds: Retrieved ${String(result.certificateHashDataChain.length)} certificates`
+      )
+
+      return {
+        certificateHashDataChain:
+          result.certificateHashDataChain.length > 0 ? result.certificateHashDataChain : undefined,
+        status:
+          result.certificateHashDataChain.length > 0
+            ? GetInstalledCertificateStatusEnumType.Accepted
+            : GetInstalledCertificateStatusEnumType.NotFound,
+      }
+    } catch (error) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetInstalledCertificateIds: Failed to retrieve certificates`,
+        error
+      )
+      return {
+        status: GetInstalledCertificateStatusEnumType.NotFound,
+        statusInfo: {
+          reasonCode: ReasonCodeEnumType.InternalError,
+        },
+      }
+    }
+  }
+
+  private async handleRequestInstallCertificate (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20InstallCertificateRequest
+  ): Promise<OCPP20InstallCertificateResponse> {
+    const { certificate, certificateType } = commandPayload
+
+    if (!hasCertificateManager(chargingStation)) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestInstallCertificate: Certificate manager not available`
+      )
+      return {
+        status: InstallCertificateStatusEnumType.Failed,
+        statusInfo: {
+          reasonCode: ReasonCodeEnumType.InternalError,
+        },
+      }
+    }
+
+    if (!chargingStation.certificateManager.validateCertificateFormat(certificate)) {
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestInstallCertificate: Invalid PEM format for certificate type ${certificateType}`
+      )
+      return {
+        status: InstallCertificateStatusEnumType.Rejected,
+        statusInfo: {
+          reasonCode: ReasonCodeEnumType.InvalidCertificate,
+        },
+      }
+    }
+
+    try {
+      const methodResult = chargingStation.certificateManager.storeCertificate(
+        chargingStation.stationInfo?.hashId ?? '',
+        certificateType,
+        certificate
+      )
+      const storeResult: StoreCertificateResult =
+        methodResult instanceof Promise ? await methodResult : methodResult
+
+      if (!storeResult.success) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestInstallCertificate: Certificate storage rejected for type ${certificateType}`
+        )
+        return {
+          status: InstallCertificateStatusEnumType.Rejected,
+          statusInfo: {
+            reasonCode: ReasonCodeEnumType.InvalidCertificate,
+          },
+        }
+      }
+
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestInstallCertificate: Certificate installed successfully for type ${certificateType}`
+      )
+      return {
+        status: InstallCertificateStatusEnumType.Accepted,
+      }
+    } catch (error) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestInstallCertificate: Certificate storage failed for type ${certificateType}`,
+        error
+      )
+      return {
+        status: InstallCertificateStatusEnumType.Failed,
+        statusInfo: {
+          reasonCode: ReasonCodeEnumType.OutOfStorage,
+        },
+      }
     }
   }
 
@@ -1196,15 +1563,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
-    // Authorize idToken - OCPP 2.0 always uses unified auth system
+    // Authorize idToken
     let isAuthorized = false
     try {
-      // Use unified auth system - pass idToken.idToken as string
-      isAuthorized = await OCPPServiceUtils.isIdTagAuthorizedUnified(
-        chargingStation,
-        connectorId,
-        idToken.idToken
-      )
+      isAuthorized = this.isIdTokenAuthorized(chargingStation, idToken)
     } catch (error) {
       logger.error(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Authorization error for ${idToken.idToken}:`,
@@ -1230,12 +1592,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     if (groupIdToken != null) {
       let isGroupAuthorized = false
       try {
-        // Use unified auth system for group token
-        isGroupAuthorized = await OCPPServiceUtils.isIdTagAuthorizedUnified(
-          chargingStation,
-          connectorId,
-          groupIdToken.idToken
-        )
+        isGroupAuthorized = this.isIdTokenAuthorized(chargingStation, groupIdToken)
       } catch (error) {
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Group authorization error for ${groupIdToken.idToken}:`,
@@ -1262,12 +1619,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     if (chargingProfile != null) {
       let isValidProfile = false
       try {
-        isValidProfile = this.validateChargingProfile(
-          chargingStation,
-          chargingProfile,
-          evseId,
-          'RequestStartTransaction'
-        )
+        isValidProfile = this.validateChargingProfile(chargingStation, chargingProfile, evseId)
       } catch (error) {
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Charging profile validation error:`,
@@ -1299,8 +1651,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
       connectorStatus.transactionStarted = true
       connectorStatus.transactionId = transactionId
-      // Reset sequence number for new transaction (OCPP 2.0.1 compliance)
-      OCPP20ServiceUtils.resetTransactionSequenceNumber(chargingStation, connectorId)
       connectorStatus.transactionIdTag = idToken.idToken
       connectorStatus.transactionStart = new Date()
       connectorStatus.transactionEnergyActiveImportRegisterValue = 0
@@ -1328,30 +1678,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Charging profile stored for transaction ${transactionId}`
         )
       }
-
-      // Send TransactionEvent Started notification to CSMS with context-aware trigger reason selection
-      // FR: F01.FR.17 - remoteStartId SHALL be included in TransactionEventRequest
-      // FR: F02.FR.05 - idToken SHALL be included in TransactionEventRequest
-      const context: OCPP20TransactionContext = {
-        command: 'RequestStartTransaction',
-        source: 'remote_command',
-      }
-
-      await OCPP20ServiceUtils.sendTransactionEvent(
-        chargingStation,
-        OCPP20TransactionEventEnumType.Started,
-        context,
-        connectorId,
-        transactionId,
-        {
-          idToken,
-          remoteStartId,
-        }
-      )
-
-      // Start TxUpdatedInterval timer for periodic TransactionEvent(Updated) messages
-      const txUpdatedInterval = this.getTxUpdatedInterval(chargingStation)
-      chargingStation.startTxUpdatedInterval(connectorId, txUpdatedInterval)
 
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Remote start transaction ACCEPTED on #${connectorId.toString()} for idToken '${idToken.idToken}'`
@@ -1383,9 +1709,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestStopTransaction: Remote stop transaction request received for transaction ID ${transactionId as string}`
     )
 
-    if (!validateIdentifierString(transactionId, 36)) {
+    if (!validateUUID(transactionId)) {
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStopTransaction: Invalid transaction ID format (must be non-empty string ≤36 characters): ${transactionId as string}`
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStopTransaction: Invalid transaction ID format (expected UUID): ${transactionId as string}`
       )
       return {
         status: RequestStartStopStatusEnumType.Rejected,
@@ -1442,6 +1768,105 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return {
         status: RequestStartStopStatusEnumType.Rejected,
       }
+    }
+  }
+
+  private isIdTokenAuthorized (
+    chargingStation: ChargingStation,
+    idToken: OCPP20IdTokenType
+  ): boolean {
+    /**
+     * OCPP 2.0 Authorization Logic Implementation
+     *
+     * OCPP 2.0 handles authorization differently from 1.6:
+     * 1. Check if authorization is required (LocalAuthorizeOffline, AuthorizeRemoteStart variables)
+     * 2. Local authorization list validation if enabled
+     * 3. For OCPP 2.0, there's no explicit AuthorizeRequest - authorization is validated
+     *    through configuration variables and local auth lists
+     * 4. Remote validation through TransactionEvent if needed
+     */
+
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: Validating idToken ${idToken.idToken} of type ${idToken.type}`
+    )
+
+    try {
+      // Check if local authorization is disabled and remote authorization is also disabled
+      const localAuthListEnabled = chargingStation.getLocalAuthListEnabled()
+      const remoteAuthorizationEnabled = chargingStation.stationInfo?.remoteAuthorization ?? true
+
+      if (!localAuthListEnabled && !remoteAuthorizationEnabled) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: Both local and remote authorization are disabled. Allowing access but this may indicate misconfiguration.`
+        )
+        return true
+      }
+
+      // 1. Check local authorization list first (if enabled)
+      if (localAuthListEnabled) {
+        const isLocalAuthorized = this.isIdTokenLocalAuthorized(chargingStation, idToken.idToken)
+        if (isLocalAuthorized) {
+          logger.debug(
+            `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: IdToken ${idToken.idToken} authorized via local auth list`
+          )
+          return true
+        }
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: IdToken ${idToken.idToken} not found in local auth list`
+        )
+      }
+
+      // 2. For OCPP 2.0, if we can't authorize locally and remote auth is enabled,
+      //    we should validate through TransactionEvent mechanism or return false
+      //    In OCPP 2.0, there's no explicit remote authorize - it's handled during transaction events
+      if (remoteAuthorizationEnabled) {
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: Remote authorization enabled but no explicit remote auth mechanism in OCPP 2.0 - deferring to transaction event validation`
+        )
+        // In OCPP 2.0, remote authorization happens during TransactionEvent processing
+        // For now, we'll allow the transaction to proceed and let the CSMS validate during TransactionEvent
+        return true
+      }
+
+      // 3. If we reach here, authorization failed
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: IdToken ${idToken.idToken} authorization failed - not found in local list and remote auth not configured`
+      )
+      return false
+    } catch (error) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: Error during authorization validation for ${idToken.idToken}:`,
+        error
+      )
+      // Fail securely - deny access on authorization errors
+      return false
+    }
+  }
+
+  /**
+   * Check if idToken is authorized in local authorization list
+   * @param chargingStation - The charging station instance
+   * @param idTokenString - The ID token string to validate
+   * @returns true if authorized locally, false otherwise
+   */
+  private isIdTokenLocalAuthorized (
+    chargingStation: ChargingStation,
+    idTokenString: string
+  ): boolean {
+    try {
+      return (
+        chargingStation.hasIdTags() &&
+        chargingStation.idTagsCache
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          .getIdTags(getIdTagsFile(chargingStation.stationInfo!)!)
+          ?.includes(idTokenString) === true
+      )
+    } catch (error) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.isIdTokenLocalAuthorized: Error checking local authorization for ${idTokenString}:`,
+        error
+      )
+      return false
     }
   }
 
@@ -1762,13 +2187,13 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   private validateChargingProfile (
     chargingStation: ChargingStation,
     chargingProfile: OCPP20ChargingProfileType,
-    evseId: number,
-    context: 'RequestStartTransaction' | 'SetChargingProfile' = 'SetChargingProfile'
+    evseId: number
   ): boolean {
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfile: Validating charging profile ${chargingProfile.id.toString()} for EVSE ${evseId.toString()}`
     )
 
+    // Validate stack level range (OCPP 2.0 spec: 0-9)
     if (chargingProfile.stackLevel < 0 || chargingProfile.stackLevel > 9) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfile: Invalid stack level ${chargingProfile.stackLevel.toString()}, must be 0-9`
@@ -1776,6 +2201,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
+    // Validate charging profile ID is positive
     if (chargingProfile.id <= 0) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfile: Invalid charging profile ID ${chargingProfile.id.toString()}, must be positive`
@@ -1783,6 +2209,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
+    // Validate EVSE compatibility
     if (!chargingStation.hasEvses && evseId > 0) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfile: EVSE ${evseId.toString()} not supported by this charging station`
@@ -1797,6 +2224,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
+    // Validate charging schedules array is not empty
     if (chargingProfile.chargingSchedule.length === 0) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfile: Charging profile must contain at least one charging schedule`
@@ -1804,6 +2232,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
+    // Time constraints validation
     const now = new Date()
     if (chargingProfile.validFrom && chargingProfile.validTo) {
       if (chargingProfile.validFrom >= chargingProfile.validTo) {
@@ -1821,6 +2250,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
+    // Validate recurrency kind compatibility with profile kind
     if (
       chargingProfile.recurrencyKind &&
       chargingProfile.chargingProfileKind !== OCPP20ChargingProfileKindEnumType.Recurring
@@ -1841,6 +2271,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
+    // Validate each charging schedule
     for (const [scheduleIndex, schedule] of chargingProfile.chargingSchedule.entries()) {
       if (
         !this.validateChargingSchedule(
@@ -1855,7 +2286,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
-    if (!this.validateChargingProfilePurpose(chargingStation, chargingProfile, evseId, context)) {
+    // Profile purpose specific validations
+    if (!this.validateChargingProfilePurpose(chargingStation, chargingProfile, evseId)) {
       return false
     }
 
@@ -1867,45 +2299,19 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
   /**
    * Validates charging profile purpose-specific business rules
-   * Per OCPP 2.0.1 Part 2 §2.10:
-   * - RequestStartTransaction MUST use chargingProfilePurpose=TxProfile
-   * - RequestStartTransaction chargingProfile.transactionId MUST NOT be present
    * @param chargingStation - The charging station instance
    * @param chargingProfile - The charging profile to validate
    * @param evseId - EVSE identifier
-   * @param context - Request context ('RequestStartTransaction' or 'SetChargingProfile')
    * @returns True if purpose validation passes, false otherwise
    */
   private validateChargingProfilePurpose (
     chargingStation: ChargingStation,
     chargingProfile: OCPP20ChargingProfileType,
-    evseId: number,
-    context: 'RequestStartTransaction' | 'SetChargingProfile' = 'SetChargingProfile'
+    evseId: number
   ): boolean {
     logger.debug(
-      `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfilePurpose: Validating purpose-specific rules for profile ${chargingProfile.id.toString()} with purpose ${chargingProfile.chargingProfilePurpose} in context ${context}`
+      `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfilePurpose: Validating purpose-specific rules for profile ${chargingProfile.id.toString()} with purpose ${chargingProfile.chargingProfilePurpose}`
     )
-
-    // RequestStartTransaction context validation per OCPP 2.0.1 §2.10
-    if (context === 'RequestStartTransaction') {
-      // Requirement 1: ChargingProfile.chargingProfilePurpose SHALL be TxProfile
-      if (
-        chargingProfile.chargingProfilePurpose !== OCPP20ChargingProfilePurposeEnumType.TxProfile
-      ) {
-        logger.warn(
-          `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfilePurpose: RequestStartTransaction (OCPP 2.0.1 §2.10) requires chargingProfilePurpose to be TxProfile, got ${chargingProfile.chargingProfilePurpose}`
-        )
-        return false
-      }
-
-      // Requirement 2: ChargingProfile.transactionId SHALL NOT be present at RequestStartTransaction time
-      if (chargingProfile.transactionId != null) {
-        logger.warn(
-          `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfilePurpose: RequestStartTransaction (OCPP 2.0.1 §2.10) does not allow chargingProfile.transactionId (not yet known at start time)`
-        )
-        return false
-      }
-    }
 
     switch (chargingProfile.chargingProfilePurpose) {
       case OCPP20ChargingProfilePurposeEnumType.ChargingStationExternalConstraints:
@@ -1942,10 +2348,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           return false
         }
 
-        // TxProfile in SetChargingProfile context should have a transactionId
-        if (context === 'SetChargingProfile' && !chargingProfile.transactionId) {
+        // TxProfile should have a transactionId when used with active transaction
+        if (!chargingProfile.transactionId) {
           logger.debug(
-            `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfilePurpose: TxProfile without transactionId in SetChargingProfile context - may be for future use`
+            `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfilePurpose: TxProfile without transactionId - may be for future use`
           )
         }
         break
