@@ -8,6 +8,7 @@ import { describe, it } from 'node:test'
 
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import {
+  FirmwareStatus,
   type OCPP20ResetRequest,
   type OCPP20ResetResponse,
   OCPPVersion,
@@ -283,6 +284,286 @@ await describe('B11 & B12 - Reset', async () => {
       // Restore original state
       ;(mockChargingStation as any).hasEvses = originalHasEvses
       ;(mockChargingStation as any).getNumberOfRunningTransactions = () => 0
+    })
+
+    // RST-001: Reset OnIdle Errata 2.14 Compliance Tests
+    // These tests verify that OnIdle correctly considers firmware updates and reservations
+    // in addition to active transactions, per OCPP 2.0.1 Errata 2.14.
+    await describe('RST-001 - Reset OnIdle Errata 2.14 Compliance', async () => {
+      // Create a separate charging station for RST-001 tests with clean state
+      const createTestStation = () => {
+        const station = createChargingStation({
+          baseName: TEST_CHARGING_STATION_BASE_NAME,
+          connectorsCount: 3,
+          evseConfiguration: { evsesCount: 3 },
+          heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+          stationInfo: {
+            ocppStrictCompliance: false,
+            ocppVersion: OCPPVersion.VERSION_201,
+            resetTime: 5000,
+          },
+          websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+        })
+        // Add required methods
+        ;(station as any).getNumberOfRunningTransactions = () => 0
+        ;(station as any).reset = () => Promise.resolve()
+        return station
+      }
+
+      await describe('Firmware Update Blocking', async () => {
+        // Errata 2.14: OnIdle definition includes firmware updates
+        // Charging station is NOT idle when firmware is Downloading, Downloaded, or Installing
+
+        await it('Should return Scheduled when firmware is Downloading', async () => {
+          const station = createTestStation()
+          // Mock firmware status as Downloading
+          ;(station as any).stationInfo = {
+            ...station.stationInfo,
+            firmwareStatus: FirmwareStatus.Downloading,
+          }
+
+          const resetRequest: OCPP20ResetRequest = {
+            type: ResetEnumType.OnIdle,
+          }
+
+          const response: OCPP20ResetResponse = await (
+            incomingRequestService as any
+          ).handleRequestReset(station, resetRequest)
+
+          expect(response).toBeDefined()
+          expect(response.status).toBe(ResetStatusEnumType.Scheduled)
+        })
+
+        await it('Should return Scheduled when firmware is Downloaded', async () => {
+          const station = createTestStation()
+          // Mock firmware status as Downloaded (waiting to install)
+          ;(station as any).stationInfo = {
+            ...station.stationInfo,
+            firmwareStatus: FirmwareStatus.Downloaded,
+          }
+
+          const resetRequest: OCPP20ResetRequest = {
+            type: ResetEnumType.OnIdle,
+          }
+
+          const response: OCPP20ResetResponse = await (
+            incomingRequestService as any
+          ).handleRequestReset(station, resetRequest)
+
+          expect(response).toBeDefined()
+          expect(response.status).toBe(ResetStatusEnumType.Scheduled)
+        })
+
+        await it('Should return Scheduled when firmware is Installing', async () => {
+          const station = createTestStation()
+          // Mock firmware status as Installing
+          ;(station as any).stationInfo = {
+            ...station.stationInfo,
+            firmwareStatus: FirmwareStatus.Installing,
+          }
+
+          const resetRequest: OCPP20ResetRequest = {
+            type: ResetEnumType.OnIdle,
+          }
+
+          const response: OCPP20ResetResponse = await (
+            incomingRequestService as any
+          ).handleRequestReset(station, resetRequest)
+
+          expect(response).toBeDefined()
+          expect(response.status).toBe(ResetStatusEnumType.Scheduled)
+        })
+
+        await it('Should return Accepted when firmware is Installed (complete)', async () => {
+          const station = createTestStation()
+          // Mock firmware status as Installed (update complete)
+          ;(station as any).stationInfo = {
+            ...station.stationInfo,
+            firmwareStatus: FirmwareStatus.Installed,
+          }
+
+          const resetRequest: OCPP20ResetRequest = {
+            type: ResetEnumType.OnIdle,
+          }
+
+          const response: OCPP20ResetResponse = await (
+            incomingRequestService as any
+          ).handleRequestReset(station, resetRequest)
+
+          expect(response).toBeDefined()
+          expect(response.status).toBe(ResetStatusEnumType.Accepted)
+        })
+
+        await it('Should return Accepted when firmware status is Idle', async () => {
+          const station = createTestStation()
+          // Mock firmware status as Idle (no update in progress)
+          ;(station as any).stationInfo = {
+            ...station.stationInfo,
+            firmwareStatus: FirmwareStatus.Idle,
+          }
+
+          const resetRequest: OCPP20ResetRequest = {
+            type: ResetEnumType.OnIdle,
+          }
+
+          const response: OCPP20ResetResponse = await (
+            incomingRequestService as any
+          ).handleRequestReset(station, resetRequest)
+
+          expect(response).toBeDefined()
+          expect(response.status).toBe(ResetStatusEnumType.Accepted)
+        })
+      })
+
+      await describe('Reservation Blocking', async () => {
+        // Errata 2.14: OnIdle definition includes pending reservations
+        // Charging station is NOT idle when a connector has a non-expired reservation
+
+        await it('Should return Scheduled when connector has non-expired reservation', async () => {
+          const station = createTestStation()
+          // Create a reservation that expires in 1 hour (future)
+          const futureExpiryDate = new Date(Date.now() + 3600000)
+          const mockReservation = {
+            expiryDate: futureExpiryDate,
+            id: 1,
+            idTag: 'test-tag',
+          }
+
+          // Set reservation on first connector of first EVSE
+          const evse = station.evses.get(1)
+          if (evse) {
+            const connectorId = [...evse.connectors.keys()][0]
+            const connector = evse.connectors.get(connectorId)
+            if (connector) {
+              connector.reservation = mockReservation as any
+            }
+          }
+
+          const resetRequest: OCPP20ResetRequest = {
+            type: ResetEnumType.OnIdle,
+          }
+
+          const response: OCPP20ResetResponse = await (
+            incomingRequestService as any
+          ).handleRequestReset(station, resetRequest)
+
+          expect(response).toBeDefined()
+          expect(response.status).toBe(ResetStatusEnumType.Scheduled)
+        })
+
+        await it('Should return Accepted when reservation is expired', async () => {
+          const station = createTestStation()
+          // Create a reservation that expired 1 hour ago (past)
+          const pastExpiryDate = new Date(Date.now() - 3600000)
+          const mockReservation = {
+            expiryDate: pastExpiryDate,
+            id: 1,
+            idTag: 'test-tag',
+          }
+
+          // Set expired reservation on first connector of first EVSE
+          const evse = station.evses.get(1)
+          if (evse) {
+            const connectorId = [...evse.connectors.keys()][0]
+            const connector = evse.connectors.get(connectorId)
+            if (connector) {
+              connector.reservation = mockReservation as any
+            }
+          }
+
+          const resetRequest: OCPP20ResetRequest = {
+            type: ResetEnumType.OnIdle,
+          }
+
+          const response: OCPP20ResetResponse = await (
+            incomingRequestService as any
+          ).handleRequestReset(station, resetRequest)
+
+          expect(response).toBeDefined()
+          // Station is idle because the reservation is expired
+          expect(response.status).toBe(ResetStatusEnumType.Accepted)
+        })
+
+        await it('Should return Accepted when no reservations exist', async () => {
+          const station = createTestStation()
+          // No reservations set (default state)
+
+          const resetRequest: OCPP20ResetRequest = {
+            type: ResetEnumType.OnIdle,
+          }
+
+          const response: OCPP20ResetResponse = await (
+            incomingRequestService as any
+          ).handleRequestReset(station, resetRequest)
+
+          expect(response).toBeDefined()
+          expect(response.status).toBe(ResetStatusEnumType.Accepted)
+        })
+      })
+
+      await describe('Idle Condition', async () => {
+        // Errata 2.14: Station is idle when NO transactions, NO firmware update, NO reservations
+
+        await it('Should return Accepted when all conditions clear (true idle state)', async () => {
+          const station = createTestStation()
+          // Ensure no transactions
+          ;(station as any).getNumberOfRunningTransactions = () => 0
+          // Ensure no firmware update in progress
+          ;(station as any).stationInfo = {
+            ...station.stationInfo,
+            firmwareStatus: FirmwareStatus.Idle,
+          }
+          // No reservations (default state)
+
+          const resetRequest: OCPP20ResetRequest = {
+            type: ResetEnumType.OnIdle,
+          }
+
+          const response: OCPP20ResetResponse = await (
+            incomingRequestService as any
+          ).handleRequestReset(station, resetRequest)
+
+          expect(response).toBeDefined()
+          expect(response.status).toBe(ResetStatusEnumType.Accepted)
+        })
+
+        await it('Should return Scheduled when multiple blocking conditions exist', async () => {
+          const station = createTestStation()
+          // Active transaction
+          ;(station as any).getNumberOfRunningTransactions = () => 1
+          // Firmware downloading
+          ;(station as any).stationInfo = {
+            ...station.stationInfo,
+            firmwareStatus: FirmwareStatus.Downloading,
+          }
+          // Active reservation
+          const futureExpiryDate = new Date(Date.now() + 3600000)
+          const mockReservation = {
+            expiryDate: futureExpiryDate,
+            id: 1,
+            idTag: 'test-tag',
+          }
+          const evse = station.evses.get(1)
+          if (evse) {
+            const connectorId = [...evse.connectors.keys()][0]
+            const connector = evse.connectors.get(connectorId)
+            if (connector) {
+              connector.reservation = mockReservation as any
+            }
+          }
+
+          const resetRequest: OCPP20ResetRequest = {
+            type: ResetEnumType.OnIdle,
+          }
+
+          const response: OCPP20ResetResponse = await (
+            incomingRequestService as any
+          ).handleRequestReset(station, resetRequest)
+
+          expect(response).toBeDefined()
+          expect(response.status).toBe(ResetStatusEnumType.Scheduled)
+        })
+      })
     })
   })
 })
