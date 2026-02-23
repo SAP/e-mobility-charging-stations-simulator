@@ -20,6 +20,7 @@ import {
   DataEnumType,
   DeleteCertificateStatusEnumType,
   ErrorType,
+  FirmwareStatus,
   GenericDeviceModelStatusEnumType,
   GenericStatus,
   GetCertificateIdUseEnumType,
@@ -31,6 +32,7 @@ import {
   type JsonType,
   type OCPP20CertificateSignedRequest,
   type OCPP20CertificateSignedResponse,
+  type OCPP20ClearCacheResponse,
   OCPP20ComponentName,
   OCPP20ConnectorStatusEnumType,
   type OCPP20DeleteCertificateRequest,
@@ -83,7 +85,8 @@ import {
   validateUUID,
 } from '../../../utils/index.js'
 import { getConfigurationKey } from '../../ConfigurationKeyUtils.js'
-import { getIdTagsFile, resetConnectorStatus } from '../../Helpers.js'
+import { getIdTagsFile, hasReservationExpired, resetConnectorStatus } from '../../Helpers.js'
+import { OCPPAuthServiceFactory } from '../auth/services/OCPPAuthServiceFactory.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
 import { restoreConnectorStatus, sendAndSetConnectorStatus } from '../OCPPServiceUtils.js'
 import {
@@ -91,6 +94,7 @@ import {
   hasCertificateManager,
   type StoreCertificateResult,
 } from './OCPP20CertificateManager.js'
+import { OCPP20Constants } from './OCPP20Constants.js'
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 import { OCPP20VariableManager } from './OCPP20VariableManager.js'
 import { getVariableMetadata, VARIABLE_REGISTRY } from './OCPP20VariableRegistry.js'
@@ -161,7 +165,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       ],
       [
         OCPP20IncomingRequestCommand.CLEAR_CACHE,
-        super.handleRequestClearCache.bind(this) as IncomingRequestHandler,
+        this.handleRequestClearCache.bind(this) as unknown as IncomingRequestHandler,
       ],
       [
         OCPP20IncomingRequestCommand.DELETE_CERTIFICATE,
@@ -509,6 +513,40 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         `${chargingStation.logPrefix()} ${moduleName}.stop: Error clearing runtime overrides:`,
         error
       )
+    }
+  }
+
+  /**
+   * Handles OCPP 2.0.1 ClearCache request by clearing the Authorization Cache
+   * per OCPP 2.0.1 spec C11.FR.01
+   * Per C11.FR.04: Returns Rejected if AuthCacheEnabled is false
+   * @param chargingStation - The charging station instance
+   * @returns Promise resolving to ClearCacheResponse
+   */
+  protected override async handleRequestClearCache (
+    chargingStation: ChargingStation
+  ): Promise<OCPP20ClearCacheResponse> {
+    try {
+      const authService = await OCPPAuthServiceFactory.getInstance(chargingStation)
+      // C11.FR.04: IF AuthCacheEnabled is false, CS SHALL send ClearCacheResponse with status Rejected
+      const config = authService.getConfiguration()
+      if (!config.authorizationCacheEnabled) {
+        logger.info(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestClearCache: Authorization cache disabled, returning Rejected (C11.FR.04)`
+        )
+        return OCPP20Constants.OCPP_RESPONSE_REJECTED
+      }
+      await authService.clearCache()
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestClearCache: Authorization cache cleared`
+      )
+      return OCPP20Constants.OCPP_RESPONSE_ACCEPTED
+    } catch (error) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestClearCache: Error clearing cache:`,
+        error
+      )
+      return OCPP20Constants.OCPP_RESPONSE_REJECTED
     }
   }
 
@@ -1922,19 +1960,40 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param evseId - The EVSE identifier to reset
    */
   private scheduleEvseResetOnIdle (chargingStation: ChargingStation, evseId: number): void {
-    // Monitor for transaction completion and reset when idle
+    // Monitor for idle state per Errata 2.14 and reset when idle
     const monitorInterval = setInterval(() => {
       const evse = chargingStation.evses.get(evseId)
       if (evse) {
+        // Check all idle conditions per Errata 2.14 (OnIdle definition):
+        // 1. Active transactions on EVSE
         let hasActiveTransactions = false
+        let hasPendingReservation = false
         for (const [, connector] of evse.connectors) {
+          // Check for active transaction
           if (connector.transactionId !== undefined) {
             hasActiveTransactions = true
-            break
+          }
+          // Check for pending (non-expired) reservation
+          if (connector.reservation != null && !hasReservationExpired(connector.reservation)) {
+            hasPendingReservation = true
           }
         }
 
-        if (!hasActiveTransactions) {
+        // 2. Firmware update in progress (station-wide affects all EVSEs)
+        const firmwareStatus = chargingStation.stationInfo?.firmwareStatus
+        const hasFirmwareUpdateInProgress =
+          firmwareStatus === FirmwareStatus.Downloading ||
+          firmwareStatus === FirmwareStatus.Downloaded ||
+          firmwareStatus === FirmwareStatus.Installing
+
+        // Note: Log uploads and cable lock state are not tracked in the simulator.
+        // Per Errata 2.14, these would also prevent idle state, but the simulator
+        // does not implement log upload tracking or separate cable lock state.
+
+        const isIdle =
+          !hasActiveTransactions && !hasFirmwareUpdateInProgress && !hasPendingReservation
+
+        if (isIdle) {
           clearInterval(monitorInterval)
           logger.info(
             `${chargingStation.logPrefix()} ${moduleName}.scheduleEvseResetOnIdle: EVSE ${evseId.toString()} is now idle, executing reset`
@@ -1952,11 +2011,48 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param chargingStation - The charging station instance
    */
   private scheduleResetOnIdle (chargingStation: ChargingStation): void {
-    // Monitor for transaction completion and reset when idle
+    // Monitor for idle state per Errata 2.14 and reset when idle
     const monitorInterval = setInterval(() => {
+      // Check all idle conditions per Errata 2.14 (OnIdle definition):
+      // 1. Active transactions
       const hasActiveTransactions = chargingStation.getNumberOfRunningTransactions() > 0
 
-      if (!hasActiveTransactions) {
+      // 2. Firmware update in progress
+      const firmwareStatus = chargingStation.stationInfo?.firmwareStatus
+      const hasFirmwareUpdateInProgress =
+        firmwareStatus === FirmwareStatus.Downloading ||
+        firmwareStatus === FirmwareStatus.Downloaded ||
+        firmwareStatus === FirmwareStatus.Installing
+
+      // 3. Pending reservations (non-expired)
+      let hasPendingReservation = false
+      if (chargingStation.hasEvses) {
+        for (const evse of chargingStation.evses.values()) {
+          for (const connector of evse.connectors.values()) {
+            if (connector.reservation != null && !hasReservationExpired(connector.reservation)) {
+              hasPendingReservation = true
+              break
+            }
+          }
+          if (hasPendingReservation) break
+        }
+      } else {
+        for (const connector of chargingStation.connectors.values()) {
+          if (connector.reservation != null && !hasReservationExpired(connector.reservation)) {
+            hasPendingReservation = true
+            break
+          }
+        }
+      }
+
+      // Note: Log uploads and cable lock state are not tracked in the simulator.
+      // Per Errata 2.14, these would also prevent idle state, but the simulator
+      // does not implement log upload tracking or separate cable lock state.
+
+      const isIdle =
+        !hasActiveTransactions && !hasFirmwareUpdateInProgress && !hasPendingReservation
+
+      if (isIdle) {
         clearInterval(monitorInterval)
         logger.info(
           `${chargingStation.logPrefix()} ${moduleName}.scheduleResetOnIdle: Charging station is now idle, executing reset`
