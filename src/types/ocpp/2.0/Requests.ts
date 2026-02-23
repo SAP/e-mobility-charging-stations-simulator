@@ -37,6 +37,8 @@ export const enum OCPP20IncomingRequestCommand {
   REQUEST_STOP_TRANSACTION = 'RequestStopTransaction',
   RESET = 'Reset',
   SET_VARIABLES = 'SetVariables',
+  TRIGGER_MESSAGE = 'TriggerMessage',
+  UNLOCK_CONNECTOR = 'UnlockConnector',
 }
 
 export const enum OCPP20RequestCommand {
