@@ -170,14 +170,7 @@ export class OCPP20CertificateManager {
     hashData: CertificateHashDataType
   ): Promise<DeleteCertificateResult> {
     try {
-      const sanitizedHashId = this.sanitizePath(stationHashId)
-      const basePath = join(
-        OCPP20CertificateManager.BASE_CERT_PATH,
-        sanitizedHashId,
-        OCPP20CertificateManager.CERT_FOLDER
-      )
-
-      this.validateCertificatePath(basePath, OCPP20CertificateManager.BASE_CERT_PATH)
+      const basePath = this.getStationCertificatesBasePath(stationHashId)
 
       if (!(await this.pathExists(basePath))) {
         return { status: 'NotFound' }
@@ -209,13 +202,14 @@ export class OCPP20CertificateManager {
               return { status: 'Accepted' }
             }
           } catch {
-            continue
+            // Skip unreadable or unparsable certificate file
           }
         }
       }
 
       return { status: 'NotFound' }
     } catch {
+      // Certificate directory access or validation failed
       return { status: 'Failed' }
     }
   }
@@ -232,16 +226,9 @@ export class OCPP20CertificateManager {
     certType: CertificateSigningUseEnumType | InstallCertificateUseEnumType,
     serialNumber: string
   ): string {
-    const sanitizedHashId = this.sanitizePath(stationHashId)
+    const basePath = this.getStationCertificatesBasePath(stationHashId)
     const sanitizedSerial = this.sanitizeSerial(serialNumber)
-
-    return join(
-      OCPP20CertificateManager.BASE_CERT_PATH,
-      sanitizedHashId,
-      OCPP20CertificateManager.CERT_FOLDER,
-      certType,
-      `${sanitizedSerial}.pem`
-    )
+    return join(basePath, certType, `${sanitizedSerial}.pem`)
   }
 
   /**
@@ -257,14 +244,7 @@ export class OCPP20CertificateManager {
     const certificateHashDataChain: CertificateHashDataChainType[] = []
 
     try {
-      const sanitizedHashId = this.sanitizePath(stationHashId)
-      const basePath = join(
-        OCPP20CertificateManager.BASE_CERT_PATH,
-        sanitizedHashId,
-        OCPP20CertificateManager.CERT_FOLDER
-      )
-
-      this.validateCertificatePath(basePath, OCPP20CertificateManager.BASE_CERT_PATH)
+      const basePath = this.getStationCertificatesBasePath(stationHashId)
 
       if (!(await this.pathExists(basePath))) {
         return { certificateHashDataChain }
@@ -300,12 +280,14 @@ export class OCPP20CertificateManager {
               ),
             })
           } catch {
+            // Skip unreadable or unparsable certificate file
             continue
           }
         }
       }
-    } catch {}
-
+    } catch {
+      // Ignore directory listing errors - return empty result
+    }
     return { certificateHashDataChain }
   }
 
@@ -337,6 +319,7 @@ export class OCPP20CertificateManager {
         const hashData = this.computeCertificateHash(firstCertPem)
         serialNumber = hashData.serialNumber
       } catch {
+        // X509 parsing failed, generate fallback serial from content hash
         serialNumber = this.generateFallbackSerialNumber(firstCertPem)
       }
 
@@ -454,6 +437,23 @@ export class OCPP20CertificateManager {
     }
   }
 
+  /**
+   * Builds and validates the base certificates directory path for a station.
+   * @param stationHashId - Charging station unique identifier
+   * @returns Validated base path for certificate storage
+   * @throws {Error} If path validation fails (path traversal attempt)
+   */
+  private getStationCertificatesBasePath (stationHashId: string): string {
+    const sanitizedHashId = this.sanitizePath(stationHashId)
+    const basePath = join(
+      OCPP20CertificateManager.BASE_CERT_PATH,
+      sanitizedHashId,
+      OCPP20CertificateManager.CERT_FOLDER
+    )
+    this.validateCertificatePath(basePath, OCPP20CertificateManager.BASE_CERT_PATH)
+    return basePath
+  }
+
   private isSelfSignedCertificate (x509: X509Certificate): boolean {
     return x509.issuer === x509.subject
   }
@@ -480,6 +480,7 @@ export class OCPP20CertificateManager {
       await stat(path)
       return true
     } catch {
+      // Path does not exist or is inaccessible
       return false
     }
   }
