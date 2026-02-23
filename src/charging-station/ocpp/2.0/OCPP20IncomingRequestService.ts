@@ -1577,6 +1577,29 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     // Validate charging profile if provided
     if (chargingProfile != null) {
+      // OCPP 2.0.1 §2.10: RequestStartTransaction requires chargingProfilePurpose = TxProfile
+      if (
+        chargingProfile.chargingProfilePurpose !== OCPP20ChargingProfilePurposeEnumType.TxProfile
+      ) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: ChargingProfile must have purpose TxProfile for RequestStartTransaction, got ${chargingProfile.chargingProfilePurpose}`
+        )
+        return {
+          status: RequestStartStopStatusEnumType.Rejected,
+          transactionId: generateUUID(),
+        }
+      }
+
+      // OCPP 2.0.1 §2.10: transactionId MUST NOT be set in RequestStartTransaction
+      if (chargingProfile.transactionId != null) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: ChargingProfile transactionId must not be set for RequestStartTransaction`
+        )
+        return {
+          status: RequestStartStopStatusEnumType.Rejected,
+          transactionId: generateUUID(),
+        }
+      }
       let isValidProfile = false
       try {
         isValidProfile = this.validateChargingProfile(chargingStation, chargingProfile, evseId)
@@ -1590,7 +1613,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           transactionId: generateUUID(),
         }
       }
-
       if (!isValidProfile) {
         logger.warn(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Invalid charging profile`
