@@ -486,8 +486,8 @@ export class OCPP20CertificateManager {
 
   private sanitizePath (input: string): string {
     return input
-      .replace(/\\.\\./g, '')
-      .replace(/[/\\\\]/g, '_')
+      .replace(/\.\./g, '_')
+      .replace(/[/\\]/g, '_')
       .replace(/[<>:"|?*]/g, '_')
   }
 
