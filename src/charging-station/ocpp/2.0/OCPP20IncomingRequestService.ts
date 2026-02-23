@@ -1029,7 +1029,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       const deleteResult = result instanceof Promise ? await result : result
 
       // Check the status field for the result
-      if (deleteResult.status === 'NotFound') {
+      if (deleteResult.status === DeleteCertificateStatusEnumType.NotFound) {
         logger.info(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestDeleteCertificate: Certificate not found`
         )
@@ -1038,7 +1038,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         }
       }
 
-      if (deleteResult.status === 'Accepted') {
+      if (deleteResult.status === DeleteCertificateStatusEnumType.Accepted) {
         logger.info(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestDeleteCertificate: Certificate deleted successfully`
         )

@@ -10,6 +10,7 @@ import {
   type CertificateHashDataChainType,
   type CertificateHashDataType,
   CertificateSigningUseEnumType,
+  DeleteCertificateStatusEnumType,
   GetCertificateIdUseEnumType,
   HashAlgorithmEnumType,
   InstallCertificateUseEnumType,
@@ -26,7 +27,7 @@ export interface ChargingStationWithCertificateManager extends ChargingStation {
  * Result type for certificate deletion operations
  */
 export interface DeleteCertificateResult {
-  status: 'Accepted' | 'Failed' | 'NotFound'
+  status: DeleteCertificateStatusEnumType
 }
 
 /**
@@ -173,7 +174,7 @@ export class OCPP20CertificateManager {
       const basePath = this.getStationCertificatesBasePath(stationHashId)
 
       if (!(await this.pathExists(basePath))) {
-        return { status: 'NotFound' }
+        return { status: DeleteCertificateStatusEnumType.NotFound }
       }
 
       const certTypeEntries = await readdir(basePath, { withFileTypes: true })
@@ -199,7 +200,7 @@ export class OCPP20CertificateManager {
               certHash.issuerKeyHash === hashData.issuerKeyHash
             ) {
               await rm(filePath)
-              return { status: 'Accepted' }
+              return { status: DeleteCertificateStatusEnumType.Accepted }
             }
           } catch {
             // Skip unreadable or unparsable certificate file
@@ -207,10 +208,10 @@ export class OCPP20CertificateManager {
         }
       }
 
-      return { status: 'NotFound' }
+      return { status: DeleteCertificateStatusEnumType.NotFound }
     } catch {
       // Certificate directory access or validation failed
-      return { status: 'Failed' }
+      return { status: DeleteCertificateStatusEnumType.Failed }
     }
   }
 
