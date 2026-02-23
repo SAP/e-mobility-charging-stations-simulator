@@ -2,7 +2,7 @@
 
 import { createHash, X509Certificate } from 'node:crypto'
 import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
-import { join, resolve } from 'node:path'
+import { join, resolve, sep } from 'node:path'
 
 import type { ChargingStation } from '../../ChargingStation.js'
 
@@ -500,7 +500,7 @@ export class OCPP20CertificateManager {
     const fileResolved = resolve(baseDir, certificateFileName)
 
     // Check if resolved path is within the base directory
-    if (!fileResolved.startsWith(baseResolved + '/') && fileResolved !== baseResolved) {
+    if (!fileResolved.startsWith(baseResolved + sep) && fileResolved !== baseResolved) {
       throw new Error(
         `Path traversal attempt detected: certificate path '${certificateFileName}' resolves outside base directory`
       )
