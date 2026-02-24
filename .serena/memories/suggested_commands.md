@@ -31,8 +31,7 @@ pnpm start:dev:debug        # Start with debugging enabled
 pnpm build:dev              # Development build with source maps
 pnpm test                   # Run all tests
 pnpm test:debug             # Run tests with debugging
-pnpm coverage               # Generate coverage report
-pnpm coverage:html          # Generate HTML coverage report
+pnpm test:coverage          # Generate coverage report
 ```
 
 ### Code Quality

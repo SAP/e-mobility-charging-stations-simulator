@@ -24,7 +24,7 @@
     "lint:fix": "cross-env TIMING=1 eslint --cache --fix .",
     "format": "prettier --cache --write .; eslint --cache --fix .",
     "test": "vitest",
-    "coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "finalhandler": "^2.1.1",

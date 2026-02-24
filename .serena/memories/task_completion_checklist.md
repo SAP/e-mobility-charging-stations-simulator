@@ -11,7 +11,7 @@
 
 - [ ] Run `pnpm test` to ensure all tests pass
 - [ ] If new functionality added, ensure appropriate tests are included
-- [ ] Check test coverage if relevant: `pnpm coverage`
+- [ ] Check test coverage if relevant: `pnpm test:coverage`
 
 ### 3. Build Verification
 
