@@ -175,11 +175,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       ],
       [
         OCPP16IncomingRequestCommand.CLEAR_CACHE,
-        super.handleRequestClearCache.bind(this) as IncomingRequestHandler,
+        super.handleRequestClearCache.bind(this) as unknown as IncomingRequestHandler,
       ],
       [
         OCPP16IncomingRequestCommand.CLEAR_CHARGING_PROFILE,
-        this.handleRequestClearChargingProfile.bind(this) as IncomingRequestHandler,
+        this.handleRequestClearChargingProfile.bind(this) as unknown as IncomingRequestHandler,
       ],
       [
         OCPP16IncomingRequestCommand.DATA_TRANSFER,
@@ -191,11 +191,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       ],
       [
         OCPP16IncomingRequestCommand.GET_CONFIGURATION,
-        this.handleRequestGetConfiguration.bind(this) as IncomingRequestHandler,
+        this.handleRequestGetConfiguration.bind(this) as unknown as IncomingRequestHandler,
       ],
       [
         OCPP16IncomingRequestCommand.GET_DIAGNOSTICS,
-        this.handleRequestGetDiagnostics.bind(this) as IncomingRequestHandler,
+        this.handleRequestGetDiagnostics.bind(this) as unknown as IncomingRequestHandler,
       ],
       [
         OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
