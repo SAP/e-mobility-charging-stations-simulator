@@ -221,4 +221,26 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
       }
     })
   })
+
+  // C11.FR.05: IF the CS does not support an Authorization Cache → Rejected
+  await describe('C11.FR.05 - No Authorization Cache Support', async () => {
+    await it('Should return Rejected when authService factory fails (no cache support)', async () => {
+      // Mock factory to throw error (simulates no Authorization Cache support)
+      const originalGetInstance = OCPPAuthServiceFactory.getInstance.bind(OCPPAuthServiceFactory)
+      ;(OCPPAuthServiceFactory as any).getInstance = (): Promise<never> =>
+        Promise.reject(new Error('Authorization Cache not supported'))
+
+      try {
+        const response = await (incomingRequestService as any).handleRequestClearCache(
+          mockChargingStation
+        )
+
+        // Per C11.FR.05: SHALL return Rejected if CS does not support Authorization Cache
+        expect(response.status).toBe(GenericStatus.Rejected)
+      } finally {
+        // Restore original factory method
+        ;(OCPPAuthServiceFactory as any).getInstance = originalGetInstance
+      }
+    })
+  })
 })
