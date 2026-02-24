@@ -288,12 +288,7 @@ export interface OCPP20TransactionContext {
   }
 
   /** Specific command that triggered the event (for remote_command source) */
-  command?:
-    | 'RequestStartTransaction'
-    | 'RequestStopTransaction'
-    | 'Reset'
-    | 'TriggerMessage'
-    | 'UnlockConnector'
+  command?: OCPP20IncomingRequestCommand
 
   hasRemoteStartId?: boolean
 

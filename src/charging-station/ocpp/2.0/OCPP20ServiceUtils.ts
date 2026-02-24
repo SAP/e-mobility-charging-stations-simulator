@@ -621,15 +621,15 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     for (const entry of candidates) {
       if (context.source === 'remote_command' && context.command != null) {
         if (
-          (context.command === 'RequestStartTransaction' &&
+          (context.command === OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION &&
             entry.triggerReason === OCPP20TriggerReasonEnumType.RemoteStart) ||
-          (context.command === 'RequestStopTransaction' &&
+          (context.command === OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION &&
             entry.triggerReason === OCPP20TriggerReasonEnumType.RemoteStop) ||
-          (context.command === 'Reset' &&
+          (context.command === OCPP20IncomingRequestCommand.RESET &&
             entry.triggerReason === OCPP20TriggerReasonEnumType.ResetCommand) ||
-          (context.command === 'TriggerMessage' &&
+          (context.command === OCPP20IncomingRequestCommand.TRIGGER_MESSAGE &&
             entry.triggerReason === OCPP20TriggerReasonEnumType.Trigger) ||
-          (context.command === 'UnlockConnector' &&
+          (context.command === OCPP20IncomingRequestCommand.UNLOCK_CONNECTOR &&
             entry.triggerReason === OCPP20TriggerReasonEnumType.UnlockCommand)
         ) {
           return entry.triggerReason

@@ -151,6 +151,7 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
     getNumberOfEvses: (): number => evses.size,
     getWebSocketPingInterval: () => websocketPingInterval,
     hasEvses: useEvses,
+    hasIdTags: (): boolean => false,
     idTagsCache: IdTagsCache.getInstance(),
     inAcceptedState: (): boolean => {
       return (

@@ -3,10 +3,16 @@ import type { JsonObject } from '../../JsonType.js'
 import type { UUIDv4 } from '../../UUID.js'
 import type { RegistrationStatusEnumType } from '../Common.js'
 import type {
+  CertificateHashDataChainType,
+  CertificateSignedStatusEnumType,
   CustomDataType,
+  DeleteCertificateStatusEnumType,
   GenericDeviceModelStatusEnumType,
   GenericStatusEnumType,
+  GetCertificateStatusEnumType,
+  GetInstalledCertificateStatusEnumType,
   InstallCertificateStatusEnumType,
+  Iso15118EVCertificateStatusEnumType,
   ResetStatusEnumType,
   StatusInfoType,
 } from './Common.js'
@@ -21,15 +27,48 @@ export interface OCPP20BootNotificationResponse extends JsonObject {
   statusInfo?: StatusInfoType
 }
 
+export interface OCPP20CertificateSignedResponse extends JsonObject {
+  customData?: CustomDataType
+  status: CertificateSignedStatusEnumType
+  statusInfo?: StatusInfoType
+}
+
 export interface OCPP20ClearCacheResponse extends JsonObject {
   customData?: CustomDataType
   status: GenericStatusEnumType
   statusInfo?: StatusInfoType
 }
 
+export interface OCPP20DeleteCertificateResponse extends JsonObject {
+  customData?: CustomDataType
+  status: DeleteCertificateStatusEnumType
+  statusInfo?: StatusInfoType
+}
+
+export interface OCPP20Get15118EVCertificateResponse extends JsonObject {
+  customData?: CustomDataType
+  exiResponse: string
+  status: Iso15118EVCertificateStatusEnumType
+  statusInfo?: StatusInfoType
+}
+
 export interface OCPP20GetBaseReportResponse extends JsonObject {
   customData?: CustomDataType
   status: GenericDeviceModelStatusEnumType
+  statusInfo?: StatusInfoType
+}
+
+export interface OCPP20GetCertificateStatusResponse extends JsonObject {
+  customData?: CustomDataType
+  ocspResult?: string
+  status: GetCertificateStatusEnumType
+  statusInfo?: StatusInfoType
+}
+
+export interface OCPP20GetInstalledCertificateIdsResponse extends JsonObject {
+  certificateHashDataChain?: CertificateHashDataChainType[]
+  customData?: CustomDataType
+  status: GetInstalledCertificateStatusEnumType
   statusInfo?: StatusInfoType
 }
 
@@ -73,6 +112,12 @@ export interface OCPP20ResetResponse extends JsonObject {
 export interface OCPP20SetVariablesResponse extends JsonObject {
   customData?: CustomDataType
   setVariableResult: OCPP20SetVariableResultType[]
+}
+
+export interface OCPP20SignCertificateResponse extends JsonObject {
+  customData?: CustomDataType
+  status: GenericStatusEnumType
+  statusInfo?: StatusInfoType
 }
 
 export type OCPP20StatusNotificationResponse = EmptyObject

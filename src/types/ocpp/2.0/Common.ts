@@ -84,6 +84,11 @@ export enum InstallCertificateUseEnumType {
   V2GRootCertificate = 'V2GRootCertificate',
 }
 
+export enum Iso15118EVCertificateStatusEnumType {
+  Accepted = 'Accepted',
+  Failed = 'Failed',
+}
+
 export enum OCPP20ComponentName {
   // Physical and Logical Components
   AccessBarrier = 'AccessBarrier',
@@ -270,7 +275,7 @@ export enum ResetStatusEnumType {
 export interface CertificateHashDataChainType extends JsonObject {
   certificateHashData: CertificateHashDataType
   certificateType: GetCertificateIdUseEnumType
-  childCertificateHashData?: CertificateHashDataType
+  childCertificateHashData?: CertificateHashDataType[]
 }
 
 export interface CertificateHashDataType extends JsonObject {

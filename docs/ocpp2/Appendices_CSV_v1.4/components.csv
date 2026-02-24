@@ -1,0 +1,75 @@
+Component ; Description
+AlignedDataCtrlr; Logical Component responsible for configuration relating to the reporting of clock-aligned meter data.
+AuthCtrlr; Logical Component responsible for configuration relating to the use of authorization for Charging Station use.
+AuthCacheCtrlr; Logical Component responsible for configuration relating to the use of a local cache for authorization for Charging Station use.
+CHAdeMOCtrlr; A CHAdeMO Controller component communicates with an EV using the wired CANbus protocol to exchange information and control charging using the CHAdeMO protocol
+ClockCtrlr; Provides a means to configure management of time tracking by Charging Station.
+DeviceDataCtrlr; Logical Component responsible for configuration relating to the exchange and storage of Charging Station Device Model data.
+DisplayMessageCtrlr; Logical Component responsible for configuration relating to the display of messages to Charging Station users.
+ISO15118Ctrlr; Communicates with an EV to exchange information and control charging using the ISO 15118 protocol.
+LocalAuthListCtrlr; Logical Component responsible for configuration relating to the use of Local Authorization Lists for Charging Station use.
+MonitoringCtrlr; Logical Component responsible for configuration relating to the exchange of monitoring event data.
+OCPPCommCtrlr; Logical Component responsible for configuration relating to information exchange between Charging Station and CSMS.
+ReservationCtrlr; Logical Component responsible for configuration relating to reservations.
+SampledDataCtrlr; Logical Component responsible for configuration relating to the reporting of sampled meter data.
+SecurityCtrlr; Logical Component responsible for configuration relating to security of communications between Charging Station and CSMS.
+SmartChargingCtrlr; Logical Component responsible for configuration relating to smart charging.
+TariffCostCtrlr; Logical Component responsible for configuration relating to tariff and cost display.
+TxCtrlr; Logical Component responsible for configuration relating to transaction characteristics and behaviour.
+AccessBarrier; Allows physical access of vehicles to a charging site to be controlled.
+AcDcConverter; Provides a variable DC current source to force energy directly into an EV battery stack, under tight control of the EV's battery management system.
+AcPhaseSelector; Allows a specific AC phase to be selected (typically at EVSE tier) for single phase vehicle charging in order to lower overall (e.g. site) phase imbalance.
+Actuator; A general purpose electro-mechanical output system, with optional completion tracking sensing. Each output should use a Variable instance key indicating the nature of the output.
+AirCoolingSystem; Fans (or equivalent devices) used to provide cooling.
+AreaVentilation; Fans (or equivalent devices) used to ensure that EVs that require ventilation during charging
+BayOccupancySensor; Sensor (optical, ground loop, ultrasonic, etc.) to detect whether the associated parking/charging bay is physically vacant, or is occupied by a vehicle or other obstruction
+BeaconLighting; Beacon Lighting to help EV drivers to locate nearby charging places, and/or to determine charging availability state, usually by color variation.
+CableBreakawaySensor; A sensor that detects when a charging cable (captive or removable) has been forcibly pulled from the Charging Station.
+CaseAccessSensor; Reports when an access door/panel is open
+ChargingStation; The entire Charging Station as a logical entity
+ChargingStatusIndicator; The Charging Status Indicator, provides visible feedback to the user about the connection and charging status of an EVSE/Connector. This is commonly in the form of multi-colored lighting.
+ConnectedEV; ConnectedEV is a component that represents a connected vehicle for which data is received via an ISO 15118 or CHAdeMO interface. The generic information that is received, is represented as variables of ConnectedEV. Any protocol-specific information is represented in variables of the ISO15118Ctrlr or CHAdeMOCtrlr component.
+Connector; A means to connect an EV to a Charging Station with either a socket, an attached cable & inline connector, or any wireless power transfer device.
+ConnectorHolsterRelease; A mechanism present in a connector holster to prevent the connector from being removed inappropriately: typically unlocks connector after authorization.
+ConnectorHolsterSensor; A mechanism to report when a tethered cable connector has been removed from its normal stowage position. May be used for detection of connectors left un-holstered, and possible penalty billing.
+ConnectorPlugRetentionLock; Locking mechanism to retain an inserted plug, both to prevent on-load disconnection, and to prevent theft of charging cables
+ConnectorProtectionRelease; External protective mechanism (e.g. an external shutter or a connector holster lock mechanism) to prevent contact with conductors that may become 'live' under other failure modes
+Controller; An embedded logic controller
+ControlMetering; Energy, Power, Electricity meter, used to measure energy, current, voltages etc.
+CPPWMController; Control Pilot PWM Controller: provides and senses the IEC 61851-1 / SAE J1772 low voltage DC and PWM signalling between an EVSE and EV over a control pilot line.
+DataLink; Provides a communications link from a Charging Station to a CSMS. It may use fixed infrastructure, mobile telephony data services, WiFi, or other connectivity channels.
+Display; Provides information and feedback to the user.
+DistributionPanel; Defines the Distribution Panel, with it's fuses and connections to both Charging Stations and other Distribution Panel's.
+ElectricalFeed; Represents an incoming electrical connection to a Charging Station, that may be a grid/distribution network connection, of a connection to local power generation and/or storage. Each electrical feed can record the electrical and other characteristics of that feed, including power rating, fusing, upstream metering, etc. When a Charging Station has more than one electrical feed, it must represent which feed supplies each EVSE, and which feed supplies the house load of the Charging Station itself. Simple Charging Stations with only a single electrical feed may omit all electrical feed information, in which case it is inferred that all power is supplied from a single feed, and what would otherwise be ElectricalFeed data (Variables) may be reported as being associated with the ChargingStation component.
+ELVSupply; Represents the low voltage power supply (typically 12V DC and often other ELV voltages) that provides operating power for controllers, relays, and other electrical components.
+EmergencyStopSensor; An 'Emergency Stop' button that should be pressed by the user or other nearby persons if serious faulty behavior is observed (e.g. smoke/flames from EV or Charging Station).
+EnvironmentalLighting; Provides reporting/control of general illumination lighting in use at Charging Station.
+EVRetentionLock; A locking mechanism on the EV side as a safety measure to prevent it being disconnected while high currents are flowing.
+EVSE; The entire chain of components responsible for transporting energy from the incoming supply to the electric vehicle (or vice versa)
+ExternalTemperatureSensor; Reports ambient air temperature
+FiscalMetering; Provides energy transfer readings that are the basis for billing.
+FloodSensor; A sensor reporting whether the Charging Station is experiencing water ingress/pooling.
+GroundIsolationProtection; An Isolation Tester as part of their own self-test mechanisms, to confirm the isolation of floating circuitry when no Evs are connected
+Heater; Heater to ensure reliable operation in cold environments
+HumiditySensor; Reports relative air humidity
+LightSensor; Reports ambient light levels.
+LiquidCoolingSystem; A liquid based cooling system, typically used to cool the connector cables of very high power Charging Stations.
+LocalAvailabilitySensor; Accepts local signal inputs controlling whether new Charging Sessions can start and/or whether ongoing sessions should continue. Typically connected to a site/building power supply, to automatically report unavailability when closed.
+LocalController; The entire Local Controller as a logical entity
+LocalEnergyStorage; Energy storage
+OverCurrentProtection; Protects equipment by disconnecting the electrical supply when the current drawn (on any phase) exceeds the rated value to a substantial degree.
+OverCurrentProtectionRecloser; Recloser mechanism of an OverCurrentProtection to perform re-arm retries after a trip, or may be set for remotely controlled re-arming on command.
+PowerContactor; Switches on and off the power to the EV after all authorization and safety requirements have been met. May have secondary contacts to report closure state.
+RCD; A Residual Current Device (US: ground fault breaker) protects human life and/or downstream equipment by quickly detecting abnormal current flows (usually indicative in earth faults) in the Charging Station, cable, or EV during charging.
+RCDRecloser; A motorized recloser mechanism of an RCD that may be configured to perform re-arm retries after a trip, or may be set for remotely controlled re-arming on command.
+RealTimeClock; Represents realtime clock hardware that can maintain accurate date & time information in a Charging Station, even in the case of simultaneous CSMS uncontactability and power outages or resets.
+ShockSensor; Measures impact forces/accelerations experienced, indicative of possible damage.
+SpacesCountSignage; Electronic signage allowing a charging controller for a large charging facility to advertise counts of available spaces to passing traffic.
+Switch; A general purpose electromechanical input device, with optional remote defaulting/resetting of values. Each input should use a Variable instance key indicating the nature of the input.
+TemperatureSensor; Temperature sensor at a point inside the Charging Station, multiple sensing points for a single sensing controller. Multiple sensing points for a single sensing controller may be reported using distinct Variable instance keys.
+TiltSensor; Measures Tilt angle from normal reference position (normally 90 degree vertical).
+TokenReader; An authorization token reader (e.g. RFID)
+UpstreamProtectionTrigger; Circuitry designed to trigger the disconnection of power to the structure by an upstream protection device after a severe problem has been detected
+UIInput; A logical input mechanism (e.g. set of buttons) that is part of a UI whose use may be communicated to the CSMS (in near real time). May support momentary inputs ('Operated') or modal state ('Active'). Multiple input sources should use explicit Variable instance keys (where the input function is key name).
+VehicleIdSensor; Reports an identifier associated with a vehicle occupying a charging bay. The identifier may be a vehicle registration number via ANPR hardware, a VIN, or other local identifier of the vehicle based on medium range/active RFID, or any other relevant technology and result.
+

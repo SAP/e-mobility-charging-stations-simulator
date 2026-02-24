@@ -1,0 +1,12 @@
+Value;Description
+Central;A centrally, in the CSMS (or other server) generated id (for example used for a remotely started transaction that is activated by SMS). No format defined, might be a UUID.
+DirectPayment;IdToken from a payment terminal that authorized a payment card. Usually a reference id from payment service provider.
+eMAID;Electro-mobility account id as defined in ISO 15118
+EVCCID;EVCCID of EV. For ISO 15118-2 this is the MAC address. For ISO 15118-20 this is an identifier up to 255 characters.
+ISO14443;ISO 14443 UID of RFID card. It is represented as an array of 4 or 7 bytes in hexadecimal representation.
+ISO15693;ISO 15693 UID of RFID card. It is represented as an array of 8 bytes in hexadecimal representation.
+KeyCode;A private key-code to authorize a charging transaction. For example: Pin-code.
+Local;A locally generated id (e.g. internal id created by the Charging Station). Needs no checking by CSMS. No format defined, might be a UUID
+MacAddress;MacAddress of the EVCC (Electric Vehicle Communication Controller) that is connected to the EVSE. Used when MAC address is used for authorization (Autocharge).
+NoAuthorization;Transaction is started and no authorization possible. Charging Station only has a start button or mechanical key etc. IdToken field SHALL be left empty.
+VIN;Vehicle Identification Number of EV.
