@@ -69,7 +69,7 @@
     "format": "prettier --cache --write .; eslint --cache --fix src tests scripts ./*.js ./*.ts",
     "test": "node --import tsx --test --experimental-test-coverage tests/**/*.test.ts",
     "test:debug": "node --import tsx --test --inspect tests/**/*.test.ts",
-    "test:coverage": "node --import tsx --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/lcov.info tests/**/*.test.ts",
+    "test:coverage": "mkdir -p coverage && node --import tsx --test --experimental-test-coverage --test-reporter=lcov --test-reporter-destination=coverage/lcov.info tests/**/*.test.ts",
     "clinic:clean": "clinic clean",
     "sea": "pnpm exec rimraf ./dist/evse-simulator ./dist/evse-simulator.blob && node --experimental-sea-config sea-config.json && pnpm dlx ncp $(volta which node || n which lts || nvm which node || command -v node) ./dist/evse-simulator && pnpm dlx postject ./dist/evse-simulator NODE_SEA_BLOB ./dist/evse-simulator.blob --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2 && pnpm exec rimraf ./dist/evse-simulator.blob"
   },
