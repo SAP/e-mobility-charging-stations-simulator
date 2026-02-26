@@ -20,6 +20,7 @@ import {
   DataEnumType,
   DeleteCertificateStatusEnumType,
   ErrorType,
+  type EvseStatus,
   FirmwareStatus,
   GenericDeviceModelStatusEnumType,
   GenericStatus,
@@ -1419,21 +1420,22 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         // OnIdle reset
         if (evseId !== undefined) {
           // EVSE-specific OnIdle reset
-          if (hasEvseActiveTransactions) {
+          const evse = chargingStation.evses.get(evseId)
+          if (evse != null && !this.isEvseIdle(chargingStation, evse)) {
             logger.info(
-              `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: OnIdle EVSE reset scheduled for EVSE ${evseId.toString()}, waiting for transaction completion`
+              `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: OnIdle EVSE reset scheduled for EVSE ${evseId.toString()}, waiting for idle state`
             )
 
-            // Monitor EVSE for transaction completion and schedule reset when idle
+            // Monitor EVSE for idle state and schedule reset when idle
             this.scheduleEvseResetOnIdle(chargingStation, evseId)
 
             return {
               status: ResetStatusEnumType.Scheduled,
             }
           } else {
-            // No active transactions on EVSE, reset immediately
+            // EVSE is idle, reset immediately
             logger.info(
-              `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: OnIdle EVSE reset without active transactions for EVSE ${evseId.toString()}`
+              `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: OnIdle EVSE reset - EVSE ${evseId.toString()} is idle, resetting immediately`
             )
 
             this.scheduleEvseReset(chargingStation, evseId, false)
@@ -1444,9 +1446,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           }
         } else {
           // Charging station OnIdle reset
-          if (hasActiveTransactions) {
+          if (!this.isChargingStationIdle(chargingStation)) {
             logger.info(
-              `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: OnIdle reset scheduled, waiting for transaction completion`
+              `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: OnIdle reset scheduled, waiting for idle state`
             )
 
             this.scheduleResetOnIdle(chargingStation)
@@ -1455,9 +1457,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               status: ResetStatusEnumType.Scheduled,
             }
           } else {
-            // No active transactions, reset immediately
+            // Charging station is idle, reset immediately
             logger.info(
-              `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: OnIdle reset without active transactions, resetting immediately`
+              `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: OnIdle reset - charging station is idle, resetting immediately`
             )
 
             chargingStation.reset(StopTransactionReason.REMOTE).catch((error: unknown) => {
@@ -1791,6 +1793,102 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
+  /**
+   * Checks if a specific EVSE has any active transactions.
+   * @param evse - The EVSE to check
+   * @returns true if any connector on the EVSE has an active transaction
+   */
+  private hasEvseActiveTransactions (evse: EvseStatus): boolean {
+    for (const connector of evse.connectors.values()) {
+      if (connector.transactionId !== undefined) {
+        return true
+      }
+    }
+    return false
+  }
+
+  /**
+   * Checks if a specific EVSE has any non-expired reservations.
+   * @param evse - The EVSE to check
+   * @returns true if any connector on the EVSE has a pending reservation
+   */
+  private hasEvsePendingReservations (evse: EvseStatus): boolean {
+    for (const connector of evse.connectors.values()) {
+      if (connector.reservation != null && !hasReservationExpired(connector.reservation)) {
+        return true
+      }
+    }
+    return false
+  }
+
+  /**
+   * Checks if firmware update is in progress per OCPP 2.0.1 Errata idle definition.
+   * @param chargingStation - The charging station instance
+   * @returns true if firmware update is in progress (Downloading, Downloaded, or Installing)
+   */
+  private hasFirmwareUpdateInProgress (chargingStation: ChargingStation): boolean {
+    const firmwareStatus = chargingStation.stationInfo?.firmwareStatus
+    return (
+      firmwareStatus === FirmwareStatus.Downloading ||
+      firmwareStatus === FirmwareStatus.Downloaded ||
+      firmwareStatus === FirmwareStatus.Installing
+    )
+  }
+
+  /**
+   * Checks if charging station has any non-expired reservations per OCPP 2.0.1 Errata idle definition.
+   * @param chargingStation - The charging station instance
+   * @returns true if any connector has a pending (non-expired) reservation
+   */
+  private hasPendingReservations (chargingStation: ChargingStation): boolean {
+    if (chargingStation.hasEvses) {
+      for (const evse of chargingStation.evses.values()) {
+        for (const connector of evse.connectors.values()) {
+          if (connector.reservation != null && !hasReservationExpired(connector.reservation)) {
+            return true
+          }
+        }
+      }
+    } else {
+      for (const connector of chargingStation.connectors.values()) {
+        if (connector.reservation != null && !hasReservationExpired(connector.reservation)) {
+          return true
+        }
+      }
+    }
+    return false
+  }
+
+  /**
+   * Checks if charging station is idle per OCPP 2.0.1 Errata definition.
+   * Idle means: no active transactions, no firmware update in progress, no pending reservations.
+   * Note: Log uploads and cable lock state are not tracked in the simulator.
+   * @param chargingStation - The charging station instance
+   * @returns true if charging station is idle
+   */
+  private isChargingStationIdle (chargingStation: ChargingStation): boolean {
+    return (
+      chargingStation.getNumberOfRunningTransactions() === 0 &&
+      !this.hasFirmwareUpdateInProgress(chargingStation) &&
+      !this.hasPendingReservations(chargingStation)
+    )
+  }
+
+  /**
+   * Checks if a specific EVSE is idle per OCPP 2.0.1 Errata definition.
+   * Idle means: no active transactions on EVSE, no firmware update in progress, no pending reservations on EVSE.
+   * @param chargingStation - The charging station instance
+   * @param evse - The EVSE to check
+   * @returns true if EVSE is idle
+   */
+  private isEvseIdle (chargingStation: ChargingStation, evse: EvseStatus): boolean {
+    return (
+      !this.hasEvseActiveTransactions(evse) &&
+      !this.hasFirmwareUpdateInProgress(chargingStation) &&
+      !this.hasEvsePendingReservations(evse)
+    )
+  }
+
   private isIdTokenAuthorized (
     chargingStation: ChargingStation,
     idToken: OCPP20IdTokenType
@@ -1960,40 +2058,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param evseId - The EVSE identifier to reset
    */
   private scheduleEvseResetOnIdle (chargingStation: ChargingStation, evseId: number): void {
-    // Monitor for idle state per Errata 2.14 and reset when idle
     const monitorInterval = setInterval(() => {
       const evse = chargingStation.evses.get(evseId)
-      if (evse) {
-        // Check all idle conditions per Errata 2.14 (OnIdle definition):
-        // 1. Active transactions on EVSE
-        let hasActiveTransactions = false
-        let hasPendingReservation = false
-        for (const [, connector] of evse.connectors) {
-          // Check for active transaction
-          if (connector.transactionId !== undefined) {
-            hasActiveTransactions = true
-          }
-          // Check for pending (non-expired) reservation
-          if (connector.reservation != null && !hasReservationExpired(connector.reservation)) {
-            hasPendingReservation = true
-          }
-        }
-
-        // 2. Firmware update in progress (station-wide affects all EVSEs)
-        const firmwareStatus = chargingStation.stationInfo?.firmwareStatus
-        const hasFirmwareUpdateInProgress =
-          firmwareStatus === FirmwareStatus.Downloading ||
-          firmwareStatus === FirmwareStatus.Downloaded ||
-          firmwareStatus === FirmwareStatus.Installing
-
-        // Note: Log uploads and cable lock state are not tracked in the simulator.
-        // Per Errata 2.14, these would also prevent idle state, but the simulator
-        // does not implement log upload tracking or separate cable lock state.
-
-        const isIdle =
-          !hasActiveTransactions && !hasFirmwareUpdateInProgress && !hasPendingReservation
-
-        if (isIdle) {
+      if (evse != null) {
+        if (this.isEvseIdle(chargingStation, evse)) {
           clearInterval(monitorInterval)
           logger.info(
             `${chargingStation.logPrefix()} ${moduleName}.scheduleEvseResetOnIdle: EVSE ${evseId.toString()} is now idle, executing reset`
@@ -2003,7 +2071,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       } else {
         clearInterval(monitorInterval)
       }
-    }, 5000) // Check every 5 seconds
+    }, 5000)
   }
 
   /**
@@ -2011,48 +2079,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param chargingStation - The charging station instance
    */
   private scheduleResetOnIdle (chargingStation: ChargingStation): void {
-    // Monitor for idle state per Errata 2.14 and reset when idle
     const monitorInterval = setInterval(() => {
-      // Check all idle conditions per Errata 2.14 (OnIdle definition):
-      // 1. Active transactions
-      const hasActiveTransactions = chargingStation.getNumberOfRunningTransactions() > 0
-
-      // 2. Firmware update in progress
-      const firmwareStatus = chargingStation.stationInfo?.firmwareStatus
-      const hasFirmwareUpdateInProgress =
-        firmwareStatus === FirmwareStatus.Downloading ||
-        firmwareStatus === FirmwareStatus.Downloaded ||
-        firmwareStatus === FirmwareStatus.Installing
-
-      // 3. Pending reservations (non-expired)
-      let hasPendingReservation = false
-      if (chargingStation.hasEvses) {
-        for (const evse of chargingStation.evses.values()) {
-          for (const connector of evse.connectors.values()) {
-            if (connector.reservation != null && !hasReservationExpired(connector.reservation)) {
-              hasPendingReservation = true
-              break
-            }
-          }
-          if (hasPendingReservation) break
-        }
-      } else {
-        for (const connector of chargingStation.connectors.values()) {
-          if (connector.reservation != null && !hasReservationExpired(connector.reservation)) {
-            hasPendingReservation = true
-            break
-          }
-        }
-      }
-
-      // Note: Log uploads and cable lock state are not tracked in the simulator.
-      // Per Errata 2.14, these would also prevent idle state, but the simulator
-      // does not implement log upload tracking or separate cable lock state.
-
-      const isIdle =
-        !hasActiveTransactions && !hasFirmwareUpdateInProgress && !hasPendingReservation
-
-      if (isIdle) {
+      if (this.isChargingStationIdle(chargingStation)) {
         clearInterval(monitorInterval)
         logger.info(
           `${chargingStation.logPrefix()} ${moduleName}.scheduleResetOnIdle: Charging station is now idle, executing reset`
@@ -2064,7 +2092,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           )
         })
       }
-    }, 5000) // Check every 5 seconds
+    }, 5000)
   }
 
   /**
