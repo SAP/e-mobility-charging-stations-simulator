@@ -38,241 +38,229 @@ const createMockRequestService = (responseOverride?: Partial<OCPP20SignCertifica
   return requestService
 }
 
-// FIXME: tests hang on Windows due to generateKeyPairSync in requestSignCertificate
-await describe(
-  'I02 - SignCertificate Request',
-  { skip: process.platform === 'win32' },
-  async () => {
-    const mockChargingStation = createChargingStation({
-      baseName: TEST_CHARGING_STATION_BASE_NAME,
-      connectorsCount: 3,
-      evseConfiguration: { evsesCount: 3 },
-      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-      stationInfo: {
-        ocppStrictCompliance: false,
-        ocppVersion: OCPPVersion.VERSION_201,
-      },
-      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
-    })
+await describe('I02 - SignCertificate Request', async () => {
+  const mockChargingStation = createChargingStation({
+    baseName: TEST_CHARGING_STATION_BASE_NAME,
+    connectorsCount: 3,
+    evseConfiguration: { evsesCount: 3 },
+    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+    stationInfo: {
+      ocppStrictCompliance: false,
+      ocppVersion: OCPPVersion.VERSION_201,
+    },
+    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+  })
 
-    // Set up configuration with OrganizationName
-    mockChargingStation.ocppConfiguration = {
-      configurationKey: [{ key: 'SecurityCtrlr.OrganizationName', value: MOCK_ORGANIZATION_NAME }],
-    }
-
-    await describe('CSR Generation', async () => {
-      await it('Should generate CSR with PKCS#10 PEM format', async () => {
-        const requestService = createMockRequestService()
-
-        const response = await (requestService as any).requestSignCertificate(
-          mockChargingStation,
-          CertificateSigningUseEnumType.ChargingStationCertificate
-        )
-
-        expect(response).toBeDefined()
-        expect(response.status).toBe(GenericStatus.Accepted)
-
-        const sendMessageMock = (requestService as any).sendMessage
-        expect(sendMessageMock.mock.calls.length).toBeGreaterThan(0)
-
-        const sentPayload = sendMessageMock.mock.calls[0]
-          .arguments[2] as OCPP20SignCertificateRequest
-        expect(sentPayload.csr).toBeDefined()
-        expect(sentPayload.csr).toContain('-----BEGIN CERTIFICATE REQUEST-----')
-        expect(sentPayload.csr).toContain('-----END CERTIFICATE REQUEST-----')
-      })
-
-      await it('Should include OrganizationName from SecurityCtrlr config in CSR', async () => {
-        const requestService = createMockRequestService()
-
-        await (requestService as any).requestSignCertificate(
-          mockChargingStation,
-          CertificateSigningUseEnumType.ChargingStationCertificate
-        )
-
-        const sendMessageMock = (requestService as any).sendMessage
-        const sentPayload = sendMessageMock.mock.calls[0]
-          .arguments[2] as OCPP20SignCertificateRequest
-        expect(sentPayload.csr).toBeDefined()
-        expect(sentPayload.csr).toContain('-----BEGIN CERTIFICATE REQUEST-----')
-
-        const csrRegex =
-          /-----BEGIN CERTIFICATE REQUEST-----\n(.+?)\n-----END CERTIFICATE REQUEST-----/
-        const csrExecResult = csrRegex.exec(sentPayload.csr)
-        expect(csrExecResult).toBeDefined()
-        const csrData = csrExecResult?.[1]
-        const decodedCsr = Buffer.from(csrData ?? '', 'base64').toString('utf-8')
-        expect(decodedCsr).toContain('O=Test Organization Inc.')
-      })
-    })
-
-    await describe('ChargingStationCertificate Type', async () => {
-      await it('Should send SignCertificateRequest with ChargingStationCertificate type', async () => {
-        const requestService = createMockRequestService()
-
-        await (requestService as any).requestSignCertificate(
-          mockChargingStation,
-          CertificateSigningUseEnumType.ChargingStationCertificate
-        )
-
-        const sendMessageMock = (requestService as any).sendMessage
-        const sentPayload = sendMessageMock.mock.calls[0]
-          .arguments[2] as OCPP20SignCertificateRequest
-
-        expect(sentPayload.certificateType).toBe(
-          CertificateSigningUseEnumType.ChargingStationCertificate
-        )
-      })
-    })
-
-    await describe('V2GCertificate Type', async () => {
-      await it('Should send SignCertificateRequest with V2GCertificate type', async () => {
-        const requestService = createMockRequestService()
-
-        await (requestService as any).requestSignCertificate(
-          mockChargingStation,
-          CertificateSigningUseEnumType.V2GCertificate
-        )
-
-        const sendMessageMock = (requestService as any).sendMessage
-        const sentPayload = sendMessageMock.mock.calls[0]
-          .arguments[2] as OCPP20SignCertificateRequest
-
-        expect(sentPayload.certificateType).toBe(CertificateSigningUseEnumType.V2GCertificate)
-      })
-    })
-
-    await describe('CSMS Response Handling', async () => {
-      await it('Should return Accepted response from CSMS', async () => {
-        const requestService = createMockRequestService({
-          status: GenericStatus.Accepted,
-        })
-
-        const response: OCPP20SignCertificateResponse = await (
-          requestService as any
-        ).requestSignCertificate(
-          mockChargingStation,
-          CertificateSigningUseEnumType.ChargingStationCertificate
-        )
-
-        expect(response).toBeDefined()
-        expect(response.status).toBe(GenericStatus.Accepted)
-      })
-
-      await it('Should return Rejected response from CSMS', async () => {
-        const requestService = createMockRequestService({
-          status: GenericStatus.Rejected,
-          statusInfo: {
-            reasonCode: 'InvalidCSR',
-          },
-        })
-
-        const response: OCPP20SignCertificateResponse = await (
-          requestService as any
-        ).requestSignCertificate(
-          mockChargingStation,
-          CertificateSigningUseEnumType.ChargingStationCertificate
-        )
-
-        expect(response).toBeDefined()
-        expect(response.status).toBe(GenericStatus.Rejected)
-        expect(response.statusInfo).toBeDefined()
-        expect(response.statusInfo?.reasonCode).toBe('InvalidCSR')
-      })
-    })
-
-    await describe('Optional Certificate Type', async () => {
-      await it('Should send SignCertificateRequest without certificateType when omitted', async () => {
-        const requestService = createMockRequestService()
-
-        await (requestService as any).requestSignCertificate(mockChargingStation)
-
-        const sendMessageMock = (requestService as any).sendMessage
-        const sentPayload = sendMessageMock.mock.calls[0]
-          .arguments[2] as OCPP20SignCertificateRequest
-
-        expect(sentPayload.csr).toBeDefined()
-        // certificateType should be undefined when not specified
-        expect(sentPayload.certificateType).toBeUndefined()
-      })
-    })
-
-    await describe('Request Payload Validation', async () => {
-      await it('Should build valid OCPP20SignCertificateRequest payload', async () => {
-        const requestService = createMockRequestService()
-
-        await (requestService as any).requestSignCertificate(
-          mockChargingStation,
-          CertificateSigningUseEnumType.ChargingStationCertificate
-        )
-
-        const sendMessageMock = (requestService as any).sendMessage
-        expect(sendMessageMock.mock.calls.length).toBe(1)
-
-        const sentPayload = sendMessageMock.mock.calls[0]
-          .arguments[2] as OCPP20SignCertificateRequest
-
-        // Validate payload structure
-        expect(typeof sentPayload).toBe('object')
-        expect(sentPayload.csr).toBeDefined()
-        expect(typeof sentPayload.csr).toBe('string')
-        expect(sentPayload.csr.length).toBeGreaterThan(0)
-        expect(sentPayload.csr.length).toBeLessThanOrEqual(5500) // Max length per schema
-      })
-
-      await it('Should send SIGN_CERTIFICATE command name', async () => {
-        const requestService = createMockRequestService()
-
-        await (requestService as any).requestSignCertificate(
-          mockChargingStation,
-          CertificateSigningUseEnumType.ChargingStationCertificate
-        )
-
-        const sendMessageMock = (requestService as any).sendMessage
-        const commandName = sendMessageMock.mock.calls[0].arguments[3]
-
-        expect(commandName).toBe(OCPP20RequestCommand.SIGN_CERTIFICATE)
-      })
-    })
-
-    await describe('Error Handling', async () => {
-      await it('Should generate CSR without certificate manager dependency', async () => {
-        const stationWithoutCertManager = createChargingStation({
-          baseName: TEST_CHARGING_STATION_BASE_NAME,
-          connectorsCount: 1,
-          evseConfiguration: { evsesCount: 1 },
-          heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-          stationInfo: {
-            ocppStrictCompliance: false,
-            ocppVersion: OCPPVersion.VERSION_201,
-          },
-          websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
-        })
-
-        stationWithoutCertManager.ocppConfiguration = {
-          configurationKey: [
-            { key: 'SecurityCtrlr.OrganizationName', value: MOCK_ORGANIZATION_NAME },
-          ],
-        }
-
-        delete (stationWithoutCertManager as any).certificateManager
-
-        const requestService = createMockRequestService()
-
-        const response = await (requestService as any).requestSignCertificate(
-          stationWithoutCertManager,
-          CertificateSigningUseEnumType.ChargingStationCertificate
-        )
-
-        expect(response).toBeDefined()
-        expect(response.status).toBe(GenericStatus.Accepted)
-
-        const sendMessageMock = (requestService as any).sendMessage
-        const sentPayload = sendMessageMock.mock.calls[0]
-          .arguments[2] as OCPP20SignCertificateRequest
-        expect(sentPayload.csr).toBeDefined()
-        expect(sentPayload.csr).toContain('-----BEGIN CERTIFICATE REQUEST-----')
-      })
-    })
+  // Set up configuration with OrganizationName
+  mockChargingStation.ocppConfiguration = {
+    configurationKey: [{ key: 'SecurityCtrlr.OrganizationName', value: MOCK_ORGANIZATION_NAME }],
   }
-)
+
+  await describe('CSR Generation', async () => {
+    await it('Should generate CSR with PKCS#10 PEM format', async () => {
+      const requestService = createMockRequestService()
+
+      const response = await (requestService as any).requestSignCertificate(
+        mockChargingStation,
+        CertificateSigningUseEnumType.ChargingStationCertificate
+      )
+
+      expect(response).toBeDefined()
+      expect(response.status).toBe(GenericStatus.Accepted)
+
+      const sendMessageMock = (requestService as any).sendMessage
+      expect(sendMessageMock.mock.calls.length).toBeGreaterThan(0)
+
+      const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
+      expect(sentPayload.csr).toBeDefined()
+      expect(sentPayload.csr).toContain('-----BEGIN CERTIFICATE REQUEST-----')
+      expect(sentPayload.csr).toContain('-----END CERTIFICATE REQUEST-----')
+    })
+
+    await it('Should include OrganizationName from SecurityCtrlr config in CSR', async () => {
+      const requestService = createMockRequestService()
+
+      await (requestService as any).requestSignCertificate(
+        mockChargingStation,
+        CertificateSigningUseEnumType.ChargingStationCertificate
+      )
+
+      const sendMessageMock = (requestService as any).sendMessage
+      const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
+      expect(sentPayload.csr).toBeDefined()
+      expect(sentPayload.csr).toContain('-----BEGIN CERTIFICATE REQUEST-----')
+
+      const csrRegex =
+        /-----BEGIN CERTIFICATE REQUEST-----\n(.+?)\n-----END CERTIFICATE REQUEST-----/
+      const csrExecResult = csrRegex.exec(sentPayload.csr)
+      expect(csrExecResult).toBeDefined()
+      const csrData = csrExecResult?.[1]
+      const decodedCsr = Buffer.from(csrData ?? '', 'base64').toString('utf-8')
+      expect(decodedCsr).toContain('O=Test Organization Inc.')
+    })
+  })
+
+  await describe('ChargingStationCertificate Type', async () => {
+    await it('Should send SignCertificateRequest with ChargingStationCertificate type', async () => {
+      const requestService = createMockRequestService()
+
+      await (requestService as any).requestSignCertificate(
+        mockChargingStation,
+        CertificateSigningUseEnumType.ChargingStationCertificate
+      )
+
+      const sendMessageMock = (requestService as any).sendMessage
+      const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
+
+      expect(sentPayload.certificateType).toBe(
+        CertificateSigningUseEnumType.ChargingStationCertificate
+      )
+    })
+  })
+
+  await describe('V2GCertificate Type', async () => {
+    await it('Should send SignCertificateRequest with V2GCertificate type', async () => {
+      const requestService = createMockRequestService()
+
+      await (requestService as any).requestSignCertificate(
+        mockChargingStation,
+        CertificateSigningUseEnumType.V2GCertificate
+      )
+
+      const sendMessageMock = (requestService as any).sendMessage
+      const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
+
+      expect(sentPayload.certificateType).toBe(CertificateSigningUseEnumType.V2GCertificate)
+    })
+  })
+
+  await describe('CSMS Response Handling', async () => {
+    await it('Should return Accepted response from CSMS', async () => {
+      const requestService = createMockRequestService({
+        status: GenericStatus.Accepted,
+      })
+
+      const response: OCPP20SignCertificateResponse = await (
+        requestService as any
+      ).requestSignCertificate(
+        mockChargingStation,
+        CertificateSigningUseEnumType.ChargingStationCertificate
+      )
+
+      expect(response).toBeDefined()
+      expect(response.status).toBe(GenericStatus.Accepted)
+    })
+
+    await it('Should return Rejected response from CSMS', async () => {
+      const requestService = createMockRequestService({
+        status: GenericStatus.Rejected,
+        statusInfo: {
+          reasonCode: 'InvalidCSR',
+        },
+      })
+
+      const response: OCPP20SignCertificateResponse = await (
+        requestService as any
+      ).requestSignCertificate(
+        mockChargingStation,
+        CertificateSigningUseEnumType.ChargingStationCertificate
+      )
+
+      expect(response).toBeDefined()
+      expect(response.status).toBe(GenericStatus.Rejected)
+      expect(response.statusInfo).toBeDefined()
+      expect(response.statusInfo?.reasonCode).toBe('InvalidCSR')
+    })
+  })
+
+  await describe('Optional Certificate Type', async () => {
+    await it('Should send SignCertificateRequest without certificateType when omitted', async () => {
+      const requestService = createMockRequestService()
+
+      await (requestService as any).requestSignCertificate(mockChargingStation)
+
+      const sendMessageMock = (requestService as any).sendMessage
+      const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
+
+      expect(sentPayload.csr).toBeDefined()
+      // certificateType should be undefined when not specified
+      expect(sentPayload.certificateType).toBeUndefined()
+    })
+  })
+
+  await describe('Request Payload Validation', async () => {
+    await it('Should build valid OCPP20SignCertificateRequest payload', async () => {
+      const requestService = createMockRequestService()
+
+      await (requestService as any).requestSignCertificate(
+        mockChargingStation,
+        CertificateSigningUseEnumType.ChargingStationCertificate
+      )
+
+      const sendMessageMock = (requestService as any).sendMessage
+      expect(sendMessageMock.mock.calls.length).toBe(1)
+
+      const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
+
+      // Validate payload structure
+      expect(typeof sentPayload).toBe('object')
+      expect(sentPayload.csr).toBeDefined()
+      expect(typeof sentPayload.csr).toBe('string')
+      expect(sentPayload.csr.length).toBeGreaterThan(0)
+      expect(sentPayload.csr.length).toBeLessThanOrEqual(5500) // Max length per schema
+    })
+
+    await it('Should send SIGN_CERTIFICATE command name', async () => {
+      const requestService = createMockRequestService()
+
+      await (requestService as any).requestSignCertificate(
+        mockChargingStation,
+        CertificateSigningUseEnumType.ChargingStationCertificate
+      )
+
+      const sendMessageMock = (requestService as any).sendMessage
+      const commandName = sendMessageMock.mock.calls[0].arguments[3]
+
+      expect(commandName).toBe(OCPP20RequestCommand.SIGN_CERTIFICATE)
+    })
+  })
+
+  await describe('Error Handling', async () => {
+    await it('Should generate CSR without certificate manager dependency', async () => {
+      const stationWithoutCertManager = createChargingStation({
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
+        connectorsCount: 1,
+        evseConfiguration: { evsesCount: 1 },
+        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+        stationInfo: {
+          ocppStrictCompliance: false,
+          ocppVersion: OCPPVersion.VERSION_201,
+        },
+        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      })
+
+      stationWithoutCertManager.ocppConfiguration = {
+        configurationKey: [
+          { key: 'SecurityCtrlr.OrganizationName', value: MOCK_ORGANIZATION_NAME },
+        ],
+      }
+
+      delete (stationWithoutCertManager as any).certificateManager
+
+      const requestService = createMockRequestService()
+
+      const response = await (requestService as any).requestSignCertificate(
+        stationWithoutCertManager,
+        CertificateSigningUseEnumType.ChargingStationCertificate
+      )
+
+      expect(response).toBeDefined()
+      expect(response.status).toBe(GenericStatus.Accepted)
+
+      const sendMessageMock = (requestService as any).sendMessage
+      const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
+      expect(sentPayload.csr).toBeDefined()
+      expect(sentPayload.csr).toContain('-----BEGIN CERTIFICATE REQUEST-----')
+    })
+  })
+})

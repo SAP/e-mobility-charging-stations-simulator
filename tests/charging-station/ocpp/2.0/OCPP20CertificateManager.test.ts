@@ -44,8 +44,7 @@ const _EXPECTED_HASH_DATA: CertificateHashDataType = {
   serialNumber: expect.any(String),
 }
 
-// FIXME: tests hang on Windows since certificate management merge
-await describe('OCPP20CertificateManager', { skip: process.platform === 'win32' }, async () => {
+await describe('OCPP20CertificateManager', async () => {
   afterEach(async () => {
     await rm(`dist/assets/configurations/${TEST_STATION_HASH_ID}`, {
       force: true,
