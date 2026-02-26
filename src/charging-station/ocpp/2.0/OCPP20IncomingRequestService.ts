@@ -1326,17 +1326,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     const hasActiveTransactions = chargingStation.getNumberOfRunningTransactions() > 0
 
     // Check for EVSE-specific active transactions if evseId is provided
-    let hasEvseActiveTransactions = false
+    let evseHasActiveTransactions = false
     if (evseId !== undefined && evseId > 0) {
-      // Check if there are active transactions on the specific EVSE
       const evse = chargingStation.evses.get(evseId)
-      if (evse) {
-        for (const [, connector] of evse.connectors) {
-          if (connector.transactionId !== undefined) {
-            hasEvseActiveTransactions = true
-            break
-          }
-        }
+      if (evse != null) {
+        evseHasActiveTransactions = this.hasEvseActiveTransactions(evse)
       }
     }
 
@@ -1344,7 +1338,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       if (type === ResetEnumType.Immediate) {
         if (evseId !== undefined) {
           // EVSE-specific immediate reset
-          if (hasEvseActiveTransactions) {
+          if (evseHasActiveTransactions) {
             logger.info(
               `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: Immediate EVSE reset with active transaction, will terminate transaction and reset EVSE ${evseId.toString()}`
             )
