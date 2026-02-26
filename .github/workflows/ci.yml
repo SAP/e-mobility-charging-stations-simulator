@@ -82,9 +82,8 @@ jobs:
         run: pnpm lint
       - name: pnpm build
         run: pnpm build
-      # FIXME: tests hang on Windows since certificate management merge
       - name: pnpm test
-        if: ${{ matrix.os != 'windows-latest' && !(github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.node == '22.x') }}
+        if: ${{ !(github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.node == '22.x') }}
         run: pnpm test
       - name: pnpm test:coverage
         if: ${{ github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.node == '22.x' }}
