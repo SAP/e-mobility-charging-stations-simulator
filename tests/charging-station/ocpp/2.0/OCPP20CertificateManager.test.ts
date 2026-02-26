@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { expect } from '@std/expect'
-import { describe, it, mock } from 'node:test'
+import { rm } from 'node:fs/promises'
+import { afterEach, describe, it, mock } from 'node:test'
 
 import { OCPP20CertificateManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20CertificateManager.js'
 import {
@@ -54,6 +55,21 @@ const _EXPECTED_HASH_DATA: CertificateHashDataType = {
 }
 
 await describe('OCPP20CertificateManager', async () => {
+  afterEach(async () => {
+    await rm(`dist/assets/configurations/${TEST_STATION_HASH_ID}`, {
+      force: true,
+      recursive: true,
+    })
+    await rm('dist/assets/configurations/empty-station-hash-id', {
+      force: true,
+      recursive: true,
+    })
+    await rm('dist/assets/configurations/invalid-station-id', {
+      force: true,
+      recursive: true,
+    })
+  })
+
   await describe('storeCertificate', async () => {
     await it('Should store a valid PEM certificate to the correct path', async () => {
       const manager = new OCPP20CertificateManager()
