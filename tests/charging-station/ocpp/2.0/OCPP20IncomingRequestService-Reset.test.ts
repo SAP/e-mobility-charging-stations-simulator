@@ -20,10 +20,7 @@ import { Constants } from '../../../../src/utils/index.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from './OCPP20TestConstants.js'
 
-// Reset tests use fake timers to prevent real setInterval/setTimeout from blocking test runner
-// This fixes Windows CI hangs where Node.js test runner waits for all timers to complete
 await describe('B11 & B12 - Reset', async () => {
-  // Enable fake timers for all timer APIs used by Reset handlers
   beforeEach(() => {
     mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'setImmediate'] })
   })
