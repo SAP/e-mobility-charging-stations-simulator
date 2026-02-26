@@ -2,17 +2,11 @@ import _Ajv, { type ValidateFunction } from 'ajv'
 import _ajvFormats from 'ajv-formats'
 import { EventEmitter } from 'node:events'
 
-import type {
-  ClearCacheResponse,
-  IncomingRequestCommand,
-  JsonType,
-  OCPPVersion,
-} from '../../types/index.js'
+import type { IncomingRequestCommand, JsonType, OCPPVersion } from '../../types/index.js'
 
-import { type ChargingStation, getIdTagsFile } from '../../charging-station/index.js'
+import { type ChargingStation } from '../../charging-station/index.js'
 import { OCPPError } from '../../exception/index.js'
 import { logger } from '../../utils/index.js'
-import { OCPPConstants } from './OCPPConstants.js'
 import { ajvErrorsToErrorType } from './OCPPServiceUtils.js'
 
 type Ajv = _Ajv.default
@@ -58,17 +52,6 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
   ): Promise<void>
 
   public abstract stop (chargingStation: ChargingStation): void
-
-  protected handleRequestClearCache (
-    chargingStation: ChargingStation
-  ): ClearCacheResponse | Promise<ClearCacheResponse> {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    if (chargingStation.idTagsCache.deleteIdTags(getIdTagsFile(chargingStation.stationInfo!)!)) {
-      return OCPPConstants.OCPP_RESPONSE_ACCEPTED
-    }
-    return OCPPConstants.OCPP_RESPONSE_REJECTED
-  }
-
   /**
    * Validates incoming request payload against JSON schema
    * @param chargingStation - The charging station instance processing the request

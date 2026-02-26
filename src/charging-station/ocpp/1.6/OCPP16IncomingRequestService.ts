@@ -21,6 +21,7 @@ import {
   checkChargingStationState,
   getConfigurationKey,
   getConnectorChargingProfiles,
+  getIdTagsFile,
   prepareChargingProfileKind,
   removeExpiredReservations,
   resetAuthorizeConnectorStatus,
@@ -30,6 +31,7 @@ import { OCPPError } from '../../../exception/index.js'
 import {
   type ChangeConfigurationRequest,
   type ChangeConfigurationResponse,
+  type ClearCacheResponse,
   ConfigurationSection,
   ErrorType,
   type GenericResponse,
@@ -109,6 +111,7 @@ import {
   logger,
   sleep,
 } from '../../../utils/index.js'
+import { OCPPConstants } from '../OCPPConstants.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
 import { OCPPServiceUtils } from '../OCPPServiceUtils.js'
 import { OCPP16Constants } from './OCPP16Constants.js'
@@ -175,7 +178,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       ],
       [
         OCPP16IncomingRequestCommand.CLEAR_CACHE,
-        super.handleRequestClearCache.bind(this) as unknown as IncomingRequestHandler,
+        this.handleRequestClearCache.bind(this) as unknown as IncomingRequestHandler,
       ],
       [
         OCPP16IncomingRequestCommand.CLEAR_CHARGING_PROFILE,
@@ -697,6 +700,14 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       return OCPP16Constants.OCPP_CONFIGURATION_RESPONSE_ACCEPTED
     }
     return OCPP16Constants.OCPP_CONFIGURATION_RESPONSE_NOT_SUPPORTED
+  }
+
+  private handleRequestClearCache (chargingStation: ChargingStation): ClearCacheResponse {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    if (chargingStation.idTagsCache.deleteIdTags(getIdTagsFile(chargingStation.stationInfo!)!)) {
+      return OCPPConstants.OCPP_RESPONSE_ACCEPTED
+    }
+    return OCPPConstants.OCPP_RESPONSE_REJECTED
   }
 
   private handleRequestClearChargingProfile (
