@@ -169,9 +169,9 @@ await describe('OCPP Authentication Integration Tests', async () => {
     await it('should authenticate with valid identifier', async () => {
       const authService = new OCPPAuthServiceImpl(mockChargingStation16)
       const request = createMockAuthRequest({
-        identifier: createMockOCPP16Identifier('VALID_ID_123'),
         connectorId: 1,
         context: AuthContext.TRANSACTION_START,
+        identifier: createMockOCPP16Identifier('VALID_ID_123'),
       })
 
       const result = await authService.authenticate(request)
@@ -194,9 +194,9 @@ await describe('OCPP Authentication Integration Tests', async () => {
 
       for (const context of contexts) {
         const request = createMockAuthRequest({
-          identifier: createMockOCPP16Identifier(`CONTEXT_TEST_${context}`),
           connectorId: 1,
           context,
+          identifier: createMockOCPP16Identifier(`CONTEXT_TEST_${context}`),
         })
 
         const result = await authService.authenticate(request)
@@ -208,8 +208,8 @@ await describe('OCPP Authentication Integration Tests', async () => {
     await it('should authorize request directly', async () => {
       const authService = new OCPPAuthServiceImpl(mockChargingStation16)
       const request = createMockAuthRequest({
-        identifier: createMockOCPP16Identifier('AUTH_DIRECT_TEST'),
         connectorId: 1,
+        identifier: createMockOCPP16Identifier('AUTH_DIRECT_TEST'),
       })
 
       const result = await authService.authorize(request)
@@ -222,9 +222,9 @@ await describe('OCPP Authentication Integration Tests', async () => {
     await it('should authenticate with valid identifier', async () => {
       const authService = new OCPPAuthServiceImpl(mockChargingStation20)
       const request = createMockAuthRequest({
-        identifier: createMockOCPP20Identifier('VALID_ID_456'),
         connectorId: 2,
         context: AuthContext.TRANSACTION_START,
+        identifier: createMockOCPP20Identifier('VALID_ID_456'),
       })
 
       const result = await authService.authenticate(request)
@@ -246,9 +246,9 @@ await describe('OCPP Authentication Integration Tests', async () => {
 
       for (const context of contexts) {
         const request = createMockAuthRequest({
-          identifier: createMockOCPP20Identifier(`V20_CONTEXT_${context}`),
           connectorId: 2,
           context,
+          identifier: createMockOCPP20Identifier(`V20_CONTEXT_${context}`),
         })
 
         const result = await authService.authenticate(request)
@@ -262,13 +262,13 @@ await describe('OCPP Authentication Integration Tests', async () => {
     await it('should handle invalid identifier gracefully', async () => {
       const authService = new OCPPAuthServiceImpl(mockChargingStation16)
       const request = createMockAuthRequest({
+        connectorId: 999, // Invalid connector
+        context: AuthContext.TRANSACTION_START,
         identifier: {
           ocppVersion: OCPPVersion.VERSION_16,
           type: IdentifierType.ISO14443,
           value: '', // Invalid empty value
         },
-        connectorId: 999, // Invalid connector
-        context: AuthContext.TRANSACTION_START,
       })
 
       const result = await authService.authenticate(request)
@@ -349,8 +349,8 @@ await describe('OCPP Authentication Integration Tests', async () => {
 
       for (let i = 0; i < requestCount; i++) {
         const request = createMockAuthRequest({
-          identifier: createMockOCPP16Identifier(`PERF_TEST_${String(i)}`),
           connectorId: 1,
+          identifier: createMockOCPP16Identifier(`PERF_TEST_${String(i)}`),
         })
         promises.push(authService.authenticate(request))
       }
@@ -406,9 +406,9 @@ await describe('OCPP Authentication Integration Tests', async () => {
       const mockService = createMockAuthService({
         authorize: () =>
           Promise.resolve({
-            status: AuthorizationStatus.BLOCKED,
-            method: AuthenticationMethod.REMOTE_AUTHORIZATION,
             isOffline: false,
+            method: AuthenticationMethod.REMOTE_AUTHORIZATION,
+            status: AuthorizationStatus.BLOCKED,
             timestamp: new Date(),
           }),
       })

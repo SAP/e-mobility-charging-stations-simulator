@@ -12,17 +12,12 @@
  * @see tests/charging-station/ChargingStationTestConstants.ts for test constants
  */
 
-// Re-export all mock classes
-export { MockWebSocket, WebSocketReadyState } from './mocks/MockWebSocket.js'
-export { MockIdTagsCache, MockSharedLRUCache } from './mocks/MockCaches.js'
-
 // Re-export all helper functions and types
 export type {
   ChargingStationMocks,
   MockChargingStationOptions,
   MockChargingStationResult,
 } from './helpers/StationHelpers.js'
-
 export {
   cleanupChargingStation,
   createMockChargingStation,
@@ -30,3 +25,8 @@ export {
   resetChargingStationState,
   waitForCondition,
 } from './helpers/StationHelpers.js'
+
+export { MockIdTagsCache, MockSharedLRUCache } from './mocks/MockCaches.js'
+
+// Re-export all mock classes
+export { MockWebSocket, WebSocketReadyState } from './mocks/MockWebSocket.js'
