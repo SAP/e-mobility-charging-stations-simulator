@@ -2,14 +2,13 @@
  * @file Tests for OCPP20IncomingRequestService GetInstalledCertificateIds
  * @description Unit tests for OCPP 2.0 GetInstalledCertificateIds command handling
  */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { expect } from '@std/expect'
 import { describe, it, mock } from 'node:test'
 
+import type { ChargingStationWithCertificateManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20CertificateManager.js'
+
+import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import {
   type CertificateHashDataChainType,
@@ -72,9 +71,12 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
     websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
   })
 
-  ;(mockChargingStation as any).certificateManager = createMockCertificateManager()
+  // Cast to allow setting certificateManager property
+  const stationWithCertManager = mockChargingStation as unknown as ChargingStationWithCertificateManager
+  stationWithCertManager.certificateManager = createMockCertificateManager()
 
   const incomingRequestService = new OCPP20IncomingRequestService()
+  const testableService = createTestableIncomingRequestService(incomingRequestService)
 
   await describe('Request All Certificate Types', async () => {
     await it('Should return all certificates when no filter is provided', async () => {
@@ -84,15 +86,14 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
         createMockCertificateHashDataChain(GetCertificateIdUseEnumType.CSMSRootCertificate, '333'),
       ]
 
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
+      stationWithCertManager.certificateManager = createMockCertificateManager({
         getInstalledCertificatesResult: mockCerts,
       })
 
       const request: OCPP20GetInstalledCertificateIdsRequest = {}
 
-      const response: OCPP20GetInstalledCertificateIdsResponse = await (
-        incomingRequestService as any
-      ).handleRequestGetInstalledCertificateIds(mockChargingStation, request)
+      const response: OCPP20GetInstalledCertificateIdsResponse =
+        await testableService.handleRequestGetInstalledCertificateIds(mockChargingStation, request)
 
       expect(response).toBeDefined()
       expect(response.status).toBe(GetInstalledCertificateStatusEnumType.Accepted)
@@ -109,7 +110,7 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
         '111'
       )
 
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
+      stationWithCertManager.certificateManager = createMockCertificateManager({
         getInstalledCertificatesResult: [v2gCert],
       })
 
@@ -117,9 +118,8 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
         certificateType: [GetCertificateIdUseEnumType.V2GRootCertificate],
       }
 
-      const response: OCPP20GetInstalledCertificateIdsResponse = await (
-        incomingRequestService as any
-      ).handleRequestGetInstalledCertificateIds(mockChargingStation, request)
+      const response: OCPP20GetInstalledCertificateIdsResponse =
+        await testableService.handleRequestGetInstalledCertificateIds(mockChargingStation, request)
 
       expect(response).toBeDefined()
       expect(response.status).toBe(GetInstalledCertificateStatusEnumType.Accepted)
@@ -136,7 +136,7 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
         createMockCertificateHashDataChain(GetCertificateIdUseEnumType.CSMSRootCertificate, '222'),
       ]
 
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
+      stationWithCertManager.certificateManager = createMockCertificateManager({
         getInstalledCertificatesResult: mockCerts,
       })
 
@@ -147,9 +147,8 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
         ],
       }
 
-      const response: OCPP20GetInstalledCertificateIdsResponse = await (
-        incomingRequestService as any
-      ).handleRequestGetInstalledCertificateIds(mockChargingStation, request)
+      const response: OCPP20GetInstalledCertificateIdsResponse =
+        await testableService.handleRequestGetInstalledCertificateIds(mockChargingStation, request)
 
       expect(response).toBeDefined()
       expect(response.status).toBe(GetInstalledCertificateStatusEnumType.Accepted)
@@ -159,15 +158,14 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
 
   await describe('No Certificates Found', async () => {
     await it('Should return Accepted with empty array when no certificates found', async () => {
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
+      stationWithCertManager.certificateManager = createMockCertificateManager({
         getInstalledCertificatesResult: [],
       })
 
       const request: OCPP20GetInstalledCertificateIdsRequest = {}
 
-      const response: OCPP20GetInstalledCertificateIdsResponse = await (
-        incomingRequestService as any
-      ).handleRequestGetInstalledCertificateIds(mockChargingStation, request)
+      const response: OCPP20GetInstalledCertificateIdsResponse =
+        await testableService.handleRequestGetInstalledCertificateIds(mockChargingStation, request)
 
       expect(response).toBeDefined()
       // Per OCPP 2.0.1 spec: NotFound is returned when no certificates match the request
@@ -177,7 +175,7 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
     })
 
     await it('Should return NotFound when filtered type has no certificates', async () => {
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
+      stationWithCertManager.certificateManager = createMockCertificateManager({
         getInstalledCertificatesResult: [],
       })
 
@@ -185,9 +183,8 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
         certificateType: [GetCertificateIdUseEnumType.ManufacturerRootCertificate],
       }
 
-      const response: OCPP20GetInstalledCertificateIdsResponse = await (
-        incomingRequestService as any
-      ).handleRequestGetInstalledCertificateIds(mockChargingStation, request)
+      const response: OCPP20GetInstalledCertificateIdsResponse =
+        await testableService.handleRequestGetInstalledCertificateIds(mockChargingStation, request)
 
       expect(response).toBeDefined()
       expect(response.status).toBe(GetInstalledCertificateStatusEnumType.NotFound)
@@ -196,15 +193,14 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
 
   await describe('Response Structure Validation', async () => {
     await it('Should return response with required status field', async () => {
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
+      stationWithCertManager.certificateManager = createMockCertificateManager({
         getInstalledCertificatesResult: [],
       })
 
       const request: OCPP20GetInstalledCertificateIdsRequest = {}
 
-      const response: OCPP20GetInstalledCertificateIdsResponse = await (
-        incomingRequestService as any
-      ).handleRequestGetInstalledCertificateIds(mockChargingStation, request)
+      const response: OCPP20GetInstalledCertificateIdsResponse =
+        await testableService.handleRequestGetInstalledCertificateIds(mockChargingStation, request)
 
       expect(response).toBeDefined()
       expect(typeof response).toBe('object')
@@ -221,15 +217,14 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
         '123456'
       )
 
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
+      stationWithCertManager.certificateManager = createMockCertificateManager({
         getInstalledCertificatesResult: [mockCert],
       })
 
       const request: OCPP20GetInstalledCertificateIdsRequest = {}
 
-      const response: OCPP20GetInstalledCertificateIdsResponse = await (
-        incomingRequestService as any
-      ).handleRequestGetInstalledCertificateIds(mockChargingStation, request)
+      const response: OCPP20GetInstalledCertificateIdsResponse =
+        await testableService.handleRequestGetInstalledCertificateIds(mockChargingStation, request)
 
       expect(response.status).toBe(GetInstalledCertificateStatusEnumType.Accepted)
       expect(response.certificateHashDataChain).toBeDefined()
@@ -260,13 +255,13 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
       })
 
       // Explicitly set to null/undefined
-      ;(stationWithoutCertManager as any).certificateManager = null
+      const stationNoCertManager = stationWithoutCertManager as unknown as ChargingStationWithCertificateManager
+      stationNoCertManager.certificateManager = null as unknown as ChargingStationWithCertificateManager['certificateManager']
 
       const request: OCPP20GetInstalledCertificateIdsRequest = {}
 
-      const response: OCPP20GetInstalledCertificateIdsResponse = await (
-        incomingRequestService as any
-      ).handleRequestGetInstalledCertificateIds(stationWithoutCertManager, request)
+      const response: OCPP20GetInstalledCertificateIdsResponse =
+        await testableService.handleRequestGetInstalledCertificateIds(stationWithoutCertManager, request)
 
       expect(response).toBeDefined()
       expect(response.status).toBe(GetInstalledCertificateStatusEnumType.NotFound)

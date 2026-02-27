@@ -2,10 +2,6 @@
  * @file Tests for OCPP20VariableManager
  * @description Unit tests for OCPP 2.0 variable management and device model
  */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { expect } from '@std/expect'
 import { millisecondsToSeconds } from 'date-fns'
@@ -15,6 +11,7 @@ import {
   deleteConfigurationKey,
   getConfigurationKey,
 } from '../../../../src/charging-station/ConfigurationKeyUtils.js'
+import { createTestableVariableManager } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
 import { VARIABLE_REGISTRY } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableRegistry.js'
 import {
@@ -181,8 +178,8 @@ await describe('B05/B06 - OCPP20VariableManager test suite', async () => {
     await it('Should handle invalid component gracefully', () => {
       const request: OCPP20GetVariableDataType[] = [
         {
-          component: { name: 'InvalidComponent' as any },
-          variable: { name: 'SomeVariable' as any },
+          component: { name: 'InvalidComponent' as unknown as OCPP20ComponentName },
+          variable: { name: 'SomeVariable' as unknown as OCPP20OptionalVariableName },
         },
       ]
 
@@ -343,6 +340,7 @@ await describe('B05/B06 - OCPP20VariableManager test suite', async () => {
 
   await describe('Component validation tests', async () => {
     const manager = OCPP20VariableManager.getInstance()
+    const testable = createTestableVariableManager(manager)
 
     await it('Should validate OCPPCommCtrlr component as always valid', () => {
       // Behavior: Connector components are unsupported and isComponentValid returns false.
@@ -350,7 +348,7 @@ await describe('B05/B06 - OCPP20VariableManager test suite', async () => {
       const component: ComponentType = { name: OCPP20ComponentName.OCPPCommCtrlr }
 
       // Access private method through any casting for testing
-      const isValid = (manager as any).isComponentValid(mockChargingStation, component)
+      const isValid = testable.isComponentValid(mockChargingStation, component)
       expect(isValid).toBe(true)
     })
 
@@ -359,26 +357,27 @@ await describe('B05/B06 - OCPP20VariableManager test suite', async () => {
     await it('Should reject Connector component as unsupported even when connectors exist', () => {
       const component: ComponentType = { instance: '1', name: OCPP20ComponentName.Connector }
 
-      const isValid = (manager as any).isComponentValid(mockChargingStation, component)
+      const isValid = testable.isComponentValid(mockChargingStation, component)
       expect(isValid).toBe(false)
     })
 
     await it('Should reject invalid connector instance', () => {
       const component: ComponentType = { instance: '999', name: OCPP20ComponentName.Connector }
 
-      const isValid = (manager as any).isComponentValid(mockChargingStation, component)
+      const isValid = testable.isComponentValid(mockChargingStation, component)
       expect(isValid).toBe(false)
     })
   })
 
   await describe('Variable support validation tests', async () => {
     const manager = OCPP20VariableManager.getInstance()
+    const testable = createTestableVariableManager(manager)
 
     await it('Should support standard HeartbeatInterval variable', () => {
       const component: ComponentType = { name: OCPP20ComponentName.OCPPCommCtrlr }
       const variable: VariableType = { name: OCPP20OptionalVariableName.HeartbeatInterval }
 
-      const isSupported = (manager as any).isVariableSupported(component, variable)
+      const isSupported = testable.isVariableSupported(component, variable)
       expect(isSupported).toBe(true)
     })
 
@@ -386,15 +385,15 @@ await describe('B05/B06 - OCPP20VariableManager test suite', async () => {
       const component: ComponentType = { name: OCPP20ComponentName.ChargingStation }
       const variable: VariableType = { name: OCPP20OptionalVariableName.WebSocketPingInterval }
 
-      const isSupported = (manager as any).isVariableSupported(component, variable)
+      const isSupported = testable.isVariableSupported(component, variable)
       expect(isSupported).toBe(true)
     })
 
     await it('Should reject unknown variables', () => {
       const component: ComponentType = { name: OCPP20ComponentName.OCPPCommCtrlr }
-      const variable: VariableType = { name: 'UnknownVariable' as any }
+      const variable: VariableType = { name: 'UnknownVariable' as unknown as OCPP20OptionalVariableName }
 
-      const isSupported = (manager as any).isVariableSupported(component, variable)
+      const isSupported = testable.isVariableSupported(component, variable)
       expect(isSupported).toBe(false)
     })
   })

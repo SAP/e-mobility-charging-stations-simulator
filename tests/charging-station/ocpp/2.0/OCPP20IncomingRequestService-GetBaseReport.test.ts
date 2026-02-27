@@ -1,11 +1,3 @@
-/**
- * @file Tests for OCPP20IncomingRequestService GetBaseReport
- * @description Unit tests for OCPP 2.0 GetBaseReport command handling (B07)
- */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { expect } from '@std/expect'
 import { afterEach, describe, it } from 'node:test'
 
@@ -13,6 +5,11 @@ import {
   addConfigurationKey,
   setConfigurationKeyValue,
 } from '../../../../src/charging-station/ConfigurationKeyUtils.js'
+/**
+ * @file Tests for OCPP20IncomingRequestService GetBaseReport
+ * @description Unit tests for OCPP 2.0 GetBaseReport command handling (B07)
+ */
+import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
 import {
@@ -60,6 +57,8 @@ await describe('B07 - Get Base Report', async () => {
 
   const incomingRequestService = new OCPP20IncomingRequestService()
 
+  const testableService = createTestableIncomingRequestService(incomingRequestService)
+
   // Reset singleton state after each test to ensure test isolation
   afterEach(() => {
     OCPP20VariableManager.getInstance().resetRuntimeOverrides()
@@ -72,10 +71,7 @@ await describe('B07 - Get Base Report', async () => {
       requestId: 1,
     }
 
-    const response = (incomingRequestService as any).handleRequestGetBaseReport(
-      mockChargingStation,
-      request
-    )
+    const response = testableService.handleRequestGetBaseReport(mockChargingStation, request)
 
     expect(response).toBeDefined()
     expect(response.status).toBe(GenericDeviceModelStatusEnumType.Accepted)
@@ -88,20 +84,14 @@ await describe('B07 - Get Base Report', async () => {
       requestId: 2,
     }
 
-    const response = (incomingRequestService as any).handleRequestGetBaseReport(
-      mockChargingStation,
-      request
-    )
+    const response = testableService.handleRequestGetBaseReport(mockChargingStation, request)
 
     expect(response).toBeDefined()
     expect(response.status).toBe(GenericDeviceModelStatusEnumType.Accepted)
   })
 
   await it('Should include registry variables with Actual attribute only for unsupported types', () => {
-    const reportData: ReportDataType[] = (incomingRequestService as any).buildReportData(
-      mockChargingStation,
-      ReportBaseEnumType.FullInventory
-    )
+    const reportData = testableService.buildReportData(mockChargingStation, ReportBaseEnumType.FullInventory)
     const heartbeatEntry = reportData.find(
       (item: ReportDataType) =>
         item.variable.name === (OCPP20OptionalVariableName.HeartbeatInterval as string) &&
@@ -137,10 +127,7 @@ await describe('B07 - Get Base Report', async () => {
       requestId: 3,
     }
 
-    const response = (incomingRequestService as any).handleRequestGetBaseReport(
-      mockChargingStation,
-      request
-    )
+    const response = testableService.handleRequestGetBaseReport(mockChargingStation, request)
 
     expect(response).toBeDefined()
     expect(response.status).toBe(GenericDeviceModelStatusEnumType.Accepted)
@@ -153,10 +140,7 @@ await describe('B07 - Get Base Report', async () => {
       requestId: 4,
     }
 
-    const response = (incomingRequestService as any).handleRequestGetBaseReport(
-      mockChargingStation,
-      request
-    )
+    const response = testableService.handleRequestGetBaseReport(mockChargingStation, request)
 
     expect(response).toBeDefined()
     expect(response.status).toBe(GenericDeviceModelStatusEnumType.NotSupported)
@@ -183,10 +167,7 @@ await describe('B07 - Get Base Report', async () => {
       requestId: 5,
     }
 
-    const response = (incomingRequestService as any).handleRequestGetBaseReport(
-      minimalChargingStation,
-      request
-    )
+    const response = testableService.handleRequestGetBaseReport(mockChargingStation, request)
 
     expect(response).toBeDefined()
     expect(response.status).toBe(GenericDeviceModelStatusEnumType.EmptyResultSet)
@@ -201,16 +182,13 @@ await describe('B07 - Get Base Report', async () => {
 
     // Test the buildReportData method indirectly by calling handleRequestGetBaseReport
     // and checking if it returns Accepted status (which means data was built successfully)
-    const response = (incomingRequestService as any).handleRequestGetBaseReport(
-      mockChargingStation,
-      request
-    )
+    const response = testableService.handleRequestGetBaseReport(mockChargingStation, request)
 
     expect(response).toBeDefined()
     expect(response.status).toBe(GenericDeviceModelStatusEnumType.Accepted)
 
     // We can also test the buildReportData method directly if needed
-    const reportData: ReportDataType[] = (incomingRequestService as any).buildReportData(
+    const reportData = testableService.buildReportData(
       mockChargingStation,
       ReportBaseEnumType.ConfigurationInventory
     )
@@ -232,10 +210,7 @@ await describe('B07 - Get Base Report', async () => {
 
   // FR: B08.FR.07
   await it('Should build correct report data for FullInventory with station info', () => {
-    const reportData: ReportDataType[] = (incomingRequestService as any).buildReportData(
-      mockChargingStation,
-      ReportBaseEnumType.FullInventory
-    )
+    const reportData = testableService.buildReportData(mockChargingStation, ReportBaseEnumType.FullInventory)
 
     expect(Array.isArray(reportData)).toBe(true)
     expect(reportData.length).toBeGreaterThan(0)
@@ -264,7 +239,7 @@ await describe('B07 - Get Base Report', async () => {
 
   // FR: B08.FR.08
   await it('Should build correct report data for SummaryInventory', () => {
-    const reportData: ReportDataType[] = (incomingRequestService as any).buildReportData(
+    const reportData = testableService.buildReportData(
       mockChargingStation,
       ReportBaseEnumType.SummaryInventory
     )
@@ -313,10 +288,7 @@ await describe('B07 - Get Base Report', async () => {
     expect(setResult[0].attributeStatus).toBe('Accepted')
 
     // Build report; value should be truncated to length 10
-    const reportData: ReportDataType[] = (incomingRequestService as any).buildReportData(
-      mockChargingStation,
-      ReportBaseEnumType.FullInventory
-    )
+    const reportData = testableService.buildReportData(mockChargingStation, ReportBaseEnumType.FullInventory)
     const timeSourceEntry = reportData.find(
       (item: ReportDataType) =>
         item.variable.name === (OCPP20RequiredVariableName.TimeSource as string) &&
@@ -350,10 +322,7 @@ await describe('B07 - Get Base Report', async () => {
       },
     })
 
-    const reportData: ReportDataType[] = (incomingRequestService as any).buildReportData(
-      stationWithEvses,
-      ReportBaseEnumType.FullInventory
-    )
+    const reportData = testableService.buildReportData(stationWithEvses, ReportBaseEnumType.FullInventory)
 
     expect(Array.isArray(reportData)).toBe(true)
     expect(reportData.length).toBeGreaterThan(0)
@@ -369,7 +338,7 @@ await describe('B07 - Get Base Report', async () => {
 
   // FR: B08.FR.10
   await it('Should validate unsupported reportBase correctly', () => {
-    const reportData: ReportDataType[] = (incomingRequestService as any).buildReportData(
+    const reportData = testableService.buildReportData(
       mockChargingStation,
       'InvalidReportBase' as unknown as ReportBaseEnumType
     )

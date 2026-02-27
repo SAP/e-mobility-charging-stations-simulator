@@ -2,14 +2,13 @@
  * @file Tests for OCPP20IncomingRequestService DeleteCertificate
  * @description Unit tests for OCPP 2.0 DeleteCertificate command handling
  */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { expect } from '@std/expect'
 import { describe, it, mock } from 'node:test'
 
+import type { ChargingStationWithCertificateManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20CertificateManager.js'
+
+import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import {
   DeleteCertificateStatusEnumType,
@@ -67,13 +66,16 @@ await describe('I04 - DeleteCertificate', async () => {
     websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
   })
 
-  ;(mockChargingStation as any).certificateManager = createMockCertificateManager()
+  // Cast to allow setting certificateManager property
+  const stationWithCertManager = mockChargingStation as unknown as ChargingStationWithCertificateManager
+  stationWithCertManager.certificateManager = createMockCertificateManager()
 
   const incomingRequestService = new OCPP20IncomingRequestService()
+  const testableService = createTestableIncomingRequestService(incomingRequestService)
 
   await describe('Valid Certificate Deletion', async () => {
     await it('Should accept deletion of existing certificate', async () => {
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
+      stationWithCertManager.certificateManager = createMockCertificateManager({
         deleteCertificateResult: { status: 'Accepted' },
       })
 
@@ -81,9 +83,8 @@ await describe('I04 - DeleteCertificate', async () => {
         certificateHashData: VALID_CERTIFICATE_HASH_DATA,
       }
 
-      const response: OCPP20DeleteCertificateResponse = await (
-        incomingRequestService as any
-      ).handleRequestDeleteCertificate(mockChargingStation, request)
+      const response: OCPP20DeleteCertificateResponse =
+        await testableService.handleRequestDeleteCertificate(mockChargingStation, request)
 
       expect(response).toBeDefined()
       expect(typeof response).toBe('object')
@@ -94,7 +95,7 @@ await describe('I04 - DeleteCertificate', async () => {
     })
 
     await it('Should accept deletion with SHA384 hash algorithm', async () => {
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
+      stationWithCertManager.certificateManager = createMockCertificateManager({
         deleteCertificateResult: { status: 'Accepted' },
       })
 
@@ -105,9 +106,8 @@ await describe('I04 - DeleteCertificate', async () => {
         },
       }
 
-      const response: OCPP20DeleteCertificateResponse = await (
-        incomingRequestService as any
-      ).handleRequestDeleteCertificate(mockChargingStation, request)
+      const response: OCPP20DeleteCertificateResponse =
+        await testableService.handleRequestDeleteCertificate(mockChargingStation, request)
 
       expect(response).toBeDefined()
       expect(response.status).toBe(DeleteCertificateStatusEnumType.Accepted)
@@ -115,7 +115,7 @@ await describe('I04 - DeleteCertificate', async () => {
     })
 
     await it('Should accept deletion with SHA512 hash algorithm', async () => {
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
+      stationWithCertManager.certificateManager = createMockCertificateManager({
         deleteCertificateResult: { status: 'Accepted' },
       })
 
@@ -126,9 +126,8 @@ await describe('I04 - DeleteCertificate', async () => {
         },
       }
 
-      const response: OCPP20DeleteCertificateResponse = await (
-        incomingRequestService as any
-      ).handleRequestDeleteCertificate(mockChargingStation, request)
+      const response: OCPP20DeleteCertificateResponse =
+        await testableService.handleRequestDeleteCertificate(mockChargingStation, request)
 
       expect(response).toBeDefined()
       expect(response.status).toBe(DeleteCertificateStatusEnumType.Accepted)
@@ -138,7 +137,7 @@ await describe('I04 - DeleteCertificate', async () => {
 
   await describe('Certificate Not Found', async () => {
     await it('Should return NotFound for non-existent certificate', async () => {
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
+      stationWithCertManager.certificateManager = createMockCertificateManager({
         deleteCertificateResult: { status: 'NotFound' },
       })
 
@@ -146,9 +145,8 @@ await describe('I04 - DeleteCertificate', async () => {
         certificateHashData: NONEXISTENT_CERTIFICATE_HASH_DATA,
       }
 
-      const response: OCPP20DeleteCertificateResponse = await (
-        incomingRequestService as any
-      ).handleRequestDeleteCertificate(mockChargingStation, request)
+      const response: OCPP20DeleteCertificateResponse =
+        await testableService.handleRequestDeleteCertificate(mockChargingStation, request)
 
       expect(response).toBeDefined()
       expect(response.status).toBe(DeleteCertificateStatusEnumType.NotFound)
@@ -157,7 +155,7 @@ await describe('I04 - DeleteCertificate', async () => {
 
   await describe('Deletion Failure Handling', async () => {
     await it('Should return Failed status when deletion throws error', async () => {
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
+      stationWithCertManager.certificateManager = createMockCertificateManager({
         deleteCertificateError: new Error('Deletion failed'),
       })
 
@@ -165,9 +163,8 @@ await describe('I04 - DeleteCertificate', async () => {
         certificateHashData: VALID_CERTIFICATE_HASH_DATA,
       }
 
-      const response: OCPP20DeleteCertificateResponse = await (
-        incomingRequestService as any
-      ).handleRequestDeleteCertificate(mockChargingStation, request)
+      const response: OCPP20DeleteCertificateResponse =
+        await testableService.handleRequestDeleteCertificate(mockChargingStation, request)
 
       expect(response).toBeDefined()
       expect(response.status).toBe(DeleteCertificateStatusEnumType.Failed)
@@ -188,15 +185,15 @@ await describe('I04 - DeleteCertificate', async () => {
         websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
       })
 
-      ;(stationWithoutCertManager as any).certificateManager = undefined
+      const stationNoCertManager = stationWithoutCertManager as unknown as ChargingStationWithCertificateManager
+      stationNoCertManager.certificateManager = undefined as unknown as ChargingStationWithCertificateManager['certificateManager']
 
       const request: OCPP20DeleteCertificateRequest = {
         certificateHashData: VALID_CERTIFICATE_HASH_DATA,
       }
 
-      const response: OCPP20DeleteCertificateResponse = await (
-        incomingRequestService as any
-      ).handleRequestDeleteCertificate(stationWithoutCertManager, request)
+      const response: OCPP20DeleteCertificateResponse =
+        await testableService.handleRequestDeleteCertificate(stationWithoutCertManager, request)
 
       expect(response).toBeDefined()
       expect(response.status).toBe(DeleteCertificateStatusEnumType.Failed)
@@ -207,7 +204,7 @@ await describe('I04 - DeleteCertificate', async () => {
 
   await describe('Response Structure Validation', async () => {
     await it('Should return response matching DeleteCertificateResponse schema', async () => {
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
+      stationWithCertManager.certificateManager = createMockCertificateManager({
         deleteCertificateResult: { status: 'Accepted' },
       })
 
@@ -215,9 +212,8 @@ await describe('I04 - DeleteCertificate', async () => {
         certificateHashData: VALID_CERTIFICATE_HASH_DATA,
       }
 
-      const response: OCPP20DeleteCertificateResponse = await (
-        incomingRequestService as any
-      ).handleRequestDeleteCertificate(mockChargingStation, request)
+      const response: OCPP20DeleteCertificateResponse =
+        await testableService.handleRequestDeleteCertificate(mockChargingStation, request)
 
       expect(response).toBeDefined()
       expect(typeof response).toBe('object')
@@ -244,7 +240,7 @@ await describe('I04 - DeleteCertificate', async () => {
     })
 
     await it('Should include statusInfo with reasonCode for failure', async () => {
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
+      stationWithCertManager.certificateManager = createMockCertificateManager({
         deleteCertificateError: new Error('Deletion failed'),
       })
 
@@ -252,9 +248,8 @@ await describe('I04 - DeleteCertificate', async () => {
         certificateHashData: VALID_CERTIFICATE_HASH_DATA,
       }
 
-      const response: OCPP20DeleteCertificateResponse = await (
-        incomingRequestService as any
-      ).handleRequestDeleteCertificate(mockChargingStation, request)
+      const response: OCPP20DeleteCertificateResponse =
+        await testableService.handleRequestDeleteCertificate(mockChargingStation, request)
 
       expect(response.status).toBe(DeleteCertificateStatusEnumType.Failed)
       expect(response.statusInfo).toBeDefined()

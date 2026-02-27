@@ -2,14 +2,11 @@
  * @file Tests for OCPP20IncomingRequestService ClearCache
  * @description Unit tests for OCPP 2.0 ClearCache command handling (C11)
  */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { expect } from '@std/expect'
 import { describe, it } from 'node:test'
 
+import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'
 import { GenericStatus, OCPPVersion } from '../../../../src/types/index.js'
@@ -31,12 +28,11 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
   })
 
   const incomingRequestService = new OCPP20IncomingRequestService()
+  const testableService = createTestableIncomingRequestService(incomingRequestService)
 
   // FR: C11.FR.01 - CS SHALL attempt to clear its Authorization Cache
   await it('Should handle ClearCache request successfully', async () => {
-    const response = await (incomingRequestService as any).handleRequestClearCache(
-      mockChargingStation
-    )
+    const response = await testableService.handleRequestClearCache(mockChargingStation)
 
     expect(response).toBeDefined()
     expect(typeof response).toBe('object')
@@ -47,9 +43,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
 
   // FR: C11.FR.02 - Return correct status based on cache clearing result
   await it('Should return correct status based on cache clearing result', async () => {
-    const response = await (incomingRequestService as any).handleRequestClearCache(
-      mockChargingStation
-    )
+    const response = await testableService.handleRequestClearCache(mockChargingStation)
 
     expect(response).toBeDefined()
     expect(response.status).toBeDefined()
@@ -74,38 +68,38 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
 
       // Mock the factory to return our mock auth service
       const originalGetInstance = OCPPAuthServiceFactory.getInstance.bind(OCPPAuthServiceFactory)
-      ;(OCPPAuthServiceFactory as any).getInstance = (): Promise<typeof mockAuthService> =>
-        Promise.resolve(mockAuthService)
+      Object.assign(OCPPAuthServiceFactory, {
+        getInstance: (): Promise<typeof mockAuthService> => Promise.resolve(mockAuthService),
+      })
 
       try {
-        const response = await (incomingRequestService as any).handleRequestClearCache(
-          mockChargingStation
-        )
+        const response = await testableService.handleRequestClearCache(mockChargingStation)
 
         expect(clearCacheCalled).toBe(true)
         expect(response.status).toBe(GenericStatus.Accepted)
       } finally {
         // Restore original factory method
-        ;(OCPPAuthServiceFactory as any).getInstance = originalGetInstance
+        Object.assign(OCPPAuthServiceFactory, { getInstance: originalGetInstance })
       }
     })
 
     await it('Should NOT call idTagsCache.deleteIdTags() on ClearCache request', async () => {
       // Verify that IdTagsCache is not touched
       let deleteIdTagsCalled = false
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       const originalDeleteIdTags = mockChargingStation.idTagsCache.deleteIdTags
 
-      ;(mockChargingStation.idTagsCache as any).deleteIdTags = () => {
-        deleteIdTagsCalled = true
-      }
+      Object.assign(mockChargingStation.idTagsCache, {
+        deleteIdTags: () => {
+          deleteIdTagsCalled = true
+        },
+      })
 
       try {
-        await (incomingRequestService as any).handleRequestClearCache(mockChargingStation)
+        await testableService.handleRequestClearCache(mockChargingStation)
         expect(deleteIdTagsCalled).toBe(false)
       } finally {
         // Restore original method
-        ;(mockChargingStation.idTagsCache as any).deleteIdTags = originalDeleteIdTags
+        Object.assign(mockChargingStation.idTagsCache, { deleteIdTags: originalDeleteIdTags })
       }
     })
   })
@@ -125,18 +119,17 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
 
       // Mock the factory to return our mock auth service
       const originalGetInstance = OCPPAuthServiceFactory.getInstance.bind(OCPPAuthServiceFactory)
-      ;(OCPPAuthServiceFactory as any).getInstance = (): Promise<typeof mockAuthService> =>
-        Promise.resolve(mockAuthService)
+      Object.assign(OCPPAuthServiceFactory, {
+        getInstance: (): Promise<typeof mockAuthService> => Promise.resolve(mockAuthService),
+      })
 
       try {
-        const response = await (incomingRequestService as any).handleRequestClearCache(
-          mockChargingStation
-        )
+        const response = await testableService.handleRequestClearCache(mockChargingStation)
 
         expect(response.status).toBe(GenericStatus.Rejected)
       } finally {
         // Restore original factory method
-        ;(OCPPAuthServiceFactory as any).getInstance = originalGetInstance
+        Object.assign(OCPPAuthServiceFactory, { getInstance: originalGetInstance })
       }
     })
 
@@ -154,18 +147,17 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
 
       // Mock the factory to return our mock auth service
       const originalGetInstance = OCPPAuthServiceFactory.getInstance.bind(OCPPAuthServiceFactory)
-      ;(OCPPAuthServiceFactory as any).getInstance = (): Promise<typeof mockAuthService> =>
-        Promise.resolve(mockAuthService)
+      Object.assign(OCPPAuthServiceFactory, {
+        getInstance: (): Promise<typeof mockAuthService> => Promise.resolve(mockAuthService),
+      })
 
       try {
-        const response = await (incomingRequestService as any).handleRequestClearCache(
-          mockChargingStation
-        )
+        const response = await testableService.handleRequestClearCache(mockChargingStation)
 
         expect(response.status).toBe(GenericStatus.Accepted)
       } finally {
         // Restore original factory method
-        ;(OCPPAuthServiceFactory as any).getInstance = originalGetInstance
+        Object.assign(OCPPAuthServiceFactory, { getInstance: originalGetInstance })
       }
     })
 
@@ -182,18 +174,17 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
 
       // Mock the factory to return our mock auth service
       const originalGetInstance = OCPPAuthServiceFactory.getInstance.bind(OCPPAuthServiceFactory)
-      ;(OCPPAuthServiceFactory as any).getInstance = (): Promise<typeof mockAuthService> =>
-        Promise.resolve(mockAuthService)
+      Object.assign(OCPPAuthServiceFactory, {
+        getInstance: (): Promise<typeof mockAuthService> => Promise.resolve(mockAuthService),
+      })
 
       try {
-        const response = await (incomingRequestService as any).handleRequestClearCache(
-          mockChargingStation
-        )
+        const response = await testableService.handleRequestClearCache(mockChargingStation)
 
         expect(response.status).toBe(GenericStatus.Rejected)
       } finally {
         // Restore original factory method
-        ;(OCPPAuthServiceFactory as any).getInstance = originalGetInstance
+        Object.assign(OCPPAuthServiceFactory, { getInstance: originalGetInstance })
       }
     })
 
@@ -211,17 +202,18 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
 
       // Mock the factory to return our mock auth service
       const originalGetInstance = OCPPAuthServiceFactory.getInstance.bind(OCPPAuthServiceFactory)
-      ;(OCPPAuthServiceFactory as any).getInstance = (): Promise<typeof mockAuthService> =>
-        Promise.resolve(mockAuthService)
+      Object.assign(OCPPAuthServiceFactory, {
+        getInstance: (): Promise<typeof mockAuthService> => Promise.resolve(mockAuthService),
+      })
 
       try {
-        await (incomingRequestService as any).handleRequestClearCache(mockChargingStation)
+        await testableService.handleRequestClearCache(mockChargingStation)
 
         // clearCache should NOT be called when cache is disabled
         expect(clearCacheAttempted).toBe(false)
       } finally {
         // Restore original factory method
-        ;(OCPPAuthServiceFactory as any).getInstance = originalGetInstance
+        Object.assign(OCPPAuthServiceFactory, { getInstance: originalGetInstance })
       }
     })
   })
@@ -231,19 +223,19 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
     await it('Should return Rejected when authService factory fails (no cache support)', async () => {
       // Mock factory to throw error (simulates no Authorization Cache support)
       const originalGetInstance = OCPPAuthServiceFactory.getInstance.bind(OCPPAuthServiceFactory)
-      ;(OCPPAuthServiceFactory as any).getInstance = (): Promise<never> =>
-        Promise.reject(new Error('Authorization Cache not supported'))
+      Object.assign(OCPPAuthServiceFactory, {
+        getInstance: (): Promise<never> =>
+          Promise.reject(new Error('Authorization Cache not supported')),
+      })
 
       try {
-        const response = await (incomingRequestService as any).handleRequestClearCache(
-          mockChargingStation
-        )
+        const response = await testableService.handleRequestClearCache(mockChargingStation)
 
         // Per C11.FR.05: SHALL return Rejected if CS does not support Authorization Cache
         expect(response.status).toBe(GenericStatus.Rejected)
       } finally {
         // Restore original factory method
-        ;(OCPPAuthServiceFactory as any).getInstance = originalGetInstance
+        Object.assign(OCPPAuthServiceFactory, { getInstance: originalGetInstance })
       }
     })
   })

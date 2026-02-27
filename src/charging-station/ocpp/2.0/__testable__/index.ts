@@ -37,6 +37,8 @@ import type {
   OCPP20ResetResponse,
   OCPP20SetVariablesRequest,
   OCPP20SetVariablesResponse,
+  ReportBaseEnumType,
+  type ReportDataType,
 } from '../../../../types/index.js'
 import type { ChargingStation } from '../../../index.js'
 import type { OCPP20IncomingRequestService } from '../OCPP20IncomingRequestService.js'
@@ -46,6 +48,15 @@ import type { OCPP20IncomingRequestService } from '../OCPP20IncomingRequestServi
  * Each method signature matches the corresponding private method in the service class.
  */
 export interface TestableOCPP20IncomingRequestService {
+  /**
+   * Builds report data for the device model report.
+   * Used internally by handleRequestGetBaseReport.
+   */
+  buildReportData: (
+    chargingStation: ChargingStation,
+    reportBase: ReportBaseEnumType
+  ) => ReportDataType[]
+
   /**
    * Handles OCPP 2.0 CertificateSigned request from central system.
    * Receives signed certificate chain from CSMS and stores it in the charging station.
@@ -165,6 +176,8 @@ export function createTestableIncomingRequestService (
   const serviceImpl = service as unknown as TestableOCPP20IncomingRequestService
 
   return {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
+    buildReportData: (serviceImpl as any).buildReportData.bind(service),
     handleRequestCertificateSigned: serviceImpl.handleRequestCertificateSigned.bind(service),
     handleRequestClearCache: serviceImpl.handleRequestClearCache.bind(service),
     handleRequestDeleteCertificate: serviceImpl.handleRequestDeleteCertificate.bind(service),
@@ -179,3 +192,17 @@ export function createTestableIncomingRequestService (
     handleRequestStopTransaction: serviceImpl.handleRequestStopTransaction.bind(service),
   }
 }
+
+export {
+  createTestableRequestService,
+  type SendMessageFn,
+  type SendMessageMock,
+  type TestableOCPP20RequestService,
+  type TestableRequestServiceOptions,
+  type TestableRequestServiceResult,
+} from './OCPP20RequestServiceTestable.js'
+
+export {
+  createTestableVariableManager,
+  type TestableOCPP20VariableManager,
+} from './OCPP20VariableManagerTestable.js'

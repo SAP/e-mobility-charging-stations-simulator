@@ -1,18 +1,14 @@
-/**
- * @file Tests for OCPP20IncomingRequestService RequestStartTransaction
- * @description Unit tests for OCPP 2.0 RequestStartTransaction command handling (F01/F02)
- */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { OCPP20RequestStartTransactionRequest } from '../../../../src/types/index.js'
-import type { OCPP20ChargingProfileType } from '../../../../src/types/ocpp/2.0/Transaction.js'
+import type { OCPP20ChargingProfileType, OCPP20ChargingRateUnitType } from '../../../../src/types/ocpp/2.0/Transaction.js'
 
+/**
+ * @file Tests for OCPP20IncomingRequestService RequestStartTransaction
+ * @description Unit tests for OCPP 2.0 RequestStartTransaction command handling (F01/F02)
+ */
+import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'
 import { OCPPVersion, RequestStartStopStatusEnumType } from '../../../../src/types/index.js'
@@ -23,8 +19,8 @@ import {
 } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
-import { createMockAuthService } from '../auth/helpers/MockFactories.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
+import { createMockAuthService } from '../auth/helpers/MockFactories.js'
 import {
   resetConnectorTransactionState,
   resetLimits,
@@ -48,6 +44,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
   })
 
   const incomingRequestService = new OCPP20IncomingRequestService()
+  const testableService = createTestableIncomingRequestService(incomingRequestService)
 
   beforeEach(() => {
     const stationId = mockChargingStation.stationInfo?.chargingStationId ?? 'unknown'
@@ -72,7 +69,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       remoteStartId: 1,
     }
 
-    const response = await (incomingRequestService as any).handleRequestStartTransaction(
+    const response = await testableService.handleRequestStartTransaction(
       mockChargingStation,
       validRequest
     )
@@ -112,7 +109,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       remoteStartId: 42,
     }
 
-    const response = await (incomingRequestService as any).handleRequestStartTransaction(
+    const response = await testableService.handleRequestStartTransaction(
       spyChargingStation,
       requestWithRemoteStartId
     )
@@ -146,7 +143,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       remoteStartId: 3,
     }
 
-    const response = await (incomingRequestService as any).handleRequestStartTransaction(
+    const response = await testableService.handleRequestStartTransaction(
       mockChargingStation,
       requestWithGroupToken
     )
@@ -163,7 +160,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       chargingProfilePurpose: OCPP20ChargingProfilePurposeEnumType.TxProfile,
       chargingSchedule: [
         {
-          chargingRateUnit: 'A' as any,
+          chargingRateUnit: 'A' as OCPP20ChargingRateUnitType,
           chargingSchedulePeriod: [
             {
               limit: 30,
@@ -187,7 +184,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       remoteStartId: 301,
     }
 
-    const response = await (incomingRequestService as any).handleRequestStartTransaction(
+    const response = await testableService.handleRequestStartTransaction(
       mockChargingStation,
       requestWithValidProfile
     )
@@ -204,7 +201,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       chargingProfilePurpose: OCPP20ChargingProfilePurposeEnumType.TxDefaultProfile,
       chargingSchedule: [
         {
-          chargingRateUnit: 'A' as any,
+          chargingRateUnit: 'A' as OCPP20ChargingRateUnitType,
           chargingSchedulePeriod: [
             {
               limit: 25,
@@ -228,7 +225,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       remoteStartId: 302,
     }
 
-    const response = await (incomingRequestService as any).handleRequestStartTransaction(
+    const response = await testableService.handleRequestStartTransaction(
       mockChargingStation,
       requestWithInvalidProfile
     )
@@ -244,7 +241,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       chargingProfilePurpose: OCPP20ChargingProfilePurposeEnumType.TxProfile,
       chargingSchedule: [
         {
-          chargingRateUnit: 'A' as any,
+          chargingRateUnit: 'A' as OCPP20ChargingRateUnitType,
           chargingSchedulePeriod: [
             {
               limit: 32,
@@ -269,7 +266,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       remoteStartId: 303,
     }
 
-    const response = await (incomingRequestService as any).handleRequestStartTransaction(
+    const response = await testableService.handleRequestStartTransaction(
       mockChargingStation,
       requestWithTransactionIdProfile
     )
@@ -291,10 +288,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
 
     // Should throw OCPPError for invalid evseId
     await expect(
-      (incomingRequestService as any).handleRequestStartTransaction(
-        mockChargingStation,
-        invalidEvseRequest
-      )
+      testableService.handleRequestStartTransaction(mockChargingStation, invalidEvseRequest)
     ).rejects.toThrow('EVSE 999 does not exist on charging station')
   })
 
@@ -310,10 +304,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       remoteStartId: 100,
     }
 
-    await (incomingRequestService as any).handleRequestStartTransaction(
-      mockChargingStation,
-      firstRequest
-    )
+    await testableService.handleRequestStartTransaction(mockChargingStation, firstRequest)
 
     // Now try to start another transaction on the same EVSE
     const secondRequest: OCPP20RequestStartTransactionRequest = {
@@ -325,7 +316,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       remoteStartId: 101,
     }
 
-    const response = await (incomingRequestService as any).handleRequestStartTransaction(
+    const response = await testableService.handleRequestStartTransaction(
       mockChargingStation,
       secondRequest
     )
@@ -346,7 +337,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       remoteStartId: 200,
     }
 
-    const response = await (incomingRequestService as any).handleRequestStartTransaction(
+    const response = await testableService.handleRequestStartTransaction(
       mockChargingStation,
       validRequest
     )

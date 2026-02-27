@@ -2,12 +2,12 @@
  * @file Tests for OCPP20IncomingRequestService SetVariables
  * @description Unit tests for OCPP 2.0 SetVariables command handling
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { expect } from '@std/expect'
 import { millisecondsToSeconds } from 'date-fns'
 import { afterEach, describe, it } from 'node:test'
 
+import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
 import {
@@ -40,21 +40,6 @@ import {
   upsertConfigurationKey,
 } from './OCPP20TestUtils.js'
 
-interface IncomingRequestServicePrivate {
-  handleRequestGetVariables: (
-    chargingStation: any,
-    request: OCPP20GetVariablesRequest
-  ) => { getVariableResult: OCPP20GetVariableResultType[] }
-  handleRequestSetVariables: (
-    chargingStation: any,
-    request: OCPP20SetVariablesRequest
-  ) => { setVariableResult: OCPP20SetVariableResultType[] }
-}
-
-interface OCPP20GetVariablesRequest {
-  getVariableData: OCPP20GetVariableDataType[]
-}
-
 await describe('B05 - Set Variables', async () => {
   const mockChargingStation = createChargingStation({
     baseName: TEST_CHARGING_STATION_BASE_NAME,
@@ -69,7 +54,7 @@ await describe('B05 - Set Variables', async () => {
   })
 
   const incomingRequestService = new OCPP20IncomingRequestService()
-  const svc = incomingRequestService as unknown as IncomingRequestServicePrivate
+  const testableService = createTestableIncomingRequestService(incomingRequestService)
 
   // Reset singleton state after each test to ensure test isolation
   afterEach(() => {
@@ -98,7 +83,7 @@ await describe('B05 - Set Variables', async () => {
     }
 
     const response: { setVariableResult: OCPP20SetVariableResultType[] } =
-      svc.handleRequestSetVariables(mockChargingStation, request)
+      testableService.handleRequestSetVariables(mockChargingStation, request)
 
     expect(response).toBeDefined()
     expect(response.setVariableResult).toBeDefined()
@@ -138,7 +123,7 @@ await describe('B05 - Set Variables', async () => {
     }
 
     const response: { setVariableResult: OCPP20SetVariableResultType[] } =
-      svc.handleRequestSetVariables(mockChargingStation, request)
+      testableService.handleRequestSetVariables(mockChargingStation, request)
 
     expect(response.setVariableResult).toHaveLength(2)
     const firstResult = response.setVariableResult[0]
@@ -163,7 +148,7 @@ await describe('B05 - Set Variables', async () => {
     }
 
     const response: { setVariableResult: OCPP20SetVariableResultType[] } =
-      svc.handleRequestSetVariables(mockChargingStation, request)
+      testableService.handleRequestSetVariables(mockChargingStation, request)
 
     expect(response.setVariableResult).toHaveLength(1)
     const result = response.setVariableResult[0]
@@ -186,7 +171,7 @@ await describe('B05 - Set Variables', async () => {
       ],
     }
     const response: { setVariableResult: OCPP20SetVariableResultType[] } =
-      svc.handleRequestSetVariables(mockChargingStation, request)
+      testableService.handleRequestSetVariables(mockChargingStation, request)
     expect(response.setVariableResult).toHaveLength(1)
     const result = response.setVariableResult[0]
     expect(result.attributeStatus).toBe(SetVariableStatusEnumType.UnknownComponent)
@@ -206,7 +191,7 @@ await describe('B05 - Set Variables', async () => {
     }
 
     const response: { setVariableResult: OCPP20SetVariableResultType[] } =
-      svc.handleRequestSetVariables(mockChargingStation, request)
+      testableService.handleRequestSetVariables(mockChargingStation, request)
 
     expect(response.setVariableResult).toHaveLength(1)
     const result = response.setVariableResult[0]
@@ -255,7 +240,7 @@ await describe('B05 - Set Variables', async () => {
     }
 
     const response: { setVariableResult: OCPP20SetVariableResultType[] } =
-      svc.handleRequestSetVariables(mockChargingStation, request)
+      testableService.handleRequestSetVariables(mockChargingStation, request)
 
     expect(response.setVariableResult).toHaveLength(5)
     const [accepted, unknownVariable, unsupportedAttrHeartbeat, unsupportedAttrWs, oversize] =
@@ -286,7 +271,7 @@ await describe('B05 - Set Variables', async () => {
       ],
     }
     const response: { setVariableResult: OCPP20SetVariableResultType[] } =
-      svc.handleRequestSetVariables(mockChargingStation, request)
+      testableService.handleRequestSetVariables(mockChargingStation, request)
     expect(response.setVariableResult).toHaveLength(1)
     const result = response.setVariableResult[0]
     expect(result.attributeStatus).toBe(SetVariableStatusEnumType.NotSupportedAttributeType)
@@ -306,7 +291,7 @@ await describe('B05 - Set Variables', async () => {
       ],
     }
     const response: { setVariableResult: OCPP20SetVariableResultType[] } =
-      svc.handleRequestSetVariables(mockChargingStation, request)
+      testableService.handleRequestSetVariables(mockChargingStation, request)
     expect(response.setVariableResult).toHaveLength(1)
     const result = response.setVariableResult[0]
     expect(result.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
@@ -331,10 +316,10 @@ await describe('B05 - Set Variables', async () => {
         },
       ],
     }
-    svc.handleRequestSetVariables(mockChargingStation, setRequest)
+    testableService.handleRequestSetVariables(mockChargingStation, setRequest)
 
     const getResponse: { getVariableResult: OCPP20GetVariableResultType[] } =
-      svc.handleRequestGetVariables(mockChargingStation, {
+      testableService.handleRequestGetVariables(mockChargingStation, {
         getVariableData: [
           {
             attributeType: AttributeEnumType.Actual,
@@ -369,10 +354,10 @@ await describe('B05 - Set Variables', async () => {
         },
       ],
     }
-    svc.handleRequestSetVariables(mockChargingStation, setRequest)
+    testableService.handleRequestSetVariables(mockChargingStation, setRequest)
 
     const getBefore: { getVariableResult: OCPP20GetVariableResultType[] } =
-      svc.handleRequestGetVariables(mockChargingStation, {
+      testableService.handleRequestGetVariables(mockChargingStation, {
         getVariableData: [
           {
             attributeType: AttributeEnumType.Actual,
@@ -388,7 +373,7 @@ await describe('B05 - Set Variables', async () => {
     OCPP20VariableManager.getInstance().resetRuntimeOverrides()
 
     const getAfter: { getVariableResult: OCPP20GetVariableResultType[] } =
-      svc.handleRequestGetVariables(mockChargingStation, {
+      testableService.handleRequestGetVariables(mockChargingStation, {
         getVariableData: [
           {
             component: { name: OCPP20ComponentName.SampledDataCtrlr },
@@ -419,7 +404,7 @@ await describe('B05 - Set Variables', async () => {
       ],
     }
     const response: { setVariableResult: OCPP20SetVariableResultType[] } =
-      svc.handleRequestSetVariables(mockChargingStation, request)
+      testableService.handleRequestSetVariables(mockChargingStation, request)
     expect(response.setVariableResult).toHaveLength(2)
     response.setVariableResult.forEach(r => {
       expect(r.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
@@ -447,7 +432,7 @@ await describe('B05 - Set Variables', async () => {
       ],
     }
     const response: { setVariableResult: OCPP20SetVariableResultType[] } =
-      svc.handleRequestSetVariables(mockChargingStation, request)
+      testableService.handleRequestSetVariables(mockChargingStation, request)
     expect(response.setVariableResult).toHaveLength(2)
     response.setVariableResult.forEach(r => {
       expect(r.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
@@ -508,7 +493,7 @@ await describe('B05 - Set Variables', async () => {
     )
     expect(preEstimate).toBeLessThan(postCalcLimit)
     const response: { setVariableResult: OCPP20SetVariableResultType[] } =
-      svc.handleRequestSetVariables(mockChargingStation, request)
+      testableService.handleRequestSetVariables(mockChargingStation, request)
     const actualSize = Buffer.byteLength(JSON.stringify(response.setVariableResult), 'utf8')
     expect(actualSize).toBeGreaterThan(postCalcLimit)
     expect(response.setVariableResult).toHaveLength(request.setVariableData.length)
@@ -530,7 +515,7 @@ await describe('B05 - Set Variables', async () => {
     const prefix = 'wss://example.com/'
     const withinLimit = prefix + 'a'.repeat(100 - prefix.length)
     const overLimit = prefix + 'a'.repeat(100 - prefix.length + 1)
-    let response = svc.handleRequestSetVariables(mockChargingStation, {
+    let response = testableService.handleRequestSetVariables(mockChargingStation, {
       setVariableData: [
         {
           attributeValue: withinLimit,
@@ -540,7 +525,7 @@ await describe('B05 - Set Variables', async () => {
       ],
     })
     expect(response.setVariableResult[0].attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
-    response = svc.handleRequestSetVariables(mockChargingStation, {
+    response = testableService.handleRequestSetVariables(mockChargingStation, {
       setVariableData: [
         {
           attributeValue: overLimit,
@@ -566,7 +551,7 @@ await describe('B05 - Set Variables', async () => {
     const prefix = 'wss://example.com/'
     const withinLimit = prefix + 'b'.repeat(120 - prefix.length)
     const overLimit = prefix + 'b'.repeat(120 - prefix.length + 1)
-    let response = svc.handleRequestSetVariables(mockChargingStation, {
+    let response = testableService.handleRequestSetVariables(mockChargingStation, {
       setVariableData: [
         {
           attributeValue: withinLimit,
@@ -576,7 +561,7 @@ await describe('B05 - Set Variables', async () => {
       ],
     })
     expect(response.setVariableResult[0].attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
-    response = svc.handleRequestSetVariables(mockChargingStation, {
+    response = testableService.handleRequestSetVariables(mockChargingStation, {
       setVariableData: [
         {
           attributeValue: overLimit,
@@ -598,7 +583,7 @@ await describe('B05 - Set Variables', async () => {
     const prefix = 'wss://example.com/'
     const withinLimit = prefix + 'c'.repeat(350 - prefix.length)
     const overLimit = prefix + 'c'.repeat(350 - prefix.length + 1)
-    let response = svc.handleRequestSetVariables(mockChargingStation, {
+    let response = testableService.handleRequestSetVariables(mockChargingStation, {
       setVariableData: [
         {
           attributeValue: withinLimit,
@@ -608,7 +593,7 @@ await describe('B05 - Set Variables', async () => {
       ],
     })
     expect(response.setVariableResult[0].attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
-    response = svc.handleRequestSetVariables(mockChargingStation, {
+    response = testableService.handleRequestSetVariables(mockChargingStation, {
       setVariableData: [
         {
           attributeValue: overLimit,
@@ -630,7 +615,7 @@ await describe('B05 - Set Variables', async () => {
     const prefix = 'wss://example.com/'
     const withinLimit = prefix + 'd'.repeat(260 - prefix.length)
     const overLimit = prefix + 'd'.repeat(260 - prefix.length + 1)
-    let response = svc.handleRequestSetVariables(mockChargingStation, {
+    let response = testableService.handleRequestSetVariables(mockChargingStation, {
       setVariableData: [
         {
           attributeValue: withinLimit,
@@ -640,7 +625,7 @@ await describe('B05 - Set Variables', async () => {
       ],
     })
     expect(response.setVariableResult[0].attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
-    response = svc.handleRequestSetVariables(mockChargingStation, {
+    response = testableService.handleRequestSetVariables(mockChargingStation, {
       setVariableData: [
         {
           attributeValue: overLimit,
@@ -661,7 +646,7 @@ await describe('B05 - Set Variables', async () => {
     setValueSize(mockChargingStation, -5)
     const prefix = 'wss://example.com/'
     const validValue = prefix + 'e'.repeat(300 - prefix.length) // 300 < default absolute max length and < ConnectionUrl maxLength
-    const response = svc.handleRequestSetVariables(mockChargingStation, {
+    const response = testableService.handleRequestSetVariables(mockChargingStation, {
       setVariableData: [
         {
           attributeValue: validValue,
@@ -689,9 +674,9 @@ await describe('B05 - Set Variables', async () => {
         },
       ],
     }
-    svc.handleRequestSetVariables(mockChargingStation, setRequest)
+    testableService.handleRequestSetVariables(mockChargingStation, setRequest)
     const getResponse: { getVariableResult: OCPP20GetVariableResultType[] } =
-      svc.handleRequestGetVariables(mockChargingStation, {
+      testableService.handleRequestGetVariables(mockChargingStation, {
         getVariableData: [
           {
             attributeType: AttributeEnumType.Actual,
@@ -721,13 +706,13 @@ await describe('B05 - Set Variables', async () => {
       ],
     }
     const response: { setVariableResult: OCPP20SetVariableResultType[] } =
-      svc.handleRequestSetVariables(mockChargingStation, setRequest)
+      testableService.handleRequestSetVariables(mockChargingStation, setRequest)
     expect(response.setVariableResult).toHaveLength(1)
     const setResult = response.setVariableResult[0]
     expect(setResult.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
     expect(setResult.attributeStatusInfo).toBeUndefined()
     const getResponse: { getVariableResult: OCPP20GetVariableResultType[] } =
-      svc.handleRequestGetVariables(mockChargingStation, {
+      testableService.handleRequestGetVariables(mockChargingStation, {
         getVariableData: [
           {
             attributeType: AttributeEnumType.Actual,

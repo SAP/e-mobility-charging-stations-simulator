@@ -2,14 +2,14 @@
  * @file Tests for OCPP20RequestService NotifyReport
  * @description Unit tests for OCPP 2.0 NotifyReport request building (B07/B08)
  */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { expect } from '@std/expect'
 import { describe, it } from 'node:test'
 
+import {
+  createTestableRequestService,
+  type TestableOCPP20RequestService,
+} from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20RequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20RequestService.js'
 import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
 import {
@@ -34,8 +34,7 @@ import {
 } from '../../ChargingStationTestConstants.js'
 
 await describe('B07/B08 - NotifyReport', async () => {
-  const mockResponseService = new OCPP20ResponseService()
-  const requestService = new OCPP20RequestService(mockResponseService)
+  const { service: testableService } = createTestableRequestService()
 
   const mockChargingStation = createChargingStation({
     baseName: TEST_CHARGING_STATION_BASE_NAME,
@@ -62,11 +61,11 @@ await describe('B07/B08 - NotifyReport', async () => {
     }
 
     // Access the private buildRequestPayload method via type assertion
-    const payload = (requestService as any).buildRequestPayload(
+    const payload = testableService.buildRequestPayload(
       mockChargingStation,
       OCPP20RequestCommand.NOTIFY_REPORT,
       requestParams
-    )
+    ) as OCPP20NotifyReportRequest
 
     expect(payload).toBeDefined()
     expect(payload.generatedAt).toBeInstanceOf(Date)
@@ -106,11 +105,11 @@ await describe('B07/B08 - NotifyReport', async () => {
       tbc: false,
     }
 
-    const payload = (requestService as any).buildRequestPayload(
+    const payload = testableService.buildRequestPayload(
       mockChargingStation,
       OCPP20RequestCommand.NOTIFY_REPORT,
       requestParams
-    )
+    ) as OCPP20NotifyReportRequest
 
     expect(payload).toBeDefined()
     expect(payload.generatedAt).toBeInstanceOf(Date)
@@ -188,11 +187,11 @@ await describe('B07/B08 - NotifyReport', async () => {
       tbc: true,
     }
 
-    const payload = (requestService as any).buildRequestPayload(
+    const payload = testableService.buildRequestPayload(
       mockChargingStation,
       OCPP20RequestCommand.NOTIFY_REPORT,
       requestParams
-    )
+    ) as OCPP20NotifyReportRequest
 
     expect(payload).toBeDefined()
     expect(payload.generatedAt).toBeInstanceOf(Date)
@@ -234,11 +233,11 @@ await describe('B07/B08 - NotifyReport', async () => {
       tbc: true, // Indicates more fragments to follow
     }
 
-    const payload = (requestService as any).buildRequestPayload(
+    const payload = testableService.buildRequestPayload(
       mockChargingStation,
       OCPP20RequestCommand.NOTIFY_REPORT,
       requestParams
-    )
+    ) as OCPP20NotifyReportRequest
 
     expect(payload).toBeDefined()
     expect(payload.generatedAt).toBeInstanceOf(Date)
@@ -259,11 +258,11 @@ await describe('B07/B08 - NotifyReport', async () => {
       tbc: false,
     }
 
-    const payload = (requestService as any).buildRequestPayload(
+    const payload = testableService.buildRequestPayload(
       mockChargingStation,
       OCPP20RequestCommand.NOTIFY_REPORT,
       requestParams
-    )
+    ) as OCPP20NotifyReportRequest
 
     expect(payload).toBeDefined()
     expect(payload.generatedAt).toBeInstanceOf(Date)
@@ -308,11 +307,11 @@ await describe('B07/B08 - NotifyReport', async () => {
         tbc: false,
       }
 
-      const payload = (requestService as any).buildRequestPayload(
+      const payload = testableService.buildRequestPayload(
         mockChargingStation,
         OCPP20RequestCommand.NOTIFY_REPORT,
         requestParams
-      )
+      ) as OCPP20NotifyReportRequest
 
       expect(payload).toBeDefined()
       expect(payload.reportData[0].variableAttribute[0].type).toBe(attributeType)
@@ -361,11 +360,11 @@ await describe('B07/B08 - NotifyReport', async () => {
         tbc: false,
       }
 
-      const payload = (requestService as any).buildRequestPayload(
+      const payload = testableService.buildRequestPayload(
         mockChargingStation,
         OCPP20RequestCommand.NOTIFY_REPORT,
         requestParams
-      )
+      ) as OCPP20NotifyReportRequest
 
       expect(payload).toBeDefined()
       expect(payload.reportData[0].variableCharacteristics.dataType).toBe(testCase.dataType)
@@ -403,11 +402,11 @@ await describe('B07/B08 - NotifyReport', async () => {
       tbc: false,
     }
 
-    const payload = (requestService as any).buildRequestPayload(
+    const payload = testableService.buildRequestPayload(
       mockChargingStation,
       OCPP20RequestCommand.NOTIFY_REPORT,
       requestParams
-    )
+    ) as OCPP20NotifyReportRequest
 
     // Validate that the payload has the exact structure of OCPP20NotifyReportRequest
     expect(typeof payload).toBe('object')
@@ -468,11 +467,11 @@ await describe('B07/B08 - NotifyReport', async () => {
       tbc: false,
     }
 
-    const payload = (requestService as any).buildRequestPayload(
+    const payload = testableService.buildRequestPayload(
       mockChargingStation,
       OCPP20RequestCommand.NOTIFY_REPORT,
       requestParams
-    )
+    ) as OCPP20NotifyReportRequest
 
     expect(payload).toBeDefined()
     expect(payload.reportData[0].variableAttribute).toHaveLength(1)
@@ -506,11 +505,11 @@ await describe('B07/B08 - NotifyReport', async () => {
       tbc: true,
     }
 
-    const payload = (requestService as any).buildRequestPayload(
+    const payload = testableService.buildRequestPayload(
       mockChargingStation,
       OCPP20RequestCommand.NOTIFY_REPORT,
       requestParams
-    )
+    ) as OCPP20NotifyReportRequest
 
     // Verify all input properties are preserved exactly
     expect(payload.generatedAt).toBe(testDate)

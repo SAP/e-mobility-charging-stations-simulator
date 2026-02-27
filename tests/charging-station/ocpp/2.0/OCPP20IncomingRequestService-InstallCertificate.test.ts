@@ -2,14 +2,13 @@
  * @file Tests for OCPP20IncomingRequestService InstallCertificate
  * @description Unit tests for OCPP 2.0 InstallCertificate command handling
  */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { expect } from '@std/expect'
 import { describe, it, mock } from 'node:test'
 
+import type { ChargingStationWithCertificateManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20CertificateManager.js'
+
+import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import {
   InstallCertificateStatusEnumType,
@@ -81,13 +80,16 @@ await describe('I03 - InstallCertificate', async () => {
     websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
   })
 
-  ;(mockChargingStation as any).certificateManager = createMockCertificateManager()
+  // Cast to allow setting certificateManager property
+  const stationWithCertManager = mockChargingStation as unknown as ChargingStationWithCertificateManager
+  stationWithCertManager.certificateManager = createMockCertificateManager()
 
   const incomingRequestService = new OCPP20IncomingRequestService()
+  const testableService = createTestableIncomingRequestService(incomingRequestService)
 
   await describe('Valid Certificate Installation', async () => {
     await it('Should accept valid V2GRootCertificate', async () => {
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
+      stationWithCertManager.certificateManager = createMockCertificateManager({
         storeCertificateResult: true,
       })
 
@@ -96,9 +98,8 @@ await describe('I03 - InstallCertificate', async () => {
         certificateType: InstallCertificateUseEnumType.V2GRootCertificate,
       }
 
-      const response: OCPP20InstallCertificateResponse = await (
-        incomingRequestService as any
-      ).handleRequestInstallCertificate(mockChargingStation, request)
+      const response: OCPP20InstallCertificateResponse =
+        await testableService.handleRequestInstallCertificate(mockChargingStation, request)
 
       expect(response).toBeDefined()
       expect(typeof response).toBe('object')
@@ -109,7 +110,7 @@ await describe('I03 - InstallCertificate', async () => {
     })
 
     await it('Should accept valid MORootCertificate', async () => {
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
+      stationWithCertManager.certificateManager = createMockCertificateManager({
         storeCertificateResult: true,
       })
 
@@ -118,9 +119,8 @@ await describe('I03 - InstallCertificate', async () => {
         certificateType: InstallCertificateUseEnumType.MORootCertificate,
       }
 
-      const response: OCPP20InstallCertificateResponse = await (
-        incomingRequestService as any
-      ).handleRequestInstallCertificate(mockChargingStation, request)
+      const response: OCPP20InstallCertificateResponse =
+        await testableService.handleRequestInstallCertificate(mockChargingStation, request)
 
       expect(response).toBeDefined()
       expect(response.status).toBe(InstallCertificateStatusEnumType.Accepted)
@@ -128,7 +128,7 @@ await describe('I03 - InstallCertificate', async () => {
     })
 
     await it('Should accept valid CSMSRootCertificate', async () => {
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
+      stationWithCertManager.certificateManager = createMockCertificateManager({
         storeCertificateResult: true,
       })
 
@@ -137,9 +137,8 @@ await describe('I03 - InstallCertificate', async () => {
         certificateType: InstallCertificateUseEnumType.CSMSRootCertificate,
       }
 
-      const response: OCPP20InstallCertificateResponse = await (
-        incomingRequestService as any
-      ).handleRequestInstallCertificate(mockChargingStation, request)
+      const response: OCPP20InstallCertificateResponse =
+        await testableService.handleRequestInstallCertificate(mockChargingStation, request)
 
       expect(response).toBeDefined()
       expect(response.status).toBe(InstallCertificateStatusEnumType.Accepted)
@@ -147,7 +146,7 @@ await describe('I03 - InstallCertificate', async () => {
     })
 
     await it('Should accept valid ManufacturerRootCertificate', async () => {
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
+      stationWithCertManager.certificateManager = createMockCertificateManager({
         storeCertificateResult: true,
       })
 
@@ -156,9 +155,8 @@ await describe('I03 - InstallCertificate', async () => {
         certificateType: InstallCertificateUseEnumType.ManufacturerRootCertificate,
       }
 
-      const response: OCPP20InstallCertificateResponse = await (
-        incomingRequestService as any
-      ).handleRequestInstallCertificate(mockChargingStation, request)
+      const response: OCPP20InstallCertificateResponse =
+        await testableService.handleRequestInstallCertificate(mockChargingStation, request)
 
       expect(response).toBeDefined()
       expect(response.status).toBe(InstallCertificateStatusEnumType.Accepted)
@@ -173,9 +171,8 @@ await describe('I03 - InstallCertificate', async () => {
         certificateType: InstallCertificateUseEnumType.V2GRootCertificate,
       }
 
-      const response: OCPP20InstallCertificateResponse = await (
-        incomingRequestService as any
-      ).handleRequestInstallCertificate(mockChargingStation, request)
+      const response: OCPP20InstallCertificateResponse =
+        await testableService.handleRequestInstallCertificate(mockChargingStation, request)
 
       expect(response).toBeDefined()
       expect(response.status).toBe(InstallCertificateStatusEnumType.Rejected)
@@ -185,32 +182,31 @@ await describe('I03 - InstallCertificate', async () => {
     })
 
     await it('Should reject expired certificate when validation is enabled', async () => {
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
+      stationWithCertManager.certificateManager = createMockCertificateManager({
         storeCertificateResult: false,
       })
-      ;(mockChargingStation as any).stationInfo.validateCertificateExpiry = true
+      mockChargingStation.stationInfo!.validateCertificateExpiry = true
 
       const request: OCPP20InstallCertificateRequest = {
         certificate: EXPIRED_PEM_CERTIFICATE,
         certificateType: InstallCertificateUseEnumType.CSMSRootCertificate,
       }
 
-      const response: OCPP20InstallCertificateResponse = await (
-        incomingRequestService as any
-      ).handleRequestInstallCertificate(mockChargingStation, request)
+      const response: OCPP20InstallCertificateResponse =
+        await testableService.handleRequestInstallCertificate(mockChargingStation, request)
 
       expect(response).toBeDefined()
       expect(response.status).toBe(InstallCertificateStatusEnumType.Rejected)
       expect(response.statusInfo).toBeDefined()
       expect(response.statusInfo?.reasonCode).toBeDefined()
 
-      delete (mockChargingStation as any).stationInfo.validateCertificateExpiry
+      delete mockChargingStation.stationInfo!.validateCertificateExpiry
     })
   })
 
   await describe('Storage Failure Handling', async () => {
     await it('Should return Failed status when storage is full', async () => {
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
+      stationWithCertManager.certificateManager = createMockCertificateManager({
         storeCertificateError: new Error('Storage full'),
       })
 
@@ -219,9 +215,8 @@ await describe('I03 - InstallCertificate', async () => {
         certificateType: InstallCertificateUseEnumType.MORootCertificate,
       }
 
-      const response: OCPP20InstallCertificateResponse = await (
-        incomingRequestService as any
-      ).handleRequestInstallCertificate(mockChargingStation, request)
+      const response: OCPP20InstallCertificateResponse =
+        await testableService.handleRequestInstallCertificate(mockChargingStation, request)
 
       expect(response).toBeDefined()
       expect(response.status).toBe(InstallCertificateStatusEnumType.Failed)
@@ -232,7 +227,7 @@ await describe('I03 - InstallCertificate', async () => {
 
   await describe('Response Structure Validation', async () => {
     await it('Should return response matching InstallCertificateResponse schema', async () => {
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
+      stationWithCertManager.certificateManager = createMockCertificateManager({
         storeCertificateResult: true,
       })
 
@@ -241,9 +236,8 @@ await describe('I03 - InstallCertificate', async () => {
         certificateType: InstallCertificateUseEnumType.V2GRootCertificate,
       }
 
-      const response: OCPP20InstallCertificateResponse = await (
-        incomingRequestService as any
-      ).handleRequestInstallCertificate(mockChargingStation, request)
+      const response: OCPP20InstallCertificateResponse =
+        await testableService.handleRequestInstallCertificate(mockChargingStation, request)
 
       expect(response).toBeDefined()
       expect(typeof response).toBe('object')
@@ -275,9 +269,8 @@ await describe('I03 - InstallCertificate', async () => {
         certificateType: InstallCertificateUseEnumType.V2GRootCertificate,
       }
 
-      const response: OCPP20InstallCertificateResponse = await (
-        incomingRequestService as any
-      ).handleRequestInstallCertificate(mockChargingStation, request)
+      const response: OCPP20InstallCertificateResponse =
+        await testableService.handleRequestInstallCertificate(mockChargingStation, request)
 
       expect(response.status).toBe(InstallCertificateStatusEnumType.Rejected)
       expect(response.statusInfo).toBeDefined()

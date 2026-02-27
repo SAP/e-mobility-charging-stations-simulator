@@ -2,10 +2,6 @@
  * @file Tests for OCPP20IncomingRequestService RequestStopTransaction
  * @description Unit tests for OCPP 2.0 RequestStopTransaction command handling (F03)
  */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it } from 'node:test'
@@ -17,6 +13,7 @@ import type {
   UUIDv4,
 } from '../../../../src/types/index.js'
 
+import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'
 import {
@@ -32,8 +29,8 @@ import {
 } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
-import { createMockAuthService } from '../auth/helpers/MockFactories.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
+import { createMockAuthService } from '../auth/helpers/MockFactories.js'
 import { resetLimits, resetReportingValueSize } from './OCPP20TestUtils.js'
 
 await describe('F03 - Remote Stop Transaction', async () => {
@@ -61,6 +58,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
   })
 
   const incomingRequestService = new OCPP20IncomingRequestService()
+  const testableService = createTestableIncomingRequestService(incomingRequestService)
 
   beforeEach(() => {
     const stationId = mockChargingStation.stationInfo?.chargingStationId ?? 'unknown'
@@ -122,7 +120,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
       remoteStartId,
     }
 
-    const startResponse = await (incomingRequestService as any).handleRequestStartTransaction(
+    const startResponse = await testableService.handleRequestStartTransaction(
       mockChargingStation,
       startRequest
     )
@@ -146,7 +144,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
     }
 
     // Execute stop transaction
-    const response = await (incomingRequestService as any).handleRequestStopTransaction(
+    const response = await testableService.handleRequestStopTransaction(
       mockChargingStation,
       stopRequest
     )
@@ -184,7 +182,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
       transactionId: transactionId2 as UUIDv4,
     }
 
-    const response = await (incomingRequestService as any).handleRequestStopTransaction(
+    const response = await testableService.handleRequestStopTransaction(
       mockChargingStation,
       stopRequest
     )
@@ -215,7 +213,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
       transactionId: nonExistentTransactionId as UUIDv4,
     }
 
-    const response = await (incomingRequestService as any).handleRequestStopTransaction(
+    const response = await testableService.handleRequestStopTransaction(
       mockChargingStation,
       stopRequest
     )
@@ -237,7 +235,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
       transactionId: '' as UUIDv4,
     }
 
-    const response = await (incomingRequestService as any).handleRequestStopTransaction(
+    const response = await testableService.handleRequestStopTransaction(
       mockChargingStation,
       invalidRequest
     )
@@ -261,7 +259,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
       transactionId: tooLongTransactionId as UUIDv4,
     }
 
-    const response = await (incomingRequestService as any).handleRequestStopTransaction(
+    const response = await testableService.handleRequestStopTransaction(
       mockChargingStation,
       invalidRequest
     )
@@ -303,7 +301,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
       transactionId: testTransactionId as UUIDv4,
     }
 
-    const response = await (incomingRequestService as any).handleRequestStopTransaction(
+    const response = await testableService.handleRequestStopTransaction(
       mockChargingStation,
       stopRequest
     )
@@ -351,7 +349,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
       remoteStartId: 999,
     }
 
-    const startResponse = await (incomingRequestService as any).handleRequestStartTransaction(
+    const startResponse = await testableService.handleRequestStartTransaction(
       failingChargingStation,
       startRequest
     )
@@ -363,7 +361,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
       transactionId: transactionId as UUIDv4,
     }
 
-    const response = await (incomingRequestService as any).handleRequestStopTransaction(
+    const response = await testableService.handleRequestStopTransaction(
       failingChargingStation,
       stopRequest
     )
@@ -385,7 +383,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
       transactionId: transactionId as UUIDv4,
     }
 
-    const response = await (incomingRequestService as any).handleRequestStopTransaction(
+    const response = await testableService.handleRequestStopTransaction(
       mockChargingStation,
       stopRequest
     )
@@ -417,7 +415,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
       transactionId: transactionId as UUIDv4,
     }
 
-    const response = await (incomingRequestService as any).handleRequestStopTransaction(
+    const response = await testableService.handleRequestStopTransaction(
       mockChargingStation,
       stopRequestWithCustomData
     )
@@ -442,7 +440,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
       transactionId: transactionId as UUIDv4,
     }
 
-    const response = await (incomingRequestService as any).handleRequestStopTransaction(
+    const response = await testableService.handleRequestStopTransaction(
       mockChargingStation,
       stopRequest
     )
@@ -489,7 +487,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
       transactionId: transactionId as UUIDv4,
     }
 
-    const response = await (incomingRequestService as any).handleRequestStopTransaction(
+    const response = await testableService.handleRequestStopTransaction(
       mockChargingStation,
       stopRequest
     )

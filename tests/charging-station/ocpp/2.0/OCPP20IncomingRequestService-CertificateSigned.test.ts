@@ -2,14 +2,19 @@
  * @file Tests for OCPP20IncomingRequestService CertificateSigned
  * @description Unit tests for OCPP 2.0 CertificateSigned command handling
  */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { expect } from '@std/expect'
-import { describe, it, mock } from 'node:test'
+import { describe, it, mock, type Mock } from 'node:test'
 
+import type { ChargingStation } from '../../../../src/charging-station/index.js'
+import type {
+  DeleteCertificateResult,
+  GetInstalledCertificatesResult,
+  OCPP20CertificateManagerInterface,
+  StoreCertificateResult,
+} from '../../../../src/charging-station/ocpp/2.0/OCPP20CertificateManager.js'
+
+import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import {
   CertificateSigningUseEnumType,
@@ -58,19 +63,39 @@ const INVALID_PEM_CERTIFICATE_MISSING_MARKERS = `MIIBkTCB+wIJAKHBfpvPA0GXMA0GCSq
 Rlc3RDQTAeFw0yNDAxMDEwMDAwMDBaFw0yOTAxMDEwMDAwMDBaMBExDzANBgNVBA
 MMBnRlc3RDQTBcMA0GCSqGSIb3DQEBAQUAA0sAMEgCQQC5p8U8zTk8TT5H5s8mjx`
 
+/**
+ * Mock certificate manager interface for testing
+ * Provides typed access to mock certificate operations
+ */
+interface MockCertificateManager extends OCPP20CertificateManagerInterface {
+  deleteCertificate: Mock<() => DeleteCertificateResult>
+  getInstalledCertificates: Mock<() => GetInstalledCertificatesResult>
+  storeCertificate: Mock<() => StoreCertificateResult>
+  validateCertificateFormat: Mock<(cert: string) => boolean>
+}
+
+/**
+ * Test-specific ChargingStation interface with certificate management
+ * Extends ChargingStation with properties needed for certificate tests
+ */
+interface TestableChargingStationWithCertificate extends ChargingStation {
+  certificateManager?: MockCertificateManager
+  closeWSConnection?: Mock<() => void>
+}
+
 const createMockCertificateManager = (
   options: {
     storeCertificateError?: Error
     storeCertificateResult?: boolean
   } = {}
-) => ({
+): MockCertificateManager => ({
   deleteCertificate: mock.fn(),
-  getInstalledCertificates: mock.fn(() => []),
+  getInstalledCertificates: mock.fn(() => ({ certificateHashDataChain: [] })),
   storeCertificate: mock.fn(() => {
     if (options.storeCertificateError) {
       throw options.storeCertificateError
     }
-    return options.storeCertificateResult ?? true
+    return { success: options.storeCertificateResult ?? true }
   }),
   validateCertificateFormat: mock.fn((cert: string) => {
     return (
@@ -90,17 +115,18 @@ await describe('I04 - CertificateSigned', async () => {
       ocppVersion: OCPPVersion.VERSION_201,
     },
     websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
-  })
+  }) as TestableChargingStationWithCertificate
 
-  ;(mockChargingStation as any).certificateManager = createMockCertificateManager()
+  mockChargingStation.certificateManager = createMockCertificateManager()
   // Mock closeWSConnection for reconnect tests
-  ;(mockChargingStation as any).closeWSConnection = mock.fn()
+  mockChargingStation.closeWSConnection = mock.fn()
 
   const incomingRequestService = new OCPP20IncomingRequestService()
+  const testableService = createTestableIncomingRequestService(incomingRequestService)
 
   await describe('Valid Certificate Chain Installation', async () => {
     await it('Should accept valid certificate chain', async () => {
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
+      mockChargingStation.certificateManager = createMockCertificateManager({
         storeCertificateResult: true,
       })
 
@@ -109,9 +135,8 @@ await describe('I04 - CertificateSigned', async () => {
         certificateType: CertificateSigningUseEnumType.ChargingStationCertificate,
       }
 
-      const response: OCPP20CertificateSignedResponse = await (
-        incomingRequestService as any
-      ).handleRequestCertificateSigned(mockChargingStation, request)
+      const response: OCPP20CertificateSignedResponse =
+        await testableService.handleRequestCertificateSigned(mockChargingStation, request)
 
       expect(response).toBeDefined()
       expect(typeof response).toBe('object')
@@ -121,7 +146,7 @@ await describe('I04 - CertificateSigned', async () => {
     })
 
     await it('Should accept single certificate (no chain)', async () => {
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
+      mockChargingStation.certificateManager = createMockCertificateManager({
         storeCertificateResult: true,
       })
 
@@ -130,9 +155,8 @@ await describe('I04 - CertificateSigned', async () => {
         certificateType: CertificateSigningUseEnumType.V2GCertificate,
       }
 
-      const response: OCPP20CertificateSignedResponse = await (
-        incomingRequestService as any
-      ).handleRequestCertificateSigned(mockChargingStation, request)
+      const response: OCPP20CertificateSignedResponse =
+        await testableService.handleRequestCertificateSigned(mockChargingStation, request)
 
       expect(response).toBeDefined()
       expect(response.status).toBe(GenericStatus.Accepted)
@@ -147,9 +171,8 @@ await describe('I04 - CertificateSigned', async () => {
         certificateType: CertificateSigningUseEnumType.ChargingStationCertificate,
       }
 
-      const response: OCPP20CertificateSignedResponse = await (
-        incomingRequestService as any
-      ).handleRequestCertificateSigned(mockChargingStation, request)
+      const response: OCPP20CertificateSignedResponse =
+        await testableService.handleRequestCertificateSigned(mockChargingStation, request)
 
       expect(response).toBeDefined()
       expect(response.status).toBe(GenericStatus.Rejected)
@@ -164,18 +187,17 @@ await describe('I04 - CertificateSigned', async () => {
       const mockCertManager = createMockCertificateManager({
         storeCertificateResult: true,
       })
-      ;(mockChargingStation as any).certificateManager = mockCertManager
+      mockChargingStation.certificateManager = mockCertManager
       const mockCloseWSConnection = mock.fn()
-      ;(mockChargingStation as any).closeWSConnection = mockCloseWSConnection
+      mockChargingStation.closeWSConnection = mockCloseWSConnection
 
       const request: OCPP20CertificateSignedRequest = {
         certificateChain: VALID_PEM_CERTIFICATE,
         certificateType: CertificateSigningUseEnumType.ChargingStationCertificate,
       }
 
-      const response: OCPP20CertificateSignedResponse = await (
-        incomingRequestService as any
-      ).handleRequestCertificateSigned(mockChargingStation, request)
+      const response: OCPP20CertificateSignedResponse =
+        await testableService.handleRequestCertificateSigned(mockChargingStation, request)
 
       expect(response.status).toBe(GenericStatus.Accepted)
       // Verify closeWSConnection was called to trigger reconnect
@@ -188,18 +210,17 @@ await describe('I04 - CertificateSigned', async () => {
       const mockCertManager = createMockCertificateManager({
         storeCertificateResult: true,
       })
-      ;(mockChargingStation as any).certificateManager = mockCertManager
+      mockChargingStation.certificateManager = mockCertManager
       const mockCloseWSConnection = mock.fn()
-      ;(mockChargingStation as any).closeWSConnection = mockCloseWSConnection
+      mockChargingStation.closeWSConnection = mockCloseWSConnection
 
       const request: OCPP20CertificateSignedRequest = {
         certificateChain: VALID_PEM_CERTIFICATE,
         certificateType: CertificateSigningUseEnumType.V2GCertificate,
       }
 
-      const response: OCPP20CertificateSignedResponse = await (
-        incomingRequestService as any
-      ).handleRequestCertificateSigned(mockChargingStation, request)
+      const response: OCPP20CertificateSignedResponse =
+        await testableService.handleRequestCertificateSigned(mockChargingStation, request)
 
       expect(response.status).toBe(GenericStatus.Accepted)
       // Verify storeCertificate was called
@@ -222,19 +243,18 @@ await describe('I04 - CertificateSigned', async () => {
           ocppVersion: OCPPVersion.VERSION_201,
         },
         websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
-      })
+      }) as TestableChargingStationWithCertificate
 
-      // Ensure certificateManager is null/undefined
-      delete (stationWithoutCertManager as any).certificateManager
+      // Ensure certificateManager is undefined (not present)
+      delete stationWithoutCertManager.certificateManager
 
       const request: OCPP20CertificateSignedRequest = {
         certificateChain: VALID_PEM_CERTIFICATE,
         certificateType: CertificateSigningUseEnumType.ChargingStationCertificate,
       }
 
-      const response: OCPP20CertificateSignedResponse = await (
-        incomingRequestService as any
-      ).handleRequestCertificateSigned(stationWithoutCertManager, request)
+      const response: OCPP20CertificateSignedResponse =
+        await testableService.handleRequestCertificateSigned(stationWithoutCertManager, request)
 
       expect(response).toBeDefined()
       expect(response.status).toBe(GenericStatus.Rejected)
@@ -245,7 +265,7 @@ await describe('I04 - CertificateSigned', async () => {
 
   await describe('Storage Failure Handling', async () => {
     await it('Should return Rejected status when storage fails', async () => {
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
+      mockChargingStation.certificateManager = createMockCertificateManager({
         storeCertificateResult: false,
       })
 
@@ -254,9 +274,8 @@ await describe('I04 - CertificateSigned', async () => {
         certificateType: CertificateSigningUseEnumType.ChargingStationCertificate,
       }
 
-      const response: OCPP20CertificateSignedResponse = await (
-        incomingRequestService as any
-      ).handleRequestCertificateSigned(mockChargingStation, request)
+      const response: OCPP20CertificateSignedResponse =
+        await testableService.handleRequestCertificateSigned(mockChargingStation, request)
 
       expect(response).toBeDefined()
       expect(response.status).toBe(GenericStatus.Rejected)
@@ -265,7 +284,7 @@ await describe('I04 - CertificateSigned', async () => {
     })
 
     await it('Should return Rejected status when storage throws error', async () => {
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
+      mockChargingStation.certificateManager = createMockCertificateManager({
         storeCertificateError: new Error('Storage full'),
       })
 
@@ -274,9 +293,8 @@ await describe('I04 - CertificateSigned', async () => {
         certificateType: CertificateSigningUseEnumType.V2GCertificate,
       }
 
-      const response: OCPP20CertificateSignedResponse = await (
-        incomingRequestService as any
-      ).handleRequestCertificateSigned(mockChargingStation, request)
+      const response: OCPP20CertificateSignedResponse =
+        await testableService.handleRequestCertificateSigned(mockChargingStation, request)
 
       expect(response).toBeDefined()
       expect(response.status).toBe(GenericStatus.Rejected)
@@ -287,7 +305,7 @@ await describe('I04 - CertificateSigned', async () => {
 
   await describe('Response Structure Validation', async () => {
     await it('Should return response matching CertificateSignedResponse schema', async () => {
-      ;(mockChargingStation as any).certificateManager = createMockCertificateManager({
+      mockChargingStation.certificateManager = createMockCertificateManager({
         storeCertificateResult: true,
       })
 
@@ -296,9 +314,8 @@ await describe('I04 - CertificateSigned', async () => {
         certificateType: CertificateSigningUseEnumType.ChargingStationCertificate,
       }
 
-      const response: OCPP20CertificateSignedResponse = await (
-        incomingRequestService as any
-      ).handleRequestCertificateSigned(mockChargingStation, request)
+      const response: OCPP20CertificateSignedResponse =
+        await testableService.handleRequestCertificateSigned(mockChargingStation, request)
 
       expect(response).toBeDefined()
       expect(typeof response).toBe('object')
@@ -329,9 +346,8 @@ await describe('I04 - CertificateSigned', async () => {
         certificateType: CertificateSigningUseEnumType.ChargingStationCertificate,
       }
 
-      const response: OCPP20CertificateSignedResponse = await (
-        incomingRequestService as any
-      ).handleRequestCertificateSigned(mockChargingStation, request)
+      const response: OCPP20CertificateSignedResponse =
+        await testableService.handleRequestCertificateSigned(mockChargingStation, request)
 
       expect(response.status).toBe(GenericStatus.Rejected)
       expect(response.statusInfo).toBeDefined()

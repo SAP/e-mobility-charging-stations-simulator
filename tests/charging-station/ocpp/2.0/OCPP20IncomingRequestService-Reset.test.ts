@@ -2,24 +2,24 @@
  * @file Tests for OCPP20IncomingRequestService Reset
  * @description Unit tests for OCPP 2.0 Reset command handling (B11/B12)
  */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
-import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
-import {
+import type { ChargingStation, EvseStatus } from '../../../../src/charging-station/index.js'
+import type {
   FirmwareStatus,
   type OCPP20ResetRequest,
   type OCPP20ResetResponse,
   OCPPVersion,
   ReasonCodeEnumType,
+  Reservation,
   ResetEnumType,
-  ResetStatusEnumType,
+  ResetStatusEnumType
 } from '../../../../src/types/index.js'
+
+import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
+import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
@@ -46,11 +46,17 @@ await describe('B11 & B12 - Reset', async () => {
     websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
   })
 
-  // Add missing method to mock
-  ;(mockChargingStation as any).getNumberOfRunningTransactions = () => 0
-  ;(mockChargingStation as any).reset = () => Promise.resolve()
+  // Add missing method to mock using interface extension pattern
+  interface MockChargingStation extends ChargingStation {
+    getNumberOfRunningTransactions: () => number
+    reset: () => Promise<void>
+  }
+  const mockStation = mockChargingStation as MockChargingStation
+  mockStation.getNumberOfRunningTransactions = () => 0
+  mockStation.reset = () => Promise.resolve()
 
   const incomingRequestService = new OCPP20IncomingRequestService()
+  const testableService = createTestableIncomingRequestService(incomingRequestService)
 
   await describe('B11 - Reset - Without Ongoing Transaction', async () => {
     // FR: B11.FR.01
@@ -59,9 +65,10 @@ await describe('B11 & B12 - Reset', async () => {
         type: ResetEnumType.Immediate,
       }
 
-      const response: OCPP20ResetResponse = await (
-        incomingRequestService as any
-      ).handleRequestReset(mockChargingStation, resetRequest)
+      const response: OCPP20ResetResponse = await testableService.handleRequestReset(
+        mockChargingStation,
+        resetRequest
+      )
 
       expect(response).toBeDefined()
       expect(typeof response).toBe('object')
@@ -79,9 +86,10 @@ await describe('B11 & B12 - Reset', async () => {
         type: ResetEnumType.OnIdle,
       }
 
-      const response: OCPP20ResetResponse = await (
-        incomingRequestService as any
-      ).handleRequestReset(mockChargingStation, resetRequest)
+      const response: OCPP20ResetResponse = await testableService.handleRequestReset(
+        mockChargingStation,
+        resetRequest
+      )
 
       expect(response).toBeDefined()
       expect(response.status).toBeDefined()
@@ -99,9 +107,10 @@ await describe('B11 & B12 - Reset', async () => {
         type: ResetEnumType.Immediate,
       }
 
-      const response: OCPP20ResetResponse = await (
-        incomingRequestService as any
-      ).handleRequestReset(mockChargingStation, resetRequest)
+      const response: OCPP20ResetResponse = await testableService.handleRequestReset(
+        mockChargingStation,
+        resetRequest
+      )
 
       expect(response).toBeDefined()
       expect(response.status).toBeDefined()
@@ -118,9 +127,10 @@ await describe('B11 & B12 - Reset', async () => {
         type: ResetEnumType.Immediate,
       }
 
-      const response: OCPP20ResetResponse = await (
-        incomingRequestService as any
-      ).handleRequestReset(mockChargingStation, resetRequest)
+      const response: OCPP20ResetResponse = await testableService.handleRequestReset(
+        mockChargingStation,
+        resetRequest
+      )
 
       expect(response).toBeDefined()
       expect(response.status).toBe(ResetStatusEnumType.Rejected)
@@ -134,16 +144,17 @@ await describe('B11 & B12 - Reset', async () => {
         type: ResetEnumType.Immediate,
       }
 
-      const response: OCPP20ResetResponse = await (
-        incomingRequestService as any
-      ).handleRequestReset(mockChargingStation, resetRequest)
+      const response: OCPP20ResetResponse = await testableService.handleRequestReset(
+        mockChargingStation,
+        resetRequest
+      )
 
       expect(response).toBeDefined()
       expect(response.status).toBeDefined()
       expect(typeof response.status).toBe('string')
 
       // For immediate reset without active transactions, should be accepted
-      if (mockChargingStation.getNumberOfRunningTransactions() === 0) {
+      if (mockStation.getNumberOfRunningTransactions() === 0) {
         expect(response.status).toBe(ResetStatusEnumType.Accepted)
       }
     })
@@ -153,9 +164,10 @@ await describe('B11 & B12 - Reset', async () => {
         type: ResetEnumType.OnIdle,
       }
 
-      const response: OCPP20ResetResponse = await (
-        incomingRequestService as any
-      ).handleRequestReset(mockChargingStation, resetRequest)
+      const response: OCPP20ResetResponse = await testableService.handleRequestReset(
+        mockChargingStation,
+        resetRequest
+      )
 
       expect(response).toBeDefined()
       expect(response.status).toBe(ResetStatusEnumType.Accepted)
@@ -164,16 +176,17 @@ await describe('B11 & B12 - Reset', async () => {
     await it('Should reject EVSE reset when not supported and no transactions', async () => {
       // Mock charging station without EVSE support
       const originalHasEvses = mockChargingStation.hasEvses
-      ;(mockChargingStation as any).hasEvses = false
+      ;(mockChargingStation as { hasEvses: boolean }).hasEvses = false
 
       const resetRequest: OCPP20ResetRequest = {
         evseId: 1,
         type: ResetEnumType.Immediate,
       }
 
-      const response: OCPP20ResetResponse = await (
-        incomingRequestService as any
-      ).handleRequestReset(mockChargingStation, resetRequest)
+      const response: OCPP20ResetResponse = await testableService.handleRequestReset(
+        mockChargingStation,
+        resetRequest
+      )
 
       expect(response).toBeDefined()
       expect(response.status).toBe(ResetStatusEnumType.Rejected)
@@ -184,7 +197,7 @@ await describe('B11 & B12 - Reset', async () => {
       )
 
       // Restore original state
-      ;(mockChargingStation as any).hasEvses = originalHasEvses
+      ;(mockChargingStation as { hasEvses: boolean }).hasEvses = originalHasEvses
     })
 
     await it('Should handle EVSE-specific reset without transactions', async () => {
@@ -193,9 +206,10 @@ await describe('B11 & B12 - Reset', async () => {
         type: ResetEnumType.Immediate,
       }
 
-      const response: OCPP20ResetResponse = await (
-        incomingRequestService as any
-      ).handleRequestReset(mockChargingStation, resetRequest)
+      const response: OCPP20ResetResponse = await testableService.handleRequestReset(
+        mockChargingStation,
+        resetRequest
+      )
 
       expect(response).toBeDefined()
       expect(response.status).toBe(ResetStatusEnumType.Accepted)
@@ -207,58 +221,61 @@ await describe('B11 & B12 - Reset', async () => {
     // FR: B12.FR.02
     await it('Should handle immediate reset with active transactions', async () => {
       // Mock active transactions
-      ;(mockChargingStation as any).getNumberOfRunningTransactions = () => 1
+      mockStation.getNumberOfRunningTransactions = () => 1
 
       const resetRequest: OCPP20ResetRequest = {
         type: ResetEnumType.Immediate,
       }
 
-      const response: OCPP20ResetResponse = await (
-        incomingRequestService as any
-      ).handleRequestReset(mockChargingStation, resetRequest)
+      const response: OCPP20ResetResponse = await testableService.handleRequestReset(
+        mockChargingStation,
+        resetRequest
+      )
 
       expect(response).toBeDefined()
       expect(response.status).toBe(ResetStatusEnumType.Accepted) // Should accept immediate reset
       expect(response.statusInfo).toBeUndefined()
 
       // Reset mock
-      ;(mockChargingStation as any).getNumberOfRunningTransactions = () => 0
+      mockStation.getNumberOfRunningTransactions = () => 0
     })
 
     // FR: B12.FR.01
     await it('Should handle OnIdle reset with active transactions', async () => {
       // Mock active transactions
-      ;(mockChargingStation as any).getNumberOfRunningTransactions = () => 1
+      mockStation.getNumberOfRunningTransactions = () => 1
 
       const resetRequest: OCPP20ResetRequest = {
         type: ResetEnumType.OnIdle,
       }
 
-      const response: OCPP20ResetResponse = await (
-        incomingRequestService as any
-      ).handleRequestReset(mockChargingStation, resetRequest)
+      const response: OCPP20ResetResponse = await testableService.handleRequestReset(
+        mockChargingStation,
+        resetRequest
+      )
 
       expect(response).toBeDefined()
       expect(response.status).toBe(ResetStatusEnumType.Scheduled) // Should schedule OnIdle reset
       expect(response.statusInfo).toBeUndefined()
 
       // Reset mock
-      ;(mockChargingStation as any).getNumberOfRunningTransactions = () => 0
+      mockStation.getNumberOfRunningTransactions = () => 0
     })
 
     // FR: B12.FR.03
     await it('Should handle EVSE-specific reset with active transactions', async () => {
       // Mock active transactions
-      ;(mockChargingStation as any).getNumberOfRunningTransactions = () => 1
+      mockStation.getNumberOfRunningTransactions = () => 1
 
       const resetRequest: OCPP20ResetRequest = {
         evseId: 1,
         type: ResetEnumType.Immediate,
       }
 
-      const response: OCPP20ResetResponse = await (
-        incomingRequestService as any
-      ).handleRequestReset(mockChargingStation, resetRequest)
+      const response: OCPP20ResetResponse = await testableService.handleRequestReset(
+        mockChargingStation,
+        resetRequest
+      )
 
       expect(response).toBeDefined()
       expect(response.status).toBeDefined()
@@ -267,23 +284,24 @@ await describe('B11 & B12 - Reset', async () => {
       )
 
       // Reset mock
-      ;(mockChargingStation as any).getNumberOfRunningTransactions = () => 0
+      mockStation.getNumberOfRunningTransactions = () => 0
     })
 
     await it('Should reject EVSE reset when not supported with active transactions', async () => {
       // Mock charging station without EVSE support and active transactions
       const originalHasEvses = mockChargingStation.hasEvses
-      ;(mockChargingStation as any).hasEvses = false
-      ;(mockChargingStation as any).getNumberOfRunningTransactions = () => 1
+      ;(mockChargingStation as { hasEvses: boolean }).hasEvses = false
+      mockStation.getNumberOfRunningTransactions = () => 1
 
       const resetRequest: OCPP20ResetRequest = {
         evseId: 1,
         type: ResetEnumType.Immediate,
       }
 
-      const response: OCPP20ResetResponse = await (
-        incomingRequestService as any
-      ).handleRequestReset(mockChargingStation, resetRequest)
+      const response: OCPP20ResetResponse = await testableService.handleRequestReset(
+        mockChargingStation,
+        resetRequest
+      )
 
       expect(response).toBeDefined()
       expect(response.status).toBe(ResetStatusEnumType.Rejected)
@@ -294,8 +312,8 @@ await describe('B11 & B12 - Reset', async () => {
       )
 
       // Restore original state
-      ;(mockChargingStation as any).hasEvses = originalHasEvses
-      ;(mockChargingStation as any).getNumberOfRunningTransactions = () => 0
+      ;(mockChargingStation as { hasEvses: boolean }).hasEvses = originalHasEvses
+      mockStation.getNumberOfRunningTransactions = () => 0
     })
 
     // RST-001: Reset OnIdle Errata 2.14 Compliance Tests
@@ -303,7 +321,12 @@ await describe('B11 & B12 - Reset', async () => {
     // in addition to active transactions, per OCPP 2.0.1 Errata 2.14.
     await describe('RST-001 - Reset OnIdle Errata 2.14 Compliance', async () => {
       // Create a separate charging station for RST-001 tests with clean state
-      const createTestStation = () => {
+      interface TestStation extends ChargingStation {
+        getNumberOfRunningTransactions: () => number
+        reset: () => Promise<void>
+      }
+
+      const createTestStation = (): TestStation => {
         const station = createChargingStation({
           baseName: TEST_CHARGING_STATION_BASE_NAME,
           connectorsCount: 3,
@@ -317,9 +340,10 @@ await describe('B11 & B12 - Reset', async () => {
           websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
         })
         // Add required methods
-        ;(station as any).getNumberOfRunningTransactions = () => 0
-        ;(station as any).reset = () => Promise.resolve()
-        return station
+        const testStation = station as TestStation
+        testStation.getNumberOfRunningTransactions = () => 0
+        testStation.reset = () => Promise.resolve()
+        return testStation
       }
 
       await describe('Firmware Update Blocking', async () => {
@@ -329,18 +353,18 @@ await describe('B11 & B12 - Reset', async () => {
         await it('Should return Scheduled when firmware is Downloading', async () => {
           const station = createTestStation()
           // Mock firmware status as Downloading
-          ;(station as any).stationInfo = {
-            ...station.stationInfo,
+          Object.assign(station.stationInfo, {
             firmwareStatus: FirmwareStatus.Downloading,
-          }
+          })
 
           const resetRequest: OCPP20ResetRequest = {
             type: ResetEnumType.OnIdle,
           }
 
-          const response: OCPP20ResetResponse = await (
-            incomingRequestService as any
-          ).handleRequestReset(station, resetRequest)
+          const response: OCPP20ResetResponse = await testableService.handleRequestReset(
+            station,
+            resetRequest
+          )
 
           expect(response).toBeDefined()
           expect(response.status).toBe(ResetStatusEnumType.Scheduled)
@@ -349,18 +373,18 @@ await describe('B11 & B12 - Reset', async () => {
         await it('Should return Scheduled when firmware is Downloaded', async () => {
           const station = createTestStation()
           // Mock firmware status as Downloaded (waiting to install)
-          ;(station as any).stationInfo = {
-            ...station.stationInfo,
+          Object.assign(station.stationInfo, {
             firmwareStatus: FirmwareStatus.Downloaded,
-          }
+          })
 
           const resetRequest: OCPP20ResetRequest = {
             type: ResetEnumType.OnIdle,
           }
 
-          const response: OCPP20ResetResponse = await (
-            incomingRequestService as any
-          ).handleRequestReset(station, resetRequest)
+          const response: OCPP20ResetResponse = await testableService.handleRequestReset(
+            station,
+            resetRequest
+          )
 
           expect(response).toBeDefined()
           expect(response.status).toBe(ResetStatusEnumType.Scheduled)
@@ -369,18 +393,18 @@ await describe('B11 & B12 - Reset', async () => {
         await it('Should return Scheduled when firmware is Installing', async () => {
           const station = createTestStation()
           // Mock firmware status as Installing
-          ;(station as any).stationInfo = {
-            ...station.stationInfo,
+          Object.assign(station.stationInfo, {
             firmwareStatus: FirmwareStatus.Installing,
-          }
+          })
 
           const resetRequest: OCPP20ResetRequest = {
             type: ResetEnumType.OnIdle,
           }
 
-          const response: OCPP20ResetResponse = await (
-            incomingRequestService as any
-          ).handleRequestReset(station, resetRequest)
+          const response: OCPP20ResetResponse = await testableService.handleRequestReset(
+            station,
+            resetRequest
+          )
 
           expect(response).toBeDefined()
           expect(response.status).toBe(ResetStatusEnumType.Scheduled)
@@ -389,18 +413,18 @@ await describe('B11 & B12 - Reset', async () => {
         await it('Should return Accepted when firmware is Installed (complete)', async () => {
           const station = createTestStation()
           // Mock firmware status as Installed (update complete)
-          ;(station as any).stationInfo = {
-            ...station.stationInfo,
+          Object.assign(station.stationInfo, {
             firmwareStatus: FirmwareStatus.Installed,
-          }
+          })
 
           const resetRequest: OCPP20ResetRequest = {
             type: ResetEnumType.OnIdle,
           }
 
-          const response: OCPP20ResetResponse = await (
-            incomingRequestService as any
-          ).handleRequestReset(station, resetRequest)
+          const response: OCPP20ResetResponse = await testableService.handleRequestReset(
+            station,
+            resetRequest
+          )
 
           expect(response).toBeDefined()
           expect(response.status).toBe(ResetStatusEnumType.Accepted)
@@ -409,18 +433,18 @@ await describe('B11 & B12 - Reset', async () => {
         await it('Should return Accepted when firmware status is Idle', async () => {
           const station = createTestStation()
           // Mock firmware status as Idle (no update in progress)
-          ;(station as any).stationInfo = {
-            ...station.stationInfo,
+          Object.assign(station.stationInfo, {
             firmwareStatus: FirmwareStatus.Idle,
-          }
+          })
 
           const resetRequest: OCPP20ResetRequest = {
             type: ResetEnumType.OnIdle,
           }
 
-          const response: OCPP20ResetResponse = await (
-            incomingRequestService as any
-          ).handleRequestReset(station, resetRequest)
+          const response: OCPP20ResetResponse = await testableService.handleRequestReset(
+            station,
+            resetRequest
+          )
 
           expect(response).toBeDefined()
           expect(response.status).toBe(ResetStatusEnumType.Accepted)
@@ -435,19 +459,19 @@ await describe('B11 & B12 - Reset', async () => {
           const station = createTestStation()
           // Create a reservation that expires in 1 hour (future)
           const futureExpiryDate = new Date(Date.now() + 3600000)
-          const mockReservation = {
+          const mockReservation: Partial<Reservation> = {
             expiryDate: futureExpiryDate,
             id: 1,
             idTag: 'test-tag',
           }
 
           // Set reservation on first connector of first EVSE
-          const evse = station.evses.get(1)
+          const evse: EvseStatus | undefined = station.evses.get(1)
           if (evse) {
             const connectorId = [...evse.connectors.keys()][0]
             const connector = evse.connectors.get(connectorId)
             if (connector) {
-              connector.reservation = mockReservation as any
+              connector.reservation = mockReservation as Reservation
             }
           }
 
@@ -455,9 +479,10 @@ await describe('B11 & B12 - Reset', async () => {
             type: ResetEnumType.OnIdle,
           }
 
-          const response: OCPP20ResetResponse = await (
-            incomingRequestService as any
-          ).handleRequestReset(station, resetRequest)
+          const response: OCPP20ResetResponse = await testableService.handleRequestReset(
+            station,
+            resetRequest
+          )
 
           expect(response).toBeDefined()
           expect(response.status).toBe(ResetStatusEnumType.Scheduled)
@@ -467,19 +492,19 @@ await describe('B11 & B12 - Reset', async () => {
           const station = createTestStation()
           // Create a reservation that expired 1 hour ago (past)
           const pastExpiryDate = new Date(Date.now() - 3600000)
-          const mockReservation = {
+          const mockReservation: Partial<Reservation> = {
             expiryDate: pastExpiryDate,
             id: 1,
             idTag: 'test-tag',
           }
 
           // Set expired reservation on first connector of first EVSE
-          const evse = station.evses.get(1)
+          const evse: EvseStatus | undefined = station.evses.get(1)
           if (evse) {
             const connectorId = [...evse.connectors.keys()][0]
             const connector = evse.connectors.get(connectorId)
             if (connector) {
-              connector.reservation = mockReservation as any
+              connector.reservation = mockReservation as Reservation
             }
           }
 
@@ -487,9 +512,10 @@ await describe('B11 & B12 - Reset', async () => {
             type: ResetEnumType.OnIdle,
           }
 
-          const response: OCPP20ResetResponse = await (
-            incomingRequestService as any
-          ).handleRequestReset(station, resetRequest)
+          const response: OCPP20ResetResponse = await testableService.handleRequestReset(
+            station,
+            resetRequest
+          )
 
           expect(response).toBeDefined()
           // Station is idle because the reservation is expired
@@ -504,9 +530,10 @@ await describe('B11 & B12 - Reset', async () => {
             type: ResetEnumType.OnIdle,
           }
 
-          const response: OCPP20ResetResponse = await (
-            incomingRequestService as any
-          ).handleRequestReset(station, resetRequest)
+          const response: OCPP20ResetResponse = await testableService.handleRequestReset(
+            station,
+            resetRequest
+          )
 
           expect(response).toBeDefined()
           expect(response.status).toBe(ResetStatusEnumType.Accepted)
@@ -519,21 +546,21 @@ await describe('B11 & B12 - Reset', async () => {
         await it('Should return Accepted when all conditions clear (true idle state)', async () => {
           const station = createTestStation()
           // Ensure no transactions
-          ;(station as any).getNumberOfRunningTransactions = () => 0
+          station.getNumberOfRunningTransactions = () => 0
           // Ensure no firmware update in progress
-          ;(station as any).stationInfo = {
-            ...station.stationInfo,
+          Object.assign(station.stationInfo, {
             firmwareStatus: FirmwareStatus.Idle,
-          }
+          })
           // No reservations (default state)
 
           const resetRequest: OCPP20ResetRequest = {
             type: ResetEnumType.OnIdle,
           }
 
-          const response: OCPP20ResetResponse = await (
-            incomingRequestService as any
-          ).handleRequestReset(station, resetRequest)
+          const response: OCPP20ResetResponse = await testableService.handleRequestReset(
+            station,
+            resetRequest
+          )
 
           expect(response).toBeDefined()
           expect(response.status).toBe(ResetStatusEnumType.Accepted)
@@ -542,25 +569,24 @@ await describe('B11 & B12 - Reset', async () => {
         await it('Should return Scheduled when multiple blocking conditions exist', async () => {
           const station = createTestStation()
           // Active transaction
-          ;(station as any).getNumberOfRunningTransactions = () => 1
+          station.getNumberOfRunningTransactions = () => 1
           // Firmware downloading
-          ;(station as any).stationInfo = {
-            ...station.stationInfo,
+          Object.assign(station.stationInfo, {
             firmwareStatus: FirmwareStatus.Downloading,
-          }
+          })
           // Active reservation
           const futureExpiryDate = new Date(Date.now() + 3600000)
-          const mockReservation = {
+          const mockReservation: Partial<Reservation> = {
             expiryDate: futureExpiryDate,
             id: 1,
             idTag: 'test-tag',
           }
-          const evse = station.evses.get(1)
+          const evse: EvseStatus | undefined = station.evses.get(1)
           if (evse) {
             const connectorId = [...evse.connectors.keys()][0]
             const connector = evse.connectors.get(connectorId)
             if (connector) {
-              connector.reservation = mockReservation as any
+              connector.reservation = mockReservation as Reservation
             }
           }
 
@@ -568,9 +594,10 @@ await describe('B11 & B12 - Reset', async () => {
             type: ResetEnumType.OnIdle,
           }
 
-          const response: OCPP20ResetResponse = await (
-            incomingRequestService as any
-          ).handleRequestReset(station, resetRequest)
+          const response: OCPP20ResetResponse = await testableService.handleRequestReset(
+            station,
+            resetRequest
+          )
 
           expect(response).toBeDefined()
           expect(response.status).toBe(ResetStatusEnumType.Scheduled)
