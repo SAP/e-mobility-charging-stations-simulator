@@ -4,7 +4,7 @@ import { afterEach, describe, it } from 'node:test'
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 
 import { RegistrationStatusEnumType } from '../../src/types/index.js'
-import { cleanupChargingStation, createRealChargingStation } from './ChargingStationTestUtils.js'
+import { cleanupChargingStation, createMockChargingStation } from './ChargingStationTestUtils.js'
 
 await describe('ChargingStation', async () => {
   await describe('Lifecycle', async () => {
@@ -18,7 +18,7 @@ await describe('ChargingStation', async () => {
 
     await it('should transition from stopped to started on start()', () => {
       // Arrange
-      const result = createRealChargingStation({ connectorsCount: 1 })
+      const result = createMockChargingStation({ connectorsCount: 1 })
       station = result.station
 
       // Act
@@ -33,7 +33,7 @@ await describe('ChargingStation', async () => {
 
     await it('should not restart when already started', () => {
       // Arrange
-      const result = createRealChargingStation({ connectorsCount: 1 })
+      const result = createMockChargingStation({ connectorsCount: 1 })
       station = result.station
 
       // Act
@@ -49,7 +49,7 @@ await describe('ChargingStation', async () => {
 
     await it('should set starting flag during start()', () => {
       // Arrange
-      const result = createRealChargingStation({ connectorsCount: 1 })
+      const result = createMockChargingStation({ connectorsCount: 1 })
       station = result.station
 
       // Act & Assert
@@ -63,7 +63,7 @@ await describe('ChargingStation', async () => {
 
     await it('should transition from started to stopped on stop()', async () => {
       // Arrange
-      const result = createRealChargingStation({ connectorsCount: 1 })
+      const result = createMockChargingStation({ connectorsCount: 1 })
       station = result.station
       station.start()
       expect(station.started).toBe(true)
@@ -77,7 +77,7 @@ await describe('ChargingStation', async () => {
 
     await it('should be idempotent when calling stop() on already stopped station', async () => {
       // Arrange
-      const result = createRealChargingStation({ connectorsCount: 1 })
+      const result = createMockChargingStation({ connectorsCount: 1 })
       station = result.station
       // Station starts in stopped state
       expect(station.started).toBe(false)
@@ -91,7 +91,7 @@ await describe('ChargingStation', async () => {
 
     await it('should set stopping flag during stop()', async () => {
       // Arrange
-      const result = createRealChargingStation({ connectorsCount: 1 })
+      const result = createMockChargingStation({ connectorsCount: 1 })
       station = result.station
       station.start()
 
@@ -108,7 +108,7 @@ await describe('ChargingStation', async () => {
 
     await it('should clear bootNotificationResponse on stop()', async () => {
       // Arrange
-      const result = createRealChargingStation({ connectorsCount: 1 })
+      const result = createMockChargingStation({ connectorsCount: 1 })
       station = result.station
       station.start()
       expect(station.bootNotificationResponse).toBeDefined()
@@ -122,7 +122,7 @@ await describe('ChargingStation', async () => {
 
     await it('should be restartable after stop()', async () => {
       // Arrange
-      const result = createRealChargingStation({ connectorsCount: 1 })
+      const result = createMockChargingStation({ connectorsCount: 1 })
       station = result.station
       station.start()
       expect(station.started).toBe(true)
@@ -138,7 +138,7 @@ await describe('ChargingStation', async () => {
 
     await it('should handle delete() on stopped station', async () => {
       // Arrange
-      const result = createRealChargingStation({ connectorsCount: 2 })
+      const result = createMockChargingStation({ connectorsCount: 2 })
       station = result.station
       expect(station.started).toBe(false)
 
@@ -153,7 +153,7 @@ await describe('ChargingStation', async () => {
 
     await it('should stop station before delete() if running', async () => {
       // Arrange
-      const result = createRealChargingStation({ connectorsCount: 1 })
+      const result = createMockChargingStation({ connectorsCount: 1 })
       station = result.station
       station.start()
       expect(station.started).toBe(true)
@@ -168,7 +168,7 @@ await describe('ChargingStation', async () => {
 
     await it('should guard against concurrent start operations', () => {
       // Arrange
-      const result = createRealChargingStation({ connectorsCount: 1 })
+      const result = createMockChargingStation({ connectorsCount: 1 })
       station = result.station
 
       // Simulate starting state manually to test guard
@@ -197,7 +197,7 @@ await describe('ChargingStation', async () => {
     // === Connector Query Tests ===
 
     await it('should return true for hasConnector() with existing connector IDs', () => {
-      const result = createRealChargingStation({ connectorsCount: 2 })
+      const result = createMockChargingStation({ connectorsCount: 2 })
       station = result.station
 
       expect(station.hasConnector(0)).toBe(true)
@@ -206,7 +206,7 @@ await describe('ChargingStation', async () => {
     })
 
     await it('should return false for hasConnector() with non-existing connector IDs', () => {
-      const result = createRealChargingStation({ connectorsCount: 2 })
+      const result = createMockChargingStation({ connectorsCount: 2 })
       station = result.station
 
       expect(station.hasConnector(3)).toBe(false)
@@ -215,7 +215,7 @@ await describe('ChargingStation', async () => {
     })
 
     await it('should return connector status for valid connector IDs', () => {
-      const result = createRealChargingStation({ connectorsCount: 2 })
+      const result = createMockChargingStation({ connectorsCount: 2 })
       station = result.station
 
       const status1 = station.getConnectorStatus(1)
@@ -226,7 +226,7 @@ await describe('ChargingStation', async () => {
     })
 
     await it('should return undefined for getConnectorStatus() with invalid connector IDs', () => {
-      const result = createRealChargingStation({ connectorsCount: 2 })
+      const result = createMockChargingStation({ connectorsCount: 2 })
       station = result.station
 
       expect(station.getConnectorStatus(999)).toBeUndefined()
@@ -234,7 +234,7 @@ await describe('ChargingStation', async () => {
     })
 
     await it('should correctly count connectors via getNumberOfConnectors()', () => {
-      const result = createRealChargingStation({ connectorsCount: 3 })
+      const result = createMockChargingStation({ connectorsCount: 3 })
       station = result.station
 
       // Should return 3, not 4 (connector 0 is excluded from count)
@@ -242,7 +242,7 @@ await describe('ChargingStation', async () => {
     })
 
     await it('should return true for isConnectorAvailable() on operative connectors', () => {
-      const result = createRealChargingStation({ connectorsCount: 2 })
+      const result = createMockChargingStation({ connectorsCount: 2 })
       station = result.station
 
       expect(station.isConnectorAvailable(1)).toBe(true)
@@ -251,14 +251,14 @@ await describe('ChargingStation', async () => {
 
     await it('should return false for isConnectorAvailable() on connector 0', () => {
       // Connector 0 is never "available" per isConnectorAvailable() logic (connectorId > 0)
-      const result = createRealChargingStation({ connectorsCount: 2 })
+      const result = createMockChargingStation({ connectorsCount: 2 })
       station = result.station
 
       expect(station.isConnectorAvailable(0)).toBe(false)
     })
 
     await it('should return false for isConnectorAvailable() on non-existing connector', () => {
-      const result = createRealChargingStation({ connectorsCount: 2 })
+      const result = createMockChargingStation({ connectorsCount: 2 })
       station = result.station
 
       expect(station.isConnectorAvailable(999)).toBe(false)
@@ -267,7 +267,7 @@ await describe('ChargingStation', async () => {
     // === Connector 0 (shared power) Tests ===
 
     await it('should include connector 0 for shared power configuration', () => {
-      const result = createRealChargingStation({ connectorsCount: 2 })
+      const result = createMockChargingStation({ connectorsCount: 2 })
       station = result.station
 
       // Connector 0 always exists and represents the charging station itself
@@ -276,7 +276,7 @@ await describe('ChargingStation', async () => {
     })
 
     await it('should determine station availability via connector 0 status', () => {
-      const result = createRealChargingStation({ connectorsCount: 2 })
+      const result = createMockChargingStation({ connectorsCount: 2 })
       station = result.station
 
       // Initially connector 0 is operative
@@ -286,7 +286,7 @@ await describe('ChargingStation', async () => {
     // === EVSE Query Tests (non-EVSE mode) ===
 
     await it('should return 0 for getNumberOfEvses() in non-EVSE mode', () => {
-      const result = createRealChargingStation({ connectorsCount: 2, evsesCount: 0 })
+      const result = createMockChargingStation({ connectorsCount: 2, evsesCount: 0 })
       station = result.station
 
       expect(station.hasEvses).toBe(false)
@@ -294,7 +294,7 @@ await describe('ChargingStation', async () => {
     })
 
     await it('should return undefined for getEvseIdByConnectorId() in non-EVSE mode', () => {
-      const result = createRealChargingStation({ connectorsCount: 2, evsesCount: 0 })
+      const result = createMockChargingStation({ connectorsCount: 2, evsesCount: 0 })
       station = result.station
 
       expect(station.getEvseIdByConnectorId(1)).toBeUndefined()
@@ -304,21 +304,21 @@ await describe('ChargingStation', async () => {
     // === EVSE Mode Tests ===
 
     await it('should enable hasEvses flag in EVSE mode', () => {
-      const result = createRealChargingStation({ connectorsCount: 2, evsesCount: 1 })
+      const result = createMockChargingStation({ connectorsCount: 2, evsesCount: 1 })
       station = result.station
 
       expect(station.hasEvses).toBe(true)
     })
 
     await it('should return correct EVSE count via getNumberOfEvses() in EVSE mode', () => {
-      const result = createRealChargingStation({ connectorsCount: 2, evsesCount: 1 })
+      const result = createMockChargingStation({ connectorsCount: 2, evsesCount: 1 })
       station = result.station
 
       expect(station.getNumberOfEvses()).toBe(1)
     })
 
     await it('should return connector status via getConnectorStatus() in EVSE mode', () => {
-      const result = createRealChargingStation({ connectorsCount: 2, evsesCount: 1 })
+      const result = createMockChargingStation({ connectorsCount: 2, evsesCount: 1 })
       station = result.station
 
       // Connectors are nested under EVSEs in EVSE mode
@@ -330,7 +330,7 @@ await describe('ChargingStation', async () => {
     })
 
     await it('should map connector IDs to EVSE IDs via getEvseIdByConnectorId()', () => {
-      const result = createRealChargingStation({ connectorsCount: 2, evsesCount: 1 })
+      const result = createMockChargingStation({ connectorsCount: 2, evsesCount: 1 })
       station = result.station
 
       // In single-EVSE mode, both connectors should map to EVSE 1
@@ -339,14 +339,14 @@ await describe('ChargingStation', async () => {
     })
 
     await it('should return undefined for getEvseIdByConnectorId() with invalid connector', () => {
-      const result = createRealChargingStation({ connectorsCount: 2, evsesCount: 1 })
+      const result = createMockChargingStation({ connectorsCount: 2, evsesCount: 1 })
       station = result.station
 
       expect(station.getEvseIdByConnectorId(999)).toBeUndefined()
     })
 
     await it('should return EVSE status via getEvseStatus() for valid EVSE IDs', () => {
-      const result = createRealChargingStation({ connectorsCount: 2, evsesCount: 1 })
+      const result = createMockChargingStation({ connectorsCount: 2, evsesCount: 1 })
       station = result.station
 
       const evseStatus = station.getEvseStatus(1)
@@ -357,14 +357,14 @@ await describe('ChargingStation', async () => {
     })
 
     await it('should return undefined for getEvseStatus() with invalid EVSE IDs', () => {
-      const result = createRealChargingStation({ connectorsCount: 2, evsesCount: 1 })
+      const result = createMockChargingStation({ connectorsCount: 2, evsesCount: 1 })
       station = result.station
 
       expect(station.getEvseStatus(999)).toBeUndefined()
     })
 
     await it('should return true for hasConnector() with connectors in EVSE mode', () => {
-      const result = createRealChargingStation({ connectorsCount: 2, evsesCount: 1 })
+      const result = createMockChargingStation({ connectorsCount: 2, evsesCount: 1 })
       station = result.station
 
       expect(station.hasConnector(1)).toBe(true)
@@ -372,14 +372,14 @@ await describe('ChargingStation', async () => {
     })
 
     await it('should return false for hasConnector() with non-existing connector in EVSE mode', () => {
-      const result = createRealChargingStation({ connectorsCount: 2, evsesCount: 1 })
+      const result = createMockChargingStation({ connectorsCount: 2, evsesCount: 1 })
       station = result.station
 
       expect(station.hasConnector(999)).toBe(false)
     })
 
     await it('should correctly count connectors in EVSE mode via getNumberOfConnectors()', () => {
-      const result = createRealChargingStation({ connectorsCount: 4, evsesCount: 2 })
+      const result = createMockChargingStation({ connectorsCount: 4, evsesCount: 2 })
       station = result.station
 
       // Should return total connectors across all EVSEs
