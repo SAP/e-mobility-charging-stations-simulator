@@ -542,8 +542,25 @@ export function createMockChargingStation (
 
   // Create the station object that mimics ChargingStation
   const station = {
+    // Reservation methods (mock implementations - eslint disabled for test utilities)
+
+    addReservation (reservation: Record<string, unknown>): void {
+      // Check if reservation with same ID exists and remove it
+      const existingReservation = this.getReservationBy(
+        'reservationId',
+        (reservation as Record<string, number>).reservationId
+      )
+      if (existingReservation != null) {
+        this.removeReservation(existingReservation, 'REPLACE_EXISTING')
+      }
+      const connectorStatus = this.getConnectorStatus(reservation.connectorId as number)
+      if (connectorStatus != null) {
+        connectorStatus.reservation = reservation
+      }
+    },
     automaticTransactionGenerator: undefined,
     bootNotificationRequest: undefined,
+
     bootNotificationResponse: {
       currentTime: new Date(),
       interval: heartbeatInterval,
@@ -553,7 +570,6 @@ export function createMockChargingStation (
     bufferMessage (message: string): void {
       this.messageQueue.push(message)
     },
-
     closeWSConnection (): void {
       if (this.wsConnection != null) {
         this.wsConnection.close()
@@ -561,6 +577,7 @@ export function createMockChargingStation (
       }
     },
     connectors,
+
     async delete (deleteConfiguration = true): Promise<void> {
       if (this.started) {
         await this.stop()
@@ -571,7 +588,6 @@ export function createMockChargingStation (
       // Note: deleteConfiguration controls file deletion in real implementation
       // Mock doesn't have file system access, so parameter is unused
     },
-
     // Event emitter methods (minimal implementation)
     emit: () => true,
     // Empty implementations for interface compatibility
@@ -708,6 +724,24 @@ export function createMockChargingStation (
       }
       return numberOfRunningTransactions
     },
+    getReservationBy (filterKey: string, value: unknown): Record<string, unknown> | undefined {
+      if (useEvses) {
+        for (const evseStatus of evses.values()) {
+          for (const connectorStatus of evseStatus.connectors.values()) {
+            if (connectorStatus.reservation?.[filterKey] === value) {
+              return connectorStatus.reservation
+            }
+          }
+        }
+      } else {
+        for (const connectorStatus of connectors.values()) {
+          if (connectorStatus.reservation?.[filterKey] === value) {
+            return connectorStatus.reservation
+          }
+        }
+      }
+      return undefined
+    },
     getTransactionIdTag (transactionId: number): string | undefined {
       if (useEvses) {
         for (const evseStatus of evses.values()) {
@@ -740,10 +774,12 @@ export function createMockChargingStation (
       }
       return connectors.has(connectorId)
     },
+
     // Getters
     get hasEvses (): boolean {
       return useEvses
     },
+
     heartbeatSetInterval: undefined as NodeJS.Timeout | undefined,
 
     idTagsCache: mockIdTagsCache as unknown,
@@ -758,7 +794,6 @@ export function createMockChargingStation (
     inPendingState (): boolean {
       return this.bootNotificationResponse.status === RegistrationStatusEnumType.PENDING
     },
-
     inRejectedState (): boolean {
       return this.bootNotificationResponse.status === RegistrationStatusEnumType.REJECTED
     },
@@ -767,6 +802,7 @@ export function createMockChargingStation (
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       return this.bootNotificationResponse?.status == null
     },
+
     isChargingStationAvailable (): boolean {
       return this.getConnectorStatus(0)?.availability === AvailabilityType.Operative
     },
@@ -776,6 +812,14 @@ export function createMockChargingStation (
         connectorId > 0 &&
         this.getConnectorStatus(connectorId)?.availability === AvailabilityType.Operative
       )
+    },
+
+    isConnectorReservable (reservationId: number, idTag?: string, connectorId?: number): boolean {
+      if (connectorId === 0) {
+        return false
+      }
+      const reservation = this.getReservationBy('reservationId', reservationId)
+      return reservation == null
     },
 
     isWebSocketConnectionOpened (): boolean {
@@ -805,6 +849,13 @@ export function createMockChargingStation (
     removeAllListeners: () => station,
 
     removeListener: () => station,
+
+    removeReservation (reservation: Record<string, unknown>, _reason?: string): void {
+      const connectorStatus = this.getConnectorStatus(reservation.connectorId as number)
+      if (connectorStatus != null) {
+        delete connectorStatus.reservation
+      }
+    },
     requests,
 
     restartHeartbeat (): void {

@@ -2121,4 +2121,241 @@ await describe('ChargingStation', async () => {
       )
     })
   })
+
+  await describe('Reservation Management', async () => {
+    let station: ChargingStation | undefined
+
+    afterEach(() => {
+      if (station != null) {
+        cleanupChargingStation(station)
+      }
+    })
+
+    await it('should add reservation successfully to connector', async () => {
+      // Arrange
+      const result = createMockChargingStation({ connectorsCount: 2 })
+      station = result.station
+      const reservation = {
+        connectorId: 1,
+        expiryDate: new Date(Date.now() + 3600000), // 1 hour from now
+        idTag: 'test-tag-1',
+        reservationId: 101,
+      }
+
+      // Act
+      await station.addReservation(reservation)
+
+      // Assert
+      const found = station.getReservationBy('reservationId', 101)
+      expect(found).toBeDefined()
+      expect(found?.idTag).toBe('test-tag-1')
+      expect(found?.connectorId).toBe(1)
+    })
+
+    await it('should replace existing reservation with new one', async () => {
+      // Arrange
+      const result = createMockChargingStation({ connectorsCount: 2 })
+      station = result.station
+      const firstReservation = {
+        connectorId: 1,
+        expiryDate: new Date(Date.now() + 3600000),
+        idTag: 'tag-1',
+        reservationId: 201,
+      }
+      const secondReservation = {
+        connectorId: 2,
+        expiryDate: new Date(Date.now() + 3600000),
+        idTag: 'tag-2',
+        reservationId: 201, // Same ID
+      }
+
+      // Act
+      await station.addReservation(firstReservation)
+      await station.addReservation(secondReservation)
+
+      // Assert - Only second reservation should exist with same ID
+      const found = station.getReservationBy('reservationId', 201)
+      expect(found).toBeDefined()
+      expect(found?.idTag).toBe('tag-2')
+      expect(found?.connectorId).toBe(2)
+    })
+
+    await it('should remove reservation with EXPIRED reason', async () => {
+      // Arrange
+      const result = createMockChargingStation({ connectorsCount: 2 })
+      station = result.station
+      const reservation = {
+        connectorId: 1,
+        expiryDate: new Date(Date.now() + 3600000),
+        idTag: 'test-tag-expired',
+        reservationId: 301,
+      }
+      await station.addReservation(reservation)
+
+      // Act
+      const { ReservationTerminationReason } = await import('../../src/types/ocpp/Reservation.js')
+      await station.removeReservation(reservation, ReservationTerminationReason.EXPIRED)
+
+      // Assert
+      const found = station.getReservationBy('reservationId', 301)
+      expect(found).toBeUndefined()
+    })
+
+    await it('should remove reservation with REPLACE_EXISTING reason', async () => {
+      // Arrange
+      const result = createMockChargingStation({ connectorsCount: 2 })
+      station = result.station
+      const reservation = {
+        connectorId: 1,
+        expiryDate: new Date(Date.now() + 3600000),
+        idTag: 'test-tag-replace',
+        reservationId: 401,
+      }
+      await station.addReservation(reservation)
+
+      // Act
+      const { ReservationTerminationReason } = await import('../../src/types/ocpp/Reservation.js')
+      await station.removeReservation(reservation, ReservationTerminationReason.REPLACE_EXISTING)
+
+      // Assert
+      const found = station.getReservationBy('reservationId', 401)
+      expect(found).toBeUndefined()
+    })
+
+    await it('should query reservation by reservationId', async () => {
+      // Arrange
+      const result = createMockChargingStation({ connectorsCount: 2 })
+      station = result.station
+      const reservation = {
+        connectorId: 2,
+        expiryDate: new Date(Date.now() + 3600000),
+        idTag: 'query-test-id',
+        reservationId: 501,
+      }
+      await station.addReservation(reservation)
+
+      // Act
+      const found = station.getReservationBy('reservationId', 501)
+
+      // Assert
+      expect(found).toBeDefined()
+      expect(found?.connectorId).toBe(2)
+      expect(found?.idTag).toBe('query-test-id')
+    })
+
+    await it('should query reservation by idTag', async () => {
+      // Arrange
+      const result = createMockChargingStation({ connectorsCount: 2 })
+      station = result.station
+      const reservation = {
+        connectorId: 1,
+        expiryDate: new Date(Date.now() + 3600000),
+        idTag: 'search-by-tag',
+        reservationId: 601,
+      }
+      await station.addReservation(reservation)
+
+      // Act
+      const found = station.getReservationBy('idTag', 'search-by-tag')
+
+      // Assert
+      expect(found).toBeDefined()
+      expect(found?.reservationId).toBe(601)
+      expect(found?.connectorId).toBe(1)
+    })
+
+    await it('should query reservation by connectorId', async () => {
+      // Arrange
+      const result = createMockChargingStation({ connectorsCount: 3 })
+      station = result.station
+      const reservation = {
+        connectorId: 2,
+        expiryDate: new Date(Date.now() + 3600000),
+        idTag: 'connector-search',
+        reservationId: 701,
+      }
+      await station.addReservation(reservation)
+
+      // Act
+      const found = station.getReservationBy('connectorId', 2)
+
+      // Assert
+      expect(found).toBeDefined()
+      expect(found?.reservationId).toBe(701)
+      expect(found?.idTag).toBe('connector-search')
+    })
+
+    await it('should handle isConnectorReservable check with valid reservationId', async () => {
+      // Arrange
+      const result = createMockChargingStation({ connectorsCount: 2 })
+      station = result.station
+      const reservation = {
+        connectorId: 1,
+        expiryDate: new Date(Date.now() + 3600000),
+        idTag: 'reservable-check',
+        reservationId: 801,
+      }
+      await station.addReservation(reservation)
+
+      // Act
+      const isReservable = station.isConnectorReservable(801)
+
+      // Assert - Should return false since reservation exists
+      expect(isReservable).toBe(false)
+    })
+
+    await it('should handle isConnectorReservable check with non-existent reservationId', () => {
+      // Arrange
+      const result = createMockChargingStation({ connectorsCount: 2 })
+      station = result.station
+
+      // Act
+      const isReservable = station.isConnectorReservable(999)
+
+      // Assert - Should return true since reservation does not exist
+      expect(isReservable).toBe(true)
+    })
+
+    await it('should not allow reservation on connector 0 via isConnectorReservable', () => {
+      // Arrange
+      const result = createMockChargingStation({ connectorsCount: 2 })
+      station = result.station
+
+      // Act
+      const isReservable = station.isConnectorReservable(901, 'test-tag', 0)
+
+      // Assert - Connector 0 should not be reservable
+      expect(isReservable).toBe(false)
+    })
+
+    await it('should handle multiple reservations on different connectors', async () => {
+      // Arrange
+      const result = createMockChargingStation({ connectorsCount: 4 })
+      station = result.station
+      const reservation1 = {
+        connectorId: 1,
+        expiryDate: new Date(Date.now() + 3600000),
+        idTag: 'multi-test-1',
+        reservationId: 1001,
+      }
+      const reservation2 = {
+        connectorId: 2,
+        expiryDate: new Date(Date.now() + 3600000),
+        idTag: 'multi-test-2',
+        reservationId: 1002,
+      }
+
+      // Act
+      await station.addReservation(reservation1)
+      await station.addReservation(reservation2)
+
+      // Assert
+      const found1 = station.getReservationBy('reservationId', 1001)
+      const found2 = station.getReservationBy('reservationId', 1002)
+      expect(found1).toBeDefined()
+      expect(found2).toBeDefined()
+      expect(found1?.connectorId).toBe(1)
+      expect(found2?.connectorId).toBe(2)
+    })
+  })
 })
