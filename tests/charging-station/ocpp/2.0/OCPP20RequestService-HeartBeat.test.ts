@@ -2,11 +2,6 @@
  * @file Tests for OCPP20RequestService HeartBeat
  * @description Unit tests for OCPP 2.0 Heartbeat request building (G02)
  */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { expect } from '@std/expect'
 import { afterEach, describe, it, mock } from 'node:test'
 
@@ -26,6 +21,7 @@ import {
   TEST_CHARGING_STATION_BASE_NAME,
   TEST_FIRMWARE_VERSION,
 } from '../../ChargingStationTestConstants.js'
+import { createTestableOCPP20RequestService } from './OCPP20TestUtils.js'
 
 await describe('G02 - Heartbeat', async () => {
   afterEach(() => {
@@ -33,6 +29,7 @@ await describe('G02 - Heartbeat', async () => {
   })
   const mockResponseService = new OCPP20ResponseService()
   const requestService = new OCPP20RequestService(mockResponseService)
+  const testableRequestService = createTestableOCPP20RequestService(requestService)
 
   const mockChargingStation = createChargingStation({
     baseName: TEST_CHARGING_STATION_BASE_NAME,
@@ -54,8 +51,7 @@ await describe('G02 - Heartbeat', async () => {
   await it('should build HeartBeat request payload correctly with empty object', () => {
     const requestParams: OCPP20HeartbeatRequest = {}
 
-    // Access the private buildRequestPayload method via type assertion
-    const payload = (requestService as any).buildRequestPayload(
+    const payload = testableRequestService.buildRequestPayload(
       mockChargingStation,
       OCPP20RequestCommand.HEARTBEAT,
       requestParams
@@ -69,7 +65,7 @@ await describe('G02 - Heartbeat', async () => {
   // FR: G02.FR.02
   await it('should build HeartBeat request payload correctly without parameters', () => {
     // Test without passing any request parameters
-    const payload = (requestService as any).buildRequestPayload(
+    const payload = testableRequestService.buildRequestPayload(
       mockChargingStation,
       OCPP20RequestCommand.HEARTBEAT
     )
@@ -83,7 +79,7 @@ await describe('G02 - Heartbeat', async () => {
   await it('should validate payload structure matches OCPP20HeartbeatRequest interface', () => {
     const requestParams: OCPP20HeartbeatRequest = {}
 
-    const payload = (requestService as any).buildRequestPayload(
+    const payload = testableRequestService.buildRequestPayload(
       mockChargingStation,
       OCPP20RequestCommand.HEARTBEAT,
       requestParams
@@ -102,19 +98,19 @@ await describe('G02 - Heartbeat', async () => {
     const requestParams: OCPP20HeartbeatRequest = {}
 
     // Call buildRequestPayload multiple times to ensure consistency
-    const payload1 = (requestService as any).buildRequestPayload(
+    const payload1 = testableRequestService.buildRequestPayload(
       mockChargingStation,
       OCPP20RequestCommand.HEARTBEAT,
       requestParams
     )
 
-    const payload2 = (requestService as any).buildRequestPayload(
+    const payload2 = testableRequestService.buildRequestPayload(
       mockChargingStation,
       OCPP20RequestCommand.HEARTBEAT,
       requestParams
     )
 
-    const payload3 = (requestService as any).buildRequestPayload(
+    const payload3 = testableRequestService.buildRequestPayload(
       mockChargingStation,
       OCPP20RequestCommand.HEARTBEAT
     )
@@ -147,7 +143,7 @@ await describe('G02 - Heartbeat', async () => {
 
     const requestParams: OCPP20HeartbeatRequest = {}
 
-    const payload = (requestService as any).buildRequestPayload(
+    const payload = testableRequestService.buildRequestPayload(
       alternativeChargingStation,
       OCPP20RequestCommand.HEARTBEAT,
       requestParams
@@ -164,7 +160,7 @@ await describe('G02 - Heartbeat', async () => {
   await it('should build empty HeartBeat request conforming to OCPP 2.0 specification', () => {
     const requestParams: OCPP20HeartbeatRequest = {}
 
-    const payload = (requestService as any).buildRequestPayload(
+    const payload = testableRequestService.buildRequestPayload(
       mockChargingStation,
       OCPP20RequestCommand.HEARTBEAT,
       requestParams

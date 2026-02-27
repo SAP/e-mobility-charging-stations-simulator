@@ -2,11 +2,6 @@
  * @file Tests for OCPP20RequestService StatusNotification
  * @description Unit tests for OCPP 2.0 StatusNotification request building (G01)
  */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { expect } from '@std/expect'
 import { afterEach, describe, it, mock } from 'node:test'
 
@@ -27,6 +22,7 @@ import {
   TEST_STATUS_CHARGE_POINT_VENDOR,
   TEST_STATUS_CHARGING_STATION_BASE_NAME,
 } from '../../ChargingStationTestConstants.js'
+import { createTestableOCPP20RequestService } from './OCPP20TestUtils.js'
 
 await describe('G01 - Status Notification', async () => {
   afterEach(() => {
@@ -34,6 +30,7 @@ await describe('G01 - Status Notification', async () => {
   })
   const mockResponseService = new OCPP20ResponseService()
   const requestService = new OCPP20RequestService(mockResponseService)
+  const testableRequestService = createTestableOCPP20RequestService(requestService)
 
   const mockChargingStation = createChargingStation({
     baseName: TEST_STATUS_CHARGING_STATION_BASE_NAME,
@@ -62,12 +59,11 @@ await describe('G01 - Status Notification', async () => {
       timestamp: testTimestamp,
     }
 
-    // Access the private buildRequestPayload method via type assertion
-    const payload = (requestService as any).buildRequestPayload(
+    const payload = testableRequestService.buildRequestPayload(
       mockChargingStation,
       OCPP20RequestCommand.STATUS_NOTIFICATION,
       requestParams
-    )
+    ) as OCPP20StatusNotificationRequest
 
     expect(payload).toBeDefined()
     expect(payload.connectorId).toBe(1)
@@ -87,11 +83,11 @@ await describe('G01 - Status Notification', async () => {
       timestamp: testTimestamp,
     }
 
-    const payload = (requestService as any).buildRequestPayload(
+    const payload = testableRequestService.buildRequestPayload(
       mockChargingStation,
       OCPP20RequestCommand.STATUS_NOTIFICATION,
       requestParams
-    )
+    ) as OCPP20StatusNotificationRequest
 
     expect(payload).toBeDefined()
     expect(payload.connectorId).toBe(2)
@@ -111,11 +107,11 @@ await describe('G01 - Status Notification', async () => {
       timestamp: testTimestamp,
     }
 
-    const payload = (requestService as any).buildRequestPayload(
+    const payload = testableRequestService.buildRequestPayload(
       mockChargingStation,
       OCPP20RequestCommand.STATUS_NOTIFICATION,
       requestParams
-    )
+    ) as OCPP20StatusNotificationRequest
 
     expect(payload).toBeDefined()
     expect(payload.connectorId).toBe(1)
@@ -144,11 +140,11 @@ await describe('G01 - Status Notification', async () => {
         timestamp: testTimestamp,
       }
 
-      const payload = (requestService as any).buildRequestPayload(
+      const payload = testableRequestService.buildRequestPayload(
         mockChargingStation,
         OCPP20RequestCommand.STATUS_NOTIFICATION,
         requestParams
-      )
+      ) as OCPP20StatusNotificationRequest
 
       expect(payload).toBeDefined()
       expect(payload.connectorStatus).toBe(status)
@@ -169,11 +165,11 @@ await describe('G01 - Status Notification', async () => {
       timestamp: testTimestamp,
     }
 
-    const payload = (requestService as any).buildRequestPayload(
+    const payload = testableRequestService.buildRequestPayload(
       mockChargingStation,
       OCPP20RequestCommand.STATUS_NOTIFICATION,
       requestParams
-    )
+    ) as OCPP20StatusNotificationRequest
 
     // Validate that the payload has the exact structure of OCPP20StatusNotificationRequest
     expect(typeof payload).toBe('object')
@@ -208,11 +204,11 @@ await describe('G01 - Status Notification', async () => {
       timestamp: testTimestamp,
     }
 
-    const payloadConnector0 = (requestService as any).buildRequestPayload(
+    const payloadConnector0 = testableRequestService.buildRequestPayload(
       mockChargingStation,
       OCPP20RequestCommand.STATUS_NOTIFICATION,
       requestParamsConnector0
-    )
+    ) as OCPP20StatusNotificationRequest
 
     expect(payloadConnector0).toBeDefined()
     expect(payloadConnector0.connectorId).toBe(0)
@@ -228,11 +224,11 @@ await describe('G01 - Status Notification', async () => {
       timestamp: testTimestamp,
     }
 
-    const payloadEvse0 = (requestService as any).buildRequestPayload(
+    const payloadEvse0 = testableRequestService.buildRequestPayload(
       mockChargingStation,
       OCPP20RequestCommand.STATUS_NOTIFICATION,
       requestParamsEvse0
-    )
+    ) as OCPP20StatusNotificationRequest
 
     expect(payloadEvse0).toBeDefined()
     expect(payloadEvse0.connectorId).toBe(1)
@@ -250,7 +246,7 @@ await describe('G01 - Status Notification', async () => {
       new Date('2024-06-15T12:30:45.678Z'), // Mid-year with milliseconds
     ]
 
-    testCases.forEach((timestamp, index) => {
+    testCases.forEach((timestamp, _index) => {
       const requestParams: OCPP20StatusNotificationRequest = {
         connectorId: 1,
         connectorStatus: OCPP20ConnectorStatusEnumType.Available,
@@ -258,11 +254,11 @@ await describe('G01 - Status Notification', async () => {
         timestamp,
       }
 
-      const payload = (requestService as any).buildRequestPayload(
+      const payload = testableRequestService.buildRequestPayload(
         mockChargingStation,
         OCPP20RequestCommand.STATUS_NOTIFICATION,
         requestParams
-      )
+      ) as OCPP20StatusNotificationRequest
 
       expect(payload).toBeDefined()
       expect(payload.timestamp).toBe(timestamp)

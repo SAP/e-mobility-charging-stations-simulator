@@ -2,11 +2,6 @@
  * @file Tests for OCPP20RequestService BootNotification
  * @description Unit tests for OCPP 2.0 BootNotification request building (B01)
  */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { expect } from '@std/expect'
 import { afterEach, describe, it, mock } from 'node:test'
 
@@ -28,6 +23,7 @@ import {
   TEST_CHARGING_STATION_BASE_NAME,
   TEST_FIRMWARE_VERSION,
 } from '../../ChargingStationTestConstants.js'
+import { createTestableOCPP20RequestService } from './OCPP20TestUtils.js'
 
 await describe('B01 - Cold Boot Charging Station', async () => {
   afterEach(() => {
@@ -36,6 +32,7 @@ await describe('B01 - Cold Boot Charging Station', async () => {
 
   const mockResponseService = new OCPP20ResponseService()
   const requestService = new OCPP20RequestService(mockResponseService)
+  const testableRequestService = createTestableOCPP20RequestService(requestService)
 
   const mockChargingStation = createChargingStation({
     baseName: TEST_CHARGING_STATION_BASE_NAME,
@@ -67,12 +64,11 @@ await describe('B01 - Cold Boot Charging Station', async () => {
       reason: BootReasonEnumType.PowerUp,
     }
 
-    // Access the private buildRequestPayload method via type assertion
-    const payload = (requestService as any).buildRequestPayload(
+    const payload = testableRequestService.buildRequestPayload(
       mockChargingStation,
       OCPP20RequestCommand.BOOT_NOTIFICATION,
       requestParams
-    )
+    ) as OCPP20BootNotificationRequest
 
     expect(payload).toBeDefined()
     expect(payload.chargingStation).toBeDefined()
@@ -97,11 +93,11 @@ await describe('B01 - Cold Boot Charging Station', async () => {
       reason: BootReasonEnumType.ApplicationReset,
     }
 
-    const payload = (requestService as any).buildRequestPayload(
+    const payload = testableRequestService.buildRequestPayload(
       mockChargingStation,
       OCPP20RequestCommand.BOOT_NOTIFICATION,
       requestParams
-    )
+    ) as OCPP20BootNotificationRequest
 
     expect(payload).toBeDefined()
     expect(payload.chargingStation).toBeDefined()
@@ -125,11 +121,11 @@ await describe('B01 - Cold Boot Charging Station', async () => {
       reason: BootReasonEnumType.FirmwareUpdate,
     }
 
-    const payload = (requestService as any).buildRequestPayload(
+    const payload = testableRequestService.buildRequestPayload(
       mockChargingStation,
       OCPP20RequestCommand.BOOT_NOTIFICATION,
       requestParams
-    )
+    ) as OCPP20BootNotificationRequest
 
     expect(payload).toBeDefined()
     expect(payload.chargingStation).toBeDefined()
@@ -165,11 +161,11 @@ await describe('B01 - Cold Boot Charging Station', async () => {
         reason,
       }
 
-      const payload = (requestService as any).buildRequestPayload(
+      const payload = testableRequestService.buildRequestPayload(
         mockChargingStation,
         OCPP20RequestCommand.BOOT_NOTIFICATION,
         requestParams
-      )
+      ) as OCPP20BootNotificationRequest
 
       expect(payload).toBeDefined()
       expect(payload.reason).toBe(reason)
@@ -194,11 +190,11 @@ await describe('B01 - Cold Boot Charging Station', async () => {
       reason: BootReasonEnumType.PowerUp,
     }
 
-    const payload = (requestService as any).buildRequestPayload(
+    const payload = testableRequestService.buildRequestPayload(
       mockChargingStation,
       OCPP20RequestCommand.BOOT_NOTIFICATION,
       requestParams
-    )
+    ) as OCPP20BootNotificationRequest
 
     // Validate that the payload has the exact structure of OCPP20BootNotificationRequest
     expect(typeof payload).toBe('object')

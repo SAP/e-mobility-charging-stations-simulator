@@ -1,6 +1,8 @@
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
+import type { OCPP20RequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20RequestService.js'
 import type { ConfigurationKey } from '../../../../src/types/ChargingStationOcppConfiguration.js'
 import type { EmptyObject } from '../../../../src/types/EmptyObject.js'
+import type { JsonType, OCPP20RequestCommand } from '../../../../src/types/index.js'
 
 import {
   ConnectorStatusEnum,
@@ -10,6 +12,33 @@ import {
 import { Constants } from '../../../../src/utils/index.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
+
+// ============================================================================
+// Testable Interfaces
+// ============================================================================
+// These interfaces provide type-safe access to private methods for testing
+// purposes, eliminating the need for `as any` casts and eslint-disable comments.
+// ============================================================================
+
+/**
+ * Interface exposing private methods of OCPP20RequestService for testing.
+ * This allows type-safe testing without `as any` casts.
+ */
+export interface TestableOCPP20RequestService {
+  /**
+   * Build a request payload for the given OCPP 2.0 command.
+   * Exposes the private `buildRequestPayload` method for testing.
+   * @param chargingStation - The charging station instance
+   * @param commandName - The OCPP 2.0 request command
+   * @param commandParams - Optional command parameters
+   * @returns The built request payload
+   */
+  buildRequestPayload: (
+    chargingStation: ChargingStation,
+    commandName: OCPP20RequestCommand,
+    commandParams?: JsonType
+  ) => JsonType
+}
 
 /**
  * Create a mock ChargingStation for OCPP 2.0 transaction event testing.
@@ -31,6 +60,31 @@ export function createMockOCPP20TransactionTestStation (): ChargingStation {
     },
     websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
   })
+}
+
+/**
+ * Create a testable wrapper for OCPP20RequestService that exposes private methods.
+ *
+ * This function provides type-safe access to private methods that need to be tested,
+ * following the pattern recommended in TEST_STYLE_GUIDE.md to avoid `as any` casts.
+ * @param requestService - The OCPP20RequestService instance to wrap
+ * @returns A testable interface with access to private methods
+ * @example
+ * ```typescript
+ * const testable = createTestableOCPP20RequestService(requestService)
+ * const payload = testable.buildRequestPayload(station, OCPP20RequestCommand.HEARTBEAT)
+ * ```
+ */
+export function createTestableOCPP20RequestService (
+  requestService: OCPP20RequestService
+): TestableOCPP20RequestService {
+  // Use type assertion at the boundary only, providing type-safe interface to tests
+  const service = requestService as unknown as {
+    buildRequestPayload: TestableOCPP20RequestService['buildRequestPayload']
+  }
+  return {
+    buildRequestPayload: service.buildRequestPayload.bind(requestService),
+  }
 }
 
 /**
