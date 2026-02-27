@@ -9,17 +9,12 @@ import type { ChargingStation } from '../../../../../src/charging-station/Chargi
 
 import { OCPPAuthServiceFactory } from '../../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'
 import { OCPPVersion } from '../../../../../src/types/ocpp/OCPPVersion.js'
+import { createMockAuthServiceTestStation } from '../helpers/MockFactories.js'
 
 await describe('OCPPAuthServiceFactory', async () => {
   await describe('getInstance', async () => {
     await it('should create a new instance for a charging station', async () => {
-      const mockStation = {
-        logPrefix: () => '[TEST-CS-001]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-001',
-          ocppVersion: OCPPVersion.VERSION_16,
-        },
-      } as unknown as ChargingStation
+      const mockStation = createMockAuthServiceTestStation('001')
 
       const authService = await OCPPAuthServiceFactory.getInstance(mockStation)
 
@@ -29,13 +24,7 @@ await describe('OCPPAuthServiceFactory', async () => {
     })
 
     await it('should return cached instance for same charging station', async () => {
-      const mockStation = {
-        logPrefix: () => '[TEST-CS-002]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-002',
-          ocppVersion: OCPPVersion.VERSION_20,
-        },
-      } as unknown as ChargingStation
+      const mockStation = createMockAuthServiceTestStation('002', OCPPVersion.VERSION_20)
 
       const authService1 = await OCPPAuthServiceFactory.getInstance(mockStation)
       const authService2 = await OCPPAuthServiceFactory.getInstance(mockStation)
@@ -44,21 +33,8 @@ await describe('OCPPAuthServiceFactory', async () => {
     })
 
     await it('should create different instances for different charging stations', async () => {
-      const mockStation1 = {
-        logPrefix: () => '[TEST-CS-003]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-003',
-          ocppVersion: OCPPVersion.VERSION_16,
-        },
-      } as unknown as ChargingStation
-
-      const mockStation2 = {
-        logPrefix: () => '[TEST-CS-004]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-004',
-          ocppVersion: OCPPVersion.VERSION_20,
-        },
-      } as unknown as ChargingStation
+      const mockStation1 = createMockAuthServiceTestStation('003')
+      const mockStation2 = createMockAuthServiceTestStation('004', OCPPVersion.VERSION_20)
 
       const authService1 = await OCPPAuthServiceFactory.getInstance(mockStation1)
       const authService2 = await OCPPAuthServiceFactory.getInstance(mockStation2)
@@ -85,13 +61,7 @@ await describe('OCPPAuthServiceFactory', async () => {
 
   await describe('createInstance', async () => {
     await it('should create a new uncached instance', async () => {
-      const mockStation = {
-        logPrefix: () => '[TEST-CS-005]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-005',
-          ocppVersion: OCPPVersion.VERSION_16,
-        },
-      } as unknown as ChargingStation
+      const mockStation = createMockAuthServiceTestStation('005')
 
       const authService1 = await OCPPAuthServiceFactory.createInstance(mockStation)
       const authService2 = await OCPPAuthServiceFactory.createInstance(mockStation)
@@ -102,13 +72,7 @@ await describe('OCPPAuthServiceFactory', async () => {
     })
 
     await it('should not cache created instances', async () => {
-      const mockStation = {
-        logPrefix: () => '[TEST-CS-006]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-006',
-          ocppVersion: OCPPVersion.VERSION_20,
-        },
-      } as unknown as ChargingStation
+      const mockStation = createMockAuthServiceTestStation('006', OCPPVersion.VERSION_20)
 
       const initialCount = OCPPAuthServiceFactory.getCachedInstanceCount()
       await OCPPAuthServiceFactory.createInstance(mockStation)
@@ -120,13 +84,7 @@ await describe('OCPPAuthServiceFactory', async () => {
 
   await describe('clearInstance', async () => {
     await it('should clear cached instance for a charging station', async () => {
-      const mockStation = {
-        logPrefix: () => '[TEST-CS-007]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-007',
-          ocppVersion: OCPPVersion.VERSION_16,
-        },
-      } as unknown as ChargingStation
+      const mockStation = createMockAuthServiceTestStation('007')
 
       // Create and cache instance
       const authService1 = await OCPPAuthServiceFactory.getInstance(mockStation)
@@ -141,13 +99,7 @@ await describe('OCPPAuthServiceFactory', async () => {
     })
 
     await it('should not throw when clearing non-existent instance', () => {
-      const mockStation = {
-        logPrefix: () => '[TEST-CS-008]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-008',
-          ocppVersion: OCPPVersion.VERSION_20,
-        },
-      } as unknown as ChargingStation
+      const mockStation = createMockAuthServiceTestStation('008', OCPPVersion.VERSION_20)
 
       expect(() => {
         OCPPAuthServiceFactory.clearInstance(mockStation)
@@ -157,21 +109,8 @@ await describe('OCPPAuthServiceFactory', async () => {
 
   await describe('clearAllInstances', async () => {
     await it('should clear all cached instances', async () => {
-      const mockStation1 = {
-        logPrefix: () => '[TEST-CS-009]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-009',
-          ocppVersion: OCPPVersion.VERSION_16,
-        },
-      } as unknown as ChargingStation
-
-      const mockStation2 = {
-        logPrefix: () => '[TEST-CS-010]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-010',
-          ocppVersion: OCPPVersion.VERSION_20,
-        },
-      } as unknown as ChargingStation
+      const mockStation1 = createMockAuthServiceTestStation('009')
+      const mockStation2 = createMockAuthServiceTestStation('010', OCPPVersion.VERSION_20)
 
       // Create multiple instances
       await OCPPAuthServiceFactory.getInstance(mockStation1)
@@ -190,21 +129,8 @@ await describe('OCPPAuthServiceFactory', async () => {
     await it('should return the number of cached instances', async () => {
       OCPPAuthServiceFactory.clearAllInstances()
 
-      const mockStation1 = {
-        logPrefix: () => '[TEST-CS-011]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-011',
-          ocppVersion: OCPPVersion.VERSION_16,
-        },
-      } as unknown as ChargingStation
-
-      const mockStation2 = {
-        logPrefix: () => '[TEST-CS-012]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-012',
-          ocppVersion: OCPPVersion.VERSION_20,
-        },
-      } as unknown as ChargingStation
+      const mockStation1 = createMockAuthServiceTestStation('011')
+      const mockStation2 = createMockAuthServiceTestStation('012', OCPPVersion.VERSION_20)
 
       expect(OCPPAuthServiceFactory.getCachedInstanceCount()).toBe(0)
 
@@ -224,21 +150,8 @@ await describe('OCPPAuthServiceFactory', async () => {
     await it('should return factory statistics', async () => {
       OCPPAuthServiceFactory.clearAllInstances()
 
-      const mockStation1 = {
-        logPrefix: () => '[TEST-CS-013]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-013',
-          ocppVersion: OCPPVersion.VERSION_16,
-        },
-      } as unknown as ChargingStation
-
-      const mockStation2 = {
-        logPrefix: () => '[TEST-CS-014]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-014',
-          ocppVersion: OCPPVersion.VERSION_20,
-        },
-      } as unknown as ChargingStation
+      const mockStation1 = createMockAuthServiceTestStation('013')
+      const mockStation2 = createMockAuthServiceTestStation('014', OCPPVersion.VERSION_20)
 
       await OCPPAuthServiceFactory.getInstance(mockStation1)
       await OCPPAuthServiceFactory.getInstance(mockStation2)
@@ -264,13 +177,7 @@ await describe('OCPPAuthServiceFactory', async () => {
 
   await describe('OCPP version handling', async () => {
     await it('should create service for OCPP 1.6 station', async () => {
-      const mockStation = {
-        logPrefix: () => '[TEST-CS-015]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-015',
-          ocppVersion: OCPPVersion.VERSION_16,
-        },
-      } as unknown as ChargingStation
+      const mockStation = createMockAuthServiceTestStation('015')
 
       const authService = await OCPPAuthServiceFactory.getInstance(mockStation)
 
@@ -280,13 +187,7 @@ await describe('OCPPAuthServiceFactory', async () => {
     })
 
     await it('should create service for OCPP 2.0 station', async () => {
-      const mockStation = {
-        logPrefix: () => '[TEST-CS-016]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-016',
-          ocppVersion: OCPPVersion.VERSION_20,
-        },
-      } as unknown as ChargingStation
+      const mockStation = createMockAuthServiceTestStation('016', OCPPVersion.VERSION_20)
 
       const authService = await OCPPAuthServiceFactory.getInstance(mockStation)
 
@@ -300,13 +201,12 @@ await describe('OCPPAuthServiceFactory', async () => {
     await it('should properly manage instance lifecycle', async () => {
       OCPPAuthServiceFactory.clearAllInstances()
 
-      const mockStations = Array.from({ length: 5 }, (_, i) => ({
-        logPrefix: () => `[TEST-CS-${String(100 + i)}]`,
-        stationInfo: {
-          chargingStationId: `TEST-CS-${String(100 + i)}`,
-          ocppVersion: i % 2 === 0 ? OCPPVersion.VERSION_16 : OCPPVersion.VERSION_20,
-        },
-      })) as unknown as ChargingStation[]
+      const mockStations = Array.from({ length: 5 }, (_, i) =>
+        createMockAuthServiceTestStation(
+          String(100 + i),
+          i % 2 === 0 ? OCPPVersion.VERSION_16 : OCPPVersion.VERSION_20
+        )
+      )
 
       // Create instances
       for (const station of mockStations) {
