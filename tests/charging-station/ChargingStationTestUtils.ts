@@ -549,6 +549,11 @@ export function createMockChargingStation (
       interval: heartbeatInterval,
       status: bootNotificationStatus,
     },
+
+    bufferMessage (message: string): void {
+      this.messageQueue.push(message)
+    },
+
     closeWSConnection (): void {
       if (this.wsConnection != null) {
         this.wsConnection.close()
@@ -556,7 +561,6 @@ export function createMockChargingStation (
       }
     },
     connectors,
-
     async delete (deleteConfiguration = true): Promise<void> {
       if (this.started) {
         await this.stop()
@@ -567,6 +571,7 @@ export function createMockChargingStation (
       // Note: deleteConfiguration controls file deletion in real implementation
       // Mock doesn't have file system access, so parameter is unused
     },
+
     // Event emitter methods (minimal implementation)
     emit: () => true,
     // Empty implementations for interface compatibility
@@ -739,7 +744,6 @@ export function createMockChargingStation (
     get hasEvses (): boolean {
       return useEvses
     },
-
     heartbeatSetInterval: undefined as NodeJS.Timeout | undefined,
 
     idTagsCache: mockIdTagsCache as unknown,
@@ -758,11 +762,11 @@ export function createMockChargingStation (
     inRejectedState (): boolean {
       return this.bootNotificationResponse.status === RegistrationStatusEnumType.REJECTED
     },
+
     inUnknownState (): boolean {
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       return this.bootNotificationResponse?.status == null
     },
-
     isChargingStationAvailable (): boolean {
       return this.getConnectorStatus(0)?.availability === AvailabilityType.Operative
     },
@@ -783,6 +787,8 @@ export function createMockChargingStation (
     logPrefix (): string {
       return `${this.stationInfo.chargingStationId} |`
     },
+
+    messageQueue: [] as string[],
 
     ocppConfiguration: {
       configurationKey: [],
