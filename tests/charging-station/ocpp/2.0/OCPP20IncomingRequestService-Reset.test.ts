@@ -8,19 +8,21 @@ import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type {
-  EvseStatus,
-  FirmwareStatus,
   OCPP20ResetRequest,
   OCPP20ResetResponse,
   ReasonCodeEnumType,
   Reservation,
-  ResetEnumType,
-  ResetStatusEnumType,
 } from '../../../../src/types/index.js'
 
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
-import { OCPPVersion } from '../../../../src/types/index.js'
+import {
+  EvseStatus,
+  FirmwareStatus,
+  OCPPVersion,
+  ResetEnumType,
+  ResetStatusEnumType,
+} from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
