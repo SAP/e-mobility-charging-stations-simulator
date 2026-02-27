@@ -14,10 +14,7 @@ await describe('ChargingStationFactory', async () => {
     await it('Should throw error when OCPPRequestService.requestHandler is not mocked', async () => {
       const station = createChargingStation({ connectorsCount: 1 })
 
-      await expect(
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-        (station as any).ocppRequestService.requestHandler()
-      ).rejects.toThrow(
+      await expect(station.ocppRequestService.requestHandler()).rejects.toThrow(
         'ocppRequestService.requestHandler not mocked. Define in createChargingStation options.'
       )
     })
@@ -26,8 +23,7 @@ await describe('ChargingStationFactory', async () => {
       const station = createChargingStation({ connectorsCount: 1 })
 
       expect(() => {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-        ;(station as any).ocppIncomingRequestService.stop()
+        station.ocppIncomingRequestService.stop()
       }).toThrow(
         'ocppIncomingRequestService.stop not mocked. Define in createChargingStation options.'
       )
@@ -45,9 +41,7 @@ await describe('ChargingStationFactory', async () => {
         },
       })
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-      const result = await (station as any).ocppRequestService.requestHandler()
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      const result = (await station.ocppRequestService.requestHandler()) as { success: boolean }
       expect(result.success).toBe(true)
     })
 
@@ -62,18 +56,14 @@ await describe('ChargingStationFactory', async () => {
         },
       })
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-      ;(station as any).ocppIncomingRequestService.stop()
+      station.ocppIncomingRequestService.stop()
       expect(stopCalled).toBe(true)
     })
 
     await it('Should throw error when OCPPRequestService.sendError is not mocked', async () => {
       const station = createChargingStation({ connectorsCount: 1 })
 
-      await expect(
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-        (station as any).ocppRequestService.sendError()
-      ).rejects.toThrow(
+      await expect(station.ocppRequestService.sendError()).rejects.toThrow(
         'ocppRequestService.sendError not mocked. Define in createChargingStation options.'
       )
     })
@@ -81,10 +71,7 @@ await describe('ChargingStationFactory', async () => {
     await it('Should throw error when OCPPRequestService.sendResponse is not mocked', async () => {
       const station = createChargingStation({ connectorsCount: 1 })
 
-      await expect(
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-        (station as any).ocppRequestService.sendResponse()
-      ).rejects.toThrow(
+      await expect(station.ocppRequestService.sendResponse()).rejects.toThrow(
         'ocppRequestService.sendResponse not mocked. Define in createChargingStation options.'
       )
     })
@@ -101,9 +88,7 @@ await describe('ChargingStationFactory', async () => {
         },
       })
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-      const result = await (station as any).ocppRequestService.sendError()
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      const result = (await station.ocppRequestService.sendError()) as { error: string }
       expect(result.error).toBe('test-error')
     })
 
@@ -119,19 +104,14 @@ await describe('ChargingStationFactory', async () => {
         },
       })
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-      const result = await (station as any).ocppRequestService.sendResponse()
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      const result = (await station.ocppRequestService.sendResponse()) as { response: string }
       expect(result.response).toBe('test-response')
     })
 
     await it('Should throw error when OCPPIncomingRequestService.incomingRequestHandler is not mocked', async () => {
       const station = createChargingStation({ connectorsCount: 1 })
 
-      await expect(
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-        (station as any).ocppIncomingRequestService.incomingRequestHandler()
-      ).rejects.toThrow(
+      await expect(station.ocppIncomingRequestService.incomingRequestHandler()).rejects.toThrow(
         'ocppIncomingRequestService.incomingRequestHandler not mocked. Define in createChargingStation options.'
       )
     })
@@ -148,9 +128,9 @@ await describe('ChargingStationFactory', async () => {
         },
       })
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-      const result = await (station as any).ocppIncomingRequestService.incomingRequestHandler()
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      const result = (await station.ocppIncomingRequestService.incomingRequestHandler()) as {
+        handled: boolean
+      }
       expect(result.handled).toBe(true)
     })
   })

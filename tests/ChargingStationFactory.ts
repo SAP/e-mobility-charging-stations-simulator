@@ -43,13 +43,41 @@ export interface ChargingStationOptions {
   heartbeatInterval?: number
   ocppConfiguration?: ChargingStationConfiguration
   /** Custom OCPP incoming request service for test mocking */
-  ocppIncomingRequestService?: unknown
+  ocppIncomingRequestService?: Partial<MockOCPPIncomingRequestService>
   /** Custom OCPP request service for test mocking */
-  ocppRequestService?: unknown
+  ocppRequestService?: Partial<MockOCPPRequestService>
   started?: boolean
   starting?: boolean
   stationInfo?: Partial<ChargingStationInfo>
   websocketPingInterval?: number
+}
+
+/**
+ * Mock OCPP incoming request service interface for testing
+ * Provides typed access to mock handlers without eslint-disable comments
+ */
+export interface MockOCPPIncomingRequestService {
+  incomingRequestHandler: () => Promise<unknown>
+  stop: () => void
+}
+
+/**
+ * Mock OCPP request service interface for testing
+ * Provides typed access to mock handlers without eslint-disable comments
+ */
+export interface MockOCPPRequestService {
+  requestHandler: () => Promise<unknown>
+  sendError: () => Promise<unknown>
+  sendResponse: () => Promise<unknown>
+}
+
+/**
+ * Test-specific ChargingStation interface exposing mock services
+ * Allows typed access to mock OCPP services in tests
+ */
+export interface TestChargingStation extends ChargingStation {
+  ocppIncomingRequestService: MockOCPPIncomingRequestService
+  ocppRequestService: MockOCPPRequestService
 }
 
 const CHARGING_STATION_BASE_NAME = 'CS-TEST'
@@ -57,9 +85,9 @@ const CHARGING_STATION_BASE_NAME = 'CS-TEST'
 /**
  * Creates a ChargingStation instance for tests
  * @param options - Configuration options for the charging station
- * @returns ChargingStation instance configured for testing
+ * @returns TestChargingStation instance configured for testing
  */
-export function createChargingStation (options: ChargingStationOptions = {}): ChargingStation {
+export function createChargingStation (options: ChargingStationOptions = {}): TestChargingStation {
   const baseName = options.baseName ?? CHARGING_STATION_BASE_NAME
   const templateIndex = 1
   const connectionTimeout = options.connectionTimeout ?? Constants.DEFAULT_CONNECTION_TIMEOUT
@@ -198,7 +226,7 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
       ],
       ...options.ocppConfiguration,
     },
-    ocppIncomingRequestService: options.ocppIncomingRequestService ?? {
+    ocppIncomingRequestService: {
       incomingRequestHandler: async () => {
         return await Promise.reject(
           new Error(
@@ -211,8 +239,9 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
           'ocppIncomingRequestService.stop not mocked. Define in createChargingStation options.'
         )
       },
+      ...options.ocppIncomingRequestService,
     },
-    ocppRequestService: options.ocppRequestService ?? {
+    ocppRequestService: {
       requestHandler: async () => {
         return await Promise.reject(
           new Error(
@@ -234,6 +263,7 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
           )
         )
       },
+      ...options.ocppRequestService,
     },
     restartHeartbeat: (): void => {
       /* no-op for tests */
@@ -270,7 +300,7 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
     stopTxUpdatedInterval: (_connectorId: number): void => {
       /* no-op for tests */
     },
-  } as unknown as ChargingStation
+  } as unknown as TestChargingStation
 
   return chargingStation
 }

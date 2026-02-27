@@ -5,6 +5,8 @@
 import { expect } from '@std/expect'
 import { describe, it } from 'node:test'
 
+import type { ChargingStationOcppConfiguration } from '../../src/types/index.js'
+
 import {
   addConfigurationKey,
   deleteConfigurationKey,
@@ -23,9 +25,8 @@ await describe('ConfigurationKeyUtils test suite', async () => {
   await describe('getConfigurationKey()', async () => {
     await it('should return undefined when configurationKey array is missing', () => {
       const cs = createChargingStation()
-      // remove array
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
-      cs.ocppConfiguration = {} as any
+      // Simulate missing configurationKey array
+      cs.ocppConfiguration = {} as Partial<ChargingStationOcppConfiguration>
       expect(getConfigurationKey(cs, TEST_KEY_1)).toBeUndefined()
     })
 
@@ -54,8 +55,8 @@ await describe('ConfigurationKeyUtils test suite', async () => {
   await describe('addConfigurationKey()', async () => {
     await it('should no-op when configurationKey array missing', () => {
       const cs = createChargingStation()
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
-      cs.ocppConfiguration = {} as any
+      // Simulate missing configurationKey array
+      cs.ocppConfiguration = {} as Partial<ChargingStationOcppConfiguration>
       addConfigurationKey(cs, TEST_KEY_1, VALUE_A)
       expect(getConfigurationKey(cs, TEST_KEY_1)).toBeUndefined()
     })
@@ -214,8 +215,8 @@ await describe('ConfigurationKeyUtils test suite', async () => {
 
     await it('should return undefined without logging when configurationKey array missing', t => {
       const cs = createChargingStation()
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
-      cs.ocppConfiguration = {} as any
+      // Simulate missing configurationKey array
+      cs.ocppConfiguration = {} as Partial<ChargingStationOcppConfiguration>
       const errorMock = t.mock.method(logger, 'error')
       const res = setConfigurationKeyValue(cs, TEST_KEY_1, VALUE_A)
       expect(res).toBeUndefined()
@@ -242,8 +243,8 @@ await describe('ConfigurationKeyUtils test suite', async () => {
   await describe('deleteConfigurationKey()', async () => {
     await it('should return undefined when configurationKey array missing', () => {
       const cs = createChargingStation()
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
-      cs.ocppConfiguration = {} as any
+      // Simulate missing configurationKey array
+      cs.ocppConfiguration = {} as Partial<ChargingStationOcppConfiguration>
       const res = deleteConfigurationKey(cs, TEST_KEY_1)
       expect(res).toBeUndefined()
     })
