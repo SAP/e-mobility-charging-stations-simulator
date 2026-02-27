@@ -26,7 +26,7 @@ import {
   TEST_STATUS_CHARGE_POINT_SERIAL_NUMBER,
   TEST_STATUS_CHARGE_POINT_VENDOR,
   TEST_STATUS_CHARGING_STATION_BASE_NAME,
-} from './OCPP20TestConstants.js'
+} from '../../ChargingStationTestConstants.js'
 
 await describe('G01 - Status Notification', async () => {
   const mockResponseService = new OCPP20ResponseService()

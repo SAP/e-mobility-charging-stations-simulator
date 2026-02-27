@@ -24,7 +24,7 @@ import {
 } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants, generateUUID } from '../../../../src/utils/index.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
-import { TEST_CHARGING_STATION_BASE_NAME } from './OCPP20TestConstants.js'
+import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockOCPP20TransactionTestStation, resetLimits } from './OCPP20TestUtils.js'
 
 await describe('E01-E04 - OCPP 2.0.1 TransactionEvent Implementation', async () => {

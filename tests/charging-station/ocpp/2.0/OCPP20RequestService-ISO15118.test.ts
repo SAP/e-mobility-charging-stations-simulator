@@ -29,7 +29,7 @@ import {
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
-import { TEST_CHARGING_STATION_BASE_NAME } from './OCPP20TestConstants.js'
+import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 
 // Sample Base64 EXI request (mock - represents CertificateInstallationReq)
 const MOCK_EXI_REQUEST = 'SGVsbG8gV29ybGQgRVhJIFJlcXVlc3Q='

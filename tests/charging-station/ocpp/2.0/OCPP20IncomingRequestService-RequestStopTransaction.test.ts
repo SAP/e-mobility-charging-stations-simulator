@@ -33,7 +33,7 @@ import {
 import { Constants } from '../../../../src/utils/index.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
 import { createMockAuthService } from '../auth/helpers/MockFactories.js'
-import { TEST_CHARGING_STATION_BASE_NAME } from './OCPP20TestConstants.js'
+import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { resetLimits, resetReportingValueSize } from './OCPP20TestUtils.js'
 
 await describe('F03 - Remote Stop Transaction', async () => {

@@ -27,7 +27,7 @@ import {
   TEST_CHARGE_POINT_VENDOR,
   TEST_CHARGING_STATION_BASE_NAME,
   TEST_FIRMWARE_VERSION,
-} from './OCPP20TestConstants.js'
+} from '../../ChargingStationTestConstants.js'
 
 await describe('B01 - Cold Boot Charging Station', async () => {
   const mockResponseService = new OCPP20ResponseService()

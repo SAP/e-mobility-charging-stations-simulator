@@ -23,7 +23,7 @@ import {
 } from '../../../../src/types/index.js'
 import { Constants, generateUUID } from '../../../../src/utils/index.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
-import { TEST_CHARGING_STATION_BASE_NAME } from './OCPP20TestConstants.js'
+import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { resetLimits } from './OCPP20TestUtils.js'
 
 await describe('E02 - OCPP 2.0.1 Periodic TransactionEvent at TxUpdatedInterval', async () => {

@@ -30,7 +30,7 @@ import { createChargingStation } from '../../../ChargingStationFactory.js'
 import {
   TEST_CHARGING_STATION_BASE_NAME,
   TEST_CONNECTOR_VALID_INSTANCE,
-} from './OCPP20TestConstants.js'
+} from '../../ChargingStationTestConstants.js'
 import {
   resetLimits,
   resetValueSizeLimits,
