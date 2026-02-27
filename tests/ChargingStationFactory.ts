@@ -11,7 +11,9 @@ import {
   type ChargingStationConfiguration,
   type ChargingStationInfo,
   type ChargingStationTemplate,
+  type ConnectorStatus,
   ConnectorStatusEnum,
+  type EvseStatus,
   OCPP20OptionalVariableName,
   OCPPVersion,
   RegistrationStatusEnumType,
@@ -75,12 +77,14 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
       status: RegistrationStatusEnumType.ACCEPTED,
     } as BootNotificationResponse,
     connectors,
-    emitChargingStationEvent: () => {
+    emitChargingStationEvent: (): void => {
       /* no-op for tests */
     },
     evses,
-    getConnectionTimeout: () => connectionTimeout,
-    getConnectorIdByTransactionId: (transactionId: number | string | undefined) => {
+    getConnectionTimeout: (): number => connectionTimeout,
+    getConnectorIdByTransactionId: (
+      transactionId: number | string | undefined
+    ): number | undefined => {
       if (transactionId == null) {
         return undefined
       }
@@ -102,7 +106,7 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
       }
       return undefined
     },
-    getConnectorStatus: (connectorId: number) => {
+    getConnectorStatus: (connectorId: number): ConnectorStatus | undefined => {
       if (chargingStation.hasEvses) {
         for (const evseStatus of chargingStation.evses.values()) {
           if (evseStatus.connectors.has(connectorId)) {
@@ -113,7 +117,7 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
       }
       return chargingStation.connectors.get(connectorId)
     },
-    getEvseIdByConnectorId: (connectorId: number) => {
+    getEvseIdByConnectorId: (connectorId: number): number | undefined => {
       if (!chargingStation.hasEvses) {
         return undefined
       }
@@ -124,7 +128,7 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
       }
       return undefined
     },
-    getEvseIdByTransactionId: (transactionId: number | string | undefined) => {
+    getEvseIdByTransactionId: (transactionId: number | string | undefined): number | undefined => {
       if (transactionId == null) {
         return undefined
       }
@@ -140,7 +144,10 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
       }
       return undefined
     },
-    getHeartbeatInterval: () => heartbeatInterval,
+    getEvseStatus: (evseId: number): EvseStatus | undefined => {
+      return chargingStation.evses.get(evseId)
+    },
+    getHeartbeatInterval: (): number => heartbeatInterval,
     getLocalAuthListEnabled: (): boolean => {
       const localAuthListEnabled = getConfigurationKey(
         chargingStation,
@@ -149,7 +156,7 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
       return localAuthListEnabled != null ? convertToBoolean(localAuthListEnabled.value) : false
     },
     getNumberOfEvses: (): number => evses.size,
-    getWebSocketPingInterval: () => websocketPingInterval,
+    getWebSocketPingInterval: (): number => websocketPingInterval,
     hasEvses: useEvses,
     hasIdTags: (): boolean => false,
     idTagsCache: IdTagsCache.getInstance(),
@@ -161,7 +168,7 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
     isChargingStationAvailable: (): boolean => {
       return chargingStation.getConnectorStatus(0)?.availability === AvailabilityType.Operative
     },
-    isConnectorAvailable: (connectorId: number) => {
+    isConnectorAvailable: (connectorId: number): boolean => {
       return (
         connectorId > 0 &&
         chargingStation.getConnectorStatus(connectorId)?.availability === AvailabilityType.Operative
@@ -199,7 +206,7 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
           )
         )
       },
-      stop: () => {
+      stop: (): void => {
         throw new Error(
           'ocppIncomingRequestService.stop not mocked. Define in createChargingStation options.'
         )
@@ -228,13 +235,13 @@ export function createChargingStation (options: ChargingStationOptions = {}): Ch
         )
       },
     },
-    restartHeartbeat: () => {
+    restartHeartbeat: (): void => {
       /* no-op for tests */
     },
-    restartWebSocketPing: () => {
+    restartWebSocketPing: (): void => {
       /* no-op for tests */
     },
-    saveOcppConfiguration: () => {
+    saveOcppConfiguration: (): void => {
       /* no-op for tests */
     },
     started: options.started ?? false,

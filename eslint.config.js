@@ -83,6 +83,11 @@ export default defineConfig([
               'idtoken',
               'issuerkeyhash',
               'issuernamehash',
+              // OCPP SRPC (Simple Remote Procedure Call) message types
+              'SRPC',
+              'CALLRESULT',
+              'CALLERROR',
+              'CALLRESULTERROR',
             ],
           },
         },
