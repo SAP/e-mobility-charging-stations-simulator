@@ -561,9 +561,9 @@ export function createRealChargingStation (
       }
     },
     connectors,
-    delete (deleteConfiguration = true): void {
+    async delete (deleteConfiguration = true): Promise<void> {
       if (this.started) {
-        this.stop()
+        await this.stop()
       }
       this.requests.clear()
       this.connectors.clear()
@@ -731,10 +731,11 @@ export function createRealChargingStation (
       templateIndex: index,
       templateName: templateFile,
     },
-    stop (): void {
+    async stop (): Promise<void> {
       if (this.started && !this.stopping) {
         this.stopping = true
-        // Simulate real stop behavior
+        // Simulate async stop behavior (immediate resolution for tests)
+        await Promise.resolve()
         this.closeWSConnection()
         delete this.bootNotificationResponse
         this.started = false
