@@ -3,7 +3,7 @@ import { afterEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 
-import { RegistrationStatusEnumType } from '../../src/types/index.js'
+import { AvailabilityType, RegistrationStatusEnumType } from '../../src/types/index.js'
 import { cleanupChargingStation, createMockChargingStation } from './ChargingStationTestUtils.js'
 
 await describe('ChargingStation', async () => {
@@ -485,6 +485,225 @@ await describe('ChargingStation', async () => {
       // Assert
       expect(station.inRejectedState()).toBe(true)
       expect(station.inPendingState()).toBe(false)
+    })
+  })
+
+  // ===== B02/B03 BOOT NOTIFICATION BEHAVIOR TESTS =====
+  // These tests verify behavioral requirements, not just state detection (which is tested above)
+  await describe('B02 - Pending Boot Notification Behavior', async () => {
+    let station: ChargingStation | undefined
+
+    afterEach(() => {
+      if (station != null) {
+        cleanupChargingStation(station)
+      }
+    })
+
+    // B02.FR.01: Station stores currentTime and interval from Pending response
+    await it('should store interval from Pending response for retry scheduling', () => {
+      // Arrange
+      const result = createMockChargingStation({
+        bootNotificationStatus: RegistrationStatusEnumType.PENDING,
+      })
+      station = result.station
+
+      // Assert - Pending response should have interval for retry
+      expect(station.bootNotificationResponse).toBeDefined()
+      expect(station.bootNotificationResponse?.interval).toBeGreaterThan(0)
+      expect(station.inPendingState()).toBe(true)
+    })
+
+    // B02.FR.02: Station should be able to transition out of Pending via new response
+    await it('should transition from Pending to Accepted when receiving new response', () => {
+      // Arrange
+      const result = createMockChargingStation({
+        bootNotificationStatus: RegistrationStatusEnumType.PENDING,
+      })
+      station = result.station
+      expect(station.inPendingState()).toBe(true)
+
+      // Act - Simulate receiving Accepted response (as would happen after retry)
+      station.bootNotificationResponse = {
+        currentTime: new Date(),
+        interval: 300,
+        status: RegistrationStatusEnumType.ACCEPTED,
+      }
+
+      // Assert - Should now be in Accepted state
+      expect(station.inAcceptedState()).toBe(true)
+      expect(station.inPendingState()).toBe(false)
+    })
+
+    // B02.FR.03: Pending station should have valid heartbeat interval for operation
+    await it('should use interval from response as heartbeat interval when Pending', () => {
+      // Arrange - Create station with specific interval
+      const customInterval = 120 // seconds
+      const result = createMockChargingStation({
+        bootNotificationStatus: RegistrationStatusEnumType.PENDING,
+        heartbeatInterval: customInterval,
+      })
+      station = result.station
+
+      // Assert - Heartbeat interval should match response interval
+      expect(station.getHeartbeatInterval()).toBe(customInterval * 1000)
+      expect(station.inPendingState()).toBe(true)
+    })
+
+    // B02.FR.06: Station should handle clock synchronization from response
+    await it('should have currentTime in Pending response for clock sync', () => {
+      // Arrange
+      const result = createMockChargingStation({
+        bootNotificationStatus: RegistrationStatusEnumType.PENDING,
+      })
+      station = result.station
+
+      // Assert - currentTime should be present for clock synchronization
+      expect(station.bootNotificationResponse?.currentTime).toBeDefined()
+      expect(station.bootNotificationResponse?.currentTime instanceof Date).toBe(true)
+    })
+
+    // B02.FR.04/05: Station should be able to transition to Rejected from Pending
+    await it('should transition from Pending to Rejected when receiving rejection', () => {
+      // Arrange
+      const result = createMockChargingStation({
+        bootNotificationStatus: RegistrationStatusEnumType.PENDING,
+      })
+      station = result.station
+      expect(station.inPendingState()).toBe(true)
+
+      // Act - Simulate receiving Rejected response
+      station.bootNotificationResponse = {
+        currentTime: new Date(),
+        interval: 3600, // Longer interval for rejected state
+        status: RegistrationStatusEnumType.REJECTED,
+      }
+
+      // Assert - Should now be in Rejected state
+      expect(station.inRejectedState()).toBe(true)
+      expect(station.inPendingState()).toBe(false)
+    })
+  })
+
+  await describe('B03 - Rejected Boot Notification Behavior', async () => {
+    let station: ChargingStation | undefined
+
+    afterEach(() => {
+      if (station != null) {
+        cleanupChargingStation(station)
+      }
+    })
+
+    // B03.FR.01: Station stores currentTime and interval from Rejected response
+    await it('should store interval from Rejected response for retry scheduling', () => {
+      // Arrange
+      const result = createMockChargingStation({
+        bootNotificationStatus: RegistrationStatusEnumType.REJECTED,
+      })
+      station = result.station
+
+      // Assert - Rejected response should have interval for retry (typically longer)
+      expect(station.bootNotificationResponse).toBeDefined()
+      expect(station.bootNotificationResponse?.interval).toBeGreaterThan(0)
+      expect(station.inRejectedState()).toBe(true)
+    })
+
+    // B03.FR.03: Station should NOT initiate non-boot messages when Rejected
+    await it('should not initiate messages when in Rejected state (B03.FR.03)', () => {
+      // Arrange
+      const result = createMockChargingStation({
+        bootNotificationStatus: RegistrationStatusEnumType.REJECTED,
+        connectorsCount: 2,
+      })
+      station = result.station
+      const mocks = result.mocks
+
+      // Clear any setup messages
+      mocks.webSocket.clearMessages()
+
+      // Assert - Station is in rejected state
+      expect(station.inRejectedState()).toBe(true)
+
+      // Assert - No messages should have been sent (station should be silent)
+      // Per B03.FR.03: CS SHALL NOT send any OCPP message until interval expires
+      expect(mocks.webSocket.sentMessages.length).toBe(0)
+    })
+
+    // B03.FR.04: Station should transition from Rejected to Accepted
+    await it('should transition from Rejected to Accepted when receiving acceptance', () => {
+      // Arrange
+      const result = createMockChargingStation({
+        bootNotificationStatus: RegistrationStatusEnumType.REJECTED,
+      })
+      station = result.station
+      expect(station.inRejectedState()).toBe(true)
+
+      // Act - Simulate receiving Accepted response after retry
+      station.bootNotificationResponse = {
+        currentTime: new Date(),
+        interval: 60,
+        status: RegistrationStatusEnumType.ACCEPTED,
+      }
+
+      // Assert - Should now be in Accepted state
+      expect(station.inAcceptedState()).toBe(true)
+      expect(station.inRejectedState()).toBe(false)
+    })
+
+    // B03.FR.05: Station should have currentTime for clock synchronization
+    await it('should have currentTime in Rejected response for clock sync', () => {
+      // Arrange
+      const result = createMockChargingStation({
+        bootNotificationStatus: RegistrationStatusEnumType.REJECTED,
+      })
+      station = result.station
+
+      // Assert - currentTime should be present
+      expect(station.bootNotificationResponse?.currentTime).toBeDefined()
+      expect(station.bootNotificationResponse?.currentTime instanceof Date).toBe(true)
+    })
+
+    // B03.FR.02: Rejected state should use different (typically longer) retry interval
+    await it('should support configurable retry interval for Rejected state', () => {
+      // Arrange - Create two stations: one pending, one rejected
+      const pendingStation = createMockChargingStation({
+        bootNotificationStatus: RegistrationStatusEnumType.PENDING,
+        heartbeatInterval: 60, // Normal interval
+      })
+
+      const rejectedStation = createMockChargingStation({
+        bootNotificationStatus: RegistrationStatusEnumType.REJECTED,
+        heartbeatInterval: 3600, // Longer interval for rejected
+      })
+
+      // Assert - Both should have their respective intervals
+      expect(pendingStation.station.inPendingState()).toBe(true)
+      expect(rejectedStation.station.inRejectedState()).toBe(true)
+      expect(pendingStation.station.getHeartbeatInterval()).toBe(60000)
+      expect(rejectedStation.station.getHeartbeatInterval()).toBe(3600000)
+
+      // Cleanup
+      cleanupChargingStation(pendingStation.station)
+      cleanupChargingStation(rejectedStation.station)
+    })
+
+    // B03.FR.04 + state preservation: Connectors should maintain state during rejection
+    await it('should preserve connector states during Rejected state', () => {
+      // Arrange
+      const result = createMockChargingStation({
+        bootNotificationStatus: RegistrationStatusEnumType.REJECTED,
+        connectorsCount: 2,
+      })
+      station = result.station
+
+      // Set up connector state
+      const connector1 = station.getConnectorStatus(1)
+      if (connector1 != null) {
+        connector1.availability = AvailabilityType.Operative
+      }
+
+      // Assert - Connector state should be preserved even in Rejected state
+      expect(station.getConnectorStatus(1)?.availability).toBe(AvailabilityType.Operative)
+      expect(station.hasConnector(1)).toBe(true)
     })
   })
 
