@@ -6,7 +6,6 @@
 
 import type { ChargingStation } from '../../../src/charging-station/ChargingStation.js'
 import type {
-  ChargingStationTemplate,
   ConnectorStatus,
   EvseStatus,
   StopTransactionReason,
@@ -745,24 +744,6 @@ export function createMockChargingStation (
     mocks,
     station: station as unknown as ChargingStation,
   }
-}
-
-/**
- * Create a mock template for testing
- * @param overrides - Template properties to override
- * @returns ChargingStationTemplate for testing
- */
-export function createMockTemplate (
-  overrides: Partial<ChargingStationTemplate> = {}
-): ChargingStationTemplate {
-  return {
-    baseName: TEST_CHARGING_STATION_BASE_NAME,
-    chargePointModel: 'Test Model',
-    chargePointVendor: 'Test Vendor',
-    numberOfConnectors: 2,
-    ocppVersion: OCPPVersion.VERSION_16,
-    ...overrides,
-  } as ChargingStationTemplate
 }
 
 /**

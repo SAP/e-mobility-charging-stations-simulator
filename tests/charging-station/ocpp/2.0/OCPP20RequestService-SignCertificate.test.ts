@@ -4,7 +4,7 @@
  */
 
 import { expect } from '@std/expect'
-import { afterEach, describe, it, mock } from 'node:test'
+import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import { createTestableRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import {
@@ -16,31 +16,35 @@ import {
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { createChargingStation } from '../../../ChargingStationFactory.js'
+import { createChargingStation, type TestChargingStation } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 
 const MOCK_ORGANIZATION_NAME = 'Test Organization Inc.'
 
 await describe('I02 - SignCertificate Request', async () => {
+  let mockChargingStation: TestChargingStation
+
+  beforeEach(() => {
+    mockChargingStation = createChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
+      connectorsCount: 3,
+      evseConfiguration: { evsesCount: 3 },
+      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+      stationInfo: {
+        ocppStrictCompliance: false,
+        ocppVersion: OCPPVersion.VERSION_201,
+      },
+      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+    })
+    // Set up configuration with OrganizationName
+    mockChargingStation.ocppConfiguration = {
+      configurationKey: [{ key: 'SecurityCtrlr.OrganizationName', value: MOCK_ORGANIZATION_NAME }],
+    }
+  })
+
   afterEach(() => {
     mock.restoreAll()
   })
-  const mockChargingStation = createChargingStation({
-    baseName: TEST_CHARGING_STATION_BASE_NAME,
-    connectorsCount: 3,
-    evseConfiguration: { evsesCount: 3 },
-    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-    stationInfo: {
-      ocppStrictCompliance: false,
-      ocppVersion: OCPPVersion.VERSION_201,
-    },
-    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
-  })
-
-  // Set up configuration with OrganizationName
-  mockChargingStation.ocppConfiguration = {
-    configurationKey: [{ key: 'SecurityCtrlr.OrganizationName', value: MOCK_ORGANIZATION_NAME }],
-  }
 
   await describe('CSR Generation', async () => {
     await it('should generate CSR with PKCS#10 PEM format', async () => {

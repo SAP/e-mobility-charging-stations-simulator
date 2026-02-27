@@ -5,7 +5,7 @@
 /* cspell:ignore Bvbn NQIF CBCYX */
 
 import { expect } from '@std/expect'
-import { afterEach, describe, it, mock } from 'node:test'
+import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import { createTestableRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import {
@@ -23,7 +23,7 @@ import {
   ReasonCodeEnumType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { createChargingStation } from '../../../ChargingStationFactory.js'
+import { createChargingStation, type TestChargingStation } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 
 // Sample Base64 EXI request (mock - represents CertificateInstallationReq)
@@ -42,19 +42,24 @@ const createMockOCSPRequestData = (): OCSPRequestDataType => ({
 })
 
 await describe('M02 - Get15118EVCertificate Request', async () => {
+  let mockChargingStation: TestChargingStation
+
+  beforeEach(() => {
+    mockChargingStation = createChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
+      connectorsCount: 3,
+      evseConfiguration: { evsesCount: 3 },
+      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+      stationInfo: {
+        ocppStrictCompliance: false,
+        ocppVersion: OCPPVersion.VERSION_201,
+      },
+      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+    })
+  })
+
   afterEach(() => {
     mock.restoreAll()
-  })
-  const mockChargingStation = createChargingStation({
-    baseName: TEST_CHARGING_STATION_BASE_NAME,
-    connectorsCount: 3,
-    evseConfiguration: { evsesCount: 3 },
-    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-    stationInfo: {
-      ocppStrictCompliance: false,
-      ocppVersion: OCPPVersion.VERSION_201,
-    },
-    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
   })
 
   await describe('EXI Install Action', async () => {
@@ -204,16 +209,24 @@ await describe('M02 - Get15118EVCertificate Request', async () => {
 })
 
 await describe('M03 - GetCertificateStatus Request', async () => {
-  const mockChargingStation = createChargingStation({
-    baseName: TEST_CHARGING_STATION_BASE_NAME,
-    connectorsCount: 3,
-    evseConfiguration: { evsesCount: 3 },
-    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-    stationInfo: {
-      ocppStrictCompliance: false,
-      ocppVersion: OCPPVersion.VERSION_201,
-    },
-    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+  let mockChargingStation: TestChargingStation
+
+  beforeEach(() => {
+    mockChargingStation = createChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
+      connectorsCount: 3,
+      evseConfiguration: { evsesCount: 3 },
+      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+      stationInfo: {
+        ocppStrictCompliance: false,
+        ocppVersion: OCPPVersion.VERSION_201,
+      },
+      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+    })
+  })
+
+  afterEach(() => {
+    mock.restoreAll()
   })
 
   await describe('OCSP Request Data', async () => {
@@ -313,16 +326,24 @@ await describe('M03 - GetCertificateStatus Request', async () => {
 })
 
 await describe('Request Command Names', async () => {
-  const mockChargingStation = createChargingStation({
-    baseName: TEST_CHARGING_STATION_BASE_NAME,
-    connectorsCount: 1,
-    evseConfiguration: { evsesCount: 1 },
-    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-    stationInfo: {
-      ocppStrictCompliance: false,
-      ocppVersion: OCPPVersion.VERSION_201,
-    },
-    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+  let mockChargingStation: TestChargingStation
+
+  beforeEach(() => {
+    mockChargingStation = createChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
+      connectorsCount: 1,
+      evseConfiguration: { evsesCount: 1 },
+      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+      stationInfo: {
+        ocppStrictCompliance: false,
+        ocppVersion: OCPPVersion.VERSION_201,
+      },
+      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+    })
+  })
+
+  afterEach(() => {
+    mock.restoreAll()
   })
 
   await it('should send GET_15118_EV_CERTIFICATE command name', async () => {

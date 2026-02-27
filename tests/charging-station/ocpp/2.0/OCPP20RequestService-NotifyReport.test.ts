@@ -4,9 +4,12 @@
  */
 
 import { expect } from '@std/expect'
-import { afterEach, describe, it, mock } from 'node:test'
+import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
-import { createTestableRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
+import {
+  createTestableRequestService,
+  type TestableOCPP20RequestService,
+} from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import {
   AttributeEnumType,
   DataEnumType,
@@ -19,7 +22,7 @@ import {
   type ReportDataType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { createChargingStation } from '../../../ChargingStationFactory.js'
+import { createChargingStation, type TestChargingStation } from '../../../ChargingStationFactory.js'
 import {
   TEST_CHARGE_POINT_MODEL,
   TEST_CHARGE_POINT_SERIAL_NUMBER,
@@ -29,25 +32,31 @@ import {
 } from '../../ChargingStationTestConstants.js'
 
 await describe('B07/B08 - NotifyReport', async () => {
+  let testableService: TestableOCPP20RequestService
+  let mockChargingStation: TestChargingStation
+
+  beforeEach(() => {
+    const { service } = createTestableRequestService()
+    testableService = service
+    mockChargingStation = createChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
+      connectorsCount: 3,
+      evseConfiguration: { evsesCount: 3 },
+      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+      stationInfo: {
+        chargePointModel: TEST_CHARGE_POINT_MODEL,
+        chargePointSerialNumber: TEST_CHARGE_POINT_SERIAL_NUMBER,
+        chargePointVendor: TEST_CHARGE_POINT_VENDOR,
+        firmwareVersion: TEST_FIRMWARE_VERSION,
+        ocppStrictCompliance: false,
+        ocppVersion: OCPPVersion.VERSION_201,
+      },
+      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+    })
+  })
+
   afterEach(() => {
     mock.restoreAll()
-  })
-  const { service: testableService } = createTestableRequestService()
-
-  const mockChargingStation = createChargingStation({
-    baseName: TEST_CHARGING_STATION_BASE_NAME,
-    connectorsCount: 3,
-    evseConfiguration: { evsesCount: 3 },
-    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-    stationInfo: {
-      chargePointModel: TEST_CHARGE_POINT_MODEL,
-      chargePointSerialNumber: TEST_CHARGE_POINT_SERIAL_NUMBER,
-      chargePointVendor: TEST_CHARGE_POINT_VENDOR,
-      firmwareVersion: TEST_FIRMWARE_VERSION,
-      ocppStrictCompliance: false,
-      ocppVersion: OCPPVersion.VERSION_201,
-    },
-    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
   })
 
   // FR: B07.FR.03, B07.FR.04

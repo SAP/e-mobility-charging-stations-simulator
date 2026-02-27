@@ -3,7 +3,7 @@
  * @description Unit tests for OCPP 2.0 StatusNotification request building (G01)
  */
 import { expect } from '@std/expect'
-import { afterEach, describe, it, mock } from 'node:test'
+import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import { OCPP20RequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20RequestService.js'
 import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
@@ -14,7 +14,7 @@ import {
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { createChargingStation } from '../../../ChargingStationFactory.js'
+import { createChargingStation, type TestChargingStation } from '../../../ChargingStationFactory.js'
 import {
   TEST_FIRMWARE_VERSION,
   TEST_STATUS_CHARGE_POINT_MODEL,
@@ -22,30 +22,40 @@ import {
   TEST_STATUS_CHARGE_POINT_VENDOR,
   TEST_STATUS_CHARGING_STATION_BASE_NAME,
 } from '../../ChargingStationTestConstants.js'
-import { createTestableOCPP20RequestService } from './OCPP20TestUtils.js'
+import {
+  createTestableOCPP20RequestService,
+  type TestableOCPP20RequestService,
+} from './OCPP20TestUtils.js'
 
 await describe('G01 - Status Notification', async () => {
+  let mockResponseService: OCPP20ResponseService
+  let requestService: OCPP20RequestService
+  let testableRequestService: TestableOCPP20RequestService
+  let mockChargingStation: TestChargingStation
+
+  beforeEach(() => {
+    mockResponseService = new OCPP20ResponseService()
+    requestService = new OCPP20RequestService(mockResponseService)
+    testableRequestService = createTestableOCPP20RequestService(requestService)
+    mockChargingStation = createChargingStation({
+      baseName: TEST_STATUS_CHARGING_STATION_BASE_NAME,
+      connectorsCount: 3,
+      evseConfiguration: { evsesCount: 3 },
+      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+      stationInfo: {
+        chargePointModel: TEST_STATUS_CHARGE_POINT_MODEL,
+        chargePointSerialNumber: TEST_STATUS_CHARGE_POINT_SERIAL_NUMBER,
+        chargePointVendor: TEST_STATUS_CHARGE_POINT_VENDOR,
+        firmwareVersion: TEST_FIRMWARE_VERSION,
+        ocppStrictCompliance: false,
+        ocppVersion: OCPPVersion.VERSION_201,
+      },
+      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+    })
+  })
+
   afterEach(() => {
     mock.restoreAll()
-  })
-  const mockResponseService = new OCPP20ResponseService()
-  const requestService = new OCPP20RequestService(mockResponseService)
-  const testableRequestService = createTestableOCPP20RequestService(requestService)
-
-  const mockChargingStation = createChargingStation({
-    baseName: TEST_STATUS_CHARGING_STATION_BASE_NAME,
-    connectorsCount: 3,
-    evseConfiguration: { evsesCount: 3 },
-    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-    stationInfo: {
-      chargePointModel: TEST_STATUS_CHARGE_POINT_MODEL,
-      chargePointSerialNumber: TEST_STATUS_CHARGE_POINT_SERIAL_NUMBER,
-      chargePointVendor: TEST_STATUS_CHARGE_POINT_VENDOR,
-      firmwareVersion: TEST_FIRMWARE_VERSION,
-      ocppStrictCompliance: false,
-      ocppVersion: OCPPVersion.VERSION_201,
-    },
-    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
   })
 
   // FR: G01.FR.01

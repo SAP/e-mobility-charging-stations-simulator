@@ -3,7 +3,11 @@
 import { expect } from '@std/expect'
 
 import type { ChargingStation } from '../../../../../src/charging-station/ChargingStation.js'
-import type { OCPPAuthService } from '../../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
+import type {
+  AuthCache,
+  OCPPAuthAdapter,
+  OCPPAuthService,
+} from '../../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
 
 import {
   type AuthConfiguration,
@@ -178,6 +182,71 @@ export const createMockAuthService = (overrides?: Partial<OCPPAuthService>): OCP
     ...overrides,
   }) as OCPPAuthService
 
+// ============================================================================
+// Cache Mocks
+// ============================================================================
+
+/**
+ * Create a mock AuthCache for testing.
+ * @param overrides - Partial AuthCache methods to override defaults
+ * @returns Mock AuthCache with stubbed async methods
+ */
+export const createMockAuthCache = (overrides?: Partial<AuthCache>): AuthCache => ({
+  clear: async () => Promise.resolve(),
+  get: async (_key: string) => Promise.resolve(undefined),
+  getStats: async () =>
+    Promise.resolve({
+      evictions: 0,
+      expiredEntries: 0,
+      hitRate: 0,
+      hits: 0,
+      memoryUsage: 0,
+      misses: 0,
+      totalEntries: 0,
+    }),
+  remove: async (_key: string) => Promise.resolve(),
+  set: async (_key: string, _value: unknown, _ttl?: number) => Promise.resolve(),
+  ...overrides,
+})
+
+// ============================================================================
+// Adapter Mocks
+// ============================================================================
+
+/**
+ * Create a mock OCPPAuthAdapter for testing.
+ * @param ocppVersion - OCPP version for this adapter
+ * @param overrides - Partial OCPPAuthAdapter methods to override defaults
+ * @returns Mock OCPPAuthAdapter with stubbed methods
+ */
+export const createMockOCPPAdapter = (
+  ocppVersion: OCPPVersion,
+  overrides?: Partial<OCPPAuthAdapter>
+): OCPPAuthAdapter => ({
+  authorizeRemote: async (_identifier: UnifiedIdentifier) =>
+    Promise.resolve(
+      createMockAuthorizationResult({
+        method: AuthenticationMethod.REMOTE_AUTHORIZATION,
+      })
+    ),
+  convertFromUnifiedIdentifier: (identifier: UnifiedIdentifier) =>
+    ocppVersion === OCPPVersion.VERSION_16
+      ? identifier.value
+      : { idToken: identifier.value, type: identifier.type },
+  convertToUnifiedIdentifier: (identifier: object | string) => ({
+    ocppVersion,
+    type: IdentifierType.ID_TAG,
+    value:
+      typeof identifier === 'string'
+        ? identifier
+        : ((identifier as { idToken?: string }).idToken ?? 'unknown'),
+  }),
+  getConfigurationSchema: () => ({}),
+  isRemoteAvailable: async () => Promise.resolve(true),
+  ocppVersion,
+  validateConfiguration: async (_config: AuthConfiguration) => Promise.resolve(true),
+  ...overrides,
+})
 // ============================================================================
 // Assertion Helpers
 // ============================================================================

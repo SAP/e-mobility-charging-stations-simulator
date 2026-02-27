@@ -164,6 +164,61 @@ import { waitForCondition } from './helpers/StationHelpers.js'
 - Keep mocks focused - mock only what's necessary
 - Verify mock calls when behavior depends on them
 
+## Test Isolation (CRITICAL)
+
+**NEVER define mock instances at module level inside describe blocks.** Each test must get fresh instances.
+
+❌ **Bad (Module-Level State Sharing):**
+
+```typescript
+await describe('My Test Suite', async () => {
+  afterEach(() => {
+    mock.restoreAll()
+  })
+
+  // WRONG: These instances are SHARED across all tests!
+  const mockResponseService = new OCPP20ResponseService()
+  const requestService = new OCPP20RequestService(mockResponseService)
+  const mockChargingStation = createChargingStation({...})
+
+  await it('test 1', () => { /* uses shared state */ })
+  await it('test 2', () => { /* uses same shared state! Test pollution risk! */ })
+})
+```
+
+✅ **Good (Fresh Instances Per Test):**
+
+```typescript
+await describe('My Test Suite', async () => {
+  let mockResponseService: OCPP20ResponseService
+  let requestService: OCPP20RequestService
+  let mockChargingStation: TestChargingStation
+
+  beforeEach(() => {
+    // Fresh instances for every test - proper isolation
+    mockResponseService = new OCPP20ResponseService()
+    requestService = new OCPP20RequestService(mockResponseService)
+    mockChargingStation = createChargingStation({...})
+  })
+
+  afterEach(() => {
+    mock.restoreAll()
+  })
+
+  await it('test 1', () => { /* clean state */ })
+  await it('test 2', () => { /* clean state */ })
+})
+```
+
+**Why:** Module-level state causes:
+
+- Test pollution (state leaks between tests)
+- Flaky tests (order-dependent results)
+- False positives/negatives
+- Difficult debugging
+
+**Exception:** Static constants (strings, numbers, frozen objects) CAN be at module level since they don't change.
+
 ## Cleanup Hooks
 
 **ALWAYS include `afterEach()` cleanup to prevent test pollution:**
