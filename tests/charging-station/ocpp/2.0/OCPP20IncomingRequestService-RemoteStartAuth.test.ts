@@ -7,7 +7,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { expect } from '@std/expect'
-import { beforeEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
 import type { ConnectorStatus } from '../../../../src/types/ConnectorStatus.js'
@@ -60,6 +60,12 @@ await describe('OCPP20IncomingRequestService - G03.FR.03 Remote Start Pre-Author
     } as unknown as ChargingStation
 
     service = new OCPP20IncomingRequestService()
+  })
+
+  afterEach(() => {
+    // Reset service and mock charging station state
+    mockChargingStation = undefined as any
+    service = undefined as any
   })
 
   await describe('G03.FR.03.001 - Successful remote start with valid token', async () => {
