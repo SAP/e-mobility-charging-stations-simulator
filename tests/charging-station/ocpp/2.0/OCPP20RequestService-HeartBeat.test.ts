@@ -158,7 +158,7 @@ await describe('G02 - Heartbeat', async () => {
   })
 
   // FR: G02.FR.06
-  await it('should verify HeartBeat request conforms to OCPP 2.0 specification', () => {
+  await it('should build empty HeartBeat request conforming to OCPP 2.0 specification', () => {
     const requestParams: OCPP20HeartbeatRequest = {}
 
     const payload = (requestService as any).buildRequestPayload(

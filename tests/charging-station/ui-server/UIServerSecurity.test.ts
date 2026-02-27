@@ -20,39 +20,39 @@ const RATE_WINDOW_EXPIRY_DELAY_MS = 110
 
 await describe('UIServerSecurity test suite', async () => {
   await describe('isValidCredential()', async () => {
-    await it('should verify matching credentials return true', () => {
+    await it('should return true for matching credentials', () => {
       expect(isValidCredential('myPassword123', 'myPassword123')).toBe(true)
     })
 
-    await it('should verify non-matching credentials return false', () => {
+    await it('should return false for non-matching credentials', () => {
       expect(isValidCredential('password1', 'password2')).toBe(false)
     })
 
-    await it('should verify empty string credentials match', () => {
+    await it('should return true for empty string credentials', () => {
       expect(isValidCredential('', '')).toBe(true)
     })
 
-    await it('should verify different length credentials return false', () => {
+    await it('should return false for different length credentials', () => {
       // cspell:disable-next-line
       expect(isValidCredential('short', 'verylongpassword')).toBe(false)
     })
   })
 
   await describe('createBodySizeLimiter()', async () => {
-    await it('should verify bytes under limit return true', () => {
+    await it('should return true when bytes under limit', () => {
       const limiter = createBodySizeLimiter(1000)
 
       expect(limiter(500)).toBe(true)
     })
 
-    await it('should verify accumulated bytes exceeding limit return false', () => {
+    await it('should return false when accumulated bytes exceed limit', () => {
       const limiter = createBodySizeLimiter(1000)
       limiter(600)
 
       expect(limiter(500)).toBe(false)
     })
 
-    await it('should verify exact limit boundary returns true', () => {
+    await it('should return true at exact limit boundary', () => {
       const limiter = createBodySizeLimiter(1000)
 
       expect(limiter(1000)).toBe(true)
@@ -60,7 +60,7 @@ await describe('UIServerSecurity test suite', async () => {
   })
 
   await describe('createRateLimiter()', async () => {
-    await it('should verify requests under limit are allowed', () => {
+    await it('should allow requests under rate limit', () => {
       const limiter = createRateLimiter(5, 1000)
 
       for (let i = 0; i < 5; i++) {
@@ -68,7 +68,7 @@ await describe('UIServerSecurity test suite', async () => {
       }
     })
 
-    await it('should verify requests exceeding limit are blocked', () => {
+    await it('should block requests exceeding rate limit', () => {
       const limiter = createRateLimiter(3, 1000)
       limiter('192.168.1.1')
       limiter('192.168.1.1')
@@ -77,7 +77,7 @@ await describe('UIServerSecurity test suite', async () => {
       expect(limiter('192.168.1.1')).toBe(false)
     })
 
-    await it('should verify window resets after time expires', async () => {
+    await it('should reset window after time expires', async () => {
       const limiter = createRateLimiter(2, 100)
       limiter('10.0.0.1')
       limiter('10.0.0.1')
@@ -88,7 +88,7 @@ await describe('UIServerSecurity test suite', async () => {
       expect(limiter('10.0.0.1')).toBe(true)
     })
 
-    await it('should verify new IPs rejected when at max tracked capacity', () => {
+    await it('should reject new IPs when at max tracked capacity', () => {
       const limiter = createRateLimiter(10, 60000, 3)
 
       expect(limiter('192.168.1.1')).toBe(true)
@@ -97,7 +97,7 @@ await describe('UIServerSecurity test suite', async () => {
       expect(limiter('192.168.1.4')).toBe(false)
     })
 
-    await it('should verify existing IPs still allowed when at capacity', () => {
+    await it('should allow existing IPs when at max capacity', () => {
       const limiter = createRateLimiter(10, 60000, 2)
 
       expect(limiter('192.168.1.1')).toBe(true)
@@ -106,7 +106,7 @@ await describe('UIServerSecurity test suite', async () => {
       expect(limiter('192.168.1.2')).toBe(true)
     })
 
-    await it('should verify expired entries cleanup when at capacity', async () => {
+    await it('should cleanup expired entries when at capacity', async () => {
       const limiter = createRateLimiter(10, 50, 2)
       expect(limiter('192.168.1.1')).toBe(true)
       expect(limiter('192.168.1.2')).toBe(true)
@@ -118,23 +118,23 @@ await describe('UIServerSecurity test suite', async () => {
   })
 
   await describe('isValidNumberOfStations()', async () => {
-    await it('should verify valid number of stations returns true', () => {
+    await it('should return true for valid number within limit', () => {
       expect(isValidNumberOfStations(50, DEFAULT_MAX_STATIONS)).toBe(true)
     })
 
-    await it('should verify exceeding max stations returns false', () => {
+    await it('should return false when exceeding max stations', () => {
       expect(isValidNumberOfStations(150, DEFAULT_MAX_STATIONS)).toBe(false)
     })
 
-    await it('should verify zero stations returns false', () => {
+    await it('should return false for zero stations', () => {
       expect(isValidNumberOfStations(0, DEFAULT_MAX_STATIONS)).toBe(false)
     })
 
-    await it('should verify negative stations returns false', () => {
+    await it('should return false for negative stations', () => {
       expect(isValidNumberOfStations(-5, DEFAULT_MAX_STATIONS)).toBe(false)
     })
 
-    await it('should verify exact max stations boundary returns true', () => {
+    await it('should return true at exact max stations boundary', () => {
       expect(isValidNumberOfStations(DEFAULT_MAX_STATIONS, DEFAULT_MAX_STATIONS)).toBe(true)
     })
   })

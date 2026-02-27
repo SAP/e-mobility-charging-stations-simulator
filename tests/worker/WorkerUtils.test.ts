@@ -3,7 +3,7 @@
  * @description Unit tests for worker process utility functions
  */
 import { expect } from '@std/expect'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 
 import { WorkerProcessType } from '../../src/worker/WorkerTypes.js'
 import {
@@ -13,9 +13,14 @@ import {
   randomizeDelay,
   sleep,
 } from '../../src/worker/WorkerUtils.js'
+import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 await describe('WorkerUtils test suite', async () => {
-  await it('should verify checkWorkerProcessType()', () => {
+  afterEach(() => {
+    standardCleanup()
+  })
+
+  await it('should validate worker process types correctly', () => {
     // Valid worker process types should not throw
     expect(() => {
       checkWorkerProcessType(WorkerProcessType.dynamicPool)
@@ -33,7 +38,7 @@ await describe('WorkerUtils test suite', async () => {
     }).toThrow(SyntaxError)
   })
 
-  await it('should verify sleep()', async t => {
+  await it('should return timeout object after specified delay', async t => {
     t.mock.timers.enable({ apis: ['setTimeout'] })
     try {
       const delay = 10 // 10ms for fast test execution
@@ -52,7 +57,7 @@ await describe('WorkerUtils test suite', async () => {
     }
   })
 
-  await it('should verify defaultExitHandler()', t => {
+  await it('should log info for success/termination codes, error for other codes', t => {
     const mockConsoleInfo = t.mock.method(console, 'info')
     const mockConsoleError = t.mock.method(console, 'error')
 
@@ -85,7 +90,7 @@ await describe('WorkerUtils test suite', async () => {
     expect(mockConsoleError.mock.calls.length).toBe(1)
   })
 
-  await it('should verify defaultErrorHandler()', t => {
+  await it('should log error with error details', t => {
     const mockConsoleError = t.mock.method(console, 'error')
     const testError = new Error('Test error message')
 
@@ -99,7 +104,7 @@ await describe('WorkerUtils test suite', async () => {
     expect(mockConsoleError.mock.calls.length).toBe(2)
   })
 
-  await it('should verify randomizeDelay()', () => {
+  await it('should randomize delay within ±20% tolerance', () => {
     const baseDelay = 1000
     const tolerance = baseDelay * 0.2 // 20% tolerance as per implementation
 

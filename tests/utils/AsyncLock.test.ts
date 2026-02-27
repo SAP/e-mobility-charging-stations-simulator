@@ -9,7 +9,7 @@ import { describe, it } from 'node:test'
 import { AsyncLock, AsyncLockType } from '../../src/utils/AsyncLock.js'
 
 await describe('AsyncLock test suite', async () => {
-  await it('should verify runExclusive() on sync fn', () => {
+  await it('should run synchronous functions exclusively in sequence', () => {
     const runs = 10
     const executed: number[] = []
     let count = 0
@@ -26,7 +26,7 @@ await describe('AsyncLock test suite', async () => {
     }
   })
 
-  await it('should verify runExclusive() on async fn', () => {
+  await it('should run asynchronous functions exclusively in sequence', () => {
     const runs = 10
     const executed: number[] = []
     let count = 0

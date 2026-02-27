@@ -49,7 +49,7 @@ await describe('Utils test suite', async () => {
   afterEach(() => {
     standardCleanup()
   })
-  await it('should verify generateUUID()/validateUUID()', () => {
+  await it('should generate valid UUIDs and validate them correctly', () => {
     const uuid = generateUUID()
     expect(uuid).toBeDefined()
     expect(uuid.length).toEqual(36)
@@ -70,7 +70,7 @@ await describe('Utils test suite', async () => {
     expect(validateUUID(true)).toBe(false)
   })
 
-  await it('should verify validateIdentifierString()', () => {
+  await it('should validate identifier strings within length constraints', () => {
     expect(validateIdentifierString('550e8400-e29b-41d4-a716-446655440000', 36)).toBe(true)
     expect(validateIdentifierString('CSMS-TXN-12345', 36)).toBe(true)
     expect(validateIdentifierString('a', 36)).toBe(true)
@@ -85,7 +85,7 @@ await describe('Utils test suite', async () => {
     expect(validateIdentifierString('valid', 4)).toBe(false)
   })
 
-  await it('should verify sleep()', async t => {
+  await it('should sleep for specified milliseconds using timer mock', async t => {
     /**
      * Timer mock pattern for testing asynchronous timer-based operations.
      * Uses Node.js test module's built-in timer mocking API.
@@ -129,21 +129,21 @@ await describe('Utils test suite', async () => {
     }
   })
 
-  await it('should verify formatDurationMilliSeconds()', () => {
+  await it('should format milliseconds duration into human readable string', () => {
     expect(formatDurationMilliSeconds(0)).toBe('0 seconds')
     expect(formatDurationMilliSeconds(900)).toBe('0 seconds')
     expect(formatDurationMilliSeconds(1000)).toBe('1 second')
     expect(formatDurationMilliSeconds(hoursToMilliseconds(4380))).toBe('182 days 12 hours')
   })
 
-  await it('should verify formatDurationSeconds()', () => {
+  await it('should format seconds duration into human readable string', () => {
     expect(formatDurationSeconds(0)).toBe('0 seconds')
     expect(formatDurationSeconds(0.9)).toBe('0 seconds')
     expect(formatDurationSeconds(1)).toBe('1 second')
     expect(formatDurationSeconds(hoursToSeconds(4380))).toBe('182 days 12 hours')
   })
 
-  await it('should verify isValidDate()', () => {
+  await it('should validate date objects and timestamps correctly', () => {
     expect(isValidDate(undefined)).toBe(false)
     expect(isValidDate(-1)).toBe(true)
     expect(isValidDate(0)).toBe(true)
@@ -153,7 +153,7 @@ await describe('Utils test suite', async () => {
     expect(isValidDate(new Date())).toBe(true)
   })
 
-  await it('should verify convertToDate()', () => {
+  await it('should convert various input types to Date objects', () => {
     expect(convertToDate(undefined)).toBe(undefined)
     expect(convertToDate(null)).toBe(undefined)
     expect(() => convertToDate('')).toThrow(new Error("Cannot convert to date: ''"))
@@ -169,7 +169,7 @@ await describe('Utils test suite', async () => {
     expect(date).toStrictEqual(new Date(dateStr))
   })
 
-  await it('should verify convertToInt()', () => {
+  await it('should convert various input types to integers', () => {
     expect(convertToInt(undefined)).toBe(0)
     expect(convertToInt(null)).toBe(0)
     expect(convertToInt(0)).toBe(0)
@@ -190,7 +190,7 @@ await describe('Utils test suite', async () => {
     }).toThrow("Cannot convert to integer: 'NaN'")
   })
 
-  await it('should verify convertToFloat()', () => {
+  await it('should convert various input types to floats', () => {
     expect(convertToFloat(undefined)).toBe(0)
     expect(convertToFloat(null)).toBe(0)
     expect(convertToFloat(0)).toBe(0)
@@ -211,7 +211,7 @@ await describe('Utils test suite', async () => {
     }).toThrow("Cannot convert to float: 'NaN'")
   })
 
-  await it('should verify convertToBoolean()', () => {
+  await it('should convert various input types to booleans', () => {
     expect(convertToBoolean(undefined)).toBe(false)
     expect(convertToBoolean(null)).toBe(false)
     expect(convertToBoolean('true')).toBe(true)
@@ -228,14 +228,14 @@ await describe('Utils test suite', async () => {
     expect(convertToBoolean('NoNBoolean')).toBe(false)
   })
 
-  await it('should verify secureRandom()', () => {
+  await it('should generate cryptographically secure random numbers between 0 and 1', () => {
     const random = secureRandom()
     expect(typeof random === 'number').toBe(true)
     expect(random).toBeGreaterThanOrEqual(0)
     expect(random).toBeLessThan(1)
   })
 
-  await it('should verify roundTo()', () => {
+  await it('should round numbers to specified decimal places correctly', () => {
     expect(roundTo(0, 2)).toBe(0)
     expect(roundTo(0.5, 0)).toBe(1)
     expect(roundTo(0.5, 2)).toBe(0.5)
@@ -250,7 +250,7 @@ await describe('Utils test suite', async () => {
     expect(roundTo(-5.015, 2)).toBe(-5.02)
   })
 
-  await it('should verify getRandomFloat()', () => {
+  await it('should generate random floats within specified range', () => {
     let randomFloat = getRandomFloat()
     expect(typeof randomFloat === 'number').toBe(true)
     expect(randomFloat).toBeGreaterThanOrEqual(0)
@@ -265,7 +265,7 @@ await describe('Utils test suite', async () => {
     expect(randomFloat).toBeLessThanOrEqual(0)
   })
 
-  await it('should verify extractTimeSeriesValues()', () => {
+  await it('should extract numeric values from timestamped circular buffer', () => {
     expect(
       extractTimeSeriesValues(
         new CircularBuffer<TimestampedData>(Array, Constants.DEFAULT_CIRCULAR_BUFFER_CAPACITY)
@@ -281,7 +281,7 @@ await describe('Utils test suite', async () => {
     expect(extractTimeSeriesValues(circularBuffer)).toEqual([1.1, 2.2, 3.3])
   })
 
-  await it('should verify isAsyncFunction()', () => {
+  await it('should correctly identify async functions from other types', () => {
     expect(isAsyncFunction(null)).toBe(false)
     expect(isAsyncFunction(undefined)).toBe(false)
     expect(isAsyncFunction(true)).toBe(false)
@@ -356,7 +356,7 @@ await describe('Utils test suite', async () => {
     expect(isAsyncFunction(TestClass.testStaticAsync)).toBe(true)
   })
 
-  await it('should verify clone()', () => {
+  await it('should deep clone objects, arrays, dates, maps and sets', () => {
     const obj = { 1: 1 }
     expect(clone(obj)).toStrictEqual(obj)
     expect(clone(obj) === obj).toBe(false)
@@ -388,7 +388,7 @@ await describe('Utils test suite', async () => {
     expect(() => clone(weakSet)).toThrow(new Error('#<WeakSet> could not be cloned.'))
   })
 
-  await it('should verify once()', () => {
+  await it('should execute function only once regardless of call count', () => {
     let called = 0
     const fn = (): number => ++called
     const onceFn = once(fn)
@@ -403,7 +403,7 @@ await describe('Utils test suite', async () => {
     expect(result3).toBe(1)
   })
 
-  await it('should verify has()', () => {
+  await it('should check if property exists in object using has()', () => {
     expect(has('', 'test')).toBe(false)
     expect(has('test', '')).toBe(false)
     expect(has('test', 'test')).toBe(false)
@@ -421,7 +421,7 @@ await describe('Utils test suite', async () => {
     expect(has(2, { 1: '1' })).toBe(false)
   })
 
-  await it('should verify isEmpty()', () => {
+  await it('should detect empty strings, objects, arrays, maps and sets', () => {
     expect(isEmpty('')).toBe(true)
     expect(isEmpty(' ')).toBe(true)
     expect(isEmpty('     ')).toBe(true)
@@ -439,7 +439,7 @@ await describe('Utils test suite', async () => {
     expect(isEmpty(new WeakSet())).toBe(false)
   })
 
-  await it('should verify isNotEmptyString()', () => {
+  await it('should detect non-empty strings correctly', () => {
     expect(isNotEmptyString('')).toBe(false)
     expect(isNotEmptyString(' ')).toBe(false)
     expect(isNotEmptyString('     ')).toBe(false)
@@ -457,7 +457,7 @@ await describe('Utils test suite', async () => {
     expect(isNotEmptyString(new WeakSet())).toBe(false)
   })
 
-  await it('should verify isNotEmptyArray()', () => {
+  await it('should detect non-empty arrays correctly', () => {
     expect(isNotEmptyArray([])).toBe(false)
     expect(isNotEmptyArray([1, 2])).toBe(true)
     expect(isNotEmptyArray(['1', '2'])).toBe(true)
@@ -473,13 +473,13 @@ await describe('Utils test suite', async () => {
     expect(isNotEmptyArray(new WeakSet())).toBe(false)
   })
 
-  await it('should verify insertAt()', () => {
+  await it('should insert substring at specified index position', () => {
     expect(insertAt('test', 'ing', 'test'.length)).toBe('testing')
     // eslint-disable-next-line @cspell/spellchecker
     expect(insertAt('test', 'ing', 2)).toBe('teingst')
   })
 
-  await it('should verify convertToIntOrNaN()', () => {
+  await it('should convert to integer or return NaN for invalid input', () => {
     expect(convertToIntOrNaN(undefined)).toBe(0)
     expect(convertToIntOrNaN(null)).toBe(0)
     expect(convertToIntOrNaN('0')).toBe(0)
@@ -490,7 +490,7 @@ await describe('Utils test suite', async () => {
     expect(Number.isNaN(convertToIntOrNaN('abc'))).toBe(true)
   })
 
-  await it('should verify isArraySorted()', () => {
+  await it('should check if array is sorted according to comparator', () => {
     expect(isArraySorted<number>([], (a, b) => a - b)).toBe(true)
     expect(isArraySorted<number>([1], (a, b) => a - b)).toBe(true)
     expect(isArraySorted<number>([1, 2, 3, 4, 5], (a, b) => a - b)).toBe(true)
@@ -498,7 +498,7 @@ await describe('Utils test suite', async () => {
     expect(isArraySorted<number>([2, 1, 3, 4, 5], (a, b) => a - b)).toBe(false)
   })
 
-  await it('should verify clampToSafeTimerValue()', () => {
+  await it('should clamp values to safe timer range (0 to MAX_SETINTERVAL_DELAY)', () => {
     expect(clampToSafeTimerValue(0)).toBe(0)
     expect(clampToSafeTimerValue(1000)).toBe(1000)
     expect(clampToSafeTimerValue(Constants.MAX_SETINTERVAL_DELAY)).toBe(
@@ -516,7 +516,7 @@ await describe('Utils test suite', async () => {
   // Exponential Backoff Algorithm Tests (WebSocket Reconnection)
   // -------------------------------------------------------------------------
 
-  await it('should verify exponentialDelay() with default parameters', () => {
+  await it('should calculate exponential delay with default parameters', () => {
     // Formula: delay = 2^retryNumber * delayFactor + (0-20% random jitter)
     // With default delayFactor = 100ms
 
@@ -541,7 +541,7 @@ await describe('Utils test suite', async () => {
     expect(delay3).toBeLessThanOrEqual(960) // 800 + 20% max jitter
   })
 
-  await it('should verify exponentialDelay() with custom delayFactor', () => {
+  await it('should calculate exponential delay with custom delay factor', () => {
     // Custom delayFactor = 50ms
     const delay0 = exponentialDelay(0, 50)
     expect(delay0).toBeGreaterThanOrEqual(50)
@@ -557,7 +557,7 @@ await describe('Utils test suite', async () => {
     expect(delay2).toBeLessThanOrEqual(960)
   })
 
-  await it('should verify exponentialDelay() exponential growth pattern', () => {
+  await it('should follow 2^n exponential growth pattern', () => {
     // Verify that delays follow 2^n exponential growth pattern
     const delayFactor = 100
 
@@ -577,7 +577,7 @@ await describe('Utils test suite', async () => {
     }
   })
 
-  await it('should verify exponentialDelay() includes random jitter', () => {
+  await it('should include random jitter in exponential delay', () => {
     // Run multiple times to verify jitter produces different values
     const delays = new Set<number>()
     const retryNumber = 3
@@ -594,7 +594,7 @@ await describe('Utils test suite', async () => {
     expect(delays.size).toBeGreaterThan(1)
   })
 
-  await it('should verify exponentialDelay() jitter is within 0-20% range', () => {
+  await it('should keep jitter within 0-20% range of base delay', () => {
     // For a given retry, jitter should add 0-20% of base delay
     const retryNumber = 4
     const delayFactor = 100
@@ -611,7 +611,7 @@ await describe('Utils test suite', async () => {
     }
   })
 
-  await it('should verify exponentialDelay() handles edge cases', () => {
+  await it('should handle edge cases (default retry, large retry, small factor)', () => {
     // Default retryNumber (0)
     const defaultRetry = exponentialDelay()
     expect(defaultRetry).toBeGreaterThanOrEqual(100) // 2^0 * 100
@@ -629,7 +629,7 @@ await describe('Utils test suite', async () => {
     expect(smallFactor).toBeLessThan(5) // 4 + 20%
   })
 
-  await it('should verify exponentialDelay() for WebSocket reconnection scenarios', () => {
+  await it('should calculate appropriate delays for WebSocket reconnection scenarios', () => {
     // Simulate typical WebSocket reconnection delay sequence
     const delayFactor = 100 // Default used in ChargingStation.reconnect()
 

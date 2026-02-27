@@ -40,6 +40,23 @@ import {
 import { MockIdTagsCache, MockSharedLRUCache } from '../charging-station/mocks/MockCaches.js'
 
 /**
+ * Result type for console mocks
+ */
+export interface ConsoleMockResult {
+  errorMock: { mock: { calls: unknown[][] } }
+  infoMock: { mock: { calls: unknown[][] } }
+  warnMock: { mock: { calls: unknown[][] } }
+}
+
+/**
+ * Result type for logger mocks
+ */
+export interface LoggerMockResult {
+  errorMock: { mock: { calls: unknown[][] } }
+  warnMock: { mock: { calls: unknown[][] } }
+}
+
+/**
  * Timer APIs that can be mocked in tests
  */
 export type MockableTimerAPI = 'setImmediate' | 'setInterval' | 'setTimeout'
@@ -52,6 +69,18 @@ export interface TimerHelperOptions {
    * Timer APIs to mock (default: all three)
    */
   apis?: MockableTimerAPI[]
+}
+
+/**
+ * Mock context type for Node.js test module
+ */
+interface MockContext {
+  mock: {
+    method: (
+      object: object,
+      methodName: string
+    ) => { mock: { calls: unknown[][] } }
+  }
 }
 
 /**
@@ -285,6 +314,81 @@ export function clearConnectorTransaction (station: ChargingStation, connectorId
   if (connector.transactionSetInterval != null) {
     clearInterval(connector.transactionSetInterval)
     connector.transactionSetInterval = undefined
+  }
+}
+
+/**
+ * Factory for creating centralized console mocks
+ *
+ * Reduces boilerplate in tests that need to mock console methods.
+ * @param t - Test context from node:test
+ * @param options - Which console methods to mock
+ * @param options.error - Whether to mock console.error
+ * @param options.info - Whether to mock console.info
+ * @param options.warn - Whether to mock console.warn
+ * @returns Object with console mock references
+ * @example
+ * ```typescript
+ * import { createConsoleMocks } from '../helpers/TestLifecycleHelpers.js'
+ *
+ * await it('should log to console', t => {
+ *   const { errorMock, warnMock } = createConsoleMocks(t, { error: true, warn: true })
+ *
+ *   // ... test code ...
+ *
+ *   expect(warnMock.mock.calls.length).toBe(1)
+ * })
+ * ```
+ */
+export function createConsoleMocks (
+  t: MockContext,
+  options: { error?: boolean; info?: boolean; warn?: boolean } = {}
+): Partial<ConsoleMockResult> {
+  const result: Partial<ConsoleMockResult> = {}
+
+  if (options.error === true) {
+    result.errorMock = t.mock.method(console, 'error')
+  }
+  if (options.warn === true) {
+    result.warnMock = t.mock.method(console, 'warn')
+  }
+  if (options.info === true) {
+    result.infoMock = t.mock.method(console, 'info')
+  }
+
+  return result
+}
+
+/**
+ * Factory for creating centralized logger mocks
+ *
+ * Reduces boilerplate in tests that need to mock logger methods.
+ * @param t - Test context from node:test
+ * @param logger - Logger instance to mock (must have error and warn methods)
+ * @param logger.error - Logger error method
+ * @param logger.warn - Logger warn method
+ * @returns Object with warn and error mock references
+ * @example
+ * ```typescript
+ * import { createLoggerMocks } from '../helpers/TestLifecycleHelpers.js'
+ * import { logger } from '../../src/utils/Logger.js'
+ *
+ * await it('should handle errors', t => {
+ *   const { warnMock, errorMock } = createLoggerMocks(t, logger)
+ *
+ *   // ... test code ...
+ *
+ *   expect(errorMock.mock.calls.length).toBe(1)
+ * })
+ * ```
+ */
+export function createLoggerMocks (
+  t: MockContext,
+  logger: { error: unknown; warn: unknown }
+): LoggerMockResult {
+  return {
+    errorMock: t.mock.method(logger, 'error'),
+    warnMock: t.mock.method(logger, 'warn'),
   }
 }
 

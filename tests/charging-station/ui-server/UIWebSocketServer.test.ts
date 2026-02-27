@@ -35,7 +35,7 @@ class TestableUIWebSocketServer extends UIWebSocketServer {
 }
 
 await describe('UIWebSocketServer test suite', async () => {
-  await it('should verify sendResponse() deletes handler after sending', () => {
+  await it('should delete response handler after successful send', () => {
     const config = createMockUIServerConfiguration()
     const server = new TestableUIWebSocketServer(config)
     const ws = new MockWebSocket()
@@ -49,7 +49,7 @@ await describe('UIWebSocketServer test suite', async () => {
     expect(ws.sentMessages.length).toBe(1)
   })
 
-  await it('should verify sendResponse() logs error when handler not found', () => {
+  await it('should log error when response handler not found', () => {
     const config = createMockUIServerConfiguration()
     const server = new TestableUIWebSocketServer(config)
 
@@ -58,7 +58,7 @@ await describe('UIWebSocketServer test suite', async () => {
     expect(server.hasResponseHandler(TEST_UUID)).toBe(false)
   })
 
-  await it('should verify sendResponse() deletes handler when WebSocket not open', () => {
+  await it('should delete handler when WebSocket not in OPEN state', () => {
     const config = createMockUIServerConfiguration()
     const server = new TestableUIWebSocketServer(config)
     const ws = new MockWebSocket()
@@ -71,7 +71,7 @@ await describe('UIWebSocketServer test suite', async () => {
     expect(ws.sentMessages.length).toBe(0)
   })
 
-  await it('should verify sendResponse() handles send errors gracefully', () => {
+  await it('should handle send errors gracefully without throwing', () => {
     const config = createMockUIServerConfiguration()
     const server = new TestableUIWebSocketServer(config)
     const ws = new MockWebSocket()
@@ -86,7 +86,7 @@ await describe('UIWebSocketServer test suite', async () => {
     expect(server.hasResponseHandler(TEST_UUID)).toBe(false)
   })
 
-  await it('should verify broadcast handler persistence (issue #1642)', async () => {
+  await it('should preserve broadcast handler until explicit deletion (issue #1642)', async () => {
     const config = createMockUIServerConfiguration()
     const server = new TestableUIWebSocketServer(config)
     const mockService = new MockUIServiceBroadcast()
@@ -108,7 +108,7 @@ await describe('UIWebSocketServer test suite', async () => {
     expect(server.hasResponseHandler(TEST_UUID)).toBe(false)
   })
 
-  await it('should verify non-broadcast handler immediate deletion', async () => {
+  await it('should delete non-broadcast handler immediately after response', async () => {
     const config = createMockUIServerConfiguration()
     const server = new TestableUIWebSocketServer(config)
     const mockService = new MockUIServiceNonBroadcast()
@@ -127,7 +127,7 @@ await describe('UIWebSocketServer test suite', async () => {
     expect(server.hasResponseHandler(TEST_UUID)).toBe(false)
   })
 
-  await it('should verify error handler cleanup', async () => {
+  await it('should preserve handler when service throws error', async () => {
     const config = createMockUIServerConfiguration()
     const server = new TestableUIWebSocketServer(config)
     const mockService = new MockUIServiceError()
@@ -145,7 +145,7 @@ await describe('UIWebSocketServer test suite', async () => {
     expect(server.getResponseHandlersSize()).toBe(1)
   })
 
-  await it('should verify response handlers cleanup', () => {
+  await it('should clean up response handlers after each response', () => {
     const config = createMockUIServerConfiguration()
     const server = new TestableUIWebSocketServer(config)
     const ws1 = new MockWebSocket()
@@ -163,7 +163,7 @@ await describe('UIWebSocketServer test suite', async () => {
     expect(server.getResponseHandlersSize()).toBe(0)
   })
 
-  await it('should verify handlers cleared on server stop', () => {
+  await it('should clear all handlers on server stop', () => {
     const config = createMockUIServerConfiguration()
     const server = new TestableUIWebSocketServer(config)
     const ws = new MockWebSocket()
@@ -176,14 +176,14 @@ await describe('UIWebSocketServer test suite', async () => {
     expect(server.getResponseHandlersSize()).toBe(0)
   })
 
-  await it('should verify valid WebSocket configuration', () => {
+  await it('should create server with valid WebSocket configuration', () => {
     const config = createMockUIServerConfiguration()
     const server = new UIWebSocketServer(config)
 
     expect(server).toBeDefined()
   })
 
-  await it('should verify WebSocket server with custom config', () => {
+  await it('should create server with custom host and port', () => {
     const config = createMockUIServerConfiguration({
       options: {
         host: 'localhost',

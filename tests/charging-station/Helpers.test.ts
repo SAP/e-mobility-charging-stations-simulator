@@ -53,17 +53,17 @@ await describe('Helpers test suite', async () => {
       reservationId: 1,
     }) as Reservation
 
-  await it('should verify getChargingStationId()', () => {
+  await it('should return formatted charging station ID with index', () => {
     expect(getChargingStationId(1, chargingStationTemplate)).toBe(`${baseName}-00001`)
   })
 
-  await it('should verify getHashId()', () => {
+  await it('should return consistent hash ID for same template and index', () => {
     expect(getHashId(1, chargingStationTemplate)).toBe(
       'b4b1e8ec4fca79091d99ea9a7ea5901548010e6c0e98be9296f604b9d68734444dfdae73d7d406b6124b42815214d088'
     )
   })
 
-  await it('should verify validateStationInfo() - Missing stationInfo', () => {
+  await it('should throw when stationInfo is missing', () => {
     // For validation edge cases, we need to manually create invalid states
     // since the factory is designed to create valid configurations
     const stationNoInfo = createChargingStation({ baseName })
@@ -74,7 +74,7 @@ await describe('Helpers test suite', async () => {
     }).toThrow(new BaseError('Missing charging station information'))
   })
 
-  await it('should verify validateStationInfo() - Empty stationInfo', () => {
+  await it('should throw when stationInfo is empty object', () => {
     // For validation edge cases, manually create empty stationInfo
     const stationEmptyInfo = createChargingStation({ baseName })
     stationEmptyInfo.stationInfo = {} as ChargingStationInfo
@@ -83,7 +83,7 @@ await describe('Helpers test suite', async () => {
     }).toThrow(new BaseError('Missing charging station information'))
   })
 
-  await it('should verify validateStationInfo() - Missing chargingStationId', () => {
+  await it('should throw when chargingStationId is undefined', () => {
     const stationMissingId = createChargingStation({
       baseName,
       stationInfo: { baseName, chargingStationId: undefined },
@@ -93,7 +93,7 @@ await describe('Helpers test suite', async () => {
     }).toThrow(new BaseError('Missing chargingStationId in stationInfo properties'))
   })
 
-  await it('should verify validateStationInfo() - Empty chargingStationId', () => {
+  await it('should throw when chargingStationId is empty string', () => {
     const stationEmptyId = createChargingStation({
       baseName,
       stationInfo: { baseName, chargingStationId: '' },
@@ -103,7 +103,7 @@ await describe('Helpers test suite', async () => {
     }).toThrow(new BaseError('Missing chargingStationId in stationInfo properties'))
   })
 
-  await it('should verify validateStationInfo() - Missing hashId', () => {
+  await it('should throw when hashId is undefined', () => {
     const stationMissingHash = createChargingStation({
       baseName,
       stationInfo: {
@@ -117,7 +117,7 @@ await describe('Helpers test suite', async () => {
     }).toThrow(new BaseError(`${baseName}-00001: Missing hashId in stationInfo properties`))
   })
 
-  await it('should verify validateStationInfo() - Empty hashId', () => {
+  await it('should throw when hashId is empty string', () => {
     const stationEmptyHash = createChargingStation({
       baseName,
       stationInfo: {
@@ -131,7 +131,7 @@ await describe('Helpers test suite', async () => {
     }).toThrow(new BaseError(`${baseName}-00001: Missing hashId in stationInfo properties`))
   })
 
-  await it('should verify validateStationInfo() - Missing templateIndex', () => {
+  await it('should throw when templateIndex is undefined', () => {
     const stationMissingTemplate = createChargingStation({
       baseName,
       stationInfo: {
@@ -146,7 +146,7 @@ await describe('Helpers test suite', async () => {
     }).toThrow(new BaseError(`${baseName}-00001: Missing templateIndex in stationInfo properties`))
   })
 
-  await it('should verify validateStationInfo() - Invalid templateIndex (zero)', () => {
+  await it('should throw when templateIndex is zero', () => {
     const stationInvalidTemplate = createChargingStation({
       baseName,
       stationInfo: {
@@ -163,7 +163,7 @@ await describe('Helpers test suite', async () => {
     )
   })
 
-  await it('should verify validateStationInfo() - Missing templateName', () => {
+  await it('should throw when templateName is undefined', () => {
     const stationMissingName = createChargingStation({
       baseName,
       stationInfo: {
@@ -179,7 +179,7 @@ await describe('Helpers test suite', async () => {
     }).toThrow(new BaseError(`${baseName}-00001: Missing templateName in stationInfo properties`))
   })
 
-  await it('should verify validateStationInfo() - Empty templateName', () => {
+  await it('should throw when templateName is empty string', () => {
     const stationEmptyName = createChargingStation({
       baseName,
       stationInfo: {
@@ -195,7 +195,7 @@ await describe('Helpers test suite', async () => {
     }).toThrow(new BaseError(`${baseName}-00001: Missing templateName in stationInfo properties`))
   })
 
-  await it('should verify validateStationInfo() - Missing maximumPower', () => {
+  await it('should throw when maximumPower is undefined', () => {
     const stationMissingPower = createChargingStation({
       baseName,
       stationInfo: {
@@ -212,7 +212,7 @@ await describe('Helpers test suite', async () => {
     }).toThrow(new BaseError(`${baseName}-00001: Missing maximumPower in stationInfo properties`))
   })
 
-  await it('should verify validateStationInfo() - Invalid maximumPower (zero)', () => {
+  await it('should throw when maximumPower is zero', () => {
     const stationInvalidPower = createChargingStation({
       baseName,
       stationInfo: {
@@ -231,7 +231,7 @@ await describe('Helpers test suite', async () => {
     )
   })
 
-  await it('should verify validateStationInfo() - Missing maximumAmperage', () => {
+  await it('should throw when maximumAmperage is undefined', () => {
     const stationMissingAmperage = createChargingStation({
       baseName,
       stationInfo: {
@@ -251,7 +251,7 @@ await describe('Helpers test suite', async () => {
     )
   })
 
-  await it('should verify validateStationInfo() - Invalid maximumAmperage (zero)', () => {
+  await it('should throw when maximumAmperage is zero', () => {
     const stationInvalidAmperage = createChargingStation({
       baseName,
       stationInfo: {
@@ -271,7 +271,7 @@ await describe('Helpers test suite', async () => {
     )
   })
 
-  await it('should verify validateStationInfo() - Valid configuration passes', () => {
+  await it('should pass validation with complete valid configuration', () => {
     const validStation = createChargingStation({
       baseName,
       stationInfo: {
@@ -289,7 +289,7 @@ await describe('Helpers test suite', async () => {
     }).not.toThrow()
   })
 
-  await it('should verify validateStationInfo() - OCPP 2.0 requires EVSE', () => {
+  await it('should throw for OCPP 2.0 without EVSE configuration', () => {
     const stationOcpp20 = createChargingStation({
       baseName,
       connectorsCount: 0, // Ensure no EVSEs are created
@@ -313,7 +313,7 @@ await describe('Helpers test suite', async () => {
     )
   })
 
-  await it('should verify validateStationInfo() - OCPP 2.0.1 requires EVSE', () => {
+  await it('should throw for OCPP 2.0.1 without EVSE configuration', () => {
     const stationOcpp201 = createChargingStation({
       baseName,
       connectorsCount: 0, // Ensure no EVSEs are created
@@ -337,28 +337,28 @@ await describe('Helpers test suite', async () => {
     )
   })
 
-  await it('should verify checkChargingStationState() - Not started or starting', t => {
+  await it('should return false and warn when station is not started or starting', t => {
     const warnMock = t.mock.method(logger, 'warn')
     const stationNotStarted = createChargingStation({ baseName, started: false, starting: false })
     expect(checkChargingStationState(stationNotStarted, 'log prefix |')).toBe(false)
     expect(warnMock.mock.calls.length).toBe(1)
   })
 
-  await it('should verify checkChargingStationState() - Starting returns true', t => {
+  await it('should return true when station is starting', t => {
     const warnMock = t.mock.method(logger, 'warn')
     const stationStarting = createChargingStation({ baseName, started: false, starting: true })
     expect(checkChargingStationState(stationStarting, 'log prefix |')).toBe(true)
     expect(warnMock.mock.calls.length).toBe(0)
   })
 
-  await it('should verify checkChargingStationState() - Started returns true', t => {
+  await it('should return true when station is started', t => {
     const warnMock = t.mock.method(logger, 'warn')
     const stationStarted = createChargingStation({ baseName, started: true, starting: false })
     expect(checkChargingStationState(stationStarted, 'log prefix |')).toBe(true)
     expect(warnMock.mock.calls.length).toBe(0)
   })
 
-  await it('should verify getPhaseRotationValue()', () => {
+  await it('should return correct phase rotation value for connector and phase count', () => {
     expect(getPhaseRotationValue(0, 0)).toBe('0.RST')
     expect(getPhaseRotationValue(1, 0)).toBe('1.NotApplicable')
     expect(getPhaseRotationValue(2, 0)).toBe('2.NotApplicable')
@@ -373,12 +373,12 @@ await describe('Helpers test suite', async () => {
     expect(getPhaseRotationValue(2, 3)).toBe('2.RST')
   })
 
-  await it('should verify getMaxNumberOfEvses()', () => {
+  await it('should return -1 for undefined EVSEs and 0 for empty object', () => {
     expect(getMaxNumberOfEvses(undefined)).toBe(-1)
     expect(getMaxNumberOfEvses({})).toBe(0)
   })
 
-  await it('should verify checkTemplate()', t => {
+  await it('should throw for undefined or empty template', t => {
     const warnMock = t.mock.method(logger, 'warn')
     const errorMock = t.mock.method(logger, 'error')
     expect(() => {
@@ -395,7 +395,7 @@ await describe('Helpers test suite', async () => {
     expect(warnMock.mock.calls.length).toBe(1)
   })
 
-  await it('should verify checkConfiguration()', t => {
+  await it('should throw for undefined or empty configuration', t => {
     const errorMock = t.mock.method(logger, 'error')
     expect(() => {
       checkConfiguration(undefined, 'log prefix |', 'configuration.json')
@@ -409,7 +409,7 @@ await describe('Helpers test suite', async () => {
     expect(errorMock.mock.calls.length).toBe(2)
   })
 
-  await it('should verify checkStationInfoConnectorStatus()', t => {
+  await it('should warn and clear status when connector has predefined status', t => {
     const warnMock = t.mock.method(logger, 'warn')
     checkStationInfoConnectorStatus(1, {} as ConnectorStatus, 'log prefix |', 'test-template.json')
     expect(warnMock.mock.calls.length).toBe(0)
@@ -421,7 +421,7 @@ await describe('Helpers test suite', async () => {
     expect(connectorStatus.status).toBeUndefined()
   })
 
-  await it('should verify getBootConnectorStatus() - default to Available when no bootStatus', () => {
+  await it('should return Available when no bootStatus is defined', () => {
     const chargingStation = createChargingStation({ baseName, connectorsCount: 2 })
     const connectorStatus = {} as ConnectorStatus
     expect(getBootConnectorStatus(chargingStation, 1, connectorStatus)).toBe(
@@ -429,7 +429,7 @@ await describe('Helpers test suite', async () => {
     )
   })
 
-  await it('should verify getBootConnectorStatus() - use bootStatus from template', () => {
+  await it('should return bootStatus from template when defined', () => {
     const chargingStation = createChargingStation({ baseName, connectorsCount: 2 })
     const connectorStatus = {
       bootStatus: ConnectorStatusEnum.Unavailable,
@@ -439,7 +439,7 @@ await describe('Helpers test suite', async () => {
     )
   })
 
-  await it('should verify getBootConnectorStatus() - charging station unavailable overrides bootStatus', () => {
+  await it('should return Unavailable when charging station is inoperative', () => {
     const chargingStation = createChargingStation({
       baseName,
       connectorDefaults: { availability: AvailabilityType.Inoperative },
@@ -453,7 +453,7 @@ await describe('Helpers test suite', async () => {
     )
   })
 
-  await it('should verify getBootConnectorStatus() - connector unavailable overrides bootStatus', () => {
+  await it('should return Unavailable when connector is inoperative', () => {
     const chargingStation = createChargingStation({
       baseName,
       connectorDefaults: { availability: AvailabilityType.Inoperative },
@@ -468,7 +468,7 @@ await describe('Helpers test suite', async () => {
     )
   })
 
-  await it('should verify getBootConnectorStatus() - transaction in progress restores previous status', () => {
+  await it('should restore previous status when transaction is in progress', () => {
     const chargingStation = createChargingStation({ baseName, connectorsCount: 2 })
     const connectorStatus = {
       bootStatus: ConnectorStatusEnum.Available,
@@ -480,7 +480,7 @@ await describe('Helpers test suite', async () => {
     )
   })
 
-  await it('should verify getBootConnectorStatus() - no transaction uses bootStatus over previous status', () => {
+  await it('should use bootStatus over previous status when no transaction', () => {
     const chargingStation = createChargingStation({ baseName, connectorsCount: 2 })
     const connectorStatus = {
       bootStatus: ConnectorStatusEnum.Available,
@@ -493,35 +493,35 @@ await describe('Helpers test suite', async () => {
   })
 
   // Tests for reservation helper functions
-  await it('should verify hasReservationExpired() - expired reservation', () => {
+  await it('should return true when reservation has expired', () => {
     expect(hasReservationExpired(createTestReservation(true))).toBe(true)
   })
 
-  await it('should verify hasReservationExpired() - valid reservation', () => {
+  await it('should return false when reservation is still valid', () => {
     expect(hasReservationExpired(createTestReservation(false))).toBe(false)
   })
 
-  await it('should verify hasPendingReservation() - no reservation', () => {
+  await it('should return false when connector has no reservation', () => {
     const connectorStatus = {} as ConnectorStatus
     expect(hasPendingReservation(connectorStatus)).toBe(false)
   })
 
-  await it('should verify hasPendingReservation() - with valid reservation', () => {
+  await it('should return true when connector has valid pending reservation', () => {
     const connectorStatus = { reservation: createTestReservation(false) } as ConnectorStatus
     expect(hasPendingReservation(connectorStatus)).toBe(true)
   })
 
-  await it('should verify hasPendingReservation() - with expired reservation', () => {
+  await it('should return false when connector reservation has expired', () => {
     const connectorStatus = { reservation: createTestReservation(true) } as ConnectorStatus
     expect(hasPendingReservation(connectorStatus)).toBe(false)
   })
 
-  await it('should verify hasPendingReservations() - no reservations (without EVSEs)', () => {
+  await it('should return false when no reservations exist (connector mode)', () => {
     const chargingStation = createChargingStation({ baseName, connectorsCount: 2 })
     expect(hasPendingReservations(chargingStation)).toBe(false)
   })
 
-  await it('should verify hasPendingReservations() - with pending reservation (without EVSEs)', () => {
+  await it('should return true when pending reservation exists (connector mode)', () => {
     const chargingStation = createChargingStation({ baseName, connectorsCount: 2 })
     const connectorStatus = chargingStation.connectors.get(1)
     if (connectorStatus != null) {
@@ -530,7 +530,7 @@ await describe('Helpers test suite', async () => {
     expect(hasPendingReservations(chargingStation)).toBe(true)
   })
 
-  await it('should verify hasPendingReservations() - no reservations (with EVSEs)', () => {
+  await it('should return false when no reservations exist (EVSE mode)', () => {
     const chargingStation = createChargingStation({
       baseName,
       connectorsCount: 2,
@@ -539,7 +539,7 @@ await describe('Helpers test suite', async () => {
     expect(hasPendingReservations(chargingStation)).toBe(false)
   })
 
-  await it('should verify hasPendingReservations() - with pending reservation (with EVSEs)', () => {
+  await it('should return true when pending reservation exists (EVSE mode)', () => {
     const chargingStation = createChargingStation({
       baseName,
       connectorsCount: 2,
@@ -553,7 +553,7 @@ await describe('Helpers test suite', async () => {
     expect(hasPendingReservations(chargingStation)).toBe(true)
   })
 
-  await it('should verify hasPendingReservations() - with expired reservation only (with EVSEs)', () => {
+  await it('should return false when only expired reservations exist (EVSE mode)', () => {
     const chargingStation = createChargingStation({
       baseName,
       connectorsCount: 2,

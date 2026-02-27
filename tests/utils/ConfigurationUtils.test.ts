@@ -3,7 +3,7 @@
  * @description Unit tests for configuration utility functions
  */
 import { expect } from '@std/expect'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 
 import { FileType, StorageType } from '../../src/types/index.js'
 import {
@@ -13,19 +13,24 @@ import {
   handleFileException,
   logPrefix,
 } from '../../src/utils/ConfigurationUtils.js'
+import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 await describe('ConfigurationUtils test suite', async () => {
-  await it('should verify logPrefix()', () => {
+  afterEach(() => {
+    standardCleanup()
+  })
+
+  await it('should return log prefix with simulator configuration', () => {
     expect(logPrefix()).toContain(' Simulator configuration |')
   })
 
-  await it('should verify buildPerformanceUriFilePath()', () => {
+  await it('should build file URI path for performance storage', () => {
     const result = buildPerformanceUriFilePath('test.json')
     expect(result).toContain('test.json')
     expect(result).toMatch(/^file:\/\/.*test\.json$/)
   })
 
-  await it('should verify getDefaultPerformanceStorageUri()', () => {
+  await it('should return appropriate URI for storage types', () => {
     // Test JSON_FILE storage type
     const jsonUri = getDefaultPerformanceStorageUri(StorageType.JSON_FILE)
     expect(jsonUri).toMatch(/^file:\/\/.*\.json$/)
@@ -42,7 +47,7 @@ await describe('ConfigurationUtils test suite', async () => {
     }).toThrow(Error)
   })
 
-  await it('should verify handleFileException()', t => {
+  await it('should throw and log error for file exceptions', t => {
     const mockConsoleError = t.mock.method(console, 'error')
     const error = new Error() as NodeJS.ErrnoException
     error.code = 'ENOENT'
@@ -52,7 +57,7 @@ await describe('ConfigurationUtils test suite', async () => {
     expect(mockConsoleError.mock.calls.length).toBe(1)
   })
 
-  await it('should verify checkWorkerElementsPerWorker()', () => {
+  await it('should validate worker elements per worker configuration', () => {
     // These calls should not throw exceptions
     expect(() => {
       checkWorkerElementsPerWorker(undefined)

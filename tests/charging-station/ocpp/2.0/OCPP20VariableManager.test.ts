@@ -81,7 +81,7 @@ await describe('B05/B06 - OCPP20VariableManager test suite', async () => {
     OCPP20VariableManager.getInstance().resetRuntimeOverrides()
   })
 
-  await it('should verify that OCPP20VariableManager can be instantiated as singleton', () => {
+  await it('should return same instance when getInstance() called multiple times', () => {
     const manager1 = OCPP20VariableManager.getInstance()
     const manager2 = OCPP20VariableManager.getInstance()
 
