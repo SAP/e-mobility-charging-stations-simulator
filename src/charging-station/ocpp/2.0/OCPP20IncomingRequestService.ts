@@ -86,7 +86,12 @@ import {
   validateUUID,
 } from '../../../utils/index.js'
 import { getConfigurationKey } from '../../ConfigurationKeyUtils.js'
-import { getIdTagsFile, hasReservationExpired, resetConnectorStatus } from '../../Helpers.js'
+import {
+  getIdTagsFile,
+  hasPendingReservation,
+  hasPendingReservations,
+  resetConnectorStatus,
+} from '../../Helpers.js'
 import { OCPPAuthServiceFactory } from '../auth/services/OCPPAuthServiceFactory.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
 import { restoreConnectorStatus, sendAndSetConnectorStatus } from '../OCPPServiceUtils.js'
@@ -1328,7 +1333,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     // Check for EVSE-specific active transactions if evseId is provided
     let evseHasActiveTransactions = false
     if (evseId !== undefined && evseId > 0) {
-      const evse = chargingStation.evses.get(evseId)
+      const evse = chargingStation.getEvseStatus(evseId)
       if (evse != null) {
         evseHasActiveTransactions = this.hasEvseActiveTransactions(evse)
       }
@@ -1414,7 +1419,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         // OnIdle reset
         if (evseId !== undefined) {
           // EVSE-specific OnIdle reset
-          const evse = chargingStation.evses.get(evseId)
+          const evse = chargingStation.getEvseStatus(evseId)
           if (evse != null && !this.isEvseIdle(chargingStation, evse)) {
             logger.info(
               `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: OnIdle EVSE reset scheduled for EVSE ${evseId.toString()}, waiting for idle state`
@@ -1516,7 +1521,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
 
     // Get the first connector for this EVSE
-    const evse = chargingStation.evses.get(evseId)
+    const evse = chargingStation.getEvseStatus(evseId)
     if (evse == null) {
       const errorMsg = `EVSE ${evseId.toString()} does not exist on charging station`
       logger.warn(
@@ -1794,7 +1799,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    */
   private hasEvseActiveTransactions (evse: EvseStatus): boolean {
     for (const connector of evse.connectors.values()) {
-      if (connector.transactionId !== undefined) {
+      if (connector.transactionId != null) {
         return true
       }
     }
@@ -1808,7 +1813,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    */
   private hasEvsePendingReservations (evse: EvseStatus): boolean {
     for (const connector of evse.connectors.values()) {
-      if (connector.reservation != null && !hasReservationExpired(connector.reservation)) {
+      if (hasPendingReservation(connector)) {
         return true
       }
     }
@@ -1830,30 +1835,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   /**
-   * Checks if charging station has any non-expired reservations per OCPP 2.0.1 Errata idle definition.
-   * @param chargingStation - The charging station instance
-   * @returns true if any connector has a pending (non-expired) reservation
-   */
-  private hasPendingReservations (chargingStation: ChargingStation): boolean {
-    if (chargingStation.hasEvses) {
-      for (const evse of chargingStation.evses.values()) {
-        for (const connector of evse.connectors.values()) {
-          if (connector.reservation != null && !hasReservationExpired(connector.reservation)) {
-            return true
-          }
-        }
-      }
-    } else {
-      for (const connector of chargingStation.connectors.values()) {
-        if (connector.reservation != null && !hasReservationExpired(connector.reservation)) {
-          return true
-        }
-      }
-    }
-    return false
-  }
-
-  /**
    * Checks if charging station is idle per OCPP 2.0.1 Errata definition.
    * Idle means: no active transactions, no firmware update in progress, no pending reservations.
    * Note: Log uploads and cable lock state are not tracked in the simulator.
@@ -1864,7 +1845,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     return (
       chargingStation.getNumberOfRunningTransactions() === 0 &&
       !this.hasFirmwareUpdateInProgress(chargingStation) &&
-      !this.hasPendingReservations(chargingStation)
+      !hasPendingReservations(chargingStation)
     )
   }
 
@@ -2025,7 +2006,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       // Reset EVSE - this would typically involve resetting the EVSE hardware/software
       // For now, we'll restore connectors to available status after a short delay
       setTimeout(() => {
-        const evse = chargingStation.evses.get(evseId)
+        const evse = chargingStation.getEvseStatus(evseId)
         if (evse) {
           for (const [connectorId] of evse.connectors) {
             const connectorStatus = chargingStation.getConnectorStatus(connectorId)
@@ -2053,7 +2034,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    */
   private scheduleEvseResetOnIdle (chargingStation: ChargingStation, evseId: number): void {
     const monitorInterval = setInterval(() => {
-      const evse = chargingStation.evses.get(evseId)
+      const evse = chargingStation.getEvseStatus(evseId)
       if (evse != null) {
         if (this.isEvseIdle(chargingStation, evse)) {
           clearInterval(monitorInterval)
@@ -2125,7 +2106,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     evseId: number,
     status: OCPP20ConnectorStatusEnumType
   ): void {
-    const evse = chargingStation.evses.get(evseId)
+    const evse = chargingStation.getEvseStatus(evseId)
     if (evse) {
       for (const [connectorId] of evse.connectors) {
         sendAndSetConnectorStatus(
@@ -2210,7 +2191,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     for (const [evseId, evse] of chargingStation.evses) {
       for (const [connectorId, connector] of evse.connectors) {
-        if (connector.transactionId !== undefined) {
+        if (connector.transactionId != null) {
           logger.info(
             `${chargingStation.logPrefix()} ${moduleName}.terminateAllTransactions: Terminating transaction ${connector.transactionId.toString()} on connector ${connectorId.toString()}`
           )
@@ -2248,7 +2229,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     evseId: number,
     reason: OCPP20ReasonEnumType
   ): Promise<void> {
-    const evse = chargingStation.evses.get(evseId)
+    const evse = chargingStation.getEvseStatus(evseId)
     if (!evse) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.terminateEvseTransactions: EVSE ${evseId.toString()} not found`
@@ -2258,7 +2239,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     const terminationPromises: Promise<unknown>[] = []
     for (const [connectorId, connector] of evse.connectors) {
-      if (connector.transactionId !== undefined) {
+      if (connector.transactionId != null) {
         logger.info(
           `${chargingStation.logPrefix()} ${moduleName}.terminateEvseTransactions: Terminating transaction ${connector.transactionId.toString()} on connector ${connectorId.toString()}`
         )

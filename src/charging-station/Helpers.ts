@@ -107,6 +107,39 @@ export const hasReservationExpired = (reservation: Reservation): boolean => {
   return isPast(reservation.expiryDate)
 }
 
+/**
+ * Checks if a connector has a pending (non-expired) reservation.
+ * @param connectorStatus - The connector status to check
+ * @returns true if the connector has a pending reservation, false otherwise
+ */
+export const hasPendingReservation = (connectorStatus: ConnectorStatus): boolean => {
+  return connectorStatus.reservation != null && !hasReservationExpired(connectorStatus.reservation)
+}
+
+/**
+ * Checks if a charging station has any pending (non-expired) reservations.
+ * @param chargingStation - The charging station to check
+ * @returns true if any connector has a pending reservation, false otherwise
+ */
+export const hasPendingReservations = (chargingStation: ChargingStation): boolean => {
+  if (chargingStation.hasEvses) {
+    for (const evseStatus of chargingStation.evses.values()) {
+      for (const connectorStatus of evseStatus.connectors.values()) {
+        if (hasPendingReservation(connectorStatus)) {
+          return true
+        }
+      }
+    }
+  } else {
+    for (const connectorStatus of chargingStation.connectors.values()) {
+      if (hasPendingReservation(connectorStatus)) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
 export const removeExpiredReservations = async (
   chargingStation: ChargingStation
 ): Promise<void> => {

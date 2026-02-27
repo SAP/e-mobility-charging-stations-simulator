@@ -11,6 +11,8 @@ export {
   getConnectorChargingProfiles,
   getIdTagsFile,
   hasFeatureProfile,
+  hasPendingReservation,
+  hasPendingReservations,
   hasReservationExpired,
   prepareChargingProfileKind,
   removeExpiredReservations,

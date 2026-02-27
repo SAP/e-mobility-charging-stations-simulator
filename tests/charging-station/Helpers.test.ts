@@ -13,6 +13,9 @@ import {
   getHashId,
   getMaxNumberOfEvses,
   getPhaseRotationValue,
+  hasPendingReservation,
+  hasPendingReservations,
+  hasReservationExpired,
   validateStationInfo,
 } from '../../src/charging-station/Helpers.js'
 import { BaseError } from '../../src/exception/index.js'
@@ -24,6 +27,7 @@ import {
   type ConnectorStatus,
   ConnectorStatusEnum,
   OCPPVersion,
+  type Reservation,
 } from '../../src/types/index.js'
 import { logger } from '../../src/utils/Logger.js'
 import { createChargingStation, createChargingStationTemplate } from '../ChargingStationFactory.js'
@@ -31,6 +35,15 @@ import { createChargingStation, createChargingStationTemplate } from '../Chargin
 await describe('Helpers test suite', async () => {
   const baseName = 'CS-TEST'
   const chargingStationTemplate = createChargingStationTemplate(baseName)
+
+  // Helper to create test reservations with configurable expiry
+  const createTestReservation = (expired = false): Reservation =>
+    ({
+      connectorId: 1,
+      expiryDate: new Date(Date.now() + (expired ? -60000 : 60000)),
+      idTag: 'tag1',
+      reservationId: 1,
+    }) as Reservation
 
   await it('Verify getChargingStationId()', () => {
     expect(getChargingStationId(1, chargingStationTemplate)).toBe(`${baseName}-00001`)
@@ -469,5 +482,80 @@ await describe('Helpers test suite', async () => {
     expect(getBootConnectorStatus(chargingStation, 1, connectorStatus)).toBe(
       ConnectorStatusEnum.Available
     )
+  })
+
+  // Tests for reservation helper functions
+  await it('Verify hasReservationExpired() - expired reservation', () => {
+    expect(hasReservationExpired(createTestReservation(true))).toBe(true)
+  })
+
+  await it('Verify hasReservationExpired() - valid reservation', () => {
+    expect(hasReservationExpired(createTestReservation(false))).toBe(false)
+  })
+
+  await it('Verify hasPendingReservation() - no reservation', () => {
+    const connectorStatus = {} as ConnectorStatus
+    expect(hasPendingReservation(connectorStatus)).toBe(false)
+  })
+
+  await it('Verify hasPendingReservation() - with valid reservation', () => {
+    const connectorStatus = { reservation: createTestReservation(false) } as ConnectorStatus
+    expect(hasPendingReservation(connectorStatus)).toBe(true)
+  })
+
+  await it('Verify hasPendingReservation() - with expired reservation', () => {
+    const connectorStatus = { reservation: createTestReservation(true) } as ConnectorStatus
+    expect(hasPendingReservation(connectorStatus)).toBe(false)
+  })
+
+  await it('Verify hasPendingReservations() - no reservations (without EVSEs)', () => {
+    const chargingStation = createChargingStation({ baseName, connectorsCount: 2 })
+    expect(hasPendingReservations(chargingStation)).toBe(false)
+  })
+
+  await it('Verify hasPendingReservations() - with pending reservation (without EVSEs)', () => {
+    const chargingStation = createChargingStation({ baseName, connectorsCount: 2 })
+    const connectorStatus = chargingStation.connectors.get(1)
+    if (connectorStatus != null) {
+      connectorStatus.reservation = createTestReservation(false)
+    }
+    expect(hasPendingReservations(chargingStation)).toBe(true)
+  })
+
+  await it('Verify hasPendingReservations() - no reservations (with EVSEs)', () => {
+    const chargingStation = createChargingStation({
+      baseName,
+      connectorsCount: 2,
+      stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+    })
+    expect(hasPendingReservations(chargingStation)).toBe(false)
+  })
+
+  await it('Verify hasPendingReservations() - with pending reservation (with EVSEs)', () => {
+    const chargingStation = createChargingStation({
+      baseName,
+      connectorsCount: 2,
+      stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+    })
+    const firstEvse = chargingStation.evses.get(1)
+    const firstConnector = firstEvse?.connectors.values().next().value
+    if (firstConnector != null) {
+      firstConnector.reservation = createTestReservation(false)
+    }
+    expect(hasPendingReservations(chargingStation)).toBe(true)
+  })
+
+  await it('Verify hasPendingReservations() - with expired reservation only (with EVSEs)', () => {
+    const chargingStation = createChargingStation({
+      baseName,
+      connectorsCount: 2,
+      stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+    })
+    const firstEvse = chargingStation.evses.get(1)
+    const firstConnector = firstEvse?.connectors.values().next().value
+    if (firstConnector != null) {
+      firstConnector.reservation = createTestReservation(true)
+    }
+    expect(hasPendingReservations(chargingStation)).toBe(false)
   })
 })

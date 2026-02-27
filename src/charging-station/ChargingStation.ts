@@ -539,6 +539,15 @@ export class ChargingStation extends EventEmitter {
     return undefined
   }
 
+  /**
+   * Returns the EVSE status for the given EVSE ID.
+   * @param evseId - The EVSE ID to look up
+   * @returns The EvseStatus if found, undefined otherwise
+   */
+  public getEvseStatus (evseId: number): EvseStatus | undefined {
+    return this.evses.get(evseId)
+  }
+
   public getHeartbeatInterval (): number {
     const HeartbeatInterval = getConfigurationKey(this, StandardParametersKey.HeartbeatInterval)
     if (HeartbeatInterval != null) {
