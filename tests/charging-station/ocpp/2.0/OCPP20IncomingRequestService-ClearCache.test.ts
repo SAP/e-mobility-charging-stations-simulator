@@ -31,7 +31,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
   const testableService = createTestableIncomingRequestService(incomingRequestService)
 
   // FR: C11.FR.01 - CS SHALL attempt to clear its Authorization Cache
-  await it('Should handle ClearCache request successfully', async () => {
+  await it('should handle ClearCache request successfully', async () => {
     const response = await testableService.handleRequestClearCache(mockChargingStation)
 
     expect(response).toBeDefined()
@@ -42,7 +42,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
   })
 
   // FR: C11.FR.02 - Return correct status based on cache clearing result
-  await it('Should return correct status based on cache clearing result', async () => {
+  await it('should return correct status based on cache clearing result', async () => {
     const response = await testableService.handleRequestClearCache(mockChargingStation)
 
     expect(response).toBeDefined()
@@ -53,7 +53,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
 
   // CLR-001: Verify Authorization Cache is cleared (not IdTagsCache)
   await describe('CLR-001 - ClearCache clears Authorization Cache', async () => {
-    await it('Should call authService.clearCache() on ClearCache request', async () => {
+    await it('should call authService.clearCache() on ClearCache request', async () => {
       // Create a mock auth service to verify clearCache is called
       let clearCacheCalled = false
       const mockAuthService = {
@@ -83,7 +83,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
       }
     })
 
-    await it('Should NOT call idTagsCache.deleteIdTags() on ClearCache request', async () => {
+    await it('should NOT call idTagsCache.deleteIdTags() on ClearCache request', async () => {
       // Verify that IdTagsCache is not touched
       let deleteIdTagsCalled = false
       const originalDeleteIdTags = mockChargingStation.idTagsCache.deleteIdTags.bind(mockChargingStation.idTagsCache)
@@ -106,7 +106,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
 
   // CLR-002: Verify AuthCacheEnabled check per C11.FR.04
   await describe('CLR-002 - AuthCacheEnabled Check (C11.FR.04)', async () => {
-    await it('Should return Rejected when AuthCacheEnabled is false', async () => {
+    await it('should return Rejected when AuthCacheEnabled is false', async () => {
       // Create a mock auth service with cache disabled
       const mockAuthService = {
         clearCache: (): Promise<void> => {
@@ -133,7 +133,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
       }
     })
 
-    await it('Should return Accepted when AuthCacheEnabled is true and clear succeeds', async () => {
+    await it('should return Accepted when AuthCacheEnabled is true and clear succeeds', async () => {
       // Create a mock auth service with cache enabled
       const mockAuthService = {
         clearCache: (): Promise<void> => {
@@ -161,7 +161,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
       }
     })
 
-    await it('Should return Rejected when clearCache throws an error', async () => {
+    await it('should return Rejected when clearCache throws an error', async () => {
       // Create a mock auth service that throws on clearCache
       const mockAuthService = {
         clearCache: (): Promise<void> => {
@@ -188,7 +188,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
       }
     })
 
-    await it('Should not attempt to clear cache when AuthCacheEnabled is false', async () => {
+    await it('should not attempt to clear cache when AuthCacheEnabled is false', async () => {
       let clearCacheAttempted = false
       const mockAuthService = {
         clearCache: (): Promise<void> => {
@@ -220,7 +220,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
 
   // C11.FR.05: IF the CS does not support an Authorization Cache → Rejected
   await describe('C11.FR.05 - No Authorization Cache Support', async () => {
-    await it('Should return Rejected when authService factory fails (no cache support)', async () => {
+    await it('should return Rejected when authService factory fails (no cache support)', async () => {
       // Mock factory to throw error (simulates no Authorization Cache support)
       const originalGetInstance = OCPPAuthServiceFactory.getInstance.bind(OCPPAuthServiceFactory)
       Object.assign(OCPPAuthServiceFactory, {

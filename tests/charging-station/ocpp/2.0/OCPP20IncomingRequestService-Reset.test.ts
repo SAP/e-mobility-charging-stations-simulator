@@ -63,7 +63,7 @@ await describe('B11 & B12 - Reset', async () => {
 
   await describe('B11 - Reset - Without Ongoing Transaction', async () => {
     // FR: B11.FR.01
-    await it('Should handle Reset request with Immediate type when no transactions', async () => {
+    await it('should handle Reset request with Immediate type when no transactions', async () => {
       const resetRequest: OCPP20ResetRequest = {
         type: ResetEnumType.Immediate,
       }
@@ -84,7 +84,7 @@ await describe('B11 & B12 - Reset', async () => {
       ]).toContain(response.status)
     })
 
-    await it('Should handle Reset request with OnIdle type when no transactions', async () => {
+    await it('should handle Reset request with OnIdle type when no transactions', async () => {
       const resetRequest: OCPP20ResetRequest = {
         type: ResetEnumType.OnIdle,
       }
@@ -104,7 +104,7 @@ await describe('B11 & B12 - Reset', async () => {
     })
 
     // FR: B11.FR.03
-    await it('Should handle EVSE-specific reset request when no transactions', async () => {
+    await it('should handle EVSE-specific reset request when no transactions', async () => {
       const resetRequest: OCPP20ResetRequest = {
         evseId: 1,
         type: ResetEnumType.Immediate,
@@ -124,7 +124,7 @@ await describe('B11 & B12 - Reset', async () => {
       ]).toContain(response.status)
     })
 
-    await it('Should reject reset for non-existent EVSE when no transactions', async () => {
+    await it('should reject reset for non-existent EVSE when no transactions', async () => {
       const resetRequest: OCPP20ResetRequest = {
         evseId: 999, // Non-existent EVSE
         type: ResetEnumType.Immediate,
@@ -142,7 +142,7 @@ await describe('B11 & B12 - Reset', async () => {
       expect(response.statusInfo?.additionalInfo).toContain('EVSE 999')
     })
 
-    await it('Should return proper response structure for immediate reset without transactions', async () => {
+    await it('should return proper response structure for immediate reset without transactions', async () => {
       const resetRequest: OCPP20ResetRequest = {
         type: ResetEnumType.Immediate,
       }
@@ -162,7 +162,7 @@ await describe('B11 & B12 - Reset', async () => {
       }
     })
 
-    await it('Should return proper response structure for OnIdle reset without transactions', async () => {
+    await it('should return proper response structure for OnIdle reset without transactions', async () => {
       const resetRequest: OCPP20ResetRequest = {
         type: ResetEnumType.OnIdle,
       }
@@ -176,7 +176,7 @@ await describe('B11 & B12 - Reset', async () => {
       expect(response.status).toBe(ResetStatusEnumType.Accepted)
     })
 
-    await it('Should reject EVSE reset when not supported and no transactions', async () => {
+    await it('should reject EVSE reset when not supported and no transactions', async () => {
       // Mock charging station without EVSE support
       const originalHasEvses = mockChargingStation.hasEvses
       ;(mockChargingStation as { hasEvses: boolean }).hasEvses = false
@@ -203,7 +203,7 @@ await describe('B11 & B12 - Reset', async () => {
       ;(mockChargingStation as { hasEvses: boolean }).hasEvses = originalHasEvses
     })
 
-    await it('Should handle EVSE-specific reset without transactions', async () => {
+    await it('should handle EVSE-specific reset without transactions', async () => {
       const resetRequest: OCPP20ResetRequest = {
         evseId: 1,
         type: ResetEnumType.Immediate,
@@ -222,7 +222,7 @@ await describe('B11 & B12 - Reset', async () => {
 
   await describe('B12 - Reset - With Ongoing Transaction', async () => {
     // FR: B12.FR.02
-    await it('Should handle immediate reset with active transactions', async () => {
+    await it('should handle immediate reset with active transactions', async () => {
       // Mock active transactions
       mockStation.getNumberOfRunningTransactions = () => 1
 
@@ -244,7 +244,7 @@ await describe('B11 & B12 - Reset', async () => {
     })
 
     // FR: B12.FR.01
-    await it('Should handle OnIdle reset with active transactions', async () => {
+    await it('should handle OnIdle reset with active transactions', async () => {
       // Mock active transactions
       mockStation.getNumberOfRunningTransactions = () => 1
 
@@ -266,7 +266,7 @@ await describe('B11 & B12 - Reset', async () => {
     })
 
     // FR: B12.FR.03
-    await it('Should handle EVSE-specific reset with active transactions', async () => {
+    await it('should handle EVSE-specific reset with active transactions', async () => {
       // Mock active transactions
       mockStation.getNumberOfRunningTransactions = () => 1
 
@@ -290,7 +290,7 @@ await describe('B11 & B12 - Reset', async () => {
       mockStation.getNumberOfRunningTransactions = () => 0
     })
 
-    await it('Should reject EVSE reset when not supported with active transactions', async () => {
+    await it('should reject EVSE reset when not supported with active transactions', async () => {
       // Mock charging station without EVSE support and active transactions
       const originalHasEvses = mockChargingStation.hasEvses
       ;(mockChargingStation as { hasEvses: boolean }).hasEvses = false
@@ -353,7 +353,7 @@ await describe('B11 & B12 - Reset', async () => {
         // Errata 2.14: OnIdle definition includes firmware updates
         // Charging station is NOT idle when firmware is Downloading, Downloaded, or Installing
 
-        await it('Should return Scheduled when firmware is Downloading', async () => {
+        await it('should return Scheduled when firmware is Downloading', async () => {
           const station = createTestStation()
           // Mock firmware status as Downloading
           Object.assign(station.stationInfo, {
@@ -373,7 +373,7 @@ await describe('B11 & B12 - Reset', async () => {
           expect(response.status).toBe(ResetStatusEnumType.Scheduled)
         })
 
-        await it('Should return Scheduled when firmware is Downloaded', async () => {
+        await it('should return Scheduled when firmware is Downloaded', async () => {
           const station = createTestStation()
           // Mock firmware status as Downloaded (waiting to install)
           Object.assign(station.stationInfo, {
@@ -393,7 +393,7 @@ await describe('B11 & B12 - Reset', async () => {
           expect(response.status).toBe(ResetStatusEnumType.Scheduled)
         })
 
-        await it('Should return Scheduled when firmware is Installing', async () => {
+        await it('should return Scheduled when firmware is Installing', async () => {
           const station = createTestStation()
           // Mock firmware status as Installing
           Object.assign(station.stationInfo, {
@@ -413,7 +413,7 @@ await describe('B11 & B12 - Reset', async () => {
           expect(response.status).toBe(ResetStatusEnumType.Scheduled)
         })
 
-        await it('Should return Accepted when firmware is Installed (complete)', async () => {
+        await it('should return Accepted when firmware is Installed (complete)', async () => {
           const station = createTestStation()
           // Mock firmware status as Installed (update complete)
           Object.assign(station.stationInfo, {
@@ -433,7 +433,7 @@ await describe('B11 & B12 - Reset', async () => {
           expect(response.status).toBe(ResetStatusEnumType.Accepted)
         })
 
-        await it('Should return Accepted when firmware status is Idle', async () => {
+        await it('should return Accepted when firmware status is Idle', async () => {
           const station = createTestStation()
           // Mock firmware status as Idle (no update in progress)
           Object.assign(station.stationInfo, {
@@ -458,7 +458,7 @@ await describe('B11 & B12 - Reset', async () => {
         // Errata 2.14: OnIdle definition includes pending reservations
         // Charging station is NOT idle when a connector has a non-expired reservation
 
-        await it('Should return Scheduled when connector has non-expired reservation', async () => {
+        await it('should return Scheduled when connector has non-expired reservation', async () => {
           const station = createTestStation()
           // Create a reservation that expires in 1 hour (future)
           const futureExpiryDate = new Date(Date.now() + 3600000)
@@ -491,7 +491,7 @@ await describe('B11 & B12 - Reset', async () => {
           expect(response.status).toBe(ResetStatusEnumType.Scheduled)
         })
 
-        await it('Should return Accepted when reservation is expired', async () => {
+        await it('should return Accepted when reservation is expired', async () => {
           const station = createTestStation()
           // Create a reservation that expired 1 hour ago (past)
           const pastExpiryDate = new Date(Date.now() - 3600000)
@@ -525,7 +525,7 @@ await describe('B11 & B12 - Reset', async () => {
           expect(response.status).toBe(ResetStatusEnumType.Accepted)
         })
 
-        await it('Should return Accepted when no reservations exist', async () => {
+        await it('should return Accepted when no reservations exist', async () => {
           const station = createTestStation()
           // No reservations set (default state)
 
@@ -546,7 +546,7 @@ await describe('B11 & B12 - Reset', async () => {
       await describe('Idle Condition', async () => {
         // Errata 2.14: Station is idle when NO transactions, NO firmware update, NO reservations
 
-        await it('Should return Accepted when all conditions clear (true idle state)', async () => {
+        await it('should return Accepted when all conditions clear (true idle state)', async () => {
           const station = createTestStation()
           // Ensure no transactions
           station.getNumberOfRunningTransactions = () => 0
@@ -569,7 +569,7 @@ await describe('B11 & B12 - Reset', async () => {
           expect(response.status).toBe(ResetStatusEnumType.Accepted)
         })
 
-        await it('Should return Scheduled when multiple blocking conditions exist', async () => {
+        await it('should return Scheduled when multiple blocking conditions exist', async () => {
           const station = createTestStation()
           // Active transaction
           station.getNumberOfRunningTransactions = () => 1

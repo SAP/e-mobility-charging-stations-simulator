@@ -88,7 +88,7 @@ await describe('I03 - InstallCertificate', async () => {
   const testableService = createTestableIncomingRequestService(incomingRequestService)
 
   await describe('Valid Certificate Installation', async () => {
-    await it('Should accept valid V2GRootCertificate', async () => {
+    await it('should accept valid V2GRootCertificate', async () => {
       stationWithCertManager.certificateManager = createMockCertificateManager({
         storeCertificateResult: true,
       })
@@ -109,7 +109,7 @@ await describe('I03 - InstallCertificate', async () => {
       expect(response.statusInfo).toBeUndefined()
     })
 
-    await it('Should accept valid MORootCertificate', async () => {
+    await it('should accept valid MORootCertificate', async () => {
       stationWithCertManager.certificateManager = createMockCertificateManager({
         storeCertificateResult: true,
       })
@@ -127,7 +127,7 @@ await describe('I03 - InstallCertificate', async () => {
       expect(response.statusInfo).toBeUndefined()
     })
 
-    await it('Should accept valid CSMSRootCertificate', async () => {
+    await it('should accept valid CSMSRootCertificate', async () => {
       stationWithCertManager.certificateManager = createMockCertificateManager({
         storeCertificateResult: true,
       })
@@ -145,7 +145,7 @@ await describe('I03 - InstallCertificate', async () => {
       expect(response.statusInfo).toBeUndefined()
     })
 
-    await it('Should accept valid ManufacturerRootCertificate', async () => {
+    await it('should accept valid ManufacturerRootCertificate', async () => {
       stationWithCertManager.certificateManager = createMockCertificateManager({
         storeCertificateResult: true,
       })
@@ -165,7 +165,7 @@ await describe('I03 - InstallCertificate', async () => {
   })
 
   await describe('Invalid Certificate Handling', async () => {
-    await it('Should reject certificate with invalid PEM format', async () => {
+    await it('should reject certificate with invalid PEM format', async () => {
       const request: OCPP20InstallCertificateRequest = {
         certificate: INVALID_PEM_CERTIFICATE_MISSING_MARKERS,
         certificateType: InstallCertificateUseEnumType.V2GRootCertificate,
@@ -181,7 +181,7 @@ await describe('I03 - InstallCertificate', async () => {
       expect(typeof response.statusInfo?.reasonCode).toBe('string')
     })
 
-    await it('Should reject expired certificate when validation is enabled', async () => {
+    await it('should reject expired certificate when validation is enabled', async () => {
       stationWithCertManager.certificateManager = createMockCertificateManager({
         storeCertificateResult: false,
       })
@@ -205,7 +205,7 @@ await describe('I03 - InstallCertificate', async () => {
   })
 
   await describe('Storage Failure Handling', async () => {
-    await it('Should return Failed status when storage is full', async () => {
+    await it('should return Failed status when storage is full', async () => {
       stationWithCertManager.certificateManager = createMockCertificateManager({
         storeCertificateError: new Error('Storage full'),
       })
@@ -226,7 +226,7 @@ await describe('I03 - InstallCertificate', async () => {
   })
 
   await describe('Response Structure Validation', async () => {
-    await it('Should return response matching InstallCertificateResponse schema', async () => {
+    await it('should return response matching InstallCertificateResponse schema', async () => {
       stationWithCertManager.certificateManager = createMockCertificateManager({
         storeCertificateResult: true,
       })
@@ -263,7 +263,7 @@ await describe('I03 - InstallCertificate', async () => {
       }
     })
 
-    await it('Should include statusInfo with reasonCode for rejection', async () => {
+    await it('should include statusInfo with reasonCode for rejection', async () => {
       const request: OCPP20InstallCertificateRequest = {
         certificate: INVALID_PEM_CERTIFICATE_MISSING_MARKERS,
         certificateType: InstallCertificateUseEnumType.V2GRootCertificate,

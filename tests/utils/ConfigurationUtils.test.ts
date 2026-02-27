@@ -15,17 +15,17 @@ import {
 } from '../../src/utils/ConfigurationUtils.js'
 
 await describe('ConfigurationUtils test suite', async () => {
-  await it('Verify logPrefix()', () => {
+  await it('should verify logPrefix()', () => {
     expect(logPrefix()).toContain(' Simulator configuration |')
   })
 
-  await it('Verify buildPerformanceUriFilePath()', () => {
+  await it('should verify buildPerformanceUriFilePath()', () => {
     const result = buildPerformanceUriFilePath('test.json')
     expect(result).toContain('test.json')
     expect(result).toMatch(/^file:\/\/.*test\.json$/)
   })
 
-  await it('Verify getDefaultPerformanceStorageUri()', () => {
+  await it('should verify getDefaultPerformanceStorageUri()', () => {
     // Test JSON_FILE storage type
     const jsonUri = getDefaultPerformanceStorageUri(StorageType.JSON_FILE)
     expect(jsonUri).toMatch(/^file:\/\/.*\.json$/)
@@ -42,7 +42,7 @@ await describe('ConfigurationUtils test suite', async () => {
     }).toThrow(Error)
   })
 
-  await it('Verify handleFileException()', t => {
+  await it('should verify handleFileException()', t => {
     const mockConsoleError = t.mock.method(console, 'error')
     const error = new Error() as NodeJS.ErrnoException
     error.code = 'ENOENT'
@@ -52,7 +52,7 @@ await describe('ConfigurationUtils test suite', async () => {
     expect(mockConsoleError.mock.calls.length).toBe(1)
   })
 
-  await it('Verify checkWorkerElementsPerWorker()', () => {
+  await it('should verify checkWorkerElementsPerWorker()', () => {
     // These calls should not throw exceptions
     expect(() => {
       checkWorkerElementsPerWorker(undefined)

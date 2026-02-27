@@ -23,7 +23,7 @@ import { createChargingStation } from '../ChargingStationFactory.js'
 await describe('ErrorUtils test suite', async () => {
   const chargingStation = createChargingStation({ baseName: 'CS-TEST' })
 
-  await it('Verify handleFileException()', t => {
+  await it('should verify handleFileException()', t => {
     const consoleWarnMock = t.mock.method(console, 'warn')
     const consoleErrorMock = t.mock.method(console, 'error')
     const warnMock = t.mock.method(logger, 'warn')
@@ -55,7 +55,7 @@ await describe('ErrorUtils test suite', async () => {
     expect(consoleErrorMock.mock.calls.length).toBe(1)
   })
 
-  await it('Verify handleSendMessageError()', t => {
+  await it('should verify handleSendMessageError()', t => {
     const errorMock = t.mock.method(logger, 'error')
     const logPrefixMock = t.mock.method(chargingStation, 'logPrefix')
     const error = new Error()
@@ -80,7 +80,7 @@ await describe('ErrorUtils test suite', async () => {
     expect(errorMock.mock.calls.length).toBe(2)
   })
 
-  await it('Verify handleIncomingRequestError()', t => {
+  await it('should verify handleIncomingRequestError()', t => {
     const errorMock = t.mock.method(logger, 'error')
     const logPrefixMock = t.mock.method(chargingStation, 'logPrefix')
     const error = new Error()

@@ -54,7 +54,7 @@ await describe('E03 - IdToken-First Pre-Authorization Flow', async () => {
   // E03.FR.13: Trigger Reason Selection for IdToken-First
   // =========================================================================
   await describe('E03.FR.13 - Trigger Reason Selection', async () => {
-    await it('Should select Authorized trigger for IdToken-first transaction start', () => {
+    await it('should select Authorized trigger for IdToken-first transaction start', () => {
       // E03.FR.13: triggerReason SHALL be Authorized for IdToken-first
       const context: OCPP20TransactionContext = {
         authorizationMethod: 'idToken',
@@ -69,7 +69,7 @@ await describe('E03 - IdToken-First Pre-Authorization Flow', async () => {
       expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.Authorized)
     })
 
-    await it('Should select groupIdToken trigger for group authorization', () => {
+    await it('should select groupIdToken trigger for group authorization', () => {
       const context: OCPP20TransactionContext = {
         authorizationMethod: 'groupIdToken',
         source: 'local_authorization',
@@ -83,7 +83,7 @@ await describe('E03 - IdToken-First Pre-Authorization Flow', async () => {
       expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.Authorized)
     })
 
-    await it('Should differentiate IdToken-first from Cable-first by trigger reason', () => {
+    await it('should differentiate IdToken-first from Cable-first by trigger reason', () => {
       // IdToken-first: Authorized trigger
       const idTokenFirstContext: OCPP20TransactionContext = {
         authorizationMethod: 'idToken',
@@ -116,7 +116,7 @@ await describe('E03 - IdToken-First Pre-Authorization Flow', async () => {
   // E03.FR.01: IdToken Inclusion in TransactionEvent
   // =========================================================================
   await describe('E03.FR.01 - IdToken in TransactionEvent', async () => {
-    await it('Should include idToken in first TransactionEvent after authorization', () => {
+    await it('should include idToken in first TransactionEvent after authorization', () => {
       const connectorId = 1
       const transactionId = generateUUID()
       const idToken: OCPP20IdTokenType = {
@@ -143,7 +143,7 @@ await describe('E03 - IdToken-First Pre-Authorization Flow', async () => {
       expect(startedEvent.triggerReason).toBe(OCPP20TriggerReasonEnumType.Authorized)
     })
 
-    await it('Should not include idToken in subsequent events (E03.FR.01 compliance)', () => {
+    await it('should not include idToken in subsequent events (E03.FR.01 compliance)', () => {
       const connectorId = 1
       const transactionId = generateUUID()
       const idToken: OCPP20IdTokenType = {
@@ -177,7 +177,7 @@ await describe('E03 - IdToken-First Pre-Authorization Flow', async () => {
       expect(updatedEvent.idToken).toBeUndefined()
     })
 
-    await it('Should support various IdToken types for E03 flow', () => {
+    await it('should support various IdToken types for E03 flow', () => {
       const connectorId = 1
       const transactionId = generateUUID()
 
@@ -231,7 +231,7 @@ await describe('E03 - IdToken-First Pre-Authorization Flow', async () => {
   // Full E03 IdToken-First Transaction Lifecycle
   // =========================================================================
   await describe('Full IdToken-First Transaction Lifecycle', async () => {
-    await it('Should support complete IdToken-first to cable to charging to end flow', () => {
+    await it('should support complete IdToken-first to cable to charging to end flow', () => {
       const connectorId = 1
       const transactionId = generateUUID()
       const idToken: OCPP20IdTokenType = {
@@ -303,7 +303,7 @@ await describe('E03 - IdToken-First Pre-Authorization Flow', async () => {
       expect(endedEvent.transactionInfo.transactionId).toBe(transactionId)
     })
 
-    await it('Should differentiate E03 lifecycle from E02 Cable-First lifecycle', () => {
+    await it('should differentiate E03 lifecycle from E02 Cable-First lifecycle', () => {
       const connectorId = 1
       const e03TransactionId = generateUUID()
       const e02TransactionId = generateUUID()
@@ -356,7 +356,7 @@ await describe('E03 - IdToken-First Pre-Authorization Flow', async () => {
   // E03.FR.05/06: EVConnectionTimeOut Handling
   // =========================================================================
   await describe('E03.FR.05/06 - EVConnectionTimeOut', async () => {
-    await it('Should support authorization cancellation event (cable not connected)', () => {
+    await it('should support authorization cancellation event (cable not connected)', () => {
       const connectorId = 1
       const transactionId = generateUUID()
       const idToken: OCPP20IdTokenType = {
@@ -398,7 +398,7 @@ await describe('E03 - IdToken-First Pre-Authorization Flow', async () => {
       )
     })
 
-    await it('Should track sequence numbers correctly for timeout scenario', () => {
+    await it('should track sequence numbers correctly for timeout scenario', () => {
       const connectorId = 1
       const transactionId = generateUUID()
 
@@ -431,7 +431,7 @@ await describe('E03 - IdToken-First Pre-Authorization Flow', async () => {
   // Authorization Status Handling
   // =========================================================================
   await describe('Authorization Status in E03 Flow', async () => {
-    await it('Should support Deauthorized trigger for rejected authorization', () => {
+    await it('should support Deauthorized trigger for rejected authorization', () => {
       const context: OCPP20TransactionContext = {
         authorizationMethod: 'idToken',
         isDeauthorized: true,
@@ -446,7 +446,7 @@ await describe('E03 - IdToken-First Pre-Authorization Flow', async () => {
       expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.Deauthorized)
     })
 
-    await it('Should handle transaction end after token revocation', () => {
+    await it('should handle transaction end after token revocation', () => {
       const connectorId = 1
       const transactionId = generateUUID()
       const idToken: OCPP20IdTokenType = {
@@ -480,7 +480,7 @@ await describe('E03 - IdToken-First Pre-Authorization Flow', async () => {
       expect(revokedEvent.triggerReason).toBe(OCPP20TriggerReasonEnumType.Deauthorized)
     })
 
-    await it('Should support StopAuthorized trigger for normal transaction end', () => {
+    await it('should support StopAuthorized trigger for normal transaction end', () => {
       const context: OCPP20TransactionContext = {
         authorizationMethod: 'stopAuthorized',
         source: 'local_authorization',
@@ -499,7 +499,7 @@ await describe('E03 - IdToken-First Pre-Authorization Flow', async () => {
   // E03.FR.07/08: Sequence Numbers and Transaction ID
   // =========================================================================
   await describe('E03.FR.07/08 - Sequence Numbers and Transaction ID', async () => {
-    await it('Should maintain continuous sequence numbers throughout E03 lifecycle', () => {
+    await it('should maintain continuous sequence numbers throughout E03 lifecycle', () => {
       const connectorId = 1
       const transactionId = generateUUID()
       const idToken: OCPP20IdTokenType = {
@@ -554,7 +554,7 @@ await describe('E03 - IdToken-First Pre-Authorization Flow', async () => {
       })
     })
 
-    await it('Should use unique transaction ID (E03.FR.08)', () => {
+    await it('should use unique transaction ID (E03.FR.08)', () => {
       const connectorId = 1
 
       OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
@@ -593,7 +593,7 @@ await describe('E03 - IdToken-First Pre-Authorization Flow', async () => {
   // Multiple Connector Independence
   // =========================================================================
   await describe('Multiple Connector Independence in E03 Flow', async () => {
-    await it('Should handle independent E03 transactions on different connectors', () => {
+    await it('should handle independent E03 transactions on different connectors', () => {
       const connector1 = 1
       const connector2 = 2
       const transaction1Id = generateUUID()

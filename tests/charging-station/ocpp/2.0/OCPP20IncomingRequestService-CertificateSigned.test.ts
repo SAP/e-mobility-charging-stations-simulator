@@ -125,7 +125,7 @@ await describe('I04 - CertificateSigned', async () => {
   const testableService = createTestableIncomingRequestService(incomingRequestService)
 
   await describe('Valid Certificate Chain Installation', async () => {
-    await it('Should accept valid certificate chain', async () => {
+    await it('should accept valid certificate chain', async () => {
       mockChargingStation.certificateManager = createMockCertificateManager({
         storeCertificateResult: true,
       })
@@ -145,7 +145,7 @@ await describe('I04 - CertificateSigned', async () => {
       expect(response.status).toBe(GenericStatus.Accepted)
     })
 
-    await it('Should accept single certificate (no chain)', async () => {
+    await it('should accept single certificate (no chain)', async () => {
       mockChargingStation.certificateManager = createMockCertificateManager({
         storeCertificateResult: true,
       })
@@ -165,7 +165,7 @@ await describe('I04 - CertificateSigned', async () => {
   })
 
   await describe('Invalid Certificate Handling', async () => {
-    await it('Should reject certificate with invalid PEM format', async () => {
+    await it('should reject certificate with invalid PEM format', async () => {
       const request: OCPP20CertificateSignedRequest = {
         certificateChain: INVALID_PEM_CERTIFICATE_MISSING_MARKERS,
         certificateType: CertificateSigningUseEnumType.ChargingStationCertificate,
@@ -183,7 +183,7 @@ await describe('I04 - CertificateSigned', async () => {
   })
 
   await describe('ChargingStationCertificate Reconnect Logic', async () => {
-    await it('Should trigger websocket reconnect for ChargingStationCertificate type', async () => {
+    await it('should trigger websocket reconnect for ChargingStationCertificate type', async () => {
       const mockCertManager = createMockCertificateManager({
         storeCertificateResult: true,
       })
@@ -206,7 +206,7 @@ await describe('I04 - CertificateSigned', async () => {
   })
 
   await describe('V2GCertificate Storage', async () => {
-    await it('Should store V2GCertificate separately without reconnect', async () => {
+    await it('should store V2GCertificate separately without reconnect', async () => {
       const mockCertManager = createMockCertificateManager({
         storeCertificateResult: true,
       })
@@ -231,7 +231,7 @@ await describe('I04 - CertificateSigned', async () => {
   })
 
   await describe('Certificate Manager Missing', async () => {
-    await it('Should return Rejected status with InternalError when certificate manager is missing', async () => {
+    await it('should return Rejected status with InternalError when certificate manager is missing', async () => {
       // Create a separate mock charging station without certificateManager
       const stationWithoutCertManager = createChargingStation({
         baseName: TEST_CHARGING_STATION_BASE_NAME,
@@ -264,7 +264,7 @@ await describe('I04 - CertificateSigned', async () => {
   })
 
   await describe('Storage Failure Handling', async () => {
-    await it('Should return Rejected status when storage fails', async () => {
+    await it('should return Rejected status when storage fails', async () => {
       mockChargingStation.certificateManager = createMockCertificateManager({
         storeCertificateResult: false,
       })
@@ -283,7 +283,7 @@ await describe('I04 - CertificateSigned', async () => {
       expect(response.statusInfo?.reasonCode).toBeDefined()
     })
 
-    await it('Should return Rejected status when storage throws error', async () => {
+    await it('should return Rejected status when storage throws error', async () => {
       mockChargingStation.certificateManager = createMockCertificateManager({
         storeCertificateError: new Error('Storage full'),
       })
@@ -304,7 +304,7 @@ await describe('I04 - CertificateSigned', async () => {
   })
 
   await describe('Response Structure Validation', async () => {
-    await it('Should return response matching CertificateSignedResponse schema', async () => {
+    await it('should return response matching CertificateSignedResponse schema', async () => {
       mockChargingStation.certificateManager = createMockCertificateManager({
         storeCertificateResult: true,
       })
@@ -340,7 +340,7 @@ await describe('I04 - CertificateSigned', async () => {
       }
     })
 
-    await it('Should include statusInfo with reasonCode for rejection', async () => {
+    await it('should include statusInfo with reasonCode for rejection', async () => {
       const request: OCPP20CertificateSignedRequest = {
         certificateChain: INVALID_PEM_CERTIFICATE_MISSING_MARKERS,
         certificateType: CertificateSigningUseEnumType.ChargingStationCertificate,

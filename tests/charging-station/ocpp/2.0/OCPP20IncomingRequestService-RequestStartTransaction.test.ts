@@ -62,7 +62,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
   })
 
   // FR: F01.FR.03, F01.FR.04, F01.FR.05, F01.FR.13
-  await it('Should handle RequestStartTransaction with valid evseId and idToken', async () => {
+  await it('should handle RequestStartTransaction with valid evseId and idToken', async () => {
     const validRequest: OCPP20RequestStartTransactionRequest = {
       evseId: 1,
       idToken: {
@@ -84,7 +84,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
   })
 
   // FR: F01.FR.17, F02.FR.05 - Verify remoteStartId and idToken are stored for later TransactionEvent
-  await it('Should store remoteStartId and idToken in connector status for TransactionEvent', async () => {
+  await it('should store remoteStartId and idToken in connector status for TransactionEvent', async () => {
     const spyChargingStation = createChargingStation({
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 3,
@@ -132,7 +132,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
   })
 
   // FR: F01.FR.19
-  await it('Should handle RequestStartTransaction with groupIdToken', async () => {
+  await it('should handle RequestStartTransaction with groupIdToken', async () => {
     const requestWithGroupToken: OCPP20RequestStartTransactionRequest = {
       evseId: 3,
       groupIdToken: {
@@ -157,7 +157,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
   })
 
   // OCPP 2.0.1 §2.10 ChargingProfile validation tests
-  await it('Should accept RequestStartTransaction with valid TxProfile (no transactionId)', async () => {
+  await it('should accept RequestStartTransaction with valid TxProfile (no transactionId)', async () => {
     const validChargingProfile: OCPP20ChargingProfileType = {
       chargingProfileKind: OCPP20ChargingProfileKindEnumType.Relative,
       chargingProfilePurpose: OCPP20ChargingProfilePurposeEnumType.TxProfile,
@@ -199,7 +199,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
   })
 
   // OCPP 2.0.1 §2.10: RequestStartTransaction requires chargingProfilePurpose=TxProfile
-  await it('Should reject RequestStartTransaction with non-TxProfile purpose (OCPP 2.0.1 §2.10)', async () => {
+  await it('should reject RequestStartTransaction with non-TxProfile purpose (OCPP 2.0.1 §2.10)', async () => {
     const invalidPurposeProfile: OCPP20ChargingProfileType = {
       chargingProfileKind: OCPP20ChargingProfileKindEnumType.Relative,
       chargingProfilePurpose: OCPP20ChargingProfilePurposeEnumType.TxDefaultProfile,
@@ -240,7 +240,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
   })
 
   // OCPP 2.0.1 §2.10: transactionId MUST NOT be present at RequestStartTransaction time
-  await it('Should reject RequestStartTransaction with TxProfile having transactionId set (OCPP 2.0.1 §2.10)', async () => {
+  await it('should reject RequestStartTransaction with TxProfile having transactionId set (OCPP 2.0.1 §2.10)', async () => {
     const profileWithTransactionId: OCPP20ChargingProfileType = {
       chargingProfileKind: OCPP20ChargingProfileKindEnumType.Relative,
       chargingProfilePurpose: OCPP20ChargingProfilePurposeEnumType.TxProfile,
@@ -282,7 +282,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
   })
 
   // FR: F01.FR.07
-  await it('Should reject RequestStartTransaction for invalid evseId', async () => {
+  await it('should reject RequestStartTransaction for invalid evseId', async () => {
     const invalidEvseRequest: OCPP20RequestStartTransactionRequest = {
       evseId: 999, // Non-existent EVSE
       idToken: {
@@ -299,7 +299,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
   })
 
   // FR: F01.FR.09, F01.FR.10
-  await it('Should reject RequestStartTransaction when connector is already occupied', async () => {
+  await it('should reject RequestStartTransaction when connector is already occupied', async () => {
     // First, start a transaction to occupy the connector
     const firstRequest: OCPP20RequestStartTransactionRequest = {
       evseId: 1,
@@ -333,7 +333,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
   })
 
   // FR: F02.FR.01
-  await it('Should return proper response structure', async () => {
+  await it('should return proper response structure', async () => {
     const validRequest: OCPP20RequestStartTransactionRequest = {
       evseId: 1,
       idToken: {

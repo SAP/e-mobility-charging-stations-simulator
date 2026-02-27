@@ -65,7 +65,7 @@ await describe('OCPP20CertificateManager', async () => {
   })
 
   await describe('storeCertificate', async () => {
-    await it('Should store a valid PEM certificate to the correct path', async () => {
+    await it('should store a valid PEM certificate to the correct path', async () => {
       const manager = new OCPP20CertificateManager()
 
       const result = await manager.storeCertificate(
@@ -81,7 +81,7 @@ await describe('OCPP20CertificateManager', async () => {
       expect(result.filePath).toMatch(/\.pem$/)
     })
 
-    await it('Should reject invalid PEM certificate without BEGIN/END markers', async () => {
+    await it('should reject invalid PEM certificate without BEGIN/END markers', async () => {
       const manager = new OCPP20CertificateManager()
 
       const result = await manager.storeCertificate(
@@ -95,7 +95,7 @@ await describe('OCPP20CertificateManager', async () => {
       expect(result.error).toContain('Invalid PEM format')
     })
 
-    await it('Should reject empty certificate data', async () => {
+    await it('should reject empty certificate data', async () => {
       const manager = new OCPP20CertificateManager()
 
       const result = await manager.storeCertificate(
@@ -109,7 +109,7 @@ await describe('OCPP20CertificateManager', async () => {
       expect(result.error).toBeDefined()
     })
 
-    await it('Should create certificate directory structure if not exists', async () => {
+    await it('should create certificate directory structure if not exists', async () => {
       const manager = new OCPP20CertificateManager()
 
       const result = await manager.storeCertificate(
@@ -125,7 +125,7 @@ await describe('OCPP20CertificateManager', async () => {
   })
 
   await describe('deleteCertificate', async () => {
-    await it('Should delete certificate by hash data', async () => {
+    await it('should delete certificate by hash data', async () => {
       const manager = new OCPP20CertificateManager()
 
       const hashData: CertificateHashDataType = {
@@ -142,7 +142,7 @@ await describe('OCPP20CertificateManager', async () => {
       expect(['Accepted', 'NotFound', 'Failed']).toContain(result.status)
     })
 
-    await it('Should return NotFound for non-existent certificate', async () => {
+    await it('should return NotFound for non-existent certificate', async () => {
       const manager = new OCPP20CertificateManager()
 
       const hashData: CertificateHashDataType = {
@@ -158,7 +158,7 @@ await describe('OCPP20CertificateManager', async () => {
       expect(result.status).toBe('NotFound')
     })
 
-    await it('Should handle filesystem errors gracefully', async () => {
+    await it('should handle filesystem errors gracefully', async () => {
       const manager = new OCPP20CertificateManager()
 
       const hashData: CertificateHashDataType = {
@@ -176,7 +176,7 @@ await describe('OCPP20CertificateManager', async () => {
   })
 
   await describe('getInstalledCertificates', async () => {
-    await it('Should return list of installed certificates for station', async () => {
+    await it('should return list of installed certificates for station', async () => {
       const manager = new OCPP20CertificateManager()
 
       const result = await manager.getInstalledCertificates(TEST_STATION_HASH_ID)
@@ -185,7 +185,7 @@ await describe('OCPP20CertificateManager', async () => {
       expect(Array.isArray(result.certificateHashDataChain)).toBe(true)
     })
 
-    await it('Should filter certificates by type when filter provided', async () => {
+    await it('should filter certificates by type when filter provided', async () => {
       const manager = new OCPP20CertificateManager()
 
       const filterTypes = [InstallCertificateUseEnumType.CSMSRootCertificate]
@@ -195,7 +195,7 @@ await describe('OCPP20CertificateManager', async () => {
       expect(Array.isArray(result.certificateHashDataChain)).toBe(true)
     })
 
-    await it('Should return empty list when no certificates installed', async () => {
+    await it('should return empty list when no certificates installed', async () => {
       const manager = new OCPP20CertificateManager()
 
       const result = await manager.getInstalledCertificates('empty-station-hash-id')
@@ -204,7 +204,7 @@ await describe('OCPP20CertificateManager', async () => {
       expect(result.certificateHashDataChain).toHaveLength(0)
     })
 
-    await it('Should support multiple certificate type filters', async () => {
+    await it('should support multiple certificate type filters', async () => {
       const manager = new OCPP20CertificateManager()
 
       const filterTypes = [
@@ -220,7 +220,7 @@ await describe('OCPP20CertificateManager', async () => {
   })
 
   await describe('computeCertificateHash', async () => {
-    await it('Should compute hash data for valid PEM certificate', () => {
+    await it('should compute hash data for valid PEM certificate', () => {
       const manager = new OCPP20CertificateManager()
 
       const hashData = manager.computeCertificateHash(VALID_PEM_CERTIFICATE)
@@ -235,7 +235,7 @@ await describe('OCPP20CertificateManager', async () => {
       expect(typeof hashData.serialNumber).toBe('string')
     })
 
-    await it('Should return hex-encoded hash values', () => {
+    await it('should return hex-encoded hash values', () => {
       const manager = new OCPP20CertificateManager()
 
       const hashData = manager.computeCertificateHash(VALID_PEM_CERTIFICATE)
@@ -245,7 +245,7 @@ await describe('OCPP20CertificateManager', async () => {
       expect(hashData.issuerKeyHash).toMatch(hexPattern)
     })
 
-    await it('Should throw error for invalid PEM certificate', () => {
+    await it('should throw error for invalid PEM certificate', () => {
       const manager = new OCPP20CertificateManager()
 
       expect(() => {
@@ -253,7 +253,7 @@ await describe('OCPP20CertificateManager', async () => {
       }).toThrow()
     })
 
-    await it('Should throw error for empty certificate', () => {
+    await it('should throw error for empty certificate', () => {
       const manager = new OCPP20CertificateManager()
 
       expect(() => {
@@ -261,7 +261,7 @@ await describe('OCPP20CertificateManager', async () => {
       }).toThrow()
     })
 
-    await it('Should support SHA384 hash algorithm', () => {
+    await it('should support SHA384 hash algorithm', () => {
       const manager = new OCPP20CertificateManager()
 
       const hashData = manager.computeCertificateHash(
@@ -273,7 +273,7 @@ await describe('OCPP20CertificateManager', async () => {
       expect(hashData.hashAlgorithm).toBe(HashAlgorithmEnumType.SHA384)
     })
 
-    await it('Should support SHA512 hash algorithm', () => {
+    await it('should support SHA512 hash algorithm', () => {
       const manager = new OCPP20CertificateManager()
 
       const hashData = manager.computeCertificateHash(
@@ -287,7 +287,7 @@ await describe('OCPP20CertificateManager', async () => {
   })
 
   await describe('validateCertificateFormat', async () => {
-    await it('Should return true for valid PEM certificate', () => {
+    await it('should return true for valid PEM certificate', () => {
       const manager = new OCPP20CertificateManager()
 
       const isValid = manager.validateCertificateFormat(VALID_PEM_CERTIFICATE)
@@ -295,7 +295,7 @@ await describe('OCPP20CertificateManager', async () => {
       expect(isValid).toBe(true)
     })
 
-    await it('Should return false for certificate without BEGIN marker', () => {
+    await it('should return false for certificate without BEGIN marker', () => {
       const manager = new OCPP20CertificateManager()
 
       const isValid = manager.validateCertificateFormat(INVALID_PEM_NO_MARKERS)
@@ -303,7 +303,7 @@ await describe('OCPP20CertificateManager', async () => {
       expect(isValid).toBe(false)
     })
 
-    await it('Should return false for certificate with wrong markers', () => {
+    await it('should return false for certificate with wrong markers', () => {
       const manager = new OCPP20CertificateManager()
 
       const isValid = manager.validateCertificateFormat(INVALID_PEM_WRONG_MARKERS)
@@ -311,7 +311,7 @@ await describe('OCPP20CertificateManager', async () => {
       expect(isValid).toBe(false)
     })
 
-    await it('Should return false for empty string', () => {
+    await it('should return false for empty string', () => {
       const manager = new OCPP20CertificateManager()
 
       const isValid = manager.validateCertificateFormat(EMPTY_PEM_CERTIFICATE)
@@ -319,14 +319,14 @@ await describe('OCPP20CertificateManager', async () => {
       expect(isValid).toBe(false)
     })
 
-    await it('Should return false for null/undefined input', () => {
+    await it('should return false for null/undefined input', () => {
       const manager = new OCPP20CertificateManager()
 
       expect(manager.validateCertificateFormat(null as any)).toBe(false)
       expect(manager.validateCertificateFormat(undefined as any)).toBe(false)
     })
 
-    await it('Should return true for certificate with extra whitespace', () => {
+    await it('should return true for certificate with extra whitespace', () => {
       const manager = new OCPP20CertificateManager()
 
       const pemWithWhitespace = `
@@ -344,7 +344,7 @@ await describe('OCPP20CertificateManager', async () => {
   })
 
   await describe('getCertificatePath', async () => {
-    await it('Should return correct file path for certificate', () => {
+    await it('should return correct file path for certificate', () => {
       const manager = new OCPP20CertificateManager()
 
       const path = manager.getCertificatePath(TEST_STATION_HASH_ID, TEST_CERT_TYPE, 'SERIAL-12345')
@@ -357,7 +357,7 @@ await describe('OCPP20CertificateManager', async () => {
       expect(path).toMatch(/\.pem$/)
     })
 
-    await it('Should handle special characters in serial number', () => {
+    await it('should handle special characters in serial number', () => {
       const manager = new OCPP20CertificateManager()
 
       const path = manager.getCertificatePath(
@@ -372,7 +372,7 @@ await describe('OCPP20CertificateManager', async () => {
       expect(filename).not.toContain('/')
     })
 
-    await it('Should return different paths for different certificate types', () => {
+    await it('should return different paths for different certificate types', () => {
       const manager = new OCPP20CertificateManager()
 
       const csmsPath = manager.getCertificatePath(
@@ -392,7 +392,7 @@ await describe('OCPP20CertificateManager', async () => {
       expect(v2gPath).toContain('V2GRootCertificate')
     })
 
-    await it('Should return path following project convention', () => {
+    await it('should return path following project convention', () => {
       const manager = new OCPP20CertificateManager()
 
       const path = manager.getCertificatePath(TEST_STATION_HASH_ID, TEST_CERT_TYPE, 'SERIAL-12345')
@@ -404,7 +404,7 @@ await describe('OCPP20CertificateManager', async () => {
   })
 
   await describe('Edge cases and error handling', async () => {
-    await it('Should handle concurrent certificate operations', async () => {
+    await it('should handle concurrent certificate operations', async () => {
       const manager = new OCPP20CertificateManager()
 
       const results = await Promise.all([
@@ -427,7 +427,7 @@ await describe('OCPP20CertificateManager', async () => {
       })
     })
 
-    await it('Should handle very long certificate chains', async () => {
+    await it('should handle very long certificate chains', async () => {
       const manager = new OCPP20CertificateManager()
 
       const longChain = Array(5).fill(VALID_PEM_CERTIFICATE).join('\n')
@@ -437,7 +437,7 @@ await describe('OCPP20CertificateManager', async () => {
       expect(result).toBeDefined()
     })
 
-    await it('Should sanitize station hash ID for filesystem safety', () => {
+    await it('should sanitize station hash ID for filesystem safety', () => {
       const manager = new OCPP20CertificateManager()
 
       const maliciousHashId = '../../../etc/passwd'

@@ -48,7 +48,7 @@ await describe('G02 - Heartbeat', async () => {
   })
 
   // FR: G02.FR.01
-  await it('Should build HeartBeat request payload correctly with empty object', () => {
+  await it('should build HeartBeat request payload correctly with empty object', () => {
     const requestParams: OCPP20HeartbeatRequest = {}
 
     // Access the private buildRequestPayload method via type assertion
@@ -64,7 +64,7 @@ await describe('G02 - Heartbeat', async () => {
   })
 
   // FR: G02.FR.02
-  await it('Should build HeartBeat request payload correctly without parameters', () => {
+  await it('should build HeartBeat request payload correctly without parameters', () => {
     // Test without passing any request parameters
     const payload = (requestService as any).buildRequestPayload(
       mockChargingStation,
@@ -77,7 +77,7 @@ await describe('G02 - Heartbeat', async () => {
   })
 
   // FR: G02.FR.03
-  await it('Should validate payload structure matches OCPP20HeartbeatRequest interface', () => {
+  await it('should validate payload structure matches OCPP20HeartbeatRequest interface', () => {
     const requestParams: OCPP20HeartbeatRequest = {}
 
     const payload = (requestService as any).buildRequestPayload(
@@ -95,7 +95,7 @@ await describe('G02 - Heartbeat', async () => {
   })
 
   // FR: G02.FR.04
-  await it('Should handle HeartBeat request consistently across multiple calls', () => {
+  await it('should handle HeartBeat request consistently across multiple calls', () => {
     const requestParams: OCPP20HeartbeatRequest = {}
 
     // Call buildRequestPayload multiple times to ensure consistency
@@ -125,7 +125,7 @@ await describe('G02 - Heartbeat', async () => {
   })
 
   // FR: G02.FR.05
-  await it('Should handle HeartBeat request with different charging station configurations', () => {
+  await it('should handle HeartBeat request with different charging station configurations', () => {
     const alternativeChargingStation = createChargingStation({
       baseName: 'CS-ALTERNATIVE-002',
       connectorsCount: 3,
@@ -158,7 +158,7 @@ await describe('G02 - Heartbeat', async () => {
   })
 
   // FR: G02.FR.06
-  await it('Should verify HeartBeat request conforms to OCPP 2.0 specification', () => {
+  await it('should verify HeartBeat request conforms to OCPP 2.0 specification', () => {
     const requestParams: OCPP20HeartbeatRequest = {}
 
     const payload = (requestService as any).buildRequestPayload(

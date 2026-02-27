@@ -79,7 +79,7 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
   const testableService = createTestableIncomingRequestService(incomingRequestService)
 
   await describe('Request All Certificate Types', async () => {
-    await it('Should return all certificates when no filter is provided', async () => {
+    await it('should return all certificates when no filter is provided', async () => {
       const mockCerts: CertificateHashDataChainType[] = [
         createMockCertificateHashDataChain(GetCertificateIdUseEnumType.V2GRootCertificate, '111'),
         createMockCertificateHashDataChain(GetCertificateIdUseEnumType.MORootCertificate, '222'),
@@ -104,7 +104,7 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
   })
 
   await describe('Request Filtered Certificate Types', async () => {
-    await it('Should return only V2GRootCertificate when filtered', async () => {
+    await it('should return only V2GRootCertificate when filtered', async () => {
       const v2gCert = createMockCertificateHashDataChain(
         GetCertificateIdUseEnumType.V2GRootCertificate,
         '111'
@@ -130,7 +130,7 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
       )
     })
 
-    await it('Should return multiple types when multiple filters provided', async () => {
+    await it('should return multiple types when multiple filters provided', async () => {
       const mockCerts: CertificateHashDataChainType[] = [
         createMockCertificateHashDataChain(GetCertificateIdUseEnumType.V2GRootCertificate, '111'),
         createMockCertificateHashDataChain(GetCertificateIdUseEnumType.CSMSRootCertificate, '222'),
@@ -157,7 +157,7 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
   })
 
   await describe('No Certificates Found', async () => {
-    await it('Should return Accepted with empty array when no certificates found', async () => {
+    await it('should return Accepted with empty array when no certificates found', async () => {
       stationWithCertManager.certificateManager = createMockCertificateManager({
         getInstalledCertificatesResult: [],
       })
@@ -174,7 +174,7 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
       expect(response.certificateHashDataChain).toBeUndefined()
     })
 
-    await it('Should return NotFound when filtered type has no certificates', async () => {
+    await it('should return NotFound when filtered type has no certificates', async () => {
       stationWithCertManager.certificateManager = createMockCertificateManager({
         getInstalledCertificatesResult: [],
       })
@@ -192,7 +192,7 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
   })
 
   await describe('Response Structure Validation', async () => {
-    await it('Should return response with required status field', async () => {
+    await it('should return response with required status field', async () => {
       stationWithCertManager.certificateManager = createMockCertificateManager({
         getInstalledCertificatesResult: [],
       })
@@ -211,7 +211,7 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
       ]).toContain(response.status)
     })
 
-    await it('Should return valid CertificateHashDataChain structure', async () => {
+    await it('should return valid CertificateHashDataChain structure', async () => {
       const mockCert = createMockCertificateHashDataChain(
         GetCertificateIdUseEnumType.V2GRootCertificate,
         '123456'
@@ -241,7 +241,7 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
   })
 
   await describe('Certificate Manager Missing', async () => {
-    await it('Should return NotFound when certificate manager is not available', async () => {
+    await it('should return NotFound when certificate manager is not available', async () => {
       const stationWithoutCertManager = createChargingStation({
         baseName: TEST_CHARGING_STATION_BASE_NAME,
         connectorsCount: 3,

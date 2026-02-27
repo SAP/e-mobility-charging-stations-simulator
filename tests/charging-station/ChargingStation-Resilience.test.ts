@@ -396,9 +396,7 @@ await describe('ChargingStation Message Buffering', async () => {
 
     // Verify first and last message are in correct positions
     expect(station.messageQueue[0]).toContain('msg-0')
-    expect(station.messageQueue[messageCount - 1]).toContain(
-      `msg-${(messageCount - 1).toString()}`
-    )
+    expect(station.messageQueue[messageCount - 1]).toContain(`msg-${(messageCount - 1).toString()}`)
   })
 
   // -------------------------------------------------------------------------

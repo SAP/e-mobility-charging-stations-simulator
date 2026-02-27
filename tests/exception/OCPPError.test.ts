@@ -10,7 +10,7 @@ import { ErrorType } from '../../src/types/index.js'
 import { Constants } from '../../src/utils/Constants.js'
 
 await describe('OCPPError test suite', async () => {
-  await it('Verify that OCPPError can be instantiated', () => {
+  await it('should verify that OCPPError can be instantiated', () => {
     const ocppError = new OCPPError(ErrorType.GENERIC_ERROR, '')
     expect(ocppError).toBeInstanceOf(OCPPError)
     expect(ocppError.name).toBe('OCPPError')

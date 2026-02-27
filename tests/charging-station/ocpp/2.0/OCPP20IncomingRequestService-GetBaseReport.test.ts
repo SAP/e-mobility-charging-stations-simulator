@@ -65,7 +65,7 @@ await describe('B07 - Get Base Report', async () => {
   })
 
   // FR: B07.FR.01, B07.FR.07
-  await it('Should handle GetBaseReport request with ConfigurationInventory', () => {
+  await it('should handle GetBaseReport request with ConfigurationInventory', () => {
     const request: OCPP20GetBaseReportRequest = {
       reportBase: ReportBaseEnumType.ConfigurationInventory,
       requestId: 1,
@@ -78,7 +78,7 @@ await describe('B07 - Get Base Report', async () => {
   })
 
   // FR: B08.FR.02
-  await it('Should handle GetBaseReport request with FullInventory', () => {
+  await it('should handle GetBaseReport request with FullInventory', () => {
     const request: OCPP20GetBaseReportRequest = {
       reportBase: ReportBaseEnumType.FullInventory,
       requestId: 2,
@@ -90,7 +90,7 @@ await describe('B07 - Get Base Report', async () => {
     expect(response.status).toBe(GenericDeviceModelStatusEnumType.Accepted)
   })
 
-  await it('Should include registry variables with Actual attribute only for unsupported types', () => {
+  await it('should include registry variables with Actual attribute only for unsupported types', () => {
     const reportData = testableService.buildReportData(
       mockChargingStation,
       ReportBaseEnumType.FullInventory
@@ -124,7 +124,7 @@ await describe('B07 - Get Base Report', async () => {
   })
 
   // FR: B08.FR.03
-  await it('Should handle GetBaseReport request with SummaryInventory', () => {
+  await it('should handle GetBaseReport request with SummaryInventory', () => {
     const request: OCPP20GetBaseReportRequest = {
       reportBase: ReportBaseEnumType.SummaryInventory,
       requestId: 3,
@@ -137,7 +137,7 @@ await describe('B07 - Get Base Report', async () => {
   })
 
   // FR: B08.FR.04
-  await it('Should return NotSupported for unsupported reportBase', () => {
+  await it('should return NotSupported for unsupported reportBase', () => {
     const request: OCPP20GetBaseReportRequest = {
       reportBase: 'UnsupportedReportBase' as unknown as ReportBaseEnumType,
       requestId: 4,
@@ -150,7 +150,7 @@ await describe('B07 - Get Base Report', async () => {
   })
 
   // FR: B08.FR.05
-  await it('Should return Accepted for ConfigurationInventory with configured station', () => {
+  await it('should return Accepted for ConfigurationInventory with configured station', () => {
     // Create a charging station with minimal configuration
 
     const request: OCPP20GetBaseReportRequest = {
@@ -165,7 +165,7 @@ await describe('B07 - Get Base Report', async () => {
   })
 
   // FR: B08.FR.06
-  await it('Should build correct report data for ConfigurationInventory', () => {
+  await it('should build correct report data for ConfigurationInventory', () => {
     const request: OCPP20GetBaseReportRequest = {
       reportBase: ReportBaseEnumType.ConfigurationInventory,
       requestId: 6,
@@ -200,7 +200,7 @@ await describe('B07 - Get Base Report', async () => {
   })
 
   // FR: B08.FR.07
-  await it('Should build correct report data for FullInventory with station info', () => {
+  await it('should build correct report data for FullInventory with station info', () => {
     const reportData = testableService.buildReportData(
       mockChargingStation,
       ReportBaseEnumType.FullInventory
@@ -232,7 +232,7 @@ await describe('B07 - Get Base Report', async () => {
   })
 
   // FR: B08.FR.08
-  await it('Should build correct report data for SummaryInventory', () => {
+  await it('should build correct report data for SummaryInventory', () => {
     const reportData = testableService.buildReportData(
       mockChargingStation,
       ReportBaseEnumType.SummaryInventory
@@ -254,7 +254,7 @@ await describe('B07 - Get Base Report', async () => {
   })
 
   // ReportingValueSize truncation test
-  await it('Should truncate long SequenceList/MemberList values per ReportingValueSize', () => {
+  await it('should truncate long SequenceList/MemberList values per ReportingValueSize', () => {
     // Ensure ReportingValueSize is at a small value (default is Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH). We will override configuration key if absent.
     const reportingSizeKey = StandardParametersKey.ReportingValueSize
     // Add or lower configuration key to 10 to force truncation
@@ -305,7 +305,7 @@ await describe('B07 - Get Base Report', async () => {
   })
 
   // FR: B08.FR.09
-  await it('Should handle GetBaseReport with EVSE structure', () => {
+  await it('should handle GetBaseReport with EVSE structure', () => {
     // The createChargingStation should create a station with EVSEs
     const stationWithEvses = createChargingStation({
       baseName: 'CS-EVSE-001',
@@ -337,7 +337,7 @@ await describe('B07 - Get Base Report', async () => {
   })
 
   // FR: B08.FR.10
-  await it('Should validate unsupported reportBase correctly', () => {
+  await it('should validate unsupported reportBase correctly', () => {
     const reportData = testableService.buildReportData(
       mockChargingStation,
       'InvalidReportBase' as unknown as ReportBaseEnumType

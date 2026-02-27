@@ -55,7 +55,7 @@ await describe('M02 - Get15118EVCertificate Request', async () => {
   })
 
   await describe('EXI Install Action', async () => {
-    await it('Should forward EXI request unmodified for Install action', async () => {
+    await it('should forward EXI request unmodified for Install action', async () => {
       const { sendMessageMock, service } =
         createTestableRequestService<OCPP20Get15118EVCertificateResponse>({
           sendMessageResponse: {
@@ -81,7 +81,7 @@ await describe('M02 - Get15118EVCertificate Request', async () => {
   })
 
   await describe('EXI Update Action', async () => {
-    await it('Should forward EXI request unmodified for Update action', async () => {
+    await it('should forward EXI request unmodified for Update action', async () => {
       const { sendMessageMock, service } =
         createTestableRequestService<OCPP20Get15118EVCertificateResponse>({
           sendMessageResponse: {
@@ -105,7 +105,7 @@ await describe('M02 - Get15118EVCertificate Request', async () => {
   })
 
   await describe('CSMS Response Handling', async () => {
-    await it('Should return Accepted response with exiResponse from CSMS', async () => {
+    await it('should return Accepted response with exiResponse from CSMS', async () => {
       const { service } = createTestableRequestService<OCPP20Get15118EVCertificateResponse>({
         sendMessageResponse: {
           exiResponse: MOCK_EXI_RESPONSE,
@@ -125,7 +125,7 @@ await describe('M02 - Get15118EVCertificate Request', async () => {
       expect(response.exiResponse).toBe(MOCK_EXI_RESPONSE)
     })
 
-    await it('Should return Failed response from CSMS', async () => {
+    await it('should return Failed response from CSMS', async () => {
       const { service } = createTestableRequestService<OCPP20Get15118EVCertificateResponse>({
         sendMessageResponse: {
           exiResponse: '',
@@ -150,7 +150,7 @@ await describe('M02 - Get15118EVCertificate Request', async () => {
   })
 
   await describe('Schema Version Parameter', async () => {
-    await it('Should pass schema version correctly', async () => {
+    await it('should pass schema version correctly', async () => {
       const { sendMessageMock, service } =
         createTestableRequestService<OCPP20Get15118EVCertificateResponse>({
           sendMessageResponse: {
@@ -173,7 +173,7 @@ await describe('M02 - Get15118EVCertificate Request', async () => {
   })
 
   await describe('Base64 EXI Pass-Through', async () => {
-    await it('Should pass Base64 EXI string unchanged', async () => {
+    await it('should pass Base64 EXI string unchanged', async () => {
       const complexBase64EXI =
         'VGhpcyBpcyBhIG1vcmUgY29tcGxleCBFWEkgcGF5bG9hZCB3aXRoIHNwZWNpYWwgY2hhcmFjdGVycyArLz0='
 
@@ -214,7 +214,7 @@ await describe('M03 - GetCertificateStatus Request', async () => {
   })
 
   await describe('OCSP Request Data', async () => {
-    await it('Should send OCSP request data correctly', async () => {
+    await it('should send OCSP request data correctly', async () => {
       const { sendMessageMock, service } =
         createTestableRequestService<OCPP20GetCertificateStatusResponse>({
           sendMessageResponse: {
@@ -241,7 +241,7 @@ await describe('M03 - GetCertificateStatus Request', async () => {
   })
 
   await describe('CSMS Response Handling', async () => {
-    await it('Should return Accepted response with ocspResult from CSMS', async () => {
+    await it('should return Accepted response with ocspResult from CSMS', async () => {
       const { service } = createTestableRequestService<OCPP20GetCertificateStatusResponse>({
         sendMessageResponse: {
           ocspResult: MOCK_OCSP_RESULT,
@@ -259,7 +259,7 @@ await describe('M03 - GetCertificateStatus Request', async () => {
       expect(response.ocspResult).toBe(MOCK_OCSP_RESULT)
     })
 
-    await it('Should return Failed response from CSMS', async () => {
+    await it('should return Failed response from CSMS', async () => {
       const { service } = createTestableRequestService<OCPP20GetCertificateStatusResponse>({
         sendMessageResponse: {
           status: GetCertificateStatusEnumType.Failed,
@@ -281,7 +281,7 @@ await describe('M03 - GetCertificateStatus Request', async () => {
   })
 
   await describe('Stub OCSP Response', async () => {
-    await it('Should handle stub OCSP response correctly', async () => {
+    await it('should handle stub OCSP response correctly', async () => {
       // This tests that the simulator doesn't make real network calls
       // Response is stubbed/mocked at the sendMessage level
       const stubOcspResult = 'U3R1YiBPQ1NQIFJlc3BvbnNlIERhdGE='
@@ -322,7 +322,7 @@ await describe('Request Command Names', async () => {
     websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
   })
 
-  await it('Should send GET_15118_EV_CERTIFICATE command name', async () => {
+  await it('should send GET_15118_EV_CERTIFICATE command name', async () => {
     const { sendMessageMock, service } =
       createTestableRequestService<OCPP20Get15118EVCertificateResponse>({
         sendMessageResponse: {
@@ -342,7 +342,7 @@ await describe('Request Command Names', async () => {
     expect(commandName).toBe(OCPP20RequestCommand.GET_15118_EV_CERTIFICATE)
   })
 
-  await it('Should send GET_CERTIFICATE_STATUS command name', async () => {
+  await it('should send GET_CERTIFICATE_STATUS command name', async () => {
     const { sendMessageMock, service } =
       createTestableRequestService<OCPP20GetCertificateStatusResponse>({
         sendMessageResponse: {

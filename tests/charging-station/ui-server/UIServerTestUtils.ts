@@ -20,6 +20,11 @@ import {
   ProcedureName,
   ResponseStatus,
 } from '../../../src/types/index.js'
+import { waitForCondition } from '../helpers/StationHelpers.js'
+import { MockWebSocket as BaseMockWebSocket } from '../mocks/MockWebSocket.js'
+
+// Re-export waitForCondition for backward compatibility
+export { waitForCondition }
 
 export const createMockUIServerConfiguration = (
   overrides?: Partial<UIServerConfiguration>
@@ -95,33 +100,28 @@ export class MockServerResponse extends EventEmitter {
   }
 }
 
-export class MockWebSocket extends EventEmitter {
-  public protocol = 'ui0.0.1'
-  public readyState = 1 // OPEN
-  public sentMessages: string[] = []
-
-  public close (code?: number): void {
-    this.readyState = 3 // CLOSED
-    this.emit('close', code, Buffer.from(''))
+/**
+ * MockWebSocket for UI protocol testing
+ *
+ * Extends base MockWebSocket with UI-specific helper methods.
+ * Uses 'ui0.0.1' protocol by default.
+ */
+export class MockWebSocket extends BaseMockWebSocket {
+  constructor () {
+    super('ws://localhost:8080/ui')
+    this.protocol = 'ui0.0.1'
   }
 
-  public getLastSentMessage (): ProtocolResponse | undefined {
-    if (this.sentMessages.length === 0) {
+  /**
+   * Get last sent message parsed as ProtocolResponse
+   * @returns Parsed ProtocolResponse or undefined if no messages
+   */
+  public getLastSentMessageAsResponse (): ProtocolResponse | undefined {
+    const lastMsg = this.getLastSentMessage()
+    if (lastMsg == null) {
       return undefined
     }
-    return JSON.parse(this.sentMessages[this.sentMessages.length - 1]) as ProtocolResponse
-  }
-
-  public send (data: string): void {
-    this.sentMessages.push(data)
-  }
-
-  public simulateError (error: Error): void {
-    this.emit('error', error)
-  }
-
-  public simulateMessage (data: string): void {
-    this.emit('message', Buffer.from(data))
+    return JSON.parse(lastMsg) as ProtocolResponse
   }
 }
 
@@ -179,22 +179,6 @@ export const createInvalidRequest = (): string => {
 
 export const createMalformedRequest = (): string => {
   return JSON.stringify({ not: 'an array' })
-}
-
-export const waitForCondition = async (
-  condition: () => boolean,
-  timeout = 1000,
-  interval = 10
-): Promise<void> => {
-  const startTime = Date.now()
-  while (!condition()) {
-    if (Date.now() - startTime > timeout) {
-      throw new Error('Timeout waiting for condition')
-    }
-    await new Promise(resolve => {
-      setTimeout(resolve, interval)
-    })
-  }
 }
 
 export const createMockBroadcastResponse = (

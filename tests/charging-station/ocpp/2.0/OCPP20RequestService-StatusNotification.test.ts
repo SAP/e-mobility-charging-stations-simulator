@@ -49,7 +49,7 @@ await describe('G01 - Status Notification', async () => {
   })
 
   // FR: G01.FR.01
-  await it('Should build StatusNotification request payload correctly with Available status', () => {
+  await it('should build StatusNotification request payload correctly with Available status', () => {
     const testTimestamp = new Date('2024-01-15T10:30:00.000Z')
 
     const requestParams: OCPP20StatusNotificationRequest = {
@@ -74,7 +74,7 @@ await describe('G01 - Status Notification', async () => {
   })
 
   // FR: G01.FR.02
-  await it('Should build StatusNotification request payload correctly with Occupied status', () => {
+  await it('should build StatusNotification request payload correctly with Occupied status', () => {
     const testTimestamp = new Date('2024-01-15T11:45:30.000Z')
 
     const requestParams: OCPP20StatusNotificationRequest = {
@@ -98,7 +98,7 @@ await describe('G01 - Status Notification', async () => {
   })
 
   // FR: G01.FR.03
-  await it('Should build StatusNotification request payload correctly with Faulted status', () => {
+  await it('should build StatusNotification request payload correctly with Faulted status', () => {
     const testTimestamp = new Date('2024-01-15T12:15:45.500Z')
 
     const requestParams: OCPP20StatusNotificationRequest = {
@@ -122,7 +122,7 @@ await describe('G01 - Status Notification', async () => {
   })
 
   // FR: G01.FR.04
-  await it('Should handle all OCPP20ConnectorStatusEnumType values correctly', () => {
+  await it('should handle all OCPP20ConnectorStatusEnumType values correctly', () => {
     const testTimestamp = new Date('2024-01-15T13:00:00.000Z')
 
     const statusValues = [
@@ -156,7 +156,7 @@ await describe('G01 - Status Notification', async () => {
   })
 
   // FR: G01.FR.05
-  await it('Should validate payload structure matches OCPP20StatusNotificationRequest interface', () => {
+  await it('should validate payload structure matches OCPP20StatusNotificationRequest interface', () => {
     const testTimestamp = new Date('2024-01-15T14:30:15.123Z')
 
     const requestParams: OCPP20StatusNotificationRequest = {
@@ -194,7 +194,7 @@ await describe('G01 - Status Notification', async () => {
   })
 
   // FR: G01.FR.06
-  await it('Should handle edge case connector and EVSE IDs correctly', () => {
+  await it('should handle edge case connector and EVSE IDs correctly', () => {
     const testTimestamp = new Date('2024-01-15T15:45:00.000Z')
 
     // Test with connector ID 0 (valid in OCPP 2.0 for the charging station itself)
@@ -239,7 +239,7 @@ await describe('G01 - Status Notification', async () => {
   })
 
   // FR: G01.FR.07
-  await it('Should handle different timestamp formats correctly', () => {
+  await it('should handle different timestamp formats correctly', () => {
     const testCases = [
       new Date('2024-01-01T00:00:00.000Z'), // Start of year
       new Date('2024-12-31T23:59:59.999Z'), // End of year

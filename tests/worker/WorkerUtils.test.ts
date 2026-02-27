@@ -15,7 +15,7 @@ import {
 } from '../../src/worker/WorkerUtils.js'
 
 await describe('WorkerUtils test suite', async () => {
-  await it('Verify checkWorkerProcessType()', () => {
+  await it('should verify checkWorkerProcessType()', () => {
     // Valid worker process types should not throw
     expect(() => {
       checkWorkerProcessType(WorkerProcessType.dynamicPool)
@@ -33,7 +33,7 @@ await describe('WorkerUtils test suite', async () => {
     }).toThrow(SyntaxError)
   })
 
-  await it('Verify sleep()', async t => {
+  await it('should verify sleep()', async t => {
     t.mock.timers.enable({ apis: ['setTimeout'] })
     try {
       const delay = 10 // 10ms for fast test execution
@@ -52,7 +52,7 @@ await describe('WorkerUtils test suite', async () => {
     }
   })
 
-  await it('Verify defaultExitHandler()', t => {
+  await it('should verify defaultExitHandler()', t => {
     const mockConsoleInfo = t.mock.method(console, 'info')
     const mockConsoleError = t.mock.method(console, 'error')
 
@@ -85,7 +85,7 @@ await describe('WorkerUtils test suite', async () => {
     expect(mockConsoleError.mock.calls.length).toBe(1)
   })
 
-  await it('Verify defaultErrorHandler()', t => {
+  await it('should verify defaultErrorHandler()', t => {
     const mockConsoleError = t.mock.method(console, 'error')
     const testError = new Error('Test error message')
 
@@ -99,7 +99,7 @@ await describe('WorkerUtils test suite', async () => {
     expect(mockConsoleError.mock.calls.length).toBe(2)
   })
 
-  await it('Verify randomizeDelay()', () => {
+  await it('should verify randomizeDelay()', () => {
     const baseDelay = 1000
     const tolerance = baseDelay * 0.2 // 20% tolerance as per implementation
 

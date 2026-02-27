@@ -135,7 +135,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
   }
 
   // FR: F03.FR.02, F03.FR.03, F03.FR.07, F03.FR.09
-  await it('Should successfully stop an active transaction', async () => {
+  await it('should successfully stop an active transaction', async () => {
     // Start a transaction first
     const transactionId = await startTransaction(1, 100)
 
@@ -169,7 +169,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
   })
 
   // FR: F03.FR.02, F03.FR.03
-  await it('Should handle multiple active transactions correctly', async () => {
+  await it('should handle multiple active transactions correctly', async () => {
     // Reset once before starting multiple transactions
     resetConnectorTransactionStates()
 
@@ -208,7 +208,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
   })
 
   // FR: F03.FR.08
-  await it('Should reject stop transaction for non-existent transaction ID', async () => {
+  await it('should reject stop transaction for non-existent transaction ID', async () => {
     // Clear previous transaction events
     sentTransactionEvents = []
 
@@ -231,7 +231,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
   })
 
   // FR: F03.FR.08
-  await it('Should reject stop transaction for invalid transaction ID format - empty string', async () => {
+  await it('should reject stop transaction for invalid transaction ID format - empty string', async () => {
     // Clear previous transaction events
     sentTransactionEvents = []
 
@@ -253,7 +253,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
   })
 
   // FR: F03.FR.08
-  await it('Should reject stop transaction for invalid transaction ID format - too long', async () => {
+  await it('should reject stop transaction for invalid transaction ID format - too long', async () => {
     // Clear previous transaction events
     sentTransactionEvents = []
 
@@ -277,7 +277,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
   })
 
   // FR: F03.FR.02
-  await it('Should accept valid transaction ID format - exactly 36 characters', async () => {
+  await it('should accept valid transaction ID format - exactly 36 characters', async () => {
     // Start a transaction first
     const transactionId = await startTransaction(1, 300)
 
@@ -318,7 +318,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
     expect(sentTransactionEvents).toHaveLength(1)
   })
 
-  await it('Should handle TransactionEvent request failure gracefully', async () => {
+  await it('should handle TransactionEvent request failure gracefully', async () => {
     sentTransactionEvents = []
 
     const failingChargingStation = createChargingStation({
@@ -380,7 +380,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
   })
 
   // FR: F04.FR.01
-  await it('Should return proper response structure', async () => {
+  await it('should return proper response structure', async () => {
     // Clear previous transaction events
     sentTransactionEvents = []
 
@@ -408,7 +408,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
     expect(Object.keys(response as object)).toEqual(['status'])
   })
 
-  await it('Should handle custom data in request payload', async () => {
+  await it('should handle custom data in request payload', async () => {
     // Start a transaction first
     const transactionId = await startTransaction(1, 500)
 
@@ -437,7 +437,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
   })
 
   // FR: F03.FR.07, F03.FR.09
-  await it('Should validate TransactionEvent content correctly', async () => {
+  await it('should validate TransactionEvent content correctly', async () => {
     // Start a transaction first
     const transactionId = await startTransaction(2, 600) // Use EVSE 2
 
@@ -478,7 +478,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
   })
 
   // FR: F03.FR.09
-  await it('Should include final meter values in TransactionEvent(Ended)', async () => {
+  await it('should include final meter values in TransactionEvent(Ended)', async () => {
     resetConnectorTransactionStates()
 
     const transactionId = await startTransaction(3, 700)

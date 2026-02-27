@@ -71,7 +71,7 @@ await describe('E02 - OCPP 2.0.1 Periodic TransactionEvent at TxUpdatedInterval'
   })
 
   await describe('startTxUpdatedInterval', async () => {
-    await it('Should not start timer for non-OCPP 2.0 stations', () => {
+    await it('should not start timer for non-OCPP 2.0 stations', () => {
       const ocpp16Station = createChargingStation({
         baseName: TEST_CHARGING_STATION_BASE_NAME,
         connectorsCount: 1,
@@ -88,7 +88,7 @@ await describe('E02 - OCPP 2.0.1 Periodic TransactionEvent at TxUpdatedInterval'
       expect(connector?.transactionTxUpdatedSetInterval).toBeUndefined()
     })
 
-    await it('Should not start timer when interval is zero', () => {
+    await it('should not start timer when interval is zero', () => {
       const connectorId = 1
 
       // Simulate startTxUpdatedInterval with zero interval
@@ -100,7 +100,7 @@ await describe('E02 - OCPP 2.0.1 Periodic TransactionEvent at TxUpdatedInterval'
       expect(connector.transactionTxUpdatedSetInterval).toBeUndefined()
     })
 
-    await it('Should not start timer when interval is negative', () => {
+    await it('should not start timer when interval is negative', () => {
       const connectorId = 1
       const connector = mockChargingStation.getConnectorStatus(connectorId)
       expect(connector).toBeDefined()
@@ -109,7 +109,7 @@ await describe('E02 - OCPP 2.0.1 Periodic TransactionEvent at TxUpdatedInterval'
       expect(connector.transactionTxUpdatedSetInterval).toBeUndefined()
     })
 
-    await it('Should handle non-existent connector gracefully', () => {
+    await it('should handle non-existent connector gracefully', () => {
       const nonExistentConnectorId = 999
 
       // Should not throw for non-existent connector
@@ -123,7 +123,7 @@ await describe('E02 - OCPP 2.0.1 Periodic TransactionEvent at TxUpdatedInterval'
   })
 
   await describe('Periodic TransactionEvent generation', async () => {
-    await it('Should send TransactionEvent with MeterValuePeriodic trigger reason', async () => {
+    await it('should send TransactionEvent with MeterValuePeriodic trigger reason', async () => {
       const connectorId = 1
       const transactionId = generateUUID()
 
@@ -148,7 +148,7 @@ await describe('E02 - OCPP 2.0.1 Periodic TransactionEvent at TxUpdatedInterval'
       )
     })
 
-    await it('Should increment seqNo for each periodic event', async () => {
+    await it('should increment seqNo for each periodic event', async () => {
       const connectorId = 1
       const transactionId = generateUUID()
 
@@ -182,7 +182,7 @@ await describe('E02 - OCPP 2.0.1 Periodic TransactionEvent at TxUpdatedInterval'
       expect(connector?.transactionSeqNo).toBe(3)
     })
 
-    await it('Should maintain correct eventType (Updated) for periodic events', async () => {
+    await it('should maintain correct eventType (Updated) for periodic events', async () => {
       const connectorId = 2
       const transactionId = generateUUID()
 
@@ -201,7 +201,7 @@ await describe('E02 - OCPP 2.0.1 Periodic TransactionEvent at TxUpdatedInterval'
       expect(sentRequests[0].payload.eventType).toBe(OCPP20TransactionEventEnumType.Updated)
     })
 
-    await it('Should include EVSE information in periodic events', async () => {
+    await it('should include EVSE information in periodic events', async () => {
       const connectorId = 1
       const transactionId = generateUUID()
 
@@ -220,7 +220,7 @@ await describe('E02 - OCPP 2.0.1 Periodic TransactionEvent at TxUpdatedInterval'
       expect(sentRequests[0].payload.evse.id).toBe(connectorId)
     })
 
-    await it('Should include transactionInfo with correct transactionId', async () => {
+    await it('should include transactionInfo with correct transactionId', async () => {
       const connectorId = 1
       const transactionId = generateUUID()
 
@@ -241,7 +241,7 @@ await describe('E02 - OCPP 2.0.1 Periodic TransactionEvent at TxUpdatedInterval'
   })
 
   await describe('Timer lifecycle integration', async () => {
-    await it('Should continue seqNo sequence across multiple periodic events', async () => {
+    await it('should continue seqNo sequence across multiple periodic events', async () => {
       const connectorId = 1
       const transactionId = generateUUID()
 
@@ -282,7 +282,7 @@ await describe('E02 - OCPP 2.0.1 Periodic TransactionEvent at TxUpdatedInterval'
       expect(endEvent.seqNo).toBe(4)
     })
 
-    await it('Should handle multiple connectors with independent timers', async () => {
+    await it('should handle multiple connectors with independent timers', async () => {
       const transactionId1 = generateUUID()
       const transactionId2 = generateUUID()
 
@@ -335,7 +335,7 @@ await describe('E02 - OCPP 2.0.1 Periodic TransactionEvent at TxUpdatedInterval'
   })
 
   await describe('Error handling', async () => {
-    await it('Should handle network errors gracefully during periodic event', async () => {
+    await it('should handle network errors gracefully during periodic event', async () => {
       const errorMockChargingStation = createChargingStation({
         baseName: TEST_CHARGING_STATION_BASE_NAME,
         connectorsCount: 1,

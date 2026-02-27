@@ -40,7 +40,7 @@ await describe('I02 - SignCertificate Request', async () => {
   }
 
   await describe('CSR Generation', async () => {
-    await it('Should generate CSR with PKCS#10 PEM format', async () => {
+    await it('should generate CSR with PKCS#10 PEM format', async () => {
       const { sendMessageMock, service } =
         createTestableRequestService<OCPP20SignCertificateResponse>({
           sendMessageResponse: {
@@ -64,7 +64,7 @@ await describe('I02 - SignCertificate Request', async () => {
       expect(sentPayload.csr).toContain('-----END CERTIFICATE REQUEST-----')
     })
 
-    await it('Should include OrganizationName from SecurityCtrlr config in CSR', async () => {
+    await it('should include OrganizationName from SecurityCtrlr config in CSR', async () => {
       const { sendMessageMock, service } =
         createTestableRequestService<OCPP20SignCertificateResponse>({
           sendMessageResponse: {
@@ -92,7 +92,7 @@ await describe('I02 - SignCertificate Request', async () => {
   })
 
   await describe('ChargingStationCertificate Type', async () => {
-    await it('Should send SignCertificateRequest with ChargingStationCertificate type', async () => {
+    await it('should send SignCertificateRequest with ChargingStationCertificate type', async () => {
       const { sendMessageMock, service } =
         createTestableRequestService<OCPP20SignCertificateResponse>({
           sendMessageResponse: {
@@ -114,7 +114,7 @@ await describe('I02 - SignCertificate Request', async () => {
   })
 
   await describe('V2GCertificate Type', async () => {
-    await it('Should send SignCertificateRequest with V2GCertificate type', async () => {
+    await it('should send SignCertificateRequest with V2GCertificate type', async () => {
       const { sendMessageMock, service } =
         createTestableRequestService<OCPP20SignCertificateResponse>({
           sendMessageResponse: {
@@ -134,7 +134,7 @@ await describe('I02 - SignCertificate Request', async () => {
   })
 
   await describe('CSMS Response Handling', async () => {
-    await it('Should return Accepted response from CSMS', async () => {
+    await it('should return Accepted response from CSMS', async () => {
       const { service } = createTestableRequestService<OCPP20SignCertificateResponse>({
         sendMessageResponse: {
           status: GenericStatus.Accepted,
@@ -150,7 +150,7 @@ await describe('I02 - SignCertificate Request', async () => {
       expect(response.status).toBe(GenericStatus.Accepted)
     })
 
-    await it('Should return Rejected response from CSMS', async () => {
+    await it('should return Rejected response from CSMS', async () => {
       const { service } = createTestableRequestService<OCPP20SignCertificateResponse>({
         sendMessageResponse: {
           status: GenericStatus.Rejected,
@@ -173,7 +173,7 @@ await describe('I02 - SignCertificate Request', async () => {
   })
 
   await describe('Optional Certificate Type', async () => {
-    await it('Should send SignCertificateRequest without certificateType when omitted', async () => {
+    await it('should send SignCertificateRequest without certificateType when omitted', async () => {
       const { sendMessageMock, service } =
         createTestableRequestService<OCPP20SignCertificateResponse>({
           sendMessageResponse: {
@@ -192,7 +192,7 @@ await describe('I02 - SignCertificate Request', async () => {
   })
 
   await describe('Request Payload Validation', async () => {
-    await it('Should build valid OCPP20SignCertificateRequest payload', async () => {
+    await it('should build valid OCPP20SignCertificateRequest payload', async () => {
       const { sendMessageMock, service } =
         createTestableRequestService<OCPP20SignCertificateResponse>({
           sendMessageResponse: {
@@ -217,7 +217,7 @@ await describe('I02 - SignCertificate Request', async () => {
       expect(sentPayload.csr.length).toBeLessThanOrEqual(5500) // Max length per schema
     })
 
-    await it('Should send SIGN_CERTIFICATE command name', async () => {
+    await it('should send SIGN_CERTIFICATE command name', async () => {
       const { sendMessageMock, service } =
         createTestableRequestService<OCPP20SignCertificateResponse>({
           sendMessageResponse: {
@@ -237,7 +237,7 @@ await describe('I02 - SignCertificate Request', async () => {
   })
 
   await describe('Error Handling', async () => {
-    await it('Should generate CSR without certificate manager dependency', async () => {
+    await it('should generate CSR without certificate manager dependency', async () => {
       const stationWithoutCertManager = createChargingStation({
         baseName: TEST_CHARGING_STATION_BASE_NAME,
         connectorsCount: 1,

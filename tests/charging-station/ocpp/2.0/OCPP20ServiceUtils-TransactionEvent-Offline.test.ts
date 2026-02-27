@@ -68,7 +68,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
   })
 
   await describe('Queue formation when offline', async () => {
-    await it('Should queue TransactionEvent when WebSocket is disconnected', async () => {
+    await it('should queue TransactionEvent when WebSocket is disconnected', async () => {
       const connectorId = 1
       const transactionId = generateUUID()
 
@@ -94,7 +94,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
       expect(connector.transactionEventQueue[0].seqNo).toBe(0)
     })
 
-    await it('Should queue multiple TransactionEvents in order when offline', async () => {
+    await it('should queue multiple TransactionEvents in order when offline', async () => {
       const connectorId = 1
       const transactionId = generateUUID()
 
@@ -144,7 +144,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
       )
     })
 
-    await it('Should preserve seqNo in queued events', async () => {
+    await it('should preserve seqNo in queued events', async () => {
       const connectorId = 1
       const transactionId = generateUUID()
 
@@ -186,7 +186,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
       expect(connector.transactionEventQueue[1].seqNo).toBe(2)
     })
 
-    await it('Should include timestamp in queued events', async () => {
+    await it('should include timestamp in queued events', async () => {
       const connectorId = 1
       const transactionId = generateUUID()
 
@@ -215,7 +215,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
   })
 
   await describe('Queue draining when coming online', async () => {
-    await it('Should send all queued events when sendQueuedTransactionEvents is called', async () => {
+    await it('should send all queued events when sendQueuedTransactionEvents is called', async () => {
       const connectorId = 1
       const transactionId = generateUUID()
 
@@ -249,7 +249,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
       expect(sentRequests[1].payload.seqNo).toBe(1)
     })
 
-    await it('Should clear queue after sending', async () => {
+    await it('should clear queue after sending', async () => {
       const connectorId = 1
       const transactionId = generateUUID()
 
@@ -273,7 +273,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
       expect(connector.transactionEventQueue.length).toBe(0)
     })
 
-    await it('Should preserve FIFO order when draining queue', async () => {
+    await it('should preserve FIFO order when draining queue', async () => {
       const connectorId = 1
       const transactionId = generateUUID()
 
@@ -316,7 +316,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
       expect(sentRequests[2].payload.seqNo).toBe(2)
     })
 
-    await it('Should handle empty queue gracefully', async () => {
+    await it('should handle empty queue gracefully', async () => {
       const connectorId = 1
 
       await expect(
@@ -326,7 +326,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
       expect(sentRequests.length).toBe(0)
     })
 
-    await it('Should handle null queue gracefully', async () => {
+    await it('should handle null queue gracefully', async () => {
       const connectorId = 1
       const connector = mockChargingStation.getConnectorStatus(connectorId)
       connector.transactionEventQueue = undefined
@@ -340,7 +340,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
   })
 
   await describe('Sequence number continuity across queue boundary', async () => {
-    await it('Should maintain seqNo continuity: online → offline → online', async () => {
+    await it('should maintain seqNo continuity: online → offline → online', async () => {
       const connectorId = 1
       const transactionId = generateUUID()
 
@@ -398,7 +398,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
   })
 
   await describe('Multiple connectors with independent queues', async () => {
-    await it('Should maintain separate queues for each connector', async () => {
+    await it('should maintain separate queues for each connector', async () => {
       const transactionId1 = generateUUID()
       const transactionId2 = generateUUID()
 
@@ -444,7 +444,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
       )
     })
 
-    await it('Should drain queues independently per connector', async () => {
+    await it('should drain queues independently per connector', async () => {
       const transactionId1 = generateUUID()
       const transactionId2 = generateUUID()
 
@@ -486,7 +486,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
   })
 
   await describe('Error handling during queue drain', async () => {
-    await it('Should continue sending remaining events if one fails', async () => {
+    await it('should continue sending remaining events if one fails', async () => {
       const connectorId = 1
       const transactionId = generateUUID()
       let callCount = 0

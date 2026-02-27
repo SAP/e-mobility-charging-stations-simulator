@@ -4,9 +4,37 @@ This document establishes conventions for writing maintainable, consistent tests
 
 ## Naming Conventions
 
+### Test Case Naming (MANDATORY)
+
+Use consistent `should [verb]` pattern in **lowercase**:
+
+✅ **Good:**
+
+```typescript
+it('should start successfully with valid configuration', async () => {})
+it('should reject invalid identifier', () => {})
+it('should handle Reset request with Immediate type', async () => {})
+```
+
+❌ **Bad:**
+
+```typescript
+// Inconsistent capitalization
+it('Should start successfully', () => {}) // Capital 'S'
+
+// Imperative style
+it('Verify generateUUID()', () => {}) // Not declarative
+
+// Missing 'should'
+it('starts successfully', () => {}) // No 'should'
+```
+
+### Files & Suites
+
 - **Files**: Use descriptive names matching the module under test: `ModuleName.test.ts`
 - **Test suites**: Use `describe()` with clear, specific descriptions
-- **Test cases**: Use `it()` or `test()` with descriptive names starting with action verbs
+- **OCPP tests**: Use requirement codes: `describe('B11 & B12 - Reset', () => {})`
+- **Auth tests**: Reference spec sections: `describe('G03.FR.01 - AuthCache Conformance', () => {})`
 - **Variables**: Use camelCase for variables, functions, and test helpers
 - **Constants**: Use SCREAMING_SNAKE_CASE for test constants
 
@@ -103,6 +131,30 @@ const station = await createChargingStation({
   ocppVersion: OCPPVersion.VERSION_20,
   numberOfConnectors: 2,
 })
+```
+
+### Shared Test Utilities
+
+The following utilities are available for reuse across test files:
+
+| Utility                       | Location                             | Purpose                                   |
+| ----------------------------- | ------------------------------------ | ----------------------------------------- |
+| `createMockChargingStation()` | `ChargingStationTestUtils.ts`        | Lightweight mock station stub             |
+| `createChargingStation()`     | `ChargingStationFactory.ts`          | Full test station with OCPP services      |
+| `createConnectorStatus()`     | `helpers/StationHelpers.ts`          | ConnectorStatus factory with defaults     |
+| `MockWebSocket`               | `mocks/MockWebSocket.ts`             | WebSocket simulation with message capture |
+| `MockIdTagsCache`             | `mocks/MockCaches.ts`                | In-memory IdTags cache mock               |
+| `MockSharedLRUCache`          | `mocks/MockCaches.ts`                | In-memory LRU cache mock                  |
+| `waitForCondition()`          | `helpers/StationHelpers.ts`          | Async condition waiting with timeout      |
+| `cleanupChargingStation()`    | `helpers/StationHelpers.ts`          | Proper station cleanup for afterEach      |
+| Auth factories                | `ocpp/auth/helpers/MockFactories.ts` | Auth-specific mock creation               |
+
+**DO NOT duplicate these utilities.** Import and reuse them.
+
+```typescript
+// Good: Import shared utilities
+import { createMockChargingStation, cleanupChargingStation } from './ChargingStationTestUtils.js'
+import { waitForCondition } from './helpers/StationHelpers.js'
 ```
 
 ### Mocking Best Practices

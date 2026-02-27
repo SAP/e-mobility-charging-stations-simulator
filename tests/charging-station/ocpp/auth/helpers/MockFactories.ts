@@ -261,11 +261,14 @@ export interface MockChargingStation {
 }
 
 /**
- * Create a mock ChargingStation for auth module testing.
+ * Create a mock ChargingStation for auth module unit testing.
+ *
+ * Returns MockChargingStation interface - minimal interface for auth strategies.
+ * For OCPPAuthService tests requiring full ChargingStation type, use createMockAuthServiceTestStation().
  * @param overrides - Partial MockChargingStation properties to override defaults
  * @returns Mock ChargingStation object with stubbed methods
  */
-export const createMockChargingStation = (
+export const createMockAuthChargingStation = (
   overrides?: Partial<MockChargingStation>
 ): MockChargingStation => ({
   getConnectorStatus: () => ({ status: 'Available' }),

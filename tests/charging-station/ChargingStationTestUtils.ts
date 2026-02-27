@@ -15,11 +15,13 @@
 // Re-export all helper functions and types
 export type {
   ChargingStationMocks,
+  CreateConnectorStatusOptions,
   MockChargingStationOptions,
   MockChargingStationResult,
 } from './helpers/StationHelpers.js'
 export {
   cleanupChargingStation,
+  createConnectorStatus,
   createMockChargingStation,
   createMockTemplate,
   resetChargingStationState,

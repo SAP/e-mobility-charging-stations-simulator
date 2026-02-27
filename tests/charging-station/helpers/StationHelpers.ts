@@ -50,6 +50,16 @@ export interface ChargingStationMocks {
 }
 
 /**
+ * Options for customizing connector status creation
+ */
+export interface CreateConnectorStatusOptions {
+  /** Override availability (default: AvailabilityType.Operative) */
+  availability?: AvailabilityType
+  /** Override status (default: ConnectorStatusEnum.Available) */
+  status?: ConnectorStatusEnum
+}
+
+/**
  * Options for creating a mock ChargingStation instance
  */
 export interface MockChargingStationOptions {
@@ -155,6 +165,45 @@ export function cleanupChargingStation (station: ChargingStation): void {
   // Reset mock singleton instances
   MockSharedLRUCache.resetInstance()
   MockIdTagsCache.resetInstance()
+}
+
+/**
+ * Create a connector status object with default values
+ *
+ * This is the canonical factory for creating ConnectorStatus objects in tests.
+ * Both ChargingStationFactory and StationHelpers use this function.
+ * @param _connectorId - Connector ID (unused, kept for API consistency)
+ * @param options - Optional overrides for default values
+ * @returns ConnectorStatus with default or customized values
+ * @example
+ * ```typescript
+ * // Default connector status
+ * const status = createConnectorStatus(1)
+ *
+ * // Customized connector status
+ * const status = createConnectorStatus(1, { availability: AvailabilityType.Inoperative })
+ * ```
+ */
+export function createConnectorStatus (
+  _connectorId: number,
+  options: CreateConnectorStatusOptions = {}
+): ConnectorStatus {
+  return {
+    availability: options.availability ?? AvailabilityType.Operative,
+    bootStatus: ConnectorStatusEnum.Available,
+    chargingProfiles: [],
+    energyActiveImportRegisterValue: 0,
+    idTagAuthorized: false,
+    idTagLocalAuthorized: false,
+    MeterValues: [],
+    status: options.status ?? ConnectorStatusEnum.Available,
+    transactionEnergyActiveImportRegisterValue: 0,
+    transactionId: undefined,
+    transactionIdTag: undefined,
+    transactionRemoteStarted: false,
+    transactionStart: undefined,
+    transactionStarted: false,
+  } as unknown as ConnectorStatus
 }
 
 /**
@@ -781,30 +830,6 @@ export async function waitForCondition (
     }
     await new Promise(resolve => setTimeout(resolve, interval))
   }
-}
-
-/**
- * Create a connector status object with default values
- * @param connectorId - Connector ID
- * @returns Default connector status
- */
-function createConnectorStatus (connectorId: number): ConnectorStatus {
-  return {
-    availability: AvailabilityType.Operative,
-    bootStatus: ConnectorStatusEnum.Available,
-    chargingProfiles: [],
-    energyActiveImportRegisterValue: 0,
-    idTagAuthorized: false,
-    idTagLocalAuthorized: false,
-    MeterValues: [],
-    status: ConnectorStatusEnum.Available,
-    transactionEnergyActiveImportRegisterValue: 0,
-    transactionId: undefined,
-    transactionIdTag: undefined,
-    transactionRemoteStarted: false,
-    transactionStart: undefined,
-    transactionStarted: false,
-  } as unknown as ConnectorStatus
 }
 
 /**

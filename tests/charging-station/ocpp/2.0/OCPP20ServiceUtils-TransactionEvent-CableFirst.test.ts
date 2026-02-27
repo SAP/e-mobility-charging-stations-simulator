@@ -54,7 +54,7 @@ await describe('E02 - Cable-First Transaction Flow', async () => {
   // E02.FR.01: Cable Plug Event Flow Tests
   // =========================================================================
   await describe('Cable Plug Event Sequencing', async () => {
-    await it('Should generate CablePluggedIn event as first event in cable-first flow', () => {
+    await it('should generate CablePluggedIn event as first event in cable-first flow', () => {
       const connectorId = 1
       const transactionId = generateUUID()
 
@@ -77,7 +77,7 @@ await describe('E02 - Cable-First Transaction Flow', async () => {
       expect(cablePluggedEvent.transactionInfo.transactionId).toBe(transactionId)
     })
 
-    await it('Should sequence CablePluggedIn → EVDetected → Charging correctly', () => {
+    await it('should sequence CablePluggedIn → EVDetected → Charging correctly', () => {
       const connectorId = 1
       const transactionId = generateUUID()
 
@@ -128,7 +128,7 @@ await describe('E02 - Cable-First Transaction Flow', async () => {
       expect(chargingStartedEvent.eventType).toBe(OCPP20TransactionEventEnumType.Updated)
     })
 
-    await it('Should handle EVDeparted for cable removal ending transaction', () => {
+    await it('should handle EVDeparted for cable removal ending transaction', () => {
       const connectorId = 2
       const transactionId = generateUUID()
 
@@ -166,7 +166,7 @@ await describe('E02 - Cable-First Transaction Flow', async () => {
   // E02.FR.02: EV Detection Flow Tests
   // =========================================================================
   await describe('EV Detection Flow', async () => {
-    await it('Should include EVDetected between cable plug and charging start', () => {
+    await it('should include EVDetected between cable plug and charging start', () => {
       const connectorId = 1
       const transactionId = generateUUID()
 
@@ -222,7 +222,7 @@ await describe('E02 - Cable-First Transaction Flow', async () => {
   // E02.FR.03: Connector Status Transitions
   // =========================================================================
   await describe('Connector Status Transitions', async () => {
-    await it('Should track connector status through cable-first lifecycle', () => {
+    await it('should track connector status through cable-first lifecycle', () => {
       const connectorId = 1
 
       // Get connector status object
@@ -253,7 +253,7 @@ await describe('E02 - Cable-First Transaction Flow', async () => {
       expect(connectorStatus.transactionStarted).toBe(false)
     })
 
-    await it('Should preserve transaction ID through cable-first flow states', () => {
+    await it('should preserve transaction ID through cable-first flow states', () => {
       const connectorId = 2
       const transactionId = generateUUID()
 
@@ -287,7 +287,7 @@ await describe('E02 - Cable-First Transaction Flow', async () => {
   // Full E02 Transaction Lifecycle Tests
   // =========================================================================
   await describe('Full Cable-First Transaction Lifecycle', async () => {
-    await it('Should support complete cable-first → charging → cable-removal flow', () => {
+    await it('should support complete cable-first → charging → cable-removal flow', () => {
       const connectorId = 1
       const transactionId = generateUUID()
 
@@ -342,7 +342,7 @@ await describe('E02 - Cable-First Transaction Flow', async () => {
       expect(lifecycle.evDeparted.transactionInfo.transactionId).toBe(transactionId)
     })
 
-    await it('Should handle suspended charging states in cable-first flow', () => {
+    await it('should handle suspended charging states in cable-first flow', () => {
       const connectorId = 3
       const transactionId = generateUUID()
 
@@ -411,7 +411,7 @@ await describe('E02 - Cable-First Transaction Flow', async () => {
   // Context-Based Trigger Reason Selection for Cable Events
   // =========================================================================
   await describe('Context-Based Cable Event Trigger Selection', async () => {
-    await it('Should select CablePluggedIn from cable_action context with plugged_in state', () => {
+    await it('should select CablePluggedIn from cable_action context with plugged_in state', () => {
       const context: OCPP20TransactionContext = {
         cableState: 'plugged_in',
         source: 'cable_action',
@@ -425,7 +425,7 @@ await describe('E02 - Cable-First Transaction Flow', async () => {
       expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.CablePluggedIn)
     })
 
-    await it('Should select EVDetected from cable_action context with detected state', () => {
+    await it('should select EVDetected from cable_action context with detected state', () => {
       const context: OCPP20TransactionContext = {
         cableState: 'detected',
         source: 'cable_action',
@@ -439,7 +439,7 @@ await describe('E02 - Cable-First Transaction Flow', async () => {
       expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.EVDetected)
     })
 
-    await it('Should select EVDeparted from cable_action context with unplugged state', () => {
+    await it('should select EVDeparted from cable_action context with unplugged state', () => {
       const context: OCPP20TransactionContext = {
         cableState: 'unplugged',
         source: 'cable_action',
@@ -458,7 +458,7 @@ await describe('E02 - Cable-First Transaction Flow', async () => {
   // Multiple Connector Independence Tests
   // =========================================================================
   await describe('Multiple Connector Independence', async () => {
-    await it('Should maintain independent transaction sequences on different connectors', () => {
+    await it('should maintain independent transaction sequences on different connectors', () => {
       const transactionId1 = generateUUID()
       const transactionId2 = generateUUID()
 

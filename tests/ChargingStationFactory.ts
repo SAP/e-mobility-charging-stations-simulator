@@ -7,7 +7,6 @@ import { IdTagsCache } from '../src/charging-station/IdTagsCache.js'
 import {
   AvailabilityType,
   type BootNotificationResponse,
-  type ChargingProfile,
   type ChargingStationConfiguration,
   type ChargingStationInfo,
   type ChargingStationTemplate,
@@ -17,10 +16,10 @@ import {
   OCPP20OptionalVariableName,
   OCPPVersion,
   RegistrationStatusEnumType,
-  type SampledValueTemplate,
   StandardParametersKey,
 } from '../src/types/index.js'
 import { clone, Constants, convertToBoolean } from '../src/utils/index.js'
+import { createConnectorStatus } from './charging-station/helpers/StationHelpers.js'
 
 /**
  * Options to customize the construction of a ChargingStation test instance
@@ -337,31 +336,17 @@ function createConnectorsConfiguration (
     return { connectors, evses }
   }
 
-  const createConnectorStatus = (connectorId: number) => {
-    const baseStatus = {
-      availability: options.connectorDefaults?.availability ?? AvailabilityType.Operative,
-      chargingProfiles: [] as ChargingProfile[],
-      energyActiveImportRegisterValue: 0,
-      idTagAuthorized: false,
-      idTagLocalAuthorized: false,
-      MeterValues: [] as SampledValueTemplate[],
-      status: options.connectorDefaults?.status ?? ConnectorStatusEnum.Available,
-      transactionEnergyActiveImportRegisterValue: 0,
-      transactionId: undefined,
-      transactionIdTag: undefined,
-      transactionRemoteStarted: false,
-      transactionStart: undefined,
-      transactionStarted: false,
-    }
-
-    return clone(baseStatus)
+  // Helper to create connector status with options defaults
+  const connectorStatusOptions = {
+    availability: options.connectorDefaults?.availability,
+    status: options.connectorDefaults?.status,
   }
 
   if (useEvses) {
     const evsesCount = options.evseConfiguration?.evsesCount ?? connectorsCount
     const connectorsCountPerEvse = Math.ceil(connectorsCount / evsesCount)
 
-    const connector0 = createConnectorStatus(0)
+    const connector0 = createConnectorStatus(0, connectorStatusOptions)
     connectors.set(0, connector0)
 
     for (let evseId = 1; evseId <= evsesCount; evseId++) {
@@ -373,7 +358,7 @@ function createConnectorsConfiguration (
       )
 
       for (let connectorId = startConnectorId; connectorId <= endConnectorId; connectorId++) {
-        const connectorStatus = createConnectorStatus(connectorId)
+        const connectorStatus = createConnectorStatus(connectorId, connectorStatusOptions)
         connectors.set(connectorId, connectorStatus)
         evseConnectors.set(connectorId, clone(connectorStatus))
       }
@@ -385,7 +370,7 @@ function createConnectorsConfiguration (
     }
   } else {
     for (let connectorId = 0; connectorId <= connectorsCount; connectorId++) {
-      connectors.set(connectorId, createConnectorStatus(connectorId))
+      connectors.set(connectorId, createConnectorStatus(connectorId, connectorStatusOptions))
     }
   }
 

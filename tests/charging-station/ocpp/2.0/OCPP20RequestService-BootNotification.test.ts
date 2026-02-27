@@ -50,7 +50,7 @@ await describe('B01 - Cold Boot Charging Station', async () => {
   })
 
   // FR: B01.FR.01
-  await it('Should build BootNotification request payload correctly with PowerUp reason', () => {
+  await it('should build BootNotification request payload correctly with PowerUp reason', () => {
     const chargingStationInfo: ChargingStationType = {
       firmwareVersion: TEST_FIRMWARE_VERSION,
       model: TEST_CHARGE_POINT_MODEL,
@@ -80,7 +80,7 @@ await describe('B01 - Cold Boot Charging Station', async () => {
   })
 
   // FR: B01.FR.02
-  await it('Should build BootNotification request payload correctly with ApplicationReset reason', () => {
+  await it('should build BootNotification request payload correctly with ApplicationReset reason', () => {
     const chargingStationInfo: ChargingStationType = {
       firmwareVersion: '2.1.3',
       model: 'Advanced Model X1',
@@ -109,7 +109,7 @@ await describe('B01 - Cold Boot Charging Station', async () => {
   })
 
   // FR: B01.FR.03
-  await it('Should build BootNotification request payload correctly with minimal required fields', () => {
+  await it('should build BootNotification request payload correctly with minimal required fields', () => {
     const chargingStationInfo: ChargingStationType = {
       model: 'Basic Model',
       vendorName: 'Basic Vendor',
@@ -137,7 +137,7 @@ await describe('B01 - Cold Boot Charging Station', async () => {
   })
 
   // FR: B01.FR.04
-  await it('Should handle all BootReasonEnumType values correctly', () => {
+  await it('should handle all BootReasonEnumType values correctly', () => {
     const chargingStationInfo: ChargingStationType = {
       model: TEST_CHARGE_POINT_MODEL,
       vendorName: TEST_CHARGE_POINT_VENDOR,
@@ -174,7 +174,7 @@ await describe('B01 - Cold Boot Charging Station', async () => {
   })
 
   // FR: B01.FR.05
-  await it('Should validate payload structure matches OCPP20BootNotificationRequest interface', () => {
+  await it('should validate payload structure matches OCPP20BootNotificationRequest interface', () => {
     const chargingStationInfo: ChargingStationType = {
       customData: {
         vendorId: 'TEST_VENDOR',

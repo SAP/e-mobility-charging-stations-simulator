@@ -74,7 +74,7 @@ await describe('I04 - DeleteCertificate', async () => {
   const testableService = createTestableIncomingRequestService(incomingRequestService)
 
   await describe('Valid Certificate Deletion', async () => {
-    await it('Should accept deletion of existing certificate', async () => {
+    await it('should accept deletion of existing certificate', async () => {
       stationWithCertManager.certificateManager = createMockCertificateManager({
         deleteCertificateResult: { status: 'Accepted' },
       })
@@ -94,7 +94,7 @@ await describe('I04 - DeleteCertificate', async () => {
       expect(response.statusInfo).toBeUndefined()
     })
 
-    await it('Should accept deletion with SHA384 hash algorithm', async () => {
+    await it('should accept deletion with SHA384 hash algorithm', async () => {
       stationWithCertManager.certificateManager = createMockCertificateManager({
         deleteCertificateResult: { status: 'Accepted' },
       })
@@ -114,7 +114,7 @@ await describe('I04 - DeleteCertificate', async () => {
       expect(response.statusInfo).toBeUndefined()
     })
 
-    await it('Should accept deletion with SHA512 hash algorithm', async () => {
+    await it('should accept deletion with SHA512 hash algorithm', async () => {
       stationWithCertManager.certificateManager = createMockCertificateManager({
         deleteCertificateResult: { status: 'Accepted' },
       })
@@ -136,7 +136,7 @@ await describe('I04 - DeleteCertificate', async () => {
   })
 
   await describe('Certificate Not Found', async () => {
-    await it('Should return NotFound for non-existent certificate', async () => {
+    await it('should return NotFound for non-existent certificate', async () => {
       stationWithCertManager.certificateManager = createMockCertificateManager({
         deleteCertificateResult: { status: 'NotFound' },
       })
@@ -154,7 +154,7 @@ await describe('I04 - DeleteCertificate', async () => {
   })
 
   await describe('Deletion Failure Handling', async () => {
-    await it('Should return Failed status when deletion throws error', async () => {
+    await it('should return Failed status when deletion throws error', async () => {
       stationWithCertManager.certificateManager = createMockCertificateManager({
         deleteCertificateError: new Error('Deletion failed'),
       })
@@ -172,7 +172,7 @@ await describe('I04 - DeleteCertificate', async () => {
       expect(response.statusInfo?.reasonCode).toBeDefined()
     })
 
-    await it('Should return Failed with InternalError when certificateManager is missing', async () => {
+    await it('should return Failed with InternalError when certificateManager is missing', async () => {
       const stationWithoutCertManager = createChargingStation({
         baseName: TEST_CHARGING_STATION_BASE_NAME,
         connectorsCount: 3,
@@ -203,7 +203,7 @@ await describe('I04 - DeleteCertificate', async () => {
   })
 
   await describe('Response Structure Validation', async () => {
-    await it('Should return response matching DeleteCertificateResponse schema', async () => {
+    await it('should return response matching DeleteCertificateResponse schema', async () => {
       stationWithCertManager.certificateManager = createMockCertificateManager({
         deleteCertificateResult: { status: 'Accepted' },
       })
@@ -239,7 +239,7 @@ await describe('I04 - DeleteCertificate', async () => {
       }
     })
 
-    await it('Should include statusInfo with reasonCode for failure', async () => {
+    await it('should include statusInfo with reasonCode for failure', async () => {
       stationWithCertManager.certificateManager = createMockCertificateManager({
         deleteCertificateError: new Error('Deletion failed'),
       })

@@ -27,7 +27,7 @@ class TestableUIWebSocketServer extends UIWebSocketServer {
 }
 
 await describe('AbstractUIService test suite', async () => {
-  await it('Verify sendResponse checks for response handler existence', () => {
+  await it('should verify sendResponse checks for response handler existence', () => {
     const config = createMockUIServerConfiguration()
     const server = new TestableUIWebSocketServer(config)
 
@@ -43,7 +43,7 @@ await describe('AbstractUIService test suite', async () => {
     expect(server.hasResponseHandler(TEST_UUID)).toBe(false)
   })
 
-  await it('Verify requestHandler returns response for LIST_CHARGING_STATIONS', async () => {
+  await it('should verify requestHandler returns response for LIST_CHARGING_STATIONS', async () => {
     const config = createMockUIServerConfiguration()
     const server = new TestableUIWebSocketServer(config)
 
@@ -70,7 +70,7 @@ await describe('AbstractUIService test suite', async () => {
     }
   })
 
-  await it('Verify requestHandler returns response for LIST_TEMPLATES', async () => {
+  await it('should verify requestHandler returns response for LIST_TEMPLATES', async () => {
     const config = createMockUIServerConfiguration()
     const server = new TestableUIWebSocketServer(config)
 
@@ -99,7 +99,7 @@ await describe('AbstractUIService test suite', async () => {
     }
   })
 
-  await it('Verify requestHandler returns error response for unknown procedure', async () => {
+  await it('should verify requestHandler returns error response for unknown procedure', async () => {
     const config = createMockUIServerConfiguration()
     const server = new TestableUIWebSocketServer(config)
 
@@ -123,7 +123,7 @@ await describe('AbstractUIService test suite', async () => {
     }
   })
 
-  await it('Verify broadcast channel request tracking initialization', () => {
+  await it('should verify broadcast channel request tracking initialization', () => {
     const config = createMockUIServerConfiguration()
     const server = new TestableUIWebSocketServer(config)
 
@@ -138,7 +138,7 @@ await describe('AbstractUIService test suite', async () => {
     }
   })
 
-  await it('Verify broadcast channel cleanup on stop', () => {
+  await it('should verify broadcast channel cleanup on stop', () => {
     const config = createMockUIServerConfiguration()
     const server = new TestableUIWebSocketServer(config)
 
@@ -153,7 +153,7 @@ await describe('AbstractUIService test suite', async () => {
     }
   })
 
-  await it('Verify requestHandler handles errors gracefully', async () => {
+  await it('should verify requestHandler handles errors gracefully', async () => {
     const config = createMockUIServerConfiguration()
     const server = new TestableUIWebSocketServer(config)
 
@@ -176,7 +176,7 @@ await describe('AbstractUIService test suite', async () => {
     }
   })
 
-  await it('Verify UI service initialization', () => {
+  await it('should verify UI service initialization', () => {
     const config = createMockUIServerConfiguration()
     const server = new TestableUIWebSocketServer(config)
 
@@ -190,7 +190,7 @@ await describe('AbstractUIService test suite', async () => {
     }
   })
 
-  await it('Verify multiple service registrations', () => {
+  await it('should verify multiple service registrations', () => {
     const config = createMockUIServerConfiguration()
     const server = new TestableUIWebSocketServer(config)
 

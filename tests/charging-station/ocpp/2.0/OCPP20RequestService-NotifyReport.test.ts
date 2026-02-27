@@ -50,7 +50,7 @@ await describe('B07/B08 - NotifyReport', async () => {
   })
 
   // FR: B07.FR.03, B07.FR.04
-  await it('Should build NotifyReport request payload correctly with minimal required fields', () => {
+  await it('should build NotifyReport request payload correctly with minimal required fields', () => {
     const requestParams: OCPP20NotifyReportRequest = {
       generatedAt: new Date('2023-10-22T10:30:00.000Z'),
       requestId: 123,
@@ -72,7 +72,7 @@ await describe('B07/B08 - NotifyReport', async () => {
     expect(payload.reportData).toBeUndefined()
   })
 
-  await it('Should build NotifyReport request payload correctly with reportData', () => {
+  await it('should build NotifyReport request payload correctly with reportData', () => {
     const reportData: ReportDataType[] = [
       {
         component: {
@@ -118,7 +118,7 @@ await describe('B07/B08 - NotifyReport', async () => {
     expect(payload.reportData).toHaveLength(1)
   })
 
-  await it('Should build NotifyReport request payload correctly with multiple reportData items', () => {
+  await it('should build NotifyReport request payload correctly with multiple reportData items', () => {
     const reportData: ReportDataType[] = [
       {
         component: {
@@ -200,7 +200,7 @@ await describe('B07/B08 - NotifyReport', async () => {
     expect(payload.reportData).toHaveLength(3)
   })
 
-  await it('Should build NotifyReport request payload correctly with fragmented report (tbc=true)', () => {
+  await it('should build NotifyReport request payload correctly with fragmented report (tbc=true)', () => {
     const reportData: ReportDataType[] = [
       {
         component: {
@@ -246,7 +246,7 @@ await describe('B07/B08 - NotifyReport', async () => {
     expect(payload.reportData).toHaveLength(1)
   })
 
-  await it('Should build NotifyReport request payload correctly with empty reportData array', () => {
+  await it('should build NotifyReport request payload correctly with empty reportData array', () => {
     const requestParams: OCPP20NotifyReportRequest = {
       generatedAt: new Date('2023-10-22T09:00:00.000Z'),
       reportData: [], // Empty array
@@ -271,7 +271,7 @@ await describe('B07/B08 - NotifyReport', async () => {
     expect(payload.reportData).toHaveLength(0)
   })
 
-  await it('Should handle different AttributeEnumType values correctly', () => {
+  await it('should handle different AttributeEnumType values correctly', () => {
     const testAttributes = [AttributeEnumType.Actual]
 
     testAttributes.forEach((attributeType, index) => {
@@ -318,7 +318,7 @@ await describe('B07/B08 - NotifyReport', async () => {
     })
   })
 
-  await it('Should handle different DataEnumType values correctly', () => {
+  await it('should handle different DataEnumType values correctly', () => {
     const testDataTypes = [
       { dataType: DataEnumType.string, value: 'test string' },
       { dataType: DataEnumType.integer, value: '42' },
@@ -369,7 +369,7 @@ await describe('B07/B08 - NotifyReport', async () => {
     })
   })
 
-  await it('Should validate payload structure matches OCPP20NotifyReportRequest interface', () => {
+  await it('should validate payload structure matches OCPP20NotifyReportRequest interface', () => {
     const reportData: ReportDataType[] = [
       {
         component: {
@@ -434,7 +434,7 @@ await describe('B07/B08 - NotifyReport', async () => {
     }
   })
 
-  await it('Should handle complex reportData with multiple variable attributes', () => {
+  await it('should handle complex reportData with multiple variable attributes', () => {
     const reportData: ReportDataType[] = [
       {
         component: {
@@ -475,7 +475,7 @@ await describe('B07/B08 - NotifyReport', async () => {
     expect(payload.reportData[0].variableAttribute[0].type).toBe(AttributeEnumType.Actual)
   })
 
-  await it('Should preserve all payload properties correctly', () => {
+  await it('should preserve all payload properties correctly', () => {
     const testDate = new Date('2023-10-22T11:22:33.444Z')
     const reportData: ReportDataType[] = [
       {
