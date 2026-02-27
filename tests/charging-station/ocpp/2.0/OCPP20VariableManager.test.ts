@@ -1386,7 +1386,7 @@ await describe('B05/B06 - OCPP20VariableManager test suite', async () => {
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
 
-    await it('Returns NotSupportedAttributeType for MinSet HeartbeatInterval', () => {
+    await it('should return NotSupportedAttributeType for MinSet HeartbeatInterval', () => {
       const component = { name: OCPP20ComponentName.OCPPCommCtrlr }
       const variable = { name: OCPP20OptionalVariableName.HeartbeatInterval }
       const res = manager.getVariables(station, [
@@ -1396,7 +1396,7 @@ await describe('B05/B06 - OCPP20VariableManager test suite', async () => {
       expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
     })
 
-    await it('Returns NotSupportedAttributeType for MaxSet WebSocketPingInterval', () => {
+    await it('should return NotSupportedAttributeType for MaxSet WebSocketPingInterval', () => {
       const component = { name: OCPP20ComponentName.ChargingStation }
       const variable = { name: OCPP20OptionalVariableName.WebSocketPingInterval }
       const res = manager.getVariables(station, [
