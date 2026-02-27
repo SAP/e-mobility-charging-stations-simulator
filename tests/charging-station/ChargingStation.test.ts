@@ -665,4 +665,323 @@ await describe('ChargingStation', async () => {
       expect(mocks.fileSystem.writtenFiles.size).toBe(0)
     })
   })
+
+  await describe('WebSocket Message Handling', async () => {
+    let station: ChargingStation | undefined
+
+    afterEach(() => {
+      if (station != null) {
+        cleanupChargingStation(station)
+      }
+    })
+
+    // === Connection Management Tests ===
+
+    await it('should report WebSocket connection state via isWebSocketConnectionOpened()', () => {
+      // Arrange
+      const result = createMockChargingStation({ connectorsCount: 1 })
+      station = result.station
+      const mocks = result.mocks
+
+      // Assert - connection is open by default
+      expect(station.isWebSocketConnectionOpened()).toBe(true)
+
+      // Act - change ready state to CLOSED
+      mocks.webSocket.readyState = 3 // WebSocketReadyState.CLOSED
+
+      // Assert
+      expect(station.isWebSocketConnectionOpened()).toBe(false)
+    })
+
+    await it('should return false when WebSocket is CONNECTING', () => {
+      // Arrange
+      const result = createMockChargingStation({ connectorsCount: 1 })
+      station = result.station
+      const mocks = result.mocks
+
+      // Act
+      mocks.webSocket.readyState = 0 // WebSocketReadyState.CONNECTING
+
+      // Assert
+      expect(station.isWebSocketConnectionOpened()).toBe(false)
+    })
+
+    await it('should return false when WebSocket is CLOSING', () => {
+      // Arrange
+      const result = createMockChargingStation({ connectorsCount: 1 })
+      station = result.station
+      const mocks = result.mocks
+
+      // Act
+      mocks.webSocket.readyState = 2 // WebSocketReadyState.CLOSING
+
+      // Assert
+      expect(station.isWebSocketConnectionOpened()).toBe(false)
+    })
+
+    await it('should close WebSocket connection via closeWSConnection()', () => {
+      // Arrange
+      const result = createMockChargingStation({ connectorsCount: 1 })
+      station = result.station
+
+      // Assert - connection exists initially
+      expect(station.wsConnection).not.toBeNull()
+
+      // Act
+      station.closeWSConnection()
+
+      // Assert - connection is nullified
+      expect(station.wsConnection).toBeNull()
+    })
+
+    await it('should handle closeWSConnection() when already closed', () => {
+      // Arrange
+      const result = createMockChargingStation({ connectorsCount: 1 })
+      station = result.station
+
+      // Act - close twice (idempotent)
+      station.closeWSConnection()
+      station.closeWSConnection()
+
+      // Assert - no error, connection remains null
+      expect(station.wsConnection).toBeNull()
+    })
+
+    // === Message Capture Tests ===
+
+    await it('should capture sent messages in sentMessages array', () => {
+      // Arrange
+      const result = createMockChargingStation({ connectorsCount: 1 })
+      station = result.station
+      const mocks = result.mocks
+
+      // Act - send messages via mock WebSocket
+      mocks.webSocket.send('["2","uuid-1","Heartbeat",{}]')
+      mocks.webSocket.send('["2","uuid-2","StatusNotification",{"connectorId":1}]')
+
+      // Assert
+      expect(mocks.webSocket.sentMessages.length).toBe(2)
+      expect(mocks.webSocket.sentMessages[0]).toBe('["2","uuid-1","Heartbeat",{}]')
+      expect(mocks.webSocket.sentMessages[1]).toBe(
+        '["2","uuid-2","StatusNotification",{"connectorId":1}]'
+      )
+    })
+
+    await it('should return last sent message via getLastSentMessage()', () => {
+      // Arrange
+      const result = createMockChargingStation({ connectorsCount: 1 })
+      station = result.station
+      const mocks = result.mocks
+
+      // Act
+      mocks.webSocket.send('["2","uuid-1","Heartbeat",{}]')
+      mocks.webSocket.send('["2","uuid-2","BootNotification",{}]')
+
+      // Assert
+      expect(mocks.webSocket.getLastSentMessage()).toBe('["2","uuid-2","BootNotification",{}]')
+    })
+
+    await it('should return undefined for getLastSentMessage() when no messages sent', () => {
+      // Arrange
+      const result = createMockChargingStation({ connectorsCount: 1 })
+      station = result.station
+      const mocks = result.mocks
+
+      // Assert
+      expect(mocks.webSocket.getLastSentMessage()).toBeUndefined()
+    })
+
+    await it('should parse sent messages as JSON via getSentMessagesAsJson()', () => {
+      // Arrange
+      const result = createMockChargingStation({ connectorsCount: 1 })
+      station = result.station
+      const mocks = result.mocks
+
+      // Act
+      mocks.webSocket.send('[2,"uuid-1","Heartbeat",{}]')
+
+      // Assert
+      const parsed = mocks.webSocket.getSentMessagesAsJson()
+      expect(parsed.length).toBe(1)
+      expect(parsed[0]).toEqual([2, 'uuid-1', 'Heartbeat', {}])
+    })
+
+    await it('should clear captured messages via clearMessages()', () => {
+      // Arrange
+      const result = createMockChargingStation({ connectorsCount: 1 })
+      station = result.station
+      const mocks = result.mocks
+
+      // Populate messages
+      mocks.webSocket.send('["2","uuid-1","Heartbeat",{}]')
+      mocks.webSocket.send('["2","uuid-2","Heartbeat",{}]')
+      expect(mocks.webSocket.sentMessages.length).toBe(2)
+
+      // Act
+      mocks.webSocket.clearMessages()
+
+      // Assert
+      expect(mocks.webSocket.sentMessages.length).toBe(0)
+      expect(mocks.webSocket.sentBinaryMessages.length).toBe(0)
+    })
+
+    // === Event Simulation Tests ===
+
+    await it('should emit message event via simulateMessage()', () => {
+      // Arrange
+      const result = createMockChargingStation({ connectorsCount: 1 })
+      station = result.station
+      const mocks = result.mocks
+      let receivedData: unknown
+
+      // Set up listener
+      mocks.webSocket.on('message', (data: unknown) => {
+        receivedData = data
+      })
+
+      // Act
+      mocks.webSocket.simulateMessage('[3,"uuid-1",{}]')
+
+      // Assert
+      expect(receivedData).toBeDefined()
+      expect(Buffer.isBuffer(receivedData)).toBe(true)
+    })
+
+    await it('should emit open event and set readyState via simulateOpen()', () => {
+      // Arrange
+      const result = createMockChargingStation({ connectorsCount: 1 })
+      station = result.station
+      const mocks = result.mocks
+      let openEventFired = false
+
+      // First close the connection to test opening
+      mocks.webSocket.readyState = 3 // CLOSED
+
+      // Set up listener
+      mocks.webSocket.on('open', () => {
+        openEventFired = true
+      })
+
+      // Act
+      mocks.webSocket.simulateOpen()
+
+      // Assert
+      expect(openEventFired).toBe(true)
+      expect(mocks.webSocket.readyState).toBe(1) // WebSocketReadyState.OPEN
+    })
+
+    await it('should emit close event and set readyState via simulateClose()', () => {
+      // Arrange
+      const result = createMockChargingStation({ connectorsCount: 1 })
+      station = result.station
+      const mocks = result.mocks
+      let closeCode: number | undefined
+
+      // Set up listener
+      mocks.webSocket.on('close', (code: number) => {
+        closeCode = code
+      })
+
+      // Act
+      mocks.webSocket.simulateClose(1001, 'Going away')
+
+      // Assert
+      expect(closeCode).toBe(1001)
+      expect(mocks.webSocket.readyState).toBe(3) // WebSocketReadyState.CLOSED
+    })
+
+    await it('should emit error event via simulateError()', () => {
+      // Arrange
+      const result = createMockChargingStation({ connectorsCount: 1 })
+      station = result.station
+      const mocks = result.mocks
+      let receivedError: Error | undefined
+
+      // Set up listener
+      mocks.webSocket.on('error', (error: Error) => {
+        receivedError = error
+      })
+
+      // Act
+      const testError = new Error('Connection refused')
+      mocks.webSocket.simulateError(testError)
+
+      // Assert
+      expect(receivedError).toBe(testError)
+      expect(receivedError?.message).toBe('Connection refused')
+    })
+
+    await it('should emit ping event via simulatePing()', () => {
+      // Arrange
+      const result = createMockChargingStation({ connectorsCount: 1 })
+      station = result.station
+      const mocks = result.mocks
+      let pingReceived = false
+      let pingData: Buffer | undefined
+
+      // Set up listener
+      mocks.webSocket.on('ping', (data: Buffer) => {
+        pingReceived = true
+        pingData = data
+      })
+
+      // Act
+      mocks.webSocket.simulatePing(Buffer.from('ping-data'))
+
+      // Assert
+      expect(pingReceived).toBe(true)
+      expect(pingData?.toString()).toBe('ping-data')
+    })
+
+    await it('should emit pong event via simulatePong()', () => {
+      // Arrange
+      const result = createMockChargingStation({ connectorsCount: 1 })
+      station = result.station
+      const mocks = result.mocks
+      let pongReceived = false
+      let pongData: Buffer | undefined
+
+      // Set up listener
+      mocks.webSocket.on('pong', (data: Buffer) => {
+        pongReceived = true
+        pongData = data
+      })
+
+      // Act
+      mocks.webSocket.simulatePong(Buffer.from('pong-data'))
+
+      // Assert
+      expect(pongReceived).toBe(true)
+      expect(pongData?.toString()).toBe('pong-data')
+    })
+
+    // === Edge Case Tests ===
+
+    await it('should throw error when sending on closed WebSocket', () => {
+      // Arrange
+      const result = createMockChargingStation({ connectorsCount: 1 })
+      station = result.station
+      const mocks = result.mocks
+
+      // Close the WebSocket
+      mocks.webSocket.readyState = 3 // WebSocketReadyState.CLOSED
+
+      // Act & Assert
+      expect(() => {
+        mocks.webSocket.send('["2","uuid","Heartbeat",{}]')
+      }).toThrow('WebSocket is not open')
+    })
+
+    await it('should capture URL from WebSocket connection', () => {
+      // Arrange
+      const result = createMockChargingStation({ connectorsCount: 1 })
+      station = result.station
+      const mocks = result.mocks
+
+      // Assert
+      expect(mocks.webSocket.url).toBeDefined()
+      expect(typeof mocks.webSocket.url).toBe('string')
+      expect(mocks.webSocket.url.length).toBeGreaterThan(0)
+    })
+  })
 })
