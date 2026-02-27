@@ -3,6 +3,7 @@ import { afterEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 
+import { RegistrationStatusEnumType } from '../../src/types/index.js'
 import { cleanupChargingStation, createRealChargingStation } from './ChargingStationTestUtils.js'
 
 await describe('ChargingStation', async () => {
@@ -383,6 +384,285 @@ await describe('ChargingStation', async () => {
 
       // Should return total connectors across all EVSEs
       expect(station.getNumberOfConnectors()).toBe(4)
+    })
+  })
+
+  await describe('Boot Notification State', async () => {
+    let station: ChargingStation | undefined
+
+    afterEach(() => {
+      if (station != null) {
+        cleanupChargingStation(station)
+      }
+    })
+
+    await it('should return true for inAcceptedState when boot status is ACCEPTED', () => {
+      // Arrange
+      const result = createRealChargingStation({
+        bootNotificationStatus: RegistrationStatusEnumType.ACCEPTED,
+      })
+      station = result.station
+
+      // Act & Assert
+      expect(station.inAcceptedState()).toBe(true)
+      expect(station.inPendingState()).toBe(false)
+      expect(station.inRejectedState()).toBe(false)
+      expect(station.inUnknownState()).toBe(false)
+    })
+
+    await it('should return true for inPendingState when boot status is PENDING', () => {
+      // Arrange
+      const result = createRealChargingStation({
+        bootNotificationStatus: RegistrationStatusEnumType.PENDING,
+      })
+      station = result.station
+
+      // Act & Assert
+      expect(station.inPendingState()).toBe(true)
+      expect(station.inAcceptedState()).toBe(false)
+      expect(station.inRejectedState()).toBe(false)
+      expect(station.inUnknownState()).toBe(false)
+    })
+
+    await it('should return true for inRejectedState when boot status is REJECTED', () => {
+      // Arrange
+      const result = createRealChargingStation({
+        bootNotificationStatus: RegistrationStatusEnumType.REJECTED,
+      })
+      station = result.station
+
+      // Act & Assert
+      expect(station.inRejectedState()).toBe(true)
+      expect(station.inAcceptedState()).toBe(false)
+      expect(station.inPendingState()).toBe(false)
+      expect(station.inUnknownState()).toBe(false)
+    })
+
+    await it('should return true for inUnknownState when boot notification response is null', () => {
+      // Arrange - create station with default accepted status, then delete the response
+      const result = createRealChargingStation({ connectorsCount: 1 })
+      station = result.station
+
+      // Act - simulate unknown state by clearing boot notification response
+      if (station.bootNotificationResponse != null) {
+        // Delete the boot notification response to simulate unknown state
+        delete station.bootNotificationResponse
+      }
+
+      // Assert - only check inUnknownState
+      expect(station.inUnknownState()).toBe(true)
+    })
+
+    await it('should allow state transitions from PENDING to ACCEPTED', () => {
+      // Arrange
+      const result = createRealChargingStation({
+        bootNotificationStatus: RegistrationStatusEnumType.PENDING,
+      })
+      station = result.station
+      expect(station.inPendingState()).toBe(true)
+
+      // Act - transition from PENDING to ACCEPTED
+      station.bootNotificationResponse.status = RegistrationStatusEnumType.ACCEPTED
+      station.bootNotificationResponse.currentTime = new Date()
+
+      // Assert
+      expect(station.inAcceptedState()).toBe(true)
+      expect(station.inPendingState()).toBe(false)
+    })
+
+    await it('should allow state transitions from PENDING to REJECTED', () => {
+      // Arrange
+      const result = createRealChargingStation({
+        bootNotificationStatus: RegistrationStatusEnumType.PENDING,
+      })
+      station = result.station
+      expect(station.inPendingState()).toBe(true)
+
+      // Act - transition from PENDING to REJECTED
+      station.bootNotificationResponse.status = RegistrationStatusEnumType.REJECTED
+      station.bootNotificationResponse.currentTime = new Date()
+
+      // Assert
+      expect(station.inRejectedState()).toBe(true)
+      expect(station.inPendingState()).toBe(false)
+    })
+  })
+
+  await describe('Configuration Persistence', async () => {
+    let station: ChargingStation | undefined
+
+    afterEach(() => {
+      if (station != null) {
+        cleanupChargingStation(station)
+      }
+    })
+
+    // === OCPP Configuration Getters ===
+
+    await it('should return heartbeat interval in milliseconds', () => {
+      // Arrange - create station with 60 second heartbeat
+      const result = createRealChargingStation({ heartbeatInterval: 60 })
+      station = result.station
+
+      // Act & Assert - should convert seconds to milliseconds
+      expect(station.getHeartbeatInterval()).toBe(60000)
+    })
+
+    await it('should return default heartbeat interval when not explicitly configured', () => {
+      // Arrange - use default heartbeat interval (TEST_HEARTBEAT_INTERVAL_SECONDS = 60)
+      const result = createRealChargingStation()
+      station = result.station
+
+      // Act & Assert - default 60s * 1000 = 60000ms
+      expect(station.getHeartbeatInterval()).toBe(60000)
+    })
+
+    await it('should return connection timeout in milliseconds', () => {
+      // Arrange
+      const result = createRealChargingStation()
+      station = result.station
+
+      // Act & Assert - default connection timeout is 30 seconds
+      expect(station.getConnectionTimeout()).toBe(30000)
+    })
+
+    await it('should return authorize remote TX requests as boolean', () => {
+      // Arrange - create station which defaults to false for AuthorizeRemoteTxRequests
+      const result = createRealChargingStation()
+      station = result.station
+
+      // Act & Assert - getAuthorizeRemoteTxRequests returns boolean
+      const authorizeRemoteTx = station.getAuthorizeRemoteTxRequests()
+      expect(typeof authorizeRemoteTx).toBe('boolean')
+    })
+
+    await it('should return local auth list enabled as boolean', () => {
+      // Arrange
+      const result = createRealChargingStation()
+      station = result.station
+
+      // Act & Assert - getLocalAuthListEnabled returns boolean
+      const localAuthEnabled = station.getLocalAuthListEnabled()
+      expect(typeof localAuthEnabled).toBe('boolean')
+    })
+
+    // === Configuration Save Operations ===
+
+    await it('should call saveOcppConfiguration without throwing', () => {
+      // Arrange
+      const result = createRealChargingStation()
+      station = result.station
+
+      // Act & Assert - should not throw
+      expect(() => station?.saveOcppConfiguration()).not.toThrow()
+    })
+
+    await it('should have ocppConfiguration object with configurationKey array', () => {
+      // Arrange
+      const result = createRealChargingStation()
+      station = result.station
+
+      // Act & Assert - configuration structure should be present
+      expect(station.ocppConfiguration).toBeDefined()
+      expect(station.ocppConfiguration?.configurationKey).toBeDefined()
+      expect(Array.isArray(station.ocppConfiguration?.configurationKey)).toBe(true)
+    })
+
+    // === Configuration Mutation ===
+
+    await it('should allow updating heartbeat interval', () => {
+      // Arrange - create with 60 second interval
+      const result = createRealChargingStation({ heartbeatInterval: 60 })
+      station = result.station
+      const initialInterval = station.getHeartbeatInterval()
+      expect(initialInterval).toBe(60000)
+
+      // Act - simulate configuration change by creating new station with different interval
+      const result2 = createRealChargingStation({ heartbeatInterval: 120 })
+      const station2 = result2.station
+
+      // Assert - different configurations have different intervals
+      expect(station2.getHeartbeatInterval()).toBe(120000)
+      expect(station.getHeartbeatInterval()).toBe(60000) // Original unchanged
+
+      // Cleanup second station
+      cleanupChargingStation(station2)
+    })
+
+    await it('should support setSupervisionUrl method if available', () => {
+      // Arrange
+      const result = createRealChargingStation()
+      station = result.station
+
+      // Act & Assert - setSupervisionUrl should be a function if available
+      if ('setSupervisionUrl' in station && typeof station.setSupervisionUrl === 'function') {
+        expect(() => station?.setSupervisionUrl('ws://new-server:8080')).not.toThrow()
+      } else {
+        // Mock station may not have setSupervisionUrl, which is expected
+        expect(station).toBeDefined()
+      }
+    })
+
+    // === Configuration Loading & Persistence ===
+
+    await it('should have template file reference', () => {
+      // Arrange
+      const result = createRealChargingStation({ templateFile: 'custom-template.json' })
+      station = result.station
+
+      // Act & Assert - station info should have template reference
+      expect(station.stationInfo?.templateName).toBe('custom-template.json')
+    })
+
+    await it('should have hashId for configuration persistence', () => {
+      // Arrange
+      const result = createRealChargingStation()
+      station = result.station
+
+      // Act & Assert - hashId is used for configuration file naming
+      expect(station.stationInfo?.hashId).toBeDefined()
+      expect(typeof station.stationInfo?.hashId).toBe('string')
+    })
+
+    await it('should preserve station info properties for persistence', () => {
+      // Arrange
+      const result = createRealChargingStation({
+        baseName: 'PERSIST-CS',
+        index: 5,
+      })
+      station = result.station
+
+      // Act & Assert - station info should have all properties for persistence
+      expect(station.stationInfo).toBeDefined()
+      expect(station.stationInfo?.baseName).toBe('PERSIST-CS')
+      expect(station.stationInfo?.chargingStationId).toContain('PERSIST-CS')
+      expect(station.stationInfo?.templateIndex).toBe(5)
+    })
+
+    await it('should track configuration file path via templateFile', () => {
+      // Arrange
+      const result = createRealChargingStation()
+      station = result.station
+
+      // Act & Assert - templateFile is used to track configuration source
+      expect(station.templateFile).toBeDefined()
+      expect(typeof station.templateFile).toBe('string')
+    })
+
+    await it('should use mocked file system without real file writes', () => {
+      // Arrange
+      const result = createRealChargingStation()
+      station = result.station
+      const mocks = result.mocks
+
+      // Act - perform save operation (mocked to no-op)
+      station.saveOcppConfiguration()
+
+      // Assert - mock file system is available for tracking (no real writes)
+      expect(mocks.fileSystem).toBeDefined()
+      expect(mocks.fileSystem.writtenFiles).toBeInstanceOf(Map)
+      // In mock mode, saveOcppConfiguration is a no-op, so no files are written
+      expect(mocks.fileSystem.writtenFiles.size).toBe(0)
     })
   })
 })

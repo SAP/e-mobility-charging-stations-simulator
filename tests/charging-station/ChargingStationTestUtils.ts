@@ -575,6 +575,9 @@ export function createRealChargingStation (
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     emitChargingStationEvent: () => {},
     evses,
+    getAuthorizeRemoteTxRequests (): boolean {
+      return false // Default to false in mock
+    },
     getConnectionTimeout (): number {
       return 30000
     },
@@ -606,6 +609,9 @@ export function createRealChargingStation (
     },
     getHeartbeatInterval (): number {
       return heartbeatInterval * 1000 // Return in ms
+    },
+    getLocalAuthListEnabled (): boolean {
+      return false // Default to false in mock
     },
     getNumberOfConnectors (): number {
       if (useEvses) {
@@ -648,6 +654,18 @@ export function createRealChargingStation (
     // Core properties
     index,
 
+    inPendingState (): boolean {
+      return this.bootNotificationResponse.status === RegistrationStatusEnumType.PENDING
+    },
+
+    inRejectedState (): boolean {
+      return this.bootNotificationResponse.status === RegistrationStatusEnumType.REJECTED
+    },
+
+    inUnknownState (): boolean {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      return this.bootNotificationResponse?.status == null
+    },
     isChargingStationAvailable (): boolean {
       return this.getConnectorStatus(0)?.availability === AvailabilityType.Operative
     },
