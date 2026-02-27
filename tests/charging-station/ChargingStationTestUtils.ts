@@ -579,6 +579,26 @@ export function createMockChargingStation (
     getConnectionTimeout (): number {
       return 30000
     },
+    getConnectorIdByTransactionId (transactionId: number | string | undefined): number | undefined {
+      if (transactionId == null) {
+        return undefined
+      } else if (useEvses) {
+        for (const evseStatus of evses.values()) {
+          for (const [connectorId, connectorStatus] of evseStatus.connectors) {
+            if (connectorStatus.transactionId === transactionId) {
+              return connectorId
+            }
+          }
+        }
+      } else {
+        for (const connectorId of connectors.keys()) {
+          if (this.getConnectorStatus(connectorId)?.transactionId === transactionId) {
+            return connectorId
+          }
+        }
+      }
+      return undefined
+    },
     // Methods
     getConnectorStatus (connectorId: number): ConnectorStatus | undefined {
       if (useEvses) {
@@ -591,6 +611,24 @@ export function createMockChargingStation (
       }
       return connectors.get(connectorId)
     },
+    getEnergyActiveImportRegisterByConnectorId (connectorId: number, rounded = false): number {
+      const connectorStatus = this.getConnectorStatus(connectorId)
+      if (connectorStatus == null) {
+        return 0
+      }
+      const value = connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0
+      return rounded ? Math.round(value) : value
+    },
+    getEnergyActiveImportRegisterByTransactionId (
+      transactionId: number | string | undefined,
+      rounded = false
+    ): number {
+      const connectorId = this.getConnectorIdByTransactionId(transactionId)
+      if (connectorId == null) {
+        return 0
+      }
+      return this.getEnergyActiveImportRegisterByConnectorId(connectorId, rounded)
+    },
     getEvseIdByConnectorId (connectorId: number): number | undefined {
       if (!useEvses) {
         return undefined
@@ -598,6 +636,20 @@ export function createMockChargingStation (
       for (const [evseId, evseStatus] of evses) {
         if (evseStatus.connectors.has(connectorId)) {
           return evseId
+        }
+      }
+      return undefined
+    },
+    getEvseIdByTransactionId (transactionId: number | string | undefined): number | undefined {
+      if (transactionId == null) {
+        return undefined
+      } else if (useEvses) {
+        for (const [evseId, evseStatus] of evses) {
+          for (const connectorStatus of evseStatus.connectors.values()) {
+            if (connectorStatus.transactionId === transactionId) {
+              return evseId
+            }
+          }
         }
       }
       return undefined
@@ -625,6 +677,49 @@ export function createMockChargingStation (
     },
     getNumberOfEvses (): number {
       return evses.has(0) ? evses.size - 1 : evses.size
+    },
+    getNumberOfRunningTransactions (): number {
+      let numberOfRunningTransactions = 0
+      if (useEvses) {
+        for (const [evseId, evseStatus] of evses) {
+          if (evseId === 0) {
+            continue
+          }
+          for (const connectorStatus of evseStatus.connectors.values()) {
+            if (connectorStatus.transactionStarted === true) {
+              ++numberOfRunningTransactions
+            }
+          }
+        }
+      } else {
+        for (const connectorId of connectors.keys()) {
+          if (
+            connectorId > 0 &&
+            this.getConnectorStatus(connectorId)?.transactionStarted === true
+          ) {
+            ++numberOfRunningTransactions
+          }
+        }
+      }
+      return numberOfRunningTransactions
+    },
+    getTransactionIdTag (transactionId: number): string | undefined {
+      if (useEvses) {
+        for (const evseStatus of evses.values()) {
+          for (const connectorStatus of evseStatus.connectors.values()) {
+            if (connectorStatus.transactionId === transactionId) {
+              return connectorStatus.transactionIdTag
+            }
+          }
+        }
+      } else {
+        for (const connectorId of connectors.keys()) {
+          if (this.getConnectorStatus(connectorId)?.transactionId === transactionId) {
+            return this.getConnectorStatus(connectorId)?.transactionIdTag
+          }
+        }
+      }
+      return undefined
     },
     hasConnector (connectorId: number): boolean {
       if (useEvses) {
