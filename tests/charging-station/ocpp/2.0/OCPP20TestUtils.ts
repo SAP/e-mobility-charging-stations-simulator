@@ -1,8 +1,37 @@
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
 import type { ConfigurationKey } from '../../../../src/types/ChargingStationOcppConfiguration.js'
+import type { EmptyObject } from '../../../../src/types/EmptyObject.js'
 
-import { ConnectorStatusEnum, OCPP20RequiredVariableName } from '../../../../src/types/index.js'
+import {
+  ConnectorStatusEnum,
+  OCPP20RequiredVariableName,
+  OCPPVersion,
+} from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
+import { createChargingStation } from '../../../ChargingStationFactory.js'
+import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
+
+/**
+ * Create a mock ChargingStation for OCPP 2.0 transaction event testing.
+ * Provides standard configuration used across all transaction event test files.
+ * @returns ChargingStation configured for OCPP 2.0 transaction testing
+ */
+export function createMockOCPP20TransactionTestStation (): ChargingStation {
+  return createChargingStation({
+    baseName: TEST_CHARGING_STATION_BASE_NAME,
+    connectorsCount: 3,
+    evseConfiguration: { evsesCount: 3 },
+    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+    ocppRequestService: {
+      requestHandler: async () => Promise.resolve({} as EmptyObject),
+    },
+    stationInfo: {
+      ocppStrictCompliance: true,
+      ocppVersion: OCPPVersion.VERSION_201,
+    },
+    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+  })
+}
 
 /**
  * Reset connector transaction state for all connectors in the charging station.

@@ -6,6 +6,9 @@ import type { ChargingStation } from '../../src/charging-station/ChargingStation
 import { AvailabilityType, RegistrationStatusEnumType } from '../../src/types/index.js'
 import { cleanupChargingStation, createMockChargingStation } from './ChargingStationTestUtils.js'
 
+// Alias for tests that reference createRealChargingStation
+const createRealChargingStation = createMockChargingStation
+
 await describe('ChargingStation', async () => {
   await describe('Lifecycle', async () => {
     let station: ChargingStation | undefined

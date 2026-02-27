@@ -1,7 +1,6 @@
 import { expect } from '@std/expect'
 import { afterEach, describe, it } from 'node:test'
 
-import type { ChargingStation } from '../../../../../src/charging-station/ChargingStation.js'
 import type { OCPPAuthService } from '../../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
 
 import { OCPPAuthServiceImpl } from '../../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceImpl.js'
@@ -13,6 +12,7 @@ import {
   type UnifiedIdentifier,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import { OCPPVersion } from '../../../../../src/types/ocpp/OCPPVersion.js'
+import { createMockAuthServiceTestStation } from '../helpers/MockFactories.js'
 
 await describe('OCPPAuthServiceImpl', async () => {
   afterEach(() => {
@@ -21,13 +21,7 @@ await describe('OCPPAuthServiceImpl', async () => {
 
   await describe('constructor', async () => {
     await it('should initialize with OCPP 1.6 charging station', () => {
-      const mockStation = {
-        logPrefix: () => '[TEST-CS-001]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-001',
-          ocppVersion: OCPPVersion.VERSION_16,
-        },
-      } as unknown as ChargingStation
+      const mockStation = createMockAuthServiceTestStation('001')
 
       const authService: OCPPAuthService = new OCPPAuthServiceImpl(mockStation)
 
@@ -37,13 +31,7 @@ await describe('OCPPAuthServiceImpl', async () => {
     })
 
     await it('should initialize with OCPP 2.0 charging station', () => {
-      const mockStation = {
-        logPrefix: () => '[TEST-CS-002]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-002',
-          ocppVersion: OCPPVersion.VERSION_20,
-        },
-      } as unknown as ChargingStation
+      const mockStation = createMockAuthServiceTestStation('002', OCPPVersion.VERSION_20)
 
       const authService = new OCPPAuthServiceImpl(mockStation)
 
@@ -53,13 +41,7 @@ await describe('OCPPAuthServiceImpl', async () => {
 
   await describe('getConfiguration', async () => {
     await it('should return default configuration', () => {
-      const mockStation = {
-        logPrefix: () => '[TEST-CS-003]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-003',
-          ocppVersion: OCPPVersion.VERSION_16,
-        },
-      } as unknown as ChargingStation
+      const mockStation = createMockAuthServiceTestStation('003')
 
       const authService = new OCPPAuthServiceImpl(mockStation)
       const config = authService.getConfiguration()
@@ -73,13 +55,7 @@ await describe('OCPPAuthServiceImpl', async () => {
 
   await describe('updateConfiguration', async () => {
     await it('should update configuration', async () => {
-      const mockStation = {
-        logPrefix: () => '[TEST-CS-004]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-004',
-          ocppVersion: OCPPVersion.VERSION_16,
-        },
-      } as unknown as ChargingStation
+      const mockStation = createMockAuthServiceTestStation('004')
 
       const authService = new OCPPAuthServiceImpl(mockStation)
 
@@ -96,13 +72,7 @@ await describe('OCPPAuthServiceImpl', async () => {
 
   await describe('isSupported', async () => {
     await it('should check if identifier type is supported for OCPP 1.6', async () => {
-      const mockStation = {
-        logPrefix: () => '[TEST-CS-005]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-005',
-          ocppVersion: OCPPVersion.VERSION_16,
-        },
-      } as unknown as ChargingStation
+      const mockStation = createMockAuthServiceTestStation('005')
 
       const authService = new OCPPAuthServiceImpl(mockStation)
       await authService.initialize()
@@ -117,13 +87,7 @@ await describe('OCPPAuthServiceImpl', async () => {
     })
 
     await it('should check if identifier type is supported for OCPP 2.0', async () => {
-      const mockStation = {
-        logPrefix: () => '[TEST-CS-006]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-006',
-          ocppVersion: OCPPVersion.VERSION_20,
-        },
-      } as unknown as ChargingStation
+      const mockStation = createMockAuthServiceTestStation('006', OCPPVersion.VERSION_20)
 
       const authService = new OCPPAuthServiceImpl(mockStation)
       await authService.initialize()
@@ -140,13 +104,7 @@ await describe('OCPPAuthServiceImpl', async () => {
 
   await describe('testConnectivity', async () => {
     await it('should test remote connectivity', async () => {
-      const mockStation = {
-        logPrefix: () => '[TEST-CS-007]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-007',
-          ocppVersion: OCPPVersion.VERSION_16,
-        },
-      } as unknown as ChargingStation
+      const mockStation = createMockAuthServiceTestStation('007')
 
       const authService = new OCPPAuthServiceImpl(mockStation)
       const isConnected = await authService.testConnectivity()
@@ -157,13 +115,7 @@ await describe('OCPPAuthServiceImpl', async () => {
 
   await describe('clearCache', async () => {
     await it('should clear authorization cache', async () => {
-      const mockStation = {
-        logPrefix: () => '[TEST-CS-008]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-008',
-          ocppVersion: OCPPVersion.VERSION_16,
-        },
-      } as unknown as ChargingStation
+      const mockStation = createMockAuthServiceTestStation('008')
 
       const authService = new OCPPAuthServiceImpl(mockStation)
 
@@ -173,13 +125,7 @@ await describe('OCPPAuthServiceImpl', async () => {
 
   await describe('invalidateCache', async () => {
     await it('should invalidate cache for specific identifier', async () => {
-      const mockStation = {
-        logPrefix: () => '[TEST-CS-009]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-009',
-          ocppVersion: OCPPVersion.VERSION_16,
-        },
-      } as unknown as ChargingStation
+      const mockStation = createMockAuthServiceTestStation('009')
 
       const authService = new OCPPAuthServiceImpl(mockStation)
 
@@ -195,13 +141,7 @@ await describe('OCPPAuthServiceImpl', async () => {
 
   await describe('getStats', async () => {
     await it('should return authentication statistics', async () => {
-      const mockStation = {
-        logPrefix: () => '[TEST-CS-010]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-010',
-          ocppVersion: OCPPVersion.VERSION_16,
-        },
-      } as unknown as ChargingStation
+      const mockStation = createMockAuthServiceTestStation('010')
 
       const authService = new OCPPAuthServiceImpl(mockStation)
       const stats = await authService.getStats()
@@ -216,13 +156,7 @@ await describe('OCPPAuthServiceImpl', async () => {
 
   await describe('authorize', async () => {
     await it('should authorize identifier using strategy chain', async () => {
-      const mockStation = {
-        logPrefix: () => '[TEST-CS-011]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-011',
-          ocppVersion: OCPPVersion.VERSION_16,
-        },
-      } as unknown as ChargingStation
+      const mockStation = createMockAuthServiceTestStation('011')
 
       const authService = new OCPPAuthServiceImpl(mockStation)
 
@@ -246,13 +180,7 @@ await describe('OCPPAuthServiceImpl', async () => {
     })
 
     await it('should return INVALID status when all strategies fail', async () => {
-      const mockStation = {
-        logPrefix: () => '[TEST-CS-012]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-012',
-          ocppVersion: OCPPVersion.VERSION_16,
-        },
-      } as unknown as ChargingStation
+      const mockStation = createMockAuthServiceTestStation('012')
 
       const authService = new OCPPAuthServiceImpl(mockStation)
 
@@ -277,13 +205,7 @@ await describe('OCPPAuthServiceImpl', async () => {
 
   await describe('isLocallyAuthorized', async () => {
     await it('should check local authorization', async () => {
-      const mockStation = {
-        logPrefix: () => '[TEST-CS-013]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-013',
-          ocppVersion: OCPPVersion.VERSION_16,
-        },
-      } as unknown as ChargingStation
+      const mockStation = createMockAuthServiceTestStation('013')
 
       const authService = new OCPPAuthServiceImpl(mockStation)
 
@@ -302,13 +224,7 @@ await describe('OCPPAuthServiceImpl', async () => {
 
   await describe('OCPP version specific behavior', async () => {
     await it('should handle OCPP 1.6 specific identifiers', async () => {
-      const mockStation = {
-        logPrefix: () => '[TEST-CS-014]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-014',
-          ocppVersion: OCPPVersion.VERSION_16,
-        },
-      } as unknown as ChargingStation
+      const mockStation = createMockAuthServiceTestStation('014')
 
       const authService = new OCPPAuthServiceImpl(mockStation)
 
@@ -330,13 +246,7 @@ await describe('OCPPAuthServiceImpl', async () => {
     })
 
     await it('should handle OCPP 2.0 specific identifiers', async () => {
-      const mockStation = {
-        logPrefix: () => '[TEST-CS-015]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-015',
-          ocppVersion: OCPPVersion.VERSION_20,
-        },
-      } as unknown as ChargingStation
+      const mockStation = createMockAuthServiceTestStation('015', OCPPVersion.VERSION_20)
 
       const authService = new OCPPAuthServiceImpl(mockStation)
 
@@ -360,13 +270,7 @@ await describe('OCPPAuthServiceImpl', async () => {
 
   await describe('error handling', async () => {
     await it('should handle invalid identifier gracefully', async () => {
-      const mockStation = {
-        logPrefix: () => '[TEST-CS-016]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-016',
-          ocppVersion: OCPPVersion.VERSION_16,
-        },
-      } as unknown as ChargingStation
+      const mockStation = createMockAuthServiceTestStation('016')
 
       const authService = new OCPPAuthServiceImpl(mockStation)
 
@@ -390,13 +294,7 @@ await describe('OCPPAuthServiceImpl', async () => {
 
   await describe('authentication contexts', async () => {
     await it('should handle TRANSACTION_START context', async () => {
-      const mockStation = {
-        logPrefix: () => '[TEST-CS-017]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-017',
-          ocppVersion: OCPPVersion.VERSION_16,
-        },
-      } as unknown as ChargingStation
+      const mockStation = createMockAuthServiceTestStation('017')
 
       const authService = new OCPPAuthServiceImpl(mockStation)
 
@@ -419,13 +317,7 @@ await describe('OCPPAuthServiceImpl', async () => {
     })
 
     await it('should handle TRANSACTION_STOP context', async () => {
-      const mockStation = {
-        logPrefix: () => '[TEST-CS-018]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-018',
-          ocppVersion: OCPPVersion.VERSION_16,
-        },
-      } as unknown as ChargingStation
+      const mockStation = createMockAuthServiceTestStation('018')
 
       const authService = new OCPPAuthServiceImpl(mockStation)
 
@@ -448,13 +340,7 @@ await describe('OCPPAuthServiceImpl', async () => {
     })
 
     await it('should handle REMOTE_START context', async () => {
-      const mockStation = {
-        logPrefix: () => '[TEST-CS-019]',
-        stationInfo: {
-          chargingStationId: 'TEST-CS-019',
-          ocppVersion: OCPPVersion.VERSION_20,
-        },
-      } as unknown as ChargingStation
+      const mockStation = createMockAuthServiceTestStation('019', OCPPVersion.VERSION_20)
 
       const authService = new OCPPAuthServiceImpl(mockStation)
 

@@ -1,23 +1,22 @@
 import { expect } from '@std/expect'
 import { afterEach, describe, it } from 'node:test'
 
-import type { EmptyObject } from '../../../../src/types/index.js'
-
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import {
   ConnectorStatusEnum,
   OCPP20TransactionEventEnumType,
   OCPP20TriggerReasonEnumType,
-  OCPPVersion,
 } from '../../../../src/types/index.js'
 import {
   OCPP20ChargingStateEnumType,
   type OCPP20TransactionContext,
 } from '../../../../src/types/ocpp/2.0/Transaction.js'
-import { Constants, generateUUID } from '../../../../src/utils/index.js'
-import { createChargingStation } from '../../../ChargingStationFactory.js'
-import { TEST_CHARGING_STATION_BASE_NAME } from './OCPP20TestConstants.js'
-import { resetConnectorTransactionState, resetLimits } from './OCPP20TestUtils.js'
+import { generateUUID } from '../../../../src/utils/index.js'
+import {
+  createMockOCPP20TransactionTestStation,
+  resetConnectorTransactionState,
+  resetLimits,
+} from './OCPP20TestUtils.js'
 
 /**
  * E02 - Cable-First Transaction Flow Tests
@@ -38,22 +37,7 @@ import { resetConnectorTransactionState, resetLimits } from './OCPP20TestUtils.j
  * - E02.FR.03: Connector status transitions reflect cable state changes
  */
 await describe('E02 - Cable-First Transaction Flow', async () => {
-  const mockChargingStation = createChargingStation({
-    baseName: TEST_CHARGING_STATION_BASE_NAME,
-    connectorsCount: 3,
-    evseConfiguration: { evsesCount: 3 },
-    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-    ocppRequestService: {
-      requestHandler: async () => {
-        return Promise.resolve({} as EmptyObject)
-      },
-    },
-    stationInfo: {
-      ocppStrictCompliance: true,
-      ocppVersion: OCPPVersion.VERSION_201,
-    },
-    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
-  })
+  const mockChargingStation = createMockOCPP20TransactionTestStation()
 
   // Reset limits and state before tests
   resetLimits(mockChargingStation)

@@ -6,8 +6,6 @@
 import { expect } from '@std/expect'
 import { describe, it } from 'node:test'
 
-import type { EmptyObject } from '../../../../src/types/index.js'
-
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import {
   OCPP20TransactionEventEnumType,
@@ -23,26 +21,10 @@ import {
 import { Constants, generateUUID } from '../../../../src/utils/index.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from './OCPP20TestConstants.js'
-import { resetLimits } from './OCPP20TestUtils.js'
+import { createMockOCPP20TransactionTestStation, resetLimits } from './OCPP20TestUtils.js'
 
 await describe('E01-E04 - OCPP 2.0.1 TransactionEvent Implementation', async () => {
-  const mockChargingStation = createChargingStation({
-    baseName: TEST_CHARGING_STATION_BASE_NAME,
-    connectorsCount: 3,
-    evseConfiguration: { evsesCount: 3 },
-    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-    ocppRequestService: {
-      requestHandler: async () => {
-        // Mock successful OCPP request responses (EmptyObject for TransactionEventResponse)
-        return Promise.resolve({} as EmptyObject)
-      },
-    },
-    stationInfo: {
-      ocppStrictCompliance: true,
-      ocppVersion: OCPPVersion.VERSION_201,
-    },
-    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
-  })
+  const mockChargingStation = createMockOCPP20TransactionTestStation()
 
   // Reset limits before tests
   resetLimits(mockChargingStation)

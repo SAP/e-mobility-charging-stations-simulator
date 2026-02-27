@@ -2,6 +2,7 @@
 
 import { expect } from '@std/expect'
 
+import type { ChargingStation } from '../../../../../src/charging-station/ChargingStation.js'
 import type { OCPPAuthService } from '../../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
 
 import {
@@ -279,3 +280,27 @@ export const createMockChargingStation = (
   },
   ...overrides,
 })
+
+/**
+ * Create a mock ChargingStation for auth service testing.
+ * Provides minimal station interface needed for OCPPAuthServiceImpl tests.
+ * @param id - Station identifier suffix (e.g., '001' creates 'TEST-CS-001')
+ * @param ocppVersion - OCPP version (defaults to VERSION_16)
+ * @returns Mock ChargingStation with logPrefix and stationInfo
+ */
+export const createMockAuthServiceTestStation = (
+  id: string,
+  ocppVersion: OCPPVersion = OCPPVersion.VERSION_16
+): ChargingStation =>
+  ({
+    getConnectorStatus: () => ({ status: 'Available' }),
+    idTagLocalAuthorized: () => false,
+    isConnected: () => true,
+    logPrefix: () => `[TEST-CS-${id}]`,
+    ocppVersion,
+    sendRequest: () => Promise.resolve({}),
+    stationInfo: {
+      chargingStationId: `TEST-CS-${id}`,
+      hashId: `test-hash-${id}`,
+    },
+  }) as unknown as ChargingStation
