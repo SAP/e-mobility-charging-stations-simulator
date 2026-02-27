@@ -18,6 +18,7 @@ import {
   convertToFloat,
   convertToInt,
   convertToIntOrNaN,
+  exponentialDelay,
   extractTimeSeriesValues,
   formatDurationMilliSeconds,
   formatDurationSeconds,
@@ -472,5 +473,142 @@ await describe('Utils test suite', async () => {
     expect(clampToSafeTimerValue(Number.MAX_SAFE_INTEGER)).toBe(Constants.MAX_SETINTERVAL_DELAY)
     expect(clampToSafeTimerValue(-1)).toBe(0)
     expect(clampToSafeTimerValue(-1000)).toBe(0)
+  })
+
+  // -------------------------------------------------------------------------
+  // Exponential Backoff Algorithm Tests (WebSocket Reconnection)
+  // -------------------------------------------------------------------------
+
+  await it('Verify exponentialDelay() with default parameters', () => {
+    // Formula: delay = 2^retryNumber * delayFactor + (0-20% random jitter)
+    // With default delayFactor = 100ms
+
+    // retryNumber = 0: 2^0 * 100 = 100ms base
+    const delay0 = exponentialDelay(0)
+    expect(delay0).toBeGreaterThanOrEqual(100)
+    expect(delay0).toBeLessThanOrEqual(120) // 100 + 20% max jitter
+
+    // retryNumber = 1: 2^1 * 100 = 200ms base
+    const delay1 = exponentialDelay(1)
+    expect(delay1).toBeGreaterThanOrEqual(200)
+    expect(delay1).toBeLessThanOrEqual(240) // 200 + 20% max jitter
+
+    // retryNumber = 2: 2^2 * 100 = 400ms base
+    const delay2 = exponentialDelay(2)
+    expect(delay2).toBeGreaterThanOrEqual(400)
+    expect(delay2).toBeLessThanOrEqual(480) // 400 + 20% max jitter
+
+    // retryNumber = 3: 2^3 * 100 = 800ms base
+    const delay3 = exponentialDelay(3)
+    expect(delay3).toBeGreaterThanOrEqual(800)
+    expect(delay3).toBeLessThanOrEqual(960) // 800 + 20% max jitter
+  })
+
+  await it('Verify exponentialDelay() with custom delayFactor', () => {
+    // Custom delayFactor = 50ms
+    const delay0 = exponentialDelay(0, 50)
+    expect(delay0).toBeGreaterThanOrEqual(50)
+    expect(delay0).toBeLessThanOrEqual(60) // 50 + 20% max jitter
+
+    const delay1 = exponentialDelay(1, 50)
+    expect(delay1).toBeGreaterThanOrEqual(100)
+    expect(delay1).toBeLessThanOrEqual(120)
+
+    // Custom delayFactor = 200ms
+    const delay2 = exponentialDelay(2, 200)
+    expect(delay2).toBeGreaterThanOrEqual(800) // 2^2 * 200 = 800
+    expect(delay2).toBeLessThanOrEqual(960)
+  })
+
+  await it('Verify exponentialDelay() exponential growth pattern', () => {
+    // Verify that delays follow 2^n exponential growth pattern
+    const delayFactor = 100
+
+    // Collect base delays (without jitter consideration)
+    const delays: number[] = []
+    for (let retry = 0; retry <= 5; retry++) {
+      delays.push(exponentialDelay(retry, delayFactor))
+    }
+
+    // Each delay should be approximately double the previous (accounting for jitter)
+    // delay[n+1] / delay[n] should be close to 2 (between 1.5 and 2.5 with jitter)
+    for (let i = 1; i < delays.length; i++) {
+      const ratio = delays[i] / delays[i - 1]
+      // Allow for jitter variance - ratio should be roughly 2x
+      expect(ratio).toBeGreaterThan(1.5)
+      expect(ratio).toBeLessThan(2.5)
+    }
+  })
+
+  await it('Verify exponentialDelay() includes random jitter', () => {
+    // Run multiple times to verify jitter produces different values
+    const delays = new Set<number>()
+    const retryNumber = 3
+    const delayFactor = 100
+
+    // Collect 10 samples - with cryptographically secure random,
+    // we should get variation (not all identical)
+    for (let i = 0; i < 10; i++) {
+      delays.add(Math.round(exponentialDelay(retryNumber, delayFactor)))
+    }
+
+    // With jitter, we expect at least some variation
+    // (unlikely to get 10 identical values with secure random)
+    expect(delays.size).toBeGreaterThan(1)
+  })
+
+  await it('Verify exponentialDelay() jitter is within 0-20% range', () => {
+    // For a given retry, jitter should add 0-20% of base delay
+    const retryNumber = 4
+    const delayFactor = 100
+    const baseDelay = Math.pow(2, retryNumber) * delayFactor // 1600ms
+
+    // Run multiple samples to verify jitter range
+    for (let i = 0; i < 20; i++) {
+      const delay = exponentialDelay(retryNumber, delayFactor)
+      const jitter = delay - baseDelay
+
+      // Jitter should be non-negative and at most 20% of base delay
+      expect(jitter).toBeGreaterThanOrEqual(0)
+      expect(jitter).toBeLessThanOrEqual(baseDelay * 0.2)
+    }
+  })
+
+  await it('Verify exponentialDelay() handles edge cases', () => {
+    // Default retryNumber (0)
+    const defaultRetry = exponentialDelay()
+    expect(defaultRetry).toBeGreaterThanOrEqual(100) // 2^0 * 100
+    expect(defaultRetry).toBeLessThanOrEqual(120)
+
+    // Large retry number (verify no overflow issues)
+    const largeRetry = exponentialDelay(10, 100)
+    // 2^10 * 100 = 102400ms base
+    expect(largeRetry).toBeGreaterThanOrEqual(102400)
+    expect(largeRetry).toBeLessThanOrEqual(122880) // 102400 + 20%
+
+    // Very small delay factor
+    const smallFactor = exponentialDelay(2, 1)
+    expect(smallFactor).toBeGreaterThanOrEqual(4) // 2^2 * 1
+    expect(smallFactor).toBeLessThan(5) // 4 + 20%
+  })
+
+  await it('Verify exponentialDelay() for WebSocket reconnection scenarios', () => {
+    // Simulate typical WebSocket reconnection delay sequence
+    const delayFactor = 100 // Default used in ChargingStation.reconnect()
+
+    // First reconnect attempt (retry 1)
+    const firstDelay = exponentialDelay(1, delayFactor)
+    expect(firstDelay).toBeGreaterThanOrEqual(200) // 2^1 * 100
+    expect(firstDelay).toBeLessThanOrEqual(240)
+
+    // After several failures (retry 5)
+    const fifthDelay = exponentialDelay(5, delayFactor)
+    expect(fifthDelay).toBeGreaterThanOrEqual(3200) // 2^5 * 100
+    expect(fifthDelay).toBeLessThanOrEqual(3840)
+
+    // Maximum practical retry (retry 10 = ~102 seconds)
+    const maxDelay = exponentialDelay(10, delayFactor)
+    expect(maxDelay).toBeGreaterThanOrEqual(102400) // ~102 seconds
+    expect(maxDelay).toBeLessThanOrEqual(122880)
   })
 })
