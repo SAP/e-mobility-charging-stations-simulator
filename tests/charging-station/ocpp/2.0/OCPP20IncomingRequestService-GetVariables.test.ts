@@ -24,7 +24,7 @@ import { Constants } from '../../../../src/utils/index.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
 import {
   TEST_CHARGING_STATION_BASE_NAME,
-  TEST_CONNECTOR_VALID_INSTANCE,
+  TEST_CONNECTOR_ID_VALID_INSTANCE,
 } from '../../ChargingStationTestConstants.js'
 import {
   resetLimits,
@@ -172,8 +172,7 @@ await describe('B06 - Get Variables', async () => {
       getVariableData: [
         {
           component: {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            instance: TEST_CONNECTOR_VALID_INSTANCE,
+            instance: TEST_CONNECTOR_ID_VALID_INSTANCE,
             name: OCPP20ComponentName.Connector,
           },
           variable: { name: OCPP20RequiredVariableName.AuthorizeRemoteStart },
