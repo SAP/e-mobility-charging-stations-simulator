@@ -12,6 +12,17 @@
  * @see tests/charging-station/ChargingStationTestConstants.ts for test constants
  */
 
+// Re-export test lifecycle helpers
+export {
+  clearConnectorTransaction,
+  setupConnectorWithTransaction,
+  standardCleanup,
+  TestEnvironmentHelper,
+  TestStationHelper,
+  TestTimerHelper,
+} from '../helpers/TestLifecycleHelpers.js'
+export type { MockableTimerAPI, TimerHelperOptions } from '../helpers/TestLifecycleHelpers.js'
+
 // Re-export all helper functions and types
 export type {
   ChargingStationMocks,
@@ -19,6 +30,7 @@ export type {
   MockChargingStationOptions,
   MockChargingStationResult,
 } from './helpers/StationHelpers.js'
+
 export {
   cleanupChargingStation,
   createConnectorStatus,
@@ -29,6 +41,5 @@ export {
 } from './helpers/StationHelpers.js'
 
 export { MockIdTagsCache, MockSharedLRUCache } from './mocks/MockCaches.js'
-
 // Re-export all mock classes
 export { MockWebSocket, WebSocketReadyState } from './mocks/MockWebSocket.js'

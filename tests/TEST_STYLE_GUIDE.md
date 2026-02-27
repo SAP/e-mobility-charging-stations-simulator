@@ -298,6 +298,37 @@ expect(result.token).toBeDefined()
 
 **Why:** Disabling linting rules hides real problems. Fix the underlying type issues instead.
 
+**Exception - Legitimate Uses of eslint-disable:**
+
+Some eslint-disable comments are acceptable when testing defensive code that validates inputs at runtime:
+
+```typescript
+// Testing that validators handle invalid types gracefully
+// This is legitimate because the function is designed to handle runtime type errors
+await it('should return false for non-string input', () => {
+  // Testing runtime type validation - intentionally passing wrong type
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
+  expect(AuthValidators.isValidIdentifierValue(123 as any)).toBe(false)
+})
+
+// Testing async function detection requires empty function expressions
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+expect(isAsyncFunction(() => {})).toBe(false)
+```
+
+**Acceptable Rules to Disable (with justification):**
+
+- `@typescript-eslint/no-empty-function` - When testing function type detection
+- `@typescript-eslint/no-explicit-any` - When testing runtime type validation
+- `@typescript-eslint/unbound-method` - When testing method type detection
+- `@cspell/spellchecker` - For intentional misspellings in test data
+
+**Still NOT Acceptable:**
+
+- File-level disables (`/* eslint-disable ... */` at top of file)
+- Disabling rules to bypass type safety in test setup
+- Disabling rules because proper interfaces haven't been created
+
 ## Summary
 
 - **Name clearly**: Descriptive names for files, suites, and test cases

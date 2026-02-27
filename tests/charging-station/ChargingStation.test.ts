@@ -9,11 +9,12 @@
  * - ChargingStation-Configuration.test.ts: boot notification, config persistence, WebSocket, error handling
  */
 import { expect } from '@std/expect'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 
 import { RegistrationStatusEnumType } from '../../src/types/index.js'
+import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import {
   cleanupChargingStation,
   createMockChargingStation,
@@ -25,6 +26,9 @@ import {
 
 await describe('ChargingStation Integration Tests', async () => {
   await describe('Test Utilities Verification', async () => {
+    afterEach(() => {
+      standardCleanup()
+    })
     await it('should create mock charging station with default options', () => {
       const result = createMockChargingStation()
       const station = result.station
@@ -105,6 +109,12 @@ await describe('ChargingStation Integration Tests', async () => {
   })
 
   await describe('Cross-Domain Integration', async () => {
+    afterEach(() => {
+      standardCleanup()
+      if (station != null) {
+        cleanupChargingStation(station)
+      }
+    })
     let station: ChargingStation | undefined
 
     await it('should support full lifecycle with transactions', async () => {

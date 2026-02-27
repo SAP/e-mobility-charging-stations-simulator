@@ -8,7 +8,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { expect } from '@std/expect'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import {
@@ -23,6 +23,7 @@ import {
   type OCPP20TransactionContext,
 } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants, generateUUID } from '../../../../src/utils/index.js'
+import { standardCleanup } from '../../../../tests/helpers/TestLifecycleHelpers.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockOCPP20TransactionTestStation, resetLimits } from './OCPP20TestUtils.js'
@@ -32,6 +33,11 @@ await describe('E01-E04 - OCPP 2.0.1 TransactionEvent Implementation', async () 
 
   // Reset limits before tests
   resetLimits(mockChargingStation)
+
+  // Reset singleton state and timers after each test to ensure test isolation
+  afterEach(() => {
+    standardCleanup()
+  })
 
   // FR: E01.FR.01 - TransactionEventRequest structure validation
   await describe('buildTransactionEvent', async () => {

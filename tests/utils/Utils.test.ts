@@ -7,7 +7,7 @@ import { hoursToMilliseconds, hoursToSeconds } from 'date-fns'
 import { CircularBuffer } from 'mnemonist'
 import { randomInt } from 'node:crypto'
 import { version } from 'node:process'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 import { satisfies } from 'semver'
 
 import type { TimestampedData } from '../../src/types/index.js'
@@ -43,8 +43,12 @@ import {
   validateIdentifierString,
   validateUUID,
 } from '../../src/utils/Utils.js'
+import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 await describe('Utils test suite', async () => {
+  afterEach(() => {
+    standardCleanup()
+  })
   await it('should verify generateUUID()/validateUUID()', () => {
     const uuid = generateUUID()
     expect(uuid).toBeDefined()

@@ -2,10 +2,9 @@
  * @file Tests for Helpers
  * @description Unit tests for charging station helper functions and utilities
  */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 
 import { expect } from '@std/expect'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 
 import {
   checkChargingStationState,
@@ -35,10 +34,15 @@ import {
 } from '../../src/types/index.js'
 import { logger } from '../../src/utils/Logger.js'
 import { createChargingStation, createChargingStationTemplate } from '../ChargingStationFactory.js'
+import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 await describe('Helpers test suite', async () => {
   const baseName = 'CS-TEST'
   const chargingStationTemplate = createChargingStationTemplate(baseName)
+
+  afterEach(() => {
+    standardCleanup()
+  })
 
   // Helper to create test reservations with configurable expiry
   const createTestReservation = (expired = false): Reservation =>
@@ -63,7 +67,7 @@ await describe('Helpers test suite', async () => {
     // For validation edge cases, we need to manually create invalid states
     // since the factory is designed to create valid configurations
     const stationNoInfo = createChargingStation({ baseName })
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
     delete (stationNoInfo as any).stationInfo
     expect(() => {
       validateStationInfo(stationNoInfo)
