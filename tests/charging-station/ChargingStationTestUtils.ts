@@ -721,6 +721,9 @@ export function createMockChargingStation (
       }
       return undefined
     },
+    getWebSocketPingInterval (): number {
+      return 30
+    },
     hasConnector (connectorId: number): boolean {
       if (useEvses) {
         for (const evseStatus of evses.values()) {
@@ -736,6 +739,7 @@ export function createMockChargingStation (
     get hasEvses (): boolean {
       return useEvses
     },
+
     heartbeatSetInterval: undefined as NodeJS.Timeout | undefined,
 
     idTagsCache: mockIdTagsCache as unknown,
@@ -754,11 +758,11 @@ export function createMockChargingStation (
     inRejectedState (): boolean {
       return this.bootNotificationResponse.status === RegistrationStatusEnumType.REJECTED
     },
-
     inUnknownState (): boolean {
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       return this.bootNotificationResponse?.status == null
     },
+
     isChargingStationAvailable (): boolean {
       return this.getConnectorStatus(0)?.availability === AvailabilityType.Operative
     },
@@ -795,22 +799,64 @@ export function createMockChargingStation (
     removeAllListeners: () => station,
 
     removeListener: () => station,
-
     requests,
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    restartHeartbeat: () => {},
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    restartWebSocketPing: () => {},
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    saveOcppConfiguration: () => {},
+
+    restartHeartbeat (): void {
+      this.stopHeartbeat()
+      this.startHeartbeat()
+    },
+
+    restartMeterValues (connectorId: number, interval: number): void {
+      this.stopMeterValues(connectorId)
+      this.startMeterValues(connectorId, interval)
+    },
+
+    restartWebSocketPing (): void {
+      /* empty */
+    },
+
+    saveOcppConfiguration (): void {
+      /* empty */
+    },
     start (): void {
       this.started = true
       this.starting = false
     },
     started,
+
+    startHeartbeat (): void {
+      this.heartbeatSetInterval ??= setInterval(() => {
+        /* empty */
+      }, 30000)
+    },
     starting: false,
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    startTxUpdatedInterval: () => {},
+
+    startMeterValues (connectorId: number, interval: number): void {
+      const connector = this.getConnectorStatus(connectorId)
+      if (connector != null) {
+        connector.transactionSetInterval = setInterval(() => {
+          /* empty */
+        }, interval)
+      }
+    },
+
+    startTxUpdatedInterval (connectorId: number, interval: number): void {
+      if (
+        this.stationInfo.ocppVersion === OCPPVersion.VERSION_20 ||
+        this.stationInfo.ocppVersion === OCPPVersion.VERSION_201
+      ) {
+        const connector = this.getConnectorStatus(connectorId)
+        if (connector != null) {
+          connector.transactionTxUpdatedSetInterval = setInterval(() => {
+            /* empty */
+          }, interval)
+        }
+      }
+    },
+
+    startWebSocketPing (): void {
+      /* empty */
+    },
     // Station info
     stationInfo: {
       autoStart,
@@ -836,13 +882,32 @@ export function createMockChargingStation (
         this.stopping = false
       }
     },
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    stopMeterValues: () => {},
+
+    stopHeartbeat (): void {
+      if (this.heartbeatSetInterval != null) {
+        clearInterval(this.heartbeatSetInterval)
+        delete this.heartbeatSetInterval
+      }
+    },
+    stopMeterValues (connectorId: number): void {
+      const connector = this.getConnectorStatus(connectorId)
+      if (connector?.transactionSetInterval != null) {
+        clearInterval(connector.transactionSetInterval)
+        delete connector.transactionSetInterval
+      }
+    },
     stopping: false,
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    stopTxUpdatedInterval: () => {},
+
+    stopTxUpdatedInterval (connectorId: number): void {
+      const connector = this.getConnectorStatus(connectorId)
+      if (connector?.transactionTxUpdatedSetInterval != null) {
+        clearInterval(connector.transactionTxUpdatedSetInterval)
+        delete connector.transactionTxUpdatedSetInterval
+      }
+    },
     templateFile,
     wsConnection: null as MockWebSocket | null,
+    wsConnectionRetryCount: 0,
   }
 
   // Set up mock WebSocket connection
