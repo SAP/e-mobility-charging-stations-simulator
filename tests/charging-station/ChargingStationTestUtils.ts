@@ -1,12 +1,12 @@
 /**
- * Utilities for creating REAL ChargingStation instances in tests
+ * Utilities for creating MOCK ChargingStation instances in tests
  *
- * This file provides factory functions to instantiate actual ChargingStation
- * objects (not mocks) with properly isolated dependencies for testing.
+ * This file provides factory functions to instantiate mock ChargingStation
+ * objects (lightweight stubs) with properly isolated dependencies for testing.
  *
  * Key patterns:
  * - MockWebSocket: Captures sent messages for assertion
- * - Singleton mocking: Overrides getInstance() before ChargingStation import
+ * - Singleton mocking: Overrides getInstance() for shared caches
  * - Cleanup utilities: Prevents test pollution via timer/listener cleanup
  * @see tests/ChargingStationFactory.ts for mock factory (creates mock objects)
  * @see tests/charging-station/ChargingStationTestConstants.ts for test constants
@@ -22,6 +22,7 @@ import type {
   ChargingStationTemplate,
   ConnectorStatus,
   EvseStatus,
+  StopTransactionReason,
 } from '../../src/types/index.js'
 
 import {
@@ -70,9 +71,9 @@ export interface ChargingStationMocks {
 }
 
 /**
- * Options for creating a real ChargingStation instance
+ * Options for creating a mock ChargingStation instance
  */
-export interface RealChargingStationOptions {
+export interface MockChargingStationOptions {
   /** Auto-start the station on creation */
   autoStart?: boolean
 
@@ -105,9 +106,9 @@ export interface RealChargingStationOptions {
 }
 
 /**
- * Result of creating a real ChargingStation instance
+ * Result of creating a mock ChargingStation instance
  */
-export interface RealChargingStationResult {
+export interface MockChargingStationResult {
   /** All mocks used by the station for assertion */
   mocks: ChargingStationMocks
 
@@ -446,46 +447,28 @@ export function cleanupChargingStation (station: ChargingStation): void {
 }
 
 /**
- * Create a mock template for testing
- * @param overrides - Template properties to override
- * @returns ChargingStationTemplate for testing
- */
-export function createMockTemplate (
-  overrides: Partial<ChargingStationTemplate> = {}
-): ChargingStationTemplate {
-  return {
-    baseName: TEST_CHARGING_STATION_BASE_NAME,
-    chargePointModel: 'Test Model',
-    chargePointVendor: 'Test Vendor',
-    numberOfConnectors: 2,
-    ocppVersion: OCPPVersion.VERSION_16,
-    ...overrides,
-  } as ChargingStationTemplate
-}
-
-/**
- * Creates a minimal ChargingStation-like object for testing
+ * Creates a minimal mock ChargingStation-like object for testing
  *
  * Due to the complexity of the ChargingStation class and its deep dependencies
  * (Bootstrap singleton, file system, WebSocket, worker threads), this factory
- * creates an object that implements the essential ChargingStation interface
+ * creates a lightweight stub that implements the essential ChargingStation interface
  * without requiring the full initialization chain.
  *
  * This is useful for testing code that depends on ChargingStation methods
  * without needing the full OCPP protocol stack.
- * @param options - Configuration options for the charging station
- * @returns Object with station instance and mocks for assertion
+ * @param options - Configuration options for the mock charging station
+ * @returns Object with mock station instance and mocks for assertion
  * @example
  * ```typescript
- * const { station, mocks } = createRealChargingStation({ connectorsCount: 2 })
+ * const { station, mocks } = createMockChargingStation({ connectorsCount: 2 })
  * expect(station.connectors.size).toBe(3) // 0 + 2 connectors
  * station.wsConnection = mocks.webSocket
  * mocks.webSocket.simulateMessage('["3","uuid",{}]')
  * ```
  */
-export function createRealChargingStation (
-  options: RealChargingStationOptions = {}
-): RealChargingStationResult {
+export function createMockChargingStation (
+  options: MockChargingStationOptions = {}
+): MockChargingStationResult {
   const {
     autoStart = false,
     baseName = TEST_CHARGING_STATION_BASE_NAME,
@@ -522,6 +505,18 @@ export function createRealChargingStation (
   // Create EVSEs map if applicable
   const evses = new Map<number, EvseStatus>()
   if (useEvses) {
+    // EVSE 0 contains connector 0 (station-level status for availability checks)
+    const evse0Connectors = new Map<number, ConnectorStatus>()
+    const connector0Status = connectors.get(0)
+    if (connector0Status != null) {
+      evse0Connectors.set(0, connector0Status)
+    }
+    evses.set(0, {
+      availability: AvailabilityType.Operative,
+      connectors: evse0Connectors,
+    })
+
+    // Create EVSEs 1..N with their respective connectors
     const connectorsPerEvse = Math.ceil(connectorsCount / evsesCount)
     for (let evseId = 1; evseId <= evsesCount; evseId++) {
       const evseConnectors = new Map<number, ConnectorStatus>()
@@ -561,6 +556,7 @@ export function createRealChargingStation (
       }
     },
     connectors,
+
     async delete (deleteConfiguration = true): Promise<void> {
       if (this.started) {
         await this.stop()
@@ -568,6 +564,8 @@ export function createRealChargingStation (
       this.requests.clear()
       this.connectors.clear()
       this.evses.clear()
+      // Note: deleteConfiguration controls file deletion in real implementation
+      // Mock doesn't have file system access, so parameter is unused
     },
     // Event emitter methods (minimal implementation)
     emit: () => true,
@@ -713,7 +711,8 @@ export function createRealChargingStation (
       templateIndex: index,
       templateName: templateFile,
     },
-    async stop (): Promise<void> {
+
+    async stop (reason?: StopTransactionReason, stopTransactions?: boolean): Promise<void> {
       if (this.started && !this.stopping) {
         this.stopping = true
         // Simulate async stop behavior (immediate resolution for tests)
@@ -751,6 +750,24 @@ export function createRealChargingStation (
     mocks,
     station: station as unknown as ChargingStation,
   }
+}
+
+/**
+ * Create a mock template for testing
+ * @param overrides - Template properties to override
+ * @returns ChargingStationTemplate for testing
+ */
+export function createMockTemplate (
+  overrides: Partial<ChargingStationTemplate> = {}
+): ChargingStationTemplate {
+  return {
+    baseName: TEST_CHARGING_STATION_BASE_NAME,
+    chargePointModel: 'Test Model',
+    chargePointVendor: 'Test Vendor',
+    numberOfConnectors: 2,
+    ocppVersion: OCPPVersion.VERSION_16,
+    ...overrides,
+  } as ChargingStationTemplate
 }
 
 /**
