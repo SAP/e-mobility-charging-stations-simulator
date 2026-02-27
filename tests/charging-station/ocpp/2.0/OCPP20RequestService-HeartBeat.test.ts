@@ -8,7 +8,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { expect } from '@std/expect'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it, mock } from 'node:test'
 
 import { OCPP20RequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20RequestService.js'
 import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
@@ -28,6 +28,9 @@ import {
 } from '../../ChargingStationTestConstants.js'
 
 await describe('G02 - Heartbeat', async () => {
+  afterEach(() => {
+    mock.restoreAll()
+  })
   const mockResponseService = new OCPP20ResponseService()
   const requestService = new OCPP20RequestService(mockResponseService)
 

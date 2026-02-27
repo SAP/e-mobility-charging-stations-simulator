@@ -3,13 +3,17 @@
  * @description Unit tests for charging station factory utilities and OCPP service mocking
  */
 import { expect } from '@std/expect'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it, mock } from 'node:test'
 
 import { getHashId } from '../src/charging-station/Helpers.js'
 import { AvailabilityType, ConnectorStatusEnum, OCPPVersion } from '../src/types/index.js'
 import { createChargingStation, createChargingStationTemplate } from './ChargingStationFactory.js'
 
 await describe('ChargingStationFactory', async () => {
+  afterEach(() => {
+    mock.restoreAll()
+  })
+
   await describe('OCPP Service Mocking', async () => {
     await it('should throw error when OCPPRequestService.requestHandler is not mocked', async () => {
       const station = createChargingStation({ connectorsCount: 1 })

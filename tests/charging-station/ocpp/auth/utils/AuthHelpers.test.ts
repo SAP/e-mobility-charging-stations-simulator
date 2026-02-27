@@ -3,7 +3,7 @@
  * @description Unit tests for authentication helper utilities
  */
 import { expect } from '@std/expect'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it, mock } from 'node:test'
 
 import {
   AuthContext,
@@ -17,6 +17,9 @@ import { AuthHelpers } from '../../../../../src/charging-station/ocpp/auth/utils
 import { OCPPVersion } from '../../../../../src/types/ocpp/OCPPVersion.js'
 
 await describe('AuthHelpers', async () => {
+  afterEach(() => {
+    mock.restoreAll()
+  })
   await describe('calculateTTL', async () => {
     await it('should return undefined for undefined expiry date', () => {
       const result = AuthHelpers.calculateTTL(undefined)

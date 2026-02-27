@@ -5,7 +5,7 @@
 // Copyright Jerome Benoit. 2024-2025. All Rights Reserved.
 
 import { expect } from '@std/expect'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it, mock } from 'node:test'
 
 import { UIWebSocketServer } from '../../../../src/charging-station/ui-server/UIWebSocketServer.js'
 import { ProcedureName, ProtocolVersion, ResponseStatus } from '../../../../src/types/index.js'
@@ -27,6 +27,9 @@ class TestableUIWebSocketServer extends UIWebSocketServer {
 }
 
 await describe('AbstractUIService test suite', async () => {
+  afterEach(() => {
+    mock.restoreAll()
+  })
   await it('should check response handler existence before sending', () => {
     const config = createMockUIServerConfiguration()
     const server = new TestableUIWebSocketServer(config)

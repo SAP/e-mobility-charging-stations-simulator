@@ -3,11 +3,14 @@
  * @description Unit tests for base error class functionality
  */
 import { expect } from '@std/expect'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it, mock } from 'node:test'
 
 import { BaseError } from '../../src/exception/BaseError.js'
 
 await describe('BaseError test suite', async () => {
+  afterEach(() => {
+    mock.restoreAll()
+  })
   await it('should create instance with default values', () => {
     const baseError = new BaseError()
     expect(baseError).toBeInstanceOf(BaseError)

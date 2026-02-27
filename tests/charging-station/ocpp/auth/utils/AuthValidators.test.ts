@@ -3,7 +3,7 @@
  * @description Unit tests for authentication validation utilities
  */
 import { expect } from '@std/expect'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it, mock } from 'node:test'
 
 import {
   type AuthConfiguration,
@@ -15,6 +15,9 @@ import { AuthValidators } from '../../../../../src/charging-station/ocpp/auth/ut
 import { OCPPVersion } from '../../../../../src/types/ocpp/OCPPVersion.js'
 
 await describe('AuthValidators', async () => {
+  afterEach(() => {
+    mock.restoreAll()
+  })
   await describe('isValidCacheTTL', async () => {
     await it('should return true for undefined TTL', () => {
       expect(AuthValidators.isValidCacheTTL(undefined)).toBe(true)

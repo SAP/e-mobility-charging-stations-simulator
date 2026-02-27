@@ -4,7 +4,7 @@
  */
 
 import { expect } from '@std/expect'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it, mock } from 'node:test'
 
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
@@ -15,6 +15,10 @@ import { createChargingStation } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 
 await describe('C11 - Clear Authorization Data in Authorization Cache', async () => {
+  afterEach(() => {
+    mock.restoreAll()
+  })
+
   const mockChargingStation = createChargingStation({
     baseName: TEST_CHARGING_STATION_BASE_NAME,
     connectorsCount: 3,
@@ -86,7 +90,9 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
     await it('should NOT call idTagsCache.deleteIdTags() on ClearCache request', async () => {
       // Verify that IdTagsCache is not touched
       let deleteIdTagsCalled = false
-      const originalDeleteIdTags = mockChargingStation.idTagsCache.deleteIdTags.bind(mockChargingStation.idTagsCache)
+      const originalDeleteIdTags = mockChargingStation.idTagsCache.deleteIdTags.bind(
+        mockChargingStation.idTagsCache
+      )
 
       Object.assign(mockChargingStation.idTagsCache, {
         deleteIdTags: () => {

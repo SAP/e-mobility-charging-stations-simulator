@@ -3,7 +3,7 @@
  * @description Unit tests for OCPP configuration key management utilities
  */
 import { expect } from '@std/expect'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStationOcppConfiguration } from '../../src/types/index.js'
 
@@ -22,6 +22,9 @@ const VALUE_A = 'ValueA'
 const VALUE_B = 'ValueB'
 
 await describe('ConfigurationKeyUtils test suite', async () => {
+  afterEach(() => {
+    mock.restoreAll()
+  })
   await describe('getConfigurationKey()', async () => {
     await it('should return undefined when configurationKey array is missing', () => {
       const cs = createChargingStation()

@@ -5,7 +5,7 @@
 // Copyright Jerome Benoit. 2024-2025. All Rights Reserved.
 
 import { expect } from '@std/expect'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it, mock } from 'node:test'
 
 import {
   createBodySizeLimiter,
@@ -19,6 +19,9 @@ import { waitForStreamFlush } from './UIServerTestUtils.js'
 const RATE_WINDOW_EXPIRY_DELAY_MS = 110
 
 await describe('UIServerSecurity test suite', async () => {
+  afterEach(() => {
+    mock.restoreAll()
+  })
   await describe('isValidCredential()', async () => {
     await it('should return true for matching credentials', () => {
       expect(isValidCredential('myPassword123', 'myPassword123')).toBe(true)

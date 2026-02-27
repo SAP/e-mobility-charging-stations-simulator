@@ -4,11 +4,9 @@
  */
 
 import { expect } from '@std/expect'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it, mock } from 'node:test'
 
-import {
-  createTestableRequestService,
-} from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
+import { createTestableRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import {
   AttributeEnumType,
   DataEnumType,
@@ -31,6 +29,9 @@ import {
 } from '../../ChargingStationTestConstants.js'
 
 await describe('B07/B08 - NotifyReport', async () => {
+  afterEach(() => {
+    mock.restoreAll()
+  })
   const { service: testableService } = createTestableRequestService()
 
   const mockChargingStation = createChargingStation({

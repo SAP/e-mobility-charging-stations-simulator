@@ -5,7 +5,7 @@
 // Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
 
 import { expect } from '@std/expect'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it, mock } from 'node:test'
 
 import {
   type AuthConfiguration,
@@ -15,6 +15,9 @@ import {
 import { AuthConfigValidator } from '../../../../../src/charging-station/ocpp/auth/utils/ConfigValidator.js'
 
 await describe('AuthConfigValidator', async () => {
+  afterEach(() => {
+    mock.restoreAll()
+  })
   await describe('validate', async () => {
     await it('should accept valid configuration', () => {
       const config: AuthConfiguration = {

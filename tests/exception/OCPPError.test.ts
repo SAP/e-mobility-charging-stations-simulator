@@ -3,13 +3,17 @@
  * @description Unit tests for OCPP-specific error class
  */
 import { expect } from '@std/expect'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it, mock } from 'node:test'
 
 import { OCPPError } from '../../src/exception/OCPPError.js'
 import { ErrorType } from '../../src/types/index.js'
 import { Constants } from '../../src/utils/Constants.js'
 
 await describe('OCPPError test suite', async () => {
+  afterEach(() => {
+    mock.restoreAll()
+  })
+
   await it('should create instance with error code and default values', () => {
     const ocppError = new OCPPError(ErrorType.GENERIC_ERROR, '')
     expect(ocppError).toBeInstanceOf(OCPPError)

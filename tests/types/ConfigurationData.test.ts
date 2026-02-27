@@ -3,7 +3,7 @@
  * @description Unit tests for configuration data types and enumerations
  */
 import { expect } from '@std/expect'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it, mock } from 'node:test'
 
 import {
   ApplicationProtocolVersion,
@@ -12,6 +12,10 @@ import {
 } from '../../src/types/ConfigurationData.js'
 
 await describe('ConfigurationData test suite', async () => {
+  afterEach(() => {
+    mock.restoreAll()
+  })
+
   await it('should define ConfigurationSection enumeration values', () => {
     expect(ConfigurationSection.log).toBe('log')
     expect(ConfigurationSection.performanceStorage).toBe('performanceStorage')

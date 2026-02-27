@@ -3,11 +3,14 @@
  * @description Unit tests for electrical calculations (AC/DC power, amperage)
  */
 import { expect } from '@std/expect'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it, mock } from 'node:test'
 
 import { ACElectricUtils, DCElectricUtils } from '../../src/utils/ElectricUtils.js'
 
 await describe('ElectricUtils test suite', async () => {
+  afterEach(() => {
+    mock.restoreAll()
+  })
   await it('should calculate DC power from voltage and current', () => {
     expect(DCElectricUtils.power(230, 1)).toBe(230)
   })

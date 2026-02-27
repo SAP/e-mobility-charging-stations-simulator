@@ -4,7 +4,7 @@
  */
 
 import { expect } from '@std/expect'
-import { describe, it, mock } from 'node:test'
+import { afterEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStationWithCertificateManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20CertificateManager.js'
 
@@ -59,6 +59,10 @@ const createMockCertificateManager = (
 })
 
 await describe('I04 - GetInstalledCertificateIds', async () => {
+  afterEach(() => {
+    mock.restoreAll()
+  })
+
   const mockChargingStation = createChargingStation({
     baseName: TEST_CHARGING_STATION_BASE_NAME,
     connectorsCount: 3,
@@ -72,7 +76,8 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
   })
 
   // Cast to allow setting certificateManager property
-  const stationWithCertManager = mockChargingStation as unknown as ChargingStationWithCertificateManager
+  const stationWithCertManager =
+    mockChargingStation as unknown as ChargingStationWithCertificateManager
   stationWithCertManager.certificateManager = createMockCertificateManager()
 
   const incomingRequestService = new OCPP20IncomingRequestService()
@@ -255,13 +260,18 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
       })
 
       // Explicitly set to null/undefined
-      const stationNoCertManager = stationWithoutCertManager as unknown as ChargingStationWithCertificateManager
-      stationNoCertManager.certificateManager = null as unknown as ChargingStationWithCertificateManager['certificateManager']
+      const stationNoCertManager =
+        stationWithoutCertManager as unknown as ChargingStationWithCertificateManager
+      stationNoCertManager.certificateManager =
+        null as unknown as ChargingStationWithCertificateManager['certificateManager']
 
       const request: OCPP20GetInstalledCertificateIdsRequest = {}
 
       const response: OCPP20GetInstalledCertificateIdsResponse =
-        await testableService.handleRequestGetInstalledCertificateIds(stationWithoutCertManager, request)
+        await testableService.handleRequestGetInstalledCertificateIds(
+          stationWithoutCertManager,
+          request
+        )
 
       expect(response).toBeDefined()
       expect(response.status).toBe(GetInstalledCertificateStatusEnumType.NotFound)

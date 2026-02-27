@@ -76,10 +76,7 @@ export interface TimerHelperOptions {
  */
 interface MockContext {
   mock: {
-    method: (
-      object: object,
-      methodName: string
-    ) => { mock: { calls: unknown[][] } }
+    method: (object: object, methodName: string) => { mock: { calls: unknown[][] } }
   }
 }
 

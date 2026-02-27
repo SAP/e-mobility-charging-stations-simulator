@@ -4,7 +4,7 @@
  */
 
 import { expect } from '@std/expect'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it, mock } from 'node:test'
 
 import { createTestableRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import {
@@ -22,6 +22,9 @@ import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConsta
 const MOCK_ORGANIZATION_NAME = 'Test Organization Inc.'
 
 await describe('I02 - SignCertificate Request', async () => {
+  afterEach(() => {
+    mock.restoreAll()
+  })
   const mockChargingStation = createChargingStation({
     baseName: TEST_CHARGING_STATION_BASE_NAME,
     connectorsCount: 3,

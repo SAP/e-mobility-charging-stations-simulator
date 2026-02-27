@@ -5,7 +5,7 @@
 /* cspell:ignore Bvbn NQIF CBCYX */
 
 import { expect } from '@std/expect'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it, mock } from 'node:test'
 
 import { createTestableRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import {
@@ -42,6 +42,9 @@ const createMockOCSPRequestData = (): OCSPRequestDataType => ({
 })
 
 await describe('M02 - Get15118EVCertificate Request', async () => {
+  afterEach(() => {
+    mock.restoreAll()
+  })
   const mockChargingStation = createChargingStation({
     baseName: TEST_CHARGING_STATION_BASE_NAME,
     connectorsCount: 3,

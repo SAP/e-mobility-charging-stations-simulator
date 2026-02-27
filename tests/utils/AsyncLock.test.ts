@@ -4,11 +4,14 @@
  */
 import { expect } from '@std/expect'
 import { randomInt } from 'node:crypto'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it, mock } from 'node:test'
 
 import { AsyncLock, AsyncLockType } from '../../src/utils/AsyncLock.js'
 
 await describe('AsyncLock test suite', async () => {
+  afterEach(() => {
+    mock.restoreAll()
+  })
   await it('should run synchronous functions exclusively in sequence', () => {
     const runs = 10
     const executed: number[] = []

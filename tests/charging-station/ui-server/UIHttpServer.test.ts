@@ -5,7 +5,7 @@
 // Copyright Jerome Benoit. 2024-2025. All Rights Reserved.
 
 import { expect } from '@std/expect'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it, mock } from 'node:test'
 import { gunzipSync } from 'node:zlib'
 
 import type { UUIDv4 } from '../../../src/types/index.js'
@@ -47,6 +47,9 @@ const createLargePayload = (status: ResponseStatus = ResponseStatus.SUCCESS) => 
 })
 
 await describe('UIHttpServer test suite', async () => {
+  afterEach(() => {
+    mock.restoreAll()
+  })
   await it('should delete response handler after successful send', () => {
     const server = new TestableUIHttpServer(createHttpServerConfig())
     const res = new MockServerResponse()

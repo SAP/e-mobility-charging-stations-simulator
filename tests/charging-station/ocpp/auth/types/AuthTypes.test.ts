@@ -3,7 +3,7 @@
  * @description Unit tests for authentication type definitions and mappings
  */
 import { expect } from '@std/expect'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it, mock } from 'node:test'
 
 import {
   AuthContext,
@@ -31,6 +31,9 @@ import {
 import { OCPPVersion } from '../../../../../src/types/ocpp/OCPPVersion.js'
 
 await describe('AuthTypes', async () => {
+  afterEach(() => {
+    mock.restoreAll()
+  })
   await describe('IdentifierTypeGuards', async () => {
     await it('should correctly identify OCPP 1.6 types', () => {
       expect(isOCPP16Type(IdentifierType.ID_TAG)).toBe(true)

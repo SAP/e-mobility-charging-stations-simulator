@@ -5,7 +5,7 @@
 // Copyright Jerome Benoit. 2024-2025. All Rights Reserved.
 
 import { expect } from '@std/expect'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it, mock } from 'node:test'
 
 import type { UUIDv4 } from '../../../src/types/index.js'
 
@@ -35,6 +35,9 @@ class TestableUIWebSocketServer extends UIWebSocketServer {
 }
 
 await describe('UIWebSocketServer test suite', async () => {
+  afterEach(() => {
+    mock.restoreAll()
+  })
   await it('should delete response handler after successful send', () => {
     const config = createMockUIServerConfiguration()
     const server = new TestableUIWebSocketServer(config)
