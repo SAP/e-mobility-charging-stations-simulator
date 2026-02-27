@@ -1,3 +1,7 @@
+/**
+ * @file Tests for InMemoryAuthCache
+ * @description Unit tests for in-memory authorization cache conformance (G03.FR.01)
+ */
 import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 

@@ -1,3 +1,7 @@
+/**
+ * @file Tests for OCPP20ServiceUtils TransactionEvent IdTokenFirst
+ * @description Unit tests for OCPP 2.0 IdToken-first pre-authorization flow (E03)
+ */
 import { expect } from '@std/expect'
 import { afterEach, describe, it } from 'node:test'
 

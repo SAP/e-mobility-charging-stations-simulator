@@ -1,3 +1,7 @@
+/**
+ * @file Tests for OCPP20IncomingRequestService RemoteStartAuth
+ * @description Unit tests for OCPP 2.0 remote start pre-authorization (G03.FR.03)
+ */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */

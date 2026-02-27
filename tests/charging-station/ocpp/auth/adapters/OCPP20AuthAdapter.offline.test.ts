@@ -1,4 +1,8 @@
 /**
+ * @file Tests for OCPP20AuthAdapter Offline
+ * @description Unit tests for OCPP 2.0 offline authorization scenarios (G03.FR.02)
+ */
+/**
  * G03.FR.02 - OCPP 2.0 Offline Authorization Tests
  *
  * Tests for offline authorization scenarios:

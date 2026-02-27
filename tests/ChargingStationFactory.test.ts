@@ -1,3 +1,7 @@
+/**
+ * @file Tests for ChargingStationFactory
+ * @description Unit tests for charging station factory utilities and OCPP service mocking
+ */
 import { expect } from '@std/expect'
 import { describe, it } from 'node:test'
 

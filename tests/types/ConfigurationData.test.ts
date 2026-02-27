@@ -1,3 +1,7 @@
+/**
+ * @file Tests for ConfigurationData
+ * @description Unit tests for configuration data types and enumerations
+ */
 import { expect } from '@std/expect'
 import { describe, it } from 'node:test'
 

@@ -1,3 +1,7 @@
+/**
+ * @file Tests for AsyncLock
+ * @description Unit tests for asynchronous lock utilities
+ */
 import { expect } from '@std/expect'
 import { randomInt } from 'node:crypto'
 import { describe, it } from 'node:test'

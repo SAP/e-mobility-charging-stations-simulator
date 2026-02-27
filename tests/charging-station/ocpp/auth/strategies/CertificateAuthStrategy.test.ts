@@ -1,3 +1,7 @@
+/**
+ * @file Tests for CertificateAuthStrategy
+ * @description Unit tests for certificate-based authentication strategy
+ */
 import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 

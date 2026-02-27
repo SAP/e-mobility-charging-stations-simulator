@@ -1,3 +1,7 @@
+/**
+ * @file Tests for ConfigurationKeyUtils
+ * @description Unit tests for OCPP configuration key management utilities
+ */
 import { expect } from '@std/expect'
 import { describe, it } from 'node:test'
 

@@ -1,3 +1,7 @@
+/**
+ * @file Tests for StatisticUtils
+ * @description Unit tests for statistical calculation utilities
+ */
 import { expect } from '@std/expect'
 import { describe, it } from 'node:test'
 

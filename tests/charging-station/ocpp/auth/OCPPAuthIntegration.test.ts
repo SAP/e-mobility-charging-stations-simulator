@@ -1,3 +1,7 @@
+/**
+ * @file Tests for OCPPAuthIntegration
+ * @description Integration tests for OCPP authentication across versions 1.6 and 2.0
+ */
 import { expect } from '@std/expect'
 import { describe, it } from 'node:test'
 

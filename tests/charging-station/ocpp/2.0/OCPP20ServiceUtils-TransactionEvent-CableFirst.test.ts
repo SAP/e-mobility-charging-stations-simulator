@@ -1,3 +1,7 @@
+/**
+ * @file Tests for OCPP20ServiceUtils TransactionEvent CableFirst
+ * @description Unit tests for OCPP 2.0 cable-first transaction flow (E02)
+ */
 import { expect } from '@std/expect'
 import { afterEach, describe, it } from 'node:test'
 

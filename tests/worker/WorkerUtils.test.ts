@@ -1,3 +1,7 @@
+/**
+ * @file Tests for WorkerUtils
+ * @description Unit tests for worker process utility functions
+ */
 import { expect } from '@std/expect'
 import { describe, it } from 'node:test'
 

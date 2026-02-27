@@ -1,3 +1,7 @@
+/**
+ * @file Tests for RemoteAuthStrategy
+ * @description Unit tests for remote (CSMS) authorization strategy
+ */
 import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 

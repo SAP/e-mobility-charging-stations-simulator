@@ -1,3 +1,7 @@
+/**
+ * @file Tests for OCPP20RequestService SignCertificate
+ * @description Unit tests for OCPP 2.0 SignCertificate request building
+ */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */

@@ -1,3 +1,7 @@
+/**
+ * @file Tests for OCPP20CertificateManager
+ * @description Unit tests for OCPP 2.0 certificate management and validation
+ */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { expect } from '@std/expect'

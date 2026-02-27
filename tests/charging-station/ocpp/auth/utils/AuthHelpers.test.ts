@@ -1,3 +1,7 @@
+/**
+ * @file Tests for AuthHelpers
+ * @description Unit tests for authentication helper utilities
+ */
 import { expect } from '@std/expect'
 import { describe, it } from 'node:test'
 

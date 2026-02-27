@@ -1,3 +1,7 @@
+/**
+ * @file Tests for Helpers
+ * @description Unit tests for charging station helper functions and utilities
+ */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 
 import { expect } from '@std/expect'

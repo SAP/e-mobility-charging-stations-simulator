@@ -1,3 +1,7 @@
+/**
+ * @file Tests for OCPP20IncomingRequestService Reset
+ * @description Unit tests for OCPP 2.0 Reset command handling (B11/B12)
+ */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */

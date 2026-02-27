@@ -1,3 +1,7 @@
+/**
+ * @file Tests for OCPP20IncomingRequestService SetVariables
+ * @description Unit tests for OCPP 2.0 SetVariables command handling
+ */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { expect } from '@std/expect'

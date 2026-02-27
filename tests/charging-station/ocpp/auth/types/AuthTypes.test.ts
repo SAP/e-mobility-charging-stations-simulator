@@ -1,3 +1,7 @@
+/**
+ * @file Tests for AuthTypes
+ * @description Unit tests for authentication type definitions and mappings
+ */
 import { expect } from '@std/expect'
 import { describe, it } from 'node:test'
 

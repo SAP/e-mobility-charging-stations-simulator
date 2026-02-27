@@ -1,3 +1,7 @@
+/**
+ * @file Tests for ChargingStation
+ * @description Unit tests for charging station lifecycle, state management, and connector operations
+ */
 import { expect } from '@std/expect'
 import { afterEach, describe, it } from 'node:test'
 

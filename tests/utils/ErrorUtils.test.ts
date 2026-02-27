@@ -1,3 +1,7 @@
+/**
+ * @file Tests for ErrorUtils
+ * @description Unit tests for error handling utilities
+ */
 import { expect } from '@std/expect'
 import { describe, it } from 'node:test'
 

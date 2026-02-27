@@ -1,3 +1,7 @@
+/**
+ * @file Tests for OCPP20RequestService StatusNotification
+ * @description Unit tests for OCPP 2.0 StatusNotification request building (G01)
+ */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */

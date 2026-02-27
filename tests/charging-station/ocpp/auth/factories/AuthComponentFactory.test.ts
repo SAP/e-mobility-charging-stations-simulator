@@ -1,3 +1,7 @@
+/**
+ * @file Tests for AuthComponentFactory
+ * @description Unit tests for authentication component factory
+ */
 /* eslint-disable @typescript-eslint/no-confusing-void-expression */
 import { expect } from '@std/expect'
 import { afterEach, describe, it } from 'node:test'

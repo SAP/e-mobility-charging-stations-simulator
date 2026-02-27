@@ -1,3 +1,7 @@
+/**
+ * @file Tests for OCPP20RequestService BootNotification
+ * @description Unit tests for OCPP 2.0 BootNotification request building (B01)
+ */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */

@@ -1,3 +1,7 @@
+/**
+ * @file Tests for OCPP16AuthAdapter
+ * @description Unit tests for OCPP 1.6 authentication adapter
+ */
 import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 

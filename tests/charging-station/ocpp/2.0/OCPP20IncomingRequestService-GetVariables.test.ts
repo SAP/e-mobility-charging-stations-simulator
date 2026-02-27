@@ -1,3 +1,7 @@
+/**
+ * @file Tests for OCPP20IncomingRequestService GetVariables
+ * @description Unit tests for OCPP 2.0 GetVariables command handling (B06)
+ */
 import { expect } from '@std/expect'
 import { millisecondsToSeconds } from 'date-fns'
 import { describe, it } from 'node:test'

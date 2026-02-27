@@ -1,3 +1,7 @@
+/**
+ * @file Tests for OCPP20IncomingRequestService ClearCache
+ * @description Unit tests for OCPP 2.0 ClearCache command handling (C11)
+ */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */

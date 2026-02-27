@@ -1,3 +1,7 @@
+/**
+ * @file Tests for OCPP20ServiceUtils TransactionEvent
+ * @description Unit tests for OCPP 2.0 TransactionEvent building and trigger reasons (E01-E04)
+ */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 

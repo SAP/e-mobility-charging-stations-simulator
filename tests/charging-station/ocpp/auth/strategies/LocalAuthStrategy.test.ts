@@ -1,3 +1,7 @@
+/**
+ * @file Tests for LocalAuthStrategy
+ * @description Unit tests for local authorization strategy (cache and local list)
+ */
 import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 

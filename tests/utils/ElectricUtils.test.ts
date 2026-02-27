@@ -1,3 +1,7 @@
+/**
+ * @file Tests for ElectricUtils
+ * @description Unit tests for electrical calculations (AC/DC power, amperage)
+ */
 import { expect } from '@std/expect'
 import { describe, it } from 'node:test'
 

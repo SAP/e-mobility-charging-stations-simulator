@@ -1,3 +1,7 @@
+/**
+ * @file Tests for UIHttpServer
+ * @description Unit tests for HTTP-based UI server and response handling
+ */
 // Copyright Jerome Benoit. 2024-2025. All Rights Reserved.
 
 import { expect } from '@std/expect'

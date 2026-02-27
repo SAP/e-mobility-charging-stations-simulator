@@ -1,3 +1,7 @@
+/**
+ * @file Tests for OCPP20VariableManager
+ * @description Unit tests for OCPP 2.0 variable management and device model
+ */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */

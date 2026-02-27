@@ -1,3 +1,7 @@
+/**
+ * @file Tests for OCPPAuthServiceFactory
+ * @description Unit tests for OCPP authentication service factory
+ */
 import { expect } from '@std/expect'
 import { describe, it } from 'node:test'
 
