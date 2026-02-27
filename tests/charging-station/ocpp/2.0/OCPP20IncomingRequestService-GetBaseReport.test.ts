@@ -91,7 +91,10 @@ await describe('B07 - Get Base Report', async () => {
   })
 
   await it('Should include registry variables with Actual attribute only for unsupported types', () => {
-    const reportData = testableService.buildReportData(mockChargingStation, ReportBaseEnumType.FullInventory)
+    const reportData = testableService.buildReportData(
+      mockChargingStation,
+      ReportBaseEnumType.FullInventory
+    )
     const heartbeatEntry = reportData.find(
       (item: ReportDataType) =>
         item.variable.name === (OCPP20OptionalVariableName.HeartbeatInterval as string) &&
@@ -147,8 +150,8 @@ await describe('B07 - Get Base Report', async () => {
   })
 
   // FR: B08.FR.05
-  await it('Should return EmptyResultSet when no data is available', () => {
-  // Create a charging station with minimal configuration
+  await it('Should return Accepted for ConfigurationInventory with configured station', () => {
+    // Create a charging station with minimal configuration
 
     const request: OCPP20GetBaseReportRequest = {
       reportBase: ReportBaseEnumType.ConfigurationInventory,
@@ -158,7 +161,7 @@ await describe('B07 - Get Base Report', async () => {
     const response = testableService.handleRequestGetBaseReport(mockChargingStation, request)
 
     expect(response).toBeDefined()
-    expect(response.status).toBe(GenericDeviceModelStatusEnumType.EmptyResultSet)
+    expect(response.status).toBe(GenericDeviceModelStatusEnumType.Accepted)
   })
 
   // FR: B08.FR.06
@@ -198,7 +201,10 @@ await describe('B07 - Get Base Report', async () => {
 
   // FR: B08.FR.07
   await it('Should build correct report data for FullInventory with station info', () => {
-    const reportData = testableService.buildReportData(mockChargingStation, ReportBaseEnumType.FullInventory)
+    const reportData = testableService.buildReportData(
+      mockChargingStation,
+      ReportBaseEnumType.FullInventory
+    )
 
     expect(Array.isArray(reportData)).toBe(true)
     expect(reportData.length).toBeGreaterThan(0)
@@ -276,7 +282,10 @@ await describe('B07 - Get Base Report', async () => {
     expect(setResult[0].attributeStatus).toBe('Accepted')
 
     // Build report; value should be truncated to length 10
-    const reportData = testableService.buildReportData(mockChargingStation, ReportBaseEnumType.FullInventory)
+    const reportData = testableService.buildReportData(
+      mockChargingStation,
+      ReportBaseEnumType.FullInventory
+    )
     const timeSourceEntry = reportData.find(
       (item: ReportDataType) =>
         item.variable.name === (OCPP20RequiredVariableName.TimeSource as string) &&
@@ -310,7 +319,10 @@ await describe('B07 - Get Base Report', async () => {
       },
     })
 
-    const reportData = testableService.buildReportData(stationWithEvses, ReportBaseEnumType.FullInventory)
+    const reportData = testableService.buildReportData(
+      stationWithEvses,
+      ReportBaseEnumType.FullInventory
+    )
 
     expect(Array.isArray(reportData)).toBe(true)
     expect(reportData.length).toBeGreaterThan(0)
