@@ -86,7 +86,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
     await it('Should NOT call idTagsCache.deleteIdTags() on ClearCache request', async () => {
       // Verify that IdTagsCache is not touched
       let deleteIdTagsCalled = false
-      const originalDeleteIdTags = mockChargingStation.idTagsCache.deleteIdTags
+      const originalDeleteIdTags = mockChargingStation.idTagsCache.deleteIdTags.bind(mockChargingStation.idTagsCache)
 
       Object.assign(mockChargingStation.idTagsCache, {
         deleteIdTags: () => {
