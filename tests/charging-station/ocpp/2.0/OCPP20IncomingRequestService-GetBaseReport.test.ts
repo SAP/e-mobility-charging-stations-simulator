@@ -148,19 +148,7 @@ await describe('B07 - Get Base Report', async () => {
 
   // FR: B08.FR.05
   await it('Should return EmptyResultSet when no data is available', () => {
-    // Create a charging station with minimal configuration
-    const minimalChargingStation = createChargingStation({
-      baseName: 'CS-MINIMAL',
-      connectorsCount: 3,
-      evseConfiguration: { evsesCount: 3 },
-      ocppConfiguration: {
-        configurationKey: [],
-      },
-      stationInfo: {
-        ocppStrictCompliance: false,
-        ocppVersion: OCPPVersion.VERSION_201,
-      },
-    })
+  // Create a charging station with minimal configuration
 
     const request: OCPP20GetBaseReportRequest = {
       reportBase: ReportBaseEnumType.ConfigurationInventory,

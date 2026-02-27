@@ -7,7 +7,7 @@ import { afterEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 
-import { AvailabilityType, RegistrationStatusEnumType } from '../../src/types/index.js'
+import { RegistrationStatusEnumType } from '../../src/types/index.js'
 import { cleanupChargingStation, createMockChargingStation } from './ChargingStationTestUtils.js'
 
 // Alias for tests that reference createRealChargingStation

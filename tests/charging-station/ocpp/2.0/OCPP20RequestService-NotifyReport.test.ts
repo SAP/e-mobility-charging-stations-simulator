@@ -8,10 +8,7 @@ import { describe, it } from 'node:test'
 
 import {
   createTestableRequestService,
-  type TestableOCPP20RequestService,
 } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
-import { OCPP20RequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20RequestService.js'
-import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
 import {
   AttributeEnumType,
   DataEnumType,

@@ -6,7 +6,6 @@
 
 import type { ChargingStation } from '../../../src/charging-station/ChargingStation.js'
 import type {
-  ChargingStationConfiguration,
   ChargingStationTemplate,
   ConnectorStatus,
   EvseStatus,

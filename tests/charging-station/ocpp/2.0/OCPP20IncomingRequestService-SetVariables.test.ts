@@ -14,7 +14,6 @@ import {
   AttributeEnumType,
   GetVariableStatusEnumType,
   OCPP20ComponentName,
-  type OCPP20GetVariableDataType,
   type OCPP20GetVariableResultType,
   OCPP20OptionalVariableName,
   OCPP20RequiredVariableName,
