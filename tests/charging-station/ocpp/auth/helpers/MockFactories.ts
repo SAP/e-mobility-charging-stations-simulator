@@ -297,10 +297,10 @@ export const createMockAuthServiceTestStation = (
     idTagLocalAuthorized: () => false,
     isConnected: () => true,
     logPrefix: () => `[TEST-CS-${id}]`,
-    ocppVersion,
     sendRequest: () => Promise.resolve({}),
     stationInfo: {
       chargingStationId: `TEST-CS-${id}`,
       hashId: `test-hash-${id}`,
+      ocppVersion,
     },
   }) as unknown as ChargingStation
