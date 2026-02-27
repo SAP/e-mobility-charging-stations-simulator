@@ -2,7 +2,10 @@ import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { OCPP20RequestStartTransactionRequest } from '../../../../src/types/index.js'
-import type { OCPP20ChargingProfileType, OCPP20ChargingRateUnitType } from '../../../../src/types/ocpp/2.0/Transaction.js'
+import type {
+  OCPP20ChargingProfileType,
+  OCPP20ChargingRateUnitType,
+} from '../../../../src/types/ocpp/2.0/Transaction.js'
 
 /**
  * @file Tests for OCPP20IncomingRequestService RequestStartTransaction
@@ -160,6 +163,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       chargingProfilePurpose: OCPP20ChargingProfilePurposeEnumType.TxProfile,
       chargingSchedule: [
         {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           chargingRateUnit: 'A' as OCPP20ChargingRateUnitType,
           chargingSchedulePeriod: [
             {
@@ -201,6 +205,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       chargingProfilePurpose: OCPP20ChargingProfilePurposeEnumType.TxDefaultProfile,
       chargingSchedule: [
         {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           chargingRateUnit: 'A' as OCPP20ChargingRateUnitType,
           chargingSchedulePeriod: [
             {
@@ -241,6 +246,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       chargingProfilePurpose: OCPP20ChargingProfilePurposeEnumType.TxProfile,
       chargingSchedule: [
         {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           chargingRateUnit: 'A' as OCPP20ChargingRateUnitType,
           chargingSchedulePeriod: [
             {

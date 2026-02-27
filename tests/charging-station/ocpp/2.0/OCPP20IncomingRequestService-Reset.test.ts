@@ -6,8 +6,9 @@
 import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
-import type { ChargingStation, EvseStatus } from '../../../../src/charging-station/index.js'
+import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type {
+  EvseStatus,
   FirmwareStatus,
   type OCPP20ResetRequest,
   type OCPP20ResetResponse,
@@ -15,7 +16,7 @@ import type {
   ReasonCodeEnumType,
   Reservation,
   ResetEnumType,
-  ResetStatusEnumType
+  ResetStatusEnumType,
 } from '../../../../src/types/index.js'
 
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'

@@ -42,7 +42,11 @@ await describe('F03 - Remote Stop Transaction', async () => {
     evseConfiguration: { evsesCount: 3 },
     heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
     ocppRequestService: {
-      requestHandler: async (chargingStation: any, commandName: any, commandPayload: any) => {
+      requestHandler: async (
+        _chargingStation: unknown,
+        commandName: unknown,
+        commandPayload: unknown
+      ) => {
         if (commandName === OCPP20RequestCommand.TRANSACTION_EVENT) {
           sentTransactionEvents.push(commandPayload as OCPP20TransactionEventRequest)
           return Promise.resolve({})
@@ -323,7 +327,11 @@ await describe('F03 - Remote Stop Transaction', async () => {
       evseConfiguration: { evsesCount: 1 },
       heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
       ocppRequestService: {
-        requestHandler: async (chargingStation: any, commandName: any, commandPayload: any) => {
+        requestHandler: async (
+          _chargingStation: unknown,
+          commandName: unknown,
+          commandPayload: unknown
+        ) => {
           if (commandName === OCPP20RequestCommand.TRANSACTION_EVENT) {
             throw new Error('TransactionEvent rejected by server')
           }

@@ -162,6 +162,7 @@ await describe('B05 - Set Variables', async () => {
         {
           attributeValue: 'true',
           component: {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             instance: TEST_CONNECTOR_VALID_INSTANCE,
             name: OCPP20ComponentName.Connector,
           },

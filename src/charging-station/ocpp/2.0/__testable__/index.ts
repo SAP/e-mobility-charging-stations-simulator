@@ -176,7 +176,7 @@ export function createTestableIncomingRequestService (
   const serviceImpl = service as unknown as TestableOCPP20IncomingRequestService
 
   return {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
     buildReportData: (serviceImpl as any).buildReportData.bind(service),
     handleRequestCertificateSigned: serviceImpl.handleRequestCertificateSigned.bind(service),
     handleRequestClearCache: serviceImpl.handleRequestClearCache.bind(service),

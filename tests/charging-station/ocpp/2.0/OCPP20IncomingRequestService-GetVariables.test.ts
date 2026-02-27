@@ -172,6 +172,7 @@ await describe('B06 - Get Variables', async () => {
       getVariableData: [
         {
           component: {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             instance: TEST_CONNECTOR_VALID_INSTANCE,
             name: OCPP20ComponentName.Connector,
           },

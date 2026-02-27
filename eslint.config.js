@@ -88,6 +88,7 @@ export default defineConfig([
               'CALLRESULT',
               'CALLERROR',
               'CALLRESULTERROR',
+              'reservability',
             ],
           },
         },
