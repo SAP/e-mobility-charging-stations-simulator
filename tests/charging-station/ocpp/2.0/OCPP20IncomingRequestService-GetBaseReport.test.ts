@@ -7,7 +7,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { expect } from '@std/expect'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 
 import {
   addConfigurationKey,
@@ -59,6 +59,11 @@ await describe('B07 - Get Base Report', async () => {
   })
 
   const incomingRequestService = new OCPP20IncomingRequestService()
+
+  // Reset singleton state after each test to ensure test isolation
+  afterEach(() => {
+    OCPP20VariableManager.getInstance().resetRuntimeOverrides()
+  })
 
   // FR: B07.FR.01, B07.FR.07
   await it('Should handle GetBaseReport request with ConfigurationInventory', () => {

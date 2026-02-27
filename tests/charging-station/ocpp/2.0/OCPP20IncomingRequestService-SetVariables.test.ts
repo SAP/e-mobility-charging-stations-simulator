@@ -6,9 +6,10 @@
 
 import { expect } from '@std/expect'
 import { millisecondsToSeconds } from 'date-fns'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
+import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
 import {
   AttributeEnumType,
   GetVariableStatusEnumType,
@@ -69,6 +70,11 @@ await describe('B05 - Set Variables', async () => {
 
   const incomingRequestService = new OCPP20IncomingRequestService()
   const svc = incomingRequestService as unknown as IncomingRequestServicePrivate
+
+  // Reset singleton state after each test to ensure test isolation
+  afterEach(() => {
+    OCPP20VariableManager.getInstance().resetRuntimeOverrides()
+  })
 
   // FR: B05.FR.01, B05.FR.10
   await it('Should handle SetVariables request with valid writable variables', () => {

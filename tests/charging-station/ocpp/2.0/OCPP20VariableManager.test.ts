@@ -9,7 +9,7 @@
 
 import { expect } from '@std/expect'
 import { millisecondsToSeconds } from 'date-fns'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 
 import {
   deleteConfigurationKey,
@@ -75,6 +75,11 @@ await describe('B05/B06 - OCPP20VariableManager test suite', async () => {
       ocppVersion: OCPPVersion.VERSION_201,
     },
     websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+  })
+
+  // Reset singleton state after each test to ensure test isolation
+  afterEach(() => {
+    OCPP20VariableManager.getInstance().resetRuntimeOverrides()
   })
 
   await it('Verify that OCPP20VariableManager can be instantiated as singleton', () => {

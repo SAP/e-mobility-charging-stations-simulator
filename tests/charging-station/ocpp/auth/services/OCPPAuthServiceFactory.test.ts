@@ -3,7 +3,7 @@
  * @description Unit tests for OCPP authentication service factory
  */
 import { expect } from '@std/expect'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../../src/charging-station/ChargingStation.js'
 
@@ -12,6 +12,11 @@ import { OCPPVersion } from '../../../../../src/types/ocpp/OCPPVersion.js'
 import { createMockAuthServiceTestStation } from '../helpers/MockFactories.js'
 
 await describe('OCPPAuthServiceFactory', async () => {
+  // Clear all cached instances after each test to ensure test isolation
+  afterEach(() => {
+    OCPPAuthServiceFactory.clearAllInstances()
+  })
+
   await describe('getInstance', async () => {
     await it('should create a new instance for a charging station', async () => {
       const mockStation = createMockAuthServiceTestStation('001')
