@@ -3,7 +3,7 @@
  * @description Unit tests for certificate-based authentication strategy
  */
 import { expect } from '@std/expect'
-import { afterEach, beforeEach, describe, it, mock } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../../src/charging-station/ChargingStation.js'
 import type { OCPPAuthAdapter } from '../../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
@@ -58,7 +58,6 @@ await describe('CertificateAuthStrategy', async () => {
   })
 
   afterEach(() => {
-    mock.restoreAll()
     standardCleanup()
   })
 

@@ -5,7 +5,7 @@
 // Copyright Jerome Benoit. 2024-2025. All Rights Reserved.
 
 import { expect } from '@std/expect'
-import { afterEach, describe, it, mock } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 
 import {
   createBodySizeLimiter,
@@ -21,7 +21,6 @@ const RATE_WINDOW_EXPIRY_DELAY_MS = 110
 
 await describe('UIServerSecurity', async () => {
   afterEach(() => {
-    mock.restoreAll()
     standardCleanup()
   })
   await describe('IsValidCredential', async () => {

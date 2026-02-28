@@ -5,7 +5,7 @@
 // Copyright Jerome Benoit. 2024-2025. All Rights Reserved.
 
 import { expect } from '@std/expect'
-import { afterEach, describe, it, mock } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 
 import type { UUIDv4 } from '../../../src/types/index.js'
 
@@ -22,7 +22,6 @@ import {
 
 await describe('UIWebSocketServer', async () => {
   afterEach(() => {
-    mock.restoreAll()
     standardCleanup()
   })
   await it('should delete response handler after successful send', () => {

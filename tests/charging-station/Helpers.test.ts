@@ -61,14 +61,12 @@ await describe('Helpers', async () => {
     }) as Reservation
 
   await it('should return formatted charging station ID with index', () => {
-    // Arrange & Act & Assert
     expect(getChargingStationId(1, chargingStationTemplate)).toBe(
       `${TEST_CHARGING_STATION_BASE_NAME}-00001`
     )
   })
 
   await it('should return consistent hash ID for same template and index', () => {
-    // Arrange & Act & Assert
     expect(getHashId(1, chargingStationTemplate)).toBe(
       'b4b1e8ec4fca79091d99ea9a7ea5901548010e6c0e98be9296f604b9d68734444dfdae73d7d406b6124b42815214d088'
     )
@@ -488,7 +486,6 @@ await describe('Helpers', async () => {
   })
 
   await it('should return correct phase rotation value for connector and phase count', () => {
-    // Arrange & Act & Assert
     expect(getPhaseRotationValue(0, 0)).toBe('0.RST')
     expect(getPhaseRotationValue(1, 0)).toBe('1.NotApplicable')
     expect(getPhaseRotationValue(2, 0)).toBe('2.NotApplicable')
@@ -504,7 +501,6 @@ await describe('Helpers', async () => {
   })
 
   await it('should return -1 for undefined EVSEs and 0 for empty object', () => {
-    // Arrange & Act & Assert
     expect(getMaxNumberOfEvses(undefined)).toBe(-1)
     expect(getMaxNumberOfEvses({})).toBe(0)
   })
@@ -664,35 +660,29 @@ await describe('Helpers', async () => {
 
   // Tests for reservation helper functions
   await it('should return true when reservation has expired', () => {
-    // Arrange & Act & Assert
     expect(hasReservationExpired(createTestReservation(true))).toBe(true)
   })
 
   await it('should return false when reservation is still valid', () => {
-    // Arrange & Act & Assert
     expect(hasReservationExpired(createTestReservation(false))).toBe(false)
   })
 
   await it('should return false when connector has no reservation', () => {
-    // Arrange & Act & Assert
     const connectorStatus = {} as ConnectorStatus
     expect(hasPendingReservation(connectorStatus)).toBe(false)
   })
 
   await it('should return true when connector has valid pending reservation', () => {
-    // Arrange & Act & Assert
     const connectorStatus = { reservation: createTestReservation(false) } as ConnectorStatus
     expect(hasPendingReservation(connectorStatus)).toBe(true)
   })
 
   await it('should return false when connector reservation has expired', () => {
-    // Arrange & Act & Assert
     const connectorStatus = { reservation: createTestReservation(true) } as ConnectorStatus
     expect(hasPendingReservation(connectorStatus)).toBe(false)
   })
 
   await it('should return false when no reservations exist (connector mode)', () => {
-    // Arrange & Act & Assert
     const { station: chargingStation } = createMockChargingStation({
       connectorsCount: 2,
       TEST_CHARGING_STATION_BASE_NAME,

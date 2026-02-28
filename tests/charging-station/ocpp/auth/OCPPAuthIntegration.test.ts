@@ -4,7 +4,7 @@
  */
 
 import { expect } from '@std/expect'
-import { afterEach, beforeEach, describe, it, mock } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
 
@@ -51,7 +51,6 @@ await describe('OCPP Authentication', async () => {
 
   afterEach(() => {
     standardCleanup()
-    mock.restoreAll()
   })
 
   await describe('OCPP 1.6 Authentication', async () => {

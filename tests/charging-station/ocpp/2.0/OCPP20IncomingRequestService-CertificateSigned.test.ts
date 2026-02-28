@@ -85,7 +85,6 @@ await describe('I04 - CertificateSigned', async () => {
 
   afterEach(() => {
     standardCleanup()
-    mock.restoreAll()
   })
   await describe('Valid Certificate Chain Installation', async () => {
     await it('should accept valid certificate chain', async () => {

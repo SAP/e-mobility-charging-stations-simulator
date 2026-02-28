@@ -3,7 +3,7 @@
  * @description Unit tests for OCPP-specific error class
  */
 import { expect } from '@std/expect'
-import { afterEach, describe, it, mock } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 
 import { OCPPError } from '../../src/exception/OCPPError.js'
 import { ErrorType } from '../../src/types/index.js'
@@ -13,7 +13,6 @@ import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 await describe('OCPPError', async () => {
   afterEach(() => {
     standardCleanup()
-    mock.restoreAll()
   })
 
   await it('should create instance with error code and default values', () => {

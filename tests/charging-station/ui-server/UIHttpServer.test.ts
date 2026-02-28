@@ -5,7 +5,7 @@
 // Copyright Jerome Benoit. 2024-2025. All Rights Reserved.
 
 import { expect } from '@std/expect'
-import { afterEach, beforeEach, describe, it, mock } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 import { gunzipSync } from 'node:zlib'
 
 import type { UUIDv4 } from '../../../src/types/index.js'
@@ -55,7 +55,6 @@ await describe('UIHttpServer', async () => {
   })
 
   afterEach(() => {
-    mock.restoreAll()
     standardCleanup()
   })
 
@@ -196,7 +195,6 @@ await describe('UIHttpServer', async () => {
     })
 
     afterEach(() => {
-      mock.restoreAll()
       standardCleanup()
     })
 

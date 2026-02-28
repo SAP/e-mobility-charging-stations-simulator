@@ -3,7 +3,7 @@
  * @description Unit tests for authentication validation utilities
  */
 import { expect } from '@std/expect'
-import { afterEach, describe, it, mock } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 
 import {
   type AuthConfiguration,
@@ -18,7 +18,6 @@ import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
 await describe('AuthValidators', async () => {
   afterEach(() => {
     standardCleanup()
-    mock.restoreAll()
   })
   await describe('isValidCacheTTL', async () => {
     await it('should return true for undefined TTL', () => {

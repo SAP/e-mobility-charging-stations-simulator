@@ -5,7 +5,7 @@
 // Copyright Jerome Benoit. 2024-2025. All Rights Reserved.
 
 import { expect } from '@std/expect'
-import { afterEach, describe, it, mock } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 
 import { ProcedureName, ProtocolVersion, ResponseStatus } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
@@ -19,7 +19,6 @@ import {
 
 await describe('AbstractUIService', async () => {
   afterEach(() => {
-    mock.restoreAll()
     standardCleanup()
   })
   await it('should check response handler existence before sending', () => {

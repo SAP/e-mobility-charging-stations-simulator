@@ -4,7 +4,7 @@
  */
 
 import { expect } from '@std/expect'
-import { afterEach, beforeEach, describe, it, mock } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type { ChargingStationWithCertificateManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20CertificateManager.js'
@@ -55,7 +55,6 @@ SIb3DQEBCwUAA0EAexpired==
 await describe('I03 - InstallCertificate', async () => {
   afterEach(() => {
     standardCleanup()
-    mock.restoreAll()
   })
 
   let mockChargingStation: ChargingStation

@@ -5,7 +5,7 @@
 // Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
 
 import { expect } from '@std/expect'
-import { afterEach, describe, it, mock } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 
 import {
   type AuthConfiguration,
@@ -18,7 +18,6 @@ import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
 await describe('AuthConfigValidator', async () => {
   afterEach(() => {
     standardCleanup()
-    mock.restoreAll()
   })
   await describe('validate', async () => {
     await it('should accept valid configuration', () => {

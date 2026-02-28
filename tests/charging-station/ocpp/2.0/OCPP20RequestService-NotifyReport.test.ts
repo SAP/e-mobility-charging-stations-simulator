@@ -4,7 +4,7 @@
  */
 
 import { expect } from '@std/expect'
-import { afterEach, beforeEach, describe, it, mock } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 
@@ -61,7 +61,6 @@ await describe('B07/B08 - NotifyReport', async () => {
 
   afterEach(() => {
     standardCleanup()
-    mock.restoreAll()
   })
 
   // FR: B07.FR.03, B07.FR.04

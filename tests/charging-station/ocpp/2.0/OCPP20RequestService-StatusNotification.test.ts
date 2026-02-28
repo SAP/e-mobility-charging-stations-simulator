@@ -3,7 +3,7 @@
  * @description Unit tests for OCPP 2.0 StatusNotification request building (G01)
  */
 import { expect } from '@std/expect'
-import { afterEach, beforeEach, describe, it, mock } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 
@@ -60,7 +60,6 @@ await describe('G01 - Status Notification', async () => {
 
   afterEach(() => {
     standardCleanup()
-    mock.restoreAll()
   })
 
   // FR: G01.FR.01

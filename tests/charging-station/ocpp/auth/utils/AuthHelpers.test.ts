@@ -3,7 +3,7 @@
  * @description Unit tests for authentication helper utilities
  */
 import { expect } from '@std/expect'
-import { afterEach, describe, it, mock } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 
 import {
   AuthContext,
@@ -20,7 +20,6 @@ import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
 await describe('AuthHelpers', async () => {
   afterEach(() => {
     standardCleanup()
-    mock.restoreAll()
   })
   await describe('calculateTTL', async () => {
     await it('should return undefined for undefined expiry date', () => {

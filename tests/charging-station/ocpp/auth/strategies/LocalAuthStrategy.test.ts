@@ -3,7 +3,7 @@
  * @description Unit tests for local authorization strategy (cache and local list)
  */
 import { expect } from '@std/expect'
-import { afterEach, beforeEach, describe, it, mock } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type {
   AuthCache,
@@ -40,7 +40,6 @@ await describe('LocalAuthStrategy', async () => {
   })
 
   afterEach(() => {
-    mock.restoreAll()
     standardCleanup()
   })
 
@@ -100,19 +99,6 @@ await describe('LocalAuthStrategy', async () => {
         offlineAuthorizationEnabled: true,
       })
       await strategy.initialize(config)
-    })
-
-    afterEach(() => {
-      // Reset mock properties to prevent state pollution between tests
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-      delete (mockLocalAuthListManager as any).getEntry
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-      delete (mockAuthCache as any).get
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-      delete (mockAuthCache as any).set
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-      delete (mockAuthCache as any).remove
-      mock.restoreAll()
     })
 
     await it('should authenticate using local auth list', async () => {

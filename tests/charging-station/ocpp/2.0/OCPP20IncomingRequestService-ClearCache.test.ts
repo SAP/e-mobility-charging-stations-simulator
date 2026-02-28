@@ -4,7 +4,7 @@
  */
 
 import { expect } from '@std/expect'
-import { afterEach, beforeEach, describe, it, mock } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 
@@ -20,7 +20,6 @@ import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 await describe('C11 - Clear Authorization Data in Authorization Cache', async () => {
   afterEach(() => {
     standardCleanup()
-    mock.restoreAll()
   })
 
   let station: ChargingStation

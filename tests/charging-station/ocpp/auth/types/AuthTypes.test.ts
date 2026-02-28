@@ -3,7 +3,7 @@
  * @description Unit tests for authentication type definitions and mappings
  */
 import { expect } from '@std/expect'
-import { afterEach, describe, it, mock } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 
 import {
   AuthContext,
@@ -34,7 +34,6 @@ import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
 await describe('AuthTypes', async () => {
   afterEach(() => {
     standardCleanup()
-    mock.restoreAll()
   })
   await describe('IdentifierTypeGuards', async () => {
     await it('should correctly identify OCPP 1.6 types', () => {

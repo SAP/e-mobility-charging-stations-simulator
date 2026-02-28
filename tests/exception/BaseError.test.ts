@@ -3,7 +3,7 @@
  * @description Unit tests for base error class functionality
  */
 import { expect } from '@std/expect'
-import { afterEach, describe, it, mock } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 
 import { BaseError } from '../../src/exception/BaseError.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
@@ -11,7 +11,6 @@ import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 await describe('BaseError', async () => {
   afterEach(() => {
     standardCleanup()
-    mock.restoreAll()
   })
   await it('should create instance with default values', () => {
     const baseError = new BaseError()

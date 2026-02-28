@@ -257,13 +257,15 @@ expect(mocks.webSocket.sentMessages).toContain(expectedMessage)
 
 ### Lifecycle Helpers (`helpers/TestLifecycleHelpers.ts`)
 
-| Utility                           | Purpose                              |
-| --------------------------------- | ------------------------------------ |
-| `standardCleanup()`               | **MANDATORY** afterEach cleanup      |
-| `withMockTimers()`                | Execute test with timer mocking      |
-| `createTimerScope()`              | Manual timer control                 |
-| `setupConnectorWithTransaction()` | Setup connector in transaction state |
-| `clearConnectorTransaction()`     | Clear connector transaction state    |
+| Utility                           | Purpose                                  |
+| --------------------------------- | ---------------------------------------- |
+| `standardCleanup()`               | **MANDATORY** afterEach cleanup          |
+| `withMockTimers()`                | Execute test with timer mocking          |
+| `createTimerScope()`              | Manual timer control                     |
+| `createLoggerMocks()`             | Create logger spies (error, warn)        |
+| `createConsoleMocks()`            | Create console spies (error, warn, info) |
+| `setupConnectorWithTransaction()` | Setup connector in transaction state     |
+| `clearConnectorTransaction()`     | Clear connector transaction state        |
 
 ### Mock Classes (`mocks/`)
 

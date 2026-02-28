@@ -5,7 +5,7 @@
 /* cspell:ignore Bvbn NQIF CBCYX */
 
 import { expect } from '@std/expect'
-import { afterEach, beforeEach, describe, it, mock } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import { createTestableRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import {
@@ -62,7 +62,6 @@ await describe('M02 - Get15118EVCertificate Request', async () => {
 
   afterEach(() => {
     standardCleanup()
-    mock.restoreAll()
   })
 
   await describe('EXI Install Action', async () => {
@@ -231,7 +230,6 @@ await describe('M03 - GetCertificateStatus Request', async () => {
 
   afterEach(() => {
     standardCleanup()
-    mock.restoreAll()
   })
 
   await describe('OCSP Request Data', async () => {
@@ -350,7 +348,6 @@ await describe('Request Command Names', async () => {
 
   afterEach(() => {
     standardCleanup()
-    mock.restoreAll()
   })
 
   await it('should send GET_15118_EV_CERTIFICATE command name', async () => {

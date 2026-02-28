@@ -4,7 +4,7 @@
  */
 
 import { expect } from '@std/expect'
-import { afterEach, beforeEach, describe, it, mock } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type { ChargingStationWithCertificateManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20CertificateManager.js'
@@ -45,7 +45,6 @@ const NONEXISTENT_CERTIFICATE_HASH_DATA = {
 await describe('I04 - DeleteCertificate', async () => {
   afterEach(() => {
     standardCleanup()
-    mock.restoreAll()
   })
 
   let station: ChargingStation

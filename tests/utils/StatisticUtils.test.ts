@@ -3,7 +3,7 @@
  * @description Unit tests for statistical calculation utilities
  */
 import { expect } from '@std/expect'
-import { afterEach, describe, it, mock } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 
 import { average, max, median, min, percentile, std } from '../../src/utils/StatisticUtils.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
@@ -11,7 +11,6 @@ import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 await describe('StatisticUtils', async () => {
   afterEach(() => {
     standardCleanup()
-    mock.restoreAll()
   })
   await it('should calculate arithmetic mean of array values', () => {
     expect(average([])).toBe(0)

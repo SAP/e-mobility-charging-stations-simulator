@@ -3,7 +3,7 @@
  * @description Unit tests for configuration data types and enumerations
  */
 import { expect } from '@std/expect'
-import { afterEach, describe, it, mock } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 
 import {
   ApplicationProtocolVersion,
@@ -15,7 +15,6 @@ import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 await describe('ConfigurationData', async () => {
   afterEach(() => {
     standardCleanup()
-    mock.restoreAll()
   })
 
   await it('should define ConfigurationSection enumeration values', () => {

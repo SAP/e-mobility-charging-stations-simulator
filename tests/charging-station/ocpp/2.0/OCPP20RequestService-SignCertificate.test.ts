@@ -4,7 +4,7 @@
  */
 
 import { expect } from '@std/expect'
-import { afterEach, beforeEach, describe, it, mock } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 
@@ -48,7 +48,6 @@ await describe('I02 - SignCertificate Request', async () => {
 
   afterEach(() => {
     standardCleanup()
-    mock.restoreAll()
   })
 
   await describe('CSR Generation', async () => {
