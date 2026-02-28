@@ -3,8 +3,9 @@
  * @description Unit tests for OCPP authentication service implementation
  */
 import { expect } from '@std/expect'
-import { afterEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
+import type { ChargingStation } from '../../../../../src/charging-station/ChargingStation.js'
 import type { OCPPAuthService } from '../../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
 
 import { OCPPAuthServiceImpl } from '../../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceImpl.js'
@@ -24,10 +25,16 @@ await describe('OCPPAuthServiceImpl', async () => {
   })
 
   await describe('constructor', async () => {
-    await it('should initialize with OCPP 1.6 charging station', () => {
-      const mockStation = createMockAuthServiceTestStation('001')
+    let mockStation16: ChargingStation
+    let mockStation20: ChargingStation
 
-      const authService: OCPPAuthService = new OCPPAuthServiceImpl(mockStation)
+    beforeEach(() => {
+      mockStation16 = createMockAuthServiceTestStation('constructor-16')
+      mockStation20 = createMockAuthServiceTestStation('constructor-20', OCPPVersion.VERSION_20)
+    })
+
+    await it('should initialize with OCPP 1.6 charging station', () => {
+      const authService: OCPPAuthService = new OCPPAuthServiceImpl(mockStation16)
 
       expect(authService).toBeDefined()
       expect(typeof authService.authorize).toBe('function')
@@ -35,18 +42,20 @@ await describe('OCPPAuthServiceImpl', async () => {
     })
 
     await it('should initialize with OCPP 2.0 charging station', () => {
-      const mockStation = createMockAuthServiceTestStation('002', OCPPVersion.VERSION_20)
-
-      const authService = new OCPPAuthServiceImpl(mockStation)
+      const authService = new OCPPAuthServiceImpl(mockStation20)
 
       expect(authService).toBeDefined()
     })
   })
 
   await describe('getConfiguration', async () => {
-    await it('should return default configuration', () => {
-      const mockStation = createMockAuthServiceTestStation('003')
+    let mockStation: ChargingStation
 
+    beforeEach(() => {
+      mockStation = createMockAuthServiceTestStation('getConfig')
+    })
+
+    await it('should return default configuration', () => {
       const authService = new OCPPAuthServiceImpl(mockStation)
       const config = authService.getConfiguration()
 
@@ -58,9 +67,13 @@ await describe('OCPPAuthServiceImpl', async () => {
   })
 
   await describe('updateConfiguration', async () => {
-    await it('should update configuration', async () => {
-      const mockStation = createMockAuthServiceTestStation('004')
+    let mockStation: ChargingStation
 
+    beforeEach(() => {
+      mockStation = createMockAuthServiceTestStation('updateConfig')
+    })
+
+    await it('should update configuration', async () => {
       const authService = new OCPPAuthServiceImpl(mockStation)
 
       await authService.updateConfiguration({
@@ -75,10 +88,16 @@ await describe('OCPPAuthServiceImpl', async () => {
   })
 
   await describe('isSupported', async () => {
-    await it('should check if identifier type is supported for OCPP 1.6', async () => {
-      const mockStation = createMockAuthServiceTestStation('005')
+    let mockStation16: ChargingStation
+    let mockStation20: ChargingStation
 
-      const authService = new OCPPAuthServiceImpl(mockStation)
+    beforeEach(() => {
+      mockStation16 = createMockAuthServiceTestStation('isSupported-16')
+      mockStation20 = createMockAuthServiceTestStation('isSupported-20', OCPPVersion.VERSION_20)
+    })
+
+    await it('should check if identifier type is supported for OCPP 1.6', async () => {
+      const authService = new OCPPAuthServiceImpl(mockStation16)
       await authService.initialize()
 
       const idTagIdentifier: UnifiedIdentifier = {
@@ -91,9 +110,7 @@ await describe('OCPPAuthServiceImpl', async () => {
     })
 
     await it('should check if identifier type is supported for OCPP 2.0', async () => {
-      const mockStation = createMockAuthServiceTestStation('006', OCPPVersion.VERSION_20)
-
-      const authService = new OCPPAuthServiceImpl(mockStation)
+      const authService = new OCPPAuthServiceImpl(mockStation20)
       await authService.initialize()
 
       const centralIdentifier: UnifiedIdentifier = {
@@ -107,9 +124,13 @@ await describe('OCPPAuthServiceImpl', async () => {
   })
 
   await describe('testConnectivity', async () => {
-    await it('should test remote connectivity', async () => {
-      const mockStation = createMockAuthServiceTestStation('007')
+    let mockStation: ChargingStation
 
+    beforeEach(() => {
+      mockStation = createMockAuthServiceTestStation('connectivity')
+    })
+
+    await it('should test remote connectivity', async () => {
       const authService = new OCPPAuthServiceImpl(mockStation)
       const isConnected = await authService.testConnectivity()
 
@@ -118,9 +139,13 @@ await describe('OCPPAuthServiceImpl', async () => {
   })
 
   await describe('clearCache', async () => {
-    await it('should clear authorization cache', async () => {
-      const mockStation = createMockAuthServiceTestStation('008')
+    let mockStation: ChargingStation
 
+    beforeEach(() => {
+      mockStation = createMockAuthServiceTestStation('clearCache')
+    })
+
+    await it('should clear authorization cache', async () => {
       const authService = new OCPPAuthServiceImpl(mockStation)
 
       await expect(authService.clearCache()).resolves.toBeUndefined()
@@ -128,9 +153,13 @@ await describe('OCPPAuthServiceImpl', async () => {
   })
 
   await describe('invalidateCache', async () => {
-    await it('should invalidate cache for specific identifier', async () => {
-      const mockStation = createMockAuthServiceTestStation('009')
+    let mockStation: ChargingStation
 
+    beforeEach(() => {
+      mockStation = createMockAuthServiceTestStation('invalidateCache')
+    })
+
+    await it('should invalidate cache for specific identifier', async () => {
       const authService = new OCPPAuthServiceImpl(mockStation)
 
       const identifier: UnifiedIdentifier = {
@@ -144,9 +173,13 @@ await describe('OCPPAuthServiceImpl', async () => {
   })
 
   await describe('getStats', async () => {
-    await it('should return authentication statistics', async () => {
-      const mockStation = createMockAuthServiceTestStation('010')
+    let mockStation: ChargingStation
 
+    beforeEach(() => {
+      mockStation = createMockAuthServiceTestStation('getStats')
+    })
+
+    await it('should return authentication statistics', async () => {
       const authService = new OCPPAuthServiceImpl(mockStation)
       const stats = await authService.getStats()
 
@@ -159,9 +192,13 @@ await describe('OCPPAuthServiceImpl', async () => {
   })
 
   await describe('authorize', async () => {
-    await it('should authorize identifier using strategy chain', async () => {
-      const mockStation = createMockAuthServiceTestStation('011')
+    let mockStation: ChargingStation
 
+    beforeEach(() => {
+      mockStation = createMockAuthServiceTestStation('authorize')
+    })
+
+    await it('should authorize identifier using strategy chain', async () => {
       const authService = new OCPPAuthServiceImpl(mockStation)
 
       const identifier: UnifiedIdentifier = {
@@ -184,8 +221,6 @@ await describe('OCPPAuthServiceImpl', async () => {
     })
 
     await it('should return INVALID status when all strategies fail', async () => {
-      const mockStation = createMockAuthServiceTestStation('012')
-
       const authService = new OCPPAuthServiceImpl(mockStation)
 
       const identifier: UnifiedIdentifier = {
@@ -208,9 +243,13 @@ await describe('OCPPAuthServiceImpl', async () => {
   })
 
   await describe('isLocallyAuthorized', async () => {
-    await it('should check local authorization', async () => {
-      const mockStation = createMockAuthServiceTestStation('013')
+    let mockStation: ChargingStation
 
+    beforeEach(() => {
+      mockStation = createMockAuthServiceTestStation('localAuth')
+    })
+
+    await it('should check local authorization', async () => {
       const authService = new OCPPAuthServiceImpl(mockStation)
 
       const identifier: UnifiedIdentifier = {
@@ -227,10 +266,16 @@ await describe('OCPPAuthServiceImpl', async () => {
   })
 
   await describe('OCPP version specific behavior', async () => {
-    await it('should handle OCPP 1.6 specific identifiers', async () => {
-      const mockStation = createMockAuthServiceTestStation('014')
+    let mockStation16: ChargingStation
+    let mockStation20: ChargingStation
 
-      const authService = new OCPPAuthServiceImpl(mockStation)
+    beforeEach(() => {
+      mockStation16 = createMockAuthServiceTestStation('version-16')
+      mockStation20 = createMockAuthServiceTestStation('version-20', OCPPVersion.VERSION_20)
+    })
+
+    await it('should handle OCPP 1.6 specific identifiers', async () => {
+      const authService = new OCPPAuthServiceImpl(mockStation16)
 
       const identifier: UnifiedIdentifier = {
         ocppVersion: OCPPVersion.VERSION_16,
@@ -250,9 +295,7 @@ await describe('OCPPAuthServiceImpl', async () => {
     })
 
     await it('should handle OCPP 2.0 specific identifiers', async () => {
-      const mockStation = createMockAuthServiceTestStation('015', OCPPVersion.VERSION_20)
-
-      const authService = new OCPPAuthServiceImpl(mockStation)
+      const authService = new OCPPAuthServiceImpl(mockStation20)
 
       const identifier: UnifiedIdentifier = {
         ocppVersion: OCPPVersion.VERSION_20,
@@ -273,9 +316,13 @@ await describe('OCPPAuthServiceImpl', async () => {
   })
 
   await describe('error handling', async () => {
-    await it('should handle invalid identifier gracefully', async () => {
-      const mockStation = createMockAuthServiceTestStation('016')
+    let mockStation: ChargingStation
 
+    beforeEach(() => {
+      mockStation = createMockAuthServiceTestStation('errorHandling')
+    })
+
+    await it('should handle invalid identifier gracefully', async () => {
       const authService = new OCPPAuthServiceImpl(mockStation)
 
       const identifier: UnifiedIdentifier = {
@@ -297,10 +344,16 @@ await describe('OCPPAuthServiceImpl', async () => {
   })
 
   await describe('authentication contexts', async () => {
-    await it('should handle TRANSACTION_START context', async () => {
-      const mockStation = createMockAuthServiceTestStation('017')
+    let mockStation16: ChargingStation
+    let mockStation20: ChargingStation
 
-      const authService = new OCPPAuthServiceImpl(mockStation)
+    beforeEach(() => {
+      mockStation16 = createMockAuthServiceTestStation('context-16')
+      mockStation20 = createMockAuthServiceTestStation('context-20', OCPPVersion.VERSION_20)
+    })
+
+    await it('should handle TRANSACTION_START context', async () => {
+      const authService = new OCPPAuthServiceImpl(mockStation16)
 
       const identifier: UnifiedIdentifier = {
         ocppVersion: OCPPVersion.VERSION_16,
@@ -321,9 +374,7 @@ await describe('OCPPAuthServiceImpl', async () => {
     })
 
     await it('should handle TRANSACTION_STOP context', async () => {
-      const mockStation = createMockAuthServiceTestStation('018')
-
-      const authService = new OCPPAuthServiceImpl(mockStation)
+      const authService = new OCPPAuthServiceImpl(mockStation16)
 
       const identifier: UnifiedIdentifier = {
         ocppVersion: OCPPVersion.VERSION_16,
@@ -344,9 +395,7 @@ await describe('OCPPAuthServiceImpl', async () => {
     })
 
     await it('should handle REMOTE_START context', async () => {
-      const mockStation = createMockAuthServiceTestStation('019', OCPPVersion.VERSION_20)
-
-      const authService = new OCPPAuthServiceImpl(mockStation)
+      const authService = new OCPPAuthServiceImpl(mockStation20)
 
       const identifier: UnifiedIdentifier = {
         ocppVersion: OCPPVersion.VERSION_20,

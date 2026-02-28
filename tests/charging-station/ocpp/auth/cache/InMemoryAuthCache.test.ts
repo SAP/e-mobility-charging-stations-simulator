@@ -5,6 +5,8 @@
 import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
+import type { AuthorizationResult } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
+
 import { InMemoryAuthCache } from '../../../../../src/charging-station/ocpp/auth/cache/InMemoryAuthCache.js'
 import {
   AuthenticationMethod,
@@ -43,11 +45,16 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
   })
 
   await describe('G03.FR.01.001 - Cache Hit Behavior', async () => {
-    await it('should return cached result on cache hit', async () => {
-      const identifier = 'test-token-001'
-      const mockResult = createMockAuthorizationResult({
+    let mockResult: AuthorizationResult
+
+    beforeEach(() => {
+      mockResult = createMockAuthorizationResult({
         status: AuthorizationStatus.ACCEPTED,
       })
+    })
+
+    await it('should return cached result on cache hit', async () => {
+      const identifier = 'test-token-001'
 
       // Cache the result
       await cache.set(identifier, mockResult, 60)
@@ -62,7 +69,6 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
 
     await it('should track cache hits in statistics', async () => {
       const identifier = 'test-token-002'
-      const mockResult = createMockAuthorizationResult()
 
       await cache.set(identifier, mockResult)
       await cache.get(identifier)
@@ -81,7 +87,6 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
         maxEntries: 3,
         rateLimit: { enabled: false },
       })
-      const mockResult = createMockAuthorizationResult()
 
       // Fill cache to capacity
       await lruCache.set('token-1', mockResult)
@@ -107,6 +112,12 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
   })
 
   await describe('G03.FR.01.002 - Cache Miss Behavior', async () => {
+    let mockResult: AuthorizationResult
+
+    beforeEach(() => {
+      mockResult = createMockAuthorizationResult()
+    })
+
     await it('should return undefined on cache miss', async () => {
       const result = await cache.get('non-existent-token')
 
@@ -125,8 +136,6 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
     })
 
     await it('should calculate hit rate correctly with mixed hits/misses', async () => {
-      const mockResult = createMockAuthorizationResult()
-
       // 2 sets
       await cache.set('token-1', mockResult)
       await cache.set('token-2', mockResult)
@@ -148,9 +157,14 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
   })
 
   await describe('G03.FR.01.003 - Cache Expiration (TTL)', async () => {
+    let mockResult: AuthorizationResult
+
+    beforeEach(() => {
+      mockResult = createMockAuthorizationResult()
+    })
+
     await it('should expire entries after TTL', async () => {
       const identifier = 'expiring-token'
-      const mockResult = createMockAuthorizationResult()
 
       // Set with 1ms TTL (will expire immediately)
       await cache.set(identifier, mockResult, 0.001)
@@ -164,8 +178,6 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
     })
 
     await it('should track expired entries in statistics', async () => {
-      const mockResult = createMockAuthorizationResult()
-
       // Set with very short TTL
       await cache.set('token-1', mockResult, 0.001)
       await cache.set('token-2', mockResult, 0.001)
@@ -186,7 +198,6 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
         defaultTtl: 0.001, // 1ms default
       })
 
-      const mockResult = createMockAuthorizationResult()
       await cacheWithShortTTL.set('token', mockResult) // No TTL specified
 
       // Wait for expiration
@@ -198,7 +209,6 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
 
     await it('should not expire entries before TTL', async () => {
       const identifier = 'long-lived-token'
-      const mockResult = createMockAuthorizationResult()
 
       // Set with 60 second TTL
       await cache.set(identifier, mockResult, 60)
@@ -212,9 +222,14 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
   })
 
   await describe('G03.FR.01.004 - Cache Invalidation', async () => {
+    let mockResult: AuthorizationResult
+
+    beforeEach(() => {
+      mockResult = createMockAuthorizationResult()
+    })
+
     await it('should remove entry on invalidation', async () => {
       const identifier = 'token-to-remove'
-      const mockResult = createMockAuthorizationResult()
 
       await cache.set(identifier, mockResult)
 
@@ -231,8 +246,6 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
     })
 
     await it('should clear all entries', async () => {
-      const mockResult = createMockAuthorizationResult()
-
       await cache.set('token-1', mockResult)
       await cache.set('token-2', mockResult)
       await cache.set('token-3', mockResult)
@@ -247,8 +260,6 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
     })
 
     await it('should reset statistics on clear', async () => {
-      const mockResult = createMockAuthorizationResult()
-
       await cache.set('token', mockResult)
       await cache.get('token')
       await cache.get('miss')
@@ -265,9 +276,14 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
   })
 
   await describe('G03.FR.01.005 - Rate Limiting (Security)', async () => {
+    let mockResult: AuthorizationResult
+
+    beforeEach(() => {
+      mockResult = createMockAuthorizationResult()
+    })
+
     await it('should block requests exceeding rate limit', async () => {
       const identifier = 'rate-limited-token'
-      const mockResult = createMockAuthorizationResult()
 
       // Make 3 requests (at limit)
       await cache.set(identifier, mockResult)
@@ -284,7 +300,6 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
 
     await it('should track rate limit statistics', async () => {
       const identifier = 'token'
-      const mockResult = createMockAuthorizationResult()
 
       // Exceed rate limit
       await cache.set(identifier, mockResult)
@@ -299,7 +314,6 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
 
     await it('should reset rate limit after window expires', async () => {
       const identifier = 'windowed-token'
-      const mockResult = createMockAuthorizationResult()
 
       // Fill rate limit
       await cache.set(identifier, mockResult)
@@ -315,8 +329,6 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
     })
 
     await it('should rate limit per identifier independently', async () => {
-      const mockResult = createMockAuthorizationResult()
-
       // Fill rate limit for token-1
       await cache.set('token-1', mockResult)
       await cache.get('token-1')
@@ -334,8 +346,6 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
         rateLimit: { enabled: false },
       })
 
-      const mockResult = createMockAuthorizationResult()
-
       // Make many requests without blocking
       for (let i = 0; i < 20; i++) {
         await unratedCache.set('token', mockResult)
@@ -350,9 +360,13 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
   })
 
   await describe('G03.FR.01.006 - LRU Eviction', async () => {
-    await it('should evict least recently used entry when full', async () => {
-      const mockResult = createMockAuthorizationResult()
+    let mockResult: AuthorizationResult
 
+    beforeEach(() => {
+      mockResult = createMockAuthorizationResult()
+    })
+
+    await it('should evict least recently used entry when full', async () => {
       // Fill cache to capacity (5 entries)
       await cache.set('token-1', mockResult)
       await cache.set('token-2', mockResult)
@@ -376,8 +390,6 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
     })
 
     await it('should track eviction count in statistics', async () => {
-      const mockResult = createMockAuthorizationResult()
-
       // Trigger multiple evictions
       for (let i = 1; i <= 10; i++) {
         await cache.set(`token-${String(i)}`, mockResult)
@@ -391,9 +403,13 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
   })
 
   await describe('G03.FR.01.007 - Statistics & Monitoring', async () => {
-    await it('should provide accurate cache statistics', async () => {
-      const mockResult = createMockAuthorizationResult()
+    let mockResult: AuthorizationResult
 
+    beforeEach(() => {
+      mockResult = createMockAuthorizationResult()
+    })
+
+    await it('should provide accurate cache statistics', async () => {
       await cache.set('token-1', mockResult)
       await cache.set('token-2', mockResult)
       await cache.get('token-1') // hit
@@ -409,8 +425,6 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
     })
 
     await it('should track memory usage estimate', async () => {
-      const mockResult = createMockAuthorizationResult()
-
       const statsBefore = await cache.getStats()
       const memoryBefore = statsBefore.memoryUsage
 
@@ -426,8 +440,6 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
     })
 
     await it('should provide rate limit statistics', async () => {
-      const mockResult = createMockAuthorizationResult()
-
       // Make some rate-limited requests
       await cache.set('token', mockResult)
       await cache.set('token', mockResult)
@@ -444,9 +456,13 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
   })
 
   await describe('G03.FR.01.008 - Edge Cases', async () => {
-    await it('should handle empty identifier gracefully', async () => {
-      const mockResult = createMockAuthorizationResult()
+    let mockResult: AuthorizationResult
 
+    beforeEach(() => {
+      mockResult = createMockAuthorizationResult()
+    })
+
+    await it('should handle empty identifier gracefully', async () => {
       await cache.set('', mockResult)
       const result = await cache.get('')
 
@@ -455,7 +471,6 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
 
     await it('should handle very long identifier strings', async () => {
       const longIdentifier = 'x'.repeat(1000)
-      const mockResult = createMockAuthorizationResult()
 
       await cache.set(longIdentifier, mockResult)
       const result = await cache.get(longIdentifier)
@@ -464,8 +479,6 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
     })
 
     await it('should handle concurrent operations', async () => {
-      const mockResult = createMockAuthorizationResult()
-
       // Concurrent sets
       await Promise.all([
         cache.set('token-1', mockResult),
@@ -486,8 +499,6 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
     })
 
     await it('should handle zero TTL (immediate expiration)', async () => {
-      const mockResult = createMockAuthorizationResult()
-
       await cache.set('token', mockResult, 0)
 
       // Should be immediately expired
@@ -496,8 +507,6 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
     })
 
     await it('should handle very large TTL values', async () => {
-      const mockResult = createMockAuthorizationResult()
-
       // 1 year TTL
       await cache.set('token', mockResult, 31536000)
 
