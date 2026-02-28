@@ -2,6 +2,16 @@
 
 This document establishes conventions for writing maintainable, consistent tests in the e-mobility charging stations simulator project.
 
+## Testing Philosophy
+
+Core principles guiding test implementation:
+
+- **Test behavior, not implementation**: Focus on what code does, not how it does it
+- **Isolation is mandatory**: Each test must run independently with fresh state
+- **Determinism required**: Tests must produce identical results on every run
+- **Coverage target**: Aim for 80%+ code coverage on new code
+- **Strict assertions**: Use strict equality (`toBe`, `toStrictEqual`) to prevent false positives
+
 ## Naming Conventions
 
 ### Test Case Naming (MANDATORY)
@@ -56,7 +66,12 @@ Follow the Arrange-Act-Assert pattern for clarity:
 2. **Act**: Execute the code under test
 3. **Assert**: Verify the expected outcome
 
-**Example:**
+### When to Use AAA Comments
+
+- **Required**: Tests with 3+ setup steps or complex assertions
+- **Optional**: Simple single-assertion tests where intent is obvious
+
+**Complex test (comments required):**
 
 ```typescript
 it('should calculate total power correctly', () => {
@@ -69,6 +84,126 @@ it('should calculate total power correctly', () => {
 
   // Assert
   expect(actualPower).toBe(expectedPower)
+})
+```
+
+**Simple test (comments optional):**
+
+```typescript
+it('should return true for valid identifier', () => {
+  expect(isValidIdentifier('ABC123')).toBe(true)
+})
+```
+
+## Async Testing Patterns
+
+Most tests in this project are asynchronous. Follow these patterns:
+
+### Async/Await (Preferred)
+
+✅ **Good:**
+
+```typescript
+it('should start charging session successfully', async () => {
+  // Arrange
+  const station = await createChargingStation({ connectorsCount: 2 })
+  const connectorId = 1
+
+  // Act
+  const result = await station.startTransaction(connectorId, 'VALID_TAG')
+
+  // Assert
+  expect(result.status).toBe('Accepted')
+  expect(station.getConnectorStatus(connectorId)?.transactionStarted).toBe(true)
+})
+```
+
+### Promise Rejection Testing
+
+```typescript
+it('should reject invalid connector ID', async () => {
+  const station = await createChargingStation({ connectorsCount: 1 })
+
+  await expect(station.startTransaction(99, 'TAG')).rejects.toThrow('Invalid connector')
+})
+```
+
+### Timeout Handling
+
+```typescript
+it('should timeout when server does not respond', async () => {
+  mock.timers.enable({ apis: ['setTimeout'] })
+  const station = await createChargingStation()
+
+  const responsePromise = station.sendHeartbeat()
+  mock.timers.tick(30000) // Advance past timeout
+
+  await expect(responsePromise).rejects.toThrow('Timeout')
+  mock.timers.reset()
+})
+```
+
+❌ **Bad (Mixing callbacks and Promises):**
+
+```typescript
+// WRONG: Never mix callback and Promise patterns
+it('broken test', done => {
+  someAsyncOp().then(() => {
+    done() // Confusing - use async/await instead
+  })
+})
+```
+
+## Error & Exception Testing
+
+Error handling is critical. Test both expected errors and edge cases:
+
+### Testing Expected Errors
+
+```typescript
+it('should throw on invalid configuration', () => {
+  expect(() => new ChargingStation(null)).toThrow('Configuration required')
+})
+
+it('should reject unauthorized tag', async () => {
+  const station = await createChargingStation()
+
+  await expect(station.authorize('INVALID_TAG')).rejects.toThrow(OCPPError)
+})
+```
+
+### Testing Error Properties
+
+```typescript
+it('should include error code in OCPPError', async () => {
+  const station = await createChargingStation()
+
+  try {
+    await station.sendInvalidCommand()
+    expect.fail('Should have thrown')
+  } catch (error) {
+    expect(error).toBeInstanceOf(OCPPError)
+    expect((error as OCPPError).code).toBe('GenericError')
+  }
+})
+```
+
+### Testing Error Recovery
+
+```typescript
+it('should recover after transient error', async () => {
+  const station = await createChargingStation()
+  mock.method(station, 'sendMessage', () => {
+    throw new Error('Network error')
+  })
+
+  // First call fails
+  await expect(station.sendHeartbeat()).rejects.toThrow('Network')
+
+  // Restore and retry succeeds
+  mock.restoreAll()
+  const result = await station.sendHeartbeat()
+  expect(result).toBeDefined()
 })
 ```
 
@@ -383,6 +518,28 @@ expect(isAsyncFunction(() => {})).toBe(false)
 - File-level disables (`/* eslint-disable ... */` at top of file)
 - Disabling rules to bypass type safety in test setup
 - Disabling rules because proper interfaces haven't been created
+
+### 6. Non-Strict Assertions
+
+❌ **Bad:**
+
+```typescript
+// Loose equality - can cause false positives
+expect(result).toEqual({ status: 'ok' }) // Ignores extra properties
+expect(count == '5').toBe(true) // Type coercion
+expect(value).toBeTruthy() // Too vague
+```
+
+✅ **Good:**
+
+```typescript
+// Strict equality - catches more bugs
+expect(result).toStrictEqual({ status: 'ok' }) // Exact match
+expect(count).toBe(5) // Type-safe
+expect(value).toBe(true) // Explicit
+```
+
+**Why:** Strict assertions catch type mismatches and unexpected properties. Use `toBe()` for primitives, `toStrictEqual()` for objects.
 
 ## Summary
 
