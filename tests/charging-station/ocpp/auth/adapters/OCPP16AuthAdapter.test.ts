@@ -18,6 +18,7 @@ import {
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import { OCPP16AuthorizationStatus } from '../../../../../src/types/ocpp/1.6/Transaction.js'
 import { OCPPVersion } from '../../../../../src/types/ocpp/OCPPVersion.js'
+import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
 import { createMockAuthorizationResult, createMockIdentifier } from '../helpers/MockFactories.js'
 
 await describe('OCPP16AuthAdapter', async () => {
@@ -55,6 +56,7 @@ await describe('OCPP16AuthAdapter', async () => {
 
   afterEach(() => {
     mock.restoreAll()
+    standardCleanup()
   })
 
   await describe('constructor', async () => {

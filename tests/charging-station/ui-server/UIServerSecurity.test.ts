@@ -14,13 +14,15 @@ import {
   isValidCredential,
   isValidNumberOfStations,
 } from '../../../src/charging-station/ui-server/UIServerSecurity.js'
+import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { waitForStreamFlush } from './UIServerTestUtils.js'
 
 const RATE_WINDOW_EXPIRY_DELAY_MS = 110
 
-await describe('UIServerSecurity test suite', async () => {
+await describe('UIServerSecurity', async () => {
   afterEach(() => {
     mock.restoreAll()
+    standardCleanup()
   })
   await describe('isValidCredential()', async () => {
     await it('should return true for matching credentials', () => {

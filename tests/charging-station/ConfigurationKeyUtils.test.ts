@@ -14,6 +14,7 @@ import {
   setConfigurationKeyValue,
 } from '../../src/charging-station/ConfigurationKeyUtils.js'
 import { logger } from '../../src/utils/Logger.js'
+import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from './ChargingStationTestUtils.js'
 
 const TEST_KEY_1 = 'TestKey1'
@@ -21,8 +22,9 @@ const MIXED_CASE_KEY = 'MiXeDkEy'
 const VALUE_A = 'ValueA'
 const VALUE_B = 'ValueB'
 
-await describe('ConfigurationKeyUtils test suite', async () => {
+await describe('ConfigurationKeyUtils', async () => {
   afterEach(() => {
+    standardCleanup()
     mock.restoreAll()
   })
   await describe('getConfigurationKey()', async () => {

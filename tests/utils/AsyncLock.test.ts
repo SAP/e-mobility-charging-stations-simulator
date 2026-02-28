@@ -7,9 +7,11 @@ import { randomInt } from 'node:crypto'
 import { afterEach, describe, it, mock } from 'node:test'
 
 import { AsyncLock, AsyncLockType } from '../../src/utils/AsyncLock.js'
+import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
-await describe('AsyncLock test suite', async () => {
+await describe('AsyncLock', async () => {
   afterEach(() => {
+    standardCleanup()
     mock.restoreAll()
   })
   await it('should run synchronous functions exclusively in sequence', () => {

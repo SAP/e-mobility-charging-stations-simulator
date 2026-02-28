@@ -12,6 +12,7 @@ import {
   AuthenticationMethod,
   AuthorizationStatus,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
+import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
 import { createMockAuthorizationResult } from '../helpers/MockFactories.js'
 
 /**
@@ -41,6 +42,7 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
   })
 
   afterEach(() => {
+    standardCleanup()
     mock.restoreAll()
   })
 

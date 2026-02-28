@@ -19,6 +19,7 @@ import {
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
+import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import {
@@ -53,6 +54,7 @@ SIb3DQEBCwUAA0EAexpired==
 
 await describe('I03 - InstallCertificate', async () => {
   afterEach(() => {
+    standardCleanup()
     mock.restoreAll()
   })
 

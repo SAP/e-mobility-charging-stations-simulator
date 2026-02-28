@@ -6,9 +6,11 @@ import { expect } from '@std/expect'
 import { afterEach, describe, it, mock } from 'node:test'
 
 import { BaseError } from '../../src/exception/BaseError.js'
+import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
-await describe('BaseError test suite', async () => {
+await describe('BaseError', async () => {
   afterEach(() => {
+    standardCleanup()
     mock.restoreAll()
   })
   await it('should create instance with default values', () => {

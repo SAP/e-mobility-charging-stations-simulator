@@ -13,6 +13,7 @@ import type { UUIDv4 } from '../../../src/types/index.js'
 import { UIHttpServer } from '../../../src/charging-station/ui-server/UIHttpServer.js'
 import { DEFAULT_COMPRESSION_THRESHOLD } from '../../../src/charging-station/ui-server/UIServerSecurity.js'
 import { ApplicationProtocol, ResponseStatus } from '../../../src/types/index.js'
+import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { GZIP_STREAM_FLUSH_DELAY_MS, TEST_UUID } from './UIServerTestConstants.js'
 import {
   createMockUIServerConfiguration,
@@ -46,9 +47,10 @@ const createLargePayload = (status: ResponseStatus = ResponseStatus.SUCCESS) => 
   status,
 })
 
-await describe('UIHttpServer test suite', async () => {
+await describe('UIHttpServer', async () => {
   afterEach(() => {
     mock.restoreAll()
+    standardCleanup()
   })
   await it('should delete response handler after successful send', () => {
     const server = new TestableUIHttpServer(createHttpServerConfig())

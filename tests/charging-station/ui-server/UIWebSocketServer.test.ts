@@ -10,6 +10,7 @@ import { afterEach, describe, it, mock } from 'node:test'
 import type { UUIDv4 } from '../../../src/types/index.js'
 
 import { ProcedureName, ResponseStatus } from '../../../src/types/index.js'
+import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { TEST_UUID } from './UIServerTestConstants.js'
 import {
   createMockUIServerConfiguration,
@@ -19,9 +20,10 @@ import {
   TestableUIWebSocketServer,
 } from './UIServerTestUtils.js'
 
-await describe('UIWebSocketServer test suite', async () => {
+await describe('UIWebSocketServer', async () => {
   afterEach(() => {
     mock.restoreAll()
+    standardCleanup()
   })
   await it('should delete response handler after successful send', () => {
     const config = createMockUIServerConfiguration()

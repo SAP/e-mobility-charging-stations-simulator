@@ -17,6 +17,7 @@ import {
 } from '../../../../src/types/index.js'
 import { type ChargingStationType } from '../../../../src/types/ocpp/2.0/Common.js'
 import { Constants } from '../../../../src/utils/index.js'
+import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import {
   TEST_CHARGE_POINT_MODEL,
   TEST_CHARGE_POINT_SERIAL_NUMBER,
@@ -59,6 +60,7 @@ await describe('B01 - Cold Boot Charging Station', async () => {
   })
 
   afterEach(() => {
+    standardCleanup()
     mock.restoreAll()
   })
 

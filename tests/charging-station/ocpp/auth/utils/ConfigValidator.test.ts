@@ -13,9 +13,11 @@ import {
   AuthorizationStatus,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import { AuthConfigValidator } from '../../../../../src/charging-station/ocpp/auth/utils/ConfigValidator.js'
+import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
 
 await describe('AuthConfigValidator', async () => {
   afterEach(() => {
+    standardCleanup()
     mock.restoreAll()
   })
   await describe('validate', async () => {

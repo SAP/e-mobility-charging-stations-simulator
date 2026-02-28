@@ -39,7 +39,7 @@ import {
   createMockChargingStationTemplate,
 } from './ChargingStationTestUtils.js'
 
-await describe('Helpers test suite', async () => {
+await describe('Helpers', async () => {
   const baseName = 'CS-TEST'
   const chargingStationTemplate = createMockChargingStationTemplate(baseName)
 

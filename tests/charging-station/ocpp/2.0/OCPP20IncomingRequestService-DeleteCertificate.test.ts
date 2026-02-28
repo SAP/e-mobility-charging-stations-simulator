@@ -20,6 +20,7 @@ import {
   ReasonCodeEnumType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
+import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import {
@@ -43,6 +44,7 @@ const NONEXISTENT_CERTIFICATE_HASH_DATA = {
 
 await describe('I04 - DeleteCertificate', async () => {
   afterEach(() => {
+    standardCleanup()
     mock.restoreAll()
   })
 

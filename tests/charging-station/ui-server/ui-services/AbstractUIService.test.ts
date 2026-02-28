@@ -8,6 +8,7 @@ import { expect } from '@std/expect'
 import { afterEach, describe, it, mock } from 'node:test'
 
 import { ProcedureName, ProtocolVersion, ResponseStatus } from '../../../../src/types/index.js'
+import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_HASH_ID, TEST_UUID } from '../UIServerTestConstants.js'
 import {
   createMockChargingStationData,
@@ -16,9 +17,10 @@ import {
   TestableUIWebSocketServer,
 } from '../UIServerTestUtils.js'
 
-await describe('AbstractUIService test suite', async () => {
+await describe('AbstractUIService', async () => {
   afterEach(() => {
     mock.restoreAll()
+    standardCleanup()
   })
   await it('should check response handler existence before sending', () => {
     const config = createMockUIServerConfiguration()

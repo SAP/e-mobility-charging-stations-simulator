@@ -18,6 +18,7 @@ import {
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
+import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import { createMockCertificateManager } from './OCPP20TestUtils.js'
@@ -83,6 +84,7 @@ await describe('I04 - CertificateSigned', async () => {
   })
 
   afterEach(() => {
+    standardCleanup()
     mock.restoreAll()
   })
   await describe('Valid Certificate Chain Installation', async () => {

@@ -22,6 +22,7 @@ import {
   RequestStartStopStatusEnumType,
 } from '../../../../../src/types/ocpp/2.0/Transaction.js'
 import { OCPPVersion } from '../../../../../src/types/ocpp/OCPPVersion.js'
+import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
 import { createMockAuthorizationResult, createMockIdentifier } from '../helpers/MockFactories.js'
 
 await describe('OCPP20AuthAdapter', async () => {
@@ -42,6 +43,7 @@ await describe('OCPP20AuthAdapter', async () => {
 
   afterEach(() => {
     mock.restoreAll()
+    standardCleanup()
   })
 
   await describe('constructor', async () => {

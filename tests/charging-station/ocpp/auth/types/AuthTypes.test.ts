@@ -29,9 +29,11 @@ import {
   RequestStartStopStatusEnumType,
 } from '../../../../../src/types/ocpp/2.0/Transaction.js'
 import { OCPPVersion } from '../../../../../src/types/ocpp/OCPPVersion.js'
+import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
 
 await describe('AuthTypes', async () => {
   afterEach(() => {
+    standardCleanup()
     mock.restoreAll()
   })
   await describe('IdentifierTypeGuards', async () => {

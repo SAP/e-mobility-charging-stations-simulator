@@ -21,7 +21,7 @@ import { logger } from '../../src/utils/Logger.js'
 import { createMockChargingStation } from '../charging-station/ChargingStationTestUtils.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
-await describe('ErrorUtils test suite', async () => {
+await describe('ErrorUtils', async () => {
   const { station: chargingStation } = createMockChargingStation({ baseName: 'CS-TEST' })
 
   afterEach(() => {

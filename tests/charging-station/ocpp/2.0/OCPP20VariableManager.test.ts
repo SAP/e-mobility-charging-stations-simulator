@@ -64,7 +64,7 @@ function buildWsExampleUrl (targetLength: number, fillerChar = 'a'): string {
   return base + fillerChar.repeat(targetLength - base.length)
 }
 
-await describe('B05/B06 - OCPP20VariableManager test suite', async () => {
+await describe('B05 - OCPP20VariableManager', async () => {
   // Type declaration for mock ChargingStation
   let station: ChargingStation
 

@@ -13,11 +13,13 @@ import { OCPP20IncomingRequestService } from '../../../../src/charging-station/o
 import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'
 import { GenericStatus, OCPPVersion } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
+import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 
 await describe('C11 - Clear Authorization Data in Authorization Cache', async () => {
   afterEach(() => {
+    standardCleanup()
     mock.restoreAll()
   })
 

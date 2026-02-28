@@ -16,6 +16,7 @@ import {
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
+import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import {
   TEST_FIRMWARE_VERSION,
   TEST_STATUS_CHARGE_POINT_MODEL,
@@ -58,6 +59,7 @@ await describe('G01 - Status Notification', async () => {
   })
 
   afterEach(() => {
+    standardCleanup()
     mock.restoreAll()
   })
 

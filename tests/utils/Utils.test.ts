@@ -45,7 +45,7 @@ import {
 } from '../../src/utils/Utils.js'
 import { standardCleanup, withMockTimers } from '../helpers/TestLifecycleHelpers.js'
 
-await describe('Utils test suite', async () => {
+await describe('Utils', async () => {
   afterEach(() => {
     standardCleanup()
   })

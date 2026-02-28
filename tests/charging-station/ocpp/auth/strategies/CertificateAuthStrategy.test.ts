@@ -15,6 +15,7 @@ import {
   IdentifierType,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import { OCPPVersion } from '../../../../../src/types/ocpp/OCPPVersion.js'
+import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
 import {
   createMockAuthorizationResult,
   createMockAuthRequest,
@@ -58,6 +59,7 @@ await describe('CertificateAuthStrategy', async () => {
 
   afterEach(() => {
     mock.restoreAll()
+    standardCleanup()
   })
 
   await describe('constructor', async () => {

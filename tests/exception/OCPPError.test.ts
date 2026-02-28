@@ -8,9 +8,11 @@ import { afterEach, describe, it, mock } from 'node:test'
 import { OCPPError } from '../../src/exception/OCPPError.js'
 import { ErrorType } from '../../src/types/index.js'
 import { Constants } from '../../src/utils/Constants.js'
+import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
-await describe('OCPPError test suite', async () => {
+await describe('OCPPError', async () => {
   afterEach(() => {
+    standardCleanup()
     mock.restoreAll()
   })
 

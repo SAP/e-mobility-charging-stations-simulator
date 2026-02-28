@@ -15,6 +15,7 @@ import {
   IdentifierType,
 } from '../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import { OCPPVersion } from '../../../../src/types/ocpp/OCPPVersion.js'
+import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import { createMockAuthRequest, createMockIdentifier } from './helpers/MockFactories.js'
 
@@ -49,6 +50,7 @@ await describe('OCPP Authentication Integration Tests', async () => {
   })
 
   afterEach(() => {
+    standardCleanup()
     mock.restoreAll()
   })
 

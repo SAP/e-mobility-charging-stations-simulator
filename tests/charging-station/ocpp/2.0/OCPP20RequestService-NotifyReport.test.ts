@@ -24,6 +24,7 @@ import {
   type ReportDataType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
+import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import {
   TEST_CHARGE_POINT_MODEL,
   TEST_CHARGE_POINT_SERIAL_NUMBER,
@@ -59,6 +60,7 @@ await describe('B07/B08 - NotifyReport', async () => {
   })
 
   afterEach(() => {
+    standardCleanup()
     mock.restoreAll()
   })
 

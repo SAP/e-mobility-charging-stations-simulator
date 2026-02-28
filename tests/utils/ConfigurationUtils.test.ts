@@ -15,7 +15,7 @@ import {
 } from '../../src/utils/ConfigurationUtils.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
-await describe('ConfigurationUtils test suite', async () => {
+await describe('ConfigurationUtils', async () => {
   afterEach(() => {
     standardCleanup()
   })

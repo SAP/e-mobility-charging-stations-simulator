@@ -10,9 +10,11 @@ import {
   ConfigurationSection,
   SupervisionUrlDistribution,
 } from '../../src/types/ConfigurationData.js'
+import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
-await describe('ConfigurationData test suite', async () => {
+await describe('ConfigurationData', async () => {
   afterEach(() => {
+    standardCleanup()
     mock.restoreAll()
   })
 

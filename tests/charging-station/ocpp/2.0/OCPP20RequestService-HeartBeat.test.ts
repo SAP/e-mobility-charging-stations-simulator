@@ -15,6 +15,7 @@ import {
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { Constants, has } from '../../../../src/utils/index.js'
+import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import {
   TEST_CHARGE_POINT_MODEL,
   TEST_CHARGE_POINT_SERIAL_NUMBER,
@@ -57,6 +58,7 @@ await describe('G02 - Heartbeat', async () => {
   })
 
   afterEach(() => {
+    standardCleanup()
     mock.restoreAll()
   })
 

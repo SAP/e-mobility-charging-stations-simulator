@@ -6,9 +6,11 @@ import { expect } from '@std/expect'
 import { afterEach, describe, it, mock } from 'node:test'
 
 import { ACElectricUtils, DCElectricUtils } from '../../src/utils/ElectricUtils.js'
+import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
-await describe('ElectricUtils test suite', async () => {
+await describe('ElectricUtils', async () => {
   afterEach(() => {
+    standardCleanup()
     mock.restoreAll()
   })
   await it('should calculate DC power from voltage and current', () => {

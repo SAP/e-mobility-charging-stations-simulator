@@ -15,9 +15,11 @@ import {
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import { AuthHelpers } from '../../../../../src/charging-station/ocpp/auth/utils/AuthHelpers.js'
 import { OCPPVersion } from '../../../../../src/types/ocpp/OCPPVersion.js'
+import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
 
 await describe('AuthHelpers', async () => {
   afterEach(() => {
+    standardCleanup()
     mock.restoreAll()
   })
   await describe('calculateTTL', async () => {
