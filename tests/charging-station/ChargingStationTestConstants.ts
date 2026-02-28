@@ -44,3 +44,27 @@ export const TEST_STATUS_CHARGE_POINT_VENDOR = 'Test Status Vendor'
  * Test values for connector addressing
  */
 export const TEST_CONNECTOR_ID_VALID_INSTANCE = '1'
+
+/**
+ * Test ID Tags
+ * Test values for authentication and authorization
+ */
+export const TEST_ID_TAG = 'TEST-TAG-001'
+export const TEST_ID_TAG_VALID = 'VALID_TAG'
+export const TEST_ID_TAG_INVALID = 'INVALID_TAG'
+export const TEST_ID_TAG_BLOCKED = 'BLOCKED_TAG'
+
+/**
+ * Test Transaction Values
+ * Test values for transaction-related operations
+ */
+export const TEST_TRANSACTION_ID = 1
+export const TEST_TRANSACTION_ENERGY_WH = 5000
+
+/**
+ * Test Token Values (OCPP 2.0)
+ * Test values for IdToken-based authentication
+ */
+export const TEST_TOKEN_ISO14443 = 'TEST_RFID_TOKEN_001'
+export const TEST_TOKEN_EMAID = 'DE*ABC*E123456*1'
+export const TEST_TOKEN_CENTRAL = 'CENTRAL_TOKEN_001'

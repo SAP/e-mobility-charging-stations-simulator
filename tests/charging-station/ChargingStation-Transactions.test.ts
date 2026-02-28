@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 
 import { standardCleanup, withMockTimers } from '../helpers/TestLifecycleHelpers.js'
+import { TEST_ID_TAG } from './ChargingStationTestConstants.js'
 import { cleanupChargingStation, createMockChargingStation } from './ChargingStationTestUtils.js'
 
 await describe('ChargingStation Transaction Management', async () => {
@@ -44,7 +45,7 @@ await describe('ChargingStation Transaction Management', async () => {
       if (connector1 != null) {
         connector1.transactionStarted = true
         connector1.transactionId = 100
-        connector1.transactionIdTag = 'TEST-TAG-001'
+        connector1.transactionIdTag = TEST_ID_TAG
       }
 
       // Act
@@ -98,7 +99,7 @@ await describe('ChargingStation Transaction Management', async () => {
       if (connector1 != null) {
         connector1.transactionStarted = true
         connector1.transactionId = 200
-        connector1.transactionIdTag = 'TEST-TAG-002'
+        connector1.transactionIdTag = TEST_ID_TAG
       }
 
       // Act

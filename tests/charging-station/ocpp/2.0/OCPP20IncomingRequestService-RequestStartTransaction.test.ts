@@ -364,7 +364,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
 
     // Verify transactionId is a string (UUID format in OCPP 2.0)
     expect(typeof response.transactionId).toBe('string')
-    expect(response.transactionId).toBeTruthy()
+    expect(response.transactionId).toBeDefined()
     expect(response.transactionId?.length).toBeGreaterThan(0)
   })
 })

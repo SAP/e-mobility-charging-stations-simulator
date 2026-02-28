@@ -16,6 +16,11 @@ import type { ChargingStation } from '../../src/charging-station/ChargingStation
 import { RegistrationStatusEnumType } from '../../src/types/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import {
+  TEST_ID_TAG,
+  TEST_TRANSACTION_ENERGY_WH,
+  TEST_TRANSACTION_ID,
+} from './ChargingStationTestConstants.js'
+import {
   cleanupChargingStation,
   createMockChargingStation,
   MockIdTagsCache,
@@ -133,15 +138,17 @@ await describe('ChargingStation Integration Tests', async () => {
       const connector1 = station.getConnectorStatus(1)
       if (connector1 != null) {
         connector1.transactionStarted = true
-        connector1.transactionId = 1
-        connector1.transactionIdTag = 'TEST-TAG'
-        connector1.transactionEnergyActiveImportRegisterValue = 5000
+        connector1.transactionId = TEST_TRANSACTION_ID
+        connector1.transactionIdTag = TEST_ID_TAG
+        connector1.transactionEnergyActiveImportRegisterValue = TEST_TRANSACTION_ENERGY_WH
       }
 
       // Verify transaction
       expect(station.getNumberOfRunningTransactions()).toBe(1)
-      expect(station.getTransactionIdTag(1)).toBe('TEST-TAG')
-      expect(station.getEnergyActiveImportRegisterByTransactionId(1)).toBe(5000)
+      expect(station.getTransactionIdTag(TEST_TRANSACTION_ID)).toBe(TEST_ID_TAG)
+      expect(station.getEnergyActiveImportRegisterByTransactionId(TEST_TRANSACTION_ID)).toBe(
+        TEST_TRANSACTION_ENERGY_WH
+      )
 
       // Stop station
       await station.stop()

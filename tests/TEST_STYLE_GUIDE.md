@@ -1,85 +1,54 @@
 # Test Style Guide
 
-This document establishes conventions for writing maintainable, consistent tests in the e-mobility charging stations simulator project.
+Conventions for writing maintainable, consistent tests in the e-mobility charging stations simulator.
 
-## Testing Philosophy
+## Core Principles
 
-Core principles guiding test implementation:
-
-- **Test behavior, not implementation**: Focus on what code does, not how it does it
-- **Isolation is mandatory**: Each test must run independently with fresh state
+- **Test behavior, not implementation**: Focus on what code does, not how
+- **Isolation is mandatory**: Each test runs independently with fresh state
 - **Determinism required**: Tests must produce identical results on every run
-- **Coverage target**: Aim for 80%+ code coverage on new code
-- **Strict assertions**: Use strict equality (`toBe`, `toStrictEqual`) to prevent false positives
+- **Strict assertions**: Use `toBe`, `toStrictEqual` — never `toEqual`, `toBeTruthy`
+- **Coverage target**: 80%+ on new code
 
-## Naming Conventions
+---
 
-### Test Case Naming (MANDATORY)
+## 1. Naming Conventions
 
-Use consistent `should [verb]` pattern in **lowercase**:
+### Test Cases
 
-✅ **Good:**
+Pattern: `should [verb]` in **lowercase**
 
 ```typescript
+// ✅ Good
 it('should start successfully with valid configuration', async () => {})
 it('should reject invalid identifier', () => {})
-it('should handle Reset request with Immediate type', async () => {})
-```
 
-❌ **Bad:**
-
-```typescript
-// Inconsistent capitalization
+// ❌ Bad
 it('Should start successfully', () => {}) // Capital 'S'
-
-// Imperative style
-it('Verify generateUUID()', () => {}) // Not declarative
-
-// Missing 'should'
-it('starts successfully', () => {}) // No 'should'
+it('Verify generateUUID()', () => {}) // Imperative
+it('starts successfully', () => {}) // Missing 'should'
 ```
 
 ### Files & Suites
 
-- **Files**: Use descriptive names matching the module under test: `ModuleName.test.ts`
-- **Test suites**: Use `describe()` with the module name only - NO "test suite" suffix
-- **OCPP tests**: Use requirement codes: `describe('B11 - Reset', () => {})`
-- **Auth tests**: Reference spec sections: `describe('G03.FR.01 - AuthCache Conformance', () => {})`
-- **Variables**: Use camelCase for variables, functions, and test helpers
-- **Constants**: Use SCREAMING_SNAKE_CASE for test constants
-
-**describe() Naming:**
-
-✅ **Good:**
+| Element    | Convention              | Example                                 |
+| ---------- | ----------------------- | --------------------------------------- |
+| Files      | `ModuleName.test.ts`    | `ChargingStation.test.ts`               |
+| Suites     | Module name only        | `describe('ChargingStation', () => {})` |
+| OCPP tests | Spec code + description | `describe('B11 - Reset', () => {})`     |
+| Variables  | camelCase               | `mockStation`, `requestService`         |
+| Constants  | SCREAMING_SNAKE_CASE    | `TEST_HEARTBEAT_INTERVAL`               |
 
 ```typescript
-describe('ChargingStation', () => {}) // Module name only
-describe('B11 - Reset', () => {}) // OCPP spec code + description
-describe('Utils', () => {}) // Simple and clear
+// ❌ Never add "test suite" suffix
+describe('ChargingStation test suite', () => {})
 ```
 
-❌ **Bad:**
+---
 
-```typescript
-describe('ChargingStation test suite', () => {}) // Don't add "test suite"
-describe('B11 & B12 - Reset', () => {}) // Split into separate describes
-describe('WorkerUtils test suite', () => {}) // Redundant suffix
-```
+## 2. Test Structure
 
-## Test Structure (AAA Pattern)
-
-Follow the Arrange-Act-Assert pattern for clarity:
-
-1. **Arrange**: Set up test data, mocks, and preconditions
-2. **Act**: Execute the code under test
-3. **Assert**: Verify the expected outcome
-
-### When to Use AAA Comments
-
-- **Required**: Tests with 3+ setup steps or complex assertions
-- **Optional**: Simple single-assertion tests where intent is obvious
-
-**Complex test (comments required):**
+### AAA Pattern (Arrange-Act-Assert)
 
 ```typescript
 it('should calculate total power correctly', () => {
@@ -95,131 +64,12 @@ it('should calculate total power correctly', () => {
 })
 ```
 
-**Simple test (comments optional):**
+**When to use AAA comments:**
 
-```typescript
-it('should return true for valid identifier', () => {
-  expect(isValidIdentifier('ABC123')).toBe(true)
-})
-```
+- Required: Tests with 3+ setup steps
+- Optional: Simple single-assertion tests
 
-## Async Testing Patterns
-
-Most tests in this project are asynchronous. Follow these patterns:
-
-### Async/Await (Preferred)
-
-✅ **Good:**
-
-```typescript
-it('should start charging session successfully', async () => {
-  // Arrange
-  const { station } = createMockChargingStation({ connectorsCount: 2 })
-  const connectorId = 1
-
-  // Act
-  const result = await station.startTransaction(connectorId, 'VALID_TAG')
-
-  // Assert
-  expect(result.status).toBe('Accepted')
-  expect(station.getConnectorStatus(connectorId)?.transactionStarted).toBe(true)
-})
-```
-
-### Promise Rejection Testing
-
-```typescript
-it('should reject invalid connector ID', async () => {
-  const { station } = createMockChargingStation({ connectorsCount: 1 })
-
-  await expect(station.startTransaction(99, 'TAG')).rejects.toThrow('Invalid connector')
-})
-```
-
-### Timeout Handling
-
-```typescript
-it('should timeout when server does not respond', async () => {
-  mock.timers.enable({ apis: ['setTimeout'] })
-  const { station } = createMockChargingStation()
-
-  const responsePromise = station.sendHeartbeat()
-  mock.timers.tick(30000) // Advance past timeout
-
-  await expect(responsePromise).rejects.toThrow('Timeout')
-  mock.timers.reset()
-})
-```
-
-❌ **Bad (Mixing callbacks and Promises):**
-
-```typescript
-// WRONG: Never mix callback and Promise patterns
-it('broken test', done => {
-  someAsyncOp().then(() => {
-    done() // Confusing - use async/await instead
-  })
-})
-```
-
-## Error & Exception Testing
-
-Error handling is critical. Test both expected errors and edge cases:
-
-### Testing Expected Errors
-
-```typescript
-it('should throw on invalid configuration', () => {
-  expect(() => new ChargingStation(null)).toThrow('Configuration required')
-})
-
-it('should reject unauthorized tag', async () => {
-  const { station } = createMockChargingStation()
-
-  await expect(station.authorize('INVALID_TAG')).rejects.toThrow(OCPPError)
-})
-```
-
-### Testing Error Properties
-
-```typescript
-it('should include error code in OCPPError', async () => {
-  const { station } = createMockChargingStation()
-
-  try {
-    await station.sendInvalidCommand()
-    expect.fail('Should have thrown')
-  } catch (error) {
-    expect(error).toBeInstanceOf(OCPPError)
-    expect((error as OCPPError).code).toBe('GenericError')
-  }
-})
-```
-
-### Testing Error Recovery
-
-```typescript
-it('should recover after transient error', async () => {
-  const { station } = createMockChargingStation()
-  mock.method(station, 'sendMessage', () => {
-    throw new Error('Network error')
-  })
-
-  // First call fails
-  await expect(station.sendHeartbeat()).rejects.toThrow('Network')
-
-  // Restore and retry succeeds
-  mock.restoreAll()
-  const result = await station.sendHeartbeat()
-  expect(result).toBeDefined()
-})
-```
-
-## Comments & JSDoc
-
-### File Headers
-
-Every test file MUST include a JSDoc header:
+### File Headers (MANDATORY)
 
 ```typescript
 /**
@@ -228,348 +78,227 @@ Every test file MUST include a JSDoc header:
  */
 ```
 
-### Inline Comments
+---
 
-- Use comments sparingly - prefer self-documenting test names
-- Comment WHY, not WHAT (the code shows what)
-- Document non-obvious setup or complex assertions
+## 3. Test Isolation (CRITICAL)
 
-## Constants
-
-**ALWAYS use consolidated test constants from the canonical source:**
-
-- ✅ Import from: `tests/charging-station/ChargingStationTestConstants.ts`
-- ❌ NEVER duplicate constants in individual test files
-- ❌ NEVER create inline magic values
-
-**Good:**
+### Fresh Instances Per Test
 
 ```typescript
-import { TEST_CHARGING_STATION_BASE_NAME } from '../ChargingStationTestConstants.js'
-```
-
-**Bad:**
-
-```typescript
-// Don't do this!
-const TEST_STATION_NAME = 'CS-TEST-001' // Duplicate constant
-```
-
-## Mocks & Factories
-
-### When to Use Mock Factories
-
-Use centralized mock factories for complex objects:
-
-- `createMockChargingStation()` - From `ChargingStationTestUtils.ts` (returns `{ station, mocks }`)
-- Auth mocks - From `tests/charging-station/ocpp/auth/helpers/MockFactories.ts`
-
-**Example:**
-
-```typescript
-import { createMockChargingStation } from './ChargingStationTestUtils.js'
-
-const { station } = createMockChargingStation({
-  ocppVersion: OCPPVersion.VERSION_20,
-  numberOfConnectors: 2,
-})
-```
-
-### Shared Test Utilities
-
-The following utilities are available for reuse across test files:
-
-| Utility                                 | Location                             | Purpose                                       |
-| --------------------------------------- | ------------------------------------ | --------------------------------------------- |
-| `createMockChargingStation()`           | `ChargingStationTestUtils.ts`        | Full test station with OCPP services + mocks  |
-| `createConnectorStatus()`               | `helpers/StationHelpers.ts`          | ConnectorStatus factory with defaults         |
-| `cleanupChargingStation()`              | `helpers/StationHelpers.ts`          | Proper station cleanup for afterEach          |
-| `resetChargingStationState()`           | `helpers/StationHelpers.ts`          | Reset station state between tests             |
-| `createMockChargingStationTemplate()`   | `helpers/StationHelpers.ts`          | Minimal charging station template             |
-| `MockWebSocket`                         | `mocks/MockWebSocket.ts`             | WebSocket simulation with message capture     |
-| `MockIdTagsCache`                       | `mocks/MockCaches.ts`                | In-memory IdTags cache mock                   |
-| `MockSharedLRUCache`                    | `mocks/MockCaches.ts`                | In-memory LRU cache mock                      |
-| `createStationWithCertificateManager()` | `ocpp/2.0/OCPP20TestUtils.ts`        | Station with certificate manager (type-safe)  |
-| `createMockCertificateManager()`        | `ocpp/2.0/OCPP20TestUtils.ts`        | Mock certificate manager factory              |
-| `createTestableOCPP20RequestService()`  | `ocpp/2.0/OCPP20TestUtils.ts`        | Testable wrapper for OCPP 2.0 request service |
-| Auth factories                          | `ocpp/auth/helpers/MockFactories.ts` | Auth-specific mock creation                   |
-| UI server utilities                     | `ui-server/UIServerTestUtils.ts`     | UI WebSocket server testing utilities         |
-
-**DO NOT duplicate these utilities.** Import and reuse them.
-
-```typescript
-// Good: Import shared utilities
-import { createMockChargingStation, cleanupChargingStation } from './ChargingStationTestUtils.js'
-import { resetChargingStationState } from './helpers/StationHelpers.js'
-```
-
-### Mocking Best Practices
-
-- Use `mock.method()` for function mocking (Node.js native)
-- Use `mock.timers` for time-dependent tests
-- Keep mocks focused - mock only what's necessary
-- Verify mock calls when behavior depends on them
-
-## Test Isolation (CRITICAL)
-
-**NEVER define mock instances at module level inside describe blocks.** Each test must get fresh instances.
-
-❌ **Bad (Module-Level State Sharing):**
-
-```typescript
-await describe('My Test Suite', async () => {
-  afterEach(() => {
-    mock.restoreAll()
-  })
-
-  // WRONG: These instances are SHARED across all tests!
-  const mockResponseService = new OCPP20ResponseService()
-  const requestService = new OCPP20RequestService(mockResponseService)
-  const { station: mockChargingStation } = createMockChargingStation({...})
-
-  await it('test 1', () => { /* uses shared state */ })
-  await it('test 2', () => { /* uses same shared state! Test pollution risk! */ })
-})
-```
-
-✅ **Good (Fresh Instances Per Test):**
-
-```typescript
-await describe('My Test Suite', async () => {
-  let mockResponseService: OCPP20ResponseService
-  let requestService: OCPP20RequestService
-  let mockChargingStation: TestChargingStation
+// ✅ Good - Fresh instances in beforeEach
+describe('My Test Suite', () => {
+  let station: ChargingStation
 
   beforeEach(() => {
-    // Fresh instances for every test - proper isolation
-    mockResponseService = new OCPP20ResponseService()
-    requestService = new OCPP20RequestService(mockResponseService)
-    const { station } = createMockChargingStation({...})
-    mockChargingStation = station
+    const { station: s } = createMockChargingStation()
+    station = s
   })
 
   afterEach(() => {
-    mock.restoreAll()
+    standardCleanup()
   })
 
-  await it('test 1', () => { /* clean state */ })
-  await it('test 2', () => { /* clean state */ })
+  it('test 1', () => {
+    /* clean state */
+  })
+  it('test 2', () => {
+    /* clean state */
+  })
+})
+
+// ❌ Bad - Shared state at module level
+describe('My Test Suite', () => {
+  const { station } = createMockChargingStation() // SHARED!
+
+  it('test 1', () => {
+    /* polluted state */
+  })
+  it('test 2', () => {
+    /* same polluted state */
+  })
 })
 ```
 
-**Why:** Module-level state causes:
-
-- Test pollution (state leaks between tests)
-- Flaky tests (order-dependent results)
-- False positives/negatives
-- Difficult debugging
-
-**Exception:** Static constants (strings, numbers, frozen objects) CAN be at module level since they don't change.
-
-## Cleanup Hooks
-
-**ALWAYS include `afterEach()` cleanup to prevent test pollution:**
+### Mandatory Cleanup
 
 ```typescript
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 afterEach(() => {
-  standardCleanup()
-  mock.restoreAll()
+  standardCleanup() // ALWAYS call this
 })
 ```
 
-### standardCleanup() (MANDATORY)
+`standardCleanup()` clears caches, resets singletons, ensures isolation.
 
-The `standardCleanup()` function from `tests/helpers/TestLifecycleHelpers.ts` MUST be called in every test file's `afterEach()` hook. It:
+---
 
-- Clears shared caches (MockIdTagsCache, MockSharedLRUCache)
-- Resets any singleton state
-- Ensures test isolation
+## 4. Async & Timers
 
-### What to Clean Up
-
-- Mock timers: `mock.timers.reset()`
-- Mock functions: `mock.restoreAll()`
-- Charging stations: `await chargingStation.stop()`
-- File handles, network connections, database connections
-- Any global state modifications
-
-**Missing cleanup causes flaky tests and false positives.**
-
-## Anti-Patterns to Avoid
-
-### 1. Inline `as any` Casts
-
-❌ **Bad:**
+### Async/Await (Preferred)
 
 ```typescript
-;(incomingRequestService as any).handleRequestReset(station, request)
+it('should start charging session', async () => {
+  const { station } = createMockChargingStation()
+  const result = await station.startTransaction(1, 'VALID_TAG')
+  expect(result.status).toBe('Accepted')
+})
+
+it('should reject invalid connector', async () => {
+  const { station } = createMockChargingStation()
+  await expect(station.startTransaction(99, 'TAG')).rejects.toThrow('Invalid')
+})
 ```
 
-✅ **Good:**
+### Mock Timers (Never Use Real Delays)
 
 ```typescript
-import { createTestableIncomingRequestService } from '../__testable__/index.js'
+// ✅ Good - Instant execution
+it('should timeout', async t => {
+  await withMockTimers(t, ['setTimeout'], async () => {
+    const promise = station.sendHeartbeat()
+    t.mock.timers.tick(30000)
+    await expect(promise).rejects.toThrow('Timeout')
+  })
+})
 
-const testable = createTestableIncomingRequestService(incomingRequestService)
-await testable.handleRequestReset(station, request)
+// ❌ Bad - Real delay (slow, flaky)
+it('should timeout', async () => {
+  await new Promise(r => setTimeout(r, 5000)) // NEVER
+})
 ```
 
-**Why:** Type safety prevents bugs. Use testable interfaces instead of breaking the type system.
+---
 
-### 2. Duplicate Constants
+## 5. Constants & Imports
 
-❌ **Bad:**
+### Single Source of Truth
 
 ```typescript
-// In multiple test files:
+// ✅ Good - Import from canonical source
+import { TEST_CHARGING_STATION_BASE_NAME, TEST_ID_TAG } from '../ChargingStationTestConstants.js'
+
+// ❌ Bad - Duplicated constant
 const TEST_STATION_NAME = 'CS-TEST-001'
 ```
 
-✅ **Good:**
+Available constants: `tests/charging-station/ChargingStationTestConstants.ts`
+
+---
+
+## 6. Assertions
+
+### Strict Only
 
 ```typescript
-import { TEST_CHARGING_STATION_BASE_NAME } from '../ChargingStationTestConstants.js'
-```
-
-**Why:** Single source of truth. Changes propagate automatically, reduces maintenance burden.
-
-### 3. Missing Cleanup
-
-❌ **Bad:**
-
-```typescript
-describe('Tests', () => {
-  it('test 1', () => {
-    /* ... */
-  })
-  it('test 2', () => {
-    /* ... */
-  })
-  // No afterEach cleanup!
-})
-```
-
-✅ **Good:**
-
-```typescript
-describe('Tests', () => {
-  afterEach(() => {
-    mock.restoreAll()
-    // Clean up resources
-  })
-
-  it('test 1', () => {
-    /* ... */
-  })
-  it('test 2', () => {
-    /* ... */
-  })
-})
-```
-
-**Why:** Test isolation. Each test should run independently without side effects.
-
-### 4. Probabilistic Assertions
-
-❌ **Bad:**
-
-```typescript
-const successRate = calculateSuccessRate()
-expect(successRate).toBeGreaterThan(50) // Flaky!
-```
-
-✅ **Good:**
-
-```typescript
-const result = await authenticateUser(mockCredentials)
-expect(result.success).toBe(true)
-expect(result.token).toBeDefined()
-```
-
-**Why:** Tests must be deterministic. Use mocks to control behavior, not probabilistic thresholds.
-
-### 5. Over-Use of `eslint-disable`
-
-❌ **Bad:**
-
-```typescript
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-```
-
-✅ **Good:**
-
-```typescript
-// Use proper types and testable interfaces - no disables needed
-```
-
-**Why:** Disabling linting rules hides real problems. Fix the underlying type issues instead.
-
-**Exception - Legitimate Uses of eslint-disable:**
-
-Some eslint-disable comments are acceptable when testing defensive code that validates inputs at runtime:
-
-```typescript
-// Testing that validators handle invalid types gracefully
-// This is legitimate because the function is designed to handle runtime type errors
-await it('should return false for non-string input', () => {
-  // Testing runtime type validation - intentionally passing wrong type
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
-  expect(AuthValidators.isValidIdentifierValue(123 as any)).toBe(false)
-})
-
-// Testing async function detection requires empty function expressions
-// eslint-disable-next-line @typescript-eslint/no-empty-function
-expect(isAsyncFunction(() => {})).toBe(false)
-```
-
-**Acceptable Rules to Disable (with justification):**
-
-- `@typescript-eslint/no-empty-function` - When testing function type detection
-- `@typescript-eslint/no-explicit-any` - When testing runtime type validation
-- `@typescript-eslint/unbound-method` - When testing method type detection
-- `@cspell/spellchecker` - For intentional misspellings in test data
-
-**Still NOT Acceptable:**
-
-- File-level disables (`/* eslint-disable ... */` at top of file)
-- Disabling rules to bypass type safety in test setup
-- Disabling rules because proper interfaces haven't been created
-
-### 6. Non-Strict Assertions
-
-❌ **Bad:**
-
-```typescript
-// Loose equality - can cause false positives
-expect(result).toEqual({ status: 'ok' }) // Ignores extra properties
-expect(count == '5').toBe(true) // Type coercion
-expect(value).toBeTruthy() // Too vague
-```
-
-✅ **Good:**
-
-```typescript
-// Strict equality - catches more bugs
+// ✅ Good
 expect(result).toStrictEqual({ status: 'ok' }) // Exact match
-expect(count).toBe(5) // Type-safe
-expect(value).toBe(true) // Explicit
+expect(count).toBe(5) // Primitive
+expect(value).toBe(true) // Explicit boolean
+expect(item).toBeDefined() // Existence check
+
+// ❌ Bad
+expect(result).toEqual({ status: 'ok' }) // Ignores extra properties
+expect(value).toBeTruthy() // Too vague
+expect(count == '5').toBe(true) // Type coercion
 ```
 
-**Why:** Strict assertions catch type mismatches and unexpected properties. Use `toBe()` for primitives, `toStrictEqual()` for objects.
+---
+
+## 7. Type Safety
+
+### No `as any` Casts
+
+```typescript
+// ✅ Good - Use testable interfaces
+const testable = createTestableOCPP20RequestService(requestService)
+testable.buildRequestPayload(station, command)
+
+// ❌ Bad - Breaks type safety
+;(requestService as any).buildRequestPayload(station, command)
+```
+
+### Exception: Runtime Type Validation Tests
+
+```typescript
+// Acceptable when testing defensive code
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+expect(AuthValidators.isValidIdentifierValue(123 as any)).toBe(false)
+```
+
+---
+
+## 8. Mock Factories
+
+### Choose the Right Factory
+
+| Factory                                  | Use Case                         | Location                             |
+| ---------------------------------------- | -------------------------------- | ------------------------------------ |
+| `createMockChargingStation()`            | Full OCPP protocol testing       | `ChargingStationTestUtils.ts`        |
+| `createMockAuthServiceTestStation()`     | Auth service tests (lightweight) | `ocpp/auth/helpers/MockFactories.ts` |
+| `createMockStationWithRequestTracking()` | Verify sent OCPP requests        | `ocpp/2.0/OCPP20TestUtils.ts`        |
+
+### Usage
+
+```typescript
+// Full station with mocks
+const { station, mocks } = createMockChargingStation({
+  connectorsCount: 2,
+  ocppVersion: OCPPVersion.VERSION_20,
+})
+
+// Verify sent messages
+expect(mocks.webSocket.sentMessages).toContain(expectedMessage)
+```
+
+---
+
+## 9. Utility Reference
+
+### Lifecycle Helpers (`helpers/TestLifecycleHelpers.ts`)
+
+| Utility                           | Purpose                              |
+| --------------------------------- | ------------------------------------ |
+| `standardCleanup()`               | **MANDATORY** afterEach cleanup      |
+| `withMockTimers()`                | Execute test with timer mocking      |
+| `createTimerScope()`              | Manual timer control                 |
+| `setupConnectorWithTransaction()` | Setup connector in transaction state |
+| `clearConnectorTransaction()`     | Clear connector transaction state    |
+
+### Mock Classes (`mocks/`)
+
+| Class                | Purpose                                   |
+| -------------------- | ----------------------------------------- |
+| `MockWebSocket`      | WebSocket simulation with message capture |
+| `MockIdTagsCache`    | In-memory IdTags cache                    |
+| `MockSharedLRUCache` | In-memory LRU cache                       |
+
+### OCPP 2.0 (`ocpp/2.0/OCPP20TestUtils.ts`)
+
+| Utility                                | Purpose                         |
+| -------------------------------------- | ------------------------------- |
+| `createTestableOCPP20RequestService()` | Type-safe private method access |
+| `createMockCertificateManager()`       | Certificate operations mock     |
+| `IdTokenFixtures`                      | Pre-built IdToken fixtures      |
+| `TransactionContextFixtures`           | Transaction context fixtures    |
+
+### Auth (`ocpp/auth/helpers/MockFactories.ts`)
+
+| Utility                           | Purpose                     |
+| --------------------------------- | --------------------------- |
+| `createMockIdentifier()`          | UnifiedIdentifier factory   |
+| `createMockAuthRequest()`         | AuthRequest factory         |
+| `createMockAuthorizationResult()` | AuthorizationResult factory |
+| `expectAcceptedAuthorization()`   | Assert accepted result      |
+
+---
 
 ## Summary
 
-- **Name clearly**: Descriptive names for files, suites, and test cases
-- **Structure with AAA**: Arrange, Act, Assert
-- **Document minimally**: JSDoc headers required, inline comments only when necessary
-- **Use canonical constants**: Single source of truth
-- **Leverage mock factories**: Centralized, reusable mocks
-- **Clean up always**: `afterEach()` hooks prevent test pollution
-- **Avoid anti-patterns**: No `as any`, no duplication, no probabilistic tests
-
-Following these guidelines ensures tests are maintainable, reliable, and easy to understand.
+1. **Name**: `should [verb]` lowercase
+2. **Structure**: AAA pattern, JSDoc headers
+3. **Isolate**: Fresh instances in `beforeEach`, `standardCleanup()` in `afterEach`
+4. **Async**: Use `async/await`, mock timers
+5. **Constants**: Import from `ChargingStationTestConstants.ts`
+6. **Assert**: Strict only (`toBe`, `toStrictEqual`)
+7. **Types**: No `as any`, use testable interfaces
