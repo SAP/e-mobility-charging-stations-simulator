@@ -254,7 +254,6 @@ const TEST_STATION_NAME = 'CS-TEST-001' // Duplicate constant
 Use centralized mock factories for complex objects:
 
 - `createMockChargingStation()` - From `ChargingStationTestUtils.ts` (returns `{ station, mocks }`)
-- `createMockChargingStation()` - From `ChargingStationTestUtils.ts`
 - Auth mocks - From `tests/charging-station/ocpp/auth/helpers/MockFactories.ts`
 
 **Example:**
@@ -274,14 +273,15 @@ The following utilities are available for reuse across test files:
 
 | Utility                                 | Location                             | Purpose                                      |
 | --------------------------------------- | ------------------------------------ | -------------------------------------------- |
-| `createMockChargingStation()`           | `ChargingStationTestUtils.ts`        | Lightweight mock station stub                |
 | `createMockChargingStation()`           | `ChargingStationTestUtils.ts`        | Full test station with OCPP services + mocks |
 | `createConnectorStatus()`               | `helpers/StationHelpers.ts`          | ConnectorStatus factory with defaults        |
 | `createStationWithCertificateManager()` | `ocpp/2.0/OCPP20TestUtils.ts`        | Station with certificate manager (type-safe) |
 | `MockWebSocket`                         | `mocks/MockWebSocket.ts`             | WebSocket simulation with message capture    |
 | `MockIdTagsCache`                       | `mocks/MockCaches.ts`                | In-memory IdTags cache mock                  |
 | `MockSharedLRUCache`                    | `mocks/MockCaches.ts`                | In-memory LRU cache mock                     |
-| `waitForCondition()`                    | `helpers/StationHelpers.ts`          | Async condition waiting with timeout         |
+| `waitForChargingStationState()`         | `helpers/StationHelpers.ts`          | Async state waiting with timeout             |
+| `cleanupChargingStation()`              | `helpers/StationHelpers.ts`          | Proper station cleanup for afterEach         |
+| Auth factories                          | `ocpp/auth/helpers/MockFactories.ts` | Auth-specific mock creation                  |
 | `cleanupChargingStation()`              | `helpers/StationHelpers.ts`          | Proper station cleanup for afterEach         |
 | Auth factories                          | `ocpp/auth/helpers/MockFactories.ts` | Auth-specific mock creation                  |
 
@@ -290,7 +290,7 @@ The following utilities are available for reuse across test files:
 ```typescript
 // Good: Import shared utilities
 import { createMockChargingStation, cleanupChargingStation } from './ChargingStationTestUtils.js'
-import { waitForCondition } from './helpers/StationHelpers.js'
+import { waitForChargingStationState } from './helpers/StationHelpers.js'
 ```
 
 ### Mocking Best Practices
