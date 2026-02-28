@@ -8,7 +8,7 @@
  * - MockWebSocket: Captures sent messages for assertion
  * - Singleton mocking: Overrides getInstance() for shared caches
  * - Cleanup utilities: Prevents test pollution via timer/listener cleanup
- * @see tests/ChargingStationFactory.ts for mock factory (creates mock objects)
+ * @see tests/charging-station/helpers/StationHelpers.ts for mock factory implementation
  * @see tests/charging-station/ChargingStationTestConstants.ts for test constants
  */
 
@@ -37,7 +37,6 @@ export {
   resetChargingStationState,
   waitForCondition,
 } from './helpers/StationHelpers.js'
-
 
 export { MockIdTagsCache, MockSharedLRUCache } from './mocks/MockCaches.js'
 // Re-export all mock classes

@@ -253,16 +253,16 @@ const TEST_STATION_NAME = 'CS-TEST-001' // Duplicate constant
 
 Use centralized mock factories for complex objects:
 
-- `createChargingStation()` - From `ChargingStationFactory.ts`
+- `createMockChargingStation()` - From `ChargingStationTestUtils.ts` (returns `{ station, mocks }`)
 - `createMockChargingStation()` - From `ChargingStationTestUtils.ts`
 - Auth mocks - From `tests/charging-station/ocpp/auth/helpers/MockFactories.ts`
 
 **Example:**
 
 ```typescript
-import { createChargingStation } from '../ChargingStationFactory.js'
+import { createMockChargingStation } from './ChargingStationTestUtils.js'
 
-const station = await createChargingStation({
+const { station } = createMockChargingStation({
   ocppVersion: OCPPVersion.VERSION_20,
   numberOfConnectors: 2,
 })
@@ -275,7 +275,7 @@ The following utilities are available for reuse across test files:
 | Utility                                 | Location                             | Purpose                                      |
 | --------------------------------------- | ------------------------------------ | -------------------------------------------- |
 | `createMockChargingStation()`           | `ChargingStationTestUtils.ts`        | Lightweight mock station stub                |
-| `createChargingStation()`               | `ChargingStationFactory.ts`          | Full test station with OCPP services         |
+| `createMockChargingStation()`           | `ChargingStationTestUtils.ts`        | Full test station with OCPP services + mocks |
 | `createConnectorStatus()`               | `helpers/StationHelpers.ts`          | ConnectorStatus factory with defaults        |
 | `createStationWithCertificateManager()` | `ocpp/2.0/OCPP20TestUtils.ts`        | Station with certificate manager (type-safe) |
 | `MockWebSocket`                         | `mocks/MockWebSocket.ts`             | WebSocket simulation with message capture    |
