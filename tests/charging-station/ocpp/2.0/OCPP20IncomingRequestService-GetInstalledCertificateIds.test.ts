@@ -6,6 +6,7 @@
 import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
+import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type { ChargingStationWithCertificateManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20CertificateManager.js'
 
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
@@ -21,8 +22,8 @@ import {
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
+import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import { createStationWithCertificateManager } from './OCPP20TestUtils.js'
 
 const createMockCertificateHashData = (serialNumber = '123456789'): CertificateHashDataType => ({
@@ -256,7 +257,7 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
 
   await describe('Certificate Manager Missing', async () => {
     await it('should return NotFound when certificate manager is not available', async () => {
-      const stationWithoutCertManager = createChargingStation({
+      const { station: stationWithoutCertManager } = createMockChargingStation({
         baseName: TEST_CHARGING_STATION_BASE_NAME,
         connectorsCount: 3,
         evseConfiguration: { evsesCount: 3 },

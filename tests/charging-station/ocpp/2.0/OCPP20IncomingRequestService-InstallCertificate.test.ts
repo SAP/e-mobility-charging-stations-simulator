@@ -19,8 +19,8 @@ import {
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
+import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import { createStationWithCertificateManager } from './OCPP20TestUtils.js'
 
 const VALID_PEM_CERTIFICATE = `-----BEGIN CERTIFICATE-----
@@ -74,7 +74,6 @@ await describe('I03 - InstallCertificate', async () => {
     mock.restoreAll()
   })
 
-  let station: ChargingStation
   let mockChargingStation: ChargingStation
   let stationWithCertManager: ChargingStationWithCertificateManager
   let incomingRequestService: OCPP20IncomingRequestService
@@ -92,7 +91,7 @@ await describe('I03 - InstallCertificate', async () => {
       },
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
-    station = initialStation
+    mockChargingStation = initialStation
     mockChargingStation = initialStation
 
     // Use factory function to create station with certificate manager

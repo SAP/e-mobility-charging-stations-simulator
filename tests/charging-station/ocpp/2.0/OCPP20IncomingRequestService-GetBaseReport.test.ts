@@ -5,6 +5,8 @@
 import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
+import type { ChargingStation } from '../../../../src/charging-station/index.js'
+
 import {
   addConfigurationKey,
   setConfigurationKeyValue,
@@ -28,7 +30,6 @@ import {
 import { StandardParametersKey } from '../../../../src/types/ocpp/Configuration.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../../tests/helpers/TestLifecycleHelpers.js'
-import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import {
   TEST_CHARGE_POINT_MODEL,
   TEST_CHARGE_POINT_SERIAL_NUMBER,
@@ -36,6 +37,7 @@ import {
   TEST_CHARGING_STATION_BASE_NAME,
   TEST_FIRMWARE_VERSION,
 } from '../../ChargingStationTestConstants.js'
+import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 
 await describe('B07 - Get Base Report', async () => {
   let station: ChargingStation
@@ -98,10 +100,7 @@ await describe('B07 - Get Base Report', async () => {
   })
 
   await it('should include registry variables with Actual attribute only for unsupported types', () => {
-    const reportData = testableService.buildReportData(
-      station,
-      ReportBaseEnumType.FullInventory
-    )
+    const reportData = testableService.buildReportData(station, ReportBaseEnumType.FullInventory)
     const heartbeatEntry = reportData.find(
       (item: ReportDataType) =>
         item.variable.name === (OCPP20OptionalVariableName.HeartbeatInterval as string) &&
@@ -208,10 +207,7 @@ await describe('B07 - Get Base Report', async () => {
 
   // FR: B08.FR.07
   await it('should build correct report data for FullInventory with station info', () => {
-    const reportData = testableService.buildReportData(
-      station,
-      ReportBaseEnumType.FullInventory
-    )
+    const reportData = testableService.buildReportData(station, ReportBaseEnumType.FullInventory)
 
     expect(Array.isArray(reportData)).toBe(true)
     expect(reportData.length).toBeGreaterThan(0)
@@ -240,10 +236,7 @@ await describe('B07 - Get Base Report', async () => {
 
   // FR: B08.FR.08
   await it('should build correct report data for SummaryInventory', () => {
-    const reportData = testableService.buildReportData(
-      station,
-      ReportBaseEnumType.SummaryInventory
-    )
+    const reportData = testableService.buildReportData(station, ReportBaseEnumType.SummaryInventory)
 
     expect(Array.isArray(reportData)).toBe(true)
     expect(reportData.length).toBeGreaterThan(0)
@@ -275,24 +268,18 @@ await describe('B07 - Get Base Report', async () => {
     // Use members exceeding 10 chars total; exclude removed RTC/Manual.
     const longValue = 'Heartbeat,NTP,GPS,RealTimeClock,MobileNetwork,RadioTimeTransmitter'
     // Set Actual (SequenceList). Should accept full value internally.
-    const setResult: OCPP20SetVariableResultType[] = variableManager.setVariables(
-      station,
-      [
-        {
-          attributeType: AttributeEnumType.Actual,
-          attributeValue: longValue,
-          component: { name: OCPP20ComponentName.ClockCtrlr },
-          variable: { name: OCPP20RequiredVariableName.TimeSource },
-        },
-      ]
-    )
+    const setResult: OCPP20SetVariableResultType[] = variableManager.setVariables(station, [
+      {
+        attributeType: AttributeEnumType.Actual,
+        attributeValue: longValue,
+        component: { name: OCPP20ComponentName.ClockCtrlr },
+        variable: { name: OCPP20RequiredVariableName.TimeSource },
+      },
+    ])
     expect(setResult[0].attributeStatus).toBe('Accepted')
 
     // Build report; value should be truncated to length 10
-    const reportData = testableService.buildReportData(
-      station,
-      ReportBaseEnumType.FullInventory
-    )
+    const reportData = testableService.buildReportData(station, ReportBaseEnumType.FullInventory)
     const timeSourceEntry = reportData.find(
       (item: ReportDataType) =>
         item.variable.name === (OCPP20RequiredVariableName.TimeSource as string) &&

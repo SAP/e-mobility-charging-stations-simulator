@@ -5,6 +5,8 @@
 import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
+import type { ChargingStation } from '../../../../src/charging-station/index.js'
+
 import { OCPP20RequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20RequestService.js'
 import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
 import {
@@ -13,8 +15,6 @@ import {
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { Constants, has } from '../../../../src/utils/index.js'
-import { createMockChargingStation } from '../../../ChargingStationTestUtils.js'
-import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import {
   TEST_CHARGE_POINT_MODEL,
   TEST_CHARGE_POINT_SERIAL_NUMBER,
@@ -22,6 +22,7 @@ import {
   TEST_CHARGING_STATION_BASE_NAME,
   TEST_FIRMWARE_VERSION,
 } from '../../ChargingStationTestConstants.js'
+import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import {
   createTestableOCPP20RequestService,
   type TestableOCPP20RequestService,
@@ -137,7 +138,7 @@ await describe('G02 - Heartbeat', async () => {
 
   // FR: G02.FR.05
   await it('should handle HeartBeat request with different charging station configurations', () => {
-    const alternativeChargingStation = createChargingStation({
+    const { station: alternativeChargingStation } = createMockChargingStation({
       baseName: 'CS-ALTERNATIVE-002',
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },

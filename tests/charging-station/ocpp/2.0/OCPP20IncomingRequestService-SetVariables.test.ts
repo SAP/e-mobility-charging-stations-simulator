@@ -8,6 +8,7 @@ import { millisecondsToSeconds } from 'date-fns'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
+
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
@@ -27,11 +28,11 @@ import {
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../../tests/helpers/TestLifecycleHelpers.js'
-import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import {
   TEST_CHARGING_STATION_BASE_NAME,
   TEST_CONNECTOR_ID_VALID_INSTANCE,
 } from '../../ChargingStationTestConstants.js'
+import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import {
   resetLimits,
   resetValueSizeLimits,

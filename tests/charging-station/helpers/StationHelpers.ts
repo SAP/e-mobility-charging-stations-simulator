@@ -854,10 +854,25 @@ export function createMockChargingStation (
     webSocket: mockWebSocket,
   }
 
+  const typedStation: ChargingStation = station as unknown as ChargingStation
+
   return {
     mocks,
-    station: station as unknown as ChargingStation,
+    station: typedStation,
   }
+}
+
+/**
+ * Create a mock charging station template for testing
+ * @param baseName - Base name for the template
+ * @returns ChargingStationTemplate with minimal required properties for testing
+ */
+export function createMockChargingStationTemplate (
+  baseName: string = TEST_CHARGING_STATION_BASE_NAME
+): ChargingStationTemplate {
+  return {
+    baseName,
+  } as ChargingStationTemplate
 }
 
 /**
@@ -974,17 +989,4 @@ function resetConnectorStatus (status: ConnectorStatus, isConnectorZero: boolean
     clearInterval(status.transactionSetInterval)
     status.transactionSetInterval = undefined
   }
-}
-
-/**
- * Create a mock charging station template for testing
- * @param baseName - Base name for the template
- * @returns ChargingStationTemplate with minimal required properties for testing
- */
-export function createMockChargingStationTemplate (
-  baseName: string = TEST_CHARGING_STATION_BASE_NAME
-): ChargingStationTemplate {
-  return {
-    baseName,
-  } as ChargingStationTemplate
 }

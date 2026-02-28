@@ -6,13 +6,15 @@
 import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
+import type { ChargingStation } from '../../../../src/charging-station/index.js'
+
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'
 import { GenericStatus, OCPPVersion } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
+import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 
 await describe('C11 - Clear Authorization Data in Authorization Cache', async () => {
   afterEach(() => {
@@ -96,9 +98,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
     await it('should NOT call idTagsCache.deleteIdTags() on ClearCache request', async () => {
       // Verify that IdTagsCache is not touched
       let deleteIdTagsCalled = false
-      const originalDeleteIdTags = station.idTagsCache.deleteIdTags.bind(
-        station.idTagsCache
-      )
+      const originalDeleteIdTags = station.idTagsCache.deleteIdTags.bind(station.idTagsCache)
 
       Object.assign(station.idTagsCache, {
         deleteIdTags: () => {

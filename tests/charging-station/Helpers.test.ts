@@ -33,8 +33,8 @@ import {
   type Reservation,
 } from '../../src/types/index.js'
 import { logger } from '../../src/utils/Logger.js'
-import { createMockChargingStation, createMockChargingStationTemplate } from './ChargingStationTestUtils.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+import { createMockChargingStation, createMockChargingStationTemplate } from './ChargingStationTestUtils.js'
 
 await describe('Helpers test suite', async () => {
   const baseName = 'CS-TEST'

@@ -24,8 +24,8 @@ import {
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
+import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 
 const VALID_PEM_CERTIFICATE = `-----BEGIN CERTIFICATE-----
 MIIBkTCB+wIJAKHBfpvPA0GXMA0GCSqGSIb3DQEBCwUAMBExDzANBgNVBAMMBnRl
@@ -72,15 +72,6 @@ interface MockCertificateManager extends OCPP20CertificateManagerInterface {
   getInstalledCertificates: Mock<() => GetInstalledCertificatesResult>
   storeCertificate: Mock<() => StoreCertificateResult>
   validateCertificateFormat: Mock<(cert: string) => boolean>
-}
-
-/**
- * Test-specific ChargingStation interface with certificate management
- * Extends ChargingStation with properties needed for certificate tests
- */
-interface TestableChargingStationWithCertificate extends ChargingStation {
-  certificateManager?: MockCertificateManager
-  closeWSConnection?: Mock<() => void>
 }
 
 const createMockCertificateManager = (

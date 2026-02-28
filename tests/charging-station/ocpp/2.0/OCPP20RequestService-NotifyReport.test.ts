@@ -6,6 +6,8 @@
 import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
+import type { ChargingStation } from '../../../../src/charging-station/index.js'
+
 import {
   createTestableRequestService,
   type TestableOCPP20RequestService,
@@ -22,8 +24,6 @@ import {
   type ReportDataType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { createMockChargingStation } from '../../../ChargingStationTestUtils.js'
-import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import {
   TEST_CHARGE_POINT_MODEL,
   TEST_CHARGE_POINT_SERIAL_NUMBER,
@@ -31,6 +31,7 @@ import {
   TEST_CHARGING_STATION_BASE_NAME,
   TEST_FIRMWARE_VERSION,
 } from '../../ChargingStationTestConstants.js'
+import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 
 await describe('B07/B08 - NotifyReport', async () => {
   let testableService: TestableOCPP20RequestService

@@ -5,6 +5,8 @@
 import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
+import type { ChargingStation } from '../../../../src/charging-station/index.js'
+
 import { OCPP20RequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20RequestService.js'
 import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
 import {
@@ -13,10 +15,8 @@ import {
   OCPP20RequestCommand,
   OCPPVersion,
 } from '../../../../src/types/index.js'
-import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import { type ChargingStationType } from '../../../../src/types/ocpp/2.0/Common.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { createMockChargingStation } from '../../../ChargingStationTestUtils.js'
 import {
   TEST_CHARGE_POINT_MODEL,
   TEST_CHARGE_POINT_SERIAL_NUMBER,
@@ -24,6 +24,7 @@ import {
   TEST_CHARGING_STATION_BASE_NAME,
   TEST_FIRMWARE_VERSION,
 } from '../../ChargingStationTestConstants.js'
+import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import {
   createTestableOCPP20RequestService,
   type TestableOCPP20RequestService,
@@ -173,7 +174,7 @@ await describe('B01 - Cold Boot Charging Station', async () => {
       }
 
       const payload = testableRequestService.buildRequestPayload(
-      station,
+        station,
         OCPP20RequestCommand.BOOT_NOTIFICATION,
         requestParams
       ) as OCPP20BootNotificationRequest

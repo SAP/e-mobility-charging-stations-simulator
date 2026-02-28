@@ -24,17 +24,13 @@ import {
   ResetStatusEnumType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
+import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 
 await describe('B11 & B12 - Reset', async () => {
   let mockChargingStation: ChargingStation
   let mockStation: ChargingStation & {
-    getNumberOfRunningTransactions: () => number
-    reset: () => Promise<void>
-  }
-  let mockStation: ReturnType<typeof createChargingStation> & {
     getNumberOfRunningTransactions: () => number
     reset: () => Promise<void>
   }
@@ -344,7 +340,7 @@ await describe('B11 & B12 - Reset', async () => {
       }
 
       const createTestStation = (): TestStation => {
-        const station = createChargingStation({
+        const { station } = createMockChargingStation({
           baseName: TEST_CHARGING_STATION_BASE_NAME,
           connectorsCount: 3,
           evseConfiguration: { evsesCount: 3 },

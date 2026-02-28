@@ -210,10 +210,10 @@ await describe('M02 - Get15118EVCertificate Request', async () => {
 })
 
 await describe('M03 - GetCertificateStatus Request', async () => {
-  let station: TestChargingStation
+  let station: ReturnType<typeof createMockChargingStation>['station']
 
   beforeEach(() => {
-    station = createChargingStation({
+    const result = createMockChargingStation({
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },
@@ -224,6 +224,7 @@ await describe('M03 - GetCertificateStatus Request', async () => {
       },
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
+    station = result.station
   })
 
   afterEach(() => {
@@ -327,10 +328,10 @@ await describe('M03 - GetCertificateStatus Request', async () => {
 })
 
 await describe('Request Command Names', async () => {
-  let station: TestChargingStation
+  let station: ReturnType<typeof createMockChargingStation>['station']
 
   beforeEach(() => {
-    station = createChargingStation({
+    const result = createMockChargingStation({
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 1,
       evseConfiguration: { evsesCount: 1 },
@@ -341,6 +342,7 @@ await describe('Request Command Names', async () => {
       },
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
+    station = result.station
   })
 
   afterEach(() => {

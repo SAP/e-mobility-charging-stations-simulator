@@ -10,8 +10,8 @@ import type { AuthConfiguration } from '../../../../../src/charging-station/ocpp
 
 import { AuthComponentFactory } from '../../../../../src/charging-station/ocpp/auth/factories/AuthComponentFactory.js'
 import { OCPPVersion } from '../../../../../src/types/ocpp/OCPPVersion.js'
-import { createMockChargingStation } from '../../../ChargingStationTestUtils.js'
 import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
+import { createMockChargingStation } from '../../../ChargingStationTestUtils.js'
 
 await describe('AuthComponentFactory', async () => {
   afterEach(() => {

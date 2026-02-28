@@ -6,6 +6,8 @@
 import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
+import type { ChargingStation } from '../../../../src/charging-station/index.js'
+
 import { createTestableRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import {
   CertificateSigningUseEnumType,
@@ -16,9 +18,8 @@ import {
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { createMockChargingStation } from '../../../ChargingStationTestUtils.js'
-import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
+import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 
 const MOCK_ORGANIZATION_NAME = 'Test Organization Inc.'
 
@@ -131,10 +132,7 @@ await describe('I02 - SignCertificate Request', async () => {
           },
         })
 
-      await service.requestSignCertificate(
-        station,
-        CertificateSigningUseEnumType.V2GCertificate
-      )
+      await service.requestSignCertificate(station, CertificateSigningUseEnumType.V2GCertificate)
 
       const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
 
@@ -247,7 +245,7 @@ await describe('I02 - SignCertificate Request', async () => {
 
   await describe('Error Handling', async () => {
     await it('should generate CSR without certificate manager dependency', async () => {
-      const stationWithoutCertManager = createChargingStation({
+      const { station: stationWithoutCertManager } = createMockChargingStation({
         baseName: TEST_CHARGING_STATION_BASE_NAME,
         connectorsCount: 1,
         evseConfiguration: { evsesCount: 1 },

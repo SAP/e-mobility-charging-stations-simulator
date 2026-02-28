@@ -5,6 +5,8 @@
 import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
+import type { ChargingStation } from '../../../../src/charging-station/index.js'
+
 import { OCPP20RequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20RequestService.js'
 import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
 import {
@@ -14,8 +16,6 @@ import {
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { createMockChargingStation } from '../../../ChargingStationTestUtils.js'
-import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import {
   TEST_FIRMWARE_VERSION,
   TEST_STATUS_CHARGE_POINT_MODEL,
@@ -23,6 +23,7 @@ import {
   TEST_STATUS_CHARGE_POINT_VENDOR,
   TEST_STATUS_CHARGING_STATION_BASE_NAME,
 } from '../../ChargingStationTestConstants.js'
+import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import {
   createTestableOCPP20RequestService,
   type TestableOCPP20RequestService,

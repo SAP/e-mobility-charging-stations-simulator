@@ -30,8 +30,8 @@ import {
 } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../../tests/helpers/TestLifecycleHelpers.js'
-import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
+import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import { createMockAuthService } from '../auth/helpers/MockFactories.js'
 import {
   resetConnectorTransactionState,
@@ -308,7 +308,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
   await it('should handle TransactionEvent request failure gracefully', async () => {
     sentTransactionEvents = []
 
-    const failingChargingStation = createChargingStation({
+    const { station: failingChargingStation } = createMockChargingStation({
       baseName: TEST_CHARGING_STATION_BASE_NAME + '-FAIL',
       connectorsCount: 1,
       evseConfiguration: { evsesCount: 1 },

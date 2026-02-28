@@ -7,11 +7,12 @@ import { expect } from '@std/expect'
 import { millisecondsToSeconds } from 'date-fns'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
+import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
+
 import {
   deleteConfigurationKey,
   getConfigurationKey,
 } from '../../../../src/charging-station/ConfigurationKeyUtils.js'
-import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
 import { createTestableVariableManager } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
 import { VARIABLE_REGISTRY } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableRegistry.js'
