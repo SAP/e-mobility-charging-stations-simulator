@@ -637,6 +637,87 @@ export const TransactionFlowPatterns: TransactionFlowPattern[] = [
 // ============================================================================
 
 /**
+ * Options for configuring the mock certificate manager behavior.
+ */
+export interface MockCertificateManagerOptions {
+  /** Error to throw when deleteCertificate is called */
+  deleteCertificateError?: Error
+  /** Result to return from deleteCertificate (default: { status: 'Accepted' }) */
+  deleteCertificateResult?: { status: 'Accepted' | 'Failed' | 'NotFound' }
+  /** Error to throw when getInstalledCertificates is called */
+  getInstalledCertificatesError?: Error
+  /** Result to return from getInstalledCertificates (default: []) */
+  getInstalledCertificatesResult?: unknown[]
+  /** Error to throw when storeCertificate is called */
+  storeCertificateError?: Error
+  /** Result to return from storeCertificate (default: { success: true }) */
+  storeCertificateResult?: boolean
+}
+
+// ============================================================================
+// Certificate Manager Mock Factory
+// ============================================================================
+
+/**
+ * Create a mock certificate manager for OCPP 2.0 certificate operation testing.
+ *
+ * This unified factory consolidates the previously duplicated createMockCertificateManager
+ * functions from DeleteCertificate, InstallCertificate, CertificateSigned, and
+ * GetInstalledCertificateIds test files.
+ * @param options - Configuration options for mock behavior
+ * @returns Mock certificate manager with configurable behavior
+ * @example
+ * ```typescript
+ * // Default behavior - all operations succeed
+ * const certManager = createMockCertificateManager()
+ *
+ * // Configure delete to return NotFound
+ * const certManager = createMockCertificateManager({
+ *   deleteCertificateResult: { status: 'NotFound' }
+ * })
+ *
+ * // Configure store to throw error
+ * const certManager = createMockCertificateManager({
+ *   storeCertificateError: new Error('Storage failed')
+ * })
+ *
+ * // Configure getInstalledCertificates to return specific certificates
+ * const certManager = createMockCertificateManager({
+ *   getInstalledCertificatesResult: [certificateChain1, certificateChain2]
+ * })
+ * ```
+ */
+export function createMockCertificateManager (options: MockCertificateManagerOptions = {}) {
+  return {
+    deleteCertificate: mock.fn(() => {
+      if (options.deleteCertificateError != null) {
+        throw options.deleteCertificateError
+      }
+      return options.deleteCertificateResult ?? { status: 'Accepted' }
+    }),
+    getInstalledCertificates: mock.fn(() => {
+      if (options.getInstalledCertificatesError != null) {
+        throw options.getInstalledCertificatesError
+      }
+      return {
+        certificateHashDataChain: options.getInstalledCertificatesResult ?? [],
+      }
+    }),
+    storeCertificate: mock.fn(() => {
+      if (options.storeCertificateError != null) {
+        throw options.storeCertificateError
+      }
+      return { success: options.storeCertificateResult ?? true }
+    }),
+    validateCertificateFormat: mock.fn((cert: string) => {
+      return (
+        cert.includes('-----BEGIN CERTIFICATE-----') && cert.includes('-----END CERTIFICATE-----')
+      )
+    }),
+  }
+}
+
+/**
  * Create a mock ChargingStation with certificate manager for testing.
  * This encapsulates the type casting pattern for ChargingStationWithCertificateManager.
  * @param baseStation - Optional base station to extend (creates new if not provided)

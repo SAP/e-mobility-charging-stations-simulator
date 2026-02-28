@@ -4,15 +4,9 @@
  */
 
 import { expect } from '@std/expect'
-import { afterEach, beforeEach, describe, it, mock, type Mock } from 'node:test'
+import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
-import type {
-  DeleteCertificateResult,
-  GetInstalledCertificatesResult,
-  OCPP20CertificateManagerInterface,
-  StoreCertificateResult,
-} from '../../../../src/charging-station/ocpp/2.0/OCPP20CertificateManager.js'
 
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
@@ -26,6 +20,7 @@ import {
 import { Constants } from '../../../../src/utils/index.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
+import { createMockCertificateManager } from './OCPP20TestUtils.js'
 
 const VALID_PEM_CERTIFICATE = `-----BEGIN CERTIFICATE-----
 MIIBkTCB+wIJAKHBfpvPA0GXMA0GCSqGSIb3DQEBCwUAMBExDzANBgNVBAMMBnRl
@@ -62,38 +57,6 @@ nFUewM7PNhYJsWjJRpLdAL1kC6x8bW1kQ5FVUQ==
 const INVALID_PEM_CERTIFICATE_MISSING_MARKERS = `MIIBkTCB+wIJAKHBfpvPA0GXMA0GCSqGSIb3DQEBCwUAMBExDzANBgNVBAMMBn
 Rlc3RDQTAeFw0yNDAxMDEwMDAwMDBaFw0yOTAxMDEwMDAwMDBaMBExDzANBgNVBA
 MMBnRlc3RDQTBcMA0GCSqGSIb3DQEBAQUAA0sAMEgCQQC5p8U8zTk8TT5H5s8mjx`
-
-/**
- * Mock certificate manager interface for testing
- * Provides typed access to mock certificate operations
- */
-interface MockCertificateManager extends OCPP20CertificateManagerInterface {
-  deleteCertificate: Mock<() => DeleteCertificateResult>
-  getInstalledCertificates: Mock<() => GetInstalledCertificatesResult>
-  storeCertificate: Mock<() => StoreCertificateResult>
-  validateCertificateFormat: Mock<(cert: string) => boolean>
-}
-
-const createMockCertificateManager = (
-  options: {
-    storeCertificateError?: Error
-    storeCertificateResult?: boolean
-  } = {}
-): MockCertificateManager => ({
-  deleteCertificate: mock.fn(),
-  getInstalledCertificates: mock.fn(() => ({ certificateHashDataChain: [] })),
-  storeCertificate: mock.fn(() => {
-    if (options.storeCertificateError) {
-      throw options.storeCertificateError
-    }
-    return { success: options.storeCertificateResult ?? true }
-  }),
-  validateCertificateFormat: mock.fn((cert: string) => {
-    return (
-      cert.includes('-----BEGIN CERTIFICATE-----') && cert.includes('-----END CERTIFICATE-----')
-    )
-  }),
-})
 
 await describe('I04 - CertificateSigned', async () => {
   let station: ChargingStation

@@ -28,10 +28,28 @@ import { OCPPVersion } from '../../../../../src/types/ocpp/OCPPVersion.js'
  */
 
 /**
+ * Create a mock UnifiedIdentifier for any OCPP version.
+ * @param ocppVersion - OCPP version (defaults to VERSION_16)
+ * @param value - Identifier token value (defaults to 'TEST-TAG-001')
+ * @param type - Identifier type enum value (defaults to ID_TAG)
+ * @returns Mock UnifiedIdentifier configured for specified OCPP version
+ */
+export const createMockIdentifier = (
+  ocppVersion: OCPPVersion = OCPPVersion.VERSION_16,
+  value = 'TEST-TAG-001',
+  type: IdentifierType = IdentifierType.ID_TAG
+): UnifiedIdentifier => ({
+  ocppVersion,
+  type,
+  value,
+})
+
+/**
  * Create a mock UnifiedIdentifier for OCPP 1.6
  * @param value - Identifier token value (defaults to 'TEST-TAG-001')
  * @param type - Identifier type enum value (defaults to ID_TAG)
  * @returns Mock UnifiedIdentifier configured for OCPP 1.6 protocol
+ * @deprecated Use createMockIdentifier(OCPPVersion.VERSION_16, ...) for new code
  */
 export const createMockOCPP16Identifier = (
   value = 'TEST-TAG-001',
@@ -47,6 +65,7 @@ export const createMockOCPP16Identifier = (
  * @param value - Identifier token value (defaults to 'TEST-TAG-001')
  * @param type - Identifier type enum value (defaults to ID_TAG)
  * @returns Mock UnifiedIdentifier configured for OCPP 2.0 protocol
+ * @deprecated Use createMockIdentifier(OCPPVersion.VERSION_20, ...) for new code
  */
 export const createMockOCPP20Identifier = (
   value = 'TEST-TAG-001',
@@ -66,84 +85,53 @@ export const createMockAuthRequest = (overrides?: Partial<AuthRequest>): AuthReq
   allowOffline: false,
   connectorId: 1,
   context: AuthContext.TRANSACTION_START,
-  identifier: createMockOCPP16Identifier(),
+  identifier: createMockIdentifier(),
   timestamp: new Date(),
   ...overrides,
 })
 
 /**
- * Create a mock successful AuthorizationResult
+ * Create a mock AuthorizationResult with configurable status.
+ *
+ * This factory consolidates what were previously 5 separate factories:
+ * - createMockAuthorizationResult (ACCEPTED)
+ * - createMockRejectedAuthorizationResult (INVALID)
+ * - createMockBlockedAuthorizationResult (BLOCKED)
+ * - createMockExpiredAuthorizationResult (EXPIRED)
+ * - createMockConcurrentTxAuthorizationResult (CONCURRENT_TX)
+ *
+ * @param status - Authorization status (defaults to ACCEPTED)
  * @param overrides - Partial AuthorizationResult properties to override defaults
- * @returns Mock AuthorizationResult with ACCEPTED status from local list method
+ * @returns Mock AuthorizationResult with specified status from local list method
+ * @example
+ * ```typescript
+ * // Default: ACCEPTED status
+ * const accepted = createMockAuthorizationResult()
+ *
+ * // Rejected with INVALID status
+ * const rejected = createMockAuthorizationResult(AuthorizationStatus.INVALID)
+ *
+ * // Blocked with custom method
+ * const blocked = createMockAuthorizationResult(AuthorizationStatus.BLOCKED, {
+ *   method: AuthenticationMethod.REMOTE_AUTHORIZATION
+ * })
+ *
+ * // Expired with custom expiry date
+ * const expired = createMockAuthorizationResult(AuthorizationStatus.EXPIRED, {
+ *   expiryDate: new Date(Date.now() - 1000)
+ * })
+ * ```
  */
 export const createMockAuthorizationResult = (
+  status: AuthorizationStatus = AuthorizationStatus.ACCEPTED,
   overrides?: Partial<AuthorizationResult>
 ): AuthorizationResult => ({
   isOffline: false,
   method: AuthenticationMethod.LOCAL_LIST,
-  status: AuthorizationStatus.ACCEPTED,
+  status,
   timestamp: new Date(),
-  ...overrides,
-})
-
-/**
- * Create a mock rejected AuthorizationResult
- * @param overrides - Partial AuthorizationResult properties to override defaults
- * @returns Mock AuthorizationResult with INVALID status from local list method
- */
-export const createMockRejectedAuthorizationResult = (
-  overrides?: Partial<AuthorizationResult>
-): AuthorizationResult => ({
-  isOffline: false,
-  method: AuthenticationMethod.LOCAL_LIST,
-  status: AuthorizationStatus.INVALID,
-  timestamp: new Date(),
-  ...overrides,
-})
-
-/**
- * Create a mock blocked AuthorizationResult
- * @param overrides - Partial AuthorizationResult properties to override defaults
- * @returns Mock AuthorizationResult with BLOCKED status from local list method
- */
-export const createMockBlockedAuthorizationResult = (
-  overrides?: Partial<AuthorizationResult>
-): AuthorizationResult => ({
-  isOffline: false,
-  method: AuthenticationMethod.LOCAL_LIST,
-  status: AuthorizationStatus.BLOCKED,
-  timestamp: new Date(),
-  ...overrides,
-})
-
-/**
- * Create a mock expired AuthorizationResult
- * @param overrides - Partial AuthorizationResult properties to override defaults
- * @returns Mock AuthorizationResult with EXPIRED status and past expiry date
- */
-export const createMockExpiredAuthorizationResult = (
-  overrides?: Partial<AuthorizationResult>
-): AuthorizationResult => ({
-  expiryDate: new Date(Date.now() - 1000), // Expired 1 second ago
-  isOffline: false,
-  method: AuthenticationMethod.LOCAL_LIST,
-  status: AuthorizationStatus.EXPIRED,
-  timestamp: new Date(),
-  ...overrides,
-})
-
-/**
- * Create a mock concurrent transaction limit AuthorizationResult
- * @param overrides - Partial AuthorizationResult properties to override defaults
- * @returns Mock AuthorizationResult with CONCURRENT_TX status from local list method
- */
-export const createMockConcurrentTxAuthorizationResult = (
-  overrides?: Partial<AuthorizationResult>
-): AuthorizationResult => ({
-  isOffline: false,
-  method: AuthenticationMethod.LOCAL_LIST,
-  status: AuthorizationStatus.CONCURRENT_TX,
-  timestamp: new Date(),
+  // For expired status, include a default expiryDate in the past
+  ...(status === AuthorizationStatus.EXPIRED && { expiryDate: new Date(Date.now() - 1000) }),
   ...overrides,
 })
 

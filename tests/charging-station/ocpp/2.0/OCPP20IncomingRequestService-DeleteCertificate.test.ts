@@ -22,7 +22,10 @@ import {
 import { Constants } from '../../../../src/utils/index.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
-import { createStationWithCertificateManager } from './OCPP20TestUtils.js'
+import {
+  createMockCertificateManager,
+  createStationWithCertificateManager,
+} from './OCPP20TestUtils.js'
 
 const VALID_CERTIFICATE_HASH_DATA = {
   hashAlgorithm: HashAlgorithmEnumType.SHA256,
@@ -37,23 +40,6 @@ const NONEXISTENT_CERTIFICATE_HASH_DATA = {
   issuerNameHash: '0000000000000000000000000000000000000000000000000000000000000000',
   serialNumber: 'NONEXISTENT123456',
 }
-
-const createMockCertificateManager = (
-  options: {
-    deleteCertificateError?: Error
-    deleteCertificateResult?: { status: 'Accepted' | 'Failed' | 'NotFound' }
-  } = {}
-) => ({
-  deleteCertificate: mock.fn(() => {
-    if (options.deleteCertificateError) {
-      throw options.deleteCertificateError
-    }
-    return options.deleteCertificateResult ?? { status: 'Accepted' }
-  }),
-  getInstalledCertificates: mock.fn(() => []),
-  storeCertificate: mock.fn(() => true),
-  validateCertificateFormat: mock.fn(() => true),
-})
 
 await describe('I04 - DeleteCertificate', async () => {
   afterEach(() => {

@@ -24,7 +24,10 @@ import {
 import { Constants } from '../../../../src/utils/index.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
-import { createStationWithCertificateManager } from './OCPP20TestUtils.js'
+import {
+  createMockCertificateManager,
+  createStationWithCertificateManager,
+} from './OCPP20TestUtils.js'
 
 const createMockCertificateHashData = (serialNumber = '123456789'): CertificateHashDataType => ({
   hashAlgorithm: HashAlgorithmEnumType.SHA256,
@@ -39,25 +42,6 @@ const createMockCertificateHashDataChain = (
 ): CertificateHashDataChainType => ({
   certificateHashData: createMockCertificateHashData(serialNumber),
   certificateType,
-})
-
-const createMockCertificateManager = (
-  options: {
-    getInstalledCertificatesError?: Error
-    getInstalledCertificatesResult?: CertificateHashDataChainType[]
-  } = {}
-) => ({
-  deleteCertificate: mock.fn(),
-  getInstalledCertificates: mock.fn(() => {
-    if (options.getInstalledCertificatesError) {
-      throw options.getInstalledCertificatesError
-    }
-    return {
-      certificateHashDataChain: options.getInstalledCertificatesResult ?? [],
-    }
-  }),
-  storeCertificate: mock.fn(() => true),
-  validateCertificateFormat: mock.fn(() => true),
 })
 
 await describe('I04 - GetInstalledCertificateIds', async () => {

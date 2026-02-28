@@ -21,7 +21,10 @@ import {
 import { Constants } from '../../../../src/utils/index.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
-import { createStationWithCertificateManager } from './OCPP20TestUtils.js'
+import {
+  createMockCertificateManager,
+  createStationWithCertificateManager,
+} from './OCPP20TestUtils.js'
 
 const VALID_PEM_CERTIFICATE = `-----BEGIN CERTIFICATE-----
 MIIBkTCB+wIJAKHBfpvPA0GXMA0GCSqGSIb3DQEBCwUAMBExDzANBgNVBAMMBnRl
@@ -47,27 +50,6 @@ AgMBAAGjUzBRMB0GA1UdDgQWBBRc8RqFu0nnqJdw3f9nFVXm9BxeUDAfBgNVHSME
 GDAWgBRc8RqFu0nnqJdw3f9nFVXm9BxeUDAPBgNVHRMBAf8EBTADAQH/MA0GCSqG
 SIb3DQEBCwUAA0EAexpired==
 -----END CERTIFICATE-----`
-
-const createMockCertificateManager = (
-  options: {
-    storeCertificateError?: Error
-    storeCertificateResult?: boolean
-  } = {}
-) => ({
-  deleteCertificate: mock.fn(),
-  getInstalledCertificates: mock.fn(() => []),
-  storeCertificate: mock.fn(() => {
-    if (options.storeCertificateError) {
-      throw options.storeCertificateError
-    }
-    return { success: options.storeCertificateResult ?? true }
-  }),
-  validateCertificateFormat: mock.fn((cert: string) => {
-    return (
-      cert.includes('-----BEGIN CERTIFICATE-----') && cert.includes('-----END CERTIFICATE-----')
-    )
-  }),
-})
 
 await describe('I03 - InstallCertificate', async () => {
   afterEach(() => {
