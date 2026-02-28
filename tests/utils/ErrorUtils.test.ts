@@ -18,11 +18,14 @@ import {
   handleSendMessageError,
 } from '../../src/utils/ErrorUtils.js'
 import { logger } from '../../src/utils/Logger.js'
+import { TEST_CHARGING_STATION_BASE_NAME } from '../charging-station/ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../charging-station/ChargingStationTestUtils.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 await describe('ErrorUtils', async () => {
-  const { station: chargingStation } = createMockChargingStation({ baseName: 'CS-TEST' })
+  const { station: chargingStation } = createMockChargingStation({
+    baseName: TEST_CHARGING_STATION_BASE_NAME,
+  })
 
   afterEach(() => {
     standardCleanup()
