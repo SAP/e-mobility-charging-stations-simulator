@@ -71,7 +71,8 @@ await describe('I04 - DeleteCertificate', async () => {
   })
 
   // Cast to allow setting certificateManager property
-  const stationWithCertManager = mockChargingStation as unknown as ChargingStationWithCertificateManager
+  const stationWithCertManager =
+    mockChargingStation as unknown as ChargingStationWithCertificateManager
   stationWithCertManager.certificateManager = createMockCertificateManager()
 
   const incomingRequestService = new OCPP20IncomingRequestService()
@@ -189,8 +190,10 @@ await describe('I04 - DeleteCertificate', async () => {
         websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
       })
 
-      const stationNoCertManager = stationWithoutCertManager as unknown as ChargingStationWithCertificateManager
-      stationNoCertManager.certificateManager = undefined as unknown as ChargingStationWithCertificateManager['certificateManager']
+      const stationNoCertManager =
+        stationWithoutCertManager as unknown as ChargingStationWithCertificateManager
+      stationNoCertManager.certificateManager =
+        undefined as unknown as ChargingStationWithCertificateManager['certificateManager']
 
       const request: OCPP20DeleteCertificateRequest = {
         certificateHashData: VALID_CERTIFICATE_HASH_DATA,
