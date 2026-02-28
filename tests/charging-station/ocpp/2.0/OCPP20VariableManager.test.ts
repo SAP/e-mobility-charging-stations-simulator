@@ -1263,6 +1263,17 @@ await describe('B05/B06 - OCPP20VariableManager test suite', async () => {
     })
 
     await it('should keep FileTransferProtocols value unchanged after rejected update attempt', () => {
+      // First ensure the configuration key exists by calling getVariables (triggers self-check)
+      // Each test gets a fresh mockChargingStation, so we must initialize the configuration key
+      const initGet = manager.getVariables(mockChargingStation, [
+        {
+          component: { name: OCPP20ComponentName.OCPPCommCtrlr },
+          variable: { name: OCPP20RequiredVariableName.FileTransferProtocols },
+        },
+      ])[0]
+      expect(initGet.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      expect(initGet.attributeValue).toBe('HTTPS,FTPS,SFTP')
+
       const beforeCfg = getConfigurationKey(
         mockChargingStation,
         OCPP20RequiredVariableName.FileTransferProtocols as unknown as VariableType['name']
@@ -1601,6 +1612,15 @@ await describe('B05/B06 - OCPP20VariableManager test suite', async () => {
     })
 
     await it('should preserve OrganizationName value after resetRuntimeOverrides()', () => {
+      // First set OrganizationName to ensure it's persisted (test must be self-contained)
+      manager.setVariables(mockChargingStation, [
+        {
+          attributeValue: 'PersistenceTestOrgName',
+          component: { name: OCPP20ComponentName.SecurityCtrlr },
+          variable: { name: OCPP20RequiredVariableName.OrganizationName },
+        },
+      ])
+      // Now reset runtime overrides
       manager.resetRuntimeOverrides()
       const res = manager.getVariables(mockChargingStation, [
         {
@@ -1609,8 +1629,8 @@ await describe('B05/B06 - OCPP20VariableManager test suite', async () => {
         },
       ])[0]
       expect(res.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      // Value should persist as 'NewOrgName' from previous test (OCPP 2.0.1 compliant persistence)
-      expect(res.attributeValue).toBe('NewOrgName')
+      // Value should persist as 'PersistenceTestOrgName' after resetRuntimeOverrides (OCPP 2.0.1 compliant persistence)
+      expect(res.attributeValue).toBe('PersistenceTestOrgName')
     })
 
     await it('should create configuration key for instance-scoped MessageAttemptInterval and persist Actual value (Actual-only, no MinSet/MaxSet)', () => {
