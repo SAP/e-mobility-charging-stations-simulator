@@ -91,9 +91,6 @@ export interface MockChargingStationOptions {
     evsesCount?: number
   }
 
-  /** Number of EVSEs (enables EVSE mode if > 0) - deprecated, use evseConfiguration */
-  evsesCount?: number
-
   /** Heartbeat interval in seconds */
   heartbeatInterval?: number
 
@@ -290,7 +287,6 @@ export function createMockChargingStation (
     connectorDefaults,
     connectorsCount = 2,
     evseConfiguration,
-    evsesCount = 0,
     heartbeatInterval = TEST_HEARTBEAT_INTERVAL_SECONDS,
     index = 1,
     ocppConfiguration,
@@ -305,8 +301,8 @@ export function createMockChargingStation (
   } = options
 
   // Determine EVSE usage: explicit config OR OCPP 2.0/2.0.1 auto-detection
-  const useEvses = determineEvseUsage(options, evsesCount)
-  const effectiveEvsesCount = evseConfiguration?.evsesCount ?? evsesCount
+  const useEvses = determineEvseUsage(options)
+  const effectiveEvsesCount = evseConfiguration?.evsesCount ?? 0
 
   // Initialize mocks
   const mockWebSocket = new MockWebSocket(`ws://localhost:8080/${baseName}-${String(index)}`)
@@ -945,13 +941,9 @@ export async function waitForCondition (
 /**
  * Determines whether EVSEs should be used based on configuration
  * @param options - Configuration options to check
- * @param legacyEvsesCount - Legacy evsesCount option for backward compatibility
  * @returns True if EVSEs should be used, false otherwise
  */
-function determineEvseUsage (
-  options: MockChargingStationOptions,
-  legacyEvsesCount: number
-): boolean {
+function determineEvseUsage (options: MockChargingStationOptions): boolean {
   // If explicitly set to 0, don't use EVSEs
   if (options.evseConfiguration?.evsesCount === 0) {
     return false
@@ -960,7 +952,6 @@ function determineEvseUsage (
   const effectiveOcppVersion = options.stationInfo?.ocppVersion ?? options.ocppVersion
   return (
     options.evseConfiguration?.evsesCount != null ||
-    legacyEvsesCount > 0 ||
     effectiveOcppVersion === OCPPVersion.VERSION_20 ||
     effectiveOcppVersion === OCPPVersion.VERSION_201
   )

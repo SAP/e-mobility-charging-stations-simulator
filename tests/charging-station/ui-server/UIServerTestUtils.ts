@@ -20,21 +20,18 @@ import {
   ProcedureName,
   ResponseStatus,
 } from '../../../src/types/index.js'
-import { waitForCondition } from '../helpers/StationHelpers.js'
-import { MockWebSocket as BaseMockWebSocket, createUIProtocolMock } from '../mocks/MockWebSocket.js'
-
-// Re-export MockWebSocket for backward compatibility
-// Note: Use createMockUIWebSocket() factory for new code
-export { BaseMockWebSocket as MockWebSocket }
+import { MockWebSocket } from '../mocks/MockWebSocket.js'
 
 /**
  * Create a MockWebSocket configured for UI protocol testing.
  * @param protocol - UI protocol version (default: 'ui0.0.1')
  * @returns MockWebSocket instance configured for UI testing
  */
-export const createMockUIWebSocket = createUIProtocolMock
-// Re-export waitForCondition for backward compatibility
-export { waitForCondition }
+export function createMockUIWebSocket (protocol = 'ui0.0.1'): MockWebSocket {
+  const ws = new MockWebSocket('ws://localhost:8080/ui')
+  ws.protocol = protocol
+  return ws
+}
 
 export const createMockUIServerConfiguration = (
   overrides?: Partial<UIServerConfiguration>

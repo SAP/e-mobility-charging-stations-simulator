@@ -186,19 +186,3 @@ export class MockWebSocket extends EventEmitter {
     this.emit('close', 1006, Buffer.from('Connection terminated'))
   }
 }
-
-/**
- * Factory function to create a MockWebSocket configured for UI protocol
- * @param protocol - UI protocol version (default: 'ui0.0.1')
- * @returns MockWebSocket instance configured for UI testing
- * @example
- * ```typescript
- * const uiWs = createUIProtocolMock()
- * expect(uiWs.protocol).toBe('ui0.0.1')
- * ```
- */
-export function createUIProtocolMock (protocol = 'ui0.0.1'): MockWebSocket {
-  const ws = new MockWebSocket('ws://localhost:8080/ui')
-  ws.protocol = protocol
-  return ws
-}

@@ -143,7 +143,10 @@ await describe('ChargingStation Connector and EVSE State', async () => {
     })
 
     await it('should return 0 for getNumberOfEvses() in non-EVSE mode', () => {
-      const result = createMockChargingStation({ connectorsCount: 2, evsesCount: 0 })
+      const result = createMockChargingStation({
+        connectorsCount: 2,
+        evseConfiguration: { evsesCount: 0 },
+      })
       station = result.station
 
       expect(station.hasEvses).toBe(false)
@@ -151,7 +154,10 @@ await describe('ChargingStation Connector and EVSE State', async () => {
     })
 
     await it('should return undefined for getEvseIdByConnectorId() in non-EVSE mode', () => {
-      const result = createMockChargingStation({ connectorsCount: 2, evsesCount: 0 })
+      const result = createMockChargingStation({
+        connectorsCount: 2,
+        evseConfiguration: { evsesCount: 0 },
+      })
       station = result.station
 
       expect(station.getEvseIdByConnectorId(1)).toBeUndefined()
@@ -173,21 +179,30 @@ await describe('ChargingStation Connector and EVSE State', async () => {
     })
 
     await it('should enable hasEvses flag in EVSE mode', () => {
-      const result = createMockChargingStation({ connectorsCount: 2, evsesCount: 1 })
+      const result = createMockChargingStation({
+        connectorsCount: 2,
+        evseConfiguration: { evsesCount: 1 },
+      })
       station = result.station
 
       expect(station.hasEvses).toBe(true)
     })
 
     await it('should return correct EVSE count via getNumberOfEvses() in EVSE mode', () => {
-      const result = createMockChargingStation({ connectorsCount: 2, evsesCount: 1 })
+      const result = createMockChargingStation({
+        connectorsCount: 2,
+        evseConfiguration: { evsesCount: 1 },
+      })
       station = result.station
 
       expect(station.getNumberOfEvses()).toBe(1)
     })
 
     await it('should return connector status via getConnectorStatus() in EVSE mode', () => {
-      const result = createMockChargingStation({ connectorsCount: 2, evsesCount: 1 })
+      const result = createMockChargingStation({
+        connectorsCount: 2,
+        evseConfiguration: { evsesCount: 1 },
+      })
       station = result.station
 
       // Connectors are nested under EVSEs in EVSE mode
@@ -199,7 +214,10 @@ await describe('ChargingStation Connector and EVSE State', async () => {
     })
 
     await it('should map connector IDs to EVSE IDs via getEvseIdByConnectorId()', () => {
-      const result = createMockChargingStation({ connectorsCount: 2, evsesCount: 1 })
+      const result = createMockChargingStation({
+        connectorsCount: 2,
+        evseConfiguration: { evsesCount: 1 },
+      })
       station = result.station
 
       // In single-EVSE mode, both connectors should map to EVSE 1
@@ -208,14 +226,20 @@ await describe('ChargingStation Connector and EVSE State', async () => {
     })
 
     await it('should return undefined for getEvseIdByConnectorId() with invalid connector', () => {
-      const result = createMockChargingStation({ connectorsCount: 2, evsesCount: 1 })
+      const result = createMockChargingStation({
+        connectorsCount: 2,
+        evseConfiguration: { evsesCount: 1 },
+      })
       station = result.station
 
       expect(station.getEvseIdByConnectorId(999)).toBeUndefined()
     })
 
     await it('should return EVSE status via getEvseStatus() for valid EVSE IDs', () => {
-      const result = createMockChargingStation({ connectorsCount: 2, evsesCount: 1 })
+      const result = createMockChargingStation({
+        connectorsCount: 2,
+        evseConfiguration: { evsesCount: 1 },
+      })
       station = result.station
 
       const evseStatus = station.getEvseStatus(1)
@@ -226,14 +250,20 @@ await describe('ChargingStation Connector and EVSE State', async () => {
     })
 
     await it('should return undefined for getEvseStatus() with invalid EVSE IDs', () => {
-      const result = createMockChargingStation({ connectorsCount: 2, evsesCount: 1 })
+      const result = createMockChargingStation({
+        connectorsCount: 2,
+        evseConfiguration: { evsesCount: 1 },
+      })
       station = result.station
 
       expect(station.getEvseStatus(999)).toBeUndefined()
     })
 
     await it('should return true for hasConnector() with connectors in EVSE mode', () => {
-      const result = createMockChargingStation({ connectorsCount: 2, evsesCount: 1 })
+      const result = createMockChargingStation({
+        connectorsCount: 2,
+        evseConfiguration: { evsesCount: 1 },
+      })
       station = result.station
 
       expect(station.hasConnector(1)).toBe(true)
@@ -241,14 +271,20 @@ await describe('ChargingStation Connector and EVSE State', async () => {
     })
 
     await it('should return false for hasConnector() with non-existing connector in EVSE mode', () => {
-      const result = createMockChargingStation({ connectorsCount: 2, evsesCount: 1 })
+      const result = createMockChargingStation({
+        connectorsCount: 2,
+        evseConfiguration: { evsesCount: 1 },
+      })
       station = result.station
 
       expect(station.hasConnector(999)).toBe(false)
     })
 
     await it('should correctly count connectors in EVSE mode via getNumberOfConnectors()', () => {
-      const result = createMockChargingStation({ connectorsCount: 4, evsesCount: 2 })
+      const result = createMockChargingStation({
+        connectorsCount: 4,
+        evseConfiguration: { evsesCount: 2 },
+      })
       station = result.station
 
       // Should return total connectors across all EVSEs

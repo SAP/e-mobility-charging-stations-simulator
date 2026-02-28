@@ -52,7 +52,10 @@ await describe('ChargingStation Integration Tests', async () => {
     })
 
     await it('should create mock charging station with EVSE mode', () => {
-      const result = createMockChargingStation({ connectorsCount: 4, evsesCount: 2 })
+      const result = createMockChargingStation({
+        connectorsCount: 4,
+        evseConfiguration: { evsesCount: 2 },
+      })
       const station = result.station
 
       expect(station.hasEvses).toBe(true)
@@ -175,7 +178,10 @@ await describe('ChargingStation Integration Tests', async () => {
 
     await it('should support EVSE mode with reservations', async () => {
       // Create station with EVSEs
-      const result = createMockChargingStation({ connectorsCount: 2, evsesCount: 1 })
+      const result = createMockChargingStation({
+        connectorsCount: 2,
+        evseConfiguration: { evsesCount: 1 },
+      })
       station = result.station
 
       // Verify EVSE structure

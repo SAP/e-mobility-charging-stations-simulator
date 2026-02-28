@@ -68,7 +68,10 @@ await describe('ChargingStation Transaction Management', async () => {
 
     await it('should return undefined for getEvseIdByTransactionId in non-EVSE mode', () => {
       // Arrange
-      const result = createMockChargingStation({ connectorsCount: 2, evsesCount: 0 })
+      const result = createMockChargingStation({
+        connectorsCount: 2,
+        evseConfiguration: { evsesCount: 0 },
+      })
       station = result.station
       const connector1 = station.getConnectorStatus(1)
       if (connector1 != null) {
@@ -85,7 +88,10 @@ await describe('ChargingStation Transaction Management', async () => {
 
     await it('should return EVSE id for getEvseIdByTransactionId in EVSE mode with active transaction', () => {
       // Arrange
-      const result = createMockChargingStation({ connectorsCount: 2, evsesCount: 2 })
+      const result = createMockChargingStation({
+        connectorsCount: 2,
+        evseConfiguration: { evsesCount: 2 },
+      })
       station = result.station
       // Get connector in EVSE 1
       const connector1 = station.getConnectorStatus(1)
@@ -335,7 +341,10 @@ await describe('ChargingStation Transaction Management', async () => {
 
     await it('should handle transactions across multiple EVSEs', () => {
       // Arrange - 4 connectors across 2 EVSEs
-      const result = createMockChargingStation({ connectorsCount: 4, evsesCount: 2 })
+      const result = createMockChargingStation({
+        connectorsCount: 4,
+        evseConfiguration: { evsesCount: 2 },
+      })
       station = result.station
 
       // Set up transaction on connector 1 (EVSE 1) and connector 3 (EVSE 2)
@@ -399,7 +408,10 @@ await describe('ChargingStation Transaction Management', async () => {
 
     await it('should return idTag in EVSE mode for getTransactionIdTag', () => {
       // Arrange
-      const result = createMockChargingStation({ connectorsCount: 2, evsesCount: 2 })
+      const result = createMockChargingStation({
+        connectorsCount: 2,
+        evseConfiguration: { evsesCount: 2 },
+      })
       station = result.station
 
       const connector2 = station.getConnectorStatus(2)
