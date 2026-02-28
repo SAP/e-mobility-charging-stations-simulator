@@ -18,8 +18,8 @@ import {
 } from '../../../../src/types/index.js'
 import { OCPP20IdTokenEnumType } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { createChargingStation } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
+import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 
 // ============================================================================
 // Testable Interfaces
@@ -78,7 +78,7 @@ export interface TestableOCPP20RequestService {
  * @returns ChargingStation configured for OCPP 2.0 transaction testing
  */
 export function createMockOCPP20TransactionTestStation (): ChargingStation {
-  return createChargingStation({
+  const { station } = createMockChargingStation({
     baseName: TEST_CHARGING_STATION_BASE_NAME,
     connectorsCount: 3,
     evseConfiguration: { evsesCount: 3 },
@@ -92,6 +92,7 @@ export function createMockOCPP20TransactionTestStation (): ChargingStation {
     },
     websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
   })
+  return station
 }
 
 /**
@@ -117,7 +118,7 @@ export function createMockStationWithRequestTracking (): MockStationWithTracking
     }
   )
 
-  const station = createChargingStation({
+  const { station } = createMockChargingStation({
     baseName: TEST_CHARGING_STATION_BASE_NAME,
     connectorsCount: 3,
     evseConfiguration: { evsesCount: 3 },
@@ -643,8 +644,11 @@ export const TransactionFlowPatterns: TransactionFlowPattern[] = [
  * @returns ChargingStation with certificateManager property properly typed
  * @example
  * ```typescript
- * const station = createStationWithCertificateManager(
- *   createChargingStation({ ocppVersion: OCPPVersion.VERSION_201 }),
+ * const { station } = createMockChargingStation({
+ *   stationInfo: { ocppVersion: OCPPVersion.VERSION_201 }
+ * })
+ * const stationWithCerts = createStationWithCertificateManager(
+ *   station,
  *   createMockCertificateManager()
  * )
  * ```
