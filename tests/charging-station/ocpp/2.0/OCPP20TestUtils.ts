@@ -1,6 +1,7 @@
 import { mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
+import type { ChargingStationWithCertificateManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20CertificateManager.js'
 import type { OCPP20RequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20RequestService.js'
 import type { ConfigurationKey } from '../../../../src/types/ChargingStationOcppConfiguration.js'
 import type { EmptyObject } from '../../../../src/types/EmptyObject.js'
@@ -629,3 +630,30 @@ export const TransactionFlowPatterns: TransactionFlowPattern[] = [
     startContext: TransactionContextFixtures.remoteStart(),
   },
 ] as const
+
+// ============================================================================
+// ChargingStationWithCertificateManager Factory
+// ============================================================================
+
+/**
+ * Create a mock ChargingStation with certificate manager for testing.
+ * This encapsulates the type casting pattern for ChargingStationWithCertificateManager.
+ * @param baseStation - Optional base station to extend (creates new if not provided)
+ * @param certificateManager - Certificate manager to attach
+ * @returns ChargingStation with certificateManager property properly typed
+ * @example
+ * ```typescript
+ * const station = createStationWithCertificateManager(
+ *   createChargingStation({ ocppVersion: OCPPVersion.VERSION_201 }),
+ *   createMockCertificateManager()
+ * )
+ * ```
+ */
+export function createStationWithCertificateManager (
+  baseStation: ChargingStation,
+  certificateManager: ChargingStationWithCertificateManager['certificateManager']
+): ChargingStationWithCertificateManager {
+  const station = baseStation as ChargingStationWithCertificateManager
+  station.certificateManager = certificateManager
+  return station
+}

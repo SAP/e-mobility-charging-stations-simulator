@@ -3,7 +3,7 @@
  * @description Unit tests for in-memory authorization cache conformance (G03.FR.01)
  */
 import { expect } from '@std/expect'
-import { afterEach, beforeEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import { InMemoryAuthCache } from '../../../../../src/charging-station/ocpp/auth/cache/InMemoryAuthCache.js'
 import {
@@ -39,7 +39,7 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
   })
 
   afterEach(() => {
-    cache = undefined as unknown as InMemoryAuthCache
+    mock.reset()
   })
 
   await describe('G03.FR.01.001 - Cache Hit Behavior', async () => {

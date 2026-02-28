@@ -3,7 +3,7 @@
  * @description Unit tests for OCPP authentication integration with deterministic mocked responses
  */
 import { expect } from '@std/expect'
-import { afterEach, beforeEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
 
@@ -56,8 +56,7 @@ await describe('OCPP Authentication Integration Tests', async () => {
   })
 
   afterEach(() => {
-    mockChargingStation16 = undefined as unknown as ChargingStation
-    mockChargingStation20 = undefined as unknown as ChargingStation
+    mock.reset()
   })
 
   await describe('Service Initialization', async () => {

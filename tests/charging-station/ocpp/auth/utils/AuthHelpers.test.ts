@@ -210,7 +210,7 @@ await describe('AuthHelpers', async () => {
     })
 
     await it('should return generic message for unknown status', () => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any -- testing invalid status value
       expect(AuthHelpers.getStatusMessage('INVALID_STATUS' as any)).toBe('Authorization failed')
     })
   })

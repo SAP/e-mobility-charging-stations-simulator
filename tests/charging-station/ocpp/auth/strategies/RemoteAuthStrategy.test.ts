@@ -3,7 +3,7 @@
  * @description Unit tests for remote (CSMS) authorization strategy
  */
 import { expect } from '@std/expect'
-import { afterEach, beforeEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type {
   AuthCache,
@@ -44,9 +44,7 @@ await describe('RemoteAuthStrategy', async () => {
   })
 
   afterEach(() => {
-    mockAuthCache = undefined as unknown as typeof mockAuthCache
-    mockOCPP16Adapter = undefined as unknown as typeof mockOCPP16Adapter
-    mockOCPP20Adapter = undefined as unknown as typeof mockOCPP20Adapter
+    mock.reset()
   })
 
   await describe('constructor', async () => {

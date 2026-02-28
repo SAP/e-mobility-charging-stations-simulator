@@ -272,17 +272,28 @@ const station = await createChargingStation({
 
 The following utilities are available for reuse across test files:
 
-| Utility                       | Location                             | Purpose                                   |
-| ----------------------------- | ------------------------------------ | ----------------------------------------- |
-| `createMockChargingStation()` | `ChargingStationTestUtils.ts`        | Lightweight mock station stub             |
-| `createChargingStation()`     | `ChargingStationFactory.ts`          | Full test station with OCPP services      |
-| `createConnectorStatus()`     | `helpers/StationHelpers.ts`          | ConnectorStatus factory with defaults     |
-| `MockWebSocket`               | `mocks/MockWebSocket.ts`             | WebSocket simulation with message capture |
-| `MockIdTagsCache`             | `mocks/MockCaches.ts`                | In-memory IdTags cache mock               |
-| `MockSharedLRUCache`          | `mocks/MockCaches.ts`                | In-memory LRU cache mock                  |
-| `waitForCondition()`          | `helpers/StationHelpers.ts`          | Async condition waiting with timeout      |
-| `cleanupChargingStation()`    | `helpers/StationHelpers.ts`          | Proper station cleanup for afterEach      |
-| Auth factories                | `ocpp/auth/helpers/MockFactories.ts` | Auth-specific mock creation               |
+| Utility                                 | Location                             | Purpose                                      |
+| --------------------------------------- | ------------------------------------ | -------------------------------------------- |
+| `createMockChargingStation()`           | `ChargingStationTestUtils.ts`        | Lightweight mock station stub                |
+| `createChargingStation()`               | `ChargingStationFactory.ts`          | Full test station with OCPP services         |
+| `createConnectorStatus()`               | `helpers/StationHelpers.ts`          | ConnectorStatus factory with defaults        |
+| `createStationWithCertificateManager()` | `ocpp/2.0/OCPP20TestUtils.ts`        | Station with certificate manager (type-safe) |
+| `MockWebSocket`                         | `mocks/MockWebSocket.ts`             | WebSocket simulation with message capture    |
+| `MockIdTagsCache`                       | `mocks/MockCaches.ts`                | In-memory IdTags cache mock                  |
+| `MockSharedLRUCache`                    | `mocks/MockCaches.ts`                | In-memory LRU cache mock                     |
+| `waitForCondition()`                    | `helpers/StationHelpers.ts`          | Async condition waiting with timeout         |
+| `cleanupChargingStation()`              | `helpers/StationHelpers.ts`          | Proper station cleanup for afterEach         |
+| Auth factories                          | `ocpp/auth/helpers/MockFactories.ts` | Auth-specific mock creation                  |
+| -----------------------------           | ------------------------------------ | -----------------------------------------    |
+| `createMockChargingStation()`           | `ChargingStationTestUtils.ts`        | Lightweight mock station stub                |
+| `createChargingStation()`               | `ChargingStationFactory.ts`          | Full test station with OCPP services         |
+| `createConnectorStatus()`               | `helpers/StationHelpers.ts`          | ConnectorStatus factory with defaults        |
+| `MockWebSocket`                         | `mocks/MockWebSocket.ts`             | WebSocket simulation with message capture    |
+| `MockIdTagsCache`                       | `mocks/MockCaches.ts`                | In-memory IdTags cache mock                  |
+| `MockSharedLRUCache`                    | `mocks/MockCaches.ts`                | In-memory LRU cache mock                     |
+| `waitForCondition()`                    | `helpers/StationHelpers.ts`          | Async condition waiting with timeout         |
+| `cleanupChargingStation()`              | `helpers/StationHelpers.ts`          | Proper station cleanup for afterEach         |
+| Auth factories                          | `ocpp/auth/helpers/MockFactories.ts` | Auth-specific mock creation                  |
 
 **DO NOT duplicate these utilities.** Import and reuse them.
 

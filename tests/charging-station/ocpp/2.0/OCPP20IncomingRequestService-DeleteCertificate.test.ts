@@ -21,6 +21,7 @@ import {
 import { Constants } from '../../../../src/utils/index.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
+import { createStationWithCertificateManager } from './OCPP20TestUtils.js'
 
 const VALID_CERTIFICATE_HASH_DATA = {
   hashAlgorithm: HashAlgorithmEnumType.SHA256,
@@ -76,9 +77,10 @@ await describe('I04 - DeleteCertificate', async () => {
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
 
-    // Cast to allow setting certificateManager property
-    stationWithCertManager = mockChargingStation as unknown as ChargingStationWithCertificateManager
-    stationWithCertManager.certificateManager = createMockCertificateManager()
+    stationWithCertManager = createStationWithCertificateManager(
+      mockChargingStation,
+      createMockCertificateManager()
+    )
 
     incomingRequestService = new OCPP20IncomingRequestService()
     testableService = createTestableIncomingRequestService(incomingRequestService)

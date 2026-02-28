@@ -85,7 +85,7 @@ await describe('AuthValidators', async () => {
     })
 
     await it('should return false for non-string input', () => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any -- testing invalid type input
       expect(AuthValidators.isValidIdentifierValue(123 as any)).toBe(false)
     })
   })
@@ -106,7 +106,7 @@ await describe('AuthValidators', async () => {
     })
 
     await it('should return empty string for non-string input', () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- testing invalid type input
       expect(AuthValidators.sanitizeIdTag(123 as any)).toBe('')
     })
 
@@ -133,7 +133,7 @@ await describe('AuthValidators', async () => {
     })
 
     await it('should return empty string for non-string input', () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- testing invalid type input
       expect(AuthValidators.sanitizeIdToken(123 as any)).toBe('')
     })
 
@@ -160,12 +160,12 @@ await describe('AuthValidators', async () => {
     })
 
     await it('should return false for null configuration', () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- testing null input
       expect(AuthValidators.validateAuthConfiguration(null as any)).toBe(false)
     })
 
     await it('should return false for undefined configuration', () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- testing undefined input
       expect(AuthValidators.validateAuthConfiguration(undefined as any)).toBe(false)
     })
 
@@ -240,7 +240,7 @@ await describe('AuthValidators', async () => {
         localAuthListEnabled: true,
         localPreAuthorize: true,
         offlineAuthorizationEnabled: false,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- testing invalid enum value
         strategyPriorityOrder: ['InvalidMethod' as any],
       }
 
@@ -269,12 +269,12 @@ await describe('AuthValidators', async () => {
 
   await describe('validateIdentifier', async () => {
     await it('should return false for undefined identifier', () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- testing undefined input
       expect(AuthValidators.validateIdentifier(undefined as any)).toBe(false)
     })
 
     await it('should return false for null identifier', () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- testing null input
       expect(AuthValidators.validateIdentifier(null as any)).toBe(false)
     })
 

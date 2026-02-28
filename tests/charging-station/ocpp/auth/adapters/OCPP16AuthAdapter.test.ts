@@ -3,7 +3,7 @@
  * @description Unit tests for OCPP 1.6 authentication adapter
  */
 import { expect } from '@std/expect'
-import { afterEach, beforeEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../../src/charging-station/ChargingStation.js'
 import type { OCPP16AuthorizeResponse } from '../../../../../src/types/ocpp/1.6/Responses.js'
@@ -57,8 +57,7 @@ await describe('OCPP16AuthAdapter', async () => {
   })
 
   afterEach(() => {
-    adapter = undefined as unknown as OCPP16AuthAdapter
-    mockChargingStation = undefined as unknown as ChargingStation
+    mock.reset()
   })
 
   await describe('constructor', async () => {

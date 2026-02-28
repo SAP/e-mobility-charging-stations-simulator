@@ -3,7 +3,7 @@
  * @description Unit tests for local authorization strategy (cache and local list)
  */
 import { expect } from '@std/expect'
-import { afterEach, beforeEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type {
   AuthCache,
@@ -38,8 +38,7 @@ await describe('LocalAuthStrategy', async () => {
   })
 
   afterEach(() => {
-    mockAuthCache = undefined as unknown as typeof mockAuthCache
-    mockLocalAuthListManager = undefined as unknown as typeof mockLocalAuthListManager
+    mock.reset()
   })
 
   await describe('constructor', async () => {
