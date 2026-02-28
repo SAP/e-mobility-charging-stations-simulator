@@ -9,10 +9,8 @@ import type { ChargingStation } from '../../src/charging-station/ChargingStation
 
 import { AvailabilityType, RegistrationStatusEnumType } from '../../src/types/index.js'
 import { standardCleanup, withMockTimers } from '../helpers/TestLifecycleHelpers.js'
+import { TEST_HEARTBEAT_INTERVAL_MS, TEST_ONE_HOUR_MS } from './ChargingStationTestConstants.js'
 import { cleanupChargingStation, createMockChargingStation } from './ChargingStationTestUtils.js'
-
-// Alias for tests that reference createRealChargingStation
-const createRealChargingStation = createMockChargingStation
 
 await describe('ChargingStation Configuration Management', async () => {
   // ===== B02/B03 BOOT NOTIFICATION BEHAVIOR TESTS =====
@@ -214,7 +212,7 @@ await describe('ChargingStation Configuration Management', async () => {
       expect(pendingStation.station.inPendingState()).toBe(true)
       expect(rejectedStation.station.inRejectedState()).toBe(true)
       expect(pendingStation.station.getHeartbeatInterval()).toBe(60000)
-      expect(rejectedStation.station.getHeartbeatInterval()).toBe(3600000)
+      expect(rejectedStation.station.getHeartbeatInterval()).toBe(TEST_ONE_HOUR_MS)
 
       // Cleanup
       cleanupChargingStation(pendingStation.station)
@@ -259,7 +257,7 @@ await describe('ChargingStation Configuration Management', async () => {
 
     await it('should return heartbeat interval in milliseconds', () => {
       // Arrange - create station with 60 second heartbeat
-      const result = createRealChargingStation({ heartbeatInterval: 60 })
+      const result = createMockChargingStation({ heartbeatInterval: 60 })
       station = result.station
 
       // Act & Assert - should convert seconds to milliseconds
@@ -268,7 +266,7 @@ await describe('ChargingStation Configuration Management', async () => {
 
     await it('should return default heartbeat interval when not explicitly configured', () => {
       // Arrange - use default heartbeat interval (TEST_HEARTBEAT_INTERVAL_SECONDS = 60)
-      const result = createRealChargingStation()
+      const result = createMockChargingStation()
       station = result.station
 
       // Act & Assert - default 60s * 1000 = 60000ms
@@ -277,16 +275,16 @@ await describe('ChargingStation Configuration Management', async () => {
 
     await it('should return connection timeout in milliseconds', () => {
       // Arrange
-      const result = createRealChargingStation()
+      const result = createMockChargingStation()
       station = result.station
 
       // Act & Assert - default connection timeout is 30 seconds
-      expect(station.getConnectionTimeout()).toBe(30000)
+      expect(station.getConnectionTimeout()).toBe(TEST_HEARTBEAT_INTERVAL_MS)
     })
 
     await it('should return authorize remote TX requests as boolean', () => {
       // Arrange - create station which defaults to false for AuthorizeRemoteTxRequests
-      const result = createRealChargingStation()
+      const result = createMockChargingStation()
       station = result.station
 
       // Act & Assert - getAuthorizeRemoteTxRequests returns boolean
@@ -296,7 +294,7 @@ await describe('ChargingStation Configuration Management', async () => {
 
     await it('should return local auth list enabled as boolean', () => {
       // Arrange
-      const result = createRealChargingStation()
+      const result = createMockChargingStation()
       station = result.station
 
       // Act & Assert - getLocalAuthListEnabled returns boolean
@@ -308,7 +306,7 @@ await describe('ChargingStation Configuration Management', async () => {
 
     await it('should call saveOcppConfiguration without throwing', () => {
       // Arrange
-      const result = createRealChargingStation()
+      const result = createMockChargingStation()
       station = result.station
 
       // Act & Assert - should not throw
@@ -317,7 +315,7 @@ await describe('ChargingStation Configuration Management', async () => {
 
     await it('should have ocppConfiguration object with configurationKey array', () => {
       // Arrange
-      const result = createRealChargingStation()
+      const result = createMockChargingStation()
       station = result.station
 
       // Act & Assert - configuration structure should be present
@@ -330,13 +328,13 @@ await describe('ChargingStation Configuration Management', async () => {
 
     await it('should allow updating heartbeat interval', () => {
       // Arrange - create with 60 second interval
-      const result = createRealChargingStation({ heartbeatInterval: 60 })
+      const result = createMockChargingStation({ heartbeatInterval: 60 })
       station = result.station
       const initialInterval = station.getHeartbeatInterval()
       expect(initialInterval).toBe(60000)
 
       // Act - simulate configuration change by creating new station with different interval
-      const result2 = createRealChargingStation({ heartbeatInterval: 120 })
+      const result2 = createMockChargingStation({ heartbeatInterval: 120 })
       const station2 = result2.station
 
       // Assert - different configurations have different intervals
@@ -349,7 +347,7 @@ await describe('ChargingStation Configuration Management', async () => {
 
     await it('should support setSupervisionUrl method if available', () => {
       // Arrange
-      const result = createRealChargingStation()
+      const result = createMockChargingStation()
       station = result.station
 
       // Act & Assert - setSupervisionUrl should be a function if available
@@ -365,7 +363,7 @@ await describe('ChargingStation Configuration Management', async () => {
 
     await it('should have template file reference', () => {
       // Arrange
-      const result = createRealChargingStation({ templateFile: 'custom-template.json' })
+      const result = createMockChargingStation({ templateFile: 'custom-template.json' })
       station = result.station
 
       // Act & Assert - station info should have template reference
@@ -374,7 +372,7 @@ await describe('ChargingStation Configuration Management', async () => {
 
     await it('should have hashId for configuration persistence', () => {
       // Arrange
-      const result = createRealChargingStation()
+      const result = createMockChargingStation()
       station = result.station
 
       // Act & Assert - hashId is used for configuration file naming
@@ -384,7 +382,7 @@ await describe('ChargingStation Configuration Management', async () => {
 
     await it('should preserve station info properties for persistence', () => {
       // Arrange
-      const result = createRealChargingStation({
+      const result = createMockChargingStation({
         baseName: 'PERSIST-CS',
         index: 5,
       })
@@ -399,7 +397,7 @@ await describe('ChargingStation Configuration Management', async () => {
 
     await it('should track configuration file path via templateFile', () => {
       // Arrange
-      const result = createRealChargingStation()
+      const result = createMockChargingStation()
       station = result.station
 
       // Act & Assert - templateFile is used to track configuration source
@@ -409,7 +407,7 @@ await describe('ChargingStation Configuration Management', async () => {
 
     await it('should use mocked file system without real file writes', () => {
       // Arrange
-      const result = createRealChargingStation()
+      const result = createMockChargingStation()
       station = result.station
       const mocks = result.mocks
 

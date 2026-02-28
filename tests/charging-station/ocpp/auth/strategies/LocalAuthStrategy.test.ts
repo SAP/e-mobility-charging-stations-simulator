@@ -102,6 +102,19 @@ await describe('LocalAuthStrategy', async () => {
       await strategy.initialize(config)
     })
 
+    afterEach(() => {
+      // Reset mock properties to prevent state pollution between tests
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+      delete (mockLocalAuthListManager as any).getEntry
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+      delete (mockAuthCache as any).get
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+      delete (mockAuthCache as any).set
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+      delete (mockAuthCache as any).remove
+      mock.restoreAll()
+    })
+
     await it('should authenticate using local auth list', async () => {
       mockLocalAuthListManager.getEntry = async () =>
         await Promise.resolve({

@@ -5,7 +5,7 @@
 
 import { expect } from '@std/expect'
 import { rm } from 'node:fs/promises'
-import { afterEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import { OCPP20CertificateManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20CertificateManager.js'
 import {
@@ -66,9 +66,13 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
   })
 
   await describe('storeCertificate', async () => {
-    await it('should store a valid PEM certificate to the correct path', async () => {
-      const manager = new OCPP20CertificateManager()
+    let manager: OCPP20CertificateManager
 
+    beforeEach(() => {
+      manager = new OCPP20CertificateManager()
+    })
+
+    await it('should store a valid PEM certificate to the correct path', async () => {
       const result = await manager.storeCertificate(
         TEST_STATION_HASH_ID,
         TEST_CERT_TYPE,
@@ -83,8 +87,6 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
     })
 
     await it('should reject invalid PEM certificate without BEGIN/END markers', async () => {
-      const manager = new OCPP20CertificateManager()
-
       const result = await manager.storeCertificate(
         TEST_STATION_HASH_ID,
         TEST_CERT_TYPE,
@@ -97,8 +99,6 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
     })
 
     await it('should reject empty certificate data', async () => {
-      const manager = new OCPP20CertificateManager()
-
       const result = await manager.storeCertificate(
         TEST_STATION_HASH_ID,
         TEST_CERT_TYPE,
@@ -111,8 +111,6 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
     })
 
     await it('should create certificate directory structure if not exists', async () => {
-      const manager = new OCPP20CertificateManager()
-
       const result = await manager.storeCertificate(
         TEST_STATION_HASH_ID,
         InstallCertificateUseEnumType.V2GRootCertificate,
@@ -126,9 +124,12 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
   })
 
   await describe('deleteCertificate', async () => {
-    await it('should delete certificate by hash data', async () => {
-      const manager = new OCPP20CertificateManager()
+    let manager: OCPP20CertificateManager
 
+    beforeEach(() => {
+      manager = new OCPP20CertificateManager()
+    })
+    await it('should delete certificate by hash data', async () => {
       const hashData: CertificateHashDataType = {
         hashAlgorithm: HashAlgorithmEnumType.SHA256,
         issuerKeyHash: 'abc123def456',
@@ -144,8 +145,6 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
     })
 
     await it('should return NotFound for non-existent certificate', async () => {
-      const manager = new OCPP20CertificateManager()
-
       const hashData: CertificateHashDataType = {
         hashAlgorithm: HashAlgorithmEnumType.SHA256,
         issuerKeyHash: 'non-existent-hash',
@@ -160,8 +159,6 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
     })
 
     await it('should handle filesystem errors gracefully', async () => {
-      const manager = new OCPP20CertificateManager()
-
       const hashData: CertificateHashDataType = {
         hashAlgorithm: HashAlgorithmEnumType.SHA256,
         issuerKeyHash: 'valid-hash',
@@ -177,9 +174,12 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
   })
 
   await describe('getInstalledCertificates', async () => {
-    await it('should return list of installed certificates for station', async () => {
-      const manager = new OCPP20CertificateManager()
+    let manager: OCPP20CertificateManager
 
+    beforeEach(() => {
+      manager = new OCPP20CertificateManager()
+    })
+    await it('should return list of installed certificates for station', async () => {
       const result = await manager.getInstalledCertificates(TEST_STATION_HASH_ID)
 
       expect(result).toBeDefined()
@@ -187,8 +187,6 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
     })
 
     await it('should filter certificates by type when filter provided', async () => {
-      const manager = new OCPP20CertificateManager()
-
       const filterTypes = [InstallCertificateUseEnumType.CSMSRootCertificate]
       const result = await manager.getInstalledCertificates(TEST_STATION_HASH_ID, filterTypes)
 
@@ -197,8 +195,6 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
     })
 
     await it('should return empty list when no certificates installed', async () => {
-      const manager = new OCPP20CertificateManager()
-
       const result = await manager.getInstalledCertificates('empty-station-hash-id')
 
       expect(result).toBeDefined()
@@ -206,8 +202,6 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
     })
 
     await it('should support multiple certificate type filters', async () => {
-      const manager = new OCPP20CertificateManager()
-
       const filterTypes = [
         InstallCertificateUseEnumType.CSMSRootCertificate,
         InstallCertificateUseEnumType.V2GRootCertificate,
@@ -221,9 +215,12 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
   })
 
   await describe('computeCertificateHash', async () => {
-    await it('should compute hash data for valid PEM certificate', () => {
-      const manager = new OCPP20CertificateManager()
+    let manager: OCPP20CertificateManager
 
+    beforeEach(() => {
+      manager = new OCPP20CertificateManager()
+    })
+    await it('should compute hash data for valid PEM certificate', () => {
       const hashData = manager.computeCertificateHash(VALID_PEM_CERTIFICATE)
 
       expect(hashData).toBeDefined()
@@ -237,8 +234,6 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
     })
 
     await it('should return hex-encoded hash values', () => {
-      const manager = new OCPP20CertificateManager()
-
       const hashData = manager.computeCertificateHash(VALID_PEM_CERTIFICATE)
 
       const hexPattern = /^[a-fA-F0-9]+$/
@@ -247,24 +242,18 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
     })
 
     await it('should throw error for invalid PEM certificate', () => {
-      const manager = new OCPP20CertificateManager()
-
       expect(() => {
         manager.computeCertificateHash(INVALID_PEM_NO_MARKERS)
       }).toThrow()
     })
 
     await it('should throw error for empty certificate', () => {
-      const manager = new OCPP20CertificateManager()
-
       expect(() => {
         manager.computeCertificateHash(EMPTY_PEM_CERTIFICATE)
       }).toThrow()
     })
 
     await it('should support SHA384 hash algorithm', () => {
-      const manager = new OCPP20CertificateManager()
-
       const hashData = manager.computeCertificateHash(
         VALID_PEM_CERTIFICATE,
         HashAlgorithmEnumType.SHA384
@@ -275,8 +264,6 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
     })
 
     await it('should support SHA512 hash algorithm', () => {
-      const manager = new OCPP20CertificateManager()
-
       const hashData = manager.computeCertificateHash(
         VALID_PEM_CERTIFICATE,
         HashAlgorithmEnumType.SHA512
@@ -288,41 +275,36 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
   })
 
   await describe('validateCertificateFormat', async () => {
-    await it('should return true for valid PEM certificate', () => {
-      const manager = new OCPP20CertificateManager()
+    let manager: OCPP20CertificateManager
 
+    beforeEach(() => {
+      manager = new OCPP20CertificateManager()
+    })
+    await it('should return true for valid PEM certificate', () => {
       const isValid = manager.validateCertificateFormat(VALID_PEM_CERTIFICATE)
 
       expect(isValid).toBe(true)
     })
 
     await it('should return false for certificate without BEGIN marker', () => {
-      const manager = new OCPP20CertificateManager()
-
       const isValid = manager.validateCertificateFormat(INVALID_PEM_NO_MARKERS)
 
       expect(isValid).toBe(false)
     })
 
     await it('should return false for certificate with wrong markers', () => {
-      const manager = new OCPP20CertificateManager()
-
       const isValid = manager.validateCertificateFormat(INVALID_PEM_WRONG_MARKERS)
 
       expect(isValid).toBe(false)
     })
 
     await it('should return false for empty string', () => {
-      const manager = new OCPP20CertificateManager()
-
       const isValid = manager.validateCertificateFormat(EMPTY_PEM_CERTIFICATE)
 
       expect(isValid).toBe(false)
     })
 
     await it('should return false for null/undefined input', () => {
-      const manager = new OCPP20CertificateManager()
-
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- testing invalid null input
       expect(manager.validateCertificateFormat(null as any)).toBe(false)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- testing invalid undefined input
@@ -330,8 +312,6 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
     })
 
     await it('should return true for certificate with extra whitespace', () => {
-      const manager = new OCPP20CertificateManager()
-
       const pemWithWhitespace = `
         
         -----BEGIN CERTIFICATE-----
@@ -347,9 +327,12 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
   })
 
   await describe('getCertificatePath', async () => {
-    await it('should return correct file path for certificate', () => {
-      const manager = new OCPP20CertificateManager()
+    let manager: OCPP20CertificateManager
 
+    beforeEach(() => {
+      manager = new OCPP20CertificateManager()
+    })
+    await it('should return correct file path for certificate', () => {
       const path = manager.getCertificatePath(TEST_STATION_HASH_ID, TEST_CERT_TYPE, 'SERIAL-12345')
 
       expect(path).toBeDefined()
@@ -361,8 +344,6 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
     })
 
     await it('should handle special characters in serial number', () => {
-      const manager = new OCPP20CertificateManager()
-
       const path = manager.getCertificatePath(
         TEST_STATION_HASH_ID,
         TEST_CERT_TYPE,
@@ -376,8 +357,6 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
     })
 
     await it('should return different paths for different certificate types', () => {
-      const manager = new OCPP20CertificateManager()
-
       const csmsPath = manager.getCertificatePath(
         TEST_STATION_HASH_ID,
         InstallCertificateUseEnumType.CSMSRootCertificate,
@@ -396,8 +375,6 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
     })
 
     await it('should return path following project convention', () => {
-      const manager = new OCPP20CertificateManager()
-
       const path = manager.getCertificatePath(TEST_STATION_HASH_ID, TEST_CERT_TYPE, 'SERIAL-12345')
 
       expect(path).toMatch(/configurations/)
@@ -407,9 +384,12 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
   })
 
   await describe('Edge cases and error handling', async () => {
-    await it('should handle concurrent certificate operations', async () => {
-      const manager = new OCPP20CertificateManager()
+    let manager: OCPP20CertificateManager
 
+    beforeEach(() => {
+      manager = new OCPP20CertificateManager()
+    })
+    await it('should handle concurrent certificate operations', async () => {
       const results = await Promise.all([
         manager.storeCertificate(
           TEST_STATION_HASH_ID,
@@ -431,8 +411,6 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
     })
 
     await it('should handle very long certificate chains', async () => {
-      const manager = new OCPP20CertificateManager()
-
       const longChain = Array(5).fill(VALID_PEM_CERTIFICATE).join('\n')
 
       const result = await manager.storeCertificate(TEST_STATION_HASH_ID, TEST_CERT_TYPE, longChain)
@@ -441,8 +419,6 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
     })
 
     await it('should sanitize station hash ID for filesystem safety', () => {
-      const manager = new OCPP20CertificateManager()
-
       const maliciousHashId = '../../../etc/passwd'
 
       const path = manager.getCertificatePath(maliciousHashId, TEST_CERT_TYPE, 'SERIAL-001')

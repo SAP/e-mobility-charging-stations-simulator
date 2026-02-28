@@ -19,7 +19,7 @@ import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import { createMockAuthRequest, createMockIdentifier } from './helpers/MockFactories.js'
 
-await describe('OCPP Authentication Integration Tests', async () => {
+await describe('OCPP Authentication', async () => {
   let mockChargingStation16: ChargingStation
   let mockChargingStation20: ChargingStation
 
@@ -54,16 +54,21 @@ await describe('OCPP Authentication Integration Tests', async () => {
     mock.restoreAll()
   })
 
-  await describe('OCPP 1.6 Authentication Flow', async () => {
+  await describe('OCPP 1.6 Authentication', async () => {
+    let authService16: OCPPAuthServiceImpl
+
+    beforeEach(() => {
+      authService16 = new OCPPAuthServiceImpl(mockChargingStation16)
+    })
+
     await it('should authenticate with valid identifier', async () => {
-      const authService = new OCPPAuthServiceImpl(mockChargingStation16)
       const request = createMockAuthRequest({
         connectorId: 1,
         context: AuthContext.TRANSACTION_START,
         identifier: createMockIdentifier(OCPPVersion.VERSION_16, 'VALID_ID_123'),
       })
 
-      const result = await authService.authenticate(request)
+      const result = await authService16.authenticate(request)
 
       expect(result).toBeDefined()
       expect(result.timestamp).toBeInstanceOf(Date)
@@ -73,7 +78,6 @@ await describe('OCPP Authentication Integration Tests', async () => {
     })
 
     await it('should handle multiple auth contexts', async () => {
-      const authService = new OCPPAuthServiceImpl(mockChargingStation16)
       const contexts = [
         AuthContext.TRANSACTION_START,
         AuthContext.TRANSACTION_STOP,
@@ -88,35 +92,39 @@ await describe('OCPP Authentication Integration Tests', async () => {
           identifier: createMockIdentifier(OCPPVersion.VERSION_16, `CONTEXT_TEST_${context}`),
         })
 
-        const result = await authService.authenticate(request)
+        const result = await authService16.authenticate(request)
         expect(result).toBeDefined()
         expect(result.timestamp).toBeInstanceOf(Date)
       }
     })
 
     await it('should authorize request directly', async () => {
-      const authService = new OCPPAuthServiceImpl(mockChargingStation16)
       const request = createMockAuthRequest({
         connectorId: 1,
         identifier: createMockIdentifier(OCPPVersion.VERSION_16, 'AUTH_DIRECT_TEST'),
       })
 
-      const result = await authService.authorize(request)
+      const result = await authService16.authorize(request)
       expect(result).toBeDefined()
       expect(result.timestamp).toBeInstanceOf(Date)
     })
   })
 
-  await describe('OCPP 2.0 Authentication Flow', async () => {
+  await describe('OCPP 2.0 Authentication', async () => {
+    let authService20: OCPPAuthServiceImpl
+
+    beforeEach(() => {
+      authService20 = new OCPPAuthServiceImpl(mockChargingStation20)
+    })
+
     await it('should authenticate with valid identifier', async () => {
-      const authService = new OCPPAuthServiceImpl(mockChargingStation20)
       const request = createMockAuthRequest({
         connectorId: 2,
         context: AuthContext.TRANSACTION_START,
         identifier: createMockIdentifier(OCPPVersion.VERSION_20, 'VALID_ID_456'),
       })
 
-      const result = await authService.authenticate(request)
+      const result = await authService20.authenticate(request)
 
       expect(result).toBeDefined()
       expect(result.timestamp).toBeInstanceOf(Date)
@@ -125,7 +133,6 @@ await describe('OCPP Authentication Integration Tests', async () => {
     })
 
     await it('should handle all auth contexts', async () => {
-      const authService = new OCPPAuthServiceImpl(mockChargingStation20)
       const contexts = [
         AuthContext.TRANSACTION_START,
         AuthContext.TRANSACTION_STOP,
@@ -140,7 +147,7 @@ await describe('OCPP Authentication Integration Tests', async () => {
           identifier: createMockIdentifier(OCPPVersion.VERSION_20, `V20_CONTEXT_${context}`),
         })
 
-        const result = await authService.authenticate(request)
+        const result = await authService20.authenticate(request)
         expect(result).toBeDefined()
         expect(result.timestamp).toBeInstanceOf(Date)
       }
@@ -148,8 +155,13 @@ await describe('OCPP Authentication Integration Tests', async () => {
   })
 
   await describe('Integration Error Scenarios', async () => {
+    let authServiceError: OCPPAuthServiceImpl
+
+    beforeEach(() => {
+      authServiceError = new OCPPAuthServiceImpl(mockChargingStation16)
+    })
+
     await it('should handle invalid identifier gracefully during auth flow', async () => {
-      const authService = new OCPPAuthServiceImpl(mockChargingStation16)
       const request = createMockAuthRequest({
         connectorId: 999, // Invalid connector
         context: AuthContext.TRANSACTION_START,
@@ -160,7 +172,7 @@ await describe('OCPP Authentication Integration Tests', async () => {
         },
       })
 
-      const result = await authService.authenticate(request)
+      const result = await authServiceError.authenticate(request)
 
       // Should return a result (not throw) with non-ACCEPTED status
       expect(result).toBeDefined()
@@ -169,8 +181,13 @@ await describe('OCPP Authentication Integration Tests', async () => {
   })
 
   await describe('Concurrent Operations', async () => {
+    let authServiceConcurrent: OCPPAuthServiceImpl
+
+    beforeEach(() => {
+      authServiceConcurrent = new OCPPAuthServiceImpl(mockChargingStation16)
+    })
+
     await it('should handle concurrent authentication requests with mixed contexts', async () => {
-      const authService = new OCPPAuthServiceImpl(mockChargingStation16)
       const requestCount = 10
       const promises = []
 
@@ -180,7 +197,7 @@ await describe('OCPP Authentication Integration Tests', async () => {
           context: i % 2 === 0 ? AuthContext.TRANSACTION_START : AuthContext.TRANSACTION_STOP,
           identifier: createMockIdentifier(OCPPVersion.VERSION_16, `CONCURRENT_${String(i)}`),
         })
-        promises.push(authService.authenticate(request))
+        promises.push(authServiceConcurrent.authenticate(request))
       }
 
       const results = await Promise.all(promises)

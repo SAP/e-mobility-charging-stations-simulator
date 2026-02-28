@@ -97,7 +97,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
       }
     })
 
-    await it('should NOT call idTagsCache.deleteIdTags() on ClearCache request', async () => {
+    await it('should not call idTagsCache.deleteIdTags() on ClearCache request', async () => {
       // Verify that IdTagsCache is not touched
       let deleteIdTagsCalled = false
       const originalDeleteIdTags = station.idTagsCache.deleteIdTags.bind(station.idTagsCache)

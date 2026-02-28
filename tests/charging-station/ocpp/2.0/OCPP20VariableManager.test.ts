@@ -98,8 +98,11 @@ await describe('B05 - OCPP20VariableManager', async () => {
   })
 
   await describe('getVariables method tests', async () => {
-    const manager = OCPP20VariableManager.getInstance()
+    let manager: OCPP20VariableManager
 
+    beforeEach(() => {
+      manager = OCPP20VariableManager.getInstance()
+    })
     await it('should handle valid OCPPCommCtrlr and TxCtrlr component requests', () => {
       const request: OCPP20GetVariableDataType[] = [
         {
@@ -349,9 +352,13 @@ await describe('B05 - OCPP20VariableManager', async () => {
   })
 
   await describe('Component validation tests', async () => {
-    const manager = OCPP20VariableManager.getInstance()
-    const testable = createTestableVariableManager(manager)
+    let manager: OCPP20VariableManager
+    let testable: ReturnType<typeof createTestableVariableManager>
 
+    beforeEach(() => {
+      manager = OCPP20VariableManager.getInstance()
+      testable = createTestableVariableManager(manager)
+    })
     await it('should validate OCPPCommCtrlr component as always valid', () => {
       // Behavior: Connector components are unsupported and isComponentValid returns false.
       // Scope: Per-connector variable validation not implemented; tests assert current behavior.
@@ -380,9 +387,13 @@ await describe('B05 - OCPP20VariableManager', async () => {
   })
 
   await describe('Variable support validation tests', async () => {
-    const manager = OCPP20VariableManager.getInstance()
-    const testable = createTestableVariableManager(manager)
+    let manager: OCPP20VariableManager
+    let testable: ReturnType<typeof createTestableVariableManager>
 
+    beforeEach(() => {
+      manager = OCPP20VariableManager.getInstance()
+      testable = createTestableVariableManager(manager)
+    })
     await it('should support standard HeartbeatInterval variable', () => {
       const component: ComponentType = { name: OCPP20ComponentName.OCPPCommCtrlr }
       const variable: VariableType = { name: OCPP20OptionalVariableName.HeartbeatInterval }
@@ -411,8 +422,11 @@ await describe('B05 - OCPP20VariableManager', async () => {
   })
 
   await describe('setVariables method tests', async () => {
-    const manager = OCPP20VariableManager.getInstance()
+    let manager: OCPP20VariableManager
 
+    beforeEach(() => {
+      manager = OCPP20VariableManager.getInstance()
+    })
     await it('should accept setting writable variables (Actual default)', () => {
       const request: OCPP20SetVariableDataType[] = [
         {

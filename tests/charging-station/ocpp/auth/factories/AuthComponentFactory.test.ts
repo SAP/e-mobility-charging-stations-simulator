@@ -11,6 +11,7 @@ import type { AuthConfiguration } from '../../../../../src/charging-station/ocpp
 import { AuthComponentFactory } from '../../../../../src/charging-station/ocpp/auth/factories/AuthComponentFactory.js'
 import { OCPPVersion } from '../../../../../src/types/ocpp/OCPPVersion.js'
 import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
+import { TEST_AUTHORIZATION_TIMEOUT_MS } from '../../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../../ChargingStationTestUtils.js'
 
 await describe('AuthComponentFactory', async () => {
@@ -74,7 +75,7 @@ await describe('AuthComponentFactory', async () => {
       const config: AuthConfiguration = {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: true,
-        authorizationTimeout: 30000,
+        authorizationTimeout: TEST_AUTHORIZATION_TIMEOUT_MS,
         certificateAuthEnabled: false,
         localAuthListEnabled: false,
         localPreAuthorize: false,
@@ -97,7 +98,7 @@ await describe('AuthComponentFactory', async () => {
       const config: AuthConfiguration = {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: false,
-        authorizationTimeout: 30000,
+        authorizationTimeout: TEST_AUTHORIZATION_TIMEOUT_MS,
         certificateAuthEnabled: false,
         localAuthListEnabled: true,
         localPreAuthorize: false,
@@ -115,7 +116,7 @@ await describe('AuthComponentFactory', async () => {
       const config: AuthConfiguration = {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: false,
-        authorizationTimeout: 30000,
+        authorizationTimeout: TEST_AUTHORIZATION_TIMEOUT_MS,
         certificateAuthEnabled: false,
         localAuthListEnabled: false,
         localPreAuthorize: false,
@@ -131,7 +132,7 @@ await describe('AuthComponentFactory', async () => {
       const config: AuthConfiguration = {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: false,
-        authorizationTimeout: 30000,
+        authorizationTimeout: TEST_AUTHORIZATION_TIMEOUT_MS,
         certificateAuthEnabled: false,
         localAuthListEnabled: true,
         localPreAuthorize: false,
@@ -156,7 +157,7 @@ await describe('AuthComponentFactory', async () => {
       const config: AuthConfiguration = {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: false,
-        authorizationTimeout: 30000,
+        authorizationTimeout: TEST_AUTHORIZATION_TIMEOUT_MS,
         certificateAuthEnabled: false,
         localAuthListEnabled: false,
         localPreAuthorize: false,
@@ -177,7 +178,7 @@ await describe('AuthComponentFactory', async () => {
       const config: AuthConfiguration = {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: false,
-        authorizationTimeout: 30000,
+        authorizationTimeout: TEST_AUTHORIZATION_TIMEOUT_MS,
         certificateAuthEnabled: false,
         localAuthListEnabled: false,
         localPreAuthorize: false,
@@ -203,7 +204,7 @@ await describe('AuthComponentFactory', async () => {
       const config: AuthConfiguration = {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: false,
-        authorizationTimeout: 30000,
+        authorizationTimeout: TEST_AUTHORIZATION_TIMEOUT_MS,
         certificateAuthEnabled: true,
         localAuthListEnabled: false,
         localPreAuthorize: false,
@@ -230,7 +231,7 @@ await describe('AuthComponentFactory', async () => {
       const config: AuthConfiguration = {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: false,
-        authorizationTimeout: 30000,
+        authorizationTimeout: TEST_AUTHORIZATION_TIMEOUT_MS,
         certificateAuthEnabled: false,
         localAuthListEnabled: false,
         localPreAuthorize: false,
@@ -257,7 +258,7 @@ await describe('AuthComponentFactory', async () => {
       const config: AuthConfiguration = {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: false,
-        authorizationTimeout: 30000,
+        authorizationTimeout: TEST_AUTHORIZATION_TIMEOUT_MS,
         certificateAuthEnabled: false,
         localAuthListEnabled: true,
         localPreAuthorize: false,
@@ -286,7 +287,7 @@ await describe('AuthComponentFactory', async () => {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: true,
         authorizationCacheLifetime: 600,
-        authorizationTimeout: 30000,
+        authorizationTimeout: TEST_AUTHORIZATION_TIMEOUT_MS,
         certificateAuthEnabled: false,
         localAuthListEnabled: true,
         localPreAuthorize: false,
@@ -304,7 +305,7 @@ await describe('AuthComponentFactory', async () => {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: true,
         authorizationCacheLifetime: -1, // Invalid
-        authorizationTimeout: 30000,
+        authorizationTimeout: TEST_AUTHORIZATION_TIMEOUT_MS,
         certificateAuthEnabled: false,
         localAuthListEnabled: false,
         localPreAuthorize: false,

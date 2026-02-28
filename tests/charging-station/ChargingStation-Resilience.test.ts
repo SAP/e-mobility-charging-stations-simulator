@@ -9,6 +9,7 @@ import type { ChargingStation } from '../../src/charging-station/ChargingStation
 
 import { RegistrationStatusEnumType } from '../../src/types/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+import { TEST_HEARTBEAT_INTERVAL_MS } from './ChargingStationTestConstants.js'
 import { cleanupChargingStation, createMockChargingStation } from './ChargingStationTestUtils.js'
 
 await describe('ChargingStation Error Recovery and Resilience', async () => {
@@ -251,7 +252,7 @@ await describe('ChargingStation Error Recovery and Resilience', async () => {
     // Set up a heartbeat timer (simulated)
     station.heartbeatSetInterval = setInterval(() => {
       /* empty */
-    }, 30000) as unknown as NodeJS.Timeout
+    }, TEST_HEARTBEAT_INTERVAL_MS) as unknown as NodeJS.Timeout
 
     // Act - Cleanup station
     cleanupChargingStation(station)

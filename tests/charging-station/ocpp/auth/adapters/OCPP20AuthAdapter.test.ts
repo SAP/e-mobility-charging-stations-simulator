@@ -407,6 +407,7 @@ await describe('OCPP20AuthAdapter', async () => {
     })
 
     afterEach(() => {
+      standardCleanup()
       mock.reset()
     })
 

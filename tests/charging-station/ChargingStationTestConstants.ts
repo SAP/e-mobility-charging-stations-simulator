@@ -20,6 +20,9 @@ export const TEST_CHARGING_STATION_HASH_ID = 'cs-test-hash-001'
  * Test values for timing-related configuration and expectations
  */
 export const TEST_HEARTBEAT_INTERVAL_SECONDS = 60
+export const TEST_HEARTBEAT_INTERVAL_MS = 30000
+export const TEST_AUTHORIZATION_TIMEOUT_MS = 30000
+export const TEST_ONE_HOUR_MS = 3600000
 
 /**
  * Charging Station Information

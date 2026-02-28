@@ -9,13 +9,11 @@ import type { ChargingStation } from '../../src/charging-station/ChargingStation
 
 import { RegistrationStatusEnumType } from '../../src/types/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+import { TEST_ONE_HOUR_MS } from './ChargingStationTestConstants.js'
 import { cleanupChargingStation, createMockChargingStation } from './ChargingStationTestUtils.js'
 
-// Alias for tests that reference createRealChargingStation
-const createRealChargingStation = createMockChargingStation
-
 await describe('ChargingStation Connector and EVSE State', async () => {
-  await describe('Connector Query Tests', async () => {
+  await describe('Connector Query', async () => {
     let station: ChargingStation | undefined
 
     beforeEach(() => {
@@ -98,7 +96,7 @@ await describe('ChargingStation Connector and EVSE State', async () => {
     })
   })
 
-  await describe('Connector 0 (Shared Power) Tests', async () => {
+  await describe('Connector 0 (Shared Power)', async () => {
     let station: ChargingStation | undefined
 
     beforeEach(() => {
@@ -129,7 +127,7 @@ await describe('ChargingStation Connector and EVSE State', async () => {
     })
   })
 
-  await describe('EVSE Query Tests (non-EVSE mode)', async () => {
+  await describe('EVSE Query (non-EVSE mode)', async () => {
     let station: ChargingStation | undefined
 
     beforeEach(() => {
@@ -165,7 +163,7 @@ await describe('ChargingStation Connector and EVSE State', async () => {
     })
   })
 
-  await describe('EVSE Mode Tests', async () => {
+  await describe('EVSE Mode', async () => {
     let station: ChargingStation | undefined
 
     beforeEach(() => {
@@ -307,7 +305,7 @@ await describe('ChargingStation Connector and EVSE State', async () => {
 
     await it('should return true for inAcceptedState when boot status is ACCEPTED', () => {
       // Arrange
-      const result = createRealChargingStation({
+      const result = createMockChargingStation({
         bootNotificationStatus: RegistrationStatusEnumType.ACCEPTED,
       })
       station = result.station
@@ -321,7 +319,7 @@ await describe('ChargingStation Connector and EVSE State', async () => {
 
     await it('should return true for inPendingState when boot status is PENDING', () => {
       // Arrange
-      const result = createRealChargingStation({
+      const result = createMockChargingStation({
         bootNotificationStatus: RegistrationStatusEnumType.PENDING,
       })
       station = result.station
@@ -335,7 +333,7 @@ await describe('ChargingStation Connector and EVSE State', async () => {
 
     await it('should return true for inRejectedState when boot status is REJECTED', () => {
       // Arrange
-      const result = createRealChargingStation({
+      const result = createMockChargingStation({
         bootNotificationStatus: RegistrationStatusEnumType.REJECTED,
       })
       station = result.station
@@ -349,7 +347,7 @@ await describe('ChargingStation Connector and EVSE State', async () => {
 
     await it('should return true for inUnknownState when boot notification response is null', () => {
       // Arrange - create station with default accepted status, then delete the response
-      const result = createRealChargingStation({ connectorsCount: 1 })
+      const result = createMockChargingStation({ connectorsCount: 1 })
       station = result.station
 
       // Act - simulate unknown state by clearing boot notification response
@@ -364,7 +362,7 @@ await describe('ChargingStation Connector and EVSE State', async () => {
 
     await it('should allow state transitions from PENDING to ACCEPTED', () => {
       // Arrange
-      const result = createRealChargingStation({
+      const result = createMockChargingStation({
         bootNotificationStatus: RegistrationStatusEnumType.PENDING,
       })
       station = result.station
@@ -381,7 +379,7 @@ await describe('ChargingStation Connector and EVSE State', async () => {
 
     await it('should allow state transitions from PENDING to REJECTED', () => {
       // Arrange
-      const result = createRealChargingStation({
+      const result = createMockChargingStation({
         bootNotificationStatus: RegistrationStatusEnumType.PENDING,
       })
       station = result.station
@@ -416,7 +414,7 @@ await describe('ChargingStation Connector and EVSE State', async () => {
       station = result.station
       const reservation = {
         connectorId: 1,
-        expiryDate: new Date(Date.now() + 3600000), // 1 hour from now
+        expiryDate: new Date(Date.now() + TEST_ONE_HOUR_MS), // 1 hour from now
         idTag: 'test-tag-1',
         reservationId: 101,
       }
@@ -437,13 +435,13 @@ await describe('ChargingStation Connector and EVSE State', async () => {
       station = result.station
       const firstReservation = {
         connectorId: 1,
-        expiryDate: new Date(Date.now() + 3600000),
+        expiryDate: new Date(Date.now() + TEST_ONE_HOUR_MS),
         idTag: 'tag-1',
         reservationId: 201,
       }
       const secondReservation = {
         connectorId: 2,
-        expiryDate: new Date(Date.now() + 3600000),
+        expiryDate: new Date(Date.now() + TEST_ONE_HOUR_MS),
         idTag: 'tag-2',
         reservationId: 201, // Same ID
       }
@@ -465,7 +463,7 @@ await describe('ChargingStation Connector and EVSE State', async () => {
       station = result.station
       const reservation = {
         connectorId: 1,
-        expiryDate: new Date(Date.now() + 3600000),
+        expiryDate: new Date(Date.now() + TEST_ONE_HOUR_MS),
         idTag: 'test-tag-expired',
         reservationId: 301,
       }
@@ -486,7 +484,7 @@ await describe('ChargingStation Connector and EVSE State', async () => {
       station = result.station
       const reservation = {
         connectorId: 1,
-        expiryDate: new Date(Date.now() + 3600000),
+        expiryDate: new Date(Date.now() + TEST_ONE_HOUR_MS),
         idTag: 'test-tag-replace',
         reservationId: 401,
       }
@@ -507,7 +505,7 @@ await describe('ChargingStation Connector and EVSE State', async () => {
       station = result.station
       const reservation = {
         connectorId: 2,
-        expiryDate: new Date(Date.now() + 3600000),
+        expiryDate: new Date(Date.now() + TEST_ONE_HOUR_MS),
         idTag: 'query-test-id',
         reservationId: 501,
       }
@@ -528,7 +526,7 @@ await describe('ChargingStation Connector and EVSE State', async () => {
       station = result.station
       const reservation = {
         connectorId: 1,
-        expiryDate: new Date(Date.now() + 3600000),
+        expiryDate: new Date(Date.now() + TEST_ONE_HOUR_MS),
         idTag: 'search-by-tag',
         reservationId: 601,
       }
@@ -549,7 +547,7 @@ await describe('ChargingStation Connector and EVSE State', async () => {
       station = result.station
       const reservation = {
         connectorId: 2,
-        expiryDate: new Date(Date.now() + 3600000),
+        expiryDate: new Date(Date.now() + TEST_ONE_HOUR_MS),
         idTag: 'connector-search',
         reservationId: 701,
       }
@@ -570,7 +568,7 @@ await describe('ChargingStation Connector and EVSE State', async () => {
       station = result.station
       const reservation = {
         connectorId: 1,
-        expiryDate: new Date(Date.now() + 3600000),
+        expiryDate: new Date(Date.now() + TEST_ONE_HOUR_MS),
         idTag: 'reservable-check',
         reservationId: 801,
       }
@@ -613,13 +611,13 @@ await describe('ChargingStation Connector and EVSE State', async () => {
       station = result.station
       const reservation1 = {
         connectorId: 1,
-        expiryDate: new Date(Date.now() + 3600000),
+        expiryDate: new Date(Date.now() + TEST_ONE_HOUR_MS),
         idTag: 'multi-test-1',
         reservationId: 1001,
       }
       const reservation2 = {
         connectorId: 2,
-        expiryDate: new Date(Date.now() + 3600000),
+        expiryDate: new Date(Date.now() + TEST_ONE_HOUR_MS),
         idTag: 'multi-test-2',
         reservationId: 1002,
       }

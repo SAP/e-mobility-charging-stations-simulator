@@ -230,6 +230,7 @@ await describe('M03 - GetCertificateStatus Request', async () => {
   })
 
   afterEach(() => {
+    standardCleanup()
     mock.restoreAll()
   })
 
@@ -348,6 +349,7 @@ await describe('Request Command Names', async () => {
   })
 
   afterEach(() => {
+    standardCleanup()
     mock.restoreAll()
   })
 

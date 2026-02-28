@@ -8,11 +8,11 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 
 import { standardCleanup, withMockTimers } from '../helpers/TestLifecycleHelpers.js'
-import { TEST_ID_TAG } from './ChargingStationTestConstants.js'
+import { TEST_HEARTBEAT_INTERVAL_MS, TEST_ID_TAG } from './ChargingStationTestConstants.js'
 import { cleanupChargingStation, createMockChargingStation } from './ChargingStationTestUtils.js'
 
 await describe('ChargingStation Transaction Management', async () => {
-  await describe('Transaction Query Tests', async () => {
+  await describe('Transaction Query', async () => {
     let station: ChargingStation | undefined
 
     beforeEach(() => {
@@ -175,7 +175,7 @@ await describe('ChargingStation Transaction Management', async () => {
     })
   })
 
-  await describe('Energy Meter Tests', async () => {
+  await describe('Energy Meter', async () => {
     let station: ChargingStation | undefined
 
     beforeEach(() => {
@@ -466,7 +466,10 @@ await describe('ChargingStation Transaction Management', async () => {
     await it('should create interval when startHeartbeat() is called with valid interval', async t => {
       await withMockTimers(t, ['setInterval'], () => {
         // Arrange
-        const result = createMockChargingStation({ connectorsCount: 1, heartbeatInterval: 30000 })
+        const result = createMockChargingStation({
+          connectorsCount: 1,
+          heartbeatInterval: TEST_HEARTBEAT_INTERVAL_MS,
+        })
         station = result.station
 
         // Act
@@ -481,7 +484,10 @@ await describe('ChargingStation Transaction Management', async () => {
     await it('should restart heartbeat interval when restartHeartbeat() is called', async t => {
       await withMockTimers(t, ['setInterval'], () => {
         // Arrange
-        const result = createMockChargingStation({ connectorsCount: 1, heartbeatInterval: 30000 })
+        const result = createMockChargingStation({
+          connectorsCount: 1,
+          heartbeatInterval: TEST_HEARTBEAT_INTERVAL_MS,
+        })
         station = result.station
         station.startHeartbeat()
         const firstInterval = station.heartbeatSetInterval
@@ -500,7 +506,10 @@ await describe('ChargingStation Transaction Management', async () => {
     await it('should not create heartbeat interval if already started', async t => {
       await withMockTimers(t, ['setInterval'], () => {
         // Arrange
-        const result = createMockChargingStation({ connectorsCount: 1, heartbeatInterval: 30000 })
+        const result = createMockChargingStation({
+          connectorsCount: 1,
+          heartbeatInterval: TEST_HEARTBEAT_INTERVAL_MS,
+        })
         station = result.station
         station.startHeartbeat()
         const firstInterval = station.heartbeatSetInterval

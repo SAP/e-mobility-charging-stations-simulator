@@ -1118,7 +1118,7 @@ await describe('E01-E04 - OCPP 2.0.1 TransactionEvent Implementation', async () 
   // ==========================================================================
   // E02 Cable-First Specific Tests
   // ==========================================================================
-  await describe('E02 - Cable-First Transaction Flow', async () => {
+  await describe('E02 - Cable-First Transaction', async () => {
     beforeEach(() => {
       resetConnectorTransactionState(mockChargingStation)
     })
@@ -1207,7 +1207,7 @@ await describe('E01-E04 - OCPP 2.0.1 TransactionEvent Implementation', async () 
       })
     })
 
-    await describe('EV Detection Flow', async () => {
+    await describe('EV Detection', async () => {
       await it('should include EVDetected between cable plug and charging start', () => {
         const connectorId = 1
         const transactionId = generateUUID()
@@ -1421,7 +1421,7 @@ await describe('E01-E04 - OCPP 2.0.1 TransactionEvent Implementation', async () 
   // ==========================================================================
   // E03 IdToken-First Specific Tests
   // ==========================================================================
-  await describe('E03 - IdToken-First Pre-Authorization Flow', async () => {
+  await describe('E03 - IdToken-First Pre-Authorization', async () => {
     beforeEach(() => {
       resetConnectorTransactionState(mockChargingStation)
     })
@@ -1748,7 +1748,7 @@ await describe('E01-E04 - OCPP 2.0.1 TransactionEvent Implementation', async () 
       })
     })
 
-    await describe('Authorization Status in E03 Flow', async () => {
+    await describe('Authorization Status in E03', async () => {
       await it('should support Deauthorized trigger for rejected authorization', () => {
         const context: OCPP20TransactionContext = {
           authorizationMethod: 'idToken',

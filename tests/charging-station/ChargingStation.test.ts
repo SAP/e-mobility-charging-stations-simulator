@@ -9,7 +9,7 @@
  * - ChargingStation-Configuration.test.ts: boot notification, config persistence, WebSocket, error handling
  */
 import { expect } from '@std/expect'
-import { afterEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 
@@ -17,6 +17,7 @@ import { RegistrationStatusEnumType } from '../../src/types/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import {
   TEST_ID_TAG,
+  TEST_ONE_HOUR_MS,
   TEST_TRANSACTION_ENERGY_WH,
   TEST_TRANSACTION_ID,
 } from './ChargingStationTestConstants.js'
@@ -29,8 +30,8 @@ import {
   WebSocketReadyState,
 } from './ChargingStationTestUtils.js'
 
-await describe('ChargingStation Integration Tests', async () => {
-  await describe('Test Utilities Verification', async () => {
+await describe('ChargingStation', async () => {
+  await describe('Test Utilities', async () => {
     afterEach(() => {
       standardCleanup()
     })
@@ -116,15 +117,19 @@ await describe('ChargingStation Integration Tests', async () => {
     })
   })
 
-  await describe('Cross-Domain Integration', async () => {
+  await describe('Cross-Domain', async () => {
+    let station: ChargingStation | undefined
+
+    beforeEach(() => {
+      station = undefined
+    })
+
     afterEach(() => {
       standardCleanup()
       if (station != null) {
         cleanupChargingStation(station)
       }
     })
-    let station: ChargingStation | undefined
-
     await it('should support full lifecycle with transactions', async () => {
       // Create station
       const result = createMockChargingStation({ connectorsCount: 2 })
@@ -198,7 +203,7 @@ await describe('ChargingStation Integration Tests', async () => {
       // Add reservation
       const reservation = {
         connectorId: 1,
-        expiryDate: new Date(Date.now() + 3600000),
+        expiryDate: new Date(Date.now() + TEST_ONE_HOUR_MS),
         idTag: 'RESERVATION-TAG',
         reservationId: 1,
       }
@@ -246,7 +251,7 @@ await describe('ChargingStation Integration Tests', async () => {
     })
   })
 
-  await describe('Mock Reset Verification', async () => {
+  await describe('Mock Reset', async () => {
     await it('should reset singleton mocks between tests', () => {
       // First test - create and use mocks
       const result1 = createMockChargingStation()
