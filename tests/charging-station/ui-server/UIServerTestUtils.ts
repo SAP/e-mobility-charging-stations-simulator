@@ -84,6 +84,11 @@ export function createMockUIWebSocket (protocol = 'ui0.0.1'): MockWebSocket {
   return ws
 }
 
+/**
+ * Create a mock UI server configuration with default values.
+ * @param overrides - Partial configuration to merge with defaults
+ * @returns Complete UIServerConfiguration for testing
+ */
 export const createMockUIServerConfiguration = (
   overrides?: Partial<UIServerConfiguration>
 ): UIServerConfiguration => {
@@ -99,6 +104,11 @@ export const createMockUIServerConfiguration = (
   }
 }
 
+/**
+ * Create a mock UI server configuration with basic authentication enabled.
+ * @param overrides - Partial configuration to merge with auth defaults
+ * @returns UIServerConfiguration with BASIC_AUTH enabled
+ */
 export const createMockUIServerConfigurationWithAuth = (
   overrides?: Partial<UIServerConfiguration>
 ): UIServerConfiguration => {
@@ -158,6 +168,11 @@ export class MockServerResponse extends EventEmitter {
   }
 }
 
+/**
+ * Create a mock HTTP IncomingMessage for testing.
+ * @param overrides - Partial message properties to merge with defaults
+ * @returns IncomingMessage configured for testing
+ */
 export const createMockIncomingMessage = (
   overrides?: Partial<IncomingMessage>
 ): IncomingMessage => {
@@ -169,6 +184,12 @@ export const createMockIncomingMessage = (
   } as IncomingMessage
 }
 
+/**
+ * Create mock charging station data for UI server tests.
+ * @param hashId - Unique identifier for the charging station
+ * @param overrides - Partial data properties to merge with defaults
+ * @returns ChargingStationData configured for testing
+ */
 export const createMockChargingStationData = (
   hashId: string,
   overrides?: Partial<ChargingStationData>
@@ -185,6 +206,13 @@ export const createMockChargingStationData = (
   } as ChargingStationData
 }
 
+/**
+ * Create a protocol request tuple for UI server testing.
+ * @param uuid - Request identifier
+ * @param procedureName - OCPP procedure name
+ * @param payload - Request payload (defaults to empty object)
+ * @returns Protocol request tuple [uuid, procedureName, payload]
+ */
 export const createProtocolRequest = (
   uuid: UUIDv4,
   procedureName: ProcedureName,
@@ -249,6 +277,11 @@ export const createMockUIService = (
   },
 })
 
+/**
+ * Wait for stream operations to flush.
+ * @param delayMs - Delay in milliseconds to wait
+ * @returns Promise that resolves after the delay
+ */
 export const waitForStreamFlush = async (delayMs: number): Promise<void> => {
   await new Promise(resolve => {
     setTimeout(resolve, delayMs)
