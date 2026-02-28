@@ -40,7 +40,7 @@ These instructions guide GitHub Copilot to generate changes consistent with this
 - **Naming coherence**: prefer semantically accurate names across code, documentation, directories, and outputs. Avoid synonyms that create ambiguity.
 - **English-only**: code, tests, logs, comments, and documentation must be in English.
 - **Small, verifiable changes**: prefer minimal diffs that keep public behavior stable unless explicitly requested.
-- **Tests-first mindset**: add or update minimal tests before refactoring or feature changes.
+- **Tests-first mindset**: add or update minimal tests before refactoring or feature changes. Follow test conventions in `tests/TEST_STYLE_GUIDE.md`.
 - **Documentation standards**: must follow established standards for programming languages.
 
 ## Options and configuration
