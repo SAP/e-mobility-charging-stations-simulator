@@ -31,25 +31,26 @@ import {
 } from './OCPP20TestUtils.js'
 
 await describe('F01 & F02 - Remote Start Transaction', async () => {
-  const mockChargingStation = createChargingStation({
-    baseName: TEST_CHARGING_STATION_BASE_NAME,
-    connectorsCount: 3,
-    evseConfiguration: { evsesCount: 3 },
-    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-    ocppRequestService: {
-      requestHandler: async () => Promise.resolve({}),
-    },
-    stationInfo: {
-      ocppStrictCompliance: false,
-      ocppVersion: OCPPVersion.VERSION_201,
-    },
-    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
-  })
-
-  const incomingRequestService = new OCPP20IncomingRequestService()
-  const testableService = createTestableIncomingRequestService(incomingRequestService)
-
+  let mockChargingStation: ReturnType<typeof createChargingStation>
+  let incomingRequestService: OCPP20IncomingRequestService
+  let testableService: ReturnType<typeof createTestableIncomingRequestService>
   beforeEach(() => {
+    mockChargingStation = createChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
+      connectorsCount: 3,
+      evseConfiguration: { evsesCount: 3 },
+      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+      ocppRequestService: {
+        requestHandler: async () => Promise.resolve({}),
+      },
+      stationInfo: {
+        ocppStrictCompliance: false,
+        ocppVersion: OCPPVersion.VERSION_201,
+      },
+      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+    })
+    incomingRequestService = new OCPP20IncomingRequestService()
+    testableService = createTestableIncomingRequestService(incomingRequestService)
     const stationId = mockChargingStation.stationInfo?.chargingStationId ?? 'unknown'
     OCPPAuthServiceFactory.setInstanceForTesting(stationId, createMockAuthService())
     resetConnectorTransactionState(mockChargingStation)

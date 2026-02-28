@@ -1,5 +1,5 @@
 import { expect } from '@std/expect'
-import { afterEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import {
   addConfigurationKey,
@@ -39,25 +39,31 @@ import {
 } from '../../ChargingStationTestConstants.js'
 
 await describe('B07 - Get Base Report', async () => {
-  const mockChargingStation = createChargingStation({
-    baseName: TEST_CHARGING_STATION_BASE_NAME,
-    connectorsCount: 3,
-    evseConfiguration: { evsesCount: 3 },
-    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-    stationInfo: {
-      chargePointModel: TEST_CHARGE_POINT_MODEL,
-      chargePointSerialNumber: TEST_CHARGE_POINT_SERIAL_NUMBER,
-      chargePointVendor: TEST_CHARGE_POINT_VENDOR,
-      firmwareVersion: TEST_FIRMWARE_VERSION,
-      ocppStrictCompliance: false,
-      ocppVersion: OCPPVersion.VERSION_201,
-    },
-    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+  let mockChargingStation: ReturnType<typeof createChargingStation>
+  let incomingRequestService: OCPP20IncomingRequestService
+  let testableService: ReturnType<typeof createTestableIncomingRequestService>
+
+  beforeEach(() => {
+    mockChargingStation = createChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
+      connectorsCount: 3,
+      evseConfiguration: { evsesCount: 3 },
+      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+      stationInfo: {
+        chargePointModel: TEST_CHARGE_POINT_MODEL,
+        chargePointSerialNumber: TEST_CHARGE_POINT_SERIAL_NUMBER,
+        chargePointVendor: TEST_CHARGE_POINT_VENDOR,
+        firmwareVersion: TEST_FIRMWARE_VERSION,
+        ocppStrictCompliance: false,
+        ocppVersion: OCPPVersion.VERSION_201,
+      },
+      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+    })
+
+    incomingRequestService = new OCPP20IncomingRequestService()
+
+    testableService = createTestableIncomingRequestService(incomingRequestService)
   })
-
-  const incomingRequestService = new OCPP20IncomingRequestService()
-
-  const testableService = createTestableIncomingRequestService(incomingRequestService)
 
   // Reset singleton state after each test to ensure test isolation
   afterEach(() => {

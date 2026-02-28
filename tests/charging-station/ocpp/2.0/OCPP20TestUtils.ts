@@ -348,8 +348,9 @@ function ensureConfig (chargingStation: ChargingStation): ConfigurationKey[] {
  */
 export const IdTokenFixtures = {
   /**
-   * Central (server-side) token
-   * @param idToken
+   * Central (server-side) token.
+   * @param idToken - The ID token string.
+   * @returns An OCPP20IdTokenType with Central type.
    */
   central: (idToken = 'CENTRAL_TOKEN_001'): OCPP20IdTokenType => ({
     idToken,
@@ -357,8 +358,9 @@ export const IdTokenFixtures = {
   }),
 
   /**
-   * eMAID contract identifier token
-   * @param idToken
+   * eMAID contract identifier token.
+   * @param idToken - The eMAID token string.
+   * @returns An OCPP20IdTokenType with eMAID type.
    */
   emaid: (idToken = 'DE*ABC*E123456*1'): OCPP20IdTokenType => ({
     idToken,
@@ -366,8 +368,9 @@ export const IdTokenFixtures = {
   }),
 
   /**
-   * ISO14443 RFID token (most common type)
-   * @param idToken
+   * ISO14443 RFID token (most common type).
+   * @param idToken - The RFID token string.
+   * @returns An OCPP20IdTokenType with ISO14443 type.
    */
   iso14443: (idToken = 'TEST_RFID_TOKEN_001'): OCPP20IdTokenType => ({
     idToken,
@@ -375,15 +378,19 @@ export const IdTokenFixtures = {
   }),
 
   /**
-   * ISO15693 RFID token
-   * @param idToken
+   * ISO15693 RFID token.
+   * @param idToken - The ISO15693 token string.
+   * @returns An OCPP20IdTokenType with ISO15693 type.
    */
   iso15693: (idToken = 'TEST_ISO15693_001'): OCPP20IdTokenType => ({
     idToken,
     type: OCPP20IdTokenEnumType.ISO15693,
   }),
 
-  /** NoAuthorization token (free charging) */
+  /**
+   * NoAuthorization token (free charging).
+   * @returns An OCPP20IdTokenType with NoAuthorization type.
+   */
   noAuth: (): OCPP20IdTokenType => ({
     idToken: '',
     type: OCPP20IdTokenEnumType.NoAuthorization,
@@ -398,21 +405,28 @@ export const TransactionContextFixtures = {
   // ===== Local Authorization Contexts =====
 
   /**
-   * Abnormal condition (with optional condition type)
-   * @param condition
+   * Abnormal condition (with optional condition type).
+   * @param condition - The abnormal condition type.
+   * @returns An OCPP20TransactionContext for abnormal conditions.
    */
   abnormalCondition: (condition = 'OverCurrent'): OCPP20TransactionContext => ({
     abnormalCondition: condition,
     source: 'abnormal_condition',
   }),
 
-  /** Cable plugged in (E02 cable-first start) */
+  /**
+   * Cable plugged in (E02 cable-first start).
+   * @returns An OCPP20TransactionContext for cable plugged in.
+   */
   cablePluggedIn: (): OCPP20TransactionContext => ({
     cableState: 'plugged_in',
     source: 'cable_action',
   }),
 
-  /** Deauthorization (token revoked or invalid) */
+  /**
+   * Deauthorization (token revoked or invalid).
+   * @returns An OCPP20TransactionContext for deauthorization.
+   */
   deauthorized: (): OCPP20TransactionContext => ({
     authorizationMethod: 'idToken',
     isDeauthorized: true,
@@ -421,18 +435,27 @@ export const TransactionContextFixtures = {
 
   // ===== Cable Action Contexts (E02 flow) =====
 
-  /** Energy limit reached */
+  /**
+   * Energy limit reached.
+   * @returns An OCPP20TransactionContext for energy limit reached.
+   */
   energyLimitReached: (): OCPP20TransactionContext => ({
     source: 'energy_limit',
   }),
 
-  /** EV communication lost */
+  /**
+   * EV communication lost.
+   * @returns An OCPP20TransactionContext for EV communication lost.
+   */
   evCommunicationLost: (): OCPP20TransactionContext => ({
     source: 'system_event',
     systemEvent: 'ev_communication_lost',
   }),
 
-  /** EV connect timeout */
+  /**
+   * EV connect timeout.
+   * @returns An OCPP20TransactionContext for EV connect timeout.
+   */
   evConnectTimeout: (): OCPP20TransactionContext => ({
     source: 'system_event',
     systemEvent: 'ev_connect_timeout',
@@ -440,21 +463,28 @@ export const TransactionContextFixtures = {
 
   // ===== Remote Command Contexts =====
 
-  /** Cable unplugged / EV departed */
+  /**
+   * Cable unplugged / EV departed.
+   * @returns An OCPP20TransactionContext for EV departure.
+   */
   evDeparted: (): OCPP20TransactionContext => ({
     cableState: 'unplugged',
     source: 'cable_action',
   }),
 
-  /** EV detected after cable connection */
+  /**
+   * EV detected after cable connection.
+   * @returns An OCPP20TransactionContext for EV detection.
+   */
   evDetected: (): OCPP20TransactionContext => ({
     cableState: 'detected',
     source: 'cable_action',
   }),
 
   /**
-   * IdToken-first authorization (E03 flow start)
-   * @param authorizationMethod
+   * IdToken-first authorization (E03 flow start).
+   * @param authorizationMethod - The authorization method used.
+   * @returns An OCPP20TransactionContext for IdToken authorization.
    */
   idTokenAuthorized: (
     authorizationMethod: 'groupIdToken' | 'idToken' = 'idToken'
@@ -463,13 +493,19 @@ export const TransactionContextFixtures = {
     source: 'local_authorization',
   }),
 
-  /** Clock-aligned meter value */
+  /**
+   * Clock-aligned meter value.
+   * @returns An OCPP20TransactionContext for clock-aligned meter values.
+   */
   meterValueClock: (): OCPP20TransactionContext => ({
     isPeriodicMeterValue: false,
     source: 'meter_value',
   }),
 
-  /** Periodic meter value (sampled interval) */
+  /**
+   * Periodic meter value (sampled interval).
+   * @returns An OCPP20TransactionContext for periodic meter values.
+   */
   meterValuePeriodic: (): OCPP20TransactionContext => ({
     isPeriodicMeterValue: true,
     source: 'meter_value',
@@ -477,19 +513,28 @@ export const TransactionContextFixtures = {
 
   // ===== Meter Value Contexts =====
 
-  /** Remote start transaction request */
+  /**
+   * Remote start transaction request.
+   * @returns An OCPP20TransactionContext for remote start.
+   */
   remoteStart: (): OCPP20TransactionContext => ({
     command: 'RequestStartTransaction',
     source: 'remote_command',
   }),
 
-  /** Remote stop transaction request */
+  /**
+   * Remote stop transaction request.
+   * @returns An OCPP20TransactionContext for remote stop.
+   */
   remoteStop: (): OCPP20TransactionContext => ({
     command: 'RequestStopTransaction',
     source: 'remote_command',
   }),
 
-  /** Reset command */
+  /**
+   * Reset command.
+   * @returns An OCPP20TransactionContext for reset.
+   */
   reset: (): OCPP20TransactionContext => ({
     command: 'Reset',
     source: 'remote_command',
@@ -497,13 +542,19 @@ export const TransactionContextFixtures = {
 
   // ===== System Event Contexts =====
 
-  /** Signed data received */
+  /**
+   * Signed data received.
+   * @returns An OCPP20TransactionContext for signed data.
+   */
   signedData: (): OCPP20TransactionContext => ({
     isSignedDataReceived: true,
     source: 'meter_value',
   }),
 
-  /** Stop authorized by local token presentation */
+  /**
+   * Stop authorized by local token presentation.
+   * @returns An OCPP20TransactionContext for stop authorization.
+   */
   stopAuthorized: (): OCPP20TransactionContext => ({
     authorizationMethod: 'stopAuthorized',
     source: 'local_authorization',
@@ -511,12 +562,18 @@ export const TransactionContextFixtures = {
 
   // ===== Limit Contexts =====
 
-  /** Time limit reached */
+  /**
+   * Time limit reached.
+   * @returns An OCPP20TransactionContext for time limit.
+   */
   timeLimitReached: (): OCPP20TransactionContext => ({
     source: 'time_limit',
   }),
 
-  /** Trigger message command */
+  /**
+   * Trigger message command.
+   * @returns An OCPP20TransactionContext for trigger message.
+   */
   triggerMessage: (): OCPP20TransactionContext => ({
     command: 'TriggerMessage',
     source: 'remote_command',
@@ -524,7 +581,10 @@ export const TransactionContextFixtures = {
 
   // ===== Abnormal Condition Contexts =====
 
-  /** Unlock connector command */
+  /**
+   * Unlock connector command.
+   * @returns An OCPP20TransactionContext for unlock connector.
+   */
   unlockConnector: (): OCPP20TransactionContext => ({
     command: 'UnlockConnector',
     source: 'remote_command',

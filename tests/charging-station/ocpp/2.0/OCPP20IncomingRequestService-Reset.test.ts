@@ -28,38 +28,46 @@ import { createChargingStation } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 
 await describe('B11 & B12 - Reset', async () => {
+  let mockChargingStation: ReturnType<typeof createChargingStation>
+  let mockStation: ReturnType<typeof createChargingStation> & {
+    getNumberOfRunningTransactions: () => number
+    reset: () => Promise<void>
+  }
+  let incomingRequestService: OCPP20IncomingRequestService
+  let testableService: ReturnType<typeof createTestableIncomingRequestService>
+
   beforeEach(() => {
     mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'setImmediate'] })
+
+    mockChargingStation = createChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
+      connectorsCount: 3,
+      evseConfiguration: { evsesCount: 3 },
+      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+      stationInfo: {
+        ocppStrictCompliance: false,
+        ocppVersion: OCPPVersion.VERSION_201,
+        resetTime: 5000,
+      },
+      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+    })
+
+    // Add missing method to mock using interface extension pattern
+    interface MockChargingStation extends ChargingStation {
+      getNumberOfRunningTransactions: () => number
+      reset: () => Promise<void>
+    }
+    mockStation = mockChargingStation as MockChargingStation
+    mockStation.getNumberOfRunningTransactions = () => 0
+    mockStation.reset = () => Promise.resolve()
+
+    incomingRequestService = new OCPP20IncomingRequestService()
+    testableService = createTestableIncomingRequestService(incomingRequestService)
   })
 
   afterEach(() => {
     mock.timers.reset()
   })
-
-  const mockChargingStation = createChargingStation({
-    baseName: TEST_CHARGING_STATION_BASE_NAME,
-    connectorsCount: 3,
-    evseConfiguration: { evsesCount: 3 },
-    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-    stationInfo: {
-      ocppStrictCompliance: false,
-      ocppVersion: OCPPVersion.VERSION_201,
-      resetTime: 5000,
-    },
-    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
-  })
-
-  // Add missing method to mock using interface extension pattern
-  interface MockChargingStation extends ChargingStation {
-    getNumberOfRunningTransactions: () => number
-    reset: () => Promise<void>
-  }
-  const mockStation = mockChargingStation as MockChargingStation
-  mockStation.getNumberOfRunningTransactions = () => 0
-  mockStation.reset = () => Promise.resolve()
-
-  const incomingRequestService = new OCPP20IncomingRequestService()
-  const testableService = createTestableIncomingRequestService(incomingRequestService)
 
   await describe('B11 - Reset - Without Ongoing Transaction', async () => {
     // FR: B11.FR.01

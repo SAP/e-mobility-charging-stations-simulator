@@ -5,7 +5,7 @@
 
 import { expect } from '@std/expect'
 import { millisecondsToSeconds } from 'date-fns'
-import { afterEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import {
   deleteConfigurationKey,
@@ -63,16 +63,21 @@ function buildWsExampleUrl (targetLength: number, fillerChar = 'a'): string {
 }
 
 await describe('B05/B06 - OCPP20VariableManager test suite', async () => {
-  // Create mock ChargingStation with EVSEs for OCPP 2.0 testing
-  const mockChargingStation = createChargingStation({
-    baseName: TEST_CHARGING_STATION_BASE_NAME,
-    connectorsCount: 3,
-    evseConfiguration: { evsesCount: 3 },
-    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-    stationInfo: {
-      ocppVersion: OCPPVersion.VERSION_201,
-    },
-    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+  // Type declaration for mock ChargingStation
+  let mockChargingStation: ReturnType<typeof createChargingStation>
+
+  // Initialize mock ChargingStation before each test
+  beforeEach(() => {
+    mockChargingStation = createChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
+      connectorsCount: 3,
+      evseConfiguration: { evsesCount: 3 },
+      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+      stationInfo: {
+        ocppVersion: OCPPVersion.VERSION_201,
+      },
+      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+    })
   })
 
   // Reset singleton state after each test to ensure test isolation

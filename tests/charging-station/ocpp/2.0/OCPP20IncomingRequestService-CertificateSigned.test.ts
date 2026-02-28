@@ -4,7 +4,7 @@
  */
 
 import { expect } from '@std/expect'
-import { afterEach, describe, it, mock, type Mock } from 'node:test'
+import { afterEach, beforeEach, describe, it, mock, type Mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type {
@@ -105,29 +105,31 @@ const createMockCertificateManager = (
 })
 
 await describe('I04 - CertificateSigned', async () => {
+  let mockChargingStation: TestableChargingStationWithCertificate
+  let incomingRequestService: OCPP20IncomingRequestService
+  let testableService: ReturnType<typeof createTestableIncomingRequestService>
+
+  beforeEach(() => {
+    mockChargingStation = createChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
+      connectorsCount: 3,
+      evseConfiguration: { evsesCount: 3 },
+      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+      stationInfo: {
+        ocppStrictCompliance: false,
+        ocppVersion: OCPPVersion.VERSION_201,
+      },
+      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+    }) as TestableChargingStationWithCertificate
+    mockChargingStation.certificateManager = createMockCertificateManager()
+    mockChargingStation.closeWSConnection = mock.fn()
+    incomingRequestService = new OCPP20IncomingRequestService()
+    testableService = createTestableIncomingRequestService(incomingRequestService)
+  })
+
   afterEach(() => {
     mock.restoreAll()
   })
-
-  const mockChargingStation = createChargingStation({
-    baseName: TEST_CHARGING_STATION_BASE_NAME,
-    connectorsCount: 3,
-    evseConfiguration: { evsesCount: 3 },
-    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-    stationInfo: {
-      ocppStrictCompliance: false,
-      ocppVersion: OCPPVersion.VERSION_201,
-    },
-    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
-  }) as TestableChargingStationWithCertificate
-
-  mockChargingStation.certificateManager = createMockCertificateManager()
-  // Mock closeWSConnection for reconnect tests
-  mockChargingStation.closeWSConnection = mock.fn()
-
-  const incomingRequestService = new OCPP20IncomingRequestService()
-  const testableService = createTestableIncomingRequestService(incomingRequestService)
-
   await describe('Valid Certificate Chain Installation', async () => {
     await it('should accept valid certificate chain', async () => {
       mockChargingStation.certificateManager = createMockCertificateManager({

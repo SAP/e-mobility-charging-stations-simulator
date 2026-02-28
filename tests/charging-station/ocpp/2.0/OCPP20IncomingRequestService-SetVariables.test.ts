@@ -5,7 +5,7 @@
 
 import { expect } from '@std/expect'
 import { millisecondsToSeconds } from 'date-fns'
-import { afterEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
@@ -40,20 +40,25 @@ import {
 } from './OCPP20TestUtils.js'
 
 await describe('B05 - Set Variables', async () => {
-  const mockChargingStation = createChargingStation({
-    baseName: TEST_CHARGING_STATION_BASE_NAME,
-    connectorsCount: 3,
-    evseConfiguration: { evsesCount: 3 },
-    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-    stationInfo: {
-      ocppStrictCompliance: false,
-      ocppVersion: OCPPVersion.VERSION_201,
-    },
-    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
-  })
+  let mockChargingStation: ReturnType<typeof createChargingStation>
+  let incomingRequestService: OCPP20IncomingRequestService
+  let testableService: ReturnType<typeof createTestableIncomingRequestService>
 
-  const incomingRequestService = new OCPP20IncomingRequestService()
-  const testableService = createTestableIncomingRequestService(incomingRequestService)
+  beforeEach(() => {
+    mockChargingStation = createChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
+      connectorsCount: 3,
+      evseConfiguration: { evsesCount: 3 },
+      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+      stationInfo: {
+        ocppStrictCompliance: false,
+        ocppVersion: OCPPVersion.VERSION_201,
+      },
+      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+    })
+    incomingRequestService = new OCPP20IncomingRequestService()
+    testableService = createTestableIncomingRequestService(incomingRequestService)
+  })
 
   // Reset singleton state after each test to ensure test isolation
   afterEach(() => {

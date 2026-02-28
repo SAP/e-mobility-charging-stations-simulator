@@ -4,7 +4,7 @@
  */
 
 import { expect } from '@std/expect'
-import { afterEach, describe, it, mock } from 'node:test'
+import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStationWithCertificateManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20CertificateManager.js'
 
@@ -58,25 +58,31 @@ await describe('I04 - DeleteCertificate', async () => {
     mock.restoreAll()
   })
 
-  const mockChargingStation = createChargingStation({
-    baseName: TEST_CHARGING_STATION_BASE_NAME,
-    connectorsCount: 3,
-    evseConfiguration: { evsesCount: 3 },
-    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-    stationInfo: {
-      ocppStrictCompliance: false,
-      ocppVersion: OCPPVersion.VERSION_201,
-    },
-    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+  let mockChargingStation: ReturnType<typeof createChargingStation>
+  let stationWithCertManager: ChargingStationWithCertificateManager
+  let incomingRequestService: OCPP20IncomingRequestService
+  let testableService: ReturnType<typeof createTestableIncomingRequestService>
+
+  beforeEach(() => {
+    mockChargingStation = createChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
+      connectorsCount: 3,
+      evseConfiguration: { evsesCount: 3 },
+      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+      stationInfo: {
+        ocppStrictCompliance: false,
+        ocppVersion: OCPPVersion.VERSION_201,
+      },
+      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+    })
+
+    // Cast to allow setting certificateManager property
+    stationWithCertManager = mockChargingStation as unknown as ChargingStationWithCertificateManager
+    stationWithCertManager.certificateManager = createMockCertificateManager()
+
+    incomingRequestService = new OCPP20IncomingRequestService()
+    testableService = createTestableIncomingRequestService(incomingRequestService)
   })
-
-  // Cast to allow setting certificateManager property
-  const stationWithCertManager =
-    mockChargingStation as unknown as ChargingStationWithCertificateManager
-  stationWithCertManager.certificateManager = createMockCertificateManager()
-
-  const incomingRequestService = new OCPP20IncomingRequestService()
-  const testableService = createTestableIncomingRequestService(incomingRequestService)
 
   await describe('Valid Certificate Deletion', async () => {
     await it('should accept deletion of existing certificate', async () => {

@@ -3,7 +3,7 @@
  * @description Unit tests for OCPP 2.0 IdToken-first pre-authorization flow (E03)
  */
 import { expect } from '@std/expect'
-import { afterEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import {
@@ -42,10 +42,12 @@ import {
  * - E02: Cable connection -> EV detection -> Authorization -> Charging
  */
 await describe('E03 - IdToken-First Pre-Authorization Flow', async () => {
-  const mockChargingStation = createMockOCPP20TransactionTestStation()
+  let mockChargingStation: ReturnType<typeof createMockOCPP20TransactionTestStation>
 
-  // Reset limits and state before tests
-  resetLimits(mockChargingStation)
+  beforeEach(() => {
+    mockChargingStation = createMockOCPP20TransactionTestStation()
+    resetLimits(mockChargingStation)
+  })
 
   afterEach(() => {
     resetConnectorTransactionState(mockChargingStation)
