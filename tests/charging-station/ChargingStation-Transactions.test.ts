@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 
-import { withMockTimers } from '../helpers/TestLifecycleHelpers.js'
+import { standardCleanup, withMockTimers } from '../helpers/TestLifecycleHelpers.js'
 import { cleanupChargingStation, createMockChargingStation } from './ChargingStationTestUtils.js'
 
 await describe('ChargingStation Transaction Management', async () => {
@@ -18,6 +18,7 @@ await describe('ChargingStation Transaction Management', async () => {
       station = undefined
     })
     afterEach(() => {
+      standardCleanup()
       if (station != null) {
         cleanupChargingStation(station)
       }
@@ -174,6 +175,7 @@ await describe('ChargingStation Transaction Management', async () => {
       station = undefined
     })
     afterEach(() => {
+      standardCleanup()
       if (station != null) {
         cleanupChargingStation(station)
       }
@@ -277,6 +279,7 @@ await describe('ChargingStation Transaction Management', async () => {
       station = undefined
     })
     afterEach(() => {
+      standardCleanup()
       if (station != null) {
         cleanupChargingStation(station)
       }
@@ -441,6 +444,7 @@ await describe('ChargingStation Transaction Management', async () => {
       station = undefined
     })
     afterEach(() => {
+      standardCleanup()
       if (station != null) {
         cleanupChargingStation(station)
       }

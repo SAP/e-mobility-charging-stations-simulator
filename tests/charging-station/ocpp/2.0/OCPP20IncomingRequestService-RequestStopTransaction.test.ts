@@ -28,6 +28,7 @@ import {
   OCPP20ReasonEnumType,
 } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants } from '../../../../src/utils/index.js'
+import { standardCleanup } from '../../../../tests/helpers/TestLifecycleHelpers.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockAuthService } from '../auth/helpers/MockFactories.js'
@@ -78,6 +79,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
   })
 
   afterEach(() => {
+    standardCleanup()
     OCPPAuthServiceFactory.clearAllInstances()
   })
 
@@ -388,7 +390,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
     expect(Object.values(RequestStartStopStatusEnumType)).toContain(response.status)
 
     // OCPP 2.0 RequestStopTransaction response should only contain status
-    expect(Object.keys(response as object)).toEqual(['status'])
+    expect(Object.keys(response as object)).toStrictEqual(['status'])
   })
 
   await it('should handle custom data in request payload', async () => {

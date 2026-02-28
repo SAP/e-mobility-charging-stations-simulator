@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 
 import { AvailabilityType, RegistrationStatusEnumType } from '../../src/types/index.js'
-import { withMockTimers } from '../helpers/TestLifecycleHelpers.js'
+import { standardCleanup, withMockTimers } from '../helpers/TestLifecycleHelpers.js'
 import { cleanupChargingStation, createMockChargingStation } from './ChargingStationTestUtils.js'
 
 // Alias for tests that reference createRealChargingStation
@@ -24,6 +24,7 @@ await describe('ChargingStation Configuration Management', async () => {
       station = undefined
     })
     afterEach(() => {
+      standardCleanup()
       if (station != null) {
         cleanupChargingStation(station)
       }
@@ -121,6 +122,7 @@ await describe('ChargingStation Configuration Management', async () => {
       station = undefined
     })
     afterEach(() => {
+      standardCleanup()
       if (station != null) {
         cleanupChargingStation(station)
       }
@@ -247,6 +249,7 @@ await describe('ChargingStation Configuration Management', async () => {
       station = undefined
     })
     afterEach(() => {
+      standardCleanup()
       if (station != null) {
         cleanupChargingStation(station)
       }
@@ -428,6 +431,7 @@ await describe('ChargingStation Configuration Management', async () => {
       station = undefined
     })
     afterEach(() => {
+      standardCleanup()
       if (station != null) {
         cleanupChargingStation(station)
       }
@@ -561,7 +565,7 @@ await describe('ChargingStation Configuration Management', async () => {
       // Assert
       const parsed = mocks.webSocket.getSentMessagesAsJson()
       expect(parsed.length).toBe(1)
-      expect(parsed[0]).toEqual([2, 'uuid-1', 'Heartbeat', {}])
+      expect(parsed[0]).toStrictEqual([2, 'uuid-1', 'Heartbeat', {}])
     })
 
     await it('should clear captured messages via clearMessages()', () => {
@@ -750,6 +754,7 @@ await describe('ChargingStation Configuration Management', async () => {
       station = undefined
     })
     afterEach(() => {
+      standardCleanup()
       if (station != null) {
         cleanupChargingStation(station)
       }

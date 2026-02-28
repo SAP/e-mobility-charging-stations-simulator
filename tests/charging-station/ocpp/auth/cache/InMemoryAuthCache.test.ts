@@ -64,7 +64,7 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
 
       expect(cachedResult).toBeDefined()
       expect(cachedResult?.status).toBe(AuthorizationStatus.ACCEPTED)
-      expect(cachedResult?.timestamp).toEqual(mockResult.timestamp)
+      expect(cachedResult?.timestamp).toStrictEqual(mockResult.timestamp)
     })
 
     await it('should track cache hits in statistics', async () => {

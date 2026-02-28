@@ -9,12 +9,14 @@ import type { ChargingStation } from '../../../../../src/charging-station/Chargi
 
 import { OCPPAuthServiceFactory } from '../../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'
 import { OCPPVersion } from '../../../../../src/types/ocpp/OCPPVersion.js'
+import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
 import { createMockAuthServiceTestStation } from '../helpers/MockFactories.js'
 
 await describe('OCPPAuthServiceFactory', async () => {
   // Clear all cached instances after each test to ensure test isolation
   afterEach(() => {
     OCPPAuthServiceFactory.clearAllInstances()
+    standardCleanup()
   })
 
   await describe('getInstance', async () => {

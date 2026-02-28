@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 
 import { RegistrationStatusEnumType } from '../../src/types/index.js'
+import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import { cleanupChargingStation, createMockChargingStation } from './ChargingStationTestUtils.js'
 
 // Alias for tests that reference createRealChargingStation
@@ -22,6 +23,7 @@ await describe('ChargingStation Connector and EVSE State', async () => {
     })
 
     afterEach(() => {
+      standardCleanup()
       if (station != null) {
         cleanupChargingStation(station)
       }
@@ -103,6 +105,7 @@ await describe('ChargingStation Connector and EVSE State', async () => {
       station = undefined
     })
     afterEach(() => {
+      standardCleanup()
       if (station != null) {
         cleanupChargingStation(station)
       }
@@ -133,6 +136,7 @@ await describe('ChargingStation Connector and EVSE State', async () => {
       station = undefined
     })
     afterEach(() => {
+      standardCleanup()
       if (station != null) {
         cleanupChargingStation(station)
       }
@@ -162,6 +166,7 @@ await describe('ChargingStation Connector and EVSE State', async () => {
       station = undefined
     })
     afterEach(() => {
+      standardCleanup()
       if (station != null) {
         cleanupChargingStation(station)
       }
@@ -258,6 +263,7 @@ await describe('ChargingStation Connector and EVSE State', async () => {
       station = undefined
     })
     afterEach(() => {
+      standardCleanup()
       if (station != null) {
         cleanupChargingStation(station)
       }
@@ -362,6 +368,7 @@ await describe('ChargingStation Connector and EVSE State', async () => {
       station = undefined
     })
     afterEach(() => {
+      standardCleanup()
       if (station != null) {
         cleanupChargingStation(station)
       }

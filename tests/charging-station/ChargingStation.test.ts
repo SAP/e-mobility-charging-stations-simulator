@@ -241,7 +241,7 @@ await describe('ChargingStation Integration Tests', async () => {
 
       // Store some data in cache
       mocks1.idTagsCache.setIdTags('test-file.json', ['tag1', 'tag2'])
-      expect(mocks1.idTagsCache.getIdTags('test-file.json')).toEqual(['tag1', 'tag2'])
+      expect(mocks1.idTagsCache.getIdTags('test-file.json')).toStrictEqual(['tag1', 'tag2'])
 
       // Cleanup first station
       cleanupChargingStation(result1.station)

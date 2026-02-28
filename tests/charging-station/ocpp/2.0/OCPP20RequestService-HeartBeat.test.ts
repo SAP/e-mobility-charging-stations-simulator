@@ -126,8 +126,8 @@ await describe('G02 - Heartbeat', async () => {
     )
 
     // All payloads should be identical empty objects
-    expect(payload1).toEqual(payload2)
-    expect(payload2).toEqual(payload3)
+    expect(payload1).toStrictEqual(payload2)
+    expect(payload2).toStrictEqual(payload3)
     expect(JSON.stringify(payload1)).toBe('{}')
     expect(JSON.stringify(payload2)).toBe('{}')
     expect(JSON.stringify(payload3)).toBe('{}')
@@ -179,7 +179,7 @@ await describe('G02 - Heartbeat', async () => {
     // According to OCPP 2.0 specification, HeartBeat request should be an empty object
     // This validates compliance with the official OCPP 2.0 standard
     expect(payload).toBeDefined()
-    expect(payload).toEqual({})
+    expect(payload).toStrictEqual({})
     expect(has('constructor', payload)).toBe(false)
 
     // Ensure it's a plain object and not an instance of another type

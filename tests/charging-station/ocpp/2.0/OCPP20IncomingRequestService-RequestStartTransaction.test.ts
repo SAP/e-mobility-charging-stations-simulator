@@ -21,6 +21,7 @@ import {
   OCPP20IdTokenEnumType,
 } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants } from '../../../../src/utils/index.js'
+import { standardCleanup } from '../../../../tests/helpers/TestLifecycleHelpers.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockAuthService } from '../auth/helpers/MockFactories.js'
@@ -59,6 +60,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
   })
 
   afterEach(() => {
+    standardCleanup()
     OCPPAuthServiceFactory.clearAllInstances()
   })
 

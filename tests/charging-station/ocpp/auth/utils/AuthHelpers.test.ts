@@ -93,7 +93,7 @@ await describe('AuthHelpers', async () => {
 
       const request = AuthHelpers.createAuthRequest(identifier, context, undefined, metadata)
 
-      expect(request.metadata).toEqual({ source: 'test' })
+      expect(request.metadata).toStrictEqual({ source: 'test' })
     })
   })
 
@@ -120,7 +120,7 @@ await describe('AuthHelpers', async () => {
 
       expect(result.status).toBe(AuthorizationStatus.EXPIRED)
       expect(result.method).toBe(AuthenticationMethod.REMOTE_AUTHORIZATION)
-      expect(result.additionalInfo).toEqual({ reason: 'Token expired on 2024-01-01' })
+      expect(result.additionalInfo).toStrictEqual({ reason: 'Token expired on 2024-01-01' })
     })
   })
 
@@ -480,7 +480,7 @@ await describe('AuthHelpers', async () => {
       expect(merged?.status).toBe(AuthorizationStatus.BLOCKED)
       expect(merged?.method).toBe(AuthenticationMethod.LOCAL_LIST)
       expect(merged?.isOffline).toBe(true)
-      expect(merged?.additionalInfo).toEqual({
+      expect(merged?.additionalInfo).toStrictEqual({
         attemptedMethods: 'LocalList, RemoteAuthorization',
         totalAttempts: 2,
       })
@@ -504,7 +504,7 @@ await describe('AuthHelpers', async () => {
 
       const sanitized = AuthHelpers.sanitizeForLogging(result)
 
-      expect(sanitized).toEqual({
+      expect(sanitized).toStrictEqual({
         hasExpiryDate: true,
         hasGroupId: true,
         hasPersonalMessage: true,
@@ -525,7 +525,7 @@ await describe('AuthHelpers', async () => {
 
       const sanitized = AuthHelpers.sanitizeForLogging(result)
 
-      expect(sanitized).toEqual({
+      expect(sanitized).toStrictEqual({
         hasExpiryDate: false,
         hasGroupId: false,
         hasPersonalMessage: false,

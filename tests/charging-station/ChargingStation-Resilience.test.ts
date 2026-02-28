@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 
 import { RegistrationStatusEnumType } from '../../src/types/index.js'
+import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import { cleanupChargingStation, createMockChargingStation } from './ChargingStationTestUtils.js'
 
 await describe('ChargingStation Error Recovery and Resilience', async () => {
@@ -18,6 +19,7 @@ await describe('ChargingStation Error Recovery and Resilience', async () => {
   })
 
   afterEach(() => {
+    standardCleanup()
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (station != null) {
       cleanupChargingStation(station)
@@ -283,6 +285,7 @@ await describe('ChargingStation Message Buffering', async () => {
   })
 
   afterEach(() => {
+    standardCleanup()
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (station != null) {
       cleanupChargingStation(station)

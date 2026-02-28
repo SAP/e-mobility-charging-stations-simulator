@@ -11,10 +11,11 @@ import type { AuthConfiguration } from '../../../../../src/charging-station/ocpp
 import { AuthComponentFactory } from '../../../../../src/charging-station/ocpp/auth/factories/AuthComponentFactory.js'
 import { OCPPVersion } from '../../../../../src/types/ocpp/OCPPVersion.js'
 import { createChargingStation } from '../../../../ChargingStationFactory.js'
+import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
 
 await describe('AuthComponentFactory', async () => {
   afterEach(() => {
-    // Cleanup handled by test isolation - each test creates its own instances
+    standardCleanup()
   })
 
   await describe('createAdapters', async () => {

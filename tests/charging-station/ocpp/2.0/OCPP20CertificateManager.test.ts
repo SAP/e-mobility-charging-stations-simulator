@@ -13,6 +13,7 @@ import {
   HashAlgorithmEnumType,
   InstallCertificateUseEnumType,
 } from '../../../../src/types/index.js'
+import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 
 const TEST_STATION_HASH_ID = 'test-station-hash-12345'
 const TEST_CERT_TYPE = InstallCertificateUseEnumType.CSMSRootCertificate
@@ -61,6 +62,7 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
       force: true,
       recursive: true,
     })
+    standardCleanup()
   })
 
   await describe('storeCertificate', async () => {

@@ -52,7 +52,7 @@ await describe('Utils test suite', async () => {
   await it('should generate valid UUIDs and validate them correctly', () => {
     const uuid = generateUUID()
     expect(uuid).toBeDefined()
-    expect(uuid.length).toEqual(36)
+    expect(uuid.length).toStrictEqual(36)
     expect(validateUUID(uuid)).toBe(true)
     expect(validateUUID('abcdef00-0000-4000-9000-000000000000')).toBe(true)
     expect(validateUUID('abcdef00-0000-4000-a000-000000000000')).toBe(true)
@@ -171,7 +171,7 @@ await describe('Utils test suite', async () => {
     expect(convertToInt(null)).toBe(0)
     expect(convertToInt(0)).toBe(0)
     const randomInteger = randomInt(Constants.MAX_RANDOM_INTEGER)
-    expect(convertToInt(randomInteger)).toEqual(randomInteger)
+    expect(convertToInt(randomInteger)).toStrictEqual(randomInteger)
     expect(convertToInt('-1')).toBe(-1)
     expect(convertToInt('1')).toBe(1)
     expect(convertToInt('1.1')).toBe(1)
@@ -192,7 +192,7 @@ await describe('Utils test suite', async () => {
     expect(convertToFloat(null)).toBe(0)
     expect(convertToFloat(0)).toBe(0)
     const randomFloat = getRandomFloat()
-    expect(convertToFloat(randomFloat)).toEqual(randomFloat)
+    expect(convertToFloat(randomFloat)).toStrictEqual(randomFloat)
     expect(convertToFloat('-1')).toBe(-1)
     expect(convertToFloat('1')).toBe(1)
     expect(convertToFloat('1.1')).toBe(1.1)
@@ -252,7 +252,7 @@ await describe('Utils test suite', async () => {
     expect(typeof randomFloat === 'number').toBe(true)
     expect(randomFloat).toBeGreaterThanOrEqual(0)
     expect(randomFloat).toBeLessThanOrEqual(Number.MAX_VALUE)
-    expect(randomFloat).not.toEqual(getRandomFloat())
+    expect(randomFloat).not.toStrictEqual(getRandomFloat())
     expect(() => getRandomFloat(0, 1)).toThrow(new RangeError('Invalid interval'))
     expect(() => getRandomFloat(Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY)).toThrow(
       new RangeError('Invalid interval')
@@ -267,7 +267,7 @@ await describe('Utils test suite', async () => {
       extractTimeSeriesValues(
         new CircularBuffer<TimestampedData>(Array, Constants.DEFAULT_CIRCULAR_BUFFER_CAPACITY)
       )
-    ).toEqual([])
+    ).toStrictEqual([])
     const circularBuffer = new CircularBuffer<TimestampedData>(
       Array,
       Constants.DEFAULT_CIRCULAR_BUFFER_CAPACITY
@@ -275,7 +275,7 @@ await describe('Utils test suite', async () => {
     circularBuffer.push({ timestamp: Date.now(), value: 1.1 })
     circularBuffer.push({ timestamp: Date.now(), value: 2.2 })
     circularBuffer.push({ timestamp: Date.now(), value: 3.3 })
-    expect(extractTimeSeriesValues(circularBuffer)).toEqual([1.1, 2.2, 3.3])
+    expect(extractTimeSeriesValues(circularBuffer)).toStrictEqual([1.1, 2.2, 3.3])
   })
 
   await it('should correctly identify async functions from other types', () => {

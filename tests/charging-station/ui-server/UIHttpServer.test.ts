@@ -149,7 +149,7 @@ await describe('UIHttpServer test suite', async () => {
     expect(res.body).toBeDefined()
     const parsedBody = JSON.parse(res.body ?? '{}') as Record<string, unknown>
     expect(parsedBody.status).toBe('success')
-    expect(parsedBody.hashIdsSucceeded).toEqual(['station-1', 'station-2'])
+    expect(parsedBody.hashIdsSucceeded).toStrictEqual(['station-1', 'station-2'])
   })
 
   await it('should include error details in failure response', () => {
@@ -168,7 +168,7 @@ await describe('UIHttpServer test suite', async () => {
     const parsedBody = JSON.parse(res.body ?? '{}') as Record<string, unknown>
     expect(parsedBody.status).toBe('failure')
     expect(parsedBody.errorMessage).toBe('Test error')
-    expect(parsedBody.hashIdsFailed).toEqual(['station-1'])
+    expect(parsedBody.hashIdsFailed).toStrictEqual(['station-1'])
   })
 
   await it('should create server with valid HTTP configuration', () => {

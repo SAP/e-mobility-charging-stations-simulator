@@ -27,6 +27,7 @@ import {
 } from '../../../../src/types/index.js'
 import { StandardParametersKey } from '../../../../src/types/ocpp/Configuration.js'
 import { Constants } from '../../../../src/utils/index.js'
+import { standardCleanup } from '../../../../tests/helpers/TestLifecycleHelpers.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
 import {
   TEST_CHARGE_POINT_MODEL,
@@ -65,6 +66,7 @@ await describe('B07 - Get Base Report', async () => {
 
   // Reset singleton state after each test to ensure test isolation
   afterEach(() => {
+    standardCleanup()
     OCPP20VariableManager.getInstance().resetRuntimeOverrides()
   })
 
@@ -109,7 +111,7 @@ await describe('B07 - Get Base Report', async () => {
       const types =
         heartbeatEntry.variableAttribute?.map((a: { type?: string; value?: string }) => a.type) ??
         []
-      expect(types).toEqual([AttributeEnumType.Actual])
+      expect(types).toStrictEqual([AttributeEnumType.Actual])
     }
     // Boolean variable (AuthorizeRemoteStart) should only include Actual
     const authorizeRemoteStartEntry = reportData.find(
@@ -123,7 +125,7 @@ await describe('B07 - Get Base Report', async () => {
         authorizeRemoteStartEntry.variableAttribute?.map(
           (a: { type?: string; value?: string }) => a.type
         ) ?? []
-      expect(types).toEqual([AttributeEnumType.Actual])
+      expect(types).toStrictEqual([AttributeEnumType.Actual])
     }
   })
 
