@@ -36,14 +36,12 @@ import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConsta
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import {
   type CapturedOCPPRequest,
-  createMockOCPP20TransactionTestStation,
   createMockStationWithRequestTracking,
   type MockStationWithTracking,
   resetConnectorTransactionState,
   resetLimits,
   TransactionContextFixtures,
 } from './OCPP20TestUtils.js'
-
 // ============================================================================
 // Transaction Flow Patterns for Parameterized Testing
 // ============================================================================
@@ -80,10 +78,24 @@ const TRANSACTION_FLOWS = [
 ] as const
 
 await describe('E01-E04 - OCPP 2.0.1 TransactionEvent Implementation', async () => {
-  let mockChargingStation: ReturnType<typeof createMockOCPP20TransactionTestStation>
+  let mockChargingStation: ChargingStation
 
   beforeEach(() => {
-    mockChargingStation = createMockOCPP20TransactionTestStation()
+    const { station } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
+      connectorsCount: 3,
+      evseConfiguration: { evsesCount: 3 },
+      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+      ocppRequestService: {
+        requestHandler: async () => Promise.resolve({} as EmptyObject),
+      },
+      stationInfo: {
+        ocppStrictCompliance: true,
+        ocppVersion: OCPPVersion.VERSION_201,
+      },
+      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+    })
+    mockChargingStation = station
     resetLimits(mockChargingStation)
   })
 
@@ -91,7 +103,6 @@ await describe('E01-E04 - OCPP 2.0.1 TransactionEvent Implementation', async () 
   afterEach(() => {
     standardCleanup()
   })
-
   // FR: E01.FR.01 - TransactionEventRequest structure validation
   await describe('buildTransactionEvent', async () => {
     await it('should build valid TransactionEvent Started with sequence number 0', () => {

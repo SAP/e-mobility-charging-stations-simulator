@@ -919,26 +919,6 @@ export function resetChargingStationState (station: ChargingStation): void {
 }
 
 /**
- * Wait for a condition to be true with timeout
- * @param condition - Function that returns true when condition is met
- * @param timeout - Maximum time to wait in milliseconds
- * @param interval - Check interval in milliseconds
- */
-export async function waitForCondition (
-  condition: () => boolean,
-  timeout = 1000,
-  interval = 10
-): Promise<void> {
-  const startTime = Date.now()
-  while (!condition()) {
-    if (Date.now() - startTime > timeout) {
-      throw new Error('Timeout waiting for condition')
-    }
-    await new Promise(resolve => setTimeout(resolve, interval))
-  }
-}
-
-/**
  * Determines whether EVSEs should be used based on configuration
  * @param options - Configuration options to check
  * @returns True if EVSEs should be used, false otherwise

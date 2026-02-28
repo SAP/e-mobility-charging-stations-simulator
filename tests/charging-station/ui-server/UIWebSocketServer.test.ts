@@ -9,30 +9,15 @@ import { afterEach, describe, it, mock } from 'node:test'
 
 import type { UUIDv4 } from '../../../src/types/index.js'
 
-import { UIWebSocketServer } from '../../../src/charging-station/ui-server/UIWebSocketServer.js'
 import { ProcedureName, ResponseStatus } from '../../../src/types/index.js'
-import { MockWebSocket } from '../mocks/MockWebSocket.js'
 import { TEST_UUID } from './UIServerTestConstants.js'
 import {
   createMockUIServerConfiguration,
   createMockUIService,
   createMockUIWebSocket,
   MockUIServiceMode,
+  TestableUIWebSocketServer,
 } from './UIServerTestUtils.js'
-
-class TestableUIWebSocketServer extends UIWebSocketServer {
-  public addResponseHandler (uuid: UUIDv4, ws: MockWebSocket): void {
-    this.responseHandlers.set(uuid, ws as never)
-  }
-
-  public getResponseHandlersSize (): number {
-    return this.responseHandlers.size
-  }
-
-  public registerMockUIService (version: string, service: unknown): void {
-    this.uiServices.set(version as never, service as never)
-  }
-}
 
 await describe('UIWebSocketServer test suite', async () => {
   afterEach(() => {
@@ -181,7 +166,7 @@ await describe('UIWebSocketServer test suite', async () => {
 
   await it('should create server with valid WebSocket configuration', () => {
     const config = createMockUIServerConfiguration()
-    const server = new UIWebSocketServer(config)
+    const server = new TestableUIWebSocketServer(config)
 
     expect(server).toBeDefined()
   })
@@ -194,7 +179,7 @@ await describe('UIWebSocketServer test suite', async () => {
       },
     })
 
-    const server = new UIWebSocketServer(config)
+    const server = new TestableUIWebSocketServer(config)
     expect(server).toBeDefined()
   })
 })

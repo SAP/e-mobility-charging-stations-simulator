@@ -35,7 +35,6 @@ export {
   createMockChargingStation,
   createMockChargingStationTemplate,
   resetChargingStationState,
-  waitForCondition,
 } from './helpers/StationHelpers.js'
 
 export { MockIdTagsCache, MockSharedLRUCache } from './mocks/MockCaches.js'

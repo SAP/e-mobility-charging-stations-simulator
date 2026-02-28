@@ -99,20 +99,6 @@ export class MockWebSocket extends EventEmitter {
   }
 
   /**
-   * Ping the server (no-op in mock)
-   */
-  public ping (): void {
-    // No-op for tests
-  }
-
-  /**
-   * Pong response (no-op in mock)
-   */
-  public pong (): void {
-    // No-op for tests
-  }
-
-  /**
    * Send a message through the WebSocket
    * @param data - Message to send
    */

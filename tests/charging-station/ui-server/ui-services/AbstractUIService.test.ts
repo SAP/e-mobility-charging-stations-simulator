@@ -7,24 +7,14 @@
 import { expect } from '@std/expect'
 import { afterEach, describe, it, mock } from 'node:test'
 
-import { UIWebSocketServer } from '../../../../src/charging-station/ui-server/UIWebSocketServer.js'
 import { ProcedureName, ProtocolVersion, ResponseStatus } from '../../../../src/types/index.js'
 import { TEST_HASH_ID, TEST_UUID } from '../UIServerTestConstants.js'
 import {
   createMockChargingStationData,
   createMockUIServerConfiguration,
   createProtocolRequest,
+  TestableUIWebSocketServer,
 } from '../UIServerTestUtils.js'
-
-class TestableUIWebSocketServer extends UIWebSocketServer {
-  public getUIService (version: ProtocolVersion) {
-    return this.uiServices.get(version)
-  }
-
-  public testRegisterProtocolVersionUIService (version: ProtocolVersion): void {
-    this.registerProtocolVersionUIService(version)
-  }
-}
 
 await describe('AbstractUIService test suite', async () => {
   afterEach(() => {

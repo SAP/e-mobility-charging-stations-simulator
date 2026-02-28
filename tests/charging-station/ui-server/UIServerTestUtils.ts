@@ -13,14 +13,61 @@ import type {
   UUIDv4,
 } from '../../../src/types/index.js'
 
+import { UIWebSocketServer } from '../../../src/charging-station/ui-server/UIWebSocketServer.js'
 import {
   ApplicationProtocol,
   ApplicationProtocolVersion,
   AuthenticationType,
   ProcedureName,
+  ProtocolVersion,
   ResponseStatus,
 } from '../../../src/types/index.js'
 import { MockWebSocket } from '../mocks/MockWebSocket.js'
+
+/**
+ * Testable UIWebSocketServer that exposes protected members for testing.
+ * Consolidates TestableUIWebSocketServer from UIWebSocketServer.test.ts and AbstractUIService.test.ts.
+ */
+export class TestableUIWebSocketServer extends UIWebSocketServer {
+  /**
+   * Add a response handler for testing
+   * @param uuid
+   * @param ws
+   */
+  public addResponseHandler (uuid: UUIDv4, ws: MockWebSocket): void {
+    this.responseHandlers.set(uuid, ws as never)
+  }
+
+  /** Get the size of response handlers map */
+  public getResponseHandlersSize (): number {
+    return this.responseHandlers.size
+  }
+
+  /**
+   * Get UI service by version
+   * @param version
+   */
+  public getUIService (version: ProtocolVersion) {
+    return this.uiServices.get(version)
+  }
+
+  /**
+   * Register a mock UI service for testing
+   * @param version
+   * @param service
+   */
+  public registerMockUIService (version: string, service: unknown): void {
+    this.uiServices.set(version as never, service as never)
+  }
+
+  /**
+   * Test helper to register protocol version UI service
+   * @param version
+   */
+  public testRegisterProtocolVersionUIService (version: ProtocolVersion): void {
+    this.registerProtocolVersionUIService(version)
+  }
+}
 
 /**
  * Create a MockWebSocket configured for UI protocol testing.
@@ -140,35 +187,6 @@ export const createProtocolRequest = (
   payload: RequestPayload = {}
 ): ProtocolRequest => {
   return [uuid, procedureName, payload]
-}
-
-export const createValidAuthorizeRequest = (uuid: UUIDv4, hashId: string): string => {
-  return JSON.stringify(
-    createProtocolRequest(uuid, ProcedureName.AUTHORIZE, {
-      hashIds: [hashId],
-      idTag: 'test-id-tag',
-    })
-  )
-}
-
-export const createValidListRequest = (uuid: UUIDv4): string => {
-  return JSON.stringify(createProtocolRequest(uuid, ProcedureName.LIST_CHARGING_STATIONS, {}))
-}
-
-export const createInvalidRequest = (): string => {
-  return '{"invalid": "json"'
-}
-
-export const createMalformedRequest = (): string => {
-  return JSON.stringify({ not: 'an array' })
-}
-
-export const createMockBroadcastResponse = (
-  uuid: string,
-  hashId: string,
-  status: ResponseStatus = ResponseStatus.SUCCESS
-): [string, { hashId: string; status: ResponseStatus }] => {
-  return [uuid, { hashId, status }]
 }
 
 /**

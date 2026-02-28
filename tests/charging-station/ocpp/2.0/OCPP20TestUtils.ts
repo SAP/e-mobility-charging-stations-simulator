@@ -73,29 +73,6 @@ export interface TestableOCPP20RequestService {
 }
 
 /**
- * Create a mock ChargingStation for OCPP 2.0 transaction event testing.
- * Provides standard configuration used across all transaction event test files.
- * @returns ChargingStation configured for OCPP 2.0 transaction testing
- */
-export function createMockOCPP20TransactionTestStation (): ChargingStation {
-  const { station } = createMockChargingStation({
-    baseName: TEST_CHARGING_STATION_BASE_NAME,
-    connectorsCount: 3,
-    evseConfiguration: { evsesCount: 3 },
-    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-    ocppRequestService: {
-      requestHandler: async () => Promise.resolve({} as EmptyObject),
-    },
-    stationInfo: {
-      ocppStrictCompliance: true,
-      ocppVersion: OCPPVersion.VERSION_201,
-    },
-    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
-  })
-  return station
-}
-
-/**
  * Create a mock ChargingStation with request tracking for testing OCPP request flows.
  * This is useful for tests that need to verify what requests were sent.
  * @returns Object containing the station, captured requests array, and control functions
