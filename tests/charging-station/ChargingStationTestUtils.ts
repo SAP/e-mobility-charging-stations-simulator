@@ -25,6 +25,8 @@ export type {
   CreateConnectorStatusOptions,
   MockChargingStationOptions,
   MockChargingStationResult,
+  MockOCPPIncomingRequestService,
+  MockOCPPRequestService,
 } from './helpers/StationHelpers.js'
 
 export {

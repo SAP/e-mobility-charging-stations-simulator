@@ -6,6 +6,8 @@
 
 import type { ChargingStation } from '../../../src/charging-station/ChargingStation.js'
 import type {
+  ChargingStationInfo,
+  ChargingStationOcppConfiguration,
   ConnectorStatus,
   EvseStatus,
   StopTransactionReason,
@@ -71,10 +73,24 @@ export interface MockChargingStationOptions {
   /** Initial boot notification status */
   bootNotificationStatus?: RegistrationStatusEnumType
 
+  /** Connection timeout in milliseconds */
+  connectionTimeout?: number
+
+  /** Default connector status overrides */
+  connectorDefaults?: {
+    availability?: AvailabilityType
+    status?: ConnectorStatusEnum
+  }
+
   /** Number of connectors (default: 2) */
   connectorsCount?: number
 
-  /** Number of EVSEs (enables EVSE mode if > 0) */
+  /** EVSE configuration for OCPP 2.0 - enables EVSE mode when present */
+  evseConfiguration?: {
+    evsesCount?: number
+  }
+
+  /** Number of EVSEs (enables EVSE mode if > 0) - deprecated, use evseConfiguration */
   evsesCount?: number
 
   /** Heartbeat interval in seconds */
@@ -83,14 +99,32 @@ export interface MockChargingStationOptions {
   /** Station index (default: 1) */
   index?: number
 
+  /** OCPP configuration with configuration keys */
+  ocppConfiguration?: ChargingStationOcppConfiguration
+
+  /** Custom OCPP incoming request service for test mocking */
+  ocppIncomingRequestService?: Partial<MockOCPPIncomingRequestService>
+
+  /** Custom OCPP request service for test mocking */
+  ocppRequestService?: Partial<MockOCPPRequestService>
+
   /** OCPP version (default: '1.6') */
   ocppVersion?: OCPPVersion
 
   /** Whether station is started */
   started?: boolean
 
+  /** Whether station is starting */
+  starting?: boolean
+
+  /** Station info overrides */
+  stationInfo?: Partial<ChargingStationInfo>
+
   /** Template file path (mocked) */
   templateFile?: string
+
+  /** WebSocket ping interval in seconds */
+  websocketPingInterval?: number
 }
 
 /**
@@ -102,6 +136,25 @@ export interface MockChargingStationResult {
 
   /** The actual ChargingStation instance */
   station: ChargingStation
+}
+
+/**
+ * Mock OCPP incoming request service interface for testing
+ * Provides typed access to mock handlers without eslint-disable comments
+ */
+export interface MockOCPPIncomingRequestService {
+  incomingRequestHandler: () => Promise<unknown>
+  stop: () => void
+}
+
+/**
+ * Mock OCPP request service interface for testing
+ * Provides typed access to mock handlers without eslint-disable comments
+ */
+export interface MockOCPPRequestService {
+  requestHandler: () => Promise<unknown>
+  sendError: () => Promise<unknown>
+  sendResponse: () => Promise<unknown>
 }
 
 /**
@@ -232,14 +285,27 @@ export function createMockChargingStation (
     autoStart = false,
     baseName = TEST_CHARGING_STATION_BASE_NAME,
     bootNotificationStatus = RegistrationStatusEnumType.ACCEPTED,
+    connectionTimeout = 30000,
+    connectorDefaults,
     connectorsCount = 2,
+    evseConfiguration,
     evsesCount = 0,
     heartbeatInterval = TEST_HEARTBEAT_INTERVAL_SECONDS,
     index = 1,
+    ocppConfiguration,
+    ocppIncomingRequestService,
+    ocppRequestService,
     ocppVersion = OCPPVersion.VERSION_16,
     started = false,
+    starting = false,
+    stationInfo: stationInfoOverrides,
     templateFile = 'test-template.json',
+    websocketPingInterval = 30,
   } = options
+
+  // Determine EVSE usage: explicit config OR OCPP 2.0/2.0.1 auto-detection
+  const useEvses = determineEvseUsage(options, evsesCount)
+  const effectiveEvsesCount = evseConfiguration?.evsesCount ?? evsesCount
 
   // Initialize mocks
   const mockWebSocket = new MockWebSocket(`ws://localhost:8080/${baseName}-${String(index)}`)
@@ -249,21 +315,27 @@ export function createMockChargingStation (
   const writtenFiles = new Map<string, string>()
   const readFiles = new Map<string, string>()
 
+  // Helper to create connector status with options defaults
+  const connectorStatusOptions: CreateConnectorStatusOptions = {
+    availability: connectorDefaults?.availability,
+    status: connectorDefaults?.status,
+  }
+
   // Create connectors map
   const connectors = new Map<number, ConnectorStatus>()
-  const useEvses = evsesCount > 0
 
   // Connector 0 always exists
-  connectors.set(0, createConnectorStatus(0))
+  connectors.set(0, createConnectorStatus(0, connectorStatusOptions))
 
   // Add numbered connectors
   for (let i = 1; i <= connectorsCount; i++) {
-    connectors.set(i, createConnectorStatus(i))
+    connectors.set(i, createConnectorStatus(i, connectorStatusOptions))
   }
 
   // Create EVSEs map if applicable
   const evses = new Map<number, EvseStatus>()
   if (useEvses) {
+    const resolvedEvsesCount = effectiveEvsesCount > 0 ? effectiveEvsesCount : connectorsCount
     // EVSE 0 contains connector 0 (station-level status for availability checks)
     const evse0Connectors = new Map<number, ConnectorStatus>()
     const connector0Status = connectors.get(0)
@@ -276,8 +348,8 @@ export function createMockChargingStation (
     })
 
     // Create EVSEs 1..N with their respective connectors
-    const connectorsPerEvse = Math.ceil(connectorsCount / evsesCount)
-    for (let evseId = 1; evseId <= evsesCount; evseId++) {
+    const connectorsPerEvse = Math.ceil(connectorsCount / resolvedEvsesCount)
+    for (let evseId = 1; evseId <= resolvedEvsesCount; evseId++) {
       const evseConnectors = new Map<number, ConnectorStatus>()
       const startId = (evseId - 1) * connectorsPerEvse + 1
       const endId = Math.min(startId + connectorsPerEvse - 1, connectorsCount)
@@ -357,7 +429,7 @@ export function createMockChargingStation (
       return false // Default to false in mock
     },
     getConnectionTimeout (): number {
-      return 30000
+      return connectionTimeout
     },
     getConnectorIdByTransactionId (transactionId: number | string | undefined): number | undefined {
       if (transactionId == null) {
@@ -520,7 +592,7 @@ export function createMockChargingStation (
       return undefined
     },
     getWebSocketPingInterval (): number {
-      return 30
+      return websocketPingInterval
     },
     hasConnector (connectorId: number): boolean {
       if (useEvses) {
@@ -593,8 +665,49 @@ export function createMockChargingStation (
 
     messageQueue: [] as string[],
 
-    ocppConfiguration: {
+    ocppConfiguration: ocppConfiguration ?? {
       configurationKey: [],
+    },
+
+    ocppIncomingRequestService: {
+      incomingRequestHandler: async () => {
+        return await Promise.reject(
+          new Error(
+            'ocppIncomingRequestService.incomingRequestHandler not mocked. Define in createMockChargingStation options.'
+          )
+        )
+      },
+      stop: (): void => {
+        throw new Error(
+          'ocppIncomingRequestService.stop not mocked. Define in createMockChargingStation options.'
+        )
+      },
+      ...ocppIncomingRequestService,
+    },
+
+    ocppRequestService: {
+      requestHandler: async () => {
+        return await Promise.reject(
+          new Error(
+            'ocppRequestService.requestHandler not mocked. Define in createMockChargingStation options.'
+          )
+        )
+      },
+      sendError: async () => {
+        return await Promise.reject(
+          new Error(
+            'ocppRequestService.sendError not mocked. Define in createMockChargingStation options.'
+          )
+        )
+      },
+      sendResponse: async () => {
+        return await Promise.reject(
+          new Error(
+            'ocppRequestService.sendResponse not mocked. Define in createMockChargingStation options.'
+          )
+        )
+      },
+      ...ocppRequestService,
     },
 
     on: () => station,
@@ -645,7 +758,7 @@ export function createMockChargingStation (
         /* empty */
       }, 30000)
     },
-    starting: false,
+    starting,
 
     startMeterValues (connectorId: number, interval: number): void {
       const connector = this.getConnectorStatus(connectorId)
@@ -673,7 +786,6 @@ export function createMockChargingStation (
     startWebSocketPing (): void {
       /* empty */
     },
-    // Station info
     stationInfo: {
       autoStart,
       baseName,
@@ -681,10 +793,11 @@ export function createMockChargingStation (
       hashId: TEST_CHARGING_STATION_HASH_ID,
       maximumAmperage: 32,
       maximumPower: 22000,
-      ocppVersion,
+      ocppVersion: stationInfoOverrides?.ocppVersion ?? ocppVersion,
       remoteAuthorization: true,
       templateIndex: index,
       templateName: templateFile,
+      ...stationInfoOverrides,
     },
 
     async stop (reason?: StopTransactionReason, stopTransactions?: boolean): Promise<void> {
@@ -811,6 +924,26 @@ export async function waitForCondition (
     }
     await new Promise(resolve => setTimeout(resolve, interval))
   }
+}
+
+/**
+ * Determines whether EVSEs should be used based on configuration
+ * @param options - Configuration options to check
+ * @param legacyEvsesCount - Legacy evsesCount option for backward compatibility
+ * @returns True if EVSEs should be used, false otherwise
+ */
+function determineEvseUsage (
+  options: MockChargingStationOptions,
+  legacyEvsesCount: number
+): boolean {
+  // Get the ocppVersion from stationInfo overrides or options
+  const effectiveOcppVersion = options.stationInfo?.ocppVersion ?? options.ocppVersion
+  return (
+    options.evseConfiguration?.evsesCount != null ||
+    legacyEvsesCount > 0 ||
+    effectiveOcppVersion === OCPPVersion.VERSION_20 ||
+    effectiveOcppVersion === OCPPVersion.VERSION_201
+  )
 }
 
 /**
