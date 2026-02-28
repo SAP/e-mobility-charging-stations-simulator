@@ -2,7 +2,6 @@
  * @file Tests for OCPP20CertificateManager
  * @description Unit tests for OCPP 2.0 certificate management and validation
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { expect } from '@std/expect'
 import { rm } from 'node:fs/promises'
@@ -322,7 +321,9 @@ await describe('OCPP20CertificateManager', async () => {
     await it('should return false for null/undefined input', () => {
       const manager = new OCPP20CertificateManager()
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- testing invalid null input
       expect(manager.validateCertificateFormat(null as any)).toBe(false)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- testing invalid undefined input
       expect(manager.validateCertificateFormat(undefined as any)).toBe(false)
     })
 

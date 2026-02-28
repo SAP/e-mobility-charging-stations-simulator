@@ -2,9 +2,6 @@
  * @file Tests for OCPP20IncomingRequestService RemoteStartAuth
  * @description Unit tests for OCPP 2.0 remote start pre-authorization (G03.FR.03)
  */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it } from 'node:test'
@@ -28,8 +25,8 @@ import {
 import { OCPPVersion } from '../../../../src/types/ocpp/OCPPVersion.js'
 
 await describe('OCPP20IncomingRequestService - G03.FR.03 Remote Start Pre-Authorization', async () => {
-  let service: OCPP20IncomingRequestService
-  let mockChargingStation: ChargingStation
+  let service: OCPP20IncomingRequestService | undefined
+  let mockChargingStation: ChargingStation | undefined
 
   beforeEach(() => {
     // Mock charging station with EVSE configuration
@@ -64,8 +61,8 @@ await describe('OCPP20IncomingRequestService - G03.FR.03 Remote Start Pre-Author
 
   afterEach(() => {
     // Reset service and mock charging station state
-    mockChargingStation = undefined as any
-    service = undefined as any
+    mockChargingStation = undefined
+    service = undefined
   })
 
   await describe('G03.FR.03.001 - Successful remote start with valid token', async () => {
@@ -202,6 +199,7 @@ await describe('OCPP20IncomingRequestService - G03.FR.03 Remote Start Pre-Author
       // Given: Request without evseId (null)
 
       const request: OCPP20RequestStartTransactionRequest = {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any -- testing invalid null input
         evseId: null as any,
         idToken: {
           idToken: 'VALID_TOKEN_005',
@@ -218,6 +216,7 @@ await describe('OCPP20IncomingRequestService - G03.FR.03 Remote Start Pre-Author
       // Given: Request without evseId (undefined)
 
       const request: OCPP20RequestStartTransactionRequest = {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any -- testing invalid undefined input
         evseId: undefined as any,
         idToken: {
           idToken: 'VALID_TOKEN_006',
