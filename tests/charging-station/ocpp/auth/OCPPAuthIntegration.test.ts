@@ -15,7 +15,7 @@ import {
   IdentifierType,
 } from '../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import { OCPPVersion } from '../../../../src/types/ocpp/OCPPVersion.js'
-import { createChargingStation } from '../../ChargingStationTestUtils.js'
+import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import {
   createMockAuthRequest,
   createMockOCPP16Identifier,
@@ -28,7 +28,7 @@ await describe('OCPP Authentication Integration Tests', async () => {
 
   beforeEach(() => {
     // Create mock charging station with OCPP 1.6 configuration
-    mockChargingStation16 = createChargingStation({
+    const result16 = createMockChargingStation({
       baseName: 'TEST_AUTH_CS_16',
       connectorsCount: 2,
       stationInfo: {
@@ -37,9 +37,10 @@ await describe('OCPP Authentication Integration Tests', async () => {
         templateName: 'test-auth-template',
       },
     })
+    mockChargingStation16 = result16.station
 
     // Create mock charging station with OCPP 2.0 configuration
-    mockChargingStation20 = createChargingStation({
+    const result20 = createMockChargingStation({
       baseName: 'TEST_AUTH_CS_20',
       connectorsCount: 2,
       stationInfo: {
@@ -48,6 +49,7 @@ await describe('OCPP Authentication Integration Tests', async () => {
         templateName: 'test-auth-template',
       },
     })
+    mockChargingStation20 = result20.station
   })
 
   afterEach(() => {

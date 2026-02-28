@@ -11,6 +11,7 @@ import {
   deleteConfigurationKey,
   getConfigurationKey,
 } from '../../../../src/charging-station/ConfigurationKeyUtils.js'
+import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
 import { createTestableVariableManager } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
 import { VARIABLE_REGISTRY } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableRegistry.js'
@@ -64,7 +65,7 @@ function buildWsExampleUrl (targetLength: number, fillerChar = 'a'): string {
 
 await describe('B05/B06 - OCPP20VariableManager test suite', async () => {
   // Type declaration for mock ChargingStation
-  let station: ReturnType<typeof createMockChargingStation>
+  let station: ChargingStation
 
   // Initialize mock ChargingStation before each test
   beforeEach(() => {
@@ -1404,7 +1405,7 @@ await describe('B05/B06 - OCPP20VariableManager test suite', async () => {
 
   await describe('Unsupported MinSet/MaxSet attribute tests', async () => {
     const manager = OCPP20VariableManager.getInstance()
-    const station = createChargingStation({
+    const { station } = createMockChargingStation({
       baseName: 'MMStation',
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },
