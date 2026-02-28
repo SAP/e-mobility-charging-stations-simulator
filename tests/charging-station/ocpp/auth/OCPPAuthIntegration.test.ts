@@ -16,11 +16,7 @@ import {
 } from '../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import { OCPPVersion } from '../../../../src/types/ocpp/OCPPVersion.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
-import {
-  createMockAuthRequest,
-  createMockOCPP16Identifier,
-  createMockOCPP20Identifier,
-} from './helpers/MockFactories.js'
+import { createMockAuthRequest, createMockIdentifier } from './helpers/MockFactories.js'
 
 await describe('OCPP Authentication Integration Tests', async () => {
   let mockChargingStation16: ChargingStation
@@ -62,7 +58,7 @@ await describe('OCPP Authentication Integration Tests', async () => {
       const request = createMockAuthRequest({
         connectorId: 1,
         context: AuthContext.TRANSACTION_START,
-        identifier: createMockOCPP16Identifier('VALID_ID_123'),
+        identifier: createMockIdentifier(OCPPVersion.VERSION_16, 'VALID_ID_123'),
       })
 
       const result = await authService.authenticate(request)
@@ -87,7 +83,7 @@ await describe('OCPP Authentication Integration Tests', async () => {
         const request = createMockAuthRequest({
           connectorId: 1,
           context,
-          identifier: createMockOCPP16Identifier(`CONTEXT_TEST_${context}`),
+          identifier: createMockIdentifier(OCPPVersion.VERSION_16, `CONTEXT_TEST_${context}`),
         })
 
         const result = await authService.authenticate(request)
@@ -100,7 +96,7 @@ await describe('OCPP Authentication Integration Tests', async () => {
       const authService = new OCPPAuthServiceImpl(mockChargingStation16)
       const request = createMockAuthRequest({
         connectorId: 1,
-        identifier: createMockOCPP16Identifier('AUTH_DIRECT_TEST'),
+        identifier: createMockIdentifier(OCPPVersion.VERSION_16, 'AUTH_DIRECT_TEST'),
       })
 
       const result = await authService.authorize(request)
@@ -115,7 +111,7 @@ await describe('OCPP Authentication Integration Tests', async () => {
       const request = createMockAuthRequest({
         connectorId: 2,
         context: AuthContext.TRANSACTION_START,
-        identifier: createMockOCPP20Identifier('VALID_ID_456'),
+        identifier: createMockIdentifier(OCPPVersion.VERSION_20, 'VALID_ID_456'),
       })
 
       const result = await authService.authenticate(request)
@@ -139,7 +135,7 @@ await describe('OCPP Authentication Integration Tests', async () => {
         const request = createMockAuthRequest({
           connectorId: 2,
           context,
-          identifier: createMockOCPP20Identifier(`V20_CONTEXT_${context}`),
+          identifier: createMockIdentifier(OCPPVersion.VERSION_20, `V20_CONTEXT_${context}`),
         })
 
         const result = await authService.authenticate(request)
@@ -180,7 +176,7 @@ await describe('OCPP Authentication Integration Tests', async () => {
         const request = createMockAuthRequest({
           connectorId: 1,
           context: i % 2 === 0 ? AuthContext.TRANSACTION_START : AuthContext.TRANSACTION_STOP,
-          identifier: createMockOCPP16Identifier(`CONCURRENT_${String(i)}`),
+          identifier: createMockIdentifier(OCPPVersion.VERSION_16, `CONCURRENT_${String(i)}`),
         })
         promises.push(authService.authenticate(request))
       }

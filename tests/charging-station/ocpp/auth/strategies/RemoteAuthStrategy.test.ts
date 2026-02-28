@@ -20,7 +20,7 @@ import { OCPPVersion } from '../../../../../src/types/ocpp/OCPPVersion.js'
 import {
   createMockAuthCache,
   createMockAuthRequest,
-  createMockOCPP16Identifier,
+  createMockIdentifier,
   createMockOCPPAdapter,
   createTestAuthConfig,
 } from '../helpers/MockFactories.js'
@@ -78,7 +78,11 @@ await describe('RemoteAuthStrategy', async () => {
     await it('should return true when remote auth is enabled', () => {
       const config = createTestAuthConfig()
       const request = createMockAuthRequest({
-        identifier: createMockOCPP16Identifier('REMOTE_TAG', IdentifierType.ID_TAG),
+        identifier: createMockIdentifier(
+          OCPPVersion.VERSION_16,
+          'REMOTE_TAG',
+          IdentifierType.ID_TAG
+        ),
       })
       expect(strategy.canHandle(request, config)).toBe(true)
     })
@@ -89,7 +93,11 @@ await describe('RemoteAuthStrategy', async () => {
         localPreAuthorize: true,
       })
       const request = createMockAuthRequest({
-        identifier: createMockOCPP16Identifier('REMOTE_TAG', IdentifierType.ID_TAG),
+        identifier: createMockIdentifier(
+          OCPPVersion.VERSION_16,
+          'REMOTE_TAG',
+          IdentifierType.ID_TAG
+        ),
       })
       expect(strategy.canHandle(request, config)).toBe(false)
     })
@@ -98,7 +106,11 @@ await describe('RemoteAuthStrategy', async () => {
       const strategyNoAdapters = new RemoteAuthStrategy()
       const config = createTestAuthConfig()
       const request = createMockAuthRequest({
-        identifier: createMockOCPP16Identifier('REMOTE_TAG', IdentifierType.ID_TAG),
+        identifier: createMockIdentifier(
+          OCPPVersion.VERSION_16,
+          'REMOTE_TAG',
+          IdentifierType.ID_TAG
+        ),
       })
       expect(strategyNoAdapters.canHandle(request, config)).toBe(false)
     })
@@ -113,7 +125,11 @@ await describe('RemoteAuthStrategy', async () => {
     await it('should authenticate using OCPP 1.6 adapter', async () => {
       const config = createTestAuthConfig({ authorizationCacheEnabled: true })
       const request = createMockAuthRequest({
-        identifier: createMockOCPP16Identifier('REMOTE_TAG', IdentifierType.ID_TAG),
+        identifier: createMockIdentifier(
+          OCPPVersion.VERSION_16,
+          'REMOTE_TAG',
+          IdentifierType.ID_TAG
+        ),
       })
 
       const result = await strategy.authenticate(request, config)
@@ -152,7 +168,11 @@ await describe('RemoteAuthStrategy', async () => {
         authorizationCacheLifetime: 300,
       })
       const request = createMockAuthRequest({
-        identifier: createMockOCPP16Identifier('CACHE_TAG', IdentifierType.ID_TAG),
+        identifier: createMockIdentifier(
+          OCPPVersion.VERSION_16,
+          'CACHE_TAG',
+          IdentifierType.ID_TAG
+        ),
       })
 
       await strategy.authenticate(request, config)
@@ -164,7 +184,11 @@ await describe('RemoteAuthStrategy', async () => {
 
       const config = createTestAuthConfig()
       const request = createMockAuthRequest({
-        identifier: createMockOCPP16Identifier('UNAVAILABLE_TAG', IdentifierType.ID_TAG),
+        identifier: createMockIdentifier(
+          OCPPVersion.VERSION_16,
+          'UNAVAILABLE_TAG',
+          IdentifierType.ID_TAG
+        ),
       })
 
       const result = await strategy.authenticate(request, config)
@@ -192,7 +216,11 @@ await describe('RemoteAuthStrategy', async () => {
 
       const config = createTestAuthConfig()
       const request = createMockAuthRequest({
-        identifier: createMockOCPP16Identifier('ERROR_TAG', IdentifierType.ID_TAG),
+        identifier: createMockIdentifier(
+          OCPPVersion.VERSION_16,
+          'ERROR_TAG',
+          IdentifierType.ID_TAG
+        ),
       })
 
       const result = await strategy.authenticate(request, config)
@@ -207,7 +235,7 @@ await describe('RemoteAuthStrategy', async () => {
 
       const config = createTestAuthConfig()
       const request = createMockAuthRequest({
-        identifier: createMockOCPP16Identifier('TEST', IdentifierType.ID_TAG),
+        identifier: createMockIdentifier(OCPPVersion.VERSION_16, 'TEST', IdentifierType.ID_TAG),
       })
 
       expect(newStrategy.canHandle(request, config)).toBe(true)
@@ -218,7 +246,7 @@ await describe('RemoteAuthStrategy', async () => {
 
       const config = createTestAuthConfig()
       const request = createMockAuthRequest({
-        identifier: createMockOCPP16Identifier('TEST', IdentifierType.ID_TAG),
+        identifier: createMockIdentifier(OCPPVersion.VERSION_16, 'TEST', IdentifierType.ID_TAG),
       })
 
       expect(strategy.canHandle(request, config)).toBe(false)

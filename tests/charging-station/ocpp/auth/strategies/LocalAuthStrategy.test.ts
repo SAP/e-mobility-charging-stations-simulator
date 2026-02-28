@@ -17,12 +17,13 @@ import {
   AuthorizationStatus,
   IdentifierType,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
+import { OCPPVersion } from '../../../../../src/types/ocpp/OCPPVersion.js'
 import {
   createMockAuthCache,
   createMockAuthorizationResult,
   createMockAuthRequest,
+  createMockIdentifier,
   createMockLocalAuthListManager,
-  createMockOCPP16Identifier,
   createTestAuthConfig,
 } from '../helpers/MockFactories.js'
 
@@ -67,7 +68,7 @@ await describe('LocalAuthStrategy', async () => {
     await it('should return true when local auth list is enabled', () => {
       const config = createTestAuthConfig({ localAuthListEnabled: true })
       const request = createMockAuthRequest({
-        identifier: createMockOCPP16Identifier('TEST_TAG', IdentifierType.ID_TAG),
+        identifier: createMockIdentifier(OCPPVersion.VERSION_16, 'TEST_TAG', IdentifierType.ID_TAG),
       })
       expect(strategy.canHandle(request, config)).toBe(true)
     })
@@ -75,7 +76,7 @@ await describe('LocalAuthStrategy', async () => {
     await it('should return true when cache is enabled', () => {
       const config = createTestAuthConfig({ authorizationCacheEnabled: true })
       const request = createMockAuthRequest({
-        identifier: createMockOCPP16Identifier('TEST_TAG', IdentifierType.ID_TAG),
+        identifier: createMockIdentifier(OCPPVersion.VERSION_16, 'TEST_TAG', IdentifierType.ID_TAG),
       })
       expect(strategy.canHandle(request, config)).toBe(true)
     })
@@ -83,7 +84,7 @@ await describe('LocalAuthStrategy', async () => {
     await it('should return false when nothing is enabled', () => {
       const config = createTestAuthConfig()
       const request = createMockAuthRequest({
-        identifier: createMockOCPP16Identifier('TEST_TAG', IdentifierType.ID_TAG),
+        identifier: createMockIdentifier(OCPPVersion.VERSION_16, 'TEST_TAG', IdentifierType.ID_TAG),
       })
       expect(strategy.canHandle(request, config)).toBe(false)
     })
@@ -113,7 +114,11 @@ await describe('LocalAuthStrategy', async () => {
         localAuthListEnabled: true,
       })
       const request = createMockAuthRequest({
-        identifier: createMockOCPP16Identifier('LOCAL_TAG', IdentifierType.ID_TAG),
+        identifier: createMockIdentifier(
+          OCPPVersion.VERSION_16,
+          'LOCAL_TAG',
+          IdentifierType.ID_TAG
+        ),
       })
 
       const result = await strategy.authenticate(request, config)
@@ -135,7 +140,11 @@ await describe('LocalAuthStrategy', async () => {
 
       const config = createTestAuthConfig({ authorizationCacheEnabled: true })
       const request = createMockAuthRequest({
-        identifier: createMockOCPP16Identifier('CACHED_TAG', IdentifierType.ID_TAG),
+        identifier: createMockIdentifier(
+          OCPPVersion.VERSION_16,
+          'CACHED_TAG',
+          IdentifierType.ID_TAG
+        ),
       })
 
       const result = await strategy.authenticate(request, config)
@@ -150,7 +159,11 @@ await describe('LocalAuthStrategy', async () => {
       const request = createMockAuthRequest({
         allowOffline: true,
         context: AuthContext.TRANSACTION_STOP,
-        identifier: createMockOCPP16Identifier('UNKNOWN_TAG', IdentifierType.ID_TAG),
+        identifier: createMockIdentifier(
+          OCPPVersion.VERSION_16,
+          'UNKNOWN_TAG',
+          IdentifierType.ID_TAG
+        ),
       })
 
       const result = await strategy.authenticate(request, config)
@@ -164,7 +177,11 @@ await describe('LocalAuthStrategy', async () => {
     await it('should return undefined when no local auth available', async () => {
       const config = createTestAuthConfig()
       const request = createMockAuthRequest({
-        identifier: createMockOCPP16Identifier('UNKNOWN_TAG', IdentifierType.ID_TAG),
+        identifier: createMockIdentifier(
+          OCPPVersion.VERSION_16,
+          'UNKNOWN_TAG',
+          IdentifierType.ID_TAG
+        ),
       })
 
       const result = await strategy.authenticate(request, config)

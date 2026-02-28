@@ -45,38 +45,6 @@ export const createMockIdentifier = (
 })
 
 /**
- * Create a mock UnifiedIdentifier for OCPP 1.6
- * @param value - Identifier token value (defaults to 'TEST-TAG-001')
- * @param type - Identifier type enum value (defaults to ID_TAG)
- * @returns Mock UnifiedIdentifier configured for OCPP 1.6 protocol
- * @deprecated Use createMockIdentifier(OCPPVersion.VERSION_16, ...) for new code
- */
-export const createMockOCPP16Identifier = (
-  value = 'TEST-TAG-001',
-  type: IdentifierType = IdentifierType.ID_TAG
-): UnifiedIdentifier => ({
-  ocppVersion: OCPPVersion.VERSION_16,
-  type,
-  value,
-})
-
-/**
- * Create a mock UnifiedIdentifier for OCPP 2.0
- * @param value - Identifier token value (defaults to 'TEST-TAG-001')
- * @param type - Identifier type enum value (defaults to ID_TAG)
- * @returns Mock UnifiedIdentifier configured for OCPP 2.0 protocol
- * @deprecated Use createMockIdentifier(OCPPVersion.VERSION_20, ...) for new code
- */
-export const createMockOCPP20Identifier = (
-  value = 'TEST-TAG-001',
-  type: IdentifierType = IdentifierType.ID_TAG
-): UnifiedIdentifier => ({
-  ocppVersion: OCPPVersion.VERSION_20,
-  type,
-  value,
-})
-
-/**
  * Create a mock AuthRequest
  * @param overrides - Partial AuthRequest properties to override defaults
  * @returns Mock AuthRequest with default OCPP 1.6 identifier and transaction start context
@@ -99,7 +67,6 @@ export const createMockAuthRequest = (overrides?: Partial<AuthRequest>): AuthReq
  * - createMockBlockedAuthorizationResult (BLOCKED)
  * - createMockExpiredAuthorizationResult (EXPIRED)
  * - createMockConcurrentTxAuthorizationResult (CONCURRENT_TX)
- *
  * @param status - Authorization status (defaults to ACCEPTED)
  * @param overrides - Partial AuthorizationResult properties to override defaults
  * @returns Mock AuthorizationResult with specified status from local list method
