@@ -2,17 +2,11 @@
  * @file Tests for OCPP20ServiceUtils TransactionEvent Periodic
  * @description Unit tests for OCPP 2.0 periodic TransactionEvent at TxUpdatedInterval (E02)
  */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/require-await */
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 
 import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
+import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
 import type { EmptyObject } from '../../../../src/types/index.js'
 
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
@@ -22,21 +16,28 @@ import {
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { Constants, generateUUID } from '../../../../src/utils/index.js'
+import { standardCleanup } from '../../../../tests/helpers/TestLifecycleHelpers.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { resetLimits } from './OCPP20TestUtils.js'
 
 await describe('E02 - OCPP 2.0.1 Periodic TransactionEvent at TxUpdatedInterval', async () => {
-  let mockChargingStation: any
+  let mockChargingStation: ChargingStation
   let requestHandlerMock: ReturnType<typeof mock.fn>
-  let sentRequests: any[]
+  interface SentRequest {
+    command: string
+    payload: Record<string, unknown>
+  }
+  let sentRequests: SentRequest[]
 
   beforeEach(() => {
     sentRequests = []
-    requestHandlerMock = mock.fn(async (_station: any, command: string, payload: any) => {
-      sentRequests.push({ command, payload })
-      return Promise.resolve({} as EmptyObject)
-    })
+    requestHandlerMock = mock.fn(
+      async (_station: ChargingStation, command: string, payload: Record<string, unknown>) => {
+        sentRequests.push({ command, payload })
+        return Promise.resolve({} as EmptyObject)
+      }
+    )
 
     mockChargingStation = createChargingStation({
       baseName: TEST_CHARGING_STATION_BASE_NAME,
@@ -65,9 +66,10 @@ await describe('E02 - OCPP 2.0.1 Periodic TransactionEvent at TxUpdatedInterval'
       const connector = mockChargingStation.getConnectorStatus(connectorId)
       if (connector?.transactionTxUpdatedSetInterval != null) {
         clearInterval(connector.transactionTxUpdatedSetInterval)
-        delete connector.transactionTxUpdatedSetInterval
+        connector.transactionTxUpdatedSetInterval = undefined
       }
     }
+    standardCleanup()
   })
 
   await describe('startTxUpdatedInterval', async () => {
@@ -81,7 +83,7 @@ await describe('E02 - OCPP 2.0.1 Periodic TransactionEvent at TxUpdatedInterval'
       })
 
       // Call startTxUpdatedInterval on OCPP 1.6 station
-      ocpp16Station.startTxUpdatedInterval?.(1, 60000)
+      ocpp16Station.startTxUpdatedInterval(1, 60000)
 
       // Verify no timer was started (method should return early)
       const connector = ocpp16Station.getConnectorStatus(1)
@@ -148,7 +150,7 @@ await describe('E02 - OCPP 2.0.1 Periodic TransactionEvent at TxUpdatedInterval'
       )
     })
 
-    await it('should increment seqNo for each periodic event', async () => {
+    await it('should increment seqNo for each periodic event', () => {
       const connectorId = 1
       const transactionId = generateUUID()
 
@@ -241,7 +243,7 @@ await describe('E02 - OCPP 2.0.1 Periodic TransactionEvent at TxUpdatedInterval'
   })
 
   await describe('Timer lifecycle integration', async () => {
-    await it('should continue seqNo sequence across multiple periodic events', async () => {
+    await it('should continue seqNo sequence across multiple periodic events', () => {
       const connectorId = 1
       const transactionId = generateUUID()
 
@@ -282,7 +284,7 @@ await describe('E02 - OCPP 2.0.1 Periodic TransactionEvent at TxUpdatedInterval'
       expect(endEvent.seqNo).toBe(4)
     })
 
-    await it('should handle multiple connectors with independent timers', async () => {
+    await it('should handle multiple connectors with independent timers', () => {
       const transactionId1 = generateUUID()
       const transactionId2 = generateUUID()
 
@@ -368,8 +370,8 @@ await describe('E02 - OCPP 2.0.1 Periodic TransactionEvent at TxUpdatedInterval'
           transactionId
         )
         throw new Error('Should have thrown network error')
-      } catch (error: any) {
-        expect(error.message).toContain('Network timeout')
+      } catch (error) {
+        expect((error as Error).message).toContain('Network timeout')
       }
     })
   })

@@ -2,13 +2,9 @@
  * @file Tests for OCPP20ServiceUtils TransactionEvent
  * @description Unit tests for OCPP 2.0 TransactionEvent building and trigger reasons (E01-E04)
  */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { expect } from '@std/expect'
-import { afterEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import {
@@ -29,10 +25,12 @@ import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConsta
 import { createMockOCPP20TransactionTestStation, resetLimits } from './OCPP20TestUtils.js'
 
 await describe('E01-E04 - OCPP 2.0.1 TransactionEvent Implementation', async () => {
-  const mockChargingStation = createMockOCPP20TransactionTestStation()
+  let mockChargingStation: ReturnType<typeof createMockOCPP20TransactionTestStation>
 
-  // Reset limits before tests
-  resetLimits(mockChargingStation)
+  beforeEach(() => {
+    mockChargingStation = createMockOCPP20TransactionTestStation()
+    resetLimits(mockChargingStation)
+  })
 
   // Reset singleton state and timers after each test to ensure test isolation
   afterEach(() => {
@@ -173,8 +171,8 @@ await describe('E01-E04 - OCPP 2.0.1 TransactionEvent Implementation', async () 
           invalidTransactionId
         )
         throw new Error('Should have thrown error for invalid identifier string')
-      } catch (error: any) {
-        expect(error.message).toContain('Invalid transaction ID format')
+      } catch (error) {
+        expect((error as Error).message).toContain('Invalid transaction ID format')
         expect(error.message).toContain('≤36 characters')
       }
     })
@@ -276,8 +274,8 @@ await describe('E01-E04 - OCPP 2.0.1 TransactionEvent Implementation', async () 
           transactionId
         )
         throw new Error('Should have thrown error')
-      } catch (error: any) {
-        expect(error.message).toContain('Network error')
+      } catch (error) {
+        expect((error as Error).message).toContain('Network error')
       }
     })
   })
@@ -353,7 +351,7 @@ await describe('E01-E04 - OCPP 2.0.1 TransactionEvent Implementation', async () 
       ]
       for (const field of requiredFields) {
         expect(transactionEvent).toHaveProperty(field)
-        expect((transactionEvent as any)[field]).toBeDefined()
+        expect(transactionEvent[field as keyof typeof transactionEvent]).toBeDefined()
       }
 
       // Validate field types match schema requirements
@@ -707,7 +705,7 @@ await describe('E01-E04 - OCPP 2.0.1 TransactionEvent Implementation', async () 
 
       await it('should fallback to Trigger for unknown context source', () => {
         const context: OCPP20TransactionContext = {
-          source: 'unknown_source' as any, // Invalid source to test fallback
+          source: 'unknown_source' as OCPP20TransactionContext['source'], // Invalid source to test fallback
         }
 
         const triggerReason = OCPP20ServiceUtils.selectTriggerReason(
@@ -847,8 +845,8 @@ await describe('E01-E04 - OCPP 2.0.1 TransactionEvent Implementation', async () 
             transactionId
           )
           throw new Error('Should have thrown error')
-        } catch (error: any) {
-          expect(error.message).toContain('Context test error')
+        } catch (error) {
+          expect((error as Error).message).toContain('Context test error')
         }
       })
     })

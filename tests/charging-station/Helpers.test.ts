@@ -67,8 +67,7 @@ await describe('Helpers test suite', async () => {
     // For validation edge cases, we need to manually create invalid states
     // since the factory is designed to create valid configurations
     const stationNoInfo = createChargingStation({ baseName })
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-    delete (stationNoInfo as any).stationInfo
+    stationNoInfo.stationInfo = undefined
     expect(() => {
       validateStationInfo(stationNoInfo)
     }).toThrow(new BaseError('Missing charging station information'))

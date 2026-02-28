@@ -2,15 +2,11 @@
  * @file Tests for OCPP20ServiceUtils TransactionEvent Offline
  * @description Unit tests for OCPP 2.0 offline TransactionEvent queueing (E02)
  */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
+import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
 import type { EmptyObject } from '../../../../src/types/index.js'
 
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
@@ -20,23 +16,30 @@ import {
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { Constants, generateUUID } from '../../../../src/utils/index.js'
+import { standardCleanup } from '../../../../tests/helpers/TestLifecycleHelpers.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { resetLimits } from './OCPP20TestUtils.js'
 
 await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () => {
-  let mockChargingStation: any
+  let mockChargingStation: ChargingStation
   let requestHandlerMock: ReturnType<typeof mock.fn>
-  let sentRequests: any[]
+  interface SentRequest {
+    command: string
+    payload: Record<string, unknown>
+  }
+  let sentRequests: SentRequest[]
   let isOnline: boolean
 
   beforeEach(() => {
     sentRequests = []
     isOnline = true
-    requestHandlerMock = mock.fn(async (_station: any, command: string, payload: any) => {
-      sentRequests.push({ command, payload })
-      return Promise.resolve({} as EmptyObject)
-    })
+    requestHandlerMock = mock.fn(
+      async (_station: ChargingStation, command: string, payload: Record<string, unknown>) => {
+        sentRequests.push({ command, payload })
+        return Promise.resolve({} as EmptyObject)
+      }
+    )
 
     mockChargingStation = createChargingStation({
       baseName: TEST_CHARGING_STATION_BASE_NAME,
@@ -65,6 +68,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
         connector.transactionEventQueue = undefined
       }
     }
+    standardCleanup()
   })
 
   await describe('Queue formation when offline', async () => {
