@@ -76,7 +76,7 @@ Follow the Arrange-Act-Assert pattern for clarity:
 ```typescript
 it('should calculate total power correctly', () => {
   // Arrange
-  const station = createMockChargingStation()
+  const { station } = createMockChargingStation()
   const expectedPower = 22000
 
   // Act
@@ -106,7 +106,7 @@ Most tests in this project are asynchronous. Follow these patterns:
 ```typescript
 it('should start charging session successfully', async () => {
   // Arrange
-  const station = await createChargingStation({ connectorsCount: 2 })
+  const { station } = createMockChargingStation({ connectorsCount: 2 })
   const connectorId = 1
 
   // Act
@@ -122,7 +122,7 @@ it('should start charging session successfully', async () => {
 
 ```typescript
 it('should reject invalid connector ID', async () => {
-  const station = await createChargingStation({ connectorsCount: 1 })
+  const { station } = createMockChargingStation({ connectorsCount: 1 })
 
   await expect(station.startTransaction(99, 'TAG')).rejects.toThrow('Invalid connector')
 })
@@ -133,7 +133,7 @@ it('should reject invalid connector ID', async () => {
 ```typescript
 it('should timeout when server does not respond', async () => {
   mock.timers.enable({ apis: ['setTimeout'] })
-  const station = await createChargingStation()
+  const { station } = createMockChargingStation()
 
   const responsePromise = station.sendHeartbeat()
   mock.timers.tick(30000) // Advance past timeout
@@ -166,7 +166,7 @@ it('should throw on invalid configuration', () => {
 })
 
 it('should reject unauthorized tag', async () => {
-  const station = await createChargingStation()
+  const { station } = createMockChargingStation()
 
   await expect(station.authorize('INVALID_TAG')).rejects.toThrow(OCPPError)
 })
@@ -176,7 +176,7 @@ it('should reject unauthorized tag', async () => {
 
 ```typescript
 it('should include error code in OCPPError', async () => {
-  const station = await createChargingStation()
+  const { station } = createMockChargingStation()
 
   try {
     await station.sendInvalidCommand()
@@ -192,7 +192,7 @@ it('should include error code in OCPPError', async () => {
 
 ```typescript
 it('should recover after transient error', async () => {
-  const station = await createChargingStation()
+  const { station } = createMockChargingStation()
   mock.method(station, 'sendMessage', () => {
     throw new Error('Network error')
   })
@@ -271,26 +271,28 @@ const { station } = createMockChargingStation({
 
 The following utilities are available for reuse across test files:
 
-| Utility                                 | Location                             | Purpose                                      |
-| --------------------------------------- | ------------------------------------ | -------------------------------------------- |
-| `createMockChargingStation()`           | `ChargingStationTestUtils.ts`        | Full test station with OCPP services + mocks |
-| `createConnectorStatus()`               | `helpers/StationHelpers.ts`          | ConnectorStatus factory with defaults        |
-| `createStationWithCertificateManager()` | `ocpp/2.0/OCPP20TestUtils.ts`        | Station with certificate manager (type-safe) |
-| `MockWebSocket`                         | `mocks/MockWebSocket.ts`             | WebSocket simulation with message capture    |
-| `MockIdTagsCache`                       | `mocks/MockCaches.ts`                | In-memory IdTags cache mock                  |
-| `MockSharedLRUCache`                    | `mocks/MockCaches.ts`                | In-memory LRU cache mock                     |
-| `waitForChargingStationState()`         | `helpers/StationHelpers.ts`          | Async state waiting with timeout             |
-| `cleanupChargingStation()`              | `helpers/StationHelpers.ts`          | Proper station cleanup for afterEach         |
-| Auth factories                          | `ocpp/auth/helpers/MockFactories.ts` | Auth-specific mock creation                  |
-| `cleanupChargingStation()`              | `helpers/StationHelpers.ts`          | Proper station cleanup for afterEach         |
-| Auth factories                          | `ocpp/auth/helpers/MockFactories.ts` | Auth-specific mock creation                  |
+| Utility                                 | Location                             | Purpose                                       |
+| --------------------------------------- | ------------------------------------ | --------------------------------------------- |
+| `createMockChargingStation()`           | `ChargingStationTestUtils.ts`        | Full test station with OCPP services + mocks  |
+| `createConnectorStatus()`               | `helpers/StationHelpers.ts`          | ConnectorStatus factory with defaults         |
+| `cleanupChargingStation()`              | `helpers/StationHelpers.ts`          | Proper station cleanup for afterEach          |
+| `resetChargingStationState()`           | `helpers/StationHelpers.ts`          | Reset station state between tests             |
+| `createMockChargingStationTemplate()`   | `helpers/StationHelpers.ts`          | Minimal charging station template             |
+| `MockWebSocket`                         | `mocks/MockWebSocket.ts`             | WebSocket simulation with message capture     |
+| `MockIdTagsCache`                       | `mocks/MockCaches.ts`                | In-memory IdTags cache mock                   |
+| `MockSharedLRUCache`                    | `mocks/MockCaches.ts`                | In-memory LRU cache mock                      |
+| `createStationWithCertificateManager()` | `ocpp/2.0/OCPP20TestUtils.ts`        | Station with certificate manager (type-safe)  |
+| `createMockCertificateManager()`        | `ocpp/2.0/OCPP20TestUtils.ts`        | Mock certificate manager factory              |
+| `createTestableOCPP20RequestService()`  | `ocpp/2.0/OCPP20TestUtils.ts`        | Testable wrapper for OCPP 2.0 request service |
+| Auth factories                          | `ocpp/auth/helpers/MockFactories.ts` | Auth-specific mock creation                   |
+| UI server utilities                     | `ui-server/UIServerTestUtils.ts`     | UI WebSocket server testing utilities         |
 
 **DO NOT duplicate these utilities.** Import and reuse them.
 
 ```typescript
 // Good: Import shared utilities
 import { createMockChargingStation, cleanupChargingStation } from './ChargingStationTestUtils.js'
-import { waitForChargingStationState } from './helpers/StationHelpers.js'
+import { resetChargingStationState } from './helpers/StationHelpers.js'
 ```
 
 ### Mocking Best Practices
@@ -315,7 +317,7 @@ await describe('My Test Suite', async () => {
   // WRONG: These instances are SHARED across all tests!
   const mockResponseService = new OCPP20ResponseService()
   const requestService = new OCPP20RequestService(mockResponseService)
-  const mockChargingStation = createChargingStation({...})
+  const { station: mockChargingStation } = createMockChargingStation({...})
 
   await it('test 1', () => { /* uses shared state */ })
   await it('test 2', () => { /* uses same shared state! Test pollution risk! */ })
@@ -334,7 +336,8 @@ await describe('My Test Suite', async () => {
     // Fresh instances for every test - proper isolation
     mockResponseService = new OCPP20ResponseService()
     requestService = new OCPP20RequestService(mockResponseService)
-    mockChargingStation = createChargingStation({...})
+    const { station } = createMockChargingStation({...})
+    mockChargingStation = station
   })
 
   afterEach(() => {
