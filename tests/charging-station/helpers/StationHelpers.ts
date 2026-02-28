@@ -175,6 +175,12 @@ export function cleanupChargingStation (station: ChargingStation): void {
     station.heartbeatSetInterval = undefined
   }
 
+  // Stop WebSocket ping timer
+  if (station.wsPingSetInterval != null) {
+    clearInterval(station.wsPingSetInterval)
+    station.wsPingSetInterval = undefined
+  }
+
   // Close WebSocket connection
   if (station.wsConnection != null) {
     try {
