@@ -33,7 +33,7 @@ import {
   type Reservation,
 } from '../../src/types/index.js'
 import { logger } from '../../src/utils/Logger.js'
-import { createChargingStation, createChargingStationTemplate } from '../ChargingStationFactory.js'
+import { createChargingStation, createChargingStationTemplate } from './ChargingStationTestUtils.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 await describe('Helpers test suite', async () => {

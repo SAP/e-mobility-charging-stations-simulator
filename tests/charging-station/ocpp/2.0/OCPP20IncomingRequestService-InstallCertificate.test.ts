@@ -6,6 +6,7 @@
 import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
+import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type { ChargingStationWithCertificateManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20CertificateManager.js'
 
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
@@ -18,7 +19,7 @@ import {
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { createChargingStation } from '../../../ChargingStationFactory.js'
+import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createStationWithCertificateManager } from './OCPP20TestUtils.js'
 
@@ -73,13 +74,14 @@ await describe('I03 - InstallCertificate', async () => {
     mock.restoreAll()
   })
 
-  let mockChargingStation: ReturnType<typeof createChargingStation>
+  let station: ChargingStation
+  let mockChargingStation: ChargingStation
   let stationWithCertManager: ChargingStationWithCertificateManager
   let incomingRequestService: OCPP20IncomingRequestService
   let testableService: ReturnType<typeof createTestableIncomingRequestService>
 
   beforeEach(() => {
-    mockChargingStation = createChargingStation({
+    const { station: initialStation } = createMockChargingStation({
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },
@@ -90,6 +92,8 @@ await describe('I03 - InstallCertificate', async () => {
       },
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
+    station = initialStation
+    mockChargingStation = initialStation
 
     // Use factory function to create station with certificate manager
     stationWithCertManager = createStationWithCertificateManager(

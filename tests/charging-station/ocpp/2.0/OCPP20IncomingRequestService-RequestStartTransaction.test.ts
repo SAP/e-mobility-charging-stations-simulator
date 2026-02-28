@@ -5,6 +5,7 @@
 import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
+import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type { OCPP20RequestStartTransactionRequest } from '../../../../src/types/index.js'
 import type {
   OCPP20ChargingProfileType,
@@ -22,7 +23,7 @@ import {
 } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../../tests/helpers/TestLifecycleHelpers.js'
-import { createChargingStation } from '../../../ChargingStationFactory.js'
+import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockAuthService } from '../auth/helpers/MockFactories.js'
 import {
@@ -32,11 +33,11 @@ import {
 } from './OCPP20TestUtils.js'
 
 await describe('F01 & F02 - Remote Start Transaction', async () => {
-  let mockChargingStation: ReturnType<typeof createChargingStation>
+  let mockChargingStation: ChargingStation
   let incomingRequestService: OCPP20IncomingRequestService
   let testableService: ReturnType<typeof createTestableIncomingRequestService>
   beforeEach(() => {
-    mockChargingStation = createChargingStation({
+    const { station } = createMockChargingStation({
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },
@@ -50,6 +51,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       },
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
+    mockChargingStation = station
     incomingRequestService = new OCPP20IncomingRequestService()
     testableService = createTestableIncomingRequestService(incomingRequestService)
     const stationId = mockChargingStation.stationInfo?.chargingStationId ?? 'unknown'
@@ -88,7 +90,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
 
   // FR: F01.FR.17, F02.FR.05 - Verify remoteStartId and idToken are stored for later TransactionEvent
   await it('should store remoteStartId and idToken in connector status for TransactionEvent', async () => {
-    const spyChargingStation = createChargingStation({
+    const { station: spyChargingStation } = createMockChargingStation({
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },

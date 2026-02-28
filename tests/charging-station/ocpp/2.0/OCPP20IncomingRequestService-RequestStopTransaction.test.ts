@@ -6,6 +6,7 @@
 import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
+import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type {
   OCPP20RequestStartTransactionRequest,
   OCPP20RequestStopTransactionRequest,
@@ -29,7 +30,7 @@ import {
 } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../../tests/helpers/TestLifecycleHelpers.js'
-import { createChargingStation } from '../../../ChargingStationFactory.js'
+import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockAuthService } from '../auth/helpers/MockFactories.js'
 import {
@@ -40,13 +41,13 @@ import {
 
 await describe('F03 - Remote Stop Transaction', async () => {
   let sentTransactionEvents: OCPP20TransactionEventRequest[] = []
-  let mockChargingStation: ReturnType<typeof createChargingStation>
+  let mockChargingStation: ChargingStation
   let incomingRequestService: OCPP20IncomingRequestService
   let testableService: ReturnType<typeof createTestableIncomingRequestService>
 
   beforeEach(() => {
     sentTransactionEvents = []
-    mockChargingStation = createChargingStation({
+    const { station } = createMockChargingStation({
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },
@@ -70,6 +71,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
       },
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
+    mockChargingStation = station
     incomingRequestService = new OCPP20IncomingRequestService()
     testableService = createTestableIncomingRequestService(incomingRequestService)
     const stationId = mockChargingStation.stationInfo?.chargingStationId ?? 'unknown'

@@ -11,7 +11,7 @@ import { OCPP20IncomingRequestService } from '../../../../src/charging-station/o
 import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'
 import { GenericStatus, OCPPVersion } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { createChargingStation } from '../../../ChargingStationFactory.js'
+import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 
 await describe('C11 - Clear Authorization Data in Authorization Cache', async () => {
@@ -19,12 +19,12 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
     mock.restoreAll()
   })
 
-  let mockChargingStation: ReturnType<typeof createChargingStation>
+  let station: ChargingStation
   let incomingRequestService: OCPP20IncomingRequestService
   let testableService: ReturnType<typeof createTestableIncomingRequestService>
 
   beforeEach(() => {
-    mockChargingStation = createChargingStation({
+    const { station: mockStation } = createMockChargingStation({
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },
@@ -35,13 +35,14 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
       },
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
+    station = mockStation
     incomingRequestService = new OCPP20IncomingRequestService()
     testableService = createTestableIncomingRequestService(incomingRequestService)
   })
 
   // FR: C11.FR.01 - CS SHALL attempt to clear its Authorization Cache
   await it('should handle ClearCache request successfully', async () => {
-    const response = await testableService.handleRequestClearCache(mockChargingStation)
+    const response = await testableService.handleRequestClearCache(station)
 
     expect(response).toBeDefined()
     expect(typeof response).toBe('object')
@@ -52,7 +53,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
 
   // FR: C11.FR.02 - Return correct status based on cache clearing result
   await it('should return correct status based on cache clearing result', async () => {
-    const response = await testableService.handleRequestClearCache(mockChargingStation)
+    const response = await testableService.handleRequestClearCache(station)
 
     expect(response).toBeDefined()
     expect(response.status).toBeDefined()
@@ -82,7 +83,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
       })
 
       try {
-        const response = await testableService.handleRequestClearCache(mockChargingStation)
+        const response = await testableService.handleRequestClearCache(station)
 
         expect(clearCacheCalled).toBe(true)
         expect(response.status).toBe(GenericStatus.Accepted)
@@ -95,22 +96,22 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
     await it('should NOT call idTagsCache.deleteIdTags() on ClearCache request', async () => {
       // Verify that IdTagsCache is not touched
       let deleteIdTagsCalled = false
-      const originalDeleteIdTags = mockChargingStation.idTagsCache.deleteIdTags.bind(
-        mockChargingStation.idTagsCache
+      const originalDeleteIdTags = station.idTagsCache.deleteIdTags.bind(
+        station.idTagsCache
       )
 
-      Object.assign(mockChargingStation.idTagsCache, {
+      Object.assign(station.idTagsCache, {
         deleteIdTags: () => {
           deleteIdTagsCalled = true
         },
       })
 
       try {
-        await testableService.handleRequestClearCache(mockChargingStation)
+        await testableService.handleRequestClearCache(station)
         expect(deleteIdTagsCalled).toBe(false)
       } finally {
         // Restore original method
-        Object.assign(mockChargingStation.idTagsCache, { deleteIdTags: originalDeleteIdTags })
+        Object.assign(station.idTagsCache, { deleteIdTags: originalDeleteIdTags })
       }
     })
   })
@@ -135,7 +136,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
       })
 
       try {
-        const response = await testableService.handleRequestClearCache(mockChargingStation)
+        const response = await testableService.handleRequestClearCache(station)
 
         expect(response.status).toBe(GenericStatus.Rejected)
       } finally {
@@ -163,7 +164,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
       })
 
       try {
-        const response = await testableService.handleRequestClearCache(mockChargingStation)
+        const response = await testableService.handleRequestClearCache(station)
 
         expect(response.status).toBe(GenericStatus.Accepted)
       } finally {
@@ -190,7 +191,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
       })
 
       try {
-        const response = await testableService.handleRequestClearCache(mockChargingStation)
+        const response = await testableService.handleRequestClearCache(station)
 
         expect(response.status).toBe(GenericStatus.Rejected)
       } finally {
@@ -218,7 +219,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
       })
 
       try {
-        await testableService.handleRequestClearCache(mockChargingStation)
+        await testableService.handleRequestClearCache(station)
 
         // clearCache should NOT be called when cache is disabled
         expect(clearCacheAttempted).toBe(false)
@@ -240,7 +241,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
       })
 
       try {
-        const response = await testableService.handleRequestClearCache(mockChargingStation)
+        const response = await testableService.handleRequestClearCache(station)
 
         // Per C11.FR.05: SHALL return Rejected if CS does not support Authorization Cache
         expect(response.status).toBe(GenericStatus.Rejected)

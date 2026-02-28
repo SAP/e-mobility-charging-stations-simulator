@@ -23,8 +23,8 @@ import {
   ReasonCodeEnumType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { createChargingStation, type TestChargingStation } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
+import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 
 // Sample Base64 EXI request (mock - represents CertificateInstallationReq)
 const MOCK_EXI_REQUEST = 'SGVsbG8gV29ybGQgRVhJIFJlcXVlc3Q='
@@ -42,10 +42,10 @@ const createMockOCSPRequestData = (): OCSPRequestDataType => ({
 })
 
 await describe('M02 - Get15118EVCertificate Request', async () => {
-  let mockChargingStation: TestChargingStation
+  let station: ReturnType<typeof createMockChargingStation>
 
   beforeEach(() => {
-    mockChargingStation = createChargingStation({
+    const { station: newStation } = createMockChargingStation({
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },
@@ -56,6 +56,7 @@ await describe('M02 - Get15118EVCertificate Request', async () => {
       },
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
+    station = newStation
   })
 
   afterEach(() => {
@@ -73,7 +74,7 @@ await describe('M02 - Get15118EVCertificate Request', async () => {
         })
 
       await service.requestGet15118EVCertificate(
-        mockChargingStation,
+        station,
         MOCK_ISO15118_SCHEMA_VERSION,
         CertificateActionEnumType.Install,
         MOCK_EXI_REQUEST
@@ -99,7 +100,7 @@ await describe('M02 - Get15118EVCertificate Request', async () => {
         })
 
       await service.requestGet15118EVCertificate(
-        mockChargingStation,
+        station,
         MOCK_ISO15118_SCHEMA_VERSION,
         CertificateActionEnumType.Update,
         MOCK_EXI_REQUEST
@@ -122,7 +123,7 @@ await describe('M02 - Get15118EVCertificate Request', async () => {
       })
 
       const response = await service.requestGet15118EVCertificate(
-        mockChargingStation,
+        station,
         MOCK_ISO15118_SCHEMA_VERSION,
         CertificateActionEnumType.Install,
         MOCK_EXI_REQUEST
@@ -145,7 +146,7 @@ await describe('M02 - Get15118EVCertificate Request', async () => {
       })
 
       const response = await service.requestGet15118EVCertificate(
-        mockChargingStation,
+        station,
         MOCK_ISO15118_SCHEMA_VERSION,
         CertificateActionEnumType.Install,
         MOCK_EXI_REQUEST
@@ -168,7 +169,7 @@ await describe('M02 - Get15118EVCertificate Request', async () => {
         })
 
       await service.requestGet15118EVCertificate(
-        mockChargingStation,
+        station,
         MOCK_ISO15118_SCHEMA_VERSION,
         CertificateActionEnumType.Install,
         MOCK_EXI_REQUEST
@@ -194,7 +195,7 @@ await describe('M02 - Get15118EVCertificate Request', async () => {
         })
 
       await service.requestGet15118EVCertificate(
-        mockChargingStation,
+        station,
         MOCK_ISO15118_SCHEMA_VERSION,
         CertificateActionEnumType.Install,
         complexBase64EXI
@@ -209,10 +210,10 @@ await describe('M02 - Get15118EVCertificate Request', async () => {
 })
 
 await describe('M03 - GetCertificateStatus Request', async () => {
-  let mockChargingStation: TestChargingStation
+  let station: TestChargingStation
 
   beforeEach(() => {
-    mockChargingStation = createChargingStation({
+    station = createChargingStation({
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },
@@ -241,7 +242,7 @@ await describe('M03 - GetCertificateStatus Request', async () => {
 
       const ocspRequestData = createMockOCSPRequestData()
 
-      await service.requestGetCertificateStatus(mockChargingStation, ocspRequestData)
+      await service.requestGetCertificateStatus(station, ocspRequestData)
 
       expect(sendMessageMock.mock.calls.length).toBe(1)
 
@@ -266,7 +267,7 @@ await describe('M03 - GetCertificateStatus Request', async () => {
       })
 
       const response = await service.requestGetCertificateStatus(
-        mockChargingStation,
+        station,
         createMockOCSPRequestData()
       )
 
@@ -286,7 +287,7 @@ await describe('M03 - GetCertificateStatus Request', async () => {
       })
 
       const response = await service.requestGetCertificateStatus(
-        mockChargingStation,
+        station,
         createMockOCSPRequestData()
       )
 
@@ -311,7 +312,7 @@ await describe('M03 - GetCertificateStatus Request', async () => {
         })
 
       const response = await service.requestGetCertificateStatus(
-        mockChargingStation,
+        station,
         createMockOCSPRequestData()
       )
 
@@ -326,10 +327,10 @@ await describe('M03 - GetCertificateStatus Request', async () => {
 })
 
 await describe('Request Command Names', async () => {
-  let mockChargingStation: TestChargingStation
+  let station: TestChargingStation
 
   beforeEach(() => {
-    mockChargingStation = createChargingStation({
+    station = createChargingStation({
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 1,
       evseConfiguration: { evsesCount: 1 },
@@ -356,7 +357,7 @@ await describe('Request Command Names', async () => {
       })
 
     await service.requestGet15118EVCertificate(
-      mockChargingStation,
+      station,
       MOCK_ISO15118_SCHEMA_VERSION,
       CertificateActionEnumType.Install,
       MOCK_EXI_REQUEST
@@ -375,7 +376,7 @@ await describe('Request Command Names', async () => {
         },
       })
 
-    await service.requestGetCertificateStatus(mockChargingStation, createMockOCSPRequestData())
+    await service.requestGetCertificateStatus(station, createMockOCSPRequestData())
 
     const commandName = sendMessageMock.mock.calls[0].arguments[3]
     expect(commandName).toBe(OCPP20RequestCommand.GET_CERTIFICATE_STATUS)

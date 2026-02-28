@@ -28,7 +28,7 @@ import {
 import { StandardParametersKey } from '../../../../src/types/ocpp/Configuration.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../../tests/helpers/TestLifecycleHelpers.js'
-import { createChargingStation } from '../../../ChargingStationFactory.js'
+import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import {
   TEST_CHARGE_POINT_MODEL,
   TEST_CHARGE_POINT_SERIAL_NUMBER,
@@ -38,12 +38,12 @@ import {
 } from '../../ChargingStationTestConstants.js'
 
 await describe('B07 - Get Base Report', async () => {
-  let mockChargingStation: ReturnType<typeof createChargingStation>
+  let station: ChargingStation
   let incomingRequestService: OCPP20IncomingRequestService
   let testableService: ReturnType<typeof createTestableIncomingRequestService>
 
   beforeEach(() => {
-    mockChargingStation = createChargingStation({
+    const { station: mockStation } = createMockChargingStation({
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },
@@ -58,6 +58,7 @@ await describe('B07 - Get Base Report', async () => {
       },
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
+    station = mockStation
 
     incomingRequestService = new OCPP20IncomingRequestService()
 
@@ -77,7 +78,7 @@ await describe('B07 - Get Base Report', async () => {
       requestId: 1,
     }
 
-    const response = testableService.handleRequestGetBaseReport(mockChargingStation, request)
+    const response = testableService.handleRequestGetBaseReport(station, request)
 
     expect(response).toBeDefined()
     expect(response.status).toBe(GenericDeviceModelStatusEnumType.Accepted)
@@ -90,7 +91,7 @@ await describe('B07 - Get Base Report', async () => {
       requestId: 2,
     }
 
-    const response = testableService.handleRequestGetBaseReport(mockChargingStation, request)
+    const response = testableService.handleRequestGetBaseReport(station, request)
 
     expect(response).toBeDefined()
     expect(response.status).toBe(GenericDeviceModelStatusEnumType.Accepted)
@@ -98,7 +99,7 @@ await describe('B07 - Get Base Report', async () => {
 
   await it('should include registry variables with Actual attribute only for unsupported types', () => {
     const reportData = testableService.buildReportData(
-      mockChargingStation,
+      station,
       ReportBaseEnumType.FullInventory
     )
     const heartbeatEntry = reportData.find(
@@ -136,7 +137,7 @@ await describe('B07 - Get Base Report', async () => {
       requestId: 3,
     }
 
-    const response = testableService.handleRequestGetBaseReport(mockChargingStation, request)
+    const response = testableService.handleRequestGetBaseReport(station, request)
 
     expect(response).toBeDefined()
     expect(response.status).toBe(GenericDeviceModelStatusEnumType.Accepted)
@@ -149,7 +150,7 @@ await describe('B07 - Get Base Report', async () => {
       requestId: 4,
     }
 
-    const response = testableService.handleRequestGetBaseReport(mockChargingStation, request)
+    const response = testableService.handleRequestGetBaseReport(station, request)
 
     expect(response).toBeDefined()
     expect(response.status).toBe(GenericDeviceModelStatusEnumType.NotSupported)
@@ -164,7 +165,7 @@ await describe('B07 - Get Base Report', async () => {
       requestId: 5,
     }
 
-    const response = testableService.handleRequestGetBaseReport(mockChargingStation, request)
+    const response = testableService.handleRequestGetBaseReport(station, request)
 
     expect(response).toBeDefined()
     expect(response.status).toBe(GenericDeviceModelStatusEnumType.Accepted)
@@ -179,14 +180,14 @@ await describe('B07 - Get Base Report', async () => {
 
     // Test the buildReportData method indirectly by calling handleRequestGetBaseReport
     // and checking if it returns Accepted status (which means data was built successfully)
-    const response = testableService.handleRequestGetBaseReport(mockChargingStation, request)
+    const response = testableService.handleRequestGetBaseReport(station, request)
 
     expect(response).toBeDefined()
     expect(response.status).toBe(GenericDeviceModelStatusEnumType.Accepted)
 
     // We can also test the buildReportData method directly if needed
     const reportData = testableService.buildReportData(
-      mockChargingStation,
+      station,
       ReportBaseEnumType.ConfigurationInventory
     )
 
@@ -208,7 +209,7 @@ await describe('B07 - Get Base Report', async () => {
   // FR: B08.FR.07
   await it('should build correct report data for FullInventory with station info', () => {
     const reportData = testableService.buildReportData(
-      mockChargingStation,
+      station,
       ReportBaseEnumType.FullInventory
     )
 
@@ -240,7 +241,7 @@ await describe('B07 - Get Base Report', async () => {
   // FR: B08.FR.08
   await it('should build correct report data for SummaryInventory', () => {
     const reportData = testableService.buildReportData(
-      mockChargingStation,
+      station,
       ReportBaseEnumType.SummaryInventory
     )
 
@@ -264,10 +265,10 @@ await describe('B07 - Get Base Report', async () => {
     // Ensure ReportingValueSize is at a small value (default is Constants.OCPP_VALUE_ABSOLUTE_MAX_LENGTH). We will override configuration key if absent.
     const reportingSizeKey = StandardParametersKey.ReportingValueSize
     // Add or lower configuration key to 10 to force truncation
-    addConfigurationKey(mockChargingStation, reportingSizeKey, '10', undefined, {
+    addConfigurationKey(station, reportingSizeKey, '10', undefined, {
       overwrite: true,
     })
-    setConfigurationKeyValue(mockChargingStation, reportingSizeKey, '10')
+    setConfigurationKeyValue(station, reportingSizeKey, '10')
 
     // Choose TimeSource (SequenceList) and construct an artificially long ordered list value > 10 chars
     const variableManager = OCPP20VariableManager.getInstance()
@@ -275,7 +276,7 @@ await describe('B07 - Get Base Report', async () => {
     const longValue = 'Heartbeat,NTP,GPS,RealTimeClock,MobileNetwork,RadioTimeTransmitter'
     // Set Actual (SequenceList). Should accept full value internally.
     const setResult: OCPP20SetVariableResultType[] = variableManager.setVariables(
-      mockChargingStation,
+      station,
       [
         {
           attributeType: AttributeEnumType.Actual,
@@ -289,7 +290,7 @@ await describe('B07 - Get Base Report', async () => {
 
     // Build report; value should be truncated to length 10
     const reportData = testableService.buildReportData(
-      mockChargingStation,
+      station,
       ReportBaseEnumType.FullInventory
     )
     const timeSourceEntry = reportData.find(
@@ -312,8 +313,8 @@ await describe('B07 - Get Base Report', async () => {
 
   // FR: B08.FR.09
   await it('should handle GetBaseReport with EVSE structure', () => {
-    // The createChargingStation should create a station with EVSEs
-    const stationWithEvses = createChargingStation({
+    // Create a station with EVSEs
+    const { station: stationWithEvses } = createMockChargingStation({
       baseName: 'CS-EVSE-001',
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },
@@ -345,7 +346,7 @@ await describe('B07 - Get Base Report', async () => {
   // FR: B08.FR.10
   await it('should validate unsupported reportBase correctly', () => {
     const reportData = testableService.buildReportData(
-      mockChargingStation,
+      station,
       'InvalidReportBase' as unknown as ReportBaseEnumType
     )
 

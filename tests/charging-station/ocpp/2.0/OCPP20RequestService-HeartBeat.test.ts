@@ -13,7 +13,8 @@ import {
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { Constants, has } from '../../../../src/utils/index.js'
-import { createChargingStation, type TestChargingStation } from '../../../ChargingStationFactory.js'
+import { createMockChargingStation } from '../../../ChargingStationTestUtils.js'
+import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import {
   TEST_CHARGE_POINT_MODEL,
   TEST_CHARGE_POINT_SERIAL_NUMBER,
@@ -30,13 +31,13 @@ await describe('G02 - Heartbeat', async () => {
   let mockResponseService: OCPP20ResponseService
   let requestService: OCPP20RequestService
   let testableRequestService: TestableOCPP20RequestService
-  let mockChargingStation: TestChargingStation
+  let station: ChargingStation
 
   beforeEach(() => {
     mockResponseService = new OCPP20ResponseService()
     requestService = new OCPP20RequestService(mockResponseService)
     testableRequestService = createTestableOCPP20RequestService(requestService)
-    mockChargingStation = createChargingStation({
+    const { station: createdStation } = createMockChargingStation({
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },
@@ -51,6 +52,7 @@ await describe('G02 - Heartbeat', async () => {
       },
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
+    station = createdStation
   })
 
   afterEach(() => {
@@ -62,7 +64,7 @@ await describe('G02 - Heartbeat', async () => {
     const requestParams: OCPP20HeartbeatRequest = {}
 
     const payload = testableRequestService.buildRequestPayload(
-      mockChargingStation,
+      station,
       OCPP20RequestCommand.HEARTBEAT,
       requestParams
     )
@@ -76,7 +78,7 @@ await describe('G02 - Heartbeat', async () => {
   await it('should build HeartBeat request payload correctly without parameters', () => {
     // Test without passing any request parameters
     const payload = testableRequestService.buildRequestPayload(
-      mockChargingStation,
+      station,
       OCPP20RequestCommand.HEARTBEAT
     )
 
@@ -90,7 +92,7 @@ await describe('G02 - Heartbeat', async () => {
     const requestParams: OCPP20HeartbeatRequest = {}
 
     const payload = testableRequestService.buildRequestPayload(
-      mockChargingStation,
+      station,
       OCPP20RequestCommand.HEARTBEAT,
       requestParams
     )
@@ -109,19 +111,19 @@ await describe('G02 - Heartbeat', async () => {
 
     // Call buildRequestPayload multiple times to ensure consistency
     const payload1 = testableRequestService.buildRequestPayload(
-      mockChargingStation,
+      station,
       OCPP20RequestCommand.HEARTBEAT,
       requestParams
     )
 
     const payload2 = testableRequestService.buildRequestPayload(
-      mockChargingStation,
+      station,
       OCPP20RequestCommand.HEARTBEAT,
       requestParams
     )
 
     const payload3 = testableRequestService.buildRequestPayload(
-      mockChargingStation,
+      station,
       OCPP20RequestCommand.HEARTBEAT
     )
 
@@ -171,7 +173,7 @@ await describe('G02 - Heartbeat', async () => {
     const requestParams: OCPP20HeartbeatRequest = {}
 
     const payload = testableRequestService.buildRequestPayload(
-      mockChargingStation,
+      station,
       OCPP20RequestCommand.HEARTBEAT,
       requestParams
     )

@@ -14,7 +14,8 @@ import {
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { createChargingStation, type TestChargingStation } from '../../../ChargingStationFactory.js'
+import { createMockChargingStation } from '../../../ChargingStationTestUtils.js'
+import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import {
   TEST_FIRMWARE_VERSION,
   TEST_STATUS_CHARGE_POINT_MODEL,
@@ -31,13 +32,13 @@ await describe('G01 - Status Notification', async () => {
   let mockResponseService: OCPP20ResponseService
   let requestService: OCPP20RequestService
   let testableRequestService: TestableOCPP20RequestService
-  let mockChargingStation: TestChargingStation
+  let station: ChargingStation
 
   beforeEach(() => {
     mockResponseService = new OCPP20ResponseService()
     requestService = new OCPP20RequestService(mockResponseService)
     testableRequestService = createTestableOCPP20RequestService(requestService)
-    mockChargingStation = createChargingStation({
+    const { station: createdStation } = createMockChargingStation({
       baseName: TEST_STATUS_CHARGING_STATION_BASE_NAME,
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },
@@ -52,6 +53,7 @@ await describe('G01 - Status Notification', async () => {
       },
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
+    station = createdStation
   })
 
   afterEach(() => {
@@ -70,7 +72,7 @@ await describe('G01 - Status Notification', async () => {
     }
 
     const payload = testableRequestService.buildRequestPayload(
-      mockChargingStation,
+      station,
       OCPP20RequestCommand.STATUS_NOTIFICATION,
       requestParams
     ) as OCPP20StatusNotificationRequest
@@ -94,7 +96,7 @@ await describe('G01 - Status Notification', async () => {
     }
 
     const payload = testableRequestService.buildRequestPayload(
-      mockChargingStation,
+      station,
       OCPP20RequestCommand.STATUS_NOTIFICATION,
       requestParams
     ) as OCPP20StatusNotificationRequest
@@ -118,7 +120,7 @@ await describe('G01 - Status Notification', async () => {
     }
 
     const payload = testableRequestService.buildRequestPayload(
-      mockChargingStation,
+      station,
       OCPP20RequestCommand.STATUS_NOTIFICATION,
       requestParams
     ) as OCPP20StatusNotificationRequest
@@ -151,7 +153,7 @@ await describe('G01 - Status Notification', async () => {
       }
 
       const payload = testableRequestService.buildRequestPayload(
-        mockChargingStation,
+        station,
         OCPP20RequestCommand.STATUS_NOTIFICATION,
         requestParams
       ) as OCPP20StatusNotificationRequest
@@ -176,7 +178,7 @@ await describe('G01 - Status Notification', async () => {
     }
 
     const payload = testableRequestService.buildRequestPayload(
-      mockChargingStation,
+      station,
       OCPP20RequestCommand.STATUS_NOTIFICATION,
       requestParams
     ) as OCPP20StatusNotificationRequest
@@ -215,7 +217,7 @@ await describe('G01 - Status Notification', async () => {
     }
 
     const payloadConnector0 = testableRequestService.buildRequestPayload(
-      mockChargingStation,
+      station,
       OCPP20RequestCommand.STATUS_NOTIFICATION,
       requestParamsConnector0
     ) as OCPP20StatusNotificationRequest
@@ -235,7 +237,7 @@ await describe('G01 - Status Notification', async () => {
     }
 
     const payloadEvse0 = testableRequestService.buildRequestPayload(
-      mockChargingStation,
+      station,
       OCPP20RequestCommand.STATUS_NOTIFICATION,
       requestParamsEvse0
     ) as OCPP20StatusNotificationRequest
@@ -265,7 +267,7 @@ await describe('G01 - Status Notification', async () => {
       }
 
       const payload = testableRequestService.buildRequestPayload(
-        mockChargingStation,
+        station,
         OCPP20RequestCommand.STATUS_NOTIFICATION,
         requestParams
       ) as OCPP20StatusNotificationRequest

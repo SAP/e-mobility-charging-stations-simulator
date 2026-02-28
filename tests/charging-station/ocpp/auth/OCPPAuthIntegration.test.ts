@@ -15,7 +15,7 @@ import {
   IdentifierType,
 } from '../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import { OCPPVersion } from '../../../../src/types/ocpp/OCPPVersion.js'
-import { createChargingStation } from '../../../ChargingStationFactory.js'
+import { createChargingStation } from '../../ChargingStationTestUtils.js'
 import {
   createMockAuthRequest,
   createMockOCPP16Identifier,

@@ -32,8 +32,8 @@ import {
 } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants, generateUUID } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../../tests/helpers/TestLifecycleHelpers.js'
-import { createChargingStation } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
+import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import {
   type CapturedOCPPRequest,
   createMockOCPP20TransactionTestStation,
@@ -300,7 +300,7 @@ await describe('E01-E04 - OCPP 2.0.1 TransactionEvent Implementation', async () 
 
     await it('should handle errors gracefully', async () => {
       // Create a mock charging station that throws an error
-      const errorMockChargingStation = createChargingStation({
+      const { station: errorMockChargingStation } = createMockChargingStation({
         baseName: TEST_CHARGING_STATION_BASE_NAME,
         connectorsCount: 1,
         evseConfiguration: { evsesCount: 1 },
@@ -867,7 +867,7 @@ await describe('E01-E04 - OCPP 2.0.1 TransactionEvent Implementation', async () 
 
       await it('should handle context-aware error scenarios gracefully', async () => {
         // Create error mock for this test
-        const errorMockChargingStation = createChargingStation({
+        const { station: errorMockChargingStation } = createMockChargingStation({
           baseName: TEST_CHARGING_STATION_BASE_NAME,
           connectorsCount: 1,
           evseConfiguration: { evsesCount: 1 },
@@ -2353,7 +2353,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
         return Promise.resolve({} as EmptyObject)
       })
 
-      const errorStation = createChargingStation({
+      const { station: errorStation } = createMockChargingStation({
         baseName: TEST_CHARGING_STATION_BASE_NAME,
         connectorsCount: 1,
         evseConfiguration: { evsesCount: 1 },
@@ -2433,7 +2433,7 @@ await describe('E02 - OCPP 2.0.1 Periodic TransactionEvent at TxUpdatedInterval'
 
   await describe('startTxUpdatedInterval', async () => {
     await it('should not start timer for non-OCPP 2.0 stations', () => {
-      const ocpp16Station = createChargingStation({
+      const { station: ocpp16Station } = createMockChargingStation({
         baseName: TEST_CHARGING_STATION_BASE_NAME,
         connectorsCount: 1,
         stationInfo: {
@@ -2697,7 +2697,7 @@ await describe('E02 - OCPP 2.0.1 Periodic TransactionEvent at TxUpdatedInterval'
 
   await describe('Error handling', async () => {
     await it('should handle network errors gracefully during periodic event', async () => {
-      const errorMockChargingStation = createChargingStation({
+      const { station: errorMockChargingStation } = createMockChargingStation({
         baseName: TEST_CHARGING_STATION_BASE_NAME,
         connectorsCount: 1,
         evseConfiguration: { evsesCount: 1 },

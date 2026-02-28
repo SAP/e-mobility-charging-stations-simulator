@@ -22,11 +22,11 @@ import {
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../../tests/helpers/TestLifecycleHelpers.js'
-import { createChargingStation } from '../../../ChargingStationFactory.js'
 import {
   TEST_CHARGING_STATION_BASE_NAME,
   TEST_CONNECTOR_ID_VALID_INSTANCE,
-} from '../../ChargingStationTestConstants.js'
+  } from '../../ChargingStationTestConstants.js'
+import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import {
   resetLimits,
   resetReportingValueSize,
@@ -36,11 +36,11 @@ import {
 } from './OCPP20TestUtils.js'
 
 await describe('B06 - Get Variables', async () => {
-  let mockChargingStation: ReturnType<typeof createChargingStation>
+  let station: ReturnType<typeof createMockChargingStation>
   let incomingRequestService: OCPP20IncomingRequestService
 
   beforeEach(() => {
-    mockChargingStation = createChargingStation({
+    const { station: newStation } = createMockChargingStation({
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },
@@ -51,6 +51,7 @@ await describe('B06 - Get Variables', async () => {
       },
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
+    station = newStation
     incomingRequestService = new OCPP20IncomingRequestService()
   })
 
@@ -76,7 +77,7 @@ await describe('B06 - Get Variables', async () => {
       ],
     }
 
-    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    const response = incomingRequestService.handleRequestGetVariables(station, request)
 
     expect(response).toBeDefined()
     expect(response.getVariableResult).toBeDefined()
@@ -119,7 +120,7 @@ await describe('B06 - Get Variables', async () => {
       ],
     }
 
-    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    const response = incomingRequestService.handleRequestGetVariables(station, request)
 
     expect(response).toBeDefined()
     expect(response.getVariableResult).toBeDefined()
@@ -159,7 +160,7 @@ await describe('B06 - Get Variables', async () => {
       ],
     }
 
-    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    const response = incomingRequestService.handleRequestGetVariables(station, request)
 
     expect(response).toBeDefined()
     expect(response.getVariableResult).toBeDefined()
@@ -172,8 +173,8 @@ await describe('B06 - Get Variables', async () => {
 
   // FR: B06.FR.04
   await it('should reject AuthorizeRemoteStart under Connector component', () => {
-    resetLimits(mockChargingStation)
-    resetReportingValueSize(mockChargingStation)
+    resetLimits(station)
+    resetReportingValueSize(station)
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
         {
@@ -185,7 +186,7 @@ await describe('B06 - Get Variables', async () => {
         },
       ],
     }
-    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    const response = incomingRequestService.handleRequestGetVariables(station, request)
     expect(response.getVariableResult).toHaveLength(1)
     const result = response.getVariableResult[0]
     expect(result.attributeStatus).toBe(GetVariableStatusEnumType.UnknownComponent)
@@ -202,7 +203,7 @@ await describe('B06 - Get Variables', async () => {
         },
       ],
     }
-    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    const response = incomingRequestService.handleRequestGetVariables(station, request)
     expect(response.getVariableResult).toHaveLength(1)
     const result = response.getVariableResult[0]
     expect(result.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
@@ -210,7 +211,7 @@ await describe('B06 - Get Variables', async () => {
 
   await it('should truncate variable value based on ReportingValueSize', () => {
     // Set size below actual value length to force truncation
-    setReportingValueSize(mockChargingStation, 2)
+    setReportingValueSize(station, 2)
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
         {
@@ -219,11 +220,11 @@ await describe('B06 - Get Variables', async () => {
         },
       ],
     }
-    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    const response = incomingRequestService.handleRequestGetVariables(station, request)
     const result = response.getVariableResult[0]
     expect(result.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
     expect(result.attributeValue?.length).toBe(2)
-    resetReportingValueSize(mockChargingStation)
+    resetReportingValueSize(station)
   })
 
   await it('should allow ReportingValueSize retrieval from DeviceDataCtrlr', () => {
@@ -235,14 +236,14 @@ await describe('B06 - Get Variables', async () => {
         },
       ],
     }
-    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    const response = incomingRequestService.handleRequestGetVariables(station, request)
     const result = response.getVariableResult[0]
     expect(result.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
     expect(result.attributeValue).toBeDefined()
   })
 
   await it('should enforce ItemsPerMessage limit', () => {
-    setStrictLimits(mockChargingStation, 1, 10000)
+    setStrictLimits(station, 1, 10000)
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
         {
@@ -255,17 +256,17 @@ await describe('B06 - Get Variables', async () => {
         },
       ],
     }
-    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    const response = incomingRequestService.handleRequestGetVariables(station, request)
     expect(response.getVariableResult.length).toBe(2)
     for (const r of response.getVariableResult) {
       expect(r.attributeStatus).toBe(GetVariableStatusEnumType.Rejected)
       expect(r.attributeStatusInfo?.reasonCode).toBeDefined()
     }
-    resetLimits(mockChargingStation)
+    resetLimits(station)
   })
 
   await it('should enforce BytesPerMessage limit (pre-calculation)', () => {
-    setStrictLimits(mockChargingStation, 100, 10)
+    setStrictLimits(station, 100, 10)
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
         {
@@ -278,13 +279,13 @@ await describe('B06 - Get Variables', async () => {
         },
       ],
     }
-    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    const response = incomingRequestService.handleRequestGetVariables(station, request)
     expect(response.getVariableResult.length).toBe(2)
     response.getVariableResult.forEach(r => {
       expect(r.attributeStatus).toBe(GetVariableStatusEnumType.Rejected)
       expect(r.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
     })
-    resetLimits(mockChargingStation)
+    resetLimits(station)
   })
 
   await it('should enforce BytesPerMessage limit (post-calculation)', () => {
@@ -318,8 +319,8 @@ await describe('B06 - Get Variables', async () => {
     }
     const preEstimate = Buffer.byteLength(JSON.stringify(request.getVariableData), 'utf8')
     const limit = preEstimate + 5 // allow pre-check pass, fail post-check
-    setStrictLimits(mockChargingStation, 100, limit)
-    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    setStrictLimits(station, 100, limit)
+    const response = incomingRequestService.handleRequestGetVariables(station, request)
     const actualSize = Buffer.byteLength(JSON.stringify(response.getVariableResult), 'utf8')
     expect(actualSize).toBeGreaterThan(limit)
     expect(response.getVariableResult).toHaveLength(request.getVariableData.length)
@@ -327,7 +328,7 @@ await describe('B06 - Get Variables', async () => {
       expect(r.attributeStatus).toBe(GetVariableStatusEnumType.Rejected)
       expect(r.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
     })
-    resetLimits(mockChargingStation)
+    resetLimits(station)
   })
 
   // Added tests for relocated components
@@ -341,7 +342,7 @@ await describe('B06 - Get Variables', async () => {
         },
       ],
     }
-    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    const response = incomingRequestService.handleRequestGetVariables(station, request)
     expect(response.getVariableResult).toHaveLength(1)
     const result = response.getVariableResult[0]
     expect(result.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
@@ -360,7 +361,7 @@ await describe('B06 - Get Variables', async () => {
         },
       ],
     }
-    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    const response = incomingRequestService.handleRequestGetVariables(station, request)
     expect(response.getVariableResult).toHaveLength(1)
     const result = response.getVariableResult[0]
     expect(result.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
@@ -380,7 +381,7 @@ await describe('B06 - Get Variables', async () => {
         },
       ],
     }
-    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    const response = incomingRequestService.handleRequestGetVariables(station, request)
     expect(response.getVariableResult).toHaveLength(1)
     const result = response.getVariableResult[0]
     expect(result.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
@@ -406,7 +407,7 @@ await describe('B06 - Get Variables', async () => {
         },
       ],
     }
-    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    const response = incomingRequestService.handleRequestGetVariables(station, request)
     expect(response.getVariableResult).toHaveLength(3)
     const fileTransfer = response.getVariableResult[0]
     expect(fileTransfer.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
@@ -436,7 +437,7 @@ await describe('B06 - Get Variables', async () => {
         },
       ],
     }
-    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    const response = incomingRequestService.handleRequestGetVariables(station, request)
     expect(response.getVariableResult).toHaveLength(3)
     const txStarted = response.getVariableResult[0]
     expect(txStarted.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
@@ -466,7 +467,7 @@ await describe('B06 - Get Variables', async () => {
         },
       ],
     }
-    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    const response = incomingRequestService.handleRequestGetVariables(station, request)
     expect(response.getVariableResult).toHaveLength(1)
     const result = response.getVariableResult[0]
     expect(result.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
@@ -485,7 +486,7 @@ await describe('B06 - Get Variables', async () => {
         },
       ],
     }
-    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    const response = incomingRequestService.handleRequestGetVariables(station, request)
     expect(response.getVariableResult).toHaveLength(1)
     const result = response.getVariableResult[0]
     expect(result.attributeStatus).toBe(GetVariableStatusEnumType.UnknownVariable)
@@ -503,7 +504,7 @@ await describe('B06 - Get Variables', async () => {
         },
       ],
     }
-    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    const response = incomingRequestService.handleRequestGetVariables(station, request)
     expect(response.getVariableResult).toHaveLength(1)
     const result = response.getVariableResult[0]
     expect(result.attributeStatus).toBe(GetVariableStatusEnumType.Rejected)
@@ -525,7 +526,7 @@ await describe('B06 - Get Variables', async () => {
         },
       ],
     }
-    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    const response = incomingRequestService.handleRequestGetVariables(station, request)
     expect(response.getVariableResult).toHaveLength(2)
     const minSet = response.getVariableResult[0]
     const maxSet = response.getVariableResult[1]
@@ -547,7 +548,7 @@ await describe('B06 - Get Variables', async () => {
         },
       ],
     }
-    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    const response = incomingRequestService.handleRequestGetVariables(station, request)
     expect(response.getVariableResult).toHaveLength(1)
     const result = response.getVariableResult[0]
     expect(result.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
@@ -563,7 +564,7 @@ await describe('B06 - Get Variables', async () => {
         },
       ],
     }
-    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    const response = incomingRequestService.handleRequestGetVariables(station, request)
     expect(response.getVariableResult).toHaveLength(1)
     const result = response.getVariableResult[0]
     expect(result.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
@@ -571,8 +572,8 @@ await describe('B06 - Get Variables', async () => {
 
   await it('should apply ValueSize then ReportingValueSize sequential truncation', () => {
     // First apply a smaller ValueSize (5) then a smaller ReportingValueSize (3)
-    setValueSize(mockChargingStation, 5)
-    setReportingValueSize(mockChargingStation, 3)
+    setValueSize(station, 5)
+    setReportingValueSize(station, 3)
     const request: OCPP20GetVariablesRequest = {
       getVariableData: [
         {
@@ -581,11 +582,11 @@ await describe('B06 - Get Variables', async () => {
         },
       ],
     }
-    const response = incomingRequestService.handleRequestGetVariables(mockChargingStation, request)
+    const response = incomingRequestService.handleRequestGetVariables(station, request)
     const result = response.getVariableResult[0]
     expect(result.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
     expect(result.attributeValue).toBeDefined()
     expect(result.attributeValue?.length).toBeLessThanOrEqual(3)
-    resetReportingValueSize(mockChargingStation)
+    resetReportingValueSize(station)
   })
 })

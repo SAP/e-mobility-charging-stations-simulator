@@ -10,7 +10,7 @@ import type { AuthConfiguration } from '../../../../../src/charging-station/ocpp
 
 import { AuthComponentFactory } from '../../../../../src/charging-station/ocpp/auth/factories/AuthComponentFactory.js'
 import { OCPPVersion } from '../../../../../src/types/ocpp/OCPPVersion.js'
-import { createChargingStation } from '../../../../ChargingStationFactory.js'
+import { createMockChargingStation } from '../../../../ChargingStationTestUtils.js'
 import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
 
 await describe('AuthComponentFactory', async () => {
@@ -20,7 +20,7 @@ await describe('AuthComponentFactory', async () => {
 
   await describe('createAdapters', async () => {
     await it('should create OCPP 1.6 adapter', async () => {
-      const chargingStation = createChargingStation({
+      const { station: chargingStation } = createMockChargingStation({
         stationInfo: { ocppVersion: OCPPVersion.VERSION_16 },
       })
       const result = await AuthComponentFactory.createAdapters(chargingStation)
@@ -30,7 +30,7 @@ await describe('AuthComponentFactory', async () => {
     })
 
     await it('should create OCPP 2.0 adapter', async () => {
-      const chargingStation = createChargingStation({
+      const { station: chargingStation } = createMockChargingStation({
         stationInfo: { ocppVersion: OCPPVersion.VERSION_20 },
       })
       const result = await AuthComponentFactory.createAdapters(chargingStation)
@@ -40,7 +40,7 @@ await describe('AuthComponentFactory', async () => {
     })
 
     await it('should create OCPP 2.0.1 adapter', async () => {
-      const chargingStation = createChargingStation({
+      const { station: chargingStation } = createMockChargingStation({
         stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
       })
       const result = await AuthComponentFactory.createAdapters(chargingStation)
@@ -50,7 +50,7 @@ await describe('AuthComponentFactory', async () => {
     })
 
     await it('should throw error for unsupported version', async () => {
-      const chargingStation = createChargingStation({
+      const { station: chargingStation } = createMockChargingStation({
         stationInfo: { ocppVersion: 'VERSION_15' as OCPPVersion },
       })
 
@@ -60,7 +60,7 @@ await describe('AuthComponentFactory', async () => {
     })
 
     await it('should throw error when no OCPP version', async () => {
-      const chargingStation = createChargingStation()
+      const { station: chargingStation } = createMockChargingStation()
       chargingStation.stationInfo = undefined
 
       await expect(AuthComponentFactory.createAdapters(chargingStation)).rejects.toThrow(
@@ -93,7 +93,7 @@ await describe('AuthComponentFactory', async () => {
 
   await describe('createLocalAuthListManager', async () => {
     await it('should return undefined (delegated to service)', () => {
-      const chargingStation = createChargingStation()
+      const { station: chargingStation } = createMockChargingStation()
       const config: AuthConfiguration = {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: false,
@@ -149,7 +149,7 @@ await describe('AuthComponentFactory', async () => {
 
   await describe('createRemoteStrategy', async () => {
     await it('should return undefined when remote auth disabled', async () => {
-      const chargingStation = createChargingStation({
+      const { station: chargingStation } = createMockChargingStation({
         stationInfo: { ocppVersion: OCPPVersion.VERSION_16 },
       })
       const adapters = await AuthComponentFactory.createAdapters(chargingStation)
@@ -170,7 +170,7 @@ await describe('AuthComponentFactory', async () => {
     })
 
     await it('should create remote strategy when enabled', async () => {
-      const chargingStation = createChargingStation({
+      const { station: chargingStation } = createMockChargingStation({
         stationInfo: { ocppVersion: OCPPVersion.VERSION_16 },
       })
       const adapters = await AuthComponentFactory.createAdapters(chargingStation)
@@ -196,7 +196,7 @@ await describe('AuthComponentFactory', async () => {
 
   await describe('createCertificateStrategy', async () => {
     await it('should create certificate strategy', async () => {
-      const chargingStation = createChargingStation({
+      const { station: chargingStation } = createMockChargingStation({
         stationInfo: { ocppVersion: OCPPVersion.VERSION_16 },
       })
       const adapters = await AuthComponentFactory.createAdapters(chargingStation)
@@ -223,7 +223,7 @@ await describe('AuthComponentFactory', async () => {
 
   await describe('createStrategies', async () => {
     await it('should create only certificate strategy by default', async () => {
-      const chargingStation = createChargingStation({
+      const { station: chargingStation } = createMockChargingStation({
         stationInfo: { ocppVersion: OCPPVersion.VERSION_16 },
       })
       const adapters = await AuthComponentFactory.createAdapters(chargingStation)
@@ -250,7 +250,7 @@ await describe('AuthComponentFactory', async () => {
     })
 
     await it('should create and sort all strategies when enabled', async () => {
-      const chargingStation = createChargingStation({
+      const { station: chargingStation } = createMockChargingStation({
         stationInfo: { ocppVersion: OCPPVersion.VERSION_16 },
       })
       const adapters = await AuthComponentFactory.createAdapters(chargingStation)

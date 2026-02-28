@@ -19,7 +19,7 @@ import {
   ReasonCodeEnumType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { createChargingStation } from '../../../ChargingStationFactory.js'
+import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createStationWithCertificateManager } from './OCPP20TestUtils.js'
 
@@ -59,13 +59,13 @@ await describe('I04 - DeleteCertificate', async () => {
     mock.restoreAll()
   })
 
-  let mockChargingStation: ReturnType<typeof createChargingStation>
+  let station: ChargingStation
   let stationWithCertManager: ChargingStationWithCertificateManager
   let incomingRequestService: OCPP20IncomingRequestService
   let testableService: ReturnType<typeof createTestableIncomingRequestService>
 
   beforeEach(() => {
-    mockChargingStation = createChargingStation({
+    const { station: mockStation } = createMockChargingStation({
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },
@@ -76,9 +76,10 @@ await describe('I04 - DeleteCertificate', async () => {
       },
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
+    station = mockStation
 
     stationWithCertManager = createStationWithCertificateManager(
-      mockChargingStation,
+      station,
       createMockCertificateManager()
     )
 
@@ -97,7 +98,7 @@ await describe('I04 - DeleteCertificate', async () => {
       }
 
       const response: OCPP20DeleteCertificateResponse =
-        await testableService.handleRequestDeleteCertificate(mockChargingStation, request)
+        await testableService.handleRequestDeleteCertificate(station, request)
 
       expect(response).toBeDefined()
       expect(typeof response).toBe('object')
@@ -120,7 +121,7 @@ await describe('I04 - DeleteCertificate', async () => {
       }
 
       const response: OCPP20DeleteCertificateResponse =
-        await testableService.handleRequestDeleteCertificate(mockChargingStation, request)
+        await testableService.handleRequestDeleteCertificate(station, request)
 
       expect(response).toBeDefined()
       expect(response.status).toBe(DeleteCertificateStatusEnumType.Accepted)
@@ -140,7 +141,7 @@ await describe('I04 - DeleteCertificate', async () => {
       }
 
       const response: OCPP20DeleteCertificateResponse =
-        await testableService.handleRequestDeleteCertificate(mockChargingStation, request)
+        await testableService.handleRequestDeleteCertificate(station, request)
 
       expect(response).toBeDefined()
       expect(response.status).toBe(DeleteCertificateStatusEnumType.Accepted)
@@ -159,7 +160,7 @@ await describe('I04 - DeleteCertificate', async () => {
       }
 
       const response: OCPP20DeleteCertificateResponse =
-        await testableService.handleRequestDeleteCertificate(mockChargingStation, request)
+        await testableService.handleRequestDeleteCertificate(station, request)
 
       expect(response).toBeDefined()
       expect(response.status).toBe(DeleteCertificateStatusEnumType.NotFound)
@@ -177,7 +178,7 @@ await describe('I04 - DeleteCertificate', async () => {
       }
 
       const response: OCPP20DeleteCertificateResponse =
-        await testableService.handleRequestDeleteCertificate(mockChargingStation, request)
+        await testableService.handleRequestDeleteCertificate(station, request)
 
       expect(response).toBeDefined()
       expect(response.status).toBe(DeleteCertificateStatusEnumType.Failed)
@@ -186,7 +187,7 @@ await describe('I04 - DeleteCertificate', async () => {
     })
 
     await it('should return Failed with InternalError when certificateManager is missing', async () => {
-      const stationWithoutCertManager = createChargingStation({
+      const { station: stationWithoutCertManager } = createMockChargingStation({
         baseName: TEST_CHARGING_STATION_BASE_NAME,
         connectorsCount: 3,
         evseConfiguration: { evsesCount: 3 },
@@ -228,7 +229,7 @@ await describe('I04 - DeleteCertificate', async () => {
       }
 
       const response: OCPP20DeleteCertificateResponse =
-        await testableService.handleRequestDeleteCertificate(mockChargingStation, request)
+        await testableService.handleRequestDeleteCertificate(station, request)
 
       expect(response).toBeDefined()
       expect(typeof response).toBe('object')
@@ -264,7 +265,7 @@ await describe('I04 - DeleteCertificate', async () => {
       }
 
       const response: OCPP20DeleteCertificateResponse =
-        await testableService.handleRequestDeleteCertificate(mockChargingStation, request)
+        await testableService.handleRequestDeleteCertificate(station, request)
 
       expect(response.status).toBe(DeleteCertificateStatusEnumType.Failed)
       expect(response.statusInfo).toBeDefined()

@@ -13,9 +13,10 @@ import {
   OCPP20RequestCommand,
   OCPPVersion,
 } from '../../../../src/types/index.js'
+import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import { type ChargingStationType } from '../../../../src/types/ocpp/2.0/Common.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { createChargingStation, type TestChargingStation } from '../../../ChargingStationFactory.js'
+import { createMockChargingStation } from '../../../ChargingStationTestUtils.js'
 import {
   TEST_CHARGE_POINT_MODEL,
   TEST_CHARGE_POINT_SERIAL_NUMBER,
@@ -32,13 +33,13 @@ await describe('B01 - Cold Boot Charging Station', async () => {
   let mockResponseService: OCPP20ResponseService
   let requestService: OCPP20RequestService
   let testableRequestService: TestableOCPP20RequestService
-  let mockChargingStation: TestChargingStation
+  let station: ChargingStation
 
   beforeEach(() => {
     mockResponseService = new OCPP20ResponseService()
     requestService = new OCPP20RequestService(mockResponseService)
     testableRequestService = createTestableOCPP20RequestService(requestService)
-    mockChargingStation = createChargingStation({
+    const { station: createdStation } = createMockChargingStation({
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },
@@ -53,6 +54,7 @@ await describe('B01 - Cold Boot Charging Station', async () => {
       },
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
+    station = createdStation
   })
 
   afterEach(() => {
@@ -74,7 +76,7 @@ await describe('B01 - Cold Boot Charging Station', async () => {
     }
 
     const payload = testableRequestService.buildRequestPayload(
-      mockChargingStation,
+      station,
       OCPP20RequestCommand.BOOT_NOTIFICATION,
       requestParams
     ) as OCPP20BootNotificationRequest
@@ -103,7 +105,7 @@ await describe('B01 - Cold Boot Charging Station', async () => {
     }
 
     const payload = testableRequestService.buildRequestPayload(
-      mockChargingStation,
+      station,
       OCPP20RequestCommand.BOOT_NOTIFICATION,
       requestParams
     ) as OCPP20BootNotificationRequest
@@ -131,7 +133,7 @@ await describe('B01 - Cold Boot Charging Station', async () => {
     }
 
     const payload = testableRequestService.buildRequestPayload(
-      mockChargingStation,
+      station,
       OCPP20RequestCommand.BOOT_NOTIFICATION,
       requestParams
     ) as OCPP20BootNotificationRequest
@@ -171,7 +173,7 @@ await describe('B01 - Cold Boot Charging Station', async () => {
       }
 
       const payload = testableRequestService.buildRequestPayload(
-        mockChargingStation,
+      station,
         OCPP20RequestCommand.BOOT_NOTIFICATION,
         requestParams
       ) as OCPP20BootNotificationRequest
@@ -200,7 +202,7 @@ await describe('B01 - Cold Boot Charging Station', async () => {
     }
 
     const payload = testableRequestService.buildRequestPayload(
-      mockChargingStation,
+      station,
       OCPP20RequestCommand.BOOT_NOTIFICATION,
       requestParams
     ) as OCPP20BootNotificationRequest

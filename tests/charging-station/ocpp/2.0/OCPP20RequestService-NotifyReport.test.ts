@@ -22,7 +22,8 @@ import {
   type ReportDataType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { createChargingStation, type TestChargingStation } from '../../../ChargingStationFactory.js'
+import { createMockChargingStation } from '../../../ChargingStationTestUtils.js'
+import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import {
   TEST_CHARGE_POINT_MODEL,
   TEST_CHARGE_POINT_SERIAL_NUMBER,
@@ -33,12 +34,12 @@ import {
 
 await describe('B07/B08 - NotifyReport', async () => {
   let testableService: TestableOCPP20RequestService
-  let mockChargingStation: TestChargingStation
+  let station: ChargingStation
 
   beforeEach(() => {
     const { service } = createTestableRequestService()
     testableService = service
-    mockChargingStation = createChargingStation({
+    const { station: createdStation } = createMockChargingStation({
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },
@@ -53,6 +54,7 @@ await describe('B07/B08 - NotifyReport', async () => {
       },
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
+    station = createdStation
   })
 
   afterEach(() => {
@@ -69,7 +71,7 @@ await describe('B07/B08 - NotifyReport', async () => {
 
     // Access the private buildRequestPayload method via type assertion
     const payload = testableService.buildRequestPayload(
-      mockChargingStation,
+      station,
       OCPP20RequestCommand.NOTIFY_REPORT,
       requestParams
     ) as OCPP20NotifyReportRequest
@@ -113,7 +115,7 @@ await describe('B07/B08 - NotifyReport', async () => {
     }
 
     const payload = testableService.buildRequestPayload(
-      mockChargingStation,
+      station,
       OCPP20RequestCommand.NOTIFY_REPORT,
       requestParams
     ) as OCPP20NotifyReportRequest
@@ -195,7 +197,7 @@ await describe('B07/B08 - NotifyReport', async () => {
     }
 
     const payload = testableService.buildRequestPayload(
-      mockChargingStation,
+      station,
       OCPP20RequestCommand.NOTIFY_REPORT,
       requestParams
     ) as OCPP20NotifyReportRequest
@@ -241,7 +243,7 @@ await describe('B07/B08 - NotifyReport', async () => {
     }
 
     const payload = testableService.buildRequestPayload(
-      mockChargingStation,
+      station,
       OCPP20RequestCommand.NOTIFY_REPORT,
       requestParams
     ) as OCPP20NotifyReportRequest
@@ -266,7 +268,7 @@ await describe('B07/B08 - NotifyReport', async () => {
     }
 
     const payload = testableService.buildRequestPayload(
-      mockChargingStation,
+      station,
       OCPP20RequestCommand.NOTIFY_REPORT,
       requestParams
     ) as OCPP20NotifyReportRequest
@@ -315,7 +317,7 @@ await describe('B07/B08 - NotifyReport', async () => {
       }
 
       const payload = testableService.buildRequestPayload(
-        mockChargingStation,
+        station,
         OCPP20RequestCommand.NOTIFY_REPORT,
         requestParams
       ) as OCPP20NotifyReportRequest
@@ -368,7 +370,7 @@ await describe('B07/B08 - NotifyReport', async () => {
       }
 
       const payload = testableService.buildRequestPayload(
-        mockChargingStation,
+        station,
         OCPP20RequestCommand.NOTIFY_REPORT,
         requestParams
       ) as OCPP20NotifyReportRequest
@@ -410,7 +412,7 @@ await describe('B07/B08 - NotifyReport', async () => {
     }
 
     const payload = testableService.buildRequestPayload(
-      mockChargingStation,
+      station,
       OCPP20RequestCommand.NOTIFY_REPORT,
       requestParams
     ) as OCPP20NotifyReportRequest
@@ -475,7 +477,7 @@ await describe('B07/B08 - NotifyReport', async () => {
     }
 
     const payload = testableService.buildRequestPayload(
-      mockChargingStation,
+      station,
       OCPP20RequestCommand.NOTIFY_REPORT,
       requestParams
     ) as OCPP20NotifyReportRequest
@@ -513,7 +515,7 @@ await describe('B07/B08 - NotifyReport', async () => {
     }
 
     const payload = testableService.buildRequestPayload(
-      mockChargingStation,
+      station,
       OCPP20RequestCommand.NOTIFY_REPORT,
       requestParams
     ) as OCPP20NotifyReportRequest

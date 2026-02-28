@@ -37,6 +37,8 @@ export {
   waitForCondition,
 } from './helpers/StationHelpers.js'
 
+export { createChargingStation, createChargingStationTemplate } from '../ChargingStationFactory.js'
+
 export { MockIdTagsCache, MockSharedLRUCache } from './mocks/MockCaches.js'
 // Re-export all mock classes
 export { MockWebSocket, WebSocketReadyState } from './mocks/MockWebSocket.js'

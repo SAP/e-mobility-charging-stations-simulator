@@ -16,16 +16,17 @@ import {
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { createChargingStation, type TestChargingStation } from '../../../ChargingStationFactory.js'
+import { createMockChargingStation } from '../../../ChargingStationTestUtils.js'
+import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 
 const MOCK_ORGANIZATION_NAME = 'Test Organization Inc.'
 
 await describe('I02 - SignCertificate Request', async () => {
-  let mockChargingStation: TestChargingStation
+  let station: ChargingStation
 
   beforeEach(() => {
-    mockChargingStation = createChargingStation({
+    const { station: createdStation } = createMockChargingStation({
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },
@@ -36,8 +37,9 @@ await describe('I02 - SignCertificate Request', async () => {
       },
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
+    station = createdStation
     // Set up configuration with OrganizationName
-    mockChargingStation.ocppConfiguration = {
+    station.ocppConfiguration = {
       configurationKey: [{ key: 'SecurityCtrlr.OrganizationName', value: MOCK_ORGANIZATION_NAME }],
     }
   })
@@ -56,7 +58,7 @@ await describe('I02 - SignCertificate Request', async () => {
         })
 
       const response = await service.requestSignCertificate(
-        mockChargingStation,
+        station,
         CertificateSigningUseEnumType.ChargingStationCertificate
       )
 
@@ -80,7 +82,7 @@ await describe('I02 - SignCertificate Request', async () => {
         })
 
       await service.requestSignCertificate(
-        mockChargingStation,
+        station,
         CertificateSigningUseEnumType.ChargingStationCertificate
       )
 
@@ -108,7 +110,7 @@ await describe('I02 - SignCertificate Request', async () => {
         })
 
       await service.requestSignCertificate(
-        mockChargingStation,
+        station,
         CertificateSigningUseEnumType.ChargingStationCertificate
       )
 
@@ -130,7 +132,7 @@ await describe('I02 - SignCertificate Request', async () => {
         })
 
       await service.requestSignCertificate(
-        mockChargingStation,
+        station,
         CertificateSigningUseEnumType.V2GCertificate
       )
 
@@ -149,7 +151,7 @@ await describe('I02 - SignCertificate Request', async () => {
       })
 
       const response = await service.requestSignCertificate(
-        mockChargingStation,
+        station,
         CertificateSigningUseEnumType.ChargingStationCertificate
       )
 
@@ -168,7 +170,7 @@ await describe('I02 - SignCertificate Request', async () => {
       })
 
       const response = await service.requestSignCertificate(
-        mockChargingStation,
+        station,
         CertificateSigningUseEnumType.ChargingStationCertificate
       )
 
@@ -188,7 +190,7 @@ await describe('I02 - SignCertificate Request', async () => {
           },
         })
 
-      await service.requestSignCertificate(mockChargingStation)
+      await service.requestSignCertificate(station)
 
       const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
 
@@ -208,7 +210,7 @@ await describe('I02 - SignCertificate Request', async () => {
         })
 
       await service.requestSignCertificate(
-        mockChargingStation,
+        station,
         CertificateSigningUseEnumType.ChargingStationCertificate
       )
 
@@ -233,7 +235,7 @@ await describe('I02 - SignCertificate Request', async () => {
         })
 
       await service.requestSignCertificate(
-        mockChargingStation,
+        station,
         CertificateSigningUseEnumType.ChargingStationCertificate
       )
 

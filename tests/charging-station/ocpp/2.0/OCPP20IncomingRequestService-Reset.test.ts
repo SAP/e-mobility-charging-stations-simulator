@@ -24,12 +24,16 @@ import {
   ResetStatusEnumType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { createChargingStation } from '../../../ChargingStationFactory.js'
+import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 
 await describe('B11 & B12 - Reset', async () => {
-  let mockChargingStation: ReturnType<typeof createChargingStation>
+  let mockChargingStation: ChargingStation
+  let mockStation: ChargingStation & {
+    getNumberOfRunningTransactions: () => number
+    reset: () => Promise<void>
+  }
   let mockStation: ReturnType<typeof createChargingStation> & {
     getNumberOfRunningTransactions: () => number
     reset: () => Promise<void>
@@ -40,7 +44,7 @@ await describe('B11 & B12 - Reset', async () => {
   beforeEach(() => {
     mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'setImmediate'] })
 
-    mockChargingStation = createChargingStation({
+    const { station } = createMockChargingStation({
       baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },
@@ -52,6 +56,7 @@ await describe('B11 & B12 - Reset', async () => {
       },
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
+    mockChargingStation = station
 
     // Add missing method to mock using interface extension pattern
     interface MockChargingStation extends ChargingStation {

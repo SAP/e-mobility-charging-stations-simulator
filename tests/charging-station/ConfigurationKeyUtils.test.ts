@@ -14,7 +14,7 @@ import {
   setConfigurationKeyValue,
 } from '../../src/charging-station/ConfigurationKeyUtils.js'
 import { logger } from '../../src/utils/Logger.js'
-import { createChargingStation } from '../ChargingStationFactory.js'
+import { createChargingStation } from './ChargingStationTestUtils.js'
 
 const TEST_KEY_1 = 'TestKey1'
 const MIXED_CASE_KEY = 'MiXeDkEy'
