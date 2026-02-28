@@ -57,7 +57,7 @@ await describe('CertificateAuthStrategy', async () => {
   })
 
   afterEach(() => {
-    mock.reset()
+    mock.restoreAll()
   })
 
   await describe('constructor', async () => {

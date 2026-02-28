@@ -51,7 +51,7 @@ await describe('OCPP Authentication Integration Tests', async () => {
   })
 
   afterEach(() => {
-    mock.reset()
+    mock.restoreAll()
   })
 
   await describe('OCPP 1.6 Authentication Flow', async () => {

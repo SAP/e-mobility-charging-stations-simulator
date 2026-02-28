@@ -39,7 +39,7 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
   })
 
   afterEach(() => {
-    mock.reset()
+    mock.restoreAll()
   })
 
   await describe('G03.FR.01.001 - Cache Hit Behavior', async () => {

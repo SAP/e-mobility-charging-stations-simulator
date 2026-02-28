@@ -44,7 +44,7 @@ await describe('RemoteAuthStrategy', async () => {
   })
 
   afterEach(() => {
-    mock.reset()
+    mock.restoreAll()
   })
 
   await describe('constructor', async () => {

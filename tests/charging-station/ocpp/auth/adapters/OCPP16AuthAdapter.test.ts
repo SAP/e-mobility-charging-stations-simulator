@@ -57,7 +57,7 @@ await describe('OCPP16AuthAdapter', async () => {
   })
 
   afterEach(() => {
-    mock.reset()
+    mock.restoreAll()
   })
 
   await describe('constructor', async () => {
