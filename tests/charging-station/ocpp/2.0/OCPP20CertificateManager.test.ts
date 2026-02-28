@@ -47,7 +47,7 @@ const _EXPECTED_HASH_DATA: CertificateHashDataType = {
   serialNumber: expect.any(String),
 }
 
-await describe('OCPP20CertificateManager', async () => {
+await describe('I02-I04 - ISO15118 Certificate Management', async () => {
   afterEach(async () => {
     await rm(`dist/assets/configurations/${TEST_STATION_HASH_ID}`, {
       force: true,

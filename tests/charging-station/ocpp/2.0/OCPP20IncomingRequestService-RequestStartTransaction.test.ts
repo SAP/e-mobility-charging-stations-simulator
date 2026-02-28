@@ -1,3 +1,7 @@
+/**
+ * @file Tests for OCPP20IncomingRequestService RequestStartTransaction
+ * @description Unit tests for OCPP 2.0 RequestStartTransaction command handling (F01/F02)
+ */
 import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
@@ -7,10 +11,6 @@ import type {
   OCPP20ChargingRateUnitType,
 } from '../../../../src/types/ocpp/2.0/Transaction.js'
 
-/**
- * @file Tests for OCPP20IncomingRequestService RequestStartTransaction
- * @description Unit tests for OCPP 2.0 RequestStartTransaction command handling (F01/F02)
- */
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'

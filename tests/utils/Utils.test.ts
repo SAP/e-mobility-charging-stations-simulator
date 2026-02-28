@@ -304,53 +304,41 @@ await describe('Utils test suite', async () => {
     expect(isAsyncFunction(new Float64Array())).toBe(false)
     expect(isAsyncFunction(new BigInt64Array())).toBe(false)
     expect(isAsyncFunction(new BigUint64Array())).toBe(false)
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    /* eslint-disable @typescript-eslint/no-empty-function -- Testing with empty functions to verify isAsyncFunction correctly identifies async vs sync */
     expect(isAsyncFunction(new Promise(() => {}))).toBe(false)
     expect(isAsyncFunction(new WeakRef({}))).toBe(false)
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
     expect(isAsyncFunction(new FinalizationRegistry(() => {}))).toBe(false)
     expect(isAsyncFunction(new ArrayBuffer(16))).toBe(false)
     expect(isAsyncFunction(new SharedArrayBuffer(16))).toBe(false)
     expect(isAsyncFunction(new DataView(new ArrayBuffer(16)))).toBe(false)
     expect(isAsyncFunction({})).toBe(false)
     expect(isAsyncFunction({ a: 1 })).toBe(false)
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
     expect(isAsyncFunction(() => {})).toBe(false)
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
     expect(isAsyncFunction(function () {})).toBe(false)
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
     expect(isAsyncFunction(function named () {})).toBe(false)
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
     expect(isAsyncFunction(async () => {})).toBe(true)
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
     expect(isAsyncFunction(async function () {})).toBe(true)
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
     expect(isAsyncFunction(async function named () {})).toBe(true)
+    /* eslint-enable @typescript-eslint/no-empty-function */
     class TestClass {
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      /* eslint-disable @typescript-eslint/no-empty-function -- Testing class methods and properties */
       public static async testStaticAsync (): Promise<void> {}
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
       public static testStaticSync (): void {}
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
       public testArrowAsync = async (): Promise<void> => {}
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
       public testArrowSync = (): void => {}
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
       public async testAsync (): Promise<void> {}
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
       public testSync (): void {}
+      /* eslint-enable @typescript-eslint/no-empty-function */
     }
     const testClass = new TestClass()
-    // eslint-disable-next-line @typescript-eslint/unbound-method
+    /* eslint-disable @typescript-eslint/unbound-method -- Testing unbound method detection for async/sync determination */
     expect(isAsyncFunction(testClass.testSync)).toBe(false)
-    // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(isAsyncFunction(testClass.testAsync)).toBe(true)
     expect(isAsyncFunction(testClass.testArrowSync)).toBe(false)
     expect(isAsyncFunction(testClass.testArrowAsync)).toBe(true)
-    // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(isAsyncFunction(TestClass.testStaticSync)).toBe(false)
-    // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(isAsyncFunction(TestClass.testStaticAsync)).toBe(true)
+    /* eslint-enable @typescript-eslint/unbound-method */
   })
 
   await it('should deep clone objects, arrays, dates, maps and sets', () => {
@@ -472,8 +460,9 @@ await describe('Utils test suite', async () => {
 
   await it('should insert substring at specified index position', () => {
     expect(insertAt('test', 'ing', 'test'.length)).toBe('testing')
-    // eslint-disable-next-line @cspell/spellchecker
+    /* eslint-disable @cspell/spellchecker -- Testing string insertion with intentional misspelling 'ing' at position 2 */
     expect(insertAt('test', 'ing', 2)).toBe('teingst')
+    /* eslint-enable @cspell/spellchecker */
   })
 
   await it('should convert to integer or return NaN for invalid input', () => {

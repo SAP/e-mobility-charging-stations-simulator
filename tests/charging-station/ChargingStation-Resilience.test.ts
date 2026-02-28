@@ -3,7 +3,7 @@
  * @description Unit tests for charging station error handling, reconnection, and message queuing
  */
 import { expect } from '@std/expect'
-import { afterEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 
@@ -12,6 +12,10 @@ import { cleanupChargingStation, createMockChargingStation } from './ChargingSta
 
 await describe('ChargingStation Error Recovery and Resilience', async () => {
   let station: ChargingStation
+
+  beforeEach(() => {
+    station = undefined
+  })
 
   afterEach(() => {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -273,6 +277,10 @@ await describe('ChargingStation Error Recovery and Resilience', async () => {
 
 await describe('ChargingStation Message Buffering', async () => {
   let station: ChargingStation
+
+  beforeEach(() => {
+    station = undefined
+  })
 
   afterEach(() => {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition

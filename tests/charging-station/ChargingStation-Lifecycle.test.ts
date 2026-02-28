@@ -3,7 +3,7 @@
  * @description Unit tests for charging station start/stop/restart and delete operations
  */
 import { expect } from '@std/expect'
-import { afterEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 
@@ -12,6 +12,9 @@ import { cleanupChargingStation, createMockChargingStation } from './ChargingSta
 await describe('ChargingStation Lifecycle', async () => {
   await describe('Start/Stop Operations', async () => {
     let station: ChargingStation | undefined
+    beforeEach(() => {
+      station = undefined
+    })
 
     afterEach(() => {
       if (station != null) {
@@ -160,6 +163,9 @@ await describe('ChargingStation Lifecycle', async () => {
 
   await describe('Delete Operations', async () => {
     let station: ChargingStation | undefined
+    beforeEach(() => {
+      station = undefined
+    })
 
     afterEach(() => {
       if (station != null) {

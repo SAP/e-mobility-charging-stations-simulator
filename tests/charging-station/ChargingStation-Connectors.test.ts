@@ -3,7 +3,7 @@
  * @description Unit tests for connector queries, EVSE management, and availability
  */
 import { expect } from '@std/expect'
-import { afterEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 
@@ -16,6 +16,10 @@ const createRealChargingStation = createMockChargingStation
 await describe('ChargingStation Connector and EVSE State', async () => {
   await describe('Connector Query Tests', async () => {
     let station: ChargingStation | undefined
+
+    beforeEach(() => {
+      station = undefined
+    })
 
     afterEach(() => {
       if (station != null) {
@@ -95,6 +99,9 @@ await describe('ChargingStation Connector and EVSE State', async () => {
   await describe('Connector 0 (Shared Power) Tests', async () => {
     let station: ChargingStation | undefined
 
+    beforeEach(() => {
+      station = undefined
+    })
     afterEach(() => {
       if (station != null) {
         cleanupChargingStation(station)
@@ -122,6 +129,9 @@ await describe('ChargingStation Connector and EVSE State', async () => {
   await describe('EVSE Query Tests (non-EVSE mode)', async () => {
     let station: ChargingStation | undefined
 
+    beforeEach(() => {
+      station = undefined
+    })
     afterEach(() => {
       if (station != null) {
         cleanupChargingStation(station)
@@ -148,6 +158,9 @@ await describe('ChargingStation Connector and EVSE State', async () => {
   await describe('EVSE Mode Tests', async () => {
     let station: ChargingStation | undefined
 
+    beforeEach(() => {
+      station = undefined
+    })
     afterEach(() => {
       if (station != null) {
         cleanupChargingStation(station)
@@ -241,6 +254,9 @@ await describe('ChargingStation Connector and EVSE State', async () => {
   await describe('Boot Notification State', async () => {
     let station: ChargingStation | undefined
 
+    beforeEach(() => {
+      station = undefined
+    })
     afterEach(() => {
       if (station != null) {
         cleanupChargingStation(station)
@@ -342,6 +358,9 @@ await describe('ChargingStation Connector and EVSE State', async () => {
   await describe('Reservation Management', async () => {
     let station: ChargingStation | undefined
 
+    beforeEach(() => {
+      station = undefined
+    })
     afterEach(() => {
       if (station != null) {
         cleanupChargingStation(station)

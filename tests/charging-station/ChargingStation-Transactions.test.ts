@@ -3,7 +3,7 @@
  * @description Unit tests for transaction queries, energy meters, and concurrent transaction handling
  */
 import { expect } from '@std/expect'
-import { afterEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 
@@ -14,6 +14,9 @@ await describe('ChargingStation Transaction Management', async () => {
   await describe('Transaction Query Tests', async () => {
     let station: ChargingStation | undefined
 
+    beforeEach(() => {
+      station = undefined
+    })
     afterEach(() => {
       if (station != null) {
         cleanupChargingStation(station)
@@ -167,6 +170,9 @@ await describe('ChargingStation Transaction Management', async () => {
   await describe('Energy Meter Tests', async () => {
     let station: ChargingStation | undefined
 
+    beforeEach(() => {
+      station = undefined
+    })
     afterEach(() => {
       if (station != null) {
         cleanupChargingStation(station)
@@ -267,6 +273,9 @@ await describe('ChargingStation Transaction Management', async () => {
   await describe('Concurrent Transaction Scenarios', async () => {
     let station: ChargingStation | undefined
 
+    beforeEach(() => {
+      station = undefined
+    })
     afterEach(() => {
       if (station != null) {
         cleanupChargingStation(station)
@@ -428,6 +437,9 @@ await describe('ChargingStation Transaction Management', async () => {
   await describe('Heartbeat and Meter Intervals', async () => {
     let station: ChargingStation | undefined
 
+    beforeEach(() => {
+      station = undefined
+    })
     afterEach(() => {
       if (station != null) {
         cleanupChargingStation(station)

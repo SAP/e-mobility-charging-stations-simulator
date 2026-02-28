@@ -373,4 +373,109 @@ await describe('OCPP20AuthAdapter', async () => {
       }
     })
   })
+
+  await describe('OCPP20AuthAdapter - G03.FR.02 Offline Authorization', async () => {
+    let offlineAdapter: OCPP20AuthAdapter
+    let offlineMockChargingStation: ChargingStation
+
+    beforeEach(() => {
+      offlineMockChargingStation = {
+        inAcceptedState: () => true,
+        logPrefix: () => '[TEST-STATION-OFFLINE]',
+        stationInfo: {
+          chargingStationId: 'TEST-OFFLINE',
+        },
+      } as unknown as ChargingStation
+
+      offlineAdapter = new OCPP20AuthAdapter(offlineMockChargingStation)
+    })
+
+    afterEach(() => {
+      mock.reset()
+    })
+
+    await describe('G03.FR.02.001 - Offline detection', async () => {
+      await it('should detect station is offline when not in accepted state', async () => {
+        // Given: Station is offline (not in accepted state)
+        offlineMockChargingStation.inAcceptedState = () => false
+
+        // When: Check if remote authorization is available
+        const isAvailable = await offlineAdapter.isRemoteAvailable()
+
+        // Then: Remote should not be available
+        expect(isAvailable).toBe(false)
+      })
+
+      await it('should detect station is online when in accepted state', async () => {
+        // Given: Station is online (in accepted state)
+        offlineMockChargingStation.inAcceptedState = () => true
+
+        // When: Check if remote authorization is available
+        const isAvailable = await offlineAdapter.isRemoteAvailable()
+
+        // Then: Remote should be available (assuming AuthorizeRemoteStart is enabled by default)
+        expect(isAvailable).toBe(true)
+      })
+
+      await it('should have correct OCPP version for offline tests', () => {
+        // Verify we're testing the correct OCPP version
+        expect(offlineAdapter.ocppVersion).toBe(OCPPVersion.VERSION_20)
+      })
+    })
+
+    await describe('G03.FR.02.002 - Remote availability check', async () => {
+      await it('should return false when offline even with valid configuration', async () => {
+        // Given: Station is offline
+        offlineMockChargingStation.inAcceptedState = () => false
+
+        // When: Check remote availability
+        const isAvailable = await offlineAdapter.isRemoteAvailable()
+
+        // Then: Should not be available
+        expect(isAvailable).toBe(false)
+      })
+
+      await it('should handle errors gracefully when checking availability', async () => {
+        // Given: inAcceptedState throws an error
+        offlineMockChargingStation.inAcceptedState = () => {
+          throw new Error('Connection error')
+        }
+
+        // When: Check remote availability
+        const isAvailable = await offlineAdapter.isRemoteAvailable()
+
+        // Then: Should safely return false
+        expect(isAvailable).toBe(false)
+      })
+    })
+
+    await describe('G03.FR.02.003 - Configuration validation', async () => {
+      await it('should initialize with default configuration for offline scenarios', () => {
+        // When: Adapter is created
+        // Then: Should have OCPP 2.0 version
+        expect(offlineAdapter.ocppVersion).toBe(OCPPVersion.VERSION_20)
+      })
+
+      await it('should validate configuration schema for offline auth', () => {
+        // When: Get configuration schema
+        const schema = offlineAdapter.getConfigurationSchema()
+
+        // Then: Should have required offline auth properties
+        expect(schema).toBeDefined()
+        expect(schema.properties).toBeDefined()
+        // OCPP 2.0 uses variables, not configuration keys
+        // The actual offline behavior is controlled by AuthCtrlr variables
+      })
+
+      await it('should have getStatus method for monitoring offline state', () => {
+        // When: Get adapter status
+        const status = offlineAdapter.getStatus()
+
+        // Then: Status should be defined and include online state
+        expect(status).toBeDefined()
+        expect(typeof status.isOnline).toBe('boolean')
+        expect(status.ocppVersion).toBe(OCPPVersion.VERSION_20)
+      })
+    })
+  })
 })

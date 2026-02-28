@@ -31,7 +31,11 @@ import { Constants } from '../../../../src/utils/index.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockAuthService } from '../auth/helpers/MockFactories.js'
-import { resetLimits, resetReportingValueSize } from './OCPP20TestUtils.js'
+import {
+  resetConnectorTransactionState,
+  resetLimits,
+  resetReportingValueSize,
+} from './OCPP20TestUtils.js'
 
 await describe('F03 - Remote Stop Transaction', async () => {
   let sentTransactionEvents: OCPP20TransactionEventRequest[] = []
@@ -78,28 +82,6 @@ await describe('F03 - Remote Stop Transaction', async () => {
   })
 
   /**
-   * Helper function to reset all connector transaction states
-   */
-  function resetConnectorTransactionStates (): void {
-    // Reset all connectors across all EVSEs
-    for (const [, evse] of mockChargingStation.evses.entries()) {
-      for (const [connectorId] of evse.connectors.entries()) {
-        const status = mockChargingStation.getConnectorStatus(connectorId)
-        if (status) {
-          status.transactionStarted = false
-          status.transactionId = undefined
-          status.transactionIdTag = undefined
-          status.transactionStart = undefined
-          status.transactionEnergyActiveImportRegisterValue = undefined
-          status.remoteStartId = undefined
-          status.chargingProfiles = undefined
-          // Keep status as Available and availability as Operative
-        }
-      }
-    }
-  }
-
-  /**
    * Helper function to start a transaction and return the transaction ID
    * @param evseId - The EVSE ID to start transaction on
    * @param remoteStartId - The remote start ID for the transaction
@@ -113,7 +95,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
   ): Promise<string> {
     // Reset all connector states first to ensure clean state (unless skipped for multiple transactions)
     if (!skipReset) {
-      resetConnectorTransactionStates()
+      resetConnectorTransactionState(mockChargingStation)
     }
 
     const startRequest: OCPP20RequestStartTransactionRequest = {
@@ -172,7 +154,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
   // FR: F03.FR.02, F03.FR.03
   await it('should handle multiple active transactions correctly', async () => {
     // Reset once before starting multiple transactions
-    resetConnectorTransactionStates()
+    resetConnectorTransactionState(mockChargingStation)
 
     // Start transactions on different EVSEs (skip reset for subsequent transactions)
     const transactionId1 = await startTransaction(1, 200, true) // Skip reset since we just did it
@@ -480,7 +462,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
 
   // FR: F03.FR.09
   await it('should include final meter values in TransactionEvent(Ended)', async () => {
-    resetConnectorTransactionStates()
+    resetConnectorTransactionState(mockChargingStation)
 
     const transactionId = await startTransaction(3, 700)
 

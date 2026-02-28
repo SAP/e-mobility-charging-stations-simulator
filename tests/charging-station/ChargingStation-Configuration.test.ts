@@ -3,7 +3,7 @@
  * @description Unit tests for boot notification, config persistence, and WebSocket handling
  */
 import { expect } from '@std/expect'
-import { afterEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 
@@ -20,6 +20,9 @@ await describe('ChargingStation Configuration Management', async () => {
   await describe('B02 - Pending Boot Notification Behavior', async () => {
     let station: ChargingStation | undefined
 
+    beforeEach(() => {
+      station = undefined
+    })
     afterEach(() => {
       if (station != null) {
         cleanupChargingStation(station)
@@ -114,6 +117,9 @@ await describe('ChargingStation Configuration Management', async () => {
   await describe('B03 - Rejected Boot Notification Behavior', async () => {
     let station: ChargingStation | undefined
 
+    beforeEach(() => {
+      station = undefined
+    })
     afterEach(() => {
       if (station != null) {
         cleanupChargingStation(station)
@@ -237,6 +243,9 @@ await describe('ChargingStation Configuration Management', async () => {
   await describe('Configuration Persistence', async () => {
     let station: ChargingStation | undefined
 
+    beforeEach(() => {
+      station = undefined
+    })
     afterEach(() => {
       if (station != null) {
         cleanupChargingStation(station)
@@ -415,6 +424,9 @@ await describe('ChargingStation Configuration Management', async () => {
   await describe('WebSocket Message Handling', async () => {
     let station: ChargingStation | undefined
 
+    beforeEach(() => {
+      station = undefined
+    })
     afterEach(() => {
       if (station != null) {
         cleanupChargingStation(station)
@@ -734,6 +746,9 @@ await describe('ChargingStation Configuration Management', async () => {
   await describe('WebSocket Ping Interval', async () => {
     let station: ChargingStation | undefined
 
+    beforeEach(() => {
+      station = undefined
+    })
     afterEach(() => {
       if (station != null) {
         cleanupChargingStation(station)

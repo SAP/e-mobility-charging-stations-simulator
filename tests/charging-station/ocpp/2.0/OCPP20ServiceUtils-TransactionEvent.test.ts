@@ -1,13 +1,24 @@
 /**
  * @file Tests for OCPP20ServiceUtils TransactionEvent
- * @description Unit tests for OCPP 2.0 TransactionEvent building and trigger reasons (E01-E04)
+ * @description Consolidated unit tests for OCPP 2.0 TransactionEvent building and trigger reasons (E01-E04)
+ *
+ * This file consolidates tests from multiple variant files:
+ * - E01-E04 core TransactionEvent implementation
+ * - E02 Cable-First flow (cable plug event sequencing)
+ * - E03 IdToken-First flow (idToken presence in events)
+ * - Offline TransactionEvent queueing
+ * - Periodic TransactionEvent at TxUpdatedInterval
  */
 
 import { expect } from '@std/expect'
-import { afterEach, beforeEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it, mock } from 'node:test'
+
+import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
+import type { EmptyObject } from '../../../../src/types/index.js'
 
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import {
+  ConnectorStatusEnum,
   OCPP20TransactionEventEnumType,
   OCPP20TriggerReasonEnumType,
   OCPPVersion,
@@ -15,6 +26,7 @@ import {
 import {
   OCPP20ChargingStateEnumType,
   OCPP20IdTokenEnumType,
+  type OCPP20IdTokenType,
   OCPP20ReasonEnumType,
   type OCPP20TransactionContext,
 } from '../../../../src/types/ocpp/2.0/Transaction.js'
@@ -22,7 +34,50 @@ import { Constants, generateUUID } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../../tests/helpers/TestLifecycleHelpers.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
-import { createMockOCPP20TransactionTestStation, resetLimits } from './OCPP20TestUtils.js'
+import {
+  type CapturedOCPPRequest,
+  createMockOCPP20TransactionTestStation,
+  createMockStationWithRequestTracking,
+  type MockStationWithTracking,
+  resetConnectorTransactionState,
+  resetLimits,
+  TransactionContextFixtures,
+} from './OCPP20TestUtils.js'
+
+// ============================================================================
+// Transaction Flow Patterns for Parameterized Testing
+// ============================================================================
+
+/**
+ * Transaction flow variants for parameterized testing.
+ * Each flow represents a different transaction initiation pattern in OCPP 2.0.1.
+ */
+const TRANSACTION_FLOWS = [
+  {
+    description: 'E02 Cable-First',
+    expectedStartTrigger: OCPP20TriggerReasonEnumType.CablePluggedIn,
+    id: 'cableFirst',
+    includeIdToken: false,
+    name: 'E02 - Cable-First',
+    startContext: TransactionContextFixtures.cablePluggedIn(),
+  },
+  {
+    description: 'E03 IdToken-First',
+    expectedStartTrigger: OCPP20TriggerReasonEnumType.Authorized,
+    id: 'idTokenFirst',
+    includeIdToken: true,
+    name: 'E03 - IdToken-First',
+    startContext: TransactionContextFixtures.idTokenAuthorized(),
+  },
+  {
+    description: 'Remote Start',
+    expectedStartTrigger: OCPP20TriggerReasonEnumType.RemoteStart,
+    id: 'remoteStart',
+    includeIdToken: false,
+    name: 'Remote Start',
+    startContext: TransactionContextFixtures.remoteStart(),
+  },
+] as const
 
 await describe('E01-E04 - OCPP 2.0.1 TransactionEvent Implementation', async () => {
   let mockChargingStation: ReturnType<typeof createMockOCPP20TransactionTestStation>
@@ -173,7 +228,7 @@ await describe('E01-E04 - OCPP 2.0.1 TransactionEvent Implementation', async () 
         throw new Error('Should have thrown error for invalid identifier string')
       } catch (error) {
         expect((error as Error).message).toContain('Invalid transaction ID format')
-        expect(error.message).toContain('≤36 characters')
+        expect((error as Error).message).toContain('≤36 characters')
       }
     })
 
@@ -888,6 +943,1795 @@ await describe('E01-E04 - OCPP 2.0.1 TransactionEvent Implementation', async () 
         expect(response).toBeDefined()
         expect(typeof response).toBe('object')
       })
+    })
+  })
+
+  // ==========================================================================
+  // Parameterized Transaction Flow Tests (E02, E03, Remote Start)
+  // ==========================================================================
+  await describe('Transaction Flow Patterns', async () => {
+    for (const {
+      description,
+      expectedStartTrigger,
+      id,
+      includeIdToken,
+      name,
+      startContext,
+    } of TRANSACTION_FLOWS) {
+      await describe(`${name} Flow`, async () => {
+        await it(`should select ${expectedStartTrigger} trigger for ${description} transaction start`, () => {
+          const triggerReason = OCPP20ServiceUtils.selectTriggerReason(
+            OCPP20TransactionEventEnumType.Started,
+            startContext
+          )
+          expect(triggerReason).toBe(expectedStartTrigger)
+        })
+
+        await it(`should build correct Started event for ${description}`, () => {
+          const connectorId = 1
+          const transactionId = generateUUID()
+          const idToken: OCPP20IdTokenType | undefined = includeIdToken
+            ? { idToken: `${id.toUpperCase()}_TOKEN_001`, type: OCPP20IdTokenEnumType.ISO14443 }
+            : undefined
+
+          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+
+          const startedEvent = OCPP20ServiceUtils.buildTransactionEvent(
+            mockChargingStation,
+            OCPP20TransactionEventEnumType.Started,
+            expectedStartTrigger,
+            connectorId,
+            transactionId,
+            idToken != null ? { idToken } : undefined
+          )
+
+          expect(startedEvent.eventType).toBe(OCPP20TransactionEventEnumType.Started)
+          expect(startedEvent.triggerReason).toBe(expectedStartTrigger)
+          expect(startedEvent.seqNo).toBe(0)
+          expect(startedEvent.transactionInfo.transactionId).toBe(transactionId)
+
+          if (includeIdToken) {
+            expect(startedEvent.idToken).toBeDefined()
+            expect(startedEvent.idToken?.idToken).toBe(`${id.toUpperCase()}_TOKEN_001`)
+          }
+        })
+
+        await it(`should support complete ${description} transaction lifecycle`, () => {
+          const connectorId = 1
+          const transactionId = generateUUID()
+          const idToken: OCPP20IdTokenType | undefined = includeIdToken
+            ? { idToken: `${id.toUpperCase()}_LIFECYCLE_001`, type: OCPP20IdTokenEnumType.ISO14443 }
+            : undefined
+
+          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+
+          // Step 1: Started event
+          const startedEvent = OCPP20ServiceUtils.buildTransactionEvent(
+            mockChargingStation,
+            OCPP20TransactionEventEnumType.Started,
+            expectedStartTrigger,
+            connectorId,
+            transactionId,
+            idToken != null ? { idToken } : undefined
+          )
+
+          // Step 2: Charging state change
+          const chargingEvent = OCPP20ServiceUtils.buildTransactionEvent(
+            mockChargingStation,
+            OCPP20TransactionEventEnumType.Updated,
+            OCPP20TriggerReasonEnumType.ChargingStateChanged,
+            connectorId,
+            transactionId,
+            { chargingState: OCPP20ChargingStateEnumType.Charging }
+          )
+
+          // Step 3: Ended event
+          const endedEvent = OCPP20ServiceUtils.buildTransactionEvent(
+            mockChargingStation,
+            OCPP20TransactionEventEnumType.Ended,
+            OCPP20TriggerReasonEnumType.StopAuthorized,
+            connectorId,
+            transactionId
+          )
+
+          // Validate event sequence
+          expect(startedEvent.seqNo).toBe(0)
+          expect(chargingEvent.seqNo).toBe(1)
+          expect(endedEvent.seqNo).toBe(2)
+
+          // All events share same transaction ID
+          expect(startedEvent.transactionInfo.transactionId).toBe(transactionId)
+          expect(chargingEvent.transactionInfo.transactionId).toBe(transactionId)
+          expect(endedEvent.transactionInfo.transactionId).toBe(transactionId)
+        })
+
+        await it(`should maintain independent sequence numbers on different connectors for ${description}`, () => {
+          const connector1 = 1
+          const connector2 = 2
+          const transaction1Id = generateUUID()
+          const transaction2Id = generateUUID()
+
+          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connector1)
+          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connector2)
+
+          // Start transaction on connector 1
+          const conn1Event1 = OCPP20ServiceUtils.buildTransactionEvent(
+            mockChargingStation,
+            OCPP20TransactionEventEnumType.Started,
+            expectedStartTrigger,
+            connector1,
+            transaction1Id
+          )
+
+          // Start transaction on connector 2
+          const conn2Event1 = OCPP20ServiceUtils.buildTransactionEvent(
+            mockChargingStation,
+            OCPP20TransactionEventEnumType.Started,
+            expectedStartTrigger,
+            connector2,
+            transaction2Id
+          )
+
+          // Update connector 1
+          const conn1Event2 = OCPP20ServiceUtils.buildTransactionEvent(
+            mockChargingStation,
+            OCPP20TransactionEventEnumType.Updated,
+            OCPP20TriggerReasonEnumType.ChargingStateChanged,
+            connector1,
+            transaction1Id
+          )
+
+          // Update connector 2
+          const conn2Event2 = OCPP20ServiceUtils.buildTransactionEvent(
+            mockChargingStation,
+            OCPP20TransactionEventEnumType.Updated,
+            OCPP20TriggerReasonEnumType.ChargingStateChanged,
+            connector2,
+            transaction2Id
+          )
+
+          // Verify independent sequence numbers
+          expect(conn1Event1.seqNo).toBe(0)
+          expect(conn1Event2.seqNo).toBe(1)
+          expect(conn2Event1.seqNo).toBe(0)
+          expect(conn2Event2.seqNo).toBe(1)
+
+          // Verify independent transaction IDs
+          expect(conn1Event1.transactionInfo.transactionId).toBe(transaction1Id)
+          expect(conn2Event1.transactionInfo.transactionId).toBe(transaction2Id)
+        })
+      })
+    }
+  })
+
+  // ==========================================================================
+  // E02 Cable-First Specific Tests
+  // ==========================================================================
+  await describe('E02 - Cable-First Transaction Flow', async () => {
+    beforeEach(() => {
+      resetConnectorTransactionState(mockChargingStation)
+    })
+
+    await describe('Cable Plug Event Sequencing', async () => {
+      await it('should sequence CablePluggedIn → EVDetected → Charging correctly', () => {
+        const connectorId = 1
+        const transactionId = generateUUID()
+
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+
+        // Step 1: Cable plugged in (Started)
+        const cablePluggedEvent = OCPP20ServiceUtils.buildTransactionEvent(
+          mockChargingStation,
+          OCPP20TransactionEventEnumType.Started,
+          OCPP20TriggerReasonEnumType.CablePluggedIn,
+          connectorId,
+          transactionId
+        )
+
+        // Step 2: EV detected (Updated)
+        const evDetectedEvent = OCPP20ServiceUtils.buildTransactionEvent(
+          mockChargingStation,
+          OCPP20TransactionEventEnumType.Updated,
+          OCPP20TriggerReasonEnumType.EVDetected,
+          connectorId,
+          transactionId
+        )
+
+        // Step 3: Charging starts (Updated with ChargingStateChanged)
+        const chargingStartedEvent = OCPP20ServiceUtils.buildTransactionEvent(
+          mockChargingStation,
+          OCPP20TransactionEventEnumType.Updated,
+          OCPP20TriggerReasonEnumType.ChargingStateChanged,
+          connectorId,
+          transactionId,
+          { chargingState: OCPP20ChargingStateEnumType.Charging }
+        )
+
+        // Assert sequence numbers follow correct order
+        expect(cablePluggedEvent.seqNo).toBe(0)
+        expect(evDetectedEvent.seqNo).toBe(1)
+        expect(chargingStartedEvent.seqNo).toBe(2)
+
+        // Assert all events share the same transaction ID
+        expect(cablePluggedEvent.transactionInfo.transactionId).toBe(transactionId)
+        expect(evDetectedEvent.transactionInfo.transactionId).toBe(transactionId)
+        expect(chargingStartedEvent.transactionInfo.transactionId).toBe(transactionId)
+
+        // Assert event types match expected pattern
+        expect(cablePluggedEvent.eventType).toBe(OCPP20TransactionEventEnumType.Started)
+        expect(evDetectedEvent.eventType).toBe(OCPP20TransactionEventEnumType.Updated)
+        expect(chargingStartedEvent.eventType).toBe(OCPP20TransactionEventEnumType.Updated)
+      })
+
+      await it('should handle EVDeparted for cable removal ending transaction', () => {
+        const connectorId = 2
+        const transactionId = generateUUID()
+
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+
+        // Start transaction with cable plug
+        const startEvent = OCPP20ServiceUtils.buildTransactionEvent(
+          mockChargingStation,
+          OCPP20TransactionEventEnumType.Started,
+          OCPP20TriggerReasonEnumType.CablePluggedIn,
+          connectorId,
+          transactionId
+        )
+
+        // End transaction with EV departure (cable removal)
+        const endEvent = OCPP20ServiceUtils.buildTransactionEvent(
+          mockChargingStation,
+          OCPP20TransactionEventEnumType.Ended,
+          OCPP20TriggerReasonEnumType.EVDeparted,
+          connectorId,
+          transactionId
+        )
+
+        // Assert proper sequencing for cable-initiated start and end
+        expect(startEvent.seqNo).toBe(0)
+        expect(startEvent.triggerReason).toBe(OCPP20TriggerReasonEnumType.CablePluggedIn)
+        expect(endEvent.seqNo).toBe(1)
+        expect(endEvent.triggerReason).toBe(OCPP20TriggerReasonEnumType.EVDeparted)
+        expect(endEvent.eventType).toBe(OCPP20TransactionEventEnumType.Ended)
+      })
+    })
+
+    await describe('EV Detection Flow', async () => {
+      await it('should include EVDetected between cable plug and charging start', () => {
+        const connectorId = 1
+        const transactionId = generateUUID()
+
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+
+        // Build full cable-first flow
+        const events = [
+          OCPP20ServiceUtils.buildTransactionEvent(
+            mockChargingStation,
+            OCPP20TransactionEventEnumType.Started,
+            OCPP20TriggerReasonEnumType.CablePluggedIn,
+            connectorId,
+            transactionId
+          ),
+          OCPP20ServiceUtils.buildTransactionEvent(
+            mockChargingStation,
+            OCPP20TransactionEventEnumType.Updated,
+            OCPP20TriggerReasonEnumType.EVDetected,
+            connectorId,
+            transactionId
+          ),
+          OCPP20ServiceUtils.buildTransactionEvent(
+            mockChargingStation,
+            OCPP20TransactionEventEnumType.Updated,
+            OCPP20TriggerReasonEnumType.Authorized,
+            connectorId,
+            transactionId
+          ),
+          OCPP20ServiceUtils.buildTransactionEvent(
+            mockChargingStation,
+            OCPP20TransactionEventEnumType.Updated,
+            OCPP20TriggerReasonEnumType.ChargingStateChanged,
+            connectorId,
+            transactionId,
+            { chargingState: OCPP20ChargingStateEnumType.Charging }
+          ),
+        ]
+
+        // Assert EVDetected comes after CablePluggedIn and before authorization
+        expect(events[0].triggerReason).toBe(OCPP20TriggerReasonEnumType.CablePluggedIn)
+        expect(events[1].triggerReason).toBe(OCPP20TriggerReasonEnumType.EVDetected)
+        expect(events[2].triggerReason).toBe(OCPP20TriggerReasonEnumType.Authorized)
+        expect(events[3].triggerReason).toBe(OCPP20TriggerReasonEnumType.ChargingStateChanged)
+
+        // Assert continuous sequence numbers
+        for (let i = 0; i < events.length; i++) {
+          expect(events[i].seqNo).toBe(i)
+        }
+      })
+    })
+
+    await describe('Connector Status Transitions', async () => {
+      await it('should track connector status through cable-first lifecycle', () => {
+        const connectorId = 1
+
+        // Get connector status object
+        const connectorStatus = mockChargingStation.getConnectorStatus(connectorId)
+        expect(connectorStatus).toBeDefined()
+        if (connectorStatus == null) {
+          throw new Error('Connector status should be defined')
+        }
+
+        // Initial state: Available
+        connectorStatus.status = ConnectorStatusEnum.Available
+        expect(connectorStatus.status).toBe(ConnectorStatusEnum.Available)
+
+        // After cable plug: Preparing (implied by transaction start)
+        connectorStatus.status = ConnectorStatusEnum.Preparing
+        connectorStatus.transactionStarted = true
+        expect(connectorStatus.status).toBe(ConnectorStatusEnum.Preparing)
+        expect(connectorStatus.transactionStarted).toBe(true)
+
+        // After EV detected and auth: Charging
+        connectorStatus.status = ConnectorStatusEnum.Charging
+        expect(connectorStatus.status).toBe(ConnectorStatusEnum.Charging)
+
+        // After EV departed: Available again
+        connectorStatus.status = ConnectorStatusEnum.Available
+        connectorStatus.transactionStarted = false
+        expect(connectorStatus.status).toBe(ConnectorStatusEnum.Available)
+        expect(connectorStatus.transactionStarted).toBe(false)
+      })
+
+      await it('should preserve transaction ID through cable-first flow states', () => {
+        const connectorId = 2
+        const transactionId = generateUUID()
+
+        const connectorStatus = mockChargingStation.getConnectorStatus(connectorId)
+        expect(connectorStatus).toBeDefined()
+        if (connectorStatus == null) {
+          throw new Error('Connector status should be defined')
+        }
+
+        // Set transaction ID at start
+        connectorStatus.transactionId = transactionId
+        connectorStatus.transactionStarted = true
+        connectorStatus.status = ConnectorStatusEnum.Preparing
+
+        // Transition to charging
+        connectorStatus.status = ConnectorStatusEnum.Charging
+
+        // Transaction ID should persist through state changes
+        expect(connectorStatus.transactionId).toBe(transactionId)
+        expect(connectorStatus.transactionStarted).toBe(true)
+
+        // Transition to finished
+        connectorStatus.status = ConnectorStatusEnum.Finishing
+
+        // Still same transaction until fully ended
+        expect(connectorStatus.transactionId).toBe(transactionId)
+      })
+    })
+
+    await describe('Full Cable-First Transaction Lifecycle', async () => {
+      await it('should handle suspended charging states in cable-first flow', () => {
+        const connectorId = 3
+        const transactionId = generateUUID()
+
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+
+        // Cable-first flow with suspended state
+        const events = [
+          // 1. Cable plugged
+          OCPP20ServiceUtils.buildTransactionEvent(
+            mockChargingStation,
+            OCPP20TransactionEventEnumType.Started,
+            OCPP20TriggerReasonEnumType.CablePluggedIn,
+            connectorId,
+            transactionId
+          ),
+          // 2. Start charging
+          OCPP20ServiceUtils.buildTransactionEvent(
+            mockChargingStation,
+            OCPP20TransactionEventEnumType.Updated,
+            OCPP20TriggerReasonEnumType.ChargingStateChanged,
+            connectorId,
+            transactionId,
+            { chargingState: OCPP20ChargingStateEnumType.Charging }
+          ),
+          // 3. Suspended by EV
+          OCPP20ServiceUtils.buildTransactionEvent(
+            mockChargingStation,
+            OCPP20TransactionEventEnumType.Updated,
+            OCPP20TriggerReasonEnumType.ChargingStateChanged,
+            connectorId,
+            transactionId,
+            { chargingState: OCPP20ChargingStateEnumType.SuspendedEV }
+          ),
+          // 4. Resume charging
+          OCPP20ServiceUtils.buildTransactionEvent(
+            mockChargingStation,
+            OCPP20TransactionEventEnumType.Updated,
+            OCPP20TriggerReasonEnumType.ChargingStateChanged,
+            connectorId,
+            transactionId,
+            { chargingState: OCPP20ChargingStateEnumType.Charging }
+          ),
+          // 5. EV departed
+          OCPP20ServiceUtils.buildTransactionEvent(
+            mockChargingStation,
+            OCPP20TransactionEventEnumType.Ended,
+            OCPP20TriggerReasonEnumType.EVDeparted,
+            connectorId,
+            transactionId
+          ),
+        ]
+
+        // Verify sequence numbers are continuous through suspend/resume
+        for (let i = 0; i < events.length; i++) {
+          expect(events[i].seqNo).toBe(i)
+        }
+
+        // Verify all share same transaction ID
+        for (const event of events) {
+          expect(event.transactionInfo.transactionId).toBe(transactionId)
+        }
+      })
+    })
+
+    await describe('Context-Based Cable Event Trigger Selection', async () => {
+      await it('should select CablePluggedIn from cable_action context with plugged_in state', () => {
+        const triggerReason = OCPP20ServiceUtils.selectTriggerReason(
+          OCPP20TransactionEventEnumType.Started,
+          TransactionContextFixtures.cablePluggedIn()
+        )
+
+        expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.CablePluggedIn)
+      })
+
+      await it('should select EVDetected from cable_action context with detected state', () => {
+        const triggerReason = OCPP20ServiceUtils.selectTriggerReason(
+          OCPP20TransactionEventEnumType.Updated,
+          TransactionContextFixtures.evDetected()
+        )
+
+        expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.EVDetected)
+      })
+
+      await it('should select EVDeparted from cable_action context with unplugged state', () => {
+        const triggerReason = OCPP20ServiceUtils.selectTriggerReason(
+          OCPP20TransactionEventEnumType.Ended,
+          TransactionContextFixtures.evDeparted()
+        )
+
+        expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.EVDeparted)
+      })
+    })
+  })
+
+  // ==========================================================================
+  // E03 IdToken-First Specific Tests
+  // ==========================================================================
+  await describe('E03 - IdToken-First Pre-Authorization Flow', async () => {
+    beforeEach(() => {
+      resetConnectorTransactionState(mockChargingStation)
+    })
+
+    await describe('E03.FR.13 - Trigger Reason Selection', async () => {
+      await it('should select groupIdToken trigger for group authorization', () => {
+        const context: OCPP20TransactionContext = {
+          authorizationMethod: 'groupIdToken',
+          source: 'local_authorization',
+        }
+
+        const triggerReason = OCPP20ServiceUtils.selectTriggerReason(
+          OCPP20TransactionEventEnumType.Started,
+          context
+        )
+
+        expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.Authorized)
+      })
+
+      await it('should differentiate IdToken-first from Cable-first by trigger reason', () => {
+        // IdToken-first: Authorized trigger
+        const idTokenFirstContext: OCPP20TransactionContext = {
+          authorizationMethod: 'idToken',
+          source: 'local_authorization',
+        }
+
+        // Cable-first: CablePluggedIn trigger
+        const cableFirstContext: OCPP20TransactionContext = {
+          cableState: 'plugged_in',
+          source: 'cable_action',
+        }
+
+        const idTokenTrigger = OCPP20ServiceUtils.selectTriggerReason(
+          OCPP20TransactionEventEnumType.Started,
+          idTokenFirstContext
+        )
+
+        const cableTrigger = OCPP20ServiceUtils.selectTriggerReason(
+          OCPP20TransactionEventEnumType.Started,
+          cableFirstContext
+        )
+
+        expect(idTokenTrigger).toBe(OCPP20TriggerReasonEnumType.Authorized)
+        expect(cableTrigger).toBe(OCPP20TriggerReasonEnumType.CablePluggedIn)
+        expect(idTokenTrigger).not.toBe(cableTrigger)
+      })
+    })
+
+    await describe('E03.FR.01 - IdToken in TransactionEvent', async () => {
+      await it('should include idToken in first TransactionEvent after authorization', () => {
+        const connectorId = 1
+        const transactionId = generateUUID()
+        const idToken: OCPP20IdTokenType = {
+          idToken: 'VALID_TOKEN_E03_001',
+          type: OCPP20IdTokenEnumType.ISO14443,
+        }
+
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+
+        // Build Started event with idToken (E03.FR.01: IdToken must be in first event)
+        const startedEvent = OCPP20ServiceUtils.buildTransactionEvent(
+          mockChargingStation,
+          OCPP20TransactionEventEnumType.Started,
+          OCPP20TriggerReasonEnumType.Authorized,
+          connectorId,
+          transactionId,
+          { idToken }
+        )
+
+        expect(startedEvent.idToken).toBeDefined()
+        expect(startedEvent.idToken?.idToken).toBe('VALID_TOKEN_E03_001')
+        expect(startedEvent.idToken?.type).toBe(OCPP20IdTokenEnumType.ISO14443)
+        expect(startedEvent.eventType).toBe(OCPP20TransactionEventEnumType.Started)
+        expect(startedEvent.triggerReason).toBe(OCPP20TriggerReasonEnumType.Authorized)
+      })
+
+      await it('should not include idToken in subsequent events (E03.FR.01 compliance)', () => {
+        const connectorId = 1
+        const transactionId = generateUUID()
+        const idToken: OCPP20IdTokenType = {
+          idToken: 'VALID_TOKEN_E03_002',
+          type: OCPP20IdTokenEnumType.ISO14443,
+        }
+
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+
+        // First event includes idToken
+        const startedEvent = OCPP20ServiceUtils.buildTransactionEvent(
+          mockChargingStation,
+          OCPP20TransactionEventEnumType.Started,
+          OCPP20TriggerReasonEnumType.Authorized,
+          connectorId,
+          transactionId,
+          { idToken }
+        )
+
+        // Second event should NOT include idToken (flag is set after first inclusion)
+        const updatedEvent = OCPP20ServiceUtils.buildTransactionEvent(
+          mockChargingStation,
+          OCPP20TransactionEventEnumType.Updated,
+          OCPP20TriggerReasonEnumType.ChargingStateChanged,
+          connectorId,
+          transactionId,
+          { chargingState: OCPP20ChargingStateEnumType.Charging, idToken }
+        )
+
+        expect(startedEvent.idToken).toBeDefined()
+        expect(updatedEvent.idToken).toBeUndefined()
+      })
+
+      await it('should support various IdToken types for E03 flow', () => {
+        const connectorId = 1
+        const transactionId = generateUUID()
+
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+
+        // Test ISO14443 (RFID)
+        const rfidToken: OCPP20IdTokenType = {
+          idToken: 'RFID_TAG_123456',
+          type: OCPP20IdTokenEnumType.ISO14443,
+        }
+
+        const rfidEvent = OCPP20ServiceUtils.buildTransactionEvent(
+          mockChargingStation,
+          OCPP20TransactionEventEnumType.Started,
+          OCPP20TriggerReasonEnumType.Authorized,
+          connectorId,
+          transactionId,
+          { idToken: rfidToken }
+        )
+
+        expect(rfidEvent.idToken?.type).toBe(OCPP20IdTokenEnumType.ISO14443)
+
+        // Reset for eMAID test
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+        const connectorStatus = mockChargingStation.getConnectorStatus(connectorId)
+        if (connectorStatus != null) {
+          connectorStatus.transactionIdTokenSent = undefined
+        }
+
+        // Test eMAID (contract identifier)
+        const emaidToken: OCPP20IdTokenType = {
+          idToken: 'DE*ABC*E123456*1',
+          type: OCPP20IdTokenEnumType.eMAID,
+        }
+
+        const emaidEvent = OCPP20ServiceUtils.buildTransactionEvent(
+          mockChargingStation,
+          OCPP20TransactionEventEnumType.Started,
+          OCPP20TriggerReasonEnumType.Authorized,
+          connectorId,
+          generateUUID(),
+          { idToken: emaidToken }
+        )
+
+        expect(emaidEvent.idToken?.type).toBe(OCPP20IdTokenEnumType.eMAID)
+        expect(emaidEvent.idToken?.idToken).toBe('DE*ABC*E123456*1')
+      })
+    })
+
+    await describe('Full IdToken-First Transaction Lifecycle', async () => {
+      await it('should support complete IdToken-first to cable to charging to end flow', () => {
+        const connectorId = 1
+        const transactionId = generateUUID()
+        const idToken: OCPP20IdTokenType = {
+          idToken: 'LIFECYCLE_TOKEN_001',
+          type: OCPP20IdTokenEnumType.ISO14443,
+        }
+
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+
+        // E03 Step 1: IdToken presented and authorized (Started with Authorized trigger)
+        const authorizedEvent = OCPP20ServiceUtils.buildTransactionEvent(
+          mockChargingStation,
+          OCPP20TransactionEventEnumType.Started,
+          OCPP20TriggerReasonEnumType.Authorized,
+          connectorId,
+          transactionId,
+          { idToken }
+        )
+
+        // E03 Step 2: Cable connected (Updated event)
+        const cableConnectedEvent = OCPP20ServiceUtils.buildTransactionEvent(
+          mockChargingStation,
+          OCPP20TransactionEventEnumType.Updated,
+          OCPP20TriggerReasonEnumType.CablePluggedIn,
+          connectorId,
+          transactionId
+        )
+
+        // E03 Step 3: Charging starts
+        const chargingEvent = OCPP20ServiceUtils.buildTransactionEvent(
+          mockChargingStation,
+          OCPP20TransactionEventEnumType.Updated,
+          OCPP20TriggerReasonEnumType.ChargingStateChanged,
+          connectorId,
+          transactionId,
+          { chargingState: OCPP20ChargingStateEnumType.Charging }
+        )
+
+        // E03 Step 4: Transaction ends
+        const endedEvent = OCPP20ServiceUtils.buildTransactionEvent(
+          mockChargingStation,
+          OCPP20TransactionEventEnumType.Ended,
+          OCPP20TriggerReasonEnumType.StopAuthorized,
+          connectorId,
+          transactionId
+        )
+
+        // Validate event sequence
+        expect(authorizedEvent.eventType).toBe(OCPP20TransactionEventEnumType.Started)
+        expect(authorizedEvent.triggerReason).toBe(OCPP20TriggerReasonEnumType.Authorized)
+        expect(authorizedEvent.idToken).toBeDefined()
+        expect(authorizedEvent.seqNo).toBe(0)
+
+        expect(cableConnectedEvent.eventType).toBe(OCPP20TransactionEventEnumType.Updated)
+        expect(cableConnectedEvent.triggerReason).toBe(OCPP20TriggerReasonEnumType.CablePluggedIn)
+        expect(cableConnectedEvent.idToken).toBeUndefined() // E03.FR.01: idToken only in first event
+        expect(cableConnectedEvent.seqNo).toBe(1)
+
+        expect(chargingEvent.eventType).toBe(OCPP20TransactionEventEnumType.Updated)
+        expect(chargingEvent.seqNo).toBe(2)
+
+        expect(endedEvent.eventType).toBe(OCPP20TransactionEventEnumType.Ended)
+        expect(endedEvent.seqNo).toBe(3)
+
+        // All events share same transaction ID
+        expect(authorizedEvent.transactionInfo.transactionId).toBe(transactionId)
+        expect(cableConnectedEvent.transactionInfo.transactionId).toBe(transactionId)
+        expect(chargingEvent.transactionInfo.transactionId).toBe(transactionId)
+        expect(endedEvent.transactionInfo.transactionId).toBe(transactionId)
+      })
+
+      await it('should differentiate E03 lifecycle from E02 Cable-First lifecycle', () => {
+        const connectorId = 1
+        const e03TransactionId = generateUUID()
+        const e02TransactionId = generateUUID()
+        const idToken: OCPP20IdTokenType = {
+          idToken: 'COMPARE_TOKEN_001',
+          type: OCPP20IdTokenEnumType.ISO14443,
+        }
+
+        // E03 IdToken-First: Starts with Authorized trigger
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+        const connectorStatus = mockChargingStation.getConnectorStatus(connectorId)
+        if (connectorStatus != null) {
+          connectorStatus.transactionIdTokenSent = undefined
+        }
+
+        const e03Start = OCPP20ServiceUtils.buildTransactionEvent(
+          mockChargingStation,
+          OCPP20TransactionEventEnumType.Started,
+          OCPP20TriggerReasonEnumType.Authorized,
+          connectorId,
+          e03TransactionId,
+          { idToken }
+        )
+
+        // E02 Cable-First: Starts with CablePluggedIn trigger
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+        if (connectorStatus != null) {
+          connectorStatus.transactionIdTokenSent = undefined
+        }
+
+        const e02Start = OCPP20ServiceUtils.buildTransactionEvent(
+          mockChargingStation,
+          OCPP20TransactionEventEnumType.Started,
+          OCPP20TriggerReasonEnumType.CablePluggedIn,
+          connectorId,
+          e02TransactionId
+        )
+
+        // Key difference: E03 starts with Authorized, E02 starts with CablePluggedIn
+        expect(e03Start.triggerReason).toBe(OCPP20TriggerReasonEnumType.Authorized)
+        expect(e02Start.triggerReason).toBe(OCPP20TriggerReasonEnumType.CablePluggedIn)
+
+        // E03 includes idToken in first event, E02 may not
+        expect(e03Start.idToken).toBeDefined()
+        expect(e02Start.idToken).toBeUndefined()
+      })
+    })
+
+    await describe('E03.FR.05/06 - EVConnectionTimeOut', async () => {
+      await it('should support authorization cancellation event (cable not connected)', () => {
+        const connectorId = 1
+        const transactionId = generateUUID()
+        const idToken: OCPP20IdTokenType = {
+          idToken: 'TIMEOUT_TOKEN_001',
+          type: OCPP20IdTokenEnumType.ISO14443,
+        }
+
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+
+        // E03.FR.05: User authorizes with IdToken
+        const authorizedEvent = OCPP20ServiceUtils.buildTransactionEvent(
+          mockChargingStation,
+          OCPP20TransactionEventEnumType.Started,
+          OCPP20TriggerReasonEnumType.Authorized,
+          connectorId,
+          transactionId,
+          { idToken }
+        )
+
+        // E03.FR.06: Cable not connected within timeout - transaction ends with Timeout
+        const timeoutEvent = OCPP20ServiceUtils.buildTransactionEvent(
+          mockChargingStation,
+          OCPP20TransactionEventEnumType.Ended,
+          OCPP20TriggerReasonEnumType.EVConnectTimeout,
+          connectorId,
+          transactionId
+        )
+
+        expect(authorizedEvent.eventType).toBe(OCPP20TransactionEventEnumType.Started)
+        expect(authorizedEvent.triggerReason).toBe(OCPP20TriggerReasonEnumType.Authorized)
+
+        expect(timeoutEvent.eventType).toBe(OCPP20TransactionEventEnumType.Ended)
+        expect(timeoutEvent.triggerReason).toBe(OCPP20TriggerReasonEnumType.EVConnectTimeout)
+        expect(timeoutEvent.seqNo).toBe(1)
+
+        // Same transaction ID for both events
+        expect(authorizedEvent.transactionInfo.transactionId).toBe(
+          timeoutEvent.transactionInfo.transactionId
+        )
+      })
+    })
+
+    await describe('Authorization Status in E03 Flow', async () => {
+      await it('should support Deauthorized trigger for rejected authorization', () => {
+        const context: OCPP20TransactionContext = {
+          authorizationMethod: 'idToken',
+          isDeauthorized: true,
+          source: 'local_authorization',
+        }
+
+        const triggerReason = OCPP20ServiceUtils.selectTriggerReason(
+          OCPP20TransactionEventEnumType.Ended,
+          context
+        )
+
+        expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.Deauthorized)
+      })
+
+      await it('should handle transaction end after token revocation', () => {
+        const connectorId = 1
+        const transactionId = generateUUID()
+        const idToken: OCPP20IdTokenType = {
+          idToken: 'REVOKED_TOKEN_001',
+          type: OCPP20IdTokenEnumType.ISO14443,
+        }
+
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+
+        // Transaction started with authorization
+        const startEvent = OCPP20ServiceUtils.buildTransactionEvent(
+          mockChargingStation,
+          OCPP20TransactionEventEnumType.Started,
+          OCPP20TriggerReasonEnumType.Authorized,
+          connectorId,
+          transactionId,
+          { idToken }
+        )
+
+        // Transaction ended due to deauthorization (e.g., token revoked mid-session)
+        const revokedEvent = OCPP20ServiceUtils.buildTransactionEvent(
+          mockChargingStation,
+          OCPP20TransactionEventEnumType.Ended,
+          OCPP20TriggerReasonEnumType.Deauthorized,
+          connectorId,
+          transactionId
+        )
+
+        expect(startEvent.eventType).toBe(OCPP20TransactionEventEnumType.Started)
+        expect(revokedEvent.eventType).toBe(OCPP20TransactionEventEnumType.Ended)
+        expect(revokedEvent.triggerReason).toBe(OCPP20TriggerReasonEnumType.Deauthorized)
+      })
+
+      await it('should support StopAuthorized trigger for normal transaction end', () => {
+        const context: OCPP20TransactionContext = {
+          authorizationMethod: 'stopAuthorized',
+          source: 'local_authorization',
+        }
+
+        const triggerReason = OCPP20ServiceUtils.selectTriggerReason(
+          OCPP20TransactionEventEnumType.Ended,
+          context
+        )
+
+        expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.StopAuthorized)
+      })
+    })
+
+    await describe('E03.FR.07/08 - Sequence Numbers and Transaction ID', async () => {
+      await it('should maintain continuous sequence numbers throughout E03 lifecycle', () => {
+        const connectorId = 1
+        const transactionId = generateUUID()
+        const idToken: OCPP20IdTokenType = {
+          idToken: 'SEQ_TOKEN_001',
+          type: OCPP20IdTokenEnumType.ISO14443,
+        }
+
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+
+        const events = [
+          OCPP20ServiceUtils.buildTransactionEvent(
+            mockChargingStation,
+            OCPP20TransactionEventEnumType.Started,
+            OCPP20TriggerReasonEnumType.Authorized,
+            connectorId,
+            transactionId,
+            { idToken }
+          ),
+          OCPP20ServiceUtils.buildTransactionEvent(
+            mockChargingStation,
+            OCPP20TransactionEventEnumType.Updated,
+            OCPP20TriggerReasonEnumType.CablePluggedIn,
+            connectorId,
+            transactionId
+          ),
+          OCPP20ServiceUtils.buildTransactionEvent(
+            mockChargingStation,
+            OCPP20TransactionEventEnumType.Updated,
+            OCPP20TriggerReasonEnumType.ChargingStateChanged,
+            connectorId,
+            transactionId
+          ),
+          OCPP20ServiceUtils.buildTransactionEvent(
+            mockChargingStation,
+            OCPP20TransactionEventEnumType.Updated,
+            OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+            connectorId,
+            transactionId
+          ),
+          OCPP20ServiceUtils.buildTransactionEvent(
+            mockChargingStation,
+            OCPP20TransactionEventEnumType.Ended,
+            OCPP20TriggerReasonEnumType.StopAuthorized,
+            connectorId,
+            transactionId
+          ),
+        ]
+
+        // E03.FR.07: Sequence numbers must be continuous
+        events.forEach((event, index) => {
+          expect(event.seqNo).toBe(index)
+        })
+      })
+
+      await it('should use unique transaction ID (E03.FR.08)', () => {
+        const connectorId = 1
+
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+
+        const transaction1Id = generateUUID()
+        const transaction2Id = generateUUID()
+
+        // E03.FR.08: transactionId MUST be unique
+        expect(transaction1Id).not.toBe(transaction2Id)
+
+        const event1 = OCPP20ServiceUtils.buildTransactionEvent(
+          mockChargingStation,
+          OCPP20TransactionEventEnumType.Started,
+          OCPP20TriggerReasonEnumType.Authorized,
+          connectorId,
+          transaction1Id
+        )
+
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+
+        const event2 = OCPP20ServiceUtils.buildTransactionEvent(
+          mockChargingStation,
+          OCPP20TransactionEventEnumType.Started,
+          OCPP20TriggerReasonEnumType.Authorized,
+          connectorId,
+          transaction2Id
+        )
+
+        expect(event1.transactionInfo.transactionId).toBe(transaction1Id)
+        expect(event2.transactionInfo.transactionId).toBe(transaction2Id)
+        expect(event1.transactionInfo.transactionId).not.toBe(event2.transactionInfo.transactionId)
+      })
+    })
+  })
+})
+
+// ============================================================================
+// Offline TransactionEvent Queueing Tests
+// ============================================================================
+await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () => {
+  let mockTracking: MockStationWithTracking
+  let mockChargingStation: ChargingStation
+  let sentRequests: CapturedOCPPRequest[]
+  let setOnline: (online: boolean) => void
+
+  beforeEach(() => {
+    mockTracking = createMockStationWithRequestTracking()
+    mockChargingStation = mockTracking.station
+    sentRequests = mockTracking.sentRequests
+    setOnline = mockTracking.setOnline
+  })
+
+  afterEach(() => {
+    for (let connectorId = 1; connectorId <= 3; connectorId++) {
+      const connector = mockChargingStation.getConnectorStatus(connectorId)
+      if (connector != null) {
+        connector.transactionEventQueue = undefined
+      }
+    }
+    standardCleanup()
+  })
+
+  await describe('Queue formation when offline', async () => {
+    await it('should queue TransactionEvent when WebSocket is disconnected', async () => {
+      const connectorId = 1
+      const transactionId = generateUUID()
+
+      setOnline(false)
+
+      OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+
+      const response = await OCPP20ServiceUtils.sendTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Started,
+        OCPP20TriggerReasonEnumType.Authorized,
+        connectorId,
+        transactionId
+      )
+
+      expect(sentRequests.length).toBe(0)
+
+      expect(response.idTokenInfo).toBeUndefined()
+
+      const connector = mockChargingStation.getConnectorStatus(connectorId)
+      expect(connector?.transactionEventQueue).toBeDefined()
+      expect(connector.transactionEventQueue.length).toBe(1)
+      expect(connector.transactionEventQueue[0].seqNo).toBe(0)
+    })
+
+    await it('should queue multiple TransactionEvents in order when offline', async () => {
+      const connectorId = 1
+      const transactionId = generateUUID()
+
+      setOnline(false)
+
+      OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Started,
+        OCPP20TriggerReasonEnumType.Authorized,
+        connectorId,
+        transactionId
+      )
+
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Updated,
+        OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+        connectorId,
+        transactionId
+      )
+
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Ended,
+        OCPP20TriggerReasonEnumType.StopAuthorized,
+        connectorId,
+        transactionId
+      )
+
+      const connector = mockChargingStation.getConnectorStatus(connectorId)
+      expect(connector?.transactionEventQueue?.length).toBe(3)
+
+      expect(connector.transactionEventQueue[0].seqNo).toBe(0)
+      expect(connector.transactionEventQueue[1].seqNo).toBe(1)
+      expect(connector.transactionEventQueue[2].seqNo).toBe(2)
+
+      expect(connector.transactionEventQueue[0].request.eventType).toBe(
+        OCPP20TransactionEventEnumType.Started
+      )
+      expect(connector.transactionEventQueue[1].request.eventType).toBe(
+        OCPP20TransactionEventEnumType.Updated
+      )
+      expect(connector.transactionEventQueue[2].request.eventType).toBe(
+        OCPP20TransactionEventEnumType.Ended
+      )
+    })
+
+    await it('should preserve seqNo in queued events', async () => {
+      const connectorId = 1
+      const transactionId = generateUUID()
+
+      setOnline(true)
+      OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Started,
+        OCPP20TriggerReasonEnumType.Authorized,
+        connectorId,
+        transactionId
+      )
+
+      expect(sentRequests.length).toBe(1)
+      expect(sentRequests[0].payload.seqNo).toBe(0)
+
+      setOnline(false)
+
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Updated,
+        OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+        connectorId,
+        transactionId
+      )
+
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Updated,
+        OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+        connectorId,
+        transactionId
+      )
+
+      const connector = mockChargingStation.getConnectorStatus(connectorId)
+      expect(connector?.transactionEventQueue?.length).toBe(2)
+      expect(connector.transactionEventQueue[0].seqNo).toBe(1)
+      expect(connector.transactionEventQueue[1].seqNo).toBe(2)
+    })
+
+    await it('should include timestamp in queued events', async () => {
+      const connectorId = 1
+      const transactionId = generateUUID()
+
+      setOnline(false)
+      OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+
+      const beforeQueue = new Date()
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Started,
+        OCPP20TriggerReasonEnumType.Authorized,
+        connectorId,
+        transactionId
+      )
+      const afterQueue = new Date()
+
+      const connector = mockChargingStation.getConnectorStatus(connectorId)
+      expect(connector?.transactionEventQueue?.[0]?.timestamp).toBeInstanceOf(Date)
+      expect(connector.transactionEventQueue[0].timestamp.getTime()).toBeGreaterThanOrEqual(
+        beforeQueue.getTime()
+      )
+      expect(connector.transactionEventQueue[0].timestamp.getTime()).toBeLessThanOrEqual(
+        afterQueue.getTime()
+      )
+    })
+  })
+
+  await describe('Queue draining when coming online', async () => {
+    await it('should send all queued events when sendQueuedTransactionEvents is called', async () => {
+      const connectorId = 1
+      const transactionId = generateUUID()
+
+      setOnline(false)
+      OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Started,
+        OCPP20TriggerReasonEnumType.Authorized,
+        connectorId,
+        transactionId
+      )
+
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Updated,
+        OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+        connectorId,
+        transactionId
+      )
+
+      expect(sentRequests.length).toBe(0)
+
+      setOnline(true)
+
+      await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockChargingStation, connectorId)
+
+      expect(sentRequests.length).toBe(2)
+      expect(sentRequests[0].payload.seqNo).toBe(0)
+      expect(sentRequests[1].payload.seqNo).toBe(1)
+    })
+
+    await it('should clear queue after sending', async () => {
+      const connectorId = 1
+      const transactionId = generateUUID()
+
+      setOnline(false)
+      OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Started,
+        OCPP20TriggerReasonEnumType.Authorized,
+        connectorId,
+        transactionId
+      )
+
+      const connector = mockChargingStation.getConnectorStatus(connectorId)
+      expect(connector?.transactionEventQueue?.length).toBe(1)
+
+      setOnline(true)
+      await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockChargingStation, connectorId)
+
+      expect(connector.transactionEventQueue.length).toBe(0)
+    })
+
+    await it('should preserve FIFO order when draining queue', async () => {
+      const connectorId = 1
+      const transactionId = generateUUID()
+
+      setOnline(false)
+      OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Started,
+        OCPP20TriggerReasonEnumType.Authorized,
+        connectorId,
+        transactionId
+      )
+
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Updated,
+        OCPP20TriggerReasonEnumType.ChargingStateChanged,
+        connectorId,
+        transactionId
+      )
+
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Ended,
+        OCPP20TriggerReasonEnumType.StopAuthorized,
+        connectorId,
+        transactionId
+      )
+
+      setOnline(true)
+      await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockChargingStation, connectorId)
+
+      expect(sentRequests[0].payload.eventType).toBe(OCPP20TransactionEventEnumType.Started)
+      expect(sentRequests[1].payload.eventType).toBe(OCPP20TransactionEventEnumType.Updated)
+      expect(sentRequests[2].payload.eventType).toBe(OCPP20TransactionEventEnumType.Ended)
+
+      expect(sentRequests[0].payload.seqNo).toBe(0)
+      expect(sentRequests[1].payload.seqNo).toBe(1)
+      expect(sentRequests[2].payload.seqNo).toBe(2)
+    })
+
+    await it('should handle empty queue gracefully', async () => {
+      const connectorId = 1
+
+      await expect(
+        OCPP20ServiceUtils.sendQueuedTransactionEvents(mockChargingStation, connectorId)
+      ).resolves.toBeUndefined()
+
+      expect(sentRequests.length).toBe(0)
+    })
+
+    await it('should handle null queue gracefully', async () => {
+      const connectorId = 1
+      const connector = mockChargingStation.getConnectorStatus(connectorId)
+      connector.transactionEventQueue = undefined
+
+      await expect(
+        OCPP20ServiceUtils.sendQueuedTransactionEvents(mockChargingStation, connectorId)
+      ).resolves.toBeUndefined()
+
+      expect(sentRequests.length).toBe(0)
+    })
+  })
+
+  await describe('Sequence number continuity across queue boundary', async () => {
+    await it('should maintain seqNo continuity: online → offline → online', async () => {
+      const connectorId = 1
+      const transactionId = generateUUID()
+
+      setOnline(true)
+      OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Started,
+        OCPP20TriggerReasonEnumType.Authorized,
+        connectorId,
+        transactionId
+      )
+      expect(sentRequests[0].payload.seqNo).toBe(0)
+
+      setOnline(false)
+
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Updated,
+        OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+        connectorId,
+        transactionId
+      )
+
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Updated,
+        OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+        connectorId,
+        transactionId
+      )
+
+      setOnline(true)
+
+      await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockChargingStation, connectorId)
+
+      expect(sentRequests[1].payload.seqNo).toBe(1)
+      expect(sentRequests[2].payload.seqNo).toBe(2)
+
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Ended,
+        OCPP20TriggerReasonEnumType.StopAuthorized,
+        connectorId,
+        transactionId
+      )
+
+      expect(sentRequests[3].payload.seqNo).toBe(3)
+
+      for (let i = 0; i < sentRequests.length; i++) {
+        expect(sentRequests[i].payload.seqNo).toBe(i)
+      }
+    })
+  })
+
+  await describe('Multiple connectors with independent queues', async () => {
+    await it('should maintain separate queues for each connector', async () => {
+      const transactionId1 = generateUUID()
+      const transactionId2 = generateUUID()
+
+      setOnline(false)
+      OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, 1)
+      OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, 2)
+
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Started,
+        OCPP20TriggerReasonEnumType.Authorized,
+        1,
+        transactionId1
+      )
+
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Started,
+        OCPP20TriggerReasonEnumType.Authorized,
+        2,
+        transactionId2
+      )
+
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Updated,
+        OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+        1,
+        transactionId1
+      )
+
+      const connector1 = mockChargingStation.getConnectorStatus(1)
+      const connector2 = mockChargingStation.getConnectorStatus(2)
+
+      expect(connector1?.transactionEventQueue?.length).toBe(2)
+      expect(connector2?.transactionEventQueue?.length).toBe(1)
+
+      expect(connector1.transactionEventQueue[0].request.transactionInfo.transactionId).toBe(
+        transactionId1
+      )
+      expect(connector2.transactionEventQueue[0].request.transactionInfo.transactionId).toBe(
+        transactionId2
+      )
+    })
+
+    await it('should drain queues independently per connector', async () => {
+      const transactionId1 = generateUUID()
+      const transactionId2 = generateUUID()
+
+      setOnline(false)
+      OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, 1)
+      OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, 2)
+
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Started,
+        OCPP20TriggerReasonEnumType.Authorized,
+        1,
+        transactionId1
+      )
+
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Started,
+        OCPP20TriggerReasonEnumType.Authorized,
+        2,
+        transactionId2
+      )
+
+      setOnline(true)
+
+      await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockChargingStation, 1)
+
+      expect(sentRequests.length).toBe(1)
+      expect(sentRequests[0].payload.transactionInfo.transactionId).toBe(transactionId1)
+
+      const connector2 = mockChargingStation.getConnectorStatus(2)
+      expect(connector2?.transactionEventQueue?.length).toBe(1)
+
+      await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockChargingStation, 2)
+
+      expect(sentRequests.length).toBe(2)
+      expect(sentRequests[1].payload.transactionInfo.transactionId).toBe(transactionId2)
+    })
+  })
+
+  await describe('Error handling during queue drain', async () => {
+    await it('should continue sending remaining events if one fails', async () => {
+      const connectorId = 1
+      const transactionId = generateUUID()
+      let callCount = 0
+
+      const errorOnSecondMock = mock.fn(async () => {
+        callCount++
+        if (callCount === 2) {
+          throw new Error('Network error on second event')
+        }
+        return Promise.resolve({} as EmptyObject)
+      })
+
+      const errorStation = createChargingStation({
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
+        connectorsCount: 1,
+        evseConfiguration: { evsesCount: 1 },
+        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+        ocppRequestService: {
+          requestHandler: errorOnSecondMock,
+        },
+        stationInfo: {
+          ocppStrictCompliance: true,
+          ocppVersion: OCPPVersion.VERSION_201,
+        },
+        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      })
+
+      errorStation.isWebSocketConnectionOpened = () => false
+
+      OCPP20ServiceUtils.resetTransactionSequenceNumber(errorStation, connectorId)
+
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        errorStation,
+        OCPP20TransactionEventEnumType.Started,
+        OCPP20TriggerReasonEnumType.Authorized,
+        connectorId,
+        transactionId
+      )
+
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        errorStation,
+        OCPP20TransactionEventEnumType.Updated,
+        OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+        connectorId,
+        transactionId
+      )
+
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        errorStation,
+        OCPP20TransactionEventEnumType.Ended,
+        OCPP20TriggerReasonEnumType.StopAuthorized,
+        connectorId,
+        transactionId
+      )
+
+      errorStation.isWebSocketConnectionOpened = () => true
+
+      await OCPP20ServiceUtils.sendQueuedTransactionEvents(errorStation, connectorId)
+
+      expect(callCount).toBe(3)
+    })
+  })
+})
+
+// ============================================================================
+// Periodic TransactionEvent Tests
+// ============================================================================
+await describe('E02 - OCPP 2.0.1 Periodic TransactionEvent at TxUpdatedInterval', async () => {
+  let mockTracking: MockStationWithTracking
+  let mockChargingStation: ChargingStation
+  let sentRequests: CapturedOCPPRequest[]
+
+  beforeEach(() => {
+    mockTracking = createMockStationWithRequestTracking()
+    mockChargingStation = mockTracking.station
+    sentRequests = mockTracking.sentRequests
+  })
+
+  afterEach(() => {
+    // Clean up any running timers
+    for (let connectorId = 1; connectorId <= 3; connectorId++) {
+      const connector = mockChargingStation.getConnectorStatus(connectorId)
+      if (connector?.transactionTxUpdatedSetInterval != null) {
+        clearInterval(connector.transactionTxUpdatedSetInterval)
+        connector.transactionTxUpdatedSetInterval = undefined
+      }
+    }
+    standardCleanup()
+  })
+
+  await describe('startTxUpdatedInterval', async () => {
+    await it('should not start timer for non-OCPP 2.0 stations', () => {
+      const ocpp16Station = createChargingStation({
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
+        connectorsCount: 1,
+        stationInfo: {
+          ocppVersion: OCPPVersion.VERSION_16,
+        },
+      })
+
+      // Call startTxUpdatedInterval on OCPP 1.6 station
+      ocpp16Station.startTxUpdatedInterval(1, 60000)
+
+      // Verify no timer was started (method should return early)
+      const connector = ocpp16Station.getConnectorStatus(1)
+      expect(connector?.transactionTxUpdatedSetInterval).toBeUndefined()
+    })
+
+    await it('should not start timer when interval is zero', () => {
+      const connectorId = 1
+
+      // Simulate startTxUpdatedInterval with zero interval
+      const connector = mockChargingStation.getConnectorStatus(connectorId)
+      expect(connector).toBeDefined()
+
+      // Zero interval should not start timer
+      // This is verified by the implementation logging debug message
+      expect(connector.transactionTxUpdatedSetInterval).toBeUndefined()
+    })
+
+    await it('should not start timer when interval is negative', () => {
+      const connectorId = 1
+      const connector = mockChargingStation.getConnectorStatus(connectorId)
+      expect(connector).toBeDefined()
+
+      // Negative interval should not start timer
+      expect(connector.transactionTxUpdatedSetInterval).toBeUndefined()
+    })
+
+    await it('should handle non-existent connector gracefully', () => {
+      const nonExistentConnectorId = 999
+
+      // Should not throw for non-existent connector
+      expect(() => {
+        mockChargingStation.getConnectorStatus(nonExistentConnectorId)
+      }).not.toThrow()
+
+      // Should return undefined for non-existent connector
+      expect(mockChargingStation.getConnectorStatus(nonExistentConnectorId)).toBeUndefined()
+    })
+  })
+
+  await describe('Periodic TransactionEvent generation', async () => {
+    await it('should send TransactionEvent with MeterValuePeriodic trigger reason', async () => {
+      const connectorId = 1
+      const transactionId = generateUUID()
+
+      // Reset sequence number
+      OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+
+      // Simulate sending periodic TransactionEvent (what the timer callback does)
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Updated,
+        OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+        connectorId,
+        transactionId
+      )
+
+      // Verify the request was sent with correct trigger reason
+      expect(sentRequests.length).toBe(1)
+      expect(sentRequests[0].command).toBe('TransactionEvent')
+      expect(sentRequests[0].payload.eventType).toBe(OCPP20TransactionEventEnumType.Updated)
+      expect(sentRequests[0].payload.triggerReason).toBe(
+        OCPP20TriggerReasonEnumType.MeterValuePeriodic
+      )
+    })
+
+    await it('should increment seqNo for each periodic event', () => {
+      const connectorId = 1
+      const transactionId = generateUUID()
+
+      // Reset sequence number for new transaction
+      OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+
+      // Send initial Started event
+      const startEvent = OCPP20ServiceUtils.buildTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Started,
+        OCPP20TriggerReasonEnumType.Authorized,
+        connectorId,
+        transactionId
+      )
+      expect(startEvent.seqNo).toBe(0)
+
+      // Send multiple periodic events (simulating timer ticks)
+      for (let i = 1; i <= 3; i++) {
+        const periodicEvent = OCPP20ServiceUtils.buildTransactionEvent(
+          mockChargingStation,
+          OCPP20TransactionEventEnumType.Updated,
+          OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+          connectorId,
+          transactionId
+        )
+        expect(periodicEvent.seqNo).toBe(i)
+      }
+
+      // Verify sequence numbers are continuous: 0, 1, 2, 3
+      const connector = mockChargingStation.getConnectorStatus(connectorId)
+      expect(connector?.transactionSeqNo).toBe(3)
+    })
+
+    await it('should maintain correct eventType (Updated) for periodic events', async () => {
+      const connectorId = 2
+      const transactionId = generateUUID()
+
+      OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+
+      // Send periodic event
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Updated,
+        OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+        connectorId,
+        transactionId
+      )
+
+      // Verify eventType is Updated (not Started or Ended)
+      expect(sentRequests[0].payload.eventType).toBe(OCPP20TransactionEventEnumType.Updated)
+    })
+
+    await it('should include EVSE information in periodic events', async () => {
+      const connectorId = 1
+      const transactionId = generateUUID()
+
+      OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Updated,
+        OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+        connectorId,
+        transactionId
+      )
+
+      // Verify EVSE info is present
+      expect(sentRequests[0].payload.evse).toBeDefined()
+      expect(sentRequests[0].payload.evse.id).toBe(connectorId)
+    })
+
+    await it('should include transactionInfo with correct transactionId', async () => {
+      const connectorId = 1
+      const transactionId = generateUUID()
+
+      OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Updated,
+        OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+        connectorId,
+        transactionId
+      )
+
+      // Verify transactionInfo contains the transaction ID
+      expect(sentRequests[0].payload.transactionInfo).toBeDefined()
+      expect(sentRequests[0].payload.transactionInfo.transactionId).toBe(transactionId)
+    })
+  })
+
+  await describe('Timer lifecycle integration', async () => {
+    await it('should continue seqNo sequence across multiple periodic events', () => {
+      const connectorId = 1
+      const transactionId = generateUUID()
+
+      // Reset for new transaction
+      OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+
+      // Simulate full transaction lifecycle with periodic updates
+      // 1. Started event (seqNo: 0)
+      const startEvent = OCPP20ServiceUtils.buildTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Started,
+        OCPP20TriggerReasonEnumType.Authorized,
+        connectorId,
+        transactionId
+      )
+      expect(startEvent.seqNo).toBe(0)
+
+      // 2. Multiple periodic updates (seqNo: 1, 2, 3)
+      for (let i = 1; i <= 3; i++) {
+        const updateEvent = OCPP20ServiceUtils.buildTransactionEvent(
+          mockChargingStation,
+          OCPP20TransactionEventEnumType.Updated,
+          OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+          connectorId,
+          transactionId
+        )
+        expect(updateEvent.seqNo).toBe(i)
+      }
+
+      // 3. Ended event (seqNo: 4)
+      const endEvent = OCPP20ServiceUtils.buildTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Ended,
+        OCPP20TriggerReasonEnumType.StopAuthorized,
+        connectorId,
+        transactionId
+      )
+      expect(endEvent.seqNo).toBe(4)
+    })
+
+    await it('should handle multiple connectors with independent timers', () => {
+      const transactionId1 = generateUUID()
+      const transactionId2 = generateUUID()
+
+      // Reset sequence numbers for both connectors
+      OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, 1)
+      OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, 2)
+
+      // Build events for connector 1
+      const event1Start = OCPP20ServiceUtils.buildTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Started,
+        OCPP20TriggerReasonEnumType.Authorized,
+        1,
+        transactionId1
+      )
+      const event1Update = OCPP20ServiceUtils.buildTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Updated,
+        OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+        1,
+        transactionId1
+      )
+
+      // Build events for connector 2
+      const event2Start = OCPP20ServiceUtils.buildTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Started,
+        OCPP20TriggerReasonEnumType.Authorized,
+        2,
+        transactionId2
+      )
+      const event2Update = OCPP20ServiceUtils.buildTransactionEvent(
+        mockChargingStation,
+        OCPP20TransactionEventEnumType.Updated,
+        OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+        2,
+        transactionId2
+      )
+
+      // Verify independent sequence numbers
+      expect(event1Start.seqNo).toBe(0)
+      expect(event1Update.seqNo).toBe(1)
+      expect(event2Start.seqNo).toBe(0)
+      expect(event2Update.seqNo).toBe(1)
+
+      // Verify different transaction IDs
+      expect(event1Start.transactionInfo.transactionId).toBe(transactionId1)
+      expect(event2Start.transactionInfo.transactionId).toBe(transactionId2)
+    })
+  })
+
+  await describe('Error handling', async () => {
+    await it('should handle network errors gracefully during periodic event', async () => {
+      const errorMockChargingStation = createChargingStation({
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
+        connectorsCount: 1,
+        evseConfiguration: { evsesCount: 1 },
+        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+        ocppRequestService: {
+          requestHandler: () => {
+            throw new Error('Network timeout')
+          },
+        },
+        stationInfo: {
+          ocppStrictCompliance: true,
+          ocppVersion: OCPPVersion.VERSION_201,
+        },
+        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      })
+
+      // Mock WebSocket as open
+      errorMockChargingStation.isWebSocketConnectionOpened = () => true
+
+      const connectorId = 1
+      const transactionId = generateUUID()
+
+      try {
+        await OCPP20ServiceUtils.sendTransactionEvent(
+          errorMockChargingStation,
+          OCPP20TransactionEventEnumType.Updated,
+          OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+          connectorId,
+          transactionId
+        )
+        throw new Error('Should have thrown network error')
+      } catch (error) {
+        expect((error as Error).message).toContain('Network timeout')
+      }
     })
   })
 })

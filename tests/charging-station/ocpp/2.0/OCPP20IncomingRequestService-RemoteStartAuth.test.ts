@@ -24,7 +24,7 @@ import {
 } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { OCPPVersion } from '../../../../src/types/ocpp/OCPPVersion.js'
 
-await describe('OCPP20IncomingRequestService - G03.FR.03 Remote Start Pre-Authorization', async () => {
+await describe('G03 - Remote Start Pre-Authorization', async () => {
   let service: OCPP20IncomingRequestService | undefined
   let mockChargingStation: ChargingStation | undefined
 

@@ -1,3 +1,7 @@
+/**
+ * @file Tests for OCPP20IncomingRequestService GetBaseReport
+ * @description Unit tests for OCPP 2.0 GetBaseReport command handling (B07)
+ */
 import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
@@ -5,27 +9,21 @@ import {
   addConfigurationKey,
   setConfigurationKeyValue,
 } from '../../../../src/charging-station/ConfigurationKeyUtils.js'
-/**
- * @file Tests for OCPP20IncomingRequestService GetBaseReport
- * @description Unit tests for OCPP 2.0 GetBaseReport command handling (B07)
- */
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
 import {
+  AttributeEnumType,
   GenericDeviceModelStatusEnumType,
   OCPP20ComponentName,
   OCPP20DeviceInfoVariableName,
   type OCPP20GetBaseReportRequest,
+  OCPP20OptionalVariableName,
+  OCPP20RequiredVariableName,
   type OCPP20SetVariableResultType,
   OCPPVersion,
   ReportBaseEnumType,
   type ReportDataType,
-} from '../../../../src/types/index.js'
-import {
-  AttributeEnumType,
-  OCPP20OptionalVariableName,
-  OCPP20RequiredVariableName,
 } from '../../../../src/types/index.js'
 import { StandardParametersKey } from '../../../../src/types/ocpp/Configuration.js'
 import { Constants } from '../../../../src/utils/index.js'
