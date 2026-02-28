@@ -21,8 +21,18 @@ import {
   ResponseStatus,
 } from '../../../src/types/index.js'
 import { waitForCondition } from '../helpers/StationHelpers.js'
-import { MockWebSocket as BaseMockWebSocket } from '../mocks/MockWebSocket.js'
+import { MockWebSocket as BaseMockWebSocket, createUIProtocolMock } from '../mocks/MockWebSocket.js'
 
+// Re-export MockWebSocket for backward compatibility
+// Note: Use createMockUIWebSocket() factory for new code
+export { BaseMockWebSocket as MockWebSocket }
+
+/**
+ * Create a MockWebSocket configured for UI protocol testing.
+ * @param protocol - UI protocol version (default: 'ui0.0.1')
+ * @returns MockWebSocket instance configured for UI testing
+ */
+export const createMockUIWebSocket = createUIProtocolMock
 // Re-export waitForCondition for backward compatibility
 export { waitForCondition }
 
@@ -100,31 +110,6 @@ export class MockServerResponse extends EventEmitter {
   }
 }
 
-/**
- * MockWebSocket for UI protocol testing
- *
- * Extends base MockWebSocket with UI-specific helper methods.
- * Uses 'ui0.0.1' protocol by default.
- */
-export class MockWebSocket extends BaseMockWebSocket {
-  constructor () {
-    super('ws://localhost:8080/ui')
-    this.protocol = 'ui0.0.1'
-  }
-
-  /**
-   * Get last sent message parsed as ProtocolResponse
-   * @returns Parsed ProtocolResponse or undefined if no messages
-   */
-  public getLastSentMessageAsResponse (): ProtocolResponse | undefined {
-    const lastMsg = this.getLastSentMessage()
-    if (lastMsg == null) {
-      return undefined
-    }
-    return JSON.parse(lastMsg) as ProtocolResponse
-  }
-}
-
 export const createMockIncomingMessage = (
   overrides?: Partial<IncomingMessage>
 ): IncomingMessage => {
@@ -189,23 +174,61 @@ export const createMockBroadcastResponse = (
   return [uuid, { hashId, status }]
 }
 
-export class MockUIServiceBroadcast {
-  requestHandler (): Promise<undefined> {
-    return Promise.resolve(undefined)
-  }
+/**
+ * Mock UI service behavior mode for testing different request handler scenarios.
+ */
+export enum MockUIServiceMode {
+  /** Returns undefined (broadcast behavior - handler preserved until explicit deletion) */
+  BROADCAST = 'broadcast',
+  /** Throws an error (error behavior - handler preserved) */
+  ERROR = 'error',
+  /** Returns a response (non-broadcast behavior - handler deleted immediately) */
+  NON_BROADCAST = 'non-broadcast',
 }
 
-export class MockUIServiceError {
-  requestHandler (): Promise<never> {
-    return Promise.reject(new Error('Request handler error'))
-  }
+/**
+ * Mock UI service interface for testing UIWebSocketServer request handling.
+ */
+export interface MockUIService {
+  requestHandler: (request?: ProtocolRequest) => Promise<ProtocolResponse | undefined>
 }
 
-export class MockUIServiceNonBroadcast {
-  requestHandler (request: ProtocolRequest): Promise<ProtocolResponse> {
-    return Promise.resolve([request[0], { status: ResponseStatus.SUCCESS }])
-  }
-}
+/**
+ * Create a mock UI service for testing UIWebSocketServer.
+ *
+ * Consolidates MockUIServiceBroadcast, MockUIServiceError, and MockUIServiceNonBroadcast
+ * into a single parameterized factory.
+ * @param mode - Service behavior mode (defaults to BROADCAST)
+ * @returns Mock UI service with behavior based on mode
+ * @example
+ * ```typescript
+ * // Broadcast mode - returns undefined, handler preserved
+ * const broadcastService = createMockUIService(MockUIServiceMode.BROADCAST)
+ *
+ * // Error mode - throws error, handler preserved
+ * const errorService = createMockUIService(MockUIServiceMode.ERROR)
+ *
+ * // Non-broadcast mode - returns response, handler deleted
+ * const nonBroadcastService = createMockUIService(MockUIServiceMode.NON_BROADCAST)
+ * ```
+ */
+export const createMockUIService = (
+  mode: MockUIServiceMode = MockUIServiceMode.BROADCAST
+): MockUIService => ({
+  requestHandler: (request?: ProtocolRequest): Promise<ProtocolResponse | undefined> => {
+    switch (mode) {
+      case MockUIServiceMode.BROADCAST:
+        return Promise.resolve(undefined)
+      case MockUIServiceMode.ERROR:
+        return Promise.reject(new Error('Request handler error'))
+      case MockUIServiceMode.NON_BROADCAST:
+        if (request == null) {
+          return Promise.reject(new Error('Request required for non-broadcast mode'))
+        }
+        return Promise.resolve([request[0], { status: ResponseStatus.SUCCESS }])
+    }
+  },
+})
 
 export const waitForStreamFlush = async (delayMs: number): Promise<void> => {
   await new Promise(resolve => {
