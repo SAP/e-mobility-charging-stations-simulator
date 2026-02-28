@@ -78,8 +78,7 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
     })
 
     // Cast to allow setting certificateManager property
-    stationWithCertManager =
-      mockChargingStation as unknown as ChargingStationWithCertificateManager
+    stationWithCertManager = mockChargingStation as unknown as ChargingStationWithCertificateManager
     stationWithCertManager.certificateManager = createMockCertificateManager()
 
     incomingRequestService = new OCPP20IncomingRequestService()
