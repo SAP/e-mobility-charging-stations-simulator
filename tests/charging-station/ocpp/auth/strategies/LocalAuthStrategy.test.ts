@@ -12,16 +12,18 @@ import type {
 
 import { LocalAuthStrategy } from '../../../../../src/charging-station/ocpp/auth/strategies/LocalAuthStrategy.js'
 import {
-  type AuthConfiguration,
   AuthContext,
   AuthenticationMethod,
   AuthorizationStatus,
   IdentifierType,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import {
+  createMockAuthCache,
   createMockAuthorizationResult,
   createMockAuthRequest,
+  createMockLocalAuthListManager,
   createMockOCPP16Identifier,
+  createTestAuthConfig,
 } from '../helpers/MockFactories.js'
 
 await describe('LocalAuthStrategy', async () => {
@@ -30,50 +32,8 @@ await describe('LocalAuthStrategy', async () => {
   let mockLocalAuthListManager: LocalAuthListManager
 
   beforeEach(() => {
-    // Create mock auth cache
-    mockAuthCache = {
-      clear: async () => {
-        // Mock implementation
-      },
-      // eslint-disable-next-line @typescript-eslint/require-await
-      get: async (_key: string) => undefined,
-      getStats: async () =>
-        await Promise.resolve({
-          expiredEntries: 0,
-          hitRate: 0,
-          hits: 0,
-          memoryUsage: 0,
-          misses: 0,
-          totalEntries: 0,
-        }),
-      remove: async (_key: string) => {
-        // Mock implementation
-      },
-      set: async (_key: string, _value, _ttl?: number) => {
-        // Mock implementation
-      },
-    }
-
-    // Create mock local auth list manager
-    mockLocalAuthListManager = {
-      addEntry: async _entry => {
-        // Mock implementation
-      },
-      clearAll: async () => {
-        // Mock implementation
-      },
-      getAllEntries: async () => await Promise.resolve([]),
-      // eslint-disable-next-line @typescript-eslint/require-await
-      getEntry: async (_identifier: string) => undefined,
-      getVersion: async () => await Promise.resolve(1),
-      removeEntry: async (_identifier: string) => {
-        // Mock implementation
-      },
-      updateVersion: async (_version: number) => {
-        // Mock implementation
-      },
-    }
-
+    mockAuthCache = createMockAuthCache()
+    mockLocalAuthListManager = createMockLocalAuthListManager()
     strategy = new LocalAuthStrategy(mockLocalAuthListManager, mockAuthCache)
   })
 
@@ -96,92 +56,51 @@ await describe('LocalAuthStrategy', async () => {
 
   await describe('initialize', async () => {
     await it('should initialize successfully with valid config', async () => {
-      const config: AuthConfiguration = {
-        allowOfflineTxForUnknownId: false,
+      const config = createTestAuthConfig({
         authorizationCacheEnabled: true,
-        authorizationTimeout: 30,
-        certificateAuthEnabled: false,
         localAuthListEnabled: true,
-        localPreAuthorize: false,
-        offlineAuthorizationEnabled: false,
-      }
-
+      })
       await expect(strategy.initialize(config)).resolves.toBeUndefined()
     })
   })
 
   await describe('canHandle', async () => {
     await it('should return true when local auth list is enabled', () => {
-      const config: AuthConfiguration = {
-        allowOfflineTxForUnknownId: false,
-        authorizationCacheEnabled: false,
-        authorizationTimeout: 30,
-        certificateAuthEnabled: false,
-        localAuthListEnabled: true,
-        localPreAuthorize: false,
-        offlineAuthorizationEnabled: false,
-      }
-
+      const config = createTestAuthConfig({ localAuthListEnabled: true })
       const request = createMockAuthRequest({
         identifier: createMockOCPP16Identifier('TEST_TAG', IdentifierType.ID_TAG),
       })
-
       expect(strategy.canHandle(request, config)).toBe(true)
     })
 
     await it('should return true when cache is enabled', () => {
-      const config: AuthConfiguration = {
-        allowOfflineTxForUnknownId: false,
-        authorizationCacheEnabled: true,
-        authorizationTimeout: 30,
-        certificateAuthEnabled: false,
-        localAuthListEnabled: false,
-        localPreAuthorize: false,
-        offlineAuthorizationEnabled: false,
-      }
-
+      const config = createTestAuthConfig({ authorizationCacheEnabled: true })
       const request = createMockAuthRequest({
         identifier: createMockOCPP16Identifier('TEST_TAG', IdentifierType.ID_TAG),
       })
-
       expect(strategy.canHandle(request, config)).toBe(true)
     })
 
     await it('should return false when nothing is enabled', () => {
-      const config: AuthConfiguration = {
-        allowOfflineTxForUnknownId: false,
-        authorizationCacheEnabled: false,
-        authorizationTimeout: 30,
-        certificateAuthEnabled: false,
-        localAuthListEnabled: false,
-        localPreAuthorize: false,
-        offlineAuthorizationEnabled: false,
-      }
-
+      const config = createTestAuthConfig()
       const request = createMockAuthRequest({
         identifier: createMockOCPP16Identifier('TEST_TAG', IdentifierType.ID_TAG),
       })
-
       expect(strategy.canHandle(request, config)).toBe(false)
     })
   })
 
   await describe('authenticate', async () => {
     beforeEach(async () => {
-      const config: AuthConfiguration = {
-        allowOfflineTxForUnknownId: false,
+      const config = createTestAuthConfig({
         authorizationCacheEnabled: true,
-        authorizationTimeout: 30,
-        certificateAuthEnabled: false,
         localAuthListEnabled: true,
-        localPreAuthorize: false,
         offlineAuthorizationEnabled: true,
-      }
+      })
       await strategy.initialize(config)
     })
 
     await it('should authenticate using local auth list', async () => {
-      // Mock local auth list entry
       mockLocalAuthListManager.getEntry = async () =>
         await Promise.resolve({
           expiryDate: new Date(Date.now() + 86400000),
@@ -190,16 +109,10 @@ await describe('LocalAuthStrategy', async () => {
           status: 'accepted',
         })
 
-      const config: AuthConfiguration = {
-        allowOfflineTxForUnknownId: false,
+      const config = createTestAuthConfig({
         authorizationCacheEnabled: true,
-        authorizationTimeout: 30,
-        certificateAuthEnabled: false,
         localAuthListEnabled: true,
-        localPreAuthorize: false,
-        offlineAuthorizationEnabled: false,
-      }
-
+      })
       const request = createMockAuthRequest({
         identifier: createMockOCPP16Identifier('LOCAL_TAG', IdentifierType.ID_TAG),
       })
@@ -212,26 +125,16 @@ await describe('LocalAuthStrategy', async () => {
     })
 
     await it('should authenticate using cache', async () => {
-      // Mock cache hit
       mockAuthCache.get = async () =>
         await Promise.resolve(
           createMockAuthorizationResult({
             cacheTtl: 300,
             method: AuthenticationMethod.CACHE,
-            timestamp: new Date(Date.now() - 60000), // 1 minute ago
+            timestamp: new Date(Date.now() - 60000),
           })
         )
 
-      const config: AuthConfiguration = {
-        allowOfflineTxForUnknownId: false,
-        authorizationCacheEnabled: true,
-        authorizationTimeout: 30,
-        certificateAuthEnabled: false,
-        localAuthListEnabled: false,
-        localPreAuthorize: false,
-        offlineAuthorizationEnabled: false,
-      }
-
+      const config = createTestAuthConfig({ authorizationCacheEnabled: true })
       const request = createMockAuthRequest({
         identifier: createMockOCPP16Identifier('CACHED_TAG', IdentifierType.ID_TAG),
       })
@@ -244,16 +147,7 @@ await describe('LocalAuthStrategy', async () => {
     })
 
     await it('should use offline fallback for transaction stop', async () => {
-      const config: AuthConfiguration = {
-        allowOfflineTxForUnknownId: false,
-        authorizationCacheEnabled: false,
-        authorizationTimeout: 30,
-        certificateAuthEnabled: false,
-        localAuthListEnabled: false,
-        localPreAuthorize: false,
-        offlineAuthorizationEnabled: true,
-      }
-
+      const config = createTestAuthConfig({ offlineAuthorizationEnabled: true })
       const request = createMockAuthRequest({
         allowOffline: true,
         context: AuthContext.TRANSACTION_STOP,
@@ -269,16 +163,7 @@ await describe('LocalAuthStrategy', async () => {
     })
 
     await it('should return undefined when no local auth available', async () => {
-      const config: AuthConfiguration = {
-        allowOfflineTxForUnknownId: false,
-        authorizationCacheEnabled: false,
-        authorizationTimeout: 30,
-        certificateAuthEnabled: false,
-        localAuthListEnabled: false,
-        localPreAuthorize: false,
-        offlineAuthorizationEnabled: false,
-      }
-
+      const config = createTestAuthConfig()
       const request = createMockAuthRequest({
         identifier: createMockOCPP16Identifier('UNKNOWN_TAG', IdentifierType.ID_TAG),
       })
@@ -290,7 +175,7 @@ await describe('LocalAuthStrategy', async () => {
 
   await describe('cacheResult', async () => {
     await it('should cache authorization result', async () => {
-      let cachedValue
+      let cachedValue: undefined | { key: string; ttl?: number; value: unknown }
       // eslint-disable-next-line @typescript-eslint/require-await
       mockAuthCache.set = async (key: string, value, ttl?: number) => {
         cachedValue = { key, ttl, value }

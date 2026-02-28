@@ -43,7 +43,7 @@ import {
   validateIdentifierString,
   validateUUID,
 } from '../../src/utils/Utils.js'
-import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+import { standardCleanup, withMockTimers } from '../helpers/TestLifecycleHelpers.js'
 
 await describe('Utils test suite', async () => {
   afterEach(() => {
@@ -115,8 +115,7 @@ await describe('Utils test suite', async () => {
      * - Async functions that depend on timing
      * - Avoiding slow tests caused by actual delays
      */
-    t.mock.timers.enable({ apis: ['setTimeout'] })
-    try {
+    await withMockTimers(t, ['setTimeout'], async () => {
       const delay = 10
       const sleepPromise = sleep(delay)
       t.mock.timers.tick(delay)
@@ -124,9 +123,7 @@ await describe('Utils test suite', async () => {
       expect(timeout).toBeDefined()
       expect(typeof timeout).toBe('object')
       clearTimeout(timeout)
-    } finally {
-      t.mock.timers.reset()
-    }
+    })
   })
 
   await it('should format milliseconds duration into human readable string', () => {

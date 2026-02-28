@@ -73,6 +73,19 @@ interface MockContext {
 }
 
 /**
+ * Test context type for timer operations
+ */
+interface TimerTestContext {
+  mock: {
+    timers: {
+      enable: (options: { apis: MockableTimerAPI[] }) => void
+      reset: () => void
+      tick: (ms: number) => void
+    }
+  }
+}
+
+/**
  * Clear transaction state from a connector
  * @param station - ChargingStation instance
  * @param connectorId - Connector to clear
@@ -175,6 +188,49 @@ export function createLoggerMocks (
 }
 
 /**
+ * Create a timer scope for manual control over timer mocking.
+ *
+ * Use this when you need more control than withMockTimers provides,
+ * such as calling tick() multiple times or conditional cleanup.
+ * @param t - Test context from node:test
+ * @param apis - Timer APIs to mock (default: setTimeout, setInterval)
+ * @returns Timer scope with tick and cleanup methods
+ * @example
+ * ```typescript
+ * await it('should test intervals', t => {
+ *   const timers = createTimerScope(t, ['setInterval'])
+ *   try {
+ *     startHeartbeat()
+ *     timers.tick(5000)
+ *     expect(heartbeatCount).toBe(5)
+ *     timers.tick(5000)
+ *     expect(heartbeatCount).toBe(10)
+ *   } finally {
+ *     timers.cleanup()
+ *   }
+ * })
+ * ```
+ */
+export function createTimerScope (
+  t: TimerTestContext,
+  apis: MockableTimerAPI[] = ['setTimeout', 'setInterval']
+): { cleanup: () => void; tick: (ms: number) => void } {
+  t.mock.timers.enable({ apis })
+  return {
+    cleanup: () => {
+      try {
+        t.mock.timers.reset()
+      } catch {
+        // Timers may already be reset, ignore
+      }
+    },
+    tick: (ms: number) => {
+      t.mock.timers.tick(ms)
+    },
+  }
+}
+
+/**
  * Setup a connector with an active transaction
  *
  * Reduces boilerplate when tests need a connector in transaction state.
@@ -242,4 +298,37 @@ export function standardCleanup (): void {
   }
   MockSharedLRUCache.resetInstance()
   MockIdTagsCache.resetInstance()
+}
+
+/**
+ * Execute a test function with mocked timers, ensuring cleanup on success or failure.
+ *
+ * This is the recommended pattern for tests that need timer mocking.
+ * It handles setup and teardown automatically with try/finally.
+ * @param t - Test context from node:test
+ * @param apis - Timer APIs to mock (default: setTimeout, setInterval)
+ * @param fn - Test function to execute
+ * @returns Result of the test function
+ * @example
+ * ```typescript
+ * await it('should handle timeout', async t => {
+ *   await withMockTimers(t, ['setTimeout'], async () => {
+ *     const promise = sleep(1000)
+ *     t.mock.timers.tick(1000)
+ *     await promise
+ *   })
+ * })
+ * ```
+ */
+export async function withMockTimers<T> (
+  t: TimerTestContext,
+  apis: MockableTimerAPI[],
+  fn: () => Promise<T> | T
+): Promise<T> {
+  t.mock.timers.enable({ apis })
+  try {
+    return await fn()
+  } finally {
+    t.mock.timers.reset()
+  }
 }

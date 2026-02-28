@@ -19,46 +19,23 @@ import { Constants, generateUUID } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../../tests/helpers/TestLifecycleHelpers.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
-import { resetLimits } from './OCPP20TestUtils.js'
+import {
+  type CapturedOCPPRequest,
+  createMockStationWithRequestTracking,
+  type MockStationWithTracking,
+} from './OCPP20TestUtils.js'
 
 await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () => {
+  let mockTracking: MockStationWithTracking
   let mockChargingStation: ChargingStation
-  let requestHandlerMock: ReturnType<typeof mock.fn>
-  interface SentRequest {
-    command: string
-    payload: Record<string, unknown>
-  }
-  let sentRequests: SentRequest[]
-  let isOnline: boolean
+  let sentRequests: CapturedOCPPRequest[]
+  let setOnline: (online: boolean) => void
 
   beforeEach(() => {
-    sentRequests = []
-    isOnline = true
-    requestHandlerMock = mock.fn(
-      async (_station: ChargingStation, command: string, payload: Record<string, unknown>) => {
-        sentRequests.push({ command, payload })
-        return Promise.resolve({} as EmptyObject)
-      }
-    )
-
-    mockChargingStation = createChargingStation({
-      baseName: TEST_CHARGING_STATION_BASE_NAME,
-      connectorsCount: 3,
-      evseConfiguration: { evsesCount: 3 },
-      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-      ocppRequestService: {
-        requestHandler: requestHandlerMock,
-      },
-      stationInfo: {
-        ocppStrictCompliance: true,
-        ocppVersion: OCPPVersion.VERSION_201,
-      },
-      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
-    })
-
-    mockChargingStation.isWebSocketConnectionOpened = () => isOnline
-
-    resetLimits(mockChargingStation)
+    mockTracking = createMockStationWithRequestTracking()
+    mockChargingStation = mockTracking.station
+    sentRequests = mockTracking.sentRequests
+    setOnline = mockTracking.setOnline
   })
 
   afterEach(() => {
@@ -76,7 +53,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
       const connectorId = 1
       const transactionId = generateUUID()
 
-      isOnline = false
+      setOnline(false)
 
       OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
 
@@ -102,7 +79,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
       const connectorId = 1
       const transactionId = generateUUID()
 
-      isOnline = false
+      setOnline(false)
 
       OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
 
@@ -152,7 +129,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
       const connectorId = 1
       const transactionId = generateUUID()
 
-      isOnline = true
+      setOnline(true)
       OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
 
       await OCPP20ServiceUtils.sendTransactionEvent(
@@ -166,7 +143,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
       expect(sentRequests.length).toBe(1)
       expect(sentRequests[0].payload.seqNo).toBe(0)
 
-      isOnline = false
+      setOnline(false)
 
       await OCPP20ServiceUtils.sendTransactionEvent(
         mockChargingStation,
@@ -194,7 +171,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
       const connectorId = 1
       const transactionId = generateUUID()
 
-      isOnline = false
+      setOnline(false)
       OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
 
       const beforeQueue = new Date()
@@ -223,7 +200,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
       const connectorId = 1
       const transactionId = generateUUID()
 
-      isOnline = false
+      setOnline(false)
       OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
 
       await OCPP20ServiceUtils.sendTransactionEvent(
@@ -244,7 +221,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
 
       expect(sentRequests.length).toBe(0)
 
-      isOnline = true
+      setOnline(true)
 
       await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockChargingStation, connectorId)
 
@@ -257,7 +234,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
       const connectorId = 1
       const transactionId = generateUUID()
 
-      isOnline = false
+      setOnline(false)
       OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
 
       await OCPP20ServiceUtils.sendTransactionEvent(
@@ -271,7 +248,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
       const connector = mockChargingStation.getConnectorStatus(connectorId)
       expect(connector?.transactionEventQueue?.length).toBe(1)
 
-      isOnline = true
+      setOnline(true)
       await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockChargingStation, connectorId)
 
       expect(connector.transactionEventQueue.length).toBe(0)
@@ -281,7 +258,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
       const connectorId = 1
       const transactionId = generateUUID()
 
-      isOnline = false
+      setOnline(false)
       OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
 
       await OCPP20ServiceUtils.sendTransactionEvent(
@@ -308,7 +285,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
         transactionId
       )
 
-      isOnline = true
+      setOnline(true)
       await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockChargingStation, connectorId)
 
       expect(sentRequests[0].payload.eventType).toBe(OCPP20TransactionEventEnumType.Started)
@@ -348,7 +325,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
       const connectorId = 1
       const transactionId = generateUUID()
 
-      isOnline = true
+      setOnline(true)
       OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
 
       await OCPP20ServiceUtils.sendTransactionEvent(
@@ -360,7 +337,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
       )
       expect(sentRequests[0].payload.seqNo).toBe(0)
 
-      isOnline = false
+      setOnline(false)
 
       await OCPP20ServiceUtils.sendTransactionEvent(
         mockChargingStation,
@@ -378,7 +355,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
         transactionId
       )
 
-      isOnline = true
+      setOnline(true)
 
       await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockChargingStation, connectorId)
 
@@ -406,7 +383,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
       const transactionId1 = generateUUID()
       const transactionId2 = generateUUID()
 
-      isOnline = false
+      setOnline(false)
       OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, 1)
       OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, 2)
 
@@ -452,7 +429,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
       const transactionId1 = generateUUID()
       const transactionId2 = generateUUID()
 
-      isOnline = false
+      setOnline(false)
       OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, 1)
       OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, 2)
 
@@ -472,7 +449,7 @@ await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () =>
         transactionId2
       )
 
-      isOnline = true
+      setOnline(true)
 
       await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockChargingStation, 1)
 

@@ -13,7 +13,7 @@ import {
   randomizeDelay,
   sleep,
 } from '../../src/worker/WorkerUtils.js'
-import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+import { standardCleanup, withMockTimers } from '../helpers/TestLifecycleHelpers.js'
 
 await describe('WorkerUtils test suite', async () => {
   afterEach(() => {
@@ -39,8 +39,7 @@ await describe('WorkerUtils test suite', async () => {
   })
 
   await it('should return timeout object after specified delay', async t => {
-    t.mock.timers.enable({ apis: ['setTimeout'] })
-    try {
+    await withMockTimers(t, ['setTimeout'], async () => {
       const delay = 10 // 10ms for fast test execution
       const sleepPromise = sleep(delay)
       t.mock.timers.tick(delay)
@@ -52,9 +51,7 @@ await describe('WorkerUtils test suite', async () => {
 
       // Clean up timeout
       clearTimeout(timeout)
-    } finally {
-      t.mock.timers.reset()
-    }
+    })
   })
 
   await it('should log info for success/termination codes, error for other codes', t => {

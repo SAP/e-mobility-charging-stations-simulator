@@ -5,6 +5,7 @@ import { expect } from '@std/expect'
 import type { ChargingStation } from '../../../../../src/charging-station/ChargingStation.js'
 import type {
   AuthCache,
+  LocalAuthListManager,
   OCPPAuthAdapter,
   OCPPAuthService,
 } from '../../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
@@ -376,3 +377,25 @@ export const createMockAuthServiceTestStation = (
       ocppVersion,
     },
   }) as unknown as ChargingStation
+
+// ============================================================================
+// LocalAuthListManager Mock
+// ============================================================================
+
+/**
+ * Create a mock LocalAuthListManager for testing.
+ * @param overrides - Partial LocalAuthListManager methods to override defaults
+ * @returns Mock LocalAuthListManager with stubbed async methods
+ */
+export const createMockLocalAuthListManager = (
+  overrides?: Partial<LocalAuthListManager>
+): LocalAuthListManager => ({
+  addEntry: async () => Promise.resolve(),
+  clearAll: async () => Promise.resolve(),
+  getAllEntries: async () => Promise.resolve([]),
+  getEntry: async () => Promise.resolve(undefined),
+  getVersion: async () => Promise.resolve(1),
+  removeEntry: async () => Promise.resolve(),
+  updateVersion: async () => Promise.resolve(),
+  ...overrides,
+})

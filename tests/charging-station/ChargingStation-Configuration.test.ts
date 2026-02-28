@@ -8,6 +8,7 @@ import { afterEach, describe, it } from 'node:test'
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 
 import { AvailabilityType, RegistrationStatusEnumType } from '../../src/types/index.js'
+import { withMockTimers } from '../helpers/TestLifecycleHelpers.js'
 import { cleanupChargingStation, createMockChargingStation } from './ChargingStationTestUtils.js'
 
 // Alias for tests that reference createRealChargingStation
@@ -739,9 +740,8 @@ await describe('ChargingStation Configuration Management', async () => {
       }
     })
 
-    await it('should return valid WebSocket ping interval from getWebSocketPingInterval()', t => {
-      t.mock.timers.enable({ apis: ['setInterval'] })
-      try {
+    await it('should return valid WebSocket ping interval from getWebSocketPingInterval()', async t => {
+      await withMockTimers(t, ['setInterval'], () => {
         // Arrange
         const result = createMockChargingStation({ connectorsCount: 1 })
         station = result.station
@@ -752,14 +752,11 @@ await describe('ChargingStation Configuration Management', async () => {
         // Assert - should return a valid interval value
         expect(pingInterval).toBeGreaterThanOrEqual(0)
         expect(typeof pingInterval).toBe('number')
-      } finally {
-        t.mock.timers.reset()
-      }
+      })
     })
 
-    await it('should restart WebSocket ping when restartWebSocketPing() is called', t => {
-      t.mock.timers.enable({ apis: ['setInterval'] })
-      try {
+    await it('should restart WebSocket ping when restartWebSocketPing() is called', async t => {
+      await withMockTimers(t, ['setInterval'], () => {
         // Arrange
         const result = createMockChargingStation({ connectorsCount: 1 })
         station = result.station
@@ -769,9 +766,7 @@ await describe('ChargingStation Configuration Management', async () => {
 
         // Assert - should complete without error
         expect(station).toBeDefined()
-      } finally {
-        t.mock.timers.reset()
-      }
+      })
     })
   })
 })

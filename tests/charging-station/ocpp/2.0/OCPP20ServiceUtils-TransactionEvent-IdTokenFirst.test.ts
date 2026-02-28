@@ -21,6 +21,7 @@ import {
   createMockOCPP20TransactionTestStation,
   resetConnectorTransactionState,
   resetLimits,
+  TransactionContextFixtures,
 } from './OCPP20TestUtils.js'
 
 /**
@@ -56,14 +57,9 @@ await describe('E03 - IdToken-First Pre-Authorization Flow', async () => {
   await describe('E03.FR.13 - Trigger Reason Selection', async () => {
     await it('should select Authorized trigger for IdToken-first transaction start', () => {
       // E03.FR.13: triggerReason SHALL be Authorized for IdToken-first
-      const context: OCPP20TransactionContext = {
-        authorizationMethod: 'idToken',
-        source: 'local_authorization',
-      }
-
       const triggerReason = OCPP20ServiceUtils.selectTriggerReason(
         OCPP20TransactionEventEnumType.Started,
-        context
+        TransactionContextFixtures.idTokenAuthorized()
       )
 
       expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.Authorized)

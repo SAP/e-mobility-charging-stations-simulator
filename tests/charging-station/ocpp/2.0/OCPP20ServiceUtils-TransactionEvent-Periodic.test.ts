@@ -4,10 +4,9 @@
  */
 
 import { expect } from '@std/expect'
-import { afterEach, beforeEach, describe, it, mock } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
-import type { EmptyObject } from '../../../../src/types/index.js'
 
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import {
@@ -19,45 +18,21 @@ import { Constants, generateUUID } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../../tests/helpers/TestLifecycleHelpers.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
-import { resetLimits } from './OCPP20TestUtils.js'
+import {
+  type CapturedOCPPRequest,
+  createMockStationWithRequestTracking,
+  type MockStationWithTracking,
+} from './OCPP20TestUtils.js'
 
 await describe('E02 - OCPP 2.0.1 Periodic TransactionEvent at TxUpdatedInterval', async () => {
+  let mockTracking: MockStationWithTracking
   let mockChargingStation: ChargingStation
-  let requestHandlerMock: ReturnType<typeof mock.fn>
-  interface SentRequest {
-    command: string
-    payload: Record<string, unknown>
-  }
-  let sentRequests: SentRequest[]
+  let sentRequests: CapturedOCPPRequest[]
 
   beforeEach(() => {
-    sentRequests = []
-    requestHandlerMock = mock.fn(
-      async (_station: ChargingStation, command: string, payload: Record<string, unknown>) => {
-        sentRequests.push({ command, payload })
-        return Promise.resolve({} as EmptyObject)
-      }
-    )
-
-    mockChargingStation = createChargingStation({
-      baseName: TEST_CHARGING_STATION_BASE_NAME,
-      connectorsCount: 3,
-      evseConfiguration: { evsesCount: 3 },
-      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-      ocppRequestService: {
-        requestHandler: requestHandlerMock,
-      },
-      stationInfo: {
-        ocppStrictCompliance: true,
-        ocppVersion: OCPPVersion.VERSION_201,
-      },
-      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
-    })
-
-    // Mock isWebSocketConnectionOpened to return true (online)
-    mockChargingStation.isWebSocketConnectionOpened = () => true
-
-    resetLimits(mockChargingStation)
+    mockTracking = createMockStationWithRequestTracking()
+    mockChargingStation = mockTracking.station
+    sentRequests = mockTracking.sentRequests
   })
 
   afterEach(() => {

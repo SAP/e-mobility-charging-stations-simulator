@@ -11,15 +11,13 @@ import {
   OCPP20TransactionEventEnumType,
   OCPP20TriggerReasonEnumType,
 } from '../../../../src/types/index.js'
-import {
-  OCPP20ChargingStateEnumType,
-  type OCPP20TransactionContext,
-} from '../../../../src/types/ocpp/2.0/Transaction.js'
+import { OCPP20ChargingStateEnumType } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { generateUUID } from '../../../../src/utils/index.js'
 import {
   createMockOCPP20TransactionTestStation,
   resetConnectorTransactionState,
   resetLimits,
+  TransactionContextFixtures,
 } from './OCPP20TestUtils.js'
 
 /**
@@ -412,42 +410,27 @@ await describe('E02 - Cable-First Transaction Flow', async () => {
   // =========================================================================
   await describe('Context-Based Cable Event Trigger Selection', async () => {
     await it('should select CablePluggedIn from cable_action context with plugged_in state', () => {
-      const context: OCPP20TransactionContext = {
-        cableState: 'plugged_in',
-        source: 'cable_action',
-      }
-
       const triggerReason = OCPP20ServiceUtils.selectTriggerReason(
         OCPP20TransactionEventEnumType.Started,
-        context
+        TransactionContextFixtures.cablePluggedIn()
       )
 
       expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.CablePluggedIn)
     })
 
     await it('should select EVDetected from cable_action context with detected state', () => {
-      const context: OCPP20TransactionContext = {
-        cableState: 'detected',
-        source: 'cable_action',
-      }
-
       const triggerReason = OCPP20ServiceUtils.selectTriggerReason(
         OCPP20TransactionEventEnumType.Updated,
-        context
+        TransactionContextFixtures.evDetected()
       )
 
       expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.EVDetected)
     })
 
     await it('should select EVDeparted from cable_action context with unplugged state', () => {
-      const context: OCPP20TransactionContext = {
-        cableState: 'unplugged',
-        source: 'cable_action',
-      }
-
       const triggerReason = OCPP20ServiceUtils.selectTriggerReason(
         OCPP20TransactionEventEnumType.Ended,
-        context
+        TransactionContextFixtures.evDeparted()
       )
 
       expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.EVDeparted)

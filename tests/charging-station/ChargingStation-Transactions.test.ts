@@ -7,6 +7,7 @@ import { afterEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 
+import { withMockTimers } from '../helpers/TestLifecycleHelpers.js'
 import { cleanupChargingStation, createMockChargingStation } from './ChargingStationTestUtils.js'
 
 await describe('ChargingStation Transaction Management', async () => {
@@ -433,9 +434,8 @@ await describe('ChargingStation Transaction Management', async () => {
       }
     })
 
-    await it('should create interval when startHeartbeat() is called with valid interval', t => {
-      t.mock.timers.enable({ apis: ['setInterval'] })
-      try {
+    await it('should create interval when startHeartbeat() is called with valid interval', async t => {
+      await withMockTimers(t, ['setInterval'], () => {
         // Arrange
         const result = createMockChargingStation({ connectorsCount: 1, heartbeatInterval: 30000 })
         station = result.station
@@ -446,14 +446,11 @@ await describe('ChargingStation Transaction Management', async () => {
         // Assert - heartbeat interval should be created
         expect(station.heartbeatSetInterval).toBeDefined()
         expect(typeof station.heartbeatSetInterval).toBe('object')
-      } finally {
-        t.mock.timers.reset()
-      }
+      })
     })
 
-    await it('should restart heartbeat interval when restartHeartbeat() is called', t => {
-      t.mock.timers.enable({ apis: ['setInterval'] })
-      try {
+    await it('should restart heartbeat interval when restartHeartbeat() is called', async t => {
+      await withMockTimers(t, ['setInterval'], () => {
         // Arrange
         const result = createMockChargingStation({ connectorsCount: 1, heartbeatInterval: 30000 })
         station = result.station
@@ -468,14 +465,11 @@ await describe('ChargingStation Transaction Management', async () => {
         expect(secondInterval).toBeDefined()
         expect(typeof secondInterval).toBe('object')
         expect(firstInterval !== secondInterval).toBe(true)
-      } finally {
-        t.mock.timers.reset()
-      }
+      })
     })
 
-    await it('should not create heartbeat interval if already started', t => {
-      t.mock.timers.enable({ apis: ['setInterval'] })
-      try {
+    await it('should not create heartbeat interval if already started', async t => {
+      await withMockTimers(t, ['setInterval'], () => {
         // Arrange
         const result = createMockChargingStation({ connectorsCount: 1, heartbeatInterval: 30000 })
         station = result.station
@@ -488,14 +482,11 @@ await describe('ChargingStation Transaction Management', async () => {
 
         // Assert - interval should be same (not restarted)
         expect(firstInterval).toBe(secondInterval)
-      } finally {
-        t.mock.timers.reset()
-      }
+      })
     })
 
-    await it('should create meter values interval when startMeterValues() is called for active transaction', t => {
-      t.mock.timers.enable({ apis: ['setInterval'] })
-      try {
+    await it('should create meter values interval when startMeterValues() is called for active transaction', async t => {
+      await withMockTimers(t, ['setInterval'], () => {
         // Arrange
         const result = createMockChargingStation({ connectorsCount: 2 })
         station = result.station
@@ -513,14 +504,11 @@ await describe('ChargingStation Transaction Management', async () => {
           expect(connector1.transactionSetInterval).toBeDefined()
           expect(typeof connector1.transactionSetInterval).toBe('object')
         }
-      } finally {
-        t.mock.timers.reset()
-      }
+      })
     })
 
-    await it('should restart meter values interval when restartMeterValues() is called', t => {
-      t.mock.timers.enable({ apis: ['setInterval'] })
-      try {
+    await it('should restart meter values interval when restartMeterValues() is called', async t => {
+      await withMockTimers(t, ['setInterval'], () => {
         // Arrange
         const result = createMockChargingStation({ connectorsCount: 2 })
         station = result.station
@@ -540,14 +528,11 @@ await describe('ChargingStation Transaction Management', async () => {
         expect(secondInterval).toBeDefined()
         expect(typeof secondInterval).toBe('object')
         expect(firstInterval !== secondInterval).toBe(true)
-      } finally {
-        t.mock.timers.reset()
-      }
+      })
     })
 
-    await it('should clear meter values interval when stopMeterValues() is called', t => {
-      t.mock.timers.enable({ apis: ['setInterval'] })
-      try {
+    await it('should clear meter values interval when stopMeterValues() is called', async t => {
+      await withMockTimers(t, ['setInterval'], () => {
         // Arrange
         const result = createMockChargingStation({ connectorsCount: 2 })
         station = result.station
@@ -563,14 +548,11 @@ await describe('ChargingStation Transaction Management', async () => {
 
         // Assert - interval should be cleared
         expect(connector1?.transactionSetInterval).toBeUndefined()
-      } finally {
-        t.mock.timers.reset()
-      }
+      })
     })
 
-    await it('should create transaction updated interval when startTxUpdatedInterval() is called for OCPP 2.0', t => {
-      t.mock.timers.enable({ apis: ['setInterval'] })
-      try {
+    await it('should create transaction updated interval when startTxUpdatedInterval() is called for OCPP 2.0', async t => {
+      await withMockTimers(t, ['setInterval'], () => {
         // Arrange
         const result = createMockChargingStation({ connectorsCount: 2, ocppVersion: '2.0' })
         station = result.station
@@ -588,14 +570,11 @@ await describe('ChargingStation Transaction Management', async () => {
           expect(connector1.transactionTxUpdatedSetInterval).toBeDefined()
           expect(typeof connector1.transactionTxUpdatedSetInterval).toBe('object')
         }
-      } finally {
-        t.mock.timers.reset()
-      }
+      })
     })
 
-    await it('should clear transaction updated interval when stopTxUpdatedInterval() is called', t => {
-      t.mock.timers.enable({ apis: ['setInterval'] })
-      try {
+    await it('should clear transaction updated interval when stopTxUpdatedInterval() is called', async t => {
+      await withMockTimers(t, ['setInterval'], () => {
         // Arrange
         const result = createMockChargingStation({ connectorsCount: 2, ocppVersion: '2.0' })
         station = result.station
@@ -611,9 +590,7 @@ await describe('ChargingStation Transaction Management', async () => {
 
         // Assert - interval should be cleared
         expect(connector1?.transactionTxUpdatedSetInterval).toBeUndefined()
-      } finally {
-        t.mock.timers.reset()
-      }
+      })
     })
   })
 })

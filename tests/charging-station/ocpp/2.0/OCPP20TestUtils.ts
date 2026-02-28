@@ -1,14 +1,21 @@
+import { mock } from 'node:test'
+
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
 import type { OCPP20RequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20RequestService.js'
 import type { ConfigurationKey } from '../../../../src/types/ChargingStationOcppConfiguration.js'
 import type { EmptyObject } from '../../../../src/types/EmptyObject.js'
 import type { JsonType, OCPP20RequestCommand } from '../../../../src/types/index.js'
+import type {
+  OCPP20IdTokenType,
+  OCPP20TransactionContext,
+} from '../../../../src/types/ocpp/2.0/Transaction.js'
 
 import {
   ConnectorStatusEnum,
   OCPP20RequiredVariableName,
   OCPPVersion,
 } from '../../../../src/types/index.js'
+import { OCPP20IdTokenEnumType } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { createChargingStation } from '../../../ChargingStationFactory.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
@@ -19,6 +26,30 @@ import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConsta
 // These interfaces provide type-safe access to private methods for testing
 // purposes, eliminating the need for `as any` casts and eslint-disable comments.
 // ============================================================================
+
+/**
+ * Interface representing a captured OCPP request for test verification.
+ */
+export interface CapturedOCPPRequest {
+  /** The OCPP command name (e.g., 'TransactionEvent', 'Heartbeat') */
+  command: string
+  /** The request payload */
+  payload: Record<string, unknown>
+}
+
+/**
+ * Result of creating a mock station with request tracking.
+ */
+export interface MockStationWithTracking {
+  /** The mock function used as request handler */
+  requestHandlerMock: ReturnType<typeof mock.fn>
+  /** Array that captures all sent requests */
+  sentRequests: CapturedOCPPRequest[]
+  /** Function to set the station's online status */
+  setOnline: (online: boolean) => void
+  /** The mock charging station instance */
+  station: ChargingStation
+}
 
 /**
  * Interface exposing private methods of OCPP20RequestService for testing.
@@ -60,6 +91,58 @@ export function createMockOCPP20TransactionTestStation (): ChargingStation {
     },
     websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
   })
+}
+
+/**
+ * Create a mock ChargingStation with request tracking for testing OCPP request flows.
+ * This is useful for tests that need to verify what requests were sent.
+ * @returns Object containing the station, captured requests array, and control functions
+ * @example
+ * ```typescript
+ * const { station, sentRequests, setOnline } = createMockStationWithRequestTracking()
+ * await OCPP20ServiceUtils.sendTransactionEvent(station, ...)
+ * expect(sentRequests.length).toBe(1)
+ * expect(sentRequests[0].command).toBe('TransactionEvent')
+ * ```
+ */
+export function createMockStationWithRequestTracking (): MockStationWithTracking {
+  const sentRequests: CapturedOCPPRequest[] = []
+  let isOnline = true
+
+  const requestHandlerMock = mock.fn(
+    async (_station: ChargingStation, command: string, payload: Record<string, unknown>) => {
+      sentRequests.push({ command, payload })
+      return Promise.resolve({} as EmptyObject)
+    }
+  )
+
+  const station = createChargingStation({
+    baseName: TEST_CHARGING_STATION_BASE_NAME,
+    connectorsCount: 3,
+    evseConfiguration: { evsesCount: 3 },
+    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+    ocppRequestService: {
+      requestHandler: requestHandlerMock,
+    },
+    stationInfo: {
+      ocppStrictCompliance: true,
+      ocppVersion: OCPPVersion.VERSION_201,
+    },
+    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+  })
+
+  station.isWebSocketConnectionOpened = () => isOnline
+
+  resetLimits(station)
+
+  return {
+    requestHandlerMock,
+    sentRequests,
+    setOnline: (online: boolean) => {
+      isOnline = online
+    },
+    station,
+  }
 }
 
 /**
@@ -252,3 +335,237 @@ function ensureConfig (chargingStation: ChargingStation): ConfigurationKey[] {
   chargingStation.ocppConfiguration.configurationKey ??= []
   return chargingStation.ocppConfiguration.configurationKey
 }
+
+// ============================================================================
+// TransactionEvent Fixtures
+// ============================================================================
+// Pre-built fixtures for common transaction event testing patterns.
+// ============================================================================
+
+/**
+ * Pre-built IdToken fixtures for common test scenarios.
+ * Use these to avoid duplication of token creation across test files.
+ */
+export const IdTokenFixtures = {
+  /**
+   * Central (server-side) token
+   * @param idToken
+   */
+  central: (idToken = 'CENTRAL_TOKEN_001'): OCPP20IdTokenType => ({
+    idToken,
+    type: OCPP20IdTokenEnumType.Central,
+  }),
+
+  /**
+   * eMAID contract identifier token
+   * @param idToken
+   */
+  emaid: (idToken = 'DE*ABC*E123456*1'): OCPP20IdTokenType => ({
+    idToken,
+    type: OCPP20IdTokenEnumType.eMAID,
+  }),
+
+  /**
+   * ISO14443 RFID token (most common type)
+   * @param idToken
+   */
+  iso14443: (idToken = 'TEST_RFID_TOKEN_001'): OCPP20IdTokenType => ({
+    idToken,
+    type: OCPP20IdTokenEnumType.ISO14443,
+  }),
+
+  /**
+   * ISO15693 RFID token
+   * @param idToken
+   */
+  iso15693: (idToken = 'TEST_ISO15693_001'): OCPP20IdTokenType => ({
+    idToken,
+    type: OCPP20IdTokenEnumType.ISO15693,
+  }),
+
+  /** NoAuthorization token (free charging) */
+  noAuth: (): OCPP20IdTokenType => ({
+    idToken: '',
+    type: OCPP20IdTokenEnumType.NoAuthorization,
+  }),
+} as const
+
+/**
+ * Pre-built TransactionContext factories for common flow patterns.
+ * Use these to create standardized contexts for different transaction flows.
+ */
+export const TransactionContextFixtures = {
+  // ===== Local Authorization Contexts =====
+
+  /**
+   * Abnormal condition (with optional condition type)
+   * @param condition
+   */
+  abnormalCondition: (condition = 'OverCurrent'): OCPP20TransactionContext => ({
+    abnormalCondition: condition,
+    source: 'abnormal_condition',
+  }),
+
+  /** Cable plugged in (E02 cable-first start) */
+  cablePluggedIn: (): OCPP20TransactionContext => ({
+    cableState: 'plugged_in',
+    source: 'cable_action',
+  }),
+
+  /** Deauthorization (token revoked or invalid) */
+  deauthorized: (): OCPP20TransactionContext => ({
+    authorizationMethod: 'idToken',
+    isDeauthorized: true,
+    source: 'local_authorization',
+  }),
+
+  // ===== Cable Action Contexts (E02 flow) =====
+
+  /** Energy limit reached */
+  energyLimitReached: (): OCPP20TransactionContext => ({
+    source: 'energy_limit',
+  }),
+
+  /** EV communication lost */
+  evCommunicationLost: (): OCPP20TransactionContext => ({
+    source: 'system_event',
+    systemEvent: 'ev_communication_lost',
+  }),
+
+  /** EV connect timeout */
+  evConnectTimeout: (): OCPP20TransactionContext => ({
+    source: 'system_event',
+    systemEvent: 'ev_connect_timeout',
+  }),
+
+  // ===== Remote Command Contexts =====
+
+  /** Cable unplugged / EV departed */
+  evDeparted: (): OCPP20TransactionContext => ({
+    cableState: 'unplugged',
+    source: 'cable_action',
+  }),
+
+  /** EV detected after cable connection */
+  evDetected: (): OCPP20TransactionContext => ({
+    cableState: 'detected',
+    source: 'cable_action',
+  }),
+
+  /**
+   * IdToken-first authorization (E03 flow start)
+   * @param authorizationMethod
+   */
+  idTokenAuthorized: (
+    authorizationMethod: 'groupIdToken' | 'idToken' = 'idToken'
+  ): OCPP20TransactionContext => ({
+    authorizationMethod,
+    source: 'local_authorization',
+  }),
+
+  /** Clock-aligned meter value */
+  meterValueClock: (): OCPP20TransactionContext => ({
+    isPeriodicMeterValue: false,
+    source: 'meter_value',
+  }),
+
+  /** Periodic meter value (sampled interval) */
+  meterValuePeriodic: (): OCPP20TransactionContext => ({
+    isPeriodicMeterValue: true,
+    source: 'meter_value',
+  }),
+
+  // ===== Meter Value Contexts =====
+
+  /** Remote start transaction request */
+  remoteStart: (): OCPP20TransactionContext => ({
+    command: 'RequestStartTransaction',
+    source: 'remote_command',
+  }),
+
+  /** Remote stop transaction request */
+  remoteStop: (): OCPP20TransactionContext => ({
+    command: 'RequestStopTransaction',
+    source: 'remote_command',
+  }),
+
+  /** Reset command */
+  reset: (): OCPP20TransactionContext => ({
+    command: 'Reset',
+    source: 'remote_command',
+  }),
+
+  // ===== System Event Contexts =====
+
+  /** Signed data received */
+  signedData: (): OCPP20TransactionContext => ({
+    isSignedDataReceived: true,
+    source: 'meter_value',
+  }),
+
+  /** Stop authorized by local token presentation */
+  stopAuthorized: (): OCPP20TransactionContext => ({
+    authorizationMethod: 'stopAuthorized',
+    source: 'local_authorization',
+  }),
+
+  // ===== Limit Contexts =====
+
+  /** Time limit reached */
+  timeLimitReached: (): OCPP20TransactionContext => ({
+    source: 'time_limit',
+  }),
+
+  /** Trigger message command */
+  triggerMessage: (): OCPP20TransactionContext => ({
+    command: 'TriggerMessage',
+    source: 'remote_command',
+  }),
+
+  // ===== Abnormal Condition Contexts =====
+
+  /** Unlock connector command */
+  unlockConnector: (): OCPP20TransactionContext => ({
+    command: 'UnlockConnector',
+    source: 'remote_command',
+  }),
+} as const
+
+/**
+ * Type representing a transaction flow pattern for parameterized testing.
+ */
+export interface TransactionFlowPattern {
+  /** Human-readable description of the flow */
+  description: string
+  /** Expected trigger reason for Started event */
+  expectedStartTrigger: string
+  /** Whether to include idToken in Started event */
+  includeIdToken: boolean
+  /** Context to use for Started event (determines initial trigger reason) */
+  startContext: OCPP20TransactionContext
+}
+
+/**
+ * Pre-defined transaction flow patterns for parameterized testing.
+ * Covers the main OCPP 2.0.1 transaction initiation scenarios.
+ */
+export const TransactionFlowPatterns: TransactionFlowPattern[] = [
+  {
+    description: 'E02 Cable-First: CablePluggedIn → Charging → EVDeparted',
+    expectedStartTrigger: 'CablePluggedIn',
+    includeIdToken: false,
+    startContext: TransactionContextFixtures.cablePluggedIn(),
+  },
+  {
+    description: 'E03 IdToken-First: Authorized → Cable → Charging → StopAuthorized',
+    expectedStartTrigger: 'Authorized',
+    includeIdToken: true,
+    startContext: TransactionContextFixtures.idTokenAuthorized(),
+  },
+  {
+    description: 'Remote Start: RemoteStart → Charging → RemoteStop',
+    expectedStartTrigger: 'RemoteStart',
+    includeIdToken: false,
+    startContext: TransactionContextFixtures.remoteStart(),
+  },
+] as const
