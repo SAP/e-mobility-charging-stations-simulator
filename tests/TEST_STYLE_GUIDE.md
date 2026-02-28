@@ -42,20 +42,28 @@ it('starts successfully', () => {}) // No 'should'
 ### Files & Suites
 
 - **Files**: Use descriptive names matching the module under test: `ModuleName.test.ts`
-- **Test suites**: Use `describe()` with clear, specific descriptions
-- **OCPP tests**: Use requirement codes: `describe('B11 & B12 - Reset', () => {})`
+- **Test suites**: Use `describe()` with the module name only - NO "test suite" suffix
+- **OCPP tests**: Use requirement codes: `describe('B11 - Reset', () => {})`
 - **Auth tests**: Reference spec sections: `describe('G03.FR.01 - AuthCache Conformance', () => {})`
 - **Variables**: Use camelCase for variables, functions, and test helpers
 - **Constants**: Use SCREAMING_SNAKE_CASE for test constants
 
-**Example:**
+**describe() Naming:**
+
+✅ **Good:**
 
 ```typescript
-describe('ChargingStation lifecycle', () => {
-  it('should start successfully with valid configuration', async () => {
-    // test implementation
-  })
-})
+describe('ChargingStation', () => {}) // Module name only
+describe('B11 - Reset', () => {}) // OCPP spec code + description
+describe('Utils', () => {}) // Simple and clear
+```
+
+❌ **Bad:**
+
+```typescript
+describe('ChargingStation test suite', () => {}) // Don't add "test suite"
+describe('B11 & B12 - Reset', () => {}) // Split into separate describes
+describe('WorkerUtils test suite', () => {}) // Redundant suffix
 ```
 
 ## Test Structure (AAA Pattern)
@@ -363,12 +371,21 @@ await describe('My Test Suite', async () => {
 **ALWAYS include `afterEach()` cleanup to prevent test pollution:**
 
 ```typescript
+import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
+
 afterEach(() => {
+  standardCleanup()
   mock.restoreAll()
-  mock.timers.reset()
-  // Clean up any resources created in tests
 })
 ```
+
+### standardCleanup() (MANDATORY)
+
+The `standardCleanup()` function from `tests/helpers/TestLifecycleHelpers.ts` MUST be called in every test file's `afterEach()` hook. It:
+
+- Clears shared caches (MockIdTagsCache, MockSharedLRUCache)
+- Resets any singleton state
+- Ensures test isolation
 
 ### What to Clean Up
 
