@@ -34,7 +34,10 @@ import {
 } from '../../src/types/index.js'
 import { logger } from '../../src/utils/Logger.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
-import { createMockChargingStation, createMockChargingStationTemplate } from './ChargingStationTestUtils.js'
+import {
+  createMockChargingStation,
+  createMockChargingStationTemplate,
+} from './ChargingStationTestUtils.js'
 
 await describe('Helpers test suite', async () => {
   const baseName = 'CS-TEST'
@@ -340,21 +343,33 @@ await describe('Helpers test suite', async () => {
 
   await it('should return false and warn when station is not started or starting', t => {
     const warnMock = t.mock.method(logger, 'warn')
-    const { station: stationNotStarted } = createMockChargingStation({ baseName, started: false, starting: false })
+    const { station: stationNotStarted } = createMockChargingStation({
+      baseName,
+      started: false,
+      starting: false,
+    })
     expect(checkChargingStationState(stationNotStarted, 'log prefix |')).toBe(false)
     expect(warnMock.mock.calls.length).toBe(1)
   })
 
   await it('should return true when station is starting', t => {
     const warnMock = t.mock.method(logger, 'warn')
-    const { station: stationStarting } = createMockChargingStation({ baseName, started: false, starting: true })
+    const { station: stationStarting } = createMockChargingStation({
+      baseName,
+      started: false,
+      starting: true,
+    })
     expect(checkChargingStationState(stationStarting, 'log prefix |')).toBe(true)
     expect(warnMock.mock.calls.length).toBe(0)
   })
 
   await it('should return true when station is started', t => {
     const warnMock = t.mock.method(logger, 'warn')
-    const { station: stationStarted } = createMockChargingStation({ baseName, started: true, starting: false })
+    const { station: stationStarted } = createMockChargingStation({
+      baseName,
+      started: true,
+      starting: false,
+    })
     expect(checkChargingStationState(stationStarted, 'log prefix |')).toBe(true)
     expect(warnMock.mock.calls.length).toBe(0)
   })
