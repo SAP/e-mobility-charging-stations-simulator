@@ -33,11 +33,11 @@ export {
   cleanupChargingStation,
   createConnectorStatus,
   createMockChargingStation,
+  createMockChargingStationTemplate,
   resetChargingStationState,
   waitForCondition,
 } from './helpers/StationHelpers.js'
 
-export { createChargingStation, createChargingStationTemplate } from '../ChargingStationFactory.js'
 
 export { MockIdTagsCache, MockSharedLRUCache } from './mocks/MockCaches.js'
 // Re-export all mock classes

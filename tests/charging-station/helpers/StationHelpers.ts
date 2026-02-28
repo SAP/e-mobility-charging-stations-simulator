@@ -8,6 +8,7 @@ import type { ChargingStation } from '../../../src/charging-station/ChargingStat
 import type {
   ChargingStationInfo,
   ChargingStationOcppConfiguration,
+  ChargingStationTemplate,
   ConnectorStatus,
   EvseStatus,
   StopTransactionReason,
@@ -223,7 +224,7 @@ export function cleanupChargingStation (station: ChargingStation): void {
  * Create a connector status object with default values
  *
  * This is the canonical factory for creating ConnectorStatus objects in tests.
- * Both ChargingStationFactory and StationHelpers use this function.
+ * This is the canonical factory for creating ConnectorStatus objects in tests.
  * @param _connectorId - Connector ID (unused, kept for API consistency)
  * @param options - Optional overrides for default values
  * @returns ConnectorStatus with default or customized values
@@ -936,6 +937,10 @@ function determineEvseUsage (
   options: MockChargingStationOptions,
   legacyEvsesCount: number
 ): boolean {
+  // If explicitly set to 0, don't use EVSEs
+  if (options.evseConfiguration?.evsesCount === 0) {
+    return false
+  }
   // Get the ocppVersion from stationInfo overrides or options
   const effectiveOcppVersion = options.stationInfo?.ocppVersion ?? options.ocppVersion
   return (
@@ -969,4 +974,17 @@ function resetConnectorStatus (status: ConnectorStatus, isConnectorZero: boolean
     clearInterval(status.transactionSetInterval)
     status.transactionSetInterval = undefined
   }
+}
+
+/**
+ * Create a mock charging station template for testing
+ * @param baseName - Base name for the template
+ * @returns ChargingStationTemplate with minimal required properties for testing
+ */
+export function createMockChargingStationTemplate (
+  baseName: string = TEST_CHARGING_STATION_BASE_NAME
+): ChargingStationTemplate {
+  return {
+    baseName,
+  } as ChargingStationTemplate
 }

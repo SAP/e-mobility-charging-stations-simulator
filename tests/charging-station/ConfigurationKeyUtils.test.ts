@@ -14,7 +14,7 @@ import {
   setConfigurationKeyValue,
 } from '../../src/charging-station/ConfigurationKeyUtils.js'
 import { logger } from '../../src/utils/Logger.js'
-import { createChargingStation } from './ChargingStationTestUtils.js'
+import { createMockChargingStation } from './ChargingStationTestUtils.js'
 
 const TEST_KEY_1 = 'TestKey1'
 const MIXED_CASE_KEY = 'MiXeDkEy'
@@ -27,14 +27,14 @@ await describe('ConfigurationKeyUtils test suite', async () => {
   })
   await describe('getConfigurationKey()', async () => {
     await it('should return undefined when configurationKey array is missing', () => {
-      const cs = createChargingStation()
+      const { station: cs } = createMockChargingStation()
       // Simulate missing configurationKey array
       cs.ocppConfiguration = {} as Partial<ChargingStationOcppConfiguration>
       expect(getConfigurationKey(cs, TEST_KEY_1)).toBeUndefined()
     })
 
     await it('should find existing key (case-sensitive)', () => {
-      const cs = createChargingStation()
+      const { station: cs } = createMockChargingStation()
       addConfigurationKey(cs, TEST_KEY_1, VALUE_A, undefined, { save: false })
       const k = getConfigurationKey(cs, TEST_KEY_1)
       expect(k?.key).toBe(TEST_KEY_1)
@@ -42,13 +42,13 @@ await describe('ConfigurationKeyUtils test suite', async () => {
     })
 
     await it('should respect case sensitivity (no match)', () => {
-      const cs = createChargingStation()
+      const { station: cs } = createMockChargingStation()
       addConfigurationKey(cs, MIXED_CASE_KEY, VALUE_A, undefined, { save: false })
       expect(getConfigurationKey(cs, MIXED_CASE_KEY.toLowerCase())).toBeUndefined()
     })
 
     await it('should support caseInsensitive lookup', () => {
-      const cs = createChargingStation()
+      const { station: cs } = createMockChargingStation()
       addConfigurationKey(cs, MIXED_CASE_KEY, VALUE_A, undefined, { save: false })
       const k = getConfigurationKey(cs, MIXED_CASE_KEY.toLowerCase(), true)
       expect(k?.key).toBe(MIXED_CASE_KEY)
@@ -57,7 +57,7 @@ await describe('ConfigurationKeyUtils test suite', async () => {
 
   await describe('addConfigurationKey()', async () => {
     await it('should no-op when configurationKey array missing', () => {
-      const cs = createChargingStation()
+      const { station: cs } = createMockChargingStation()
       // Simulate missing configurationKey array
       cs.ocppConfiguration = {} as Partial<ChargingStationOcppConfiguration>
       addConfigurationKey(cs, TEST_KEY_1, VALUE_A)
@@ -65,7 +65,7 @@ await describe('ConfigurationKeyUtils test suite', async () => {
     })
 
     await it('should add new key with default options', () => {
-      const cs = createChargingStation()
+      const { station: cs } = createMockChargingStation()
       addConfigurationKey(cs, TEST_KEY_1, VALUE_A, undefined, { save: false })
       const k = getConfigurationKey(cs, TEST_KEY_1)
       expect(k).toBeDefined()
@@ -77,7 +77,7 @@ await describe('ConfigurationKeyUtils test suite', async () => {
     })
 
     await it('should add new key with custom options', () => {
-      const cs = createChargingStation()
+      const { station: cs } = createMockChargingStation()
       addConfigurationKey(
         cs,
         TEST_KEY_1,
@@ -92,7 +92,7 @@ await describe('ConfigurationKeyUtils test suite', async () => {
     })
 
     await it('should log error and not overwrite value when key exists and overwrite=false', t => {
-      const cs = createChargingStation()
+      const { station: cs } = createMockChargingStation()
       addConfigurationKey(cs, TEST_KEY_1, VALUE_A, { readonly: false }, { save: false })
       const errorMock = t.mock.method(logger, 'error')
       // Attempt to add same key with different value and option change
@@ -114,7 +114,7 @@ await describe('ConfigurationKeyUtils test suite', async () => {
     })
 
     await it('should log error and leave key untouched when identical options & value attempted (overwrite=false)', t => {
-      const cs = createChargingStation()
+      const { station: cs } = createMockChargingStation()
       addConfigurationKey(
         cs,
         TEST_KEY_1,
@@ -140,7 +140,7 @@ await describe('ConfigurationKeyUtils test suite', async () => {
     })
 
     await it('should overwrite existing key value and options when overwrite=true', () => {
-      const cs = createChargingStation()
+      const { station: cs } = createMockChargingStation()
       addConfigurationKey(cs, TEST_KEY_1, VALUE_A, { readonly: false }, { save: false })
       addConfigurationKey(
         cs,
@@ -157,7 +157,7 @@ await describe('ConfigurationKeyUtils test suite', async () => {
     })
 
     await it('should caseInsensitive overwrite update existing differently cased key', () => {
-      const cs = createChargingStation()
+      const { station: cs } = createMockChargingStation()
       addConfigurationKey(cs, MIXED_CASE_KEY, VALUE_A, undefined, { save: false })
       addConfigurationKey(
         cs,
@@ -172,7 +172,7 @@ await describe('ConfigurationKeyUtils test suite', async () => {
     })
 
     await it('should case-insensitive false create separate key with different case', () => {
-      const cs = createChargingStation()
+      const { station: cs } = createMockChargingStation()
       addConfigurationKey(cs, MIXED_CASE_KEY, VALUE_A, undefined, { save: false })
       addConfigurationKey(cs, MIXED_CASE_KEY.toLowerCase(), VALUE_B, undefined, {
         overwrite: true,
@@ -186,14 +186,14 @@ await describe('ConfigurationKeyUtils test suite', async () => {
     })
 
     await it('should call saveOcppConfiguration when params.save=true (new key)', t => {
-      const cs = createChargingStation()
+      const { station: cs } = createMockChargingStation()
       const saveMock = t.mock.method(cs, 'saveOcppConfiguration')
       addConfigurationKey(cs, TEST_KEY_1, VALUE_A, undefined, { save: true })
       expect(saveMock.mock.calls.length).toBe(1)
     })
 
     await it('should call saveOcppConfiguration when overwriting existing key and save=true', t => {
-      const cs = createChargingStation()
+      const { station: cs } = createMockChargingStation()
       addConfigurationKey(cs, TEST_KEY_1, VALUE_A, undefined, { save: false })
       const saveMock = t.mock.method(cs, 'saveOcppConfiguration')
       addConfigurationKey(
@@ -209,7 +209,7 @@ await describe('ConfigurationKeyUtils test suite', async () => {
 
   await describe('setConfigurationKeyValue()', async () => {
     await it('should return undefined and log error for non-existing key', t => {
-      const cs = createChargingStation()
+      const { station: cs } = createMockChargingStation()
       const errorMock = t.mock.method(logger, 'error')
       const res = setConfigurationKeyValue(cs, TEST_KEY_1, VALUE_A)
       expect(res).toBeUndefined()
@@ -217,7 +217,7 @@ await describe('ConfigurationKeyUtils test suite', async () => {
     })
 
     await it('should return undefined without logging when configurationKey array missing', t => {
-      const cs = createChargingStation()
+      const { station: cs } = createMockChargingStation()
       // Simulate missing configurationKey array
       cs.ocppConfiguration = {} as Partial<ChargingStationOcppConfiguration>
       const errorMock = t.mock.method(logger, 'error')
@@ -227,7 +227,7 @@ await describe('ConfigurationKeyUtils test suite', async () => {
     })
 
     await it('should update existing key value and save', t => {
-      const cs = createChargingStation()
+      const { station: cs } = createMockChargingStation()
       addConfigurationKey(cs, TEST_KEY_1, VALUE_A, undefined, { save: false })
       const saveMock = t.mock.method(cs, 'saveOcppConfiguration')
       const updated = setConfigurationKeyValue(cs, TEST_KEY_1, VALUE_B)
@@ -236,7 +236,7 @@ await describe('ConfigurationKeyUtils test suite', async () => {
     })
 
     await it('should caseInsensitive value update work', () => {
-      const cs = createChargingStation()
+      const { station: cs } = createMockChargingStation()
       addConfigurationKey(cs, MIXED_CASE_KEY, VALUE_A, undefined, { save: false })
       const updated = setConfigurationKeyValue(cs, MIXED_CASE_KEY.toLowerCase(), VALUE_B, true)
       expect(updated?.value).toBe(VALUE_B)
@@ -245,7 +245,7 @@ await describe('ConfigurationKeyUtils test suite', async () => {
 
   await describe('deleteConfigurationKey()', async () => {
     await it('should return undefined when configurationKey array missing', () => {
-      const cs = createChargingStation()
+      const { station: cs } = createMockChargingStation()
       // Simulate missing configurationKey array
       cs.ocppConfiguration = {} as Partial<ChargingStationOcppConfiguration>
       const res = deleteConfigurationKey(cs, TEST_KEY_1)
@@ -253,13 +253,13 @@ await describe('ConfigurationKeyUtils test suite', async () => {
     })
 
     await it('should return undefined when key does not exist', () => {
-      const cs = createChargingStation()
+      const { station: cs } = createMockChargingStation()
       const res = deleteConfigurationKey(cs, TEST_KEY_1)
       expect(res).toBeUndefined()
     })
 
     await it('should delete existing key and save by default', t => {
-      const cs = createChargingStation()
+      const { station: cs } = createMockChargingStation()
       addConfigurationKey(cs, TEST_KEY_1, VALUE_A, undefined, { save: false })
       const saveMock = t.mock.method(cs, 'saveOcppConfiguration')
       const deleted = deleteConfigurationKey(cs, TEST_KEY_1)
@@ -271,7 +271,7 @@ await describe('ConfigurationKeyUtils test suite', async () => {
     })
 
     await it('should not save when params.save=false', t => {
-      const cs = createChargingStation()
+      const { station: cs } = createMockChargingStation()
       addConfigurationKey(cs, TEST_KEY_1, VALUE_A, undefined, { save: false })
       const saveMock = t.mock.method(cs, 'saveOcppConfiguration')
       const deleted = deleteConfigurationKey(cs, TEST_KEY_1, { save: false })
@@ -280,7 +280,7 @@ await describe('ConfigurationKeyUtils test suite', async () => {
     })
 
     await it('should caseInsensitive deletion remove key with different case', () => {
-      const cs = createChargingStation()
+      const { station: cs } = createMockChargingStation()
       addConfigurationKey(cs, MIXED_CASE_KEY, VALUE_A, undefined, { save: false })
       const deleted = deleteConfigurationKey(cs, MIXED_CASE_KEY.toLowerCase(), {
         caseInsensitive: true,
@@ -293,7 +293,7 @@ await describe('ConfigurationKeyUtils test suite', async () => {
 
   await describe('Combined scenarios', async () => {
     await it('should add then set then delete lifecycle', () => {
-      const cs = createChargingStation()
+      const { station: cs } = createMockChargingStation()
       addConfigurationKey(cs, TEST_KEY_1, VALUE_A, { readonly: false }, { save: false })
       const setRes = setConfigurationKeyValue(cs, TEST_KEY_1, VALUE_B)
       expect(setRes?.value).toBe(VALUE_B)
