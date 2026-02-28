@@ -30,39 +30,43 @@ import { MockWebSocket } from '../mocks/MockWebSocket.js'
  */
 export class TestableUIWebSocketServer extends UIWebSocketServer {
   /**
-   * Add a response handler for testing
-   * @param uuid
-   * @param ws
+   * Add a response handler for testing.
+   * @param uuid - Unique identifier for the response handler
+   * @param ws - WebSocket instance to associate with the handler
    */
   public addResponseHandler (uuid: UUIDv4, ws: MockWebSocket): void {
     this.responseHandlers.set(uuid, ws as never)
   }
 
-  /** Get the size of response handlers map */
+  /**
+   * Get the size of response handlers map.
+   * @returns Number of response handlers currently registered
+   */
   public getResponseHandlersSize (): number {
     return this.responseHandlers.size
   }
 
   /**
-   * Get UI service by version
-   * @param version
+   * Get UI service by version.
+   * @param version - Protocol version to look up
+   * @returns UI service instance for the specified version
    */
   public getUIService (version: ProtocolVersion) {
     return this.uiServices.get(version)
   }
 
   /**
-   * Register a mock UI service for testing
-   * @param version
-   * @param service
+   * Register a mock UI service for testing.
+   * @param version - Protocol version string to register
+   * @param service - Mock service instance to register
    */
   public registerMockUIService (version: string, service: unknown): void {
     this.uiServices.set(version as never, service as never)
   }
 
   /**
-   * Test helper to register protocol version UI service
-   * @param version
+   * Test helper to register protocol version UI service.
+   * @param version - Protocol version to register
    */
   public testRegisterProtocolVersionUIService (version: ProtocolVersion): void {
     this.registerProtocolVersionUIService(version)
