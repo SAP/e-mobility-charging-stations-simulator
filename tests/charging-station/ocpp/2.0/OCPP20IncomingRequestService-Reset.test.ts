@@ -71,7 +71,6 @@ await describe('B11 & B12 - Reset', async () => {
   })
 
   afterEach(() => {
-    mock.timers.reset()
     standardCleanup()
   })
 
