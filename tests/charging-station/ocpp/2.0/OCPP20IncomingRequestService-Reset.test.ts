@@ -106,10 +106,6 @@ await describe('B11 & B12 - Reset', async () => {
       b11MockStation.reset = () => Promise.resolve()
     })
 
-    afterEach(() => {
-      standardCleanup()
-    })
-
     // FR: B11.FR.01
     await it('should handle Reset request with Immediate type when no transactions', async () => {
       const resetRequest: OCPP20ResetRequest = {
@@ -304,10 +300,6 @@ await describe('B11 & B12 - Reset', async () => {
       b12MockStation = b12MockChargingStation as MockChargingStation
       b12MockStation.getNumberOfRunningTransactions = () => 0
       b12MockStation.reset = () => Promise.resolve()
-    })
-
-    afterEach(() => {
-      standardCleanup()
     })
 
     // FR: B12.FR.02

@@ -216,7 +216,7 @@ export function cleanupChargingStation (station: ChargingStation): void {
     }
     if (connectorStatus.transactionTxUpdatedSetInterval != null) {
       clearInterval(connectorStatus.transactionTxUpdatedSetInterval)
-      delete connectorStatus.transactionTxUpdatedSetInterval
+      connectorStatus.transactionTxUpdatedSetInterval = undefined
     }
   }
 
@@ -229,7 +229,7 @@ export function cleanupChargingStation (station: ChargingStation): void {
       }
       if (connectorStatus.transactionTxUpdatedSetInterval != null) {
         clearInterval(connectorStatus.transactionTxUpdatedSetInterval)
-        delete connectorStatus.transactionTxUpdatedSetInterval
+        connectorStatus.transactionTxUpdatedSetInterval = undefined
       }
     }
   }
