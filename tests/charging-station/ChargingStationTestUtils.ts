@@ -19,22 +19,19 @@ export {
   standardCleanup,
 } from '../helpers/TestLifecycleHelpers.js'
 
-// Re-export all helper functions and types
-export type {
-  ChargingStationMocks,
-  CreateConnectorStatusOptions,
-  MockChargingStation,
-  MockChargingStationOptions,
-  MockChargingStationResult,
-  MockOCPPIncomingRequestService,
-  MockOCPPRequestService,
-} from './helpers/StationHelpers.js'
-
+// Re-export all helper functions and types from StationHelpers
 export {
+  type ChargingStationMocks,
   cleanupChargingStation,
   createConnectorStatus,
+  type CreateConnectorStatusOptions,
   createMockChargingStation,
   createMockChargingStationTemplate,
+  type MockChargingStation,
+  type MockChargingStationOptions,
+  type MockChargingStationResult,
+  type MockOCPPIncomingRequestService,
+  type MockOCPPRequestService,
   resetChargingStationState,
 } from './helpers/StationHelpers.js'
 
