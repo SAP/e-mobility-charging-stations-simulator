@@ -2,7 +2,6 @@
  * @file Tests for UIServerSecurity
  * @description Unit tests for UI server security utilities (rate limiting, validation)
  */
-// Copyright Jerome Benoit. 2024-2025. All Rights Reserved.
 
 import { expect } from '@std/expect'
 import { afterEach, describe, it } from 'node:test'

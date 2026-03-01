@@ -26,7 +26,6 @@ import { MockWebSocket } from '../mocks/MockWebSocket.js'
 
 /**
  * Testable UIWebSocketServer that exposes protected members for testing.
- * Consolidates TestableUIWebSocketServer from UIWebSocketServer.test.ts and AbstractUIService.test.ts.
  */
 export class TestableUIWebSocketServer extends UIWebSocketServer {
   /**
@@ -243,8 +242,8 @@ export interface MockUIService {
 /**
  * Create a mock UI service for testing UIWebSocketServer.
  *
- * Consolidates MockUIServiceBroadcast, MockUIServiceError, and MockUIServiceNonBroadcast
- * into a single parameterized factory.
+ * Configurable mock that simulates different AbstractUIService behaviors:
+ * broadcast responses, error responses, or direct (non-broadcast) responses.
  * @param mode - Service behavior mode (defaults to BROADCAST)
  * @returns Mock UI service with behavior based on mode
  * @example

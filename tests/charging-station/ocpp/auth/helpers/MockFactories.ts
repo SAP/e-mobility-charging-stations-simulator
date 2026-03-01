@@ -61,12 +61,7 @@ export const createMockAuthRequest = (overrides?: Partial<AuthRequest>): AuthReq
 /**
  * Create a mock AuthorizationResult with configurable status.
  *
- * This factory consolidates what were previously 5 separate factories:
- * - createMockAuthorizationResult (ACCEPTED)
- * - createMockRejectedAuthorizationResult (INVALID)
- * - createMockBlockedAuthorizationResult (BLOCKED)
- * - createMockExpiredAuthorizationResult (EXPIRED)
- * - createMockConcurrentTxAuthorizationResult (CONCURRENT_TX)
+ * Supports all AuthorizationStatus values: ACCEPTED, INVALID, BLOCKED, EXPIRED, CONCURRENT_TX.
  * @param status - Authorization status (defaults to ACCEPTED)
  * @param overrides - Partial AuthorizationResult properties to override defaults
  * @returns Mock AuthorizationResult with specified status from local list method
