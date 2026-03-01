@@ -2,7 +2,7 @@
  * @file ChargingStation Integration Tests
  * @description Integration test suite that verifies all ChargingStation test modules work together.
  *
- * Domain-specific tests have been split into separate files:
+ * Related domain-specific test files:
  * - ChargingStation-Lifecycle.test.ts: start/stop/restart operations
  * - ChargingStation-Connectors.test.ts: connector and EVSE operations, reservations
  * - ChargingStation-Transactions.test.ts: transaction handling and energy meters

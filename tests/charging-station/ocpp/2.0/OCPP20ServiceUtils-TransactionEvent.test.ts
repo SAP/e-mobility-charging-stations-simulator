@@ -1,8 +1,8 @@
 /**
  * @file Tests for OCPP20ServiceUtils TransactionEvent
- * @description Consolidated unit tests for OCPP 2.0 TransactionEvent building and trigger reasons (E01-E04)
+ * @description Unit tests for OCPP 2.0 TransactionEvent building and trigger reasons (E01-E04)
  *
- * This file consolidates tests from multiple variant files:
+ * Covers:
  * - E01-E04 core TransactionEvent implementation
  * - E02 Cable-First flow (cable plug event sequencing)
  * - E03 IdToken-First flow (idToken presence in events)

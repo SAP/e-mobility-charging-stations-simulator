@@ -638,9 +638,8 @@ export interface MockCertificateManagerOptions {
 /**
  * Create a mock certificate manager for OCPP 2.0 certificate operation testing.
  *
- * This unified factory consolidates the previously duplicated createMockCertificateManager
- * functions from DeleteCertificate, InstallCertificate, CertificateSigned, and
- * GetInstalledCertificateIds test files.
+ * Configurable mock for DeleteCertificate, InstallCertificate, CertificateSigned,
+ * and GetInstalledCertificateIds operations.
  * @param options - Configuration options for mock behavior
  * @returns Mock certificate manager with configurable behavior
  * @example
