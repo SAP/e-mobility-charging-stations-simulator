@@ -291,11 +291,6 @@ export function setupConnectorWithTransaction (
  */
 export function standardCleanup (): void {
   mock.restoreAll()
-  try {
-    mock.timers.reset()
-  } catch {
-    // Timers may not have been enabled, ignore
-  }
   MockSharedLRUCache.resetInstance()
   MockIdTagsCache.resetInstance()
 }

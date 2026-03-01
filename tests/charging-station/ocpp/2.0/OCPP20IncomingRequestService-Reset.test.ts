@@ -71,6 +71,7 @@ await describe('B11 & B12 - Reset', async () => {
   })
 
   afterEach(() => {
+    mock.timers.reset()
     standardCleanup()
   })
 
@@ -223,36 +224,38 @@ await describe('B11 & B12 - Reset', async () => {
       expect(response.status).toBe(ResetStatusEnumType.Accepted)
     })
 
-    // Mock charging station without EVSE support
-    Object.defineProperty(b11MockChargingStation, 'hasEvses', {
-      configurable: true,
-      value: false,
-      writable: true,
-    })
+    await it('should reject EVSE-specific reset when EVSEs not supported (non-EVSE mode)', async () => {
+      // Mock charging station without EVSE support
+      Object.defineProperty(b11MockChargingStation, 'hasEvses', {
+        configurable: true,
+        value: false,
+        writable: true,
+      })
 
-    const resetRequest: OCPP20ResetRequest = {
-      evseId: 1,
-      type: ResetEnumType.Immediate,
-    }
+      const resetRequest: OCPP20ResetRequest = {
+        evseId: 1,
+        type: ResetEnumType.Immediate,
+      }
 
-    const response: OCPP20ResetResponse = await testableService.handleRequestReset(
-      b11MockChargingStation,
-      resetRequest
-    )
+      const response: OCPP20ResetResponse = await testableService.handleRequestReset(
+        b11MockChargingStation,
+        resetRequest
+      )
 
-    expect(response).toBeDefined()
-    expect(response.status).toBe(ResetStatusEnumType.Rejected)
-    expect(response.statusInfo).toBeDefined()
-    expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedRequest)
-    expect(response.statusInfo?.additionalInfo).toContain(
-      'does not support resetting individual EVSE'
-    )
+      expect(response).toBeDefined()
+      expect(response.status).toBe(ResetStatusEnumType.Rejected)
+      expect(response.statusInfo).toBeDefined()
+      expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedRequest)
+      expect(response.statusInfo?.additionalInfo).toContain(
+        'does not support resetting individual EVSE'
+      )
 
-    // Restore original state
-    Object.defineProperty(b11MockChargingStation, 'hasEvses', {
-      configurable: false,
-      value: true,
-      writable: false,
+      // Restore original state
+      Object.defineProperty(b11MockChargingStation, 'hasEvses', {
+        configurable: true,
+        value: true,
+        writable: true,
+      })
     })
 
     await it('should handle EVSE-specific reset without transactions', async () => {
