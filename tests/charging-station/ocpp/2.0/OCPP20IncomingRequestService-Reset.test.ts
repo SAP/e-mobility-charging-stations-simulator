@@ -6,7 +6,6 @@
 import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
-import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type {
   EvseStatus,
   OCPP20ResetRequest,
@@ -18,54 +17,21 @@ import { createTestableIncomingRequestService } from '../../../../src/charging-s
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import {
   FirmwareStatus,
-  OCPPVersion,
   ReasonCodeEnumType,
   ResetEnumType,
   ResetStatusEnumType,
 } from '../../../../src/types/index.js'
-import { Constants } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
-import {
-  TEST_CHARGING_STATION_BASE_NAME,
-  TEST_ONE_HOUR_MS,
-} from '../../ChargingStationTestConstants.js'
-import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
+import { TEST_ONE_HOUR_MS } from '../../ChargingStationTestConstants.js'
+import { MockChargingStation } from '../../ChargingStationTestUtils.js'
+import { ResetTestFixtures } from './OCPP20TestUtils.js'
 
 await describe('B11 & B12 - Reset', async () => {
-  let mockChargingStation: ChargingStation
-  let mockStation: ChargingStation & {
-    getNumberOfRunningTransactions: () => number
-    reset: () => Promise<void>
-  }
   let incomingRequestService: OCPP20IncomingRequestService
   let testableService: ReturnType<typeof createTestableIncomingRequestService>
 
   beforeEach(() => {
     mock.timers.enable({ apis: ['setInterval', 'setTimeout'] })
-
-    const { station } = createMockChargingStation({
-      baseName: TEST_CHARGING_STATION_BASE_NAME,
-      connectorsCount: 3,
-      evseConfiguration: { evsesCount: 3 },
-      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-      stationInfo: {
-        ocppStrictCompliance: false,
-        ocppVersion: OCPPVersion.VERSION_201,
-        resetTime: 5000,
-      },
-      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
-    })
-    mockChargingStation = station
-
-    // Add missing method to mock using interface extension pattern
-    interface MockChargingStation extends ChargingStation {
-      getNumberOfRunningTransactions: () => number
-      reset: () => Promise<void>
-    }
-    mockStation = mockChargingStation as MockChargingStation
-    mockStation.getNumberOfRunningTransactions = () => 0
-    mockStation.reset = () => Promise.resolve()
-
     incomingRequestService = new OCPP20IncomingRequestService()
     testableService = createTestableIncomingRequestService(incomingRequestService)
   })
@@ -75,34 +41,10 @@ await describe('B11 & B12 - Reset', async () => {
   })
 
   await describe('B11 - Reset - Without Ongoing Transaction', async () => {
-    let b11MockChargingStation: ChargingStation
-    let b11MockStation: ChargingStation & {
-      getNumberOfRunningTransactions: () => number
-      reset: () => Promise<void>
-    }
+    let mockStation: MockChargingStation
 
     beforeEach(() => {
-      const { station } = createMockChargingStation({
-        baseName: TEST_CHARGING_STATION_BASE_NAME,
-        connectorsCount: 3,
-        evseConfiguration: { evsesCount: 3 },
-        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-        stationInfo: {
-          ocppStrictCompliance: false,
-          ocppVersion: OCPPVersion.VERSION_201,
-          resetTime: 5000,
-        },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
-      })
-      b11MockChargingStation = station
-
-      interface MockChargingStation extends ChargingStation {
-        getNumberOfRunningTransactions: () => number
-        reset: () => Promise<void>
-      }
-      b11MockStation = b11MockChargingStation as MockChargingStation
-      b11MockStation.getNumberOfRunningTransactions = () => 0
-      b11MockStation.reset = () => Promise.resolve()
+      mockStation = ResetTestFixtures.createStandardStation()
     })
 
     // FR: B11.FR.01
@@ -112,7 +54,7 @@ await describe('B11 & B12 - Reset', async () => {
       }
 
       const response: OCPP20ResetResponse = await testableService.handleRequestReset(
-        b11MockChargingStation,
+        mockStation,
         resetRequest
       )
 
@@ -133,7 +75,7 @@ await describe('B11 & B12 - Reset', async () => {
       }
 
       const response: OCPP20ResetResponse = await testableService.handleRequestReset(
-        b11MockChargingStation,
+        mockStation,
         resetRequest
       )
 
@@ -154,7 +96,7 @@ await describe('B11 & B12 - Reset', async () => {
       }
 
       const response: OCPP20ResetResponse = await testableService.handleRequestReset(
-        b11MockChargingStation,
+        mockStation,
         resetRequest
       )
 
@@ -174,7 +116,7 @@ await describe('B11 & B12 - Reset', async () => {
       }
 
       const response: OCPP20ResetResponse = await testableService.handleRequestReset(
-        b11MockChargingStation,
+        mockStation,
         resetRequest
       )
 
@@ -191,7 +133,7 @@ await describe('B11 & B12 - Reset', async () => {
       }
 
       const response: OCPP20ResetResponse = await testableService.handleRequestReset(
-        b11MockChargingStation,
+        mockStation,
         resetRequest
       )
 
@@ -199,8 +141,8 @@ await describe('B11 & B12 - Reset', async () => {
       expect(response.status).toBeDefined()
       expect(typeof response.status).toBe('string')
 
-      // For immediate reset without active transactions, should be accepted
-      if (b11MockStation.getNumberOfRunningTransactions() === 0) {
+      // B11.FR.02: Immediate reset without transactions returns Accepted
+      if (mockStation.getNumberOfRunningTransactions() === 0) {
         expect(response.status).toBe(ResetStatusEnumType.Accepted)
       }
     })
@@ -211,7 +153,7 @@ await describe('B11 & B12 - Reset', async () => {
       }
 
       const response: OCPP20ResetResponse = await testableService.handleRequestReset(
-        b11MockChargingStation,
+        mockStation,
         resetRequest
       )
 
@@ -220,8 +162,8 @@ await describe('B11 & B12 - Reset', async () => {
     })
 
     await it('should reject EVSE-specific reset when EVSEs not supported (non-EVSE mode)', async () => {
-      // Mock charging station without EVSE support
-      Object.defineProperty(b11MockChargingStation, 'hasEvses', {
+      // Station configured without EVSE support
+      Object.defineProperty(mockStation, 'hasEvses', {
         configurable: true,
         value: false,
         writable: true,
@@ -233,7 +175,7 @@ await describe('B11 & B12 - Reset', async () => {
       }
 
       const response: OCPP20ResetResponse = await testableService.handleRequestReset(
-        b11MockChargingStation,
+        mockStation,
         resetRequest
       )
 
@@ -245,8 +187,8 @@ await describe('B11 & B12 - Reset', async () => {
         'does not support resetting individual EVSE'
       )
 
-      // Restore original state
-      Object.defineProperty(b11MockChargingStation, 'hasEvses', {
+      // Restore EVSE support
+      Object.defineProperty(mockStation, 'hasEvses', {
         configurable: true,
         value: true,
         writable: true,
@@ -260,7 +202,7 @@ await describe('B11 & B12 - Reset', async () => {
       }
 
       const response: OCPP20ResetResponse = await testableService.handleRequestReset(
-        b11MockChargingStation,
+        mockStation,
         resetRequest
       )
 
@@ -271,47 +213,24 @@ await describe('B11 & B12 - Reset', async () => {
   })
 
   await describe('B12 - Reset - With Ongoing Transaction', async () => {
-    let b12MockChargingStation: ChargingStation
-    let b12MockStation: ChargingStation & {
-      getNumberOfRunningTransactions: () => number
-      reset: () => Promise<void>
-    }
+    let mockStation: MockChargingStation
 
     beforeEach(() => {
-      const { station } = createMockChargingStation({
-        baseName: TEST_CHARGING_STATION_BASE_NAME,
-        connectorsCount: 3,
-        evseConfiguration: { evsesCount: 3 },
-        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-        stationInfo: {
-          ocppStrictCompliance: false,
-          ocppVersion: OCPPVersion.VERSION_201,
-          resetTime: 5000,
-        },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
-      })
-      b12MockChargingStation = station
-
-      interface MockChargingStation extends ChargingStation {
-        getNumberOfRunningTransactions: () => number
-        reset: () => Promise<void>
-      }
-      b12MockStation = b12MockChargingStation as MockChargingStation
-      b12MockStation.getNumberOfRunningTransactions = () => 0
-      b12MockStation.reset = () => Promise.resolve()
+      // Station uses ResetTestFixtures.createStandardStation() with 0 transactions by default
+      mockStation = ResetTestFixtures.createStandardStation()
     })
 
     // FR: B12.FR.02
     await it('should handle immediate reset with active transactions', async () => {
-      // Mock active transactions
-      b12MockStation.getNumberOfRunningTransactions = () => 1
+      // Set active transaction count to 1
+      mockStation.getNumberOfRunningTransactions = () => 1
 
       const resetRequest: OCPP20ResetRequest = {
         type: ResetEnumType.Immediate,
       }
 
       const response: OCPP20ResetResponse = await testableService.handleRequestReset(
-        b12MockChargingStation,
+        mockStation,
         resetRequest
       )
 
@@ -321,15 +240,15 @@ await describe('B11 & B12 - Reset', async () => {
     })
     // FR: B12.FR.01
     await it('should handle OnIdle reset with active transactions', async () => {
-      // Mock active transactions
-      b12MockStation.getNumberOfRunningTransactions = () => 1
+      // Set active transaction count to 1
+      mockStation.getNumberOfRunningTransactions = () => 1
 
       const resetRequest: OCPP20ResetRequest = {
         type: ResetEnumType.OnIdle,
       }
 
       const response: OCPP20ResetResponse = await testableService.handleRequestReset(
-        b12MockChargingStation,
+        mockStation,
         resetRequest
       )
 
@@ -340,8 +259,8 @@ await describe('B11 & B12 - Reset', async () => {
 
     // FR: B12.FR.03
     await it('should handle EVSE-specific reset with active transactions', async () => {
-      // Mock active transactions
-      b12MockStation.getNumberOfRunningTransactions = () => 1
+      // Set active transaction count to 1
+      mockStation.getNumberOfRunningTransactions = () => 1
 
       const resetRequest: OCPP20ResetRequest = {
         evseId: 1,
@@ -349,7 +268,7 @@ await describe('B11 & B12 - Reset', async () => {
       }
 
       const response: OCPP20ResetResponse = await testableService.handleRequestReset(
-        b12MockChargingStation,
+        mockStation,
         resetRequest
       )
 
@@ -361,13 +280,13 @@ await describe('B11 & B12 - Reset', async () => {
     })
 
     await it('should reject EVSE reset when not supported with active transactions', async () => {
-      // Mock charging station without EVSE support and active transactions
-      Object.defineProperty(b12MockChargingStation, 'hasEvses', {
+      // Station configured without EVSE support and active transactions
+      Object.defineProperty(mockStation, 'hasEvses', {
         configurable: true,
         value: false,
         writable: true,
       })
-      b12MockStation.getNumberOfRunningTransactions = () => 1
+      mockStation.getNumberOfRunningTransactions = () => 1
 
       const resetRequest: OCPP20ResetRequest = {
         evseId: 1,
@@ -375,7 +294,7 @@ await describe('B11 & B12 - Reset', async () => {
       }
 
       const response: OCPP20ResetResponse = await testableService.handleRequestReset(
-        b12MockChargingStation,
+        mockStation,
         resetRequest
       )
 
@@ -387,51 +306,27 @@ await describe('B11 & B12 - Reset', async () => {
         'does not support resetting individual EVSE'
       )
 
-      // Restore original state
-      Object.defineProperty(b12MockChargingStation, 'hasEvses', {
+      // Restore EVSE support
+      Object.defineProperty(mockStation, 'hasEvses', {
         configurable: false,
         value: true,
         writable: false,
       })
     })
 
-    // RST-001: Reset OnIdle Errata 2.14 Compliance Tests
-    // These tests verify that OnIdle correctly considers firmware updates and reservations
-    // in addition to active transactions, per OCPP 2.0.1 Errata 2.14.
+    // FR: B12.FR.04 - OnIdle considers firmware updates and reservations per OCPP 2.0.1 Errata 2.14
     await describe('RST-001 - Reset OnIdle Errata 2.14 Compliance', async () => {
-      // Create a separate charging station for RST-001 tests with clean state
-      interface TestStation extends ChargingStation {
-        getNumberOfRunningTransactions: () => number
-        reset: () => Promise<void>
-      }
-
-      const createTestStation = (): TestStation => {
-        const { station } = createMockChargingStation({
-          baseName: TEST_CHARGING_STATION_BASE_NAME,
-          connectorsCount: 3,
-          evseConfiguration: { evsesCount: 3 },
-          heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-          stationInfo: {
-            ocppStrictCompliance: false,
-            ocppVersion: OCPPVersion.VERSION_201,
-            resetTime: 5000,
-          },
-          websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
-        })
-        // Add required methods
-        const testStation = station as TestStation
-        testStation.getNumberOfRunningTransactions = () => 0
-        testStation.reset = () => Promise.resolve()
-        return testStation
+      // Factory function for test station
+      const createTestStation = (): MockChargingStation => {
+        return ResetTestFixtures.createStandardStation()
       }
 
       await describe('Firmware Update Blocking', async () => {
-        // Errata 2.14: OnIdle definition includes firmware updates
-        // Charging station is NOT idle when firmware is Downloading, Downloaded, or Installing
+        // FR: B12.FR.04.01 - Station NOT idle during firmware operations
 
         await it('should return Scheduled when firmware is Downloading', async () => {
           const station = createTestStation()
-          // Mock firmware status as Downloading
+          // Firmware status: Downloading
           Object.assign(station.stationInfo, {
             firmwareStatus: FirmwareStatus.Downloading,
           })
@@ -451,7 +346,7 @@ await describe('B11 & B12 - Reset', async () => {
 
         await it('should return Scheduled when firmware is Downloaded', async () => {
           const station = createTestStation()
-          // Mock firmware status as Downloaded (waiting to install)
+          // Firmware status: Downloaded
           Object.assign(station.stationInfo, {
             firmwareStatus: FirmwareStatus.Downloaded,
           })
@@ -471,7 +366,7 @@ await describe('B11 & B12 - Reset', async () => {
 
         await it('should return Scheduled when firmware is Installing', async () => {
           const station = createTestStation()
-          // Mock firmware status as Installing
+          // Firmware status: Installing
           Object.assign(station.stationInfo, {
             firmwareStatus: FirmwareStatus.Installing,
           })
@@ -491,7 +386,7 @@ await describe('B11 & B12 - Reset', async () => {
 
         await it('should return Accepted when firmware is Installed (complete)', async () => {
           const station = createTestStation()
-          // Mock firmware status as Installed (update complete)
+          // Firmware status: Installed (complete)
           Object.assign(station.stationInfo, {
             firmwareStatus: FirmwareStatus.Installed,
           })
@@ -511,7 +406,7 @@ await describe('B11 & B12 - Reset', async () => {
 
         await it('should return Accepted when firmware status is Idle', async () => {
           const station = createTestStation()
-          // Mock firmware status as Idle (no update in progress)
+          // Firmware status: Idle
           Object.assign(station.stationInfo, {
             firmwareStatus: FirmwareStatus.Idle,
           })
@@ -531,12 +426,11 @@ await describe('B11 & B12 - Reset', async () => {
       })
 
       await describe('Reservation Blocking', async () => {
-        // Errata 2.14: OnIdle definition includes pending reservations
-        // Charging station is NOT idle when a connector has a non-expired reservation
+        // FR: B12.FR.04.02 - Station NOT idle with non-expired reservations
 
         await it('should return Scheduled when connector has non-expired reservation', async () => {
           const station = createTestStation()
-          // Create a reservation that expires in 1 hour (future)
+          // Non-expired reservation (expires in 1 hour)
           const futureExpiryDate = new Date(Date.now() + TEST_ONE_HOUR_MS)
           const mockReservation: Partial<Reservation> = {
             expiryDate: futureExpiryDate,
@@ -544,7 +438,7 @@ await describe('B11 & B12 - Reset', async () => {
             idTag: 'test-tag',
           }
 
-          // Set reservation on first connector of first EVSE
+          // Assign reservation to first connector
           const evse: EvseStatus | undefined = station.evses.get(1)
           if (evse) {
             const connectorId = [...evse.connectors.keys()][0]
@@ -569,7 +463,7 @@ await describe('B11 & B12 - Reset', async () => {
 
         await it('should return Accepted when reservation is expired', async () => {
           const station = createTestStation()
-          // Create a reservation that expired 1 hour ago (past)
+          // Expired reservation (1 hour ago)
           const pastExpiryDate = new Date(Date.now() - TEST_ONE_HOUR_MS)
           const mockReservation: Partial<Reservation> = {
             expiryDate: pastExpiryDate,
@@ -577,7 +471,7 @@ await describe('B11 & B12 - Reset', async () => {
             idTag: 'test-tag',
           }
 
-          // Set expired reservation on first connector of first EVSE
+          // Assign expired reservation to first connector
           const evse: EvseStatus | undefined = station.evses.get(1)
           if (evse) {
             const connectorId = [...evse.connectors.keys()][0]
@@ -597,13 +491,13 @@ await describe('B11 & B12 - Reset', async () => {
           )
 
           expect(response).toBeDefined()
-          // Station is idle because the reservation is expired
+          // Expired reservation does not block idle state
           expect(response.status).toBe(ResetStatusEnumType.Accepted)
         })
 
         await it('should return Accepted when no reservations exist', async () => {
           const station = createTestStation()
-          // No reservations set (default state)
+          // No reservations (default)
 
           const resetRequest: OCPP20ResetRequest = {
             type: ResetEnumType.OnIdle,
@@ -620,17 +514,17 @@ await describe('B11 & B12 - Reset', async () => {
       })
 
       await describe('Idle Condition', async () => {
-        // Errata 2.14: Station is idle when NO transactions, NO firmware update, NO reservations
+        // FR: B12.FR.04.03 - True idle: no transactions, no firmware update, no reservations
 
         await it('should return Accepted when all conditions clear (true idle state)', async () => {
           const station = createTestStation()
-          // Ensure no transactions
+          // No transactions
           station.getNumberOfRunningTransactions = () => 0
-          // Ensure no firmware update in progress
+          // No firmware update
           Object.assign(station.stationInfo, {
             firmwareStatus: FirmwareStatus.Idle,
           })
-          // No reservations (default state)
+          // No reservations (default)
 
           const resetRequest: OCPP20ResetRequest = {
             type: ResetEnumType.OnIdle,
@@ -647,13 +541,13 @@ await describe('B11 & B12 - Reset', async () => {
 
         await it('should return Scheduled when multiple blocking conditions exist', async () => {
           const station = createTestStation()
-          // Active transaction
+          // Transaction active
           station.getNumberOfRunningTransactions = () => 1
-          // Firmware downloading
+          // Firmware update in progress
           Object.assign(station.stationInfo, {
             firmwareStatus: FirmwareStatus.Downloading,
           })
-          // Active reservation
+          // Non-expired reservation
           const futureExpiryDate = new Date(Date.now() + TEST_ONE_HOUR_MS)
           const mockReservation: Partial<Reservation> = {
             expiryDate: futureExpiryDate,

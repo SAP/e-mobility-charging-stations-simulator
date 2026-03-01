@@ -19,7 +19,7 @@ import {
 import { OCPP20IdTokenEnumType } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
-import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
+import { createMockChargingStation, MockChargingStation } from '../../ChargingStationTestUtils.js'
 
 // ============================================================================
 // Testable Interfaces
@@ -568,6 +568,60 @@ export const TransactionContextFixtures = {
     command: 'UnlockConnector',
     source: 'remote_command',
   }),
+} as const
+
+/**
+ * Pre-built mock station fixtures for Reset command testing.
+ * These factories create properly configured MockChargingStation instances
+ * with common configurations to avoid duplication across test files.
+ */
+export const ResetTestFixtures = {
+  /**
+   * Create a mock station without EVSE support for testing EVSE-specific rejection.
+   * @returns MockChargingStation with hasEvses=false
+   */
+  createNonEvseStation: (): MockChargingStation => {
+    const station = ResetTestFixtures.createStandardStation()
+    Object.defineProperty(station, 'hasEvses', {
+      configurable: true,
+      value: false,
+      writable: true,
+    })
+    return station
+  },
+
+  /**
+   * Create a standard mock station for reset tests with no running transactions.
+   * Default configuration: 3 connectors, 3 EVSEs, OCPP 2.0.1, 5s reset time.
+   * @param runningTransactions - Number of running transactions to simulate (default: 0)
+   * @returns MockChargingStation ready for reset testing
+   */
+  createStandardStation: (runningTransactions = 0): MockChargingStation => {
+    const { station } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
+      connectorsCount: 3,
+      evseConfiguration: { evsesCount: 3 },
+      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+      stationInfo: {
+        ocppStrictCompliance: false,
+        ocppVersion: OCPPVersion.VERSION_201,
+        resetTime: 5000,
+      },
+      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+    })
+    const mockStation = station as MockChargingStation
+    mockStation.getNumberOfRunningTransactions = () => runningTransactions
+    mockStation.reset = () => Promise.resolve()
+    return mockStation
+  },
+
+  /**
+   * Create a mock station with active transaction.
+   * @returns MockChargingStation with 1 running transaction
+   */
+  createStationWithTransaction: (): MockChargingStation => {
+    return ResetTestFixtures.createStandardStation(1)
+  },
 } as const
 
 /**

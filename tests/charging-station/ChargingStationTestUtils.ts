@@ -23,6 +23,7 @@ export {
 export type {
   ChargingStationMocks,
   CreateConnectorStatusOptions,
+  MockChargingStation,
   MockChargingStationOptions,
   MockChargingStationResult,
   MockOCPPIncomingRequestService,

@@ -62,6 +62,23 @@ export interface CreateConnectorStatusOptions {
 }
 
 /**
+ * Extended ChargingStation interface for test mocking.
+ * Combines all test-specific properties to avoid multiple interface definitions.
+ * - Timer properties: for cleanup (wsPingSetInterval, flushMessageBufferSetInterval)
+ * - Reset methods: for Reset command tests (getNumberOfRunningTransactions, reset)
+ */
+export interface MockChargingStation extends ChargingStation {
+  /** Private message buffer flush interval timer (accessed for cleanup) */
+  flushMessageBufferSetInterval?: NodeJS.Timeout
+  /** Mock method for getting number of running transactions (Reset tests) */
+  getNumberOfRunningTransactions?: () => number
+  /** Mock method for reset operation (Reset tests) */
+  reset?: () => Promise<void>
+  /** Private WebSocket ping interval timer (accessed for cleanup) */
+  wsPingSetInterval?: NodeJS.Timeout
+}
+
+/**
  * Options for creating a mock ChargingStation instance
  */
 export interface MockChargingStationOptions {
@@ -175,22 +192,18 @@ export function cleanupChargingStation (station: ChargingStation): void {
     station.heartbeatSetInterval = undefined
   }
 
-  // Stop WebSocket ping timer (private, accessed for cleanup)
-  /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access,
-     @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument */
-  const stationInternal = station as any
+  // Stop WebSocket ping timer (private, accessed for cleanup via MockChargingStation)
+  const stationInternal = station as MockChargingStation
   if (stationInternal.wsPingSetInterval != null) {
     clearInterval(stationInternal.wsPingSetInterval)
     stationInternal.wsPingSetInterval = undefined
   }
 
-  // Stop message buffer flush timer (private, accessed for cleanup)
+  // Stop message buffer flush timer (private, accessed for cleanup via MockChargingStation)
   if (stationInternal.flushMessageBufferSetInterval != null) {
     clearInterval(stationInternal.flushMessageBufferSetInterval)
     stationInternal.flushMessageBufferSetInterval = undefined
   }
-  /* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access,
-     @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument */
 
   // Close WebSocket connection
   if (station.wsConnection != null) {
