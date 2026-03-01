@@ -27,6 +27,7 @@ import {
   SetVariableStatusEnumType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
+import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import {
   TEST_CHARGING_STATION_BASE_NAME,
   TEST_CONNECTOR_ID_VALID_INSTANCE,
@@ -65,6 +66,7 @@ await describe('B05 - Set Variables', async () => {
 
   // Reset singleton state after each test to ensure test isolation
   afterEach(() => {
+    standardCleanup()
     OCPP20VariableManager.getInstance().resetRuntimeOverrides()
   })
 
