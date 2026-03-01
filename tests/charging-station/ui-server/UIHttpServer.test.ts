@@ -194,10 +194,6 @@ await describe('UIHttpServer', async () => {
       gzipServer = new TestableUIHttpServer(createHttpServerConfig())
     })
 
-    afterEach(() => {
-      standardCleanup()
-    })
-
     await it('should skip compression when acceptsGzip is false', () => {
       const res = new MockServerResponse()
 
