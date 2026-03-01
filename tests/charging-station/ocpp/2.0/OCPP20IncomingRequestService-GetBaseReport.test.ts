@@ -50,6 +50,12 @@ await describe('B07 - Get Base Report', async () => {
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },
       heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+      ocppConfiguration: {
+        configurationKey: [
+          { key: StandardParametersKey.HeartbeatInterval, readonly: false, value: '60' },
+          { key: StandardParametersKey.MeterValueSampleInterval, readonly: false, value: '30' },
+        ],
+      },
       stationInfo: {
         chargePointModel: TEST_CHARGE_POINT_MODEL,
         chargePointSerialNumber: TEST_CHARGE_POINT_SERIAL_NUMBER,

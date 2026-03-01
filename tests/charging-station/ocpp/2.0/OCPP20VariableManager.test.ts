@@ -32,6 +32,7 @@ import {
   SetVariableStatusEnumType,
   type VariableType,
 } from '../../../../src/types/index.js'
+import { StandardParametersKey } from '../../../../src/types/ocpp/Configuration.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../../tests/helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
@@ -75,6 +76,20 @@ await describe('B05 - OCPP20VariableManager', async () => {
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },
       heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+      ocppConfiguration: {
+        configurationKey: [
+          {
+            key: StandardParametersKey.HeartbeatInterval,
+            readonly: false,
+            value: millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL).toString(),
+          },
+          {
+            key: StandardParametersKey.WebSocketPingInterval,
+            readonly: false,
+            value: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL.toString(),
+          },
+        ],
+      },
       stationInfo: {
         ocppVersion: OCPPVersion.VERSION_201,
       },
@@ -318,7 +333,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
       // Third variable: MessageTimeout
       expect(result[2].attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
       expect(result[2].attributeType).toBe(AttributeEnumType.Actual)
-      expect(result[2].attributeValue).toBe(station.getConnectionTimeout().toString())
+      expect(result[2].attributeValue).toBe(Constants.DEFAULT_CONNECTION_TIMEOUT.toString())
       expect(result[2].component.name).toBe(OCPP20ComponentName.OCPPCommCtrlr)
       expect(result[2].component.instance).toBe('Default')
       expect(result[2].variable.name).toBe(OCPP20RequiredVariableName.MessageTimeout)
@@ -833,7 +848,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
     await it('should validate MessageTimeout positive integer >0 and reject invalid', () => {
       const okRes = manager.setVariables(station, [
         {
-          attributeValue: (station.getConnectionTimeout() + 5).toString(),
+          attributeValue: (Constants.DEFAULT_CONNECTION_TIMEOUT + 5).toString(),
           component: { instance: 'Default', name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20RequiredVariableName.MessageTimeout },
         },
