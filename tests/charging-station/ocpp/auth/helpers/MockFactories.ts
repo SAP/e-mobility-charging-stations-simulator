@@ -269,47 +269,6 @@ export const createTestAuthConfig = (
 // ============================================================================
 
 /**
- * Minimal ChargingStation interface for auth module testing.
- * Contains only the properties needed by auth strategies and services.
- */
-export interface MockChargingStation {
-  getConnectorStatus: (connectorId: number) => undefined | { status: string }
-  idTagLocalAuthorized: (idTag: string) => boolean
-  isConnected: () => boolean
-  logPrefix: () => string
-  ocppVersion: OCPPVersion
-  sendRequest: (commandName: string, payload: unknown) => Promise<unknown>
-  stationInfo: {
-    chargingStationId: string
-    hashId: string
-  }
-}
-
-/**
- * Create a mock ChargingStation for auth module unit testing.
- *
- * Returns MockChargingStation interface - minimal interface for auth strategies.
- * For OCPPAuthService tests requiring full ChargingStation type, use createMockAuthServiceTestStation().
- * @param overrides - Partial MockChargingStation properties to override defaults
- * @returns Mock ChargingStation object with stubbed methods
- */
-export const createMockAuthChargingStation = (
-  overrides?: Partial<MockChargingStation>
-): MockChargingStation => ({
-  getConnectorStatus: () => ({ status: 'Available' }),
-  idTagLocalAuthorized: () => false,
-  isConnected: () => true,
-  logPrefix: () => '[MockStation]',
-  ocppVersion: OCPPVersion.VERSION_16,
-  sendRequest: () => Promise.resolve({}),
-  stationInfo: {
-    chargingStationId: 'test-station-001',
-    hashId: 'test-hash-001',
-  },
-  ...overrides,
-})
-
-/**
  * Create a mock ChargingStation for auth service testing.
  * Provides minimal station interface needed for OCPPAuthServiceImpl tests.
  * @param id - Station identifier suffix (e.g., '001' creates 'TEST-CS-001')
