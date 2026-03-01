@@ -27,7 +27,10 @@ import {
 import { OCPP20IdTokenEnumType } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
-import { createMockChargingStation, MockChargingStation } from '../../ChargingStationTestUtils.js'
+import {
+  createMockChargingStation,
+  type MockChargingStation,
+} from '../../ChargingStationTestUtils.js'
 
 // ============================================================================
 // Testable Interfaces

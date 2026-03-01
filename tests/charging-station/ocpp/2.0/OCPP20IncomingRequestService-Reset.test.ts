@@ -12,6 +12,7 @@ import type {
   OCPP20ResetResponse,
   Reservation,
 } from '../../../../src/types/index.js'
+import type { MockChargingStation } from '../../ChargingStationTestUtils.js'
 
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
@@ -23,7 +24,6 @@ import {
 } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_ONE_HOUR_MS } from '../../ChargingStationTestConstants.js'
-import { MockChargingStation } from '../../ChargingStationTestUtils.js'
 import { ResetTestFixtures } from './OCPP20TestUtils.js'
 
 await describe('B11 & B12 - Reset', async () => {
