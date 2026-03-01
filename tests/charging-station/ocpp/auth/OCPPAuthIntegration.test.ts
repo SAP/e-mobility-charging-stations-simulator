@@ -20,8 +20,8 @@ import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import { createMockAuthRequest, createMockIdentifier } from './helpers/MockFactories.js'
 
 await describe('OCPP Authentication', async () => {
-  let mockChargingStation16: ChargingStation
-  let mockChargingStation20: ChargingStation
+  let mockStation16: ChargingStation
+  let mockStation20: ChargingStation
 
   beforeEach(() => {
     // Create mock charging station with OCPP 1.6 configuration
@@ -34,7 +34,7 @@ await describe('OCPP Authentication', async () => {
         templateName: 'test-auth-template',
       },
     })
-    mockChargingStation16 = result16.station
+    mockStation16 = result16.station
 
     // Create mock charging station with OCPP 2.0 configuration
     const result20 = createMockChargingStation({
@@ -46,7 +46,7 @@ await describe('OCPP Authentication', async () => {
         templateName: 'test-auth-template',
       },
     })
-    mockChargingStation20 = result20.station
+    mockStation20 = result20.station
   })
 
   afterEach(() => {
@@ -57,7 +57,7 @@ await describe('OCPP Authentication', async () => {
     let authService16: OCPPAuthServiceImpl
 
     beforeEach(() => {
-      authService16 = new OCPPAuthServiceImpl(mockChargingStation16)
+      authService16 = new OCPPAuthServiceImpl(mockStation16)
     })
 
     await it('should authenticate with valid identifier', async () => {
@@ -113,7 +113,7 @@ await describe('OCPP Authentication', async () => {
     let authService20: OCPPAuthServiceImpl
 
     beforeEach(() => {
-      authService20 = new OCPPAuthServiceImpl(mockChargingStation20)
+      authService20 = new OCPPAuthServiceImpl(mockStation20)
     })
 
     await it('should authenticate with valid identifier', async () => {
@@ -157,7 +157,7 @@ await describe('OCPP Authentication', async () => {
     let authServiceError: OCPPAuthServiceImpl
 
     beforeEach(() => {
-      authServiceError = new OCPPAuthServiceImpl(mockChargingStation16)
+      authServiceError = new OCPPAuthServiceImpl(mockStation16)
     })
 
     await it('should handle invalid identifier gracefully during auth flow', async () => {
@@ -183,7 +183,7 @@ await describe('OCPP Authentication', async () => {
     let authServiceConcurrent: OCPPAuthServiceImpl
 
     beforeEach(() => {
-      authServiceConcurrent = new OCPPAuthServiceImpl(mockChargingStation16)
+      authServiceConcurrent = new OCPPAuthServiceImpl(mockStation16)
     })
 
     await it('should handle concurrent authentication requests with mixed contexts', async () => {

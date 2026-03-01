@@ -41,7 +41,7 @@ import {
 
 await describe('F03 - Remote Stop Transaction', async () => {
   let sentTransactionEvents: OCPP20TransactionEventRequest[] = []
-  let mockChargingStation: ChargingStation
+  let mockStation: ChargingStation
   let incomingRequestService: OCPP20IncomingRequestService
   let testableService: ReturnType<typeof createTestableIncomingRequestService>
 
@@ -71,13 +71,13 @@ await describe('F03 - Remote Stop Transaction', async () => {
       },
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
-    mockChargingStation = station
+    mockStation = station
     incomingRequestService = new OCPP20IncomingRequestService()
     testableService = createTestableIncomingRequestService(incomingRequestService)
-    const stationId = mockChargingStation.stationInfo?.chargingStationId ?? 'unknown'
+    const stationId = mockStation.stationInfo?.chargingStationId ?? 'unknown'
     OCPPAuthServiceFactory.setInstanceForTesting(stationId, createMockAuthService())
-    resetLimits(mockChargingStation)
-    resetReportingValueSize(mockChargingStation)
+    resetLimits(mockStation)
+    resetReportingValueSize(mockStation)
   })
 
   afterEach(() => {
@@ -99,7 +99,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
   ): Promise<string> {
     // Reset all connector states first to ensure clean state (unless skipped for multiple transactions)
     if (!skipReset) {
-      resetConnectorTransactionState(mockChargingStation)
+      resetConnectorTransactionState(mockStation)
     }
 
     const startRequest: OCPP20RequestStartTransactionRequest = {
@@ -112,7 +112,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
     }
 
     const startResponse = await testableService.handleRequestStartTransaction(
-      mockChargingStation,
+      mockStation,
       startRequest
     )
 
@@ -135,10 +135,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
     }
 
     // Execute stop transaction
-    const response = await testableService.handleRequestStopTransaction(
-      mockChargingStation,
-      stopRequest
-    )
+    const response = await testableService.handleRequestStopTransaction(mockStation, stopRequest)
 
     // Verify response
     expect(response).toBeDefined()
@@ -158,7 +155,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
   // FR: F03.FR.02, F03.FR.03
   await it('should handle multiple active transactions correctly', async () => {
     // Reset once before starting multiple transactions
-    resetConnectorTransactionState(mockChargingStation)
+    resetConnectorTransactionState(mockStation)
 
     // Start transactions on different EVSEs (skip reset for subsequent transactions)
     const transactionId1 = await startTransaction(1, 200, true) // Skip reset since we just did it
@@ -173,10 +170,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
       transactionId: transactionId2 as UUIDv4,
     }
 
-    const response = await testableService.handleRequestStopTransaction(
-      mockChargingStation,
-      stopRequest
-    )
+    const response = await testableService.handleRequestStopTransaction(mockStation, stopRequest)
 
     // Verify response
     expect(response).toBeDefined()
@@ -190,8 +184,8 @@ await describe('F03 - Remote Stop Transaction', async () => {
     expect(transactionEvent.evse?.id).toBe(2)
 
     // Verify other transactions are still active (test implementation dependent)
-    expect(mockChargingStation.getConnectorIdByTransactionId(transactionId1)).toBe(1)
-    expect(mockChargingStation.getConnectorIdByTransactionId(transactionId3)).toBe(3)
+    expect(mockStation.getConnectorIdByTransactionId(transactionId1)).toBe(1)
+    expect(mockStation.getConnectorIdByTransactionId(transactionId3)).toBe(3)
   })
 
   // FR: F03.FR.08
@@ -204,10 +198,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
       transactionId: nonExistentTransactionId as UUIDv4,
     }
 
-    const response = await testableService.handleRequestStopTransaction(
-      mockChargingStation,
-      stopRequest
-    )
+    const response = await testableService.handleRequestStopTransaction(mockStation, stopRequest)
 
     // Verify rejection
     expect(response).toBeDefined()
@@ -226,10 +217,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
       transactionId: '' as UUIDv4,
     }
 
-    const response = await testableService.handleRequestStopTransaction(
-      mockChargingStation,
-      invalidRequest
-    )
+    const response = await testableService.handleRequestStopTransaction(mockStation, invalidRequest)
 
     // Verify rejection
     expect(response).toBeDefined()
@@ -250,10 +238,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
       transactionId: tooLongTransactionId as UUIDv4,
     }
 
-    const response = await testableService.handleRequestStopTransaction(
-      mockChargingStation,
-      invalidRequest
-    )
+    const response = await testableService.handleRequestStopTransaction(mockStation, invalidRequest)
 
     // Verify rejection
     expect(response).toBeDefined()
@@ -280,9 +265,9 @@ await describe('F03 - Remote Stop Transaction', async () => {
     }
 
     // Update the connector's transaction ID for testing
-    const connectorId = mockChargingStation.getConnectorIdByTransactionId(transactionId)
+    const connectorId = mockStation.getConnectorIdByTransactionId(transactionId)
     if (connectorId != null) {
-      const connectorStatus = mockChargingStation.getConnectorStatus(connectorId)
+      const connectorStatus = mockStation.getConnectorStatus(connectorId)
       if (connectorStatus) {
         connectorStatus.transactionId = testTransactionId
       }
@@ -292,10 +277,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
       transactionId: testTransactionId as UUIDv4,
     }
 
-    const response = await testableService.handleRequestStopTransaction(
-      mockChargingStation,
-      stopRequest
-    )
+    const response = await testableService.handleRequestStopTransaction(mockStation, stopRequest)
 
     // Verify acceptance (format is valid)
     expect(response).toBeDefined()
@@ -378,10 +360,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
       transactionId: transactionId as UUIDv4,
     }
 
-    const response = await testableService.handleRequestStopTransaction(
-      mockChargingStation,
-      stopRequest
-    )
+    const response = await testableService.handleRequestStopTransaction(mockStation, stopRequest)
 
     // Verify response structure
     expect(response).toBeDefined()
@@ -411,7 +390,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
     }
 
     const response = await testableService.handleRequestStopTransaction(
-      mockChargingStation,
+      mockStation,
       stopRequestWithCustomData
     )
 
@@ -435,10 +414,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
       transactionId: transactionId as UUIDv4,
     }
 
-    const response = await testableService.handleRequestStopTransaction(
-      mockChargingStation,
-      stopRequest
-    )
+    const response = await testableService.handleRequestStopTransaction(mockStation, stopRequest)
 
     expect(response.status).toBe(RequestStartStopStatusEnumType.Accepted)
 
@@ -466,11 +442,11 @@ await describe('F03 - Remote Stop Transaction', async () => {
 
   // FR: F03.FR.09
   await it('should include final meter values in TransactionEvent(Ended)', async () => {
-    resetConnectorTransactionState(mockChargingStation)
+    resetConnectorTransactionState(mockStation)
 
     const transactionId = await startTransaction(3, 700)
 
-    const connectorStatus = mockChargingStation.getConnectorStatus(3)
+    const connectorStatus = mockStation.getConnectorStatus(3)
     expect(connectorStatus).toBeDefined()
     if (connectorStatus != null) {
       connectorStatus.transactionEnergyActiveImportRegisterValue = 12345.67
@@ -482,10 +458,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
       transactionId: transactionId as UUIDv4,
     }
 
-    const response = await testableService.handleRequestStopTransaction(
-      mockChargingStation,
-      stopRequest
-    )
+    const response = await testableService.handleRequestStopTransaction(mockStation, stopRequest)
 
     expect(response.status).toBe(RequestStartStopStatusEnumType.Accepted)
 

@@ -33,7 +33,7 @@ import {
 } from './OCPP20TestUtils.js'
 
 await describe('F01 & F02 - Remote Start Transaction', async () => {
-  let mockChargingStation: ChargingStation
+  let mockStation: ChargingStation
   let incomingRequestService: OCPP20IncomingRequestService
   let testableService: ReturnType<typeof createTestableIncomingRequestService>
   beforeEach(() => {
@@ -51,14 +51,14 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       },
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
-    mockChargingStation = station
+    mockStation = station
     incomingRequestService = new OCPP20IncomingRequestService()
     testableService = createTestableIncomingRequestService(incomingRequestService)
-    const stationId = mockChargingStation.stationInfo?.chargingStationId ?? 'unknown'
+    const stationId = mockStation.stationInfo?.chargingStationId ?? 'unknown'
     OCPPAuthServiceFactory.setInstanceForTesting(stationId, createMockAuthService())
-    resetConnectorTransactionState(mockChargingStation)
-    resetLimits(mockChargingStation)
-    resetReportingValueSize(mockChargingStation)
+    resetConnectorTransactionState(mockStation)
+    resetLimits(mockStation)
+    resetReportingValueSize(mockStation)
   })
 
   afterEach(() => {
@@ -77,10 +77,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       remoteStartId: 1,
     }
 
-    const response = await testableService.handleRequestStartTransaction(
-      mockChargingStation,
-      validRequest
-    )
+    const response = await testableService.handleRequestStartTransaction(mockStation, validRequest)
 
     expect(response).toBeDefined()
     expect(response.status).toBe(RequestStartStopStatusEnumType.Accepted)
@@ -152,7 +149,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     }
 
     const response = await testableService.handleRequestStartTransaction(
-      mockChargingStation,
+      mockStation,
       requestWithGroupToken
     )
 
@@ -194,7 +191,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     }
 
     const response = await testableService.handleRequestStartTransaction(
-      mockChargingStation,
+      mockStation,
       requestWithValidProfile
     )
 
@@ -236,7 +233,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     }
 
     const response = await testableService.handleRequestStartTransaction(
-      mockChargingStation,
+      mockStation,
       requestWithInvalidProfile
     )
 
@@ -278,7 +275,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     }
 
     const response = await testableService.handleRequestStartTransaction(
-      mockChargingStation,
+      mockStation,
       requestWithTransactionIdProfile
     )
 
@@ -299,7 +296,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
 
     // Should throw OCPPError for invalid evseId
     await expect(
-      testableService.handleRequestStartTransaction(mockChargingStation, invalidEvseRequest)
+      testableService.handleRequestStartTransaction(mockStation, invalidEvseRequest)
     ).rejects.toThrow('EVSE 999 does not exist on charging station')
   })
 
@@ -315,7 +312,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       remoteStartId: 100,
     }
 
-    await testableService.handleRequestStartTransaction(mockChargingStation, firstRequest)
+    await testableService.handleRequestStartTransaction(mockStation, firstRequest)
 
     // Now try to start another transaction on the same EVSE
     const secondRequest: OCPP20RequestStartTransactionRequest = {
@@ -327,10 +324,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       remoteStartId: 101,
     }
 
-    const response = await testableService.handleRequestStartTransaction(
-      mockChargingStation,
-      secondRequest
-    )
+    const response = await testableService.handleRequestStartTransaction(mockStation, secondRequest)
 
     expect(response).toBeDefined()
     expect(response.status).toBe(RequestStartStopStatusEnumType.Rejected)
@@ -348,10 +342,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       remoteStartId: 200,
     }
 
-    const response = await testableService.handleRequestStartTransaction(
-      mockChargingStation,
-      validRequest
-    )
+    const response = await testableService.handleRequestStartTransaction(mockStation, validRequest)
 
     // Verify response structure
     expect(response).toBeDefined()

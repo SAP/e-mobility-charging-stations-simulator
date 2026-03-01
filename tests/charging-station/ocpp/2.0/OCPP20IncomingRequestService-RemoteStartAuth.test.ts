@@ -27,11 +27,11 @@ import { standardCleanup } from '../../../../tests/helpers/TestLifecycleHelpers.
 
 await describe('G03 - Remote Start Pre-Authorization', async () => {
   let service: OCPP20IncomingRequestService | undefined
-  let mockChargingStation: ChargingStation | undefined
+  let mockStation: ChargingStation | undefined
 
   beforeEach(() => {
     // Mock charging station with EVSE configuration
-    mockChargingStation = {
+    mockStation = {
       evses: new Map([
         [
           1,
@@ -62,7 +62,7 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
 
   afterEach(() => {
     standardCleanup()
-    mockChargingStation = undefined
+    mockStation = undefined
     service = undefined
   })
 
@@ -143,7 +143,7 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
     await it('should not modify connector status before authorization', () => {
       // Given: Connector in initial state
       // Then: Connector status should remain unchanged before processing
-      const connectorStatus = mockChargingStation.getConnectorStatus(1)
+      const connectorStatus = mockStation.getConnectorStatus(1)
       expect(connectorStatus?.transactionStarted).toBe(false)
       expect(connectorStatus?.status).toBe(ConnectorStatusEnum.Available)
     })
@@ -234,7 +234,7 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
   await describe('G03.FR.03.005 - Remote start on occupied connector', async () => {
     await it('should detect existing transaction on connector', () => {
       // Given: Connector with active transaction
-      mockChargingStation.getConnectorStatus = (): ConnectorStatus => ({
+      mockStation.getConnectorStatus = (): ConnectorStatus => ({
         availability: OperationalStatusEnumType.Operative,
         MeterValues: [],
         status: ConnectorStatusEnum.Occupied,
@@ -245,7 +245,7 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
       })
 
       // Then: Connector should have active transaction
-      const connectorStatus = mockChargingStation.getConnectorStatus(1)
+      const connectorStatus = mockStation.getConnectorStatus(1)
       expect(connectorStatus?.transactionStarted).toBe(true)
       expect(connectorStatus?.status).toBe(ConnectorStatusEnum.Occupied)
       expect(connectorStatus?.transactionId).toBe('existing-tx-123')
@@ -256,7 +256,7 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
       // Given: Existing transaction details
       const existingTransactionId = 'existing-tx-456'
       const existingTokenTag = 'EXISTING_TOKEN_002'
-      mockChargingStation.getConnectorStatus = (): ConnectorStatus => ({
+      mockStation.getConnectorStatus = (): ConnectorStatus => ({
         availability: OperationalStatusEnumType.Operative,
         MeterValues: [],
         status: ConnectorStatusEnum.Occupied,
@@ -267,7 +267,7 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
       })
 
       // Then: Existing transaction should be preserved
-      const connectorStatus = mockChargingStation.getConnectorStatus(1)
+      const connectorStatus = mockStation.getConnectorStatus(1)
       expect(connectorStatus?.transactionId).toBe(existingTransactionId)
       expect(connectorStatus?.transactionIdTag).toBe(existingTokenTag)
     })
@@ -354,7 +354,7 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
 
     await it('should support OCPP 2.0.1 version', () => {
       // Given: Station with OCPP 2.0.1
-      expect(mockChargingStation.stationInfo?.ocppVersion).toBe(OCPPVersion.VERSION_201)
+      expect(mockStation.stationInfo?.ocppVersion).toBe(OCPPVersion.VERSION_201)
     })
 
     await it('should support idToken with additional info', () => {
@@ -406,10 +406,10 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
 
     await it('should have valid charging station configuration', () => {
       // Then: Charging station should have required configuration
-      expect(mockChargingStation).toBeDefined()
-      expect(mockChargingStation.evses).toBeDefined()
-      expect(mockChargingStation.evses.size).toBeGreaterThan(0)
-      expect(mockChargingStation.stationInfo?.ocppVersion).toBe(OCPPVersion.VERSION_201)
+      expect(mockStation).toBeDefined()
+      expect(mockStation.evses).toBeDefined()
+      expect(mockStation.evses.size).toBeGreaterThan(0)
+      expect(mockStation.stationInfo?.ocppVersion).toBe(OCPPVersion.VERSION_201)
     })
   })
 })

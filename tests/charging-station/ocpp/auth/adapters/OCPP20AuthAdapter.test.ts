@@ -27,10 +27,10 @@ import { createMockAuthorizationResult, createMockIdentifier } from '../helpers/
 
 await describe('OCPP20AuthAdapter', async () => {
   let adapter: OCPP20AuthAdapter
-  let mockChargingStation: ChargingStation
+  let mockStation: ChargingStation
 
   beforeEach(() => {
-    mockChargingStation = {
+    mockStation = {
       inAcceptedState: () => true,
       logPrefix: () => '[TEST-STATION-20]',
       stationInfo: {
@@ -38,7 +38,7 @@ await describe('OCPP20AuthAdapter', async () => {
       },
     } as unknown as ChargingStation
 
-    adapter = new OCPP20AuthAdapter(mockChargingStation)
+    adapter = new OCPP20AuthAdapter(mockStation)
   })
 
   afterEach(() => {
@@ -269,7 +269,7 @@ await describe('OCPP20AuthAdapter', async () => {
     })
 
     await it('should return false when station is offline', async t => {
-      mockChargingStation.inAcceptedState = () => false
+      mockStation.inAcceptedState = () => false
       t.mock.method(
         adapter as unknown as { getVariableValue: () => Promise<string | undefined> },
         'getVariableValue',

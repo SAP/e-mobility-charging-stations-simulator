@@ -25,11 +25,11 @@ import {
 
 await describe('CertificateAuthStrategy', async () => {
   let strategy: CertificateAuthStrategy
-  let mockChargingStation: ChargingStation
+  let mockStation: ChargingStation
   let mockOCPP20Adapter: OCPPAuthAdapter
 
   beforeEach(() => {
-    mockChargingStation = {
+    mockStation = {
       logPrefix: () => '[TEST-CS-001]',
       stationInfo: {
         chargingStationId: 'TEST-CS-001',
@@ -54,7 +54,7 @@ await describe('CertificateAuthStrategy', async () => {
     const adapters = new Map<OCPPVersion, OCPPAuthAdapter>()
     adapters.set(OCPPVersion.VERSION_20, mockOCPP20Adapter)
 
-    strategy = new CertificateAuthStrategy(mockChargingStation, adapters)
+    strategy = new CertificateAuthStrategy(mockStation, adapters)
   })
 
   afterEach(() => {

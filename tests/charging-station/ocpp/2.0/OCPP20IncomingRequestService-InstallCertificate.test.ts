@@ -57,7 +57,7 @@ await describe('I03 - InstallCertificate', async () => {
     standardCleanup()
   })
 
-  let mockChargingStation: ChargingStation
+  let mockStation: ChargingStation
   let stationWithCertManager: ChargingStationWithCertificateManager
   let incomingRequestService: OCPP20IncomingRequestService
   let testableService: ReturnType<typeof createTestableIncomingRequestService>
@@ -74,12 +74,12 @@ await describe('I03 - InstallCertificate', async () => {
       },
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
-    mockChargingStation = initialStation
-    mockChargingStation = initialStation
+    mockStation = initialStation
+    mockStation = initialStation
 
     // Use factory function to create station with certificate manager
     stationWithCertManager = createStationWithCertificateManager(
-      mockChargingStation,
+      mockStation,
       createMockCertificateManager()
     )
 
@@ -99,7 +99,7 @@ await describe('I03 - InstallCertificate', async () => {
       }
 
       const response: OCPP20InstallCertificateResponse =
-        await testableService.handleRequestInstallCertificate(mockChargingStation, request)
+        await testableService.handleRequestInstallCertificate(mockStation, request)
 
       expect(response).toBeDefined()
       expect(typeof response).toBe('object')
@@ -120,7 +120,7 @@ await describe('I03 - InstallCertificate', async () => {
       }
 
       const response: OCPP20InstallCertificateResponse =
-        await testableService.handleRequestInstallCertificate(mockChargingStation, request)
+        await testableService.handleRequestInstallCertificate(mockStation, request)
 
       expect(response).toBeDefined()
       expect(response.status).toBe(InstallCertificateStatusEnumType.Accepted)
@@ -138,7 +138,7 @@ await describe('I03 - InstallCertificate', async () => {
       }
 
       const response: OCPP20InstallCertificateResponse =
-        await testableService.handleRequestInstallCertificate(mockChargingStation, request)
+        await testableService.handleRequestInstallCertificate(mockStation, request)
 
       expect(response).toBeDefined()
       expect(response.status).toBe(InstallCertificateStatusEnumType.Accepted)
@@ -156,7 +156,7 @@ await describe('I03 - InstallCertificate', async () => {
       }
 
       const response: OCPP20InstallCertificateResponse =
-        await testableService.handleRequestInstallCertificate(mockChargingStation, request)
+        await testableService.handleRequestInstallCertificate(mockStation, request)
 
       expect(response).toBeDefined()
       expect(response.status).toBe(InstallCertificateStatusEnumType.Accepted)
@@ -172,7 +172,7 @@ await describe('I03 - InstallCertificate', async () => {
       }
 
       const response: OCPP20InstallCertificateResponse =
-        await testableService.handleRequestInstallCertificate(mockChargingStation, request)
+        await testableService.handleRequestInstallCertificate(mockStation, request)
 
       expect(response).toBeDefined()
       expect(response.status).toBe(InstallCertificateStatusEnumType.Rejected)
@@ -185,7 +185,7 @@ await describe('I03 - InstallCertificate', async () => {
       stationWithCertManager.certificateManager = createMockCertificateManager({
         storeCertificateResult: false,
       })
-      mockChargingStation.stationInfo.validateCertificateExpiry = true
+      mockStation.stationInfo.validateCertificateExpiry = true
 
       const request: OCPP20InstallCertificateRequest = {
         certificate: EXPIRED_PEM_CERTIFICATE,
@@ -193,14 +193,14 @@ await describe('I03 - InstallCertificate', async () => {
       }
 
       const response: OCPP20InstallCertificateResponse =
-        await testableService.handleRequestInstallCertificate(mockChargingStation, request)
+        await testableService.handleRequestInstallCertificate(mockStation, request)
 
       expect(response).toBeDefined()
       expect(response.status).toBe(InstallCertificateStatusEnumType.Rejected)
       expect(response.statusInfo).toBeDefined()
       expect(response.statusInfo?.reasonCode).toBeDefined()
 
-      delete mockChargingStation.stationInfo.validateCertificateExpiry
+      delete mockStation.stationInfo.validateCertificateExpiry
     })
   })
 
@@ -216,7 +216,7 @@ await describe('I03 - InstallCertificate', async () => {
       }
 
       const response: OCPP20InstallCertificateResponse =
-        await testableService.handleRequestInstallCertificate(mockChargingStation, request)
+        await testableService.handleRequestInstallCertificate(mockStation, request)
 
       expect(response).toBeDefined()
       expect(response.status).toBe(InstallCertificateStatusEnumType.Failed)
@@ -237,7 +237,7 @@ await describe('I03 - InstallCertificate', async () => {
       }
 
       const response: OCPP20InstallCertificateResponse =
-        await testableService.handleRequestInstallCertificate(mockChargingStation, request)
+        await testableService.handleRequestInstallCertificate(mockStation, request)
 
       expect(response).toBeDefined()
       expect(typeof response).toBe('object')
@@ -270,7 +270,7 @@ await describe('I03 - InstallCertificate', async () => {
       }
 
       const response: OCPP20InstallCertificateResponse =
-        await testableService.handleRequestInstallCertificate(mockChargingStation, request)
+        await testableService.handleRequestInstallCertificate(mockStation, request)
 
       expect(response.status).toBe(InstallCertificateStatusEnumType.Rejected)
       expect(response.statusInfo).toBeDefined()

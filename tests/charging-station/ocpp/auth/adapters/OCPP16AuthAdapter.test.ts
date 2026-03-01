@@ -23,11 +23,11 @@ import { createMockAuthorizationResult, createMockIdentifier } from '../helpers/
 
 await describe('OCPP16AuthAdapter', async () => {
   let adapter: OCPP16AuthAdapter
-  let mockChargingStation: ChargingStation
+  let mockStation: ChargingStation
 
   beforeEach(() => {
     // Create mock charging station
-    mockChargingStation = {
+    mockStation = {
       getConnectorStatus: (connectorId: number) => ({
         authorizeIdTag: undefined,
       }),
@@ -51,7 +51,7 @@ await describe('OCPP16AuthAdapter', async () => {
       },
     } as unknown as ChargingStation
 
-    adapter = new OCPP16AuthAdapter(mockChargingStation)
+    adapter = new OCPP16AuthAdapter(mockStation)
   })
 
   afterEach(() => {
@@ -169,7 +169,7 @@ await describe('OCPP16AuthAdapter', async () => {
 
     await it('should handle authorization failure gracefully', async () => {
       // Override mock to simulate failure
-      mockChargingStation.ocppRequestService.requestHandler = (): Promise<never> => {
+      mockStation.ocppRequestService.requestHandler = (): Promise<never> => {
         return Promise.reject(new Error('Network error'))
       }
 
@@ -189,15 +189,15 @@ await describe('OCPP16AuthAdapter', async () => {
     })
 
     await it('should return false when station is offline', async () => {
-      mockChargingStation.inAcceptedState = () => false
+      mockStation.inAcceptedState = () => false
 
       const isAvailable = await adapter.isRemoteAvailable()
       expect(isAvailable).toBe(false)
     })
 
     await it('should return false when remote authorization is disabled', async () => {
-      if (mockChargingStation.stationInfo) {
-        mockChargingStation.stationInfo.remoteAuthorization = false
+      if (mockStation.stationInfo) {
+        mockStation.stationInfo.remoteAuthorization = false
       }
 
       const isAvailable = await adapter.isRemoteAvailable()

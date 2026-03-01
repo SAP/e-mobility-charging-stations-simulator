@@ -79,7 +79,7 @@ const TRANSACTION_FLOWS = [
 
 await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
   await describe('E01-E04 - OCPP 2.0.1 TransactionEvent Implementation', async () => {
-    let mockChargingStation: ChargingStation
+    let mockStation: ChargingStation
 
     beforeEach(() => {
       const { station } = createMockChargingStation({
@@ -96,8 +96,8 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         },
         websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
       })
-      mockChargingStation = station
-      resetLimits(mockChargingStation)
+      mockStation = station
+      resetLimits(mockStation)
     })
 
     // Reset singleton state and timers after each test to ensure test isolation
@@ -112,10 +112,10 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const triggerReason = OCPP20TriggerReasonEnumType.Authorized
 
         // Reset sequence number to simulate new transaction
-        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
         const transactionEvent = OCPP20ServiceUtils.buildTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Started,
           triggerReason,
           connectorId,
@@ -144,11 +144,11 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const transactionId = generateUUID()
 
         // Reset for new transaction
-        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
         // Build first event (Started)
         const startEvent = OCPP20ServiceUtils.buildTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Started,
           OCPP20TriggerReasonEnumType.Authorized,
           connectorId,
@@ -157,7 +157,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         // Build second event (Updated)
         const updateEvent = OCPP20ServiceUtils.buildTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Updated,
           OCPP20TriggerReasonEnumType.MeterValuePeriodic,
           connectorId,
@@ -166,7 +166,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         // Build third event (Ended)
         const endEvent = OCPP20ServiceUtils.buildTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Ended,
           OCPP20TriggerReasonEnumType.StopAuthorized,
           connectorId,
@@ -202,7 +202,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         }
 
         const transactionEvent = OCPP20ServiceUtils.buildTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Updated,
           OCPP20TriggerReasonEnumType.ChargingStateChanged,
           connectorId,
@@ -231,7 +231,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         try {
           OCPP20ServiceUtils.buildTransactionEvent(
-            mockChargingStation,
+            mockStation,
             OCPP20TransactionEventEnumType.Started,
             OCPP20TriggerReasonEnumType.Authorized,
             connectorId,
@@ -274,11 +274,11 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         ]
 
         // Reset sequence number
-        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
         for (const triggerReason of triggerReasons) {
           const transactionEvent = OCPP20ServiceUtils.buildTransactionEvent(
-            mockChargingStation,
+            mockStation,
             OCPP20TransactionEventEnumType.Updated,
             triggerReason,
             connectorId,
@@ -298,7 +298,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const transactionId = generateUUID()
 
         const response = await OCPP20ServiceUtils.sendTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Started,
           OCPP20TriggerReasonEnumType.Authorized,
           connectorId,
@@ -354,7 +354,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         // First, build a transaction event to set sequence number
         OCPP20ServiceUtils.buildTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Started,
           OCPP20TriggerReasonEnumType.Authorized,
           connectorId,
@@ -362,11 +362,11 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
 
         // Verify sequence number is set
-        const connectorStatus = mockChargingStation.getConnectorStatus(connectorId)
+        const connectorStatus = mockStation.getConnectorStatus(connectorId)
         expect(connectorStatus?.transactionSeqNo).toBeDefined()
 
         // Reset sequence number
-        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
         // Verify sequence number is reset
         expect(connectorStatus?.transactionSeqNo).toBeUndefined()
@@ -377,10 +377,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         // Should not throw error for non-existent connector
         expect(() => {
-          OCPP20ServiceUtils.resetTransactionSequenceNumber(
-            mockChargingStation,
-            nonExistentConnectorId
-          )
+          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, nonExistentConnectorId)
         }).not.toThrow()
       })
     })
@@ -391,10 +388,10 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
 
-        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
         const transactionEvent = OCPP20ServiceUtils.buildTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Started,
           OCPP20TriggerReasonEnumType.Authorized,
           connectorId,
@@ -446,10 +443,10 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const connectorId = 2
         const transactionId = generateUUID()
 
-        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
         const transactionEvent = OCPP20ServiceUtils.buildTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Started,
           OCPP20TriggerReasonEnumType.Authorized,
           connectorId,
@@ -813,10 +810,10 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             source: 'remote_command',
           }
 
-          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
           const transactionEvent = OCPP20ServiceUtils.buildTransactionEvent(
-            mockChargingStation,
+            mockStation,
             OCPP20TransactionEventEnumType.Started,
             context,
             connectorId,
@@ -845,7 +842,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           }
 
           const transactionEvent = OCPP20ServiceUtils.buildTransactionEvent(
-            mockChargingStation,
+            mockStation,
             OCPP20TransactionEventEnumType.Updated,
             context,
             connectorId,
@@ -871,7 +868,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           }
 
           const response = await OCPP20ServiceUtils.sendTransactionEvent(
-            mockChargingStation,
+            mockStation,
             OCPP20TransactionEventEnumType.Started,
             context,
             connectorId,
@@ -929,11 +926,11 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           const connectorId = 1
           const transactionId = generateUUID()
 
-          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
           // Old method call should still work
           const oldEvent = OCPP20ServiceUtils.buildTransactionEvent(
-            mockChargingStation,
+            mockStation,
             OCPP20TransactionEventEnumType.Started,
             OCPP20TriggerReasonEnumType.Authorized,
             connectorId,
@@ -951,7 +948,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
           // Old method call should still work
           const response = await OCPP20ServiceUtils.sendTransactionEvent(
-            mockChargingStation,
+            mockStation,
             OCPP20TransactionEventEnumType.Started,
             OCPP20TriggerReasonEnumType.Authorized,
             connectorId,
@@ -992,10 +989,10 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
               ? { idToken: `${id.toUpperCase()}_TOKEN_001`, type: OCPP20IdTokenEnumType.ISO14443 }
               : undefined
 
-            OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+            OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
             const startedEvent = OCPP20ServiceUtils.buildTransactionEvent(
-              mockChargingStation,
+              mockStation,
               OCPP20TransactionEventEnumType.Started,
               expectedStartTrigger,
               connectorId,
@@ -1024,11 +1021,11 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
                 }
               : undefined
 
-            OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+            OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
             // Step 1: Started event
             const startedEvent = OCPP20ServiceUtils.buildTransactionEvent(
-              mockChargingStation,
+              mockStation,
               OCPP20TransactionEventEnumType.Started,
               expectedStartTrigger,
               connectorId,
@@ -1038,7 +1035,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
             // Step 2: Charging state change
             const chargingEvent = OCPP20ServiceUtils.buildTransactionEvent(
-              mockChargingStation,
+              mockStation,
               OCPP20TransactionEventEnumType.Updated,
               OCPP20TriggerReasonEnumType.ChargingStateChanged,
               connectorId,
@@ -1048,7 +1045,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
             // Step 3: Ended event
             const endedEvent = OCPP20ServiceUtils.buildTransactionEvent(
-              mockChargingStation,
+              mockStation,
               OCPP20TransactionEventEnumType.Ended,
               OCPP20TriggerReasonEnumType.StopAuthorized,
               connectorId,
@@ -1072,12 +1069,12 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             const transaction1Id = generateUUID()
             const transaction2Id = generateUUID()
 
-            OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connector1)
-            OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connector2)
+            OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connector1)
+            OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connector2)
 
             // Start transaction on connector 1
             const conn1Event1 = OCPP20ServiceUtils.buildTransactionEvent(
-              mockChargingStation,
+              mockStation,
               OCPP20TransactionEventEnumType.Started,
               expectedStartTrigger,
               connector1,
@@ -1086,7 +1083,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
             // Start transaction on connector 2
             const conn2Event1 = OCPP20ServiceUtils.buildTransactionEvent(
-              mockChargingStation,
+              mockStation,
               OCPP20TransactionEventEnumType.Started,
               expectedStartTrigger,
               connector2,
@@ -1095,7 +1092,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
             // Update connector 1
             const conn1Event2 = OCPP20ServiceUtils.buildTransactionEvent(
-              mockChargingStation,
+              mockStation,
               OCPP20TransactionEventEnumType.Updated,
               OCPP20TriggerReasonEnumType.ChargingStateChanged,
               connector1,
@@ -1104,7 +1101,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
             // Update connector 2
             const conn2Event2 = OCPP20ServiceUtils.buildTransactionEvent(
-              mockChargingStation,
+              mockStation,
               OCPP20TransactionEventEnumType.Updated,
               OCPP20TriggerReasonEnumType.ChargingStateChanged,
               connector2,
@@ -1130,7 +1127,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
     // ==========================================================================
     await describe('E02 - Cable-First Transaction', async () => {
       beforeEach(() => {
-        resetConnectorTransactionState(mockChargingStation)
+        resetConnectorTransactionState(mockStation)
       })
 
       await describe('Cable Plug Event Sequencing', async () => {
@@ -1138,11 +1135,11 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           const connectorId = 1
           const transactionId = generateUUID()
 
-          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
           // Step 1: Cable plugged in (Started)
           const cablePluggedEvent = OCPP20ServiceUtils.buildTransactionEvent(
-            mockChargingStation,
+            mockStation,
             OCPP20TransactionEventEnumType.Started,
             OCPP20TriggerReasonEnumType.CablePluggedIn,
             connectorId,
@@ -1151,7 +1148,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
           // Step 2: EV detected (Updated)
           const evDetectedEvent = OCPP20ServiceUtils.buildTransactionEvent(
-            mockChargingStation,
+            mockStation,
             OCPP20TransactionEventEnumType.Updated,
             OCPP20TriggerReasonEnumType.EVDetected,
             connectorId,
@@ -1160,7 +1157,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
           // Step 3: Charging starts (Updated with ChargingStateChanged)
           const chargingStartedEvent = OCPP20ServiceUtils.buildTransactionEvent(
-            mockChargingStation,
+            mockStation,
             OCPP20TransactionEventEnumType.Updated,
             OCPP20TriggerReasonEnumType.ChargingStateChanged,
             connectorId,
@@ -1188,11 +1185,11 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           const connectorId = 2
           const transactionId = generateUUID()
 
-          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
           // Start transaction with cable plug
           const startEvent = OCPP20ServiceUtils.buildTransactionEvent(
-            mockChargingStation,
+            mockStation,
             OCPP20TransactionEventEnumType.Started,
             OCPP20TriggerReasonEnumType.CablePluggedIn,
             connectorId,
@@ -1201,7 +1198,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
           // End transaction with EV departure (cable removal)
           const endEvent = OCPP20ServiceUtils.buildTransactionEvent(
-            mockChargingStation,
+            mockStation,
             OCPP20TransactionEventEnumType.Ended,
             OCPP20TriggerReasonEnumType.EVDeparted,
             connectorId,
@@ -1222,33 +1219,33 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           const connectorId = 1
           const transactionId = generateUUID()
 
-          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
           // Build full cable-first flow
           const events = [
             OCPP20ServiceUtils.buildTransactionEvent(
-              mockChargingStation,
+              mockStation,
               OCPP20TransactionEventEnumType.Started,
               OCPP20TriggerReasonEnumType.CablePluggedIn,
               connectorId,
               transactionId
             ),
             OCPP20ServiceUtils.buildTransactionEvent(
-              mockChargingStation,
+              mockStation,
               OCPP20TransactionEventEnumType.Updated,
               OCPP20TriggerReasonEnumType.EVDetected,
               connectorId,
               transactionId
             ),
             OCPP20ServiceUtils.buildTransactionEvent(
-              mockChargingStation,
+              mockStation,
               OCPP20TransactionEventEnumType.Updated,
               OCPP20TriggerReasonEnumType.Authorized,
               connectorId,
               transactionId
             ),
             OCPP20ServiceUtils.buildTransactionEvent(
-              mockChargingStation,
+              mockStation,
               OCPP20TransactionEventEnumType.Updated,
               OCPP20TriggerReasonEnumType.ChargingStateChanged,
               connectorId,
@@ -1275,7 +1272,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           const connectorId = 1
 
           // Get connector status object
-          const connectorStatus = mockChargingStation.getConnectorStatus(connectorId)
+          const connectorStatus = mockStation.getConnectorStatus(connectorId)
           expect(connectorStatus).toBeDefined()
           if (connectorStatus == null) {
             throw new Error('Connector status should be defined')
@@ -1306,7 +1303,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           const connectorId = 2
           const transactionId = generateUUID()
 
-          const connectorStatus = mockChargingStation.getConnectorStatus(connectorId)
+          const connectorStatus = mockStation.getConnectorStatus(connectorId)
           expect(connectorStatus).toBeDefined()
           if (connectorStatus == null) {
             throw new Error('Connector status should be defined')
@@ -1337,13 +1334,13 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           const connectorId = 3
           const transactionId = generateUUID()
 
-          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
           // Cable-first flow with suspended state
           const events = [
             // 1. Cable plugged
             OCPP20ServiceUtils.buildTransactionEvent(
-              mockChargingStation,
+              mockStation,
               OCPP20TransactionEventEnumType.Started,
               OCPP20TriggerReasonEnumType.CablePluggedIn,
               connectorId,
@@ -1351,7 +1348,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             ),
             // 2. Start charging
             OCPP20ServiceUtils.buildTransactionEvent(
-              mockChargingStation,
+              mockStation,
               OCPP20TransactionEventEnumType.Updated,
               OCPP20TriggerReasonEnumType.ChargingStateChanged,
               connectorId,
@@ -1360,7 +1357,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             ),
             // 3. Suspended by EV
             OCPP20ServiceUtils.buildTransactionEvent(
-              mockChargingStation,
+              mockStation,
               OCPP20TransactionEventEnumType.Updated,
               OCPP20TriggerReasonEnumType.ChargingStateChanged,
               connectorId,
@@ -1369,7 +1366,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             ),
             // 4. Resume charging
             OCPP20ServiceUtils.buildTransactionEvent(
-              mockChargingStation,
+              mockStation,
               OCPP20TransactionEventEnumType.Updated,
               OCPP20TriggerReasonEnumType.ChargingStateChanged,
               connectorId,
@@ -1378,7 +1375,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             ),
             // 5. EV departed
             OCPP20ServiceUtils.buildTransactionEvent(
-              mockChargingStation,
+              mockStation,
               OCPP20TransactionEventEnumType.Ended,
               OCPP20TriggerReasonEnumType.EVDeparted,
               connectorId,
@@ -1433,7 +1430,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
     // ==========================================================================
     await describe('E03 - IdToken-First Pre-Authorization', async () => {
       beforeEach(() => {
-        resetConnectorTransactionState(mockChargingStation)
+        resetConnectorTransactionState(mockStation)
       })
 
       await describe('E03.FR.13 - Trigger Reason Selection', async () => {
@@ -1489,11 +1486,11 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             type: OCPP20IdTokenEnumType.ISO14443,
           }
 
-          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
           // Build Started event with idToken (E03.FR.01: IdToken must be in first event)
           const startedEvent = OCPP20ServiceUtils.buildTransactionEvent(
-            mockChargingStation,
+            mockStation,
             OCPP20TransactionEventEnumType.Started,
             OCPP20TriggerReasonEnumType.Authorized,
             connectorId,
@@ -1516,11 +1513,11 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             type: OCPP20IdTokenEnumType.ISO14443,
           }
 
-          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
           // First event includes idToken
           const startedEvent = OCPP20ServiceUtils.buildTransactionEvent(
-            mockChargingStation,
+            mockStation,
             OCPP20TransactionEventEnumType.Started,
             OCPP20TriggerReasonEnumType.Authorized,
             connectorId,
@@ -1530,7 +1527,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
           // Second event should NOT include idToken (flag is set after first inclusion)
           const updatedEvent = OCPP20ServiceUtils.buildTransactionEvent(
-            mockChargingStation,
+            mockStation,
             OCPP20TransactionEventEnumType.Updated,
             OCPP20TriggerReasonEnumType.ChargingStateChanged,
             connectorId,
@@ -1546,7 +1543,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           const connectorId = 1
           const transactionId = generateUUID()
 
-          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
           // Test ISO14443 (RFID)
           const rfidToken: OCPP20IdTokenType = {
@@ -1555,7 +1552,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           }
 
           const rfidEvent = OCPP20ServiceUtils.buildTransactionEvent(
-            mockChargingStation,
+            mockStation,
             OCPP20TransactionEventEnumType.Started,
             OCPP20TriggerReasonEnumType.Authorized,
             connectorId,
@@ -1566,8 +1563,8 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           expect(rfidEvent.idToken?.type).toBe(OCPP20IdTokenEnumType.ISO14443)
 
           // Reset for eMAID test
-          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
-          const connectorStatus = mockChargingStation.getConnectorStatus(connectorId)
+          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
+          const connectorStatus = mockStation.getConnectorStatus(connectorId)
           if (connectorStatus != null) {
             connectorStatus.transactionIdTokenSent = undefined
           }
@@ -1579,7 +1576,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           }
 
           const emaidEvent = OCPP20ServiceUtils.buildTransactionEvent(
-            mockChargingStation,
+            mockStation,
             OCPP20TransactionEventEnumType.Started,
             OCPP20TriggerReasonEnumType.Authorized,
             connectorId,
@@ -1601,11 +1598,11 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             type: OCPP20IdTokenEnumType.ISO14443,
           }
 
-          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
           // E03 Step 1: IdToken presented and authorized (Started with Authorized trigger)
           const authorizedEvent = OCPP20ServiceUtils.buildTransactionEvent(
-            mockChargingStation,
+            mockStation,
             OCPP20TransactionEventEnumType.Started,
             OCPP20TriggerReasonEnumType.Authorized,
             connectorId,
@@ -1615,7 +1612,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
           // E03 Step 2: Cable connected (Updated event)
           const cableConnectedEvent = OCPP20ServiceUtils.buildTransactionEvent(
-            mockChargingStation,
+            mockStation,
             OCPP20TransactionEventEnumType.Updated,
             OCPP20TriggerReasonEnumType.CablePluggedIn,
             connectorId,
@@ -1624,7 +1621,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
           // E03 Step 3: Charging starts
           const chargingEvent = OCPP20ServiceUtils.buildTransactionEvent(
-            mockChargingStation,
+            mockStation,
             OCPP20TransactionEventEnumType.Updated,
             OCPP20TriggerReasonEnumType.ChargingStateChanged,
             connectorId,
@@ -1634,7 +1631,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
           // E03 Step 4: Transaction ends
           const endedEvent = OCPP20ServiceUtils.buildTransactionEvent(
-            mockChargingStation,
+            mockStation,
             OCPP20TransactionEventEnumType.Ended,
             OCPP20TriggerReasonEnumType.StopAuthorized,
             connectorId,
@@ -1675,14 +1672,14 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           }
 
           // E03 IdToken-First: Starts with Authorized trigger
-          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
-          const connectorStatus = mockChargingStation.getConnectorStatus(connectorId)
+          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
+          const connectorStatus = mockStation.getConnectorStatus(connectorId)
           if (connectorStatus != null) {
             connectorStatus.transactionIdTokenSent = undefined
           }
 
           const e03Start = OCPP20ServiceUtils.buildTransactionEvent(
-            mockChargingStation,
+            mockStation,
             OCPP20TransactionEventEnumType.Started,
             OCPP20TriggerReasonEnumType.Authorized,
             connectorId,
@@ -1691,13 +1688,13 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           )
 
           // E02 Cable-First: Starts with CablePluggedIn trigger
-          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
           if (connectorStatus != null) {
             connectorStatus.transactionIdTokenSent = undefined
           }
 
           const e02Start = OCPP20ServiceUtils.buildTransactionEvent(
-            mockChargingStation,
+            mockStation,
             OCPP20TransactionEventEnumType.Started,
             OCPP20TriggerReasonEnumType.CablePluggedIn,
             connectorId,
@@ -1723,11 +1720,11 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             type: OCPP20IdTokenEnumType.ISO14443,
           }
 
-          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
           // E03.FR.05: User authorizes with IdToken
           const authorizedEvent = OCPP20ServiceUtils.buildTransactionEvent(
-            mockChargingStation,
+            mockStation,
             OCPP20TransactionEventEnumType.Started,
             OCPP20TriggerReasonEnumType.Authorized,
             connectorId,
@@ -1737,7 +1734,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
           // E03.FR.06: Cable not connected within timeout - transaction ends with Timeout
           const timeoutEvent = OCPP20ServiceUtils.buildTransactionEvent(
-            mockChargingStation,
+            mockStation,
             OCPP20TransactionEventEnumType.Ended,
             OCPP20TriggerReasonEnumType.EVConnectTimeout,
             connectorId,
@@ -1782,11 +1779,11 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             type: OCPP20IdTokenEnumType.ISO14443,
           }
 
-          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
           // Transaction started with authorization
           const startEvent = OCPP20ServiceUtils.buildTransactionEvent(
-            mockChargingStation,
+            mockStation,
             OCPP20TransactionEventEnumType.Started,
             OCPP20TriggerReasonEnumType.Authorized,
             connectorId,
@@ -1796,7 +1793,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
           // Transaction ended due to deauthorization (e.g., token revoked mid-session)
           const revokedEvent = OCPP20ServiceUtils.buildTransactionEvent(
-            mockChargingStation,
+            mockStation,
             OCPP20TransactionEventEnumType.Ended,
             OCPP20TriggerReasonEnumType.Deauthorized,
             connectorId,
@@ -1832,11 +1829,11 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             type: OCPP20IdTokenEnumType.ISO14443,
           }
 
-          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
           const events = [
             OCPP20ServiceUtils.buildTransactionEvent(
-              mockChargingStation,
+              mockStation,
               OCPP20TransactionEventEnumType.Started,
               OCPP20TriggerReasonEnumType.Authorized,
               connectorId,
@@ -1844,28 +1841,28 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
               { idToken }
             ),
             OCPP20ServiceUtils.buildTransactionEvent(
-              mockChargingStation,
+              mockStation,
               OCPP20TransactionEventEnumType.Updated,
               OCPP20TriggerReasonEnumType.CablePluggedIn,
               connectorId,
               transactionId
             ),
             OCPP20ServiceUtils.buildTransactionEvent(
-              mockChargingStation,
+              mockStation,
               OCPP20TransactionEventEnumType.Updated,
               OCPP20TriggerReasonEnumType.ChargingStateChanged,
               connectorId,
               transactionId
             ),
             OCPP20ServiceUtils.buildTransactionEvent(
-              mockChargingStation,
+              mockStation,
               OCPP20TransactionEventEnumType.Updated,
               OCPP20TriggerReasonEnumType.MeterValuePeriodic,
               connectorId,
               transactionId
             ),
             OCPP20ServiceUtils.buildTransactionEvent(
-              mockChargingStation,
+              mockStation,
               OCPP20TransactionEventEnumType.Ended,
               OCPP20TriggerReasonEnumType.StopAuthorized,
               connectorId,
@@ -1882,7 +1879,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         await it('should use unique transaction ID (E03.FR.08)', () => {
           const connectorId = 1
 
-          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
           const transaction1Id = generateUUID()
           const transaction2Id = generateUUID()
@@ -1891,17 +1888,17 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           expect(transaction1Id).not.toBe(transaction2Id)
 
           const event1 = OCPP20ServiceUtils.buildTransactionEvent(
-            mockChargingStation,
+            mockStation,
             OCPP20TransactionEventEnumType.Started,
             OCPP20TriggerReasonEnumType.Authorized,
             connectorId,
             transaction1Id
           )
 
-          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+          OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
           const event2 = OCPP20ServiceUtils.buildTransactionEvent(
-            mockChargingStation,
+            mockStation,
             OCPP20TransactionEventEnumType.Started,
             OCPP20TriggerReasonEnumType.Authorized,
             connectorId,
@@ -1924,20 +1921,20 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
   await describe('E02 - OCPP 2.0.1 Offline TransactionEvent Queueing', async () => {
     let mockTracking: MockStationWithTracking
-    let mockChargingStation: ChargingStation
+    let mockStation: ChargingStation
     let sentRequests: CapturedOCPPRequest[]
     let setOnline: (online: boolean) => void
 
     beforeEach(() => {
       mockTracking = createMockStationWithRequestTracking()
-      mockChargingStation = mockTracking.station
+      mockStation = mockTracking.station
       sentRequests = mockTracking.sentRequests
       setOnline = mockTracking.setOnline
     })
 
     afterEach(() => {
       for (let connectorId = 1; connectorId <= 3; connectorId++) {
-        const connector = mockChargingStation.getConnectorStatus(connectorId)
+        const connector = mockStation.getConnectorStatus(connectorId)
         if (connector != null) {
           connector.transactionEventQueue = undefined
         }
@@ -1952,10 +1949,10 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         setOnline(false)
 
-        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
         const response = await OCPP20ServiceUtils.sendTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Started,
           OCPP20TriggerReasonEnumType.Authorized,
           connectorId,
@@ -1966,7 +1963,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         expect(response.idTokenInfo).toBeUndefined()
 
-        const connector = mockChargingStation.getConnectorStatus(connectorId)
+        const connector = mockStation.getConnectorStatus(connectorId)
         expect(connector?.transactionEventQueue).toBeDefined()
         expect(connector.transactionEventQueue.length).toBe(1)
         expect(connector.transactionEventQueue[0].seqNo).toBe(0)
@@ -1978,10 +1975,10 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         setOnline(false)
 
-        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
         await OCPP20ServiceUtils.sendTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Started,
           OCPP20TriggerReasonEnumType.Authorized,
           connectorId,
@@ -1989,7 +1986,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
 
         await OCPP20ServiceUtils.sendTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Updated,
           OCPP20TriggerReasonEnumType.MeterValuePeriodic,
           connectorId,
@@ -1997,14 +1994,14 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
 
         await OCPP20ServiceUtils.sendTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Ended,
           OCPP20TriggerReasonEnumType.StopAuthorized,
           connectorId,
           transactionId
         )
 
-        const connector = mockChargingStation.getConnectorStatus(connectorId)
+        const connector = mockStation.getConnectorStatus(connectorId)
         expect(connector?.transactionEventQueue?.length).toBe(3)
 
         expect(connector.transactionEventQueue[0].seqNo).toBe(0)
@@ -2027,10 +2024,10 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const transactionId = generateUUID()
 
         setOnline(true)
-        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
         await OCPP20ServiceUtils.sendTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Started,
           OCPP20TriggerReasonEnumType.Authorized,
           connectorId,
@@ -2043,7 +2040,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         setOnline(false)
 
         await OCPP20ServiceUtils.sendTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Updated,
           OCPP20TriggerReasonEnumType.MeterValuePeriodic,
           connectorId,
@@ -2051,14 +2048,14 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
 
         await OCPP20ServiceUtils.sendTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Updated,
           OCPP20TriggerReasonEnumType.MeterValuePeriodic,
           connectorId,
           transactionId
         )
 
-        const connector = mockChargingStation.getConnectorStatus(connectorId)
+        const connector = mockStation.getConnectorStatus(connectorId)
         expect(connector?.transactionEventQueue?.length).toBe(2)
         expect(connector.transactionEventQueue[0].seqNo).toBe(1)
         expect(connector.transactionEventQueue[1].seqNo).toBe(2)
@@ -2069,11 +2066,11 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const transactionId = generateUUID()
 
         setOnline(false)
-        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
         const beforeQueue = new Date()
         await OCPP20ServiceUtils.sendTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Started,
           OCPP20TriggerReasonEnumType.Authorized,
           connectorId,
@@ -2081,7 +2078,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
         const afterQueue = new Date()
 
-        const connector = mockChargingStation.getConnectorStatus(connectorId)
+        const connector = mockStation.getConnectorStatus(connectorId)
         expect(connector?.transactionEventQueue?.[0]?.timestamp).toBeInstanceOf(Date)
         expect(connector.transactionEventQueue[0].timestamp.getTime()).toBeGreaterThanOrEqual(
           beforeQueue.getTime()
@@ -2098,10 +2095,10 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const transactionId = generateUUID()
 
         setOnline(false)
-        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
         await OCPP20ServiceUtils.sendTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Started,
           OCPP20TriggerReasonEnumType.Authorized,
           connectorId,
@@ -2109,7 +2106,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
 
         await OCPP20ServiceUtils.sendTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Updated,
           OCPP20TriggerReasonEnumType.MeterValuePeriodic,
           connectorId,
@@ -2120,7 +2117,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         setOnline(true)
 
-        await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockChargingStation, connectorId)
+        await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockStation, connectorId)
 
         expect(sentRequests.length).toBe(2)
         expect(sentRequests[0].payload.seqNo).toBe(0)
@@ -2132,21 +2129,21 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const transactionId = generateUUID()
 
         setOnline(false)
-        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
         await OCPP20ServiceUtils.sendTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Started,
           OCPP20TriggerReasonEnumType.Authorized,
           connectorId,
           transactionId
         )
 
-        const connector = mockChargingStation.getConnectorStatus(connectorId)
+        const connector = mockStation.getConnectorStatus(connectorId)
         expect(connector?.transactionEventQueue?.length).toBe(1)
 
         setOnline(true)
-        await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockChargingStation, connectorId)
+        await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockStation, connectorId)
 
         expect(connector.transactionEventQueue.length).toBe(0)
       })
@@ -2156,10 +2153,10 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const transactionId = generateUUID()
 
         setOnline(false)
-        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
         await OCPP20ServiceUtils.sendTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Started,
           OCPP20TriggerReasonEnumType.Authorized,
           connectorId,
@@ -2167,7 +2164,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
 
         await OCPP20ServiceUtils.sendTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Updated,
           OCPP20TriggerReasonEnumType.ChargingStateChanged,
           connectorId,
@@ -2175,7 +2172,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
 
         await OCPP20ServiceUtils.sendTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Ended,
           OCPP20TriggerReasonEnumType.StopAuthorized,
           connectorId,
@@ -2183,7 +2180,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
 
         setOnline(true)
-        await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockChargingStation, connectorId)
+        await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockStation, connectorId)
 
         expect(sentRequests[0].payload.eventType).toBe(OCPP20TransactionEventEnumType.Started)
         expect(sentRequests[1].payload.eventType).toBe(OCPP20TransactionEventEnumType.Updated)
@@ -2198,7 +2195,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const connectorId = 1
 
         await expect(
-          OCPP20ServiceUtils.sendQueuedTransactionEvents(mockChargingStation, connectorId)
+          OCPP20ServiceUtils.sendQueuedTransactionEvents(mockStation, connectorId)
         ).resolves.toBeUndefined()
 
         expect(sentRequests.length).toBe(0)
@@ -2206,11 +2203,11 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
       await it('should handle null queue gracefully', async () => {
         const connectorId = 1
-        const connector = mockChargingStation.getConnectorStatus(connectorId)
+        const connector = mockStation.getConnectorStatus(connectorId)
         connector.transactionEventQueue = undefined
 
         await expect(
-          OCPP20ServiceUtils.sendQueuedTransactionEvents(mockChargingStation, connectorId)
+          OCPP20ServiceUtils.sendQueuedTransactionEvents(mockStation, connectorId)
         ).resolves.toBeUndefined()
 
         expect(sentRequests.length).toBe(0)
@@ -2223,10 +2220,10 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const transactionId = generateUUID()
 
         setOnline(true)
-        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
         await OCPP20ServiceUtils.sendTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Started,
           OCPP20TriggerReasonEnumType.Authorized,
           connectorId,
@@ -2237,7 +2234,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         setOnline(false)
 
         await OCPP20ServiceUtils.sendTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Updated,
           OCPP20TriggerReasonEnumType.MeterValuePeriodic,
           connectorId,
@@ -2245,7 +2242,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
 
         await OCPP20ServiceUtils.sendTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Updated,
           OCPP20TriggerReasonEnumType.MeterValuePeriodic,
           connectorId,
@@ -2254,13 +2251,13 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         setOnline(true)
 
-        await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockChargingStation, connectorId)
+        await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockStation, connectorId)
 
         expect(sentRequests[1].payload.seqNo).toBe(1)
         expect(sentRequests[2].payload.seqNo).toBe(2)
 
         await OCPP20ServiceUtils.sendTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Ended,
           OCPP20TriggerReasonEnumType.StopAuthorized,
           connectorId,
@@ -2281,11 +2278,11 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const transactionId2 = generateUUID()
 
         setOnline(false)
-        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, 1)
-        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, 2)
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, 1)
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, 2)
 
         await OCPP20ServiceUtils.sendTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Started,
           OCPP20TriggerReasonEnumType.Authorized,
           1,
@@ -2293,7 +2290,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
 
         await OCPP20ServiceUtils.sendTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Started,
           OCPP20TriggerReasonEnumType.Authorized,
           2,
@@ -2301,15 +2298,15 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
 
         await OCPP20ServiceUtils.sendTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Updated,
           OCPP20TriggerReasonEnumType.MeterValuePeriodic,
           1,
           transactionId1
         )
 
-        const connector1 = mockChargingStation.getConnectorStatus(1)
-        const connector2 = mockChargingStation.getConnectorStatus(2)
+        const connector1 = mockStation.getConnectorStatus(1)
+        const connector2 = mockStation.getConnectorStatus(2)
 
         expect(connector1?.transactionEventQueue?.length).toBe(2)
         expect(connector2?.transactionEventQueue?.length).toBe(1)
@@ -2327,11 +2324,11 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const transactionId2 = generateUUID()
 
         setOnline(false)
-        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, 1)
-        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, 2)
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, 1)
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, 2)
 
         await OCPP20ServiceUtils.sendTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Started,
           OCPP20TriggerReasonEnumType.Authorized,
           1,
@@ -2339,7 +2336,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
 
         await OCPP20ServiceUtils.sendTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Started,
           OCPP20TriggerReasonEnumType.Authorized,
           2,
@@ -2348,15 +2345,15 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         setOnline(true)
 
-        await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockChargingStation, 1)
+        await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockStation, 1)
 
         expect(sentRequests.length).toBe(1)
         expect(sentRequests[0].payload.transactionInfo.transactionId).toBe(transactionId1)
 
-        const connector2 = mockChargingStation.getConnectorStatus(2)
+        const connector2 = mockStation.getConnectorStatus(2)
         expect(connector2?.transactionEventQueue?.length).toBe(1)
 
-        await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockChargingStation, 2)
+        await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockStation, 2)
 
         expect(sentRequests.length).toBe(2)
         expect(sentRequests[1].payload.transactionInfo.transactionId).toBe(transactionId2)
@@ -2435,19 +2432,19 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
   await describe('E02 - OCPP 2.0.1 Periodic TransactionEvent at TxUpdatedInterval', async () => {
     let mockTracking: MockStationWithTracking
-    let mockChargingStation: ChargingStation
+    let mockStation: ChargingStation
     let sentRequests: CapturedOCPPRequest[]
 
     beforeEach(() => {
       mockTracking = createMockStationWithRequestTracking()
-      mockChargingStation = mockTracking.station
+      mockStation = mockTracking.station
       sentRequests = mockTracking.sentRequests
     })
 
     afterEach(() => {
       // Clean up any running timers
       for (let connectorId = 1; connectorId <= 3; connectorId++) {
-        const connector = mockChargingStation.getConnectorStatus(connectorId)
+        const connector = mockStation.getConnectorStatus(connectorId)
         if (connector?.transactionTxUpdatedSetInterval != null) {
           clearInterval(connector.transactionTxUpdatedSetInterval)
           connector.transactionTxUpdatedSetInterval = undefined
@@ -2478,7 +2475,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const connectorId = 1
 
         // Simulate startTxUpdatedInterval with zero interval
-        const connector = mockChargingStation.getConnectorStatus(connectorId)
+        const connector = mockStation.getConnectorStatus(connectorId)
         expect(connector).toBeDefined()
 
         // Zero interval should not start timer
@@ -2488,7 +2485,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
       await it('should not start timer when interval is negative', () => {
         const connectorId = 1
-        const connector = mockChargingStation.getConnectorStatus(connectorId)
+        const connector = mockStation.getConnectorStatus(connectorId)
         expect(connector).toBeDefined()
 
         // Negative interval should not start timer
@@ -2500,11 +2497,11 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         // Should not throw for non-existent connector
         expect(() => {
-          mockChargingStation.getConnectorStatus(nonExistentConnectorId)
+          mockStation.getConnectorStatus(nonExistentConnectorId)
         }).not.toThrow()
 
         // Should return undefined for non-existent connector
-        expect(mockChargingStation.getConnectorStatus(nonExistentConnectorId)).toBeUndefined()
+        expect(mockStation.getConnectorStatus(nonExistentConnectorId)).toBeUndefined()
       })
     })
 
@@ -2514,11 +2511,11 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const transactionId = generateUUID()
 
         // Reset sequence number
-        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
         // Simulate sending periodic TransactionEvent (what the timer callback does)
         await OCPP20ServiceUtils.sendTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Updated,
           OCPP20TriggerReasonEnumType.MeterValuePeriodic,
           connectorId,
@@ -2539,11 +2536,11 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const transactionId = generateUUID()
 
         // Reset sequence number for new transaction
-        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
         // Send initial Started event
         const startEvent = OCPP20ServiceUtils.buildTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Started,
           OCPP20TriggerReasonEnumType.Authorized,
           connectorId,
@@ -2554,7 +2551,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         // Send multiple periodic events (simulating timer ticks)
         for (let i = 1; i <= 3; i++) {
           const periodicEvent = OCPP20ServiceUtils.buildTransactionEvent(
-            mockChargingStation,
+            mockStation,
             OCPP20TransactionEventEnumType.Updated,
             OCPP20TriggerReasonEnumType.MeterValuePeriodic,
             connectorId,
@@ -2564,7 +2561,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         }
 
         // Verify sequence numbers are continuous: 0, 1, 2, 3
-        const connector = mockChargingStation.getConnectorStatus(connectorId)
+        const connector = mockStation.getConnectorStatus(connectorId)
         expect(connector?.transactionSeqNo).toBe(3)
       })
 
@@ -2572,11 +2569,11 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const connectorId = 2
         const transactionId = generateUUID()
 
-        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
         // Send periodic event
         await OCPP20ServiceUtils.sendTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Updated,
           OCPP20TriggerReasonEnumType.MeterValuePeriodic,
           connectorId,
@@ -2591,10 +2588,10 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
 
-        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
         await OCPP20ServiceUtils.sendTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Updated,
           OCPP20TriggerReasonEnumType.MeterValuePeriodic,
           connectorId,
@@ -2610,10 +2607,10 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
 
-        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
         await OCPP20ServiceUtils.sendTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Updated,
           OCPP20TriggerReasonEnumType.MeterValuePeriodic,
           connectorId,
@@ -2632,12 +2629,12 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const transactionId = generateUUID()
 
         // Reset for new transaction
-        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, connectorId)
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
         // Simulate full transaction lifecycle with periodic updates
         // 1. Started event (seqNo: 0)
         const startEvent = OCPP20ServiceUtils.buildTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Started,
           OCPP20TriggerReasonEnumType.Authorized,
           connectorId,
@@ -2648,7 +2645,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         // 2. Multiple periodic updates (seqNo: 1, 2, 3)
         for (let i = 1; i <= 3; i++) {
           const updateEvent = OCPP20ServiceUtils.buildTransactionEvent(
-            mockChargingStation,
+            mockStation,
             OCPP20TransactionEventEnumType.Updated,
             OCPP20TriggerReasonEnumType.MeterValuePeriodic,
             connectorId,
@@ -2659,7 +2656,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         // 3. Ended event (seqNo: 4)
         const endEvent = OCPP20ServiceUtils.buildTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Ended,
           OCPP20TriggerReasonEnumType.StopAuthorized,
           connectorId,
@@ -2673,19 +2670,19 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const transactionId2 = generateUUID()
 
         // Reset sequence numbers for both connectors
-        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, 1)
-        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockChargingStation, 2)
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, 1)
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, 2)
 
         // Build events for connector 1
         const event1Start = OCPP20ServiceUtils.buildTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Started,
           OCPP20TriggerReasonEnumType.Authorized,
           1,
           transactionId1
         )
         const event1Update = OCPP20ServiceUtils.buildTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Updated,
           OCPP20TriggerReasonEnumType.MeterValuePeriodic,
           1,
@@ -2694,14 +2691,14 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         // Build events for connector 2
         const event2Start = OCPP20ServiceUtils.buildTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Started,
           OCPP20TriggerReasonEnumType.Authorized,
           2,
           transactionId2
         )
         const event2Update = OCPP20ServiceUtils.buildTransactionEvent(
-          mockChargingStation,
+          mockStation,
           OCPP20TransactionEventEnumType.Updated,
           OCPP20TriggerReasonEnumType.MeterValuePeriodic,
           2,
