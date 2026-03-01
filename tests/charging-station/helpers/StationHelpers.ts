@@ -175,11 +175,22 @@ export function cleanupChargingStation (station: ChargingStation): void {
     station.heartbeatSetInterval = undefined
   }
 
-  // Stop WebSocket ping timer
-  if (station.wsPingSetInterval != null) {
-    clearInterval(station.wsPingSetInterval)
-    station.wsPingSetInterval = undefined
+  // Stop WebSocket ping timer (private, accessed for cleanup)
+  /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access,
+     @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument */
+  const stationInternal = station as any
+  if (stationInternal.wsPingSetInterval != null) {
+    clearInterval(stationInternal.wsPingSetInterval)
+    stationInternal.wsPingSetInterval = undefined
   }
+
+  // Stop message buffer flush timer (private, accessed for cleanup)
+  if (stationInternal.flushMessageBufferSetInterval != null) {
+    clearInterval(stationInternal.flushMessageBufferSetInterval)
+    stationInternal.flushMessageBufferSetInterval = undefined
+  }
+  /* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access,
+     @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument */
 
   // Close WebSocket connection
   if (station.wsConnection != null) {
@@ -197,20 +208,28 @@ export function cleanupChargingStation (station: ChargingStation): void {
     // Ignore errors during cleanup
   }
 
-  // Clear connector transaction state
+  // Clear connector transaction state and timers
   for (const connectorStatus of station.connectors.values()) {
     if (connectorStatus.transactionSetInterval != null) {
       clearInterval(connectorStatus.transactionSetInterval)
       connectorStatus.transactionSetInterval = undefined
     }
+    if (connectorStatus.transactionTxUpdatedSetInterval != null) {
+      clearInterval(connectorStatus.transactionTxUpdatedSetInterval)
+      delete connectorStatus.transactionTxUpdatedSetInterval
+    }
   }
 
-  // Clear EVSE connector transaction state
+  // Clear EVSE connector transaction state and timers
   for (const evseStatus of station.evses.values()) {
     for (const connectorStatus of evseStatus.connectors.values()) {
       if (connectorStatus.transactionSetInterval != null) {
         clearInterval(connectorStatus.transactionSetInterval)
         connectorStatus.transactionSetInterval = undefined
+      }
+      if (connectorStatus.transactionTxUpdatedSetInterval != null) {
+        clearInterval(connectorStatus.transactionTxUpdatedSetInterval)
+        delete connectorStatus.transactionTxUpdatedSetInterval
       }
     }
   }
