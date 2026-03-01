@@ -23,34 +23,14 @@ import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import {
+  EXPIRED_PEM_CERTIFICATE,
+  INVALID_PEM_CERTIFICATE_MISSING_MARKERS,
+  VALID_PEM_CERTIFICATE,
+} from './OCPP20CertificateTestData.js'
+import {
   createMockCertificateManager,
   createStationWithCertificateManager,
 } from './OCPP20TestUtils.js'
-
-const VALID_PEM_CERTIFICATE = `-----BEGIN CERTIFICATE-----
-MIIBkTCB+wIJAKHBfpvPA0GXMA0GCSqGSIb3DQEBCwUAMBExDzANBgNVBAMMBnRl
-c3RDQTAeFw0yNDAxMDEwMDAwMDBaFw0yOTAxMDEwMDAwMDBaMBExDzANBgNVBAMM
-BnRlc3RDQTBcMA0GCSqGSIb3DQEBAQUAA0sAMEgCQQC5p8U8zTk8TT5H5s8mjxJz
-p+eDAh+xW1+eTprjqD4vfQSXCv8hC3TlPpZwHk8C5dJmEp8Dqv3lAO5bVkzzqbhR
-AgMBAAGjUzBRMB0GA1UdDgQWBBRc8RqFu0nnqJdw3f9nFVXm9BxeUDAfBgNVHSME
-GDAWgBRc8RqFu0nnqJdw3f9nFVXm9BxeUDAPBgNVHRMBAf8EBTADAQH/MA0GCSqG
-SIb3DQEBCwUAA0EAYw7K5EKcJGj8TH7NpP3L3hRPZF8qU5QfT0zQBqBm4U5JtDnS
-nFUewM7PNhYJsWjJRpLdAL1kC6x8bW1kQ5FVUQ==
------END CERTIFICATE-----`
-
-const INVALID_PEM_CERTIFICATE_MISSING_MARKERS = `MIIBkTCB+wIJAKHBfpvPA0GXMA0GCSqGSIb3DQEBCwUAMBExDzANBgNVBAMMBn
-Rlc3RDQTAeFw0yNDAxMDEwMDAwMDBaFw0yOTAxMDEwMDAwMDBaMBExDzANBgNVBA
-MMBnRlc3RDQTBcMA0GCSqGSIb3DQEBAQUAA0sAMEgCQQC5p8U8zTk8TT5H5s8mjx`
-
-const EXPIRED_PEM_CERTIFICATE = `-----BEGIN CERTIFICATE-----
-MIIBkTCB+wIJAKHBfpvPA0GXMA0GCSqGSIb3DQEBCwUAMBExDzANBgNVBAMMBnRl
-c3RDQTAeFw0yMDAxMDEwMDAwMDBaFw0yMTAxMDEwMDAwMDBaMBExDzANBgNVBAMM
-BnRlc3RDQTBcMA0GCSqGSIb3DQEBAQUAA0sAMEgCQQC5p8U8zTk8TT5H5s8mjxJz
-p+eDAh+xW1+eTprjqD4vfQSXCv8hC3TlPpZwHk8C5dJmEp8Dqv3lAO5bVkzzqbhR
-AgMBAAGjUzBRMB0GA1UdDgQWBBRc8RqFu0nnqJdw3f9nFVXm9BxeUDAfBgNVHSME
-GDAWgBRc8RqFu0nnqJdw3f9nFVXm9BxeUDAPBgNVHRMBAf8EBTADAQH/MA0GCSqG
-SIb3DQEBCwUAA0EAexpired==
------END CERTIFICATE-----`
 
 await describe('I03 - InstallCertificate', async () => {
   afterEach(() => {
@@ -74,7 +54,6 @@ await describe('I03 - InstallCertificate', async () => {
       },
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
-    mockStation = initialStation
     mockStation = initialStation
 
     // Use factory function to create station with certificate manager

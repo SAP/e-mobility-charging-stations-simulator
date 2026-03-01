@@ -5,7 +5,14 @@ import type { ChargingStationWithCertificateManager } from '../../../../src/char
 import type { OCPP20RequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20RequestService.js'
 import type { ConfigurationKey } from '../../../../src/types/ChargingStationOcppConfiguration.js'
 import type { EmptyObject } from '../../../../src/types/EmptyObject.js'
-import type { JsonType, OCPP20RequestCommand } from '../../../../src/types/index.js'
+import type {
+  CertificateHashDataChainType,
+  CertificateHashDataType,
+  GetCertificateIdUseEnumType,
+  JsonType,
+  OCPP20RequestCommand,
+  OCSPRequestDataType,
+} from '../../../../src/types/index.js'
 import type {
   OCPP20IdTokenType,
   OCPP20TransactionContext,
@@ -13,6 +20,7 @@ import type {
 
 import {
   ConnectorStatusEnum,
+  HashAlgorithmEnumType,
   OCPP20RequiredVariableName,
   OCPPVersion,
 } from '../../../../src/types/index.js'
@@ -690,6 +698,40 @@ export interface MockCertificateManagerOptions {
 // ============================================================================
 
 /**
+ * Create mock certificate hash data for testing.
+ * @param serialNumber - Optional serial number (default: '123456789')
+ * @returns CertificateHashDataType object
+ */
+export function createMockCertificateHashData (serialNumber = '123456789'): CertificateHashDataType {
+  return {
+    hashAlgorithm: HashAlgorithmEnumType.SHA256,
+    issuerKeyHash: 'abc123def456',
+    issuerNameHash: 'xyz789uvw012',
+    serialNumber,
+  }
+}
+
+/**
+ * Create mock certificate hash data chain for testing.
+ * @param certificateType - The certificate type
+ * @param serialNumber - Optional serial number (default: '123456789')
+ * @returns CertificateHashDataChainType object
+ */
+export function createMockCertificateHashDataChain (
+  certificateType: GetCertificateIdUseEnumType,
+  serialNumber = '123456789'
+): CertificateHashDataChainType {
+  return {
+    certificateHashData: createMockCertificateHashData(serialNumber),
+    certificateType,
+  }
+}
+
+// ============================================================================
+// Certificate Test Data Factory Functions
+// ============================================================================
+
+/**
  * Create a mock certificate manager for OCPP 2.0 certificate operation testing.
  *
  * Configurable mock for DeleteCertificate, InstallCertificate, CertificateSigned,
@@ -744,6 +786,20 @@ export function createMockCertificateManager (options: MockCertificateManagerOpt
         cert.includes('-----BEGIN CERTIFICATE-----') && cert.includes('-----END CERTIFICATE-----')
       )
     }),
+  }
+}
+
+/**
+ * Create mock OCSP request data for GetCertificateStatus tests.
+ * @returns OCSPRequestDataType object with default test values
+ */
+export function createMockOCSPRequestData (): OCSPRequestDataType {
+  return {
+    hashAlgorithm: HashAlgorithmEnumType.SHA256,
+    issuerKeyHash: 'abc123def456issuerkeyhash',
+    issuerNameHash: 'abc123def456issuernamehash',
+    responderURL: 'http://ocsp.example.com',
+    serialNumber: '1234567890',
   }
 }
 

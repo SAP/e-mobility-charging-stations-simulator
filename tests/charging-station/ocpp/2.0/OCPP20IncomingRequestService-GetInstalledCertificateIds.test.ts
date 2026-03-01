@@ -13,10 +13,8 @@ import { createTestableIncomingRequestService } from '../../../../src/charging-s
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import {
   type CertificateHashDataChainType,
-  type CertificateHashDataType,
   GetCertificateIdUseEnumType,
   GetInstalledCertificateStatusEnumType,
-  HashAlgorithmEnumType,
   type OCPP20GetInstalledCertificateIdsRequest,
   type OCPP20GetInstalledCertificateIdsResponse,
   OCPPVersion,
@@ -26,24 +24,10 @@ import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import {
+  createMockCertificateHashDataChain,
   createMockCertificateManager,
   createStationWithCertificateManager,
 } from './OCPP20TestUtils.js'
-
-const createMockCertificateHashData = (serialNumber = '123456789'): CertificateHashDataType => ({
-  hashAlgorithm: HashAlgorithmEnumType.SHA256,
-  issuerKeyHash: 'abc123def456',
-  issuerNameHash: 'xyz789uvw012',
-  serialNumber,
-})
-
-const createMockCertificateHashDataChain = (
-  certificateType: GetCertificateIdUseEnumType,
-  serialNumber = '123456789'
-): CertificateHashDataChainType => ({
-  certificateHashData: createMockCertificateHashData(serialNumber),
-  certificateType,
-})
 
 await describe('I04 - GetInstalledCertificateIds', async () => {
   let station: ChargingStation

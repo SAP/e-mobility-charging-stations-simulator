@@ -19,28 +19,18 @@ import {
   type OCPP20GetCertificateStatusResponse,
   OCPP20RequestCommand,
   OCPPVersion,
-  type OCSPRequestDataType,
   ReasonCodeEnumType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
-
+import { createMockOCSPRequestData } from './OCPP20TestUtils.js'
 // Sample Base64 EXI request (mock - represents CertificateInstallationReq)
 const MOCK_EXI_REQUEST = 'SGVsbG8gV29ybGQgRVhJIFJlcXVlc3Q='
 const MOCK_EXI_RESPONSE = 'SGVsbG8gV29ybGQgRVhJIFJlc3BvbnNl'
 const MOCK_ISO15118_SCHEMA_VERSION = 'urn:iso:std:iso:15118:-20:AC'
 const MOCK_OCSP_RESULT = 'TW9jayBPQ1NQIFJlc3VsdCBCYXNlNjQ='
-
-// Mock OCSP request data for GetCertificateStatus tests
-const createMockOCSPRequestData = (): OCSPRequestDataType => ({
-  hashAlgorithm: HashAlgorithmEnumType.SHA256,
-  issuerKeyHash: 'abc123def456issuerkeyhash',
-  issuerNameHash: 'abc123def456issuernamehash',
-  responderURL: 'http://ocsp.example.com',
-  serialNumber: '1234567890',
-})
 
 await describe('OCPP20 ISO15118 Request Service', async () => {
   await describe('M02 - Get15118EVCertificate Request', async () => {

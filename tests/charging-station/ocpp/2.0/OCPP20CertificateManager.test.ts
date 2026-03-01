@@ -14,32 +14,22 @@ import {
   InstallCertificateUseEnumType,
 } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
-
+import {
+  EMPTY_PEM_CERTIFICATE,
+  INVALID_PEM_WRONG_MARKERS,
+  VALID_PEM_CERTIFICATE_EXTENDED,
+} from './OCPP20CertificateTestData.js'
 const TEST_STATION_HASH_ID = 'test-station-hash-12345'
 const TEST_CERT_TYPE = InstallCertificateUseEnumType.CSMSRootCertificate
 
-const VALID_PEM_CERTIFICATE = `-----BEGIN CERTIFICATE-----
-MIIDXTCCAkWgAwIBAgIJAJC1HiIAZAiUMA0GCSqGSIb3Qq8teleNzMHjvLuHvVsY
-a5uYmO6K8pzuYmOvfLNNMC5leGFtcGxlLmNvbTAeFw0xNzAxMTIyMTI3NDBaFw0y
-NzAxMTAyMTI3NDBaMC4xLDAqBgNVBAMTI2V4YW1wbGUuY29tIFNlbGYgU2lnbmVk
-IENlcnRpZmljYXRlMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqGxm
-mO6K8pzuYmOvfLNNMC5leGFtcGxlLmNvbTAeFw0xNzAxMTIyMTI3NDBaFw0yNzAx
-MTAyMTI3NDBaMC4xLDAqBgNVBAMTI2V4YW1wbGUuY29tIFNlbGYgU2lnbmVkIENl
-cnRpZmljYXRlMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqGxmmO6K
-8pzuYmOvfLNNMBQLq2K8pzuY0BAQEFAAOCAQ8AMIIBCgKCAQEAqGxmmO6K8pzuYq
------END CERTIFICATE-----`
+// Use VALID_PEM_CERTIFICATE_EXTENDED as the main valid certificate for these tests
+const VALID_PEM_CERTIFICATE = VALID_PEM_CERTIFICATE_EXTENDED
 
+// Alias for consistency with existing test expectations
 const INVALID_PEM_NO_MARKERS = `
 MIIDXTCCAkWgAwIBAgIJAJC1HiIAZAiUMA0GCSqGSIb3Qq8teleNzMHjvLuHvVsY
 a5uYmO6K8pzuYmOvfLNNMC5leGFtcGxlLmNvbTAeFw0xNzAxMTIyMTI3NDBaFw0y
 `
-
-const INVALID_PEM_WRONG_MARKERS = `-----BEGIN PRIVATE KEY-----
-MIIDXTCCAkWgAwIBAgIJAJC1HiIAZAiUMA0GCSqGSIb3Qq8teleNzMHjvLuHvVsY
------END PRIVATE KEY-----`
-
-const EMPTY_PEM_CERTIFICATE = ''
-
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- kept for future assertions
 const _EXPECTED_HASH_DATA: CertificateHashDataType = {
   hashAlgorithm: HashAlgorithmEnumType.SHA256,

@@ -1,0 +1,98 @@
+/**
+ * @file Consolidated certificate test data for OCPP 2.0 tests
+ * @description Centralized PEM certificate constants used across certificate-related test files
+ */
+
+// ============================================================================
+// Valid Certificates
+// ============================================================================
+
+/**
+ * Valid PEM certificate (short format) for basic certificate tests.
+ * Used in InstallCertificate and CertificateSigned tests.
+ */
+export const VALID_PEM_CERTIFICATE = `-----BEGIN CERTIFICATE-----
+MIIBkTCB+wIJAKHBfpvPA0GXMA0GCSqGSIb3DQEBCwUAMBExDzANBgNVBAMMBnRl
+c3RDQTAeFw0yNDAxMDEwMDAwMDBaFw0yOTAxMDEwMDAwMDBaMBExDzANBgNVBAMM
+BnRlc3RDQTBcMA0GCSqGSIb3DQEBAQUAA0sAMEgCQQC5p8U8zTk8TT5H5s8mjxJz
+p+eDAh+xW1+eTprjqD4vfQSXCv8hC3TlPpZwHk8C5dJmEp8Dqv3lAO5bVkzzqbhR
+AgMBAAGjUzBRMB0GA1UdDgQWBBRc8RqFu0nnqJdw3f9nFVXm9BxeUDAfBgNVHSME
+GDAWgBRc8RqFu0nnqJdw3f9nFVXm9BxeUDAPBgNVHRMBAf8EBTADAQH/MA0GCSqG
+SIb3DQEBCwUAA0EAYw7K5EKcJGj8TH7NpP3L3hRPZF8qU5QfT0zQBqBm4U5JtDnS
+nFUewM7PNhYJsWjJRpLdAL1kC6x8bW1kQ5FVUQ==
+-----END CERTIFICATE-----`
+
+/**
+ * Valid PEM certificate (extended format) for CertificateManager tests.
+ * This is a longer certificate used for more complex validation scenarios.
+ */
+export const VALID_PEM_CERTIFICATE_EXTENDED = `-----BEGIN CERTIFICATE-----
+MIIDXTCCAkWgAwIBAgIJAJC1HiIAZAiUMA0GCSqGSIb3Qq8teleNzMHjvLuHvVsY
+a5uYmO6K8pzuYmOvfLNNMC5leGFtcGxlLmNvbTAeFw0xNzAxMTIyMTI3NDBaFw0y
+NzAxMTAyMTI3NDBaMC4xLDAqBgNVBAMTI2V4YW1wbGUuY29tIFNlbGYgU2lnbmVk
+IENlcnRpZmljYXRlMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqGxm
+mO6K8pzuYmOvfLNNMC5leGFtcGxlLmNvbTAeFw0xNzAxMTIyMTI3NDBaFw0yNzAx
+MTAyMTI3NDBaMC4xLDAqBgNVBAMTI2V4YW1wbGUuY29tIFNlbGYgU2lnbmVkIENl
+cnRpZmljYXRlMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqGxmmO6K
+8pzuYmOvfLNNMBQLq2K8pzuY0BAQEFAAOCAQ8AMIIBCgKCAQEAqGxmmO6K8pzuYq
+-----END CERTIFICATE-----`
+
+/**
+ * Valid certificate chain with two certificates for chain validation tests.
+ */
+export const VALID_CERTIFICATE_CHAIN = `-----BEGIN CERTIFICATE-----
+MIIBkTCB+wIJAKHBfpvPA0GXMA0GCSqGSIb3DQEBCwUAMBExDzANBgNVBAMMBnRl
+c3RDQTAeFw0yNDAxMDEwMDAwMDBaFw0yOTAxMDEwMDAwMDBaMBExDzANBgNVBAMM
+BnRlc3RDQTBcMA0GCSqGSIb3DQEBAQUAA0sAMEgCQQC5p8U8zTk8TT5H5s8mjxJz
+p+eDAh+xW1+eTprjqD4vfQSXCv8hC3TlPpZwHk8C5dJmEp8Dqv3lAO5bVkzzqbhR
+AgMBAAGjUzBRMB0GA1UdDgQWBBRc8RqFu0nnqJdw3f9nFVXm9BxeUDAfBgNVHSME
+GDAWgBRc8RqFu0nnqJdw3f9nFVXm9BxeUDAPBgNVHRMBAf8EBTADAQH/MA0GCSqG
+SIb3DQEBCwUAA0EAYw7K5EKcJGj8TH7NpP3L3hRPZF8qU5QfT0zQBqBm4U5JtDnS
+nFUewM7PNhYJsWjJRpLdAL1kC6x8bW1kQ5FVUQ==
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIIBkTCB+wIJAKHBfpvPA0GYMA0GCSqGSIb3DQEBCwUAMBExDzANBgNVBAMMBnRl
+c3RDQTAeFw0yNDAxMDEwMDAwMDBaFw0yOTAxMDEwMDAwMDBaMBExDzANBgNVBAMM
+BnRlc3RDQTBcMA0GCSqGSIb3DQEBAQUAA0sAMEgCQQC5p8U8zTk8TT5H5s8mjxJz
+p+eDAh+xW1+eTprjqD4vfQSXCv8hC3TlPpZwHk8C5dJmEp8Dqv3lAO5bVkzzqbhR
+AgMBAAGjUzBRMB0GA1UdDgQWBBRc8RqFu0nnqJdw3f9nFVXm9BxeUDAfBgNVHSME
+GDAWgBRc8RqFu0nnqJdw3f9nFVXm9BxeUDAPBgNVHRMBAf8EBTADAQH/MA0GCSqG
+SIb3DQEBCwUAA0EAYw7K5EKcJGj8TH7NpP3L3hRPZF8qU5QfT0zQBqBm4U5JtDnS
+nFUewM7PNhYJsWjJRpLdAL1kC6x8bW1kQ5FVUQ==
+-----END CERTIFICATE-----`
+
+// ============================================================================
+// Invalid Certificates
+// ============================================================================
+
+/**
+ * Invalid PEM certificate missing BEGIN/END markers.
+ */
+export const INVALID_PEM_CERTIFICATE_MISSING_MARKERS = `MIIBkTCB+wIJAKHBfpvPA0GXMA0GCSqGSIb3DQEBCwUAMBExDzANBgNVBAMMBn
+Rlc3RDQTAeFw0yNDAxMDEwMDAwMDBaFw0yOTAxMDEwMDAwMDBaMBExDzANBgNVBA
+MMBnRlc3RDQTBcMA0GCSqGSIb3DQEBAQUAA0sAMEgCQQC5p8U8zTk8TT5H5s8mjx`
+
+/**
+ * Invalid PEM certificate with wrong markers (PRIVATE KEY instead of CERTIFICATE).
+ */
+export const INVALID_PEM_WRONG_MARKERS = `-----BEGIN PRIVATE KEY-----
+MIIDXTCCAkWgAwIBAgIJAJC1HiIAZAiUMA0GCSqGSIb3Qq8teleNzMHjvLuHvVsY
+-----END PRIVATE KEY-----`
+
+/**
+ * Expired PEM certificate (validity period: 2020-01-01 to 2021-01-01).
+ */
+export const EXPIRED_PEM_CERTIFICATE = `-----BEGIN CERTIFICATE-----
+MIIBkTCB+wIJAKHBfpvPA0GXMA0GCSqGSIb3DQEBCwUAMBExDzANBgNVBAMMBnRl
+c3RDQTAeFw0yMDAxMDEwMDAwMDBaFw0yMTAxMDEwMDAwMDBaMBExDzANBgNVBAMM
+BnRlc3RDQTBcMA0GCSqGSIb3DQEBAQUAA0sAMEgCQQC5p8U8zTk8TT5H5s8mjxJz
+p+eDAh+xW1+eTprjqD4vfQSXCv8hC3TlPpZwHk8C5dJmEp8Dqv3lAO5bVkzzqbhR
+AgMBAAGjUzBRMB0GA1UdDgQWBBRc8RqFu0nnqJdw3f9nFVXm9BxeUDAfBgNVHSME
+GDAWgBRc8RqFu0nnqJdw3f9nFVXm9BxeUDAPBgNVHRMBAf8EBTADAQH/MA0GCSqG
+SIb3DQEBCwUAA0EAexpired==
+-----END CERTIFICATE-----`
+
+/**
+ * Empty PEM certificate for edge case testing.
+ */
+export const EMPTY_PEM_CERTIFICATE = ''
