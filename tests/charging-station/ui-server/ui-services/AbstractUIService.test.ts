@@ -2,7 +2,6 @@
  * @file Tests for AbstractUIService
  * @description Unit tests for abstract UI service base class functionality
  */
-// Copyright Jerome Benoit. 2024-2025. All Rights Reserved.
 
 import { expect } from '@std/expect'
 import { afterEach, describe, it } from 'node:test'

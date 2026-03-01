@@ -1,5 +1,7 @@
-// Copyright Jerome Benoit. 2024-2025. All Rights Reserved.
-
+/**
+ * @file UIServerTestUtils
+ * @description Test utilities for UI server testing
+ */
 import type { IncomingMessage } from 'node:http'
 
 import { EventEmitter } from 'node:events'

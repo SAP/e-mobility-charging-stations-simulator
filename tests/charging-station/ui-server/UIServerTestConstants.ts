@@ -1,4 +1,7 @@
-// Copyright Jerome Benoit. 2024-2025. All Rights Reserved.
+/**
+ * @file UI Server test constants
+ * @description Common constants for UI server test suites (WebSocket, HTTP)
+ */
 
 import type { UUIDv4 } from '../../../src/types/index.js'
 

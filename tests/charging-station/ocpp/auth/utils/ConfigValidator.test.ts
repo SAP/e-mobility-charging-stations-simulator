@@ -2,7 +2,6 @@
  * @file Tests for AuthConfigValidator
  * @description Unit tests for authentication configuration validation
  */
-// Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
 
 import { expect } from '@std/expect'
 import { afterEach, describe, it } from 'node:test'

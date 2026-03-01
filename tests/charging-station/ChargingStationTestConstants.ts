@@ -22,7 +22,8 @@ export const TEST_CHARGING_STATION_HASH_ID = 'cs-test-hash-001'
 export const TEST_HEARTBEAT_INTERVAL_SECONDS = 60
 export const TEST_HEARTBEAT_INTERVAL_MS = 30000
 export const TEST_AUTHORIZATION_TIMEOUT_MS = 30000
-export const TEST_ONE_HOUR_MS = 3600000
+export const TEST_ONE_HOUR_SECONDS = 3600
+export const TEST_ONE_HOUR_MS = TEST_ONE_HOUR_SECONDS * 1000
 
 /**
  * Charging Station Information
@@ -71,3 +72,30 @@ export const TEST_TRANSACTION_ENERGY_WH = 5000
 export const TEST_TOKEN_ISO14443 = 'TEST_RFID_TOKEN_001'
 export const TEST_TOKEN_EMAID = 'DE*ABC*E123456*1'
 export const TEST_TOKEN_CENTRAL = 'CENTRAL_TOKEN_001'
+
+/**
+ * Cache Configuration Constants
+ * Test values for cache-related timing and limits
+ */
+export const TEST_CACHE_TTL_SECONDS = TEST_ONE_HOUR_SECONDS
+export const TEST_MAX_CACHE_ENTRIES = 1000
+
+/**
+ * Rate Limiting Constants
+ * Test values for rate limiting windows and intervals
+ */
+export const TEST_RATE_LIMIT_WINDOW_MS = 1000
+
+/**
+ * Custom Interval Constants
+ * Test values for custom heartbeat and timeout intervals
+ */
+export const TEST_CUSTOM_HEARTBEAT_INTERVAL_SECONDS = 120
+export const TEST_REJECTED_HEARTBEAT_INTERVAL_SECONDS = TEST_ONE_HOUR_SECONDS
+
+/**
+ * OCPP 2.0 Value Size Limits
+ * Test values for variable value size constraints
+ */
+export const TEST_VALUE_SIZE_LIMIT = 120
+export const TEST_CONFIGURATION_VALUE_SIZE = 60

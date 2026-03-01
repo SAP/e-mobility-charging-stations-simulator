@@ -13,24 +13,23 @@ await describe('AsyncLock', async () => {
   afterEach(() => {
     standardCleanup()
   })
-  await it('should run synchronous functions exclusively in sequence', () => {
+  await it('should run synchronous functions exclusively in sequence', async () => {
     const runs = 10
     const executed: number[] = []
     let count = 0
     const fn = () => {
       executed.push(++count)
     }
+
+    const promises: Promise<void>[] = []
     for (let i = 0; i < runs; i++) {
-      AsyncLock.runExclusive(AsyncLockType.configuration, fn)
-        .then(() => {
-          expect(executed).toStrictEqual(new Array(count).fill(0).map((_, i) => ++i))
-          return undefined
-        })
-        .catch(console.error)
+      promises.push(AsyncLock.runExclusive(AsyncLockType.configuration, fn))
     }
+    await Promise.all(promises)
+    expect(executed).toStrictEqual(new Array(runs).fill(0).map((_, i) => ++i))
   })
 
-  await it('should run asynchronous functions exclusively in sequence', () => {
+  await it('should run asynchronous functions exclusively in sequence', async () => {
     const runs = 10
     const executed: number[] = []
     let count = 0
@@ -40,13 +39,12 @@ await describe('AsyncLock', async () => {
       })
       executed.push(++count)
     }
+
+    const promises: Promise<void>[] = []
     for (let i = 0; i < runs; i++) {
-      AsyncLock.runExclusive(AsyncLockType.configuration, asyncFn)
-        .then(() => {
-          expect(executed).toStrictEqual(new Array(count).fill(0).map((_, i) => ++i))
-          return undefined
-        })
-        .catch(console.error)
+      promises.push(AsyncLock.runExclusive(AsyncLockType.configuration, asyncFn))
     }
+    await Promise.all(promises)
+    expect(executed).toStrictEqual(new Array(runs).fill(0).map((_, i) => ++i))
   })
 })

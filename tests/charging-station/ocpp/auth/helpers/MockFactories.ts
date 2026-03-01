@@ -1,5 +1,7 @@
-// Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
-
+/**
+ * @file MockFactories
+ * @description Mock factory functions for authentication testing
+ */
 import { expect } from '@std/expect'
 
 import type { ChargingStation } from '../../../../../src/charging-station/ChargingStation.js'
