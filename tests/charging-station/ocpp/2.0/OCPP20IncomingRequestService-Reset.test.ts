@@ -41,7 +41,7 @@ await describe('B11 & B12 - Reset', async () => {
   let testableService: ReturnType<typeof createTestableIncomingRequestService>
 
   beforeEach(() => {
-    mock.timers.enable({ apis: ['setInterval', 'setTimeout', 'setImmediate'] })
+    mock.timers.enable({ apis: ['setInterval', 'setTimeout'] })
 
     const { station } = createMockChargingStation({
       baseName: TEST_CHARGING_STATION_BASE_NAME,

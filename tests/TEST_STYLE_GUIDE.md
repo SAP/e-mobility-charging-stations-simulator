@@ -170,7 +170,47 @@ it('should timeout', async () => {
 
 ---
 
-## 5. Constants & Imports
+## 5. Platform-Specific Considerations
+
+### Windows CI (`--test-force-exit`)
+
+The test command uses `--test-force-exit` flag to prevent Windows CI hangs:
+
+```json
+"test": "node --import tsx --test --test-force-exit tests/**/*.test.ts"
+```
+
+**Why**: Windows Named Pipes for stdout/stderr remain "ref'd" (keep event loop alive) while Unix file descriptors are auto-unref'd. Without `--test-force-exit`, the Node.js process hangs indefinitely after tests complete on Windows.
+
+### Single Top-Level Describe Block
+
+Each test file should have ONE top-level `await describe()` block:
+
+```typescript
+// ✅ Good - Single top-level describe
+await describe('MyFeature', async () => {
+  await describe('SubFeature A', async () => {
+    /* ... */
+  })
+  await describe('SubFeature B', async () => {
+    /* ... */
+  })
+})
+
+// ❌ Bad - Multiple top-level describes (breaks --test-force-exit)
+await describe('SubFeature A', async () => {
+  /* ... */
+})
+await describe('SubFeature B', async () => {
+  /* ... */
+})
+```
+
+**Why**: Multiple top-level `await describe()` blocks cause "Promise resolution is still pending" errors with `--test-force-exit`.
+
+---
+
+## 6. Constants & Imports
 
 ### Single Source of Truth
 
@@ -186,7 +226,7 @@ Available constants: `tests/charging-station/ChargingStationTestConstants.ts`
 
 ---
 
-## 6. Assertions
+## 7. Assertions
 
 ### Strict Only
 
@@ -205,7 +245,7 @@ expect(count == '5').toBe(true) // Type coercion
 
 ---
 
-## 7. Type Safety
+## 8. Type Safety
 
 ### No `as any` Casts
 
@@ -228,7 +268,7 @@ expect(AuthValidators.isValidIdentifierValue(123 as any)).toBe(false)
 
 ---
 
-## 8. Mock Factories
+## 9. Mock Factories
 
 ### Choose the Right Factory
 
@@ -253,7 +293,7 @@ expect(mocks.webSocket.sentMessages).toContain(expectedMessage)
 
 ---
 
-## 9. Utility Reference
+## 10. Utility Reference
 
 ### Lifecycle Helpers (`helpers/TestLifecycleHelpers.ts`)
 
@@ -301,6 +341,9 @@ expect(mocks.webSocket.sentMessages).toContain(expectedMessage)
 2. **Structure**: AAA pattern, JSDoc headers
 3. **Isolate**: Fresh instances in `beforeEach`, `standardCleanup()` in `afterEach`
 4. **Async**: Use `async/await`, mock timers
-5. **Constants**: Import from `ChargingStationTestConstants.ts`
-6. **Assert**: Strict only (`toBe`, `toStrictEqual`)
-7. **Types**: No `as any`, use testable interfaces
+5. **Platform**: Single top-level `describe`, `--test-force-exit` for Windows
+6. **Constants**: Import from `ChargingStationTestConstants.ts`
+7. **Assert**: Strict only (`toBe`, `toStrictEqual`)
+8. **Types**: No `as any`, use testable interfaces
+9. **Mocks**: Use appropriate factory for your use case
+10. **Utils**: Leverage lifecycle helpers and mock classes

@@ -3,6 +3,7 @@
  * @description Unit tests for OCPP 2.0 GetBaseReport command handling (B07)
  */
 import { expect } from '@std/expect'
+import { millisecondsToSeconds } from 'date-fns'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
@@ -50,6 +51,20 @@ await describe('B07 - Get Base Report', async () => {
       connectorsCount: 3,
       evseConfiguration: { evsesCount: 3 },
       heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+      ocppConfiguration: {
+        configurationKey: [
+          {
+            key: StandardParametersKey.HeartbeatInterval,
+            readonly: false,
+            value: millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL).toString(),
+          },
+          {
+            key: StandardParametersKey.MeterValueSampleInterval,
+            readonly: false,
+            value: millisecondsToSeconds(Constants.DEFAULT_METER_VALUES_INTERVAL).toString(),
+          },
+        ],
+      },
       stationInfo: {
         chargePointModel: TEST_CHARGE_POINT_MODEL,
         chargePointSerialNumber: TEST_CHARGE_POINT_SERIAL_NUMBER,

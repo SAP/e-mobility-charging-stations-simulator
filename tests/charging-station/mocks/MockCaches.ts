@@ -23,6 +23,10 @@ export class MockIdTagsCache {
     MockIdTagsCache.instance = null
   }
 
+  public deleteIdTags (file: string): void {
+    this.idTagsMap.delete(file)
+  }
+
   public getIdTags (file: string): string[] | undefined {
     return this.idTagsMap.get(file)
   }

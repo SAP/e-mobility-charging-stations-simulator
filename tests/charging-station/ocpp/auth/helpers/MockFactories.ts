@@ -59,43 +59,46 @@ export const createMockAuthRequest = (overrides?: Partial<AuthRequest>): AuthReq
 })
 
 /**
- * Create a mock AuthorizationResult with configurable status.
+ * Create a mock AuthorizationResult with configurable properties.
  *
  * Supports all AuthorizationStatus values: ACCEPTED, INVALID, BLOCKED, EXPIRED, CONCURRENT_TX.
- * @param status - Authorization status (defaults to ACCEPTED)
  * @param overrides - Partial AuthorizationResult properties to override defaults
- * @returns Mock AuthorizationResult with specified status from local list method
+ * @returns Mock AuthorizationResult with specified properties (defaults to ACCEPTED from local list)
  * @example
  * ```typescript
  * // Default: ACCEPTED status
  * const accepted = createMockAuthorizationResult()
  *
  * // Rejected with INVALID status
- * const rejected = createMockAuthorizationResult(AuthorizationStatus.INVALID)
+ * const rejected = createMockAuthorizationResult({ status: AuthorizationStatus.INVALID })
  *
  * // Blocked with custom method
- * const blocked = createMockAuthorizationResult(AuthorizationStatus.BLOCKED, {
+ * const blocked = createMockAuthorizationResult({
+ *   status: AuthorizationStatus.BLOCKED,
  *   method: AuthenticationMethod.REMOTE_AUTHORIZATION
  * })
  *
  * // Expired with custom expiry date
- * const expired = createMockAuthorizationResult(AuthorizationStatus.EXPIRED, {
+ * const expired = createMockAuthorizationResult({
+ *   status: AuthorizationStatus.EXPIRED,
  *   expiryDate: new Date(Date.now() - 1000)
  * })
  * ```
  */
 export const createMockAuthorizationResult = (
-  status: AuthorizationStatus = AuthorizationStatus.ACCEPTED,
   overrides?: Partial<AuthorizationResult>
-): AuthorizationResult => ({
-  isOffline: false,
-  method: AuthenticationMethod.LOCAL_LIST,
-  status,
-  timestamp: new Date(),
-  // For expired status, include a default expiryDate in the past
-  ...(status === AuthorizationStatus.EXPIRED && { expiryDate: new Date(Date.now() - 1000) }),
-  ...overrides,
-})
+): AuthorizationResult => {
+  const status = overrides?.status ?? AuthorizationStatus.ACCEPTED
+  return {
+    isOffline: false,
+    method: AuthenticationMethod.LOCAL_LIST,
+    status,
+    timestamp: new Date(),
+    // For expired status, include a default expiryDate in the past
+    ...(status === AuthorizationStatus.EXPIRED && { expiryDate: new Date(Date.now() - 1000) }),
+    ...overrides,
+  }
+}
 
 /**
  * Create a mock OCPPAuthService that always returns ACCEPTED status.
