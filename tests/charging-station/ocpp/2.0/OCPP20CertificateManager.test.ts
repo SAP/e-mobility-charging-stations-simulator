@@ -16,20 +16,14 @@ import {
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import {
   EMPTY_PEM_CERTIFICATE,
+  INVALID_PEM_CERTIFICATE_MISSING_MARKERS,
   INVALID_PEM_WRONG_MARKERS,
   VALID_PEM_CERTIFICATE_EXTENDED,
 } from './OCPP20CertificateTestData.js'
+
 const TEST_STATION_HASH_ID = 'test-station-hash-12345'
 const TEST_CERT_TYPE = InstallCertificateUseEnumType.CSMSRootCertificate
 
-// Use VALID_PEM_CERTIFICATE_EXTENDED as the main valid certificate for these tests
-const VALID_PEM_CERTIFICATE = VALID_PEM_CERTIFICATE_EXTENDED
-
-// Alias for consistency with existing test expectations
-const INVALID_PEM_NO_MARKERS = `
-MIIDXTCCAkWgAwIBAgIJAJC1HiIAZAiUMA0GCSqGSIb3Qq8teleNzMHjvLuHvVsY
-a5uYmO6K8pzuYmOvfLNNMC5leGFtcGxlLmNvbTAeFw0xNzAxMTIyMTI3NDBaFw0y
-`
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- kept for future assertions
 const _EXPECTED_HASH_DATA: CertificateHashDataType = {
   hashAlgorithm: HashAlgorithmEnumType.SHA256,
@@ -66,7 +60,7 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
       const result = await manager.storeCertificate(
         TEST_STATION_HASH_ID,
         TEST_CERT_TYPE,
-        VALID_PEM_CERTIFICATE
+        VALID_PEM_CERTIFICATE_EXTENDED
       )
 
       expect(result).toBeDefined()
@@ -80,7 +74,7 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
       const result = await manager.storeCertificate(
         TEST_STATION_HASH_ID,
         TEST_CERT_TYPE,
-        INVALID_PEM_NO_MARKERS
+        INVALID_PEM_CERTIFICATE_MISSING_MARKERS
       )
 
       expect(result).toBeDefined()
@@ -104,7 +98,7 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
       const result = await manager.storeCertificate(
         TEST_STATION_HASH_ID,
         InstallCertificateUseEnumType.V2GRootCertificate,
-        VALID_PEM_CERTIFICATE
+        VALID_PEM_CERTIFICATE_EXTENDED
       )
 
       expect(result).toBeDefined()
@@ -211,7 +205,7 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
       manager = new OCPP20CertificateManager()
     })
     await it('should compute hash data for valid PEM certificate', () => {
-      const hashData = manager.computeCertificateHash(VALID_PEM_CERTIFICATE)
+      const hashData = manager.computeCertificateHash(VALID_PEM_CERTIFICATE_EXTENDED)
 
       expect(hashData).toBeDefined()
       expect(hashData.hashAlgorithm).toBe(HashAlgorithmEnumType.SHA256)
@@ -224,7 +218,7 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
     })
 
     await it('should return hex-encoded hash values', () => {
-      const hashData = manager.computeCertificateHash(VALID_PEM_CERTIFICATE)
+      const hashData = manager.computeCertificateHash(VALID_PEM_CERTIFICATE_EXTENDED)
 
       const hexPattern = /^[a-fA-F0-9]+$/
       expect(hashData.issuerNameHash).toMatch(hexPattern)
@@ -233,7 +227,7 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
 
     await it('should throw error for invalid PEM certificate', () => {
       expect(() => {
-        manager.computeCertificateHash(INVALID_PEM_NO_MARKERS)
+        manager.computeCertificateHash(INVALID_PEM_CERTIFICATE_MISSING_MARKERS)
       }).toThrow()
     })
 
@@ -245,7 +239,7 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
 
     await it('should support SHA384 hash algorithm', () => {
       const hashData = manager.computeCertificateHash(
-        VALID_PEM_CERTIFICATE,
+        VALID_PEM_CERTIFICATE_EXTENDED,
         HashAlgorithmEnumType.SHA384
       )
 
@@ -255,7 +249,7 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
 
     await it('should support SHA512 hash algorithm', () => {
       const hashData = manager.computeCertificateHash(
-        VALID_PEM_CERTIFICATE,
+        VALID_PEM_CERTIFICATE_EXTENDED,
         HashAlgorithmEnumType.SHA512
       )
 
@@ -271,13 +265,13 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
       manager = new OCPP20CertificateManager()
     })
     await it('should return true for valid PEM certificate', () => {
-      const isValid = manager.validateCertificateFormat(VALID_PEM_CERTIFICATE)
+      const isValid = manager.validateCertificateFormat(VALID_PEM_CERTIFICATE_EXTENDED)
 
       expect(isValid).toBe(true)
     })
 
     await it('should return false for certificate without BEGIN marker', () => {
-      const isValid = manager.validateCertificateFormat(INVALID_PEM_NO_MARKERS)
+      const isValid = manager.validateCertificateFormat(INVALID_PEM_CERTIFICATE_MISSING_MARKERS)
 
       expect(isValid).toBe(false)
     })
@@ -384,12 +378,12 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
         manager.storeCertificate(
           TEST_STATION_HASH_ID,
           InstallCertificateUseEnumType.CSMSRootCertificate,
-          VALID_PEM_CERTIFICATE
+          VALID_PEM_CERTIFICATE_EXTENDED
         ),
         manager.storeCertificate(
           TEST_STATION_HASH_ID,
           InstallCertificateUseEnumType.V2GRootCertificate,
-          VALID_PEM_CERTIFICATE
+          VALID_PEM_CERTIFICATE_EXTENDED
         ),
         manager.getInstalledCertificates(TEST_STATION_HASH_ID),
       ])
@@ -401,7 +395,7 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
     })
 
     await it('should handle very long certificate chains', async () => {
-      const longChain = Array(5).fill(VALID_PEM_CERTIFICATE).join('\n')
+      const longChain = Array(5).fill(VALID_PEM_CERTIFICATE_EXTENDED).join('\n')
 
       const result = await manager.storeCertificate(TEST_STATION_HASH_ID, TEST_CERT_TYPE, longChain)
 
