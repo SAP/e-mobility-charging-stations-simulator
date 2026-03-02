@@ -547,8 +547,11 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       if (bytesCfg && /^\d+$/.test(bytesCfg)) {
         bytesLimit = convertToIntOrNaN(bytesCfg)
       }
-    } catch {
-      /* ignore */
+    } catch (error) {
+      logger.debug(
+        `${chargingStation.logPrefix()} readMessageLimits: error reading message limits:`,
+        error
+      )
     }
     return { bytesLimit, itemsLimit }
   }

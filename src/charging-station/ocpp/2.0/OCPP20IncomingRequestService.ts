@@ -2916,18 +2916,21 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
  */
 
 /**
- *
- * @param promise
- * @param ms
- * @param label
+ * Races a promise against a timeout, clearing the timer on settlement to avoid leaks.
+ * @param promise - The promise to race against the timeout
+ * @param ms - Timeout duration in milliseconds
+ * @param label - Descriptive label for the timeout error message
  */
 function withTimeout<T> (promise: Promise<T>, ms: number, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout>
   return Promise.race([
-    promise,
-    new Promise<never>((_resolve, reject) =>
-      setTimeout(() => {
+    promise.finally(() => {
+      clearTimeout(timer)
+    }),
+    new Promise<never>((_resolve, reject) => {
+      timer = setTimeout(() => {
         reject(new Error(`${label} timed out after ${ms.toString()}ms`))
       }, ms)
-    ),
+    }),
   ])
 }

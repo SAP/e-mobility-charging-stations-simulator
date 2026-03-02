@@ -260,6 +260,8 @@ export class OCPP20ResponseService extends OCPPResponseService {
     )
   }
 
+  // TODO: currently log-only — future work should act on idTokenInfo.status (Invalid/Blocked → stop transaction)
+  // and chargingPriority (update charging profile priority) per OCPP 2.0.1 spec
   private handleResponseTransactionEvent (
     chargingStation: ChargingStation,
     payload: OCPP20TransactionEventResponse
