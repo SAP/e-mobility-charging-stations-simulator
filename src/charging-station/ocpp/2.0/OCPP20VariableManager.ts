@@ -56,7 +56,7 @@ export class OCPP20VariableManager {
   private static instance: null | OCPP20VariableManager = null
 
   readonly #validComponentNames = new Set<string>(
-    Object.keys(VARIABLE_REGISTRY).map(k => k.split('/')[0])
+    Object.keys(VARIABLE_REGISTRY).map(k => k.split('::')[0])
   )
 
   private readonly invalidVariables = new Set<string>() // composite key (lower case)
