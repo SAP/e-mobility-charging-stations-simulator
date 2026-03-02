@@ -2920,6 +2920,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
  * @param promise - The promise to race against the timeout
  * @param ms - Timeout duration in milliseconds
  * @param label - Descriptive label for the timeout error message
+ * @returns The resolved value of the original promise, or rejects with a timeout error
  */
 function withTimeout<T> (promise: Promise<T>, ms: number, label: string): Promise<T> {
   let timer: ReturnType<typeof setTimeout>

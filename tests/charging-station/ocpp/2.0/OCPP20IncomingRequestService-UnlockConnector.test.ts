@@ -29,6 +29,7 @@ import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
  * Provides 3 EVSEs each with 1 connector.
  * Mocks requestHandler to allow sendAndSetConnectorStatus to succeed
  * (sendAndSetConnectorStatus calls requestHandler internally for StatusNotification).
+ * @returns The mock station and its request handler spy
  */
 function createUnlockConnectorStation (): {
   mockStation: MockChargingStation

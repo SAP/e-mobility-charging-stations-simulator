@@ -35,6 +35,7 @@ import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
  * Create a mock station suitable for TransactionEvent response tests.
  * Uses ocppStrictCompliance: false to bypass AJV validation so the
  * handler logic can be tested in isolation.
+ * @returns A mock station configured for TransactionEvent tests
  */
 function createTransactionEventStation (): MockChargingStation {
   const { station } = createMockChargingStation({
@@ -68,7 +69,8 @@ await describe('E01-E04 - TransactionEventResponse handler', async () => {
   /**
    * Helper to dispatch a TransactionEventResponse through the public responseHandler.
    * The station is in Accepted state by default (RegistrationStatusEnumType.ACCEPTED).
-   * @param payload
+   * @param payload - The TransactionEventResponse payload to dispatch
+   * @returns Resolves when the response handler completes
    */
   async function dispatch (payload: OCPP20TransactionEventResponse): Promise<void> {
     await responseService.responseHandler(

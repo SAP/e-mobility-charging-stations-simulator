@@ -21,9 +21,9 @@ interface TestItem {
 }
 
 /**
- *
- * @param name
- * @param value
+ * @param name - Variable name for the test item
+ * @param value - Optional attribute value
+ * @returns A test item with the given variable name and optional value
  */
 function makeItem (name: string, value?: string): TestItem {
   return {
@@ -33,9 +33,7 @@ function makeItem (name: string, value?: string): TestItem {
   }
 }
 
-/**
- *
- */
+/** @returns A mock logger that captures debug calls */
 function makeMockLogger (): MockLogger {
   const debugCalls: unknown[][] = []
   return {
@@ -46,16 +44,12 @@ function makeMockLogger (): MockLogger {
   }
 }
 
-/**
- *
- */
+/** @returns A mock station with a logPrefix method */
 function makeMockStation () {
   return { logPrefix: () => '[TestStation]' }
 }
 
-/**
- *
- */
+/** @returns A builder function that creates rejected result objects */
 function makeRejectedBuilder () {
   return (item: TestItem, reason: { info: string; reasonCode: string }): RejectedResult => ({
     info: reason.info,

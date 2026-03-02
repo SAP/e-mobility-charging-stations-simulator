@@ -29,6 +29,7 @@ import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 /**
  * Create a mock station suitable for TriggerMessage tests.
  * Uses a mock requestHandler to avoid network calls from fire-and-forget paths.
+ * @returns The mock station and its request handler spy
  */
 function createTriggerMessageStation (): {
   mockStation: MockChargingStation
