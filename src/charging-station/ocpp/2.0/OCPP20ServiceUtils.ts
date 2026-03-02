@@ -221,16 +221,32 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     { schemaPath: string }
   ][] => [
     [
+      OCPP20IncomingRequestCommand.CERTIFICATE_SIGNED,
+      OCPP20ServiceUtils.PayloadValidatorConfig('CertificateSignedRequest.json'),
+    ],
+    [
       OCPP20IncomingRequestCommand.CLEAR_CACHE,
       OCPP20ServiceUtils.PayloadValidatorConfig('ClearCacheRequest.json'),
+    ],
+    [
+      OCPP20IncomingRequestCommand.DELETE_CERTIFICATE,
+      OCPP20ServiceUtils.PayloadValidatorConfig('DeleteCertificateRequest.json'),
     ],
     [
       OCPP20IncomingRequestCommand.GET_BASE_REPORT,
       OCPP20ServiceUtils.PayloadValidatorConfig('GetBaseReportRequest.json'),
     ],
     [
+      OCPP20IncomingRequestCommand.GET_INSTALLED_CERTIFICATE_IDS,
+      OCPP20ServiceUtils.PayloadValidatorConfig('GetInstalledCertificateIdsRequest.json'),
+    ],
+    [
       OCPP20IncomingRequestCommand.GET_VARIABLES,
       OCPP20ServiceUtils.PayloadValidatorConfig('GetVariablesRequest.json'),
+    ],
+    [
+      OCPP20IncomingRequestCommand.INSTALL_CERTIFICATE,
+      OCPP20ServiceUtils.PayloadValidatorConfig('InstallCertificateRequest.json'),
     ],
     [
       OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
@@ -247,6 +263,14 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     [
       OCPP20IncomingRequestCommand.SET_VARIABLES,
       OCPP20ServiceUtils.PayloadValidatorConfig('SetVariablesRequest.json'),
+    ],
+    [
+      OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+      OCPP20ServiceUtils.PayloadValidatorConfig('TriggerMessageRequest.json'),
+    ],
+    [
+      OCPP20IncomingRequestCommand.UNLOCK_CONNECTOR,
+      OCPP20ServiceUtils.PayloadValidatorConfig('UnlockConnectorRequest.json'),
     ],
   ]
 
@@ -287,6 +311,14 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     [
       OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION,
       OCPP20ServiceUtils.PayloadValidatorConfig('RequestStopTransactionResponse.json'),
+    ],
+    [
+      OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+      OCPP20ServiceUtils.PayloadValidatorConfig('TriggerMessageResponse.json'),
+    ],
+    [
+      OCPP20IncomingRequestCommand.UNLOCK_CONNECTOR,
+      OCPP20ServiceUtils.PayloadValidatorConfig('UnlockConnectorResponse.json'),
     ],
   ]
 

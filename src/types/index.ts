@@ -158,6 +158,7 @@ export {
   InstallCertificateStatusEnumType,
   InstallCertificateUseEnumType,
   Iso15118EVCertificateStatusEnumType,
+  MessageTriggerEnumType,
   OCPP20ComponentName,
   OCPP20UnitEnumType,
   type OCSPRequestDataType,
@@ -165,6 +166,8 @@ export {
   ReportBaseEnumType,
   ResetEnumType,
   ResetStatusEnumType,
+  TriggerMessageStatusEnumType,
+  UnlockStatusEnumType,
 } from './ocpp/2.0/Common.js'
 export {
   OCPP20LocationEnumType,
@@ -199,6 +202,8 @@ export {
   type OCPP20SetVariablesRequest,
   type OCPP20SignCertificateRequest,
   type OCPP20StatusNotificationRequest,
+  type OCPP20TriggerMessageRequest,
+  type OCPP20UnlockConnectorRequest,
 } from './ocpp/2.0/Requests.js'
 export type {
   OCPP20BootNotificationResponse,
@@ -219,6 +224,8 @@ export type {
   OCPP20SetVariablesResponse,
   OCPP20SignCertificateResponse,
   OCPP20StatusNotificationResponse,
+  OCPP20TriggerMessageResponse,
+  OCPP20UnlockConnectorResponse,
 } from './ocpp/2.0/Responses.js'
 export {
   type ComponentType,
