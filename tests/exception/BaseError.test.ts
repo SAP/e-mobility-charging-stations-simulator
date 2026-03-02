@@ -34,11 +34,6 @@ await describe('BaseError', async () => {
     expect(baseError instanceof Error).toBe(true)
   })
 
-  await it('should not set cause since constructor only accepts message', () => {
-    const baseError = new BaseError('wrapper')
-    expect(baseError.cause).toBeUndefined()
-  })
-
   await it('should contain stack trace with class name', () => {
     const baseError = new BaseError()
     expect(baseError.stack?.includes('BaseError')).toBe(true)

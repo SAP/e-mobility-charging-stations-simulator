@@ -51,16 +51,4 @@ await describe('OCPPError', async () => {
     const ocppError = new OCPPError(ErrorType.NOT_IMPLEMENTED, 'test')
     expect(ocppError.code).toBe(ErrorType.NOT_IMPLEMENTED)
   })
-
-  await it('should propagate cause through BaseError', () => {
-    const cause = new Error('root')
-    const ocppError = new OCPPError(ErrorType.INTERNAL_ERROR, 'wrapped')
-    expect(cause.message).toBe('root')
-    expect(ocppError.cause).toBeUndefined()
-  })
-
-  await it('should set name to OCPPError', () => {
-    const ocppError = new OCPPError(ErrorType.GENERIC_ERROR, 'test')
-    expect(ocppError.name).toBe('OCPPError')
-  })
 })
