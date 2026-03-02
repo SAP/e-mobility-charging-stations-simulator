@@ -13,10 +13,7 @@ import {
   isValidCredential,
   isValidNumberOfStations,
 } from '../../../src/charging-station/ui-server/UIServerSecurity.js'
-import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
-import { waitForStreamFlush } from './UIServerTestUtils.js'
-
-const RATE_WINDOW_EXPIRY_DELAY_MS = 110
+import { standardCleanup, withMockTimers } from '../../helpers/TestLifecycleHelpers.js'
 
 await describe('UIServerSecurity', async () => {
   afterEach(() => {
@@ -82,15 +79,15 @@ await describe('UIServerSecurity', async () => {
       expect(limiter('192.168.1.1')).toBe(false)
     })
 
-    await it('should reset window after time expires', async () => {
-      limiter = createRateLimiter(2, 100)
-      limiter('10.0.0.1')
-      limiter('10.0.0.1')
-      expect(limiter('10.0.0.1')).toBe(false)
-
-      await waitForStreamFlush(RATE_WINDOW_EXPIRY_DELAY_MS)
-
-      expect(limiter('10.0.0.1')).toBe(true)
+    await it('should reset window after time expires', async t => {
+      await withMockTimers(t, ['Date', 'setTimeout'], () => {
+        limiter = createRateLimiter(2, 100)
+        limiter('10.0.0.1')
+        limiter('10.0.0.1')
+        expect(limiter('10.0.0.1')).toBe(false)
+        t.mock.timers.tick(101)
+        expect(limiter('10.0.0.1')).toBe(true)
+      })
     })
 
     await it('should reject new IPs when at max tracked capacity', () => {
@@ -111,14 +108,14 @@ await describe('UIServerSecurity', async () => {
       expect(limiter('192.168.1.2')).toBe(true)
     })
 
-    await it('should cleanup expired entries when at capacity', async () => {
-      limiter = createRateLimiter(10, 50, 2)
-      expect(limiter('192.168.1.1')).toBe(true)
-      expect(limiter('192.168.1.2')).toBe(true)
-
-      await waitForStreamFlush(60)
-
-      expect(limiter('192.168.1.3')).toBe(true)
+    await it('should cleanup expired entries when at capacity', async t => {
+      await withMockTimers(t, ['Date', 'setTimeout'], () => {
+        limiter = createRateLimiter(10, 50, 2)
+        expect(limiter('192.168.1.1')).toBe(true)
+        expect(limiter('192.168.1.2')).toBe(true)
+        t.mock.timers.tick(51)
+        expect(limiter('192.168.1.3')).toBe(true)
+      })
     })
   })
 

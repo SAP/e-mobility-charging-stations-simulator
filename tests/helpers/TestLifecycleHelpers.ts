@@ -51,7 +51,7 @@ export interface LoggerMockResult {
 /**
  * Timer APIs that can be mocked in tests
  */
-export type MockableTimerAPI = 'setImmediate' | 'setInterval' | 'setTimeout'
+export type MockableTimerAPI = 'Date' | 'setImmediate' | 'setInterval' | 'setTimeout'
 
 /**
  * Configuration options for TestTimerHelper

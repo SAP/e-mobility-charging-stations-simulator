@@ -47,4 +47,47 @@ await describe('AsyncLock', async () => {
     await Promise.all(promises)
     expect(executed).toStrictEqual(new Array(runs).fill(0).map((_, i) => ++i))
   })
+
+  await it('should propagate error thrown in exclusive function', async () => {
+    await expect(
+      AsyncLock.runExclusive(AsyncLockType.configuration, () => {
+        throw new Error('test error')
+      })
+    ).rejects.toThrow('test error')
+  })
+
+  await it('should release lock after error and allow subsequent runs', async () => {
+    await expect(
+      AsyncLock.runExclusive(AsyncLockType.configuration, () => {
+        throw new Error('first fails')
+      })
+    ).rejects.toThrow('first fails')
+
+    let recovered = false
+    await AsyncLock.runExclusive(AsyncLockType.configuration, () => {
+      recovered = true
+    })
+    expect(recovered).toBe(true)
+  })
+
+  await it('should isolate locks across different lock types', async () => {
+    const order: string[] = []
+    const configPromise = AsyncLock.runExclusive(AsyncLockType.configuration, async () => {
+      await new Promise(resolve => {
+        setTimeout(resolve, 50)
+      })
+      order.push('configuration')
+    })
+    const perfPromise = AsyncLock.runExclusive(AsyncLockType.performance, () => {
+      order.push('performance')
+    })
+    await Promise.all([configPromise, perfPromise])
+    expect(order[0]).toBe('performance')
+    expect(order[1]).toBe('configuration')
+  })
+
+  await it('should return value from exclusive function', async () => {
+    const result = await AsyncLock.runExclusive(AsyncLockType.configuration, () => 42)
+    expect(result).toBe(42)
+  })
 })

@@ -2,7 +2,6 @@ import { mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
 import type { ChargingStationWithCertificateManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20CertificateManager.js'
-import type { OCPP20RequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20RequestService.js'
 import type { ConfigurationKey } from '../../../../src/types/ChargingStationOcppConfiguration.js'
 import type { EmptyObject } from '../../../../src/types/EmptyObject.js'
 import type {
@@ -18,6 +17,8 @@ import type {
   OCPP20TransactionContext,
 } from '../../../../src/types/ocpp/2.0/Transaction.js'
 
+import { OCPP20RequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20RequestService.js'
+import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
 import {
   ConnectorStatusEnum,
   HashAlgorithmEnumType,
@@ -61,6 +62,24 @@ export interface MockStationWithTracking {
   setOnline: (online: boolean) => void
   /** The mock charging station instance */
   station: ChargingStation
+}
+
+/**
+ * Result of creating an OCPP 2.0 request test context.
+ * Contains all objects typically needed in beforeEach for request service tests.
+ */
+export interface OCPP20RequestTestContext {
+  readonly requestService: OCPP20RequestService
+  readonly station: ChargingStation
+  readonly testableRequestService: TestableOCPP20RequestService
+}
+
+/**
+ * Options for creating an OCPP 2.0 request test context.
+ */
+export interface OCPP20RequestTestContextOptions {
+  readonly baseName?: string
+  readonly stationInfo?: Record<string, unknown>
 }
 
 /**
@@ -133,6 +152,39 @@ export function createMockStationWithRequestTracking (): MockStationWithTracking
     },
     station,
   }
+}
+
+/**
+ * Create a standard OCPP 2.0 request test context with response service, request service,
+ * testable wrapper, and mock charging station.
+ *
+ * Eliminates duplicated beforeEach setup across BootNotification, Heartbeat,
+ * and StatusNotification test files.
+ * @param options - Optional overrides for base name and station info
+ * @returns OCPP20RequestTestContext with all objects needed for testing
+ */
+export function createOCPP20RequestTestContext (
+  options: OCPP20RequestTestContextOptions = {}
+): OCPP20RequestTestContext {
+  const { baseName = TEST_CHARGING_STATION_BASE_NAME, stationInfo = {} } = options
+
+  const mockResponseService = new OCPP20ResponseService()
+  const requestService = new OCPP20RequestService(mockResponseService)
+  const testableRequestService = createTestableOCPP20RequestService(requestService)
+  const { station } = createMockChargingStation({
+    baseName,
+    connectorsCount: 3,
+    evseConfiguration: { evsesCount: 3 },
+    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+    stationInfo: {
+      ocppStrictCompliance: false,
+      ocppVersion: OCPPVersion.VERSION_201,
+      ...stationInfo,
+    },
+    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+  })
+
+  return { requestService, station, testableRequestService }
 }
 
 /**

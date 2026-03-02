@@ -58,4 +58,24 @@ await describe('StatisticUtils', async () => {
   await it('should calculate standard deviation of array', () => {
     expect(std([0.25, 4.75, 3.05, 6.04, 1.01, 2.02, 5.03])).toBe(2.1879050645374383)
   })
+  await it('should return 0 for standard deviation of empty or single-element array', () => {
+    expect(std([])).toBe(0)
+    expect(std([42])).toBe(0)
+  })
+  await it('should throw TypeError for non-array input to std', () => {
+    expect(() => std(null as unknown as number[])).toThrow(TypeError)
+    expect(() => std(undefined as unknown as number[])).toThrow(TypeError)
+  })
+  await it('should throw TypeError for non-array input to percentile', () => {
+    expect(() => percentile(null as unknown as number[], 50)).toThrow(TypeError)
+  })
+  await it('should throw RangeError for out-of-range percentile', () => {
+    expect(() => percentile([1, 2, 3], -1)).toThrow(RangeError)
+    expect(() => percentile([1, 2, 3], 101)).toThrow(RangeError)
+  })
+  await it('should accept pre-computed average parameter', () => {
+    const data = [0.25, 4.75, 3.05, 6.04, 1.01, 2.02, 5.03]
+    const avg = average(data)
+    expect(std(data, avg)).toBe(std(data))
+  })
 })

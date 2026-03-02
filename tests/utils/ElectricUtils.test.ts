@@ -33,4 +33,27 @@ await describe('ElectricUtils', async () => {
   await it('should calculate AC amperage per phase from power', () => {
     expect(ACElectricUtils.amperagePerPhaseFromPower(3, 690, 230)).toBe(1)
   })
+  await it('should return 0 for DC amperage when voltage is zero', () => {
+    expect(DCElectricUtils.amperage(1000, 0)).toBe(0)
+  })
+  await it('should return 0 for AC amperage when voltage is zero', () => {
+    expect(ACElectricUtils.amperageTotalFromPower(1000, 0)).toBe(0)
+  })
+  await it('should return 0 for AC amperage when cosPhi is zero', () => {
+    expect(ACElectricUtils.amperageTotalFromPower(1000, 230, 0)).toBe(0)
+  })
+  await it('should return 0 for AC amperage per phase when phases is zero or negative', () => {
+    expect(ACElectricUtils.amperagePerPhaseFromPower(0, 690, 230)).toBe(0)
+    expect(ACElectricUtils.amperagePerPhaseFromPower(-1, 690, 230)).toBe(0)
+  })
+  await it('should round AC power per phase with non-unity cosPhi', () => {
+    expect(ACElectricUtils.powerPerPhase(230, 10, 0.85)).toBe(1955)
+  })
+  await it('should round DC amperage when power is not evenly divisible by voltage', () => {
+    expect(DCElectricUtils.amperage(100, 3)).toBe(33)
+  })
+  await it('should calculate DC power as voltage times current', () => {
+    expect(DCElectricUtils.power(0, 10)).toBe(0)
+    expect(DCElectricUtils.power(400, 0)).toBe(0)
+  })
 })

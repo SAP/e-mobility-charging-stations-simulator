@@ -86,35 +86,6 @@ await describe('Utils', async () => {
   })
 
   await it('should sleep for specified milliseconds using timer mock', async t => {
-    /**
-     * Timer mock pattern for testing asynchronous timer-based operations.
-     * Uses Node.js test module's built-in timer mocking API.
-     * @example
-     * // Enable timer mocking with setTimeout API
-     * t.mock.timers.enable({ apis: ['setTimeout'] })
-     *
-     * try {
-     *   const delay = 10
-     *   const sleepPromise = sleep(delay)
-     *   // Advance mocked timers by specified milliseconds
-     *   t.mock.timers.tick(delay)
-     *   const timeout = await sleepPromise
-     *   expect(timeout).toBeDefined()
-     * } finally {
-     *   // Always reset timers after test to prevent side effects
-     *   t.mock.timers.reset()
-     * }
-     * @description
-     * This pattern demonstrates:
-     * - `t.mock.timers.enable()`: Activates timer mocking for specified APIs (e.g., setTimeout)
-     * - `t.mock.timers.tick()`: Advances the mocked internal clock by the given milliseconds
-     * - `t.mock.timers.reset()`: Clears mocked timers; use in finally block to ensure cleanup
-     *
-     * Useful for testing:
-     * - Timeout and interval-based logic
-     * - Async functions that depend on timing
-     * - Avoiding slow tests caused by actual delays
-     */
     await withMockTimers(t, ['setTimeout'], async () => {
       const delay = 10
       const sleepPromise = sleep(delay)

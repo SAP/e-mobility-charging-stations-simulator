@@ -7,56 +7,39 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 
-import { OCPP20RequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20RequestService.js'
-import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
 import {
   BootReasonEnumType,
   type OCPP20BootNotificationRequest,
   OCPP20RequestCommand,
-  OCPPVersion,
 } from '../../../../src/types/index.js'
 import { type ChargingStationType } from '../../../../src/types/ocpp/2.0/Common.js'
-import { Constants } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import {
   TEST_CHARGE_POINT_MODEL,
   TEST_CHARGE_POINT_SERIAL_NUMBER,
   TEST_CHARGE_POINT_VENDOR,
-  TEST_CHARGING_STATION_BASE_NAME,
   TEST_FIRMWARE_VERSION,
 } from '../../ChargingStationTestConstants.js'
-import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import {
-  createTestableOCPP20RequestService,
+  createOCPP20RequestTestContext,
   type TestableOCPP20RequestService,
 } from './OCPP20TestUtils.js'
 
 await describe('B01 - Cold Boot Charging Station', async () => {
-  let mockResponseService: OCPP20ResponseService
-  let requestService: OCPP20RequestService
   let testableRequestService: TestableOCPP20RequestService
   let station: ChargingStation
 
   beforeEach(() => {
-    mockResponseService = new OCPP20ResponseService()
-    requestService = new OCPP20RequestService(mockResponseService)
-    testableRequestService = createTestableOCPP20RequestService(requestService)
-    const { station: createdStation } = createMockChargingStation({
-      baseName: TEST_CHARGING_STATION_BASE_NAME,
-      connectorsCount: 3,
-      evseConfiguration: { evsesCount: 3 },
-      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+    const context = createOCPP20RequestTestContext({
       stationInfo: {
         chargePointModel: TEST_CHARGE_POINT_MODEL,
         chargePointSerialNumber: TEST_CHARGE_POINT_SERIAL_NUMBER,
         chargePointVendor: TEST_CHARGE_POINT_VENDOR,
         firmwareVersion: TEST_FIRMWARE_VERSION,
-        ocppStrictCompliance: false,
-        ocppVersion: OCPPVersion.VERSION_201,
       },
-      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
-    station = createdStation
+    testableRequestService = context.testableRequestService
+    station = context.station
   })
 
   afterEach(() => {
