@@ -10,6 +10,7 @@ import type {
   CustomDataType,
   GetCertificateIdUseEnumType,
   InstallCertificateUseEnumType,
+  MessageTriggerEnumType,
   OCSPRequestDataType,
   ReportBaseEnumType,
   ResetEnumType,
@@ -17,6 +18,7 @@ import type {
 import type {
   OCPP20ChargingProfileType,
   OCPP20ConnectorStatusEnumType,
+  OCPP20EVSEType,
   OCPP20IdTokenType,
 } from './Transaction.js'
 import type {
@@ -153,4 +155,16 @@ export interface OCPP20StatusNotificationRequest extends JsonObject {
   customData?: CustomDataType
   evseId: number
   timestamp: Date
+}
+
+export interface OCPP20TriggerMessageRequest extends JsonObject {
+  customData?: CustomDataType
+  evse?: OCPP20EVSEType
+  requestedMessage: MessageTriggerEnumType
+}
+
+export interface OCPP20UnlockConnectorRequest extends JsonObject {
+  connectorId: number
+  customData?: CustomDataType
+  evseId: number
 }

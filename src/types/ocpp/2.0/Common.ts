@@ -89,6 +89,28 @@ export enum Iso15118EVCertificateStatusEnumType {
   Failed = 'Failed',
 }
 
+export enum MessageFormatEnumType {
+  ASCII = 'ASCII',
+  HTML = 'HTML',
+  URI = 'URI',
+  UTF8 = 'UTF8',
+}
+
+export enum MessageTriggerEnumType {
+  BootNotification = 'BootNotification',
+  DiagnosticsStatusNotification = 'DiagnosticsStatusNotification',
+  FirmwareStatusNotification = 'FirmwareStatusNotification',
+  Heartbeat = 'Heartbeat',
+  LogStatusNotification = 'LogStatusNotification',
+  MeterValues = 'MeterValues',
+  PublishFirmwareStatusNotification = 'PublishFirmwareStatusNotification',
+  SignChargingStationCertificate = 'SignChargingStationCertificate',
+  SignCombinedCertificate = 'SignCombinedCertificate',
+  SignV2GCertificate = 'SignV2GCertificate',
+  StatusNotification = 'StatusNotification',
+  TransactionEvent = 'TransactionEvent',
+}
+
 export enum OCPP20ComponentName {
   // Physical and Logical Components
   AccessBarrier = 'AccessBarrier',
@@ -272,6 +294,19 @@ export enum ResetStatusEnumType {
   Scheduled = 'Scheduled',
 }
 
+export enum TriggerMessageStatusEnumType {
+  Accepted = 'Accepted',
+  NotImplemented = 'NotImplemented',
+  Rejected = 'Rejected',
+}
+
+export enum UnlockStatusEnumType {
+  OngoingAuthorizedTransaction = 'OngoingAuthorizedTransaction',
+  UnknownConnector = 'UnknownConnector',
+  Unlocked = 'Unlocked',
+  UnlockFailed = 'UnlockFailed',
+}
+
 export interface CertificateHashDataChainType extends JsonObject {
   certificateHashData: CertificateHashDataType
   certificateType: GetCertificateIdUseEnumType
@@ -301,6 +336,13 @@ export interface CustomDataType extends JsonObject {
 }
 
 export type GenericStatusEnumType = GenericStatus
+
+export interface MessageContentType extends JsonObject {
+  content: string
+  customData?: CustomDataType
+  format: MessageFormatEnumType
+  language?: string
+}
 
 export interface ModemType extends JsonObject {
   customData?: CustomDataType
