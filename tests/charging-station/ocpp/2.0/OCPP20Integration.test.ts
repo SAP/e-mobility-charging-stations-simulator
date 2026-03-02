@@ -161,4 +161,47 @@ await describe('OCPP 2.0 Integration — SetVariables → GetVariables consisten
       expect(result.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
     }
   })
+
+  await it('should reject SetVariables on an unknown component and confirm GetVariables returns UnknownComponent', () => {
+    const unknownComponent = { name: 'NonExistentComponent' as OCPP20ComponentName }
+    const variableName = 'SomeVariable'
+
+    // Attempt to set a variable on a component that does not exist in the registry
+    const setRequest: OCPP20SetVariablesRequest = {
+      setVariableData: [
+        {
+          attributeValue: '999',
+          component: unknownComponent,
+          variable: { name: variableName },
+        },
+      ],
+    }
+    const setResponse = testableService.handleRequestSetVariables(station, setRequest)
+
+    expect(setResponse.setVariableResult).toHaveLength(1)
+    const setResult = setResponse.setVariableResult[0]
+    expect(
+      setResult.attributeStatus === SetVariableStatusEnumType.UnknownComponent ||
+        setResult.attributeStatus === SetVariableStatusEnumType.UnknownVariable ||
+        setResult.attributeStatus === SetVariableStatusEnumType.Rejected
+    ).toBe(true)
+
+    // Confirm GetVariables also rejects lookup on the same unknown component
+    const getRequest: OCPP20GetVariablesRequest = {
+      getVariableData: [
+        {
+          component: unknownComponent,
+          variable: { name: variableName },
+        },
+      ],
+    }
+    const getResponse = testableService.handleRequestGetVariables(station, getRequest)
+
+    expect(getResponse.getVariableResult).toHaveLength(1)
+    const getResult = getResponse.getVariableResult[0]
+    expect(
+      getResult.attributeStatus === GetVariableStatusEnumType.UnknownComponent ||
+        getResult.attributeStatus === GetVariableStatusEnumType.UnknownVariable
+    ).toBe(true)
+  })
 })

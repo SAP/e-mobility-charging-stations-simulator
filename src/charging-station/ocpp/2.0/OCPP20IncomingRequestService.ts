@@ -1779,137 +1779,152 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     chargingStation: ChargingStation,
     commandPayload: OCPP20TriggerMessageRequest
   ): OCPP20TriggerMessageResponse {
-    const { evse, requestedMessage } = commandPayload
+    try {
+      const { evse, requestedMessage } = commandPayload
 
-    logger.debug(
-      `${chargingStation.logPrefix()} ${moduleName}.handleRequestTriggerMessage: TriggerMessage received for '${requestedMessage}'${evse?.id !== undefined ? ` on EVSE ${evse.id.toString()}` : ''}`
-    )
+      logger.debug(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestTriggerMessage: TriggerMessage received for '${requestedMessage}'${evse?.id !== undefined ? ` on EVSE ${evse.id.toString()}` : ''}`
+      )
 
-    // Validate EVSE if specified
-    if (evse?.id !== undefined && evse.id > 0) {
-      if (!chargingStation.hasEvses) {
-        return {
-          status: TriggerMessageStatusEnumType.Rejected,
-          statusInfo: {
-            additionalInfo: 'Charging station does not support EVSEs',
-            reasonCode: ReasonCodeEnumType.UnsupportedRequest,
-          },
+      // Validate EVSE if specified
+      if (evse?.id !== undefined && evse.id > 0) {
+        if (!chargingStation.hasEvses) {
+          return {
+            status: TriggerMessageStatusEnumType.Rejected,
+            statusInfo: {
+              additionalInfo: 'Charging station does not support EVSEs',
+              reasonCode: ReasonCodeEnumType.UnsupportedRequest,
+            },
+          }
+        }
+        if (!chargingStation.evses.has(evse.id)) {
+          return {
+            status: TriggerMessageStatusEnumType.Rejected,
+            statusInfo: {
+              additionalInfo: `EVSE ${evse.id.toString()} does not exist`,
+              reasonCode: ReasonCodeEnumType.UnknownEvse,
+            },
+          }
         }
       }
-      if (!chargingStation.evses.has(evse.id)) {
-        return {
-          status: TriggerMessageStatusEnumType.Rejected,
-          statusInfo: {
-            additionalInfo: `EVSE ${evse.id.toString()} does not exist`,
-            reasonCode: ReasonCodeEnumType.UnknownEvse,
-          },
-        }
-      }
-    }
 
-    switch (requestedMessage) {
-      case MessageTriggerEnumType.BootNotification:
-        chargingStation.ocppRequestService
-          .requestHandler<
-            OCPP20BootNotificationRequest,
-            OCPP20BootNotificationResponse
-          >(chargingStation, OCPP20RequestCommand.BOOT_NOTIFICATION, chargingStation.bootNotificationRequest as OCPP20BootNotificationRequest, { skipBufferingOnError: true, triggerMessage: true })
-          .catch((error: unknown) => {
-            logger.error(
-              `${chargingStation.logPrefix()} ${moduleName}.handleRequestTriggerMessage: Error sending BootNotification:`,
-              error
-            )
-          })
-        return { status: TriggerMessageStatusEnumType.Accepted }
-
-      case MessageTriggerEnumType.Heartbeat:
-        chargingStation.ocppRequestService
-          .requestHandler<
-            OCPP20HeartbeatRequest,
-            OCPP20HeartbeatResponse
-          >(chargingStation, OCPP20RequestCommand.HEARTBEAT, {}, { skipBufferingOnError: true, triggerMessage: true })
-          .catch((error: unknown) => {
-            logger.error(
-              `${chargingStation.logPrefix()} ${moduleName}.handleRequestTriggerMessage: Error sending Heartbeat:`,
-              error
-            )
-          })
-        return { status: TriggerMessageStatusEnumType.Accepted }
-
-      case MessageTriggerEnumType.StatusNotification:
-        if (evse?.id !== undefined && evse.id > 0 && evse.connectorId !== undefined) {
-          // Trigger for specific connector on EVSE
-          const connectorStatus = chargingStation.getConnectorStatus(evse.connectorId)
-          const resolvedStatus =
-            connectorStatus?.status != null
-              ? (connectorStatus.status as unknown as OCPP20ConnectorStatusEnumType)
-              : OCPP20ConnectorStatusEnumType.Available
+      switch (requestedMessage) {
+        case MessageTriggerEnumType.BootNotification:
           chargingStation.ocppRequestService
-            .requestHandler<OCPP20StatusNotificationRequest, OCPP20StatusNotificationResponse>(
-              chargingStation,
-              OCPP20RequestCommand.STATUS_NOTIFICATION,
-              {
-                connectorId: evse.connectorId,
-                connectorStatus: resolvedStatus,
-                evseId: evse.id,
-                timestamp: new Date(),
-              },
-              { skipBufferingOnError: true, triggerMessage: true }
-            )
+            .requestHandler<
+              OCPP20BootNotificationRequest,
+              OCPP20BootNotificationResponse
+            >(chargingStation, OCPP20RequestCommand.BOOT_NOTIFICATION, chargingStation.bootNotificationRequest as OCPP20BootNotificationRequest, { skipBufferingOnError: true, triggerMessage: true })
             .catch((error: unknown) => {
               logger.error(
-                `${chargingStation.logPrefix()} ${moduleName}.handleRequestTriggerMessage: Error sending StatusNotification:`,
+                `${chargingStation.logPrefix()} ${moduleName}.handleRequestTriggerMessage: Error sending BootNotification:`,
                 error
               )
             })
-        } else {
-          if (chargingStation.hasEvses) {
-            for (const [evseId, evseStatus] of chargingStation.evses) {
-              if (evseId > 0) {
-                for (const [connectorId, connectorStatus] of evseStatus.connectors) {
-                  const resolvedConnectorStatus =
-                    connectorStatus.status != null
-                      ? (connectorStatus.status as unknown as OCPP20ConnectorStatusEnumType)
-                      : OCPP20ConnectorStatusEnumType.Available
-                  chargingStation.ocppRequestService
-                    .requestHandler<
-                      OCPP20StatusNotificationRequest,
-                      OCPP20StatusNotificationResponse
-                    >(
-                      chargingStation,
-                      OCPP20RequestCommand.STATUS_NOTIFICATION,
-                      {
-                        connectorId,
-                        connectorStatus: resolvedConnectorStatus,
-                        evseId,
-                        timestamp: new Date(),
-                      },
-                      { skipBufferingOnError: true, triggerMessage: true }
-                    )
-                    .catch((error: unknown) => {
-                      logger.error(
-                        `${chargingStation.logPrefix()} ${moduleName}.handleRequestTriggerMessage: Error sending StatusNotification:`,
-                        error
+          return { status: TriggerMessageStatusEnumType.Accepted }
+
+        case MessageTriggerEnumType.Heartbeat:
+          chargingStation.ocppRequestService
+            .requestHandler<
+              OCPP20HeartbeatRequest,
+              OCPP20HeartbeatResponse
+            >(chargingStation, OCPP20RequestCommand.HEARTBEAT, {}, { skipBufferingOnError: true, triggerMessage: true })
+            .catch((error: unknown) => {
+              logger.error(
+                `${chargingStation.logPrefix()} ${moduleName}.handleRequestTriggerMessage: Error sending Heartbeat:`,
+                error
+              )
+            })
+          return { status: TriggerMessageStatusEnumType.Accepted }
+
+        case MessageTriggerEnumType.StatusNotification:
+          if (evse?.id !== undefined && evse.id > 0 && evse.connectorId !== undefined) {
+            // Trigger for specific connector on EVSE
+            const connectorStatus = chargingStation.getConnectorStatus(evse.connectorId)
+            const resolvedStatus =
+              connectorStatus?.status != null
+                ? (connectorStatus.status as unknown as OCPP20ConnectorStatusEnumType)
+                : OCPP20ConnectorStatusEnumType.Available
+            chargingStation.ocppRequestService
+              .requestHandler<OCPP20StatusNotificationRequest, OCPP20StatusNotificationResponse>(
+                chargingStation,
+                OCPP20RequestCommand.STATUS_NOTIFICATION,
+                {
+                  connectorId: evse.connectorId,
+                  connectorStatus: resolvedStatus,
+                  evseId: evse.id,
+                  timestamp: new Date(),
+                },
+                { skipBufferingOnError: true, triggerMessage: true }
+              )
+              .catch((error: unknown) => {
+                logger.error(
+                  `${chargingStation.logPrefix()} ${moduleName}.handleRequestTriggerMessage: Error sending StatusNotification:`,
+                  error
+                )
+              })
+          } else {
+            if (chargingStation.hasEvses) {
+              for (const [evseId, evseStatus] of chargingStation.evses) {
+                if (evseId > 0) {
+                  for (const [connectorId, connectorStatus] of evseStatus.connectors) {
+                    const resolvedConnectorStatus =
+                      connectorStatus.status != null
+                        ? (connectorStatus.status as unknown as OCPP20ConnectorStatusEnumType)
+                        : OCPP20ConnectorStatusEnumType.Available
+                    chargingStation.ocppRequestService
+                      .requestHandler<
+                        OCPP20StatusNotificationRequest,
+                        OCPP20StatusNotificationResponse
+                      >(
+                        chargingStation,
+                        OCPP20RequestCommand.STATUS_NOTIFICATION,
+                        {
+                          connectorId,
+                          connectorStatus: resolvedConnectorStatus,
+                          evseId,
+                          timestamp: new Date(),
+                        },
+                        { skipBufferingOnError: true, triggerMessage: true }
                       )
-                    })
+                      .catch((error: unknown) => {
+                        logger.error(
+                          `${chargingStation.logPrefix()} ${moduleName}.handleRequestTriggerMessage: Error sending StatusNotification:`,
+                          error
+                        )
+                      })
+                  }
                 }
               }
             }
           }
-        }
-        return { status: TriggerMessageStatusEnumType.Accepted }
+          return { status: TriggerMessageStatusEnumType.Accepted }
 
-      default:
-        logger.warn(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestTriggerMessage: Unsupported message trigger '${requestedMessage}'`
-        )
-        return {
-          status: TriggerMessageStatusEnumType.NotImplemented,
-          statusInfo: {
-            additionalInfo: `Message trigger '${requestedMessage}' is not implemented`,
-            reasonCode: ReasonCodeEnumType.UnsupportedRequest,
-          },
-        }
+        default:
+          logger.warn(
+            `${chargingStation.logPrefix()} ${moduleName}.handleRequestTriggerMessage: Unsupported message trigger '${requestedMessage}'`
+          )
+          return {
+            status: TriggerMessageStatusEnumType.NotImplemented,
+            statusInfo: {
+              additionalInfo: `Message trigger '${requestedMessage}' is not implemented`,
+              reasonCode: ReasonCodeEnumType.UnsupportedRequest,
+            },
+          }
+      }
+    } catch (error) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestTriggerMessage: Error handling trigger message request:`,
+        error
+      )
+
+      return {
+        status: TriggerMessageStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: 'Internal error occurred while processing trigger message request',
+          reasonCode: ReasonCodeEnumType.InternalError,
+        },
+      }
     }
   }
 
@@ -1924,73 +1939,88 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     chargingStation: ChargingStation,
     commandPayload: OCPP20UnlockConnectorRequest
   ): Promise<OCPP20UnlockConnectorResponse> {
-    const { connectorId, evseId } = commandPayload
+    try {
+      const { connectorId, evseId } = commandPayload
 
-    logger.debug(
-      `${chargingStation.logPrefix()} ${moduleName}.handleRequestUnlockConnector: UnlockConnector received for EVSE ${evseId.toString()} connector ${connectorId.toString()}`
-    )
-
-    // Validate EVSE exists
-    if (!chargingStation.hasEvses) {
-      return {
-        status: UnlockStatusEnumType.UnknownConnector,
-        statusInfo: {
-          additionalInfo: 'Charging station does not support EVSEs',
-          reasonCode: ReasonCodeEnumType.UnsupportedRequest,
-        },
-      }
-    }
-
-    if (!chargingStation.evses.has(evseId)) {
-      return {
-        status: UnlockStatusEnumType.UnknownConnector,
-        statusInfo: {
-          additionalInfo: `EVSE ${evseId.toString()} does not exist`,
-          reasonCode: ReasonCodeEnumType.UnknownEvse,
-        },
-      }
-    }
-
-    // Validate connector exists on this EVSE
-    const evseStatus = chargingStation.getEvseStatus(evseId)
-    if (evseStatus?.connectors.has(connectorId) !== true) {
-      return {
-        status: UnlockStatusEnumType.UnknownConnector,
-        statusInfo: {
-          additionalInfo: `Connector ${connectorId.toString()} does not exist on EVSE ${evseId.toString()}`,
-          reasonCode: ReasonCodeEnumType.UnknownConnectorId,
-        },
-      }
-    }
-
-    // Check for ongoing authorized transaction
-    if (this.hasEvseActiveTransactions(evseStatus)) {
-      logger.info(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestUnlockConnector: Ongoing authorized transaction on EVSE ${evseId.toString()}`
+      logger.debug(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestUnlockConnector: UnlockConnector received for EVSE ${evseId.toString()} connector ${connectorId.toString()}`
       )
+
+      // Validate EVSE exists
+      if (!chargingStation.hasEvses) {
+        return {
+          status: UnlockStatusEnumType.UnknownConnector,
+          statusInfo: {
+            additionalInfo: 'Charging station does not support EVSEs',
+            reasonCode: ReasonCodeEnumType.UnsupportedRequest,
+          },
+        }
+      }
+
+      if (!chargingStation.evses.has(evseId)) {
+        return {
+          status: UnlockStatusEnumType.UnknownConnector,
+          statusInfo: {
+            additionalInfo: `EVSE ${evseId.toString()} does not exist`,
+            reasonCode: ReasonCodeEnumType.UnknownEvse,
+          },
+        }
+      }
+
+      // Validate connector exists on this EVSE
+      const evseStatus = chargingStation.getEvseStatus(evseId)
+      if (evseStatus?.connectors.has(connectorId) !== true) {
+        return {
+          status: UnlockStatusEnumType.UnknownConnector,
+          statusInfo: {
+            additionalInfo: `Connector ${connectorId.toString()} does not exist on EVSE ${evseId.toString()}`,
+            reasonCode: ReasonCodeEnumType.UnknownConnectorId,
+          },
+        }
+      }
+
+      // Check for ongoing authorized transaction
+      if (this.hasEvseActiveTransactions(evseStatus)) {
+        logger.info(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestUnlockConnector: Ongoing authorized transaction on EVSE ${evseId.toString()}`
+        )
+        return {
+          status: UnlockStatusEnumType.OngoingAuthorizedTransaction,
+          statusInfo: {
+            additionalInfo: `EVSE ${evseId.toString()} has an ongoing authorized transaction`,
+            reasonCode: ReasonCodeEnumType.TxInProgress,
+          },
+        }
+      }
+
+      // Unlock the connector (simulated — always succeeds)
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestUnlockConnector: Unlocking connector ${connectorId.toString()} on EVSE ${evseId.toString()}`
+      )
+
+      // Reset connector status to Available after unlock
+      await sendAndSetConnectorStatus(
+        chargingStation,
+        connectorId,
+        ConnectorStatusEnum.Available,
+        evseId
+      )
+
+      return { status: UnlockStatusEnumType.Unlocked }
+    } catch (error) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestUnlockConnector: Error handling unlock connector request:`,
+        error
+      )
+
       return {
-        status: UnlockStatusEnumType.OngoingAuthorizedTransaction,
+        status: UnlockStatusEnumType.UnlockFailed,
         statusInfo: {
-          additionalInfo: `EVSE ${evseId.toString()} has an ongoing authorized transaction`,
-          reasonCode: ReasonCodeEnumType.TxInProgress,
+          additionalInfo: 'Internal error occurred while processing unlock connector request',
+          reasonCode: ReasonCodeEnumType.InternalError,
         },
       }
     }
-
-    // Unlock the connector (simulated — always succeeds)
-    logger.info(
-      `${chargingStation.logPrefix()} ${moduleName}.handleRequestUnlockConnector: Unlocking connector ${connectorId.toString()} on EVSE ${evseId.toString()}`
-    )
-
-    // Reset connector status to Available after unlock
-    await sendAndSetConnectorStatus(
-      chargingStation,
-      connectorId,
-      ConnectorStatusEnum.Available,
-      evseId
-    )
-
-    return { status: UnlockStatusEnumType.Unlocked }
   }
 
   /**
