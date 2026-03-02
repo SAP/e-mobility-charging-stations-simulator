@@ -18,6 +18,7 @@ import {
   MessageTriggerEnumType,
   OCPPVersion,
   ReasonCodeEnumType,
+  RegistrationStatusEnumType,
   TriggerMessageStatusEnumType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
@@ -72,7 +73,11 @@ await describe('F06 - TriggerMessage', async () => {
       ;({ mockStation } = createTriggerMessageStation())
     })
 
-    await it('should return Accepted for BootNotification trigger', () => {
+    await it('should return Accepted for BootNotification trigger when boot is Pending', () => {
+      if (mockStation.bootNotificationResponse != null) {
+        mockStation.bootNotificationResponse.status = RegistrationStatusEnumType.PENDING
+      }
+
       const request: OCPP20TriggerMessageRequest = {
         requestedMessage: MessageTriggerEnumType.BootNotification,
       }
@@ -264,6 +269,51 @@ await describe('F06 - TriggerMessage', async () => {
     await it('should accept trigger when evse is undefined', () => {
       const request: OCPP20TriggerMessageRequest = {
         requestedMessage: MessageTriggerEnumType.Heartbeat,
+      }
+
+      const response: OCPP20TriggerMessageResponse = testableService.handleRequestTriggerMessage(
+        mockStation,
+        request
+      )
+
+      expect(response.status).toBe(TriggerMessageStatusEnumType.Accepted)
+    })
+  })
+
+  await describe('F06.FR.17 - BootNotification already accepted', async () => {
+    let mockStation: MockChargingStation
+
+    beforeEach(() => {
+      ;({ mockStation } = createTriggerMessageStation())
+    })
+
+    await it('should return Rejected when boot was already Accepted (F06.FR.17)', () => {
+      if (mockStation.bootNotificationResponse != null) {
+        mockStation.bootNotificationResponse.status = RegistrationStatusEnumType.ACCEPTED
+      }
+
+      const request: OCPP20TriggerMessageRequest = {
+        requestedMessage: MessageTriggerEnumType.BootNotification,
+      }
+
+      const response: OCPP20TriggerMessageResponse = testableService.handleRequestTriggerMessage(
+        mockStation,
+        request
+      )
+
+      expect(response.status).toBe(TriggerMessageStatusEnumType.Rejected)
+      expect(response.statusInfo).toBeDefined()
+      expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.NotEnabled)
+      expect(response.statusInfo?.additionalInfo).toContain('F06.FR.17')
+    })
+
+    await it('should return Accepted for BootNotification when boot was Rejected', () => {
+      if (mockStation.bootNotificationResponse != null) {
+        mockStation.bootNotificationResponse.status = RegistrationStatusEnumType.REJECTED
+      }
+
+      const request: OCPP20TriggerMessageRequest = {
+        requestedMessage: MessageTriggerEnumType.BootNotification,
       }
 
       const response: OCPP20TriggerMessageResponse = testableService.handleRequestTriggerMessage(

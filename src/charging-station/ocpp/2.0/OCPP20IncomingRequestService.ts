@@ -73,6 +73,7 @@ import {
   type OCPP20UnlockConnectorResponse,
   OCPPVersion,
   ReasonCodeEnumType,
+  RegistrationStatusEnumType,
   ReportBaseEnumType,
   type ReportDataType,
   RequestStartStopStatusEnumType,
@@ -1810,6 +1811,18 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
       switch (requestedMessage) {
         case MessageTriggerEnumType.BootNotification:
+          // F06.FR.17: Reject BootNotification trigger if last boot was already Accepted
+          if (
+            chargingStation.bootNotificationResponse?.status === RegistrationStatusEnumType.ACCEPTED
+          ) {
+            return {
+              status: TriggerMessageStatusEnumType.Rejected,
+              statusInfo: {
+                additionalInfo: 'BootNotification already accepted (F06.FR.17)',
+                reasonCode: ReasonCodeEnumType.NotEnabled,
+              },
+            }
+          }
           chargingStation.ocppRequestService
             .requestHandler<
               OCPP20BootNotificationRequest,
@@ -1979,15 +1992,16 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         }
       }
 
-      // Check for ongoing authorized transaction
-      if (this.hasEvseActiveTransactions(evseStatus)) {
+      // F05.FR.02: Check for ongoing authorized transaction on the specified connector
+      const targetConnector = evseStatus.connectors.get(connectorId)
+      if (targetConnector?.transactionId != null) {
         logger.info(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestUnlockConnector: Ongoing authorized transaction on EVSE ${evseId.toString()}`
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestUnlockConnector: Ongoing authorized transaction on connector ${connectorId.toString()} of EVSE ${evseId.toString()}`
         )
         return {
           status: UnlockStatusEnumType.OngoingAuthorizedTransaction,
           statusInfo: {
-            additionalInfo: `EVSE ${evseId.toString()} has an ongoing authorized transaction`,
+            additionalInfo: `Connector ${connectorId.toString()} on EVSE ${evseId.toString()} has an ongoing authorized transaction`,
             reasonCode: ReasonCodeEnumType.TxInProgress,
           },
         }

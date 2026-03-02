@@ -117,11 +117,10 @@ await describe('F05 - UnlockConnector', async () => {
     })
   })
 
-  await describe('F05 - Ongoing transaction errors', async () => {
-    await it('should return OngoingAuthorizedTransaction + TxInProgress when EVSE has active transaction', async () => {
+  await describe('F05 - Ongoing transaction errors (F05.FR.02)', async () => {
+    await it('should return OngoingAuthorizedTransaction when specified connector has active transaction', async () => {
       const { mockStation } = createUnlockConnectorStation()
 
-      // Set transactionId on connector 1 of EVSE 1
       const evseStatus = mockStation.evses.get(1)
       const connector = evseStatus?.connectors.get(1)
       if (connector != null) {
@@ -136,6 +135,36 @@ await describe('F05 - UnlockConnector', async () => {
       expect(response.statusInfo).toBeDefined()
       expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.TxInProgress)
       expect(response.statusInfo?.additionalInfo).toContain('1')
+    })
+
+    await it('should return Unlocked when a different connector on the same EVSE has a transaction (F05.FR.02)', async () => {
+      const requestHandlerMock = mock.fn(async () => Promise.resolve({}))
+      const { station } = createMockChargingStation({
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
+        connectorsCount: 2,
+        evseConfiguration: { evsesCount: 1 },
+        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+        ocppRequestService: {
+          requestHandler: requestHandlerMock,
+        },
+        stationInfo: {
+          ocppVersion: OCPPVersion.VERSION_201,
+        },
+        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      })
+      const multiConnectorStation = station as MockChargingStation
+
+      const evseStatus = multiConnectorStation.evses.get(1)
+      const connector2 = evseStatus?.connectors.get(2)
+      if (connector2 != null) {
+        connector2.transactionId = 'tx-other'
+      }
+
+      const request: OCPP20UnlockConnectorRequest = { connectorId: 1, evseId: 1 }
+      const response: OCPP20UnlockConnectorResponse =
+        await testableService.handleRequestUnlockConnector(multiConnectorStation, request)
+
+      expect(response.status).toBe(UnlockStatusEnumType.Unlocked)
     })
   })
 
