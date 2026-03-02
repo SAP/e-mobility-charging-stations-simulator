@@ -461,7 +461,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param chargingStation - The charging station instance
    * @returns Promise resolving to ClearCacheResponse
    */
-  protected override async handleRequestClearCache (
+  protected async handleRequestClearCache (
     chargingStation: ChargingStation
   ): Promise<OCPP20ClearCacheResponse> {
     try {

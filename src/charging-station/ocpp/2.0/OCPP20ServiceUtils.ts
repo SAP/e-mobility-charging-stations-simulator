@@ -16,6 +16,7 @@ import {
   type OCPP20TransactionEventResponse,
   OCPP20TriggerReasonEnumType,
   OCPPVersion,
+  type UUIDv4,
 } from '../../../types/index.js'
 import { OCPP20RequiredVariableName } from '../../../types/index.js'
 import {
@@ -153,7 +154,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
 
     // Build transaction info object
     const transactionInfo: OCPP20TransactionType = {
-      transactionId,
+      transactionId: transactionId as UUIDv4,
     }
 
     // Add optional transaction info fields
@@ -613,7 +614,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         timestamp: new Date(),
         transactionInfo: {
           stoppedReason: OCPP20ReasonEnumType.Remote,
-          transactionId,
+          transactionId: transactionId as UUIDv4,
         },
         triggerReason: OCPP20TriggerReasonEnumType.RemoteStop,
       }
