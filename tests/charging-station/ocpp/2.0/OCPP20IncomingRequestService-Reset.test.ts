@@ -16,8 +16,10 @@ import type { MockChargingStation } from '../../ChargingStationTestUtils.js'
 
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
+import { VARIABLE_REGISTRY } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableRegistry.js'
 import {
   FirmwareStatus,
+  OCPP20ComponentName,
   ReasonCodeEnumType,
   ResetEnumType,
   ResetStatusEnumType,
@@ -324,9 +326,9 @@ await describe('B11 & B12 - Reset', async () => {
       await describe('Firmware Update Blocking', async () => {
         // FR: B12.FR.04.01 - Station NOT idle during firmware operations
 
-        await it('should return Scheduled when firmware is Downloading', async () => {
+        await it('should return Rejected/FwUpdateInProgress when firmware is Downloading', async () => {
           const station = createTestStation()
-          // Firmware status: Downloading
+          // Firmware check runs before OnIdle idle-state logic — always returns Rejected
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           Object.assign(station.stationInfo!, {
             firmwareStatus: FirmwareStatus.Downloading,
@@ -342,12 +344,13 @@ await describe('B11 & B12 - Reset', async () => {
           )
 
           expect(response).toBeDefined()
-          expect(response.status).toBe(ResetStatusEnumType.Scheduled)
+          expect(response.status).toBe(ResetStatusEnumType.Rejected)
+          expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.FwUpdateInProgress)
         })
 
-        await it('should return Scheduled when firmware is Downloaded', async () => {
+        await it('should return Rejected/FwUpdateInProgress when firmware is Downloaded', async () => {
           const station = createTestStation()
-          // Firmware status: Downloaded
+          // Firmware check runs before OnIdle idle-state logic — always returns Rejected
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           Object.assign(station.stationInfo!, {
             firmwareStatus: FirmwareStatus.Downloaded,
@@ -363,12 +366,13 @@ await describe('B11 & B12 - Reset', async () => {
           )
 
           expect(response).toBeDefined()
-          expect(response.status).toBe(ResetStatusEnumType.Scheduled)
+          expect(response.status).toBe(ResetStatusEnumType.Rejected)
+          expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.FwUpdateInProgress)
         })
 
-        await it('should return Scheduled when firmware is Installing', async () => {
+        await it('should return Rejected/FwUpdateInProgress when firmware is Installing', async () => {
           const station = createTestStation()
-          // Firmware status: Installing
+          // Firmware check runs before OnIdle idle-state logic — always returns Rejected
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           Object.assign(station.stationInfo!, {
             firmwareStatus: FirmwareStatus.Installing,
@@ -384,7 +388,8 @@ await describe('B11 & B12 - Reset', async () => {
           )
 
           expect(response).toBeDefined()
-          expect(response.status).toBe(ResetStatusEnumType.Scheduled)
+          expect(response.status).toBe(ResetStatusEnumType.Rejected)
+          expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.FwUpdateInProgress)
         })
 
         await it('should return Accepted when firmware is Installed (complete)', async () => {
@@ -549,11 +554,6 @@ await describe('B11 & B12 - Reset', async () => {
           const station = createTestStation()
           // Transaction active
           station.getNumberOfRunningTransactions = () => 1
-          // Firmware update in progress
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          Object.assign(station.stationInfo!, {
-            firmwareStatus: FirmwareStatus.Downloading,
-          })
           // Non-expired reservation
           const futureExpiryDate = new Date(Date.now() + TEST_ONE_HOUR_MS)
           const mockReservation: Partial<Reservation> = {
@@ -583,6 +583,44 @@ await describe('B11 & B12 - Reset', async () => {
           expect(response.status).toBe(ResetStatusEnumType.Scheduled)
         })
       })
+    })
+  })
+
+  await describe('AllowReset variable checks', async () => {
+    const ALLOW_RESET_KEY = `${OCPP20ComponentName.EVSE as string}::AllowReset`
+    let savedDefaultValue: string | undefined
+
+    beforeEach(() => {
+      savedDefaultValue = VARIABLE_REGISTRY[ALLOW_RESET_KEY].defaultValue
+    })
+
+    afterEach(() => {
+      VARIABLE_REGISTRY[ALLOW_RESET_KEY].defaultValue = savedDefaultValue
+    })
+
+    await it('should reject with NotEnabled when AllowReset is false', async () => {
+      const station = ResetTestFixtures.createStandardStation()
+      VARIABLE_REGISTRY[ALLOW_RESET_KEY].defaultValue = 'false'
+      const request: OCPP20ResetRequest = { type: ResetEnumType.Immediate }
+      const response = await testableService.handleRequestReset(station, request)
+      expect(response.status).toBe(ResetStatusEnumType.Rejected)
+      expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.NotEnabled)
+    })
+
+    await it('should proceed normally when AllowReset is true', async () => {
+      const station = ResetTestFixtures.createStandardStation()
+      VARIABLE_REGISTRY[ALLOW_RESET_KEY].defaultValue = 'true'
+      const request: OCPP20ResetRequest = { type: ResetEnumType.Immediate }
+      const response = await testableService.handleRequestReset(station, request)
+      expect(response.status).toBe(ResetStatusEnumType.Accepted)
+    })
+
+    await it('should proceed normally when AllowReset defaultValue is undefined', async () => {
+      const station = ResetTestFixtures.createStandardStation()
+      VARIABLE_REGISTRY[ALLOW_RESET_KEY].defaultValue = undefined
+      const request: OCPP20ResetRequest = { type: ResetEnumType.Immediate }
+      const response = await testableService.handleRequestReset(station, request)
+      expect(response.status).toBe(ResetStatusEnumType.Accepted)
     })
   })
 })
