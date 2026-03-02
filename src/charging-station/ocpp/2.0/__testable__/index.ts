@@ -37,8 +37,12 @@ import type {
   OCPP20ResetResponse,
   OCPP20SetVariablesRequest,
   OCPP20SetVariablesResponse,
+  OCPP20TriggerMessageRequest,
+  OCPP20TriggerMessageResponse,
+  OCPP20UnlockConnectorRequest,
+  OCPP20UnlockConnectorResponse,
   ReportBaseEnumType,
-  type ReportDataType,
+  ReportDataType,
 } from '../../../../types/index.js'
 import type { ChargingStation } from '../../../index.js'
 import type { OCPP20IncomingRequestService } from '../OCPP20IncomingRequestService.js'
@@ -152,6 +156,16 @@ export interface TestableOCPP20IncomingRequestService {
     chargingStation: ChargingStation,
     commandPayload: OCPP20RequestStopTransactionRequest
   ) => Promise<OCPP20RequestStopTransactionResponse>
+
+  handleRequestTriggerMessage: (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20TriggerMessageRequest
+  ) => OCPP20TriggerMessageResponse
+
+  handleRequestUnlockConnector: (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20UnlockConnectorRequest
+  ) => Promise<OCPP20UnlockConnectorResponse>
 }
 
 /**
@@ -190,6 +204,8 @@ export function createTestableIncomingRequestService (
     handleRequestSetVariables: serviceImpl.handleRequestSetVariables.bind(service),
     handleRequestStartTransaction: serviceImpl.handleRequestStartTransaction.bind(service),
     handleRequestStopTransaction: serviceImpl.handleRequestStopTransaction.bind(service),
+    handleRequestTriggerMessage: serviceImpl.handleRequestTriggerMessage.bind(service),
+    handleRequestUnlockConnector: serviceImpl.handleRequestUnlockConnector.bind(service),
   }
 }
 
