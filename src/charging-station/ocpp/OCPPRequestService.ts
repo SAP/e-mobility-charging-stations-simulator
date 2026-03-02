@@ -60,6 +60,7 @@ export abstract class OCPPRequestService {
     this.ajv = new Ajv({
       keywords: ['javaType'],
       multipleOfPrecision: 2,
+      strict: false,
     })
     ajvFormats(this.ajv)
     this.ocppResponseService = ocppResponseService

@@ -38,11 +38,13 @@ export abstract class OCPPResponseService {
     this.ajv = new Ajv({
       keywords: ['javaType'],
       multipleOfPrecision: 2,
+      strict: false,
     })
     ajvFormats(this.ajv)
     this.ajvIncomingRequest = new Ajv({
       keywords: ['javaType'],
       multipleOfPrecision: 2,
+      strict: false,
     })
     ajvFormats(this.ajvIncomingRequest)
     this.responseHandler = this.responseHandler.bind(this)
