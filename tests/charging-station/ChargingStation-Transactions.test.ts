@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 
+import { OCPPVersion } from '../../src/types/index.js'
 import { standardCleanup, withMockTimers } from '../helpers/TestLifecycleHelpers.js'
 import { TEST_HEARTBEAT_INTERVAL_MS, TEST_ID_TAG } from './ChargingStationTestConstants.js'
 import { cleanupChargingStation, createMockChargingStation } from './ChargingStationTestUtils.js'
@@ -592,7 +593,10 @@ await describe('ChargingStation Transaction Management', async () => {
     await it('should create transaction updated interval when startTxUpdatedInterval() is called for OCPP 2.0', async t => {
       await withMockTimers(t, ['setInterval'], () => {
         // Arrange
-        const result = createMockChargingStation({ connectorsCount: 2, ocppVersion: '2.0' })
+        const result = createMockChargingStation({
+          connectorsCount: 2,
+          ocppVersion: OCPPVersion.VERSION_20,
+        })
         station = result.station
         const connector1 = station.getConnectorStatus(1)
         if (connector1 != null) {
@@ -614,7 +618,10 @@ await describe('ChargingStation Transaction Management', async () => {
     await it('should clear transaction updated interval when stopTxUpdatedInterval() is called', async t => {
       await withMockTimers(t, ['setInterval'], () => {
         // Arrange
-        const result = createMockChargingStation({ connectorsCount: 2, ocppVersion: '2.0' })
+        const result = createMockChargingStation({
+          connectorsCount: 2,
+          ocppVersion: OCPPVersion.VERSION_20,
+        })
         station = result.station
         const connector1 = station.getConnectorStatus(1)
         if (connector1 != null) {

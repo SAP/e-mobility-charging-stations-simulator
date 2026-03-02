@@ -327,7 +327,8 @@ await describe('B11 & B12 - Reset', async () => {
         await it('should return Scheduled when firmware is Downloading', async () => {
           const station = createTestStation()
           // Firmware status: Downloading
-          Object.assign(station.stationInfo, {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          Object.assign(station.stationInfo!, {
             firmwareStatus: FirmwareStatus.Downloading,
           })
 
@@ -347,7 +348,8 @@ await describe('B11 & B12 - Reset', async () => {
         await it('should return Scheduled when firmware is Downloaded', async () => {
           const station = createTestStation()
           // Firmware status: Downloaded
-          Object.assign(station.stationInfo, {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          Object.assign(station.stationInfo!, {
             firmwareStatus: FirmwareStatus.Downloaded,
           })
 
@@ -367,7 +369,8 @@ await describe('B11 & B12 - Reset', async () => {
         await it('should return Scheduled when firmware is Installing', async () => {
           const station = createTestStation()
           // Firmware status: Installing
-          Object.assign(station.stationInfo, {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          Object.assign(station.stationInfo!, {
             firmwareStatus: FirmwareStatus.Installing,
           })
 
@@ -387,7 +390,8 @@ await describe('B11 & B12 - Reset', async () => {
         await it('should return Accepted when firmware is Installed (complete)', async () => {
           const station = createTestStation()
           // Firmware status: Installed (complete)
-          Object.assign(station.stationInfo, {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          Object.assign(station.stationInfo!, {
             firmwareStatus: FirmwareStatus.Installed,
           })
 
@@ -407,7 +411,8 @@ await describe('B11 & B12 - Reset', async () => {
         await it('should return Accepted when firmware status is Idle', async () => {
           const station = createTestStation()
           // Firmware status: Idle
-          Object.assign(station.stationInfo, {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          Object.assign(station.stationInfo!, {
             firmwareStatus: FirmwareStatus.Idle,
           })
 
@@ -521,7 +526,8 @@ await describe('B11 & B12 - Reset', async () => {
           // No transactions
           station.getNumberOfRunningTransactions = () => 0
           // No firmware update
-          Object.assign(station.stationInfo, {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          Object.assign(station.stationInfo!, {
             firmwareStatus: FirmwareStatus.Idle,
           })
           // No reservations (default)
@@ -544,7 +550,8 @@ await describe('B11 & B12 - Reset', async () => {
           // Transaction active
           station.getNumberOfRunningTransactions = () => 1
           // Firmware update in progress
-          Object.assign(station.stationInfo, {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          Object.assign(station.stationInfo!, {
             firmwareStatus: FirmwareStatus.Downloading,
           })
           // Non-expired reservation

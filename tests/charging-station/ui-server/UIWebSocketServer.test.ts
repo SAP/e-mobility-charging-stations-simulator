@@ -110,7 +110,9 @@ await describe('UIWebSocketServer', async () => {
       ProcedureName.LIST_CHARGING_STATIONS,
       {},
     ])
-    server.sendResponse(response)
+    if (response != null) {
+      server.sendResponse(response)
+    }
 
     expect(server.hasResponseHandler(TEST_UUID)).toBe(false)
   })

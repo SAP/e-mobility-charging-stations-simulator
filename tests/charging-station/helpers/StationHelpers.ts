@@ -11,6 +11,7 @@ import type {
   ChargingStationTemplate,
   ConnectorStatus,
   EvseStatus,
+  Reservation,
   StopTransactionReason,
 } from '../../../src/types/index.js'
 
@@ -62,20 +63,11 @@ export interface CreateConnectorStatusOptions {
 }
 
 /**
- * Extended ChargingStation interface for test mocking.
- * Combines all test-specific properties to avoid multiple interface definitions.
- * - Timer properties: for cleanup (wsPingSetInterval, flushMessageBufferSetInterval)
- * - Reset methods: for Reset command tests (getNumberOfRunningTransactions, reset)
+ * Mock type combining ChargingStation with optional test-specific properties.
  */
-export interface MockChargingStation extends ChargingStation {
-  /** Private message buffer flush interval timer (accessed for cleanup) */
-  flushMessageBufferSetInterval?: NodeJS.Timeout
-  /** Mock method for getting number of running transactions (Reset tests) */
+export type MockChargingStation = ChargingStation & {
   getNumberOfRunningTransactions?: () => number
-  /** Mock method for reset operation (Reset tests) */
   reset?: () => Promise<void>
-  /** Private WebSocket ping interval timer (accessed for cleanup) */
-  wsPingSetInterval?: NodeJS.Timeout
 }
 
 /**
@@ -192,17 +184,20 @@ export function cleanupChargingStation (station: ChargingStation): void {
     station.heartbeatSetInterval = undefined
   }
 
-  // Stop WebSocket ping timer (private, accessed for cleanup via MockChargingStation)
-  const stationInternal = station as MockChargingStation
-  if (stationInternal.wsPingSetInterval != null) {
-    clearInterval(stationInternal.wsPingSetInterval)
-    stationInternal.wsPingSetInterval = undefined
+  // Stop WebSocket ping timer (private, accessed for cleanup via typed cast)
+  const stationWithWsTimer = station as unknown as { wsPingSetInterval?: NodeJS.Timeout }
+  if (stationWithWsTimer.wsPingSetInterval != null) {
+    clearInterval(stationWithWsTimer.wsPingSetInterval)
+    stationWithWsTimer.wsPingSetInterval = undefined
   }
 
-  // Stop message buffer flush timer (private, accessed for cleanup via MockChargingStation)
-  if (stationInternal.flushMessageBufferSetInterval != null) {
-    clearInterval(stationInternal.flushMessageBufferSetInterval)
-    stationInternal.flushMessageBufferSetInterval = undefined
+  // Stop message buffer flush timer (private, accessed for cleanup via typed cast)
+  const stationWithFlushTimer = station as unknown as {
+    flushMessageBufferSetInterval?: NodeJS.Timeout
+  }
+  if (stationWithFlushTimer.flushMessageBufferSetInterval != null) {
+    clearInterval(stationWithFlushTimer.flushMessageBufferSetInterval)
+    stationWithFlushTimer.flushMessageBufferSetInterval = undefined
   }
 
   // Close WebSocket connection
@@ -420,7 +415,7 @@ export function createMockChargingStation (
       }
       const connectorStatus = this.getConnectorStatus(reservation.connectorId as number)
       if (connectorStatus != null) {
-        connectorStatus.reservation = reservation
+        connectorStatus.reservation = reservation as unknown as Reservation
       }
     },
     automaticTransactionGenerator: undefined,
@@ -840,7 +835,7 @@ export function createMockChargingStation (
         // Simulate async stop behavior (immediate resolution for tests)
         await Promise.resolve()
         this.closeWSConnection()
-        delete this.bootNotificationResponse
+        this.bootNotificationRequest = undefined
         this.started = false
         this.stopping = false
       }
