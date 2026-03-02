@@ -17,6 +17,7 @@ import {
   OCPP20TriggerReasonEnumType,
   OCPPVersion,
 } from '../../../types/index.js'
+import { OCPP20RequiredVariableName } from '../../../types/index.js'
 import {
   OCPP20MeasurandEnumType,
   type OCPP20MeterValue,
@@ -29,7 +30,9 @@ import {
   type OCPP20TransactionEventOptions,
   type OCPP20TransactionType,
 } from '../../../types/ocpp/2.0/Transaction.js'
-import { logger, validateIdentifierString } from '../../../utils/index.js'
+import { StandardParametersKey } from '../../../types/ocpp/Configuration.js'
+import { convertToIntOrNaN, logger, validateIdentifierString } from '../../../utils/index.js'
+import { getConfigurationKey } from '../../ConfigurationKeyUtils.js'
 import { OCPPServiceUtils, sendAndSetConnectorStatus } from '../OCPPServiceUtils.js'
 import { OCPP20Constants } from './OCPP20Constants.js'
 
@@ -482,6 +485,40 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       moduleName,
       methodName
     )
+  }
+
+  /**
+   * Read ItemsPerMessage and BytesPerMessage configuration limits
+   * Extracts configuration-reading logic shared between handleRequestGetVariables
+   * and handleRequestSetVariables to eliminate DRY violations.
+   * @param chargingStation - The charging station instance
+   * @returns Object with itemsLimit and bytesLimit (both fallback to 0 if not configured or invalid)
+   */
+  public static readMessageLimits (chargingStation: ChargingStation): {
+    bytesLimit: number
+    itemsLimit: number
+  } {
+    let itemsLimit = 0
+    let bytesLimit = 0
+    try {
+      const itemsCfg = getConfigurationKey(
+        chargingStation,
+        OCPP20RequiredVariableName.ItemsPerMessage as unknown as StandardParametersKey
+      )?.value
+      const bytesCfg = getConfigurationKey(
+        chargingStation,
+        OCPP20RequiredVariableName.BytesPerMessage as unknown as StandardParametersKey
+      )?.value
+      if (itemsCfg && /^\d+$/.test(itemsCfg)) {
+        itemsLimit = convertToIntOrNaN(itemsCfg)
+      }
+      if (bytesCfg && /^\d+$/.test(bytesCfg)) {
+        bytesLimit = convertToIntOrNaN(bytesCfg)
+      }
+    } catch {
+      /* ignore */
+    }
+    return { bytesLimit, itemsLimit }
   }
 
   public static async requestStopTransaction (

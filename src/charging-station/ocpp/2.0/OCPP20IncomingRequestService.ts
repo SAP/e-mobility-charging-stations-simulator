@@ -76,16 +76,13 @@ import {
   OCPP20ChargingRateUnitEnumType,
   OCPP20ReasonEnumType,
 } from '../../../types/ocpp/2.0/Transaction.js'
-import { StandardParametersKey } from '../../../types/ocpp/Configuration.js'
 import {
   Constants,
-  convertToIntOrNaN,
   generateUUID,
   isAsyncFunction,
   logger,
   validateUUID,
 } from '../../../utils/index.js'
-import { getConfigurationKey } from '../../ConfigurationKeyUtils.js'
 import {
   getIdTagsFile,
   hasPendingReservation,
@@ -252,26 +249,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     const variableManager = OCPP20VariableManager.getInstance()
 
     // Enforce ItemsPerMessage and BytesPerMessage limits if configured
-    let enforceItemsLimit = 0
-    let enforceBytesLimit = 0
-    try {
-      const itemsCfg = getConfigurationKey(
-        chargingStation,
-        OCPP20RequiredVariableName.ItemsPerMessage as unknown as StandardParametersKey
-      )?.value
-      const bytesCfg = getConfigurationKey(
-        chargingStation,
-        OCPP20RequiredVariableName.BytesPerMessage as unknown as StandardParametersKey
-      )?.value
-      if (itemsCfg && /^\d+$/.test(itemsCfg)) {
-        enforceItemsLimit = convertToIntOrNaN(itemsCfg)
-      }
-      if (bytesCfg && /^\d+$/.test(bytesCfg)) {
-        enforceBytesLimit = convertToIntOrNaN(bytesCfg)
-      }
-    } catch {
-      /* ignore */
-    }
+    const { bytesLimit: enforceBytesLimit, itemsLimit: enforceItemsLimit } =
+      OCPP20ServiceUtils.readMessageLimits(chargingStation)
 
     const variableData = commandPayload.getVariableData
     const preEnforcement = OCPP20ServiceUtils.enforceMessageLimits(
@@ -340,26 +319,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
 
     // Enforce ItemsPerMessageSetVariables and BytesPerMessageSetVariables limits if configured
-    let enforceItemsLimit = 0
-    let enforceBytesLimit = 0
-    try {
-      const itemsCfg = getConfigurationKey(
-        chargingStation,
-        OCPP20RequiredVariableName.ItemsPerMessage as unknown as StandardParametersKey
-      )?.value
-      const bytesCfg = getConfigurationKey(
-        chargingStation,
-        OCPP20RequiredVariableName.BytesPerMessage as unknown as StandardParametersKey
-      )?.value
-      if (itemsCfg && /^\d+$/.test(itemsCfg)) {
-        enforceItemsLimit = convertToIntOrNaN(itemsCfg)
-      }
-      if (bytesCfg && /^\d+$/.test(bytesCfg)) {
-        enforceBytesLimit = convertToIntOrNaN(bytesCfg)
-      }
-    } catch {
-      /* ignore */
-    }
+    const { bytesLimit: enforceBytesLimit, itemsLimit: enforceItemsLimit } =
+      OCPP20ServiceUtils.readMessageLimits(chargingStation)
 
     const variableManager = OCPP20VariableManager.getInstance()
 
