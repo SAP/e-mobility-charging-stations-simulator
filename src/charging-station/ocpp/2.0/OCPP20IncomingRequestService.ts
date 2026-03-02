@@ -117,50 +117,6 @@ import { getVariableMetadata, VARIABLE_REGISTRY } from './OCPP20VariableRegistry
 
 const moduleName = 'OCPP20IncomingRequestService'
 
-/**
- * OCPP 2.0+ Incoming Request Service - handles and processes all incoming requests
- * from the Central System (CSMS) to the Charging Station using OCPP 2.0+ protocol.
- *
- * This service class is responsible for:
- * - **Request Reception**: Receiving and routing OCPP 2.0+ incoming requests from CSMS
- * - **Payload Validation**: Validating incoming request payloads against OCPP 2.0+ JSON schemas
- * - **Request Processing**: Executing business logic for each OCPP 2.0+ request type
- * - **Response Generation**: Creating and sending appropriate responses back to CSMS
- * - **Enhanced Features**: Supporting advanced OCPP 2.0+ features like variable management
- *
- * Supported OCPP 2.0+ Incoming Request Types:
- * - **Transaction Management**: RequestStartTransaction, RequestStopTransaction
- * - **Configuration Management**: SetVariables, GetVariables, GetBaseReport
- * - **Security Operations**: CertificatesSigned, SecurityEventNotification
- * - **Charging Management**: SetChargingProfile, ClearChargingProfile, GetChargingProfiles
- * - **Diagnostics**: TriggerMessage, GetLog, UpdateFirmware
- * - **Display Management**: SetDisplayMessage, ClearDisplayMessage
- * - **Customer Management**: ClearCache, SendLocalList
- *
- * Key OCPP 2.0+ Enhancements:
- * - **Variable Model**: Advanced configuration through standardized variable system
- * - **Enhanced Security**: Improved authentication and authorization mechanisms
- * - **Rich Messaging**: Support for display messages and customer information
- * - **Advanced Monitoring**: Comprehensive logging and diagnostic capabilities
- * - **Flexible Charging**: Enhanced charging profile management and scheduling
- *
- * Architecture Pattern:
- * This class extends OCPPIncomingRequestService and implements OCPP 2.0+-specific
- * request handling logic. It integrates with the OCPP20VariableManager for advanced
- * configuration management and maintains backward compatibility concepts while
- * providing next-generation OCPP features.
- *
- * Validation Workflow:
- * 1. Incoming request received and parsed
- * 2. Payload validated against OCPP 2.0+ JSON schema
- * 3. Request routed to appropriate handler method
- * 4. Business logic executed with variable model integration
- * 5. Response payload validated and sent back to CSMS
- * @see {@link validatePayload} Request payload validation method
- * @see {@link handleRequestStartTransaction} Example OCPP 2.0+ request handler
- * @see {@link OCPP20VariableManager} Variable management integration
- */
-
 export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   protected payloadValidatorFunctions: Map<OCPP20IncomingRequestCommand, ValidateFunction<JsonType>>
 
@@ -940,6 +896,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return {
         status: GenericStatus.Rejected,
         statusInfo: {
+          additionalInfo: 'Certificate manager is not available on this charging station',
           reasonCode: ReasonCodeEnumType.InternalError,
         },
       }
@@ -953,6 +910,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return {
         status: GenericStatus.Rejected,
         statusInfo: {
+          additionalInfo: 'Certificate PEM format is invalid or malformed',
           reasonCode: ReasonCodeEnumType.InvalidCertificate,
         },
       }
@@ -979,6 +937,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         return {
           status: GenericStatus.Rejected,
           statusInfo: {
+            additionalInfo: 'Certificate storage rejected the certificate chain as invalid',
             reasonCode: ReasonCodeEnumType.InvalidCertificate,
           },
         }
@@ -1008,6 +967,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return {
         status: GenericStatus.Rejected,
         statusInfo: {
+          additionalInfo: 'Failed to store certificate chain due to a storage error',
           reasonCode: ReasonCodeEnumType.OutOfStorage,
         },
       }
@@ -1034,6 +994,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return {
         status: DeleteCertificateStatusEnumType.Failed,
         statusInfo: {
+          additionalInfo: 'Certificate manager is not available on this charging station',
           reasonCode: ReasonCodeEnumType.InternalError,
         },
       }
@@ -1071,6 +1032,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return {
         status: DeleteCertificateStatusEnumType.Failed,
         statusInfo: {
+          additionalInfo: 'Certificate deletion operation returned a failed status',
           reasonCode: ReasonCodeEnumType.InternalError,
         },
       }
@@ -1082,6 +1044,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return {
         status: DeleteCertificateStatusEnumType.Failed,
         statusInfo: {
+          additionalInfo: 'Certificate deletion failed due to an unexpected error',
           reasonCode: ReasonCodeEnumType.InternalError,
         },
       }
@@ -1145,6 +1108,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return {
         status: GetInstalledCertificateStatusEnumType.NotFound,
         statusInfo: {
+          additionalInfo: 'Certificate manager is not available on this charging station',
           reasonCode: ReasonCodeEnumType.InternalError,
         },
       }
@@ -1185,6 +1149,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return {
         status: GetInstalledCertificateStatusEnumType.NotFound,
         statusInfo: {
+          additionalInfo: 'Failed to retrieve installed certificates due to an unexpected error',
           reasonCode: ReasonCodeEnumType.InternalError,
         },
       }
@@ -1204,6 +1169,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return {
         status: InstallCertificateStatusEnumType.Failed,
         statusInfo: {
+          additionalInfo: 'Certificate manager is not available on this charging station',
           reasonCode: ReasonCodeEnumType.InternalError,
         },
       }
@@ -1216,19 +1182,23 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return {
         status: InstallCertificateStatusEnumType.Rejected,
         statusInfo: {
+          additionalInfo: 'Certificate PEM format is invalid or malformed',
           reasonCode: ReasonCodeEnumType.InvalidCertificate,
         },
       }
     }
 
     try {
-      const methodResult = chargingStation.certificateManager.storeCertificate(
+      const rawResult = chargingStation.certificateManager.storeCertificate(
         chargingStation.stationInfo?.hashId ?? '',
         certificateType,
         certificate
       )
-      const storeResult: StoreCertificateResult =
-        methodResult instanceof Promise ? await methodResult : methodResult
+      const resultPromise: Promise<StoreCertificateResult> =
+        rawResult instanceof Promise
+          ? withTimeout(rawResult, OCPP20Constants.HANDLER_TIMEOUT_MS, 'storeCertificate')
+          : Promise.resolve(rawResult)
+      const storeResult: StoreCertificateResult = await resultPromise
 
       if (!storeResult.success) {
         logger.warn(
@@ -1237,6 +1207,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         return {
           status: InstallCertificateStatusEnumType.Rejected,
           statusInfo: {
+            additionalInfo: 'Certificate storage rejected the certificate as invalid',
             reasonCode: ReasonCodeEnumType.InvalidCertificate,
           },
         }
@@ -1256,6 +1227,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return {
         status: InstallCertificateStatusEnumType.Failed,
         statusInfo: {
+          additionalInfo: 'Failed to store certificate due to a storage error',
           reasonCode: ReasonCodeEnumType.OutOfStorage,
         },
       }
@@ -2853,4 +2825,65 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     )
     return false
   }
+}
+
+/**
+ * OCPP 2.0+ Incoming Request Service - handles and processes all incoming requests
+ * from the Central System (CSMS) to the Charging Station using OCPP 2.0+ protocol.
+ *
+ * This service class is responsible for:
+ * - **Request Reception**: Receiving and routing OCPP 2.0+ incoming requests from CSMS
+ * - **Payload Validation**: Validating incoming request payloads against OCPP 2.0+ JSON schemas
+ * - **Request Processing**: Executing business logic for each OCPP 2.0+ request type
+ * - **Response Generation**: Creating and sending appropriate responses back to CSMS
+ * - **Enhanced Features**: Supporting advanced OCPP 2.0+ features like variable management
+ *
+ * Supported OCPP 2.0+ Incoming Request Types:
+ * - **Transaction Management**: RequestStartTransaction, RequestStopTransaction
+ * - **Configuration Management**: SetVariables, GetVariables, GetBaseReport
+ * - **Security Operations**: CertificatesSigned, SecurityEventNotification
+ * - **Charging Management**: SetChargingProfile, ClearChargingProfile, GetChargingProfiles
+ * - **Diagnostics**: TriggerMessage, GetLog, UpdateFirmware
+ * - **Display Management**: SetDisplayMessage, ClearDisplayMessage
+ * - **Customer Management**: ClearCache, SendLocalList
+ *
+ * Key OCPP 2.0+ Enhancements:
+ * - **Variable Model**: Advanced configuration through standardized variable system
+ * - **Enhanced Security**: Improved authentication and authorization mechanisms
+ * - **Rich Messaging**: Support for display messages and customer information
+ * - **Advanced Monitoring**: Comprehensive logging and diagnostic capabilities
+ * - **Flexible Charging**: Enhanced charging profile management and scheduling
+ *
+ * Architecture Pattern:
+ * This class extends OCPPIncomingRequestService and implements OCPP 2.0+-specific
+ * request handling logic. It integrates with the OCPP20VariableManager for advanced
+ * configuration management and maintains backward compatibility concepts while
+ * providing next-generation OCPP features.
+ *
+ * Validation Workflow:
+ * 1. Incoming request received and parsed
+ * 2. Payload validated against OCPP 2.0+ JSON schema
+ * 3. Request routed to appropriate handler method
+ * 4. Business logic executed with variable model integration
+ * 5. Response payload validated and sent back to CSMS
+ * @see {@link validatePayload} Request payload validation method
+ * @see {@link handleRequestStartTransaction} Example OCPP 2.0+ request handler
+ * @see {@link OCPP20VariableManager} Variable management integration
+ */
+
+/**
+ *
+ * @param promise
+ * @param ms
+ * @param label
+ */
+function withTimeout<T> (promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_resolve, reject) =>
+      setTimeout(() => {
+        reject(new Error(`${label} timed out after ${ms.toString()}ms`))
+      }, ms)
+    ),
+  ])
 }

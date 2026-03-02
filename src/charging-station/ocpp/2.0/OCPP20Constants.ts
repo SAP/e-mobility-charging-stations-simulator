@@ -137,6 +137,12 @@ export class OCPP20Constants extends OCPPConstants {
     // { from: OCPP20ConnectorStatusEnumType.Faulted, to: OCPP20ConnectorStatusEnumType.Faulted }
   ])
 
+  /**
+   * Default timeout in milliseconds for async OCPP 2.0 handler operations
+   * (e.g., certificate file I/O). Prevents handlers from hanging indefinitely.
+   */
+  static readonly HANDLER_TIMEOUT_MS = 30_000
+
   static readonly TriggerReasonMapping: readonly TriggerReasonMap[] = Object.freeze([
     // Priority 1: Remote Commands (highest priority)
     {
