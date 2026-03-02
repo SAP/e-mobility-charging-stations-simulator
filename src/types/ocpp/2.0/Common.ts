@@ -89,13 +89,6 @@ export enum Iso15118EVCertificateStatusEnumType {
   Failed = 'Failed',
 }
 
-export enum MessageFormatEnumType {
-  ASCII = 'ASCII',
-  HTML = 'HTML',
-  URI = 'URI',
-  UTF8 = 'UTF8',
-}
-
 export enum MessageTriggerEnumType {
   BootNotification = 'BootNotification',
   DiagnosticsStatusNotification = 'DiagnosticsStatusNotification',
@@ -336,13 +329,6 @@ export interface CustomDataType extends JsonObject {
 }
 
 export type GenericStatusEnumType = GenericStatus
-
-export interface MessageContentType extends JsonObject {
-  content: string
-  customData?: CustomDataType
-  format: MessageFormatEnumType
-  language?: string
-}
 
 export interface ModemType extends JsonObject {
   customData?: CustomDataType

@@ -425,7 +425,13 @@ export function createMockChargingStation (
       currentTime: new Date(),
       interval: heartbeatInterval,
       status: bootNotificationStatus,
-    },
+    } as
+      | undefined
+      | {
+        currentTime: Date
+        interval: number
+        status: RegistrationStatusEnumType
+      },
 
     bufferMessage (message: string): void {
       this.messageQueue.push(message)
@@ -645,21 +651,20 @@ export function createMockChargingStation (
     idTagsCache: mockIdTagsCache as unknown,
 
     inAcceptedState (): boolean {
-      return this.bootNotificationResponse.status === RegistrationStatusEnumType.ACCEPTED
+      return this.bootNotificationResponse?.status === RegistrationStatusEnumType.ACCEPTED
     },
 
     // Core properties
     index,
 
     inPendingState (): boolean {
-      return this.bootNotificationResponse.status === RegistrationStatusEnumType.PENDING
+      return this.bootNotificationResponse?.status === RegistrationStatusEnumType.PENDING
     },
     inRejectedState (): boolean {
-      return this.bootNotificationResponse.status === RegistrationStatusEnumType.REJECTED
+      return this.bootNotificationResponse?.status === RegistrationStatusEnumType.REJECTED
     },
 
     inUnknownState (): boolean {
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       return this.bootNotificationResponse?.status == null
     },
 
@@ -835,7 +840,7 @@ export function createMockChargingStation (
         // Simulate async stop behavior (immediate resolution for tests)
         await Promise.resolve()
         this.closeWSConnection()
-        this.bootNotificationRequest = undefined
+        this.bootNotificationResponse = undefined
         this.started = false
         this.stopping = false
       }

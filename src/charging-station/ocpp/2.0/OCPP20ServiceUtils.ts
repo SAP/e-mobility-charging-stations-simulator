@@ -31,7 +31,6 @@ import {
   type OCPP20TransactionEventOptions,
   type OCPP20TransactionType,
 } from '../../../types/ocpp/2.0/Transaction.js'
-import { StandardParametersKey } from '../../../types/ocpp/Configuration.js'
 import { convertToIntOrNaN, logger, validateIdentifierString } from '../../../utils/index.js'
 import { getConfigurationKey } from '../../ConfigurationKeyUtils.js'
 import { OCPPServiceUtils, sendAndSetConnectorStatus } from '../OCPPServiceUtils.js'
@@ -536,11 +535,11 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     try {
       const itemsCfg = getConfigurationKey(
         chargingStation,
-        OCPP20RequiredVariableName.ItemsPerMessage as unknown as StandardParametersKey
+        OCPP20RequiredVariableName.ItemsPerMessage
       )?.value
       const bytesCfg = getConfigurationKey(
         chargingStation,
-        OCPP20RequiredVariableName.BytesPerMessage as unknown as StandardParametersKey
+        OCPP20RequiredVariableName.BytesPerMessage
       )?.value
       if (itemsCfg && /^\d+$/.test(itemsCfg)) {
         itemsLimit = convertToIntOrNaN(itemsCfg)

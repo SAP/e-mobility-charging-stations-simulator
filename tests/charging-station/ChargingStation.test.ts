@@ -181,7 +181,7 @@ await describe('ChargingStation', async () => {
       expect(mocks.webSocket.readyState).toBe(WebSocketReadyState.CLOSED)
 
       // Buffer messages while disconnected
-      station.bufferMessage('[["2","uuid-2","StatusNotification",{}]')
+      station.bufferMessage('["2","uuid-2","StatusNotification",{}]')
       const stationWithQueue = station as unknown as { messageQueue: string[] }
       expect(stationWithQueue.messageQueue.length).toBe(1)
 

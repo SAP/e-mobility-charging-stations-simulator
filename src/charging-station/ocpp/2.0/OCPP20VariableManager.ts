@@ -55,6 +55,7 @@ const computeConfigurationKeyName = (variableMetadata: VariableMetadata): string
 export class OCPP20VariableManager {
   private static instance: null | OCPP20VariableManager = null
 
+  // VARIABLE_REGISTRY keys use the format "Component::Variable" (see buildRegistryKey)
   readonly #validComponentNames = new Set<string>(
     Object.keys(VARIABLE_REGISTRY).map(k => k.split('::')[0])
   )
@@ -831,12 +832,11 @@ export class OCPP20VariableManager {
       variableMetadata.persistence === PersistenceEnumType.Persistent &&
       variableMetadata.mutability !== MutabilityEnumType.WriteOnly
     ) {
-      let configKey = getConfigurationKey(chargingStation, configurationKeyName)
+      const configKey = getConfigurationKey(chargingStation, configurationKeyName)
       if (configKey == null) {
         addConfigurationKey(chargingStation, configurationKeyName, attributeValue, undefined, {
           overwrite: false,
         })
-        configKey = getConfigurationKey(chargingStation, configurationKeyName)
       } else if (configKey.value !== attributeValue) {
         setConfigurationKeyValue(chargingStation, configurationKeyName, attributeValue)
       }
