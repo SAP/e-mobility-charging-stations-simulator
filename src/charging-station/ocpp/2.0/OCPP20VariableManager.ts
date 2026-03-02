@@ -56,6 +56,10 @@ const computeConfigurationKeyName = (variableMetadata: VariableMetadata): string
 export class OCPP20VariableManager {
   private static instance: null | OCPP20VariableManager = null
 
+  readonly #validComponentNames = new Set<string>(
+    Object.keys(VARIABLE_REGISTRY).map(k => k.split('/')[0])
+  )
+
   private readonly invalidVariables = new Set<string>() // composite key (lower case)
   private readonly maxSetOverrides = new Map<string, string>() // composite key (lower case)
   private readonly minSetOverrides = new Map<string, string>() // composite key (lower case)
@@ -389,17 +393,7 @@ export class OCPP20VariableManager {
   }
 
   private isComponentValid (_chargingStation: ChargingStation, component: ComponentType): boolean {
-    const supported = new Set<string>([
-      OCPP20ComponentName.AuthCtrlr as string,
-      OCPP20ComponentName.ChargingStation as string,
-      OCPP20ComponentName.ClockCtrlr as string,
-      OCPP20ComponentName.DeviceDataCtrlr as string,
-      OCPP20ComponentName.OCPPCommCtrlr as string,
-      OCPP20ComponentName.SampledDataCtrlr as string,
-      OCPP20ComponentName.SecurityCtrlr as string,
-      OCPP20ComponentName.TxCtrlr as string,
-    ])
-    return supported.has(component.name)
+    return this.#validComponentNames.has(component.name)
   }
 
   private isVariableSupported (component: ComponentType, variable: VariableType): boolean {
