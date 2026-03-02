@@ -18,7 +18,6 @@ import {
   SetVariableStatusEnumType,
   type VariableType,
 } from '../../../types/index.js'
-import { StandardParametersKey } from '../../../types/ocpp/Configuration.js'
 import { Constants, convertToIntOrNaN, logger } from '../../../utils/index.js'
 import { type ChargingStation } from '../../ChargingStation.js'
 import {
@@ -151,10 +150,7 @@ export class OCPP20VariableManager {
       }
       // Instance-scoped persistent variables are also auto-created when defaultValue is defined
       const configurationKeyName = computeConfigurationKeyName(variableMetadata)
-      const configurationKey = getConfigurationKey(
-        chargingStation,
-        configurationKeyName as unknown as StandardParametersKey
-      )
+      const configurationKey = getConfigurationKey(chargingStation, configurationKeyName)
       const variableKey = buildCaseInsensitiveCompositeKey(
         variableMetadata.component,
         variableMetadata.instance,
@@ -177,13 +173,9 @@ export class OCPP20VariableManager {
         }
         const defaultValue = variableMetadata.defaultValue
         if (defaultValue != null) {
-          addConfigurationKey(
-            chargingStation,
-            configurationKeyName as unknown as StandardParametersKey,
-            defaultValue,
-            undefined,
-            { overwrite: false }
-          )
+          addConfigurationKey(chargingStation, configurationKeyName, defaultValue, undefined, {
+            overwrite: false,
+          })
           logger.info(
             `${chargingStation.logPrefix()} Added missing configuration key for variable '${configurationKeyName}' with default '${defaultValue}'`
           )
@@ -360,15 +352,12 @@ export class OCPP20VariableManager {
     let valueSize: string | undefined
     let reportingValueSize: string | undefined
     if (!this.invalidVariables.has(valueSizeKey)) {
-      valueSize = getConfigurationKey(
-        chargingStation,
-        OCPP20RequiredVariableName.ValueSize as unknown as StandardParametersKey
-      )?.value
+      valueSize = getConfigurationKey(chargingStation, OCPP20RequiredVariableName.ValueSize)?.value
     }
     if (!this.invalidVariables.has(reportingValueSizeKey)) {
       reportingValueSize = getConfigurationKey(
         chargingStation,
-        OCPP20RequiredVariableName.ReportingValueSize as unknown as StandardParametersKey
+        OCPP20RequiredVariableName.ReportingValueSize
       )?.value
     }
     // Apply ValueSize first then ReportingValueSize
@@ -470,25 +459,19 @@ export class OCPP20VariableManager {
       variableMetadata.mutability !== MutabilityEnumType.WriteOnly
     ) {
       const configurationKeyName = computeConfigurationKeyName(variableMetadata)
-      let cfg = getConfigurationKey(
-        chargingStation,
-        configurationKeyName as unknown as StandardParametersKey
-      )
+      let cfg = getConfigurationKey(chargingStation, configurationKeyName)
 
       if (cfg == null) {
         addConfigurationKey(
           chargingStation,
-          configurationKeyName as unknown as StandardParametersKey,
+          configurationKeyName,
           value, // Use the resolved default value
           undefined,
           {
             overwrite: false,
           }
         )
-        cfg = getConfigurationKey(
-          chargingStation,
-          configurationKeyName as unknown as StandardParametersKey
-        )
+        cfg = getConfigurationKey(chargingStation, configurationKeyName)
       }
 
       if (cfg?.value) {
@@ -739,13 +722,13 @@ export class OCPP20VariableManager {
       if (!this.invalidVariables.has(configurationValueSizeKey)) {
         configurationValueSizeRaw = getConfigurationKey(
           chargingStation,
-          OCPP20RequiredVariableName.ConfigurationValueSize as unknown as StandardParametersKey
+          OCPP20RequiredVariableName.ConfigurationValueSize
         )?.value
       }
       if (!this.invalidVariables.has(valueSizeKey)) {
         valueSizeRaw = getConfigurationKey(
           chargingStation,
-          OCPP20RequiredVariableName.ValueSize as unknown as StandardParametersKey
+          OCPP20RequiredVariableName.ValueSize
         )?.value
       }
       const cfgLimit = convertToIntOrNaN(configurationValueSizeRaw ?? '')
@@ -842,46 +825,24 @@ export class OCPP20VariableManager {
 
     let rebootRequired = false
     const configurationKeyName = computeConfigurationKeyName(variableMetadata)
-    const previousValue = getConfigurationKey(
-      chargingStation,
-      configurationKeyName as unknown as StandardParametersKey
-    )?.value
+    const previousValue = getConfigurationKey(chargingStation, configurationKeyName)?.value
 
     if (
       variableMetadata.persistence === PersistenceEnumType.Persistent &&
       variableMetadata.mutability !== MutabilityEnumType.WriteOnly
     ) {
-      let configKey = getConfigurationKey(
-        chargingStation,
-        configurationKeyName as unknown as StandardParametersKey
-      )
+      let configKey = getConfigurationKey(chargingStation, configurationKeyName)
       if (configKey == null) {
-        addConfigurationKey(
-          chargingStation,
-          configurationKeyName as unknown as StandardParametersKey,
-          attributeValue,
-          undefined,
-          {
-            overwrite: false,
-          }
-        )
-        configKey = getConfigurationKey(
-          chargingStation,
-          configurationKeyName as unknown as StandardParametersKey
-        )
+        addConfigurationKey(chargingStation, configurationKeyName, attributeValue, undefined, {
+          overwrite: false,
+        })
+        configKey = getConfigurationKey(chargingStation, configurationKeyName)
       } else if (configKey.value !== attributeValue) {
-        setConfigurationKeyValue(
-          chargingStation,
-          configurationKeyName as unknown as StandardParametersKey,
-          attributeValue
-        )
+        setConfigurationKeyValue(chargingStation, configurationKeyName, attributeValue)
       }
       rebootRequired =
         (variableMetadata.rebootRequired === true ||
-          getConfigurationKey(
-            chargingStation,
-            configurationKeyName as unknown as StandardParametersKey
-          )?.reboot === true) &&
+          getConfigurationKey(chargingStation, configurationKeyName)?.reboot === true) &&
         previousValue !== attributeValue
     }
     // Heartbeat & WS ping interval dynamic restarts

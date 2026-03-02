@@ -177,58 +177,52 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     this.incomingRequestHandlers = new Map<OCPP20IncomingRequestCommand, IncomingRequestHandler>([
       [
         OCPP20IncomingRequestCommand.CERTIFICATE_SIGNED,
-        this.handleRequestCertificateSigned.bind(this) as unknown as IncomingRequestHandler,
+        this.toHandler(this.handleRequestCertificateSigned.bind(this)),
       ],
       [
         OCPP20IncomingRequestCommand.CLEAR_CACHE,
-        this.handleRequestClearCache.bind(this) as unknown as IncomingRequestHandler,
+        this.toHandler(this.handleRequestClearCache.bind(this)),
       ],
       [
         OCPP20IncomingRequestCommand.DELETE_CERTIFICATE,
-        this.handleRequestDeleteCertificate.bind(this) as unknown as IncomingRequestHandler,
+        this.toHandler(this.handleRequestDeleteCertificate.bind(this)),
       ],
       [
         OCPP20IncomingRequestCommand.GET_BASE_REPORT,
-        this.handleRequestGetBaseReport.bind(this) as unknown as IncomingRequestHandler,
+        this.toHandler(this.handleRequestGetBaseReport.bind(this)),
       ],
-
       [
         OCPP20IncomingRequestCommand.GET_INSTALLED_CERTIFICATE_IDS,
-        this.handleRequestGetInstalledCertificateIds.bind(
-          this
-        ) as unknown as IncomingRequestHandler,
+        this.toHandler(this.handleRequestGetInstalledCertificateIds.bind(this)),
       ],
       [
         OCPP20IncomingRequestCommand.GET_VARIABLES,
-        this.handleRequestGetVariables.bind(this) as unknown as IncomingRequestHandler,
+        this.toHandler(this.handleRequestGetVariables.bind(this)),
       ],
       [
         OCPP20IncomingRequestCommand.INSTALL_CERTIFICATE,
-        this.handleRequestInstallCertificate.bind(this) as unknown as IncomingRequestHandler,
+        this.toHandler(this.handleRequestInstallCertificate.bind(this)),
       ],
       [
         OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
-        this.handleRequestStartTransaction.bind(this) as unknown as IncomingRequestHandler,
+        this.toHandler(this.handleRequestStartTransaction.bind(this)),
       ],
       [
         OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION,
-        this.handleRequestStopTransaction.bind(this) as unknown as IncomingRequestHandler,
+        this.toHandler(this.handleRequestStopTransaction.bind(this)),
       ],
-      [
-        OCPP20IncomingRequestCommand.RESET,
-        this.handleRequestReset.bind(this) as unknown as IncomingRequestHandler,
-      ],
+      [OCPP20IncomingRequestCommand.RESET, this.toHandler(this.handleRequestReset.bind(this))],
       [
         OCPP20IncomingRequestCommand.SET_VARIABLES,
-        this.handleRequestSetVariables.bind(this) as unknown as IncomingRequestHandler,
+        this.toHandler(this.handleRequestSetVariables.bind(this)),
       ],
       [
         OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
-        this.handleRequestTriggerMessage.bind(this) as unknown as IncomingRequestHandler,
+        this.toHandler(this.handleRequestTriggerMessage.bind(this)),
       ],
       [
         OCPP20IncomingRequestCommand.UNLOCK_CONNECTOR,
-        this.handleRequestUnlockConnector.bind(this) as unknown as IncomingRequestHandler,
+        this.toHandler(this.handleRequestUnlockConnector.bind(this)),
       ],
     ])
     this.payloadValidatorFunctions = OCPP20ServiceUtils.createPayloadValidatorMap(
@@ -2498,6 +2492,13 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         `${chargingStation.logPrefix()} ${moduleName}.terminateEvseTransactions: All transactions terminated on EVSE ${evseId.toString()}`
       )
     }
+  }
+
+  private toHandler (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    handler: (chargingStation: ChargingStation, commandPayload: any) => JsonType | Promise<JsonType>
+  ): IncomingRequestHandler {
+    return handler as IncomingRequestHandler
   }
 
   private validateChargingProfile (
