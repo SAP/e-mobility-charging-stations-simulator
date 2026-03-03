@@ -27,7 +27,7 @@ import type {
   ReportDataType,
 } from './Variables.js'
 
-export const enum OCPP20IncomingRequestCommand {
+export enum OCPP20IncomingRequestCommand {
   CERTIFICATE_SIGNED = 'CertificateSigned',
   CLEAR_CACHE = 'ClearCache',
   DELETE_CERTIFICATE = 'DeleteCertificate',
@@ -43,7 +43,7 @@ export const enum OCPP20IncomingRequestCommand {
   UNLOCK_CONNECTOR = 'UnlockConnector',
 }
 
-export const enum OCPP20RequestCommand {
+export enum OCPP20RequestCommand {
   BOOT_NOTIFICATION = 'BootNotification',
   GET_15118_EV_CERTIFICATE = 'Get15118EVCertificate',
   GET_CERTIFICATE_STATUS = 'GetCertificateStatus',

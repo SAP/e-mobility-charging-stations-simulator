@@ -77,7 +77,7 @@ await describe('Helpers', async () => {
     // For validation edge cases, we need to manually create invalid states
     // since the factory is designed to create valid configurations
     const { station: stationNoInfo } = createMockChargingStation({
-      TEST_CHARGING_STATION_BASE_NAME,
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
     })
     stationNoInfo.stationInfo = undefined
 
@@ -91,7 +91,7 @@ await describe('Helpers', async () => {
     // Arrange
     // For validation edge cases, manually create empty stationInfo
     const { station: stationEmptyInfo } = createMockChargingStation({
-      TEST_CHARGING_STATION_BASE_NAME,
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
     })
     stationEmptyInfo.stationInfo = {} as ChargingStationInfo
 
@@ -104,8 +104,8 @@ await describe('Helpers', async () => {
   await it('should throw when chargingStationId is undefined', () => {
     // Arrange
     const { station: stationMissingId } = createMockChargingStation({
-      stationInfo: { chargingStationId: undefined, TEST_CHARGING_STATION_BASE_NAME },
-      TEST_CHARGING_STATION_BASE_NAME,
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
+      stationInfo: { baseName: TEST_CHARGING_STATION_BASE_NAME, chargingStationId: undefined },
     })
 
     // Act & Assert
@@ -117,8 +117,8 @@ await describe('Helpers', async () => {
   await it('should throw when chargingStationId is empty string', () => {
     // Arrange
     const { station: stationEmptyId } = createMockChargingStation({
-      stationInfo: { chargingStationId: '', TEST_CHARGING_STATION_BASE_NAME },
-      TEST_CHARGING_STATION_BASE_NAME,
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
+      stationInfo: { baseName: TEST_CHARGING_STATION_BASE_NAME, chargingStationId: '' },
     })
 
     // Act & Assert
@@ -130,12 +130,12 @@ await describe('Helpers', async () => {
   await it('should throw when hashId is undefined', () => {
     // Arrange
     const { station: stationMissingHash } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       stationInfo: {
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
         chargingStationId: getChargingStationId(1, chargingStationTemplate),
         hashId: undefined,
-        TEST_CHARGING_STATION_BASE_NAME,
       },
-      TEST_CHARGING_STATION_BASE_NAME,
     })
 
     // Act & Assert
@@ -151,12 +151,12 @@ await describe('Helpers', async () => {
   await it('should throw when hashId is empty string', () => {
     // Arrange
     const { station: stationEmptyHash } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       stationInfo: {
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
         chargingStationId: getChargingStationId(1, chargingStationTemplate),
         hashId: '',
-        TEST_CHARGING_STATION_BASE_NAME,
       },
-      TEST_CHARGING_STATION_BASE_NAME,
     })
 
     // Act & Assert
@@ -172,13 +172,13 @@ await describe('Helpers', async () => {
   await it('should throw when templateIndex is undefined', () => {
     // Arrange
     const { station: stationMissingTemplate } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       stationInfo: {
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
         chargingStationId: getChargingStationId(1, chargingStationTemplate),
         hashId: getHashId(1, chargingStationTemplate),
         templateIndex: undefined,
-        TEST_CHARGING_STATION_BASE_NAME,
       },
-      TEST_CHARGING_STATION_BASE_NAME,
     })
 
     // Act & Assert
@@ -194,13 +194,13 @@ await describe('Helpers', async () => {
   await it('should throw when templateIndex is zero', () => {
     // Arrange
     const { station: stationInvalidTemplate } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       stationInfo: {
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
         chargingStationId: getChargingStationId(1, chargingStationTemplate),
         hashId: getHashId(1, chargingStationTemplate),
         templateIndex: 0,
-        TEST_CHARGING_STATION_BASE_NAME,
       },
-      TEST_CHARGING_STATION_BASE_NAME,
     })
 
     // Act & Assert
@@ -216,14 +216,14 @@ await describe('Helpers', async () => {
   await it('should throw when templateName is undefined', () => {
     // Arrange
     const { station: stationMissingName } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       stationInfo: {
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
         chargingStationId: getChargingStationId(1, chargingStationTemplate),
         hashId: getHashId(1, chargingStationTemplate),
         templateIndex: 1,
         templateName: undefined,
-        TEST_CHARGING_STATION_BASE_NAME,
       },
-      TEST_CHARGING_STATION_BASE_NAME,
     })
 
     // Act & Assert
@@ -239,14 +239,14 @@ await describe('Helpers', async () => {
   await it('should throw when templateName is empty string', () => {
     // Arrange
     const { station: stationEmptyName } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       stationInfo: {
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
         chargingStationId: getChargingStationId(1, chargingStationTemplate),
         hashId: getHashId(1, chargingStationTemplate),
         templateIndex: 1,
         templateName: '',
-        TEST_CHARGING_STATION_BASE_NAME,
       },
-      TEST_CHARGING_STATION_BASE_NAME,
     })
 
     // Act & Assert
@@ -262,15 +262,15 @@ await describe('Helpers', async () => {
   await it('should throw when maximumPower is undefined', () => {
     // Arrange
     const { station: stationMissingPower } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       stationInfo: {
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
         chargingStationId: getChargingStationId(1, chargingStationTemplate),
         hashId: getHashId(1, chargingStationTemplate),
         maximumPower: undefined,
         templateIndex: 1,
         templateName: 'test-template.json',
-        TEST_CHARGING_STATION_BASE_NAME,
       },
-      TEST_CHARGING_STATION_BASE_NAME,
     })
 
     // Act & Assert
@@ -286,15 +286,15 @@ await describe('Helpers', async () => {
   await it('should throw when maximumPower is zero', () => {
     // Arrange
     const { station: stationInvalidPower } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       stationInfo: {
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
         chargingStationId: getChargingStationId(1, chargingStationTemplate),
         hashId: getHashId(1, chargingStationTemplate),
         maximumPower: 0,
         templateIndex: 1,
         templateName: 'test-template.json',
-        TEST_CHARGING_STATION_BASE_NAME,
       },
-      TEST_CHARGING_STATION_BASE_NAME,
     })
 
     // Act & Assert
@@ -310,16 +310,16 @@ await describe('Helpers', async () => {
   await it('should throw when maximumAmperage is undefined', () => {
     // Arrange
     const { station: stationMissingAmperage } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       stationInfo: {
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
         chargingStationId: getChargingStationId(1, chargingStationTemplate),
         hashId: getHashId(1, chargingStationTemplate),
         maximumAmperage: undefined,
         maximumPower: 12000,
         templateIndex: 1,
         templateName: 'test-template.json',
-        TEST_CHARGING_STATION_BASE_NAME,
       },
-      TEST_CHARGING_STATION_BASE_NAME,
     })
 
     // Act & Assert
@@ -335,16 +335,16 @@ await describe('Helpers', async () => {
   await it('should throw when maximumAmperage is zero', () => {
     // Arrange
     const { station: stationInvalidAmperage } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       stationInfo: {
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
         chargingStationId: getChargingStationId(1, chargingStationTemplate),
         hashId: getHashId(1, chargingStationTemplate),
         maximumAmperage: 0,
         maximumPower: 12000,
         templateIndex: 1,
         templateName: 'test-template.json',
-        TEST_CHARGING_STATION_BASE_NAME,
       },
-      TEST_CHARGING_STATION_BASE_NAME,
     })
 
     // Act & Assert
@@ -360,16 +360,16 @@ await describe('Helpers', async () => {
   await it('should pass validation with complete valid configuration', () => {
     // Arrange
     const { station: validStation } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       stationInfo: {
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
         chargingStationId: getChargingStationId(1, chargingStationTemplate),
         hashId: getHashId(1, chargingStationTemplate),
         maximumAmperage: 16,
         maximumPower: 12000,
         templateIndex: 1,
         templateName: 'test-template.json',
-        TEST_CHARGING_STATION_BASE_NAME,
       },
-      TEST_CHARGING_STATION_BASE_NAME,
     })
 
     // Act & Assert
@@ -381,9 +381,11 @@ await describe('Helpers', async () => {
   await it('should throw for OCPP 2.0 without EVSE configuration', () => {
     // Arrange
     const { station: stationOcpp20 } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 0, // Ensure no EVSEs are created
       evseConfiguration: { evsesCount: 0 },
       stationInfo: {
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
         chargingStationId: getChargingStationId(1, chargingStationTemplate),
         hashId: getHashId(1, chargingStationTemplate),
         maximumAmperage: 16,
@@ -391,9 +393,7 @@ await describe('Helpers', async () => {
         ocppVersion: OCPPVersion.VERSION_20,
         templateIndex: 1,
         templateName: 'test-template.json',
-        TEST_CHARGING_STATION_BASE_NAME,
       },
-      TEST_CHARGING_STATION_BASE_NAME,
     })
 
     // Act & Assert
@@ -409,9 +409,11 @@ await describe('Helpers', async () => {
   await it('should throw for OCPP 2.0.1 without EVSE configuration', () => {
     // Arrange
     const { station: stationOcpp201 } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 0, // Ensure no EVSEs are created
       evseConfiguration: { evsesCount: 0 },
       stationInfo: {
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
         chargingStationId: getChargingStationId(1, chargingStationTemplate),
         hashId: getHashId(1, chargingStationTemplate),
         maximumAmperage: 16,
@@ -419,9 +421,7 @@ await describe('Helpers', async () => {
         ocppVersion: OCPPVersion.VERSION_201,
         templateIndex: 1,
         templateName: 'test-template.json',
-        TEST_CHARGING_STATION_BASE_NAME,
       },
-      TEST_CHARGING_STATION_BASE_NAME,
     })
 
     // Act & Assert
@@ -438,9 +438,9 @@ await describe('Helpers', async () => {
     // Arrange
     const warnMock = t.mock.method(logger, 'warn')
     const { station: stationNotStarted } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       started: false,
       starting: false,
-      TEST_CHARGING_STATION_BASE_NAME,
     })
 
     // Act
@@ -455,9 +455,9 @@ await describe('Helpers', async () => {
     // Arrange
     const warnMock = t.mock.method(logger, 'warn')
     const { station: stationStarting } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       started: false,
       starting: true,
-      TEST_CHARGING_STATION_BASE_NAME,
     })
 
     // Act
@@ -472,9 +472,9 @@ await describe('Helpers', async () => {
     // Arrange
     const warnMock = t.mock.method(logger, 'warn')
     const { station: stationStarted } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       started: true,
       starting: false,
-      TEST_CHARGING_STATION_BASE_NAME,
     })
 
     // Act
@@ -560,8 +560,8 @@ await describe('Helpers', async () => {
   await it('should return Available when no bootStatus is defined', () => {
     // Arrange
     const { station: chargingStation } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 2,
-      TEST_CHARGING_STATION_BASE_NAME,
     })
     const connectorStatus = {} as ConnectorStatus
 
@@ -574,8 +574,8 @@ await describe('Helpers', async () => {
   await it('should return bootStatus from template when defined', () => {
     // Arrange
     const { station: chargingStation } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 2,
-      TEST_CHARGING_STATION_BASE_NAME,
     })
     const connectorStatus = {
       bootStatus: ConnectorStatusEnum.Unavailable,
@@ -590,9 +590,9 @@ await describe('Helpers', async () => {
   await it('should return Unavailable when charging station is inoperative', () => {
     // Arrange
     const { station: chargingStation } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorDefaults: { availability: AvailabilityType.Inoperative },
       connectorsCount: 2,
-      TEST_CHARGING_STATION_BASE_NAME,
     })
     const connectorStatus = {
       bootStatus: ConnectorStatusEnum.Available,
@@ -607,9 +607,9 @@ await describe('Helpers', async () => {
   await it('should return Unavailable when connector is inoperative', () => {
     // Arrange
     const { station: chargingStation } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorDefaults: { availability: AvailabilityType.Inoperative },
       connectorsCount: 2,
-      TEST_CHARGING_STATION_BASE_NAME,
     })
     const connectorStatus = {
       availability: AvailabilityType.Inoperative,
@@ -625,8 +625,8 @@ await describe('Helpers', async () => {
   await it('should restore previous status when transaction is in progress', () => {
     // Arrange
     const { station: chargingStation } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 2,
-      TEST_CHARGING_STATION_BASE_NAME,
     })
     const connectorStatus = {
       bootStatus: ConnectorStatusEnum.Available,
@@ -643,8 +643,8 @@ await describe('Helpers', async () => {
   await it('should use bootStatus over previous status when no transaction', () => {
     // Arrange
     const { station: chargingStation } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 2,
-      TEST_CHARGING_STATION_BASE_NAME,
     })
     const connectorStatus = {
       bootStatus: ConnectorStatusEnum.Available,
@@ -684,8 +684,8 @@ await describe('Helpers', async () => {
 
   await it('should return false when no reservations exist (connector mode)', () => {
     const { station: chargingStation } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 2,
-      TEST_CHARGING_STATION_BASE_NAME,
     })
     expect(hasPendingReservations(chargingStation)).toBe(false)
   })
@@ -693,8 +693,8 @@ await describe('Helpers', async () => {
   await it('should return true when pending reservation exists (connector mode)', () => {
     // Arrange
     const { station: chargingStation } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 2,
-      TEST_CHARGING_STATION_BASE_NAME,
     })
     const connectorStatus = chargingStation.connectors.get(1)
     if (connectorStatus != null) {
@@ -708,9 +708,9 @@ await describe('Helpers', async () => {
   await it('should return false when no reservations exist (EVSE mode)', () => {
     // Arrange
     const { station: chargingStation } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 2,
       stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
-      TEST_CHARGING_STATION_BASE_NAME,
     })
 
     // Act & Assert
@@ -720,9 +720,9 @@ await describe('Helpers', async () => {
   await it('should return true when pending reservation exists (EVSE mode)', () => {
     // Arrange
     const { station: chargingStation } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 2,
       stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
-      TEST_CHARGING_STATION_BASE_NAME,
     })
     const firstEvse = chargingStation.evses.get(1)
     const firstConnector = firstEvse?.connectors.values().next().value
@@ -737,9 +737,9 @@ await describe('Helpers', async () => {
   await it('should return false when only expired reservations exist (EVSE mode)', () => {
     // Arrange
     const { station: chargingStation } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
       connectorsCount: 2,
       stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
-      TEST_CHARGING_STATION_BASE_NAME,
     })
     const firstEvse = chargingStation.evses.get(1)
     const firstConnector = firstEvse?.connectors.values().next().value

@@ -188,8 +188,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
                   this.chargingStation,
                   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   connectorId!,
-                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                  transactionId!,
+                  convertToInt(transactionId),
                   configuredMeterValueSampleInterval != null
                     ? secondsToMilliseconds(convertToInt(configuredMeterValueSampleInterval.value))
                     : Constants.DEFAULT_METER_VALUES_INTERVAL

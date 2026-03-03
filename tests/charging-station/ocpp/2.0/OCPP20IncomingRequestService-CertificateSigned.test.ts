@@ -7,6 +7,7 @@ import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
+import type { ChargingStationWithCertificateManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20CertificateManager.js'
 
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
@@ -26,10 +27,14 @@ import {
   VALID_CERTIFICATE_CHAIN,
   VALID_PEM_CERTIFICATE,
 } from './OCPP20CertificateTestData.js'
-import { createMockCertificateManager } from './OCPP20TestUtils.js'
+import {
+  createMockCertificateManager,
+  createStationWithCertificateManager,
+} from './OCPP20TestUtils.js'
 
 await describe('I04 - CertificateSigned', async () => {
   let station: ChargingStation
+  let stationWithCertManager: ChargingStationWithCertificateManager
   let incomingRequestService: OCPP20IncomingRequestService
   let testableService: ReturnType<typeof createTestableIncomingRequestService>
 
@@ -46,7 +51,10 @@ await describe('I04 - CertificateSigned', async () => {
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
     station = mockStation
-    station.certificateManager = createMockCertificateManager()
+    stationWithCertManager = createStationWithCertificateManager(
+      station,
+      createMockCertificateManager()
+    )
     station.closeWSConnection = mock.fn()
     incomingRequestService = new OCPP20IncomingRequestService()
     testableService = createTestableIncomingRequestService(incomingRequestService)
@@ -57,7 +65,7 @@ await describe('I04 - CertificateSigned', async () => {
   })
   await describe('Valid Certificate Chain Installation', async () => {
     await it('should accept valid certificate chain', async () => {
-      station.certificateManager = createMockCertificateManager({
+      stationWithCertManager.certificateManager = createMockCertificateManager({
         storeCertificateResult: true,
       })
 
@@ -77,7 +85,7 @@ await describe('I04 - CertificateSigned', async () => {
     })
 
     await it('should accept single certificate (no chain)', async () => {
-      station.certificateManager = createMockCertificateManager({
+      stationWithCertManager.certificateManager = createMockCertificateManager({
         storeCertificateResult: true,
       })
 
@@ -118,7 +126,7 @@ await describe('I04 - CertificateSigned', async () => {
       const mockCertManager = createMockCertificateManager({
         storeCertificateResult: true,
       })
-      station.certificateManager = mockCertManager
+      stationWithCertManager.certificateManager = mockCertManager
       const mockCloseWSConnection = mock.fn()
       station.closeWSConnection = mockCloseWSConnection
 
@@ -141,7 +149,7 @@ await describe('I04 - CertificateSigned', async () => {
       const mockCertManager = createMockCertificateManager({
         storeCertificateResult: true,
       })
-      station.certificateManager = mockCertManager
+      stationWithCertManager.certificateManager = mockCertManager
       const mockCloseWSConnection = mock.fn()
       station.closeWSConnection = mockCloseWSConnection
 
@@ -176,8 +184,7 @@ await describe('I04 - CertificateSigned', async () => {
         websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
       })
 
-      // Ensure certificateManager is undefined (not present)
-      delete stationWithoutCertManager.certificateManager
+      // certificateManager is not set on this station (not present by default)
 
       const request: OCPP20CertificateSignedRequest = {
         certificateChain: VALID_PEM_CERTIFICATE,
@@ -196,7 +203,7 @@ await describe('I04 - CertificateSigned', async () => {
 
   await describe('Storage Failure Handling', async () => {
     await it('should return Rejected status when storage fails', async () => {
-      station.certificateManager = createMockCertificateManager({
+      stationWithCertManager.certificateManager = createMockCertificateManager({
         storeCertificateResult: false,
       })
 
@@ -215,7 +222,7 @@ await describe('I04 - CertificateSigned', async () => {
     })
 
     await it('should return Rejected status when storage throws error', async () => {
-      station.certificateManager = createMockCertificateManager({
+      stationWithCertManager.certificateManager = createMockCertificateManager({
         storeCertificateError: new Error('Storage full'),
       })
 
@@ -236,7 +243,7 @@ await describe('I04 - CertificateSigned', async () => {
 
   await describe('Response Structure Validation', async () => {
     await it('should return response matching CertificateSignedResponse schema', async () => {
-      station.certificateManager = createMockCertificateManager({
+      stationWithCertManager.certificateManager = createMockCertificateManager({
         storeCertificateResult: true,
       })
 

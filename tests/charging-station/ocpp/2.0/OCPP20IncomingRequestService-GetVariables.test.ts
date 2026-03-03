@@ -36,7 +36,7 @@ import {
 } from './OCPP20TestUtils.js'
 
 await describe('B06 - Get Variables', async () => {
-  let station: ReturnType<typeof createMockChargingStation>
+  let station: ReturnType<typeof createMockChargingStation>['station']
   let incomingRequestService: OCPP20IncomingRequestService
 
   beforeEach(() => {

@@ -21,10 +21,12 @@ import { OCPP20RequestService } from '../../../../src/charging-station/ocpp/2.0/
 import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
 import {
   ConnectorStatusEnum,
+  DeleteCertificateStatusEnumType,
   HashAlgorithmEnumType,
   OCPP20RequiredVariableName,
   OCPPVersion,
 } from '../../../../src/types/index.js'
+import { OCPP20IncomingRequestCommand } from '../../../../src/types/ocpp/2.0/Requests.js'
 import { OCPP20IdTokenEnumType } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
@@ -118,12 +120,13 @@ export function createMockStationWithRequestTracking (): MockStationWithTracking
   const sentRequests: CapturedOCPPRequest[] = []
   let isOnline = true
 
-  const requestHandlerMock = mock.fn(
-    async (_station: ChargingStation, command: string, payload: Record<string, unknown>) => {
-      sentRequests.push({ command, payload })
-      return Promise.resolve({} as EmptyObject)
-    }
-  )
+  const requestHandlerMock = mock.fn(async (...args: unknown[]) => {
+    sentRequests.push({
+      command: args[1] as string,
+      payload: args[2] as Record<string, unknown>,
+    })
+    return Promise.resolve({} as EmptyObject)
+  })
 
   const { station } = createMockChargingStation({
     baseName: TEST_CHARGING_STATION_BASE_NAME,
@@ -560,7 +563,7 @@ export const TransactionContextFixtures = {
    * @returns An OCPP20TransactionContext for remote start.
    */
   remoteStart: (): OCPP20TransactionContext => ({
-    command: 'RequestStartTransaction',
+    command: OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
     source: 'remote_command',
   }),
 
@@ -569,7 +572,7 @@ export const TransactionContextFixtures = {
    * @returns An OCPP20TransactionContext for remote stop.
    */
   remoteStop: (): OCPP20TransactionContext => ({
-    command: 'RequestStopTransaction',
+    command: OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION,
     source: 'remote_command',
   }),
 
@@ -578,7 +581,7 @@ export const TransactionContextFixtures = {
    * @returns An OCPP20TransactionContext for reset.
    */
   reset: (): OCPP20TransactionContext => ({
-    command: 'Reset',
+    command: OCPP20IncomingRequestCommand.RESET,
     source: 'remote_command',
   }),
 
@@ -617,7 +620,7 @@ export const TransactionContextFixtures = {
    * @returns An OCPP20TransactionContext for trigger message.
    */
   triggerMessage: (): OCPP20TransactionContext => ({
-    command: 'TriggerMessage',
+    command: OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
     source: 'remote_command',
   }),
 
@@ -628,7 +631,7 @@ export const TransactionContextFixtures = {
    * @returns An OCPP20TransactionContext for unlock connector.
    */
   unlockConnector: (): OCPP20TransactionContext => ({
-    command: 'UnlockConnector',
+    command: OCPP20IncomingRequestCommand.UNLOCK_CONNECTOR,
     source: 'remote_command',
   }),
 } as const
@@ -736,12 +739,12 @@ export const TransactionFlowPatterns: TransactionFlowPattern[] = [
 export interface MockCertificateManagerOptions {
   /** Error to throw when deleteCertificate is called */
   deleteCertificateError?: Error
-  /** Result to return from deleteCertificate (default: { status: 'Accepted' }) */
-  deleteCertificateResult?: { status: 'Accepted' | 'Failed' | 'NotFound' }
+  /** Result to return from deleteCertificate (default: { status: DeleteCertificateStatusEnumType.Accepted }) */
+  deleteCertificateResult?: { status: DeleteCertificateStatusEnumType }
   /** Error to throw when getInstalledCertificates is called */
   getInstalledCertificatesError?: Error
   /** Result to return from getInstalledCertificates (default: []) */
-  getInstalledCertificatesResult?: unknown[]
+  getInstalledCertificatesResult?: CertificateHashDataChainType[]
   /** Error to throw when storeCertificate is called */
   storeCertificateError?: Error
   /** Result to return from storeCertificate (default: { success: true }) */
@@ -820,7 +823,7 @@ export function createMockCertificateManager (options: MockCertificateManagerOpt
       if (options.deleteCertificateError != null) {
         throw options.deleteCertificateError
       }
-      return options.deleteCertificateResult ?? { status: 'Accepted' }
+      return options.deleteCertificateResult ?? { status: DeleteCertificateStatusEnumType.Accepted }
     }),
     getInstalledCertificates: mock.fn(() => {
       if (options.getInstalledCertificatesError != null) {

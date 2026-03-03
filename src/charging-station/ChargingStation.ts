@@ -43,6 +43,7 @@ import {
   MeterValueMeasurand,
   type MeterValuesRequest,
   type MeterValuesResponse,
+  type OCPP16MeterValue,
   OCPPVersion,
   type OutgoingRequest,
   PowerUnits,
@@ -1050,21 +1051,16 @@ export class ChargingStation extends EventEmitter {
     }
     if (interval > 0) {
       connectorStatus.transactionSetInterval = setInterval(() => {
-        const meterValue = buildMeterValue(
-          this,
-          connectorId,
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          connectorStatus.transactionId!,
-          interval
-        )
+        const transactionId = convertToInt(connectorStatus.transactionId)
+        const meterValue = buildMeterValue(this, connectorId, transactionId, interval)
         this.ocppRequestService
           .requestHandler<MeterValuesRequest, MeterValuesResponse>(
             this,
             RequestCommand.METER_VALUES,
             {
               connectorId,
-              meterValue: [meterValue],
-              transactionId: connectorStatus.transactionId,
+              meterValue: [meterValue as OCPP16MeterValue],
+              transactionId,
             }
           )
           .catch((error: unknown) => {
@@ -1175,7 +1171,8 @@ export class ChargingStation extends EventEmitter {
     connectorId: number,
     reason?: StopTransactionReason
   ): Promise<StopTransactionResponse> {
-    const transactionId = this.getConnectorStatus(connectorId)?.transactionId
+    const rawTransactionId = this.getConnectorStatus(connectorId)?.transactionId
+    const transactionId = rawTransactionId != null ? convertToInt(rawTransactionId) : undefined
     if (
       this.stationInfo?.beginEndMeterValues === true &&
       this.stationInfo.ocppStrictCompliance === true &&
@@ -1184,14 +1181,14 @@ export class ChargingStation extends EventEmitter {
       const transactionEndMeterValue = buildTransactionEndMeterValue(
         this,
         connectorId,
-        this.getEnergyActiveImportRegisterByTransactionId(transactionId)
+        this.getEnergyActiveImportRegisterByTransactionId(rawTransactionId)
       )
       await this.ocppRequestService.requestHandler<MeterValuesRequest, MeterValuesResponse>(
         this,
         RequestCommand.METER_VALUES,
         {
           connectorId,
-          meterValue: [transactionEndMeterValue],
+          meterValue: [transactionEndMeterValue as OCPP16MeterValue],
           transactionId,
         }
       )
@@ -1200,7 +1197,7 @@ export class ChargingStation extends EventEmitter {
       Partial<StopTransactionRequest>,
       StopTransactionResponse
     >(this, RequestCommand.STOP_TRANSACTION, {
-      meterStop: this.getEnergyActiveImportRegisterByTransactionId(transactionId, true),
+      meterStop: this.getEnergyActiveImportRegisterByTransactionId(rawTransactionId, true),
       transactionId,
       ...(reason != null && { reason }),
     })

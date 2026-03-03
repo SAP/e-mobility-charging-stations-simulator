@@ -34,7 +34,7 @@ const MOCK_OCSP_RESULT = 'TW9jayBPQ1NQIFJlc3VsdCBCYXNlNjQ='
 
 await describe('OCPP20 ISO15118 Request Service', async () => {
   await describe('M02 - Get15118EVCertificate Request', async () => {
-    let station: ReturnType<typeof createMockChargingStation>
+    let station: ReturnType<typeof createMockChargingStation>['station']
 
     beforeEach(() => {
       const { station: newStation } = createMockChargingStation({

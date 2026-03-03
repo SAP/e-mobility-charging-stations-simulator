@@ -78,7 +78,7 @@ await describe('I04 - DeleteCertificate', async () => {
   await describe('Valid Certificate Deletion', async () => {
     await it('should accept deletion of existing certificate', async () => {
       stationWithCertManager.certificateManager = createMockCertificateManager({
-        deleteCertificateResult: { status: 'Accepted' },
+        deleteCertificateResult: { status: DeleteCertificateStatusEnumType.Accepted },
       })
 
       const request: OCPP20DeleteCertificateRequest = {
@@ -98,7 +98,7 @@ await describe('I04 - DeleteCertificate', async () => {
 
     await it('should accept deletion with SHA384 hash algorithm', async () => {
       stationWithCertManager.certificateManager = createMockCertificateManager({
-        deleteCertificateResult: { status: 'Accepted' },
+        deleteCertificateResult: { status: DeleteCertificateStatusEnumType.Accepted },
       })
 
       const request: OCPP20DeleteCertificateRequest = {
@@ -118,7 +118,7 @@ await describe('I04 - DeleteCertificate', async () => {
 
     await it('should accept deletion with SHA512 hash algorithm', async () => {
       stationWithCertManager.certificateManager = createMockCertificateManager({
-        deleteCertificateResult: { status: 'Accepted' },
+        deleteCertificateResult: { status: DeleteCertificateStatusEnumType.Accepted },
       })
 
       const request: OCPP20DeleteCertificateRequest = {
@@ -140,7 +140,7 @@ await describe('I04 - DeleteCertificate', async () => {
   await describe('Certificate Not Found', async () => {
     await it('should return NotFound for non-existent certificate', async () => {
       stationWithCertManager.certificateManager = createMockCertificateManager({
-        deleteCertificateResult: { status: 'NotFound' },
+        deleteCertificateResult: { status: DeleteCertificateStatusEnumType.NotFound },
       })
 
       const request: OCPP20DeleteCertificateRequest = {
@@ -209,7 +209,7 @@ await describe('I04 - DeleteCertificate', async () => {
   await describe('Response Structure Validation', async () => {
     await it('should return response matching DeleteCertificateResponse schema', async () => {
       stationWithCertManager.certificateManager = createMockCertificateManager({
-        deleteCertificateResult: { status: 'Accepted' },
+        deleteCertificateResult: { status: DeleteCertificateStatusEnumType.Accepted },
       })
 
       const request: OCPP20DeleteCertificateRequest = {

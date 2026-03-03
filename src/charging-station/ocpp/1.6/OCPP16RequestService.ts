@@ -9,6 +9,7 @@ import {
   type JsonObject,
   type JsonType,
   OCPP16ChargePointStatus,
+  type OCPP16MeterValue,
   OCPP16RequestCommand,
   type OCPP16StartTransactionRequest,
   OCPPVersion,
@@ -230,13 +231,14 @@ export class OCPP16RequestService extends OCPPRequestService {
           ...(chargingStation.stationInfo?.transactionDataMeterValues === true && {
             transactionData: OCPP16ServiceUtils.buildTransactionDataMeterValues(
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              chargingStation.getConnectorStatus(connectorId!)!.transactionBeginMeterValue!,
+              chargingStation.getConnectorStatus(connectorId!)!
+                .transactionBeginMeterValue! as OCPP16MeterValue,
               OCPP16ServiceUtils.buildTransactionEndMeterValue(
                 chargingStation,
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 connectorId!,
                 energyActiveImportRegister
-              )
+              ) as OCPP16MeterValue
             ),
           }),
           ...commandParams,

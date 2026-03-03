@@ -6,7 +6,7 @@ import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../../src/charging-station/ChargingStation.js'
-import type { OCPP16AuthorizeResponse } from '../../../../../src/types/ocpp/1.6/Responses.js'
+import type { OCPP16AuthorizeResponse } from '../../../../../src/types/ocpp/1.6/Transaction.js'
 
 import { OCPP16AuthAdapter } from '../../../../../src/charging-station/ocpp/auth/adapters/OCPP16AuthAdapter.js'
 import {

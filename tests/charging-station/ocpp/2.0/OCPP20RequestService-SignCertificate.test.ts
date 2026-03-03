@@ -16,6 +16,7 @@ import {
   type OCPP20SignCertificateRequest,
   type OCPP20SignCertificateResponse,
   OCPPVersion,
+  ReasonCodeEnumType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
@@ -42,7 +43,9 @@ await describe('I02 - SignCertificate Request', async () => {
     station = createdStation
     // Set up configuration with OrganizationName
     station.ocppConfiguration = {
-      configurationKey: [{ key: 'SecurityCtrlr.OrganizationName', value: MOCK_ORGANIZATION_NAME }],
+      configurationKey: [
+        { key: 'SecurityCtrlr.OrganizationName', readonly: false, value: MOCK_ORGANIZATION_NAME },
+      ],
     }
   })
 
@@ -163,7 +166,7 @@ await describe('I02 - SignCertificate Request', async () => {
         sendMessageResponse: {
           status: GenericStatus.Rejected,
           statusInfo: {
-            reasonCode: 'InvalidCSR',
+            reasonCode: ReasonCodeEnumType.InvalidCSR,
           },
         },
       })
@@ -260,11 +263,11 @@ await describe('I02 - SignCertificate Request', async () => {
 
       stationWithoutCertManager.ocppConfiguration = {
         configurationKey: [
-          { key: 'SecurityCtrlr.OrganizationName', value: MOCK_ORGANIZATION_NAME },
+          { key: 'SecurityCtrlr.OrganizationName', readonly: false, value: MOCK_ORGANIZATION_NAME },
         ],
       }
 
-      delete stationWithoutCertManager.certificateManager
+      // certificateManager does not exist on ChargingStation type — no-op, station is already without one
 
       const { sendMessageMock, service } =
         createTestableRequestService<OCPP20SignCertificateResponse>({

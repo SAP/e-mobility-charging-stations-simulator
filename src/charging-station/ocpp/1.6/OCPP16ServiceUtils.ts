@@ -31,6 +31,7 @@ import {
   OCPP16MeterValueContext,
   OCPP16MeterValueUnit,
   OCPP16RequestCommand,
+  type OCPP16SampledValue,
   OCPP16StandardParametersKey,
   OCPP16StopTransactionReason,
   type OCPP16SupportedFeatureProfiles,
@@ -57,16 +58,18 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       chargingStation,
       connectorId
     )
-    const unitDivider =
-      sampledValueTemplate?.unit === OCPP16MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1
-    meterValue.sampledValue.push(
-      OCPP16ServiceUtils.buildSampledValue(
-        chargingStation.stationInfo?.ocppVersion,
-        sampledValueTemplate,
-        roundTo((meterStart ?? 0) / unitDivider, 4),
-        OCPP16MeterValueContext.TRANSACTION_BEGIN
+    if (sampledValueTemplate != null) {
+      const unitDivider =
+        sampledValueTemplate.unit === OCPP16MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1
+      meterValue.sampledValue.push(
+        OCPP16ServiceUtils.buildSampledValue(
+          chargingStation.stationInfo?.ocppVersion,
+          sampledValueTemplate,
+          roundTo((meterStart ?? 0) / unitDivider, 4),
+          OCPP16MeterValueContext.TRANSACTION_BEGIN
+        ) as OCPP16SampledValue
       )
-    )
+    }
     return meterValue
   }
 

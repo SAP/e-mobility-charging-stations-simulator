@@ -46,6 +46,7 @@ import {
   CurrentType,
   type EvseTemplate,
   type OCPP16BootNotificationRequest,
+  type OCPP16ChargingSchedule,
   type OCPP20BootNotificationRequest,
   OCPPVersion,
   RecurrencyKindType,
@@ -547,10 +548,10 @@ export const prepareConnectorStatus = (connectorStatus: ConnectorStatus): Connec
           chargingProfile.chargingProfilePurpose !== ChargingProfilePurposeType.TX_PROFILE
       )
       .map(chargingProfile => {
-        chargingProfile.chargingSchedule.startSchedule = convertToDate(
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-          chargingProfile.chargingSchedule.startSchedule
-        )
+        const chargingSchedule = getOCPP16ChargingSchedule(chargingProfile)
+        if (chargingSchedule != null) {
+          chargingSchedule.startSchedule = convertToDate(chargingSchedule.startSchedule)
+        }
         chargingProfile.validFrom = convertToDate(chargingProfile.validFrom)
         chargingProfile.validTo = convertToDate(chargingProfile.validTo)
         return chargingProfile
@@ -751,8 +752,7 @@ export const getChargingStationChargingProfilesLimit = (
         chargingStation.stationInfo!.maximumPower!
       if (limit > chargingStationMaximumPower) {
         logger.error(
-          // eslint-disable-next-line @typescript-eslint/no-base-to-string
-          `${chargingStation.logPrefix()} ${moduleName}.getChargingStationChargingProfilesLimit: Charging profile id ${chargingProfilesLimit.chargingProfile.chargingProfileId.toString()} limit ${limit.toString()} is greater than charging station maximum ${chargingStationMaximumPower.toString()}: %j`,
+          `${chargingStation.logPrefix()} ${moduleName}.getChargingStationChargingProfilesLimit: Charging profile id ${getChargingProfileId(chargingProfilesLimit.chargingProfile)} limit ${limit.toString()} is greater than charging station maximum ${chargingStationMaximumPower.toString()}: %j`,
           chargingProfilesLimit
         )
         return chargingStationMaximumPower
@@ -817,8 +817,7 @@ export const getConnectorChargingProfilesLimit = (
         chargingStation.stationInfo!.maximumPower! / chargingStation.powerDivider!
       if (limit > connectorMaximumPower) {
         logger.error(
-          // eslint-disable-next-line @typescript-eslint/no-base-to-string
-          `${chargingStation.logPrefix()} ${moduleName}.getConnectorChargingProfilesLimit: Charging profile id ${chargingProfilesLimit.chargingProfile.chargingProfileId.toString()} limit ${limit.toString()} is greater than connector ${connectorId.toString()} maximum ${connectorMaximumPower.toString()}: %j`,
+          `${chargingStation.logPrefix()} ${moduleName}.getConnectorChargingProfilesLimit: Charging profile id ${getChargingProfileId(chargingProfilesLimit.chargingProfile)} limit ${limit.toString()} is greater than connector ${connectorId.toString()} maximum ${connectorMaximumPower.toString()}: %j`,
           chargingProfilesLimit
         )
         return connectorMaximumPower
@@ -835,9 +834,17 @@ const buildChargingProfilesLimit = (
   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
   const errorMsg = `Unknown ${chargingStation.stationInfo?.currentOutType} currentOutType in charging station information, cannot build charging profiles limit`
   const { chargingProfile, limit } = chargingProfilesLimit
+  const chargingSchedule = getOCPP16ChargingSchedule(
+    chargingProfile,
+    chargingStation.logPrefix(),
+    'buildChargingProfilesLimit'
+  )
+  if (chargingSchedule == null) {
+    return limit
+  }
   switch (chargingStation.stationInfo?.currentOutType) {
     case CurrentType.AC:
-      return chargingProfile.chargingSchedule.chargingRateUnit === ChargingRateUnitType.WATT
+      return chargingSchedule.chargingRateUnit === ChargingRateUnitType.WATT
         ? limit
         : ACElectricUtils.powerTotal(
           chargingStation.getNumberOfPhases(),
@@ -845,7 +852,7 @@ const buildChargingProfilesLimit = (
           limit
         )
     case CurrentType.DC:
-      return chargingProfile.chargingSchedule.chargingRateUnit === ChargingRateUnitType.WATT
+      return chargingSchedule.chargingRateUnit === ChargingRateUnitType.WATT
         ? limit
         : DCElectricUtils.power(chargingStation.getVoltageOut(), limit)
     default:
@@ -1003,6 +1010,26 @@ interface ChargingProfilesLimit {
   limit: number
 }
 
+const getChargingProfileId = (chargingProfile: ChargingProfile): string => {
+  const id = chargingProfile.chargingProfileId ?? chargingProfile.id
+  return typeof id === 'number' ? id.toString() : 'unknown'
+}
+
+const getOCPP16ChargingSchedule = (
+  chargingProfile: ChargingProfile,
+  logPrefix?: string,
+  methodName?: string
+): OCPP16ChargingSchedule | undefined => {
+  if (!Array.isArray(chargingProfile.chargingSchedule)) {
+    return chargingProfile.chargingSchedule
+  }
+  if (logPrefix != null && methodName != null) {
+    logger.debug(
+      `${logPrefix} ${moduleName}.${methodName}: Charging profile id ${getChargingProfileId(chargingProfile)} has an OCPP 2.0 chargingSchedule array and is skipped`
+    )
+  }
+}
+
 /**
  * Get the charging profiles limit for a connector
  * Charging profiles shall already be sorted by priorities
@@ -1021,30 +1048,35 @@ const getChargingProfilesLimit = (
   const connectorStatus = chargingStation.getConnectorStatus(connectorId)
   let previousActiveChargingProfile: ChargingProfile | undefined
   for (const chargingProfile of chargingProfiles) {
-    const chargingSchedule = chargingProfile.chargingSchedule
+    const chargingProfileId = getChargingProfileId(chargingProfile)
+    const chargingSchedule = getOCPP16ChargingSchedule(
+      chargingProfile,
+      chargingStation.logPrefix(),
+      'getChargingProfilesLimit'
+    )
+    if (chargingSchedule == null) {
+      continue
+    }
     if (chargingSchedule.startSchedule == null) {
       logger.debug(
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
-        `${chargingStation.logPrefix()} ${moduleName}.getChargingProfilesLimit: Charging profile id ${chargingProfile.chargingProfileId.toString()} has no startSchedule defined. Trying to set it to the connector current transaction start date`
+        `${chargingStation.logPrefix()} ${moduleName}.getChargingProfilesLimit: Charging profile id ${chargingProfileId} has no startSchedule defined. Trying to set it to the connector current transaction start date`
       )
       // OCPP specifies that if startSchedule is not defined, it should be relative to start of the connector transaction
       chargingSchedule.startSchedule = connectorStatus?.transactionStart
     }
     if (!isDate(chargingSchedule.startSchedule)) {
       logger.warn(
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
-        `${chargingStation.logPrefix()} ${moduleName}.getChargingProfilesLimit: Charging profile id ${chargingProfile.chargingProfileId.toString()} startSchedule property is not a Date instance. Trying to convert it to a Date instance`
+        `${chargingStation.logPrefix()} ${moduleName}.getChargingProfilesLimit: Charging profile id ${chargingProfileId} startSchedule property is not a Date instance. Trying to convert it to a Date instance`
       )
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-non-null-assertion
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       chargingSchedule.startSchedule = convertToDate(chargingSchedule.startSchedule)!
     }
     if (chargingSchedule.duration == null) {
       logger.debug(
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
-        `${chargingStation.logPrefix()} ${moduleName}.getChargingProfilesLimit: Charging profile id ${chargingProfile.chargingProfileId.toString()} has no duration defined and will be set to the maximum time allowed`
+        `${chargingStation.logPrefix()} ${moduleName}.getChargingProfilesLimit: Charging profile id ${chargingProfileId} has no duration defined and will be set to the maximum time allowed`
       )
       // OCPP specifies that if duration is not defined, it should be infinite
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
       chargingSchedule.duration = differenceInSeconds(maxTime, chargingSchedule.startSchedule)
     }
     if (
@@ -1063,9 +1095,8 @@ const getChargingProfilesLimit = (
     // Check if the charging profile is active
     if (
       isWithinInterval(currentDate, {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         end: addSeconds(chargingSchedule.startSchedule, chargingSchedule.duration),
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
         start: chargingSchedule.startSchedule,
       })
     ) {
@@ -1076,33 +1107,30 @@ const getChargingProfilesLimit = (
         ): number => a.startPeriod - b.startPeriod
         if (
           !isArraySorted<ChargingSchedulePeriod>(
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             chargingSchedule.chargingSchedulePeriod,
             chargingSchedulePeriodCompareFn
           )
         ) {
           logger.warn(
-            // eslint-disable-next-line @typescript-eslint/no-base-to-string
-            `${chargingStation.logPrefix()} ${moduleName}.getChargingProfilesLimit: Charging profile id ${chargingProfile.chargingProfileId.toString()} schedule periods are not sorted by start period`
+            `${chargingStation.logPrefix()} ${moduleName}.getChargingProfilesLimit: Charging profile id ${chargingProfileId} schedule periods are not sorted by start period`
           )
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+
           chargingSchedule.chargingSchedulePeriod.sort(chargingSchedulePeriodCompareFn)
         }
         // Check if the first schedule period startPeriod property is equal to 0
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+
         if (chargingSchedule.chargingSchedulePeriod[0].startPeriod !== 0) {
           logger.error(
-            // eslint-disable-next-line @typescript-eslint/no-base-to-string, @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-            `${chargingStation.logPrefix()} ${moduleName}.getChargingProfilesLimit: Charging profile id ${chargingProfile.chargingProfileId.toString()} first schedule period start period ${chargingSchedule.chargingSchedulePeriod[0].startPeriod.toString()} is not equal to 0`
+            `${chargingStation.logPrefix()} ${moduleName}.getChargingProfilesLimit: Charging profile id ${chargingProfileId} first schedule period start period ${chargingSchedule.chargingSchedulePeriod[0].startPeriod.toString()} is not equal to 0`
           )
           continue
         }
         // Handle only one schedule period
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+
         if (chargingSchedule.chargingSchedulePeriod.length === 1) {
           const chargingProfilesLimit: ChargingProfilesLimit = {
             chargingProfile,
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+
             limit: chargingSchedule.chargingSchedulePeriod[0].limit,
           }
           logger.debug(debugLogMsg, chargingProfilesLimit)
@@ -1113,12 +1141,10 @@ const getChargingProfilesLimit = (
         for (const [
           index,
           chargingSchedulePeriod,
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
         ] of chargingSchedule.chargingSchedulePeriod.entries()) {
           // Find the right schedule period
           if (
             isAfter(
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
               addSeconds(chargingSchedule.startSchedule, chargingSchedulePeriod.startPeriod),
               currentDate
             )
@@ -1126,7 +1152,7 @@ const getChargingProfilesLimit = (
             // Found the schedule period: previous is the correct one
             const chargingProfilesLimit: ChargingProfilesLimit = {
               chargingProfile: previousActiveChargingProfile ?? chargingProfile,
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+
               limit: previousChargingSchedulePeriod?.limit ?? chargingSchedulePeriod.limit,
             }
             logger.debug(debugLogMsg, chargingProfilesLimit)
@@ -1134,30 +1160,28 @@ const getChargingProfilesLimit = (
           }
           // Handle the last schedule period within the charging profile duration
           if (
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             index === chargingSchedule.chargingSchedulePeriod.length - 1 ||
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             (index < chargingSchedule.chargingSchedulePeriod.length - 1 &&
               differenceInSeconds(
                 addSeconds(
                   chargingSchedule.startSchedule,
-                  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/restrict-plus-operands
+
                   chargingSchedule.chargingSchedulePeriod[index + 1].startPeriod
                 ),
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
                 chargingSchedule.startSchedule
               ) > chargingSchedule.duration)
           ) {
             const chargingProfilesLimit: ChargingProfilesLimit = {
               chargingProfile,
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+
               limit: chargingSchedulePeriod.limit,
             }
             logger.debug(debugLogMsg, chargingProfilesLimit)
             return chargingProfilesLimit
           }
           // Keep a reference to previous charging schedule period
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
           previousChargingSchedulePeriod = chargingSchedulePeriod
         }
       }
@@ -1173,6 +1197,15 @@ export const prepareChargingProfileKind = (
   currentDate: Date | number | string,
   logPrefix: string
 ): boolean => {
+  const chargingProfileId = getChargingProfileId(chargingProfile)
+  const chargingSchedule = getOCPP16ChargingSchedule(
+    chargingProfile,
+    logPrefix,
+    'prepareChargingProfileKind'
+  )
+  if (chargingSchedule == null) {
+    return false
+  }
   switch (chargingProfile.chargingProfileKind) {
     case ChargingProfileKindType.RECURRING:
       if (!canProceedRecurringChargingProfile(chargingProfile, logPrefix)) {
@@ -1181,14 +1214,14 @@ export const prepareChargingProfileKind = (
       prepareRecurringChargingProfile(chargingProfile, currentDate, logPrefix)
       break
     case ChargingProfileKindType.RELATIVE:
-      if (chargingProfile.chargingSchedule.startSchedule != null) {
+      if (chargingSchedule.startSchedule != null) {
         logger.warn(
-          `${logPrefix} ${moduleName}.prepareChargingProfileKind: Relative charging profile id ${chargingProfile.chargingProfileId.toString()} has a startSchedule property defined. It will be ignored or used if the connector has a transaction started`
+          `${logPrefix} ${moduleName}.prepareChargingProfileKind: Relative charging profile id ${chargingProfileId} has a startSchedule property defined. It will be ignored or used if the connector has a transaction started`
         )
-        delete chargingProfile.chargingSchedule.startSchedule
+        delete chargingSchedule.startSchedule
       }
       if (connectorStatus?.transactionStarted === true) {
-        chargingProfile.chargingSchedule.startSchedule = connectorStatus.transactionStart
+        chargingSchedule.startSchedule = connectorStatus.transactionStart
       }
       // FIXME: handle relative charging profile duration
       break
@@ -1201,40 +1234,42 @@ export const canProceedChargingProfile = (
   currentDate: Date | number | string,
   logPrefix: string
 ): boolean => {
+  const chargingProfileId = getChargingProfileId(chargingProfile)
+  const chargingSchedule = getOCPP16ChargingSchedule(
+    chargingProfile,
+    logPrefix,
+    'canProceedChargingProfile'
+  )
+  if (chargingSchedule == null) {
+    return false
+  }
   if (
     (isValidDate(chargingProfile.validFrom) && isBefore(currentDate, chargingProfile.validFrom)) ||
     (isValidDate(chargingProfile.validTo) && isAfter(currentDate, chargingProfile.validTo))
   ) {
     logger.debug(
-      // eslint-disable-next-line @typescript-eslint/no-base-to-string
-      `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${chargingProfile.chargingProfileId.toString()} is not valid for the current date ${
+      `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${chargingProfileId} is not valid for the current date ${
         isDate(currentDate) ? currentDate.toISOString() : currentDate.toString()
       }`
     )
     return false
   }
-  if (
-    chargingProfile.chargingSchedule.startSchedule == null ||
-    chargingProfile.chargingSchedule.duration == null
-  ) {
+  if (chargingSchedule.startSchedule == null || chargingSchedule.duration == null) {
     logger.error(
-      // eslint-disable-next-line @typescript-eslint/no-base-to-string
-      `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${chargingProfile.chargingProfileId.toString()} has no startSchedule or duration defined`
+      `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${chargingProfileId} has no startSchedule or duration defined`
     )
     return false
   }
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-  if (!isValidDate(chargingProfile.chargingSchedule.startSchedule)) {
+
+  if (!isValidDate(chargingSchedule.startSchedule)) {
     logger.error(
-      // eslint-disable-next-line @typescript-eslint/no-base-to-string
-      `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${chargingProfile.chargingProfileId.toString()} has an invalid startSchedule date defined`
+      `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${chargingProfileId} has an invalid startSchedule date defined`
     )
     return false
   }
-  if (!Number.isSafeInteger(chargingProfile.chargingSchedule.duration)) {
+  if (!Number.isSafeInteger(chargingSchedule.duration)) {
     logger.error(
-      // eslint-disable-next-line @typescript-eslint/no-base-to-string
-      `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${chargingProfile.chargingProfileId.toString()} has non integer duration defined`
+      `${logPrefix} ${moduleName}.canProceedChargingProfile: Charging profile id ${chargingProfileId} has non integer duration defined`
     )
     return false
   }
@@ -1245,21 +1280,30 @@ const canProceedRecurringChargingProfile = (
   chargingProfile: ChargingProfile,
   logPrefix: string
 ): boolean => {
+  const chargingProfileId = getChargingProfileId(chargingProfile)
+  const chargingSchedule = getOCPP16ChargingSchedule(
+    chargingProfile,
+    logPrefix,
+    'canProceedRecurringChargingProfile'
+  )
+  if (chargingSchedule == null) {
+    return false
+  }
   if (
     chargingProfile.chargingProfileKind === ChargingProfileKindType.RECURRING &&
     chargingProfile.recurrencyKind == null
   ) {
     logger.error(
-      `${logPrefix} ${moduleName}.canProceedRecurringChargingProfile: Recurring charging profile id ${chargingProfile.chargingProfileId.toString()} has no recurrencyKind defined`
+      `${logPrefix} ${moduleName}.canProceedRecurringChargingProfile: Recurring charging profile id ${chargingProfileId} has no recurrencyKind defined`
     )
     return false
   }
   if (
     chargingProfile.chargingProfileKind === ChargingProfileKindType.RECURRING &&
-    chargingProfile.chargingSchedule.startSchedule == null
+    chargingSchedule.startSchedule == null
   ) {
     logger.error(
-      `${logPrefix} ${moduleName}.canProceedRecurringChargingProfile: Recurring charging profile id ${chargingProfile.chargingProfileId.toString()} has no startSchedule defined`
+      `${logPrefix} ${moduleName}.canProceedRecurringChargingProfile: Recurring charging profile id ${chargingProfileId} has no startSchedule defined`
     )
     return false
   }
@@ -1278,15 +1322,23 @@ const prepareRecurringChargingProfile = (
   currentDate: Date | number | string,
   logPrefix: string
 ): boolean => {
-  const chargingSchedule = chargingProfile.chargingSchedule
+  const chargingProfileId = getChargingProfileId(chargingProfile)
+  const chargingSchedule = getOCPP16ChargingSchedule(
+    chargingProfile,
+    logPrefix,
+    'prepareRecurringChargingProfile'
+  )
+  if (chargingSchedule == null) {
+    return false
+  }
   let recurringIntervalTranslated = false
   let recurringInterval: Interval | undefined
   switch (chargingProfile.recurrencyKind) {
     case RecurrencyKindType.DAILY:
       recurringInterval = {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         end: addDays(chargingSchedule.startSchedule!, 1),
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-non-null-assertion
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         start: chargingSchedule.startSchedule!,
       }
       checkRecurringChargingProfileDuration(chargingProfile, recurringInterval, logPrefix)
@@ -1294,14 +1346,13 @@ const prepareRecurringChargingProfile = (
         !isWithinInterval(currentDate, recurringInterval) &&
         isBefore(recurringInterval.end, currentDate)
       ) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         chargingSchedule.startSchedule = addDays(
           recurringInterval.start,
           differenceInDays(currentDate, recurringInterval.start)
         )
         recurringInterval = {
           end: addDays(chargingSchedule.startSchedule, 1),
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
           start: chargingSchedule.startSchedule,
         }
         recurringIntervalTranslated = true
@@ -1309,9 +1360,9 @@ const prepareRecurringChargingProfile = (
       break
     case RecurrencyKindType.WEEKLY:
       recurringInterval = {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion, @typescript-eslint/no-non-null-assertion
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         end: addWeeks(chargingSchedule.startSchedule!, 1),
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-non-null-assertion
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         start: chargingSchedule.startSchedule!,
       }
       checkRecurringChargingProfileDuration(chargingProfile, recurringInterval, logPrefix)
@@ -1319,14 +1370,13 @@ const prepareRecurringChargingProfile = (
         !isWithinInterval(currentDate, recurringInterval) &&
         isBefore(recurringInterval.end, currentDate)
       ) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         chargingSchedule.startSchedule = addWeeks(
           recurringInterval.start,
           differenceInWeeks(currentDate, recurringInterval.start)
         )
         recurringInterval = {
           end: addWeeks(chargingSchedule.startSchedule, 1),
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
           start: chargingSchedule.startSchedule,
         }
         recurringIntervalTranslated = true
@@ -1334,8 +1384,8 @@ const prepareRecurringChargingProfile = (
       break
     default:
       logger.error(
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string, @typescript-eslint/restrict-template-expressions
-        `${logPrefix} ${moduleName}.prepareRecurringChargingProfile: Recurring ${chargingProfile.recurrencyKind} charging profile id ${chargingProfile.chargingProfileId.toString()} is not supported`
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        `${logPrefix} ${moduleName}.prepareRecurringChargingProfile: Recurring ${chargingProfile.recurrencyKind} charging profile id ${chargingProfileId} is not supported`
       )
   }
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -1344,8 +1394,7 @@ const prepareRecurringChargingProfile = (
       `${logPrefix} ${moduleName}.prepareRecurringChargingProfile: Recurring ${
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         chargingProfile.recurrencyKind
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
-      } charging profile id ${chargingProfile.chargingProfileId.toString()} recurrency time interval [${toDate(
+      } charging profile id ${chargingProfileId} recurrency time interval [${toDate(
         recurringInterval?.start as Date
       ).toISOString()}, ${toDate(
         recurringInterval?.end as Date
@@ -1362,30 +1411,35 @@ const checkRecurringChargingProfileDuration = (
   interval: Interval,
   logPrefix: string
 ): void => {
-  if (chargingProfile.chargingSchedule.duration == null) {
+  const chargingProfileId = getChargingProfileId(chargingProfile)
+  const chargingSchedule = getOCPP16ChargingSchedule(
+    chargingProfile,
+    logPrefix,
+    'checkRecurringChargingProfileDuration'
+  )
+  if (chargingSchedule == null) {
+    return
+  }
+  if (chargingSchedule.duration == null) {
     logger.warn(
       `${logPrefix} ${moduleName}.checkRecurringChargingProfileDuration: Recurring ${
         chargingProfile.chargingProfileKind
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
-      } charging profile id ${chargingProfile.chargingProfileId.toString()} duration is not defined, set it to the recurrency time interval duration ${differenceInSeconds(
+      } charging profile id ${chargingProfileId} duration is not defined, set it to the recurrency time interval duration ${differenceInSeconds(
         interval.end,
         interval.start
       ).toString()}`
     )
-    chargingProfile.chargingSchedule.duration = differenceInSeconds(interval.end, interval.start)
-  } else if (
-    chargingProfile.chargingSchedule.duration > differenceInSeconds(interval.end, interval.start)
-  ) {
+    chargingSchedule.duration = differenceInSeconds(interval.end, interval.start)
+  } else if (chargingSchedule.duration > differenceInSeconds(interval.end, interval.start)) {
     logger.warn(
       `${logPrefix} ${moduleName}.checkRecurringChargingProfileDuration: Recurring ${
         chargingProfile.chargingProfileKind
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string, @typescript-eslint/restrict-template-expressions, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-      } charging profile id ${chargingProfile.chargingProfileId.toString()} duration ${chargingProfile.chargingSchedule.duration.toString()} is greater than the recurrency time interval duration ${differenceInSeconds(
+      } charging profile id ${chargingProfileId} duration ${chargingSchedule.duration.toString()} is greater than the recurrency time interval duration ${differenceInSeconds(
         interval.end,
         interval.start
       ).toString()}`
     )
-    chargingProfile.chargingSchedule.duration = differenceInSeconds(interval.end, interval.start)
+    chargingSchedule.duration = differenceInSeconds(interval.end, interval.start)
   }
 }
 
