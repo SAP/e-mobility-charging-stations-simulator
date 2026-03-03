@@ -297,12 +297,32 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     { schemaPath: string }
   ][] => [
     [
+      OCPP20IncomingRequestCommand.CERTIFICATE_SIGNED,
+      OCPP20ServiceUtils.PayloadValidatorConfig('CertificateSignedResponse.json'),
+    ],
+    [
       OCPP20IncomingRequestCommand.CLEAR_CACHE,
       OCPP20ServiceUtils.PayloadValidatorConfig('ClearCacheResponse.json'),
     ],
     [
+      OCPP20IncomingRequestCommand.DELETE_CERTIFICATE,
+      OCPP20ServiceUtils.PayloadValidatorConfig('DeleteCertificateResponse.json'),
+    ],
+    [
       OCPP20IncomingRequestCommand.GET_BASE_REPORT,
       OCPP20ServiceUtils.PayloadValidatorConfig('GetBaseReportResponse.json'),
+    ],
+    [
+      OCPP20IncomingRequestCommand.GET_INSTALLED_CERTIFICATE_IDS,
+      OCPP20ServiceUtils.PayloadValidatorConfig('GetInstalledCertificateIdsResponse.json'),
+    ],
+    [
+      OCPP20IncomingRequestCommand.GET_VARIABLES,
+      OCPP20ServiceUtils.PayloadValidatorConfig('GetVariablesResponse.json'),
+    ],
+    [
+      OCPP20IncomingRequestCommand.INSTALL_CERTIFICATE,
+      OCPP20ServiceUtils.PayloadValidatorConfig('InstallCertificateResponse.json'),
     ],
     [
       OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
@@ -311,6 +331,14 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     [
       OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION,
       OCPP20ServiceUtils.PayloadValidatorConfig('RequestStopTransactionResponse.json'),
+    ],
+    [
+      OCPP20IncomingRequestCommand.RESET,
+      OCPP20ServiceUtils.PayloadValidatorConfig('ResetResponse.json'),
+    ],
+    [
+      OCPP20IncomingRequestCommand.SET_VARIABLES,
+      OCPP20ServiceUtils.PayloadValidatorConfig('SetVariablesResponse.json'),
     ],
     [
       OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
