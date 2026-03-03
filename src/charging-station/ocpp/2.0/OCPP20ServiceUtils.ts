@@ -71,7 +71,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
    * @returns Promise<OCPP20TransactionEventRequest> - Built transaction event request
    * @throws {OCPPError} When parameters are invalid or EVSE mapping fails
    */
-  public static buildTransactionEvent (
+  public static buildTransactionEvent(
     chargingStation: ChargingStation,
     eventType: OCPP20TransactionEventEnumType,
     context: OCPP20TransactionContext,
@@ -79,7 +79,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     transactionId: string,
     options?: OCPP20TransactionEventOptions
   ): OCPP20TransactionEventRequest
-  public static buildTransactionEvent (
+  public static buildTransactionEvent(
     chargingStation: ChargingStation,
     eventType: OCPP20TransactionEventEnumType,
     triggerReason: OCPP20TriggerReasonEnumType,
@@ -87,8 +87,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     transactionId: string,
     options?: OCPP20TransactionEventOptions
   ): OCPP20TransactionEventRequest
-  // Implementation with union type + type guard
-  public static buildTransactionEvent (
+  public static buildTransactionEvent(
     chargingStation: ChargingStation,
     eventType: OCPP20TransactionEventEnumType,
     triggerReasonOrContext: OCPP20TransactionContext | OCPP20TriggerReasonEnumType,
@@ -96,7 +95,6 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     transactionId: string,
     options: OCPP20TransactionEventOptions = {}
   ): OCPP20TransactionEventRequest {
-    // Type guard: distinguish between context object and direct trigger reason
     const isContext = typeof triggerReasonOrContext === 'object'
     const triggerReason = isContext
       ? this.selectTriggerReason(eventType, triggerReasonOrContext)
@@ -111,7 +109,6 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       throw new OCPPError(ErrorType.PROPERTY_CONSTRAINT_VIOLATION, errorMsg)
     }
 
-    // Get or validate EVSE ID
     const evseId = options.evseId ?? chargingStation.getEvseIdByConnectorId(connectorId)
     if (evseId == null) {
       const errorMsg = `Cannot find EVSE ID for connector ${connectorId.toString()}`
@@ -121,7 +118,6 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       throw new OCPPError(ErrorType.PROPERTY_CONSTRAINT_VIOLATION, errorMsg)
     }
 
-    // Get connector status and manage sequence number
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
     if (connectorStatus == null) {
       const errorMsg = `Cannot find connector status for connector ${connectorId.toString()}`
@@ -132,12 +128,9 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     }
 
     // Per-EVSE sequence number management (OCPP 2.0.1 Section 1.3.2.1)
-    // Initialize sequence number to 0 for new transactions, or increment for existing
     if (connectorStatus.transactionSeqNo == null) {
-      // First TransactionEvent for this EVSE/connector - start at 0
       connectorStatus.transactionSeqNo = 0
     } else {
-      // Increment for subsequent TransactionEvents
       connectorStatus.transactionSeqNo = connectorStatus.transactionSeqNo + 1
     }
 
@@ -151,12 +144,10 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       connectorStatus.transactionEvseSent = true
     }
 
-    // Build transaction info object
     const transactionInfo: OCPP20TransactionType = {
       transactionId: transactionId as UUIDv4,
     }
 
-    // Add optional transaction info fields
     if (options.chargingState !== undefined) {
       transactionInfo.chargingState = options.chargingState
     }
@@ -167,7 +158,6 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       transactionInfo.remoteStartId = options.remoteStartId
     }
 
-    // Build the complete TransactionEvent request
     const transactionEventRequest: OCPP20TransactionEventRequest = {
       eventType,
       seqNo: connectorStatus.transactionSeqNo,
@@ -218,7 +208,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
    */
   public static createIncomingRequestPayloadConfigs = (): [
     OCPP20IncomingRequestCommand,
-    { schemaPath: string }
+    { schemaPath: string },
   ][] => [
     [
       OCPP20IncomingRequestCommand.CERTIFICATE_SIGNED,
@@ -294,7 +284,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
    */
   public static createIncomingRequestResponsePayloadConfigs = (): [
     OCPP20IncomingRequestCommand,
-    { schemaPath: string }
+    { schemaPath: string },
   ][] => [
     [
       OCPP20IncomingRequestCommand.CERTIFICATE_SIGNED,
@@ -373,7 +363,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
    */
   public static createRequestPayloadConfigs = (): [
     OCPP20RequestCommand,
-    { schemaPath: string }
+    { schemaPath: string },
   ][] => [
     [
       OCPP20RequestCommand.BOOT_NOTIFICATION,
@@ -417,7 +407,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
    */
   public static createResponsePayloadConfigs = (): [
     OCPP20RequestCommand,
-    { schemaPath: string }
+    { schemaPath: string },
   ][] => [
     [
       OCPP20RequestCommand.BOOT_NOTIFICATION,
@@ -456,7 +446,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     )
 
   public static enforceMessageLimits<
-    T extends { attributeType?: unknown; component: unknown; variable: unknown }
+    T extends { attributeType?: unknown; component: unknown; variable: unknown },
   >(
     chargingStation: { logPrefix: () => string },
     moduleName: string,
@@ -498,7 +488,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
   }
 
   public static enforcePostCalculationBytesLimit<
-    T extends { attributeType?: unknown; component: unknown; variable: unknown }
+    T extends { attributeType?: unknown; component: unknown; variable: unknown },
   >(
     chargingStation: { logPrefix: () => string },
     moduleName: string,
@@ -554,7 +544,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
    * @param chargingStation - The charging station instance
    * @returns Object with itemsLimit and bytesLimit (both fallback to 0 if not configured or invalid)
    */
-  public static readMessageLimits (chargingStation: ChargingStation): {
+  public static readMessageLimits(chargingStation: ChargingStation): {
     bytesLimit: number
     itemsLimit: number
   } {
@@ -584,14 +574,13 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     return { bytesLimit, itemsLimit }
   }
 
-  public static async requestStopTransaction (
+  public static async requestStopTransaction(
     chargingStation: ChargingStation,
     connectorId: number,
     evseId?: number
   ): Promise<GenericResponse> {
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
     if (connectorStatus?.transactionStarted && connectorStatus.transactionId != null) {
-      // OCPP 2.0 validation: transactionId should be a valid UUID format
       let transactionId: string
       if (typeof connectorStatus.transactionId === 'string') {
         transactionId = connectorStatus.transactionId
@@ -675,7 +664,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
    * @param chargingStation - The charging station instance
    * @param connectorId - The connector ID for which to reset the transaction state
    */
-  public static resetTransactionSequenceNumber (
+  public static resetTransactionSequenceNumber(
     chargingStation: ChargingStation,
     connectorId: number
   ): void {
@@ -710,7 +699,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
    * @param context - Context information describing the trigger source and details
    * @returns OCPP20TriggerReasonEnumType - The most appropriate trigger reason
    */
-  public static selectTriggerReason (
+  public static selectTriggerReason(
     eventType: OCPP20TransactionEventEnumType,
     context: OCPP20TransactionContext
   ): OCPP20TriggerReasonEnumType {
@@ -830,7 +819,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     return OCPP20TriggerReasonEnumType.Trigger
   }
 
-  public static async sendQueuedTransactionEvents (
+  public static async sendQueuedTransactionEvents(
     chargingStation: ChargingStation,
     connectorId: number
   ): Promise<void> {
@@ -868,7 +857,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     }
   }
 
-  public static async sendTransactionEvent (
+  public static async sendTransactionEvent(
     chargingStation: ChargingStation,
     eventType: OCPP20TransactionEventEnumType,
     context: OCPP20TransactionContext,
@@ -876,7 +865,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     transactionId: string,
     options?: OCPP20TransactionEventOptions
   ): Promise<OCPP20TransactionEventResponse>
-  public static async sendTransactionEvent (
+  public static async sendTransactionEvent(
     chargingStation: ChargingStation,
     eventType: OCPP20TransactionEventEnumType,
     triggerReason: OCPP20TriggerReasonEnumType,
@@ -885,7 +874,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     options?: OCPP20TransactionEventOptions
   ): Promise<OCPP20TransactionEventResponse>
   // Implementation with union type + type guard
-  public static async sendTransactionEvent (
+  public static async sendTransactionEvent(
     chargingStation: ChargingStation,
     eventType: OCPP20TransactionEventEnumType,
     triggerReasonOrContext: OCPP20TransactionContext | OCPP20TriggerReasonEnumType,
@@ -933,7 +922,6 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         return { idTokenInfo: undefined }
       }
 
-      // Send the request to CSMS
       logger.debug(
         `${chargingStation.logPrefix()} ${moduleName}.sendTransactionEvent: Sending TransactionEvent for trigger ${triggerReason}`
       )

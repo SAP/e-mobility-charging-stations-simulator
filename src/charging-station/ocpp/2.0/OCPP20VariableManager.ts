@@ -55,7 +55,6 @@ const computeConfigurationKeyName = (variableMetadata: VariableMetadata): string
 export class OCPP20VariableManager {
   private static instance: null | OCPP20VariableManager = null
 
-  // VARIABLE_REGISTRY keys use the format "Component::Variable" (see buildRegistryKey)
   readonly #validComponentNames = new Set<string>(
     Object.keys(VARIABLE_REGISTRY).map(k => k.split('::')[0])
   )
@@ -65,16 +64,16 @@ export class OCPP20VariableManager {
   private readonly minSetOverrides = new Map<string, string>() // composite key (lower case)
   private readonly runtimeOverrides = new Map<string, string>() // composite key (lower case)
 
-  private constructor () {
+  private constructor() {
     /* This is intentional */
   }
 
-  public static getInstance (): OCPP20VariableManager {
+  public static getInstance(): OCPP20VariableManager {
     OCPP20VariableManager.instance ??= new OCPP20VariableManager()
     return OCPP20VariableManager.instance
   }
 
-  public getVariables (
+  public getVariables(
     chargingStation: ChargingStation,
     getVariableData: OCPP20GetVariableDataType[]
   ): OCPP20GetVariableResultType[] {
@@ -104,11 +103,11 @@ export class OCPP20VariableManager {
     return results
   }
 
-  public resetRuntimeOverrides (): void {
+  public resetRuntimeOverrides(): void {
     this.runtimeOverrides.clear()
   }
 
-  public setVariables (
+  public setVariables(
     chargingStation: ChargingStation,
     setVariableData: OCPP20SetVariableDataType[]
   ): OCPP20SetVariableResultType[] {
@@ -138,7 +137,7 @@ export class OCPP20VariableManager {
     return results
   }
 
-  public validatePersistentMappings (chargingStation: ChargingStation): void {
+  public validatePersistentMappings(chargingStation: ChargingStation): void {
     this.invalidVariables.clear()
     for (const metaKey of Object.keys(VARIABLE_REGISTRY)) {
       const variableMetadata = VARIABLE_REGISTRY[metaKey]
@@ -181,7 +180,6 @@ export class OCPP20VariableManager {
             `${chargingStation.logPrefix()} Added missing configuration key for variable '${configurationKeyName}' with default '${defaultValue}'`
           )
         } else {
-          // Mark invalid
           this.invalidVariables.add(variableKey)
           logger.error(
             `${chargingStation.logPrefix()} Missing configuration key mapping and no default for variable '${configurationKeyName}'`
@@ -191,7 +189,7 @@ export class OCPP20VariableManager {
     }
   }
 
-  private getVariable (
+  private getVariable(
     chargingStation: ChargingStation,
     variableData: OCPP20GetVariableDataType
   ): OCPP20GetVariableResultType {
@@ -266,7 +264,6 @@ export class OCPP20VariableManager {
       )
     }
 
-    // Handle MinSet / MaxSet attribute retrieval
     if (resolvedAttributeType === AttributeEnumType.MinSet) {
       if (variableMetadata.min === undefined && this.minSetOverrides.get(variableKey) == null) {
         return this.rejectGet(
@@ -382,18 +379,18 @@ export class OCPP20VariableManager {
     }
   }
 
-  private isComponentValid (_chargingStation: ChargingStation, component: ComponentType): boolean {
+  private isComponentValid(_chargingStation: ChargingStation, component: ComponentType): boolean {
     return this.#validComponentNames.has(component.name)
   }
 
-  private isVariableSupported (component: ComponentType, variable: VariableType): boolean {
+  private isVariableSupported(component: ComponentType, variable: VariableType): boolean {
     return (
       getVariableMetadata(component.name, variable.name, variable.instance ?? component.instance) !=
         null || getVariableMetadata(component.name, variable.name) != null
     )
   }
 
-  private rejectGet (
+  private rejectGet(
     variable: VariableType,
     component: ComponentType,
     attributeType: AttributeEnumType | undefined,
@@ -414,7 +411,7 @@ export class OCPP20VariableManager {
     }
   }
 
-  private rejectSet (
+  private rejectSet(
     variable: VariableType,
     component: ComponentType,
     attributeType: AttributeEnumType,
@@ -435,7 +432,7 @@ export class OCPP20VariableManager {
     }
   }
 
-  private resolveVariableValue (
+  private resolveVariableValue(
     chargingStation: ChargingStation,
     component: ComponentType,
     variable: VariableType
@@ -513,7 +510,7 @@ export class OCPP20VariableManager {
     return value
   }
 
-  private setVariable (
+  private setVariable(
     chargingStation: ChargingStation,
     variableData: OCPP20SetVariableDataType
   ): OCPP20SetVariableResultType {
@@ -585,7 +582,6 @@ export class OCPP20VariableManager {
       resolvedAttributeType === AttributeEnumType.MinSet ||
       resolvedAttributeType === AttributeEnumType.MaxSet
     ) {
-      // Only meaningful for integer data type
       if (variableMetadata.dataType !== DataEnumType.integer) {
         return this.rejectSet(
           variable,
@@ -687,7 +683,6 @@ export class OCPP20VariableManager {
       }
     }
 
-    // Actual attribute setting logic
     if (variableMetadata.mutability === MutabilityEnumType.ReadOnly) {
       return this.rejectSet(
         variable,

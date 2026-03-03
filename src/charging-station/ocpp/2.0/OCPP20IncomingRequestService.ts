@@ -128,7 +128,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
   private readonly reportDataCache: Map<number, ReportDataType[]>
 
-  public constructor () {
+  public constructor() {
     super(OCPPVersion.VERSION_201)
     this.reportDataCache = new Map<number, ReportDataType[]>()
     this.incomingRequestHandlers = new Map<OCPP20IncomingRequestCommand, IncomingRequestHandler>([
@@ -210,7 +210,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     this.validatePayload = this.validatePayload.bind(this)
   }
 
-  public handleRequestGetVariables (
+  public handleRequestGetVariables(
     chargingStation: ChargingStation,
     commandPayload: OCPP20GetVariablesRequest
   ): OCPP20GetVariablesResponse {
@@ -220,7 +220,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     const variableManager = OCPP20VariableManager.getInstance()
 
-    // Enforce ItemsPerMessage and BytesPerMessage limits if configured
     const { bytesLimit: enforceBytesLimit, itemsLimit: enforceItemsLimit } =
       OCPP20ServiceUtils.readMessageLimits(chargingStation)
 
@@ -282,7 +281,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     return getVariablesResponse
   }
 
-  public handleRequestSetVariables (
+  public handleRequestSetVariables(
     chargingStation: ChargingStation,
     commandPayload: OCPP20SetVariablesRequest
   ): OCPP20SetVariablesResponse {
@@ -290,13 +289,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       setVariableResult: [],
     }
 
-    // Enforce ItemsPerMessageSetVariables and BytesPerMessageSetVariables limits if configured
     const { bytesLimit: enforceBytesLimit, itemsLimit: enforceItemsLimit } =
       OCPP20ServiceUtils.readMessageLimits(chargingStation)
 
     const variableManager = OCPP20VariableManager.getInstance()
 
-    // Items per message enforcement
     const variableData = commandPayload.setVariableData
     const preEnforcement = OCPP20ServiceUtils.enforceMessageLimits(
       chargingStation,
@@ -443,7 +440,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
-  public override stop (chargingStation: ChargingStation): void {
+  public override stop(chargingStation: ChargingStation): void {
     try {
       OCPP20VariableManager.getInstance().resetRuntimeOverrides()
       logger.debug(`${chargingStation.logPrefix()} ${moduleName}.stop: Runtime overrides cleared`)
@@ -462,7 +459,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param chargingStation - The charging station instance
    * @returns Promise resolving to ClearCacheResponse
    */
-  protected async handleRequestClearCache (
+  protected async handleRequestClearCache(
     chargingStation: ChargingStation
   ): Promise<OCPP20ClearCacheResponse> {
     try {
@@ -489,11 +486,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
-  private buildReportData (
+  private buildReportData(
     chargingStation: ChargingStation,
     reportBase: ReportBaseEnumType
   ): ReportDataType[] {
-    // Validate reportBase parameter
     if (!Object.values(ReportBaseEnumType).includes(reportBase)) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.buildReportData: Invalid reportBase '${reportBase}'`
@@ -505,7 +501,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     switch (reportBase) {
       case ReportBaseEnumType.ConfigurationInventory:
-        // Include OCPP configuration keys
         if (chargingStation.ocppConfiguration?.configurationKey) {
           for (const configKey of chargingStation.ocppConfiguration.configurationKey) {
             reportData.push({
@@ -531,7 +526,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         break
 
       case ReportBaseEnumType.FullInventory:
-        // 1. Charging Station information
         if (chargingStation.stationInfo) {
           const stationInfo = chargingStation.stationInfo
           if (stationInfo.chargePointModel) {
@@ -579,7 +573,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           }
         }
 
-        // 2. OCPP configuration
         if (chargingStation.ocppConfiguration?.configurationKey) {
           for (const configKey of chargingStation.ocppConfiguration.configurationKey) {
             const variableAttributes = []
@@ -600,26 +593,21 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           }
         }
 
-        // 3. Registered OCPP 2.0.1 variables
         try {
           const variableManager = OCPP20VariableManager.getInstance()
-          // Build getVariableData array from VARIABLE_REGISTRY metadata
           const getVariableData: OCPP20GetVariablesRequest['getVariableData'] = []
           for (const variableMetadata of Object.values(VARIABLE_REGISTRY)) {
-            // Include instance-scoped metadata; the OCPP Variable type supports instance under variable
             const variableDescriptor: { instance?: string; name: string } = {
               name: variableMetadata.variable,
             }
             if (variableMetadata.instance) {
               variableDescriptor.instance = variableMetadata.instance
             }
-            // Always request Actual first
             getVariableData.push({
               attributeType: AttributeEnumType.Actual,
               component: { name: variableMetadata.component },
               variable: variableDescriptor,
             })
-            // Request MinSet/MaxSet only if supported by metadata
             if (variableMetadata.supportedAttributes.includes(AttributeEnumType.MinSet)) {
               getVariableData.push({
                 attributeType: AttributeEnumType.MinSet,
@@ -636,7 +624,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
             }
           }
           const getResults = variableManager.getVariables(chargingStation, getVariableData)
-          // Group results by component+variable preserving attribute ordering Actual, MinSet, MaxSet
           const grouped = new Map<
             string,
             {
@@ -669,7 +656,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               }
             }
           }
-          // Normalize attribute ordering
           for (const entry of grouped.values()) {
             entry.attributes.sort((a, b) => {
               const order = [
@@ -698,7 +684,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           )
         }
 
-        // 4. EVSE and connector information
         if (chargingStation.hasEvses) {
           for (const [evseId, evse] of chargingStation.evses) {
             reportData.push({
@@ -735,7 +720,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
             }
           }
         } else {
-          // Fallback to connectors if no EVSE structure
           for (const [connectorId, connector] of chargingStation.connectors) {
             if (connectorId > 0) {
               reportData.push({
@@ -824,7 +808,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
             })
           }
         } else {
-          // Fallback to connectors if no EVSE structure
           for (const [connectorId, connector] of chargingStation.connectors) {
             if (connectorId > 0) {
               reportData.push({
@@ -859,7 +842,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     return reportData
   }
 
-  private getTxUpdatedInterval (chargingStation: ChargingStation): number {
+  private getTxUpdatedInterval(chargingStation: ChargingStation): number {
     const variableManager = OCPP20VariableManager.getInstance()
     const results = variableManager.getVariables(chargingStation, [
       {
@@ -884,7 +867,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param commandPayload - CertificateSigned request payload with certificate chain and type
    * @returns Promise resolving to CertificateSignedResponse indicating operation status
    */
-  private async handleRequestCertificateSigned (
+  private async handleRequestCertificateSigned(
     chargingStation: ChargingStation,
     commandPayload: OCPP20CertificateSignedRequest
   ): Promise<OCPP20CertificateSignedResponse> {
@@ -903,7 +886,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
-    // Validate certificate chain format
     if (!chargingStation.certificateManager.validateCertificateFormat(certificateChain)) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestCertificateSigned: Invalid PEM format for certificate chain`
@@ -917,7 +899,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
-    // Store certificate chain
     try {
       const result = chargingStation.certificateManager.storeCertificate(
         chargingStation.stationInfo?.hashId ?? '',
@@ -925,10 +906,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         certificateChain
       )
 
-      // Handle both Promise and synchronous returns, and both boolean and object results
       const storeResult = result instanceof Promise ? await result : result
 
-      // Handle both boolean (test mock) and object (real implementation) results
       const success = typeof storeResult === 'boolean' ? storeResult : storeResult.success
 
       if (!success) {
@@ -944,7 +923,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         }
       }
 
-      // For ChargingStationCertificate, trigger websocket reconnect to use the new certificate
       const effectiveCertificateType =
         certificateType ?? CertificateSigningUseEnumType.ChargingStationCertificate
       if (effectiveCertificateType === CertificateSigningUseEnumType.ChargingStationCertificate) {
@@ -982,7 +960,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param commandPayload - DeleteCertificate request payload with certificate hash data
    * @returns Promise resolving to DeleteCertificateResponse with status
    */
-  private async handleRequestDeleteCertificate (
+  private async handleRequestDeleteCertificate(
     chargingStation: ChargingStation,
     commandPayload: OCPP20DeleteCertificateRequest
   ): Promise<OCPP20DeleteCertificateResponse> {
@@ -1007,10 +985,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         certificateHashData
       )
 
-      // Handle both Promise and synchronous returns
       const deleteResult = result instanceof Promise ? await result : result
 
-      // Check the status field for the result
       if (deleteResult.status === DeleteCertificateStatusEnumType.NotFound) {
         logger.info(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestDeleteCertificate: Certificate not found`
@@ -1029,7 +1005,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         }
       }
 
-      // Failed status
       return {
         status: DeleteCertificateStatusEnumType.Failed,
         statusInfo: {
@@ -1052,7 +1027,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
-  private handleRequestGetBaseReport (
+  private handleRequestGetBaseReport(
     chargingStation: ChargingStation,
     commandPayload: OCPP20GetBaseReportRequest
   ): OCPP20GetBaseReportResponse {
@@ -1070,7 +1045,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
-    // Cache report data for subsequent NotifyReport requests to avoid recomputation
     const cached = this.reportDataCache.get(commandPayload.requestId)
     const reportData = cached ?? this.buildReportData(chargingStation, commandPayload.reportBase)
     if (!cached && reportData.length > 0) {
@@ -1096,7 +1070,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param commandPayload - GetInstalledCertificateIds request payload with optional certificate type filter
    * @returns Promise resolving to GetInstalledCertificateIdsResponse with status and certificate chain data
    */
-  private async handleRequestGetInstalledCertificateIds (
+  private async handleRequestGetInstalledCertificateIds(
     chargingStation: ChargingStation,
     commandPayload: OCPP20GetInstalledCertificateIdsRequest
   ): Promise<OCPP20GetInstalledCertificateIdsResponse> {
@@ -1157,7 +1131,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
-  private async handleRequestInstallCertificate (
+  private async handleRequestInstallCertificate(
     chargingStation: ChargingStation,
     commandPayload: OCPP20InstallCertificateRequest
   ): Promise<OCPP20InstallCertificateResponse> {
@@ -1235,7 +1209,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
-  private async handleRequestReset (
+  private async handleRequestReset(
     chargingStation: ChargingStation,
     commandPayload: OCPP20ResetRequest
   ): Promise<OCPP20ResetResponse> {
@@ -1245,7 +1219,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     const { evseId, type } = commandPayload
 
-    // Check AllowReset variable — if explicitly set to false, reject
     const variableManager = OCPP20VariableManager.getInstance()
     const allowResetResults = variableManager.getVariables(chargingStation, [
       {
@@ -1266,7 +1239,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
-    // Block reset during firmware update
     if (this.hasFirmwareUpdateInProgress(chargingStation)) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: Firmware update in progress, rejecting reset request`
@@ -1294,7 +1266,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         }
       }
 
-      // Check if the EVSE exists
       const evseExists = chargingStation.evses.has(evseId)
       if (!evseExists) {
         logger.warn(
@@ -1310,10 +1281,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
-    // Check for active transactions
     const hasActiveTransactions = chargingStation.getNumberOfRunningTransactions() > 0
 
-    // Check for EVSE-specific active transactions if evseId is provided
     let evseHasActiveTransactions = false
     if (evseId !== undefined && evseId > 0) {
       const evse = chargingStation.getEvseStatus(evseId)
@@ -1325,13 +1294,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     try {
       if (type === ResetEnumType.Immediate) {
         if (evseId !== undefined && evseId > 0) {
-          // EVSE-specific immediate reset
           if (evseHasActiveTransactions) {
             logger.info(
               `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: Immediate EVSE reset with active transaction, will terminate transaction and reset EVSE ${evseId.toString()}`
             )
 
-            // Implement EVSE-specific transaction termination
             await this.terminateEvseTransactions(
               chargingStation,
               evseId,
@@ -1343,7 +1310,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               status: ResetStatusEnumType.Accepted,
             }
           } else {
-            // Reset EVSE immediately
             logger.info(
               `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: Immediate EVSE reset without active transactions for EVSE ${evseId.toString()}`
             )
@@ -1355,13 +1321,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
             }
           }
         } else {
-          // Charging station immediate reset
           if (hasActiveTransactions) {
             logger.info(
               `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: Immediate reset with active transactions, will terminate transactions and reset`
             )
 
-            // Implement proper transaction termination with TransactionEventRequest
             await this.terminateAllTransactions(
               chargingStation,
               OCPP20ReasonEnumType.ImmediateReset
@@ -1381,7 +1345,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: Immediate reset without active transactions`
             )
 
-            // Send StatusNotification(Unavailable) for all connectors
             this.sendAllConnectorsStatusNotifications(
               chargingStation,
               OCPP20ConnectorStatusEnumType.Unavailable
@@ -1399,23 +1362,19 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           }
         }
       } else {
-        // OnIdle reset
         if (evseId !== undefined && evseId > 0) {
-          // EVSE-specific OnIdle reset
           const evse = chargingStation.getEvseStatus(evseId)
           if (evse != null && !this.isEvseIdle(chargingStation, evse)) {
             logger.info(
               `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: OnIdle EVSE reset scheduled for EVSE ${evseId.toString()}, waiting for idle state`
             )
 
-            // Monitor EVSE for idle state and schedule reset when idle
             this.scheduleEvseResetOnIdle(chargingStation, evseId)
 
             return {
               status: ResetStatusEnumType.Scheduled,
             }
           } else {
-            // EVSE is idle, reset immediately
             logger.info(
               `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: OnIdle EVSE reset - EVSE ${evseId.toString()} is idle, resetting immediately`
             )
@@ -1427,7 +1386,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
             }
           }
         } else {
-          // Charging station OnIdle reset
           if (!this.isChargingStationIdle(chargingStation)) {
             logger.info(
               `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: OnIdle reset scheduled, waiting for idle state`
@@ -1439,7 +1397,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               status: ResetStatusEnumType.Scheduled,
             }
           } else {
-            // Charging station is idle, reset immediately
             logger.info(
               `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: OnIdle reset - charging station is idle, resetting immediately`
             )
@@ -1480,7 +1437,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param commandPayload - RequestStartTransaction request payload with EVSE, ID token and profiles
    * @returns Promise resolving to RequestStartTransactionResponse with status and transaction details
    */
-  private async handleRequestStartTransaction (
+  private async handleRequestStartTransaction(
     chargingStation: ChargingStation,
     commandPayload: OCPP20RequestStartTransactionRequest
   ): Promise<OCPP20RequestStartTransactionResponse> {
@@ -1489,7 +1446,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Remote start transaction request received on EVSE ${evseId?.toString() ?? 'undefined'} with idToken ${idToken.idToken} and remoteStartId ${remoteStartId.toString()}`
     )
 
-    // Validate that EVSE ID is provided
     if (evseId == null) {
       const errorMsg = 'EVSE ID is required for RequestStartTransaction'
       logger.warn(
@@ -1503,7 +1459,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
     }
 
-    // Get the first connector for this EVSE
     const evse = chargingStation.getEvseStatus(evseId)
     if (evse == null) {
       const errorMsg = `EVSE ${evseId.toString()} does not exist on charging station`
@@ -1534,7 +1489,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
     }
 
-    // Check if connector is available for a new transaction
     if (connectorStatus.transactionStarted === true) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Connector ${connectorId.toString()} already has an active transaction`
@@ -1545,7 +1499,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
-    // Authorize idToken
     let isAuthorized = false
     try {
       isAuthorized = this.isIdTokenAuthorized(chargingStation, idToken)
@@ -1570,7 +1523,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
-    // Authorize groupIdToken if provided
     if (groupIdToken != null) {
       let isGroupAuthorized = false
       try {
@@ -1597,7 +1549,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
-    // Validate charging profile if provided
     if (chargingProfile != null) {
       // OCPP 2.0.1 §2.10: RequestStartTransaction requires chargingProfilePurpose = TxProfile
       if (
@@ -1649,7 +1600,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     const transactionId = generateUUID()
 
     try {
-      // Set connector transaction state
       logger.debug(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Setting transaction state for connector ${connectorId.toString()}, transaction ID: ${transactionId}`
       )
@@ -1663,7 +1613,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Transaction state set successfully for connector ${connectorId.toString()}`
       )
 
-      // Update connector status to Occupied
       logger.debug(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Updating connector ${connectorId.toString()} status to Occupied`
       )
@@ -1674,7 +1623,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         evseId
       )
 
-      // Store charging profile if provided
       if (chargingProfile != null) {
         connectorStatus.chargingProfiles ??= []
         connectorStatus.chargingProfiles.push(chargingProfile)
@@ -1704,7 +1652,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
-  private async handleRequestStopTransaction (
+  private async handleRequestStopTransaction(
     chargingStation: ChargingStation,
     commandPayload: OCPP20RequestStopTransactionRequest
   ): Promise<OCPP20RequestStopTransactionResponse> {
@@ -1775,14 +1723,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
-  /**
-   * Handles TriggerMessage (F06) requests from the CSMS.
-   * Triggers the requested message type to be sent from the charging station.
-   * @param chargingStation - The charging station instance
-   * @param commandPayload - TriggerMessage request payload
-   * @returns TriggerMessage response with acceptance status
-   */
-  private handleRequestTriggerMessage (
+  private handleRequestTriggerMessage(
     chargingStation: ChargingStation,
     commandPayload: OCPP20TriggerMessageRequest
   ): OCPP20TriggerMessageResponse {
@@ -1793,7 +1734,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestTriggerMessage: TriggerMessage received for '${requestedMessage}'${evse?.id !== undefined ? ` on EVSE ${evse.id.toString()}` : ''}`
       )
 
-      // Validate EVSE if specified
       if (evse?.id !== undefined && evse.id > 0) {
         if (!chargingStation.hasEvses) {
           return {
@@ -1858,7 +1798,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
         case MessageTriggerEnumType.StatusNotification:
           if (evse?.id !== undefined && evse.id > 0 && evse.connectorId !== undefined) {
-            // Trigger for specific connector on EVSE
             const evseStatus = chargingStation.evses.get(evse.id)
             const connectorStatus = evseStatus?.connectors.get(evse.connectorId)
             const resolvedStatus =
@@ -1948,14 +1887,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
-  /**
-   * Handles UnlockConnector (F05) requests from the CSMS.
-   * Unlocks the specified connector on the given EVSE.
-   * @param chargingStation - The charging station instance
-   * @param commandPayload - UnlockConnector request payload
-   * @returns UnlockConnector response with unlock status
-   */
-  private async handleRequestUnlockConnector (
+  private async handleRequestUnlockConnector(
     chargingStation: ChargingStation,
     commandPayload: OCPP20UnlockConnectorRequest
   ): Promise<OCPP20UnlockConnectorResponse> {
@@ -1966,7 +1898,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestUnlockConnector: UnlockConnector received for EVSE ${evseId.toString()} connector ${connectorId.toString()}`
       )
 
-      // Validate EVSE exists
       if (!chargingStation.hasEvses) {
         return {
           status: UnlockStatusEnumType.UnknownConnector,
@@ -1987,7 +1918,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         }
       }
 
-      // Validate connector exists on this EVSE
       const evseStatus = chargingStation.getEvseStatus(evseId)
       if (evseStatus?.connectors.has(connectorId) !== true) {
         return {
@@ -2014,12 +1944,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         }
       }
 
-      // Unlock the connector (simulated — always succeeds)
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestUnlockConnector: Unlocking connector ${connectorId.toString()} on EVSE ${evseId.toString()}`
       )
 
-      // Reset connector status to Available after unlock
       await sendAndSetConnectorStatus(
         chargingStation,
         connectorId,
@@ -2049,7 +1977,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param evse - The EVSE to check
    * @returns true if any connector on the EVSE has an active transaction
    */
-  private hasEvseActiveTransactions (evse: EvseStatus): boolean {
+  private hasEvseActiveTransactions(evse: EvseStatus): boolean {
     for (const connector of evse.connectors.values()) {
       if (connector.transactionId != null) {
         return true
@@ -2063,7 +1991,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param evse - The EVSE to check
    * @returns true if any connector on the EVSE has a pending reservation
    */
-  private hasEvsePendingReservations (evse: EvseStatus): boolean {
+  private hasEvsePendingReservations(evse: EvseStatus): boolean {
     for (const connector of evse.connectors.values()) {
       if (hasPendingReservation(connector)) {
         return true
@@ -2077,7 +2005,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param chargingStation - The charging station instance
    * @returns true if firmware update is in progress (Downloading, Downloaded, or Installing)
    */
-  private hasFirmwareUpdateInProgress (chargingStation: ChargingStation): boolean {
+  private hasFirmwareUpdateInProgress(chargingStation: ChargingStation): boolean {
     const firmwareStatus = chargingStation.stationInfo?.firmwareStatus
     return (
       firmwareStatus === FirmwareStatus.Downloading ||
@@ -2093,7 +2021,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param chargingStation - The charging station instance
    * @returns true if charging station is idle
    */
-  private isChargingStationIdle (chargingStation: ChargingStation): boolean {
+  private isChargingStationIdle(chargingStation: ChargingStation): boolean {
     return (
       chargingStation.getNumberOfRunningTransactions() === 0 &&
       !this.hasFirmwareUpdateInProgress(chargingStation) &&
@@ -2108,7 +2036,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param evse - The EVSE to check
    * @returns true if EVSE is idle
    */
-  private isEvseIdle (chargingStation: ChargingStation, evse: EvseStatus): boolean {
+  private isEvseIdle(chargingStation: ChargingStation, evse: EvseStatus): boolean {
     return (
       !this.hasEvseActiveTransactions(evse) &&
       !this.hasFirmwareUpdateInProgress(chargingStation) &&
@@ -2116,7 +2044,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     )
   }
 
-  private isIdTokenAuthorized (
+  private isIdTokenAuthorized(
     chargingStation: ChargingStation,
     idToken: OCPP20IdTokenType
   ): boolean {
@@ -2136,7 +2064,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     )
 
     try {
-      // Check if local authorization is disabled and remote authorization is also disabled
       const localAuthListEnabled = chargingStation.getLocalAuthListEnabled()
       const remoteAuthorizationEnabled = chargingStation.stationInfo?.remoteAuthorization ?? true
 
@@ -2147,7 +2074,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         return true
       }
 
-      // 1. Check local authorization list first (if enabled)
       if (localAuthListEnabled) {
         const isLocalAuthorized = this.isIdTokenLocalAuthorized(chargingStation, idToken.idToken)
         if (isLocalAuthorized) {
@@ -2161,19 +2087,14 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         )
       }
 
-      // 2. For OCPP 2.0, if we can't authorize locally and remote auth is enabled,
-      //    we should validate through TransactionEvent mechanism or return false
-      //    In OCPP 2.0, there's no explicit remote authorize - it's handled during transaction events
+      // In OCPP 2.0, remote authorization happens during TransactionEvent processing
       if (remoteAuthorizationEnabled) {
         logger.debug(
           `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: Remote authorization enabled but no explicit remote auth mechanism in OCPP 2.0 - deferring to transaction event validation`
         )
-        // In OCPP 2.0, remote authorization happens during TransactionEvent processing
-        // For now, we'll allow the transaction to proceed and let the CSMS validate during TransactionEvent
         return true
       }
 
-      // 3. If we reach here, authorization failed
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: IdToken ${idToken.idToken} authorization failed - not found in local list and remote auth not configured`
       )
@@ -2183,7 +2104,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: Error during authorization validation for ${idToken.idToken}:`,
         error
       )
-      // Fail securely - deny access on authorization errors
       return false
     }
   }
@@ -2194,7 +2114,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param idTokenString - The ID token string to validate
    * @returns true if authorized locally, false otherwise
    */
-  private isIdTokenLocalAuthorized (
+  private isIdTokenLocalAuthorized(
     chargingStation: ChargingStation,
     idTokenString: string
   ): boolean {
@@ -2221,7 +2141,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param connectorId - The connector ID that needs rollback
    * @param evseId - The EVSE ID
    */
-  private async resetConnectorOnStartTransactionError (
+  private async resetConnectorOnStartTransactionError(
     chargingStation: ChargingStation,
     connectorId: number,
     evseId?: number
@@ -2238,25 +2158,21 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param evseId - The EVSE identifier to reset
    * @param hasActiveTransactions - Whether there are active transactions to handle
    */
-  private scheduleEvseReset (
+  private scheduleEvseReset(
     chargingStation: ChargingStation,
     evseId: number,
     hasActiveTransactions: boolean
   ): void {
-    // Send status notification for unavailable EVSE
     this.sendEvseStatusNotifications(
       chargingStation,
       evseId,
       OCPP20ConnectorStatusEnumType.Unavailable
     )
 
-    // Schedule the actual EVSE reset
     setImmediate(() => {
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.scheduleEvseReset: Executing EVSE ${evseId.toString()} reset${hasActiveTransactions ? ' after transaction termination' : ''}`
       )
-      // Reset EVSE - this would typically involve resetting the EVSE hardware/software
-      // For now, we'll restore connectors to available status after a short delay
       setTimeout(() => {
         const evse = chargingStation.getEvseStatus(evseId)
         if (evse) {
@@ -2284,7 +2200,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param chargingStation - The charging station instance
    * @param evseId - The EVSE identifier to reset
    */
-  private scheduleEvseResetOnIdle (chargingStation: ChargingStation, evseId: number): void {
+  private scheduleEvseResetOnIdle(chargingStation: ChargingStation, evseId: number): void {
     const monitorInterval = setInterval(() => {
       const evse = chargingStation.getEvseStatus(evseId)
       if (evse != null) {
@@ -2305,7 +2221,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * Schedules charging station reset on idle (when no active transactions)
    * @param chargingStation - The charging station instance
    */
-  private scheduleResetOnIdle (chargingStation: ChargingStation): void {
+  private scheduleResetOnIdle(chargingStation: ChargingStation): void {
     const monitorInterval = setInterval(() => {
       if (this.isChargingStationIdle(chargingStation)) {
         clearInterval(monitorInterval)
@@ -2327,7 +2243,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param chargingStation - The charging station instance
    * @param status - The connector status to send
    */
-  private sendAllConnectorsStatusNotifications (
+  private sendAllConnectorsStatusNotifications(
     chargingStation: ChargingStation,
     status: OCPP20ConnectorStatusEnumType
   ): void {
@@ -2353,7 +2269,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param evseId - The EVSE identifier
    * @param status - The connector status to send
    */
-  private sendEvseStatusNotifications (
+  private sendEvseStatusNotifications(
     chargingStation: ChargingStation,
     evseId: number,
     status: OCPP20ConnectorStatusEnumType
@@ -2375,29 +2291,25 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
-  private async sendNotifyReportRequest (
+  private async sendNotifyReportRequest(
     chargingStation: ChargingStation,
     request: OCPP20GetBaseReportRequest,
     response: OCPP20GetBaseReportResponse
   ): Promise<void> {
     const { reportBase, requestId } = request
-    // Use cached report data if available (computed during GetBaseReport handling)
     const cached = this.reportDataCache.get(requestId)
     const reportData = cached ?? this.buildReportData(chargingStation, reportBase)
 
-    // Fragment report data if needed (OCPP2 spec recommends max 100 items per message)
     const maxItemsPerMessage = 100
     const chunks = []
     for (let i = 0; i < reportData.length; i += maxItemsPerMessage) {
       chunks.push(reportData.slice(i, i + maxItemsPerMessage))
     }
 
-    // Ensure we always send at least one message
     if (chunks.length === 0) {
       chunks.push(undefined) // undefined means reportData will be omitted from the request
     }
 
-    // Send fragmented NotifyReport messages
     for (let seqNo = 0; seqNo < chunks.length; seqNo++) {
       const isLastChunk = seqNo === chunks.length - 1
       const chunk = chunks[seqNo]
@@ -2407,7 +2319,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         requestId,
         seqNo,
         tbc: !isLastChunk,
-        // Only include reportData if chunk is defined and not empty
         ...(chunk !== undefined && chunk.length > 0 && { reportData: chunk }),
       }
 
@@ -2426,7 +2337,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       `${chargingStation.logPrefix()} ${moduleName}.sendNotifyReportRequest: Completed NotifyReport for requestId ${requestId} with ${reportData.length} total items in ${chunks.length} message(s)`
     )
-    // Clear cache for requestId after successful completion
     this.reportDataCache.delete(requestId)
   }
 
@@ -2435,7 +2345,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param chargingStation - The charging station instance
    * @param reason - The reason for transaction termination
    */
-  private async terminateAllTransactions (
+  private async terminateAllTransactions(
     chargingStation: ChargingStation,
     reason: OCPP20ReasonEnumType
   ): Promise<void> {
@@ -2447,7 +2357,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           logger.info(
             `${chargingStation.logPrefix()} ${moduleName}.terminateAllTransactions: Terminating transaction ${connector.transactionId.toString()} on connector ${connectorId.toString()}`
           )
-          // Use the proper OCPP 2.0 transaction termination method
           terminationPromises.push(
             OCPP20ServiceUtils.requestStopTransaction(chargingStation, connectorId, evseId).catch(
               (error: unknown) => {
@@ -2476,7 +2385,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param evseId - The EVSE identifier to terminate transactions on
    * @param reason - The reason for transaction termination
    */
-  private async terminateEvseTransactions (
+  private async terminateEvseTransactions(
     chargingStation: ChargingStation,
     evseId: number,
     reason: OCPP20ReasonEnumType
@@ -2495,7 +2404,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         logger.info(
           `${chargingStation.logPrefix()} ${moduleName}.terminateEvseTransactions: Terminating transaction ${connector.transactionId.toString()} on connector ${connectorId.toString()}`
         )
-        // Use the proper OCPP 2.0 transaction termination method
         terminationPromises.push(
           OCPP20ServiceUtils.requestStopTransaction(chargingStation, connectorId, evseId).catch(
             (error: unknown) => {
@@ -2517,14 +2425,14 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
-  private toHandler (
+  private toHandler(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     handler: (chargingStation: ChargingStation, commandPayload: any) => JsonType | Promise<JsonType>
   ): IncomingRequestHandler {
     return handler as IncomingRequestHandler
   }
 
-  private validateChargingProfile (
+  private validateChargingProfile(
     chargingStation: ChargingStation,
     chargingProfile: OCPP20ChargingProfileType,
     evseId: number
@@ -2533,7 +2441,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfile: Validating charging profile ${chargingProfile.id.toString()} for EVSE ${evseId.toString()}`
     )
 
-    // Validate stack level range (OCPP 2.0 spec: 0-9)
     if (chargingProfile.stackLevel < 0 || chargingProfile.stackLevel > 9) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfile: Invalid stack level ${chargingProfile.stackLevel.toString()}, must be 0-9`
@@ -2541,7 +2448,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
-    // Validate charging profile ID is positive
     if (chargingProfile.id <= 0) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfile: Invalid charging profile ID ${chargingProfile.id.toString()}, must be positive`
@@ -2549,7 +2455,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
-    // Validate EVSE compatibility
     if (!chargingStation.hasEvses && evseId > 0) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfile: EVSE ${evseId.toString()} not supported by this charging station`
@@ -2564,7 +2469,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
-    // Validate charging schedules array is not empty
     if (chargingProfile.chargingSchedule.length === 0) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfile: Charging profile must contain at least one charging schedule`
@@ -2572,7 +2476,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
-    // Time constraints validation
     const now = new Date()
     if (chargingProfile.validFrom && chargingProfile.validTo) {
       if (chargingProfile.validFrom >= chargingProfile.validTo) {
@@ -2590,7 +2493,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
-    // Validate recurrency kind compatibility with profile kind
     if (
       chargingProfile.recurrencyKind &&
       chargingProfile.chargingProfileKind !== OCPP20ChargingProfileKindEnumType.Recurring
@@ -2611,7 +2513,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
-    // Validate each charging schedule
     for (const [scheduleIndex, schedule] of chargingProfile.chargingSchedule.entries()) {
       if (
         !this.validateChargingSchedule(
@@ -2626,7 +2527,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
-    // Profile purpose specific validations
     if (!this.validateChargingProfilePurpose(chargingStation, chargingProfile, evseId)) {
       return false
     }
@@ -2644,7 +2544,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param evseId - EVSE identifier
    * @returns True if purpose validation passes, false otherwise
    */
-  private validateChargingProfilePurpose (
+  private validateChargingProfilePurpose(
     chargingStation: ChargingStation,
     chargingProfile: OCPP20ChargingProfileType,
     evseId: number
@@ -2655,7 +2555,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     switch (chargingProfile.chargingProfilePurpose) {
       case OCPP20ChargingProfilePurposeEnumType.ChargingStationExternalConstraints:
-        // ChargingStationExternalConstraints must apply to EVSE 0 (entire station)
         if (evseId !== 0) {
           logger.warn(
             `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfilePurpose: ChargingStationExternalConstraints must apply to EVSE 0, got EVSE ${evseId.toString()}`
@@ -2665,7 +2564,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         break
 
       case OCPP20ChargingProfilePurposeEnumType.ChargingStationMaxProfile:
-        // ChargingStationMaxProfile must apply to EVSE 0 (entire station)
         if (evseId !== 0) {
           logger.warn(
             `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfilePurpose: ChargingStationMaxProfile must apply to EVSE 0, got EVSE ${evseId.toString()}`
@@ -2675,12 +2573,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         break
 
       case OCPP20ChargingProfilePurposeEnumType.TxDefaultProfile:
-        // TxDefaultProfile can apply to EVSE 0 or specific EVSE
-        // No additional constraints beyond general EVSE validation
         break
 
       case OCPP20ChargingProfilePurposeEnumType.TxProfile:
-        // TxProfile must apply to a specific EVSE (not 0)
         if (evseId === 0) {
           logger.warn(
             `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfilePurpose: TxProfile cannot apply to EVSE 0, must target specific EVSE`
@@ -2688,7 +2583,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           return false
         }
 
-        // TxProfile should have a transactionId when used with active transaction
         if (!chargingProfile.transactionId) {
           logger.debug(
             `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfilePurpose: TxProfile without transactionId - may be for future use`
@@ -2719,7 +2613,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param evseId - EVSE identifier
    * @returns True if schedule is valid, false otherwise
    */
-  private validateChargingSchedule (
+  private validateChargingSchedule(
     chargingStation: ChargingStation,
     schedule: OCPP20ChargingScheduleType,
     scheduleIndex: number,
@@ -2730,7 +2624,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       `${chargingStation.logPrefix()} ${moduleName}.validateChargingSchedule: Validating schedule ${scheduleIndex.toString()} (ID: ${schedule.id.toString()}) in profile ${chargingProfile.id.toString()}`
     )
 
-    // Validate schedule ID is positive
     if (schedule.id <= 0) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.validateChargingSchedule: Invalid schedule ID ${schedule.id.toString()}, must be positive`
@@ -2738,7 +2631,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
-    // Validate charging schedule periods array is not empty
     if (schedule.chargingSchedulePeriod.length === 0) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.validateChargingSchedule: Schedule must contain at least one charging schedule period`
@@ -2746,7 +2638,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
-    // Validate charging rate unit is valid (type system ensures it exists)
     if (!Object.values(OCPP20ChargingRateUnitEnumType).includes(schedule.chargingRateUnit)) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.validateChargingSchedule: Invalid charging rate unit: ${schedule.chargingRateUnit}`
@@ -2754,7 +2645,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
-    // Validate duration constraints
     if (schedule.duration !== undefined && schedule.duration <= 0) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.validateChargingSchedule: Schedule duration must be positive if specified`
@@ -2762,7 +2652,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
-    // Validate minimum charging rate if specified
     if (schedule.minChargingRate !== undefined && schedule.minChargingRate < 0) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.validateChargingSchedule: Minimum charging rate cannot be negative`
@@ -2770,7 +2659,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
-    // Validate start schedule time constraints
     if (
       schedule.startSchedule &&
       chargingProfile.validFrom &&
@@ -2793,10 +2681,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
-    // Validate charging schedule periods
     let previousStartPeriod = -1
     for (const [periodIndex, period] of schedule.chargingSchedulePeriod.entries()) {
-      // Validate start period is non-negative and increasing
       if (period.startPeriod < 0) {
         logger.warn(
           `${chargingStation.logPrefix()} ${moduleName}.validateChargingSchedule: Period ${periodIndex.toString()} start time cannot be negative`
@@ -2812,7 +2698,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
       previousStartPeriod = period.startPeriod
 
-      // Validate charging limit is positive
       if (period.limit <= 0) {
         logger.warn(
           `${chargingStation.logPrefix()} ${moduleName}.validateChargingSchedule: Period ${periodIndex.toString()} charging limit must be positive`
@@ -2820,7 +2705,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         return false
       }
 
-      // Validate minimum charging rate constraint
       if (schedule.minChargingRate !== undefined && period.limit < schedule.minChargingRate) {
         logger.warn(
           `${chargingStation.logPrefix()} ${moduleName}.validateChargingSchedule: Period ${periodIndex.toString()} limit cannot be below minimum charging rate`
@@ -2828,7 +2712,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         return false
       }
 
-      // Validate number of phases constraints
       if (period.numberPhases !== undefined) {
         if (period.numberPhases < 1 || period.numberPhases > 3) {
           logger.warn(
@@ -2837,7 +2720,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           return false
         }
 
-        // If phaseToUse is specified, validate it's within the number of phases
         if (
           period.phaseToUse !== undefined &&
           (period.phaseToUse < 1 || period.phaseToUse > period.numberPhases)
@@ -2863,7 +2745,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param commandPayload - JSON payload to validate
    * @returns True if payload validation succeeds, false otherwise
    */
-  private validatePayload (
+  private validatePayload(
     chargingStation: ChargingStation,
     commandName: OCPP20IncomingRequestCommand,
     commandPayload: JsonType
@@ -2929,7 +2811,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
  * @param label - Descriptive label for the timeout error message
  * @returns The resolved value of the original promise, or rejects with a timeout error
  */
-function withTimeout<T> (promise: Promise<T>, ms: number, label: string): Promise<T> {
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   let timer: ReturnType<typeof setTimeout>
   return Promise.race([
     promise.finally(() => {

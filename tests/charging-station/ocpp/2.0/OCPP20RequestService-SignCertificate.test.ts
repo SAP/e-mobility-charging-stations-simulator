@@ -267,8 +267,6 @@ await describe('I02 - SignCertificate Request', async () => {
         ],
       }
 
-      // certificateManager does not exist on ChargingStation type — no-op, station is already without one
-
       const { sendMessageMock, service } =
         createTestableRequestService<OCPP20SignCertificateResponse>({
           sendMessageResponse: {

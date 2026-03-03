@@ -63,7 +63,7 @@ export class OCPP20RequestService extends OCPPRequestService {
    * - Support for advanced OCPP 2.0.1 features like variable management and enhanced security
    * @param ocppResponseService - The response service instance for handling OCPP 2.0.1 responses
    */
-  public constructor (ocppResponseService: OCPPResponseService) {
+  public constructor(ocppResponseService: OCPPResponseService) {
     super(OCPPVersion.VERSION_201, ocppResponseService)
     this.payloadValidatorFunctions = OCPP20ServiceUtils.createPayloadValidatorMap(
       OCPP20ServiceUtils.createRequestPayloadConfigs(),
@@ -88,7 +88,7 @@ export class OCPP20RequestService extends OCPPRequestService {
    * @param exiRequest - Base64-encoded EXI request from the EV (passed through unchanged)
    * @returns Promise resolving to the CSMS response with EXI-encoded certificate data
    */
-  public async requestGet15118EVCertificate (
+  public async requestGet15118EVCertificate(
     chargingStation: ChargingStation,
     iso15118SchemaVersion: string,
     action: CertificateActionEnumType,
@@ -139,7 +139,7 @@ export class OCPP20RequestService extends OCPPRequestService {
    * @param ocspRequestData - OCSP request data including certificate hash and responder URL
    * @returns Promise resolving to the CSMS response with OCSP result
    */
-  public async requestGetCertificateStatus (
+  public async requestGetCertificateStatus(
     chargingStation: ChargingStation,
     ocspRequestData: OCSPRequestDataType
   ): Promise<OCPP20GetCertificateStatusResponse> {
@@ -258,7 +258,7 @@ export class OCPP20RequestService extends OCPPRequestService {
    * @returns Promise resolving to the CSMS response with Accepted or Rejected status
    * @throws {OCPPError} When certificate manager is unavailable or CSR generation fails
    */
-  public async requestSignCertificate (
+  public async requestSignCertificate(
     chargingStation: ChargingStation,
     certificateType?: CertificateSigningUseEnumType
   ): Promise<OCPP20SignCertificateResponse> {
@@ -302,12 +302,10 @@ export class OCPP20RequestService extends OCPPRequestService {
       throw new OCPPError(ErrorType.INTERNAL_ERROR, errorMsg, OCPP20RequestCommand.SIGN_CERTIFICATE)
     }
 
-    // Build request payload
     const requestPayload: OCPP20SignCertificateRequest = {
       csr,
     }
 
-    // Add certificate type if specified
     if (certificateType != null) {
       requestPayload.certificateType = certificateType
     }
