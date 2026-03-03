@@ -91,7 +91,6 @@ export enum Iso15118EVCertificateStatusEnumType {
 
 export enum MessageTriggerEnumType {
   BootNotification = 'BootNotification',
-  DiagnosticsStatusNotification = 'DiagnosticsStatusNotification',
   FirmwareStatusNotification = 'FirmwareStatusNotification',
   Heartbeat = 'Heartbeat',
   LogStatusNotification = 'LogStatusNotification',
