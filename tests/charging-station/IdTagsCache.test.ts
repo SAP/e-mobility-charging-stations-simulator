@@ -32,10 +32,10 @@ interface IdTagsCacheInternal {
 }
 
 /**
- *
- * @param cache
- * @param file
- * @param idTags
+ * Injects id tags directly into the cache's internal Map, bypassing file I/O.
+ * @param cache - The IdTagsCache instance
+ * @param file - The file path key to use
+ * @param idTags - Array of id tags to cache
  */
 function populateCache (cache: IdTagsCache, file: string, idTags: string[]): void {
   const internal = cache as unknown as IdTagsCacheInternal
@@ -43,15 +43,16 @@ function populateCache (cache: IdTagsCache, file: string, idTags: string[]): voi
 }
 
 /**
- *
+ * Resets the IdTagsCache singleton so subsequent getInstance() creates a fresh cache.
  */
 function resetIdTagsCache (): void {
   ;(IdTagsCache as unknown as { instance: null }).instance = null
 }
 
 /**
- *
- * @param station
+ * Resolves the idTags file path for a mock station, throwing if unresolvable.
+ * @param station - The station whose stationInfo is used
+ * @returns The resolved file path string
  */
 function resolveIdTagsFile (station: ChargingStation): string {
   const stationInfo = station.stationInfo
@@ -84,7 +85,7 @@ await describe('IdTagsCache', async () => {
       resetIdTagsCache()
       const instance2 = IdTagsCache.getInstance()
 
-      expect(instance1 === instance2).toBe(false)
+      expect(instance1).not.toBe(instance2)
     })
   })
 

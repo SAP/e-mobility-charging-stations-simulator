@@ -24,9 +24,11 @@ import { BaseError } from '../../src/exception/index.js'
 import { AuthorizationStatus, type StartTransactionResponse } from '../../src/types/index.js'
 import { createMockChargingStation, standardCleanup } from './ChargingStationTestUtils.js'
 
+type ConnectorStatus = ReturnType<AutomaticTransactionGenerator['connectorsStatus']['get']>
+
 /**
- *
- * @param station
+ * Adds required ATG configuration methods to a mock station.
+ * @param station - The station to augment with ATG methods
  */
 function addATGMethodsToStation (station: ChargingStation): void {
   const stationExt = station as unknown as {
@@ -49,8 +51,9 @@ function addATGMethodsToStation (station: ChargingStation): void {
 }
 
 /**
- *
- * @param started
+ * Creates a mock station pre-configured for ATG tests.
+ * @param started - Whether the station should be in started state (default: true)
+ * @returns A mock ChargingStation with ATG methods configured
  */
 function createStationForATG (started = true): ChargingStation {
   const { station } = createMockChargingStation({ started })
@@ -59,8 +62,27 @@ function createStationForATG (started = true): ChargingStation {
 }
 
 /**
- *
- * @param station
+ * Retrieves connector status from the ATG, asserting it exists and narrowing the type.
+ * @param atg - The ATG instance to query
+ * @param connectorId - The connector ID to look up
+ * @returns The non-null connector status
+ */
+function getConnectorStatus (
+  atg: AutomaticTransactionGenerator,
+  connectorId: number
+): NonNullable<ConnectorStatus> {
+  const status = atg.connectorsStatus.get(connectorId)
+  expect(status).toBeDefined()
+  if (status == null) {
+    throw new BaseError(`Connector ${String(connectorId)} status unexpectedly undefined`)
+  }
+  return status
+}
+
+/**
+ * Gets the ATG instance for a station, asserting it exists and narrowing the type.
+ * @param station - The station to get the ATG instance for
+ * @returns The non-null ATG instance
  */
 function getDefinedATG (station: ChargingStation): AutomaticTransactionGenerator {
   const atg = AutomaticTransactionGenerator.getInstance(station)
@@ -72,8 +94,26 @@ function getDefinedATG (station: ChargingStation): AutomaticTransactionGenerator
 }
 
 /**
- *
- * @param atg
+ * Extracts the private handleStartTransactionResponse method from an ATG instance.
+ * @param atg - The ATG instance to extract the method from
+ * @returns The bound handleStartTransactionResponse method
+ */
+function getHandleStartTransactionResponse (
+  atg: AutomaticTransactionGenerator
+): (connectorId: number, response: StartTransactionResponse) => void {
+  return (
+    atg as unknown as {
+      handleStartTransactionResponse: (
+        connectorId: number,
+        response: StartTransactionResponse
+      ) => void
+    }
+  ).handleStartTransactionResponse.bind(atg)
+}
+
+/**
+ * Replaces the async internalStartConnector with a no-op to avoid real timer usage.
+ * @param atg - The ATG instance to mock
  */
 function mockInternalStartConnector (atg: AutomaticTransactionGenerator): void {
   const atgPrivate = atg as unknown as {
@@ -85,7 +125,7 @@ function mockInternalStartConnector (atg: AutomaticTransactionGenerator): void {
 }
 
 /**
- *
+ * Clears all ATG singleton instances to prevent test pollution.
  */
 function resetATGInstances (): void {
   const atgClass = AutomaticTransactionGenerator as unknown as {
@@ -188,12 +228,7 @@ await describe('AutomaticTransactionGenerator', async () => {
     await it('should stop a running connector', () => {
       const station = createStationForATG()
       const atg = getDefinedATG(station)
-
-      const connectorStatus = atg.connectorsStatus.get(1)
-      expect(connectorStatus).toBeDefined()
-      if (connectorStatus == null) {
-        throw new BaseError('Connector status unexpectedly undefined')
-      }
+      const connectorStatus = getConnectorStatus(atg, 1)
       connectorStatus.start = true
 
       atg.stopConnector(1)
@@ -215,20 +250,8 @@ await describe('AutomaticTransactionGenerator', async () => {
     await it('should increment accepted counters on accepted start response', () => {
       const station = createStationForATG()
       const atg = getDefinedATG(station)
-
-      const connectorStatus = atg.connectorsStatus.get(1)
-      expect(connectorStatus).toBeDefined()
-      if (connectorStatus == null) {
-        throw new BaseError('Connector status unexpectedly undefined')
-      }
-      const handleResponse = (
-        atg as unknown as {
-          handleStartTransactionResponse: (
-            connectorId: number,
-            response: StartTransactionResponse
-          ) => void
-        }
-      ).handleStartTransactionResponse.bind(atg)
+      const connectorStatus = getConnectorStatus(atg, 1)
+      const handleResponse = getHandleStartTransactionResponse(atg)
 
       handleResponse(1, {
         idTagInfo: { status: AuthorizationStatus.ACCEPTED },
@@ -243,20 +266,8 @@ await describe('AutomaticTransactionGenerator', async () => {
     await it('should increment rejected counters on rejected start response', () => {
       const station = createStationForATG()
       const atg = getDefinedATG(station)
-
-      const connectorStatus = atg.connectorsStatus.get(1)
-      expect(connectorStatus).toBeDefined()
-      if (connectorStatus == null) {
-        throw new BaseError('Connector status unexpectedly undefined')
-      }
-      const handleResponse = (
-        atg as unknown as {
-          handleStartTransactionResponse: (
-            connectorId: number,
-            response: StartTransactionResponse
-          ) => void
-        }
-      ).handleStartTransactionResponse.bind(atg)
+      const connectorStatus = getConnectorStatus(atg, 1)
+      const handleResponse = getHandleStartTransactionResponse(atg)
 
       handleResponse(1, {
         idTagInfo: { status: AuthorizationStatus.INVALID },

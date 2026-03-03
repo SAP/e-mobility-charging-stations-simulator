@@ -26,8 +26,9 @@ interface BootstrapStatic {
 }
 
 /**
- *
- * @param hash
+ * Creates a cacheable ChargingStationConfiguration fixture with the given hash.
+ * @param hash - The configurationHash to assign
+ * @returns A ChargingStationConfiguration fixture
  */
 function createCacheableConfiguration (hash: string): ChargingStationConfiguration {
   return {
@@ -39,8 +40,9 @@ function createCacheableConfiguration (hash: string): ChargingStationConfigurati
 }
 
 /**
- *
- * @param hash
+ * Creates a ChargingStationTemplate fixture with the given hash.
+ * @param hash - The templateHash to assign
+ * @returns A ChargingStationTemplate fixture
  */
 function createTemplate (hash: string): ChargingStationTemplate {
   return {
@@ -51,10 +53,9 @@ function createTemplate (hash: string): ChargingStationTemplate {
   } as ChargingStationTemplate
 }
 
-// Inject a mock Bootstrap singleton so that SharedLRUCache constructor reads numeric getters
-// instead of triggering a real Bootstrap construction.
 /**
- *
+ * Injects a mock Bootstrap singleton so SharedLRUCache reads numeric getters
+ * instead of triggering real Bootstrap construction.
  */
 function installMockBootstrap (): void {
   ;(Bootstrap as unknown as BootstrapStatic).instance = {
@@ -65,7 +66,7 @@ function installMockBootstrap (): void {
 }
 
 /**
- *
+ * Resets the SharedLRUCache singleton so subsequent getInstance() creates a fresh cache.
  */
 function resetSharedLRUCache (): void {
   ;(SharedLRUCache as unknown as { instance: null }).instance = null
@@ -102,10 +103,10 @@ await describe('SharedLRUCache', async () => {
   await describe('template operations', async () => {
     await it('should store and retrieve a charging station template', () => {
       const cache = SharedLRUCache.getInstance()
-      const template = createTemplate('tmpl-hash-1')
+      const template = createTemplate('template-hash-1')
 
       cache.setChargingStationTemplate(template)
-      const retrieved = cache.getChargingStationTemplate('tmpl-hash-1')
+      const retrieved = cache.getChargingStationTemplate('template-hash-1')
 
       expect(retrieved).toStrictEqual(template)
     })
@@ -120,22 +121,22 @@ await describe('SharedLRUCache', async () => {
 
     await it('should report has correctly for templates', () => {
       const cache = SharedLRUCache.getInstance()
-      const template = createTemplate('tmpl-hash-2')
+      const template = createTemplate('template-hash-2')
 
       cache.setChargingStationTemplate(template)
 
-      expect(cache.hasChargingStationTemplate('tmpl-hash-2')).toBe(true)
+      expect(cache.hasChargingStationTemplate('template-hash-2')).toBe(true)
       expect(cache.hasChargingStationTemplate('unknown-hash')).toBe(false)
     })
 
     await it('should delete a charging station template', () => {
       const cache = SharedLRUCache.getInstance()
-      const template = createTemplate('tmpl-hash-3')
+      const template = createTemplate('template-hash-3')
 
       cache.setChargingStationTemplate(template)
-      cache.deleteChargingStationTemplate('tmpl-hash-3')
+      cache.deleteChargingStationTemplate('template-hash-3')
 
-      expect(cache.hasChargingStationTemplate('tmpl-hash-3')).toBe(false)
+      expect(cache.hasChargingStationTemplate('template-hash-3')).toBe(false)
     })
   })
 
@@ -193,14 +194,14 @@ await describe('SharedLRUCache', async () => {
   await describe('clear', async () => {
     await it('should clear all cached entries', () => {
       const cache = SharedLRUCache.getInstance()
-      const template = createTemplate('tmpl-clear')
+      const template = createTemplate('template-clear')
       const config = createCacheableConfiguration('config-clear')
 
       cache.setChargingStationTemplate(template)
       cache.setChargingStationConfiguration(config)
       cache.clear()
 
-      expect(cache.hasChargingStationTemplate('tmpl-clear')).toBe(false)
+      expect(cache.hasChargingStationTemplate('template-clear')).toBe(false)
       expect(cache.hasChargingStationConfiguration('config-clear')).toBe(false)
     })
   })

@@ -20,8 +20,8 @@ import {
   ajvErrorsToErrorType,
   convertDateToISOString,
   getMessageTypeString,
+  OCPPServiceUtils,
 } from '../../../src/charging-station/ocpp/OCPPServiceUtils.js'
-import { OCPPServiceUtils } from '../../../src/charging-station/ocpp/OCPPServiceUtils.js'
 import {
   ErrorType,
   IncomingRequestCommand,
@@ -31,8 +31,9 @@ import {
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 
 /**
- *
- * @param keyword
+ * Creates a minimal AJV error fixture for testing keyword-based error mapping.
+ * @param keyword - The AJV validation keyword (e.g. 'type', 'required', 'format')
+ * @returns An ErrorObject fixture with the given keyword
  */
 function makeAjvError (keyword: string): ErrorObject {
   return {
@@ -44,9 +45,10 @@ function makeAjvError (keyword: string): ErrorObject {
 }
 
 /**
- *
+ * Creates a minimal ChargingStation stub with a logPrefix method.
+ * @returns A mock ChargingStation
  */
-function makeStationStub (): ChargingStation {
+function makeStationMock (): ChargingStation {
   return { logPrefix: () => '[test-station]' } as unknown as ChargingStation
 }
 
@@ -152,7 +154,7 @@ await describe('OCPPServiceUtils — pure functions', async () => {
   await describe('OCPPServiceUtils.isConnectorIdValid', async () => {
     await it('should return true for connector ID greater than zero', () => {
       const result = OCPPServiceUtils.isConnectorIdValid(
-        makeStationStub(),
+        makeStationMock(),
         IncomingRequestCommand.REMOTE_START_TRANSACTION,
         1
       )
@@ -161,7 +163,7 @@ await describe('OCPPServiceUtils — pure functions', async () => {
 
     await it('should return true for connector ID zero', () => {
       const result = OCPPServiceUtils.isConnectorIdValid(
-        makeStationStub(),
+        makeStationMock(),
         IncomingRequestCommand.REMOTE_START_TRANSACTION,
         0
       )
@@ -170,7 +172,7 @@ await describe('OCPPServiceUtils — pure functions', async () => {
 
     await it('should return false for negative connector ID', () => {
       const result = OCPPServiceUtils.isConnectorIdValid(
-        makeStationStub(),
+        makeStationMock(),
         IncomingRequestCommand.REMOTE_START_TRANSACTION,
         -1
       )

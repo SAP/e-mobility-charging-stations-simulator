@@ -29,10 +29,10 @@ interface StationLocalAuthOverrides {
 }
 
 /**
- *
- * @param station
- * @param mocks
- * @param tags
+ * Configures local authorization on a mock station with the given id tags.
+ * @param station - The mock station to configure
+ * @param mocks - The mock infrastructure (for idTagsCache injection)
+ * @param tags - Array of id tags to register in the local auth list
  */
 function setupLocalAuth (
   station: ReturnType<typeof createMockChargingStation>['station'],

@@ -28,6 +28,7 @@ import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 /**
  * Get a reference to the private configurationData for injection.
+ * @returns The internal configurationData holder
  */
 function getConfigurationInternals (): {
   configurationData: ConfigurationData | undefined
@@ -136,21 +137,19 @@ await describe('Configuration', async () => {
   })
 
   await it('should default to ROUND_ROBIN when not configured', () => {
-    // Arrange
     const internals = getConfigurationInternals()
     const originalData = internals.configurationData
     internals.configurationData = {
       stationTemplateUrls: [],
     } as ConfigurationData
 
-    // Act
-    const distribution = Configuration.getSupervisionUrlDistribution()
-
-    // Assert
-    expect(distribution).toBe(SupervisionUrlDistribution.ROUND_ROBIN)
-
-    internals.configurationData = originalData
-    resetSectionCache()
+    try {
+      const distribution = Configuration.getSupervisionUrlDistribution()
+      expect(distribution).toBe(SupervisionUrlDistribution.ROUND_ROBIN)
+    } finally {
+      internals.configurationData = originalData
+      resetSectionCache()
+    }
   })
 
   await it('should return false for workerPoolInUse with default workerSet config', () => {

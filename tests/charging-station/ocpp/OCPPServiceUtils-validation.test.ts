@@ -28,6 +28,7 @@ import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 /**
  * Creates a minimal ChargingStation mock with the given stationInfo.
  * @param stationInfo - partial stationInfo to set on the mock
+ * @returns A mock ChargingStation
  */
 function makeStationMock (stationInfo?: Record<string, unknown>): ChargingStation {
   return {
@@ -203,7 +204,7 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
       expect(result).toBe(true)
     })
 
-    await it('should return true when messageTriggerSupport is empty', () => {
+    await it('should return true when messageTriggerSupport is null', () => {
       const station = makeStationMock({
         messageTriggerSupport: null,
       })
