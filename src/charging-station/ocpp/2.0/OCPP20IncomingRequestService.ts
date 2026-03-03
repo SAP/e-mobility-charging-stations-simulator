@@ -128,7 +128,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
   private readonly reportDataCache: Map<number, ReportDataType[]>
 
-  public constructor() {
+  public constructor () {
     super(OCPPVersion.VERSION_201)
     this.reportDataCache = new Map<number, ReportDataType[]>()
     this.incomingRequestHandlers = new Map<OCPP20IncomingRequestCommand, IncomingRequestHandler>([
@@ -210,7 +210,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     this.validatePayload = this.validatePayload.bind(this)
   }
 
-  public handleRequestGetVariables(
+  public handleRequestGetVariables (
     chargingStation: ChargingStation,
     commandPayload: OCPP20GetVariablesRequest
   ): OCPP20GetVariablesResponse {
@@ -281,7 +281,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     return getVariablesResponse
   }
 
-  public handleRequestSetVariables(
+  public handleRequestSetVariables (
     chargingStation: ChargingStation,
     commandPayload: OCPP20SetVariablesRequest
   ): OCPP20SetVariablesResponse {
@@ -440,7 +440,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
-  public override stop(chargingStation: ChargingStation): void {
+  public override stop (chargingStation: ChargingStation): void {
     try {
       OCPP20VariableManager.getInstance().resetRuntimeOverrides()
       logger.debug(`${chargingStation.logPrefix()} ${moduleName}.stop: Runtime overrides cleared`)
@@ -459,7 +459,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param chargingStation - The charging station instance
    * @returns Promise resolving to ClearCacheResponse
    */
-  protected async handleRequestClearCache(
+  protected async handleRequestClearCache (
     chargingStation: ChargingStation
   ): Promise<OCPP20ClearCacheResponse> {
     try {
@@ -486,7 +486,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
-  private buildReportData(
+  private buildReportData (
     chargingStation: ChargingStation,
     reportBase: ReportBaseEnumType
   ): ReportDataType[] {
@@ -842,7 +842,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     return reportData
   }
 
-  private getTxUpdatedInterval(chargingStation: ChargingStation): number {
+  private getTxUpdatedInterval (chargingStation: ChargingStation): number {
     const variableManager = OCPP20VariableManager.getInstance()
     const results = variableManager.getVariables(chargingStation, [
       {
@@ -867,7 +867,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param commandPayload - CertificateSigned request payload with certificate chain and type
    * @returns Promise resolving to CertificateSignedResponse indicating operation status
    */
-  private async handleRequestCertificateSigned(
+  private async handleRequestCertificateSigned (
     chargingStation: ChargingStation,
     commandPayload: OCPP20CertificateSignedRequest
   ): Promise<OCPP20CertificateSignedResponse> {
@@ -960,7 +960,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param commandPayload - DeleteCertificate request payload with certificate hash data
    * @returns Promise resolving to DeleteCertificateResponse with status
    */
-  private async handleRequestDeleteCertificate(
+  private async handleRequestDeleteCertificate (
     chargingStation: ChargingStation,
     commandPayload: OCPP20DeleteCertificateRequest
   ): Promise<OCPP20DeleteCertificateResponse> {
@@ -1027,7 +1027,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
-  private handleRequestGetBaseReport(
+  private handleRequestGetBaseReport (
     chargingStation: ChargingStation,
     commandPayload: OCPP20GetBaseReportRequest
   ): OCPP20GetBaseReportResponse {
@@ -1070,7 +1070,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param commandPayload - GetInstalledCertificateIds request payload with optional certificate type filter
    * @returns Promise resolving to GetInstalledCertificateIdsResponse with status and certificate chain data
    */
-  private async handleRequestGetInstalledCertificateIds(
+  private async handleRequestGetInstalledCertificateIds (
     chargingStation: ChargingStation,
     commandPayload: OCPP20GetInstalledCertificateIdsRequest
   ): Promise<OCPP20GetInstalledCertificateIdsResponse> {
@@ -1131,7 +1131,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
-  private async handleRequestInstallCertificate(
+  private async handleRequestInstallCertificate (
     chargingStation: ChargingStation,
     commandPayload: OCPP20InstallCertificateRequest
   ): Promise<OCPP20InstallCertificateResponse> {
@@ -1209,7 +1209,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
-  private async handleRequestReset(
+  private async handleRequestReset (
     chargingStation: ChargingStation,
     commandPayload: OCPP20ResetRequest
   ): Promise<OCPP20ResetResponse> {
@@ -1437,7 +1437,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param commandPayload - RequestStartTransaction request payload with EVSE, ID token and profiles
    * @returns Promise resolving to RequestStartTransactionResponse with status and transaction details
    */
-  private async handleRequestStartTransaction(
+  private async handleRequestStartTransaction (
     chargingStation: ChargingStation,
     commandPayload: OCPP20RequestStartTransactionRequest
   ): Promise<OCPP20RequestStartTransactionResponse> {
@@ -1652,7 +1652,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
-  private async handleRequestStopTransaction(
+  private async handleRequestStopTransaction (
     chargingStation: ChargingStation,
     commandPayload: OCPP20RequestStopTransactionRequest
   ): Promise<OCPP20RequestStopTransactionResponse> {
@@ -1723,7 +1723,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
-  private handleRequestTriggerMessage(
+  private handleRequestTriggerMessage (
     chargingStation: ChargingStation,
     commandPayload: OCPP20TriggerMessageRequest
   ): OCPP20TriggerMessageResponse {
@@ -1887,7 +1887,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
-  private async handleRequestUnlockConnector(
+  private async handleRequestUnlockConnector (
     chargingStation: ChargingStation,
     commandPayload: OCPP20UnlockConnectorRequest
   ): Promise<OCPP20UnlockConnectorResponse> {
@@ -1977,7 +1977,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param evse - The EVSE to check
    * @returns true if any connector on the EVSE has an active transaction
    */
-  private hasEvseActiveTransactions(evse: EvseStatus): boolean {
+  private hasEvseActiveTransactions (evse: EvseStatus): boolean {
     for (const connector of evse.connectors.values()) {
       if (connector.transactionId != null) {
         return true
@@ -1991,7 +1991,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param evse - The EVSE to check
    * @returns true if any connector on the EVSE has a pending reservation
    */
-  private hasEvsePendingReservations(evse: EvseStatus): boolean {
+  private hasEvsePendingReservations (evse: EvseStatus): boolean {
     for (const connector of evse.connectors.values()) {
       if (hasPendingReservation(connector)) {
         return true
@@ -2005,7 +2005,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param chargingStation - The charging station instance
    * @returns true if firmware update is in progress (Downloading, Downloaded, or Installing)
    */
-  private hasFirmwareUpdateInProgress(chargingStation: ChargingStation): boolean {
+  private hasFirmwareUpdateInProgress (chargingStation: ChargingStation): boolean {
     const firmwareStatus = chargingStation.stationInfo?.firmwareStatus
     return (
       firmwareStatus === FirmwareStatus.Downloading ||
@@ -2021,7 +2021,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param chargingStation - The charging station instance
    * @returns true if charging station is idle
    */
-  private isChargingStationIdle(chargingStation: ChargingStation): boolean {
+  private isChargingStationIdle (chargingStation: ChargingStation): boolean {
     return (
       chargingStation.getNumberOfRunningTransactions() === 0 &&
       !this.hasFirmwareUpdateInProgress(chargingStation) &&
@@ -2036,7 +2036,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param evse - The EVSE to check
    * @returns true if EVSE is idle
    */
-  private isEvseIdle(chargingStation: ChargingStation, evse: EvseStatus): boolean {
+  private isEvseIdle (chargingStation: ChargingStation, evse: EvseStatus): boolean {
     return (
       !this.hasEvseActiveTransactions(evse) &&
       !this.hasFirmwareUpdateInProgress(chargingStation) &&
@@ -2044,7 +2044,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     )
   }
 
-  private isIdTokenAuthorized(
+  private isIdTokenAuthorized (
     chargingStation: ChargingStation,
     idToken: OCPP20IdTokenType
   ): boolean {
@@ -2114,7 +2114,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param idTokenString - The ID token string to validate
    * @returns true if authorized locally, false otherwise
    */
-  private isIdTokenLocalAuthorized(
+  private isIdTokenLocalAuthorized (
     chargingStation: ChargingStation,
     idTokenString: string
   ): boolean {
@@ -2141,7 +2141,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param connectorId - The connector ID that needs rollback
    * @param evseId - The EVSE ID
    */
-  private async resetConnectorOnStartTransactionError(
+  private async resetConnectorOnStartTransactionError (
     chargingStation: ChargingStation,
     connectorId: number,
     evseId?: number
@@ -2158,7 +2158,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param evseId - The EVSE identifier to reset
    * @param hasActiveTransactions - Whether there are active transactions to handle
    */
-  private scheduleEvseReset(
+  private scheduleEvseReset (
     chargingStation: ChargingStation,
     evseId: number,
     hasActiveTransactions: boolean
@@ -2200,7 +2200,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param chargingStation - The charging station instance
    * @param evseId - The EVSE identifier to reset
    */
-  private scheduleEvseResetOnIdle(chargingStation: ChargingStation, evseId: number): void {
+  private scheduleEvseResetOnIdle (chargingStation: ChargingStation, evseId: number): void {
     const monitorInterval = setInterval(() => {
       const evse = chargingStation.getEvseStatus(evseId)
       if (evse != null) {
@@ -2221,7 +2221,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * Schedules charging station reset on idle (when no active transactions)
    * @param chargingStation - The charging station instance
    */
-  private scheduleResetOnIdle(chargingStation: ChargingStation): void {
+  private scheduleResetOnIdle (chargingStation: ChargingStation): void {
     const monitorInterval = setInterval(() => {
       if (this.isChargingStationIdle(chargingStation)) {
         clearInterval(monitorInterval)
@@ -2243,7 +2243,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param chargingStation - The charging station instance
    * @param status - The connector status to send
    */
-  private sendAllConnectorsStatusNotifications(
+  private sendAllConnectorsStatusNotifications (
     chargingStation: ChargingStation,
     status: OCPP20ConnectorStatusEnumType
   ): void {
@@ -2269,7 +2269,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param evseId - The EVSE identifier
    * @param status - The connector status to send
    */
-  private sendEvseStatusNotifications(
+  private sendEvseStatusNotifications (
     chargingStation: ChargingStation,
     evseId: number,
     status: OCPP20ConnectorStatusEnumType
@@ -2291,7 +2291,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
-  private async sendNotifyReportRequest(
+  private async sendNotifyReportRequest (
     chargingStation: ChargingStation,
     request: OCPP20GetBaseReportRequest,
     response: OCPP20GetBaseReportResponse
@@ -2345,7 +2345,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param chargingStation - The charging station instance
    * @param reason - The reason for transaction termination
    */
-  private async terminateAllTransactions(
+  private async terminateAllTransactions (
     chargingStation: ChargingStation,
     reason: OCPP20ReasonEnumType
   ): Promise<void> {
@@ -2385,7 +2385,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param evseId - The EVSE identifier to terminate transactions on
    * @param reason - The reason for transaction termination
    */
-  private async terminateEvseTransactions(
+  private async terminateEvseTransactions (
     chargingStation: ChargingStation,
     evseId: number,
     reason: OCPP20ReasonEnumType
@@ -2425,14 +2425,14 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
-  private toHandler(
+  private toHandler (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     handler: (chargingStation: ChargingStation, commandPayload: any) => JsonType | Promise<JsonType>
   ): IncomingRequestHandler {
     return handler as IncomingRequestHandler
   }
 
-  private validateChargingProfile(
+  private validateChargingProfile (
     chargingStation: ChargingStation,
     chargingProfile: OCPP20ChargingProfileType,
     evseId: number
@@ -2544,7 +2544,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param evseId - EVSE identifier
    * @returns True if purpose validation passes, false otherwise
    */
-  private validateChargingProfilePurpose(
+  private validateChargingProfilePurpose (
     chargingStation: ChargingStation,
     chargingProfile: OCPP20ChargingProfileType,
     evseId: number
@@ -2613,7 +2613,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param evseId - EVSE identifier
    * @returns True if schedule is valid, false otherwise
    */
-  private validateChargingSchedule(
+  private validateChargingSchedule (
     chargingStation: ChargingStation,
     schedule: OCPP20ChargingScheduleType,
     scheduleIndex: number,
@@ -2745,7 +2745,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param commandPayload - JSON payload to validate
    * @returns True if payload validation succeeds, false otherwise
    */
-  private validatePayload(
+  private validatePayload (
     chargingStation: ChargingStation,
     commandName: OCPP20IncomingRequestCommand,
     commandPayload: JsonType
@@ -2811,7 +2811,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
  * @param label - Descriptive label for the timeout error message
  * @returns The resolved value of the original promise, or rejects with a timeout error
  */
-function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+function withTimeout<T> (promise: Promise<T>, ms: number, label: string): Promise<T> {
   let timer: ReturnType<typeof setTimeout>
   return Promise.race([
     promise.finally(() => {
