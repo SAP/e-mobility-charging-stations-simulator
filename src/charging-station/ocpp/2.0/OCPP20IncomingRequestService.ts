@@ -1246,8 +1246,14 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     const { evseId, type } = commandPayload
 
     // Check AllowReset variable — if explicitly set to false, reject
-    const allowResetMeta = getVariableMetadata(OCPP20ComponentName.EVSE as string, 'AllowReset')
-    if (allowResetMeta?.defaultValue === 'false') {
+    const variableManager = OCPP20VariableManager.getInstance()
+    const allowResetResults = variableManager.getVariables(chargingStation, [
+      {
+        component: { name: OCPP20ComponentName.EVSE },
+        variable: { name: 'AllowReset' },
+      },
+    ])
+    if (allowResetResults.length > 0 && allowResetResults[0].attributeValue === 'false') {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: AllowReset is false, rejecting reset request`
       )
@@ -1318,7 +1324,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     try {
       if (type === ResetEnumType.Immediate) {
-        if (evseId !== undefined) {
+        if (evseId !== undefined && evseId > 0) {
           // EVSE-specific immediate reset
           if (evseHasActiveTransactions) {
             logger.info(
@@ -1394,7 +1400,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         }
       } else {
         // OnIdle reset
-        if (evseId !== undefined) {
+        if (evseId !== undefined && evseId > 0) {
           // EVSE-specific OnIdle reset
           const evse = chargingStation.getEvseStatus(evseId)
           if (evse != null && !this.isEvseIdle(chargingStation, evse)) {
@@ -1853,7 +1859,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         case MessageTriggerEnumType.StatusNotification:
           if (evse?.id !== undefined && evse.id > 0 && evse.connectorId !== undefined) {
             // Trigger for specific connector on EVSE
-            const connectorStatus = chargingStation.getConnectorStatus(evse.connectorId)
+            const evseStatus = chargingStation.evses.get(evse.id)
+            const connectorStatus = evseStatus?.connectors.get(evse.connectorId)
             const resolvedStatus =
               connectorStatus?.status != null
                 ? (connectorStatus.status as unknown as OCPP20ConnectorStatusEnumType)
