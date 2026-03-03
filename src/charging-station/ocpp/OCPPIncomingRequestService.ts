@@ -32,7 +32,6 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
     this.ajv = new Ajv({
       keywords: ['javaType'],
       multipleOfPrecision: 2,
-      strict: false,
     })
     ajvFormats(this.ajv)
     this.incomingRequestHandler = this.incomingRequestHandler.bind(this)
