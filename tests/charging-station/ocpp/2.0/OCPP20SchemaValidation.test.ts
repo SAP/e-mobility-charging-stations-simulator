@@ -14,8 +14,10 @@ import _Ajv, { type ValidateFunction } from 'ajv'
 import _ajvFormats from 'ajv-formats'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
+
+import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 
 const AjvConstructor = _Ajv.default
 const ajvFormats = _ajvFormats.default
@@ -49,6 +51,10 @@ function makeValidator (schemaFile: string): ValidateFunction {
 }
 
 await describe('OCPP 2.0 schema validation — negative tests', async () => {
+  afterEach(() => {
+    standardCleanup()
+  })
+
   await it('AJV compiles ResetRequest schema without error (strict:false required)', () => {
     // Verifies the AJV configuration works for schemas using additionalItems pattern
     expect(() => makeValidator('ResetRequest.json')).not.toThrow()

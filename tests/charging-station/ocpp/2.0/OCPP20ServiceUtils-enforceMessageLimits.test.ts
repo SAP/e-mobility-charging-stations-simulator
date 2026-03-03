@@ -1,7 +1,13 @@
+/**
+ * @file Tests for OCPP20ServiceUtils.enforceMessageLimits
+ * @description Verifies message limit enforcement logic for OCPP 2.0 payloads
+ */
+
 import { expect } from '@std/expect'
-import { describe, it } from 'node:test'
+import { afterEach, describe, it } from 'node:test'
 
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
+import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 
 interface MockLogger {
   debug: (...args: unknown[]) => void
@@ -59,6 +65,10 @@ function makeRejectedBuilder () {
 }
 
 await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
+  afterEach(() => {
+    standardCleanup()
+  })
+
   await describe('no limits configured (both 0)', async () => {
     await it('should return rejected:false and empty results when both limits are 0', () => {
       const station = makeMockStation()

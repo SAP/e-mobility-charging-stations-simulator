@@ -1,3 +1,8 @@
+/**
+ * @file Tests for OCPP 2.0 integration (SetVariables → GetVariables consistency)
+ * @description Verifies that SetVariables and GetVariables produce consistent results
+ */
+
 import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 

@@ -1,3 +1,8 @@
+/**
+ * @file Tests for OCPP 2.0 certificate integration lifecycle
+ * @description Verifies certificate install, list, and delete operations end-to-end
+ */
+
 import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
