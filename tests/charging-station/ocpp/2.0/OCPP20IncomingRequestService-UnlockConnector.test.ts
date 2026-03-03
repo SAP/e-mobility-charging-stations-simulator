@@ -191,7 +191,7 @@ await describe('F05 - UnlockConnector', async () => {
       expect(requestHandlerMock.mock.calls.length).toBeGreaterThan(0)
     })
 
-    await it('handler is async — result is a Promise', async () => {
+    await it('should return a Promise from async handler', async () => {
       const { mockStation } = createUnlockConnectorStation()
 
       const request: OCPP20UnlockConnectorRequest = { connectorId: 1, evseId: 1 }

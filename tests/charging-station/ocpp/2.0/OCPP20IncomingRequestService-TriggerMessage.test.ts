@@ -345,7 +345,7 @@ await describe('F06 - TriggerMessage', async () => {
       expect(typeof response.status).toBe('string')
     })
 
-    await it('handler is synchronous — result is not a Promise', () => {
+    await it('should not return a Promise from synchronous handler', () => {
       const request: OCPP20TriggerMessageRequest = {
         requestedMessage: MessageTriggerEnumType.BootNotification,
       }

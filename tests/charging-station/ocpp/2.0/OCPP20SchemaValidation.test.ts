@@ -55,17 +55,17 @@ await describe('OCPP 2.0 schema validation — negative tests', async () => {
     standardCleanup()
   })
 
-  await it('AJV compiles ResetRequest schema without error (strict:false required)', () => {
+  await it('should compile ResetRequest schema without error (strict:false required)', () => {
     // Verifies the AJV configuration works for schemas using additionalItems pattern
     expect(() => makeValidator('ResetRequest.json')).not.toThrow()
   })
 
-  await it('AJV compiles GetVariablesRequest schema without error (uses additionalItems)', () => {
+  await it('should compile GetVariablesRequest schema without error (uses additionalItems)', () => {
     // GetVariablesRequest uses additionalItems:false — would fail in strict mode
     expect(() => makeValidator('GetVariablesRequest.json')).not.toThrow()
   })
 
-  await it('Reset: missing required "type" field → validation fails', () => {
+  await it('should fail validation when Reset payload is missing required "type" field', () => {
     const validate = makeValidator('ResetRequest.json')
     expect(validate({})).toBe(false)
     expect(validate.errors).toBeDefined()
@@ -78,7 +78,7 @@ await describe('OCPP 2.0 schema validation — negative tests', async () => {
     expect(hasMissingType).toBe(true)
   })
 
-  await it('Reset: invalid "type" enum value → validation fails', () => {
+  await it('should fail validation when Reset payload has invalid "type" enum value', () => {
     const validate = makeValidator('ResetRequest.json')
     // Valid values are Immediate and OnIdle only; HardReset is OCPP 1.6
     expect(validate({ type: 'HardReset' })).toBe(false)
@@ -87,7 +87,7 @@ await describe('OCPP 2.0 schema validation — negative tests', async () => {
     expect(hasEnumError).toBe(true)
   })
 
-  await it('GetVariables: empty getVariableData array (minItems:1) → validation fails', () => {
+  await it('should fail validation when GetVariables has empty getVariableData array', () => {
     const validate = makeValidator('GetVariablesRequest.json')
     expect(validate({ getVariableData: [] })).toBe(false)
     expect(validate.errors).toBeDefined()
@@ -95,7 +95,7 @@ await describe('OCPP 2.0 schema validation — negative tests', async () => {
     expect(hasMinItemsError).toBe(true)
   })
 
-  await it('GetVariables: missing required getVariableData → validation fails', () => {
+  await it('should fail validation when GetVariables is missing required getVariableData', () => {
     const validate = makeValidator('GetVariablesRequest.json')
     expect(validate({})).toBe(false)
     expect(validate.errors).toBeDefined()
@@ -107,7 +107,7 @@ await describe('OCPP 2.0 schema validation — negative tests', async () => {
     expect(hasMissingProp).toBe(true)
   })
 
-  await it('SetVariables: missing required setVariableData → validation fails', () => {
+  await it('should fail validation when SetVariables is missing required setVariableData', () => {
     const validate = makeValidator('SetVariablesRequest.json')
     expect(validate({})).toBe(false)
     expect(validate.errors).toBeDefined()
@@ -119,7 +119,7 @@ await describe('OCPP 2.0 schema validation — negative tests', async () => {
     expect(hasMissingProp).toBe(true)
   })
 
-  await it('TriggerMessage: invalid requestedMessage enum value → validation fails', () => {
+  await it('should fail validation when TriggerMessage has invalid requestedMessage enum value', () => {
     const validate = makeValidator('TriggerMessageRequest.json')
     expect(validate({ requestedMessage: 'INVALID_MESSAGE_TYPE_XYZ' })).toBe(false)
     expect(validate.errors).toBeDefined()
@@ -127,7 +127,7 @@ await describe('OCPP 2.0 schema validation — negative tests', async () => {
     expect(hasEnumError).toBe(true)
   })
 
-  await it('TriggerMessage: missing required requestedMessage → validation fails', () => {
+  await it('should fail validation when TriggerMessage is missing required requestedMessage', () => {
     const validate = makeValidator('TriggerMessageRequest.json')
     expect(validate({})).toBe(false)
     expect(validate.errors).toBeDefined()
@@ -139,7 +139,7 @@ await describe('OCPP 2.0 schema validation — negative tests', async () => {
     expect(hasMissingProp).toBe(true)
   })
 
-  await it('UnlockConnector: missing required "evseId" → validation fails', () => {
+  await it('should fail validation when UnlockConnector is missing required evseId', () => {
     const validate = makeValidator('UnlockConnectorRequest.json')
     expect(validate({ connectorId: 1 })).toBe(false)
     expect(validate.errors).toBeDefined()
@@ -151,7 +151,7 @@ await describe('OCPP 2.0 schema validation — negative tests', async () => {
     expect(hasMissingProp).toBe(true)
   })
 
-  await it('UnlockConnector: missing required "connectorId" → validation fails', () => {
+  await it('should fail validation when UnlockConnector is missing required connectorId', () => {
     const validate = makeValidator('UnlockConnectorRequest.json')
     expect(validate({ evseId: 1 })).toBe(false)
     expect(validate.errors).toBeDefined()
@@ -163,7 +163,7 @@ await describe('OCPP 2.0 schema validation — negative tests', async () => {
     expect(hasMissingProp).toBe(true)
   })
 
-  await it('RequestStartTransaction: missing required "idToken" → validation fails', () => {
+  await it('should fail validation when RequestStartTransaction is missing required idToken', () => {
     const validate = makeValidator('RequestStartTransactionRequest.json')
     // remoteStartId is also required; provide it but omit idToken
     expect(validate({ remoteStartId: 1 })).toBe(false)
@@ -176,7 +176,7 @@ await describe('OCPP 2.0 schema validation — negative tests', async () => {
     expect(hasMissingProp).toBe(true)
   })
 
-  await it('CertificateSigned: missing required certificateChain → validation fails', () => {
+  await it('should fail validation when CertificateSigned is missing required certificateChain', () => {
     const validate = makeValidator('CertificateSignedRequest.json')
     expect(validate({})).toBe(false)
     expect(validate.errors).toBeDefined()
@@ -188,14 +188,14 @@ await describe('OCPP 2.0 schema validation — negative tests', async () => {
     expect(hasMissingProp).toBe(true)
   })
 
-  await it('Reset: valid payload passes validation', () => {
+  await it('should pass validation for valid Reset payloads', () => {
     const validate = makeValidator('ResetRequest.json')
     expect(validate({ type: 'Immediate' })).toBe(true)
     expect(validate({ type: 'OnIdle' })).toBe(true)
     expect(validate({ evseId: 1, type: 'OnIdle' })).toBe(true)
   })
 
-  await it('TriggerMessage: valid payload passes validation', () => {
+  await it('should pass validation for valid TriggerMessage payloads', () => {
     const validate = makeValidator('TriggerMessageRequest.json')
     expect(validate({ requestedMessage: 'Heartbeat' })).toBe(true)
     expect(validate({ requestedMessage: 'BootNotification' })).toBe(true)
