@@ -34,6 +34,7 @@ import {
   ChargingProfileKindType,
   ChargingProfilePurposeType,
   ChargingRateUnitType,
+  type ChargingSchedule,
   type ChargingSchedulePeriod,
   type ChargingStationConfiguration,
   type ChargingStationInfo,
@@ -45,9 +46,6 @@ import {
   ConnectorStatusEnum,
   CurrentType,
   type EvseTemplate,
-  type OCPP16BootNotificationRequest,
-  type OCPP16ChargingSchedule,
-  type OCPP20BootNotificationRequest,
   OCPPVersion,
   RecurrencyKindType,
   type Reservation,
@@ -548,7 +546,7 @@ export const prepareConnectorStatus = (connectorStatus: ConnectorStatus): Connec
           chargingProfile.chargingProfilePurpose !== ChargingProfilePurposeType.TX_PROFILE
       )
       .map(chargingProfile => {
-        const chargingSchedule = getOCPP16ChargingSchedule(chargingProfile)
+        const chargingSchedule = getSingleChargingSchedule(chargingProfile)
         if (chargingSchedule != null) {
           chargingSchedule.startSchedule = convertToDate(chargingSchedule.startSchedule)
         }
@@ -587,7 +585,7 @@ export const createBootNotificationRequest = (
         ...(stationInfo.meterType != null && {
           meterType: stationInfo.meterType,
         }),
-      } satisfies OCPP16BootNotificationRequest
+      } satisfies BootNotificationRequest
     case OCPPVersion.VERSION_20:
     case OCPPVersion.VERSION_201:
       return {
@@ -608,7 +606,7 @@ export const createBootNotificationRequest = (
           }),
         },
         reason: bootReason,
-      } satisfies OCPP20BootNotificationRequest
+      } satisfies BootNotificationRequest
   }
 }
 
@@ -834,7 +832,7 @@ const buildChargingProfilesLimit = (
   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
   const errorMsg = `Unknown ${chargingStation.stationInfo?.currentOutType} currentOutType in charging station information, cannot build charging profiles limit`
   const { chargingProfile, limit } = chargingProfilesLimit
-  const chargingSchedule = getOCPP16ChargingSchedule(
+  const chargingSchedule = getSingleChargingSchedule(
     chargingProfile,
     chargingStation.logPrefix(),
     'buildChargingProfilesLimit'
@@ -1015,11 +1013,11 @@ const getChargingProfileId = (chargingProfile: ChargingProfile): string => {
   return typeof id === 'number' ? id.toString() : 'unknown'
 }
 
-const getOCPP16ChargingSchedule = (
+const getSingleChargingSchedule = (
   chargingProfile: ChargingProfile,
   logPrefix?: string,
   methodName?: string
-): OCPP16ChargingSchedule | undefined => {
+): ChargingSchedule | undefined => {
   if (!Array.isArray(chargingProfile.chargingSchedule)) {
     return chargingProfile.chargingSchedule
   }
@@ -1049,7 +1047,7 @@ const getChargingProfilesLimit = (
   let previousActiveChargingProfile: ChargingProfile | undefined
   for (const chargingProfile of chargingProfiles) {
     const chargingProfileId = getChargingProfileId(chargingProfile)
-    const chargingSchedule = getOCPP16ChargingSchedule(
+    const chargingSchedule = getSingleChargingSchedule(
       chargingProfile,
       chargingStation.logPrefix(),
       'getChargingProfilesLimit'
@@ -1198,7 +1196,7 @@ export const prepareChargingProfileKind = (
   logPrefix: string
 ): boolean => {
   const chargingProfileId = getChargingProfileId(chargingProfile)
-  const chargingSchedule = getOCPP16ChargingSchedule(
+  const chargingSchedule = getSingleChargingSchedule(
     chargingProfile,
     logPrefix,
     'prepareChargingProfileKind'
@@ -1235,7 +1233,7 @@ export const canProceedChargingProfile = (
   logPrefix: string
 ): boolean => {
   const chargingProfileId = getChargingProfileId(chargingProfile)
-  const chargingSchedule = getOCPP16ChargingSchedule(
+  const chargingSchedule = getSingleChargingSchedule(
     chargingProfile,
     logPrefix,
     'canProceedChargingProfile'
@@ -1281,7 +1279,7 @@ const canProceedRecurringChargingProfile = (
   logPrefix: string
 ): boolean => {
   const chargingProfileId = getChargingProfileId(chargingProfile)
-  const chargingSchedule = getOCPP16ChargingSchedule(
+  const chargingSchedule = getSingleChargingSchedule(
     chargingProfile,
     logPrefix,
     'canProceedRecurringChargingProfile'
@@ -1323,7 +1321,7 @@ const prepareRecurringChargingProfile = (
   logPrefix: string
 ): boolean => {
   const chargingProfileId = getChargingProfileId(chargingProfile)
-  const chargingSchedule = getOCPP16ChargingSchedule(
+  const chargingSchedule = getSingleChargingSchedule(
     chargingProfile,
     logPrefix,
     'prepareRecurringChargingProfile'
@@ -1412,7 +1410,7 @@ const checkRecurringChargingProfileDuration = (
   logPrefix: string
 ): void => {
   const chargingProfileId = getChargingProfileId(chargingProfile)
-  const chargingSchedule = getOCPP16ChargingSchedule(
+  const chargingSchedule = getSingleChargingSchedule(
     chargingProfile,
     logPrefix,
     'checkRecurringChargingProfileDuration'

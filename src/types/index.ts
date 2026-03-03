@@ -268,6 +268,7 @@ export {
   ChargingProfileKindType,
   ChargingProfilePurposeType,
   ChargingRateUnitType,
+  type ChargingSchedule,
   type ChargingSchedulePeriod,
   RecurrencyKindType,
 } from './ocpp/ChargingProfile.js'

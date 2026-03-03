@@ -3,6 +3,7 @@ import {
   OCPP16ChargingProfileKindType,
   OCPP16ChargingProfilePurposeType,
   OCPP16ChargingRateUnitType,
+  type OCPP16ChargingSchedule,
   type OCPP16ChargingSchedulePeriod,
   OCPP16RecurrencyKindType,
 } from './1.6/ChargingProfile.js'
@@ -12,10 +13,13 @@ import {
   type OCPP20ChargingProfileType,
   OCPP20ChargingRateUnitEnumType,
   type OCPP20ChargingSchedulePeriodType,
+  type OCPP20ChargingScheduleType,
   OCPP20RecurrencyKindEnumType,
 } from './2.0/Transaction.js'
 
 export type ChargingProfile = OCPP16ChargingProfile | OCPP20ChargingProfileType
+
+export type ChargingSchedule = OCPP16ChargingSchedule | OCPP20ChargingScheduleType
 
 export type ChargingSchedulePeriod = OCPP16ChargingSchedulePeriod | OCPP20ChargingSchedulePeriodType
 
