@@ -302,12 +302,10 @@ export class OCPP20RequestService extends OCPPRequestService {
       throw new OCPPError(ErrorType.INTERNAL_ERROR, errorMsg, OCPP20RequestCommand.SIGN_CERTIFICATE)
     }
 
-    // Build request payload
     const requestPayload: OCPP20SignCertificateRequest = {
       csr,
     }
 
-    // Add certificate type if specified
     if (certificateType != null) {
       requestPayload.certificateType = certificateType
     }

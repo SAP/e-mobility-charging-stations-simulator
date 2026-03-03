@@ -11,6 +11,7 @@
  */
 
 import { expect } from '@std/expect'
+import assert from 'node:assert'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
@@ -23,6 +24,7 @@ import {
   OCPP20TriggerReasonEnumType,
   OCPPVersion,
 } from '../../../../src/types/index.js'
+import { OCPP20IncomingRequestCommand } from '../../../../src/types/ocpp/2.0/Requests.js'
 import {
   OCPP20ChargingStateEnumType,
   OCPP20IdTokenEnumType,
@@ -468,7 +470,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       await describe('selectTriggerReason', async () => {
         await it('should select RemoteStart for remote_command context with RequestStartTransaction', () => {
           const context: OCPP20TransactionContext = {
-            command: 'RequestStartTransaction',
+            command: OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
             source: 'remote_command',
           }
 
@@ -482,7 +484,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         await it('should select RemoteStop for remote_command context with RequestStopTransaction', () => {
           const context: OCPP20TransactionContext = {
-            command: 'RequestStopTransaction',
+            command: OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION,
             source: 'remote_command',
           }
 
@@ -496,7 +498,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         await it('should select UnlockCommand for remote_command context with UnlockConnector', () => {
           const context: OCPP20TransactionContext = {
-            command: 'UnlockConnector',
+            command: OCPP20IncomingRequestCommand.UNLOCK_CONNECTOR,
             source: 'remote_command',
           }
 
@@ -510,7 +512,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         await it('should select ResetCommand for remote_command context with Reset', () => {
           const context: OCPP20TransactionContext = {
-            command: 'Reset',
+            command: OCPP20IncomingRequestCommand.RESET,
             source: 'remote_command',
           }
 
@@ -524,7 +526,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         await it('should select Trigger for remote_command context with TriggerMessage', () => {
           const context: OCPP20TransactionContext = {
-            command: 'TriggerMessage',
+            command: OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
             source: 'remote_command',
           }
 
@@ -759,7 +761,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           // Test context with multiple applicable triggers - priority should be respected
           const context: OCPP20TransactionContext = {
             cableState: 'plugged_in', // Even lower priority
-            command: 'RequestStartTransaction',
+            command: OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
             isDeauthorized: true, // Lower priority but should be overridden
             source: 'remote_command', // High priority
           }
@@ -806,7 +808,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           const connectorId = 1
           const transactionId = generateUUID()
           const context: OCPP20TransactionContext = {
-            command: 'RequestStartTransaction',
+            command: OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
             source: 'remote_command',
           }
 
@@ -1964,7 +1966,8 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         expect(response.idTokenInfo).toBeUndefined()
 
         const connector = mockStation.getConnectorStatus(connectorId)
-        expect(connector?.transactionEventQueue).toBeDefined()
+        assert(connector != null)
+        assert(connector.transactionEventQueue != null)
         expect(connector.transactionEventQueue.length).toBe(1)
         expect(connector.transactionEventQueue[0].seqNo).toBe(0)
       })
@@ -2003,6 +2006,8 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         const connector = mockStation.getConnectorStatus(connectorId)
         expect(connector?.transactionEventQueue?.length).toBe(3)
+        assert(connector != null)
+        assert(connector.transactionEventQueue != null)
 
         expect(connector.transactionEventQueue[0].seqNo).toBe(0)
         expect(connector.transactionEventQueue[1].seqNo).toBe(1)
@@ -2057,6 +2062,8 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         const connector = mockStation.getConnectorStatus(connectorId)
         expect(connector?.transactionEventQueue?.length).toBe(2)
+        assert(connector != null)
+        assert(connector.transactionEventQueue != null)
         expect(connector.transactionEventQueue[0].seqNo).toBe(1)
         expect(connector.transactionEventQueue[1].seqNo).toBe(2)
       })
@@ -2080,6 +2087,8 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         const connector = mockStation.getConnectorStatus(connectorId)
         expect(connector?.transactionEventQueue?.[0]?.timestamp).toBeInstanceOf(Date)
+        assert(connector != null)
+        assert(connector.transactionEventQueue != null)
         expect(connector.transactionEventQueue[0].timestamp.getTime()).toBeGreaterThanOrEqual(
           beforeQueue.getTime()
         )
@@ -2141,6 +2150,8 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         const connector = mockStation.getConnectorStatus(connectorId)
         expect(connector?.transactionEventQueue?.length).toBe(1)
+        assert(connector != null)
+        assert(connector.transactionEventQueue != null)
 
         setOnline(true)
         await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockStation, connectorId)
@@ -2204,6 +2215,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       await it('should handle null queue gracefully', async () => {
         const connectorId = 1
         const connector = mockStation.getConnectorStatus(connectorId)
+        assert(connector != null)
         connector.transactionEventQueue = undefined
 
         await expect(
@@ -2310,6 +2322,10 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         expect(connector1?.transactionEventQueue?.length).toBe(2)
         expect(connector2?.transactionEventQueue?.length).toBe(1)
+        assert(connector1 != null)
+        assert(connector1.transactionEventQueue != null)
+        assert(connector2 != null)
+        assert(connector2.transactionEventQueue != null)
 
         expect(connector1.transactionEventQueue[0].request.transactionInfo.transactionId).toBe(
           transactionId1
@@ -2348,7 +2364,9 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockStation, 1)
 
         expect(sentRequests.length).toBe(1)
-        expect(sentRequests[0].payload.transactionInfo.transactionId).toBe(transactionId1)
+        expect(
+          (sentRequests[0].payload.transactionInfo as Record<string, unknown>).transactionId
+        ).toBe(transactionId1)
 
         const connector2 = mockStation.getConnectorStatus(2)
         expect(connector2?.transactionEventQueue?.length).toBe(1)
@@ -2356,7 +2374,9 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockStation, 2)
 
         expect(sentRequests.length).toBe(2)
-        expect(sentRequests[1].payload.transactionInfo.transactionId).toBe(transactionId2)
+        expect(
+          (sentRequests[1].payload.transactionInfo as Record<string, unknown>).transactionId
+        ).toBe(transactionId2)
       })
     })
 
@@ -2477,6 +2497,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         // Simulate startTxUpdatedInterval with zero interval
         const connector = mockStation.getConnectorStatus(connectorId)
         expect(connector).toBeDefined()
+        assert(connector != null)
 
         // Zero interval should not start timer
         // This is verified by the implementation logging debug message
@@ -2487,6 +2508,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const connectorId = 1
         const connector = mockStation.getConnectorStatus(connectorId)
         expect(connector).toBeDefined()
+        assert(connector != null)
 
         // Negative interval should not start timer
         expect(connector.transactionTxUpdatedSetInterval).toBeUndefined()
@@ -2600,7 +2622,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         // Verify EVSE info is present
         expect(sentRequests[0].payload.evse).toBeDefined()
-        expect(sentRequests[0].payload.evse.id).toBe(connectorId)
+        expect((sentRequests[0].payload.evse as Record<string, unknown>).id).toBe(connectorId)
       })
 
       await it('should include transactionInfo with correct transactionId', async () => {
@@ -2619,7 +2641,9 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         // Verify transactionInfo contains the transaction ID
         expect(sentRequests[0].payload.transactionInfo).toBeDefined()
-        expect(sentRequests[0].payload.transactionInfo.transactionId).toBe(transactionId)
+        expect(
+          (sentRequests[0].payload.transactionInfo as Record<string, unknown>).transactionId
+        ).toBe(transactionId)
       })
     })
 

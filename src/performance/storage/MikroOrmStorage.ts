@@ -53,8 +53,10 @@ export class MikroOrmStorage extends Storage {
       await this.orm?.em.upsert({
         ...performanceStatistics,
         statisticsData: Array.from(performanceStatistics.statisticsData, ([name, value]) => ({
-          name,
           ...value,
+          measurementTimeSeries:
+            value.measurementTimeSeries != null ? [...value.measurementTimeSeries] : undefined,
+          name,
         })),
       } satisfies PerformanceRecord)
     } catch (error) {

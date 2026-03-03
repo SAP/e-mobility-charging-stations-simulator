@@ -13,6 +13,7 @@ import {
   OCPP20OptionalVariableName,
   OCPP20RequestCommand,
   type OCPP20StatusNotificationResponse,
+  type OCPP20TransactionEventResponse,
   OCPPVersion,
   RegistrationStatusEnumType,
   type ResponseHandler,
@@ -89,6 +90,10 @@ export class OCPP20ResponseService extends OCPPResponseService {
       [
         OCPP20RequestCommand.STATUS_NOTIFICATION,
         this.handleResponseStatusNotification.bind(this) as ResponseHandler,
+      ],
+      [
+        OCPP20RequestCommand.TRANSACTION_EVENT,
+        this.handleResponseTransactionEvent.bind(this) as ResponseHandler,
       ],
     ])
     this.payloadValidatorFunctions = OCPP20ServiceUtils.createPayloadValidatorMap(
@@ -253,6 +258,37 @@ export class OCPP20ResponseService extends OCPPResponseService {
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.handleResponseStatusNotification: StatusNotification response received successfully`
     )
+  }
+
+  // TODO: currently log-only — future work should act on idTokenInfo.status (Invalid/Blocked → stop transaction)
+  // and chargingPriority (update charging profile priority) per OCPP 2.0.1 spec
+  private handleResponseTransactionEvent (
+    chargingStation: ChargingStation,
+    payload: OCPP20TransactionEventResponse
+  ): void {
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: TransactionEvent response received`
+    )
+    if (payload.totalCost != null) {
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Total cost: ${payload.totalCost.toString()}`
+      )
+    }
+    if (payload.chargingPriority != null) {
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Charging priority: ${payload.chargingPriority.toString()}`
+      )
+    }
+    if (payload.idTokenInfo != null) {
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: IdToken info status: ${payload.idTokenInfo.status}`
+      )
+    }
+    if (payload.updatedPersonalMessage != null) {
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Updated personal message format: ${payload.updatedPersonalMessage.format}, content: ${payload.updatedPersonalMessage.content}`
+      )
+    }
   }
 
   /**

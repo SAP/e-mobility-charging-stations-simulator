@@ -340,7 +340,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
       expect(result[2].attributeStatusInfo).toBeUndefined()
     })
 
-    await it('should reject EVSE component as unsupported', () => {
+    await it('should reject unknown variable on EVSE component', () => {
       const request: OCPP20GetVariableDataType[] = [
         {
           component: {
@@ -355,7 +355,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
 
       expect(Array.isArray(result)).toBe(true)
       expect(result).toHaveLength(1)
-      expect(result[0].attributeStatus).toBe(GetVariableStatusEnumType.UnknownComponent)
+      expect(result[0].attributeStatus).toBe(GetVariableStatusEnumType.UnknownVariable)
       expect(result[0].attributeType).toBe(AttributeEnumType.Actual)
       expect(result[0].attributeValue).toBeUndefined()
       expect(result[0].component.name).toBe(OCPP20ComponentName.EVSE)

@@ -104,13 +104,13 @@ await describe('ChargingStation Lifecycle', async () => {
       station.start()
 
       // Assert initial state
-      expect(station.stopping).toBe(false)
+      expect((station as unknown as { stopping: boolean }).stopping).toBe(false)
 
       // Act
       await station.stop()
 
       // Assert - after stop() completes, stopping should be false
-      expect(station.stopping).toBe(false)
+      expect((station as unknown as { stopping: boolean }).stopping).toBe(false)
       expect(station.started).toBe(false)
     })
 

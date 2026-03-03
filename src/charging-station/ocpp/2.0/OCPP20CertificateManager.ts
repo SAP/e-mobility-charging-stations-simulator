@@ -83,12 +83,18 @@ export class OCPP20CertificateManager {
   private static readonly PEM_END_MARKER = '-----END CERTIFICATE-----'
 
   /**
-   * Computes hash data for a PEM certificate per RFC 6960 Section 4.1.1 CertID semantics
+   * Computes hash data for a PEM certificate per RFC 6960 §4.1.1 CertID semantics.
    *
    * Per RFC 6960, the CertID identifies a certificate by:
    * - issuerNameHash: Hash of the issuer's DN (from the subject certificate)
    * - issuerKeyHash: Hash of the issuer's public key (from the issuer certificate)
    * - serialNumber: The certificate's serial number
+   * @remarks
+   * **RFC 6960 §4.1.1 deviation**: Per RFC 6960, `issuerNameHash` must be the hash of the
+   * DER-encoded issuer distinguished name. This implementation hashes the string DN
+   * representation from `X509Certificate.issuer` as a simulation approximation. Full RFC 6960
+   * compliance would require ASN.1/DER encoding of the issuer name, which is outside the scope
+   * of this simulator. See also: mock CSR generation in the SignCertificate handler.
    * @param pemData - PEM-encoded certificate data
    * @param hashAlgorithm - Hash algorithm to use (default: SHA256)
    * @param issuerCertPem - Optional PEM-encoded issuer certificate for issuerKeyHash computation.
@@ -113,11 +119,12 @@ export class OCPP20CertificateManager {
       const firstCertPem = this.extractFirstCertificate(pemData)
       const x509 = new X509Certificate(firstCertPem)
 
-      // RFC 6960 4.1.1: issuerNameHash is the hash of the issuer's DN from the subject certificate
-      // Node.js X509Certificate.issuer provides the string representation of the issuer DN
+      // RFC 6960 §4.1.1 deviation: spec requires hash of DER-encoded issuer distinguished name.
+      // Using string DN from X509Certificate.issuer as simulation approximation
+      // (ASN.1/DER encoding of the issuer name is out of scope for this simulator).
       const issuerNameHash = createHash(algorithmName).update(x509.issuer).digest('hex')
 
-      // RFC 6960 4.1.1: issuerKeyHash is the hash of the issuer certificate's public key
+      // RFC 6960 §4.1.1: issuerKeyHash is the hash of the issuer certificate's public key
       // Determine which public key to use for issuerKeyHash
       let issuerPublicKeyDer: Buffer
 
@@ -371,7 +378,11 @@ export class OCPP20CertificateManager {
 
   /**
    * Computes fallback hash data when X509Certificate parsing fails.
-   * Uses the raw PEM content to derive hash values.
+   * Uses the raw PEM content to derive deterministic but non-RFC-compliant hash values.
+   * @remarks
+   * This fallback produces stable, unique identifiers for certificate matching purposes only.
+   * The hash values do not conform to RFC 6960 §4.1.1 CertID semantics since the raw DER
+   * content cannot be structurally parsed without X509Certificate support.
    * @param pemData - PEM-encoded certificate data
    * @param hashAlgorithm - Hash algorithm enum type for the response
    * @param algorithmName - Node.js crypto hash algorithm name
@@ -382,25 +393,22 @@ export class OCPP20CertificateManager {
     hashAlgorithm: HashAlgorithmEnumType,
     algorithmName: string
   ): CertificateHashDataType {
-    // Extract the base64 content between PEM markers
     const base64Content = pemData
       .replace(/-----BEGIN CERTIFICATE-----/, '')
       .replace(/-----END CERTIFICATE-----/, '')
       .replace(/\s/g, '')
 
-    // Compute hashes from the certificate content
     const contentBuffer = Buffer.from(base64Content, 'base64')
+
+    // Use first 64 bytes as issuer name proxy: in DER-encoded X.509, the issuer DN
+    // typically resides within this range, providing a stable hash for matching.
+    const issuerNameSliceEnd = Math.min(64, contentBuffer.length)
     const issuerNameHash = createHash(algorithmName)
-      .update(contentBuffer.subarray(0, Math.min(64, contentBuffer.length)))
+      .update(contentBuffer.subarray(0, issuerNameSliceEnd))
       .digest('hex')
     const issuerKeyHash = createHash(algorithmName).update(contentBuffer).digest('hex')
 
-    // Generate a serial number from the content hash
-    const serialNumber = createHash('sha256')
-      .update(pemData)
-      .digest('hex')
-      .substring(0, 16)
-      .toUpperCase()
+    const serialNumber = this.generateFallbackSerialNumber(pemData)
 
     return {
       hashAlgorithm,

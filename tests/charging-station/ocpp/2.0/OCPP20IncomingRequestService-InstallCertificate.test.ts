@@ -164,7 +164,7 @@ await describe('I03 - InstallCertificate', async () => {
       stationWithCertManager.certificateManager = createMockCertificateManager({
         storeCertificateResult: false,
       })
-      mockStation.stationInfo.validateCertificateExpiry = true
+      ;(mockStation.stationInfo as Record<string, unknown>).validateCertificateExpiry = true
 
       const request: OCPP20InstallCertificateRequest = {
         certificate: EXPIRED_PEM_CERTIFICATE,
@@ -179,7 +179,7 @@ await describe('I03 - InstallCertificate', async () => {
       expect(response.statusInfo).toBeDefined()
       expect(response.statusInfo?.reasonCode).toBeDefined()
 
-      delete mockStation.stationInfo.validateCertificateExpiry
+      delete (mockStation.stationInfo as Record<string, unknown>).validateCertificateExpiry
     })
   })
 

@@ -369,8 +369,10 @@ await describe('ChargingStation Connector and EVSE State', async () => {
       expect(station.inPendingState()).toBe(true)
 
       // Act - transition from PENDING to ACCEPTED
-      station.bootNotificationResponse.status = RegistrationStatusEnumType.ACCEPTED
-      station.bootNotificationResponse.currentTime = new Date()
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      station.bootNotificationResponse!.status = RegistrationStatusEnumType.ACCEPTED
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      station.bootNotificationResponse!.currentTime = new Date()
 
       // Assert
       expect(station.inAcceptedState()).toBe(true)
@@ -386,8 +388,10 @@ await describe('ChargingStation Connector and EVSE State', async () => {
       expect(station.inPendingState()).toBe(true)
 
       // Act - transition from PENDING to REJECTED
-      station.bootNotificationResponse.status = RegistrationStatusEnumType.REJECTED
-      station.bootNotificationResponse.currentTime = new Date()
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      station.bootNotificationResponse!.status = RegistrationStatusEnumType.REJECTED
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      station.bootNotificationResponse!.currentTime = new Date()
 
       // Assert
       expect(station.inRejectedState()).toBe(true)

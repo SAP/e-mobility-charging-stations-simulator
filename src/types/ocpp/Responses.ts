@@ -1,6 +1,7 @@
 import type { ChargingStation } from '../../charging-station/index.js'
 import type { JsonType } from '../JsonType.js'
 import type { OCPP16MeterValuesResponse } from './1.6/MeterValues.js'
+import type { OCPP20MeterValuesResponse } from './2.0/MeterValues.js'
 import type { OCPP20BootNotificationResponse, OCPP20ClearCacheResponse } from './2.0/Responses.js'
 import type { ErrorType } from './ErrorType.js'
 import type { MessageType } from './MessageType.js'
@@ -41,7 +42,8 @@ export type FirmwareStatusNotificationResponse = OCPP16FirmwareStatusNotificatio
 
 export type HeartbeatResponse = OCPP16HeartbeatResponse
 
-export type MeterValuesResponse = OCPP16MeterValuesResponse
+// eslint-disable-next-line @typescript-eslint/no-duplicate-type-constituents
+export type MeterValuesResponse = OCPP16MeterValuesResponse | OCPP20MeterValuesResponse
 
 export type Response = [MessageType.CALL_RESULT_MESSAGE, string, JsonType]
 

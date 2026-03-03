@@ -10,6 +10,7 @@ import type {
   CustomDataType,
   GetCertificateIdUseEnumType,
   InstallCertificateUseEnumType,
+  MessageTriggerEnumType,
   OCSPRequestDataType,
   ReportBaseEnumType,
   ResetEnumType,
@@ -17,6 +18,7 @@ import type {
 import type {
   OCPP20ChargingProfileType,
   OCPP20ConnectorStatusEnumType,
+  OCPP20EVSEType,
   OCPP20IdTokenType,
 } from './Transaction.js'
 import type {
@@ -25,7 +27,7 @@ import type {
   ReportDataType,
 } from './Variables.js'
 
-export const enum OCPP20IncomingRequestCommand {
+export enum OCPP20IncomingRequestCommand {
   CERTIFICATE_SIGNED = 'CertificateSigned',
   CLEAR_CACHE = 'ClearCache',
   DELETE_CERTIFICATE = 'DeleteCertificate',
@@ -41,7 +43,7 @@ export const enum OCPP20IncomingRequestCommand {
   UNLOCK_CONNECTOR = 'UnlockConnector',
 }
 
-export const enum OCPP20RequestCommand {
+export enum OCPP20RequestCommand {
   BOOT_NOTIFICATION = 'BootNotification',
   GET_15118_EV_CERTIFICATE = 'Get15118EVCertificate',
   GET_CERTIFICATE_STATUS = 'GetCertificateStatus',
@@ -153,4 +155,16 @@ export interface OCPP20StatusNotificationRequest extends JsonObject {
   customData?: CustomDataType
   evseId: number
   timestamp: Date
+}
+
+export interface OCPP20TriggerMessageRequest extends JsonObject {
+  customData?: CustomDataType
+  evse?: OCPP20EVSEType
+  requestedMessage: MessageTriggerEnumType
+}
+
+export interface OCPP20UnlockConnectorRequest extends JsonObject {
+  connectorId: number
+  customData?: CustomDataType
+  evseId: number
 }

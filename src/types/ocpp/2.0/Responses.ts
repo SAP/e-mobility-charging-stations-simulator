@@ -15,6 +15,8 @@ import type {
   Iso15118EVCertificateStatusEnumType,
   ResetStatusEnumType,
   StatusInfoType,
+  TriggerMessageStatusEnumType,
+  UnlockStatusEnumType,
 } from './Common.js'
 import type { RequestStartStopStatusEnumType } from './Transaction.js'
 import type { OCPP20GetVariableResultType, OCPP20SetVariableResultType } from './Variables.js'
@@ -121,3 +123,17 @@ export interface OCPP20SignCertificateResponse extends JsonObject {
 }
 
 export type OCPP20StatusNotificationResponse = EmptyObject
+
+export type { OCPP20TransactionEventResponse } from './Transaction.js'
+
+export interface OCPP20TriggerMessageResponse extends JsonObject {
+  customData?: CustomDataType
+  status: TriggerMessageStatusEnumType
+  statusInfo?: StatusInfoType
+}
+
+export interface OCPP20UnlockConnectorResponse extends JsonObject {
+  customData?: CustomDataType
+  status: UnlockStatusEnumType
+  statusInfo?: StatusInfoType
+}

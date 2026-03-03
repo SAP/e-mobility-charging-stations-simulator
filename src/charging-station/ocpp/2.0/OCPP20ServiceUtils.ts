@@ -16,7 +16,9 @@ import {
   type OCPP20TransactionEventResponse,
   OCPP20TriggerReasonEnumType,
   OCPPVersion,
+  type UUIDv4,
 } from '../../../types/index.js'
+import { OCPP20RequiredVariableName } from '../../../types/index.js'
 import {
   OCPP20MeasurandEnumType,
   type OCPP20MeterValue,
@@ -29,7 +31,8 @@ import {
   type OCPP20TransactionEventOptions,
   type OCPP20TransactionType,
 } from '../../../types/ocpp/2.0/Transaction.js'
-import { logger, validateIdentifierString } from '../../../utils/index.js'
+import { convertToIntOrNaN, logger, validateIdentifierString } from '../../../utils/index.js'
+import { getConfigurationKey } from '../../ConfigurationKeyUtils.js'
 import { OCPPServiceUtils, sendAndSetConnectorStatus } from '../OCPPServiceUtils.js'
 import { OCPP20Constants } from './OCPP20Constants.js'
 
@@ -84,7 +87,6 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     transactionId: string,
     options?: OCPP20TransactionEventOptions
   ): OCPP20TransactionEventRequest
-  // Implementation with union type + type guard
   public static buildTransactionEvent (
     chargingStation: ChargingStation,
     eventType: OCPP20TransactionEventEnumType,
@@ -93,7 +95,6 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     transactionId: string,
     options: OCPP20TransactionEventOptions = {}
   ): OCPP20TransactionEventRequest {
-    // Type guard: distinguish between context object and direct trigger reason
     const isContext = typeof triggerReasonOrContext === 'object'
     const triggerReason = isContext
       ? this.selectTriggerReason(eventType, triggerReasonOrContext)
@@ -108,7 +109,6 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       throw new OCPPError(ErrorType.PROPERTY_CONSTRAINT_VIOLATION, errorMsg)
     }
 
-    // Get or validate EVSE ID
     const evseId = options.evseId ?? chargingStation.getEvseIdByConnectorId(connectorId)
     if (evseId == null) {
       const errorMsg = `Cannot find EVSE ID for connector ${connectorId.toString()}`
@@ -118,7 +118,6 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       throw new OCPPError(ErrorType.PROPERTY_CONSTRAINT_VIOLATION, errorMsg)
     }
 
-    // Get connector status and manage sequence number
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
     if (connectorStatus == null) {
       const errorMsg = `Cannot find connector status for connector ${connectorId.toString()}`
@@ -128,13 +127,10 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       throw new OCPPError(ErrorType.PROPERTY_CONSTRAINT_VIOLATION, errorMsg)
     }
 
-    // Per-EVSE sequence number management (OCPP 2.0.1 Section 1.3.2.1)
-    // Initialize sequence number to 0 for new transactions, or increment for existing
+    // Per-EVSE sequence number management (OCPP 2.0.1 §1.3.2.1)
     if (connectorStatus.transactionSeqNo == null) {
-      // First TransactionEvent for this EVSE/connector - start at 0
       connectorStatus.transactionSeqNo = 0
     } else {
-      // Increment for subsequent TransactionEvents
       connectorStatus.transactionSeqNo = connectorStatus.transactionSeqNo + 1
     }
 
@@ -148,12 +144,10 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       connectorStatus.transactionEvseSent = true
     }
 
-    // Build transaction info object
     const transactionInfo: OCPP20TransactionType = {
-      transactionId,
+      transactionId: transactionId as UUIDv4,
     }
 
-    // Add optional transaction info fields
     if (options.chargingState !== undefined) {
       transactionInfo.chargingState = options.chargingState
     }
@@ -164,7 +158,6 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       transactionInfo.remoteStartId = options.remoteStartId
     }
 
-    // Build the complete TransactionEvent request
     const transactionEventRequest: OCPP20TransactionEventRequest = {
       eventType,
       seqNo: connectorStatus.transactionSeqNo,
@@ -218,16 +211,32 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     { schemaPath: string }
   ][] => [
     [
+      OCPP20IncomingRequestCommand.CERTIFICATE_SIGNED,
+      OCPP20ServiceUtils.PayloadValidatorConfig('CertificateSignedRequest.json'),
+    ],
+    [
       OCPP20IncomingRequestCommand.CLEAR_CACHE,
       OCPP20ServiceUtils.PayloadValidatorConfig('ClearCacheRequest.json'),
+    ],
+    [
+      OCPP20IncomingRequestCommand.DELETE_CERTIFICATE,
+      OCPP20ServiceUtils.PayloadValidatorConfig('DeleteCertificateRequest.json'),
     ],
     [
       OCPP20IncomingRequestCommand.GET_BASE_REPORT,
       OCPP20ServiceUtils.PayloadValidatorConfig('GetBaseReportRequest.json'),
     ],
     [
+      OCPP20IncomingRequestCommand.GET_INSTALLED_CERTIFICATE_IDS,
+      OCPP20ServiceUtils.PayloadValidatorConfig('GetInstalledCertificateIdsRequest.json'),
+    ],
+    [
       OCPP20IncomingRequestCommand.GET_VARIABLES,
       OCPP20ServiceUtils.PayloadValidatorConfig('GetVariablesRequest.json'),
+    ],
+    [
+      OCPP20IncomingRequestCommand.INSTALL_CERTIFICATE,
+      OCPP20ServiceUtils.PayloadValidatorConfig('InstallCertificateRequest.json'),
     ],
     [
       OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
@@ -244,6 +253,14 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     [
       OCPP20IncomingRequestCommand.SET_VARIABLES,
       OCPP20ServiceUtils.PayloadValidatorConfig('SetVariablesRequest.json'),
+    ],
+    [
+      OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+      OCPP20ServiceUtils.PayloadValidatorConfig('TriggerMessageRequest.json'),
+    ],
+    [
+      OCPP20IncomingRequestCommand.UNLOCK_CONNECTOR,
+      OCPP20ServiceUtils.PayloadValidatorConfig('UnlockConnectorRequest.json'),
     ],
   ]
 
@@ -270,12 +287,32 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     { schemaPath: string }
   ][] => [
     [
+      OCPP20IncomingRequestCommand.CERTIFICATE_SIGNED,
+      OCPP20ServiceUtils.PayloadValidatorConfig('CertificateSignedResponse.json'),
+    ],
+    [
       OCPP20IncomingRequestCommand.CLEAR_CACHE,
       OCPP20ServiceUtils.PayloadValidatorConfig('ClearCacheResponse.json'),
     ],
     [
+      OCPP20IncomingRequestCommand.DELETE_CERTIFICATE,
+      OCPP20ServiceUtils.PayloadValidatorConfig('DeleteCertificateResponse.json'),
+    ],
+    [
       OCPP20IncomingRequestCommand.GET_BASE_REPORT,
       OCPP20ServiceUtils.PayloadValidatorConfig('GetBaseReportResponse.json'),
+    ],
+    [
+      OCPP20IncomingRequestCommand.GET_INSTALLED_CERTIFICATE_IDS,
+      OCPP20ServiceUtils.PayloadValidatorConfig('GetInstalledCertificateIdsResponse.json'),
+    ],
+    [
+      OCPP20IncomingRequestCommand.GET_VARIABLES,
+      OCPP20ServiceUtils.PayloadValidatorConfig('GetVariablesResponse.json'),
+    ],
+    [
+      OCPP20IncomingRequestCommand.INSTALL_CERTIFICATE,
+      OCPP20ServiceUtils.PayloadValidatorConfig('InstallCertificateResponse.json'),
     ],
     [
       OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
@@ -284,6 +321,22 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     [
       OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION,
       OCPP20ServiceUtils.PayloadValidatorConfig('RequestStopTransactionResponse.json'),
+    ],
+    [
+      OCPP20IncomingRequestCommand.RESET,
+      OCPP20ServiceUtils.PayloadValidatorConfig('ResetResponse.json'),
+    ],
+    [
+      OCPP20IncomingRequestCommand.SET_VARIABLES,
+      OCPP20ServiceUtils.PayloadValidatorConfig('SetVariablesResponse.json'),
+    ],
+    [
+      OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+      OCPP20ServiceUtils.PayloadValidatorConfig('TriggerMessageResponse.json'),
+    ],
+    [
+      OCPP20IncomingRequestCommand.UNLOCK_CONNECTOR,
+      OCPP20ServiceUtils.PayloadValidatorConfig('UnlockConnectorResponse.json'),
     ],
   ]
 
@@ -484,6 +537,43 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     )
   }
 
+  /**
+   * Read ItemsPerMessage and BytesPerMessage configuration limits
+   * Extracts configuration-reading logic shared between handleRequestGetVariables
+   * and handleRequestSetVariables to eliminate DRY violations.
+   * @param chargingStation - The charging station instance
+   * @returns Object with itemsLimit and bytesLimit (both fallback to 0 if not configured or invalid)
+   */
+  public static readMessageLimits (chargingStation: ChargingStation): {
+    bytesLimit: number
+    itemsLimit: number
+  } {
+    let itemsLimit = 0
+    let bytesLimit = 0
+    try {
+      const itemsCfg = getConfigurationKey(
+        chargingStation,
+        OCPP20RequiredVariableName.ItemsPerMessage
+      )?.value
+      const bytesCfg = getConfigurationKey(
+        chargingStation,
+        OCPP20RequiredVariableName.BytesPerMessage
+      )?.value
+      if (itemsCfg && /^\d+$/.test(itemsCfg)) {
+        itemsLimit = convertToIntOrNaN(itemsCfg)
+      }
+      if (bytesCfg && /^\d+$/.test(bytesCfg)) {
+        bytesLimit = convertToIntOrNaN(bytesCfg)
+      }
+    } catch (error) {
+      logger.debug(
+        `${chargingStation.logPrefix()} readMessageLimits: error reading message limits:`,
+        error
+      )
+    }
+    return { bytesLimit, itemsLimit }
+  }
+
   public static async requestStopTransaction (
     chargingStation: ChargingStation,
     connectorId: number,
@@ -491,7 +581,6 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
   ): Promise<GenericResponse> {
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
     if (connectorStatus?.transactionStarted && connectorStatus.transactionId != null) {
-      // OCPP 2.0 validation: transactionId should be a valid UUID format
       let transactionId: string
       if (typeof connectorStatus.transactionId === 'string') {
         transactionId = connectorStatus.transactionId
@@ -519,7 +608,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
 
       connectorStatus.transactionSeqNo = (connectorStatus.transactionSeqNo ?? 0) + 1
 
-      // FR: F03.FR.09 - Build final meter values for TransactionEvent(Ended)
+      // F03.FR.04: Build final meter values for TransactionEvent(Ended)
       const finalMeterValues: OCPP20MeterValue[] = []
       const energyValue = connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0
       if (energyValue >= 0) {
@@ -544,12 +633,12 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         timestamp: new Date(),
         transactionInfo: {
           stoppedReason: OCPP20ReasonEnumType.Remote,
-          transactionId,
+          transactionId: transactionId as UUIDv4,
         },
         triggerReason: OCPP20TriggerReasonEnumType.RemoteStop,
       }
 
-      // FR: F03.FR.09 - Include final meter values in TransactionEvent(Ended)
+      // F03.FR.04: Include final meter values in TransactionEvent(Ended)
       if (finalMeterValues.length > 0) {
         transactionEventRequest.meterValue = finalMeterValues
       }
@@ -833,7 +922,6 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         return { idTokenInfo: undefined }
       }
 
-      // Send the request to CSMS
       logger.debug(
         `${chargingStation.logPrefix()} ${moduleName}.sendTransactionEvent: Sending TransactionEvent for trigger ${triggerReason}`
       )

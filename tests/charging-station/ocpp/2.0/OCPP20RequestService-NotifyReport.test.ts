@@ -4,6 +4,7 @@
  */
 
 import { expect } from '@std/expect'
+import assert from 'node:assert'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
@@ -325,10 +326,11 @@ await describe('B07/B08 - NotifyReport', async () => {
       ) as OCPP20NotifyReportRequest
 
       expect(payload).toBeDefined()
-      expect(payload.reportData[0].variableAttribute[0].type).toBe(attributeType)
-      expect(payload.reportData[0].variableAttribute[0].value).toBe(
-        `Test Value ${index.toString()}`
-      )
+      assert(payload.reportData != null)
+      const firstReport = payload.reportData[0]
+      assert(firstReport.variableAttribute != null)
+      expect(firstReport.variableAttribute[0].type).toBe(attributeType)
+      expect(firstReport.variableAttribute[0].value).toBe(`Test Value ${index.toString()}`)
     })
   })
 
@@ -378,8 +380,12 @@ await describe('B07/B08 - NotifyReport', async () => {
       ) as OCPP20NotifyReportRequest
 
       expect(payload).toBeDefined()
-      expect(payload.reportData[0].variableCharacteristics.dataType).toBe(testCase.dataType)
-      expect(payload.reportData[0].variableAttribute[0].value).toBe(testCase.value)
+      assert(payload.reportData != null)
+      const firstReport = payload.reportData[0]
+      assert(firstReport.variableCharacteristics != null)
+      assert(firstReport.variableAttribute != null)
+      expect(firstReport.variableCharacteristics.dataType).toBe(testCase.dataType)
+      expect(firstReport.variableAttribute[0].value).toBe(testCase.value)
     })
   })
 
@@ -485,8 +491,11 @@ await describe('B07/B08 - NotifyReport', async () => {
     ) as OCPP20NotifyReportRequest
 
     expect(payload).toBeDefined()
-    expect(payload.reportData[0].variableAttribute).toHaveLength(1)
-    expect(payload.reportData[0].variableAttribute[0].type).toBe(AttributeEnumType.Actual)
+    assert(payload.reportData != null)
+    const firstReport = payload.reportData[0]
+    assert(firstReport.variableAttribute != null)
+    expect(firstReport.variableAttribute).toHaveLength(1)
+    expect(firstReport.variableAttribute[0].type).toBe(AttributeEnumType.Actual)
   })
 
   await it('should preserve all payload properties correctly', () => {

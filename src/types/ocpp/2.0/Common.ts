@@ -89,6 +89,20 @@ export enum Iso15118EVCertificateStatusEnumType {
   Failed = 'Failed',
 }
 
+export enum MessageTriggerEnumType {
+  BootNotification = 'BootNotification',
+  FirmwareStatusNotification = 'FirmwareStatusNotification',
+  Heartbeat = 'Heartbeat',
+  LogStatusNotification = 'LogStatusNotification',
+  MeterValues = 'MeterValues',
+  PublishFirmwareStatusNotification = 'PublishFirmwareStatusNotification',
+  SignChargingStationCertificate = 'SignChargingStationCertificate',
+  SignCombinedCertificate = 'SignCombinedCertificate',
+  SignV2GCertificate = 'SignV2GCertificate',
+  StatusNotification = 'StatusNotification',
+  TransactionEvent = 'TransactionEvent',
+}
+
 export enum OCPP20ComponentName {
   // Physical and Logical Components
   AccessBarrier = 'AccessBarrier',
@@ -270,6 +284,19 @@ export enum ResetStatusEnumType {
   Accepted = 'Accepted',
   Rejected = 'Rejected',
   Scheduled = 'Scheduled',
+}
+
+export enum TriggerMessageStatusEnumType {
+  Accepted = 'Accepted',
+  NotImplemented = 'NotImplemented',
+  Rejected = 'Rejected',
+}
+
+export enum UnlockStatusEnumType {
+  OngoingAuthorizedTransaction = 'OngoingAuthorizedTransaction',
+  UnknownConnector = 'UnknownConnector',
+  Unlocked = 'Unlocked',
+  UnlockFailed = 'UnlockFailed',
 }
 
 export interface CertificateHashDataChainType extends JsonObject {

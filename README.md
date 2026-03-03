@@ -494,20 +494,22 @@ make SUBMODULES_INIT=true
 
 > **Note**: OCPP 2.0.x implementation is **partial** and under active development.
 
-#### A. Provisioning
+#### B. Provisioning
 
 - :white_check_mark: BootNotification
 - :white_check_mark: GetBaseReport
+- :white_check_mark: GetVariables
 - :white_check_mark: NotifyReport
+- :white_check_mark: SetVariables
 
-#### B. Authorization
+#### C. Authorization
 
 - :white_check_mark: ClearCache
 
-#### C. Availability
+#### D. LocalAuthorizationListManagement
 
-- :white_check_mark: Heartbeat
-- :white_check_mark: StatusNotification
+- :x: GetLocalListVersion
+- :x: SendLocalList
 
 #### E. Transactions
 
@@ -518,21 +520,25 @@ make SUBMODULES_INIT=true
 #### F. RemoteControl
 
 - :white_check_mark: Reset
+- :white_check_mark: TriggerMessage
+- :white_check_mark: UnlockConnector
 
-#### G. Monitoring
+#### G. Availability
 
-- :white_check_mark: GetVariables
-- :white_check_mark: SetVariables
+- :white_check_mark: Heartbeat
+- :white_check_mark: StatusNotification
 
-#### H. FirmwareManagement
+#### L. FirmwareManagement
 
 - :x: UpdateFirmware
 - :x: FirmwareStatusNotification
 
-#### I. ISO15118CertificateManagement
+#### M. ISO 15118 CertificateManagement
 
 - :white_check_mark: CertificateSigned
 - :white_check_mark: DeleteCertificate
+- :white_check_mark: Get15118EVCertificate
+- :white_check_mark: GetCertificateStatus
 - :white_check_mark: GetInstalledCertificateIds
 - :white_check_mark: InstallCertificate
 - :white_check_mark: SignCertificate
@@ -542,12 +548,7 @@ make SUBMODULES_INIT=true
 > - **Mock CSR generation**: The `SignCertificate` command generates a mock Certificate Signing Request (CSR) for simulation purposes. In production, this should be replaced with actual cryptographic CSR generation.
 > - **OCSP stub**: Online Certificate Status Protocol (OCSP) validation is stubbed and returns `Failed` status. Full OCSP integration requires external OCSP responder configuration.
 
-#### J. LocalAuthorizationListManagement
-
-- :x: GetLocalListVersion
-- :x: SendLocalList
-
-#### K. DataTransfer
+#### P. DataTransfer
 
 - :x: DataTransfer
 
@@ -609,7 +610,8 @@ All kind of OCPP parameters are supported in charging station configuration or c
 
 ### Version 2.0.x
 
-> **Note**: OCPP 2.0.x variables management is not yet implemented.
+- :white_check_mark: GetVariables
+- :white_check_mark: SetVariables
 
 ## UI Protocol
 

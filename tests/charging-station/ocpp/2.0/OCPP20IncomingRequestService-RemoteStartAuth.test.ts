@@ -4,6 +4,7 @@
  */
 
 import { expect } from '@std/expect'
+import assert from 'node:assert'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
@@ -141,6 +142,7 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
     })
 
     await it('should not modify connector status before authorization', () => {
+      assert(mockStation != null)
       // Given: Connector in initial state
       // Then: Connector status should remain unchanged before processing
       const connectorStatus = mockStation.getConnectorStatus(1)
@@ -233,6 +235,7 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
 
   await describe('G03.FR.03.005 - Remote start on occupied connector', async () => {
     await it('should detect existing transaction on connector', () => {
+      assert(mockStation != null)
       // Given: Connector with active transaction
       mockStation.getConnectorStatus = (): ConnectorStatus => ({
         availability: OperationalStatusEnumType.Operative,
@@ -253,6 +256,7 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
     })
 
     await it('should preserve existing transaction details', () => {
+      assert(mockStation != null)
       // Given: Existing transaction details
       const existingTransactionId = 'existing-tx-456'
       const existingTokenTag = 'EXISTING_TOKEN_002'
@@ -353,6 +357,7 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
     })
 
     await it('should support OCPP 2.0.1 version', () => {
+      assert(mockStation != null)
       // Given: Station with OCPP 2.0.1
       expect(mockStation.stationInfo?.ocppVersion).toBe(OCPPVersion.VERSION_201)
     })
@@ -405,6 +410,7 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
     })
 
     await it('should have valid charging station configuration', () => {
+      assert(mockStation != null)
       // Then: Charging station should have required configuration
       expect(mockStation).toBeDefined()
       expect(mockStation.evses).toBeDefined()

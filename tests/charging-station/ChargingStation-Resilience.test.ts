@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 
-import { RegistrationStatusEnumType } from '../../src/types/index.js'
+import { OCPP16RequestCommand, RegistrationStatusEnumType } from '../../src/types/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import { TEST_HEARTBEAT_INTERVAL_MS } from './ChargingStationTestConstants.js'
 import { cleanupChargingStation, createMockChargingStation } from './ChargingStationTestUtils.js'
@@ -17,7 +17,7 @@ await describe('ChargingStation Resilience', async () => {
     let station: ChargingStation
 
     beforeEach(() => {
-      station = undefined
+      station = undefined as unknown as ChargingStation
     })
 
     afterEach(() => {
@@ -66,15 +66,16 @@ await describe('ChargingStation Resilience', async () => {
       // Arrange
       const result = createMockChargingStation({ connectorsCount: 1 })
       station = result.station
+      const stationWithRetryCount = station as unknown as { wsConnectionRetryCount: number }
 
       // Assert - Initial retry count should be 0
-      expect(station.wsConnectionRetryCount).toBe(0)
+      expect(stationWithRetryCount.wsConnectionRetryCount).toBe(0)
 
       // Act - Increment retry count manually (simulating reconnection attempt)
-      station.wsConnectionRetryCount = 1
+      stationWithRetryCount.wsConnectionRetryCount = 1
 
       // Assert - Count should be incremented
-      expect(station.wsConnectionRetryCount).toBe(1)
+      expect(stationWithRetryCount.wsConnectionRetryCount).toBe(1)
     })
 
     await it('should support exponential backoff configuration', () => {
@@ -92,13 +93,14 @@ await describe('ChargingStation Resilience', async () => {
       // Arrange
       const result = createMockChargingStation({ connectorsCount: 1 })
       station = result.station
-      station.wsConnectionRetryCount = 5 // Simulate some retries
+      const stationWithRetryCount = station as unknown as { wsConnectionRetryCount: number }
+      stationWithRetryCount.wsConnectionRetryCount = 5
 
       // Act - Reset retry count (as would happen on successful reconnection)
-      station.wsConnectionRetryCount = 0
+      stationWithRetryCount.wsConnectionRetryCount = 0
 
       // Assert
-      expect(station.wsConnectionRetryCount).toBe(0)
+      expect(stationWithRetryCount.wsConnectionRetryCount).toBe(0)
     })
 
     // -------------------------------------------------------------------------
@@ -145,7 +147,16 @@ await describe('ChargingStation Resilience', async () => {
 
       // Add a request with specific message ID to simulate duplicate
       const messageId = 'duplicate-uuid-123'
-      station.requests.set(messageId, ['callback', 'errorCallback', 'TestCommand'])
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      const responseCallback = (): void => {}
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      const errorCallback = (): void => {}
+      station.requests.set(messageId, [
+        responseCallback,
+        errorCallback,
+        OCPP16RequestCommand.HEARTBEAT,
+        {},
+      ])
 
       // Assert - Request with duplicate ID exists
       expect(station.requests.has(messageId)).toBe(true)
@@ -268,8 +279,21 @@ await describe('ChargingStation Resilience', async () => {
       station = result.station
 
       // Add some pending requests
-      station.requests.set('req-1', ['callback1', 'errorCallback1', 'Command1'])
-      station.requests.set('req-2', ['callback2', 'errorCallback2', 'Command2'])
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      const callback1 = (): void => {}
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      const errorCallback1 = (): void => {}
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      const callback2 = (): void => {}
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      const errorCallback2 = (): void => {}
+      station.requests.set('req-1', [
+        callback1,
+        errorCallback1,
+        OCPP16RequestCommand.BOOT_NOTIFICATION,
+        {},
+      ])
+      station.requests.set('req-2', [callback2, errorCallback2, OCPP16RequestCommand.HEARTBEAT, {}])
 
       // Act - Cleanup station
       cleanupChargingStation(station)
@@ -283,7 +307,7 @@ await describe('ChargingStation Resilience', async () => {
     let station: ChargingStation
 
     beforeEach(() => {
-      station = undefined
+      station = undefined as unknown as ChargingStation
     })
 
     afterEach(() => {
@@ -312,8 +336,9 @@ await describe('ChargingStation Resilience', async () => {
       station.bufferMessage(testMessage)
 
       // Assert - Message should be queued but not sent
-      expect(station.messageQueue.length).toBe(1)
-      expect(station.messageQueue[0]).toBe(testMessage)
+      const stationWithQueue = station as unknown as { messageQueue: string[] }
+      expect(stationWithQueue.messageQueue.length).toBe(1)
+      expect(stationWithQueue.messageQueue[0]).toBe(testMessage)
       expect(mocks.webSocket.sentMessages.length).toBe(0)
     })
 
@@ -333,7 +358,8 @@ await describe('ChargingStation Resilience', async () => {
 
       // Note: Due to async nature, the message may be sent or buffered depending on timing
       // This test verifies the message is queued at minimum
-      expect(station.messageQueue.length).toBeGreaterThanOrEqual(0)
+      const stationWithQueue = station as unknown as { messageQueue: string[] }
+      expect(stationWithQueue.messageQueue.length).toBeGreaterThanOrEqual(0)
     })
 
     await it('should flush messages in FIFO order when connection restored', () => {
@@ -354,10 +380,11 @@ await describe('ChargingStation Resilience', async () => {
       station.bufferMessage(msg3)
 
       // Assert - All messages should be buffered
-      expect(station.messageQueue.length).toBe(3)
-      expect(station.messageQueue[0]).toBe(msg1)
-      expect(station.messageQueue[1]).toBe(msg2)
-      expect(station.messageQueue[2]).toBe(msg3)
+      const stationWithQueue = station as unknown as { messageQueue: string[] }
+      expect(stationWithQueue.messageQueue.length).toBe(3)
+      expect(stationWithQueue.messageQueue[0]).toBe(msg1)
+      expect(stationWithQueue.messageQueue[1]).toBe(msg2)
+      expect(stationWithQueue.messageQueue[2]).toBe(msg3)
       expect(mocks.webSocket.sentMessages.length).toBe(0)
     })
 
@@ -382,9 +409,10 @@ await describe('ChargingStation Resilience', async () => {
       }
 
       // Assert - Verify FIFO order
-      expect(station.messageQueue.length).toBe(5)
+      const stationWithQueue = station as unknown as { messageQueue: string[] }
+      expect(stationWithQueue.messageQueue.length).toBe(5)
       for (let i = 0; i < messages.length; i++) {
-        expect(station.messageQueue[i]).toBe(messages[i])
+        expect(stationWithQueue.messageQueue[i]).toBe(messages[i])
       }
     })
 
@@ -404,12 +432,13 @@ await describe('ChargingStation Resilience', async () => {
       }
 
       // Assert - All messages should be buffered
-      expect(station.messageQueue.length).toBe(messageCount)
+      const stationWithQueue = station as unknown as { messageQueue: string[] }
+      expect(stationWithQueue.messageQueue.length).toBe(messageCount)
       expect(mocks.webSocket.sentMessages.length).toBe(0)
 
       // Verify first and last message are in correct positions
-      expect(station.messageQueue[0]).toContain('msg-0')
-      expect(station.messageQueue[messageCount - 1]).toContain(
+      expect(stationWithQueue.messageQueue[0]).toContain('msg-0')
+      expect(stationWithQueue.messageQueue[messageCount - 1]).toContain(
         `msg-${(messageCount - 1).toString()}`
       )
     })
@@ -434,7 +463,8 @@ await describe('ChargingStation Resilience', async () => {
       const initialSentCount = mocks.webSocket.sentMessages.length
 
       // Assert - Message should remain buffered
-      expect(station.messageQueue.length).toBe(1)
+      const stationWithQueue = station as unknown as { messageQueue: string[] }
+      expect(stationWithQueue.messageQueue.length).toBe(1)
       expect(mocks.webSocket.sentMessages.length).toBe(initialSentCount)
     })
 
@@ -449,18 +479,19 @@ await describe('ChargingStation Resilience', async () => {
 
       // Act - Buffer message
       station.bufferMessage(testMessage)
-      const bufferedCount = station.messageQueue.length
+      const stationWithQueue = station as unknown as { messageQueue: string[] }
+      const bufferedCount = stationWithQueue.messageQueue.length
 
       // Assert - Message is buffered
       expect(bufferedCount).toBe(1)
 
       // Now simulate successful send by manually removing (simulating what sendMessageBuffer does)
-      if (station.messageQueue.length > 0) {
-        station.messageQueue.shift()
+      if (stationWithQueue.messageQueue.length > 0) {
+        stationWithQueue.messageQueue.shift()
       }
 
       // Assert - Buffer should be cleared
-      expect(station.messageQueue.length).toBe(0)
+      expect(stationWithQueue.messageQueue.length).toBe(0)
     })
 
     await it('should handle rapid buffer/reconnect cycles without message loss', () => {
@@ -486,9 +517,10 @@ await describe('ChargingStation Resilience', async () => {
       }
 
       // Assert - All messages from all cycles should be buffered in order
-      expect(station.messageQueue.length).toBe(totalExpectedMessages)
-      expect(station.messageQueue[0]).toContain('cycle-0-msg-0')
-      expect(station.messageQueue[totalExpectedMessages - 1]).toContain(
+      const stationWithQueue = station as unknown as { messageQueue: string[] }
+      expect(stationWithQueue.messageQueue.length).toBe(totalExpectedMessages)
+      expect(stationWithQueue.messageQueue[0]).toContain('cycle-0-msg-0')
+      expect(stationWithQueue.messageQueue[totalExpectedMessages - 1]).toContain(
         `cycle-${(cycleCount - 1).toString()}-msg-${(messagesPerCycle - 1).toString()}`
       )
     })

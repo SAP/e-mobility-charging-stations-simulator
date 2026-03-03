@@ -20,6 +20,7 @@ import {
   type OCPP16BootNotificationResponse,
   OCPP16ChargePointStatus,
   OCPP16IncomingRequestCommand,
+  type OCPP16MeterValue,
   type OCPP16MeterValuesRequest,
   type OCPP16MeterValuesResponse,
   OCPP16RequestCommand,
@@ -551,7 +552,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
             chargingStation,
             transactionConnectorId,
             requestPayload.meterStop
-          ),
+          ) as OCPP16MeterValue,
         ],
         transactionId: requestPayload.transactionId,
       }))

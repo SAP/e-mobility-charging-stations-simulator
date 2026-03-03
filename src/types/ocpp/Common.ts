@@ -1,6 +1,6 @@
 import type { JsonObject } from '../JsonType.js'
 
-export const enum GenericStatus {
+export enum GenericStatus {
   Accepted = 'Accepted',
   Rejected = 'Rejected',
 }

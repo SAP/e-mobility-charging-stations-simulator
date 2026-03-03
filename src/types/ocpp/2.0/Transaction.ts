@@ -2,6 +2,7 @@ import type { JsonObject } from '../../JsonType.js'
 import type { UUIDv4 } from '../../UUID.js'
 import type { CustomDataType } from './Common.js'
 import type { OCPP20MeterValue } from './MeterValues.js'
+import type { OCPP20IncomingRequestCommand } from './Requests.js'
 
 export enum CostKindEnumType {
   CarbonDioxideEmission = 'CarbonDioxideEmission',
