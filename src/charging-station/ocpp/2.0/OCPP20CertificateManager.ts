@@ -83,7 +83,7 @@ export class OCPP20CertificateManager {
   private static readonly PEM_END_MARKER = '-----END CERTIFICATE-----'
 
   /**
-   * Computes hash data for a PEM certificate per RFC 6960 Section 4.1.1 CertID semantics.
+   * Computes hash data for a PEM certificate per RFC 6960 §4.1.1 CertID semantics.
    *
    * Per RFC 6960, the CertID identifies a certificate by:
    * - issuerNameHash: Hash of the issuer's DN (from the subject certificate)
@@ -124,7 +124,7 @@ export class OCPP20CertificateManager {
       // (ASN.1/DER encoding of the issuer name is out of scope for this simulator).
       const issuerNameHash = createHash(algorithmName).update(x509.issuer).digest('hex')
 
-      // RFC 6960 4.1.1: issuerKeyHash is the hash of the issuer certificate's public key
+      // RFC 6960 §4.1.1: issuerKeyHash is the hash of the issuer certificate's public key
       // Determine which public key to use for issuerKeyHash
       let issuerPublicKeyDer: Buffer
 

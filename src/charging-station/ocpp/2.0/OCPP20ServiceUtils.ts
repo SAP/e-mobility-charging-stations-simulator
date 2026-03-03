@@ -127,7 +127,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       throw new OCPPError(ErrorType.PROPERTY_CONSTRAINT_VIOLATION, errorMsg)
     }
 
-    // Per-EVSE sequence number management (OCPP 2.0.1 Section 1.3.2.1)
+    // Per-EVSE sequence number management (OCPP 2.0.1 §1.3.2.1)
     if (connectorStatus.transactionSeqNo == null) {
       connectorStatus.transactionSeqNo = 0
     } else {
@@ -608,7 +608,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
 
       connectorStatus.transactionSeqNo = (connectorStatus.transactionSeqNo ?? 0) + 1
 
-      // FR: F03.FR.09 - Build final meter values for TransactionEvent(Ended)
+      // F03.FR.04: Build final meter values for TransactionEvent(Ended)
       const finalMeterValues: OCPP20MeterValue[] = []
       const energyValue = connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0
       if (energyValue >= 0) {
@@ -638,7 +638,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         triggerReason: OCPP20TriggerReasonEnumType.RemoteStop,
       }
 
-      // FR: F03.FR.09 - Include final meter values in TransactionEvent(Ended)
+      // F03.FR.04: Include final meter values in TransactionEvent(Ended)
       if (finalMeterValues.length > 0) {
         transactionEventRequest.meterValue = finalMeterValues
       }
