@@ -64,6 +64,7 @@
     "build:entities": "tsc -p tsconfig-mikro-orm.json",
     "clean:dist": "pnpm exec rimraf dist",
     "clean:node_modules": "pnpm exec rimraf node_modules",
+    "typecheck": "tsc --noEmit --skipLibCheck",
     "lint": "cross-env TIMING=1 eslint --cache src tests scripts ./*.js ./*.ts",
     "lint:fix": "cross-env TIMING=1 eslint --cache --fix src tests scripts ./*.js ./*.ts",
     "format": "prettier --cache --write .; eslint --cache --fix src tests scripts ./*.js ./*.ts",
