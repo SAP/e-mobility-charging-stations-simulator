@@ -43,7 +43,6 @@ import {
   MeterValueMeasurand,
   type MeterValuesRequest,
   type MeterValuesResponse,
-  type OCPP16MeterValue,
   OCPPVersion,
   type OutgoingRequest,
   PowerUnits,
@@ -1059,9 +1058,9 @@ export class ChargingStation extends EventEmitter {
             RequestCommand.METER_VALUES,
             {
               connectorId,
-              meterValue: [meterValue as OCPP16MeterValue],
+              meterValue: [meterValue],
               transactionId,
-            }
+            } as MeterValuesRequest
           )
           .catch((error: unknown) => {
             logger.error(
@@ -1188,9 +1187,9 @@ export class ChargingStation extends EventEmitter {
         RequestCommand.METER_VALUES,
         {
           connectorId,
-          meterValue: [transactionEndMeterValue as OCPP16MeterValue],
+          meterValue: [transactionEndMeterValue],
           transactionId,
-        }
+        } as MeterValuesRequest
       )
     }
     return await this.ocppRequestService.requestHandler<

@@ -2,6 +2,7 @@ import type { ChargingStation } from '../../charging-station/index.js'
 import type { OCPPError } from '../../exception/index.js'
 import type { JsonType } from '../JsonType.js'
 import type { OCPP16MeterValuesRequest } from './1.6/MeterValues.js'
+import type { OCPP20MeterValuesRequest } from './2.0/MeterValues.js'
 import type { MessageType } from './MessageType.js'
 
 import { OCPP16DiagnosticsStatus } from './1.6/DiagnosticsStatus.js'
@@ -82,7 +83,7 @@ export const MessageTrigger = {
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type MessageTrigger = OCPP16MessageTrigger
 
-export type MeterValuesRequest = OCPP16MeterValuesRequest
+export type MeterValuesRequest = OCPP16MeterValuesRequest | OCPP20MeterValuesRequest
 
 export type ResponseCallback = (payload: JsonType, requestPayload: JsonType) => void
 
