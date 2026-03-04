@@ -759,7 +759,7 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       noCleanupCache.dispose()
     })
 
-    await it('G03.FR.01.T10.03 - runCleanup removes expired entries', async () => {
+    await it('G03.FR.01.T10.03 - runCleanup removes expired entries (two-phase)', async () => {
       const cleanupCache = new InMemoryAuthCache({
         cleanupIntervalSeconds: 0,
         defaultTtl: 1,
@@ -777,12 +777,26 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
         setTimeout(resolve, 1100)
       })
 
+      // First cleanup: transitions expired entries to EXPIRED status (two-phase expiration)
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
       ;(cleanupCache as any).runCleanup()
 
-      const statsAfter = await cleanupCache.getStats()
-      expect(statsAfter.totalEntries).toBe(0)
-      expect(statsAfter.expiredEntries).toBe(2)
+      const statsAfterFirst = await cleanupCache.getStats()
+      expect(statsAfterFirst.totalEntries).toBe(2)
+      expect(statsAfterFirst.expiredEntries).toBe(2)
+
+      // Wait for the grace TTL to expire before second cleanup
+      await new Promise(resolve => {
+        setTimeout(resolve, 1100)
+      })
+
+      // Second cleanup: removes entries that were already in EXPIRED status
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+      ;(cleanupCache as any).runCleanup()
+
+      const statsAfterSecond = await cleanupCache.getStats()
+      expect(statsAfterSecond.totalEntries).toBe(0)
+      expect(statsAfterSecond.expiredEntries).toBe(2)
       cleanupCache.dispose()
     })
 

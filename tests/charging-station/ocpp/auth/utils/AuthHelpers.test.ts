@@ -216,67 +216,6 @@ await describe('AuthHelpers', async () => {
     })
   })
 
-  await describe('isCacheable', async () => {
-    await it('G03.FR.01.T4.05 - should return true for BLOCKED status (all statuses cached per OCPP spec)', () => {
-      const result: AuthorizationResult = {
-        isOffline: false,
-        method: AuthenticationMethod.LOCAL_LIST,
-        status: AuthorizationStatus.BLOCKED,
-        timestamp: new Date(),
-      }
-
-      expect(AuthHelpers.isCacheable(result)).toBe(true)
-    })
-
-    await it('G03.FR.01.T4.06 - should return true for ACCEPTED without expiry date', () => {
-      const result: AuthorizationResult = {
-        isOffline: false,
-        method: AuthenticationMethod.LOCAL_LIST,
-        status: AuthorizationStatus.ACCEPTED,
-        timestamp: new Date(),
-      }
-
-      expect(AuthHelpers.isCacheable(result)).toBe(true)
-    })
-
-    await it('G03.FR.01.T4.07 - should return true for already expired result (cached per OCPP spec)', () => {
-      const result: AuthorizationResult = {
-        expiryDate: new Date(Date.now() - 1000),
-        isOffline: false,
-        method: AuthenticationMethod.LOCAL_LIST,
-        status: AuthorizationStatus.ACCEPTED,
-        timestamp: new Date(),
-      }
-
-      expect(AuthHelpers.isCacheable(result)).toBe(true)
-    })
-
-    await it('G03.FR.01.T4.08 - should return true for expiry far in future (all statuses cached)', () => {
-      const oneYearPlusOne = new Date(Date.now() + 366 * 24 * 60 * 60 * 1000)
-      const result: AuthorizationResult = {
-        expiryDate: oneYearPlusOne,
-        isOffline: false,
-        method: AuthenticationMethod.LOCAL_LIST,
-        status: AuthorizationStatus.ACCEPTED,
-        timestamp: new Date(),
-      }
-
-      expect(AuthHelpers.isCacheable(result)).toBe(true)
-    })
-
-    await it('G03.FR.01.T4.09 - should return true for valid ACCEPTED result with reasonable expiry', () => {
-      const result: AuthorizationResult = {
-        expiryDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        isOffline: false,
-        method: AuthenticationMethod.LOCAL_LIST,
-        status: AuthorizationStatus.ACCEPTED,
-        timestamp: new Date(),
-      }
-
-      expect(AuthHelpers.isCacheable(result)).toBe(true)
-    })
-  })
-
   await describe('isPermanentFailure', async () => {
     await it('should return true for BLOCKED status', () => {
       const result: AuthorizationResult = {

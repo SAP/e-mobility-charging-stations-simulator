@@ -119,21 +119,6 @@ export class AuthHelpers {
   }
 
   /**
-   * Check if an authorization result is cacheable
-   *
-   * Per OCPP 1.6 §3.5.1 and OCPP 2.0.1 AuthCacheCtrlr, all authorization statuses
-   * including NOT-valid (BLOCKED, EXPIRED, INVALID) must be cached.
-   * Only structural validity is checked here.
-   * @param _result - The authorization result to check
-   * @returns True if the result should be cached, false otherwise
-   */
-  // TODO: remove dead code - not called from any production path (only tested in AuthHelpers.test.ts)
-  static isCacheable (_result: AuthorizationResult): boolean {
-    // Per OCPP 1.6 §3.5.1 and OCPP 2.0.1 AuthCacheCtrlr, all authorization statuses are cacheable
-    return true
-  }
-
-  /**
    * Check if result indicates a permanent failure (should not retry)
    * @param result - The authorization result to check
    * @returns True if this is a permanent failure

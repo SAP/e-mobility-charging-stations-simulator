@@ -159,12 +159,14 @@ export class AuthComponentFactory {
    * @param adapters.ocpp20Adapter - Optional OCPP 2.0.x protocol adapter
    * @param cache - Authorization cache for storing remote auth results
    * @param config - Authentication configuration controlling remote auth behavior
+   * @param localAuthListManager - Optional local auth list manager for R17 cache exclusion
    * @returns Remote strategy instance or undefined if remote auth disabled
    */
   static async createRemoteStrategy (
     adapters: { ocpp16Adapter?: OCPP16AuthAdapter; ocpp20Adapter?: OCPP20AuthAdapter },
     cache: AuthCache | undefined,
-    config: AuthConfiguration
+    config: AuthConfiguration,
+    localAuthListManager?: LocalAuthListManager
   ): Promise<AuthStrategy | undefined> {
     if (!config.remoteAuthorization) {
       return undefined
@@ -180,7 +182,7 @@ export class AuthComponentFactory {
       adapterMap.set(OCPPVersion.VERSION_20, adapters.ocpp20Adapter)
       adapterMap.set(OCPPVersion.VERSION_201, adapters.ocpp20Adapter)
     }
-    const strategy = new RemoteAuthStrategy(adapterMap, cache)
+    const strategy = new RemoteAuthStrategy(adapterMap, cache, localAuthListManager)
     await strategy.initialize(config)
     return strategy
   }
@@ -212,7 +214,7 @@ export class AuthComponentFactory {
     }
 
     // Add remote strategy if enabled
-    const remoteStrategy = await this.createRemoteStrategy(adapters, cache, config)
+    const remoteStrategy = await this.createRemoteStrategy(adapters, cache, config, manager)
     if (remoteStrategy) {
       strategies.push(remoteStrategy)
     }

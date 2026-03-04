@@ -118,8 +118,9 @@ export class InMemoryAuthCache implements AuthCache {
       windowMs: options?.rateLimit?.windowMs ?? 60000, // 1 minute window
     }
 
-    if (options?.cleanupIntervalSeconds !== 0) {
-      const intervalMs = (options?.cleanupIntervalSeconds ?? 300) * 1000
+    const cleanupSeconds = options?.cleanupIntervalSeconds ?? 300
+    if (cleanupSeconds > 0) {
+      const intervalMs = cleanupSeconds * 1000
       this.cleanupInterval = setInterval(() => {
         this.runCleanup()
       }, intervalMs)
@@ -179,9 +180,14 @@ export class InMemoryAuthCache implements AuthCache {
     const now = Date.now()
     if (now >= entry.expiresAt) {
       this.stats.expired++
+      this.stats.hits++
       // Transition to EXPIRED status instead of deleting (R10)
       entry.result = { ...entry.result, status: AuthorizationStatus.EXPIRED }
-      entry.expiresAt = now + this.defaultTtl * 1000
+      // Apply absolute lifetime cap to expired-transition TTL refresh
+      const absoluteDeadline = entry.createdAt + InMemoryAuthCache.MAX_ABSOLUTE_LIFETIME_MS
+      if (absoluteDeadline > now) {
+        entry.expiresAt = Math.min(now + this.defaultTtl * 1000, absoluteDeadline)
+      }
       this.lruOrder.set(identifier, now)
       logger.debug(
         `InMemoryAuthCache: Expired entry transitioned to EXPIRED for identifier: ${this.truncateId(identifier)}`
@@ -292,7 +298,7 @@ export class InMemoryAuthCache implements AuthCache {
     const expiresAt = now + ttlSeconds * 1000
 
     this.cache.set(identifier, { createdAt: now, expiresAt, result })
-    this.lruOrder.set(identifier, Date.now())
+    this.lruOrder.set(identifier, now)
     this.stats.sets++
 
     logger.debug(
@@ -408,9 +414,19 @@ export class InMemoryAuthCache implements AuthCache {
     const now = Date.now()
     for (const [key, entry] of this.cache.entries()) {
       if (now >= entry.expiresAt) {
-        this.cache.delete(key)
-        this.lruOrder.delete(key)
-        this.stats.expired++
+        if (entry.result.status === AuthorizationStatus.EXPIRED) {
+          // Already transitioned by get() — delete on second expiration cycle
+          this.cache.delete(key)
+          this.lruOrder.delete(key)
+        } else {
+          // First expiration — transition to EXPIRED status (consistent with get() R10 semantics)
+          entry.result = { ...entry.result, status: AuthorizationStatus.EXPIRED }
+          const absoluteDeadline = entry.createdAt + InMemoryAuthCache.MAX_ABSOLUTE_LIFETIME_MS
+          if (absoluteDeadline > now) {
+            entry.expiresAt = Math.min(now + this.defaultTtl * 1000, absoluteDeadline)
+          }
+          this.stats.expired++
+        }
       }
     }
     this.cleanupExpiredRateLimits()

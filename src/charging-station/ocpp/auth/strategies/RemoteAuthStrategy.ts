@@ -86,7 +86,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
 
     try {
       logger.debug(
-        `RemoteAuthStrategy: Authenticating ${request.identifier.value} via CSMS for ${request.context}`
+        `RemoteAuthStrategy: Authenticating ${request.identifier.value.substring(0, 8)}... via CSMS for ${request.context}`
       )
 
       // Get appropriate adapter for OCPP version
@@ -113,11 +113,11 @@ export class RemoteAuthStrategy implements AuthStrategy {
         this.stats.successfulRemoteAuth++
 
         // Check if identifier is in Local Auth List — do not cache (OCPP 1.6 §3.5.3)
-        if (this.authCache && this.localAuthListManager) {
+        if (this.authCache && config.localAuthListEnabled && this.localAuthListManager) {
           const isInLocalList = await this.localAuthListManager.getEntry(request.identifier.value)
           if (isInLocalList) {
             logger.debug(
-              `RemoteAuthStrategy: Skipping cache for local list identifier: ${request.identifier.value}`
+              `RemoteAuthStrategy: Skipping cache for local list identifier: ${request.identifier.value.substring(0, 8)}...`
             )
           } else {
             await this.cacheResult(
@@ -138,7 +138,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
       }
 
       logger.debug(
-        `RemoteAuthStrategy: No remote authorization result for ${request.identifier.value}`
+        `RemoteAuthStrategy: No remote authorization result for ${request.identifier.value.substring(0, 8)}...`
       )
       return undefined
     } catch (error) {
@@ -364,7 +364,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
       const cacheTtl = ttl ?? result.cacheTtl ?? 300 // Default 5 minutes
       await this.authCache.set(identifier, result, cacheTtl)
       logger.debug(
-        `RemoteAuthStrategy: Cached result for ${identifier} (TTL: ${String(cacheTtl)}s)`
+        `RemoteAuthStrategy: Cached result for ${identifier.substring(0, 8)}... (TTL: ${String(cacheTtl)}s)`
       )
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)

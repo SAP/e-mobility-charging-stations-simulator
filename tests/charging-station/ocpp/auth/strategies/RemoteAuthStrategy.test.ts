@@ -366,6 +366,7 @@ await describe('RemoteAuthStrategy', async () => {
       const config = createTestAuthConfig({
         authorizationCacheEnabled: true,
         authorizationCacheLifetime: 300,
+        localAuthListEnabled: true,
       })
       const request = createMockAuthRequest({
         identifier: createMockIdentifier(
@@ -391,6 +392,7 @@ await describe('RemoteAuthStrategy', async () => {
       const config = createTestAuthConfig({
         authorizationCacheEnabled: true,
         authorizationCacheLifetime: 300,
+        localAuthListEnabled: true,
       })
       const request = createMockAuthRequest({
         identifier: createMockIdentifier(
