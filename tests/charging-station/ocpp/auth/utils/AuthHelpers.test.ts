@@ -217,7 +217,7 @@ await describe('AuthHelpers', async () => {
   })
 
   await describe('isCacheable', async () => {
-    await it('should return false for non-ACCEPTED status', () => {
+    await it('G03.FR.01.T4.05 - should return true for BLOCKED status (all statuses cached per OCPP spec)', () => {
       const result: AuthorizationResult = {
         isOffline: false,
         method: AuthenticationMethod.LOCAL_LIST,
@@ -225,10 +225,10 @@ await describe('AuthHelpers', async () => {
         timestamp: new Date(),
       }
 
-      expect(AuthHelpers.isCacheable(result)).toBe(false)
+      expect(AuthHelpers.isCacheable(result)).toBe(true)
     })
 
-    await it('should return false for ACCEPTED without expiry date', () => {
+    await it('G03.FR.01.T4.06 - should return true for ACCEPTED without expiry date', () => {
       const result: AuthorizationResult = {
         isOffline: false,
         method: AuthenticationMethod.LOCAL_LIST,
@@ -236,10 +236,10 @@ await describe('AuthHelpers', async () => {
         timestamp: new Date(),
       }
 
-      expect(AuthHelpers.isCacheable(result)).toBe(false)
+      expect(AuthHelpers.isCacheable(result)).toBe(true)
     })
 
-    await it('should return false for already expired result', () => {
+    await it('G03.FR.01.T4.07 - should return true for already expired result (cached per OCPP spec)', () => {
       const result: AuthorizationResult = {
         expiryDate: new Date(Date.now() - 1000),
         isOffline: false,
@@ -248,10 +248,10 @@ await describe('AuthHelpers', async () => {
         timestamp: new Date(),
       }
 
-      expect(AuthHelpers.isCacheable(result)).toBe(false)
+      expect(AuthHelpers.isCacheable(result)).toBe(true)
     })
 
-    await it('should return false for expiry too far in future (>1 year)', () => {
+    await it('G03.FR.01.T4.08 - should return true for expiry far in future (all statuses cached)', () => {
       const oneYearPlusOne = new Date(Date.now() + 366 * 24 * 60 * 60 * 1000)
       const result: AuthorizationResult = {
         expiryDate: oneYearPlusOne,
@@ -261,10 +261,10 @@ await describe('AuthHelpers', async () => {
         timestamp: new Date(),
       }
 
-      expect(AuthHelpers.isCacheable(result)).toBe(false)
+      expect(AuthHelpers.isCacheable(result)).toBe(true)
     })
 
-    await it('should return true for valid ACCEPTED result with reasonable expiry', () => {
+    await it('G03.FR.01.T4.09 - should return true for valid ACCEPTED result with reasonable expiry', () => {
       const result: AuthorizationResult = {
         expiryDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
         isOffline: false,

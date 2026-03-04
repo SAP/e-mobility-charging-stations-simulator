@@ -20,6 +20,7 @@ import { OCPPVersion } from '../../../../../src/types/ocpp/OCPPVersion.js'
 import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
 import {
   createMockAuthCache,
+  createMockAuthorizationResult,
   createMockAuthRequest,
   createMockIdentifier,
   createMockOCPPAdapter,
@@ -178,6 +179,119 @@ await describe('RemoteAuthStrategy', async () => {
 
       await strategy.authenticate(request, config)
       expect(cachedKey).toBe('CACHE_TAG')
+    })
+
+    await it('G03.FR.01.T4.01 - should cache BLOCKED authorization status', async () => {
+      let cachedKey: string | undefined
+      mockAuthCache.set = async (key: string) => {
+        cachedKey = key
+        return Promise.resolve()
+      }
+      mockOCPP16Adapter.authorizeRemote = async () =>
+        Promise.resolve(
+          createMockAuthorizationResult({
+            method: AuthenticationMethod.REMOTE_AUTHORIZATION,
+            status: AuthorizationStatus.BLOCKED,
+          })
+        )
+
+      const config = createTestAuthConfig({
+        authorizationCacheEnabled: true,
+        authorizationCacheLifetime: 300,
+      })
+      const request = createMockAuthRequest({
+        identifier: createMockIdentifier(
+          OCPPVersion.VERSION_16,
+          'BLOCKED_TAG',
+          IdentifierType.ID_TAG
+        ),
+      })
+
+      await strategy.authenticate(request, config)
+      expect(cachedKey).toBe('BLOCKED_TAG')
+    })
+
+    await it('G03.FR.01.T4.02 - should cache EXPIRED authorization status', async () => {
+      let cachedKey: string | undefined
+      mockAuthCache.set = async (key: string) => {
+        cachedKey = key
+        return Promise.resolve()
+      }
+      mockOCPP16Adapter.authorizeRemote = async () =>
+        Promise.resolve(
+          createMockAuthorizationResult({
+            method: AuthenticationMethod.REMOTE_AUTHORIZATION,
+            status: AuthorizationStatus.EXPIRED,
+          })
+        )
+
+      const config = createTestAuthConfig({
+        authorizationCacheEnabled: true,
+        authorizationCacheLifetime: 300,
+      })
+      const request = createMockAuthRequest({
+        identifier: createMockIdentifier(
+          OCPPVersion.VERSION_16,
+          'EXPIRED_TAG',
+          IdentifierType.ID_TAG
+        ),
+      })
+
+      await strategy.authenticate(request, config)
+      expect(cachedKey).toBe('EXPIRED_TAG')
+    })
+
+    await it('G03.FR.01.T4.03 - should cache INVALID authorization status', async () => {
+      let cachedKey: string | undefined
+      mockAuthCache.set = async (key: string) => {
+        cachedKey = key
+        return Promise.resolve()
+      }
+      mockOCPP16Adapter.authorizeRemote = async () =>
+        Promise.resolve(
+          createMockAuthorizationResult({
+            method: AuthenticationMethod.REMOTE_AUTHORIZATION,
+            status: AuthorizationStatus.INVALID,
+          })
+        )
+
+      const config = createTestAuthConfig({
+        authorizationCacheEnabled: true,
+        authorizationCacheLifetime: 300,
+      })
+      const request = createMockAuthRequest({
+        identifier: createMockIdentifier(
+          OCPPVersion.VERSION_16,
+          'INVALID_TAG',
+          IdentifierType.ID_TAG
+        ),
+      })
+
+      await strategy.authenticate(request, config)
+      expect(cachedKey).toBe('INVALID_TAG')
+    })
+
+    await it('G03.FR.01.T4.04 - should still cache ACCEPTED authorization status (regression)', async () => {
+      let cachedKey: string | undefined
+      mockAuthCache.set = async (key: string) => {
+        cachedKey = key
+        return Promise.resolve()
+      }
+
+      const config = createTestAuthConfig({
+        authorizationCacheEnabled: true,
+        authorizationCacheLifetime: 300,
+      })
+      const request = createMockAuthRequest({
+        identifier: createMockIdentifier(
+          OCPPVersion.VERSION_16,
+          'ACCEPTED_TAG',
+          IdentifierType.ID_TAG
+        ),
+      })
+
+      await strategy.authenticate(request, config)
+      expect(cachedKey).toBe('ACCEPTED_TAG')
     })
 
     await it('should return undefined when remote is unavailable', async () => {

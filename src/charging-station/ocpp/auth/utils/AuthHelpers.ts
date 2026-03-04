@@ -121,32 +121,15 @@ export class AuthHelpers {
   /**
    * Check if an authorization result is cacheable
    *
-   * Only Accepted results with reasonable expiry dates should be cached.
-   * @param result - The authorization result to check
+   * Per OCPP 1.6 §3.5.1 and OCPP 2.0.1 AuthCacheCtrlr, all authorization statuses
+   * including NOT-valid (BLOCKED, EXPIRED, INVALID) must be cached.
+   * Only structural validity is checked here.
+   * @param _result - The authorization result to check
    * @returns True if the result should be cached, false otherwise
    */
   // TODO: remove dead code - not called from any production path (only tested in AuthHelpers.test.ts)
-  static isCacheable (result: AuthorizationResult): boolean {
-    if (result.status !== AuthorizationStatus.ACCEPTED) {
-      return false
-    }
-
-    // Don't cache if no expiry date or already expired
-    if (!result.expiryDate) {
-      return false
-    }
-
-    const now = new Date()
-    if (result.expiryDate <= now) {
-      return false
-    }
-
-    // Don't cache if expiry is too far in the future (> 1 year)
-    const oneYearFromNow = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000)
-    if (result.expiryDate > oneYearFromNow) {
-      return false
-    }
-
+  static isCacheable (_result: AuthorizationResult): boolean {
+    // Per OCPP 1.6 §3.5.1 and OCPP 2.0.1 AuthCacheCtrlr, all authorization statuses are cacheable
     return true
   }
 

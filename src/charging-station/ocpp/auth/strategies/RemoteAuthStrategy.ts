@@ -7,7 +7,6 @@ import {
   AuthenticationError,
   AuthenticationMethod,
   AuthErrorCode,
-  AuthorizationStatus,
 } from '../types/AuthTypes.js'
 
 /**
@@ -106,8 +105,8 @@ export class RemoteAuthStrategy implements AuthStrategy {
         logger.debug(`RemoteAuthStrategy: Remote authorization: ${result.status}`)
         this.stats.successfulRemoteAuth++
 
-        // Cache successful results for performance
-        if (this.authCache && result.status === AuthorizationStatus.ACCEPTED) {
+        // Cache all authorization statuses per OCPP 1.6 §3.5.1 and OCPP 2.0.1 AuthCacheCtrlr
+        if (this.authCache) {
           await this.cacheResult(
             request.identifier.value,
             result,
