@@ -1,4 +1,4 @@
-import type { AuthCache, AuthStrategy, OCPPAuthAdapter } from '../interfaces/OCPPAuthService.js'
+import type { AuthCache, AuthStrategy, LocalAuthListManager, OCPPAuthAdapter } from '../interfaces/OCPPAuthService.js'
 import type { AuthConfiguration, AuthorizationResult, AuthRequest } from '../types/AuthTypes.js'
 
 import { OCPPVersion } from '../../../../types/ocpp/OCPPVersion.js'
@@ -28,6 +28,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
   private adapters = new Map<OCPPVersion, OCPPAuthAdapter>()
   private authCache?: AuthCache
   private isInitialized = false
+  private localAuthListManager?: LocalAuthListManager
   private stats = {
     avgResponseTimeMs: 0,
     failedRemoteAuth: 0,
@@ -39,11 +40,12 @@ export class RemoteAuthStrategy implements AuthStrategy {
     totalResponseTimeMs: 0,
   }
 
-  constructor (adapters?: Map<OCPPVersion, OCPPAuthAdapter>, authCache?: AuthCache) {
+  constructor (adapters?: Map<OCPPVersion, OCPPAuthAdapter>, authCache?: AuthCache, localAuthListManager?: LocalAuthListManager) {
     if (adapters) {
       this.adapters = adapters
     }
     this.authCache = authCache
+    this.localAuthListManager = localAuthListManager
   }
 
   /**
@@ -105,8 +107,19 @@ export class RemoteAuthStrategy implements AuthStrategy {
         logger.debug(`RemoteAuthStrategy: Remote authorization: ${result.status}`)
         this.stats.successfulRemoteAuth++
 
-        // Cache all authorization statuses per OCPP 1.6 §3.5.1 and OCPP 2.0.1 AuthCacheCtrlr
-        if (this.authCache) {
+        // Check if identifier is in Local Auth List — do not cache (OCPP 1.6 §3.5.3)
+        if (this.authCache && this.localAuthListManager) {
+          const isInLocalList = await this.localAuthListManager.getEntry(request.identifier.value)
+          if (isInLocalList) {
+            logger.debug(`RemoteAuthStrategy: Skipping cache for local list identifier: ${request.identifier.value}`)
+          } else {
+            await this.cacheResult(
+              request.identifier.value,
+              result,
+              config.authorizationCacheLifetime
+            )
+          }
+        } else if (this.authCache) {
           await this.cacheResult(
             request.identifier.value,
             result,
@@ -290,6 +303,14 @@ export class RemoteAuthStrategy implements AuthStrategy {
    */
   public setAuthCache (cache: AuthCache): void {
     this.authCache = cache
+  }
+
+  /**
+   * Set local auth list manager (for dependency injection)
+   * @param manager - LocalAuthListManager instance for checking if identifier is in local list
+   */
+  public setLocalAuthListManager (manager: LocalAuthListManager): void {
+    this.localAuthListManager = manager
   }
 
   /**

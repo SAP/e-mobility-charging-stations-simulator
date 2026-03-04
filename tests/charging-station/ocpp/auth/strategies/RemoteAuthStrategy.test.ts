@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type {
   AuthCache,
+  LocalAuthListManager,
   OCPPAuthAdapter,
 } from '../../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
 
@@ -23,6 +24,7 @@ import {
   createMockAuthorizationResult,
   createMockAuthRequest,
   createMockIdentifier,
+  createMockLocalAuthListManager,
   createMockOCPPAdapter,
   createTestAuthConfig,
 } from '../helpers/MockFactories.js'
@@ -30,11 +32,13 @@ import {
 await describe('RemoteAuthStrategy', async () => {
   let strategy: RemoteAuthStrategy
   let mockAuthCache: AuthCache
+  let mockLocalAuthListManager: LocalAuthListManager
   let mockOCPP16Adapter: OCPPAuthAdapter
   let mockOCPP20Adapter: OCPPAuthAdapter
 
   beforeEach(() => {
     mockAuthCache = createMockAuthCache()
+    mockLocalAuthListManager = createMockLocalAuthListManager()
     mockOCPP16Adapter = createMockOCPPAdapter(OCPPVersion.VERSION_16)
     mockOCPP20Adapter = createMockOCPPAdapter(OCPPVersion.VERSION_20)
 
@@ -42,7 +46,7 @@ await describe('RemoteAuthStrategy', async () => {
     adapters.set(OCPPVersion.VERSION_16, mockOCPP16Adapter)
     adapters.set(OCPPVersion.VERSION_20, mockOCPP20Adapter)
 
-    strategy = new RemoteAuthStrategy(adapters, mockAuthCache)
+    strategy = new RemoteAuthStrategy(adapters, mockAuthCache, mockLocalAuthListManager)
   })
 
   afterEach(() => {
@@ -340,6 +344,64 @@ await describe('RemoteAuthStrategy', async () => {
 
       const result = await strategy.authenticate(request, config)
       expect(result).toBeUndefined()
+    })
+
+    await it('G03.FR.01.T8.01 - should not cache identifier that is in local auth list', async () => {
+      let cachedKey: string | undefined
+      mockAuthCache.set = async (key: string) => {
+        cachedKey = key
+        return Promise.resolve()
+      }
+
+      mockLocalAuthListManager.getEntry = async (identifier: string) => {
+        if (identifier === 'LOCAL_AUTH_TAG') {
+          return Promise.resolve({
+            identifier: 'LOCAL_AUTH_TAG',
+            status: 'Active',
+          })
+        }
+        return Promise.resolve(undefined)
+      }
+
+      const config = createTestAuthConfig({
+        authorizationCacheEnabled: true,
+        authorizationCacheLifetime: 300,
+      })
+      const request = createMockAuthRequest({
+        identifier: createMockIdentifier(
+          OCPPVersion.VERSION_16,
+          'LOCAL_AUTH_TAG',
+          IdentifierType.ID_TAG
+        ),
+      })
+
+      await strategy.authenticate(request, config)
+      expect(cachedKey).toBeUndefined()
+    })
+
+    await it('G03.FR.01.T8.02 - should cache identifier that is not in local auth list', async () => {
+      let cachedKey: string | undefined
+      mockAuthCache.set = async (key: string) => {
+        cachedKey = key
+        return Promise.resolve()
+      }
+
+      mockLocalAuthListManager.getEntry = async () => Promise.resolve(undefined)
+
+      const config = createTestAuthConfig({
+        authorizationCacheEnabled: true,
+        authorizationCacheLifetime: 300,
+      })
+      const request = createMockAuthRequest({
+        identifier: createMockIdentifier(
+          OCPPVersion.VERSION_16,
+          'REMOTE_AUTH_TAG',
+          IdentifierType.ID_TAG
+        ),
+      })
+
+      await strategy.authenticate(request, config)
+      expect(cachedKey).toBe('REMOTE_AUTH_TAG')
     })
   })
 
