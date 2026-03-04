@@ -330,6 +330,12 @@ export const sleep = (ms: number): Promise<void> =>
     setTimeout(resolve, ms)
   })
 
+/**
+ *
+ * @param t
+ * @param apis
+ * @param fn
+ */
 export async function withMockTimers<T> (
   t: TimerTestContext,
   apis: MockableTimerAPI[],
