@@ -90,7 +90,7 @@ export class InMemoryAuthCache implements AuthCache {
    * @param options.defaultTtl - Default TTL in seconds (default: 3600)
    * @param options.maxEntries - Maximum number of cache entries (default: 1000)
    * @param options.rateLimit - Rate limiting configuration
-   * @param options.rateLimit.enabled - Enable rate limiting (default: true)
+   * @param options.rateLimit.enabled - Enable rate limiting (default: false)
    * @param options.rateLimit.maxRequests - Max requests per window (default: 10)
    * @param options.rateLimit.windowMs - Time window in milliseconds (default: 60000)
    */
@@ -102,7 +102,7 @@ export class InMemoryAuthCache implements AuthCache {
     this.defaultTtl = options?.defaultTtl ?? 3600 // 1 hour default
     this.maxEntries = options?.maxEntries ?? 1000
     this.rateLimit = {
-      enabled: options?.rateLimit?.enabled ?? true,
+      enabled: options?.rateLimit?.enabled ?? false,
       maxRequests: options?.rateLimit?.maxRequests ?? 10, // 10 requests per window
       windowMs: options?.rateLimit?.windowMs ?? 60000, // 1 minute window
     }

@@ -579,6 +579,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
       localPreAuthorize: false,
       maxCacheEntries: 1000,
       offlineAuthorizationEnabled: true,
+      remoteAuthorization: true,
       unknownIdAuthorization: AuthorizationStatus.INVALID,
     }
   }
@@ -609,12 +610,15 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     const ocpp16Adapter = this.adapters.get(OCPPVersion.VERSION_16) as OCPP16AuthAdapter | undefined
     const ocpp20Adapter = this.adapters.get(OCPPVersion.VERSION_20) as OCPP20AuthAdapter | undefined
 
+    // Create auth cache for strategy injection
+    const authCache = AuthComponentFactory.createAuthCache(this.config)
+
     // Create strategies using factory
     const strategies = await AuthComponentFactory.createStrategies(
       this.chargingStation,
       { ocpp16Adapter, ocpp20Adapter },
-      undefined, // manager
-      undefined, // cache
+      undefined, // manager - delegated to OCPPAuthServiceImpl
+      authCache,
       this.config
     )
 
