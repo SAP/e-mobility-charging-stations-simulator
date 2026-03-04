@@ -12,7 +12,7 @@ import {
   AuthenticationMethod,
   AuthorizationStatus,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
-import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
+import { sleep, standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
 import { createMockAuthorizationResult } from '../helpers/MockFactories.js'
 
 /**
@@ -169,7 +169,7 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
 
       await cache.set(identifier, mockResult, 0.001)
 
-      await new Promise(resolve => setTimeout(resolve, 10))
+      await sleep(10)
 
       const result = await cache.get(identifier)
 
@@ -183,7 +183,7 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       await cache.set('token-2', mockResult, 0.001)
 
       // Wait for expiration
-      await new Promise(resolve => setTimeout(resolve, 10))
+      await sleep(10)
 
       // Access expired entries
       await cache.get('token-1')
@@ -200,7 +200,7 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
 
       await cacheWithShortTTL.set('token', mockResult)
 
-      await new Promise(resolve => setTimeout(resolve, 10))
+      await sleep(10)
 
       const result = await cacheWithShortTTL.get('token')
       expect(result).toBeDefined()
@@ -323,7 +323,7 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       await cache.get(identifier)
 
       // Wait for window to expire
-      await new Promise(resolve => setTimeout(resolve, 1100))
+      await sleep(1100)
 
       // Should allow new requests
       const result = await cache.get(identifier)
@@ -643,13 +643,13 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       await shortCache.set('token', accepted)
 
       // Access at 30ms to reset TTL (entry would expire at 50ms without reset)
-      await new Promise(resolve => setTimeout(resolve, 30))
+      await sleep(30)
       const midResult = await shortCache.get('token')
       expect(midResult).toBeDefined()
       expect(midResult?.status).toBe(AuthorizationStatus.ACCEPTED)
 
       // At 60ms from start (30ms after reset), entry should still be valid (new expiry = 30ms + 50ms = 80ms)
-      await new Promise(resolve => setTimeout(resolve, 30))
+      await sleep(30)
       const lateResult = await shortCache.get('token')
       expect(lateResult).toBeDefined()
       expect(lateResult?.status).toBe(AuthorizationStatus.ACCEPTED)
@@ -666,7 +666,7 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       await shortCache.set('token', accepted)
 
       // Given: entry expires without intermediate access (contrast with T6.01 where access resets TTL)
-      await new Promise(resolve => setTimeout(resolve, 60))
+      await sleep(60)
       const result = await shortCache.get('token')
       expect(result).toBeDefined()
       expect(result?.status).toBe(AuthorizationStatus.EXPIRED)
@@ -684,7 +684,7 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       const accepted = createMockAuthorizationResult({ status: AuthorizationStatus.ACCEPTED })
       await shortCache.set('token', accepted)
 
-      await new Promise(resolve => setTimeout(resolve, 10))
+      await sleep(10)
 
       const result = await shortCache.get('token')
       expect(result).toBeDefined()
@@ -701,7 +701,7 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       const accepted = createMockAuthorizationResult({ status: AuthorizationStatus.ACCEPTED })
       await shortCache.set('token', accepted)
 
-      await new Promise(resolve => setTimeout(resolve, 10))
+      await sleep(10)
 
       // First access transitions to EXPIRED
       const first = await shortCache.get('token')
@@ -773,9 +773,7 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       const statsBefore = await cleanupCache.getStats()
       expect(statsBefore.totalEntries).toBe(2)
 
-      await new Promise(resolve => {
-        setTimeout(resolve, 1100)
-      })
+      await sleep(1100)
 
       // First cleanup: transitions expired entries to EXPIRED status (two-phase expiration)
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
@@ -786,9 +784,7 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       expect(statsAfterFirst.expiredEntries).toBe(2)
 
       // Wait for the grace TTL to expire before second cleanup
-      await new Promise(resolve => {
-        setTimeout(resolve, 1100)
-      })
+      await sleep(1100)
 
       // Second cleanup: removes entries that were already in EXPIRED status
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any

@@ -18,7 +18,7 @@ import {
   IdentifierType,
 } from '../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import { OCPPVersion } from '../../../../src/types/ocpp/OCPPVersion.js'
-import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
+import { sleep, standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import {
   createMockAuthorizationResult,
@@ -299,13 +299,13 @@ await describe('OCPP Authentication', async () => {
         )
 
         // Wait 500ms, then access to reset TTL
-        await new Promise(resolve => setTimeout(resolve, 500))
+        await sleep(500)
         const midResult = await cache.get('SLIDING-ID')
         expect(midResult).toBeDefined()
         expect(midResult?.status).toBe(AuthorizationStatus.ACCEPTED)
 
         // Wait another 700ms (total 1200ms from initial set, but only 700ms from last access)
-        await new Promise(resolve => setTimeout(resolve, 700))
+        await sleep(700)
         const lateResult = await cache.get('SLIDING-ID')
 
         // Entry should still be valid because TTL was reset at the 500ms access
@@ -326,7 +326,7 @@ await describe('OCPP Authentication', async () => {
         )
 
         // Wait for TTL to expire
-        await new Promise(resolve => setTimeout(resolve, 1100))
+        await sleep(1100)
         const result = await cache.get('EXPIRE-ID')
 
         expect(result).toBeDefined()
