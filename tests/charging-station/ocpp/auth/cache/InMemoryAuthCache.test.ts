@@ -164,18 +164,17 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       mockResult = createMockAuthorizationResult()
     })
 
-    await it('should expire entries after TTL', async () => {
+    await it('should transition expired entries to EXPIRED status', async () => {
       const identifier = 'expiring-token'
 
-      // Set with 1ms TTL (will expire immediately)
       await cache.set(identifier, mockResult, 0.001)
 
-      // Wait for expiration
       await new Promise(resolve => setTimeout(resolve, 10))
 
       const result = await cache.get(identifier)
 
-      expect(result).toBeUndefined()
+      expect(result).toBeDefined()
+      expect(result?.status).toBe(AuthorizationStatus.EXPIRED)
     })
 
     await it('should track expired entries in statistics', async () => {
@@ -199,13 +198,13 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
         defaultTtl: 0.001, // 1ms default
       })
 
-      await cacheWithShortTTL.set('token', mockResult) // No TTL specified
+      await cacheWithShortTTL.set('token', mockResult)
 
-      // Wait for expiration
       await new Promise(resolve => setTimeout(resolve, 10))
 
       const result = await cacheWithShortTTL.get('token')
-      expect(result).toBeUndefined()
+      expect(result).toBeDefined()
+      expect(result?.status).toBe(AuthorizationStatus.EXPIRED)
     })
 
     await it('should not expire entries before TTL', async () => {
@@ -502,9 +501,9 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
     await it('should handle zero TTL (immediate expiration)', async () => {
       await cache.set('token', mockResult, 0)
 
-      // Should be immediately expired
       const result = await cache.get('token')
-      expect(result).toBeUndefined()
+      expect(result).toBeDefined()
+      expect(result?.status).toBe(AuthorizationStatus.EXPIRED)
     })
 
     await it('should handle very large TTL values', async () => {
@@ -569,6 +568,150 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
 
       expect(result?.isOffline).toBe(true)
       expect(result?.method).toBe(AuthenticationMethod.OFFLINE_FALLBACK)
+    })
+  })
+
+  await describe('G03.FR.01.T5 - Status-aware Eviction (R2)', async () => {
+    await it('G03.FR.01.T5.01 - should evict non-valid entry before valid one', async () => {
+      const lruCache = new InMemoryAuthCache({
+        defaultTtl: 3600,
+        maxEntries: 2,
+        rateLimit: { enabled: false },
+      })
+
+      const accepted = createMockAuthorizationResult({ status: AuthorizationStatus.ACCEPTED })
+      const blocked = createMockAuthorizationResult({ status: AuthorizationStatus.BLOCKED })
+
+      await lruCache.set('valid-token', accepted)
+      await lruCache.set('blocked-token', blocked)
+
+      // Access valid-token to make it most recently used
+      await lruCache.get('valid-token')
+
+      // Trigger eviction — blocked-token should be evicted (non-valid, even though valid-token is older in set order)
+      await lruCache.set('new-token', accepted)
+
+      const validResult = await lruCache.get('valid-token')
+      const blockedResult = await lruCache.get('blocked-token')
+      const newResult = await lruCache.get('new-token')
+
+      expect(validResult).toBeDefined()
+      expect(validResult?.status).toBe(AuthorizationStatus.ACCEPTED)
+      expect(blockedResult).toBeUndefined()
+      expect(newResult).toBeDefined()
+    })
+
+    await it('G03.FR.01.T5.02 - should fall back to LRU when all entries are ACCEPTED', async () => {
+      const lruCache = new InMemoryAuthCache({
+        defaultTtl: 3600,
+        maxEntries: 2,
+        rateLimit: { enabled: false },
+      })
+
+      const accepted = createMockAuthorizationResult({ status: AuthorizationStatus.ACCEPTED })
+
+      await lruCache.set('token-a', accepted)
+      await lruCache.set('token-b', accepted)
+
+      // Access token-b to make it most recently used
+      await lruCache.get('token-b')
+
+      // Trigger eviction — token-a should be evicted (LRU)
+      await lruCache.set('token-c', accepted)
+
+      const resultA = await lruCache.get('token-a')
+      const resultB = await lruCache.get('token-b')
+      const resultC = await lruCache.get('token-c')
+
+      expect(resultA).toBeUndefined()
+      expect(resultB).toBeDefined()
+      expect(resultC).toBeDefined()
+    })
+  })
+
+  await describe('G03.FR.01.T6 - TTL Reset on Access (R16, R5)', async () => {
+    await it('G03.FR.01.T6.01 - should reset TTL on cache hit', async () => {
+      const shortCache = new InMemoryAuthCache({
+        defaultTtl: 0.05, // 50ms
+        maxEntries: 10,
+        rateLimit: { enabled: false },
+      })
+
+      const accepted = createMockAuthorizationResult({ status: AuthorizationStatus.ACCEPTED })
+      await shortCache.set('token', accepted)
+
+      // Access at 30ms to reset TTL (entry would expire at 50ms without reset)
+      await new Promise(resolve => setTimeout(resolve, 30))
+      const midResult = await shortCache.get('token')
+      expect(midResult).toBeDefined()
+      expect(midResult?.status).toBe(AuthorizationStatus.ACCEPTED)
+
+      // At 60ms from start (30ms after reset), entry should still be valid (new expiry = 30ms + 50ms = 80ms)
+      await new Promise(resolve => setTimeout(resolve, 30))
+      const lateResult = await shortCache.get('token')
+      expect(lateResult).toBeDefined()
+      expect(lateResult?.status).toBe(AuthorizationStatus.ACCEPTED)
+    })
+
+    await it('G03.FR.01.T6.02 - should not reset TTL when max absolute lifetime exceeded', async () => {
+      const shortCache = new InMemoryAuthCache({
+        defaultTtl: 0.05, // 50ms
+        maxEntries: 10,
+        rateLimit: { enabled: false },
+      })
+
+      const accepted = createMockAuthorizationResult({ status: AuthorizationStatus.ACCEPTED })
+      await shortCache.set('token', accepted)
+
+      // Given: entry expires without intermediate access (contrast with T6.01 where access resets TTL)
+      await new Promise(resolve => setTimeout(resolve, 60))
+      const result = await shortCache.get('token')
+      expect(result).toBeDefined()
+      expect(result?.status).toBe(AuthorizationStatus.EXPIRED)
+    })
+  })
+
+  await describe('G03.FR.01.T7 - Expired Entry Lifecycle (R10)', async () => {
+    await it('G03.FR.01.T7.01 - should return EXPIRED status instead of undefined', async () => {
+      const shortCache = new InMemoryAuthCache({
+        defaultTtl: 0.001,
+        maxEntries: 10,
+        rateLimit: { enabled: false },
+      })
+
+      const accepted = createMockAuthorizationResult({ status: AuthorizationStatus.ACCEPTED })
+      await shortCache.set('token', accepted)
+
+      await new Promise(resolve => setTimeout(resolve, 10))
+
+      const result = await shortCache.get('token')
+      expect(result).toBeDefined()
+      expect(result?.status).toBe(AuthorizationStatus.EXPIRED)
+    })
+
+    await it('G03.FR.01.T7.02 - should keep expired entry in cache after first access', async () => {
+      const shortCache = new InMemoryAuthCache({
+        defaultTtl: 0.001,
+        maxEntries: 10,
+        rateLimit: { enabled: false },
+      })
+
+      const accepted = createMockAuthorizationResult({ status: AuthorizationStatus.ACCEPTED })
+      await shortCache.set('token', accepted)
+
+      await new Promise(resolve => setTimeout(resolve, 10))
+
+      // First access transitions to EXPIRED
+      const first = await shortCache.get('token')
+      expect(first?.status).toBe(AuthorizationStatus.EXPIRED)
+
+      // Second access should still return the entry (now with refreshed TTL as EXPIRED)
+      const second = await shortCache.get('token')
+      expect(second).toBeDefined()
+      expect(second?.status).toBe(AuthorizationStatus.EXPIRED)
+
+      const stats = await shortCache.getStats()
+      expect(stats.totalEntries).toBe(1)
     })
   })
 })

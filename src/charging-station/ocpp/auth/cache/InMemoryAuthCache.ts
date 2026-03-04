@@ -2,11 +2,14 @@ import type { AuthCache, CacheStats } from '../interfaces/OCPPAuthService.js'
 import type { AuthorizationResult } from '../types/AuthTypes.js'
 
 import { logger } from '../../../../utils/Logger.js'
+import { AuthorizationStatus } from '../types/AuthTypes.js'
 
 /**
  * Cached authorization entry with expiration
  */
 interface CacheEntry {
+  /** Timestamp when entry was originally created (milliseconds since epoch) */
+  createdAt: number
   /** Timestamp when entry expires (milliseconds since epoch) */
   expiresAt: number
   /** Cached authorization result */
@@ -51,6 +54,8 @@ interface RateLimitStats {
  * - Memory limits prevent memory exhaustion attacks
  */
 export class InMemoryAuthCache implements AuthCache {
+  private static readonly MAX_ABSOLUTE_LIFETIME_MS = 24 * 60 * 60 * 1000
+
   /** Cache storage: identifier -> entry */
   private readonly cache = new Map<string, CacheEntry>()
 
@@ -152,16 +157,22 @@ export class InMemoryAuthCache implements AuthCache {
     const now = Date.now()
     if (now >= entry.expiresAt) {
       this.stats.expired++
-      this.stats.misses++
-      this.cache.delete(identifier)
-      this.lruOrder.delete(identifier)
-      logger.debug(`InMemoryAuthCache: Expired entry for identifier: ${identifier}`)
-      return Promise.resolve(undefined)
+      // Transition to EXPIRED status instead of deleting (R10)
+      entry.result = { ...entry.result, status: AuthorizationStatus.EXPIRED }
+      entry.expiresAt = now + this.defaultTtl * 1000
+      this.lruOrder.set(identifier, now)
+      logger.debug(`InMemoryAuthCache: Expired entry transitioned to EXPIRED for identifier: ${identifier}`)
+      return Promise.resolve(entry.result)
     }
 
-    // Cache hit - update LRU order
+    // Cache hit - update LRU order and reset TTL (R16, R5)
     this.stats.hits++
     this.lruOrder.set(identifier, now)
+
+    // Reset TTL on access, but only if absolute lifetime has not been exceeded
+    if (entry.createdAt + InMemoryAuthCache.MAX_ABSOLUTE_LIFETIME_MS > now) {
+      entry.expiresAt = now + this.defaultTtl * 1000
+    }
 
     logger.debug(`InMemoryAuthCache: Cache hit for identifier: ${identifier}`)
     return Promise.resolve(entry.result)
@@ -234,9 +245,10 @@ export class InMemoryAuthCache implements AuthCache {
     }
 
     const ttlSeconds = ttl ?? this.defaultTtl
-    const expiresAt = Date.now() + ttlSeconds * 1000
+    const now = Date.now()
+    const expiresAt = now + ttlSeconds * 1000
 
-    this.cache.set(identifier, { expiresAt, result })
+    this.cache.set(identifier, { createdAt: now, expiresAt, result })
     this.lruOrder.set(identifier, Date.now())
     this.stats.sets++
 
@@ -309,22 +321,33 @@ export class InMemoryAuthCache implements AuthCache {
       return
     }
 
-    // Find entry with oldest access time
-    let oldestIdentifier: string | undefined
-    let oldestTime = Number.POSITIVE_INFINITY
+    // Phase 1 (R2): prefer evicting non-valid (status != ACCEPTED) entries
+    let candidateIdentifier: string | undefined
+    let candidateTime = Number.POSITIVE_INFINITY
 
     for (const [identifier, accessTime] of this.lruOrder.entries()) {
-      if (accessTime < oldestTime) {
-        oldestTime = accessTime
-        oldestIdentifier = identifier
+      const entry = this.cache.get(identifier)
+      if (entry?.result.status !== AuthorizationStatus.ACCEPTED && accessTime < candidateTime) {
+        candidateTime = accessTime
+        candidateIdentifier = identifier
       }
     }
 
-    if (oldestIdentifier) {
-      this.cache.delete(oldestIdentifier)
-      this.lruOrder.delete(oldestIdentifier)
+    // Phase 2: fall back to pure LRU if all entries are valid
+    if (candidateIdentifier == null) {
+      for (const [identifier, accessTime] of this.lruOrder.entries()) {
+        if (accessTime < candidateTime) {
+          candidateTime = accessTime
+          candidateIdentifier = identifier
+        }
+      }
+    }
+
+    if (candidateIdentifier != null) {
+      this.cache.delete(candidateIdentifier)
+      this.lruOrder.delete(candidateIdentifier)
       this.stats.evictions++
-      logger.debug(`InMemoryAuthCache: Evicted LRU entry: ${oldestIdentifier}`)
+      logger.debug(`InMemoryAuthCache: Evicted LRU entry: ${candidateIdentifier}`)
     }
   }
 
