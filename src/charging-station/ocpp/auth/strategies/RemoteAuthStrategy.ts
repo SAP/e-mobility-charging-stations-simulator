@@ -1,13 +1,14 @@
-import type { AuthCache, AuthStrategy, LocalAuthListManager, OCPPAuthAdapter } from '../interfaces/OCPPAuthService.js'
+import type {
+  AuthCache,
+  AuthStrategy,
+  LocalAuthListManager,
+  OCPPAuthAdapter,
+} from '../interfaces/OCPPAuthService.js'
 import type { AuthConfiguration, AuthorizationResult, AuthRequest } from '../types/AuthTypes.js'
 
 import { OCPPVersion } from '../../../../types/ocpp/OCPPVersion.js'
 import { logger } from '../../../../utils/Logger.js'
-import {
-  AuthenticationError,
-  AuthenticationMethod,
-  AuthErrorCode,
-} from '../types/AuthTypes.js'
+import { AuthenticationError, AuthenticationMethod, AuthErrorCode } from '../types/AuthTypes.js'
 
 /**
  * Remote Authentication Strategy
@@ -40,7 +41,11 @@ export class RemoteAuthStrategy implements AuthStrategy {
     totalResponseTimeMs: 0,
   }
 
-  constructor (adapters?: Map<OCPPVersion, OCPPAuthAdapter>, authCache?: AuthCache, localAuthListManager?: LocalAuthListManager) {
+  constructor (
+    adapters?: Map<OCPPVersion, OCPPAuthAdapter>,
+    authCache?: AuthCache,
+    localAuthListManager?: LocalAuthListManager
+  ) {
     if (adapters) {
       this.adapters = adapters
     }
@@ -111,7 +116,9 @@ export class RemoteAuthStrategy implements AuthStrategy {
         if (this.authCache && this.localAuthListManager) {
           const isInLocalList = await this.localAuthListManager.getEntry(request.identifier.value)
           if (isInLocalList) {
-            logger.debug(`RemoteAuthStrategy: Skipping cache for local list identifier: ${request.identifier.value}`)
+            logger.debug(
+              `RemoteAuthStrategy: Skipping cache for local list identifier: ${request.identifier.value}`
+            )
           } else {
             await this.cacheResult(
               request.identifier.value,

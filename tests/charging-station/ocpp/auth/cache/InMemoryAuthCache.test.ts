@@ -739,8 +739,12 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
         maxEntries: 10,
         rateLimit: { enabled: false },
       })
-      expect(() => { cleanupCache.dispose() }).not.toThrow()
-      expect(() => { cleanupCache.dispose() }).not.toThrow()
+      expect(() => {
+        cleanupCache.dispose()
+      }).not.toThrow()
+      expect(() => {
+        cleanupCache.dispose()
+      }).not.toThrow()
     })
 
     await it('G03.FR.01.T10.02 - cleanup interval is not started when cleanupIntervalSeconds is 0', () => {

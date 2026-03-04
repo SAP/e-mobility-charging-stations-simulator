@@ -161,7 +161,9 @@ export class InMemoryAuthCache implements AuthCache {
     // Check rate limiting first
     if (!this.checkRateLimit(identifier)) {
       this.stats.rateLimitBlocked++
-      logger.warn(`InMemoryAuthCache: Rate limit exceeded for identifier: ${this.truncateId(identifier)}`)
+      logger.warn(
+        `InMemoryAuthCache: Rate limit exceeded for identifier: ${this.truncateId(identifier)}`
+      )
       return Promise.resolve(undefined)
     }
 
@@ -181,7 +183,9 @@ export class InMemoryAuthCache implements AuthCache {
       entry.result = { ...entry.result, status: AuthorizationStatus.EXPIRED }
       entry.expiresAt = now + this.defaultTtl * 1000
       this.lruOrder.set(identifier, now)
-      logger.debug(`InMemoryAuthCache: Expired entry transitioned to EXPIRED for identifier: ${this.truncateId(identifier)}`)
+      logger.debug(
+        `InMemoryAuthCache: Expired entry transitioned to EXPIRED for identifier: ${this.truncateId(identifier)}`
+      )
       return Promise.resolve(entry.result)
     }
 
@@ -239,7 +243,9 @@ export class InMemoryAuthCache implements AuthCache {
     this.lruOrder.delete(identifier)
 
     if (deleted) {
-      logger.debug(`InMemoryAuthCache: Removed entry for identifier: ${this.truncateId(identifier)}`)
+      logger.debug(
+        `InMemoryAuthCache: Removed entry for identifier: ${this.truncateId(identifier)}`
+      )
     }
     return Promise.resolve()
   }
@@ -270,7 +276,9 @@ export class InMemoryAuthCache implements AuthCache {
     // Check rate limiting
     if (!this.checkRateLimit(identifier)) {
       this.stats.rateLimitBlocked++
-      logger.warn(`InMemoryAuthCache: Rate limit exceeded, not caching identifier: ${this.truncateId(identifier)}`)
+      logger.warn(
+        `InMemoryAuthCache: Rate limit exceeded, not caching identifier: ${this.truncateId(identifier)}`
+      )
       return Promise.resolve()
     }
 

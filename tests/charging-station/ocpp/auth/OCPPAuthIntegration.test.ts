@@ -343,9 +343,7 @@ await describe('OCPP Authentication', async () => {
         const listManager = createMockLocalAuthListManager({
           getEntry: (id: string) =>
             Promise.resolve(
-              id === 'LIST-ID'
-                ? { identifier: 'LIST-ID', status: 'accepted' }
-                : undefined
+              id === 'LIST-ID' ? { identifier: 'LIST-ID', status: 'accepted' } : undefined
             ),
         })
 
