@@ -45,6 +45,7 @@ interface RateLimitStats {
  * - LRU eviction when maxEntries is reached
  * - Automatic expiration of cache entries based on TTL
  * - Rate limiting per identifier (requests per time window)
+ * - Periodic cleanup of expired entries
  * - Memory usage tracking
  * - Comprehensive statistics
  *
@@ -52,12 +53,15 @@ interface RateLimitStats {
  * - Rate limiting prevents DoS attacks on auth endpoints
  * - Cache expiration ensures stale auth data doesn't persist
  * - Memory limits prevent memory exhaustion attacks
+ * - Bounded rate limits map prevents unbounded memory growth
  */
 export class InMemoryAuthCache implements AuthCache {
   private static readonly MAX_ABSOLUTE_LIFETIME_MS = 24 * 60 * 60 * 1000
 
   /** Cache storage: identifier -> entry */
   private readonly cache = new Map<string, CacheEntry>()
+
+  private cleanupInterval?: ReturnType<typeof setInterval>
 
   /** Default TTL in seconds */
   private readonly defaultTtl: number
@@ -92,6 +96,7 @@ export class InMemoryAuthCache implements AuthCache {
   /**
    * Create an in-memory auth cache
    * @param options - Cache configuration options
+   * @param options.cleanupIntervalSeconds - Periodic cleanup interval in seconds (default: 300, 0 to disable)
    * @param options.defaultTtl - Default TTL in seconds (default: 3600)
    * @param options.maxEntries - Maximum number of cache entries (default: 1000)
    * @param options.rateLimit - Rate limiting configuration
@@ -100,6 +105,7 @@ export class InMemoryAuthCache implements AuthCache {
    * @param options.rateLimit.windowMs - Time window in milliseconds (default: 60000)
    */
   constructor (options?: {
+    cleanupIntervalSeconds?: number
     defaultTtl?: number
     maxEntries?: number
     rateLimit?: { enabled?: boolean; maxRequests?: number; windowMs?: number }
@@ -110,6 +116,14 @@ export class InMemoryAuthCache implements AuthCache {
       enabled: options?.rateLimit?.enabled ?? false,
       maxRequests: options?.rateLimit?.maxRequests ?? 10, // 10 requests per window
       windowMs: options?.rateLimit?.windowMs ?? 60000, // 1 minute window
+    }
+
+    if (options?.cleanupIntervalSeconds !== 0) {
+      const intervalMs = (options?.cleanupIntervalSeconds ?? 300) * 1000
+      this.cleanupInterval = setInterval(() => {
+        this.runCleanup()
+      }, intervalMs)
+      this.cleanupInterval.unref()
     }
 
     logger.info(
@@ -132,6 +146,13 @@ export class InMemoryAuthCache implements AuthCache {
     return Promise.resolve()
   }
 
+  public dispose (): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval)
+      this.cleanupInterval = undefined
+    }
+  }
+
   /**
    * Get cached authorization result
    * @param identifier - Identifier to look up
@@ -141,7 +162,7 @@ export class InMemoryAuthCache implements AuthCache {
     // Check rate limiting first
     if (!this.checkRateLimit(identifier)) {
       this.stats.rateLimitBlocked++
-      logger.warn(`InMemoryAuthCache: Rate limit exceeded for identifier: ${identifier}`)
+      logger.warn(`InMemoryAuthCache: Rate limit exceeded for identifier: ${this.truncateId(identifier)}`)
       return Promise.resolve(undefined)
     }
 
@@ -161,7 +182,7 @@ export class InMemoryAuthCache implements AuthCache {
       entry.result = { ...entry.result, status: AuthorizationStatus.EXPIRED }
       entry.expiresAt = now + this.defaultTtl * 1000
       this.lruOrder.set(identifier, now)
-      logger.debug(`InMemoryAuthCache: Expired entry transitioned to EXPIRED for identifier: ${identifier}`)
+      logger.debug(`InMemoryAuthCache: Expired entry transitioned to EXPIRED for identifier: ${this.truncateId(identifier)}`)
       return Promise.resolve(entry.result)
     }
 
@@ -174,7 +195,7 @@ export class InMemoryAuthCache implements AuthCache {
       entry.expiresAt = now + this.defaultTtl * 1000
     }
 
-    logger.debug(`InMemoryAuthCache: Cache hit for identifier: ${identifier}`)
+    logger.debug(`InMemoryAuthCache: Cache hit for identifier: ${this.truncateId(identifier)}`)
     return Promise.resolve(entry.result)
   }
 
@@ -219,7 +240,7 @@ export class InMemoryAuthCache implements AuthCache {
     this.lruOrder.delete(identifier)
 
     if (deleted) {
-      logger.debug(`InMemoryAuthCache: Removed entry for identifier: ${identifier}`)
+      logger.debug(`InMemoryAuthCache: Removed entry for identifier: ${this.truncateId(identifier)}`)
     }
     return Promise.resolve()
   }
@@ -235,7 +256,7 @@ export class InMemoryAuthCache implements AuthCache {
     // Check rate limiting
     if (!this.checkRateLimit(identifier)) {
       this.stats.rateLimitBlocked++
-      logger.warn(`InMemoryAuthCache: Rate limit exceeded, not caching identifier: ${identifier}`)
+      logger.warn(`InMemoryAuthCache: Rate limit exceeded, not caching identifier: ${this.truncateId(identifier)}`)
       return Promise.resolve()
     }
 
@@ -253,9 +274,18 @@ export class InMemoryAuthCache implements AuthCache {
     this.stats.sets++
 
     logger.debug(
-      `InMemoryAuthCache: Cached result for identifier: ${identifier}, ttl=${String(ttlSeconds)}s, entries=${String(this.cache.size)}/${String(this.maxEntries)}`
+      `InMemoryAuthCache: Cached result for identifier: ${this.truncateId(identifier)}, ttl=${String(ttlSeconds)}s, entries=${String(this.cache.size)}/${String(this.maxEntries)}`
     )
     return Promise.resolve()
+  }
+
+  private boundRateLimitsMap (): void {
+    if (this.rateLimits.size > this.maxEntries * 2) {
+      const firstKey = this.rateLimits.keys().next().value
+      if (firstKey !== undefined) {
+        this.rateLimits.delete(firstKey)
+      }
+    }
   }
 
   /**
@@ -276,6 +306,7 @@ export class InMemoryAuthCache implements AuthCache {
     // No existing entry - create one
     if (!entry) {
       this.rateLimits.set(identifier, { count: 1, windowStart: now })
+      this.boundRateLimitsMap()
       return true
     }
 
@@ -347,7 +378,7 @@ export class InMemoryAuthCache implements AuthCache {
       this.cache.delete(candidateIdentifier)
       this.lruOrder.delete(candidateIdentifier)
       this.stats.evictions++
-      logger.debug(`InMemoryAuthCache: Evicted LRU entry: ${candidateIdentifier}`)
+      logger.debug(`InMemoryAuthCache: Evicted LRU entry: ${this.truncateId(candidateIdentifier)}`)
     }
   }
 
@@ -364,5 +395,24 @@ export class InMemoryAuthCache implements AuthCache {
       rateLimitChecks: 0,
       sets: 0,
     }
+  }
+
+  private runCleanup (): void {
+    const now = Date.now()
+    for (const [key, entry] of this.cache.entries()) {
+      if (now >= entry.expiresAt) {
+        this.cache.delete(key)
+        this.lruOrder.delete(key)
+        this.stats.expired++
+      }
+    }
+    this.cleanupExpiredRateLimits()
+  }
+
+  private truncateId (identifier: string, maxLen = 8): string {
+    if (identifier.length <= maxLen) {
+      return identifier
+    }
+    return `${identifier.slice(0, maxLen)}...`
   }
 }

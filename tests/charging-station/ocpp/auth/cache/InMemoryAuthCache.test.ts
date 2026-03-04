@@ -714,4 +714,88 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       expect(stats.totalEntries).toBe(1)
     })
   })
+
+  await describe('Helper - truncateId', async () => {
+    await it('should return identifier unchanged when short', () => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
+      const result = (cache as any).truncateId('ABCD')
+      expect(result).toBe('ABCD')
+    })
+
+    await it('should truncate long identifier with ellipsis', () => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
+      const result = (cache as any).truncateId('ABCDEFGHIJKLMNOP')
+      expect(result).toBe('ABCDEFGH...')
+    })
+  })
+
+  await describe('G03.FR.01.T10 - Periodic Cleanup and Rate Limit Bounds (R8, R9)', async () => {
+    await it('G03.FR.01.T10.01 - dispose() stops the cleanup interval and is safe to call twice', () => {
+      const cleanupCache = new InMemoryAuthCache({
+        cleanupIntervalSeconds: 1,
+        defaultTtl: 3600,
+        maxEntries: 10,
+        rateLimit: { enabled: false },
+      })
+      expect(() => { cleanupCache.dispose() }).not.toThrow()
+      expect(() => { cleanupCache.dispose() }).not.toThrow()
+    })
+
+    await it('G03.FR.01.T10.02 - cleanup interval is not started when cleanupIntervalSeconds is 0', () => {
+      const noCleanupCache = new InMemoryAuthCache({
+        cleanupIntervalSeconds: 0,
+        defaultTtl: 3600,
+        maxEntries: 10,
+        rateLimit: { enabled: false },
+      })
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+      expect((noCleanupCache as any).cleanupInterval).toBeUndefined()
+      noCleanupCache.dispose()
+    })
+
+    await it('G03.FR.01.T10.03 - runCleanup removes expired entries', async () => {
+      const cleanupCache = new InMemoryAuthCache({
+        cleanupIntervalSeconds: 0,
+        defaultTtl: 1,
+        maxEntries: 10,
+        rateLimit: { enabled: false },
+      })
+
+      await cleanupCache.set('id-1', createMockAuthorizationResult())
+      await cleanupCache.set('id-2', createMockAuthorizationResult())
+
+      const statsBefore = await cleanupCache.getStats()
+      expect(statsBefore.totalEntries).toBe(2)
+
+      await new Promise(resolve => {
+        setTimeout(resolve, 1100)
+      })
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+      ;(cleanupCache as any).runCleanup()
+
+      const statsAfter = await cleanupCache.getStats()
+      expect(statsAfter.totalEntries).toBe(0)
+      expect(statsAfter.expiredEntries).toBe(2)
+      cleanupCache.dispose()
+    })
+
+    await it('G03.FR.01.T10.04 - rateLimits map is bounded to maxEntries * 2', async () => {
+      const boundedCache = new InMemoryAuthCache({
+        cleanupIntervalSeconds: 0,
+        defaultTtl: 3600,
+        maxEntries: 2,
+        rateLimit: { enabled: true, maxRequests: 100 },
+      })
+
+      for (let i = 0; i < 10; i++) {
+        await boundedCache.get(`identifier-${String(i)}`)
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+      const rateLimitsSize = (boundedCache as any).rateLimits.size as number
+      expect(rateLimitsSize).toBeLessThanOrEqual(4)
+      boundedCache.dispose()
+    })
+  })
 })

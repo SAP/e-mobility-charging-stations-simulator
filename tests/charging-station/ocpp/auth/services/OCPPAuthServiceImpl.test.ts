@@ -433,7 +433,7 @@ await describe('OCPPAuthServiceImpl', async () => {
       expect(localStrategy).toBeInstanceOf(LocalAuthStrategy)
 
       const local = localStrategy as LocalAuthStrategy
-      expect(local.authCache).toBeDefined()
+      expect(local.getAuthCache()).toBeDefined()
     })
   })
 })

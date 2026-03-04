@@ -26,10 +26,10 @@ import {
  * and offline capability when remote services are unavailable.
  */
 export class LocalAuthStrategy implements AuthStrategy {
-  public authCache?: AuthCache
   public readonly name = 'LocalAuthStrategy'
-
   public readonly priority = 1 // High priority - try local first
+
+  private authCache?: AuthCache
   private isInitialized = false
   private localAuthListManager?: LocalAuthListManager
   private stats = {
@@ -181,6 +181,14 @@ export class LocalAuthStrategy implements AuthStrategy {
 
     logger.info('LocalAuthStrategy: Cleanup completed')
     return Promise.resolve()
+  }
+
+  /**
+   * Get the authorization cache
+   * @returns The authorization cache or undefined if not available
+   */
+  public getAuthCache (): AuthCache | undefined {
+    return this.authCache
   }
 
   /**

@@ -272,8 +272,9 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
 
     // Clear cache in local strategy
     const localStrategy = this.strategies.get('local') as LocalAuthStrategy | undefined
-    if (localStrategy?.authCache) {
-      await localStrategy.authCache.clear()
+    const localAuthCache = localStrategy?.getAuthCache()
+    if (localAuthCache) {
+      await localAuthCache.clear()
       logger.info(`${this.chargingStation.logPrefix()} Authorization cache cleared`)
     } else {
       logger.debug(`${this.chargingStation.logPrefix()} No authorization cache available to clear`)
