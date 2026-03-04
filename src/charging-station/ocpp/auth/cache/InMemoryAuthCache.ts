@@ -140,7 +140,6 @@ export class InMemoryAuthCache implements AuthCache {
     this.cache.clear()
     this.lruOrder.clear()
     this.rateLimits.clear()
-    this.resetStats()
 
     logger.info(`InMemoryAuthCache: Cleared ${String(entriesCleared)} entries`)
     return Promise.resolve()
@@ -385,7 +384,7 @@ export class InMemoryAuthCache implements AuthCache {
   /**
    * Reset statistics counters
    */
-  private resetStats (): void {
+  public resetStats (): void {
     this.stats = {
       evictions: 0,
       expired: 0,

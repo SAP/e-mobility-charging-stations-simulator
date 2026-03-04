@@ -259,19 +259,21 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       expect(statsAfter.totalEntries).toBe(0)
     })
 
-    await it('should reset statistics on clear', async () => {
+    await it('should preserve statistics on clear', async () => {
       await cache.set('token', mockResult)
       await cache.get('token')
       await cache.get('miss')
 
       const statsBefore = await cache.getStats()
       expect(statsBefore.hits).toBeGreaterThan(0)
+      expect(statsBefore.misses).toBeGreaterThan(0)
 
       await cache.clear()
 
       const statsAfter = await cache.getStats()
-      expect(statsAfter.hits).toBe(0)
-      expect(statsAfter.misses).toBe(0)
+      expect(statsAfter.hits).toBe(statsBefore.hits)
+      expect(statsAfter.misses).toBe(statsBefore.misses)
+      expect(statsAfter.totalEntries).toBe(0)
     })
   })
 
@@ -796,6 +798,87 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       const rateLimitsSize = (boundedCache as any).rateLimits.size as number
       expect(rateLimitsSize).toBeLessThanOrEqual(4)
       boundedCache.dispose()
+    })
+  })
+
+  await describe('G03.FR.01.T11 - Stats preservation and resetStats() (R14, R15)', async () => {
+    await it('G03.FR.01.T11.01 - clear() preserves hits, misses, evictions', async () => {
+      const statsCache = new InMemoryAuthCache({
+        cleanupIntervalSeconds: 0,
+        defaultTtl: 3600,
+        maxEntries: 2,
+        rateLimit: { enabled: false },
+      })
+      const result = createMockAuthorizationResult()
+      await statsCache.set('id-a', result)
+      await statsCache.set('id-b', result)
+      await statsCache.set('id-c', result) // triggers eviction
+      await statsCache.get('id-b') // hit
+      await statsCache.get('id-miss') // miss
+
+      const before = await statsCache.getStats()
+      expect(before.evictions).toBeGreaterThan(0)
+      expect(before.hits).toBeGreaterThan(0)
+      expect(before.misses).toBeGreaterThan(0)
+
+      await statsCache.clear()
+
+      const after = await statsCache.getStats()
+      expect(after.evictions).toBe(before.evictions)
+      expect(after.hits).toBe(before.hits)
+      expect(after.misses).toBe(before.misses)
+      expect(after.totalEntries).toBe(0)
+      statsCache.dispose()
+    })
+
+    await it('G03.FR.01.T11.02 - resetStats() zeroes all stat fields', async () => {
+      const statsCache = new InMemoryAuthCache({
+        cleanupIntervalSeconds: 0,
+        defaultTtl: 3600,
+        maxEntries: 2,
+        rateLimit: { enabled: false },
+      })
+      const result = createMockAuthorizationResult()
+      await statsCache.set('id-a', result)
+      await statsCache.get('id-a') // hit
+      await statsCache.get('id-miss') // miss
+
+      const before = await statsCache.getStats()
+      expect(before.hits).toBeGreaterThan(0)
+      expect(before.misses).toBeGreaterThan(0)
+
+      statsCache.resetStats()
+
+      const after = await statsCache.getStats()
+      expect(after.hits).toBe(0)
+      expect(after.misses).toBe(0)
+      expect(after.evictions).toBe(0)
+      statsCache.dispose()
+    })
+
+    await it('G03.FR.01.T11.03 - resetStats() after clear() zeroes stats correctly', async () => {
+      const statsCache = new InMemoryAuthCache({
+        cleanupIntervalSeconds: 0,
+        defaultTtl: 3600,
+        maxEntries: 10,
+        rateLimit: { enabled: false },
+      })
+      const result = createMockAuthorizationResult()
+      await statsCache.set('id-a', result)
+      await statsCache.get('id-a') // hit
+
+      await statsCache.clear() // clears entries but preserves stats
+
+      const afterClear = await statsCache.getStats()
+      expect(afterClear.hits).toBeGreaterThan(0) // stats preserved
+      expect(afterClear.totalEntries).toBe(0) // entries gone
+
+      statsCache.resetStats() // now zero out
+
+      const afterReset = await statsCache.getStats()
+      expect(afterReset.hits).toBe(0)
+      expect(afterReset.misses).toBe(0)
+      statsCache.dispose()
     })
   })
 })
