@@ -9,6 +9,7 @@ import type { ChargingStation } from '../../../../../src/charging-station/Chargi
 import type { OCPPAuthService } from '../../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
 
 import { OCPPAuthServiceImpl } from '../../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceImpl.js'
+import { LocalAuthStrategy } from '../../../../../src/charging-station/ocpp/auth/strategies/LocalAuthStrategy.js'
 import {
   AuthContext,
   AuthenticationMethod,
@@ -413,6 +414,26 @@ await describe('OCPPAuthServiceImpl', async () => {
       })
 
       expect(result).toBeDefined()
+    })
+  })
+
+  await describe('G03.FR.01.100 - Cache Wiring', async () => {
+    let mockStation: ChargingStation
+
+    beforeEach(() => {
+      mockStation = createMockAuthServiceTestStation('cache-wiring')
+    })
+
+    await it('G03.FR.01.101 - local strategy has a defined authCache after initialization', async () => {
+      const authService = new OCPPAuthServiceImpl(mockStation)
+      await authService.initialize()
+
+      const localStrategy = authService.getStrategy('local')
+      expect(localStrategy).toBeDefined()
+      expect(localStrategy).toBeInstanceOf(LocalAuthStrategy)
+
+      const local = localStrategy as LocalAuthStrategy
+      expect(local.authCache).toBeDefined()
     })
   })
 })

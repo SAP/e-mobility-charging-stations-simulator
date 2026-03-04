@@ -125,6 +125,7 @@ export class AuthHelpers {
    * @param result - The authorization result to check
    * @returns True if the result should be cached, false otherwise
    */
+  // TODO: remove dead code - not called from any production path (only tested in AuthHelpers.test.ts)
   static isCacheable (result: AuthorizationResult): boolean {
     if (result.status !== AuthorizationStatus.ACCEPTED) {
       return false
