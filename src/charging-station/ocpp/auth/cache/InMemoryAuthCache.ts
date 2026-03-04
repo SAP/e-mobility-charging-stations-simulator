@@ -245,6 +245,21 @@ export class InMemoryAuthCache implements AuthCache {
   }
 
   /**
+   * Reset statistics counters
+   */
+  public resetStats (): void {
+    this.stats = {
+      evictions: 0,
+      expired: 0,
+      hits: 0,
+      misses: 0,
+      rateLimitBlocked: 0,
+      rateLimitChecks: 0,
+      sets: 0,
+    }
+  }
+
+  /**
    * Cache an authorization result
    * @param identifier - Identifier to cache
    * @param result - Authorization result to cache
@@ -378,21 +393,6 @@ export class InMemoryAuthCache implements AuthCache {
       this.lruOrder.delete(candidateIdentifier)
       this.stats.evictions++
       logger.debug(`InMemoryAuthCache: Evicted LRU entry: ${this.truncateId(candidateIdentifier)}`)
-    }
-  }
-
-  /**
-   * Reset statistics counters
-   */
-  public resetStats (): void {
-    this.stats = {
-      evictions: 0,
-      expired: 0,
-      hits: 0,
-      misses: 0,
-      rateLimitBlocked: 0,
-      rateLimitChecks: 0,
-      sets: 0,
     }
   }
 
