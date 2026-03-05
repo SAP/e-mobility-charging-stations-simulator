@@ -8,7 +8,7 @@ import type {
 } from '../types/AuthTypes.js'
 
 import { OCPPVersion } from '../../../../types/index.js'
-import { isNotEmptyString } from '../../../../utils/index.js'
+import { isNotEmptyString, sleep } from '../../../../utils/index.js'
 import { logger } from '../../../../utils/Logger.js'
 import { AuthenticationMethod, AuthorizationStatus, IdentifierType } from '../types/AuthTypes.js'
 
@@ -241,7 +241,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
     config: AuthConfiguration
   ): Promise<boolean> {
     // Simulate validation delay
-    await new Promise(resolve => setTimeout(resolve, 100))
+    await sleep(100)
 
     // In a real implementation, this would:
     // 1. Load trusted CA certificates from configuration
