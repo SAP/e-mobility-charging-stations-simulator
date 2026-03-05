@@ -292,12 +292,11 @@ await describe('OCPP20AuthAdapter', async () => {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: false,
         authorizationTimeout: 30,
-        authorizeRemoteStart: true,
         certificateAuthEnabled: false,
         localAuthListEnabled: false,
-        localAuthorizeOffline: false,
         localPreAuthorize: false,
         offlineAuthorizationEnabled: false,
+        remoteAuthorization: true,
       }
 
       const isValid = adapter.validateConfiguration(config)
@@ -309,12 +308,11 @@ await describe('OCPP20AuthAdapter', async () => {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: false,
         authorizationTimeout: 30,
-        authorizeRemoteStart: false,
         certificateAuthEnabled: false,
         localAuthListEnabled: false,
-        localAuthorizeOffline: false,
         localPreAuthorize: false,
         offlineAuthorizationEnabled: false,
+        remoteAuthorization: false,
       }
 
       const isValid = adapter.validateConfiguration(config)
@@ -326,12 +324,11 @@ await describe('OCPP20AuthAdapter', async () => {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: false,
         authorizationTimeout: 0,
-        authorizeRemoteStart: true,
         certificateAuthEnabled: false,
         localAuthListEnabled: false,
-        localAuthorizeOffline: true,
         localPreAuthorize: false,
-        offlineAuthorizationEnabled: false,
+        offlineAuthorizationEnabled: true,
+        remoteAuthorization: true,
       }
 
       const isValid = adapter.validateConfiguration(config)

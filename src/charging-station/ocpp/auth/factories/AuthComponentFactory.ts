@@ -77,11 +77,6 @@ export class AuthComponentFactory {
     return new InMemoryAuthCache({
       defaultTtl: config.authorizationCacheLifetime ?? 3600,
       maxEntries: config.maxCacheEntries ?? 1000,
-      rateLimit: {
-        enabled: true,
-        maxRequests: 10, // 10 requests per minute per identifier
-        windowMs: 60000, // 1 minute window
-      },
     })
   }
 

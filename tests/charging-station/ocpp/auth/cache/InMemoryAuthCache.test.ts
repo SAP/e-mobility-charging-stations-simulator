@@ -7,12 +7,15 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { AuthorizationResult } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 
-import { InMemoryAuthCache } from '../../../../../src/charging-station/ocpp/auth/cache/InMemoryAuthCache.js'
+import {
+  InMemoryAuthCache,
+  truncateId,
+} from '../../../../../src/charging-station/ocpp/auth/cache/InMemoryAuthCache.js'
 import {
   AuthenticationMethod,
   AuthorizationStatus,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
-import { sleep, standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
+import { standardCleanup, withMockTimers } from '../../../../helpers/TestLifecycleHelpers.js'
 import { createMockAuthorizationResult } from '../helpers/MockFactories.js'
 
 /**
@@ -164,47 +167,53 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       mockResult = createMockAuthorizationResult()
     })
 
-    await it('should transition expired entries to EXPIRED status', async () => {
+    await it('should transition expired entries to EXPIRED status', async t => {
       const identifier = 'expiring-token'
 
-      cache.set(identifier, mockResult, 0.001)
+      await withMockTimers(t, ['Date'], () => {
+        cache.set(identifier, mockResult, 0.001)
 
-      await sleep(10)
+        t.mock.timers.tick(10)
 
-      const result = cache.get(identifier)
+        const result = cache.get(identifier)
 
-      expect(result).toBeDefined()
-      expect(result?.status).toBe(AuthorizationStatus.EXPIRED)
-    })
-
-    await it('should track expired entries in statistics', async () => {
-      // Set with very short TTL
-      cache.set('token-1', mockResult, 0.001)
-      cache.set('token-2', mockResult, 0.001)
-
-      // Wait for expiration
-      await sleep(10)
-
-      // Access expired entries
-      cache.get('token-1')
-      cache.get('token-2')
-
-      const stats = cache.getStats()
-      expect(stats.expiredEntries).toBeGreaterThanOrEqual(2)
-    })
-
-    await it('should use default TTL when not specified', async () => {
-      const cacheWithShortTTL = new InMemoryAuthCache({
-        defaultTtl: 0.001, // 1ms default
+        expect(result).toBeDefined()
+        expect(result?.status).toBe(AuthorizationStatus.EXPIRED)
       })
+    })
 
-      cacheWithShortTTL.set('token', mockResult)
+    await it('should track expired entries in statistics', async t => {
+      await withMockTimers(t, ['Date'], () => {
+        // Set with very short TTL
+        cache.set('token-1', mockResult, 0.001)
+        cache.set('token-2', mockResult, 0.001)
 
-      await sleep(10)
+        // Advance past expiration
+        t.mock.timers.tick(10)
 
-      const result = cacheWithShortTTL.get('token')
-      expect(result).toBeDefined()
-      expect(result?.status).toBe(AuthorizationStatus.EXPIRED)
+        // Access expired entries
+        cache.get('token-1')
+        cache.get('token-2')
+
+        const stats = cache.getStats()
+        expect(stats.expiredEntries).toBeGreaterThanOrEqual(2)
+      })
+    })
+
+    await it('should use default TTL when not specified', async t => {
+      await withMockTimers(t, ['Date'], () => {
+        const cacheWithShortTTL = new InMemoryAuthCache({
+          defaultTtl: 0.001, // 1ms default
+        })
+
+        cacheWithShortTTL.set('token', mockResult)
+
+        t.mock.timers.tick(10)
+
+        const result = cacheWithShortTTL.get('token')
+        expect(result).toBeDefined()
+        expect(result?.status).toBe(AuthorizationStatus.EXPIRED)
+      })
     })
 
     await it('should not expire entries before TTL', () => {
@@ -314,20 +323,19 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       expect(stats.rateLimit.blockedRequests).toBeGreaterThan(0)
     })
 
-    await it('should reset rate limit after window expires', async () => {
+    await it('should reset rate limit after window expires', async t => {
       const identifier = 'windowed-token'
 
-      // Fill rate limit
-      cache.set(identifier, mockResult)
-      cache.get(identifier)
-      cache.get(identifier)
+      await withMockTimers(t, ['Date'], () => {
+        cache.set(identifier, mockResult)
+        cache.get(identifier)
+        cache.get(identifier)
 
-      // Wait for window to expire
-      await sleep(1100)
+        t.mock.timers.tick(1100)
 
-      // Should allow new requests
-      const result = cache.get(identifier)
-      expect(result).toBeDefined()
+        const result = cache.get(identifier)
+        expect(result).toBeDefined()
+      })
     })
 
     await it('should rate limit per identifier independently', () => {
@@ -626,101 +634,104 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
   })
 
   await describe('G03.FR.01.T6 - TTL Reset on Access (R16, R5)', async () => {
-    await it('G03.FR.01.T6.01 - should reset TTL on cache hit', async () => {
-      const shortCache = new InMemoryAuthCache({
-        defaultTtl: 0.15, // 150ms
-        maxEntries: 10,
-        rateLimit: { enabled: false },
+    await it('G03.FR.01.T6.01 - should reset TTL on cache hit', async t => {
+      await withMockTimers(t, ['Date'], () => {
+        const shortCache = new InMemoryAuthCache({
+          defaultTtl: 0.15, // 150ms
+          maxEntries: 10,
+          rateLimit: { enabled: false },
+        })
+
+        const accepted = createMockAuthorizationResult({ status: AuthorizationStatus.ACCEPTED })
+        shortCache.set('token', accepted)
+
+        t.mock.timers.tick(50)
+        const midResult = shortCache.get('token')
+        expect(midResult).toBeDefined()
+        expect(midResult?.status).toBe(AuthorizationStatus.ACCEPTED)
+
+        t.mock.timers.tick(50)
+        const lateResult = shortCache.get('token')
+        expect(lateResult).toBeDefined()
+        expect(lateResult?.status).toBe(AuthorizationStatus.ACCEPTED)
       })
-
-      const accepted = createMockAuthorizationResult({ status: AuthorizationStatus.ACCEPTED })
-      shortCache.set('token', accepted)
-
-      // Access at 50ms to reset TTL (entry would expire at 150ms without reset)
-      await sleep(50)
-      const midResult = shortCache.get('token')
-      expect(midResult).toBeDefined()
-      expect(midResult?.status).toBe(AuthorizationStatus.ACCEPTED)
-
-      // At 100ms from start (50ms after reset), entry should still be valid (new expiry = 50ms + 150ms = 200ms)
-      await sleep(50)
-      const lateResult = shortCache.get('token')
-      expect(lateResult).toBeDefined()
-      expect(lateResult?.status).toBe(AuthorizationStatus.ACCEPTED)
     })
 
-    await it('G03.FR.01.T6.02 - should not reset TTL when max absolute lifetime exceeded', async () => {
-      const shortCache = new InMemoryAuthCache({
-        defaultTtl: 0.15, // 150ms
-        maxEntries: 10,
-        rateLimit: { enabled: false },
+    await it('G03.FR.01.T6.02 - should not reset TTL when max absolute lifetime exceeded', async t => {
+      await withMockTimers(t, ['Date'], () => {
+        const shortCache = new InMemoryAuthCache({
+          defaultTtl: 0.15, // 150ms
+          maxEntries: 10,
+          rateLimit: { enabled: false },
+        })
+
+        const accepted = createMockAuthorizationResult({ status: AuthorizationStatus.ACCEPTED })
+        shortCache.set('token', accepted)
+
+        t.mock.timers.tick(200)
+        const result = shortCache.get('token')
+        expect(result).toBeDefined()
+        expect(result?.status).toBe(AuthorizationStatus.EXPIRED)
       })
-
-      const accepted = createMockAuthorizationResult({ status: AuthorizationStatus.ACCEPTED })
-      shortCache.set('token', accepted)
-
-      // Given: entry expires without intermediate access (contrast with T6.01 where access resets TTL)
-      await sleep(200)
-      const result = shortCache.get('token')
-      expect(result).toBeDefined()
-      expect(result?.status).toBe(AuthorizationStatus.EXPIRED)
     })
   })
 
   await describe('G03.FR.01.T7 - Expired Entry Lifecycle (R10)', async () => {
-    await it('G03.FR.01.T7.01 - should return EXPIRED status instead of undefined', async () => {
-      const shortCache = new InMemoryAuthCache({
-        defaultTtl: 0.001,
-        maxEntries: 10,
-        rateLimit: { enabled: false },
+    await it('G03.FR.01.T7.01 - should return EXPIRED status instead of undefined', async t => {
+      await withMockTimers(t, ['Date'], () => {
+        const shortCache = new InMemoryAuthCache({
+          defaultTtl: 0.001,
+          maxEntries: 10,
+          rateLimit: { enabled: false },
+        })
+
+        const accepted = createMockAuthorizationResult({ status: AuthorizationStatus.ACCEPTED })
+        shortCache.set('token', accepted)
+
+        t.mock.timers.tick(10)
+
+        const result = shortCache.get('token')
+        expect(result).toBeDefined()
+        expect(result?.status).toBe(AuthorizationStatus.EXPIRED)
       })
-
-      const accepted = createMockAuthorizationResult({ status: AuthorizationStatus.ACCEPTED })
-      shortCache.set('token', accepted)
-
-      await sleep(10)
-
-      const result = shortCache.get('token')
-      expect(result).toBeDefined()
-      expect(result?.status).toBe(AuthorizationStatus.EXPIRED)
     })
 
-    await it('G03.FR.01.T7.02 - should keep expired entry in cache after first access', async () => {
-      const shortCache = new InMemoryAuthCache({
-        defaultTtl: 0.001,
-        maxEntries: 10,
-        rateLimit: { enabled: false },
+    await it('G03.FR.01.T7.02 - should keep expired entry in cache after first access', async t => {
+      await withMockTimers(t, ['Date'], () => {
+        const shortCache = new InMemoryAuthCache({
+          defaultTtl: 0.001,
+          maxEntries: 10,
+          rateLimit: { enabled: false },
+        })
+
+        const accepted = createMockAuthorizationResult({ status: AuthorizationStatus.ACCEPTED })
+        shortCache.set('token', accepted)
+
+        t.mock.timers.tick(10)
+
+        // First access transitions to EXPIRED
+        const first = shortCache.get('token')
+        expect(first?.status).toBe(AuthorizationStatus.EXPIRED)
+
+        // Second access should still return the entry (now with refreshed TTL as EXPIRED)
+        const second = shortCache.get('token')
+        expect(second).toBeDefined()
+        expect(second?.status).toBe(AuthorizationStatus.EXPIRED)
+
+        const stats = shortCache.getStats()
+        expect(stats.totalEntries).toBe(1)
       })
-
-      const accepted = createMockAuthorizationResult({ status: AuthorizationStatus.ACCEPTED })
-      shortCache.set('token', accepted)
-
-      await sleep(10)
-
-      // First access transitions to EXPIRED
-      const first = shortCache.get('token')
-      expect(first?.status).toBe(AuthorizationStatus.EXPIRED)
-
-      // Second access should still return the entry (now with refreshed TTL as EXPIRED)
-      const second = shortCache.get('token')
-      expect(second).toBeDefined()
-      expect(second?.status).toBe(AuthorizationStatus.EXPIRED)
-
-      const stats = shortCache.getStats()
-      expect(stats.totalEntries).toBe(1)
     })
   })
 
   await describe('Helper - truncateId', async () => {
     await it('should return identifier unchanged when short', () => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
-      const result = (cache as any).truncateId('ABCD')
+      const result = truncateId('ABCD')
       expect(result).toBe('ABCD')
     })
 
     await it('should truncate long identifier with ellipsis', () => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
-      const result = (cache as any).truncateId('ABCDEFGHIJKLMNOP')
+      const result = truncateId('ABCDEFGHIJKLMNOP')
       expect(result).toBe('ABCDEFGH...')
     })
   })
@@ -748,46 +759,42 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
         maxEntries: 10,
         rateLimit: { enabled: false },
       })
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-      expect((noCleanupCache as any).cleanupInterval).toBeUndefined()
+      expect(noCleanupCache.hasCleanupInterval()).toBe(false)
       noCleanupCache.dispose()
     })
 
-    await it('G03.FR.01.T10.03 - runCleanup removes expired entries (two-phase)', async () => {
-      const cleanupCache = new InMemoryAuthCache({
-        cleanupIntervalSeconds: 0,
-        defaultTtl: 1,
-        maxEntries: 10,
-        rateLimit: { enabled: false },
+    await it('G03.FR.01.T10.03 - runCleanup removes expired entries (two-phase)', async t => {
+      await withMockTimers(t, ['Date'], () => {
+        const cleanupCache = new InMemoryAuthCache({
+          cleanupIntervalSeconds: 0,
+          defaultTtl: 1,
+          maxEntries: 10,
+          rateLimit: { enabled: false },
+        })
+
+        cleanupCache.set('id-1', createMockAuthorizationResult())
+        cleanupCache.set('id-2', createMockAuthorizationResult())
+
+        const statsBefore = cleanupCache.getStats()
+        expect(statsBefore.totalEntries).toBe(2)
+
+        t.mock.timers.tick(1100)
+
+        cleanupCache.runCleanup()
+
+        const statsAfterFirst = cleanupCache.getStats()
+        expect(statsAfterFirst.totalEntries).toBe(2)
+        expect(statsAfterFirst.expiredEntries).toBe(2)
+
+        t.mock.timers.tick(1100)
+
+        cleanupCache.runCleanup()
+
+        const statsAfterSecond = cleanupCache.getStats()
+        expect(statsAfterSecond.totalEntries).toBe(0)
+        expect(statsAfterSecond.expiredEntries).toBe(2)
+        cleanupCache.dispose()
       })
-
-      cleanupCache.set('id-1', createMockAuthorizationResult())
-      cleanupCache.set('id-2', createMockAuthorizationResult())
-
-      const statsBefore = cleanupCache.getStats()
-      expect(statsBefore.totalEntries).toBe(2)
-
-      await sleep(1100)
-
-      // First cleanup: transitions expired entries to EXPIRED status (two-phase expiration)
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-      ;(cleanupCache as any).runCleanup()
-
-      const statsAfterFirst = cleanupCache.getStats()
-      expect(statsAfterFirst.totalEntries).toBe(2)
-      expect(statsAfterFirst.expiredEntries).toBe(2)
-
-      // Wait for the grace TTL to expire before second cleanup
-      await sleep(1100)
-
-      // Second cleanup: removes entries that were already in EXPIRED status
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-      ;(cleanupCache as any).runCleanup()
-
-      const statsAfterSecond = cleanupCache.getStats()
-      expect(statsAfterSecond.totalEntries).toBe(0)
-      expect(statsAfterSecond.expiredEntries).toBe(2)
-      cleanupCache.dispose()
     })
 
     await it('G03.FR.01.T10.04 - rateLimits map is bounded to maxEntries * 2', () => {
@@ -802,8 +809,7 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
         boundedCache.get(`identifier-${String(i)}`)
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-      const rateLimitsSize = (boundedCache as any).rateLimits.size as number
+      const rateLimitsSize = boundedCache.getStats().rateLimit.rateLimitedIdentifiers
       expect(rateLimitsSize).toBeLessThanOrEqual(4)
       boundedCache.dispose()
     })

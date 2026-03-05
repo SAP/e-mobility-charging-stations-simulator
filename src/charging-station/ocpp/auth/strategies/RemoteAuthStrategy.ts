@@ -370,19 +370,19 @@ export class RemoteAuthStrategy implements AuthStrategy {
     config: AuthConfiguration
   ): Promise<boolean> {
     try {
-      // Use adapter's built-in availability check with timeout
-      const timeout = (config.authorizationTimeout * 1000) / 2 // Use half timeout for availability check
-      const availabilityPromise = adapter.isRemoteAvailable()
+      const timeout = (config.authorizationTimeout * 1000) / 2
+      let timeoutHandle: ReturnType<typeof setTimeout> | undefined
 
       const result = await Promise.race([
-        availabilityPromise,
+        Promise.resolve(adapter.isRemoteAvailable()),
         new Promise<boolean>((_resolve, reject) => {
-          setTimeout(() => {
+          timeoutHandle = setTimeout(() => {
             reject(new AuthenticationError('Availability check timeout', AuthErrorCode.TIMEOUT))
           }, timeout)
         }),
       ])
 
+      clearTimeout(timeoutHandle)
       return result
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)

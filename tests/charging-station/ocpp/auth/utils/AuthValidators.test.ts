@@ -7,7 +7,6 @@ import { afterEach, describe, it } from 'node:test'
 
 import {
   type AuthConfiguration,
-  AuthenticationMethod,
   IdentifierType,
   type UnifiedIdentifier,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
@@ -151,7 +150,6 @@ await describe('AuthValidators', async () => {
         authorizationCacheLifetime: 3600,
         authorizationTimeout: 30,
         certificateAuthEnabled: false,
-        enabledStrategies: [AuthenticationMethod.LOCAL_LIST],
         localAuthListEnabled: true,
         localPreAuthorize: true,
         offlineAuthorizationEnabled: false,
@@ -170,59 +168,26 @@ await describe('AuthValidators', async () => {
       expect(AuthValidators.validateAuthConfiguration(undefined as any)).toBe(false)
     })
 
-    await it('should return false for empty enabled strategies', () => {
-      const config: AuthConfiguration = {
-        allowOfflineTxForUnknownId: false,
-        authorizationCacheEnabled: true,
-        authorizationTimeout: 30,
-        certificateAuthEnabled: false,
-        enabledStrategies: [],
-        localAuthListEnabled: true,
-        localPreAuthorize: true,
-        offlineAuthorizationEnabled: false,
-      }
-
-      expect(AuthValidators.validateAuthConfiguration(config)).toBe(false)
-    })
-
-    await it('should return false for missing enabled strategies', () => {
+    await it('should return false for missing required boolean fields', () => {
       const config = {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: true,
         authorizationTimeout: 30,
-        certificateAuthEnabled: false,
         localAuthListEnabled: true,
         localPreAuthorize: true,
         offlineAuthorizationEnabled: false,
+        // certificateAuthEnabled missing
       } as Partial<AuthConfiguration>
 
       expect(AuthValidators.validateAuthConfiguration(config)).toBe(false)
     })
 
-    await it('should return false for invalid remote auth timeout', () => {
+    await it('should return false for non-positive authorization timeout', () => {
       const config: AuthConfiguration = {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: true,
-        authorizationTimeout: 30,
+        authorizationTimeout: 0,
         certificateAuthEnabled: false,
-        enabledStrategies: [AuthenticationMethod.LOCAL_LIST],
-        localAuthListEnabled: true,
-        localPreAuthorize: true,
-        offlineAuthorizationEnabled: false,
-        remoteAuthTimeout: -1,
-      }
-
-      expect(AuthValidators.validateAuthConfiguration(config)).toBe(false)
-    })
-
-    await it('should return false for invalid local auth cache TTL', () => {
-      const config: AuthConfiguration = {
-        allowOfflineTxForUnknownId: false,
-        authorizationCacheEnabled: true,
-        authorizationTimeout: 30,
-        certificateAuthEnabled: false,
-        enabledStrategies: [AuthenticationMethod.LOCAL_LIST],
-        localAuthCacheTTL: -100,
         localAuthListEnabled: true,
         localPreAuthorize: true,
         offlineAuthorizationEnabled: false,
@@ -231,37 +196,47 @@ await describe('AuthValidators', async () => {
       expect(AuthValidators.validateAuthConfiguration(config)).toBe(false)
     })
 
-    await it('should return false for invalid strategy priority order', () => {
+    await it('should return false for negative cache lifetime', () => {
       const config: AuthConfiguration = {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: true,
+        authorizationCacheLifetime: -100,
         authorizationTimeout: 30,
         certificateAuthEnabled: false,
-        enabledStrategies: [AuthenticationMethod.LOCAL_LIST],
         localAuthListEnabled: true,
         localPreAuthorize: true,
         offlineAuthorizationEnabled: false,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- testing invalid enum value
-        strategyPriorityOrder: ['InvalidMethod' as any],
       }
 
       expect(AuthValidators.validateAuthConfiguration(config)).toBe(false)
     })
 
-    await it('should return true for valid strategy priority order', () => {
+    await it('should return false for non-integer max cache entries', () => {
       const config: AuthConfiguration = {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: true,
         authorizationTimeout: 30,
         certificateAuthEnabled: false,
-        enabledStrategies: [AuthenticationMethod.LOCAL_LIST],
         localAuthListEnabled: true,
         localPreAuthorize: true,
+        maxCacheEntries: 1.5,
         offlineAuthorizationEnabled: false,
-        strategyPriorityOrder: [
-          AuthenticationMethod.LOCAL_LIST,
-          AuthenticationMethod.REMOTE_AUTHORIZATION,
-        ],
+      }
+
+      expect(AuthValidators.validateAuthConfiguration(config)).toBe(false)
+    })
+
+    await it('should return true for valid configuration with optional fields', () => {
+      const config: AuthConfiguration = {
+        allowOfflineTxForUnknownId: false,
+        authorizationCacheEnabled: true,
+        authorizationCacheLifetime: 3600,
+        authorizationTimeout: 30,
+        certificateAuthEnabled: false,
+        localAuthListEnabled: true,
+        localPreAuthorize: true,
+        maxCacheEntries: 500,
+        offlineAuthorizationEnabled: false,
       }
 
       expect(AuthValidators.validateAuthConfiguration(config)).toBe(true)

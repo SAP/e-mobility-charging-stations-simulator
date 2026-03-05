@@ -502,9 +502,9 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
   validateConfiguration (config: AuthConfiguration): boolean {
     try {
       // Check that at least one authorization method is enabled
-      const hasRemoteAuth = config.authorizeRemoteStart === true
-      const hasLocalAuth = config.localAuthorizeOffline === true
-      const hasCertAuth = config.certificateValidation === true
+      const hasRemoteAuth = config.remoteAuthorization === true
+      const hasLocalAuth = config.offlineAuthorizationEnabled
+      const hasCertAuth = config.certificateAuthEnabled
 
       if (!hasRemoteAuth && !hasLocalAuth && !hasCertAuth) {
         logger.warn(

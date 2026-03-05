@@ -56,7 +56,8 @@ interface RateLimitStats {
  * - Bounded rate limits map prevents unbounded memory growth
  */
 export class InMemoryAuthCache implements AuthCache {
-  private static readonly MAX_ABSOLUTE_LIFETIME_MS = 24 * 60 * 60 * 1000
+  // Implementation-specific safety limit (not mandated by OCPP spec)
+  private static readonly DEFAULT_MAX_ABSOLUTE_LIFETIME_MS = 86_400_000 // 24 hours
 
   /** Cache storage: identifier -> entry */
   private readonly cache = new Map<string, CacheEntry>()
@@ -68,6 +69,8 @@ export class InMemoryAuthCache implements AuthCache {
 
   /** Access order for LRU eviction (identifier -> last access timestamp) */
   private readonly lruOrder = new Map<string, number>()
+
+  private readonly maxAbsoluteLifetimeMs: number
 
   /** Maximum number of entries allowed in cache */
   private readonly maxEntries: number
@@ -98,6 +101,7 @@ export class InMemoryAuthCache implements AuthCache {
    * @param options - Cache configuration options
    * @param options.cleanupIntervalSeconds - Periodic cleanup interval in seconds (default: 300, 0 to disable)
    * @param options.defaultTtl - Default TTL in seconds (default: 3600)
+   * @param options.maxAbsoluteLifetimeMs - Absolute lifetime cap in milliseconds (default: 86400000)
    * @param options.maxEntries - Maximum number of cache entries (default: 1000)
    * @param options.rateLimit - Rate limiting configuration
    * @param options.rateLimit.enabled - Enable rate limiting (default: false)
@@ -107,10 +111,13 @@ export class InMemoryAuthCache implements AuthCache {
   constructor (options?: {
     cleanupIntervalSeconds?: number
     defaultTtl?: number
+    maxAbsoluteLifetimeMs?: number
     maxEntries?: number
     rateLimit?: { enabled?: boolean; maxRequests?: number; windowMs?: number }
   }) {
     this.defaultTtl = options?.defaultTtl ?? 3600 // 1 hour default
+    this.maxAbsoluteLifetimeMs =
+      options?.maxAbsoluteLifetimeMs ?? InMemoryAuthCache.DEFAULT_MAX_ABSOLUTE_LIFETIME_MS
     this.maxEntries = options?.maxEntries ?? 1000
     this.rateLimit = {
       enabled: options?.rateLimit?.enabled ?? false,
@@ -182,7 +189,7 @@ export class InMemoryAuthCache implements AuthCache {
       // Transition to EXPIRED status instead of deleting (R10)
       entry.result = { ...entry.result, status: AuthorizationStatus.EXPIRED }
       // Apply absolute lifetime cap to expired-transition TTL refresh
-      const absoluteDeadline = entry.createdAt + InMemoryAuthCache.MAX_ABSOLUTE_LIFETIME_MS
+      const absoluteDeadline = entry.createdAt + this.maxAbsoluteLifetimeMs
       if (absoluteDeadline > now) {
         entry.expiresAt = Math.min(now + this.defaultTtl * 1000, absoluteDeadline)
       }
@@ -198,7 +205,7 @@ export class InMemoryAuthCache implements AuthCache {
     this.lruOrder.set(identifier, now)
 
     // Reset TTL on access, but only if absolute lifetime has not been exceeded
-    if (entry.createdAt + InMemoryAuthCache.MAX_ABSOLUTE_LIFETIME_MS > now) {
+    if (entry.createdAt + this.maxAbsoluteLifetimeMs > now) {
       entry.expiresAt = now + this.defaultTtl * 1000
     }
 
@@ -237,6 +244,10 @@ export class InMemoryAuthCache implements AuthCache {
     }
   }
 
+  public hasCleanupInterval (): boolean {
+    return this.cleanupInterval !== undefined
+  }
+
   /**
    * Remove a cached entry
    * @param identifier - Identifier to remove
@@ -265,6 +276,28 @@ export class InMemoryAuthCache implements AuthCache {
       rateLimitChecks: 0,
       sets: 0,
     }
+  }
+
+  public runCleanup (): void {
+    const now = Date.now()
+    for (const [key, entry] of this.cache.entries()) {
+      if (now >= entry.expiresAt) {
+        if (entry.result.status === AuthorizationStatus.EXPIRED) {
+          // Already transitioned by get() — delete on second expiration cycle
+          this.cache.delete(key)
+          this.lruOrder.delete(key)
+        } else {
+          // First expiration — transition to EXPIRED status (consistent with get() R10 semantics)
+          entry.result = { ...entry.result, status: AuthorizationStatus.EXPIRED }
+          const absoluteDeadline = entry.createdAt + this.maxAbsoluteLifetimeMs
+          if (absoluteDeadline > now) {
+            entry.expiresAt = Math.min(now + this.defaultTtl * 1000, absoluteDeadline)
+          }
+          this.stats.expired++
+        }
+      }
+    }
+    this.cleanupExpiredRateLimits()
   }
 
   /**
@@ -404,32 +437,19 @@ export class InMemoryAuthCache implements AuthCache {
     }
   }
 
-  private runCleanup (): void {
-    const now = Date.now()
-    for (const [key, entry] of this.cache.entries()) {
-      if (now >= entry.expiresAt) {
-        if (entry.result.status === AuthorizationStatus.EXPIRED) {
-          // Already transitioned by get() — delete on second expiration cycle
-          this.cache.delete(key)
-          this.lruOrder.delete(key)
-        } else {
-          // First expiration — transition to EXPIRED status (consistent with get() R10 semantics)
-          entry.result = { ...entry.result, status: AuthorizationStatus.EXPIRED }
-          const absoluteDeadline = entry.createdAt + InMemoryAuthCache.MAX_ABSOLUTE_LIFETIME_MS
-          if (absoluteDeadline > now) {
-            entry.expiresAt = Math.min(now + this.defaultTtl * 1000, absoluteDeadline)
-          }
-          this.stats.expired++
-        }
-      }
-    }
-    this.cleanupExpiredRateLimits()
-  }
-
   private truncateId (identifier: string, maxLen = 8): string {
-    if (identifier.length <= maxLen) {
-      return identifier
-    }
-    return `${identifier.slice(0, maxLen)}...`
+    return truncateId(identifier, maxLen)
   }
+}
+
+/**
+ *
+ * @param identifier
+ * @param maxLen
+ */
+export function truncateId (identifier: string, maxLen = 8): string {
+  if (identifier.length <= maxLen) {
+    return identifier
+  }
+  return `${identifier.slice(0, maxLen)}...`
 }

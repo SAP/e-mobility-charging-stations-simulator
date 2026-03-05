@@ -324,17 +324,6 @@ export class LocalAuthStrategy implements AuthStrategy {
         return undefined
       }
 
-      // Check if cached result is still valid based on timestamp and TTL
-      if (cachedResult.cacheTtl) {
-        const expiry = new Date(cachedResult.timestamp.getTime() + cachedResult.cacheTtl * 1000)
-        if (expiry < new Date()) {
-          logger.debug(`LocalAuthStrategy: Cached entry ${request.identifier.value} expired`)
-          // Remove expired entry
-          this.authCache.remove(request.identifier.value)
-          return undefined
-        }
-      }
-
       logger.debug(`LocalAuthStrategy: Cache hit for ${request.identifier.value}`)
       return cachedResult
     } catch (error) {
