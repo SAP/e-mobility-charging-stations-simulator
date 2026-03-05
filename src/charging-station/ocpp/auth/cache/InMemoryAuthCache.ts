@@ -104,7 +104,7 @@ export class InMemoryAuthCache implements AuthCache {
    * @param options.rateLimit.maxRequests - Max requests per window (default: 10)
    * @param options.rateLimit.windowMs - Time window in milliseconds (default: 60000)
    */
-  constructor (options?: {
+  constructor(options?: {
     cleanupIntervalSeconds?: number
     defaultTtl?: number
     maxEntries?: number
@@ -136,17 +136,16 @@ export class InMemoryAuthCache implements AuthCache {
    * Clear all cached entries and rate limits
    * @returns Promise that resolves when cache is cleared
    */
-  public async clear (): Promise<void> {
+  public async clear(): Promise<void> {
     const entriesCleared = this.cache.size
     this.cache.clear()
     this.lruOrder.clear()
     this.rateLimits.clear()
 
     logger.info(`InMemoryAuthCache: Cleared ${String(entriesCleared)} entries`)
-    return Promise.resolve()
   }
 
-  public dispose (): void {
+  public dispose(): void {
     if (this.cleanupInterval) {
       clearInterval(this.cleanupInterval)
       this.cleanupInterval = undefined
@@ -158,14 +157,14 @@ export class InMemoryAuthCache implements AuthCache {
    * @param identifier - Identifier to look up
    * @returns Cached result or undefined if not found/expired/rate-limited
    */
-  public async get (identifier: string): Promise<AuthorizationResult | undefined> {
+  public async get(identifier: string): Promise<AuthorizationResult | undefined> {
     // Check rate limiting first
     if (!this.checkRateLimit(identifier)) {
       this.stats.rateLimitBlocked++
       logger.warn(
         `InMemoryAuthCache: Rate limit exceeded for identifier: ${this.truncateId(identifier)}`
       )
-      return Promise.resolve(undefined)
+      return undefined
     }
 
     const entry = this.cache.get(identifier)
@@ -173,7 +172,7 @@ export class InMemoryAuthCache implements AuthCache {
     // Cache miss
     if (!entry) {
       this.stats.misses++
-      return Promise.resolve(undefined)
+      return undefined
     }
 
     // Check expiration
@@ -192,7 +191,7 @@ export class InMemoryAuthCache implements AuthCache {
       logger.debug(
         `InMemoryAuthCache: Expired entry transitioned to EXPIRED for identifier: ${this.truncateId(identifier)}`
       )
-      return Promise.resolve(entry.result)
+      return entry.result
     }
 
     // Cache hit - update LRU order and reset TTL (R16, R5)
@@ -205,14 +204,14 @@ export class InMemoryAuthCache implements AuthCache {
     }
 
     logger.debug(`InMemoryAuthCache: Cache hit for identifier: ${this.truncateId(identifier)}`)
-    return Promise.resolve(entry.result)
+    return entry.result
   }
 
   /**
    * Get cache statistics including rate limiting stats
    * @returns Cache statistics with rate limiting metrics
    */
-  public async getStats (): Promise<CacheStats & { rateLimit: RateLimitStats }> {
+  public async getStats(): Promise<CacheStats & { rateLimit: RateLimitStats }> {
     const totalAccess = this.stats.hits + this.stats.misses
     const hitRate = totalAccess > 0 ? (this.stats.hits / totalAccess) * 100 : 0
 
@@ -223,7 +222,7 @@ export class InMemoryAuthCache implements AuthCache {
     // Clean expired rate limit entries
     this.cleanupExpiredRateLimits()
 
-    return Promise.resolve({
+    return {
       evictions: this.stats.evictions,
       expiredEntries: this.stats.expired,
       hitRate: Math.round(hitRate * 100) / 100,
@@ -236,7 +235,7 @@ export class InMemoryAuthCache implements AuthCache {
         totalChecks: this.stats.rateLimitChecks,
       },
       totalEntries: this.cache.size,
-    })
+    }
   }
 
   /**
@@ -244,7 +243,7 @@ export class InMemoryAuthCache implements AuthCache {
    * @param identifier - Identifier to remove
    * @returns Promise that resolves when entry is removed
    */
-  public async remove (identifier: string): Promise<void> {
+  public async remove(identifier: string): Promise<void> {
     const deleted = this.cache.delete(identifier)
     this.lruOrder.delete(identifier)
 
@@ -253,13 +252,12 @@ export class InMemoryAuthCache implements AuthCache {
         `InMemoryAuthCache: Removed entry for identifier: ${this.truncateId(identifier)}`
       )
     }
-    return Promise.resolve()
   }
 
   /**
    * Reset statistics counters
    */
-  public resetStats (): void {
+  public resetStats(): void {
     this.stats = {
       evictions: 0,
       expired: 0,
@@ -278,14 +276,14 @@ export class InMemoryAuthCache implements AuthCache {
    * @param ttl - Optional TTL override in seconds
    * @returns Promise that resolves when entry is cached
    */
-  public async set (identifier: string, result: AuthorizationResult, ttl?: number): Promise<void> {
+  public async set(identifier: string, result: AuthorizationResult, ttl?: number): Promise<void> {
     // Check rate limiting
     if (!this.checkRateLimit(identifier)) {
       this.stats.rateLimitBlocked++
       logger.warn(
         `InMemoryAuthCache: Rate limit exceeded, not caching identifier: ${this.truncateId(identifier)}`
       )
-      return Promise.resolve()
+      return
     }
 
     // Evict LRU entry if cache is full
@@ -304,10 +302,9 @@ export class InMemoryAuthCache implements AuthCache {
     logger.debug(
       `InMemoryAuthCache: Cached result for identifier: ${this.truncateId(identifier)}, ttl=${String(ttlSeconds)}s, entries=${String(this.cache.size)}/${String(this.maxEntries)}`
     )
-    return Promise.resolve()
   }
 
-  private boundRateLimitsMap (): void {
+  private boundRateLimitsMap(): void {
     if (this.rateLimits.size > this.maxEntries * 2) {
       const firstKey = this.rateLimits.keys().next().value
       if (firstKey !== undefined) {
@@ -321,7 +318,7 @@ export class InMemoryAuthCache implements AuthCache {
    * @param identifier - Identifier to check
    * @returns true if within rate limit, false if exceeded
    */
-  private checkRateLimit (identifier: string): boolean {
+  private checkRateLimit(identifier: string): boolean {
     if (!this.rateLimit.enabled) {
       return true
     }
@@ -361,7 +358,7 @@ export class InMemoryAuthCache implements AuthCache {
   /**
    * Remove expired rate limit entries (older than 2x window)
    */
-  private cleanupExpiredRateLimits (): void {
+  private cleanupExpiredRateLimits(): void {
     const now = Date.now()
     const expirationThreshold = this.rateLimit.windowMs * 2
 
@@ -375,7 +372,7 @@ export class InMemoryAuthCache implements AuthCache {
   /**
    * Evict least recently used entry
    */
-  private evictLRU (): void {
+  private evictLRU(): void {
     if (this.lruOrder.size === 0) {
       return
     }
@@ -410,7 +407,7 @@ export class InMemoryAuthCache implements AuthCache {
     }
   }
 
-  private runCleanup (): void {
+  private runCleanup(): void {
     const now = Date.now()
     for (const [key, entry] of this.cache.entries()) {
       if (now >= entry.expiresAt) {
@@ -432,7 +429,7 @@ export class InMemoryAuthCache implements AuthCache {
     this.cleanupExpiredRateLimits()
   }
 
-  private truncateId (identifier: string, maxLen = 8): string {
+  private truncateId(identifier: string, maxLen = 8): string {
     if (identifier.length <= maxLen) {
       return identifier
     }
