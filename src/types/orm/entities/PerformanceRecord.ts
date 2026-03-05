@@ -2,21 +2,21 @@ import { Entity, PrimaryKey, Property } from '@mikro-orm/core'
 
 @Entity({ tableName: 'performance_records' })
 export class PerformanceRecord {
-  @Property()
+  @Property({ type: 'datetime' })
   createdAt!: Date
 
-  @PrimaryKey()
+  @PrimaryKey({ type: 'string' })
   id!: string
 
-  @Property()
+  @Property({ type: 'string' })
   name!: string
 
   @Property({ type: 'json' })
   statisticsData!: Record<string, unknown>[]
 
-  @Property()
+  @Property({ nullable: true, type: 'datetime' })
   updatedAt?: Date
 
-  @Property()
+  @Property({ type: 'string' })
   uri!: string
 }
