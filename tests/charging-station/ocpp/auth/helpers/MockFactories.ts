@@ -303,7 +303,10 @@ export const createMockAuthServiceTestStation = (
     idTagLocalAuthorized: () => false,
     isConnected: () => true,
     logPrefix: () => `[TEST-CS-${id}]`,
-    sendRequest: () => new Promise<Record<string, never>>(resolve => { resolve({}) }),
+    sendRequest: () =>
+      new Promise<Record<string, never>>(resolve => {
+        resolve({})
+      }),
     stationInfo: {
       chargingStationId: `TEST-CS-${id}`,
       hashId: `test-hash-${id}`,
@@ -323,12 +326,33 @@ export const createMockAuthServiceTestStation = (
 export const createMockLocalAuthListManager = (
   overrides?: Partial<LocalAuthListManager>
 ): LocalAuthListManager => ({
-  addEntry: () => new Promise<void>(resolve => { resolve() }),
-  clearAll: () => new Promise<void>(resolve => { resolve() }),
-  getAllEntries: () => new Promise<LocalAuthEntry[]>(resolve => { resolve([]) }),
-  getEntry: () => new Promise<LocalAuthEntry | undefined>(resolve => { resolve(undefined) }),
-  getVersion: () => new Promise<number>(resolve => { resolve(1) }),
-  removeEntry: () => new Promise<void>(resolve => { resolve() }),
-  updateVersion: () => new Promise<void>(resolve => { resolve() }),
+  addEntry: () =>
+    new Promise<void>(resolve => {
+      resolve()
+    }),
+  clearAll: () =>
+    new Promise<void>(resolve => {
+      resolve()
+    }),
+  getAllEntries: () =>
+    new Promise<LocalAuthEntry[]>(resolve => {
+      resolve([])
+    }),
+  getEntry: () =>
+    new Promise<LocalAuthEntry | undefined>(resolve => {
+      resolve(undefined)
+    }),
+  getVersion: () =>
+    new Promise<number>(resolve => {
+      resolve(1)
+    }),
+  removeEntry: () =>
+    new Promise<void>(resolve => {
+      resolve()
+    }),
+  updateVersion: () =>
+    new Promise<void>(resolve => {
+      resolve()
+    }),
   ...overrides,
 })

@@ -224,14 +224,17 @@ await describe('OCPP20AuthAdapter', async () => {
       t.mock.method(adapter, 'isRemoteAvailable', () => true)
 
       // Mock sendTransactionEvent to return accepted authorization
-      t.mock.method(OCPP20ServiceUtils, 'sendTransactionEvent', () =>
-        new Promise<Record<string, unknown>>(resolve => {
-          resolve({
-            idTokenInfo: {
-              status: OCPP20AuthorizationStatusEnumType.Accepted,
-            },
+      t.mock.method(
+        OCPP20ServiceUtils,
+        'sendTransactionEvent',
+        () =>
+          new Promise<Record<string, unknown>>(resolve => {
+            resolve({
+              idTokenInfo: {
+                status: OCPP20AuthorizationStatusEnumType.Accepted,
+              },
+            })
           })
-        })
       )
 
       const identifier = createMockIdentifier(
