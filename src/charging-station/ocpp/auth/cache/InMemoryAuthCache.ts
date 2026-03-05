@@ -12,6 +12,8 @@ interface CacheEntry {
   createdAt: number
   /** Timestamp when entry expires (milliseconds since epoch) */
   expiresAt: number
+  /** Whether TTL was explicitly provided (e.g. from CSMS cacheExpiryDateTime) */
+  hasExplicitTtl: boolean
   /** Cached authorization result */
   result: AuthorizationResult
 }
@@ -118,7 +120,7 @@ export class InMemoryAuthCache implements AuthCache {
     this.defaultTtl = options?.defaultTtl ?? 3600 // 1 hour default
     this.maxAbsoluteLifetimeMs =
       options?.maxAbsoluteLifetimeMs ?? InMemoryAuthCache.DEFAULT_MAX_ABSOLUTE_LIFETIME_MS
-    this.maxEntries = options?.maxEntries ?? 1000
+    this.maxEntries = Math.max(1, options?.maxEntries ?? 1000)
     this.rateLimit = {
       enabled: options?.rateLimit?.enabled ?? false,
       maxRequests: options?.rateLimit?.maxRequests ?? 10, // 10 requests per window
@@ -185,13 +187,14 @@ export class InMemoryAuthCache implements AuthCache {
     const now = Date.now()
     if (now >= entry.expiresAt) {
       this.stats.expired++
-      this.stats.hits++
       // Transition to EXPIRED status instead of deleting (R10)
       entry.result = { ...entry.result, status: AuthorizationStatus.EXPIRED }
-      // Apply absolute lifetime cap to expired-transition TTL refresh
-      const absoluteDeadline = entry.createdAt + this.maxAbsoluteLifetimeMs
-      if (absoluteDeadline > now) {
-        entry.expiresAt = Math.min(now + this.defaultTtl * 1000, absoluteDeadline)
+      // Apply absolute lifetime cap to expired-transition TTL refresh (default-TTL entries only)
+      if (!entry.hasExplicitTtl) {
+        const absoluteDeadline = entry.createdAt + this.maxAbsoluteLifetimeMs
+        if (absoluteDeadline > now) {
+          entry.expiresAt = Math.min(now + this.defaultTtl * 1000, absoluteDeadline)
+        }
       }
       this.lruOrder.set(identifier, now)
       logger.debug(
@@ -204,8 +207,9 @@ export class InMemoryAuthCache implements AuthCache {
     this.stats.hits++
     this.lruOrder.set(identifier, now)
 
-    // Reset TTL on access, but only if absolute lifetime has not been exceeded
-    if (entry.createdAt + this.maxAbsoluteLifetimeMs > now) {
+    // Reset TTL on access for default-TTL entries only; explicit TTL entries (e.g. CSMS
+    // cacheExpiryDateTime) keep their original expiration per OCPP spec.
+    if (!entry.hasExplicitTtl && entry.createdAt + this.maxAbsoluteLifetimeMs > now) {
       entry.expiresAt = now + this.defaultTtl * 1000
     }
 
@@ -289,9 +293,11 @@ export class InMemoryAuthCache implements AuthCache {
         } else {
           // First expiration — transition to EXPIRED status (consistent with get() R10 semantics)
           entry.result = { ...entry.result, status: AuthorizationStatus.EXPIRED }
-          const absoluteDeadline = entry.createdAt + this.maxAbsoluteLifetimeMs
-          if (absoluteDeadline > now) {
-            entry.expiresAt = Math.min(now + this.defaultTtl * 1000, absoluteDeadline)
+          if (!entry.hasExplicitTtl) {
+            const absoluteDeadline = entry.createdAt + this.maxAbsoluteLifetimeMs
+            if (absoluteDeadline > now) {
+              entry.expiresAt = Math.min(now + this.defaultTtl * 1000, absoluteDeadline)
+            }
           }
           this.stats.expired++
         }
@@ -322,24 +328,33 @@ export class InMemoryAuthCache implements AuthCache {
     }
 
     const ttlSeconds = ttl ?? this.defaultTtl
+    const maxTtlSeconds = this.maxAbsoluteLifetimeMs / 1000
+    const clampedTtl = Math.min(Math.max(0, ttlSeconds), maxTtlSeconds)
     const now = Date.now()
-    const expiresAt = now + ttlSeconds * 1000
+    const expiresAt = now + clampedTtl * 1000
 
-    this.cache.set(identifier, { createdAt: now, expiresAt, result })
+    this.cache.set(identifier, {
+      createdAt: now,
+      expiresAt,
+      hasExplicitTtl: ttl !== undefined,
+      result,
+    })
     this.lruOrder.set(identifier, now)
     this.stats.sets++
 
     logger.debug(
-      `InMemoryAuthCache: Cached result for identifier: ${this.truncateId(identifier)}, ttl=${String(ttlSeconds)}s, entries=${String(this.cache.size)}/${String(this.maxEntries)}`
+      `InMemoryAuthCache: Cached result for identifier: ${this.truncateId(identifier)}, ttl=${String(clampedTtl)}s, entries=${String(this.cache.size)}/${String(this.maxEntries)}`
     )
   }
 
   private boundRateLimitsMap (): void {
-    if (this.rateLimits.size > this.maxEntries * 2) {
+    const threshold = this.maxEntries * 2
+    while (this.rateLimits.size > threshold) {
       const firstKey = this.rateLimits.keys().next().value
-      if (firstKey !== undefined) {
-        this.rateLimits.delete(firstKey)
+      if (firstKey === undefined) {
+        break
       }
+      this.rateLimits.delete(firstKey)
     }
   }
 

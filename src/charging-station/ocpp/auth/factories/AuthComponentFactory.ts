@@ -111,9 +111,14 @@ export class AuthComponentFactory {
 
   /**
    * Create local auth list manager (delegated to service implementation)
+   *
+   * TODO: Implement concrete LocalAuthListManager for OCPP 1.6 §3.5 and OCPP 2.0.1 §C13/C14
+   * compliance. Until implemented, LocalAuthStrategy operates with cache and offline
+   * fallback only. The OCPP 1.6 §3.5.3 guard in RemoteAuthStrategy (skip caching for
+   * local-list identifiers) is inactive without a manager.
    * @param chargingStation - Charging station instance (unused, reserved for future use)
    * @param config - Authentication configuration (unused, reserved for future use)
-   * @returns Always undefined as manager creation is delegated to service
+   * @returns Always undefined as manager creation is not yet implemented
    */
   static createLocalAuthListManager (
     chargingStation: ChargingStation,
@@ -136,7 +141,11 @@ export class AuthComponentFactory {
     cache: AuthCache | undefined,
     config: AuthConfiguration
   ): Promise<AuthStrategy | undefined> {
-    if (!config.localAuthListEnabled) {
+    if (
+      !config.localAuthListEnabled &&
+      !config.authorizationCacheEnabled &&
+      !config.offlineAuthorizationEnabled
+    ) {
       return undefined
     }
 

@@ -26,6 +26,7 @@ export enum AuthenticationMethod {
   CACHE = 'Cache',
   CERTIFICATE_BASED = 'CertificateBased',
   LOCAL_LIST = 'LocalList',
+  NONE = 'None',
   OFFLINE_FALLBACK = 'OfflineFallback',
   REMOTE_AUTHORIZATION = 'RemoteAuthorization',
 }

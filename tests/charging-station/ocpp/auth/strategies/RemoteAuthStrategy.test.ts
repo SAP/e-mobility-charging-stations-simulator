@@ -99,10 +99,9 @@ await describe('RemoteAuthStrategy', async () => {
       expect(strategy.canHandle(request, config)).toBe(true)
     })
 
-    await it('should return false when localPreAuthorize is enabled', () => {
+    await it('should return false when remote authorization is explicitly disabled', () => {
       const config = createTestAuthConfig({
-        localAuthListEnabled: true,
-        localPreAuthorize: true,
+        remoteAuthorization: false,
       })
       const request = createMockAuthRequest({
         identifier: createMockIdentifier(

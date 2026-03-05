@@ -183,7 +183,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
         strategyUsed: 'none',
       },
       isOffline: false,
-      method: AuthenticationMethod.LOCAL_LIST,
+      method: AuthenticationMethod.NONE,
       status: AuthorizationStatus.INVALID,
       timestamp: new Date(),
     }

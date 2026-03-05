@@ -244,7 +244,7 @@ await describe('OCPPAuthServiceImpl', async () => {
       })
 
       expect(result.status).toBe(AuthorizationStatus.INVALID)
-      expect(result.method).toBe(AuthenticationMethod.LOCAL_LIST)
+      expect(result.method).toBe(AuthenticationMethod.NONE)
     })
   })
 

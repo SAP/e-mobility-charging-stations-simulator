@@ -489,6 +489,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
       IdentifierType.KEY_CODE,
       IdentifierType.E_MAID,
       IdentifierType.MAC_ADDRESS,
+      IdentifierType.NO_AUTHORIZATION,
     ]
 
     return validTypes.includes(identifier.type)
