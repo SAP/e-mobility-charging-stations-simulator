@@ -267,14 +267,14 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
   /**
    * Clear all cached authorizations
    */
-  public async clearCache (): Promise<void> {
+  public clearCache (): void {
     logger.debug(`${this.chargingStation.logPrefix()} Clearing all cached authorizations`)
 
     // Clear cache in local strategy
     const localStrategy = this.strategies.get('local') as LocalAuthStrategy | undefined
     const localAuthCache = localStrategy?.getAuthCache()
     if (localAuthCache) {
-      await localAuthCache.clear()
+      localAuthCache.clear()
       logger.info(`${this.chargingStation.logPrefix()} Authorization cache cleared`)
     } else {
       logger.debug(`${this.chargingStation.logPrefix()} No authorization cache available to clear`)
@@ -413,7 +413,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * Invalidate cached authorization for an identifier
    * @param identifier - Unified identifier whose cached authorization should be invalidated
    */
-  public async invalidateCache (identifier: UnifiedIdentifier): Promise<void> {
+  public invalidateCache (identifier: UnifiedIdentifier): void {
     logger.debug(
       `${this.chargingStation.logPrefix()} Invalidating cache for identifier: ${identifier.value}`
     )
@@ -421,7 +421,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     // Invalidate in local strategy
     const localStrategy = this.strategies.get('local') as LocalAuthStrategy | undefined
     if (localStrategy) {
-      await localStrategy.invalidateCache(identifier.value)
+      localStrategy.invalidateCache(identifier.value)
       logger.info(
         `${this.chargingStation.logPrefix()} Cache invalidated for identifier: ${identifier.value}`
       )

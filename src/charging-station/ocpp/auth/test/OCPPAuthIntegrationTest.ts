@@ -147,10 +147,10 @@ export class OCPPAuthIntegrationTest {
     }
 
     // Test cache invalidation (should not throw)
-    await this.authService.invalidateCache(testIdentifier)
+    this.authService.invalidateCache(testIdentifier)
 
     // Test cache clearing (should not throw)
-    await this.authService.clearCache()
+    this.authService.clearCache()
 
     // Test local authorization check after cache operations
     await this.authService.isLocallyAuthorized(testIdentifier)

@@ -242,15 +242,15 @@ await describe('OCPP Authentication', async () => {
     })
 
     // G04.INT.02 - All-status caching (T4)
-    await it('G04.INT.02: cache stores and retrieves all authorization statuses', async () => {
+    await it('G04.INT.02: cache stores and retrieves all authorization statuses', () => {
       const cache = new InMemoryAuthCache({ cleanupIntervalSeconds: 0 })
       try {
         const blockedResult = createMockAuthorizationResult({
           status: AuthorizationStatus.BLOCKED,
         })
 
-        await cache.set('BLOCKED-ID', blockedResult)
-        const retrieved = await cache.get('BLOCKED-ID')
+        cache.set('BLOCKED-ID', blockedResult)
+        const retrieved = cache.get('BLOCKED-ID')
 
         expect(retrieved).toBeDefined()
         expect(retrieved?.status).toBe(AuthorizationStatus.BLOCKED)
@@ -260,28 +260,28 @@ await describe('OCPP Authentication', async () => {
     })
 
     // G04.INT.03 - Status-aware eviction (T5)
-    await it('G04.INT.03: eviction prefers ACCEPTED entries over non-ACCEPTED', async () => {
+    await it('G04.INT.03: eviction prefers ACCEPTED entries over non-ACCEPTED', () => {
       const cache = new InMemoryAuthCache({ cleanupIntervalSeconds: 0, maxEntries: 3 })
       try {
         // Add 3 ACCEPTED entries
         for (let i = 0; i < 3; i++) {
-          await cache.set(
+          cache.set(
             `ACCEPTED-${String(i)}`,
             createMockAuthorizationResult({ status: AuthorizationStatus.ACCEPTED })
           )
         }
 
         // Insert a BLOCKED entry — triggers eviction of one ACCEPTED entry
-        await cache.set(
+        cache.set(
           'BLOCKED-ENTRY',
           createMockAuthorizationResult({ status: AuthorizationStatus.BLOCKED })
         )
 
-        const stats = await cache.getStats()
+        const stats = cache.getStats()
         expect(stats.totalEntries).toBe(3)
 
         // BLOCKED entry must still exist
-        const blocked = await cache.get('BLOCKED-ENTRY')
+        const blocked = cache.get('BLOCKED-ENTRY')
         expect(blocked).toBeDefined()
         expect(blocked?.status).toBe(AuthorizationStatus.BLOCKED)
       } finally {
@@ -293,20 +293,20 @@ await describe('OCPP Authentication', async () => {
     await it('G04.INT.04: cache hit resets TTL sliding window', async () => {
       const cache = new InMemoryAuthCache({ cleanupIntervalSeconds: 0, defaultTtl: 1 })
       try {
-        await cache.set(
+        cache.set(
           'SLIDING-ID',
           createMockAuthorizationResult({ status: AuthorizationStatus.ACCEPTED })
         )
 
         // Wait 500ms, then access to reset TTL
         await sleep(500)
-        const midResult = await cache.get('SLIDING-ID')
+        const midResult = cache.get('SLIDING-ID')
         expect(midResult).toBeDefined()
         expect(midResult?.status).toBe(AuthorizationStatus.ACCEPTED)
 
         // Wait another 700ms (total 1200ms from initial set, but only 700ms from last access)
         await sleep(700)
-        const lateResult = await cache.get('SLIDING-ID')
+        const lateResult = cache.get('SLIDING-ID')
 
         // Entry should still be valid because TTL was reset at the 500ms access
         expect(lateResult).toBeDefined()
@@ -320,14 +320,14 @@ await describe('OCPP Authentication', async () => {
     await it('G04.INT.05: expired entries transition to EXPIRED status instead of being deleted', async () => {
       const cache = new InMemoryAuthCache({ cleanupIntervalSeconds: 0, defaultTtl: 1 })
       try {
-        await cache.set(
+        cache.set(
           'EXPIRE-ID',
           createMockAuthorizationResult({ status: AuthorizationStatus.ACCEPTED })
         )
 
         // Wait for TTL to expire
         await sleep(1100)
-        const result = await cache.get('EXPIRE-ID')
+        const result = cache.get('EXPIRE-ID')
 
         expect(result).toBeDefined()
         expect(result?.status).toBe(AuthorizationStatus.EXPIRED)
@@ -364,7 +364,7 @@ await describe('OCPP Authentication', async () => {
         expect(result?.method).toBe(AuthenticationMethod.LOCAL_LIST)
 
         // Verify cache does NOT contain the identifier (R17)
-        const cached = await cache.get('LIST-ID')
+        const cached = cache.get('LIST-ID')
         expect(cached).toBeUndefined()
       } finally {
         cache.dispose()
@@ -372,31 +372,31 @@ await describe('OCPP Authentication', async () => {
     })
 
     // G04.INT.07 - Cache lifecycle with stats preservation (T11)
-    await it('G04.INT.07: clear preserves stats, resetStats zeroes them', async () => {
+    await it('G04.INT.07: clear preserves stats, resetStats zeroes them', () => {
       const cache = new InMemoryAuthCache({ cleanupIntervalSeconds: 0 })
       try {
         // Perform some operations to generate stats
-        await cache.set(
+        cache.set(
           'STATS-ID',
           createMockAuthorizationResult({ status: AuthorizationStatus.ACCEPTED })
         )
-        await cache.get('STATS-ID')
-        await cache.get('NONEXISTENT')
+        cache.get('STATS-ID')
+        cache.get('NONEXISTENT')
 
-        const statsBefore = await cache.getStats()
+        const statsBefore = cache.getStats()
         expect(statsBefore.hits).toBeGreaterThan(0)
         expect(statsBefore.misses).toBeGreaterThan(0)
 
         // Clear entries — stats should be preserved
-        await cache.clear()
-        const statsAfterClear = await cache.getStats()
+        cache.clear()
+        const statsAfterClear = cache.getStats()
         expect(statsAfterClear.totalEntries).toBe(0)
         expect(statsAfterClear.hits).toBe(statsBefore.hits)
         expect(statsAfterClear.misses).toBe(statsBefore.misses)
 
         // Reset stats — counters should be zeroed
         cache.resetStats()
-        const statsAfterReset = await cache.getStats()
+        const statsAfterReset = cache.getStats()
         expect(statsAfterReset.hits).toBe(0)
         expect(statsAfterReset.misses).toBe(0)
         expect(statsAfterReset.evictions).toBe(0)

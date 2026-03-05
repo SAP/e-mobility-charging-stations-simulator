@@ -120,18 +120,10 @@ export class RemoteAuthStrategy implements AuthStrategy {
               `RemoteAuthStrategy: Skipping cache for local list identifier: ${request.identifier.value.substring(0, 8)}...`
             )
           } else {
-            await this.cacheResult(
-              request.identifier.value,
-              result,
-              config.authorizationCacheLifetime
-            )
+            this.cacheResult(request.identifier.value, result, config.authorizationCacheLifetime)
           }
         } else if (this.authCache) {
-          await this.cacheResult(
-            request.identifier.value,
-            result,
-            config.authorizationCacheLifetime
-          )
+          this.cacheResult(request.identifier.value, result, config.authorizationCacheLifetime)
         }
 
         return this.enhanceResult(result, startTime)
@@ -209,7 +201,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
    * @returns Strategy statistics including success rates, response times, and error counts
    */
   public async getStats (): Promise<Record<string, unknown>> {
-    const cacheStats = this.authCache ? await this.authCache.getStats() : null
+    const cacheStats = this.authCache ? this.authCache.getStats() : null
     const adapterStats = new Map<string, unknown>()
 
     // Collect adapter availability status
@@ -350,11 +342,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
    * @param result - Authorization result to store in cache
    * @param ttl - Optional time-to-live in seconds for cache entry
    */
-  private async cacheResult (
-    identifier: string,
-    result: AuthorizationResult,
-    ttl?: number
-  ): Promise<void> {
+  private cacheResult (identifier: string, result: AuthorizationResult, ttl?: number): void {
     if (!this.authCache) {
       return
     }
@@ -362,7 +350,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
     try {
       // Use provided TTL or default cache lifetime
       const cacheTtl = ttl ?? result.cacheTtl ?? 300 // Default 5 minutes
-      await this.authCache.set(identifier, result, cacheTtl)
+      this.authCache.set(identifier, result, cacheTtl)
       logger.debug(
         `RemoteAuthStrategy: Cached result for ${identifier.substring(0, 8)}... (TTL: ${String(cacheTtl)}s)`
       )

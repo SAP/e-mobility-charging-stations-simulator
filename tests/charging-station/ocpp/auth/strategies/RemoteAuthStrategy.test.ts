@@ -164,9 +164,8 @@ await describe('RemoteAuthStrategy', async () => {
 
     await it('should cache successful authorization results', async () => {
       let cachedKey: string | undefined
-      mockAuthCache.set = async (key: string) => {
+      mockAuthCache.set = (key: string) => {
         cachedKey = key
-        return Promise.resolve()
       }
 
       const config = createTestAuthConfig({
@@ -187,9 +186,8 @@ await describe('RemoteAuthStrategy', async () => {
 
     await it('G03.FR.01.T4.01 - should cache BLOCKED authorization status', async () => {
       let cachedKey: string | undefined
-      mockAuthCache.set = async (key: string) => {
+      mockAuthCache.set = (key: string) => {
         cachedKey = key
-        return Promise.resolve()
       }
       mockOCPP16Adapter.authorizeRemote = async () =>
         Promise.resolve(
@@ -217,9 +215,8 @@ await describe('RemoteAuthStrategy', async () => {
 
     await it('G03.FR.01.T4.02 - should cache EXPIRED authorization status', async () => {
       let cachedKey: string | undefined
-      mockAuthCache.set = async (key: string) => {
+      mockAuthCache.set = (key: string) => {
         cachedKey = key
-        return Promise.resolve()
       }
       mockOCPP16Adapter.authorizeRemote = async () =>
         Promise.resolve(
@@ -247,9 +244,8 @@ await describe('RemoteAuthStrategy', async () => {
 
     await it('G03.FR.01.T4.03 - should cache INVALID authorization status', async () => {
       let cachedKey: string | undefined
-      mockAuthCache.set = async (key: string) => {
+      mockAuthCache.set = (key: string) => {
         cachedKey = key
-        return Promise.resolve()
       }
       mockOCPP16Adapter.authorizeRemote = async () =>
         Promise.resolve(
@@ -277,9 +273,8 @@ await describe('RemoteAuthStrategy', async () => {
 
     await it('G03.FR.01.T4.04 - should still cache ACCEPTED authorization status (regression)', async () => {
       let cachedKey: string | undefined
-      mockAuthCache.set = async (key: string) => {
+      mockAuthCache.set = (key: string) => {
         cachedKey = key
-        return Promise.resolve()
       }
 
       const config = createTestAuthConfig({
@@ -348,9 +343,8 @@ await describe('RemoteAuthStrategy', async () => {
 
     await it('G03.FR.01.T8.01 - should not cache identifier that is in local auth list', async () => {
       let cachedKey: string | undefined
-      mockAuthCache.set = async (key: string) => {
+      mockAuthCache.set = (key: string) => {
         cachedKey = key
-        return Promise.resolve()
       }
 
       mockLocalAuthListManager.getEntry = async (identifier: string) => {
@@ -382,9 +376,8 @@ await describe('RemoteAuthStrategy', async () => {
 
     await it('G03.FR.01.T8.02 - should cache identifier that is not in local auth list', async () => {
       let cachedKey: string | undefined
-      mockAuthCache.set = async (key: string) => {
+      mockAuthCache.set = (key: string) => {
         cachedKey = key
-        return Promise.resolve()
       }
 
       mockLocalAuthListManager.getEntry = async () => Promise.resolve(undefined)

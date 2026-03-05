@@ -147,10 +147,12 @@ await describe('OCPPAuthServiceImpl', async () => {
       mockStation = createMockAuthServiceTestStation('clearCache')
     })
 
-    await it('should clear authorization cache', async () => {
+    await it('should clear authorization cache', () => {
       const authService = new OCPPAuthServiceImpl(mockStation)
 
-      await expect(authService.clearCache()).resolves.toBeUndefined()
+      expect(() => {
+        authService.clearCache()
+      }).not.toThrow()
     })
   })
 
@@ -161,7 +163,7 @@ await describe('OCPPAuthServiceImpl', async () => {
       mockStation = createMockAuthServiceTestStation('invalidateCache')
     })
 
-    await it('should invalidate cache for specific identifier', async () => {
+    await it('should invalidate cache for specific identifier', () => {
       const authService = new OCPPAuthServiceImpl(mockStation)
 
       const identifier: UnifiedIdentifier = {
@@ -170,7 +172,9 @@ await describe('OCPPAuthServiceImpl', async () => {
         value: 'TAG_TO_INVALIDATE',
       }
 
-      await expect(authService.invalidateCache(identifier)).resolves.toBeUndefined()
+      expect(() => {
+        authService.invalidateCache(identifier)
+      }).not.toThrow()
     })
   })
 

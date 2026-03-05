@@ -83,7 +83,7 @@ export class LocalAuthStrategy implements AuthStrategy {
 
       // 2. Try authorization cache
       if (config.authorizationCacheEnabled && this.authCache) {
-        const cacheResult = await this.checkAuthCache(request, config)
+        const cacheResult = this.checkAuthCache(request, config)
         if (cacheResult) {
           logger.debug(`LocalAuthStrategy: Found in cache: ${cacheResult.status}`)
           this.stats.cacheHits++
@@ -128,17 +128,13 @@ export class LocalAuthStrategy implements AuthStrategy {
    * @param result - Authorization result to store in cache
    * @param ttl - Optional time-to-live in seconds for cache entry
    */
-  public async cacheResult (
-    identifier: string,
-    result: AuthorizationResult,
-    ttl?: number
-  ): Promise<void> {
+  public cacheResult (identifier: string, result: AuthorizationResult, ttl?: number): void {
     if (!this.authCache) {
       return
     }
 
     try {
-      await this.authCache.set(identifier, result, ttl)
+      this.authCache.set(identifier, result, ttl)
       logger.debug(`LocalAuthStrategy: Cached result for ${identifier}`)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
@@ -195,10 +191,10 @@ export class LocalAuthStrategy implements AuthStrategy {
    * Get strategy statistics
    * @returns Strategy statistics including hit rates, request counts, and cache status
    */
-  public async getStats (): Promise<Record<string, unknown>> {
-    const cacheStats = this.authCache ? await this.authCache.getStats() : null
+  public getStats (): Promise<Record<string, unknown>> {
+    const cacheStats = this.authCache ? this.authCache.getStats() : null
 
-    return {
+    return Promise.resolve({
       ...this.stats,
       cacheHitRate:
         this.stats.totalRequests > 0 ? (this.stats.cacheHits / this.stats.totalRequests) * 100 : 0,
@@ -214,7 +210,7 @@ export class LocalAuthStrategy implements AuthStrategy {
         this.stats.totalRequests > 0
           ? (this.stats.offlineDecisions / this.stats.totalRequests) * 100
           : 0,
-    }
+    })
   }
 
   /**
@@ -263,13 +259,13 @@ export class LocalAuthStrategy implements AuthStrategy {
    * Invalidate cached result for identifier
    * @param identifier - Unique identifier string to remove from cache
    */
-  public async invalidateCache (identifier: string): Promise<void> {
+  public invalidateCache (identifier: string): void {
     if (!this.authCache) {
       return
     }
 
     try {
-      await this.authCache.remove(identifier)
+      this.authCache.remove(identifier)
       logger.debug(`LocalAuthStrategy: Invalidated cache for ${identifier}`)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
@@ -320,16 +316,16 @@ export class LocalAuthStrategy implements AuthStrategy {
    * @param config - Authentication configuration (unused but required by interface)
    * @returns Cached authorization result if found and not expired; undefined otherwise
    */
-  private async checkAuthCache (
+  private checkAuthCache (
     request: AuthRequest,
     config: AuthConfiguration
-  ): Promise<AuthorizationResult | undefined> {
+  ): AuthorizationResult | undefined {
     if (!this.authCache) {
       return undefined
     }
 
     try {
-      const cachedResult = await this.authCache.get(request.identifier.value)
+      const cachedResult = this.authCache.get(request.identifier.value)
       if (!cachedResult) {
         return undefined
       }
@@ -340,7 +336,7 @@ export class LocalAuthStrategy implements AuthStrategy {
         if (expiry < new Date()) {
           logger.debug(`LocalAuthStrategy: Cached entry ${request.identifier.value} expired`)
           // Remove expired entry
-          await this.authCache.remove(request.identifier.value)
+          this.authCache.remove(request.identifier.value)
           return undefined
         }
       }

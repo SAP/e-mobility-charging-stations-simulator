@@ -118,7 +118,9 @@ export const createMockAuthService = (overrides?: Partial<OCPPAuthService>): OCP
         status: AuthorizationStatus.ACCEPTED,
         timestamp: new Date(),
       }),
-    clearCache: () => Promise.resolve(),
+    clearCache: () => {
+      /* empty */
+    },
     getConfiguration: () => ({}) as AuthConfiguration,
     getStats: () =>
       Promise.resolve({
@@ -131,7 +133,9 @@ export const createMockAuthService = (overrides?: Partial<OCPPAuthService>): OCP
         successfulAuth: 0,
         totalRequests: 0,
       }),
-    invalidateCache: () => Promise.resolve(),
+    invalidateCache: () => {
+      /* empty */
+    },
     isLocallyAuthorized: () => Promise.resolve(undefined),
     testConnectivity: () => Promise.resolve(true),
     updateConfiguration: () => Promise.resolve(),
@@ -145,23 +149,28 @@ export const createMockAuthService = (overrides?: Partial<OCPPAuthService>): OCP
 /**
  * Create a mock AuthCache for testing.
  * @param overrides - Partial AuthCache methods to override defaults
- * @returns Mock AuthCache with stubbed async methods
+ * @returns Mock AuthCache with stubbed methods
  */
 export const createMockAuthCache = (overrides?: Partial<AuthCache>): AuthCache => ({
-  clear: async () => Promise.resolve(),
-  get: async (_key: string) => Promise.resolve(undefined),
-  getStats: async () =>
-    Promise.resolve({
-      evictions: 0,
-      expiredEntries: 0,
-      hitRate: 0,
-      hits: 0,
-      memoryUsage: 0,
-      misses: 0,
-      totalEntries: 0,
-    }),
-  remove: async (_key: string) => Promise.resolve(),
-  set: async (_key: string, _value: unknown, _ttl?: number) => Promise.resolve(),
+  clear: () => {
+    /* empty */
+  },
+  get: (_key: string) => undefined,
+  getStats: () => ({
+    evictions: 0,
+    expiredEntries: 0,
+    hitRate: 0,
+    hits: 0,
+    memoryUsage: 0,
+    misses: 0,
+    totalEntries: 0,
+  }),
+  remove: (_key: string) => {
+    /* empty */
+  },
+  set: (_key: string, _value: unknown, _ttl?: number) => {
+    /* empty */
+  },
   ...overrides,
 })
 
