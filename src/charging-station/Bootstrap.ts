@@ -553,7 +553,7 @@ export class Bootstrap extends EventEmitter {
       this.uiServerStarted = false
     }
     this.initializeCounters()
-    // FIXME: initialize worker implementation only if the worker section has changed
+    // TODO: compare worker configuration hash to skip unnecessary re-initialization
     this.initializeWorkerImplementation(
       Configuration.getConfigurationSection<WorkerConfiguration>(ConfigurationSection.worker)
     )
@@ -616,7 +616,9 @@ export class Bootstrap extends EventEmitter {
         this.storage.storePerformanceStatistics as (
           performanceStatistics: Statistics
         ) => Promise<void>
-      )(data).catch(Constants.EMPTY_FUNCTION)
+      )(data).catch((error: unknown) => {
+        logger.error(`${this.logPrefix()} Error while storing performance statistics:`, error)
+      })
     } else {
       ;(this.storage?.storePerformanceStatistics as (performanceStatistics: Statistics) => void)(
         data

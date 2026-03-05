@@ -20,7 +20,7 @@ import {
   type UIServerConfiguration,
   type UUIDv4,
 } from '../../types/index.js'
-import { isEmpty, logger } from '../../utils/index.js'
+import { isEmpty, isNotEmptyString, logger, logPrefix } from '../../utils/index.js'
 import { UIServiceFactory } from './ui-services/UIServiceFactory.js'
 import { isValidCredential } from './UIServerSecurity.js'
 import { getUsernameAndPasswordFromAuthorizationToken } from './UIServerUtils.js'
@@ -30,6 +30,8 @@ const moduleName = 'AbstractUIServer'
 export abstract class AbstractUIServer {
   protected readonly httpServer: Http2Server | Server
   protected readonly responseHandlers: Map<UUIDv4, ServerResponse | WebSocket>
+
+  protected abstract readonly uiServerType: string
 
   protected readonly uiServices: Map<ProtocolVersion, AbstractUIService>
 
@@ -105,7 +107,15 @@ export abstract class AbstractUIServer {
     return [...this.chargingStations.values()]
   }
 
-  public abstract logPrefix (moduleName?: string, methodName?: string, prefixSuffix?: string): string
+  public logPrefix = (modName?: string, methodName?: string, prefixSuffix?: string): string => {
+    const logMsgPrefix =
+      prefixSuffix != null ? `${this.uiServerType} ${prefixSuffix}` : this.uiServerType
+    const logMsg =
+      isNotEmptyString(modName) && isNotEmptyString(methodName)
+        ? ` ${logMsgPrefix} | ${modName}.${methodName}:`
+        : ` ${logMsgPrefix} |`
+    return logPrefix(logMsg)
+  }
 
   public async sendInternalRequest (request: ProtocolRequest): Promise<ProtocolResponse> {
     const protocolVersion = ProtocolVersion['0.0.1']

@@ -1,5 +1,3 @@
-import chalk from 'chalk'
-
 import type { AbstractUIServer } from './AbstractUIServer.js'
 
 import { BaseError } from '../../exception/index.js'
@@ -48,7 +46,6 @@ export class UIServerFactory {
     ) {
       const logMsg = `Non loopback address in '${ConfigurationSection.uiServer}' configuration section without authentication enabled. This is not recommended`
       logger.warn(`${UIServerFactory.logPrefix()} ${logMsg}`)
-      console.warn(chalk.yellow(logMsg))
     }
     if (
       uiServerConfiguration.type === ApplicationProtocol.WS &&
@@ -56,7 +53,6 @@ export class UIServerFactory {
     ) {
       const logMsg = `Only version ${ApplicationProtocolVersion.VERSION_11} with application protocol type '${uiServerConfiguration.type}' is supported in '${ConfigurationSection.uiServer}' configuration section. Falling back to version ${ApplicationProtocolVersion.VERSION_11}`
       logger.warn(`${UIServerFactory.logPrefix()} ${logMsg}`)
-      console.warn(chalk.yellow(logMsg))
       uiServerConfiguration.version = ApplicationProtocolVersion.VERSION_11
     }
     switch (uiServerConfiguration.type) {
@@ -77,7 +73,6 @@ export class UIServerFactory {
             ApplicationProtocol.WS
           }'`
           logger.warn(`${UIServerFactory.logPrefix()} ${logMsg}`)
-          console.warn(logMsg)
         }
         return new UIWebSocketServer(uiServerConfiguration)
     }

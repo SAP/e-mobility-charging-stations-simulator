@@ -17,13 +17,7 @@ import {
   type UIServerConfiguration,
   type UUIDv4,
 } from '../../types/index.js'
-import {
-  generateUUID,
-  isNotEmptyString,
-  JSONStringify,
-  logger,
-  logPrefix,
-} from '../../utils/index.js'
+import { generateUUID, JSONStringify, logger } from '../../utils/index.js'
 import { AbstractUIServer } from './AbstractUIServer.js'
 import {
   createBodySizeLimiter,
@@ -47,20 +41,13 @@ enum HttpMethods {
 }
 
 export class UIHttpServer extends AbstractUIServer {
+  protected override readonly uiServerType = 'UI HTTP Server'
+
   private readonly acceptsGzip: Map<UUIDv4, boolean>
 
   public constructor (protected override readonly uiServerConfiguration: UIServerConfiguration) {
     super(uiServerConfiguration)
     this.acceptsGzip = new Map<UUIDv4, boolean>()
-  }
-
-  public logPrefix = (modName?: string, methodName?: string, prefixSuffix?: string): string => {
-    const logMsgPrefix = prefixSuffix != null ? `UI HTTP Server ${prefixSuffix}` : 'UI HTTP Server'
-    const logMsg =
-      isNotEmptyString(modName) && isNotEmptyString(methodName)
-        ? ` ${logMsgPrefix} | ${modName}.${methodName}:`
-        : ` ${logMsgPrefix} |`
-    return logPrefix(logMsg)
   }
 
   public sendRequest (request: ProtocolRequest): void {

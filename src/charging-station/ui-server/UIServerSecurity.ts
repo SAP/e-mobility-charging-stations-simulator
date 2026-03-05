@@ -27,6 +27,7 @@ export const isValidCredential = (provided: string, expected: string): boolean =
 
     return timingSafeEqual(paddedProvided, paddedExpected)
   } catch {
+    // Intentional: fail closed on any comparison error (e.g., encoding issues)
     return false
   }
 }

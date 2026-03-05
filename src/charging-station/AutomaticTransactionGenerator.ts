@@ -101,7 +101,9 @@ export class AutomaticTransactionGenerator {
       throw new BaseError(`Connector ${connectorId.toString()} does not exist`)
     }
     if (this.connectorsStatus.get(connectorId)?.start === false) {
-      this.internalStartConnector(connectorId, stopAbsoluteDuration).catch(Constants.EMPTY_FUNCTION)
+      this.internalStartConnector(connectorId, stopAbsoluteDuration).catch((error: unknown) =>
+        logger.error(`${this.logPrefix(connectorId)} Error while starting connector:`, error)
+      )
     } else if (this.connectorsStatus.get(connectorId)?.start === true) {
       logger.warn(`${this.logPrefix(connectorId)} is already started on connector`)
     }

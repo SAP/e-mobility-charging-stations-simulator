@@ -813,7 +813,9 @@ export class ChargingStation extends EventEmitter {
 
     // Handle WebSocket message
     this.wsConnection.on('message', data => {
-      this.onMessage(data).catch(Constants.EMPTY_FUNCTION)
+      this.onMessage(data).catch((error: unknown) =>
+        logger.error(`${this.logPrefix()} Error while processing WebSocket message:`, error)
+      )
     })
     // Handle WebSocket error
     this.wsConnection.on('error', this.onError.bind(this))
@@ -951,7 +953,8 @@ export class ChargingStation extends EventEmitter {
                 } else {
                   this.performanceStatistics?.stop()
                 }
-                // FIXME?: restart heartbeat and WebSocket ping when their interval values have changed
+                this.restartHeartbeat()
+                this.restartWebSocketPing()
               } catch (error) {
                 logger.error(
                   `${this.logPrefix()} ${FileType.ChargingStationTemplate} file monitoring error:`,

@@ -18,6 +18,15 @@ interface DeleteConfigurationKeyParams {
   save?: boolean
 }
 
+const matchesConfigurationKey = (
+  configElement: ConfigurationKey,
+  key: ConfigurationKeyType,
+  caseInsensitive: boolean
+): boolean =>
+  caseInsensitive
+    ? configElement.key.toLowerCase() === key.toLowerCase()
+    : configElement.key === key
+
 export const getConfigurationKey = (
   chargingStation: ChargingStation,
   key: ConfigurationKeyType,
@@ -25,9 +34,7 @@ export const getConfigurationKey = (
 ): ConfigurationKey | undefined => {
   if (!Array.isArray(chargingStation.ocppConfiguration?.configurationKey)) return undefined
   return chargingStation.ocppConfiguration.configurationKey.find(configElement =>
-    caseInsensitive
-      ? configElement.key.toLowerCase() === key.toLowerCase()
-      : configElement.key === key
+    matchesConfigurationKey(configElement, key, caseInsensitive)
   )
 }
 
@@ -40,9 +47,7 @@ const getConfigurationKeyIndex = (
     return -1
   }
   return chargingStation.ocppConfiguration.configurationKey.findIndex(configElement =>
-    caseInsensitive
-      ? configElement.key.toLowerCase() === key.toLowerCase()
-      : configElement.key === key
+    matchesConfigurationKey(configElement, key, caseInsensitive)
   )
 }
 

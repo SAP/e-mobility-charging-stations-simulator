@@ -169,12 +169,19 @@ export const removeExpiredReservations = async (
       chargingStation.removeReservation(reservation, ReservationTerminationReason.EXPIRED)
     )
   )
+  let failureCount = 0
   for (const result of results) {
     if (result.status === 'rejected') {
+      ++failureCount
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.removeExpiredReservations: reservation removal failed: ${String(result.reason)}`
       )
     }
+  }
+  if (failureCount > 0) {
+    logger.error(
+      `${chargingStation.logPrefix()} ${moduleName}.removeExpiredReservations: ${failureCount.toString()}/${reservations.length.toString()} expired reservation removal(s) failed`
+    )
   }
 }
 
@@ -993,13 +1000,13 @@ const convertDeprecatedTemplateKey = (
   deprecatedKey: string,
   key?: string
 ): void => {
-  if (template[deprecatedKey as keyof ChargingStationTemplate] != null) {
+  const templateRecord = template as unknown as Record<string, unknown>
+  if (templateRecord[deprecatedKey] != null) {
     if (key != null) {
-      ;(template as unknown as Record<string, unknown>)[key] =
-        template[deprecatedKey as keyof ChargingStationTemplate]
+      templateRecord[key] = templateRecord[deprecatedKey]
     }
     // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-    delete template[deprecatedKey as keyof ChargingStationTemplate]
+    delete templateRecord[deprecatedKey]
   }
 }
 
@@ -1218,10 +1225,28 @@ export const prepareChargingProfileKind = (
         )
         delete chargingSchedule.startSchedule
       }
-      if (connectorStatus?.transactionStarted === true) {
-        chargingSchedule.startSchedule = connectorStatus.transactionStart
+      if (connectorStatus?.transactionStarted !== true) {
+        logger.debug(
+          `${logPrefix} ${moduleName}.prepareChargingProfileKind: Relative charging profile id ${chargingProfileId} has no active transaction, cannot be evaluated`
+        )
+        return false
       }
-      // FIXME: handle relative charging profile duration
+      chargingSchedule.startSchedule = connectorStatus.transactionStart
+      if (chargingSchedule.startSchedule == null) {
+        logger.warn(
+          `${logPrefix} ${moduleName}.prepareChargingProfileKind: Relative charging profile id ${chargingProfileId} has active transaction without start date`
+        )
+        return false
+      }
+      if (chargingSchedule.duration != null) {
+        const elapsedSeconds = differenceInSeconds(currentDate, chargingSchedule.startSchedule)
+        if (elapsedSeconds > chargingSchedule.duration) {
+          logger.debug(
+            `${logPrefix} ${moduleName}.prepareChargingProfileKind: Relative charging profile id ${chargingProfileId} duration ${chargingSchedule.duration.toString()}s exceeded (elapsed: ${elapsedSeconds.toString()}s)`
+          )
+          return false
+        }
+      }
       break
   }
   return true

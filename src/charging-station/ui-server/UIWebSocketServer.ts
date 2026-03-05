@@ -13,10 +13,8 @@ import {
 } from '../../types/index.js'
 import {
   getWebSocketCloseEventStatusString,
-  isNotEmptyString,
   JSONStringify,
   logger,
-  logPrefix,
   validateUUID,
 } from '../../utils/index.js'
 import { AbstractUIServer } from './AbstractUIServer.js'
@@ -30,6 +28,8 @@ import {
 const moduleName = 'UIWebSocketServer'
 
 export class UIWebSocketServer extends AbstractUIServer {
+  protected override readonly uiServerType = 'UI WebSocket Server'
+
   private readonly webSocketServer: WebSocketServer
 
   public constructor (protected override readonly uiServerConfiguration: UIServerConfiguration) {
@@ -54,16 +54,6 @@ export class UIWebSocketServer extends AbstractUIServer {
         },
       },
     })
-  }
-
-  public logPrefix = (modName?: string, methodName?: string, prefixSuffix?: string): string => {
-    const logMsgPrefix =
-      prefixSuffix != null ? `UI WebSocket Server ${prefixSuffix}` : 'UI WebSocket Server'
-    const logMsg =
-      isNotEmptyString(modName) && isNotEmptyString(methodName)
-        ? ` ${logMsgPrefix} | ${modName}.${methodName}:`
-        : ` ${logMsgPrefix} |`
-    return logPrefix(logMsg)
   }
 
   public sendRequest (request: ProtocolRequest): void {
