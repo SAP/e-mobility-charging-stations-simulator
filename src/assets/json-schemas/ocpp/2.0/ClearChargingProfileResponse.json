@@ -19,7 +19,6 @@
       "description": "Indicates if the Charging Station was able to execute the request.\r\n",
       "javaType": "ClearChargingProfileStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Accepted", "Unknown"]
     },
     "StatusInfoType": {

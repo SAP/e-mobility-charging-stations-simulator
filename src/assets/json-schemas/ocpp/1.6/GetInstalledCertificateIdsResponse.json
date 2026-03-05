@@ -4,12 +4,10 @@
   "definitions": {
     "GetInstalledCertificateStatusEnumType": {
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Accepted", "NotFound"]
     },
     "HashAlgorithmEnumType": {
       "type": "string",
-      "additionalProperties": false,
       "enum": ["SHA256", "SHA384", "SHA512"]
     },
     "CertificateHashDataType": {
@@ -41,7 +39,6 @@
   "properties": {
     "certificateHashData": {
       "type": "array",
-      "additionalItems": false,
       "items": {
         "$ref": "#/definitions/CertificateHashDataType"
       },

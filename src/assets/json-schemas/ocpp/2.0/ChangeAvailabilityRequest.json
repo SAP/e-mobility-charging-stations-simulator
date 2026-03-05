@@ -19,7 +19,6 @@
       "description": "This contains the type of availability change that the Charging Station should perform.\r\n\r\n",
       "javaType": "OperationalStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Inoperative", "Operative"]
     },
     "EVSEType": {

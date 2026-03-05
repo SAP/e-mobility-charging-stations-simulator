@@ -19,7 +19,6 @@
       "description": "This indicates whether the Charging Station is able to process this request and will send &lt;&lt;reportchargingprofilesrequest, ReportChargingProfilesRequest&gt;&gt; messages.\r\n",
       "javaType": "GetChargingProfileStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Accepted", "NoProfiles"]
     },
     "StatusInfoType": {

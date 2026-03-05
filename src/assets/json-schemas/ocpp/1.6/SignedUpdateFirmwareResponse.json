@@ -4,7 +4,6 @@
   "definitions": {
     "UpdateFirmwareStatusEnumType": {
       "type": "string",
-      "additionalProperties": false,
       "enum": [
         "Accepted",
         "Rejected",

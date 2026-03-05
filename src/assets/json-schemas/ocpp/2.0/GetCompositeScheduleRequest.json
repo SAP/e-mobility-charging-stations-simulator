@@ -19,7 +19,6 @@
       "description": "Can be used to force a power or current profile.\r\n\r\n",
       "javaType": "ChargingRateUnitEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["W", "A"]
     }
   },

@@ -19,7 +19,6 @@
       "description": "The updated reservation status.\r\n",
       "javaType": "ReservationUpdateStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Expired", "Removed"]
     }
   },

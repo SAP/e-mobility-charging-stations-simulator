@@ -19,7 +19,6 @@
       "description": "Status indicating whether Charging Station accepts the request to stop a transaction.\r\n",
       "javaType": "RequestStartStopStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Accepted", "Rejected"]
     },
     "StatusInfoType": {

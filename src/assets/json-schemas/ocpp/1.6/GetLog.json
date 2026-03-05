@@ -4,7 +4,6 @@
   "definitions": {
     "LogEnumType": {
       "type": "string",
-      "additionalProperties": false,
       "enum": ["DiagnosticsLog", "SecurityLog"]
     },
     "LogParametersType": {

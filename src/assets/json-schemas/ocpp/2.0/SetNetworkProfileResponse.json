@@ -19,7 +19,6 @@
       "description": "Result of operation.\r\n",
       "javaType": "SetNetworkProfileStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Accepted", "Rejected", "Failed"]
     },
     "StatusInfoType": {

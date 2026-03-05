@@ -19,7 +19,6 @@
       "description": "Accepted if the Charging Station has executed the request, otherwise rejected.\r\n",
       "javaType": "ClearCacheStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Accepted", "Rejected"]
     },
     "StatusInfoType": {

@@ -19,7 +19,6 @@
       "description": "Charging Station indicates if installation was successful.\r\n",
       "javaType": "InstallCertificateStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Accepted", "Rejected", "Failed"]
     },
     "StatusInfoType": {

@@ -9,7 +9,6 @@
     },
     "type": {
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Inoperative", "Operative"]
     }
   },

@@ -19,14 +19,12 @@
       "description": "Charging_ Profile. Charging_ Profile_ Kind. Charging_ Profile_ Kind_ Code\r\nurn:x-oca:ocpp:uid:1:569232\r\nIndicates the kind of schedule.\r\n",
       "javaType": "ChargingProfileKindEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Absolute", "Recurring", "Relative"]
     },
     "ChargingProfilePurposeEnumType": {
       "description": "Charging_ Profile. Charging_ Profile_ Purpose. Charging_ Profile_ Purpose_ Code\r\nurn:x-oca:ocpp:uid:1:569231\r\nDefines the purpose of the schedule transferred by this profile\r\n",
       "javaType": "ChargingProfilePurposeEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": [
         "ChargingStationExternalConstraints",
         "ChargingStationMaxProfile",
@@ -38,21 +36,18 @@
       "description": "Charging_ Schedule. Charging_ Rate_ Unit. Charging_ Rate_ Unit_ Code\r\nurn:x-oca:ocpp:uid:1:569238\r\nThe unit of measure Limit is expressed in.\r\n",
       "javaType": "ChargingRateUnitEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["W", "A"]
     },
     "CostKindEnumType": {
       "description": "Cost. Cost_ Kind. Cost_ Kind_ Code\r\nurn:x-oca:ocpp:uid:1:569243\r\nThe kind of cost referred to in the message element amount\r\n",
       "javaType": "CostKindEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["CarbonDioxideEmission", "RelativePricePercentage", "RenewableGenerationPercentage"]
     },
     "IdTokenEnumType": {
       "description": "Enumeration of possible idToken types.\r\n",
       "javaType": "IdTokenEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": [
         "Central",
         "eMAID",
@@ -68,7 +63,6 @@
       "description": "Charging_ Profile. Recurrency_ Kind. Recurrency_ Kind_ Code\r\nurn:x-oca:ocpp:uid:1:569233\r\nIndicates the start point of a recurrence.\r\n",
       "javaType": "RecurrencyKindEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Daily", "Weekly"]
     },
     "AdditionalInfoType": {
@@ -131,7 +125,6 @@
         },
         "chargingSchedule": {
           "type": "array",
-          "additionalItems": false,
           "items": {
             "$ref": "#/definitions/ChargingScheduleType"
           },
@@ -207,7 +200,6 @@
         },
         "chargingSchedulePeriod": {
           "type": "array",
-          "additionalItems": false,
           "items": {
             "$ref": "#/definitions/ChargingSchedulePeriodType"
           },
@@ -239,7 +231,6 @@
         },
         "cost": {
           "type": "array",
-          "additionalItems": false,
           "items": {
             "$ref": "#/definitions/CostType"
           },
@@ -283,7 +274,6 @@
         },
         "additionalInfo": {
           "type": "array",
-          "additionalItems": false,
           "items": {
             "$ref": "#/definitions/AdditionalInfoType"
           },
@@ -339,7 +329,6 @@
         },
         "consumptionCost": {
           "type": "array",
-          "additionalItems": false,
           "items": {
             "$ref": "#/definitions/ConsumptionCostType"
           },
@@ -373,7 +362,6 @@
         },
         "salesTariffEntry": {
           "type": "array",
-          "additionalItems": false,
           "items": {
             "$ref": "#/definitions/SalesTariffEntryType"
           },

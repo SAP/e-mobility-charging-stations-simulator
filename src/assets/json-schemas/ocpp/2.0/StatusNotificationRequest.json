@@ -19,7 +19,6 @@
       "description": "This contains the current status of the Connector.\r\n",
       "javaType": "ConnectorStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Available", "Occupied", "Reserved", "Unavailable", "Faulted"]
     }
   },

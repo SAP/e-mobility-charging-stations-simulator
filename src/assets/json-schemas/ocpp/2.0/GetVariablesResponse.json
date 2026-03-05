@@ -20,14 +20,12 @@
       "javaType": "AttributeEnum",
       "type": "string",
       "default": "Actual",
-      "additionalProperties": false,
       "enum": ["Actual", "Target", "MinSet", "MaxSet"]
     },
     "GetVariableStatusEnumType": {
       "description": "Result status of getting the variable.\r\n\r\n",
       "javaType": "GetVariableStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": [
         "Accepted",
         "Rejected",
@@ -166,7 +164,6 @@
     },
     "getVariableResult": {
       "type": "array",
-      "additionalItems": false,
       "items": {
         "$ref": "#/definitions/GetVariableResultType"
       },

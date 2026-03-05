@@ -19,7 +19,6 @@
       "description": "This field specifies the report base.\r\n",
       "javaType": "ReportBaseEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["ConfigurationInventory", "FullInventory", "SummaryInventory"]
     }
   },

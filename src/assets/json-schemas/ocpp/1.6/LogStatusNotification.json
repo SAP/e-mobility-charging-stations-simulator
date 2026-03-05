@@ -4,7 +4,6 @@
   "definitions": {
     "UploadLogStatusEnumType": {
       "type": "string",
-      "additionalProperties": false,
       "enum": [
         "BadMessage",
         "Idle",

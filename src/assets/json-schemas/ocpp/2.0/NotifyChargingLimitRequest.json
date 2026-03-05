@@ -19,21 +19,18 @@
       "description": "Charging_ Limit. Charging_ Limit_ Source. Charging_ Limit_ Source_ Code\r\nurn:x-enexis:ecdm:uid:1:570845\r\nRepresents the source of the charging limit.\r\n",
       "javaType": "ChargingLimitSourceEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["EMS", "Other", "SO", "CSO"]
     },
     "ChargingRateUnitEnumType": {
       "description": "Charging_ Schedule. Charging_ Rate_ Unit. Charging_ Rate_ Unit_ Code\r\nurn:x-oca:ocpp:uid:1:569238\r\nThe unit of measure Limit is expressed in.\r\n",
       "javaType": "ChargingRateUnitEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["W", "A"]
     },
     "CostKindEnumType": {
       "description": "Cost. Cost_ Kind. Cost_ Kind_ Code\r\nurn:x-oca:ocpp:uid:1:569243\r\nThe kind of cost referred to in the message element amount\r\n",
       "javaType": "CostKindEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["CarbonDioxideEmission", "RelativePricePercentage", "RenewableGenerationPercentage"]
     },
     "ChargingLimitType": {
@@ -110,7 +107,6 @@
         },
         "chargingSchedulePeriod": {
           "type": "array",
-          "additionalItems": false,
           "items": {
             "$ref": "#/definitions/ChargingSchedulePeriodType"
           },
@@ -142,7 +138,6 @@
         },
         "cost": {
           "type": "array",
-          "additionalItems": false,
           "items": {
             "$ref": "#/definitions/CostType"
           },
@@ -214,7 +209,6 @@
         },
         "consumptionCost": {
           "type": "array",
-          "additionalItems": false,
           "items": {
             "$ref": "#/definitions/ConsumptionCostType"
           },
@@ -248,7 +242,6 @@
         },
         "salesTariffEntry": {
           "type": "array",
-          "additionalItems": false,
           "items": {
             "$ref": "#/definitions/SalesTariffEntryType"
           },
@@ -267,7 +260,6 @@
     },
     "chargingSchedule": {
       "type": "array",
-      "additionalItems": false,
       "items": {
         "$ref": "#/definitions/ChargingScheduleType"
       },

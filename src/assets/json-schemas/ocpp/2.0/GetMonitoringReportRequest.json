@@ -18,7 +18,6 @@
     "MonitoringCriterionEnumType": {
       "javaType": "MonitoringCriterionEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["ThresholdMonitoring", "DeltaMonitoring", "PeriodicMonitoring"]
     },
     "ComponentType": {
@@ -115,7 +114,6 @@
     },
     "componentVariable": {
       "type": "array",
-      "additionalItems": false,
       "items": {
         "$ref": "#/definitions/ComponentVariableType"
       },
@@ -128,7 +126,6 @@
     "monitoringCriteria": {
       "description": "This field contains criteria for components for which a monitoring report is requested\r\n",
       "type": "array",
-      "additionalItems": false,
       "items": {
         "$ref": "#/definitions/MonitoringCriterionEnumType"
       },

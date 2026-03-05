@@ -19,7 +19,6 @@
       "description": "Indicates whether the request was accepted.\r\n",
       "javaType": "GenericStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Accepted", "Rejected"]
     },
     "StatusInfoType": {

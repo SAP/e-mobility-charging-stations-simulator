@@ -19,14 +19,12 @@
       "description": "The unit of measure Limit is\r\nexpressed in.\r\n",
       "javaType": "ChargingRateUnitEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["W", "A"]
     },
     "GenericStatusEnumType": {
       "description": "The Charging Station will indicate if it was\r\nable to process the request\r\n",
       "javaType": "GenericStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Accepted", "Rejected"]
     },
     "ChargingSchedulePeriodType": {
@@ -68,7 +66,6 @@
         },
         "chargingSchedulePeriod": {
           "type": "array",
-          "additionalItems": false,
           "items": {
             "$ref": "#/definitions/ChargingSchedulePeriodType"
           },

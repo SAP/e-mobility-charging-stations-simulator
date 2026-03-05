@@ -19,7 +19,6 @@
       "description": "Indicates the type of the requested certificate(s).\r\n",
       "javaType": "GetCertificateIdUseEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": [
         "V2GRootCertificate",
         "MORootCertificate",
@@ -32,14 +31,12 @@
       "description": "Charging Station indicates if it can process the request.\r\n",
       "javaType": "GetInstalledCertificateStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Accepted", "NotFound"]
     },
     "HashAlgorithmEnumType": {
       "description": "Used algorithms for the hashes provided.\r\n",
       "javaType": "HashAlgorithmEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["SHA256", "SHA384", "SHA512"]
     },
     "CertificateHashDataChainType": {
@@ -58,7 +55,6 @@
         },
         "childCertificateHashData": {
           "type": "array",
-          "additionalItems": false,
           "items": {
             "$ref": "#/definitions/CertificateHashDataType"
           },
@@ -134,7 +130,6 @@
     },
     "certificateHashDataChain": {
       "type": "array",
-      "additionalItems": false,
       "items": {
         "$ref": "#/definitions/CertificateHashDataChainType"
       },

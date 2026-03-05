@@ -19,7 +19,6 @@
       "description": "This contains the reason for sending this message to the CSMS.\r\n",
       "javaType": "BootReasonEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": [
         "ApplicationReset",
         "FirmwareUpdate",

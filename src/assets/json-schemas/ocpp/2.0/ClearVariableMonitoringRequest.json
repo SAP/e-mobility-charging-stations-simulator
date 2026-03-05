@@ -25,7 +25,6 @@
     "id": {
       "description": "List of the monitors to be cleared, identified by there Id.\r\n",
       "type": "array",
-      "additionalItems": false,
       "items": {
         "type": "integer"
       },

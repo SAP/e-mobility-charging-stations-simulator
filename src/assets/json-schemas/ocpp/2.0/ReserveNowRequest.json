@@ -19,7 +19,6 @@
       "description": "This field specifies the connector type.\r\n",
       "javaType": "ConnectorEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": [
         "cCCS1",
         "cCCS2",
@@ -49,7 +48,6 @@
       "description": "Enumeration of possible idToken types.\r\n",
       "javaType": "IdTokenEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": [
         "Central",
         "eMAID",
@@ -94,7 +92,6 @@
         },
         "additionalInfo": {
           "type": "array",
-          "additionalItems": false,
           "items": {
             "$ref": "#/definitions/AdditionalInfoType"
           },

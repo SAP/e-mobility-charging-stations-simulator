@@ -19,14 +19,12 @@
       "description": "Used algorithms for the hashes provided.\r\n",
       "javaType": "HashAlgorithmEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["SHA256", "SHA384", "SHA512"]
     },
     "IdTokenEnumType": {
       "description": "Enumeration of possible idToken types.\r\n",
       "javaType": "IdTokenEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": [
         "Central",
         "eMAID",
@@ -71,7 +69,6 @@
         },
         "additionalInfo": {
           "type": "array",
-          "additionalItems": false,
           "items": {
             "$ref": "#/definitions/AdditionalInfoType"
           },
@@ -145,7 +142,6 @@
     },
     "iso15118CertificateHashData": {
       "type": "array",
-      "additionalItems": false,
       "items": {
         "$ref": "#/definitions/OCSPRequestDataType"
       },

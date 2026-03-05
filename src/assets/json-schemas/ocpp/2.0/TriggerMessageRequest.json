@@ -19,7 +19,6 @@
       "description": "Type of message to be triggered.\r\n",
       "javaType": "MessageTriggerEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": [
         "BootNotification",
         "LogStatusNotification",

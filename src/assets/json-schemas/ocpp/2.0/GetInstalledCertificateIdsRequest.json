@@ -18,7 +18,6 @@
     "GetCertificateIdUseEnumType": {
       "javaType": "GetCertificateIdUseEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": [
         "V2GRootCertificate",
         "MORootCertificate",
@@ -37,7 +36,6 @@
     "certificateType": {
       "description": "Indicates the type of certificates requested. When omitted, all certificate types are requested.\r\n",
       "type": "array",
-      "additionalItems": false,
       "items": {
         "$ref": "#/definitions/GetCertificateIdUseEnumType"
       },

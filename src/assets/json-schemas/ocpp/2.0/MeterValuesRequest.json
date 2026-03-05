@@ -21,7 +21,6 @@
       "javaType": "LocationEnum",
       "type": "string",
       "default": "Outlet",
-      "additionalProperties": false,
       "enum": ["Body", "Cable", "EV", "Inlet", "Outlet"]
     },
     "MeasurandEnumType": {
@@ -29,7 +28,6 @@
       "javaType": "MeasurandEnum",
       "type": "string",
       "default": "Energy.Active.Import.Register",
-      "additionalProperties": false,
       "enum": [
         "Current.Export",
         "Current.Import",
@@ -62,7 +60,6 @@
       "description": "Sampled_ Value. Phase. Phase_ Code\r\nurn:x-oca:ocpp:uid:1:569264\r\nIndicates how the measured value is to be interpreted. For instance between L1 and neutral (L1-N) Please note that not all values of phase are applicable to all Measurands. When phase is absent, the measured value is interpreted as an overall value.\r\n",
       "javaType": "PhaseEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["L1", "L2", "L3", "N", "L1-N", "L2-N", "L3-N", "L1-L2", "L2-L3", "L3-L1"]
     },
     "ReadingContextEnumType": {
@@ -70,7 +67,6 @@
       "javaType": "ReadingContextEnum",
       "type": "string",
       "default": "Sample.Periodic",
-      "additionalProperties": false,
       "enum": [
         "Interruption.Begin",
         "Interruption.End",
@@ -93,7 +89,6 @@
         },
         "sampledValue": {
           "type": "array",
-          "additionalItems": false,
           "items": {
             "$ref": "#/definitions/SampledValueType"
           },
@@ -208,7 +203,6 @@
     },
     "meterValue": {
       "type": "array",
-      "additionalItems": false,
       "items": {
         "$ref": "#/definitions/MeterValueType"
       },

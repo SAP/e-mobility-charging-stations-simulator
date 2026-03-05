@@ -20,7 +20,6 @@
       "javaType": "AttributeEnum",
       "type": "string",
       "default": "Actual",
-      "additionalProperties": false,
       "enum": ["Actual", "Target", "MinSet", "MaxSet"]
     },
     "ComponentType": {
@@ -120,7 +119,6 @@
     },
     "getVariableData": {
       "type": "array",
-      "additionalItems": false,
       "items": {
         "$ref": "#/definitions/GetVariableDataType"
       },

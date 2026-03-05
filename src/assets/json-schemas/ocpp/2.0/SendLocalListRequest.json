@@ -19,7 +19,6 @@
       "description": "ID_ Token. Status. Authorization_ Status\r\nurn:x-oca:ocpp:uid:1:569372\r\nCurrent status of the ID Token.\r\n",
       "javaType": "AuthorizationStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": [
         "Accepted",
         "Blocked",
@@ -37,7 +36,6 @@
       "description": "Enumeration of possible idToken types.\r\n",
       "javaType": "IdTokenEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": [
         "Central",
         "eMAID",
@@ -53,14 +51,12 @@
       "description": "Message_ Content. Format. Message_ Format_ Code\r\nurn:x-enexis:ecdm:uid:1:570848\r\nFormat of the message.\r\n",
       "javaType": "MessageFormatEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["ASCII", "HTML", "URI", "UTF8"]
     },
     "UpdateEnumType": {
       "description": "This contains the type of update (full or differential) of this request.\r\n",
       "javaType": "UpdateEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Differential", "Full"]
     },
     "AdditionalInfoType": {
@@ -132,7 +128,6 @@
         "evseId": {
           "description": "Only used when the IdToken is only valid for one or more specific EVSEs, not for the entire Charging Station.\r\n\r\n",
           "type": "array",
-          "additionalItems": false,
           "items": {
             "type": "integer"
           },
@@ -163,7 +158,6 @@
         },
         "additionalInfo": {
           "type": "array",
-          "additionalItems": false,
           "items": {
             "$ref": "#/definitions/AdditionalInfoType"
           },
@@ -214,7 +208,6 @@
     },
     "localAuthorizationList": {
       "type": "array",
-      "additionalItems": false,
       "items": {
         "$ref": "#/definitions/AuthorizationData"
       },

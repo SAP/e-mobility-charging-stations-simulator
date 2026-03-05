@@ -19,7 +19,6 @@
       "description": "Indicates whether the Charging Station will send the requested notification or not.\r\n",
       "javaType": "TriggerMessageStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Accepted", "Rejected", "NotImplemented"]
     },
     "StatusInfoType": {

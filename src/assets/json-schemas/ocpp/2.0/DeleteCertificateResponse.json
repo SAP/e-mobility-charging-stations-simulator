@@ -19,7 +19,6 @@
       "description": "Charging Station indicates if it can process the request.\r\n",
       "javaType": "DeleteCertificateStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Accepted", "Failed", "NotFound"]
     },
     "StatusInfoType": {

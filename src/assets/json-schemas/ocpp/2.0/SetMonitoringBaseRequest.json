@@ -19,7 +19,6 @@
       "description": "Specify which monitoring base will be set\r\n",
       "javaType": "MonitoringBaseEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["All", "FactoryDefault", "HardWiredOnly"]
     }
   },

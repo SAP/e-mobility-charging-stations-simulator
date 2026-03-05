@@ -19,7 +19,6 @@
       "description": "The type of this monitor, e.g. a threshold, delta or periodic monitor. \r\n",
       "javaType": "MonitorEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["UpperThreshold", "LowerThreshold", "Delta", "Periodic", "PeriodicClockAligned"]
     },
     "ComponentType": {
@@ -84,7 +83,6 @@
         },
         "variableMonitoring": {
           "type": "array",
-          "additionalItems": false,
           "items": {
             "$ref": "#/definitions/VariableMonitoringType"
           },
@@ -155,7 +153,6 @@
     },
     "monitor": {
       "type": "array",
-      "additionalItems": false,
       "items": {
         "$ref": "#/definitions/MonitoringDataType"
       },

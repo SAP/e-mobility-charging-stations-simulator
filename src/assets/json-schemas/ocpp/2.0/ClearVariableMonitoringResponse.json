@@ -19,7 +19,6 @@
       "description": "Result of the clear request for this monitor, identified by its Id.\r\n\r\n",
       "javaType": "ClearMonitoringStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Accepted", "Rejected", "NotFound"]
     },
     "ClearMonitoringResultType": {
@@ -74,7 +73,6 @@
     },
     "clearMonitoringResult": {
       "type": "array",
-      "additionalItems": false,
       "items": {
         "$ref": "#/definitions/ClearMonitoringResultType"
       },

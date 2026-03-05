@@ -19,14 +19,12 @@
       "description": "Specifies the event notification type of the message.\r\n\r\n",
       "javaType": "EventNotificationEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["HardWiredNotification", "HardWiredMonitor", "PreconfiguredMonitor", "CustomMonitor"]
     },
     "EventTriggerEnumType": {
       "description": "Type of monitor that triggered this event, e.g. exceeding a threshold value.\r\n\r\n",
       "javaType": "EventTriggerEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Alerting", "Delta", "Periodic"]
     },
     "ComponentType": {
@@ -192,7 +190,6 @@
     },
     "eventData": {
       "type": "array",
-      "additionalItems": false,
       "items": {
         "$ref": "#/definitions/EventDataType"
       },

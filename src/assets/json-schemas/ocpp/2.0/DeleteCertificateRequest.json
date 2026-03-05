@@ -19,7 +19,6 @@
       "description": "Used algorithms for the hashes provided.\r\n",
       "javaType": "HashAlgorithmEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["SHA256", "SHA384", "SHA512"]
     },
     "CertificateHashDataType": {

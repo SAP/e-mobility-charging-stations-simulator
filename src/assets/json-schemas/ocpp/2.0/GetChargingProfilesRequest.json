@@ -18,14 +18,12 @@
     "ChargingLimitSourceEnumType": {
       "javaType": "ChargingLimitSourceEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["EMS", "Other", "SO", "CSO"]
     },
     "ChargingProfilePurposeEnumType": {
       "description": "Charging_ Profile. Charging_ Profile_ Purpose. Charging_ Profile_ Purpose_ Code\r\nurn:x-oca:ocpp:uid:1:569231\r\nDefines the purpose of the schedule transferred by this profile\r\n",
       "javaType": "ChargingProfilePurposeEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": [
         "ChargingStationExternalConstraints",
         "ChargingStationMaxProfile",
@@ -52,7 +50,6 @@
         "chargingProfileId": {
           "description": "List of all the chargingProfileIds requested. Any ChargingProfile that matches one of these profiles will be reported. If omitted, the Charging Station SHALL not filter on chargingProfileId. This field SHALL NOT contain more ids than set in &lt;&lt;configkey-charging-profile-entries,ChargingProfileEntries.maxLimit&gt;&gt;\r\n\r\n",
           "type": "array",
-          "additionalItems": false,
           "items": {
             "type": "integer"
           },
@@ -61,7 +58,6 @@
         "chargingLimitSource": {
           "description": "For which charging limit sources, charging profiles SHALL be reported. If omitted, the Charging Station SHALL not filter on chargingLimitSource.\r\n",
           "type": "array",
-          "additionalItems": false,
           "items": {
             "$ref": "#/definitions/ChargingLimitSourceEnumType"
           },

@@ -19,7 +19,6 @@
       "description": "Returns whether certificate signing has been accepted, otherwise rejected.\r\n",
       "javaType": "CertificateSignedStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Accepted", "Rejected"]
     },
     "StatusInfoType": {

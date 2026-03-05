@@ -19,7 +19,6 @@
       "description": "This indicates the success or failure of the canceling of a reservation by CSMS.\r\n",
       "javaType": "CancelReservationStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Accepted", "Rejected"]
     },
     "StatusInfoType": {

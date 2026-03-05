@@ -19,7 +19,6 @@
       "description": "Returns whether the CSMS has been able to process the message successfully. It does not imply that the evChargingNeeds can be met with the current charging profile.\r\n",
       "javaType": "NotifyEVChargingNeedsStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Accepted", "Rejected", "Processing"]
     },
     "StatusInfoType": {

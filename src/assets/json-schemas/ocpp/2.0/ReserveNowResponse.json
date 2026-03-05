@@ -19,7 +19,6 @@
       "description": "This indicates the success or failure of the reservation.\r\n",
       "javaType": "ReserveNowStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Accepted", "Faulted", "Occupied", "Rejected", "Unavailable"]
     },
     "StatusInfoType": {

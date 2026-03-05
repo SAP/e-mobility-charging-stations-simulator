@@ -19,7 +19,6 @@
       "description": "This field indicates whether the Charging Station was able to accept the request.\r\n",
       "javaType": "GenericDeviceModelStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Accepted", "Rejected", "NotSupported", "EmptyResultSet"]
     },
     "StatusInfoType": {

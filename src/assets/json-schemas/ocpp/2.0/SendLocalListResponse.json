@@ -19,7 +19,6 @@
       "description": "This indicates whether the Charging Station has successfully received and applied the update of the Local Authorization List.\r\n",
       "javaType": "SendLocalListStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Accepted", "Failed", "VersionMismatch"]
     },
     "StatusInfoType": {

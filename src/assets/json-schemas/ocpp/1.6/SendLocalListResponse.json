@@ -6,7 +6,6 @@
   "properties": {
     "status": {
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Accepted", "Failed", "NotSupported", "VersionMismatch"]
     }
   },

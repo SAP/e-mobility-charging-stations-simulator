@@ -20,14 +20,12 @@
       "javaType": "AttributeEnum",
       "type": "string",
       "default": "Actual",
-      "additionalProperties": false,
       "enum": ["Actual", "Target", "MinSet", "MaxSet"]
     },
     "DataEnumType": {
       "description": "Data type of this variable.\r\n",
       "javaType": "DataEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": [
         "string",
         "decimal",
@@ -44,7 +42,6 @@
       "javaType": "MutabilityEnum",
       "type": "string",
       "default": "ReadWrite",
-      "additionalProperties": false,
       "enum": ["ReadOnly", "WriteOnly", "ReadWrite"]
     },
     "ComponentType": {
@@ -109,7 +106,6 @@
         },
         "variableAttribute": {
           "type": "array",
-          "additionalItems": false,
           "items": {
             "$ref": "#/definitions/VariableAttributeType"
           },
@@ -231,7 +227,6 @@
     },
     "reportData": {
       "type": "array",
-      "additionalItems": false,
       "items": {
         "$ref": "#/definitions/ReportDataType"
       },

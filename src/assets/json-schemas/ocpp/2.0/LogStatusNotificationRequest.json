@@ -19,7 +19,6 @@
       "description": "This contains the status of the log upload.\r\n",
       "javaType": "UploadLogStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": [
         "BadMessage",
         "Idle",

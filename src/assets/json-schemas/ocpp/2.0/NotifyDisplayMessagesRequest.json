@@ -19,21 +19,18 @@
       "description": "Message_ Content. Format. Message_ Format_ Code\r\nurn:x-enexis:ecdm:uid:1:570848\r\nFormat of the message.\r\n",
       "javaType": "MessageFormatEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["ASCII", "HTML", "URI", "UTF8"]
     },
     "MessagePriorityEnumType": {
       "description": "Message_ Info. Priority. Message_ Priority_ Code\r\nurn:x-enexis:ecdm:uid:1:569253\r\nWith what priority should this message be shown\r\n",
       "javaType": "MessagePriorityEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["AlwaysFront", "InFront", "NormalCycle"]
     },
     "MessageStateEnumType": {
       "description": "Message_ Info. State. Message_ State_ Code\r\nurn:x-enexis:ecdm:uid:1:569254\r\nDuring what state should this message be shown. When omitted this message should be shown in any state of the Charging Station.\r\n",
       "javaType": "MessageStateEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Charging", "Faulted", "Idle", "Unavailable"]
     },
     "ComponentType": {
@@ -158,7 +155,6 @@
     },
     "messageInfo": {
       "type": "array",
-      "additionalItems": false,
       "items": {
         "$ref": "#/definitions/MessageInfoType"
       },

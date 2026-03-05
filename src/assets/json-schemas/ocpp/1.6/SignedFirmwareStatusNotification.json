@@ -4,7 +4,6 @@
   "definitions": {
     "FirmwareStatusEnumType": {
       "type": "string",
-      "additionalProperties": false,
       "enum": [
         "Downloaded",
         "DownloadFailed",

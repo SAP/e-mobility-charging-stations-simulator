@@ -9,7 +9,6 @@
     },
     "errorCode": {
       "type": "string",
-      "additionalProperties": false,
       "enum": [
         "ConnectorLockFailure",
         "EVCommunicationError",
@@ -35,7 +34,6 @@
     },
     "status": {
       "type": "string",
-      "additionalProperties": false,
       "enum": [
         "Available",
         "Preparing",

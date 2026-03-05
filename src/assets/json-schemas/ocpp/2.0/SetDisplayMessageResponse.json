@@ -19,7 +19,6 @@
       "description": "This indicates whether the Charging Station is able to display the message.\r\n",
       "javaType": "DisplayMessageStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": [
         "Accepted",
         "NotSupportedMessageFormat",

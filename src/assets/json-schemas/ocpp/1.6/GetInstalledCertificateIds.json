@@ -4,7 +4,6 @@
   "definitions": {
     "CertificateUseEnumType": {
       "type": "string",
-      "additionalProperties": false,
       "enum": ["CentralSystemRootCertificate", "ManufacturerRootCertificate"]
     }
   },

@@ -19,7 +19,6 @@
       "description": "This contains the type of reset that the Charging Station or EVSE should perform.\r\n",
       "javaType": "ResetEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Immediate", "OnIdle"]
     }
   },

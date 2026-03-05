@@ -4,7 +4,6 @@
   "definitions": {
     "GenericStatusEnumType": {
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Accepted", "Rejected"]
     }
   },

@@ -19,7 +19,6 @@
       "description": "Defines whether certificate needs to be installed or updated.\r\n",
       "javaType": "CertificateActionEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Install", "Update"]
     }
   },

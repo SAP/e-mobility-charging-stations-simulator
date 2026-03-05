@@ -19,7 +19,6 @@
       "description": "This indicates whether the Charging Station has unlocked the connector.\r\n",
       "javaType": "UnlockStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Unlocked", "UnlockFailed", "OngoingAuthorizedTransaction", "UnknownConnector"]
     },
     "StatusInfoType": {

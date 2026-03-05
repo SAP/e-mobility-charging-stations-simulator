@@ -19,7 +19,6 @@
       "description": "Returns whether the Charging Station has been able to remove the message.\r\n",
       "javaType": "ClearMessageStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Accepted", "Unknown"]
     },
     "StatusInfoType": {

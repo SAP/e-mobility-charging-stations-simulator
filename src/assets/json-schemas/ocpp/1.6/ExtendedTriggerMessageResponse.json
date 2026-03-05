@@ -4,7 +4,6 @@
   "definitions": {
     "TriggerMessageStatusEnumType": {
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Accepted", "Rejected", "NotImplemented"]
     }
   },

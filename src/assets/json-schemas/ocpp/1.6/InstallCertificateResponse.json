@@ -4,7 +4,6 @@
   "definitions": {
     "InstallCertificateStatusEnumType": {
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Accepted", "Failed", "Rejected"]
     }
   },

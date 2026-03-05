@@ -12,7 +12,6 @@
     },
     "chargingRateUnit": {
       "type": "string",
-      "additionalProperties": false,
       "enum": ["A", "W"]
     }
   },

@@ -19,7 +19,6 @@
       "description": "Indicates the certificate type that is sent.\r\n",
       "javaType": "InstallCertificateUseEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": [
         "V2GRootCertificate",
         "MORootCertificate",

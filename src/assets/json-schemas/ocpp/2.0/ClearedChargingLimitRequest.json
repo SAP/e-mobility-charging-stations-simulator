@@ -19,7 +19,6 @@
       "description": "Source of the charging limit.\r\n",
       "javaType": "ChargingLimitSourceEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["EMS", "Other", "SO", "CSO"]
     }
   },

@@ -19,7 +19,6 @@
       "description": "Indicates whether the message was processed properly.\r\n",
       "javaType": "Iso15118EVCertificateStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Accepted", "Failed"]
     },
     "StatusInfoType": {

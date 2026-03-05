@@ -4,7 +4,6 @@
   "definitions": {
     "DeleteCertificateStatusEnumType": {
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Accepted", "Failed", "NotFound"]
     }
   },

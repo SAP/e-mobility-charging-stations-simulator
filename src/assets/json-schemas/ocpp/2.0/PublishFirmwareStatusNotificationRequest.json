@@ -19,7 +19,6 @@
       "description": "This contains the progress status of the publishfirmware\r\ninstallation.\r\n",
       "javaType": "PublishFirmwareStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": [
         "Idle",
         "DownloadScheduled",
@@ -46,7 +45,6 @@
     "location": {
       "description": "Required if status is Published. Can be multiple URI’s, if the Local Controller supports e.g. HTTP, HTTPS, and FTP.\r\n",
       "type": "array",
-      "additionalItems": false,
       "items": {
         "type": "string",
         "maxLength": 512

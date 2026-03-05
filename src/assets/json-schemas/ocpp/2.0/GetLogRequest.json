@@ -19,7 +19,6 @@
       "description": "This contains the type of log file that the Charging Station\r\nshould send.\r\n",
       "javaType": "LogEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["DiagnosticsLog", "SecurityLog"]
     },
     "LogParametersType": {

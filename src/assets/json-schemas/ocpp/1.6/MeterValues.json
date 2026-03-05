@@ -29,7 +29,6 @@
                 },
                 "context": {
                   "type": "string",
-                  "additionalProperties": false,
                   "enum": [
                     "Interruption.Begin",
                     "Interruption.End",
@@ -43,12 +42,10 @@
                 },
                 "format": {
                   "type": "string",
-                  "additionalProperties": false,
                   "enum": ["Raw", "SignedData"]
                 },
                 "measurand": {
                   "type": "string",
-                  "additionalProperties": false,
                   "enum": [
                     "Energy.Active.Export.Register",
                     "Energy.Active.Import.Register",
@@ -76,17 +73,14 @@
                 },
                 "phase": {
                   "type": "string",
-                  "additionalProperties": false,
                   "enum": ["L1", "L2", "L3", "N", "L1-N", "L2-N", "L3-N", "L1-L2", "L2-L3", "L3-L1"]
                 },
                 "location": {
                   "type": "string",
-                  "additionalProperties": false,
                   "enum": ["Cable", "EV", "Inlet", "Outlet", "Body"]
                 },
                 "unit": {
                   "type": "string",
-                  "additionalProperties": false,
                   "enum": [
                     "Wh",
                     "kWh",

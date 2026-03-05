@@ -19,7 +19,6 @@
       "description": "This contains whether the Charging Station has been registered\r\nwithin the CSMS.\r\n",
       "javaType": "RegistrationStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Accepted", "Pending", "Rejected"]
     },
     "StatusInfoType": {

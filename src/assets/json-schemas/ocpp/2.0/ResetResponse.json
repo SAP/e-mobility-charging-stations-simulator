@@ -19,7 +19,6 @@
       "description": "This indicates whether the Charging Station is able to perform the reset.\r\n",
       "javaType": "ResetStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Accepted", "Rejected", "Scheduled"]
     },
     "StatusInfoType": {

@@ -21,17 +21,14 @@
         },
         "chargingProfilePurpose": {
           "type": "string",
-          "additionalProperties": false,
           "enum": ["ChargePointMaxProfile", "TxDefaultProfile", "TxProfile"]
         },
         "chargingProfileKind": {
           "type": "string",
-          "additionalProperties": false,
           "enum": ["Absolute", "Recurring", "Relative"]
         },
         "recurrencyKind": {
           "type": "string",
-          "additionalProperties": false,
           "enum": ["Daily", "Weekly"]
         },
         "validFrom": {
@@ -54,7 +51,6 @@
             },
             "chargingRateUnit": {
               "type": "string",
-              "additionalProperties": false,
               "enum": ["A", "W"]
             },
             "chargingSchedulePeriod": {

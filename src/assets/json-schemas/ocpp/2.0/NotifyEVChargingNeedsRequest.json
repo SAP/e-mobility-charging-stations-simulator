@@ -19,7 +19,6 @@
       "description": "Charging_ Needs. Requested. Energy_ Transfer_ Mode_ Code\r\nurn:x-oca:ocpp:uid:1:569209\r\nMode of energy transfer requested by the EV.\r\n",
       "javaType": "EnergyTransferModeEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["DC", "AC_single_phase", "AC_two_phase", "AC_three_phase"]
     },
     "ACChargingParametersType": {

@@ -19,7 +19,6 @@
       "description": "This contains the progress status of the firmware installation.\r\n",
       "javaType": "FirmwareStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": [
         "Downloaded",
         "DownloadFailed",

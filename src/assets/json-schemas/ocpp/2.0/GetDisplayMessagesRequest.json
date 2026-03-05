@@ -19,14 +19,12 @@
       "description": "If provided the Charging Station shall return Display Messages with the given priority only.\r\n",
       "javaType": "MessagePriorityEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["AlwaysFront", "InFront", "NormalCycle"]
     },
     "MessageStateEnumType": {
       "description": "If provided the Charging Station shall return Display Messages with the given state only. \r\n",
       "javaType": "MessageStateEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Charging", "Faulted", "Idle", "Unavailable"]
     }
   },
@@ -39,7 +37,6 @@
     "id": {
       "description": "If provided the Charging Station shall return Display Messages of the given ids. This field SHALL NOT contain more ids than set in &lt;&lt;configkey-number-of-display-messages,NumberOfDisplayMessages.maxLimit&gt;&gt;\r\n\r\n",
       "type": "array",
-      "additionalItems": false,
       "items": {
         "type": "integer"
       },

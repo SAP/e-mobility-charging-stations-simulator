@@ -19,7 +19,6 @@
       "description": "This field indicates whether the Charging Station was able to accept the request.\r\n\r\n",
       "javaType": "UpdateFirmwareStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": [
         "Accepted",
         "Rejected",

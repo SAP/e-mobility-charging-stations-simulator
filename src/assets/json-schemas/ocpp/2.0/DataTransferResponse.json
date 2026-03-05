@@ -19,7 +19,6 @@
       "description": "This indicates the success or failure of the data transfer.\r\n",
       "javaType": "DataTransferStatusEnum",
       "type": "string",
-      "additionalProperties": false,
       "enum": ["Accepted", "Rejected", "UnknownMessageId", "UnknownVendorId"]
     },
     "StatusInfoType": {
