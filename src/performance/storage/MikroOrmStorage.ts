@@ -2,8 +2,11 @@
 
 import { type Options as MariaDbOptions, MikroORM as MariaDbORM } from '@mikro-orm/mariadb'
 import { type Options as SqliteOptions, MikroORM as SqliteORM } from '@mikro-orm/sqlite'
+import { existsSync, mkdirSync } from 'node:fs'
+import { dirname } from 'node:path'
 
-import { type PerformanceRecord, type Statistics, StorageType } from '../../types/index.js'
+import { BaseError } from '../../exception/index.js'
+import { PerformanceRecord, type Statistics, StorageType } from '../../types/index.js'
 import { Constants } from '../../utils/index.js'
 import { Storage } from './Storage.js'
 
@@ -32,14 +35,24 @@ export class MikroOrmStorage extends Storage {
   public async open (): Promise<void> {
     try {
       if (this.orm == null) {
+        if (this.storageType === StorageType.SQLITE) {
+          if (!existsSync(dirname(this.dbName))) {
+            mkdirSync(dirname(this.dbName), { recursive: true })
+          }
+        }
+        let orm: MariaDbORM | SqliteORM | undefined
         switch (this.storageType) {
           case StorageType.MARIA_DB:
           case StorageType.MYSQL:
-            this.orm = await MariaDbORM.init(this.getOptions() as MariaDbOptions)
+            orm = await MariaDbORM.init(this.getOptions() as MariaDbOptions)
             break
           case StorageType.SQLITE:
-            this.orm = await SqliteORM.init(this.getOptions() as SqliteOptions)
+            orm = await SqliteORM.init(this.getOptions() as SqliteOptions)
             break
+        }
+        if (orm != null) {
+          await orm.schema.updateSchema()
+          this.orm = orm
         }
       }
     } catch (error) {
@@ -49,8 +62,10 @@ export class MikroOrmStorage extends Storage {
 
   public async storePerformanceStatistics (performanceStatistics: Statistics): Promise<void> {
     try {
+      this.checkDBConnection()
       this.setPerformanceStatistics(performanceStatistics)
-      await this.orm?.em.upsert({
+      const em = this.orm?.em.fork()
+      await em?.upsert(PerformanceRecord, {
         ...performanceStatistics,
         statisticsData: Array.from(performanceStatistics.statisticsData, ([name, value]) => ({
           ...value,
@@ -58,12 +73,20 @@ export class MikroOrmStorage extends Storage {
             value.measurementTimeSeries != null ? [...value.measurementTimeSeries] : undefined,
           name,
         })),
-      } satisfies PerformanceRecord)
+      })
     } catch (error) {
       this.handleDBStorageError(
         this.storageType,
         error as Error,
         Constants.PERFORMANCE_RECORDS_TABLE
+      )
+    }
+  }
+
+  private checkDBConnection (): void {
+    if (this.orm == null) {
+      throw new BaseError(
+        `${this.logPrefix} ${this.getDBNameFromStorageType(this.storageType) ?? 'Unknown'} ORM not initialized while trying to issue a request`
       )
     }
   }
@@ -88,8 +111,7 @@ export class MikroOrmStorage extends Storage {
     return {
       clientUrl: this.getClientUrl(),
       dbName: this.dbName,
-      entities: ['./dist/types/orm/entities/*.js'],
-      entitiesTs: ['./src/types/orm/entities/*.ts'],
+      entities: [PerformanceRecord],
     }
   }
 }

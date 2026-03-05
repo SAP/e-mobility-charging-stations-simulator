@@ -1,26 +1,6 @@
 import { Entity, PrimaryKey, Property } from '@mikro-orm/core'
 
-interface StatisticsData {
-  avgTimeMeasurement: number
-  currentTimeMeasurement: number
-  errorCount: number
-  maxTimeMeasurement: number
-  measurementTimeSeries: {
-    timestamp: number
-    value: number
-  }[]
-  medTimeMeasurement: number
-  minTimeMeasurement: number
-  name: string
-  ninetyFiveThPercentileTimeMeasurement: number
-  requestCount: number
-  responseCount: number
-  stdTimeMeasurement: number
-  timeMeasurementCount: number
-  totalTimeMeasurement: number
-}
-
-@Entity()
+@Entity({ tableName: 'performance_records' })
 export class PerformanceRecord {
   @Property()
   createdAt!: Date
@@ -31,8 +11,8 @@ export class PerformanceRecord {
   @Property()
   name!: string
 
-  @Property()
-  statisticsData!: Partial<StatisticsData>[]
+  @Property({ type: 'json' })
+  statisticsData!: Record<string, unknown>[]
 
   @Property()
   updatedAt?: Date
