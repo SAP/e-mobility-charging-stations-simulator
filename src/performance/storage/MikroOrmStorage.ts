@@ -51,7 +51,12 @@ export class MikroOrmStorage extends Storage {
             break
         }
         if (orm != null) {
-          await orm.schema.updateSchema()
+          try {
+            await orm.schema.updateSchema()
+          } catch (error) {
+            await orm.close()
+            throw error
+          }
           this.orm = orm
         }
       }
@@ -62,8 +67,8 @@ export class MikroOrmStorage extends Storage {
 
   public async storePerformanceStatistics (performanceStatistics: Statistics): Promise<void> {
     try {
-      this.checkDBConnection()
       this.setPerformanceStatistics(performanceStatistics)
+      this.checkDBConnection()
       const em = this.orm?.em.fork()
       await em?.upsert(PerformanceRecord, {
         ...performanceStatistics,
