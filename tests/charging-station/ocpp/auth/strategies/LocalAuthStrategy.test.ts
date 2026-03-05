@@ -217,9 +217,9 @@ await describe('LocalAuthStrategy', async () => {
         method: AuthenticationMethod.REMOTE_AUTHORIZATION,
       })
 
-      // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
-      const returnValue = strategy.cacheResult('TEST_TAG', result)
-      expect(returnValue).toBeUndefined()
+      expect(() => {
+        strategy.cacheResult('TEST_TAG', result)
+      }).not.toThrow()
     })
   })
 
