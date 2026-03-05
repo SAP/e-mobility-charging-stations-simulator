@@ -7,6 +7,7 @@ import { expect } from '@std/expect'
 import type { ChargingStation } from '../../../../../src/charging-station/ChargingStation.js'
 import type {
   AuthCache,
+  LocalAuthEntry,
   LocalAuthListManager,
   OCPPAuthAdapter,
   OCPPAuthService,
@@ -110,31 +111,42 @@ export const createMockAuthorizationResult = (
  */
 export const createMockAuthService = (overrides?: Partial<OCPPAuthService>): OCPPAuthService =>
   ({
-    authorize: () =>
-      Promise.resolve({
-        expiresAt: new Date(Date.now() + 3600000),
-        isOffline: false,
-        method: AuthenticationMethod.LOCAL_LIST,
-        status: AuthorizationStatus.ACCEPTED,
-        timestamp: new Date(),
+    authorize: (_request: AuthRequest) =>
+      new Promise<AuthorizationResult>(resolve => {
+        resolve(
+          createMockAuthorizationResult({
+            method: AuthenticationMethod.LOCAL_LIST,
+          })
+        )
       }),
-    clearCache: () => Promise.resolve(),
+    clearCache: () => {
+      /* empty */
+    },
     getConfiguration: () => ({}) as AuthConfiguration,
     getStats: () =>
-      Promise.resolve({
-        avgResponseTime: 0,
-        cacheHitRate: 0,
-        failedAuth: 0,
-        lastUpdated: new Date(),
-        localUsageRate: 1,
-        remoteSuccessRate: 0,
-        successfulAuth: 0,
-        totalRequests: 0,
+      new Promise<Record<string, unknown>>(resolve => {
+        resolve({
+          avgResponseTime: 0,
+          cacheHitRate: 0,
+          failedAuth: 0,
+          lastUpdated: new Date(),
+          localUsageRate: 1,
+          remoteSuccessRate: 0,
+          successfulAuth: 0,
+          totalRequests: 0,
+        })
       }),
-    invalidateCache: () => Promise.resolve(),
-    isLocallyAuthorized: () => Promise.resolve(undefined),
-    testConnectivity: () => Promise.resolve(true),
-    updateConfiguration: () => Promise.resolve(),
+    invalidateCache: () => {
+      /* empty */
+    },
+    isLocallyAuthorized: (_identifier: UnifiedIdentifier, _connectorId?: number) =>
+      new Promise<AuthorizationResult | undefined>(resolve => {
+        resolve(undefined)
+      }),
+    testConnectivity: () => true,
+    updateConfiguration: () => {
+      /* empty */
+    },
     ...overrides,
   }) as OCPPAuthService
 
@@ -145,23 +157,28 @@ export const createMockAuthService = (overrides?: Partial<OCPPAuthService>): OCP
 /**
  * Create a mock AuthCache for testing.
  * @param overrides - Partial AuthCache methods to override defaults
- * @returns Mock AuthCache with stubbed async methods
+ * @returns Mock AuthCache with stubbed methods
  */
 export const createMockAuthCache = (overrides?: Partial<AuthCache>): AuthCache => ({
-  clear: async () => Promise.resolve(),
-  get: async (_key: string) => Promise.resolve(undefined),
-  getStats: async () =>
-    Promise.resolve({
-      evictions: 0,
-      expiredEntries: 0,
-      hitRate: 0,
-      hits: 0,
-      memoryUsage: 0,
-      misses: 0,
-      totalEntries: 0,
-    }),
-  remove: async (_key: string) => Promise.resolve(),
-  set: async (_key: string, _value: unknown, _ttl?: number) => Promise.resolve(),
+  clear: () => {
+    /* empty */
+  },
+  get: (_key: string) => undefined,
+  getStats: () => ({
+    evictions: 0,
+    expiredEntries: 0,
+    hitRate: 0,
+    hits: 0,
+    memoryUsage: 0,
+    misses: 0,
+    totalEntries: 0,
+  }),
+  remove: (_key: string) => {
+    /* empty */
+  },
+  set: (_key: string, _value: unknown, _ttl?: number) => {
+    /* empty */
+  },
   ...overrides,
 })
 
@@ -179,12 +196,14 @@ export const createMockOCPPAdapter = (
   ocppVersion: OCPPVersion,
   overrides?: Partial<OCPPAuthAdapter>
 ): OCPPAuthAdapter => ({
-  authorizeRemote: async (_identifier: UnifiedIdentifier) =>
-    Promise.resolve(
-      createMockAuthorizationResult({
-        method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-      })
-    ),
+  authorizeRemote: (_identifier: UnifiedIdentifier) =>
+    new Promise<AuthorizationResult>(resolve => {
+      resolve(
+        createMockAuthorizationResult({
+          method: AuthenticationMethod.REMOTE_AUTHORIZATION,
+        })
+      )
+    }),
   convertFromUnifiedIdentifier: (identifier: UnifiedIdentifier) =>
     ocppVersion === OCPPVersion.VERSION_16
       ? identifier.value
@@ -198,9 +217,9 @@ export const createMockOCPPAdapter = (
         : ((identifier as { idToken?: string }).idToken ?? 'unknown'),
   }),
   getConfigurationSchema: () => ({}),
-  isRemoteAvailable: async () => Promise.resolve(true),
+  isRemoteAvailable: () => true,
   ocppVersion,
-  validateConfiguration: async (_config: AuthConfiguration) => Promise.resolve(true),
+  validateConfiguration: (_config: AuthConfiguration) => true,
   ...overrides,
 })
 // ============================================================================
@@ -284,7 +303,10 @@ export const createMockAuthServiceTestStation = (
     idTagLocalAuthorized: () => false,
     isConnected: () => true,
     logPrefix: () => `[TEST-CS-${id}]`,
-    sendRequest: () => Promise.resolve({}),
+    sendRequest: () =>
+      new Promise<Record<string, never>>(resolve => {
+        resolve({})
+      }),
     stationInfo: {
       chargingStationId: `TEST-CS-${id}`,
       hashId: `test-hash-${id}`,
@@ -304,12 +326,33 @@ export const createMockAuthServiceTestStation = (
 export const createMockLocalAuthListManager = (
   overrides?: Partial<LocalAuthListManager>
 ): LocalAuthListManager => ({
-  addEntry: async () => Promise.resolve(),
-  clearAll: async () => Promise.resolve(),
-  getAllEntries: async () => Promise.resolve([]),
-  getEntry: async () => Promise.resolve(undefined),
-  getVersion: async () => Promise.resolve(1),
-  removeEntry: async () => Promise.resolve(),
-  updateVersion: async () => Promise.resolve(),
+  addEntry: () =>
+    new Promise<void>(resolve => {
+      resolve()
+    }),
+  clearAll: () =>
+    new Promise<void>(resolve => {
+      resolve()
+    }),
+  getAllEntries: () =>
+    new Promise<LocalAuthEntry[]>(resolve => {
+      resolve([])
+    }),
+  getEntry: () =>
+    new Promise<LocalAuthEntry | undefined>(resolve => {
+      resolve(undefined)
+    }),
+  getVersion: () =>
+    new Promise<number>(resolve => {
+      resolve(1)
+    }),
+  removeEntry: () =>
+    new Promise<void>(resolve => {
+      resolve()
+    }),
+  updateVersion: () =>
+    new Promise<void>(resolve => {
+      resolve()
+    }),
   ...overrides,
 })

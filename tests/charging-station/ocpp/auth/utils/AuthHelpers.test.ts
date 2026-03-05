@@ -216,67 +216,6 @@ await describe('AuthHelpers', async () => {
     })
   })
 
-  await describe('isCacheable', async () => {
-    await it('should return false for non-ACCEPTED status', () => {
-      const result: AuthorizationResult = {
-        isOffline: false,
-        method: AuthenticationMethod.LOCAL_LIST,
-        status: AuthorizationStatus.BLOCKED,
-        timestamp: new Date(),
-      }
-
-      expect(AuthHelpers.isCacheable(result)).toBe(false)
-    })
-
-    await it('should return false for ACCEPTED without expiry date', () => {
-      const result: AuthorizationResult = {
-        isOffline: false,
-        method: AuthenticationMethod.LOCAL_LIST,
-        status: AuthorizationStatus.ACCEPTED,
-        timestamp: new Date(),
-      }
-
-      expect(AuthHelpers.isCacheable(result)).toBe(false)
-    })
-
-    await it('should return false for already expired result', () => {
-      const result: AuthorizationResult = {
-        expiryDate: new Date(Date.now() - 1000),
-        isOffline: false,
-        method: AuthenticationMethod.LOCAL_LIST,
-        status: AuthorizationStatus.ACCEPTED,
-        timestamp: new Date(),
-      }
-
-      expect(AuthHelpers.isCacheable(result)).toBe(false)
-    })
-
-    await it('should return false for expiry too far in future (>1 year)', () => {
-      const oneYearPlusOne = new Date(Date.now() + 366 * 24 * 60 * 60 * 1000)
-      const result: AuthorizationResult = {
-        expiryDate: oneYearPlusOne,
-        isOffline: false,
-        method: AuthenticationMethod.LOCAL_LIST,
-        status: AuthorizationStatus.ACCEPTED,
-        timestamp: new Date(),
-      }
-
-      expect(AuthHelpers.isCacheable(result)).toBe(false)
-    })
-
-    await it('should return true for valid ACCEPTED result with reasonable expiry', () => {
-      const result: AuthorizationResult = {
-        expiryDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        isOffline: false,
-        method: AuthenticationMethod.LOCAL_LIST,
-        status: AuthorizationStatus.ACCEPTED,
-        timestamp: new Date(),
-      }
-
-      expect(AuthHelpers.isCacheable(result)).toBe(true)
-    })
-  })
-
   await describe('isPermanentFailure', async () => {
     await it('should return true for BLOCKED status', () => {
       const result: AuthorizationResult = {

@@ -13,25 +13,25 @@ export interface AuthCache {
   /**
    * Clear all cached entries
    */
-  clear(): Promise<void>
+  clear(): void
 
   /**
    * Get cached authorization result
    * @param identifier - Identifier to look up
    * @returns Cached result or undefined if not found/expired
    */
-  get(identifier: string): Promise<AuthorizationResult | undefined>
+  get(identifier: string): AuthorizationResult | undefined
 
   /**
    * Get cache statistics
    */
-  getStats(): Promise<CacheStats>
+  getStats(): CacheStats
 
   /**
    * Remove a cached entry
    * @param identifier - Identifier to remove
    */
-  remove(identifier: string): Promise<void>
+  remove(identifier: string): void
 
   /**
    * Cache an authorization result
@@ -39,7 +39,7 @@ export interface AuthCache {
    * @param result - Authorization result to cache
    * @param ttl - Optional TTL override in seconds
    */
-  set(identifier: string, result: AuthorizationResult, ttl?: number): Promise<void>
+  set(identifier: string, result: AuthorizationResult, ttl?: number): void
 }
 
 /**
@@ -139,7 +139,7 @@ export interface AuthStrategy {
   /**
    * Cleanup strategy resources
    */
-  cleanup(): Promise<void>
+  cleanup(): void
 
   /**
    * Optionally reconfigure the strategy at runtime
@@ -153,13 +153,13 @@ export interface AuthStrategy {
   /**
    * Get strategy-specific statistics
    */
-  getStats(): Promise<Record<string, unknown>>
+  getStats(): Promise<Record<string, unknown>> | Record<string, unknown>
 
   /**
    * Initialize the strategy with configuration
    * @param config - Authentication configuration
    */
-  initialize(config: AuthConfiguration): Promise<void>
+  initialize(config: AuthConfiguration): Promise<void> | void
 
   /**
    * Strategy name for identification
@@ -361,7 +361,7 @@ export interface OCPPAuthAdapter {
   /**
    * Check if remote authorization is available
    */
-  isRemoteAvailable(): Promise<boolean>
+  isRemoteAvailable(): boolean | Promise<boolean>
 
   /**
    * The OCPP version this adapter handles
@@ -371,7 +371,7 @@ export interface OCPPAuthAdapter {
   /**
    * Validate adapter configuration
    */
-  validateConfiguration(config: AuthConfiguration): Promise<boolean>
+  validateConfiguration(config: AuthConfiguration): boolean
 }
 
 /**
@@ -391,7 +391,7 @@ export interface OCPPAuthService {
   /**
    * Clear all cached authorizations
    */
-  clearCache(): Promise<void>
+  clearCache(): void
 
   /**
    * Get current authentication configuration
@@ -407,7 +407,7 @@ export interface OCPPAuthService {
    * Invalidate cached authorization for an identifier
    * @param identifier - Identifier to invalidate
    */
-  invalidateCache(identifier: UnifiedIdentifier): Promise<void>
+  invalidateCache(identifier: UnifiedIdentifier): void
 
   /**
    * Check if an identifier is locally authorized (cache/local list)
@@ -423,11 +423,11 @@ export interface OCPPAuthService {
   /**
    * Test connectivity to remote authorization service
    */
-  testConnectivity(): Promise<boolean>
+  testConnectivity(): boolean
 
   /**
    * Update authentication configuration
    * @param config - New configuration to apply
    */
-  updateConfiguration(config: Partial<AuthConfiguration>): Promise<void>
+  updateConfiguration(config: Partial<AuthConfiguration>): void
 }

@@ -26,10 +26,10 @@ import {
  * and offline capability when remote services are unavailable.
  */
 export class LocalAuthStrategy implements AuthStrategy {
-  public authCache?: AuthCache
   public readonly name = 'LocalAuthStrategy'
-
   public readonly priority = 1 // High priority - try local first
+
+  private authCache?: AuthCache
   private isInitialized = false
   private localAuthListManager?: LocalAuthListManager
   private stats = {
@@ -83,7 +83,7 @@ export class LocalAuthStrategy implements AuthStrategy {
 
       // 2. Try authorization cache
       if (config.authorizationCacheEnabled && this.authCache) {
-        const cacheResult = await this.checkAuthCache(request, config)
+        const cacheResult = this.checkAuthCache(request, config)
         if (cacheResult) {
           logger.debug(`LocalAuthStrategy: Found in cache: ${cacheResult.status}`)
           this.stats.cacheHits++
@@ -93,7 +93,7 @@ export class LocalAuthStrategy implements AuthStrategy {
 
       // 3. Apply offline fallback behavior
       if (config.offlineAuthorizationEnabled && request.allowOffline) {
-        const offlineResult = await this.handleOfflineFallback(request, config)
+        const offlineResult = this.handleOfflineFallback(request, config)
         if (offlineResult) {
           logger.debug(`LocalAuthStrategy: Offline fallback: ${offlineResult.status}`)
           this.stats.offlineDecisions++
@@ -128,17 +128,13 @@ export class LocalAuthStrategy implements AuthStrategy {
    * @param result - Authorization result to store in cache
    * @param ttl - Optional time-to-live in seconds for cache entry
    */
-  public async cacheResult (
-    identifier: string,
-    result: AuthorizationResult,
-    ttl?: number
-  ): Promise<void> {
+  public cacheResult (identifier: string, result: AuthorizationResult, ttl?: number): void {
     if (!this.authCache) {
       return
     }
 
     try {
-      await this.authCache.set(identifier, result, ttl)
+      this.authCache.set(identifier, result, ttl)
       logger.debug(`LocalAuthStrategy: Cached result for ${identifier}`)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
@@ -164,9 +160,8 @@ export class LocalAuthStrategy implements AuthStrategy {
 
   /**
    * Cleanup strategy resources
-   * @returns Promise that resolves when cleanup is complete
    */
-  public cleanup (): Promise<void> {
+  public cleanup (): void {
     logger.info('LocalAuthStrategy: Cleaning up...')
 
     // Reset internal state
@@ -180,15 +175,22 @@ export class LocalAuthStrategy implements AuthStrategy {
     }
 
     logger.info('LocalAuthStrategy: Cleanup completed')
-    return Promise.resolve()
+  }
+
+  /**
+   * Get the authorization cache
+   * @returns The authorization cache or undefined if not available
+   */
+  public getAuthCache (): AuthCache | undefined {
+    return this.authCache
   }
 
   /**
    * Get strategy statistics
    * @returns Strategy statistics including hit rates, request counts, and cache status
    */
-  public async getStats (): Promise<Record<string, unknown>> {
-    const cacheStats = this.authCache ? await this.authCache.getStats() : null
+  public getStats (): Record<string, unknown> {
+    const cacheStats = this.authCache ? this.authCache.getStats() : null
 
     return {
       ...this.stats,
@@ -212,9 +214,8 @@ export class LocalAuthStrategy implements AuthStrategy {
   /**
    * Initialize strategy with configuration and dependencies
    * @param config - Authentication configuration for strategy setup
-   * @returns Promise that resolves when initialization completes
    */
-  public initialize (config: AuthConfiguration): Promise<void> {
+  public initialize (config: AuthConfiguration): void {
     try {
       logger.info('LocalAuthStrategy: Initializing...')
 
@@ -237,16 +238,13 @@ export class LocalAuthStrategy implements AuthStrategy {
 
       this.isInitialized = true
       logger.info('LocalAuthStrategy: Initialized successfully')
-      return Promise.resolve()
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       logger.error(`LocalAuthStrategy: Initialization failed: ${errorMessage}`)
-      return Promise.reject(
-        new AuthenticationError(
-          `Local auth strategy initialization failed: ${errorMessage}`,
-          AuthErrorCode.CONFIGURATION_ERROR,
-          { cause: error instanceof Error ? error : new Error(String(error)) }
-        )
+      throw new AuthenticationError(
+        `Local auth strategy initialization failed: ${errorMessage}`,
+        AuthErrorCode.CONFIGURATION_ERROR,
+        { cause: error instanceof Error ? error : new Error(String(error)) }
       )
     }
   }
@@ -255,13 +253,13 @@ export class LocalAuthStrategy implements AuthStrategy {
    * Invalidate cached result for identifier
    * @param identifier - Unique identifier string to remove from cache
    */
-  public async invalidateCache (identifier: string): Promise<void> {
+  public invalidateCache (identifier: string): void {
     if (!this.authCache) {
       return
     }
 
     try {
-      await this.authCache.remove(identifier)
+      this.authCache.remove(identifier)
       logger.debug(`LocalAuthStrategy: Invalidated cache for ${identifier}`)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
@@ -312,29 +310,18 @@ export class LocalAuthStrategy implements AuthStrategy {
    * @param config - Authentication configuration (unused but required by interface)
    * @returns Cached authorization result if found and not expired; undefined otherwise
    */
-  private async checkAuthCache (
+  private checkAuthCache (
     request: AuthRequest,
     config: AuthConfiguration
-  ): Promise<AuthorizationResult | undefined> {
+  ): AuthorizationResult | undefined {
     if (!this.authCache) {
       return undefined
     }
 
     try {
-      const cachedResult = await this.authCache.get(request.identifier.value)
+      const cachedResult = this.authCache.get(request.identifier.value)
       if (!cachedResult) {
         return undefined
-      }
-
-      // Check if cached result is still valid based on timestamp and TTL
-      if (cachedResult.cacheTtl) {
-        const expiry = new Date(cachedResult.timestamp.getTime() + cachedResult.cacheTtl * 1000)
-        if (expiry < new Date()) {
-          logger.debug(`LocalAuthStrategy: Cached entry ${request.identifier.value} expired`)
-          // Remove expired entry
-          await this.authCache.remove(request.identifier.value)
-          return undefined
-        }
       }
 
       logger.debug(`LocalAuthStrategy: Cache hit for ${request.identifier.value}`)
@@ -446,41 +433,41 @@ export class LocalAuthStrategy implements AuthStrategy {
   private handleOfflineFallback (
     request: AuthRequest,
     config: AuthConfiguration
-  ): Promise<AuthorizationResult | undefined> {
+  ): AuthorizationResult | undefined {
     logger.debug(`LocalAuthStrategy: Applying offline fallback for ${request.identifier.value}`)
 
     // For transaction stops, always allow (safety requirement)
     if (request.context === AuthContext.TRANSACTION_STOP) {
-      return Promise.resolve({
+      return {
         additionalInfo: { reason: 'Transaction stop - offline mode' },
         isOffline: true,
         method: AuthenticationMethod.OFFLINE_FALLBACK,
         status: AuthorizationStatus.ACCEPTED,
         timestamp: new Date(),
-      })
+      }
     }
 
     // For unknown IDs, check configuration
     if (config.allowOfflineTxForUnknownId) {
       const status = config.unknownIdAuthorization ?? AuthorizationStatus.ACCEPTED
 
-      return Promise.resolve({
+      return {
         additionalInfo: { reason: 'Unknown ID allowed in offline mode' },
         isOffline: true,
         method: AuthenticationMethod.OFFLINE_FALLBACK,
         status,
         timestamp: new Date(),
-      })
+      }
     }
 
     // Default offline behavior - reject unknown identifiers
-    return Promise.resolve({
+    return {
       additionalInfo: { reason: 'Unknown ID not allowed in offline mode' },
       isOffline: true,
       method: AuthenticationMethod.OFFLINE_FALLBACK,
       status: AuthorizationStatus.INVALID,
       timestamp: new Date(),
-    })
+    }
   }
 
   /**

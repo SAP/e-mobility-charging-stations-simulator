@@ -301,6 +301,16 @@ export function standardCleanup (): void {
 }
 
 /**
+ * Suspends execution for the specified number of milliseconds.
+ * @param ms - Duration to sleep in milliseconds.
+ * @returns A promise that resolves after the specified delay.
+ */
+export const sleep = (ms: number): Promise<void> =>
+  new Promise(resolve => {
+    setTimeout(resolve, ms)
+  })
+
+/**
  * Execute a test function with mocked timers, ensuring cleanup on success or failure.
  *
  * This is the recommended pattern for tests that need timer mocking.

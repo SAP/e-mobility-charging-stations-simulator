@@ -9,6 +9,7 @@ import type { ChargingStation } from '../../../../../src/charging-station/Chargi
 import type { OCPPAuthService } from '../../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
 
 import { OCPPAuthServiceImpl } from '../../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceImpl.js'
+import { LocalAuthStrategy } from '../../../../../src/charging-station/ocpp/auth/strategies/LocalAuthStrategy.js'
 import {
   AuthContext,
   AuthenticationMethod,
@@ -74,10 +75,10 @@ await describe('OCPPAuthServiceImpl', async () => {
       mockStation = createMockAuthServiceTestStation('updateConfig')
     })
 
-    await it('should update configuration', async () => {
+    await it('should update configuration', () => {
       const authService = new OCPPAuthServiceImpl(mockStation)
 
-      await authService.updateConfiguration({
+      authService.updateConfiguration({
         authorizationTimeout: 60,
         localAuthListEnabled: false,
       })
@@ -131,9 +132,9 @@ await describe('OCPPAuthServiceImpl', async () => {
       mockStation = createMockAuthServiceTestStation('connectivity')
     })
 
-    await it('should test remote connectivity', async () => {
+    await it('should test remote connectivity', () => {
       const authService = new OCPPAuthServiceImpl(mockStation)
-      const isConnected = await authService.testConnectivity()
+      const isConnected = authService.testConnectivity()
 
       expect(typeof isConnected).toBe('boolean')
     })
@@ -146,10 +147,12 @@ await describe('OCPPAuthServiceImpl', async () => {
       mockStation = createMockAuthServiceTestStation('clearCache')
     })
 
-    await it('should clear authorization cache', async () => {
+    await it('should clear authorization cache', () => {
       const authService = new OCPPAuthServiceImpl(mockStation)
 
-      await expect(authService.clearCache()).resolves.toBeUndefined()
+      expect(() => {
+        authService.clearCache()
+      }).not.toThrow()
     })
   })
 
@@ -160,7 +163,7 @@ await describe('OCPPAuthServiceImpl', async () => {
       mockStation = createMockAuthServiceTestStation('invalidateCache')
     })
 
-    await it('should invalidate cache for specific identifier', async () => {
+    await it('should invalidate cache for specific identifier', () => {
       const authService = new OCPPAuthServiceImpl(mockStation)
 
       const identifier: UnifiedIdentifier = {
@@ -169,7 +172,9 @@ await describe('OCPPAuthServiceImpl', async () => {
         value: 'TAG_TO_INVALIDATE',
       }
 
-      await expect(authService.invalidateCache(identifier)).resolves.toBeUndefined()
+      expect(() => {
+        authService.invalidateCache(identifier)
+      }).not.toThrow()
     })
   })
 
@@ -239,7 +244,7 @@ await describe('OCPPAuthServiceImpl', async () => {
       })
 
       expect(result.status).toBe(AuthorizationStatus.INVALID)
-      expect(result.method).toBe(AuthenticationMethod.LOCAL_LIST)
+      expect(result.method).toBe(AuthenticationMethod.NONE)
     })
   })
 
@@ -413,6 +418,26 @@ await describe('OCPPAuthServiceImpl', async () => {
       })
 
       expect(result).toBeDefined()
+    })
+  })
+
+  await describe('G03.FR.01.100 - Cache Wiring', async () => {
+    let mockStation: ChargingStation
+
+    beforeEach(() => {
+      mockStation = createMockAuthServiceTestStation('cache-wiring')
+    })
+
+    await it('G03.FR.01.101 - local strategy has a defined authCache after initialization', async () => {
+      const authService = new OCPPAuthServiceImpl(mockStation)
+      await authService.initialize()
+
+      const localStrategy = authService.getStrategy('local')
+      expect(localStrategy).toBeDefined()
+      expect(localStrategy).toBeInstanceOf(LocalAuthStrategy)
+
+      const local = localStrategy as LocalAuthStrategy
+      expect(local.getAuthCache()).toBeDefined()
     })
   })
 })

@@ -8,7 +8,7 @@ import type {
 } from '../types/AuthTypes.js'
 
 import { OCPPVersion } from '../../../../types/index.js'
-import { isNotEmptyString } from '../../../../utils/index.js'
+import { isNotEmptyString, sleep } from '../../../../utils/index.js'
 import { logger } from '../../../../utils/Logger.js'
 import { AuthenticationMethod, AuthorizationStatus, IdentifierType } from '../types/AuthTypes.js'
 
@@ -135,32 +135,30 @@ export class CertificateAuthStrategy implements AuthStrategy {
     return hasAdapter && certAuthEnabled && hasCertificateData && this.isInitialized
   }
 
-  cleanup (): Promise<void> {
+  cleanup (): void {
     this.isInitialized = false
     logger.debug(
       `${this.chargingStation.logPrefix()} Certificate authentication strategy cleaned up`
     )
-    return Promise.resolve()
   }
 
-  getStats (): Promise<Record<string, unknown>> {
-    return Promise.resolve({
+  getStats (): Record<string, unknown> {
+    return {
       ...this.stats,
       isInitialized: this.isInitialized,
-    })
+    }
   }
 
-  initialize (config: AuthConfiguration): Promise<void> {
+  initialize (config: AuthConfiguration): void {
     if (!config.certificateAuthEnabled) {
       logger.info(`${this.chargingStation.logPrefix()} Certificate authentication disabled`)
-      return Promise.resolve()
+      return
     }
 
     logger.info(
       `${this.chargingStation.logPrefix()} Certificate authentication strategy initialized`
     )
     this.isInitialized = true
-    return Promise.resolve()
   }
 
   /**
@@ -243,7 +241,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
     config: AuthConfiguration
   ): Promise<boolean> {
     // Simulate validation delay
-    await new Promise(resolve => setTimeout(resolve, 100))
+    await sleep(100)
 
     // In a real implementation, this would:
     // 1. Load trusted CA certificates from configuration

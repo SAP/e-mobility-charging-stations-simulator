@@ -1,29 +1,21 @@
-/**
- * Integration Test for OCPP Authentication Service
- * Tests the complete authentication flow end-to-end
- */
-
 import type {
   AuthConfiguration,
   AuthorizationResult,
   AuthRequest,
   UnifiedIdentifier,
-} from '../types/AuthTypes.js'
+} from '../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 
-import { OCPPVersion } from '../../../../types/ocpp/OCPPVersion.js'
-import { logger } from '../../../../utils/Logger.js'
-import { ChargingStation } from '../../../ChargingStation.js'
-import { OCPPAuthServiceImpl } from '../services/OCPPAuthServiceImpl.js'
+import { ChargingStation } from '../../src/charging-station/ChargingStation.js'
+import { OCPPAuthServiceImpl } from '../../src/charging-station/ocpp/auth/services/OCPPAuthServiceImpl.js'
 import {
   AuthContext,
   AuthenticationMethod,
   AuthorizationStatus,
   IdentifierType,
-} from '../types/AuthTypes.js'
+} from '../../src/charging-station/ocpp/auth/types/AuthTypes.js'
+import { OCPPVersion } from '../../src/types/ocpp/OCPPVersion.js'
+import { logger } from '../../src/utils/Logger.js'
 
-/**
- * Integration test class for OCPP Authentication
- */
 export class OCPPAuthIntegrationTest {
   private authService: OCPPAuthServiceImpl
   private chargingStation: ChargingStation
@@ -33,10 +25,6 @@ export class OCPPAuthIntegrationTest {
     this.authService = new OCPPAuthServiceImpl(chargingStation)
   }
 
-  /**
-   * Run comprehensive integration test suite
-   * @returns Test results with passed/failed counts and result messages
-   */
   public async runTests (): Promise<{ failed: number; passed: number; results: string[] }> {
     const results: string[] = []
     let passed = 0
@@ -46,9 +34,8 @@ export class OCPPAuthIntegrationTest {
       `${this.chargingStation.logPrefix()} Starting OCPP Authentication Integration Tests`
     )
 
-    // Test 1: Service Initialization
     try {
-      await this.testServiceInitialization()
+      this.testServiceInitialization()
       results.push('✅ Service Initialization - PASSED')
       passed++
     } catch (error) {
@@ -56,9 +43,8 @@ export class OCPPAuthIntegrationTest {
       failed++
     }
 
-    // Test 2: Configuration Management
     try {
-      await this.testConfigurationManagement()
+      this.testConfigurationManagement()
       results.push('✅ Configuration Management - PASSED')
       passed++
     } catch (error) {
@@ -66,9 +52,8 @@ export class OCPPAuthIntegrationTest {
       failed++
     }
 
-    // Test 3: Strategy Selection Logic
     try {
-      await this.testStrategySelection()
+      this.testStrategySelection()
       results.push('✅ Strategy Selection Logic - PASSED')
       passed++
     } catch (error) {
@@ -76,7 +61,6 @@ export class OCPPAuthIntegrationTest {
       failed++
     }
 
-    // Test 4: OCPP 1.6 Authentication Flow
     try {
       await this.testOCPP16AuthFlow()
       results.push('✅ OCPP 1.6 Authentication Flow - PASSED')
@@ -86,7 +70,6 @@ export class OCPPAuthIntegrationTest {
       failed++
     }
 
-    // Test 5: OCPP 2.0 Authentication Flow
     try {
       await this.testOCPP20AuthFlow()
       results.push('✅ OCPP 2.0 Authentication Flow - PASSED')
@@ -96,7 +79,6 @@ export class OCPPAuthIntegrationTest {
       failed++
     }
 
-    // Test 6: Error Handling
     try {
       await this.testErrorHandling()
       results.push('✅ Error Handling - PASSED')
@@ -106,7 +88,6 @@ export class OCPPAuthIntegrationTest {
       failed++
     }
 
-    // Test 7: Cache Operations
     try {
       await this.testCacheOperations()
       results.push('✅ Cache Operations - PASSED')
@@ -116,7 +97,6 @@ export class OCPPAuthIntegrationTest {
       failed++
     }
 
-    // Test 8: Performance and Statistics
     try {
       await this.testPerformanceAndStats()
       results.push('✅ Performance and Statistics - PASSED')
@@ -133,9 +113,6 @@ export class OCPPAuthIntegrationTest {
     return { failed, passed, results }
   }
 
-  /**
-   * Test 7: Cache Operations
-   */
   private async testCacheOperations (): Promise<void> {
     const testIdentifier: UnifiedIdentifier = {
       ocppVersion:
@@ -146,37 +123,26 @@ export class OCPPAuthIntegrationTest {
       value: 'CACHE_TEST_ID',
     }
 
-    // Test cache invalidation (should not throw)
-    await this.authService.invalidateCache(testIdentifier)
-
-    // Test cache clearing (should not throw)
-    await this.authService.clearCache()
-
-    // Test local authorization check after cache operations
+    this.authService.invalidateCache(testIdentifier)
+    this.authService.clearCache()
     await this.authService.isLocallyAuthorized(testIdentifier)
-    // Result can be undefined, which is valid
 
     logger.debug(`${this.chargingStation.logPrefix()} Cache operations tested`)
   }
 
-  /**
-   * Test 2: Configuration Management
-   */
-  private async testConfigurationManagement (): Promise<void> {
+  private testConfigurationManagement (): void {
     const originalConfig = this.authService.getConfiguration()
 
-    // Test configuration update
     const updates: Partial<AuthConfiguration> = {
       authorizationTimeout: 60,
       localAuthListEnabled: false,
       maxCacheEntries: 2000,
     }
 
-    await this.authService.updateConfiguration(updates)
+    this.authService.updateConfiguration(updates)
 
     const updatedConfig = this.authService.getConfiguration()
 
-    // Verify updates applied
     if (updatedConfig.authorizationTimeout !== 60) {
       throw new Error('Configuration update failed: authorizationTimeout')
     }
@@ -189,17 +155,12 @@ export class OCPPAuthIntegrationTest {
       throw new Error('Configuration update failed: maxCacheEntries')
     }
 
-    // Restore original configuration
-    await this.authService.updateConfiguration(originalConfig)
+    this.authService.updateConfiguration(originalConfig)
 
     logger.debug(`${this.chargingStation.logPrefix()} Configuration management test completed`)
   }
 
-  /**
-   * Test 6: Error Handling
-   */
   private async testErrorHandling (): Promise<void> {
-    // Test with invalid identifier
     const invalidIdentifier: UnifiedIdentifier = {
       ocppVersion: OCPPVersion.VERSION_16,
       type: IdentifierType.ISO14443,
@@ -208,7 +169,7 @@ export class OCPPAuthIntegrationTest {
 
     const invalidRequest: AuthRequest = {
       allowOffline: false,
-      connectorId: 999, // Invalid connector
+      connectorId: 999,
       context: AuthContext.TRANSACTION_START,
       identifier: invalidIdentifier,
       timestamp: new Date(),
@@ -216,17 +177,14 @@ export class OCPPAuthIntegrationTest {
 
     const result = await this.authService.authenticate(invalidRequest)
 
-    // Should get INVALID status for invalid request
     if (result.status === AuthorizationStatus.ACCEPTED) {
       throw new Error('Expected INVALID status for invalid identifier, got ACCEPTED')
     }
 
-    // Test strategy-specific authorization with non-existent strategy
     try {
       await this.authService.authorizeWithStrategy('non-existent', invalidRequest)
       throw new Error('Expected error for non-existent strategy')
     } catch (error) {
-      // Expected behavior - should throw error
       if (!(error as Error).message.includes('not found')) {
         throw new Error('Unexpected error message for non-existent strategy')
       }
@@ -235,11 +193,7 @@ export class OCPPAuthIntegrationTest {
     logger.debug(`${this.chargingStation.logPrefix()} Error handling verified`)
   }
 
-  /**
-   * Test 4: OCPP 1.6 Authentication Flow
-   */
   private async testOCPP16AuthFlow (): Promise<void> {
-    // Create test request for OCPP 1.6
     const identifier: UnifiedIdentifier = {
       ocppVersion: OCPPVersion.VERSION_16,
       type: IdentifierType.ISO14443,
@@ -254,15 +208,12 @@ export class OCPPAuthIntegrationTest {
       timestamp: new Date(),
     }
 
-    // Test main authentication method
     const result = await this.authService.authenticate(request)
     this.validateAuthenticationResult(result)
 
-    // Test direct authorization method
     const authResult = await this.authService.authorize(request)
     this.validateAuthenticationResult(authResult)
 
-    // Test local authorization check
     const localResult = await this.authService.isLocallyAuthorized(identifier, 1)
     if (localResult) {
       this.validateAuthenticationResult(localResult)
@@ -271,11 +222,7 @@ export class OCPPAuthIntegrationTest {
     logger.debug(`${this.chargingStation.logPrefix()} OCPP 1.6 authentication flow tested`)
   }
 
-  /**
-   * Test 5: OCPP 2.0 Authentication Flow
-   */
   private async testOCPP20AuthFlow (): Promise<void> {
-    // Create test request for OCPP 2.0
     const identifier: UnifiedIdentifier = {
       ocppVersion: OCPPVersion.VERSION_20,
       type: IdentifierType.ISO15693,
@@ -290,7 +237,6 @@ export class OCPPAuthIntegrationTest {
       timestamp: new Date(),
     }
 
-    // Test authentication with different contexts
     const contexts = [
       AuthContext.TRANSACTION_START,
       AuthContext.TRANSACTION_STOP,
@@ -307,29 +253,22 @@ export class OCPPAuthIntegrationTest {
     logger.debug(`${this.chargingStation.logPrefix()} OCPP 2.0 authentication flow tested`)
   }
 
-  /**
-   * Test 8: Performance and Statistics
-   */
   private async testPerformanceAndStats (): Promise<void> {
-    // Test connectivity check
-    const connectivity = await this.authService.testConnectivity()
+    const connectivity = this.authService.testConnectivity()
     if (typeof connectivity !== 'boolean') {
       throw new Error('Invalid connectivity test result')
     }
 
-    // Test statistics retrieval
     const stats = await this.authService.getStats()
     if (typeof stats.totalRequests !== 'number') {
       throw new Error('Invalid statistics object')
     }
 
-    // Test authentication statistics
     const authStats = this.authService.getAuthenticationStats()
     if (!Array.isArray(authStats.availableStrategies)) {
       throw new Error('Invalid authentication statistics')
     }
 
-    // Performance test - multiple rapid authentication requests
     const identifier: UnifiedIdentifier = {
       ocppVersion:
         this.chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_16
@@ -356,12 +295,10 @@ export class OCPPAuthIntegrationTest {
     const results = await Promise.all(promises)
     const duration = Date.now() - startTime
 
-    // Verify all requests completed
     if (results.length !== 10) {
       throw new Error('Not all performance test requests completed')
     }
 
-    // Check reasonable performance (less than 5 seconds for 10 requests)
     if (duration > 5000) {
       throw new Error(`Performance test too slow: ${String(duration)}ms for 10 requests`)
     }
@@ -371,26 +308,17 @@ export class OCPPAuthIntegrationTest {
     )
   }
 
-  /**
-   * Test 1: Service Initialization
-   * @returns Promise that resolves when test passes
-   */
-  private testServiceInitialization (): Promise<void> {
-    // Service is always initialized in constructor, no need to check
-
-    // Check available strategies
+  private testServiceInitialization (): void {
     const strategies = this.authService.getAvailableStrategies()
     if (strategies.length === 0) {
       throw new Error('No authentication strategies available')
     }
 
-    // Check configuration
     const config = this.authService.getConfiguration()
     if (typeof config !== 'object') {
       throw new Error('Invalid configuration object')
     }
 
-    // Check stats
     const stats = this.authService.getAuthenticationStats()
     if (!stats.ocppVersion) {
       throw new Error('Invalid authentication statistics')
@@ -399,18 +327,11 @@ export class OCPPAuthIntegrationTest {
     logger.debug(
       `${this.chargingStation.logPrefix()} Service initialized with ${String(strategies.length)} strategies`
     )
-
-    return Promise.resolve()
   }
 
-  /**
-   * Test 3: Strategy Selection Logic
-   * @returns Promise that resolves when test passes
-   */
-  private testStrategySelection (): Promise<void> {
+  private testStrategySelection (): void {
     const strategies = this.authService.getAvailableStrategies()
 
-    // Test each strategy individually
     for (const strategyName of strategies) {
       const strategy = this.authService.getStrategy(strategyName)
       if (!strategy) {
@@ -418,7 +339,6 @@ export class OCPPAuthIntegrationTest {
       }
     }
 
-    // Test identifier support detection
     const testIdentifier: UnifiedIdentifier = {
       ocppVersion:
         this.chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_16
@@ -434,43 +354,29 @@ export class OCPPAuthIntegrationTest {
     }
 
     logger.debug(`${this.chargingStation.logPrefix()} Strategy selection logic verified`)
-
-    return Promise.resolve()
   }
 
-  /**
-   * Validate authentication result structure
-   * @param result - Authorization result to validate for required fields and valid enum values
-   */
   private validateAuthenticationResult (result: AuthorizationResult): void {
-    // Note: status, method, and timestamp are required by the AuthorizationResult interface
-    // so no null checks are needed - they are guaranteed by TypeScript
-
     if (typeof result.isOffline !== 'boolean') {
       throw new Error('Authentication result missing or invalid isOffline flag')
     }
 
-    // Validate status is valid enum value
     const validStatuses = Object.values(AuthorizationStatus)
     if (!validStatuses.includes(result.status)) {
       throw new Error(`Invalid authorization status: ${result.status}`)
     }
 
-    // Validate method is valid enum value
     const validMethods = Object.values(AuthenticationMethod)
     if (!validMethods.includes(result.method)) {
       throw new Error(`Invalid authentication method: ${result.method}`)
     }
 
-    // Check timestamp is recent (within last minute)
     const now = new Date()
     const diff = now.getTime() - result.timestamp.getTime()
     if (diff > 60000) {
-      // 60 seconds
       throw new Error(`Authentication timestamp too old: ${String(diff)}ms`)
     }
 
-    // Check additional info structure if present
     if (result.additionalInfo) {
       if (typeof result.additionalInfo !== 'object') {
         throw new Error('Invalid additionalInfo structure')
@@ -480,9 +386,9 @@ export class OCPPAuthIntegrationTest {
 }
 
 /**
- * Factory function to create and run integration tests
- * @param chargingStation - Charging station instance to run authentication integration tests against
- * @returns Test results with pass/fail counts and individual test outcome messages
+ * Create and run integration tests for a charging station.
+ * @param chargingStation - Charging station instance to test
+ * @returns Test results with pass/fail counts and outcome messages
  */
 export async function runOCPPAuthIntegrationTests (chargingStation: ChargingStation): Promise<{
   failed: number

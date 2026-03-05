@@ -472,7 +472,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         )
         return OCPP20Constants.OCPP_RESPONSE_REJECTED
       }
-      await authService.clearCache()
+      authService.clearCache()
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestClearCache: Authorization cache cleared`
       )

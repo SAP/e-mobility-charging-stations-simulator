@@ -300,6 +300,7 @@ expect(mocks.webSocket.sentMessages).toContain(expectedMessage)
 | Utility                           | Purpose                                  |
 | --------------------------------- | ---------------------------------------- |
 | `standardCleanup()`               | **MANDATORY** afterEach cleanup          |
+| `sleep(ms)`                       | Real-time delay                          |
 | `withMockTimers()`                | Execute test with timer mocking          |
 | `createTimerScope()`              | Manual timer control                     |
 | `createLoggerMocks()`             | Create logger spies (error, warn)        |

@@ -77,11 +77,6 @@ export class AuthComponentFactory {
     return new InMemoryAuthCache({
       defaultTtl: config.authorizationCacheLifetime ?? 3600,
       maxEntries: config.maxCacheEntries ?? 1000,
-      rateLimit: {
-        enabled: true,
-        maxRequests: 10, // 10 requests per minute per identifier
-        windowMs: 60000, // 1 minute window
-      },
     })
   }
 
@@ -110,15 +105,20 @@ export class AuthComponentFactory {
       adapterMap.set(OCPPVersion.VERSION_201, adapters.ocpp20Adapter)
     }
     const strategy = new CertificateAuthStrategy(chargingStation, adapterMap)
-    await strategy.initialize(config)
+    strategy.initialize(config)
     return strategy
   }
 
   /**
    * Create local auth list manager (delegated to service implementation)
+   *
+   * TODO: Implement concrete LocalAuthListManager for OCPP 1.6 §3.5 and OCPP 2.0.1 §C13/C14
+   * compliance. Until implemented, LocalAuthStrategy operates with cache and offline
+   * fallback only. The OCPP 1.6 §3.5.3 guard in RemoteAuthStrategy (skip caching for
+   * local-list identifiers) is inactive without a manager.
    * @param chargingStation - Charging station instance (unused, reserved for future use)
    * @param config - Authentication configuration (unused, reserved for future use)
-   * @returns Always undefined as manager creation is delegated to service
+   * @returns Always undefined as manager creation is not yet implemented
    */
   static createLocalAuthListManager (
     chargingStation: ChargingStation,
@@ -141,14 +141,18 @@ export class AuthComponentFactory {
     cache: AuthCache | undefined,
     config: AuthConfiguration
   ): Promise<AuthStrategy | undefined> {
-    if (!config.localAuthListEnabled) {
+    if (
+      !config.localAuthListEnabled &&
+      !config.authorizationCacheEnabled &&
+      !config.offlineAuthorizationEnabled
+    ) {
       return undefined
     }
 
     // Use static import - circular dependency is acceptable here
     const { LocalAuthStrategy } = await import('../strategies/LocalAuthStrategy.js')
     const strategy = new LocalAuthStrategy(manager, cache)
-    await strategy.initialize(config)
+    strategy.initialize(config)
     return strategy
   }
 
@@ -159,12 +163,14 @@ export class AuthComponentFactory {
    * @param adapters.ocpp20Adapter - Optional OCPP 2.0.x protocol adapter
    * @param cache - Authorization cache for storing remote auth results
    * @param config - Authentication configuration controlling remote auth behavior
+   * @param localAuthListManager - Optional local auth list manager for R17 cache exclusion
    * @returns Remote strategy instance or undefined if remote auth disabled
    */
   static async createRemoteStrategy (
     adapters: { ocpp16Adapter?: OCPP16AuthAdapter; ocpp20Adapter?: OCPP20AuthAdapter },
     cache: AuthCache | undefined,
-    config: AuthConfiguration
+    config: AuthConfiguration,
+    localAuthListManager?: LocalAuthListManager
   ): Promise<AuthStrategy | undefined> {
     if (!config.remoteAuthorization) {
       return undefined
@@ -180,8 +186,8 @@ export class AuthComponentFactory {
       adapterMap.set(OCPPVersion.VERSION_20, adapters.ocpp20Adapter)
       adapterMap.set(OCPPVersion.VERSION_201, adapters.ocpp20Adapter)
     }
-    const strategy = new RemoteAuthStrategy(adapterMap, cache)
-    await strategy.initialize(config)
+    const strategy = new RemoteAuthStrategy(adapterMap, cache, localAuthListManager)
+    strategy.initialize(config)
     return strategy
   }
 
@@ -212,7 +218,7 @@ export class AuthComponentFactory {
     }
 
     // Add remote strategy if enabled
-    const remoteStrategy = await this.createRemoteStrategy(adapters, cache, config)
+    const remoteStrategy = await this.createRemoteStrategy(adapters, cache, config, manager)
     if (remoteStrategy) {
       strategies.push(remoteStrategy)
     }

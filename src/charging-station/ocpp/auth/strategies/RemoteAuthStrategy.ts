@@ -1,4 +1,9 @@
-import type { AuthCache, AuthStrategy, OCPPAuthAdapter } from '../interfaces/OCPPAuthService.js'
+import type {
+  AuthCache,
+  AuthStrategy,
+  LocalAuthListManager,
+  OCPPAuthAdapter,
+} from '../interfaces/OCPPAuthService.js'
 import type { AuthConfiguration, AuthorizationResult, AuthRequest } from '../types/AuthTypes.js'
 
 import { OCPPVersion } from '../../../../types/ocpp/OCPPVersion.js'
@@ -7,7 +12,7 @@ import {
   AuthenticationError,
   AuthenticationMethod,
   AuthErrorCode,
-  AuthorizationStatus,
+  IdentifierType,
 } from '../types/AuthTypes.js'
 
 /**
@@ -29,6 +34,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
   private adapters = new Map<OCPPVersion, OCPPAuthAdapter>()
   private authCache?: AuthCache
   private isInitialized = false
+  private localAuthListManager?: LocalAuthListManager
   private stats = {
     avgResponseTimeMs: 0,
     failedRemoteAuth: 0,
@@ -40,11 +46,16 @@ export class RemoteAuthStrategy implements AuthStrategy {
     totalResponseTimeMs: 0,
   }
 
-  constructor (adapters?: Map<OCPPVersion, OCPPAuthAdapter>, authCache?: AuthCache) {
+  constructor (
+    adapters?: Map<OCPPVersion, OCPPAuthAdapter>,
+    authCache?: AuthCache,
+    localAuthListManager?: LocalAuthListManager
+  ) {
     if (adapters) {
       this.adapters = adapters
     }
     this.authCache = authCache
+    this.localAuthListManager = localAuthListManager
   }
 
   /**
@@ -80,7 +91,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
 
     try {
       logger.debug(
-        `RemoteAuthStrategy: Authenticating ${request.identifier.value} via CSMS for ${request.context}`
+        `RemoteAuthStrategy: Authenticating ${request.identifier.value.substring(0, 8)}... via CSMS for ${request.context}`
       )
 
       // Get appropriate adapter for OCPP version
@@ -106,12 +117,29 @@ export class RemoteAuthStrategy implements AuthStrategy {
         logger.debug(`RemoteAuthStrategy: Remote authorization: ${result.status}`)
         this.stats.successfulRemoteAuth++
 
-        // Cache successful results for performance
-        if (this.authCache && result.status === AuthorizationStatus.ACCEPTED) {
-          await this.cacheResult(
+        // Check if identifier is in Local Auth List — do not cache (OCPP 1.6 §3.5.3)
+        // NOTE: This guard is inactive until LocalAuthListManager is implemented.
+        // When localAuthListManager is undefined, all results are cached unconditionally.
+        if (this.authCache && config.localAuthListEnabled && this.localAuthListManager) {
+          const isInLocalList = await this.localAuthListManager.getEntry(request.identifier.value)
+          if (isInLocalList) {
+            logger.debug(
+              `RemoteAuthStrategy: Skipping cache for local list identifier: ${request.identifier.value.substring(0, 8)}...`
+            )
+          } else {
+            this.cacheResult(
+              request.identifier.value,
+              result,
+              config.authorizationCacheLifetime,
+              request.identifier.type
+            )
+          }
+        } else if (this.authCache) {
+          this.cacheResult(
             request.identifier.value,
             result,
-            config.authorizationCacheLifetime
+            config.authorizationCacheLifetime,
+            request.identifier.type
           )
         }
 
@@ -119,7 +147,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
       }
 
       logger.debug(
-        `RemoteAuthStrategy: No remote authorization result for ${request.identifier.value}`
+        `RemoteAuthStrategy: No remote authorization result for ${request.identifier.value.substring(0, 8)}...`
       )
       return undefined
     } catch (error) {
@@ -155,17 +183,16 @@ export class RemoteAuthStrategy implements AuthStrategy {
     // Can handle if we have an adapter for the identifier's OCPP version
     const hasAdapter = this.adapters.has(request.identifier.ocppVersion)
 
-    // Remote authorization must be enabled (not using local-only mode)
-    const remoteEnabled = !config.localPreAuthorize
+    // Remote authorization must be enabled via configuration
+    const remoteEnabled = config.remoteAuthorization !== false
 
     return hasAdapter && remoteEnabled
   }
 
   /**
    * Cleanup strategy resources
-   * @returns Promise that resolves when cleanup is complete
    */
-  public cleanup (): Promise<void> {
+  public cleanup (): void {
     logger.info('RemoteAuthStrategy: Cleaning up...')
 
     // Reset internal state
@@ -182,7 +209,6 @@ export class RemoteAuthStrategy implements AuthStrategy {
     }
 
     logger.info('RemoteAuthStrategy: Cleanup completed')
-    return Promise.resolve()
   }
 
   /**
@@ -190,7 +216,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
    * @returns Strategy statistics including success rates, response times, and error counts
    */
   public async getStats (): Promise<Record<string, unknown>> {
-    const cacheStats = this.authCache ? await this.authCache.getStats() : null
+    const cacheStats = this.authCache ? this.authCache.getStats() : null
     const adapterStats = new Map<string, unknown>()
 
     // Collect adapter availability status
@@ -229,7 +255,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
    * Initialize strategy with configuration and adapters
    * @param config - Authentication configuration for adapter validation
    */
-  public async initialize (config: AuthConfiguration): Promise<void> {
+  public initialize (config: AuthConfiguration): void {
     try {
       logger.info('RemoteAuthStrategy: Initializing...')
 
@@ -241,7 +267,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
       // Validate adapter configurations
       for (const [version, adapter] of this.adapters) {
         try {
-          const isValid = await adapter.validateConfiguration(config)
+          const isValid = adapter.validateConfiguration(config)
           if (!isValid) {
             logger.warn(`RemoteAuthStrategy: Invalid configuration for OCPP ${version}`)
           } else {
@@ -294,6 +320,14 @@ export class RemoteAuthStrategy implements AuthStrategy {
   }
 
   /**
+   * Set local auth list manager (for dependency injection)
+   * @param manager - LocalAuthListManager instance for checking if identifier is in local list
+   */
+  public setLocalAuthListManager (manager: LocalAuthListManager): void {
+    this.localAuthListManager = manager
+  }
+
+  /**
    * Test connectivity to remote authorization service
    * @returns True if at least one OCPP adapter can reach its remote service
    */
@@ -322,22 +356,34 @@ export class RemoteAuthStrategy implements AuthStrategy {
    * @param identifier - Unique identifier string to use as cache key
    * @param result - Authorization result to store in cache
    * @param ttl - Optional time-to-live in seconds for cache entry
+   * @param identifierType - Identifier type to filter non-cacheable types (C02.FR.03, C03.FR.02)
    */
-  private async cacheResult (
+  private cacheResult (
     identifier: string,
     result: AuthorizationResult,
-    ttl?: number
-  ): Promise<void> {
+    ttl?: number,
+    identifierType?: IdentifierType
+  ): void {
     if (!this.authCache) {
+      return
+    }
+
+    // Per OCPP 2.0.1 C02.FR.03/C03.FR.02: NoAuthorization and Central tokens
+    // should not be cached as they represent system-level auth bypasses
+    if (
+      identifierType === IdentifierType.NO_AUTHORIZATION ||
+      identifierType === IdentifierType.CENTRAL
+    ) {
+      logger.debug(`RemoteAuthStrategy: Skipping cache for ${identifierType} identifier type`)
       return
     }
 
     try {
       // Use provided TTL or default cache lifetime
       const cacheTtl = ttl ?? result.cacheTtl ?? 300 // Default 5 minutes
-      await this.authCache.set(identifier, result, cacheTtl)
+      this.authCache.set(identifier, result, cacheTtl)
       logger.debug(
-        `RemoteAuthStrategy: Cached result for ${identifier} (TTL: ${String(cacheTtl)}s)`
+        `RemoteAuthStrategy: Cached result for ${identifier.substring(0, 8)}... (TTL: ${String(cacheTtl)}s)`
       )
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
@@ -357,19 +403,19 @@ export class RemoteAuthStrategy implements AuthStrategy {
     config: AuthConfiguration
   ): Promise<boolean> {
     try {
-      // Use adapter's built-in availability check with timeout
-      const timeout = (config.authorizationTimeout * 1000) / 2 // Use half timeout for availability check
-      const availabilityPromise = adapter.isRemoteAvailable()
+      const timeout = (config.authorizationTimeout * 1000) / 2
+      let timeoutHandle: ReturnType<typeof setTimeout> | undefined
 
       const result = await Promise.race([
-        availabilityPromise,
+        Promise.resolve(adapter.isRemoteAvailable()),
         new Promise<boolean>((_resolve, reject) => {
-          setTimeout(() => {
+          timeoutHandle = setTimeout(() => {
             reject(new AuthenticationError('Availability check timeout', AuthErrorCode.TIMEOUT))
           }, timeout)
         }),
       ])
 
+      clearTimeout(timeoutHandle)
       return result
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
@@ -414,6 +460,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
     startTime: number
   ): Promise<AuthorizationResult | undefined> {
     const timeout = config.authorizationTimeout * 1000
+    let timeoutHandle: ReturnType<typeof setTimeout> | undefined
 
     try {
       // Create the authorization promise
@@ -427,7 +474,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
       const result = await Promise.race([
         authPromise,
         new Promise<never>((_resolve, reject) => {
-          setTimeout(() => {
+          timeoutHandle = setTimeout(() => {
             reject(
               new AuthenticationError(
                 `Remote authorization timeout after ${String(config.authorizationTimeout)}s`,
@@ -442,11 +489,13 @@ export class RemoteAuthStrategy implements AuthStrategy {
         }),
       ])
 
+      clearTimeout(timeoutHandle)
       logger.debug(
         `RemoteAuthStrategy: Remote authorization completed in ${String(Date.now() - startTime)}ms`
       )
       return result
     } catch (error) {
+      clearTimeout(timeoutHandle)
       if (error instanceof AuthenticationError) {
         throw error // Re-throw authentication errors as-is
       }

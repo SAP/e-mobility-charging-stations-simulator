@@ -71,7 +71,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
       )
 
       // Check if remote authorization is configured
-      const isRemoteAuth = await this.isRemoteAvailable()
+      const isRemoteAuth = this.isRemoteAvailable()
       if (!isRemoteAuth) {
         return {
           additionalInfo: {
@@ -441,7 +441,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
    * Check if remote authorization is available for OCPP 2.0
    * @returns True if remote authorization is available and enabled
    */
-  async isRemoteAvailable (): Promise<boolean> {
+  isRemoteAvailable (): boolean {
     try {
       // Check if station supports remote authorization via variables
       // OCPP 2.0 uses variables instead of configuration keys
@@ -450,7 +450,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
       const isOnline = this.chargingStation.inAcceptedState()
 
       // Check AuthorizeRemoteStart variable (with type validation)
-      const remoteStartValue = await this.getVariableValue('AuthCtrlr', 'AuthorizeRemoteStart')
+      const remoteStartValue = this.getVariableValue('AuthCtrlr', 'AuthorizeRemoteStart')
       const remoteStartEnabled = this.parseBooleanVariable(remoteStartValue, true)
 
       return isOnline && remoteStartEnabled
@@ -489,6 +489,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
       IdentifierType.KEY_CODE,
       IdentifierType.E_MAID,
       IdentifierType.MAC_ADDRESS,
+      IdentifierType.NO_AUTHORIZATION,
     ]
 
     return validTypes.includes(identifier.type)
@@ -499,18 +500,18 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
    * @param config - Authentication configuration to validate
    * @returns Promise resolving to true if configuration is valid for OCPP 2.0 operations
    */
-  validateConfiguration (config: AuthConfiguration): Promise<boolean> {
+  validateConfiguration (config: AuthConfiguration): boolean {
     try {
       // Check that at least one authorization method is enabled
-      const hasRemoteAuth = config.authorizeRemoteStart === true
-      const hasLocalAuth = config.localAuthorizeOffline === true
-      const hasCertAuth = config.certificateValidation === true
+      const hasRemoteAuth = config.remoteAuthorization === true
+      const hasLocalAuth = config.offlineAuthorizationEnabled
+      const hasCertAuth = config.certificateAuthEnabled
 
       if (!hasRemoteAuth && !hasLocalAuth && !hasCertAuth) {
         logger.warn(
           `${this.chargingStation.logPrefix()} OCPP 2.0 adapter: No authorization methods enabled`
         )
-        return Promise.resolve(false)
+        return false
       }
 
       // Validate timeout values
@@ -518,16 +519,16 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
         logger.warn(
           `${this.chargingStation.logPrefix()} OCPP 2.0 adapter: Invalid authorization timeout`
         )
-        return Promise.resolve(false)
+        return false
       }
 
-      return Promise.resolve(true)
+      return true
     } catch (error) {
       logger.error(
         `${this.chargingStation.logPrefix()} OCPP 2.0 adapter configuration validation failed`,
         error
       )
-      return Promise.resolve(false)
+      return false
     }
   }
 
@@ -597,7 +598,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
     component: string,
     variable: string,
     useDefaultFallback = true
-  ): Promise<string | undefined> {
+  ): string | undefined {
     try {
       const variableManager = OCPP20VariableManager.getInstance()
 
@@ -613,9 +614,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
         logger.debug(
           `${this.chargingStation.logPrefix()} Variable ${component}.${variable} not found in registry`
         )
-        return Promise.resolve(
-          this.getDefaultVariableValue(component, variable, useDefaultFallback)
-        )
+        return this.getDefaultVariableValue(component, variable, useDefaultFallback)
       }
 
       const result = results[0]
@@ -628,18 +627,16 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
         logger.debug(
           `${this.chargingStation.logPrefix()} Variable ${component}.${variable} not available: ${result.attributeStatus}`
         )
-        return Promise.resolve(
-          this.getDefaultVariableValue(component, variable, useDefaultFallback)
-        )
+        return this.getDefaultVariableValue(component, variable, useDefaultFallback)
       }
 
-      return Promise.resolve(result.attributeValue)
+      return result.attributeValue
     } catch (error) {
       logger.warn(
         `${this.chargingStation.logPrefix()} Error getting variable ${component}.${variable}`,
         error
       )
-      return Promise.resolve(this.getDefaultVariableValue(component, variable, useDefaultFallback))
+      return this.getDefaultVariableValue(component, variable, useDefaultFallback)
     }
   }
 

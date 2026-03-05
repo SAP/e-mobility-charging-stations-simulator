@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type {
   AuthCache,
+  LocalAuthEntry,
   LocalAuthListManager,
 } from '../../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
 
@@ -56,12 +57,14 @@ await describe('LocalAuthStrategy', async () => {
   })
 
   await describe('initialize', async () => {
-    await it('should initialize successfully with valid config', async () => {
+    await it('should initialize successfully with valid config', () => {
       const config = createTestAuthConfig({
         authorizationCacheEnabled: true,
         localAuthListEnabled: true,
       })
-      await expect(strategy.initialize(config)).resolves.toBeUndefined()
+      expect(() => {
+        strategy.initialize(config)
+      }).not.toThrow()
     })
   })
 
@@ -92,22 +95,24 @@ await describe('LocalAuthStrategy', async () => {
   })
 
   await describe('authenticate', async () => {
-    beforeEach(async () => {
+    beforeEach(() => {
       const config = createTestAuthConfig({
         authorizationCacheEnabled: true,
         localAuthListEnabled: true,
         offlineAuthorizationEnabled: true,
       })
-      await strategy.initialize(config)
+      strategy.initialize(config)
     })
 
     await it('should authenticate using local auth list', async () => {
-      mockLocalAuthListManager.getEntry = async () =>
-        await Promise.resolve({
-          expiryDate: new Date(Date.now() + 86400000),
-          identifier: 'LOCAL_TAG',
-          metadata: { source: 'local' },
-          status: 'accepted',
+      mockLocalAuthListManager.getEntry = () =>
+        new Promise<LocalAuthEntry | undefined>(resolve => {
+          resolve({
+            expiryDate: new Date(Date.now() + 86400000),
+            identifier: 'LOCAL_TAG',
+            metadata: { source: 'local' },
+            status: 'accepted',
+          })
         })
 
       const config = createTestAuthConfig({
@@ -130,14 +135,12 @@ await describe('LocalAuthStrategy', async () => {
     })
 
     await it('should authenticate using cache', async () => {
-      mockAuthCache.get = async () =>
-        await Promise.resolve(
-          createMockAuthorizationResult({
-            cacheTtl: 300,
-            method: AuthenticationMethod.CACHE,
-            timestamp: new Date(Date.now() - 60000),
-          })
-        )
+      mockAuthCache.get = () =>
+        createMockAuthorizationResult({
+          cacheTtl: 300,
+          method: AuthenticationMethod.CACHE,
+          timestamp: new Date(Date.now() - 60000),
+        })
 
       const config = createTestAuthConfig({ authorizationCacheEnabled: true })
       const request = createMockAuthRequest({
@@ -191,10 +194,9 @@ await describe('LocalAuthStrategy', async () => {
   })
 
   await describe('cacheResult', async () => {
-    await it('should cache authorization result', async () => {
+    await it('should cache authorization result', () => {
       let cachedValue: undefined | { key: string; ttl?: number; value: unknown }
-      // eslint-disable-next-line @typescript-eslint/require-await
-      mockAuthCache.set = async (key: string, value, ttl?: number) => {
+      mockAuthCache.set = (key: string, value, ttl?: number) => {
         cachedValue = { key, ttl, value }
       }
 
@@ -202,13 +204,12 @@ await describe('LocalAuthStrategy', async () => {
         method: AuthenticationMethod.REMOTE_AUTHORIZATION,
       })
 
-      await strategy.cacheResult('TEST_TAG', result, 300)
+      strategy.cacheResult('TEST_TAG', result, 300)
       expect(cachedValue).toBeDefined()
     })
 
-    await it('should handle cache errors gracefully', async () => {
-      // eslint-disable-next-line @typescript-eslint/require-await
-      mockAuthCache.set = async () => {
+    await it('should handle cache errors gracefully', () => {
+      mockAuthCache.set = () => {
         throw new Error('Cache error')
       }
 
@@ -216,45 +217,50 @@ await describe('LocalAuthStrategy', async () => {
         method: AuthenticationMethod.REMOTE_AUTHORIZATION,
       })
 
-      await expect(strategy.cacheResult('TEST_TAG', result)).resolves.toBeUndefined()
+      expect(() => {
+        strategy.cacheResult('TEST_TAG', result)
+      }).not.toThrow()
     })
   })
 
   await describe('invalidateCache', async () => {
-    await it('should remove entry from cache', async () => {
+    await it('should remove entry from cache', () => {
       let removedKey: string | undefined
-      // eslint-disable-next-line @typescript-eslint/require-await
-      mockAuthCache.remove = async (key: string) => {
+      mockAuthCache.remove = (key: string) => {
         removedKey = key
       }
 
-      await strategy.invalidateCache('TEST_TAG')
+      strategy.invalidateCache('TEST_TAG')
       expect(removedKey).toBe('TEST_TAG')
     })
   })
 
   await describe('isInLocalList', async () => {
     await it('should return true when identifier is in local list', async () => {
-      mockLocalAuthListManager.getEntry = async () =>
-        await Promise.resolve({
-          identifier: 'LOCAL_TAG',
-          status: 'accepted',
+      mockLocalAuthListManager.getEntry = () =>
+        new Promise<LocalAuthEntry | undefined>(resolve => {
+          resolve({
+            identifier: 'LOCAL_TAG',
+            status: 'accepted',
+          })
         })
 
       await expect(strategy.isInLocalList('LOCAL_TAG')).resolves.toBe(true)
     })
 
     await it('should return false when identifier is not in local list', async () => {
-      // eslint-disable-next-line @typescript-eslint/require-await
-      mockLocalAuthListManager.getEntry = async () => undefined
+      mockLocalAuthListManager.getEntry = () =>
+        new Promise<LocalAuthEntry | undefined>(resolve => {
+          resolve(undefined)
+        })
 
       await expect(strategy.isInLocalList('UNKNOWN_TAG')).resolves.toBe(false)
     })
   })
 
   await describe('getStats', async () => {
-    await it('should return strategy statistics', async () => {
-      const stats = await strategy.getStats()
+    await it('should return strategy statistics', () => {
+      const stats = strategy.getStats()
 
       expect(stats.totalRequests).toBe(0)
       expect(stats.cacheHits).toBe(0)
@@ -266,9 +272,9 @@ await describe('LocalAuthStrategy', async () => {
   })
 
   await describe('cleanup', async () => {
-    await it('should reset strategy state', async () => {
-      await strategy.cleanup()
-      const stats = await strategy.getStats()
+    await it('should reset strategy state', () => {
+      strategy.cleanup()
+      const stats = strategy.getStats()
       expect(stats.isInitialized).toBe(false)
     })
   })

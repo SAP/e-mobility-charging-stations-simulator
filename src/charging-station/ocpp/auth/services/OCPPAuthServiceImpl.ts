@@ -183,7 +183,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
         strategyUsed: 'none',
       },
       isOffline: false,
-      method: AuthenticationMethod.LOCAL_LIST,
+      method: AuthenticationMethod.NONE,
       status: AuthorizationStatus.INVALID,
       timestamp: new Date(),
     }
@@ -267,13 +267,14 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
   /**
    * Clear all cached authorizations
    */
-  public async clearCache (): Promise<void> {
+  public clearCache (): void {
     logger.debug(`${this.chargingStation.logPrefix()} Clearing all cached authorizations`)
 
     // Clear cache in local strategy
     const localStrategy = this.strategies.get('local') as LocalAuthStrategy | undefined
-    if (localStrategy?.authCache) {
-      await localStrategy.authCache.clear()
+    const localAuthCache = localStrategy?.getAuthCache()
+    if (localAuthCache) {
+      localAuthCache.clear()
       logger.info(`${this.chargingStation.logPrefix()} Authorization cache cleared`)
     } else {
       logger.debug(`${this.chargingStation.logPrefix()} No authorization cache available to clear`)
@@ -412,7 +413,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * Invalidate cached authorization for an identifier
    * @param identifier - Unified identifier whose cached authorization should be invalidated
    */
-  public async invalidateCache (identifier: UnifiedIdentifier): Promise<void> {
+  public invalidateCache (identifier: UnifiedIdentifier): void {
     logger.debug(
       `${this.chargingStation.logPrefix()} Invalidating cache for identifier: ${identifier.value}`
     )
@@ -420,7 +421,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     // Invalidate in local strategy
     const localStrategy = this.strategies.get('local') as LocalAuthStrategy | undefined
     if (localStrategy) {
-      await localStrategy.invalidateCache(identifier.value)
+      localStrategy.invalidateCache(identifier.value)
       logger.info(
         `${this.chargingStation.logPrefix()} Cache invalidated for identifier: ${identifier.value}`
       )
@@ -493,23 +494,22 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * Test connectivity to remote authorization service
    * @returns True if remote authorization service is reachable
    */
-  public testConnectivity (): Promise<boolean> {
+  public testConnectivity (): boolean {
     const remoteStrategy = this.strategies.get('remote')
     if (!remoteStrategy) {
-      return Promise.resolve(false)
+      return false
     }
 
     // For now return true - real implementation would test remote connectivity
-    return Promise.resolve(true)
+    return true
   }
 
   /**
    * Update authentication configuration
    * @param config - Partial configuration object with values to update
-   * @returns Promise that resolves when configuration is updated
    * @throws {OCPPError} If configuration validation fails
    */
-  public updateConfiguration (config: Partial<AuthConfiguration>): Promise<void> {
+  public updateConfiguration (config: Partial<AuthConfiguration>): void {
     // Merge new config with existing
     const newConfig = { ...this.config, ...config }
 
@@ -520,7 +520,6 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     this.config = newConfig
 
     logger.info(`${this.chargingStation.logPrefix()} Authentication configuration updated`)
-    return Promise.resolve()
   }
 
   /**
@@ -579,6 +578,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
       localPreAuthorize: false,
       maxCacheEntries: 1000,
       offlineAuthorizationEnabled: true,
+      remoteAuthorization: true,
       unknownIdAuthorization: AuthorizationStatus.INVALID,
     }
   }
@@ -609,12 +609,15 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     const ocpp16Adapter = this.adapters.get(OCPPVersion.VERSION_16) as OCPP16AuthAdapter | undefined
     const ocpp20Adapter = this.adapters.get(OCPPVersion.VERSION_20) as OCPP20AuthAdapter | undefined
 
+    // Create auth cache for strategy injection
+    const authCache = AuthComponentFactory.createAuthCache(this.config)
+
     // Create strategies using factory
     const strategies = await AuthComponentFactory.createStrategies(
       this.chargingStation,
       { ocpp16Adapter, ocpp20Adapter },
-      undefined, // manager
-      undefined, // cache
+      undefined, // manager - delegated to OCPPAuthServiceImpl
+      authCache,
       this.config
     )
 

@@ -70,9 +70,8 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
       // Create a mock auth service to verify clearCache is called
       let clearCacheCalled = false
       const mockAuthService = {
-        clearCache: (): Promise<void> => {
+        clearCache: (): void => {
           clearCacheCalled = true
-          return Promise.resolve()
         },
         getConfiguration: () => ({
           authorizationCacheEnabled: true,
@@ -122,7 +121,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
     await it('should return Rejected when AuthCacheEnabled is false', async () => {
       // Create a mock auth service with cache disabled
       const mockAuthService = {
-        clearCache: (): Promise<void> => {
+        clearCache: (): void => {
           throw new Error('clearCache should not be called when cache is disabled')
         },
         getConfiguration: () => ({
@@ -149,9 +148,8 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
     await it('should return Accepted when AuthCacheEnabled is true and clear succeeds', async () => {
       // Create a mock auth service with cache enabled
       const mockAuthService = {
-        clearCache: (): Promise<void> => {
-          // Successful clear
-          return Promise.resolve()
+        clearCache: (): void => {
+          /* empty */
         },
         getConfiguration: () => ({
           authorizationCacheEnabled: true,
@@ -177,8 +175,8 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
     await it('should return Rejected when clearCache throws an error', async () => {
       // Create a mock auth service that throws on clearCache
       const mockAuthService = {
-        clearCache: (): Promise<void> => {
-          return Promise.reject(new Error('Cache clear failed'))
+        clearCache: (): void => {
+          throw new Error('Cache clear failed')
         },
         getConfiguration: () => ({
           authorizationCacheEnabled: true,
@@ -204,9 +202,8 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
     await it('should not attempt to clear cache when AuthCacheEnabled is false', async () => {
       let clearCacheAttempted = false
       const mockAuthService = {
-        clearCache: (): Promise<void> => {
+        clearCache: (): void => {
           clearCacheAttempted = true
-          return Promise.resolve()
         },
         getConfiguration: () => ({
           authorizationCacheEnabled: false,
