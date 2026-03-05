@@ -2,8 +2,8 @@ import { logger } from '../../../../utils/Logger.js'
 import { type AuthConfiguration, AuthenticationError, AuthErrorCode } from '../types/AuthTypes.js'
 
 /**
- *
- * @param config
+ * Warn if no authentication method is enabled in the configuration.
+ * @param config - Authentication configuration to check
  */
 function checkAuthMethodsEnabled (config: AuthConfiguration): void {
   const hasLocalList = config.localAuthListEnabled
@@ -33,7 +33,7 @@ function checkAuthMethodsEnabled (config: AuthConfiguration): void {
 }
 
 /**
- * Validate authentication configuration
+ * Validate authentication configuration.
  * @param config - Configuration to validate
  * @throws {AuthenticationError} If configuration is invalid
  */
@@ -50,8 +50,8 @@ function validate (config: AuthConfiguration): void {
 }
 
 /**
- *
- * @param config
+ * Validate cache-related configuration values.
+ * @param config - Authentication configuration with cache settings
  */
 function validateCacheConfig (config: AuthConfiguration): void {
   if (config.authorizationCacheLifetime !== undefined) {
@@ -106,8 +106,8 @@ function validateCacheConfig (config: AuthConfiguration): void {
 }
 
 /**
- *
- * @param config
+ * Validate offline authorization configuration consistency.
+ * @param config - Authentication configuration with offline settings
  */
 function validateOfflineConfig (config: AuthConfiguration): void {
   if (config.allowOfflineTxForUnknownId && !config.offlineAuthorizationEnabled) {
@@ -128,8 +128,8 @@ function validateOfflineConfig (config: AuthConfiguration): void {
 }
 
 /**
- *
- * @param config
+ * Validate authorization timeout value.
+ * @param config - Authentication configuration with timeout setting
  */
 function validateTimeout (config: AuthConfiguration): void {
   if (!Number.isInteger(config.authorizationTimeout)) {

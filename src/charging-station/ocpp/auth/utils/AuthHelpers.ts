@@ -3,8 +3,9 @@ import type { AuthorizationResult, AuthRequest, UnifiedIdentifier } from '../typ
 import { AuthContext, AuthenticationMethod, AuthorizationStatus } from '../types/AuthTypes.js'
 
 /**
- *
- * @param expiryDate
+ * Compute remaining TTL in seconds from an expiry date.
+ * @param expiryDate - Expiry timestamp to compute TTL from
+ * @returns TTL in seconds, or undefined if already expired or no date provided
  */
 function calculateTTL (expiryDate?: Date): number | undefined {
   if (!expiryDate) {
@@ -22,11 +23,12 @@ function calculateTTL (expiryDate?: Date): number | undefined {
 }
 
 /**
- *
- * @param identifier
- * @param context
- * @param connectorId
- * @param metadata
+ * Build an AuthRequest with sensible defaults.
+ * @param identifier - Unified identifier for the request
+ * @param context - Authentication context
+ * @param connectorId - Optional connector ID
+ * @param metadata - Optional additional metadata
+ * @returns Fully populated AuthRequest
  */
 function createAuthRequest (
   identifier: UnifiedIdentifier,
@@ -45,10 +47,11 @@ function createAuthRequest (
 }
 
 /**
- *
- * @param status
- * @param method
- * @param reason
+ * Build a rejected AuthorizationResult.
+ * @param status - Authorization status to assign
+ * @param method - Authentication method that produced the result
+ * @param reason - Optional human-readable rejection reason
+ * @returns AuthorizationResult with isOffline=false
  */
 function createRejectedResult (
   status: AuthorizationStatus,
@@ -65,9 +68,10 @@ function createRejectedResult (
 }
 
 /**
- *
- * @param error
- * @param identifier
+ * Format an authentication error for logging.
+ * @param error - Error that occurred during authentication
+ * @param identifier - Identifier involved in the failed auth attempt
+ * @returns Formatted error string with truncated identifier
  */
 function formatAuthError (error: Error, identifier: UnifiedIdentifier): string {
   const identifierValue = identifier.value.substring(0, 8) + '...'
@@ -75,8 +79,9 @@ function formatAuthError (error: Error, identifier: UnifiedIdentifier): string {
 }
 
 /**
- *
- * @param status
+ * Map an authorization status to a human-readable message.
+ * @param status - Authorization status to describe
+ * @returns Descriptive message for the status
  */
 function getStatusMessage (status: AuthorizationStatus): string {
   switch (status) {
@@ -104,8 +109,9 @@ function getStatusMessage (status: AuthorizationStatus): string {
 }
 
 /**
- *
- * @param result
+ * Check whether an authorization result represents a permanent failure.
+ * @param result - Authorization result to evaluate
+ * @returns True if BLOCKED, EXPIRED, or INVALID
  */
 function isPermanentFailure (result: AuthorizationResult): boolean {
   return [
@@ -116,8 +122,9 @@ function isPermanentFailure (result: AuthorizationResult): boolean {
 }
 
 /**
- *
- * @param result
+ * Check whether an authorization result is still valid (ACCEPTED and not expired).
+ * @param result - Authorization result to evaluate
+ * @returns True if ACCEPTED and expiry date has not passed
  */
 function isResultValid (result: AuthorizationResult): boolean {
   if (result.status !== AuthorizationStatus.ACCEPTED) {
@@ -133,8 +140,9 @@ function isResultValid (result: AuthorizationResult): boolean {
 }
 
 /**
- *
- * @param result
+ * Check whether an authorization result represents a temporary failure.
+ * @param result - Authorization result to evaluate
+ * @returns True if PENDING or UNKNOWN
  */
 function isTemporaryFailure (result: AuthorizationResult): boolean {
   if (result.status === AuthorizationStatus.PENDING) {
@@ -149,8 +157,9 @@ function isTemporaryFailure (result: AuthorizationResult): boolean {
 }
 
 /**
- *
- * @param results
+ * Merge multiple authorization results, preferring ACCEPTED.
+ * @param results - Array of results to merge
+ * @returns The first ACCEPTED result, or the first result with merged metadata
  */
 function mergeAuthResults (results: AuthorizationResult[]): AuthorizationResult | undefined {
   if (results.length === 0) {
@@ -178,8 +187,9 @@ function mergeAuthResults (results: AuthorizationResult[]): AuthorizationResult 
 }
 
 /**
- *
- * @param result
+ * Strip sensitive data from an authorization result for safe logging.
+ * @param result - Authorization result to sanitize
+ * @returns Object with only safe-to-log fields
  */
 function sanitizeForLogging (result: AuthorizationResult): Record<string, unknown> {
   return {

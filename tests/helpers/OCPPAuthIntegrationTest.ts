@@ -386,8 +386,9 @@ export class OCPPAuthIntegrationTest {
 }
 
 /**
- *
- * @param chargingStation
+ * Create and run integration tests for a charging station.
+ * @param chargingStation - Charging station instance to test
+ * @returns Test results with pass/fail counts and outcome messages
  */
 export async function runOCPPAuthIntegrationTests (chargingStation: ChargingStation): Promise<{
   failed: number

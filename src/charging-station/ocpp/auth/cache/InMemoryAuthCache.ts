@@ -443,9 +443,10 @@ export class InMemoryAuthCache implements AuthCache {
 }
 
 /**
- *
- * @param identifier
- * @param maxLen
+ * Truncate identifier for safe log output.
+ * @param identifier - Full identifier string
+ * @param maxLen - Maximum length before truncation (default: 8)
+ * @returns Truncated identifier with '...' suffix, or original if within limit
  */
 export function truncateId (identifier: string, maxLen = 8): string {
   if (identifier.length <= maxLen) {
