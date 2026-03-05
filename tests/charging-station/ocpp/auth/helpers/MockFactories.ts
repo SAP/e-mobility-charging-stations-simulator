@@ -7,6 +7,7 @@ import { expect } from '@std/expect'
 import type { ChargingStation } from '../../../../../src/charging-station/ChargingStation.js'
 import type {
   AuthCache,
+  LocalAuthEntry,
   LocalAuthListManager,
   OCPPAuthAdapter,
   OCPPAuthService,
@@ -110,31 +111,38 @@ export const createMockAuthorizationResult = (
  */
 export const createMockAuthService = (overrides?: Partial<OCPPAuthService>): OCPPAuthService =>
   ({
-    authorize: async () => ({
-      expiresAt: new Date(Date.now() + 3600000),
-      isOffline: false,
-      method: AuthenticationMethod.LOCAL_LIST,
-      status: AuthorizationStatus.ACCEPTED,
-      timestamp: new Date(),
-    }),
+    authorize: (_request: AuthRequest) =>
+      new Promise<AuthorizationResult>(resolve => {
+        resolve(
+          createMockAuthorizationResult({
+            method: AuthenticationMethod.LOCAL_LIST,
+          })
+        )
+      }),
     clearCache: () => {
       /* empty */
     },
     getConfiguration: () => ({}) as AuthConfiguration,
-    getStats: async () => ({
-      avgResponseTime: 0,
-      cacheHitRate: 0,
-      failedAuth: 0,
-      lastUpdated: new Date(),
-      localUsageRate: 1,
-      remoteSuccessRate: 0,
-      successfulAuth: 0,
-      totalRequests: 0,
-    }),
+    getStats: () =>
+      new Promise<Record<string, unknown>>(resolve => {
+        resolve({
+          avgResponseTime: 0,
+          cacheHitRate: 0,
+          failedAuth: 0,
+          lastUpdated: new Date(),
+          localUsageRate: 1,
+          remoteSuccessRate: 0,
+          successfulAuth: 0,
+          totalRequests: 0,
+        })
+      }),
     invalidateCache: () => {
       /* empty */
     },
-    isLocallyAuthorized: async () => undefined,
+    isLocallyAuthorized: (_identifier: UnifiedIdentifier, _connectorId?: number) =>
+      new Promise<AuthorizationResult | undefined>(resolve => {
+        resolve(undefined)
+      }),
     testConnectivity: () => true,
     updateConfiguration: () => {
       /* empty */
@@ -188,9 +196,13 @@ export const createMockOCPPAdapter = (
   ocppVersion: OCPPVersion,
   overrides?: Partial<OCPPAuthAdapter>
 ): OCPPAuthAdapter => ({
-  authorizeRemote: async (_identifier: UnifiedIdentifier) =>
-    createMockAuthorizationResult({
-      method: AuthenticationMethod.REMOTE_AUTHORIZATION,
+  authorizeRemote: (_identifier: UnifiedIdentifier) =>
+    new Promise<AuthorizationResult>(resolve => {
+      resolve(
+        createMockAuthorizationResult({
+          method: AuthenticationMethod.REMOTE_AUTHORIZATION,
+        })
+      )
     }),
   convertFromUnifiedIdentifier: (identifier: UnifiedIdentifier) =>
     ocppVersion === OCPPVersion.VERSION_16
@@ -205,7 +217,7 @@ export const createMockOCPPAdapter = (
         : ((identifier as { idToken?: string }).idToken ?? 'unknown'),
   }),
   getConfigurationSchema: () => ({}),
-  isRemoteAvailable: async () => true,
+  isRemoteAvailable: () => true,
   ocppVersion,
   validateConfiguration: (_config: AuthConfiguration) => true,
   ...overrides,
@@ -291,7 +303,7 @@ export const createMockAuthServiceTestStation = (
     idTagLocalAuthorized: () => false,
     isConnected: () => true,
     logPrefix: () => `[TEST-CS-${id}]`,
-    sendRequest: async () => ({}),
+    sendRequest: () => new Promise<Record<string, never>>(resolve => { resolve({}) }),
     stationInfo: {
       chargingStationId: `TEST-CS-${id}`,
       hashId: `test-hash-${id}`,
@@ -311,20 +323,12 @@ export const createMockAuthServiceTestStation = (
 export const createMockLocalAuthListManager = (
   overrides?: Partial<LocalAuthListManager>
 ): LocalAuthListManager => ({
-  addEntry: async () => {
-    /* empty */
-  },
-  clearAll: async () => {
-    /* empty */
-  },
-  getAllEntries: async () => [],
-  getEntry: async () => undefined,
-  getVersion: async () => 1,
-  removeEntry: async () => {
-    /* empty */
-  },
-  updateVersion: async () => {
-    /* empty */
-  },
+  addEntry: () => new Promise<void>(resolve => { resolve() }),
+  clearAll: () => new Promise<void>(resolve => { resolve() }),
+  getAllEntries: () => new Promise<LocalAuthEntry[]>(resolve => { resolve([]) }),
+  getEntry: () => new Promise<LocalAuthEntry | undefined>(resolve => { resolve(undefined) }),
+  getVersion: () => new Promise<number>(resolve => { resolve(1) }),
+  removeEntry: () => new Promise<void>(resolve => { resolve() }),
+  updateVersion: () => new Promise<void>(resolve => { resolve() }),
   ...overrides,
 })

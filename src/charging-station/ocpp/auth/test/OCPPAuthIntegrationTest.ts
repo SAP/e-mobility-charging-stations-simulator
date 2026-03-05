@@ -48,7 +48,7 @@ export class OCPPAuthIntegrationTest {
 
     // Test 1: Service Initialization
     try {
-      await this.testServiceInitialization()
+      this.testServiceInitialization()
       results.push('✅ Service Initialization - PASSED')
       passed++
     } catch (error) {
@@ -58,7 +58,7 @@ export class OCPPAuthIntegrationTest {
 
     // Test 2: Configuration Management
     try {
-      await this.testConfigurationManagement()
+      this.testConfigurationManagement()
       results.push('✅ Configuration Management - PASSED')
       passed++
     } catch (error) {
@@ -68,7 +68,7 @@ export class OCPPAuthIntegrationTest {
 
     // Test 3: Strategy Selection Logic
     try {
-      await this.testStrategySelection()
+      this.testStrategySelection()
       results.push('✅ Strategy Selection Logic - PASSED')
       passed++
     } catch (error) {

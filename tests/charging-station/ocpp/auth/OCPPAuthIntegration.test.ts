@@ -7,6 +7,7 @@ import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
+import type { LocalAuthEntry } from '../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
 
 import { InMemoryAuthCache } from '../../../../src/charging-station/ocpp/auth/cache/InMemoryAuthCache.js'
 import { OCPPAuthServiceImpl } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceImpl.js'
@@ -341,8 +342,10 @@ await describe('OCPP Authentication', async () => {
       const cache = new InMemoryAuthCache({ cleanupIntervalSeconds: 0 })
       try {
         const listManager = createMockLocalAuthListManager({
-          getEntry: async (id: string) =>
-            id === 'LIST-ID' ? { identifier: 'LIST-ID', status: 'accepted' } : undefined,
+          getEntry: (id: string) =>
+            new Promise<LocalAuthEntry | undefined>(resolve => {
+              resolve(id === 'LIST-ID' ? { identifier: 'LIST-ID', status: 'accepted' } : undefined)
+            }),
         })
 
         const strategy = new LocalAuthStrategy(listManager, cache)

@@ -160,7 +160,6 @@ export class LocalAuthStrategy implements AuthStrategy {
 
   /**
    * Cleanup strategy resources
-   * @returns Promise that resolves when cleanup is complete
    */
   public cleanup (): void {
     logger.info('LocalAuthStrategy: Cleaning up...')
@@ -215,7 +214,6 @@ export class LocalAuthStrategy implements AuthStrategy {
   /**
    * Initialize strategy with configuration and dependencies
    * @param config - Authentication configuration for strategy setup
-   * @returns Promise that resolves when initialization completes
    */
   public initialize (config: AuthConfiguration): void {
     try {

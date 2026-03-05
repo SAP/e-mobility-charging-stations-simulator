@@ -273,7 +273,7 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter {
    * Check if remote authorization is available
    * @returns True if remote authorization is enabled and station is online
    */
-  async isRemoteAvailable (): Promise<boolean> {
+  isRemoteAvailable (): boolean {
     try {
       // Check if station supports remote authorization
       const remoteAuthEnabled = this.chargingStation.stationInfo?.remoteAuthorization === true

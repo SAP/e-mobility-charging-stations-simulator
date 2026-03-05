@@ -35,13 +35,16 @@ await describe('OCPP16AuthAdapter', async () => {
       inAcceptedState: () => true,
       logPrefix: () => '[TEST-STATION]',
       ocppRequestService: {
-        requestHandler: async (): Promise<OCPP16AuthorizeResponse> => ({
-          idTagInfo: {
-            expiryDate: new Date(Date.now() + 86400000),
-            parentIdTag: undefined,
-            status: OCPP16AuthorizationStatus.ACCEPTED,
-          },
-        }),
+        requestHandler: (): Promise<OCPP16AuthorizeResponse> =>
+          new Promise<OCPP16AuthorizeResponse>(resolve => {
+            resolve({
+              idTagInfo: {
+                expiryDate: new Date(Date.now() + 86400000),
+                parentIdTag: undefined,
+                status: OCPP16AuthorizationStatus.ACCEPTED,
+              },
+            })
+          }),
       },
       stationInfo: {
         chargingStationId: 'TEST-001',
@@ -167,9 +170,10 @@ await describe('OCPP16AuthAdapter', async () => {
 
     await it('should handle authorization failure gracefully', async () => {
       // Override mock to simulate failure
-      mockStation.ocppRequestService.requestHandler = async (): Promise<never> => {
-        throw new Error('Network error')
-      }
+      mockStation.ocppRequestService.requestHandler = (): Promise<never> =>
+        new Promise<never>((_resolve, reject) => {
+          reject(new Error('Network error'))
+        })
 
       const identifier = createMockIdentifier(OCPPVersion.VERSION_16, 'TEST_TAG')
 
@@ -181,24 +185,24 @@ await describe('OCPP16AuthAdapter', async () => {
   })
 
   await describe('isRemoteAvailable', async () => {
-    await it('should return true when remote authorization is enabled and online', async () => {
-      const isAvailable = await adapter.isRemoteAvailable()
+    await it('should return true when remote authorization is enabled and online', () => {
+      const isAvailable = adapter.isRemoteAvailable()
       expect(isAvailable).toBe(true)
     })
 
-    await it('should return false when station is offline', async () => {
+    await it('should return false when station is offline', () => {
       mockStation.inAcceptedState = () => false
 
-      const isAvailable = await adapter.isRemoteAvailable()
+      const isAvailable = adapter.isRemoteAvailable()
       expect(isAvailable).toBe(false)
     })
 
-    await it('should return false when remote authorization is disabled', async () => {
+    await it('should return false when remote authorization is disabled', () => {
       if (mockStation.stationInfo) {
         mockStation.stationInfo.remoteAuthorization = false
       }
 
-      const isAvailable = await adapter.isRemoteAvailable()
+      const isAvailable = adapter.isRemoteAvailable()
       expect(isAvailable).toBe(false)
     })
   })

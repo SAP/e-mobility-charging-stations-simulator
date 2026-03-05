@@ -11,6 +11,7 @@ import type { OCPPAuthAdapter } from '../../../../../src/charging-station/ocpp/a
 import { CertificateAuthStrategy } from '../../../../../src/charging-station/ocpp/auth/strategies/CertificateAuthStrategy.js'
 import {
   AuthenticationMethod,
+  type AuthorizationResult,
   AuthorizationStatus,
   IdentifierType,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
@@ -38,9 +39,13 @@ await describe('CertificateAuthStrategy', async () => {
     } as unknown as ChargingStation
 
     mockOCPP20Adapter = createMockOCPPAdapter(OCPPVersion.VERSION_20, {
-      authorizeRemote: async () =>
-        createMockAuthorizationResult({
-          method: AuthenticationMethod.CERTIFICATE_BASED,
+      authorizeRemote: () =>
+        new Promise<AuthorizationResult>(resolve => {
+          resolve(
+            createMockAuthorizationResult({
+              method: AuthenticationMethod.CERTIFICATE_BASED,
+            })
+          )
         }),
       convertToUnifiedIdentifier: identifier => ({
         ocppVersion: OCPPVersion.VERSION_20,
@@ -69,12 +74,16 @@ await describe('CertificateAuthStrategy', async () => {
   await describe('initialize', async () => {
     await it('should initialize successfully when certificate auth is enabled', () => {
       const config = createTestAuthConfig({ certificateAuthEnabled: true })
-      expect(strategy.initialize(config)).toBeUndefined()
+      expect(() => {
+        strategy.initialize(config)
+      }).not.toThrow()
     })
 
     await it('should handle disabled certificate auth gracefully', () => {
       const config = createTestAuthConfig({ certificateAuthEnabled: false })
-      expect(strategy.initialize(config)).toBeUndefined()
+      expect(() => {
+        strategy.initialize(config)
+      }).not.toThrow()
     })
   })
 

@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type {
   AuthCache,
+  LocalAuthEntry,
   LocalAuthListManager,
 } from '../../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
 
@@ -61,7 +62,9 @@ await describe('LocalAuthStrategy', async () => {
         authorizationCacheEnabled: true,
         localAuthListEnabled: true,
       })
-      expect(strategy.initialize(config)).toBeUndefined()
+      expect(() => {
+        strategy.initialize(config)
+      }).not.toThrow()
     })
   })
 
@@ -102,12 +105,15 @@ await describe('LocalAuthStrategy', async () => {
     })
 
     await it('should authenticate using local auth list', async () => {
-      mockLocalAuthListManager.getEntry = async () => ({
-        expiryDate: new Date(Date.now() + 86400000),
-        identifier: 'LOCAL_TAG',
-        metadata: { source: 'local' },
-        status: 'accepted',
-      })
+      mockLocalAuthListManager.getEntry = () =>
+        new Promise<LocalAuthEntry | undefined>(resolve => {
+          resolve({
+            expiryDate: new Date(Date.now() + 86400000),
+            identifier: 'LOCAL_TAG',
+            metadata: { source: 'local' },
+            status: 'accepted',
+          })
+        })
 
       const config = createTestAuthConfig({
         authorizationCacheEnabled: true,
@@ -231,16 +237,22 @@ await describe('LocalAuthStrategy', async () => {
 
   await describe('isInLocalList', async () => {
     await it('should return true when identifier is in local list', async () => {
-      mockLocalAuthListManager.getEntry = async () => ({
-        identifier: 'LOCAL_TAG',
-        status: 'accepted',
-      })
+      mockLocalAuthListManager.getEntry = () =>
+        new Promise<LocalAuthEntry | undefined>(resolve => {
+          resolve({
+            identifier: 'LOCAL_TAG',
+            status: 'accepted',
+          })
+        })
 
       await expect(strategy.isInLocalList('LOCAL_TAG')).resolves.toBe(true)
     })
 
     await it('should return false when identifier is not in local list', async () => {
-      mockLocalAuthListManager.getEntry = async () => undefined
+      mockLocalAuthListManager.getEntry = () =>
+        new Promise<LocalAuthEntry | undefined>(resolve => {
+          resolve(undefined)
+        })
 
       await expect(strategy.isInLocalList('UNKNOWN_TAG')).resolves.toBe(false)
     })

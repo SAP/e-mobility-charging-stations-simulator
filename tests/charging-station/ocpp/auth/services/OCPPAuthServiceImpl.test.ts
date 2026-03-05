@@ -132,7 +132,7 @@ await describe('OCPPAuthServiceImpl', async () => {
       mockStation = createMockAuthServiceTestStation('connectivity')
     })
 
-    it('should test remote connectivity', () => {
+    await it('should test remote connectivity', () => {
       const authService = new OCPPAuthServiceImpl(mockStation)
       const isConnected = authService.testConnectivity()
 

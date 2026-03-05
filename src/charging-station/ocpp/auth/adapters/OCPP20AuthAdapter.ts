@@ -71,7 +71,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
       )
 
       // Check if remote authorization is configured
-      const isRemoteAuth = await this.isRemoteAvailable()
+      const isRemoteAuth = this.isRemoteAvailable()
       if (!isRemoteAuth) {
         return {
           additionalInfo: {
@@ -441,7 +441,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
    * Check if remote authorization is available for OCPP 2.0
    * @returns True if remote authorization is available and enabled
    */
-  async isRemoteAvailable (): Promise<boolean> {
+  isRemoteAvailable (): boolean {
     try {
       // Check if station supports remote authorization via variables
       // OCPP 2.0 uses variables instead of configuration keys
@@ -450,7 +450,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
       const isOnline = this.chargingStation.inAcceptedState()
 
       // Check AuthorizeRemoteStart variable (with type validation)
-      const remoteStartValue = await this.getVariableValue('AuthCtrlr', 'AuthorizeRemoteStart')
+      const remoteStartValue = this.getVariableValue('AuthCtrlr', 'AuthorizeRemoteStart')
       const remoteStartEnabled = this.parseBooleanVariable(remoteStartValue, true)
 
       return isOnline && remoteStartEnabled
@@ -593,11 +593,11 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
    * @param useDefaultFallback - If true, use OCPP 2.0.1 spec default values when variable is not found
    * @returns Promise resolving to variable value as string, or undefined if not available
    */
-  private async getVariableValue (
+  private getVariableValue (
     component: string,
     variable: string,
     useDefaultFallback = true
-  ): Promise<string | undefined> {
+  ): string | undefined {
     try {
       const variableManager = OCPP20VariableManager.getInstance()
 

@@ -361,7 +361,7 @@ export interface OCPPAuthAdapter {
   /**
    * Check if remote authorization is available
    */
-  isRemoteAvailable(): Promise<boolean>
+  isRemoteAvailable(): boolean | Promise<boolean>
 
   /**
    * The OCPP version this adapter handles

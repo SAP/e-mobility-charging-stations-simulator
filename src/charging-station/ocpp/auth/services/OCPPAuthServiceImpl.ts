@@ -507,7 +507,6 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
   /**
    * Update authentication configuration
    * @param config - Partial configuration object with values to update
-   * @returns Promise that resolves when configuration is updated
    * @throws {OCPPError} If configuration validation fails
    */
   public updateConfiguration (config: Partial<AuthConfiguration>): void {

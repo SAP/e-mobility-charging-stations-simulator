@@ -221,14 +221,18 @@ await describe('OCPP20AuthAdapter', async () => {
   await describe('authorizeRemote', async () => {
     await it('should perform remote authorization successfully', async t => {
       // Mock isRemoteAvailable to return true (avoids OCPP20VariableManager singleton issues)
-      t.mock.method(adapter, 'isRemoteAvailable', async () => true)
+      t.mock.method(adapter, 'isRemoteAvailable', () => true)
 
       // Mock sendTransactionEvent to return accepted authorization
-      t.mock.method(OCPP20ServiceUtils, 'sendTransactionEvent', async () => ({
-        idTokenInfo: {
-          status: OCPP20AuthorizationStatusEnumType.Accepted,
-        },
-      }))
+      t.mock.method(OCPP20ServiceUtils, 'sendTransactionEvent', () =>
+        new Promise<Record<string, unknown>>(resolve => {
+          resolve({
+            idTokenInfo: {
+              status: OCPP20AuthorizationStatusEnumType.Accepted,
+            },
+          })
+        })
+      )
 
       const identifier = createMockIdentifier(
         OCPPVersion.VERSION_20,
@@ -255,26 +259,26 @@ await describe('OCPP20AuthAdapter', async () => {
   })
 
   await describe('isRemoteAvailable', async () => {
-    await it('should return true when station is online and remote start enabled', async t => {
+    await it('should return true when station is online and remote start enabled', t => {
       t.mock.method(
-        adapter as unknown as { getVariableValue: () => Promise<string | undefined> },
+        adapter as unknown as { getVariableValue: () => string | undefined },
         'getVariableValue',
-        async () => 'true'
+        () => 'true'
       )
 
-      const isAvailable = await adapter.isRemoteAvailable()
+      const isAvailable = adapter.isRemoteAvailable()
       expect(isAvailable).toBe(true)
     })
 
-    await it('should return false when station is offline', async t => {
+    await it('should return false when station is offline', t => {
       mockStation.inAcceptedState = () => false
       t.mock.method(
-        adapter as unknown as { getVariableValue: () => Promise<string | undefined> },
+        adapter as unknown as { getVariableValue: () => string | undefined },
         'getVariableValue',
-        async () => 'true'
+        () => 'true'
       )
 
-      const isAvailable = await adapter.isRemoteAvailable()
+      const isAvailable = adapter.isRemoteAvailable()
       expect(isAvailable).toBe(false)
     })
   })
@@ -408,23 +412,23 @@ await describe('OCPP20AuthAdapter', async () => {
     })
 
     await describe('G03.FR.02.001 - Offline detection', async () => {
-      await it('should detect station is offline when not in accepted state', async () => {
+      await it('should detect station is offline when not in accepted state', () => {
         // Given: Station is offline (not in accepted state)
         offlineMockChargingStation.inAcceptedState = () => false
 
         // When: Check if remote authorization is available
-        const isAvailable = await offlineAdapter.isRemoteAvailable()
+        const isAvailable = offlineAdapter.isRemoteAvailable()
 
         // Then: Remote should not be available
         expect(isAvailable).toBe(false)
       })
 
-      await it('should detect station is online when in accepted state', async () => {
+      await it('should detect station is online when in accepted state', () => {
         // Given: Station is online (in accepted state)
         offlineMockChargingStation.inAcceptedState = () => true
 
         // When: Check if remote authorization is available
-        const isAvailable = await offlineAdapter.isRemoteAvailable()
+        const isAvailable = offlineAdapter.isRemoteAvailable()
 
         // Then: Remote should be available (assuming AuthorizeRemoteStart is enabled by default)
         expect(isAvailable).toBe(true)
@@ -437,25 +441,25 @@ await describe('OCPP20AuthAdapter', async () => {
     })
 
     await describe('G03.FR.02.002 - Remote availability check', async () => {
-      await it('should return false when offline even with valid configuration', async () => {
+      await it('should return false when offline even with valid configuration', () => {
         // Given: Station is offline
         offlineMockChargingStation.inAcceptedState = () => false
 
         // When: Check remote availability
-        const isAvailable = await offlineAdapter.isRemoteAvailable()
+        const isAvailable = offlineAdapter.isRemoteAvailable()
 
         // Then: Should not be available
         expect(isAvailable).toBe(false)
       })
 
-      await it('should handle errors gracefully when checking availability', async () => {
+      await it('should handle errors gracefully when checking availability', () => {
         // Given: inAcceptedState throws an error
         offlineMockChargingStation.inAcceptedState = () => {
           throw new Error('Connection error')
         }
 
         // When: Check remote availability
-        const isAvailable = await offlineAdapter.isRemoteAvailable()
+        const isAvailable = offlineAdapter.isRemoteAvailable()
 
         // Then: Should safely return false
         expect(isAvailable).toBe(false)

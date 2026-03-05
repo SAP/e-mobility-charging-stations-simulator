@@ -110,7 +110,7 @@ export class AuthComponentFactory {
       adapterMap.set(OCPPVersion.VERSION_201, adapters.ocpp20Adapter)
     }
     const strategy = new CertificateAuthStrategy(chargingStation, adapterMap)
-    await strategy.initialize(config)
+    strategy.initialize(config)
     return strategy
   }
 
@@ -148,7 +148,7 @@ export class AuthComponentFactory {
     // Use static import - circular dependency is acceptable here
     const { LocalAuthStrategy } = await import('../strategies/LocalAuthStrategy.js')
     const strategy = new LocalAuthStrategy(manager, cache)
-    await strategy.initialize(config)
+    strategy.initialize(config)
     return strategy
   }
 
@@ -183,7 +183,7 @@ export class AuthComponentFactory {
       adapterMap.set(OCPPVersion.VERSION_201, adapters.ocpp20Adapter)
     }
     const strategy = new RemoteAuthStrategy(adapterMap, cache, localAuthListManager)
-    await strategy.initialize(config)
+    strategy.initialize(config)
     return strategy
   }
 

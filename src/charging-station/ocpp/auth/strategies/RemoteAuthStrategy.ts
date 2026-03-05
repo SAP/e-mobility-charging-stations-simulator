@@ -174,7 +174,6 @@ export class RemoteAuthStrategy implements AuthStrategy {
 
   /**
    * Cleanup strategy resources
-   * @returns Promise that resolves when cleanup is complete
    */
   public cleanup (): void {
     logger.info('RemoteAuthStrategy: Cleaning up...')
