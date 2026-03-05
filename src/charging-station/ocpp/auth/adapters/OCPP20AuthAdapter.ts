@@ -499,7 +499,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
    * @param config - Authentication configuration to validate
    * @returns Promise resolving to true if configuration is valid for OCPP 2.0 operations
    */
-  validateConfiguration (config: AuthConfiguration): Promise<boolean> {
+  validateConfiguration (config: AuthConfiguration): boolean {
     try {
       // Check that at least one authorization method is enabled
       const hasRemoteAuth = config.authorizeRemoteStart === true
@@ -510,7 +510,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
         logger.warn(
           `${this.chargingStation.logPrefix()} OCPP 2.0 adapter: No authorization methods enabled`
         )
-        return Promise.resolve(false)
+        return false
       }
 
       // Validate timeout values
@@ -518,16 +518,16 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
         logger.warn(
           `${this.chargingStation.logPrefix()} OCPP 2.0 adapter: Invalid authorization timeout`
         )
-        return Promise.resolve(false)
+        return false
       }
 
-      return Promise.resolve(true)
+      return true
     } catch (error) {
       logger.error(
         `${this.chargingStation.logPrefix()} OCPP 2.0 adapter configuration validation failed`,
         error
       )
-      return Promise.resolve(false)
+      return false
     }
   }
 
@@ -593,7 +593,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
    * @param useDefaultFallback - If true, use OCPP 2.0.1 spec default values when variable is not found
    * @returns Promise resolving to variable value as string, or undefined if not available
    */
-  private getVariableValue (
+  private async getVariableValue (
     component: string,
     variable: string,
     useDefaultFallback = true
@@ -613,9 +613,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
         logger.debug(
           `${this.chargingStation.logPrefix()} Variable ${component}.${variable} not found in registry`
         )
-        return Promise.resolve(
-          this.getDefaultVariableValue(component, variable, useDefaultFallback)
-        )
+        return this.getDefaultVariableValue(component, variable, useDefaultFallback)
       }
 
       const result = results[0]
@@ -628,18 +626,16 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
         logger.debug(
           `${this.chargingStation.logPrefix()} Variable ${component}.${variable} not available: ${result.attributeStatus}`
         )
-        return Promise.resolve(
-          this.getDefaultVariableValue(component, variable, useDefaultFallback)
-        )
+        return this.getDefaultVariableValue(component, variable, useDefaultFallback)
       }
 
-      return Promise.resolve(result.attributeValue)
+      return result.attributeValue
     } catch (error) {
       logger.warn(
         `${this.chargingStation.logPrefix()} Error getting variable ${component}.${variable}`,
         error
       )
-      return Promise.resolve(this.getDefaultVariableValue(component, variable, useDefaultFallback))
+      return this.getDefaultVariableValue(component, variable, useDefaultFallback)
     }
   }
 

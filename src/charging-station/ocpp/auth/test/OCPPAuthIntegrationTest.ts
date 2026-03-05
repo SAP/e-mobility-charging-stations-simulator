@@ -162,7 +162,7 @@ export class OCPPAuthIntegrationTest {
   /**
    * Test 2: Configuration Management
    */
-  private async testConfigurationManagement (): Promise<void> {
+  private testConfigurationManagement (): void {
     const originalConfig = this.authService.getConfiguration()
 
     // Test configuration update
@@ -172,7 +172,7 @@ export class OCPPAuthIntegrationTest {
       maxCacheEntries: 2000,
     }
 
-    await this.authService.updateConfiguration(updates)
+    this.authService.updateConfiguration(updates)
 
     const updatedConfig = this.authService.getConfiguration()
 
@@ -190,7 +190,7 @@ export class OCPPAuthIntegrationTest {
     }
 
     // Restore original configuration
-    await this.authService.updateConfiguration(originalConfig)
+    this.authService.updateConfiguration(originalConfig)
 
     logger.debug(`${this.chargingStation.logPrefix()} Configuration management test completed`)
   }
@@ -312,7 +312,7 @@ export class OCPPAuthIntegrationTest {
    */
   private async testPerformanceAndStats (): Promise<void> {
     // Test connectivity check
-    const connectivity = await this.authService.testConnectivity()
+    const connectivity = this.authService.testConnectivity()
     if (typeof connectivity !== 'boolean') {
       throw new Error('Invalid connectivity test result')
     }
@@ -373,9 +373,8 @@ export class OCPPAuthIntegrationTest {
 
   /**
    * Test 1: Service Initialization
-   * @returns Promise that resolves when test passes
    */
-  private testServiceInitialization (): Promise<void> {
+  private testServiceInitialization (): void {
     // Service is always initialized in constructor, no need to check
 
     // Check available strategies
@@ -399,15 +398,12 @@ export class OCPPAuthIntegrationTest {
     logger.debug(
       `${this.chargingStation.logPrefix()} Service initialized with ${String(strategies.length)} strategies`
     )
-
-    return Promise.resolve()
   }
 
   /**
    * Test 3: Strategy Selection Logic
-   * @returns Promise that resolves when test passes
    */
-  private testStrategySelection (): Promise<void> {
+  private testStrategySelection (): void {
     const strategies = this.authService.getAvailableStrategies()
 
     // Test each strategy individually
@@ -434,8 +430,6 @@ export class OCPPAuthIntegrationTest {
     }
 
     logger.debug(`${this.chargingStation.logPrefix()} Strategy selection logic verified`)
-
-    return Promise.resolve()
   }
 
   /**

@@ -494,14 +494,14 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * Test connectivity to remote authorization service
    * @returns True if remote authorization service is reachable
    */
-  public testConnectivity (): Promise<boolean> {
+  public testConnectivity (): boolean {
     const remoteStrategy = this.strategies.get('remote')
     if (!remoteStrategy) {
-      return Promise.resolve(false)
+      return false
     }
 
     // For now return true - real implementation would test remote connectivity
-    return Promise.resolve(true)
+    return true
   }
 
   /**
@@ -510,7 +510,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * @returns Promise that resolves when configuration is updated
    * @throws {OCPPError} If configuration validation fails
    */
-  public updateConfiguration (config: Partial<AuthConfiguration>): Promise<void> {
+  public updateConfiguration (config: Partial<AuthConfiguration>): void {
     // Merge new config with existing
     const newConfig = { ...this.config, ...config }
 
@@ -521,7 +521,6 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     this.config = newConfig
 
     logger.info(`${this.chargingStation.logPrefix()} Authentication configuration updated`)
-    return Promise.resolve()
   }
 
   /**

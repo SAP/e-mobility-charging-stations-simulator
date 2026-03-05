@@ -176,7 +176,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
    * Cleanup strategy resources
    * @returns Promise that resolves when cleanup is complete
    */
-  public cleanup (): Promise<void> {
+  public cleanup (): void {
     logger.info('RemoteAuthStrategy: Cleaning up...')
 
     // Reset internal state
@@ -193,7 +193,6 @@ export class RemoteAuthStrategy implements AuthStrategy {
     }
 
     logger.info('RemoteAuthStrategy: Cleanup completed')
-    return Promise.resolve()
   }
 
   /**
@@ -240,7 +239,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
    * Initialize strategy with configuration and adapters
    * @param config - Authentication configuration for adapter validation
    */
-  public async initialize (config: AuthConfiguration): Promise<void> {
+  public initialize (config: AuthConfiguration): void {
     try {
       logger.info('RemoteAuthStrategy: Initializing...')
 
@@ -252,7 +251,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
       // Validate adapter configurations
       for (const [version, adapter] of this.adapters) {
         try {
-          const isValid = await adapter.validateConfiguration(config)
+          const isValid = adapter.validateConfiguration(config)
           if (!isValid) {
             logger.warn(`RemoteAuthStrategy: Invalid configuration for OCPP ${version}`)
           } else {

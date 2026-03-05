@@ -139,7 +139,7 @@ export interface AuthStrategy {
   /**
    * Cleanup strategy resources
    */
-  cleanup(): Promise<void>
+  cleanup(): void
 
   /**
    * Optionally reconfigure the strategy at runtime
@@ -153,13 +153,13 @@ export interface AuthStrategy {
   /**
    * Get strategy-specific statistics
    */
-  getStats(): Promise<Record<string, unknown>>
+  getStats(): Promise<Record<string, unknown>> | Record<string, unknown>
 
   /**
    * Initialize the strategy with configuration
    * @param config - Authentication configuration
    */
-  initialize(config: AuthConfiguration): Promise<void>
+  initialize(config: AuthConfiguration): Promise<void> | void
 
   /**
    * Strategy name for identification
@@ -371,7 +371,7 @@ export interface OCPPAuthAdapter {
   /**
    * Validate adapter configuration
    */
-  validateConfiguration(config: AuthConfiguration): Promise<boolean>
+  validateConfiguration(config: AuthConfiguration): boolean
 }
 
 /**
@@ -423,11 +423,11 @@ export interface OCPPAuthService {
   /**
    * Test connectivity to remote authorization service
    */
-  testConnectivity(): Promise<boolean>
+  testConnectivity(): boolean
 
   /**
    * Update authentication configuration
    * @param config - New configuration to apply
    */
-  updateConfiguration(config: Partial<AuthConfiguration>): Promise<void>
+  updateConfiguration(config: Partial<AuthConfiguration>): void
 }

@@ -273,7 +273,7 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter {
    * Check if remote authorization is available
    * @returns True if remote authorization is enabled and station is online
    */
-  isRemoteAvailable (): Promise<boolean> {
+  async isRemoteAvailable (): Promise<boolean> {
     try {
       // Check if station supports remote authorization
       const remoteAuthEnabled = this.chargingStation.stationInfo?.remoteAuthorization === true
@@ -281,13 +281,13 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter {
       // Check if station is online and can communicate
       const isOnline = this.chargingStation.inAcceptedState()
 
-      return Promise.resolve(remoteAuthEnabled && isOnline)
+      return remoteAuthEnabled && isOnline
     } catch (error) {
       logger.warn(
         `${this.chargingStation.logPrefix()} Error checking remote authorization availability`,
         error
       )
-      return Promise.resolve(false)
+      return false
     }
   }
 
@@ -323,7 +323,7 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter {
    * @param config - Auth configuration to validate
    * @returns True if configuration has valid auth methods and timeout values
    */
-  validateConfiguration (config: AuthConfiguration): Promise<boolean> {
+  validateConfiguration (config: AuthConfiguration): boolean {
     try {
       // Check that at least one authorization method is enabled
       const hasLocalAuth = config.localAuthListEnabled
@@ -333,7 +333,7 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter {
         logger.warn(
           `${this.chargingStation.logPrefix()} OCPP 1.6 adapter: No authorization methods enabled`
         )
-        return Promise.resolve(false)
+        return false
       }
 
       // Validate timeout values
@@ -341,16 +341,16 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter {
         logger.warn(
           `${this.chargingStation.logPrefix()} OCPP 1.6 adapter: Invalid authorization timeout`
         )
-        return Promise.resolve(false)
+        return false
       }
 
-      return Promise.resolve(true)
+      return true
     } catch (error) {
       logger.error(
         `${this.chargingStation.logPrefix()} OCPP 1.6 adapter configuration validation failed`,
         error
       )
-      return Promise.resolve(false)
+      return false
     }
   }
 

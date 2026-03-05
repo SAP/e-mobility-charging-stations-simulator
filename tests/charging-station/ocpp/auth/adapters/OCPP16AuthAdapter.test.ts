@@ -35,15 +35,13 @@ await describe('OCPP16AuthAdapter', async () => {
       inAcceptedState: () => true,
       logPrefix: () => '[TEST-STATION]',
       ocppRequestService: {
-        requestHandler: (): Promise<OCPP16AuthorizeResponse> => {
-          return Promise.resolve({
-            idTagInfo: {
-              expiryDate: new Date(Date.now() + 86400000),
-              parentIdTag: undefined,
-              status: OCPP16AuthorizationStatus.ACCEPTED,
-            },
-          })
-        },
+        requestHandler: async (): Promise<OCPP16AuthorizeResponse> => ({
+          idTagInfo: {
+            expiryDate: new Date(Date.now() + 86400000),
+            parentIdTag: undefined,
+            status: OCPP16AuthorizationStatus.ACCEPTED,
+          },
+        }),
       },
       stationInfo: {
         chargingStationId: 'TEST-001',
@@ -169,8 +167,8 @@ await describe('OCPP16AuthAdapter', async () => {
 
     await it('should handle authorization failure gracefully', async () => {
       // Override mock to simulate failure
-      mockStation.ocppRequestService.requestHandler = (): Promise<never> => {
-        return Promise.reject(new Error('Network error'))
+      mockStation.ocppRequestService.requestHandler = async (): Promise<never> => {
+        throw new Error('Network error')
       }
 
       const identifier = createMockIdentifier(OCPPVersion.VERSION_16, 'TEST_TAG')
@@ -206,7 +204,7 @@ await describe('OCPP16AuthAdapter', async () => {
   })
 
   await describe('validateConfiguration', async () => {
-    await it('should validate configuration with at least one auth method', async () => {
+    await it('should validate configuration with at least one auth method', () => {
       const config: AuthConfiguration = {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: false,
@@ -218,11 +216,11 @@ await describe('OCPP16AuthAdapter', async () => {
         remoteAuthorization: false,
       }
 
-      const isValid = await adapter.validateConfiguration(config)
+      const isValid = adapter.validateConfiguration(config)
       expect(isValid).toBe(true)
     })
 
-    await it('should reject configuration with no auth methods', async () => {
+    await it('should reject configuration with no auth methods', () => {
       const config: AuthConfiguration = {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: false,
@@ -234,11 +232,11 @@ await describe('OCPP16AuthAdapter', async () => {
         remoteAuthorization: false,
       }
 
-      const isValid = await adapter.validateConfiguration(config)
+      const isValid = adapter.validateConfiguration(config)
       expect(isValid).toBe(false)
     })
 
-    await it('should reject configuration with invalid timeout', async () => {
+    await it('should reject configuration with invalid timeout', () => {
       const config: AuthConfiguration = {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: false,
@@ -250,7 +248,7 @@ await describe('OCPP16AuthAdapter', async () => {
         remoteAuthorization: true,
       }
 
-      const isValid = await adapter.validateConfiguration(config)
+      const isValid = adapter.validateConfiguration(config)
       expect(isValid).toBe(false)
     })
   })

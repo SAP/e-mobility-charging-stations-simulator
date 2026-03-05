@@ -93,7 +93,7 @@ export class LocalAuthStrategy implements AuthStrategy {
 
       // 3. Apply offline fallback behavior
       if (config.offlineAuthorizationEnabled && request.allowOffline) {
-        const offlineResult = await this.handleOfflineFallback(request, config)
+        const offlineResult = this.handleOfflineFallback(request, config)
         if (offlineResult) {
           logger.debug(`LocalAuthStrategy: Offline fallback: ${offlineResult.status}`)
           this.stats.offlineDecisions++
@@ -162,7 +162,7 @@ export class LocalAuthStrategy implements AuthStrategy {
    * Cleanup strategy resources
    * @returns Promise that resolves when cleanup is complete
    */
-  public cleanup (): Promise<void> {
+  public cleanup (): void {
     logger.info('LocalAuthStrategy: Cleaning up...')
 
     // Reset internal state
@@ -176,7 +176,6 @@ export class LocalAuthStrategy implements AuthStrategy {
     }
 
     logger.info('LocalAuthStrategy: Cleanup completed')
-    return Promise.resolve()
   }
 
   /**
@@ -191,10 +190,10 @@ export class LocalAuthStrategy implements AuthStrategy {
    * Get strategy statistics
    * @returns Strategy statistics including hit rates, request counts, and cache status
    */
-  public getStats (): Promise<Record<string, unknown>> {
+  public getStats (): Record<string, unknown> {
     const cacheStats = this.authCache ? this.authCache.getStats() : null
 
-    return Promise.resolve({
+    return {
       ...this.stats,
       cacheHitRate:
         this.stats.totalRequests > 0 ? (this.stats.cacheHits / this.stats.totalRequests) * 100 : 0,
@@ -210,7 +209,7 @@ export class LocalAuthStrategy implements AuthStrategy {
         this.stats.totalRequests > 0
           ? (this.stats.offlineDecisions / this.stats.totalRequests) * 100
           : 0,
-    })
+    }
   }
 
   /**
@@ -218,7 +217,7 @@ export class LocalAuthStrategy implements AuthStrategy {
    * @param config - Authentication configuration for strategy setup
    * @returns Promise that resolves when initialization completes
    */
-  public initialize (config: AuthConfiguration): Promise<void> {
+  public initialize (config: AuthConfiguration): void {
     try {
       logger.info('LocalAuthStrategy: Initializing...')
 
@@ -241,16 +240,13 @@ export class LocalAuthStrategy implements AuthStrategy {
 
       this.isInitialized = true
       logger.info('LocalAuthStrategy: Initialized successfully')
-      return Promise.resolve()
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       logger.error(`LocalAuthStrategy: Initialization failed: ${errorMessage}`)
-      return Promise.reject(
-        new AuthenticationError(
-          `Local auth strategy initialization failed: ${errorMessage}`,
-          AuthErrorCode.CONFIGURATION_ERROR,
-          { cause: error instanceof Error ? error : new Error(String(error)) }
-        )
+      throw new AuthenticationError(
+        `Local auth strategy initialization failed: ${errorMessage}`,
+        AuthErrorCode.CONFIGURATION_ERROR,
+        { cause: error instanceof Error ? error : new Error(String(error)) }
       )
     }
   }
@@ -450,41 +446,41 @@ export class LocalAuthStrategy implements AuthStrategy {
   private handleOfflineFallback (
     request: AuthRequest,
     config: AuthConfiguration
-  ): Promise<AuthorizationResult | undefined> {
+  ): AuthorizationResult | undefined {
     logger.debug(`LocalAuthStrategy: Applying offline fallback for ${request.identifier.value}`)
 
     // For transaction stops, always allow (safety requirement)
     if (request.context === AuthContext.TRANSACTION_STOP) {
-      return Promise.resolve({
+      return {
         additionalInfo: { reason: 'Transaction stop - offline mode' },
         isOffline: true,
         method: AuthenticationMethod.OFFLINE_FALLBACK,
         status: AuthorizationStatus.ACCEPTED,
         timestamp: new Date(),
-      })
+      }
     }
 
     // For unknown IDs, check configuration
     if (config.allowOfflineTxForUnknownId) {
       const status = config.unknownIdAuthorization ?? AuthorizationStatus.ACCEPTED
 
-      return Promise.resolve({
+      return {
         additionalInfo: { reason: 'Unknown ID allowed in offline mode' },
         isOffline: true,
         method: AuthenticationMethod.OFFLINE_FALLBACK,
         status,
         timestamp: new Date(),
-      })
+      }
     }
 
     // Default offline behavior - reject unknown identifiers
-    return Promise.resolve({
+    return {
       additionalInfo: { reason: 'Unknown ID not allowed in offline mode' },
       isOffline: true,
       method: AuthenticationMethod.OFFLINE_FALLBACK,
       status: AuthorizationStatus.INVALID,
       timestamp: new Date(),
-    })
+    }
   }
 
   /**

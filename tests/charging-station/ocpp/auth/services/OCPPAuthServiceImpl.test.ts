@@ -75,10 +75,10 @@ await describe('OCPPAuthServiceImpl', async () => {
       mockStation = createMockAuthServiceTestStation('updateConfig')
     })
 
-    await it('should update configuration', async () => {
+    await it('should update configuration', () => {
       const authService = new OCPPAuthServiceImpl(mockStation)
 
-      await authService.updateConfiguration({
+      authService.updateConfiguration({
         authorizationTimeout: 60,
         localAuthListEnabled: false,
       })
@@ -132,9 +132,9 @@ await describe('OCPPAuthServiceImpl', async () => {
       mockStation = createMockAuthServiceTestStation('connectivity')
     })
 
-    await it('should test remote connectivity', async () => {
+    it('should test remote connectivity', () => {
       const authService = new OCPPAuthServiceImpl(mockStation)
-      const isConnected = await authService.testConnectivity()
+      const isConnected = authService.testConnectivity()
 
       expect(typeof isConnected).toBe('boolean')
     })

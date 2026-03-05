@@ -135,32 +135,30 @@ export class CertificateAuthStrategy implements AuthStrategy {
     return hasAdapter && certAuthEnabled && hasCertificateData && this.isInitialized
   }
 
-  cleanup (): Promise<void> {
+  cleanup (): void {
     this.isInitialized = false
     logger.debug(
       `${this.chargingStation.logPrefix()} Certificate authentication strategy cleaned up`
     )
-    return Promise.resolve()
   }
 
-  getStats (): Promise<Record<string, unknown>> {
-    return Promise.resolve({
+  getStats (): Record<string, unknown> {
+    return {
       ...this.stats,
       isInitialized: this.isInitialized,
-    })
+    }
   }
 
-  initialize (config: AuthConfiguration): Promise<void> {
+  initialize (config: AuthConfiguration): void {
     if (!config.certificateAuthEnabled) {
       logger.info(`${this.chargingStation.logPrefix()} Certificate authentication disabled`)
-      return Promise.resolve()
+      return
     }
 
     logger.info(
       `${this.chargingStation.logPrefix()} Certificate authentication strategy initialized`
     )
     this.isInitialized = true
-    return Promise.resolve()
   }
 
   /**

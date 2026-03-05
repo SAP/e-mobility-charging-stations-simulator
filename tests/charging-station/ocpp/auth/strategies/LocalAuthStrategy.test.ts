@@ -56,12 +56,12 @@ await describe('LocalAuthStrategy', async () => {
   })
 
   await describe('initialize', async () => {
-    await it('should initialize successfully with valid config', async () => {
+    await it('should initialize successfully with valid config', () => {
       const config = createTestAuthConfig({
         authorizationCacheEnabled: true,
         localAuthListEnabled: true,
       })
-      await expect(strategy.initialize(config)).resolves.toBeUndefined()
+      expect(strategy.initialize(config)).toBeUndefined()
     })
   })
 
@@ -92,23 +92,22 @@ await describe('LocalAuthStrategy', async () => {
   })
 
   await describe('authenticate', async () => {
-    beforeEach(async () => {
+    beforeEach(() => {
       const config = createTestAuthConfig({
         authorizationCacheEnabled: true,
         localAuthListEnabled: true,
         offlineAuthorizationEnabled: true,
       })
-      await strategy.initialize(config)
+      strategy.initialize(config)
     })
 
     await it('should authenticate using local auth list', async () => {
-      mockLocalAuthListManager.getEntry = async () =>
-        await Promise.resolve({
-          expiryDate: new Date(Date.now() + 86400000),
-          identifier: 'LOCAL_TAG',
-          metadata: { source: 'local' },
-          status: 'accepted',
-        })
+      mockLocalAuthListManager.getEntry = async () => ({
+        expiryDate: new Date(Date.now() + 86400000),
+        identifier: 'LOCAL_TAG',
+        metadata: { source: 'local' },
+        status: 'accepted',
+      })
 
       const config = createTestAuthConfig({
         authorizationCacheEnabled: true,
@@ -232,17 +231,15 @@ await describe('LocalAuthStrategy', async () => {
 
   await describe('isInLocalList', async () => {
     await it('should return true when identifier is in local list', async () => {
-      mockLocalAuthListManager.getEntry = async () =>
-        await Promise.resolve({
-          identifier: 'LOCAL_TAG',
-          status: 'accepted',
-        })
+      mockLocalAuthListManager.getEntry = async () => ({
+        identifier: 'LOCAL_TAG',
+        status: 'accepted',
+      })
 
       await expect(strategy.isInLocalList('LOCAL_TAG')).resolves.toBe(true)
     })
 
     await it('should return false when identifier is not in local list', async () => {
-      // eslint-disable-next-line @typescript-eslint/require-await
       mockLocalAuthListManager.getEntry = async () => undefined
 
       await expect(strategy.isInLocalList('UNKNOWN_TAG')).resolves.toBe(false)
@@ -250,8 +247,8 @@ await describe('LocalAuthStrategy', async () => {
   })
 
   await describe('getStats', async () => {
-    await it('should return strategy statistics', async () => {
-      const stats = await strategy.getStats()
+    await it('should return strategy statistics', () => {
+      const stats = strategy.getStats()
 
       expect(stats.totalRequests).toBe(0)
       expect(stats.cacheHits).toBe(0)
@@ -263,9 +260,9 @@ await describe('LocalAuthStrategy', async () => {
   })
 
   await describe('cleanup', async () => {
-    await it('should reset strategy state', async () => {
-      await strategy.cleanup()
-      const stats = await strategy.getStats()
+    await it('should reset strategy state', () => {
+      strategy.cleanup()
+      const stats = strategy.getStats()
       expect(stats.isInitialized).toBe(false)
     })
   })

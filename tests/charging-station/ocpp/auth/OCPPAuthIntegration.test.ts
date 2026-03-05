@@ -341,10 +341,8 @@ await describe('OCPP Authentication', async () => {
       const cache = new InMemoryAuthCache({ cleanupIntervalSeconds: 0 })
       try {
         const listManager = createMockLocalAuthListManager({
-          getEntry: (id: string) =>
-            Promise.resolve(
-              id === 'LIST-ID' ? { identifier: 'LIST-ID', status: 'accepted' } : undefined
-            ),
+          getEntry: async (id: string) =>
+            id === 'LIST-ID' ? { identifier: 'LIST-ID', status: 'accepted' } : undefined,
         })
 
         const strategy = new LocalAuthStrategy(listManager, cache)
@@ -352,7 +350,7 @@ await describe('OCPP Authentication', async () => {
           authorizationCacheEnabled: true,
           localAuthListEnabled: true,
         })
-        await strategy.initialize(config)
+        strategy.initialize(config)
 
         const request = createMockAuthRequest({
           identifier: createMockIdentifier(OCPPVersion.VERSION_16, 'LIST-ID'),

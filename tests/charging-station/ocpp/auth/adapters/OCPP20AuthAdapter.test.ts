@@ -221,16 +221,14 @@ await describe('OCPP20AuthAdapter', async () => {
   await describe('authorizeRemote', async () => {
     await it('should perform remote authorization successfully', async t => {
       // Mock isRemoteAvailable to return true (avoids OCPP20VariableManager singleton issues)
-      t.mock.method(adapter, 'isRemoteAvailable', () => Promise.resolve(true))
+      t.mock.method(adapter, 'isRemoteAvailable', async () => true)
 
       // Mock sendTransactionEvent to return accepted authorization
-      t.mock.method(OCPP20ServiceUtils, 'sendTransactionEvent', () =>
-        Promise.resolve({
-          idTokenInfo: {
-            status: OCPP20AuthorizationStatusEnumType.Accepted,
-          },
-        })
-      )
+      t.mock.method(OCPP20ServiceUtils, 'sendTransactionEvent', async () => ({
+        idTokenInfo: {
+          status: OCPP20AuthorizationStatusEnumType.Accepted,
+        },
+      }))
 
       const identifier = createMockIdentifier(
         OCPPVersion.VERSION_20,
@@ -261,7 +259,7 @@ await describe('OCPP20AuthAdapter', async () => {
       t.mock.method(
         adapter as unknown as { getVariableValue: () => Promise<string | undefined> },
         'getVariableValue',
-        () => Promise.resolve('true')
+        async () => 'true'
       )
 
       const isAvailable = await adapter.isRemoteAvailable()
@@ -273,7 +271,7 @@ await describe('OCPP20AuthAdapter', async () => {
       t.mock.method(
         adapter as unknown as { getVariableValue: () => Promise<string | undefined> },
         'getVariableValue',
-        () => Promise.resolve('true')
+        async () => 'true'
       )
 
       const isAvailable = await adapter.isRemoteAvailable()
@@ -282,7 +280,7 @@ await describe('OCPP20AuthAdapter', async () => {
   })
 
   await describe('validateConfiguration', async () => {
-    await it('should validate configuration with at least one auth method', async () => {
+    await it('should validate configuration with at least one auth method', () => {
       const config: AuthConfiguration = {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: false,
@@ -295,11 +293,11 @@ await describe('OCPP20AuthAdapter', async () => {
         offlineAuthorizationEnabled: false,
       }
 
-      const isValid = await adapter.validateConfiguration(config)
+      const isValid = adapter.validateConfiguration(config)
       expect(isValid).toBe(true)
     })
 
-    await it('should reject configuration with no auth methods', async () => {
+    await it('should reject configuration with no auth methods', () => {
       const config: AuthConfiguration = {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: false,
@@ -312,11 +310,11 @@ await describe('OCPP20AuthAdapter', async () => {
         offlineAuthorizationEnabled: false,
       }
 
-      const isValid = await adapter.validateConfiguration(config)
+      const isValid = adapter.validateConfiguration(config)
       expect(isValid).toBe(false)
     })
 
-    await it('should reject configuration with invalid timeout', async () => {
+    await it('should reject configuration with invalid timeout', () => {
       const config: AuthConfiguration = {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: false,
@@ -329,7 +327,7 @@ await describe('OCPP20AuthAdapter', async () => {
         offlineAuthorizationEnabled: false,
       }
 
-      const isValid = await adapter.validateConfiguration(config)
+      const isValid = adapter.validateConfiguration(config)
       expect(isValid).toBe(false)
     })
   })

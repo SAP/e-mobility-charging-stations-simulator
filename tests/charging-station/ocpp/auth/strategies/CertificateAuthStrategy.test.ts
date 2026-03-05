@@ -39,11 +39,9 @@ await describe('CertificateAuthStrategy', async () => {
 
     mockOCPP20Adapter = createMockOCPPAdapter(OCPPVersion.VERSION_20, {
       authorizeRemote: async () =>
-        Promise.resolve(
-          createMockAuthorizationResult({
-            method: AuthenticationMethod.CERTIFICATE_BASED,
-          })
-        ),
+        createMockAuthorizationResult({
+          method: AuthenticationMethod.CERTIFICATE_BASED,
+        }),
       convertToUnifiedIdentifier: identifier => ({
         ocppVersion: OCPPVersion.VERSION_20,
         type: IdentifierType.CERTIFICATE,
@@ -69,21 +67,21 @@ await describe('CertificateAuthStrategy', async () => {
   })
 
   await describe('initialize', async () => {
-    await it('should initialize successfully when certificate auth is enabled', async () => {
+    await it('should initialize successfully when certificate auth is enabled', () => {
       const config = createTestAuthConfig({ certificateAuthEnabled: true })
-      await expect(strategy.initialize(config)).resolves.toBeUndefined()
+      expect(strategy.initialize(config)).toBeUndefined()
     })
 
-    await it('should handle disabled certificate auth gracefully', async () => {
+    await it('should handle disabled certificate auth gracefully', () => {
       const config = createTestAuthConfig({ certificateAuthEnabled: false })
-      await expect(strategy.initialize(config)).resolves.toBeUndefined()
+      expect(strategy.initialize(config)).toBeUndefined()
     })
   })
 
   await describe('canHandle', async () => {
-    beforeEach(async () => {
+    beforeEach(() => {
       const config = createTestAuthConfig({ certificateAuthEnabled: true })
-      await strategy.initialize(config)
+      strategy.initialize(config)
     })
 
     await it('should return true for certificate identifiers with OCPP 2.0', () => {
@@ -165,9 +163,9 @@ await describe('CertificateAuthStrategy', async () => {
   })
 
   await describe('authenticate', async () => {
-    beforeEach(async () => {
+    beforeEach(() => {
       const config = createTestAuthConfig({ certificateAuthEnabled: true })
-      await strategy.initialize(config)
+      strategy.initialize(config)
     })
 
     await it('should authenticate valid test certificate', async () => {
@@ -299,8 +297,8 @@ await describe('CertificateAuthStrategy', async () => {
   })
 
   await describe('getStats', async () => {
-    await it('should return strategy statistics', async () => {
-      const stats = await strategy.getStats()
+    await it('should return strategy statistics', () => {
+      const stats = strategy.getStats()
 
       expect(stats.isInitialized).toBe(false)
       expect(stats.totalRequests).toBe(0)
@@ -309,7 +307,7 @@ await describe('CertificateAuthStrategy', async () => {
     })
 
     await it('should update stats after authentication', async () => {
-      await strategy.initialize(createTestAuthConfig({ certificateAuthEnabled: true }))
+      strategy.initialize(createTestAuthConfig({ certificateAuthEnabled: true }))
 
       const config = createTestAuthConfig({ certificateAuthEnabled: true })
       const request = createMockAuthRequest({
@@ -328,18 +326,18 @@ await describe('CertificateAuthStrategy', async () => {
 
       await strategy.authenticate(request, config)
 
-      const stats = await strategy.getStats()
+      const stats = strategy.getStats()
       expect(stats.totalRequests).toBe(1)
       expect(stats.successfulAuths).toBe(1)
     })
   })
 
   await describe('cleanup', async () => {
-    await it('should reset strategy state', async () => {
-      await strategy.initialize(createTestAuthConfig({ certificateAuthEnabled: true }))
+    await it('should reset strategy state', () => {
+      strategy.initialize(createTestAuthConfig({ certificateAuthEnabled: true }))
 
-      await strategy.cleanup()
-      const stats = await strategy.getStats()
+      strategy.cleanup()
+      const stats = strategy.getStats()
       expect(stats.isInitialized).toBe(false)
     })
   })
