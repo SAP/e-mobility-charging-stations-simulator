@@ -3,7 +3,6 @@
  * @description Unit tests for asynchronous lock utilities
  */
 import { expect } from '@std/expect'
-import { randomInt } from 'node:crypto'
 import { afterEach, describe, it } from 'node:test'
 
 import { AsyncLock, AsyncLockType } from '../../src/utils/AsyncLock.js'
@@ -34,8 +33,9 @@ await describe('AsyncLock', async () => {
     const executed: number[] = []
     let count = 0
     const asyncFn = async () => {
-      await new Promise(resolve => {
-        setTimeout(resolve, randomInt(1, 101))
+      // Yield to event loop without real timers
+      await new Promise<void>(resolve => {
+        queueMicrotask(resolve)
       })
       executed.push(++count)
     }
@@ -72,16 +72,19 @@ await describe('AsyncLock', async () => {
 
   await it('should isolate locks across different lock types', async () => {
     const order: string[] = []
+    let resolveConfig!: () => void
     const configPromise = AsyncLock.runExclusive(AsyncLockType.configuration, async () => {
-      await new Promise(resolve => {
-        setTimeout(resolve, 50)
+      await new Promise<void>(resolve => {
+        resolveConfig = resolve
       })
       order.push('configuration')
     })
     const perfPromise = AsyncLock.runExclusive(AsyncLockType.performance, () => {
       order.push('performance')
     })
-    await Promise.all([configPromise, perfPromise])
+    await perfPromise
+    resolveConfig()
+    await configPromise
     expect(order[0]).toBe('performance')
     expect(order[1]).toBe('configuration')
   })

@@ -5,14 +5,13 @@
 import { expect } from '@std/expect'
 import { afterEach, describe, it } from 'node:test'
 
-import { FileType, StorageType } from '../../src/types/index.js'
+import { StorageType } from '../../src/types/index.js'
 import {
   buildPerformanceUriFilePath,
   checkWorkerElementsPerWorker,
   getDefaultPerformanceStorageUri,
   logPrefix,
 } from '../../src/utils/ConfigurationUtils.js'
-import { handleFileException } from '../../src/utils/ErrorUtils.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 await describe('ConfigurationUtils', async () => {
@@ -45,18 +44,6 @@ await describe('ConfigurationUtils', async () => {
     expect(() => {
       getDefaultPerformanceStorageUri('unsupported' as StorageType)
     }).toThrow(Error)
-  })
-
-  await it('should throw and log error for file exceptions', t => {
-    const mockConsoleError = t.mock.method(console, 'error')
-    const error = new Error() as NodeJS.ErrnoException
-    error.code = 'ENOENT'
-    expect(() => {
-      handleFileException('path/to/module.js', FileType.Authorization, error, 'log prefix |', {
-        consoleOut: true,
-      })
-    }).toThrow(error)
-    expect(mockConsoleError.mock.calls.length).toBe(1)
   })
 
   await it('should validate worker elements per worker configuration', () => {

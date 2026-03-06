@@ -6,6 +6,7 @@ import { expect } from '@std/expect'
 import { hoursToMilliseconds, hoursToSeconds } from 'date-fns'
 import { CircularBuffer } from 'mnemonist'
 import { randomInt } from 'node:crypto'
+import process from 'node:process'
 import { version } from 'node:process'
 import { afterEach, describe, it } from 'node:test'
 import { satisfies } from 'semver'
@@ -13,6 +14,7 @@ import { satisfies } from 'semver'
 import type { TimestampedData } from '../../src/types/index.js'
 
 import { JSRuntime, runtime } from '../../scripts/runtime.js'
+import { MapStringifyFormat } from '../../src/types/index.js'
 import { Constants } from '../../src/utils/Constants.js'
 import {
   clampToSafeTimerValue,
@@ -28,15 +30,23 @@ import {
   formatDurationSeconds,
   generateUUID,
   getRandomFloat,
+  getRandomFloatFluctuatedRounded,
+  getRandomFloatRounded,
+  getWebSocketCloseEventStatusString,
   has,
   insertAt,
   isArraySorted,
   isAsyncFunction,
+  isCFEnvironment,
   isEmpty,
   isNotEmptyArray,
   isNotEmptyString,
   isValidDate,
+  JSONStringify,
+  logPrefix,
+  mergeDeepRight,
   once,
+  queueMicrotaskErrorThrowing,
   roundTo,
   secureRandom,
   sleep,
@@ -52,7 +62,7 @@ await describe('Utils', async () => {
   await it('should generate valid UUIDs and validate them correctly', () => {
     const uuid = generateUUID()
     expect(uuid).toBeDefined()
-    expect(uuid.length).toStrictEqual(36)
+    expect(uuid.length).toBe(36)
     expect(validateUUID(uuid)).toBe(true)
     expect(validateUUID('abcdef00-0000-4000-9000-000000000000')).toBe(true)
     expect(validateUUID('abcdef00-0000-4000-a000-000000000000')).toBe(true)
@@ -142,7 +152,7 @@ await describe('Utils', async () => {
     expect(convertToInt(null)).toBe(0)
     expect(convertToInt(0)).toBe(0)
     const randomInteger = randomInt(Constants.MAX_RANDOM_INTEGER)
-    expect(convertToInt(randomInteger)).toStrictEqual(randomInteger)
+    expect(convertToInt(randomInteger)).toBe(randomInteger)
     expect(convertToInt('-1')).toBe(-1)
     expect(convertToInt('1')).toBe(1)
     expect(convertToInt('1.1')).toBe(1)
@@ -163,7 +173,7 @@ await describe('Utils', async () => {
     expect(convertToFloat(null)).toBe(0)
     expect(convertToFloat(0)).toBe(0)
     const randomFloat = getRandomFloat()
-    expect(convertToFloat(randomFloat)).toStrictEqual(randomFloat)
+    expect(convertToFloat(randomFloat)).toBe(randomFloat)
     expect(convertToFloat('-1')).toBe(-1)
     expect(convertToFloat('1')).toBe(1)
     expect(convertToFloat('1.1')).toBe(1.1)
@@ -250,47 +260,55 @@ await describe('Utils', async () => {
   })
 
   await it('should correctly identify async functions from other types', () => {
-    expect(isAsyncFunction(null)).toBe(false)
-    expect(isAsyncFunction(undefined)).toBe(false)
-    expect(isAsyncFunction(true)).toBe(false)
-    expect(isAsyncFunction(false)).toBe(false)
-    expect(isAsyncFunction(0)).toBe(false)
-    expect(isAsyncFunction('')).toBe(false)
-    expect(isAsyncFunction([])).toBe(false)
-    expect(isAsyncFunction(new Date())).toBe(false)
-    expect(isAsyncFunction(/[a-z]/i)).toBe(false)
-    expect(isAsyncFunction(new Error())).toBe(false)
-    expect(isAsyncFunction(new Map())).toBe(false)
-    expect(isAsyncFunction(new Set())).toBe(false)
-    expect(isAsyncFunction(new WeakMap())).toBe(false)
-    expect(isAsyncFunction(new WeakSet())).toBe(false)
-    expect(isAsyncFunction(new Int8Array())).toBe(false)
-    expect(isAsyncFunction(new Uint8Array())).toBe(false)
-    expect(isAsyncFunction(new Uint8ClampedArray())).toBe(false)
-    expect(isAsyncFunction(new Int16Array())).toBe(false)
-    expect(isAsyncFunction(new Uint16Array())).toBe(false)
-    expect(isAsyncFunction(new Int32Array())).toBe(false)
-    expect(isAsyncFunction(new Uint32Array())).toBe(false)
-    expect(isAsyncFunction(new Float32Array())).toBe(false)
-    expect(isAsyncFunction(new Float64Array())).toBe(false)
-    expect(isAsyncFunction(new BigInt64Array())).toBe(false)
-    expect(isAsyncFunction(new BigUint64Array())).toBe(false)
     /* eslint-disable @typescript-eslint/no-empty-function -- Testing with empty functions to verify isAsyncFunction correctly identifies async vs sync */
-    expect(isAsyncFunction(new Promise(() => {}))).toBe(false)
-    expect(isAsyncFunction(new WeakRef({}))).toBe(false)
-    expect(isAsyncFunction(new FinalizationRegistry(() => {}))).toBe(false)
-    expect(isAsyncFunction(new ArrayBuffer(16))).toBe(false)
-    expect(isAsyncFunction(new SharedArrayBuffer(16))).toBe(false)
-    expect(isAsyncFunction(new DataView(new ArrayBuffer(16)))).toBe(false)
-    expect(isAsyncFunction({})).toBe(false)
-    expect(isAsyncFunction({ a: 1 })).toBe(false)
-    expect(isAsyncFunction(() => {})).toBe(false)
-    expect(isAsyncFunction(function () {})).toBe(false)
-    expect(isAsyncFunction(function named () {})).toBe(false)
-    expect(isAsyncFunction(async () => {})).toBe(true)
-    expect(isAsyncFunction(async function () {})).toBe(true)
-    expect(isAsyncFunction(async function named () {})).toBe(true)
+    const nonAsyncValues: unknown[] = [
+      null,
+      undefined,
+      true,
+      false,
+      0,
+      '',
+      [],
+      new Date(),
+      /[a-z]/i,
+      new Error(),
+      new Map(),
+      new Set(),
+      new WeakMap(),
+      new WeakSet(),
+      new Int8Array(),
+      new Uint8Array(),
+      new Uint8ClampedArray(),
+      new Int16Array(),
+      new Uint16Array(),
+      new Int32Array(),
+      new Uint32Array(),
+      new Float32Array(),
+      new Float64Array(),
+      new BigInt64Array(),
+      new BigUint64Array(),
+      new Promise(() => {}),
+      new WeakRef({}),
+      new FinalizationRegistry(() => {}),
+      new ArrayBuffer(16),
+      new SharedArrayBuffer(16),
+      new DataView(new ArrayBuffer(16)),
+      {},
+      { a: 1 },
+      () => {},
+      function () {},
+      function named () {},
+    ]
+    for (const value of nonAsyncValues) {
+      expect(isAsyncFunction(value)).toBe(false)
+    }
+
+    const asyncValues: unknown[] = [async () => {}, async function () {}, async function named () {}]
+    for (const value of asyncValues) {
+      expect(isAsyncFunction(value)).toBe(true)
+    }
     /* eslint-enable @typescript-eslint/no-empty-function */
+
     class TestClass {
       /* eslint-disable @typescript-eslint/no-empty-function -- Testing class methods and properties */
       public static async testStaticAsync (): Promise<void> {}
@@ -604,5 +622,128 @@ await describe('Utils', async () => {
     const maxDelay = exponentialDelay(10, delayFactor)
     expect(maxDelay).toBeGreaterThanOrEqual(102400) // ~102 seconds
     expect(maxDelay).toBeLessThanOrEqual(122880)
+  })
+
+  await it('should return timestamped log prefix with optional string', () => {
+    const result = logPrefix()
+    expect(typeof result).toBe('string')
+    expect(result.length).toBeGreaterThan(0)
+    const withPrefix = logPrefix(' Test |')
+    expect(withPrefix).toContain(' Test |')
+  })
+
+  await it('should deep merge objects with source overriding target', () => {
+    // Simple merge
+    expect(mergeDeepRight({ a: 1 }, { b: 2 })).toStrictEqual({ a: 1, b: 2 })
+    // Source overrides target
+    expect(mergeDeepRight({ a: 1 }, { a: 2 })).toStrictEqual({ a: 2 })
+    // Nested merge
+    expect(mergeDeepRight({ a: { b: 1, c: 2 } }, { a: { c: 3, d: 4 } })).toStrictEqual({
+      a: { b: 1, c: 3, d: 4 },
+    })
+    // Deeply nested
+    expect(mergeDeepRight({ a: { b: { c: 1 } } }, { a: { b: { d: 2 } } })).toStrictEqual({
+      a: { b: { c: 1, d: 2 } },
+    })
+    // Non-object source value replaces target object
+    expect(mergeDeepRight({ a: { b: 1 } }, { a: 'string' })).toStrictEqual({ a: 'string' })
+    // Empty objects
+    expect(mergeDeepRight({}, { a: 1 })).toStrictEqual({ a: 1 })
+    expect(mergeDeepRight({ a: 1 }, {})).toStrictEqual({ a: 1 })
+  })
+
+  await it('should stringify objects with Map and Set support', () => {
+    // Basic object
+    expect(JSONStringify({ a: 1 })).toBe('{"a":1}')
+    // Map as array (default)
+    const map = new Map([['key', { value: 1 }]])
+    expect(JSONStringify(map)).toBe('[["key",{"value":1}]]')
+    // Map as object
+    expect(JSONStringify(map, undefined, MapStringifyFormat.object)).toBe('{"key":{"value":1}}')
+    // Set
+    const set = new Set([{ a: 1 }])
+    expect(JSONStringify(set)).toBe('[{"a":1}]')
+    // With space formatting
+    expect(JSONStringify({ a: 1 }, 2)).toBe('{\n  "a": 1\n}')
+  })
+
+  await it('should return human readable string for websocket close codes', () => {
+    // Known codes
+    expect(getWebSocketCloseEventStatusString(1000)).toBe('Normal Closure')
+    expect(getWebSocketCloseEventStatusString(1001)).toBe('Going Away')
+    expect(getWebSocketCloseEventStatusString(1006)).toBe('Abnormal Closure')
+    expect(getWebSocketCloseEventStatusString(1011)).toBe('Server Internal Error')
+    // Ranges
+    expect(getWebSocketCloseEventStatusString(0)).toBe('(Unused)')
+    expect(getWebSocketCloseEventStatusString(999)).toBe('(Unused)')
+    expect(getWebSocketCloseEventStatusString(1016)).toBe('(For WebSocket standard)')
+    expect(getWebSocketCloseEventStatusString(1999)).toBe('(For WebSocket standard)')
+    expect(getWebSocketCloseEventStatusString(2000)).toBe('(For WebSocket extensions)')
+    expect(getWebSocketCloseEventStatusString(2999)).toBe('(For WebSocket extensions)')
+    expect(getWebSocketCloseEventStatusString(3000)).toBe('(For libraries and frameworks)')
+    expect(getWebSocketCloseEventStatusString(3999)).toBe('(For libraries and frameworks)')
+    expect(getWebSocketCloseEventStatusString(4000)).toBe('(For applications)')
+    expect(getWebSocketCloseEventStatusString(4999)).toBe('(For applications)')
+    // Unknown
+    expect(getWebSocketCloseEventStatusString(5000)).toBe('(Unknown)')
+  })
+
+  await it('should generate random float rounded to specified scale', () => {
+    const result = getRandomFloatRounded(10, 0, 2)
+    expect(result).toBeGreaterThanOrEqual(0)
+    expect(result).toBeLessThanOrEqual(10)
+    // Check rounding to 2 decimal places
+    const decimalStr = result.toString()
+    if (decimalStr.includes('.')) {
+      expect(decimalStr.split('.')[1].length).toBeLessThanOrEqual(2)
+    }
+    // Default scale
+    const defaultScale = getRandomFloatRounded(10, 0)
+    expect(defaultScale).toBeGreaterThanOrEqual(0)
+    expect(defaultScale).toBeLessThanOrEqual(10)
+  })
+
+  await it('should generate fluctuated random float within percentage range', () => {
+    // 0% fluctuation returns static value rounded
+    expect(getRandomFloatFluctuatedRounded(100, 0)).toBe(100)
+    // 10% fluctuation: 100 ± 10
+    const result = getRandomFloatFluctuatedRounded(100, 10)
+    expect(result).toBeGreaterThanOrEqual(90)
+    expect(result).toBeLessThanOrEqual(110)
+    // Invalid fluctuation percent
+    expect(() => getRandomFloatFluctuatedRounded(100, -1)).toThrow(RangeError)
+    expect(() => getRandomFloatFluctuatedRounded(100, 101)).toThrow(RangeError)
+    // Negative static value with fluctuation
+    const negResult = getRandomFloatFluctuatedRounded(-100, 10)
+    expect(negResult).toBeGreaterThanOrEqual(-110)
+    expect(negResult).toBeLessThanOrEqual(-90)
+  })
+
+  await it('should detect Cloud Foundry environment from VCAP_APPLICATION', () => {
+    const originalVcap = process.env.VCAP_APPLICATION
+    try {
+      delete process.env.VCAP_APPLICATION
+      expect(isCFEnvironment()).toBe(false)
+      process.env.VCAP_APPLICATION = '{}'
+      expect(isCFEnvironment()).toBe(true)
+    } finally {
+      if (originalVcap != null) {
+        process.env.VCAP_APPLICATION = originalVcap
+      } else {
+        delete process.env.VCAP_APPLICATION
+      }
+    }
+  })
+
+  await it('should queue microtask that throws the given error', t => {
+    const error = new Error('test microtask error')
+    // eslint-disable-next-line @typescript-eslint/no-empty-function -- Mock queueMicrotask with no-op to prevent actual throw
+    const mockFn = t.mock.method(globalThis, 'queueMicrotask', () => {})
+    queueMicrotaskErrorThrowing(error)
+    expect(mockFn.mock.callCount()).toBe(1)
+    const callback = mockFn.mock.calls[0].arguments[0] as () => void
+    expect(() => {
+      callback()
+    }).toThrow(error)
   })
 })

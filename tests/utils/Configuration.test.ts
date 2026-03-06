@@ -21,7 +21,13 @@ import type {
   WorkerConfiguration,
 } from '../../src/types/index.js'
 
-import { ConfigurationSection, SupervisionUrlDistribution } from '../../src/types/index.js'
+import {
+  ApplicationProtocol,
+  ApplicationProtocolVersion,
+  ConfigurationSection,
+  StorageType,
+  SupervisionUrlDistribution,
+} from '../../src/types/index.js'
 import { Configuration } from '../../src/utils/index.js'
 import { WorkerProcessType } from '../../src/worker/WorkerTypes.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
@@ -88,11 +94,11 @@ await describe('Configuration', async () => {
       ConfigurationSection.worker
     )
     expect(worker).toBeDefined()
-    expect(worker.processType).toBeDefined()
-    expect(worker.startDelay).toBeDefined()
-    expect(worker.poolMinSize).toBeDefined()
-    expect(worker.poolMaxSize).toBeDefined()
-    expect(worker.elementsPerWorker).toBeDefined()
+    expect(worker.processType).toBe(WorkerProcessType.workerSet)
+    expect(worker.startDelay).toBe(500)
+    expect(typeof worker.poolMinSize).toBe('number')
+    expect(typeof worker.poolMaxSize).toBe('number')
+    expect(worker.elementsPerWorker).toBe('auto')
   })
 
   await it('should include default worker process type', () => {
@@ -107,10 +113,12 @@ await describe('Configuration', async () => {
       ConfigurationSection.uiServer
     )
     expect(uiServer).toBeDefined()
-    expect(typeof uiServer.enabled).toBe('boolean')
-    expect(uiServer.type).toBeDefined()
-    expect(uiServer.version).toBeDefined()
+    expect(uiServer.enabled).toBe(false)
+    expect(uiServer.type).toBe(ApplicationProtocol.WS)
+    expect(uiServer.version).toBe(ApplicationProtocolVersion.VERSION_11)
     expect(uiServer.options).toBeDefined()
+    expect(typeof uiServer.options?.host).toBe('string')
+    expect(typeof uiServer.options?.port).toBe('number')
   })
 
   await it('should return performance storage configuration', () => {
@@ -118,8 +126,8 @@ await describe('Configuration', async () => {
       ConfigurationSection.performanceStorage
     )
     expect(storage).toBeDefined()
-    expect(typeof storage.enabled).toBe('boolean')
-    expect(storage.type).toBeDefined()
+    expect(storage.enabled).toBe(true)
+    expect(storage.type).toBe(StorageType.NONE)
   })
 
   await it('should return station template URLs', () => {
@@ -162,9 +170,7 @@ await describe('Configuration', async () => {
 
   await it('should return supervision URLs from configuration', () => {
     const urls = Configuration.getSupervisionUrls()
-    if (urls != null) {
-      expect(typeof urls === 'string' || Array.isArray(urls)).toBe(true)
-    }
+    expect(urls == null || typeof urls === 'string' || Array.isArray(urls)).toBe(true)
   })
 
   await it('should throw for unknown configuration section', () => {

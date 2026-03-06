@@ -56,4 +56,42 @@ await describe('ElectricUtils', async () => {
     expect(DCElectricUtils.power(0, 10)).toBe(0)
     expect(DCElectricUtils.power(400, 0)).toBe(0)
   })
+
+  // Realistic EV charging scenarios
+
+  await it('should calculate 7.4 kW single-phase AC home charger values', () => {
+    // 230V × 32A × 1 phase × cosPhi=1 = 7360W
+    expect(ACElectricUtils.powerPerPhase(230, 32)).toBe(7360)
+    expect(ACElectricUtils.powerTotal(1, 230, 32)).toBe(7360)
+    expect(ACElectricUtils.amperageTotalFromPower(7360, 230)).toBe(32)
+    expect(ACElectricUtils.amperagePerPhaseFromPower(1, 7360, 230)).toBe(32)
+  })
+
+  await it('should calculate 22 kW three-phase AC wall box values', () => {
+    // 230V × 32A × 3 phases × cosPhi=1 = 22080W
+    expect(ACElectricUtils.powerPerPhase(230, 32)).toBe(7360)
+    expect(ACElectricUtils.powerTotal(3, 230, 32)).toBe(22080)
+    expect(ACElectricUtils.amperageTotalFromPower(22080, 230)).toBe(96)
+    expect(ACElectricUtils.amperagePerPhaseFromPower(3, 22080, 230)).toBe(32)
+  })
+
+  await it('should calculate 50 kW DC fast charger values', () => {
+    expect(DCElectricUtils.power(400, 125)).toBe(50000)
+    expect(DCElectricUtils.amperage(50000, 400)).toBe(125)
+  })
+
+  await it('should calculate 150 kW DC high-power charger values', () => {
+    expect(DCElectricUtils.power(500, 300)).toBe(150000)
+    expect(DCElectricUtils.amperage(150000, 500)).toBe(300)
+  })
+
+  await it('should handle industrial cosPhi values for AC calculations', () => {
+    // cosPhi = 0.95 (typical industrial)
+    expect(ACElectricUtils.powerPerPhase(230, 32, 0.95)).toBe(6992)
+    expect(ACElectricUtils.powerTotal(3, 230, 32, 0.95)).toBe(20976)
+    expect(ACElectricUtils.amperageTotalFromPower(6992, 230, 0.95)).toBe(32)
+    // cosPhi = 0.9
+    expect(ACElectricUtils.powerPerPhase(230, 32, 0.9)).toBe(6624)
+    expect(ACElectricUtils.amperageTotalFromPower(6624, 230, 0.9)).toBe(32)
+  })
 })
