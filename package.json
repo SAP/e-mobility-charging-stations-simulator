@@ -75,10 +75,10 @@
     "sea": "pnpm exec rimraf ./dist/evse-simulator ./dist/evse-simulator.blob && node --experimental-sea-config sea-config.json && pnpm dlx ncp $(volta which node || n which lts || nvm which node || command -v node) ./dist/evse-simulator && pnpm dlx postject ./dist/evse-simulator NODE_SEA_BLOB ./dist/evse-simulator.blob --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2 && pnpm exec rimraf ./dist/evse-simulator.blob"
   },
   "dependencies": {
+    "@mikro-orm/better-sqlite": "^6.6.9",
     "@mikro-orm/core": "^6.6.9",
     "@mikro-orm/mariadb": "^6.6.9",
     "@mikro-orm/reflection": "^6.6.9",
-    "@mikro-orm/sqlite": "^6.6.9",
     "ajv": "^8.18.0",
     "ajv-formats": "^3.0.1",
     "basic-ftp": "^5.2.0",
@@ -127,5 +127,10 @@
     "tsx": "^4.21.0",
     "typescript": "~5.9.3",
     "vue-eslint-parser": "^10.4.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3"
+    ]
   }
 }

@@ -1,5 +1,7 @@
 // Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
 
+import { existsSync, mkdirSync } from 'node:fs'
+import { dirname } from 'node:path'
 import { URL } from 'node:url'
 
 import {
@@ -38,6 +40,12 @@ export abstract class Storage {
     Storage.performanceStatistics.clear()
   }
 
+  protected ensureDBDirectory (): void {
+    if (!existsSync(dirname(this.dbName))) {
+      mkdirSync(dirname(this.dbName), { recursive: true })
+    }
+  }
+
   protected getDBNameFromStorageType (type: StorageType): DBName | undefined {
     switch (type) {
       case StorageType.MARIA_DB:
@@ -60,24 +68,27 @@ export abstract class Storage {
       throwError: false,
     }
   ): void {
-    params = {
-      ...{
-        consoleOut: false,
-        throwError: false,
-      },
-      ...params,
-    }
-    const inTableOrCollectionStr = table != null && ` in table or collection '${table}'`
+    const inTableOrCollectionStr = table != null ? ` in table or collection '${table}'` : ''
     logger.error(
-      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      `${this.logPrefix} ${this.getDBNameFromStorageType(type)} error '${
-        error.message
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      }'${inTableOrCollectionStr}:`,
+      `${this.logPrefix} ${this.getDBNameFromStorageType(type) ?? 'Unknown'} error '${error.message}'${inTableOrCollectionStr}:`,
       error
     )
     if (params.throwError === true) {
       throw error
+    }
+  }
+
+  protected serializePerformanceStatistics (
+    performanceStatistics: Statistics
+  ): Record<string, unknown> {
+    return {
+      ...performanceStatistics,
+      statisticsData: Array.from(performanceStatistics.statisticsData, ([name, value]) => ({
+        ...value,
+        measurementTimeSeries:
+          value.measurementTimeSeries != null ? [...value.measurementTimeSeries] : undefined,
+        name,
+      })),
     }
   }
 

@@ -1,7 +1,6 @@
 // Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
 
-import { closeSync, existsSync, mkdirSync, openSync, writeSync } from 'node:fs'
-import { dirname } from 'node:path'
+import { closeSync, openSync, writeSync } from 'node:fs'
 
 import { BaseError } from '../../exception/index.js'
 import { FileType, MapStringifyFormat, type Statistics } from '../../types/index.js'
@@ -36,9 +35,7 @@ export class JsonFileStorage extends Storage {
   public open (): void {
     try {
       if (this.fd == null) {
-        if (!existsSync(dirname(this.dbName))) {
-          mkdirSync(dirname(this.dbName), { recursive: true })
-        }
+        this.ensureDBDirectory()
         this.fd = openSync(this.dbName, 'w')
       }
     } catch (error) {
@@ -53,11 +50,10 @@ export class JsonFileStorage extends Storage {
 
   public storePerformanceStatistics (performanceStatistics: Statistics): void {
     this.setPerformanceStatistics(performanceStatistics)
-    this.checkPerformanceRecordsFile()
+    const fd = this.checkPerformanceRecordsFile()
     AsyncLock.runExclusive(AsyncLockType.performance, () => {
       writeSync(
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.fd!,
+        fd,
         JSONStringify([...this.getPerformanceStatistics()], 2, MapStringifyFormat.object),
         0,
         'utf8'
@@ -72,11 +68,12 @@ export class JsonFileStorage extends Storage {
     })
   }
 
-  private checkPerformanceRecordsFile (): void {
+  private checkPerformanceRecordsFile (): number {
     if (this.fd == null) {
       throw new BaseError(
         `${this.logPrefix} Performance records '${this.dbName}' file descriptor not found`
       )
     }
+    return this.fd
   }
 }
