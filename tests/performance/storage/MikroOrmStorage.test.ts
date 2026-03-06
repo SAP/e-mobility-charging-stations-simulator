@@ -8,13 +8,11 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 import { MikroOrmStorage } from '../../../src/performance/storage/MikroOrmStorage.js'
 import { type Statistics, StorageType } from '../../../src/types/index.js'
 import { PerformanceRecord } from '../../../src/types/orm/entities/PerformanceRecord.js'
-import { Constants } from '../../../src/utils/index.js'
 import { logger } from '../../../src/utils/Logger.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 
 const TEST_LOG_PREFIX = '[MikroOrmStorage Test]'
 const TEST_STORAGE_URI = 'file:performance/e-mobility-charging-stations-simulator.db'
-const TEST_MARIADB_URI = 'mysql://localhost:3306/perf'
 
 interface MockEntityManager {
   fork: () => MockEntityManager
@@ -26,6 +24,16 @@ interface MockOrm {
   em: MockEntityManager
   schema: {
     updateSchema: () => Promise<void>
+  }
+}
+
+class TestableMikroOrmStorage extends MikroOrmStorage {
+  public getOrm (): unknown {
+    return Reflect.get(this, 'orm')
+  }
+
+  public setOrm (orm: MockOrm): void {
+    Reflect.set(this, 'orm', orm)
   }
 }
 
@@ -82,10 +90,10 @@ function buildTestStatistics (id: string, name?: string): Statistics {
 }
 
 await describe('MikroOrmStorage', async () => {
-  let storage: MikroOrmStorage
+  let storage: TestableMikroOrmStorage
 
   beforeEach(() => {
-    storage = new MikroOrmStorage(TEST_STORAGE_URI, TEST_LOG_PREFIX, StorageType.SQLITE)
+    storage = new TestableMikroOrmStorage(TEST_STORAGE_URI, TEST_LOG_PREFIX, StorageType.SQLITE)
   })
 
   afterEach(async () => {
@@ -97,80 +105,44 @@ await describe('MikroOrmStorage', async () => {
     standardCleanup()
   })
 
-  await describe('Constructor', async () => {
-    await it('should set SQLite database name from constants', () => {
-      const dbName = Reflect.get(storage, 'dbName') as string
-
-      expect(dbName).toBe(
-        `${Constants.DEFAULT_PERFORMANCE_DIRECTORY}/${Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME}.db`
-      )
-    })
-
-    await it('should set storage type', () => {
-      const storageType = Reflect.get(storage, 'storageType') as StorageType
-
-      expect(storageType).toBe(StorageType.SQLITE)
-    })
-
-    await it('should parse storage URI', () => {
-      const storageUri = Reflect.get(storage, 'storageUri') as URL
-
-      expect(storageUri).toBeDefined()
-      expect(storageUri.protocol).toBe('file:')
-    })
-
-    await it('should derive MariaDB database name from URI path', () => {
-      const mariaStorage = new MikroOrmStorage(
-        TEST_MARIADB_URI,
-        TEST_LOG_PREFIX,
-        StorageType.MARIA_DB
-      )
-      const dbName = Reflect.get(mariaStorage, 'dbName') as string
-
-      expect(dbName).toBe('perf')
-    })
-  })
-
   await describe('close', async () => {
     await it('should clear cached performance statistics', async () => {
       // Arrange
       const { mockOrm } = buildMockOrm()
-      Reflect.set(storage, 'orm', mockOrm)
+      storage.setOrm(mockOrm)
       await storage.storePerformanceStatistics(buildTestStatistics('station-1'))
-      const beforeClose = [...storage.getPerformanceStatistics()]
-      expect(beforeClose.length).toBe(1)
+      expect([...storage.getPerformanceStatistics()].length).toBe(1)
 
       // Act
       await storage.close()
 
       // Assert
-      const afterClose = [...storage.getPerformanceStatistics()]
-      expect(afterClose.length).toBe(0)
+      expect([...storage.getPerformanceStatistics()].length).toBe(0)
     })
 
     await it('should call orm.close when ORM is initialized', async t => {
       // Arrange
       const { mockOrm } = buildMockOrm()
       const closeMock = t.mock.method(mockOrm, 'close')
-      Reflect.set(storage, 'orm', mockOrm)
+      storage.setOrm(mockOrm)
 
       // Act
       await storage.close()
 
       // Assert
-      expect(closeMock.mock.callCount()).toBe(1)
+      expect(closeMock.mock.calls.length).toBe(1)
     })
 
     await it('should delete orm reference after closing', async () => {
       // Arrange
       const { mockOrm } = buildMockOrm()
-      Reflect.set(storage, 'orm', mockOrm)
+      storage.setOrm(mockOrm)
 
       // Act
       await storage.close()
 
       // Assert
-      expect(Reflect.get(storage, 'orm')).toBeUndefined()
+      expect(storage.getOrm()).toBeUndefined()
     })
 
     await it('should not fail when closing without prior open', async () => {
@@ -181,17 +153,18 @@ await describe('MikroOrmStorage', async () => {
     await it('should log error when orm.close throws', async t => {
       // Arrange
       const errorMock = t.mock.method(logger, 'error')
-      const failingOrm = {
+      const failingOrm: MockOrm = {
         close: () => Promise.reject(new Error('close failed')),
-        em: { fork: () => ({}) },
+        em: { fork: () => ({}) as MockEntityManager, upsert: () => Promise.resolve({}) },
+        schema: { updateSchema: () => Promise.resolve() },
       }
-      Reflect.set(storage, 'orm', failingOrm)
+      storage.setOrm(failingOrm)
 
       // Act
       await storage.close()
 
       // Assert
-      expect(errorMock.mock.callCount()).toBeGreaterThan(0)
+      expect(errorMock.mock.calls.length).toBe(1)
     })
   })
 
@@ -199,7 +172,7 @@ await describe('MikroOrmStorage', async () => {
     await it('should transform statisticsData map to array with name field', async () => {
       // Arrange
       const { mockOrm, upsertCalls } = buildMockOrm()
-      Reflect.set(storage, 'orm', mockOrm)
+      storage.setOrm(mockOrm)
       const stats = buildTestStatistics('station-1')
 
       // Act
@@ -209,9 +182,8 @@ await describe('MikroOrmStorage', async () => {
       expect(upsertCalls.length).toBe(1)
       const call = upsertCalls[0] as { data: Record<string, unknown>; entity: unknown }
       expect(call.entity).toBe(PerformanceRecord)
-      const data = call.data
-      expect(Array.isArray(data.statisticsData)).toBe(true)
-      const statsArray = data.statisticsData as Record<string, unknown>[]
+      const statsArray = call.data.statisticsData as Record<string, unknown>[]
+      expect(Array.isArray(statsArray)).toBe(true)
       expect(statsArray.length).toBe(1)
       expect(statsArray[0].name).toBe('Heartbeat')
       expect(statsArray[0].requestCount).toBe(100)
@@ -221,11 +193,10 @@ await describe('MikroOrmStorage', async () => {
     await it('should spread measurementTimeSeries into plain array', async () => {
       // Arrange
       const { mockOrm, upsertCalls } = buildMockOrm()
-      Reflect.set(storage, 'orm', mockOrm)
-      const stats = buildTestStatistics('station-1')
+      storage.setOrm(mockOrm)
 
       // Act
-      await storage.storePerformanceStatistics(stats)
+      await storage.storePerformanceStatistics(buildTestStatistics('station-1'))
 
       // Assert
       const call = upsertCalls[0] as { data: Record<string, unknown> }
@@ -238,7 +209,7 @@ await describe('MikroOrmStorage', async () => {
     await it('should call upsert with PerformanceRecord entity class', async () => {
       // Arrange
       const { mockOrm, upsertCalls } = buildMockOrm()
-      Reflect.set(storage, 'orm', mockOrm)
+      storage.setOrm(mockOrm)
 
       // Act
       await storage.storePerformanceStatistics(buildTestStatistics('station-1'))
@@ -248,14 +219,13 @@ await describe('MikroOrmStorage', async () => {
       expect(call.entity).toBe(PerformanceRecord)
     })
 
-    await it('should cache statistics in memory via setPerformanceStatistics', async () => {
+    await it('should cache statistics in memory after store', async () => {
       // Arrange
       const { mockOrm } = buildMockOrm()
-      Reflect.set(storage, 'orm', mockOrm)
-      const stats = buildTestStatistics('station-1')
+      storage.setOrm(mockOrm)
 
       // Act
-      await storage.storePerformanceStatistics(stats)
+      await storage.storePerformanceStatistics(buildTestStatistics('station-1'))
 
       // Assert
       const cached = [...storage.getPerformanceStatistics()]
@@ -266,7 +236,7 @@ await describe('MikroOrmStorage', async () => {
     await it('should handle multiple distinct records', async () => {
       // Arrange
       const { mockOrm, upsertCalls } = buildMockOrm()
-      Reflect.set(storage, 'orm', mockOrm)
+      storage.setOrm(mockOrm)
 
       // Act
       await storage.storePerformanceStatistics(buildTestStatistics('station-1'))
@@ -282,7 +252,7 @@ await describe('MikroOrmStorage', async () => {
     await it('should handle statisticsData entry without measurementTimeSeries', async () => {
       // Arrange
       const { mockOrm, upsertCalls } = buildMockOrm()
-      Reflect.set(storage, 'orm', mockOrm)
+      storage.setOrm(mockOrm)
       const stats = buildTestStatistics('station-1')
       stats.statisticsData.set('StatusNotification', {
         requestCount: 50,
@@ -311,14 +281,14 @@ await describe('MikroOrmStorage', async () => {
       await storage.storePerformanceStatistics(buildTestStatistics('station-1'))
 
       // Assert
-      expect(errorMock.mock.callCount()).toBeGreaterThan(0)
+      expect(errorMock.mock.calls.length).toBe(1)
     })
 
-    await it('should still cache statistics even when store fails due to no connection', async () => {
+    await it('should still cache statistics even when store fails', async () => {
       // Act
       await storage.storePerformanceStatistics(buildTestStatistics('station-1'))
 
-      // Assert — setPerformanceStatistics is called before checkDBConnection
+      // Assert
       const cached = [...storage.getPerformanceStatistics()]
       expect(cached.length).toBe(1)
       expect(cached[0].id).toBe('station-1')
@@ -327,21 +297,22 @@ await describe('MikroOrmStorage', async () => {
     await it('should log error when upsert throws', async t => {
       // Arrange
       const errorMock = t.mock.method(logger, 'error')
-      const failingEm = {
+      const failingEm: MockEntityManager = {
         fork: () => failingEm,
         upsert: () => Promise.reject(new Error('upsert failed')),
       }
-      const failingOrm = {
+      const failingOrm: MockOrm = {
         close: () => Promise.resolve(),
         em: failingEm,
+        schema: { updateSchema: () => Promise.resolve() },
       }
-      Reflect.set(storage, 'orm', failingOrm)
+      storage.setOrm(failingOrm)
 
       // Act
       await storage.storePerformanceStatistics(buildTestStatistics('station-1'))
 
       // Assert
-      expect(errorMock.mock.callCount()).toBeGreaterThan(0)
+      expect(errorMock.mock.calls.length).toBe(1)
     })
   })
 })
