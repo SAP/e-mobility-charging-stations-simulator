@@ -2,8 +2,6 @@
 
 import { type Options as SqliteOptions, MikroORM as SqliteORM } from '@mikro-orm/better-sqlite'
 import { type Options as MariaDbOptions, MikroORM as MariaDbORM } from '@mikro-orm/mariadb'
-import { existsSync, mkdirSync } from 'node:fs'
-import { dirname } from 'node:path'
 
 import { BaseError } from '../../exception/index.js'
 import { PerformanceRecord, type Statistics, StorageType } from '../../types/index.js'
@@ -35,11 +33,6 @@ export class MikroOrmStorage extends Storage {
   public async open (): Promise<void> {
     try {
       if (this.orm == null) {
-        if (this.storageType === StorageType.SQLITE) {
-          if (!existsSync(dirname(this.dbName))) {
-            mkdirSync(dirname(this.dbName), { recursive: true })
-          }
-        }
         let orm: MariaDbORM | SqliteORM | undefined
         switch (this.storageType) {
           case StorageType.MARIA_DB:
@@ -47,6 +40,7 @@ export class MikroOrmStorage extends Storage {
             orm = await MariaDbORM.init(this.getOptions() as MariaDbOptions)
             break
           case StorageType.SQLITE:
+            this.ensureDBDirectory()
             orm = await SqliteORM.init(this.getOptions() as SqliteOptions)
             break
         }

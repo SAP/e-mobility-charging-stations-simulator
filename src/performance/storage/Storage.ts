@@ -1,5 +1,7 @@
 // Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
 
+import { existsSync, mkdirSync } from 'node:fs'
+import { dirname } from 'node:path'
 import { URL } from 'node:url'
 
 import {
@@ -36,6 +38,12 @@ export abstract class Storage {
 
   protected clearPerformanceStatistics (): void {
     Storage.performanceStatistics.clear()
+  }
+
+  protected ensureDBDirectory (): void {
+    if (!existsSync(dirname(this.dbName))) {
+      mkdirSync(dirname(this.dbName), { recursive: true })
+    }
   }
 
   protected getDBNameFromStorageType (type: StorageType): DBName | undefined {

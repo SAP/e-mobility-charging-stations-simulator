@@ -1,7 +1,6 @@
 // Copyright Jerome Benoit. 2021-2025. All Rights Reserved.
 
-import { closeSync, existsSync, mkdirSync, openSync, writeSync } from 'node:fs'
-import { dirname } from 'node:path'
+import { closeSync, openSync, writeSync } from 'node:fs'
 
 import { BaseError } from '../../exception/index.js'
 import { FileType, MapStringifyFormat, type Statistics } from '../../types/index.js'
@@ -36,9 +35,7 @@ export class JsonFileStorage extends Storage {
   public open (): void {
     try {
       if (this.fd == null) {
-        if (!existsSync(dirname(this.dbName))) {
-          mkdirSync(dirname(this.dbName), { recursive: true })
-        }
+        this.ensureDBDirectory()
         this.fd = openSync(this.dbName, 'w')
       }
     } catch (error) {
