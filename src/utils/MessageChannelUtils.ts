@@ -16,49 +16,59 @@ import {
   OutputFormat,
 } from './ChargingStationConfigurationUtils.js'
 
-export const buildAddedMessage = (
-  chargingStation: ChargingStation
+const buildChargingStationWorkerMessage = (
+  chargingStation: ChargingStation,
+  event: ChargingStationWorkerMessageEvents
 ): ChargingStationWorkerMessage<ChargingStationData> => {
   return {
     data: buildChargingStationDataPayload(chargingStation),
-    event: ChargingStationWorkerMessageEvents.added,
+    event,
   }
+}
+
+export const buildAddedMessage = (
+  chargingStation: ChargingStation
+): ChargingStationWorkerMessage<ChargingStationData> => {
+  return buildChargingStationWorkerMessage(
+    chargingStation,
+    ChargingStationWorkerMessageEvents.added
+  )
 }
 
 export const buildDeletedMessage = (
   chargingStation: ChargingStation
 ): ChargingStationWorkerMessage<ChargingStationData> => {
-  return {
-    data: buildChargingStationDataPayload(chargingStation),
-    event: ChargingStationWorkerMessageEvents.deleted,
-  }
+  return buildChargingStationWorkerMessage(
+    chargingStation,
+    ChargingStationWorkerMessageEvents.deleted
+  )
 }
 
 export const buildStartedMessage = (
   chargingStation: ChargingStation
 ): ChargingStationWorkerMessage<ChargingStationData> => {
-  return {
-    data: buildChargingStationDataPayload(chargingStation),
-    event: ChargingStationWorkerMessageEvents.started,
-  }
+  return buildChargingStationWorkerMessage(
+    chargingStation,
+    ChargingStationWorkerMessageEvents.started
+  )
 }
 
 export const buildStoppedMessage = (
   chargingStation: ChargingStation
 ): ChargingStationWorkerMessage<ChargingStationData> => {
-  return {
-    data: buildChargingStationDataPayload(chargingStation),
-    event: ChargingStationWorkerMessageEvents.stopped,
-  }
+  return buildChargingStationWorkerMessage(
+    chargingStation,
+    ChargingStationWorkerMessageEvents.stopped
+  )
 }
 
 export const buildUpdatedMessage = (
   chargingStation: ChargingStation
 ): ChargingStationWorkerMessage<ChargingStationData> => {
-  return {
-    data: buildChargingStationDataPayload(chargingStation),
-    event: ChargingStationWorkerMessageEvents.updated,
-  }
+  return buildChargingStationWorkerMessage(
+    chargingStation,
+    ChargingStationWorkerMessageEvents.updated
+  )
 }
 
 export const buildPerformanceStatisticsMessage = (

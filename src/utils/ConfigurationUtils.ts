@@ -1,10 +1,9 @@
-import chalk from 'chalk'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
-import { type ElementsPerWorkerType, type FileType, StorageType } from '../types/index.js'
+import { type ElementsPerWorkerType, StorageType } from '../types/index.js'
 import { Constants } from './Constants.js'
-import { isNotEmptyString, logPrefix as utilsLogPrefix } from './Utils.js'
+import { logPrefix as utilsLogPrefix } from './Utils.js'
 
 export const logPrefix = (): string => {
   return utilsLogPrefix(' Simulator configuration |')
@@ -33,46 +32,6 @@ export const getDefaultPerformanceStorageUri = (storageType: StorageType): strin
     default:
       throw new Error(`Unsupported storage type '${storageType}'`)
   }
-}
-
-export const handleFileException = (
-  file: string,
-  fileType: FileType,
-  error: NodeJS.ErrnoException,
-  logPfx: string
-): void => {
-  const prefix = isNotEmptyString(logPfx) ? `${logPfx} ` : ''
-  let logMsg: string
-  switch (error.code) {
-    case 'EACCES':
-      logMsg = `${fileType} file ${file} access denied: `
-      break
-    case 'EEXIST':
-      logMsg = `${fileType} file ${file} already exists: `
-      break
-    case 'EISDIR':
-      logMsg = `${fileType} file ${file} is a directory: `
-      break
-    case 'ENOENT':
-      logMsg = `${fileType} file ${file} not found: `
-      break
-    case 'ENOSPC':
-      logMsg = `${fileType} file ${file} no space left on device: `
-      break
-    case 'ENOTDIR':
-      logMsg = `${fileType} file ${file} parent is not a directory: `
-      break
-    case 'EPERM':
-      logMsg = `${fileType} file ${file} permission denied: `
-      break
-    case 'EROFS':
-      logMsg = `${fileType} file ${file} read-only file system: `
-      break
-    default:
-      logMsg = `${fileType} file ${file} error: `
-  }
-  console.error(`${chalk.green(prefix)}${chalk.red(logMsg)}`, error)
-  throw error
 }
 
 export const checkWorkerElementsPerWorker = (

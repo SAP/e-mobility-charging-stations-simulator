@@ -176,7 +176,6 @@ export class IdTagsCache {
         file,
         FileType.Authorization,
         this.logPrefix(file),
-        undefined,
         (event, filename) => {
           if (isNotEmptyString(filename) && event === 'change') {
             try {

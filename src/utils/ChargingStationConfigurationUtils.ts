@@ -39,7 +39,6 @@ export const buildEvsesStatus = (
   chargingStation: ChargingStation,
   outputFormat: OutputFormat = OutputFormat.configuration
 ): (EvseStatusConfiguration | EvseStatusWorkerType)[] => {
-  // eslint-disable-next-line array-callback-return
   return [...chargingStation.evses.values()].map(evseStatus => {
     const connectorsStatus = [...evseStatus.connectors.values()].map(
       ({
@@ -49,20 +48,22 @@ export const buildEvsesStatus = (
         ...connectorStatus
       }) => connectorStatus
     )
-    let status: EvseStatusConfiguration
     switch (outputFormat) {
-      case OutputFormat.configuration:
-        status = {
+      case OutputFormat.configuration: {
+        const status: EvseStatusConfiguration = {
           ...evseStatus,
           connectorsStatus,
         }
         delete (status as EvseStatusWorkerType).connectors
         return status
+      }
       case OutputFormat.worker:
         return {
           ...evseStatus,
           connectors: connectorsStatus,
         }
+      default:
+        throw new RangeError(`Unknown output format: ${outputFormat as string}`)
     }
   })
 }

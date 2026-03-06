@@ -4,7 +4,7 @@ import type { OCPP20AuthAdapter } from '../adapters/OCPP20AuthAdapter.js'
 import { OCPPError } from '../../../../exception/OCPPError.js'
 import { ErrorType } from '../../../../types/index.js'
 import { OCPPVersion } from '../../../../types/ocpp/OCPPVersion.js'
-import { logger } from '../../../../utils/Logger.js'
+import { logger } from '../../../../utils/index.js'
 import { type ChargingStation } from '../../../ChargingStation.js'
 import { AuthComponentFactory } from '../factories/AuthComponentFactory.js'
 import {

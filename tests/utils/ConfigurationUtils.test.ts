@@ -10,9 +10,9 @@ import {
   buildPerformanceUriFilePath,
   checkWorkerElementsPerWorker,
   getDefaultPerformanceStorageUri,
-  handleFileException,
   logPrefix,
 } from '../../src/utils/ConfigurationUtils.js'
+import { handleFileException } from '../../src/utils/ErrorUtils.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 await describe('ConfigurationUtils', async () => {
@@ -52,7 +52,9 @@ await describe('ConfigurationUtils', async () => {
     const error = new Error() as NodeJS.ErrnoException
     error.code = 'ENOENT'
     expect(() => {
-      handleFileException('path/to/module.js', FileType.Authorization, error, 'log prefix |')
+      handleFileException('path/to/module.js', FileType.Authorization, error, 'log prefix |', {
+        consoleOut: true,
+      })
     }).toThrow(error)
     expect(mockConsoleError.mock.calls.length).toBe(1)
   })

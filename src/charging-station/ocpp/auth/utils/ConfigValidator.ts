@@ -1,4 +1,4 @@
-import { logger } from '../../../../utils/Logger.js'
+import { logger } from '../../../../utils/index.js'
 import { type AuthConfiguration, AuthenticationError, AuthErrorCode } from '../types/AuthTypes.js'
 
 /**

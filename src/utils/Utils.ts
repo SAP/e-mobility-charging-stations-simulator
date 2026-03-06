@@ -343,6 +343,9 @@ export const clone = <T>(object: T): T => {
 
 type AsyncFunctionType<A extends unknown[], R> = (...args: A) => PromiseLike<R>
 
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+const AsyncFunctionConstructor = (async () => {}).constructor
+
 /**
  * Detects whether the given value is an asynchronous function or not.
  * @param fn - Unknown value.
@@ -350,8 +353,7 @@ type AsyncFunctionType<A extends unknown[], R> = (...args: A) => PromiseLike<R>
  * @internal
  */
 export const isAsyncFunction = (fn: unknown): fn is AsyncFunctionType<unknown[], unknown> => {
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  return fn?.constructor === (async () => {}).constructor
+  return fn?.constructor === AsyncFunctionConstructor
 }
 
 export const isCFEnvironment = (): boolean => {

@@ -8,8 +8,7 @@ import type {
 } from '../types/AuthTypes.js'
 
 import { OCPPVersion } from '../../../../types/index.js'
-import { isNotEmptyString, sleep } from '../../../../utils/index.js'
-import { logger } from '../../../../utils/Logger.js'
+import { isNotEmptyString, logger, sleep } from '../../../../utils/index.js'
 import { AuthenticationMethod, AuthorizationStatus, IdentifierType } from '../types/AuthTypes.js'
 
 /**

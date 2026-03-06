@@ -5,7 +5,7 @@ import type {
 } from '../interfaces/OCPPAuthService.js'
 import type { AuthConfiguration, AuthorizationResult, AuthRequest } from '../types/AuthTypes.js'
 
-import { logger } from '../../../../utils/Logger.js'
+import { logger } from '../../../../utils/index.js'
 import {
   AuthContext,
   AuthenticationError,

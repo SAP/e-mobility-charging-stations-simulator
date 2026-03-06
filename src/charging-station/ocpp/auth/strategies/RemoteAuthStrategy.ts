@@ -7,7 +7,7 @@ import type {
 import type { AuthConfiguration, AuthorizationResult, AuthRequest } from '../types/AuthTypes.js'
 
 import { OCPPVersion } from '../../../../types/ocpp/OCPPVersion.js'
-import { logger } from '../../../../utils/Logger.js'
+import { logger } from '../../../../utils/index.js'
 import {
   AuthenticationError,
   AuthenticationMethod,

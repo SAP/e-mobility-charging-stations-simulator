@@ -1,7 +1,7 @@
 import type { AuthCache, CacheStats } from '../interfaces/OCPPAuthService.js'
 import type { AuthorizationResult } from '../types/AuthTypes.js'
 
-import { logger } from '../../../../utils/Logger.js'
+import { logger } from '../../../../utils/index.js'
 import { AuthorizationStatus } from '../types/AuthTypes.js'
 
 /**

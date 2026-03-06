@@ -922,7 +922,6 @@ export class ChargingStation extends EventEmitter {
           this.templateFile,
           FileType.ChargingStationTemplate,
           this.logPrefix(),
-          undefined,
           (event, filename): void => {
             if (isNotEmptyString(filename) && event === 'change') {
               try {

@@ -30,10 +30,10 @@ import {
   buildPerformanceUriFilePath,
   checkWorkerElementsPerWorker,
   getDefaultPerformanceStorageUri,
-  handleFileException,
   logPrefix,
 } from './ConfigurationUtils.js'
 import { Constants } from './Constants.js'
+import { handleFileException } from './ErrorUtils.js'
 import { has, isCFEnvironment, mergeDeepRight, once } from './Utils.js'
 
 type ConfigurationSectionType =
@@ -142,7 +142,8 @@ export class Configuration {
           Configuration.configurationFile,
           FileType.Configuration,
           error as NodeJS.ErrnoException,
-          logPrefix()
+          logPrefix(),
+          { consoleOut: true }
         )
       }
     }
@@ -201,53 +202,31 @@ export class Configuration {
   }
 
   private static buildLogSection (): LogConfiguration {
-    const deprecatedLogConfiguration: LogConfiguration = {
-      ...(has('logEnabled', Configuration.getConfigurationData()) && {
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
-        enabled: Configuration.getConfigurationData()?.logEnabled,
-      }),
-      ...(has('logFile', Configuration.getConfigurationData()) && {
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
-        file: Configuration.getConfigurationData()?.logFile,
-      }),
-      ...(has('logErrorFile', Configuration.getConfigurationData()) && {
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
-        errorFile: Configuration.getConfigurationData()?.logErrorFile,
-      }),
-      ...(has('logStatisticsInterval', Configuration.getConfigurationData()) && {
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
-        statisticsInterval: Configuration.getConfigurationData()?.logStatisticsInterval,
-      }),
-      ...(has('logLevel', Configuration.getConfigurationData()) && {
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
-        level: Configuration.getConfigurationData()?.logLevel,
-      }),
-      ...(has('logConsole', Configuration.getConfigurationData()) && {
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
-        console: Configuration.getConfigurationData()?.logConsole,
-      }),
-      ...(has('logFormat', Configuration.getConfigurationData()) && {
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
-        format: Configuration.getConfigurationData()?.logFormat,
-      }),
-      ...(has('logRotate', Configuration.getConfigurationData()) && {
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
-        rotate: Configuration.getConfigurationData()?.logRotate,
-      }),
-      ...(has('logMaxFiles', Configuration.getConfigurationData()) && {
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
-        maxFiles: Configuration.getConfigurationData()?.logMaxFiles,
-      }),
-      ...(has('logMaxSize', Configuration.getConfigurationData()) && {
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
-        maxSize: Configuration.getConfigurationData()?.logMaxSize,
-      }),
+    const configData = Configuration.getConfigurationData()
+    const deprecatedLogKeyMap: [string, string][] = [
+      ['logEnabled', 'enabled'],
+      ['logFile', 'file'],
+      ['logErrorFile', 'errorFile'],
+      ['logStatisticsInterval', 'statisticsInterval'],
+      ['logLevel', 'level'],
+      ['logConsole', 'console'],
+      ['logFormat', 'format'],
+      ['logRotate', 'rotate'],
+      ['logMaxFiles', 'maxFiles'],
+      ['logMaxSize', 'maxSize'],
+    ]
+    const deprecatedLogConfiguration: Record<string, unknown> = {}
+    for (const [deprecatedKey, newKey] of deprecatedLogKeyMap) {
+      if (has(deprecatedKey, configData)) {
+        deprecatedLogConfiguration[newKey] = (configData as unknown as Record<string, unknown>)[
+          deprecatedKey
+        ]
+      }
     }
     const logConfiguration: LogConfiguration = {
       ...defaultLogConfiguration,
-      ...deprecatedLogConfiguration,
-      ...(has(ConfigurationSection.log, Configuration.getConfigurationData()) &&
-        Configuration.getConfigurationData()?.log),
+      ...(deprecatedLogConfiguration as Partial<LogConfiguration>),
+      ...(has(ConfigurationSection.log, configData) && configData?.log),
     }
     return logConfiguration
   }
@@ -310,44 +289,34 @@ export class Configuration {
   }
 
   private static buildWorkerSection (): WorkerConfiguration {
-    const deprecatedWorkerConfiguration: WorkerConfiguration = {
-      ...(has('workerProcess', Configuration.getConfigurationData()) && {
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
-        processType: Configuration.getConfigurationData()?.workerProcess,
-      }),
-      ...(has('workerStartDelay', Configuration.getConfigurationData()) && {
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
-        startDelay: Configuration.getConfigurationData()?.workerStartDelay,
-      }),
-      ...(has('chargingStationsPerWorker', Configuration.getConfigurationData()) && {
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
-        elementsPerWorker: Configuration.getConfigurationData()?.chargingStationsPerWorker,
-      }),
-      ...(has('elementAddDelay', Configuration.getConfigurationData()) && {
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
-        elementAddDelay: Configuration.getConfigurationData()?.elementAddDelay,
-      }),
-      ...(has('elementStartDelay', Configuration.getConfigurationData()?.worker) && {
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
-        elementAddDelay: Configuration.getConfigurationData()?.worker?.elementStartDelay,
-      }),
-      ...(has('workerPoolMinSize', Configuration.getConfigurationData()) && {
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
-        poolMinSize: Configuration.getConfigurationData()?.workerPoolMinSize,
-      }),
-      ...(has('workerPoolMaxSize', Configuration.getConfigurationData()) && {
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
-        poolMaxSize: Configuration.getConfigurationData()?.workerPoolMaxSize,
-      }),
+    const configData = Configuration.getConfigurationData()
+    const deprecatedWorkerKeyMap: [string, string][] = [
+      ['workerProcess', 'processType'],
+      ['workerStartDelay', 'startDelay'],
+      ['chargingStationsPerWorker', 'elementsPerWorker'],
+      ['elementAddDelay', 'elementAddDelay'],
+      ['workerPoolMinSize', 'poolMinSize'],
+      ['workerPoolMaxSize', 'poolMaxSize'],
+    ]
+    const deprecatedWorkerConfiguration: Record<string, unknown> = {}
+    for (const [deprecatedKey, newKey] of deprecatedWorkerKeyMap) {
+      if (has(deprecatedKey, configData)) {
+        deprecatedWorkerConfiguration[newKey] = (configData as unknown as Record<string, unknown>)[
+          deprecatedKey
+        ]
+      }
     }
-    has('workerPoolStrategy', Configuration.getConfigurationData()) &&
-      // eslint-disable-next-line @typescript-eslint/no-deprecated
-      delete Configuration.getConfigurationData()?.workerPoolStrategy
+    if (has('elementStartDelay', configData?.worker)) {
+      deprecatedWorkerConfiguration.elementAddDelay = (
+        configData?.worker as unknown as Record<string, unknown>
+      ).elementStartDelay
+    }
+    has('workerPoolStrategy', configData) &&
+      delete (configData as unknown as Record<string, unknown>).workerPoolStrategy
     const workerConfiguration: WorkerConfiguration = {
       ...defaultWorkerConfiguration,
-      ...deprecatedWorkerConfiguration,
-      ...(has(ConfigurationSection.worker, Configuration.getConfigurationData()) &&
-        Configuration.getConfigurationData()?.worker),
+      ...(deprecatedWorkerConfiguration as Partial<WorkerConfiguration>),
+      ...(has(ConfigurationSection.worker, configData) && configData?.worker),
     }
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     checkWorkerProcessType(workerConfiguration.processType!)
@@ -382,29 +351,133 @@ export class Configuration {
   }
 
   private static checkDeprecatedConfigurationKeys (): void {
-    // connection timeout
-    Configuration.warnDeprecatedConfigurationKey(
-      'autoReconnectTimeout',
-      undefined,
-      "Use 'ConnectionTimeOut' OCPP parameter in charging station template instead"
-    )
-    Configuration.warnDeprecatedConfigurationKey(
-      'connectionTimeout',
-      undefined,
-      "Use 'ConnectionTimeOut' OCPP parameter in charging station template instead"
-    )
-    // connection retries
-    Configuration.warnDeprecatedConfigurationKey(
-      'autoReconnectMaxRetries',
-      undefined,
-      'Use it in charging station template instead'
-    )
-    // station template url(s)
-    Configuration.warnDeprecatedConfigurationKey(
-      'stationTemplateURLs',
-      undefined,
-      "Use 'stationTemplateUrls' instead"
-    )
+    const deprecatedKeys: [string, ConfigurationSection | undefined, string][] = [
+      // connection timeout
+      [
+        'autoReconnectTimeout',
+        undefined,
+        "Use 'ConnectionTimeOut' OCPP parameter in charging station template instead",
+      ],
+      [
+        'connectionTimeout',
+        undefined,
+        "Use 'ConnectionTimeOut' OCPP parameter in charging station template instead",
+      ],
+      // connection retries
+      ['autoReconnectMaxRetries', undefined, 'Use it in charging station template instead'],
+      // station template url(s)
+      ['stationTemplateURLs', undefined, "Use 'stationTemplateUrls' instead"],
+      // supervision url(s)
+      ['supervisionURLs', undefined, "Use 'supervisionUrls' instead"],
+      // supervision urls distribution
+      ['distributeStationToTenantEqually', undefined, "Use 'supervisionUrlDistribution' instead"],
+      ['distributeStationsToTenantsEqually', undefined, "Use 'supervisionUrlDistribution' instead"],
+      // worker section
+      [
+        'useWorkerPool',
+        undefined,
+        `Use '${ConfigurationSection.worker}' section to define the type of worker process model instead`,
+      ],
+      [
+        'workerProcess',
+        undefined,
+        `Use '${ConfigurationSection.worker}' section to define the type of worker process model instead`,
+      ],
+      [
+        'workerStartDelay',
+        undefined,
+        `Use '${ConfigurationSection.worker}' section to define the worker start delay instead`,
+      ],
+      [
+        'chargingStationsPerWorker',
+        undefined,
+        `Use '${ConfigurationSection.worker}' section to define the number of element(s) per worker instead`,
+      ],
+      [
+        'elementAddDelay',
+        undefined,
+        `Use '${ConfigurationSection.worker}' section to define the worker's element add delay instead`,
+      ],
+      [
+        'workerPoolMinSize',
+        undefined,
+        `Use '${ConfigurationSection.worker}' section to define the worker pool minimum size instead`,
+      ],
+      [
+        'workerPoolSize',
+        undefined,
+        `Use '${ConfigurationSection.worker}' section to define the worker pool maximum size instead`,
+      ],
+      [
+        'workerPoolMaxSize',
+        undefined,
+        `Use '${ConfigurationSection.worker}' section to define the worker pool maximum size instead`,
+      ],
+      [
+        'workerPoolStrategy',
+        undefined,
+        `Use '${ConfigurationSection.worker}' section to define the worker pool strategy instead`,
+      ],
+      ['poolStrategy', ConfigurationSection.worker, 'Not publicly exposed to end users'],
+      ['elementStartDelay', ConfigurationSection.worker, "Use 'elementAddDelay' instead"],
+      // log section
+      [
+        'logEnabled',
+        undefined,
+        `Use '${ConfigurationSection.log}' section to define the logging enablement instead`,
+      ],
+      [
+        'logFile',
+        undefined,
+        `Use '${ConfigurationSection.log}' section to define the log file instead`,
+      ],
+      [
+        'logErrorFile',
+        undefined,
+        `Use '${ConfigurationSection.log}' section to define the log error file instead`,
+      ],
+      [
+        'logConsole',
+        undefined,
+        `Use '${ConfigurationSection.log}' section to define the console logging enablement instead`,
+      ],
+      [
+        'logStatisticsInterval',
+        undefined,
+        `Use '${ConfigurationSection.log}' section to define the log statistics interval instead`,
+      ],
+      [
+        'logLevel',
+        undefined,
+        `Use '${ConfigurationSection.log}' section to define the log level instead`,
+      ],
+      [
+        'logFormat',
+        undefined,
+        `Use '${ConfigurationSection.log}' section to define the log format instead`,
+      ],
+      [
+        'logRotate',
+        undefined,
+        `Use '${ConfigurationSection.log}' section to define the log rotation enablement instead`,
+      ],
+      [
+        'logMaxFiles',
+        undefined,
+        `Use '${ConfigurationSection.log}' section to define the log maximum files instead`,
+      ],
+      [
+        'logMaxSize',
+        undefined,
+        `Use '${ConfigurationSection.log}' section to define the log maximum size instead`,
+      ],
+      // performanceStorage section
+      ['URI', ConfigurationSection.performanceStorage, "Use 'uri' instead"],
+    ]
+    for (const [key, section, msg] of deprecatedKeys) {
+      Configuration.warnDeprecatedConfigurationKey(key, section, msg)
+    }
+    // station template url(s) remapping
     Configuration.getConfigurationData()?.['stationTemplateURLs' as keyof ConfigurationData] !=
       null &&
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -424,79 +497,7 @@ export class Configuration {
         }
       }
     )
-    // supervision url(s)
-    Configuration.warnDeprecatedConfigurationKey(
-      'supervisionURLs',
-      undefined,
-      "Use 'supervisionUrls' instead"
-    )
-    // supervision urls distribution
-    Configuration.warnDeprecatedConfigurationKey(
-      'distributeStationToTenantEqually',
-      undefined,
-      "Use 'supervisionUrlDistribution' instead"
-    )
-    Configuration.warnDeprecatedConfigurationKey(
-      'distributeStationsToTenantsEqually',
-      undefined,
-      "Use 'supervisionUrlDistribution' instead"
-    )
-    // worker section
-    Configuration.warnDeprecatedConfigurationKey(
-      'useWorkerPool',
-      undefined,
-      `Use '${ConfigurationSection.worker}' section to define the type of worker process model instead`
-    )
-    Configuration.warnDeprecatedConfigurationKey(
-      'workerProcess',
-      undefined,
-      `Use '${ConfigurationSection.worker}' section to define the type of worker process model instead`
-    )
-    Configuration.warnDeprecatedConfigurationKey(
-      'workerStartDelay',
-      undefined,
-      `Use '${ConfigurationSection.worker}' section to define the worker start delay instead`
-    )
-    Configuration.warnDeprecatedConfigurationKey(
-      'chargingStationsPerWorker',
-      undefined,
-      `Use '${ConfigurationSection.worker}' section to define the number of element(s) per worker instead`
-    )
-    Configuration.warnDeprecatedConfigurationKey(
-      'elementAddDelay',
-      undefined,
-      `Use '${ConfigurationSection.worker}' section to define the worker's element add delay instead`
-    )
-    Configuration.warnDeprecatedConfigurationKey(
-      'workerPoolMinSize',
-      undefined,
-      `Use '${ConfigurationSection.worker}' section to define the worker pool minimum size instead`
-    )
-    Configuration.warnDeprecatedConfigurationKey(
-      'workerPoolSize',
-      undefined,
-      `Use '${ConfigurationSection.worker}' section to define the worker pool maximum size instead`
-    )
-    Configuration.warnDeprecatedConfigurationKey(
-      'workerPoolMaxSize',
-      undefined,
-      `Use '${ConfigurationSection.worker}' section to define the worker pool maximum size instead`
-    )
-    Configuration.warnDeprecatedConfigurationKey(
-      'workerPoolStrategy',
-      undefined,
-      `Use '${ConfigurationSection.worker}' section to define the worker pool strategy instead`
-    )
-    Configuration.warnDeprecatedConfigurationKey(
-      'poolStrategy',
-      ConfigurationSection.worker,
-      'Not publicly exposed to end users'
-    )
-    Configuration.warnDeprecatedConfigurationKey(
-      'elementStartDelay',
-      ConfigurationSection.worker,
-      "Use 'elementAddDelay' instead"
-    )
+    // worker section: staticPool check
     if (
       Configuration.getConfigurationData()?.worker?.processType ===
       ('staticPool' as WorkerProcessType)
@@ -507,63 +508,6 @@ export class Configuration {
         )}`
       )
     }
-    // log section
-    Configuration.warnDeprecatedConfigurationKey(
-      'logEnabled',
-      undefined,
-      `Use '${ConfigurationSection.log}' section to define the logging enablement instead`
-    )
-    Configuration.warnDeprecatedConfigurationKey(
-      'logFile',
-      undefined,
-      `Use '${ConfigurationSection.log}' section to define the log file instead`
-    )
-    Configuration.warnDeprecatedConfigurationKey(
-      'logErrorFile',
-      undefined,
-      `Use '${ConfigurationSection.log}' section to define the log error file instead`
-    )
-    Configuration.warnDeprecatedConfigurationKey(
-      'logConsole',
-      undefined,
-      `Use '${ConfigurationSection.log}' section to define the console logging enablement instead`
-    )
-    Configuration.warnDeprecatedConfigurationKey(
-      'logStatisticsInterval',
-      undefined,
-      `Use '${ConfigurationSection.log}' section to define the log statistics interval instead`
-    )
-    Configuration.warnDeprecatedConfigurationKey(
-      'logLevel',
-      undefined,
-      `Use '${ConfigurationSection.log}' section to define the log level instead`
-    )
-    Configuration.warnDeprecatedConfigurationKey(
-      'logFormat',
-      undefined,
-      `Use '${ConfigurationSection.log}' section to define the log format instead`
-    )
-    Configuration.warnDeprecatedConfigurationKey(
-      'logRotate',
-      undefined,
-      `Use '${ConfigurationSection.log}' section to define the log rotation enablement instead`
-    )
-    Configuration.warnDeprecatedConfigurationKey(
-      'logMaxFiles',
-      undefined,
-      `Use '${ConfigurationSection.log}' section to define the log maximum files instead`
-    )
-    Configuration.warnDeprecatedConfigurationKey(
-      'logMaxSize',
-      undefined,
-      `Use '${ConfigurationSection.log}' section to define the log maximum size instead`
-    )
-    // performanceStorage section
-    Configuration.warnDeprecatedConfigurationKey(
-      'URI',
-      ConfigurationSection.performanceStorage,
-      "Use 'uri' instead"
-    )
     // uiServer section
     if (has('uiWebSocketServer', Configuration.getConfigurationData())) {
       console.error(
@@ -617,7 +561,8 @@ export class Configuration {
         Configuration.configurationFile,
         FileType.Configuration,
         error as NodeJS.ErrnoException,
-        logPrefix()
+        logPrefix(),
+        { consoleOut: true }
       )
     }
   }

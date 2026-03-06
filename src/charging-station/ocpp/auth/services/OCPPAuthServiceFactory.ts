@@ -3,7 +3,7 @@ import type { OCPPAuthService } from '../interfaces/OCPPAuthService.js'
 
 import { OCPPError } from '../../../../exception/OCPPError.js'
 import { ErrorType } from '../../../../types/index.js'
-import { logger } from '../../../../utils/Logger.js'
+import { logger } from '../../../../utils/index.js'
 import { OCPPAuthServiceImpl } from './OCPPAuthServiceImpl.js'
 
 const moduleName = 'OCPPAuthServiceFactory'
