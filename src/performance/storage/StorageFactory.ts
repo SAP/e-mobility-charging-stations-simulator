@@ -15,11 +15,7 @@ export class StorageFactory {
     // This is intentional
   }
 
-  public static getStorage (
-    type: StorageType,
-    connectionUri: string,
-    logPrefix: string
-  ): Storage | undefined {
+  public static getStorage (type: StorageType, connectionUri: string, logPrefix: string): Storage {
     let storageInstance: Storage
     switch (type) {
       case StorageType.JSON_FILE:
@@ -37,8 +33,7 @@ export class StorageFactory {
         storageInstance = new None()
         break
       default:
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        throw new BaseError(`${logPrefix} Unknown storage type: ${type}`)
+        throw new BaseError(`${logPrefix} Unknown storage type: ${type as string}`)
     }
     return storageInstance
   }

@@ -68,20 +68,9 @@ export abstract class Storage {
       throwError: false,
     }
   ): void {
-    params = {
-      ...{
-        consoleOut: false,
-        throwError: false,
-      },
-      ...params,
-    }
-    const inTableOrCollectionStr = table != null && ` in table or collection '${table}'`
+    const inTableOrCollectionStr = table != null ? ` in table or collection '${table}'` : ''
     logger.error(
-      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      `${this.logPrefix} ${this.getDBNameFromStorageType(type)} error '${
-        error.message
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      }'${inTableOrCollectionStr}:`,
+      `${this.logPrefix} ${this.getDBNameFromStorageType(type) ?? 'Unknown'} error '${error.message}'${inTableOrCollectionStr}:`,
       error
     )
     if (params.throwError === true) {

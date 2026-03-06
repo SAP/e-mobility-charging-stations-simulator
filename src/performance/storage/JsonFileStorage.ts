@@ -50,11 +50,10 @@ export class JsonFileStorage extends Storage {
 
   public storePerformanceStatistics (performanceStatistics: Statistics): void {
     this.setPerformanceStatistics(performanceStatistics)
-    this.checkPerformanceRecordsFile()
+    const fd = this.checkPerformanceRecordsFile()
     AsyncLock.runExclusive(AsyncLockType.performance, () => {
       writeSync(
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.fd!,
+        fd,
         JSONStringify([...this.getPerformanceStatistics()], 2, MapStringifyFormat.object),
         0,
         'utf8'
@@ -69,11 +68,12 @@ export class JsonFileStorage extends Storage {
     })
   }
 
-  private checkPerformanceRecordsFile (): void {
+  private checkPerformanceRecordsFile (): number {
     if (this.fd == null) {
       throw new BaseError(
         `${this.logPrefix} Performance records '${this.dbName}' file descriptor not found`
       )
     }
+    return this.fd
   }
 }
