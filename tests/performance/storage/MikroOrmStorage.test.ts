@@ -1,8 +1,8 @@
-import { MikroORM } from '@mikro-orm/better-sqlite'
 /**
  * @file Tests for MikroOrmStorage
  * @description Unit and integration tests for MikroORM-based performance storage
  */
+import { MikroORM } from '@mikro-orm/better-sqlite'
 import { expect } from '@std/expect'
 import { existsSync, rmSync } from 'node:fs'
 import { afterEach, beforeEach, describe, it } from 'node:test'
