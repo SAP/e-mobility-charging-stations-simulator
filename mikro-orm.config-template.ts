@@ -1,4 +1,4 @@
-import { defineConfig } from '@mikro-orm/sqlite'
+import { defineConfig } from '@mikro-orm/better-sqlite'
 
 import { PerformanceRecord } from './src/types/orm/entities/PerformanceRecord.js'
 import { Constants } from './src/utils/index.js'
