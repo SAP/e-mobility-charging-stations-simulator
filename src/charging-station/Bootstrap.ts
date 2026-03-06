@@ -219,7 +219,7 @@ export class Bootstrap extends EventEmitter {
             performanceStorageConfiguration.uri!,
             this.logPrefix()
           )
-          await this.storage?.open()
+          await this.storage.open()
         }
         this.uiServer.setChargingStationTemplates(
           Configuration.getStationTemplateUrls()?.map(stationTemplateUrl =>
