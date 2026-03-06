@@ -8,22 +8,22 @@ import { Constants } from '../../utils/index.js'
 import { Storage } from './Storage.js'
 
 export class MongoDBStorage extends Storage {
-  private readonly client?: MongoClient
-  private connected: boolean
+  private readonly client: MongoClient
+  private opened: boolean
 
   constructor (storageUri: string, logPrefix: string) {
     super(storageUri, logPrefix)
     this.client = new MongoClient(this.storageUri.toString())
-    this.connected = false
+    this.opened = false
     this.dbName = this.storageUri.pathname.replace(/(?:^\/)|(?:\/$)/g, '')
   }
 
   public async close (): Promise<void> {
     this.clearPerformanceStatistics()
     try {
-      if (this.connected && this.client != null) {
+      if (this.opened) {
         await this.client.close()
-        this.connected = false
+        this.opened = false
       }
     } catch (error) {
       this.handleDBStorageError(StorageType.MONGO_DB, error as Error)
@@ -32,9 +32,9 @@ export class MongoDBStorage extends Storage {
 
   public async open (): Promise<void> {
     try {
-      if (!this.connected && this.client != null) {
+      if (!this.opened) {
         await this.client.connect()
-        this.connected = true
+        this.opened = true
       }
     } catch (error) {
       this.handleDBStorageError(StorageType.MONGO_DB, error as Error)
@@ -46,11 +46,13 @@ export class MongoDBStorage extends Storage {
       this.setPerformanceStatistics(performanceStatistics)
       this.checkDBConnection()
       await this.client
-        ?.db(this.dbName)
+        .db(this.dbName)
         .collection<Statistics>(Constants.PERFORMANCE_RECORDS_TABLE)
-        .replaceOne({ id: performanceStatistics.id }, performanceStatistics, {
-          upsert: true,
-        })
+        .replaceOne(
+          { id: performanceStatistics.id },
+          this.serializePerformanceStatistics(performanceStatistics) as unknown as Statistics,
+          { upsert: true }
+        )
     } catch (error) {
       this.handleDBStorageError(
         StorageType.MONGO_DB,
@@ -61,20 +63,9 @@ export class MongoDBStorage extends Storage {
   }
 
   private checkDBConnection (): void {
-    if (this.client == null) {
+    if (!this.opened) {
       throw new BaseError(
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        `${this.logPrefix} ${this.getDBNameFromStorageType(
-          StorageType.MONGO_DB
-        )} client initialization failed while trying to issue a request`
-      )
-    }
-    if (!this.connected) {
-      throw new BaseError(
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        `${this.logPrefix} ${this.getDBNameFromStorageType(
-          StorageType.MONGO_DB
-        )} connection not opened while trying to issue a request`
+        `${this.logPrefix} ${this.getDBNameFromStorageType(StorageType.MONGO_DB) ?? 'Unknown'} connection not opened while trying to issue a request`
       )
     }
   }

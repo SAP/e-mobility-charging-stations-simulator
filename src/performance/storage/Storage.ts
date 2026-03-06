@@ -89,6 +89,20 @@ export abstract class Storage {
     }
   }
 
+  protected serializePerformanceStatistics (
+    performanceStatistics: Statistics
+  ): Record<string, unknown> {
+    return {
+      ...performanceStatistics,
+      statisticsData: Array.from(performanceStatistics.statisticsData, ([name, value]) => ({
+        ...value,
+        measurementTimeSeries:
+          value.measurementTimeSeries != null ? [...value.measurementTimeSeries] : undefined,
+        name,
+      })),
+    }
+  }
+
   protected setPerformanceStatistics (performanceStatistics: Statistics): void {
     Storage.performanceStatistics.set(performanceStatistics.id, performanceStatistics)
   }

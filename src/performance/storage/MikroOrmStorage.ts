@@ -64,15 +64,10 @@ export class MikroOrmStorage extends Storage {
       this.setPerformanceStatistics(performanceStatistics)
       this.checkDBConnection()
       const em = this.orm?.em.fork()
-      await em?.upsert(PerformanceRecord, {
-        ...performanceStatistics,
-        statisticsData: Array.from(performanceStatistics.statisticsData, ([name, value]) => ({
-          ...value,
-          measurementTimeSeries:
-            value.measurementTimeSeries != null ? [...value.measurementTimeSeries] : undefined,
-          name,
-        })),
-      })
+      await em?.upsert(
+        PerformanceRecord,
+        this.serializePerformanceStatistics(performanceStatistics)
+      )
     } catch (error) {
       this.handleDBStorageError(
         this.storageType,
