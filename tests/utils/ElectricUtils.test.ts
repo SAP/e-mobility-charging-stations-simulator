@@ -8,6 +8,10 @@ import { afterEach, describe, it } from 'node:test'
 import { ACElectricUtils, DCElectricUtils } from '../../src/utils/ElectricUtils.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
+const COS_PHI_RESIDENTIAL = 0.85
+const COS_PHI_POOR = 0.9
+const COS_PHI_INDUSTRIAL = 0.95
+
 await describe('ElectricUtils', async () => {
   afterEach(() => {
     standardCleanup()
@@ -47,7 +51,7 @@ await describe('ElectricUtils', async () => {
     expect(ACElectricUtils.amperagePerPhaseFromPower(-1, 690, 230)).toBe(0)
   })
   await it('should round AC power per phase with non-unity cosPhi', () => {
-    expect(ACElectricUtils.powerPerPhase(230, 10, 0.85)).toBe(1955)
+    expect(ACElectricUtils.powerPerPhase(230, 10, COS_PHI_RESIDENTIAL)).toBe(1955)
   })
   await it('should round DC amperage when power is not evenly divisible by voltage', () => {
     expect(DCElectricUtils.amperage(100, 3)).toBe(33)
@@ -86,12 +90,10 @@ await describe('ElectricUtils', async () => {
   })
 
   await it('should handle industrial cosPhi values for AC calculations', () => {
-    // cosPhi = 0.95 (typical industrial)
-    expect(ACElectricUtils.powerPerPhase(230, 32, 0.95)).toBe(6992)
-    expect(ACElectricUtils.powerTotal(3, 230, 32, 0.95)).toBe(20976)
-    expect(ACElectricUtils.amperageTotalFromPower(6992, 230, 0.95)).toBe(32)
-    // cosPhi = 0.9
-    expect(ACElectricUtils.powerPerPhase(230, 32, 0.9)).toBe(6624)
-    expect(ACElectricUtils.amperageTotalFromPower(6624, 230, 0.9)).toBe(32)
+    expect(ACElectricUtils.powerPerPhase(230, 32, COS_PHI_INDUSTRIAL)).toBe(6992)
+    expect(ACElectricUtils.powerTotal(3, 230, 32, COS_PHI_INDUSTRIAL)).toBe(20976)
+    expect(ACElectricUtils.amperageTotalFromPower(6992, 230, COS_PHI_INDUSTRIAL)).toBe(32)
+    expect(ACElectricUtils.powerPerPhase(230, 32, COS_PHI_POOR)).toBe(6624)
+    expect(ACElectricUtils.amperageTotalFromPower(6624, 230, COS_PHI_POOR)).toBe(32)
   })
 })

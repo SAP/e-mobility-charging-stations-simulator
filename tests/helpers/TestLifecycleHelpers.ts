@@ -35,17 +35,17 @@ import { MockIdTagsCache, MockSharedLRUCache } from '../charging-station/mocks/M
  * Result type for console mocks
  */
 export interface ConsoleMockResult {
-  errorMock: { mock: { calls: unknown[][] } }
-  infoMock: { mock: { calls: unknown[][] } }
-  warnMock: { mock: { calls: unknown[][] } }
+  errorMock: { mock: { calls: MockCall[] } }
+  infoMock: { mock: { calls: MockCall[] } }
+  warnMock: { mock: { calls: MockCall[] } }
 }
 
 /**
  * Result type for logger mocks
  */
 export interface LoggerMockResult {
-  errorMock: { mock: { calls: unknown[][] } }
-  warnMock: { mock: { calls: unknown[][] } }
+  errorMock: { mock: { calls: MockCall[] } }
+  warnMock: { mock: { calls: MockCall[] } }
 }
 
 /**
@@ -64,11 +64,18 @@ export interface TimerHelperOptions {
 }
 
 /**
+ * Single mock function call record matching Node.js test runner runtime shape
+ */
+interface MockCall {
+  arguments: unknown[]
+}
+
+/**
  * Mock context type for Node.js test module
  */
 interface MockContext {
   mock: {
-    method: (object: object, methodName: string) => { mock: { calls: unknown[][] } }
+    method: (object: object, methodName: string) => { mock: { calls: MockCall[] } }
   }
 }
 

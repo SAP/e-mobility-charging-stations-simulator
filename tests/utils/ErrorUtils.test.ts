@@ -114,8 +114,7 @@ await describe('ErrorUtils', async () => {
     }
     expect(warnMock.mock.calls.length).toBe(errorCodes.length)
     for (let i = 0; i < errorCodes.length; i++) {
-      const call = warnMock.mock.calls[i] as unknown as { arguments: unknown[] }
-      const logMessage = String(call.arguments[0]).toLowerCase()
+      const logMessage = String(warnMock.mock.calls[i].arguments[0]).toLowerCase()
       expect(logMessage.includes(errorCodes[i].expectedSubstring)).toBe(true)
     }
   })
