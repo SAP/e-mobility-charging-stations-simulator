@@ -1,18 +1,37 @@
+import { MikroORM } from '@mikro-orm/better-sqlite'
 /**
  * @file Tests for MikroOrmStorage
- * @description Unit tests for MikroORM-based performance storage
+ * @description Unit and integration tests for MikroORM-based performance storage
  */
 import { expect } from '@std/expect'
+import { existsSync, rmSync } from 'node:fs'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import { MikroOrmStorage } from '../../../src/performance/storage/MikroOrmStorage.js'
 import { type Statistics, StorageType } from '../../../src/types/index.js'
 import { PerformanceRecord } from '../../../src/types/orm/entities/PerformanceRecord.js'
+import { Constants } from '../../../src/utils/index.js'
 import { logger } from '../../../src/utils/Logger.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 
 const TEST_LOG_PREFIX = '[MikroOrmStorage Test]'
 const TEST_STORAGE_URI = 'file:performance/e-mobility-charging-stations-simulator.db'
+const TEST_DB_PATH = `${Constants.DEFAULT_PERFORMANCE_DIRECTORY}/${Constants.DEFAULT_PERFORMANCE_RECORDS_DB_NAME}.db`
+
+let sqliteAvailable = false
+try {
+  const orm = await MikroORM.init({
+    dbName: ':memory:',
+    discovery: { warnWhenNoEntities: false },
+    entities: [],
+  })
+  await orm.close()
+  sqliteAvailable = true
+} catch {
+  // better-sqlite3 native binding not available (CI --ignore-scripts)
+}
+
+const SKIP_SQLITE = !sqliteAvailable ? 'better-sqlite3 native binding not available' : undefined
 
 interface MockEntityManager {
   fork: () => MockEntityManager
@@ -101,6 +120,9 @@ await describe('MikroOrmStorage', async () => {
       await storage.close()
     } catch {
       // Storage may not have been opened
+    }
+    if (existsSync(TEST_DB_PATH)) {
+      rmSync(TEST_DB_PATH)
     }
     standardCleanup()
   })
@@ -313,6 +335,141 @@ await describe('MikroOrmStorage', async () => {
 
       // Assert
       expect(errorMock.mock.calls.length).toBe(1)
+    })
+  })
+
+  await describe('Integration (SQLite)', async () => {
+    await it('should open database and create schema', { skip: SKIP_SQLITE }, async () => {
+      await storage.open()
+
+      expect(existsSync(TEST_DB_PATH)).toBe(true)
+    })
+
+    await it('should persist record to SQLite database', { skip: SKIP_SQLITE }, async () => {
+      // Arrange
+      await storage.open()
+
+      // Act
+      await storage.storePerformanceStatistics(buildTestStatistics('station-1'))
+
+      // Assert
+      const verifyOrm = await MikroORM.init({
+        dbName: TEST_DB_PATH,
+        entities: [PerformanceRecord],
+      })
+      try {
+        const record = await verifyOrm.em.fork().findOne(PerformanceRecord, { id: 'station-1' })
+        expect(record).toBeDefined()
+        expect(record?.name).toBe('cs-station-1')
+        expect(record?.uri).toBe('ws://localhost:8080')
+      } finally {
+        await verifyOrm.close()
+      }
+    })
+
+    await it('should upsert existing record with same id', { skip: SKIP_SQLITE }, async () => {
+      // Arrange
+      await storage.open()
+      await storage.storePerformanceStatistics(buildTestStatistics('station-1', 'original'))
+
+      // Act
+      await storage.storePerformanceStatistics(buildTestStatistics('station-1', 'updated'))
+
+      // Assert
+      const verifyOrm = await MikroORM.init({
+        dbName: TEST_DB_PATH,
+        entities: [PerformanceRecord],
+      })
+      try {
+        const records = await verifyOrm.em.fork().findAll(PerformanceRecord)
+        expect(records.length).toBe(1)
+        expect(records[0].name).toBe('updated')
+      } finally {
+        await verifyOrm.close()
+      }
+    })
+
+    await it(
+      'should serialize statisticsData as JSON array with name field',
+      { skip: SKIP_SQLITE },
+      async () => {
+        // Arrange
+        await storage.open()
+
+        // Act
+        await storage.storePerformanceStatistics(buildTestStatistics('station-1'))
+
+        // Assert
+        const verifyOrm = await MikroORM.init({
+          dbName: TEST_DB_PATH,
+          entities: [PerformanceRecord],
+        })
+        try {
+          const record = await verifyOrm.em.fork().findOne(PerformanceRecord, { id: 'station-1' })
+          expect(record).toBeDefined()
+          expect(Array.isArray(record?.statisticsData)).toBe(true)
+          expect(record?.statisticsData.length).toBe(1)
+          const entry = record?.statisticsData[0]
+          expect(entry).toBeDefined()
+          expect(entry?.name).toBe('Heartbeat')
+          expect(entry?.requestCount).toBe(100)
+        } finally {
+          await verifyOrm.close()
+        }
+      }
+    )
+
+    await it('should persist data across close and reopen', { skip: SKIP_SQLITE }, async () => {
+      // Arrange
+      await storage.open()
+      await storage.storePerformanceStatistics(buildTestStatistics('station-1'))
+      await storage.close()
+
+      // Act
+      const freshStorage = new TestableMikroOrmStorage(
+        TEST_STORAGE_URI,
+        TEST_LOG_PREFIX,
+        StorageType.SQLITE
+      )
+      await freshStorage.open()
+
+      // Assert
+      const verifyOrm = await MikroORM.init({
+        dbName: TEST_DB_PATH,
+        entities: [PerformanceRecord],
+      })
+      try {
+        const record = await verifyOrm.em.fork().findOne(PerformanceRecord, { id: 'station-1' })
+        expect(record).toBeDefined()
+        expect(record?.name).toBe('cs-station-1')
+      } finally {
+        await verifyOrm.close()
+        await freshStorage.close()
+      }
+    })
+
+    await it('should store multiple distinct records', { skip: SKIP_SQLITE }, async () => {
+      // Arrange
+      await storage.open()
+
+      // Act
+      await storage.storePerformanceStatistics(buildTestStatistics('station-1'))
+      await storage.storePerformanceStatistics(buildTestStatistics('station-2'))
+      await storage.storePerformanceStatistics(buildTestStatistics('station-3'))
+
+      // Assert
+      const verifyOrm = await MikroORM.init({
+        dbName: TEST_DB_PATH,
+        entities: [PerformanceRecord],
+      })
+      try {
+        const records = await verifyOrm.em.fork().findAll(PerformanceRecord)
+        expect(records.length).toBe(3)
+        const ids = records.map(r => r.id).sort()
+        expect(ids).toStrictEqual(['station-1', 'station-2', 'station-3'])
+      } finally {
+        await verifyOrm.close()
+      }
     })
   })
 })
