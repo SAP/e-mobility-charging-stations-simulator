@@ -26,9 +26,7 @@ import {
   OCPP16StandardParametersKey,
   OCPPVersion,
 } from '../../../../src/types/index.js'
-import {
-  OCPP16ChargingProfileKindType,
-} from '../../../../src/types/ocpp/1.6/ChargingProfile.js'
+import { OCPP16ChargingProfileKindType } from '../../../../src/types/ocpp/1.6/ChargingProfile.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import {
@@ -223,8 +221,9 @@ export function resetConnectorTransactionState (chargingStation: ChargingStation
 // ============================================================================
 
 /**
- * Reset message size and element limits to generous defaults after tests manipulating them.
- * @param chargingStation - Charging station test instance whose configuration limits are reset
+ * Reset interval-related configuration keys to their canonical defaults after tests that modify them.
+ * Specifically resets MeterValueSampleInterval and HeartbeatInterval to default values.
+ * @param chargingStation - Charging station test instance whose interval configuration is reset
  */
 export function resetLimits (chargingStation: ChargingStation) {
   upsertConfigurationKey(
@@ -292,10 +291,7 @@ export const ChargingProfileFixtures = {
     stackLevel: 0,
   }),
 
-  createTxDefaultProfile: (
-    chargingProfileId = 1,
-    stackLevel = 0
-  ): OCPP16ChargingProfile => ({
+  createTxDefaultProfile: (chargingProfileId = 1, stackLevel = 0): OCPP16ChargingProfile => ({
     chargingProfileId,
     chargingProfileKind: OCPP16ChargingProfileKindType.ABSOLUTE,
     chargingProfilePurpose: OCPP16ChargingProfilePurposeType.TX_DEFAULT_PROFILE,
@@ -306,10 +302,7 @@ export const ChargingProfileFixtures = {
     stackLevel,
   }),
 
-  createTxProfile: (
-    chargingProfileId = 2,
-    transactionId?: number
-  ): OCPP16ChargingProfile => ({
+  createTxProfile: (chargingProfileId = 2, transactionId?: number): OCPP16ChargingProfile => ({
     chargingProfileId,
     chargingProfileKind: OCPP16ChargingProfileKindType.RELATIVE,
     chargingProfilePurpose: OCPP16ChargingProfilePurposeType.TX_PROFILE,
@@ -350,10 +343,7 @@ export const ResetFixtures = {
 } as const
 
 export const TransactionFixtures = {
-  createStartTransactionParams: (
-    connectorId = 1,
-    idTag = 'TEST-TAG-001'
-  ) => ({
+  createStartTransactionParams: (connectorId = 1, idTag = 'TEST-TAG-001') => ({
     connectorId,
     idTag,
   }),

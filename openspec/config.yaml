@@ -10,7 +10,7 @@ context: |
   - Language: TypeScript (strict mode)
   - Package Manager: pnpm (>=9.0.0)
   - Build Tool: esbuild
-  - Testing: Node.js native test runner with @std/expect
+  - Testing: Node.js native test runner with node:assert/strict
   - Code Quality: ESLint, Prettier, neostandard
 
   ## OCPP Protocol Support
