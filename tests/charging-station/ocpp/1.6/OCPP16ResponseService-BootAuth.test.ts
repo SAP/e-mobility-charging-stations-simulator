@@ -13,9 +13,11 @@
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
-import type { OCPP16AuthorizeRequest, OCPP16AuthorizeResponse } from '../../../../src/types/ocpp/1.6/Transaction.js'
+import type {
+  OCPP16AuthorizeRequest,
+  OCPP16AuthorizeResponse,
+} from '../../../../src/types/ocpp/1.6/Transaction.js'
 
-import { OCPP16ResponseService } from '../../../../src/charging-station/ocpp/1.6/OCPP16ResponseService.js'
 import {
   ChargingStationEvents,
   OCPP16AuthorizationStatus,
@@ -27,6 +29,7 @@ import {
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import {
   createOCPP16ResponseTestContext,
+  dispatchResponse,
   type OCPP16ResponseTestContext,
 } from './OCPP16TestUtils.js'
 
@@ -47,11 +50,11 @@ await describe('OCPP16ResponseService — BootNotification and Authorize', async
    * @param payload - The BootNotificationResponse payload to dispatch
    */
   async function dispatchBootNotification (payload: OCPP16BootNotificationResponse): Promise<void> {
-    await ctx.responseService.responseHandler(
+    await dispatchResponse(
+      ctx.responseService,
       ctx.station,
       OCPP16RequestCommand.BOOT_NOTIFICATION,
-      payload as unknown as Parameters<OCPP16ResponseService['responseHandler']>[2],
-      {} as Parameters<OCPP16ResponseService['responseHandler']>[3]
+      payload
     )
   }
 
@@ -64,11 +67,12 @@ await describe('OCPP16ResponseService — BootNotification and Authorize', async
     payload: OCPP16AuthorizeResponse,
     requestPayload: OCPP16AuthorizeRequest
   ): Promise<void> {
-    await ctx.responseService.responseHandler(
+    await dispatchResponse(
+      ctx.responseService,
       ctx.station,
       OCPP16RequestCommand.AUTHORIZE,
-      payload as unknown as Parameters<OCPP16ResponseService['responseHandler']>[2],
-      requestPayload as unknown as Parameters<OCPP16ResponseService['responseHandler']>[3]
+      payload,
+      requestPayload
     )
   }
 
@@ -162,7 +166,9 @@ await describe('OCPP16ResponseService — BootNotification and Authorize', async
   await it('should set idTagAuthorized to true when idTagInfo status is Accepted', async () => {
     // Arrange — set authorizeIdTag on connector 1
     const connectorStatus = ctx.station.getConnectorStatus(1)
-    if (connectorStatus == null) { assert.fail('Expected connector status to be defined') }
+    if (connectorStatus == null) {
+      assert.fail('Expected connector status to be defined')
+    }
     connectorStatus.authorizeIdTag = 'TEST_TAG'
 
     // Act
@@ -180,7 +186,9 @@ await describe('OCPP16ResponseService — BootNotification and Authorize', async
   await it('should set idTagAuthorized to false and clear authorizeIdTag for non-Accepted status', async () => {
     // Arrange — set authorizeIdTag on connector 1
     const connectorStatus = ctx.station.getConnectorStatus(1)
-    if (connectorStatus == null) { assert.fail('Expected connector status to be defined') }
+    if (connectorStatus == null) {
+      assert.fail('Expected connector status to be defined')
+    }
     connectorStatus.authorizeIdTag = 'TEST_TAG'
 
     // Act — Blocked status

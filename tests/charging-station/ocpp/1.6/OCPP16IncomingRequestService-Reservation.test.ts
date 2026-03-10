@@ -8,8 +8,10 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
-import type { OCPP16CancelReservationRequest, OCPP16ReserveNowRequest } from '../../../../src/types/index.js'
-import type { MockOCPPRequestService } from '../../ChargingStationTestUtils.js'
+import type {
+  OCPP16CancelReservationRequest,
+  OCPP16ReserveNowRequest,
+} from '../../../../src/types/index.js'
 
 import {
   GenericStatus,
@@ -23,6 +25,7 @@ import {
   createOCPP16IncomingRequestTestContext,
   type OCPP16IncomingRequestTestContext,
   ReservationFixtures,
+  setMockRequestHandler,
   upsertConfigurationKey,
 } from './OCPP16TestUtils.js'
 
@@ -52,8 +55,9 @@ function enableReservationProfile (
   }
   stationWithReserve.getReserveConnectorZeroSupported = () => reserveConnectorZeroSupported
   // Mock auth: remote authorization returns Accepted
-  ;(station.ocppRequestService as unknown as MockOCPPRequestService).requestHandler =
-    async () => Promise.resolve({ idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } })
+  setMockRequestHandler(station, async () =>
+    Promise.resolve({ idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } })
+  )
 }
 
 await describe('OCPP16IncomingRequestService — Reservation', async () => {
@@ -157,11 +161,7 @@ await describe('OCPP16IncomingRequestService — Reservation', async () => {
       // Arrange
       const { station, testableService } = context
       // Do NOT enable Reservation feature profile
-      upsertConfigurationKey(
-        station,
-        OCPP16StandardParametersKey.SupportedFeatureProfiles,
-        'Core'
-      )
+      upsertConfigurationKey(station, OCPP16StandardParametersKey.SupportedFeatureProfiles, 'Core')
       const request: OCPP16ReserveNowRequest = {
         connectorId: 1,
         expiryDate: new Date(Date.now() + 3600000),
@@ -246,11 +246,7 @@ await describe('OCPP16IncomingRequestService — Reservation', async () => {
       // Arrange
       const { station, testableService } = context
       // Do NOT enable Reservation feature profile
-      upsertConfigurationKey(
-        station,
-        OCPP16StandardParametersKey.SupportedFeatureProfiles,
-        'Core'
-      )
+      upsertConfigurationKey(station, OCPP16StandardParametersKey.SupportedFeatureProfiles, 'Core')
       const cancelRequest: OCPP16CancelReservationRequest = {
         reservationId: 1,
       }

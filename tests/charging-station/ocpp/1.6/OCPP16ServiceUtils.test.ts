@@ -12,7 +12,6 @@ import { afterEach, describe, it } from 'node:test'
 import { OCPP16ServiceUtils } from '../../../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
 import { OCPPServiceUtils } from '../../../../src/charging-station/ocpp/OCPPServiceUtils.js'
 import {
-  IncomingRequestCommand,
   type OCPP16ChargingProfile,
   OCPP16ChargingProfilePurposeType,
   OCPP16ChargingRateUnitType,
@@ -27,11 +26,11 @@ import {
   OCPP16StandardParametersKey,
   OCPP16SupportedFeatureProfiles,
   OCPPVersion,
-  RequestCommand,
 } from '../../../../src/types/index.js'
 import { OCPP16ChargingProfileKindType } from '../../../../src/types/ocpp/1.6/ChargingProfile.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from '../../helpers/StationHelpers.js'
+import { createCommandsSupport, createMeterValuesTemplate } from './OCPP16TestUtils.js'
 
 await describe('OCPP16ServiceUtils — pure functions', async () => {
   afterEach(() => {
@@ -49,13 +48,13 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       })
       const connectorStatus = station.getConnectorStatus(1)
       if (connectorStatus != null) {
-        connectorStatus.MeterValues = [
+        connectorStatus.MeterValues = createMeterValuesTemplate([
           {
             measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
             unit: OCPP16MeterValueUnit.WATT_HOUR,
             value: '0',
           },
-        ] as unknown as typeof connectorStatus.MeterValues
+        ])
       }
 
       // Act
@@ -66,7 +65,10 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       assert.ok(meterValue.timestamp instanceof Date)
       assert.strictEqual(Array.isArray(meterValue.sampledValue), true)
       assert.strictEqual(meterValue.sampledValue.length, 1)
-      assert.strictEqual(meterValue.sampledValue[0].context, OCPP16MeterValueContext.TRANSACTION_BEGIN)
+      assert.strictEqual(
+        meterValue.sampledValue[0].context,
+        OCPP16MeterValueContext.TRANSACTION_BEGIN
+      )
     })
 
     await it('should apply Wh unit divider of 1 for meterStart', () => {
@@ -77,13 +79,13 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       })
       const connectorStatus = station.getConnectorStatus(1)
       if (connectorStatus != null) {
-        connectorStatus.MeterValues = [
+        connectorStatus.MeterValues = createMeterValuesTemplate([
           {
             measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
             unit: OCPP16MeterValueUnit.WATT_HOUR,
             value: '0',
           },
-        ] as unknown as typeof connectorStatus.MeterValues
+        ])
       }
 
       // Act
@@ -101,13 +103,13 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       })
       const connectorStatus = station.getConnectorStatus(1)
       if (connectorStatus != null) {
-        connectorStatus.MeterValues = [
+        connectorStatus.MeterValues = createMeterValuesTemplate([
           {
             measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
             unit: OCPP16MeterValueUnit.KILO_WATT_HOUR,
             value: '0',
           },
-        ] as unknown as typeof connectorStatus.MeterValues
+        ])
       }
 
       // Act
@@ -125,21 +127,17 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       })
       const connectorStatus = station.getConnectorStatus(1)
       if (connectorStatus != null) {
-        connectorStatus.MeterValues = [
+        connectorStatus.MeterValues = createMeterValuesTemplate([
           {
             measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
             unit: OCPP16MeterValueUnit.WATT_HOUR,
             value: '0',
           },
-        ] as unknown as typeof connectorStatus.MeterValues
+        ])
       }
 
       // Act
-      const meterValue = OCPP16ServiceUtils.buildTransactionBeginMeterValue(
-        station,
-        1,
-        undefined
-      )
+      const meterValue = OCPP16ServiceUtils.buildTransactionBeginMeterValue(station, 1, undefined)
 
       // Assert — undefined meterStart defaults to 0
       assert.strictEqual(meterValue.sampledValue[0].value, '0')
@@ -151,9 +149,12 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
         stationInfo: { ocppVersion: OCPPVersion.VERSION_16 },
       })
 
-      assert.throws(() => {
-        OCPP16ServiceUtils.buildTransactionBeginMeterValue(station, 1, 100)
-      }, { message: /Missing MeterValues for default measurand/ })
+      assert.throws(
+        () => {
+          OCPP16ServiceUtils.buildTransactionBeginMeterValue(station, 1, 100)
+        },
+        { message: /Missing MeterValues for default measurand/ }
+      )
     })
   })
 
@@ -218,13 +219,13 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       })
       const connectorStatus = station.getConnectorStatus(1)
       if (connectorStatus != null) {
-        connectorStatus.MeterValues = [
+        connectorStatus.MeterValues = createMeterValuesTemplate([
           {
             measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
             unit: OCPP16MeterValueUnit.WATT_HOUR,
             value: '0',
           },
-        ] as unknown as typeof connectorStatus.MeterValues
+        ])
       }
 
       // Act
@@ -234,7 +235,10 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       assert.notStrictEqual(meterValue, undefined)
       assert.ok(meterValue.timestamp instanceof Date)
       assert.strictEqual(meterValue.sampledValue.length, 1)
-      assert.strictEqual(meterValue.sampledValue[0].context, OCPP16MeterValueContext.TRANSACTION_END)
+      assert.strictEqual(
+        meterValue.sampledValue[0].context,
+        OCPP16MeterValueContext.TRANSACTION_END
+      )
     })
 
     await it('should apply kWh unit divider for end meter value', () => {
@@ -245,13 +249,13 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       })
       const connectorStatus = station.getConnectorStatus(1)
       if (connectorStatus != null) {
-        connectorStatus.MeterValues = [
+        connectorStatus.MeterValues = createMeterValuesTemplate([
           {
             measurand: OCPP16MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
             unit: OCPP16MeterValueUnit.KILO_WATT_HOUR,
             value: '0',
           },
-        ] as unknown as typeof connectorStatus.MeterValues
+        ])
       }
 
       // Act
@@ -308,6 +312,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
     })
 
     await it('should clear profile matching by id', () => {
+      // Arrange
       const { station } = createMockChargingStation({ ocppVersion: OCPPVersion.VERSION_16 })
       const profiles = [
         makeProfile(1, OCPP16ChargingProfilePurposeType.TX_DEFAULT_PROFILE, 0),
@@ -315,8 +320,10 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       ]
       const payload: OCPP16ClearChargingProfileRequest = { id: 1 }
 
+      // Act
       const result = OCPP16ServiceUtils.clearChargingProfiles(station, payload, profiles)
 
+      // Assert
       assert.strictEqual(result, true)
       // Profile with id 1 should be removed
       assert.strictEqual(profiles.length, 1)
@@ -324,6 +331,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
     })
 
     await it('should clear profile matching by purpose', () => {
+      // Arrange
       const { station } = createMockChargingStation({ ocppVersion: OCPPVersion.VERSION_16 })
       const profiles = [
         makeProfile(1, OCPP16ChargingProfilePurposeType.TX_DEFAULT_PROFILE, 0),
@@ -333,8 +341,10 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
         chargingProfilePurpose: OCPP16ChargingProfilePurposeType.TX_PROFILE,
       }
 
+      // Act
       const result = OCPP16ServiceUtils.clearChargingProfiles(station, payload, profiles)
 
+      // Assert
       assert.strictEqual(result, true)
       assert.strictEqual(profiles.length, 1)
       assert.strictEqual(
@@ -344,6 +354,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
     })
 
     await it('should clear profile matching by stackLevel when purpose is null', () => {
+      // Arrange
       const { station } = createMockChargingStation({ ocppVersion: OCPPVersion.VERSION_16 })
       const profiles = [
         makeProfile(1, OCPP16ChargingProfilePurposeType.TX_DEFAULT_PROFILE, 0),
@@ -351,22 +362,25 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       ]
       const payload: OCPP16ClearChargingProfileRequest = { stackLevel: 5 }
 
+      // Act
       const result = OCPP16ServiceUtils.clearChargingProfiles(station, payload, profiles)
 
+      // Assert
       assert.strictEqual(result, true)
       assert.strictEqual(profiles.length, 1)
       assert.strictEqual(profiles[0].chargingProfileId, 1)
     })
 
     await it('should return false when no profiles match', () => {
+      // Arrange
       const { station } = createMockChargingStation({ ocppVersion: OCPPVersion.VERSION_16 })
-      const profiles = [
-        makeProfile(1, OCPP16ChargingProfilePurposeType.TX_DEFAULT_PROFILE, 0),
-      ]
+      const profiles = [makeProfile(1, OCPP16ChargingProfilePurposeType.TX_DEFAULT_PROFILE, 0)]
       const payload: OCPP16ClearChargingProfileRequest = { id: 99 }
 
+      // Act
       const result = OCPP16ServiceUtils.clearChargingProfiles(station, payload, profiles)
 
+      // Assert
       assert.strictEqual(result, false)
       assert.strictEqual(profiles.length, 1)
     })
@@ -446,7 +460,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
     })
 
     await it('should compose non-overlapping schedules', () => {
-      // Higher: 0..1800s, Lower: 1800..3600s — non-overlapping
+      // Arrange — Higher: 0..1800s, Lower: 1800..3600s — non-overlapping
       const compositeInterval = {
         end: new Date(Date.UTC(2025, 0, 1, 1, 0, 0)),
         start: new Date(Date.UTC(2025, 0, 1, 0, 0, 0)),
@@ -454,14 +468,14 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       const higher = makeSchedule(0, 1800, 11000)
       const lower = makeSchedule(1800, 1800, 7000)
 
-      const result = OCPP16ServiceUtils.composeChargingSchedules(
-        higher,
-        lower,
-        compositeInterval
-      )
+      // Act
+      const result = OCPP16ServiceUtils.composeChargingSchedules(higher, lower, compositeInterval)
 
+      // Assert
       assert.notStrictEqual(result, undefined)
-      if (result == null) { assert.fail('Expected result to be defined') }
+      if (result == null) {
+        assert.fail('Expected result to be defined')
+      }
       assert.strictEqual(result.chargingSchedulePeriod.length, 2)
       // Should be sorted by startPeriod
       const periods = result.chargingSchedulePeriod
@@ -567,12 +581,12 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       const { station } = createMockChargingStation({
         ocppVersion: OCPPVersion.VERSION_16,
         stationInfo: {
-          commandsSupport: {
-            incomingCommands: {} as unknown as Record<IncomingRequestCommand, boolean>,
+          commandsSupport: createCommandsSupport({
+            incomingCommands: {},
             outgoingCommands: {
               [OCPP16RequestCommand.HEARTBEAT]: true,
-            } as unknown as Record<RequestCommand, boolean>,
-          },
+            },
+          }),
         },
       })
 
@@ -588,12 +602,12 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       const { station } = createMockChargingStation({
         ocppVersion: OCPPVersion.VERSION_16,
         stationInfo: {
-          commandsSupport: {
-            incomingCommands: {} as unknown as Record<IncomingRequestCommand, boolean>,
+          commandsSupport: createCommandsSupport({
+            incomingCommands: {},
             outgoingCommands: {
               [OCPP16RequestCommand.HEARTBEAT]: false,
-            } as unknown as Record<RequestCommand, boolean>,
-          },
+            },
+          }),
         },
       })
 
@@ -627,11 +641,11 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       const { station } = createMockChargingStation({
         ocppVersion: OCPPVersion.VERSION_16,
         stationInfo: {
-          commandsSupport: {
+          commandsSupport: createCommandsSupport({
             incomingCommands: {
               [OCPP16IncomingRequestCommand.RESET]: true,
-            } as unknown as Record<IncomingRequestCommand, boolean>,
-          },
+            },
+          }),
         },
       })
 
@@ -647,11 +661,11 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       const { station } = createMockChargingStation({
         ocppVersion: OCPPVersion.VERSION_16,
         stationInfo: {
-          commandsSupport: {
+          commandsSupport: createCommandsSupport({
             incomingCommands: {
               [OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION]: false,
-            } as unknown as Record<IncomingRequestCommand, boolean>,
-          },
+            },
+          }),
         },
       })
 

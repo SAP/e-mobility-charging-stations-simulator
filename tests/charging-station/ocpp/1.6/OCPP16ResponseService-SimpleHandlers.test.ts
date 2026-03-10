@@ -27,6 +27,7 @@ import { Constants } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
+import { dispatchResponse } from './OCPP16TestUtils.js'
 
 /**
  * Create a mock station suitable for simple response handler tests.
@@ -64,12 +65,7 @@ await describe('OCPP16ResponseService — SimpleHandlers', async () => {
     await it('should handle DataTransfer response without throwing', async () => {
       const payload: OCPP16DataTransferResponse = { status: OCPP16DataTransferStatus.ACCEPTED }
       await assert.doesNotReject(
-        responseService.responseHandler(
-          mockStation,
-          OCPP16RequestCommand.DATA_TRANSFER,
-          payload as unknown as Parameters<typeof responseService.responseHandler>[2],
-          {} as Parameters<typeof responseService.responseHandler>[3]
-        )
+        dispatchResponse(responseService, mockStation, OCPP16RequestCommand.DATA_TRANSFER, payload)
       )
     })
   })
@@ -78,11 +74,11 @@ await describe('OCPP16ResponseService — SimpleHandlers', async () => {
     await it('should handle DiagnosticsStatusNotification response without throwing', async () => {
       const payload: OCPP16DiagnosticsStatusNotificationResponse = {}
       await assert.doesNotReject(
-        responseService.responseHandler(
+        dispatchResponse(
+          responseService,
           mockStation,
           OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
-          payload as unknown as Parameters<typeof responseService.responseHandler>[2],
-          {} as Parameters<typeof responseService.responseHandler>[3]
+          payload
         )
       )
     })
@@ -92,11 +88,11 @@ await describe('OCPP16ResponseService — SimpleHandlers', async () => {
     await it('should handle FirmwareStatusNotification response without throwing', async () => {
       const payload: OCPP16FirmwareStatusNotificationResponse = {}
       await assert.doesNotReject(
-        responseService.responseHandler(
+        dispatchResponse(
+          responseService,
           mockStation,
           OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
-          payload as unknown as Parameters<typeof responseService.responseHandler>[2],
-          {} as Parameters<typeof responseService.responseHandler>[3]
+          payload
         )
       )
     })
@@ -106,12 +102,7 @@ await describe('OCPP16ResponseService — SimpleHandlers', async () => {
     await it('should handle Heartbeat response without throwing', async () => {
       const payload: OCPP16HeartbeatResponse = { currentTime: new Date() }
       await assert.doesNotReject(
-        responseService.responseHandler(
-          mockStation,
-          OCPP16RequestCommand.HEARTBEAT,
-          payload as unknown as Parameters<typeof responseService.responseHandler>[2],
-          {} as Parameters<typeof responseService.responseHandler>[3]
-        )
+        dispatchResponse(responseService, mockStation, OCPP16RequestCommand.HEARTBEAT, payload)
       )
     })
   })
@@ -120,12 +111,7 @@ await describe('OCPP16ResponseService — SimpleHandlers', async () => {
     await it('should handle MeterValues response without throwing', async () => {
       const payload: OCPP16MeterValuesResponse = {}
       await assert.doesNotReject(
-        responseService.responseHandler(
-          mockStation,
-          OCPP16RequestCommand.METER_VALUES,
-          payload as unknown as Parameters<typeof responseService.responseHandler>[2],
-          {} as Parameters<typeof responseService.responseHandler>[3]
-        )
+        dispatchResponse(responseService, mockStation, OCPP16RequestCommand.METER_VALUES, payload)
       )
     })
   })
@@ -134,11 +120,11 @@ await describe('OCPP16ResponseService — SimpleHandlers', async () => {
     await it('should handle StatusNotification response without throwing', async () => {
       const payload: OCPP16StatusNotificationResponse = {}
       await assert.doesNotReject(
-        responseService.responseHandler(
+        dispatchResponse(
+          responseService,
           mockStation,
           OCPP16RequestCommand.STATUS_NOTIFICATION,
-          payload as unknown as Parameters<typeof responseService.responseHandler>[2],
-          {} as Parameters<typeof responseService.responseHandler>[3]
+          payload
         )
       )
     })

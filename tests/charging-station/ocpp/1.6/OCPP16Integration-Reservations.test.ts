@@ -14,7 +14,6 @@ import type {
   OCPP16ReserveNowRequest,
   RemoteStartTransactionRequest,
 } from '../../../../src/types/index.js'
-import type { MockOCPPRequestService } from '../../ChargingStationTestUtils.js'
 
 import {
   GenericStatus,
@@ -27,6 +26,7 @@ import {
   createOCPP16IncomingRequestTestContext,
   type OCPP16IncomingRequestTestContext,
   ReservationFixtures,
+  setMockRequestHandler,
   upsertConfigurationKey,
 } from './OCPP16TestUtils.js'
 
@@ -51,8 +51,9 @@ function enableReservationProfile (context: OCPP16IncomingRequestTestContext): v
   }
   stationWithReserve.getReserveConnectorZeroSupported = () => false
   // Mock auth: remote authorization returns Accepted
-  ;(station.ocppRequestService as unknown as MockOCPPRequestService).requestHandler =
-    async () => Promise.resolve({ idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } })
+  setMockRequestHandler(station, async () =>
+    Promise.resolve({ idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } })
+  )
 }
 
 await describe('OCPP16 Integration — Reservation Flow', async () => {
@@ -84,10 +85,7 @@ await describe('OCPP16 Integration — Reservation Flow', async () => {
       }
 
       // Act — reserve
-      const reserveResponse = await testableService.handleRequestReserveNow(
-        station,
-        reserveRequest
-      )
+      const reserveResponse = await testableService.handleRequestReserveNow(station, reserveRequest)
 
       // Assert — reservation accepted and stored
       assert.strictEqual(reserveResponse.status, OCPP16ReservationStatus.ACCEPTED)
@@ -135,10 +133,7 @@ await describe('OCPP16 Integration — Reservation Flow', async () => {
       }
 
       // Act — reserve
-      const reserveResponse = await testableService.handleRequestReserveNow(
-        station,
-        reserveRequest
-      )
+      const reserveResponse = await testableService.handleRequestReserveNow(station, reserveRequest)
       assert.strictEqual(reserveResponse.status, OCPP16ReservationStatus.ACCEPTED)
 
       // Act — remote start on same connector with matching idTag
@@ -174,10 +169,7 @@ await describe('OCPP16 Integration — Reservation Flow', async () => {
       }
 
       // Act — reserve connector 1
-      const reserveResponse = await testableService.handleRequestReserveNow(
-        station,
-        reserveRequest
-      )
+      const reserveResponse = await testableService.handleRequestReserveNow(station, reserveRequest)
       assert.strictEqual(reserveResponse.status, OCPP16ReservationStatus.ACCEPTED)
 
       // Act — remote start on connector 2 (different connector)
@@ -278,10 +270,7 @@ await describe('OCPP16 Integration — Reservation Flow', async () => {
       }
 
       // Act — create reservation
-      const reserveResponse = await testableService.handleRequestReserveNow(
-        station,
-        reserveRequest
-      )
+      const reserveResponse = await testableService.handleRequestReserveNow(station, reserveRequest)
       assert.strictEqual(reserveResponse.status, OCPP16ReservationStatus.ACCEPTED)
 
       // Act — cancel with wrong reservation ID

@@ -5,11 +5,16 @@
  */
 
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
+import type { ChargingStationInfo } from '../../../../src/types/ChargingStationInfo.js'
 import type { ConfigurationKey } from '../../../../src/types/ChargingStationOcppConfiguration.js'
+import type { JsonObject } from '../../../../src/types/JsonType.js'
+import type { SampledValueTemplate } from '../../../../src/types/MeasurandPerPhaseSampledValueTemplates.js'
 import type {
   OCPP16ChargingProfile,
   OCPP16ChargingSchedulePeriod,
 } from '../../../../src/types/ocpp/1.6/ChargingProfile.js'
+import type { OCPP16SampledValue } from '../../../../src/types/ocpp/1.6/MeterValues.js'
+import type { IncomingRequestCommand, RequestCommand } from '../../../../src/types/ocpp/Requests.js'
 
 import {
   createTestableIncomingRequestService,
@@ -23,6 +28,7 @@ import { OCPP16ResponseService } from '../../../../src/charging-station/ocpp/1.6
 import {
   OCPP16ChargingProfilePurposeType,
   OCPP16ChargingRateUnitType,
+  type OCPP16RequestCommand,
   OCPP16StandardParametersKey,
   OCPPVersion,
 } from '../../../../src/types/index.js'
@@ -32,6 +38,7 @@ import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConsta
 import {
   createMockChargingStation,
   type MockChargingStation,
+  type MockOCPPRequestService,
 } from '../../ChargingStationTestUtils.js'
 
 // ============================================================================
@@ -72,8 +79,42 @@ export interface OCPP16ResponseTestContextOptions {
 }
 
 // ============================================================================
-// Context Factories
+// Type Cast Helpers
 // ============================================================================
+
+/**
+ * Create a `commandsSupport` object compatible with `ChargingStationInfo` from partial records.
+ * Encapsulates the casts from `Partial<Record<...>>` to the full `Record<...>` required by the type.
+ * @param config - Partial incoming and outgoing command support maps
+ * @param config.incomingCommands - Partial map of incoming request command support
+ * @param config.outgoingCommands - Partial map of outgoing request command support
+ * @returns A `commandsSupport` value suitable for `stationInfo`
+ */
+export function createCommandsSupport (config: {
+  incomingCommands?: Record<string, boolean>
+  outgoingCommands?: Record<string, boolean>
+}): NonNullable<ChargingStationInfo['commandsSupport']> {
+  return {
+    incomingCommands: (config.incomingCommands ?? {}) as unknown as Record<
+      IncomingRequestCommand,
+      boolean
+    >,
+    ...(config.outgoingCommands != null && {
+      outgoingCommands: config.outgoingCommands as unknown as Record<RequestCommand, boolean>,
+    }),
+  }
+}
+
+/**
+ * Create a `SampledValueTemplate[]` from OCPP 1.6 sampled value entries.
+ * Encapsulates the type widening from `OCPP16SampledValue` to the union-based
+ * `SampledValueTemplate` (`(OCPP16SampledValue | OCPP20SampledValue) & { fluctuationPercent?; minimumValue? }`).
+ * @param entries - Array of OCPP 1.6 sampled value objects
+ * @returns The entries typed as `SampledValueTemplate[]`
+ */
+export function createMeterValuesTemplate (entries: OCPP16SampledValue[]): SampledValueTemplate[] {
+  return entries as unknown as SampledValueTemplate[]
+}
 
 /**
  * Create a standard OCPP 1.6 incoming request test context with service,
@@ -136,6 +177,10 @@ export function createOCPP16RequestTestContext (
   return { requestService, station, testableRequestService }
 }
 
+// ============================================================================
+// Context Factories
+// ============================================================================
+
 /**
  * Create a standard OCPP 1.6 response test context with response service
  * and mock charging station.
@@ -194,9 +239,29 @@ export function createStandardStation (
   return station as MockChargingStation
 }
 
-// ============================================================================
-// Connector Transaction State Helpers
-// ============================================================================
+/**
+ * Dispatch an OCPP 1.6 response through the public `responseHandler`, encapsulating
+ * the `as unknown as` casts needed to satisfy the generic `JsonType` parameters.
+ * @param responseService - The OCPP 1.6 response service instance
+ * @param station - Charging station context
+ * @param command - The OCPP 1.6 request command the response belongs to
+ * @param payload - Response payload (specific OCPP type widened to JsonObject)
+ * @param requestPayload - Original request payload (defaults to empty object)
+ */
+export async function dispatchResponse (
+  responseService: OCPP16ResponseService,
+  station: ChargingStation,
+  command: OCPP16RequestCommand,
+  payload: JsonObject,
+  requestPayload: JsonObject = {}
+): Promise<void> {
+  await responseService.responseHandler(
+    station,
+    command,
+    payload as unknown as Parameters<OCPP16ResponseService['responseHandler']>[2],
+    requestPayload as unknown as Parameters<OCPP16ResponseService['responseHandler']>[3]
+  )
+}
 
 /**
  * Reset connector transaction state for all connectors in the charging station.
@@ -217,7 +282,7 @@ export function resetConnectorTransactionState (chargingStation: ChargingStation
 }
 
 // ============================================================================
-// Configuration Helpers
+// Connector Transaction State Helpers
 // ============================================================================
 
 /**
@@ -236,6 +301,23 @@ export function resetLimits (chargingStation: ChargingStation) {
     OCPP16StandardParametersKey.HeartbeatInterval,
     Constants.DEFAULT_HEARTBEAT_INTERVAL.toString()
   )
+}
+
+// ============================================================================
+// Configuration Helpers
+// ============================================================================
+
+/**
+ * Set the mock request handler on a charging station's OCPP request service.
+ * Encapsulates the `as unknown as MockOCPPRequestService` cast in one place.
+ * @param station - Charging station whose request service to mock
+ * @param handler - Async handler function to assign
+ */
+export function setMockRequestHandler (
+  station: ChargingStation,
+  handler: (...args: unknown[]) => Promise<unknown>
+): void {
+  ;(station.ocppRequestService as unknown as MockOCPPRequestService).requestHandler = handler
 }
 
 /**
