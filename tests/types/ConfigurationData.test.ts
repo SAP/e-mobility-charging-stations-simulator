@@ -25,7 +25,10 @@ await describe('ConfigurationData', async () => {
   })
 
   await it('should define SupervisionUrlDistribution enumeration values', () => {
-    assert.strictEqual(SupervisionUrlDistribution.CHARGING_STATION_AFFINITY, 'charging-station-affinity')
+    assert.strictEqual(
+      SupervisionUrlDistribution.CHARGING_STATION_AFFINITY,
+      'charging-station-affinity'
+    )
     assert.strictEqual(SupervisionUrlDistribution.RANDOM, 'random')
     assert.strictEqual(SupervisionUrlDistribution.ROUND_ROBIN, 'round-robin')
   })

@@ -57,12 +57,16 @@ await describe('OCPP 2.0 schema validation — negative tests', async () => {
 
   await it('should compile ResetRequest schema without error (strict:false required)', () => {
     // Verifies the AJV configuration works for schemas using additionalItems pattern
-    assert.doesNotThrow(() => { makeValidator('ResetRequest.json') })
+    assert.doesNotThrow(() => {
+      makeValidator('ResetRequest.json')
+    })
   })
 
   await it('should compile GetVariablesRequest schema without error (uses additionalItems)', () => {
     // GetVariablesRequest uses additionalItems:false — would fail in strict mode
-    assert.doesNotThrow(() => { makeValidator('GetVariablesRequest.json') })
+    assert.doesNotThrow(() => {
+      makeValidator('GetVariablesRequest.json')
+    })
   })
 
   await it('should fail validation when Reset payload is missing required "type" field', () => {

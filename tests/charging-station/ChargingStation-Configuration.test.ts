@@ -314,7 +314,9 @@ await describe('ChargingStation Configuration Management', async () => {
       station = result.station
 
       // Act & Assert - should not throw
-      assert.doesNotThrow(() => { station?.saveOcppConfiguration() })
+      assert.doesNotThrow(() => {
+        station?.saveOcppConfiguration()
+      })
     })
 
     await it('should have ocppConfiguration object with configurationKey array', () => {
@@ -356,7 +358,9 @@ await describe('ChargingStation Configuration Management', async () => {
 
       // Act & Assert - setSupervisionUrl should be a function if available
       if ('setSupervisionUrl' in station && typeof station.setSupervisionUrl === 'function') {
-        assert.doesNotThrow(() => { station?.setSupervisionUrl('ws://new-server:8080') })
+        assert.doesNotThrow(() => {
+          station?.setSupervisionUrl('ws://new-server:8080')
+        })
       } else {
         // Mock station may not have setSupervisionUrl, which is expected
         assert.notStrictEqual(station, undefined)
@@ -526,7 +530,8 @@ await describe('ChargingStation Configuration Management', async () => {
       // Assert
       assert.strictEqual(mocks.webSocket.sentMessages.length, 2)
       assert.strictEqual(mocks.webSocket.sentMessages[0], '["2","uuid-1","Heartbeat",{}]')
-      assert.strictEqual(mocks.webSocket.sentMessages[1],
+      assert.strictEqual(
+        mocks.webSocket.sentMessages[1],
         '["2","uuid-2","StatusNotification",{"connectorId":1}]'
       )
     })
@@ -542,7 +547,10 @@ await describe('ChargingStation Configuration Management', async () => {
       mocks.webSocket.send('["2","uuid-2","BootNotification",{}]')
 
       // Assert
-      assert.strictEqual(mocks.webSocket.getLastSentMessage(), '["2","uuid-2","BootNotification",{}]')
+      assert.strictEqual(
+        mocks.webSocket.getLastSentMessage(),
+        '["2","uuid-2","BootNotification",{}]'
+      )
     })
 
     await it('should return undefined for getLastSentMessage() when no messages sent', () => {
@@ -731,9 +739,12 @@ await describe('ChargingStation Configuration Management', async () => {
       mocks.webSocket.readyState = 3 // WebSocketReadyState.CLOSED
 
       // Act & Assert
-      assert.throws(() => {
-        mocks.webSocket.send('["2","uuid","Heartbeat",{}]')
-      }, { message: /WebSocket is not open/ })
+      assert.throws(
+        () => {
+          mocks.webSocket.send('["2","uuid","Heartbeat",{}]')
+        },
+        { message: /WebSocket is not open/ }
+      )
     })
 
     await it('should capture URL from WebSocket connection', () => {

@@ -40,11 +40,7 @@ await describe('OCPP16IncomingRequestService — Configuration', async () => {
   await it('should accept changing a mutable configuration key', () => {
     // Arrange
     const { station, testableService } = testContext
-    upsertConfigurationKey(
-      station,
-      OCPP16StandardParametersKey.MeterValueSampleInterval,
-      '60'
-    )
+    upsertConfigurationKey(station, OCPP16StandardParametersKey.MeterValueSampleInterval, '60')
     const request: ChangeConfigurationRequest = {
       key: OCPP16StandardParametersKey.MeterValueSampleInterval,
       value: '30',
@@ -61,12 +57,7 @@ await describe('OCPP16IncomingRequestService — Configuration', async () => {
   await it('should reject changing a readonly configuration key', () => {
     // Arrange
     const { station, testableService } = testContext
-    upsertConfigurationKey(
-      station,
-      OCPP16StandardParametersKey.HeartbeatInterval,
-      '60',
-      true
-    )
+    upsertConfigurationKey(station, OCPP16StandardParametersKey.HeartbeatInterval, '60', true)
     const request: ChangeConfigurationRequest = {
       key: OCPP16StandardParametersKey.HeartbeatInterval,
       value: '30',
@@ -85,9 +76,7 @@ await describe('OCPP16IncomingRequestService — Configuration', async () => {
     const { station, testableService } = testContext
     upsertConfigurationKey(station, 'RebootKey', 'oldValue')
     // Manually set reboot flag since upsertConfigurationKey doesn't support it
-    const configKey = station.ocppConfiguration?.configurationKey?.find(
-      k => k.key === 'RebootKey'
-    )
+    const configKey = station.ocppConfiguration?.configurationKey?.find(k => k.key === 'RebootKey')
     if (configKey != null) {
       configKey.reboot = true
     }
@@ -127,16 +116,8 @@ await describe('OCPP16IncomingRequestService — Configuration', async () => {
   await it('should return all visible keys when no key filter is provided', () => {
     // Arrange
     const { station, testableService } = testContext
-    upsertConfigurationKey(
-      station,
-      OCPP16StandardParametersKey.HeartbeatInterval,
-      '60'
-    )
-    upsertConfigurationKey(
-      station,
-      OCPP16StandardParametersKey.MeterValueSampleInterval,
-      '30'
-    )
+    upsertConfigurationKey(station, OCPP16StandardParametersKey.HeartbeatInterval, '60')
+    upsertConfigurationKey(station, OCPP16StandardParametersKey.MeterValueSampleInterval, '30')
     const request: GetConfigurationRequest = {}
 
     // Act
@@ -157,11 +138,7 @@ await describe('OCPP16IncomingRequestService — Configuration', async () => {
   await it('should return a specific existing configuration key', () => {
     // Arrange
     const { station, testableService } = testContext
-    upsertConfigurationKey(
-      station,
-      OCPP16StandardParametersKey.WebSocketPingInterval,
-      '10'
-    )
+    upsertConfigurationKey(station, OCPP16StandardParametersKey.WebSocketPingInterval, '10')
     const request: GetConfigurationRequest = {
       key: [OCPP16StandardParametersKey.WebSocketPingInterval],
     }
@@ -200,11 +177,7 @@ await describe('OCPP16IncomingRequestService — Configuration', async () => {
   await it('should return both configurationKey and unknownKey for mixed requests', () => {
     // Arrange
     const { station, testableService } = testContext
-    upsertConfigurationKey(
-      station,
-      OCPP16StandardParametersKey.HeartbeatInterval,
-      '45'
-    )
+    upsertConfigurationKey(station, OCPP16StandardParametersKey.HeartbeatInterval, '45')
     const request: GetConfigurationRequest = {
       key: [OCPP16StandardParametersKey.HeartbeatInterval, 'DoesNotExistKey'],
     }

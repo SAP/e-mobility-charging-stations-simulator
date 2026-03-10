@@ -151,7 +151,8 @@ await describe('ChargingStation', async () => {
       // Verify transaction
       assert.strictEqual(station.getNumberOfRunningTransactions(), 1)
       assert.strictEqual(station.getTransactionIdTag(TEST_TRANSACTION_ID), TEST_ID_TAG)
-      assert.strictEqual(station.getEnergyActiveImportRegisterByTransactionId(TEST_TRANSACTION_ID),
+      assert.strictEqual(
+        station.getEnergyActiveImportRegisterByTransactionId(TEST_TRANSACTION_ID),
         TEST_TRANSACTION_ENERGY_WH
       )
 

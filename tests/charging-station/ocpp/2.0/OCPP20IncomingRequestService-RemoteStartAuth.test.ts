@@ -145,7 +145,9 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
       // Given: Connector in initial state
       // Then: Connector status should remain unchanged before processing
       const connectorStatus = mockStation.getConnectorStatus(1)
-      if (connectorStatus == null) { assert.fail('Expected connectorStatus to be defined') }
+      if (connectorStatus == null) {
+        assert.fail('Expected connectorStatus to be defined')
+      }
       assert.strictEqual(connectorStatus.transactionStarted, false)
       assert.strictEqual(connectorStatus.status, ConnectorStatusEnum.Available)
     })
@@ -249,7 +251,9 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
 
       // Then: Connector should have active transaction
       const connectorStatus = mockStation.getConnectorStatus(1)
-      if (connectorStatus == null) { assert.fail('Expected connectorStatus to be defined') }
+      if (connectorStatus == null) {
+        assert.fail('Expected connectorStatus to be defined')
+      }
       assert.strictEqual(connectorStatus.transactionStarted, true)
       assert.strictEqual(connectorStatus.status, ConnectorStatusEnum.Occupied)
       assert.strictEqual(connectorStatus.transactionId, 'existing-tx-123')
@@ -273,7 +277,9 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
 
       // Then: Existing transaction should be preserved
       const connectorStatus = mockStation.getConnectorStatus(1)
-      if (connectorStatus == null) { assert.fail('Expected connectorStatus to be defined') }
+      if (connectorStatus == null) {
+        assert.fail('Expected connectorStatus to be defined')
+      }
       assert.strictEqual(connectorStatus.transactionId, existingTransactionId)
       assert.strictEqual(connectorStatus.transactionIdTag, existingTokenTag)
     })
@@ -300,12 +306,16 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
 
       // Then: Charging profile should be present with correct structure
       assert.notStrictEqual(request.chargingProfile, undefined)
-      if (request.chargingProfile == null) { assert.fail('Expected chargingProfile to be defined') }
+      if (request.chargingProfile == null) {
+        assert.fail('Expected chargingProfile to be defined')
+      }
       assert.strictEqual(request.chargingProfile.id, 1)
-      assert.strictEqual(request.chargingProfile.chargingProfileKind,
+      assert.strictEqual(
+        request.chargingProfile.chargingProfileKind,
         OCPP20ChargingProfileKindEnumType.Absolute
       )
-      assert.strictEqual(request.chargingProfile.chargingProfilePurpose,
+      assert.strictEqual(
+        request.chargingProfile.chargingProfilePurpose,
         OCPP20ChargingProfilePurposeEnumType.TxProfile
       )
       assert.strictEqual(request.chargingProfile.stackLevel, 0)
@@ -330,8 +340,11 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
       }
 
       // Then: Recurring profile should be supported
-      if (request.chargingProfile == null) { assert.fail('Expected chargingProfile to be defined') }
-      assert.strictEqual(request.chargingProfile.chargingProfileKind,
+      if (request.chargingProfile == null) {
+        assert.fail('Expected chargingProfile to be defined')
+      }
+      assert.strictEqual(
+        request.chargingProfile.chargingProfileKind,
         OCPP20ChargingProfileKindEnumType.Recurring
       )
       assert.strictEqual(request.chargingProfile.stackLevel, 1)
@@ -385,7 +398,9 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
 
       // Then: Should accept idToken with additionalInfo
       assert.notStrictEqual(request.idToken.additionalInfo, undefined)
-      if (request.idToken.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      if (request.idToken.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
       assert.strictEqual(request.idToken.additionalInfo.length, 1)
       assert.strictEqual(request.idToken.additionalInfo[0].additionalIdToken, 'ADDITIONAL_001')
     })

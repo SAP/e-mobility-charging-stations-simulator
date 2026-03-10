@@ -148,11 +148,7 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
     await it('should return NotImplemented when RemoteTrigger profile is not enabled', () => {
       // Arrange
       const { station, testableService } = context
-      upsertConfigurationKey(
-        station,
-        OCPP16StandardParametersKey.SupportedFeatureProfiles,
-        'Core'
-      )
+      upsertConfigurationKey(station, OCPP16StandardParametersKey.SupportedFeatureProfiles, 'Core')
 
       // Act
       const response = testableService.handleRequestTriggerMessage(station, {

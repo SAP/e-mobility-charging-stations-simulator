@@ -122,7 +122,8 @@ await describe('AuthValidators', async () => {
 
     await it('should truncate to 36 characters', () => {
       const longIdToken = 'VERY_LONG_IDENTIFIER_VALUE_1234567890123456789'
-      assert.strictEqual(AuthValidators.sanitizeIdToken(longIdToken),
+      assert.strictEqual(
+        AuthValidators.sanitizeIdToken(longIdToken),
         'VERY_LONG_IDENTIFIER_VALUE_123456789'
       )
       assert.strictEqual(AuthValidators.sanitizeIdToken(longIdToken).length, 36)

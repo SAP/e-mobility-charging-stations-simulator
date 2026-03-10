@@ -108,9 +108,12 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
       assert.notStrictEqual(response, undefined)
       assert.strictEqual(response.status, GetInstalledCertificateStatusEnumType.Accepted)
       assert.notStrictEqual(response.certificateHashDataChain, undefined)
-      if (response.certificateHashDataChain == null) { assert.fail('Expected certificateHashDataChain to be defined') }
+      if (response.certificateHashDataChain == null) {
+        assert.fail('Expected certificateHashDataChain to be defined')
+      }
       assert.strictEqual(response.certificateHashDataChain.length, 1)
-      assert.strictEqual(response.certificateHashDataChain[0].certificateType,
+      assert.strictEqual(
+        response.certificateHashDataChain[0].certificateType,
         GetCertificateIdUseEnumType.V2GRootCertificate
       )
     })
@@ -190,10 +193,12 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
       assert.notStrictEqual(response, undefined)
       assert.strictEqual(typeof response, 'object')
       assert.notStrictEqual(response.status, undefined)
-      assert.ok([
-        GetInstalledCertificateStatusEnumType.Accepted,
-        GetInstalledCertificateStatusEnumType.NotFound,
-      ].includes(response.status))
+      assert.ok(
+        [
+          GetInstalledCertificateStatusEnumType.Accepted,
+          GetInstalledCertificateStatusEnumType.NotFound,
+        ].includes(response.status)
+      )
     })
 
     await it('should return valid CertificateHashDataChain structure', async () => {
@@ -213,7 +218,9 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
 
       assert.strictEqual(response.status, GetInstalledCertificateStatusEnumType.Accepted)
       assert.notStrictEqual(response.certificateHashDataChain, undefined)
-      if (response.certificateHashDataChain == null) { assert.fail('Expected certificateHashDataChain to be defined') }
+      if (response.certificateHashDataChain == null) {
+        assert.fail('Expected certificateHashDataChain to be defined')
+      }
       assert.strictEqual(response.certificateHashDataChain.length, 1)
 
       const chain = response.certificateHashDataChain[0]

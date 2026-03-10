@@ -125,7 +125,9 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
 
     const connectorStatus = spyChargingStation.getConnectorStatus(1)
     assert.notStrictEqual(connectorStatus, undefined)
-    if (connectorStatus == null) { assert.fail('Expected connectorStatus to be defined') }
+    if (connectorStatus == null) {
+      assert.fail('Expected connectorStatus to be defined')
+    }
     assert.strictEqual(connectorStatus.remoteStartId, 42)
     assert.strictEqual(connectorStatus.transactionIdTag, 'REMOTE_TOKEN_456')
     assert.strictEqual(connectorStatus.transactionStarted, true)
@@ -293,7 +295,10 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     }
 
     // Should throw OCPPError for invalid evseId
-    await assert.rejects(testableService.handleRequestStartTransaction(mockStation, invalidEvseRequest), { message: /EVSE 999 does not exist on charging station/ })
+    await assert.rejects(
+      testableService.handleRequestStartTransaction(mockStation, invalidEvseRequest),
+      { message: /EVSE 999 does not exist on charging station/ }
+    )
   })
 
   // FR: F01.FR.09, F01.FR.10
@@ -343,8 +348,8 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     // Verify response structure
     assert.notStrictEqual(response, undefined)
     assert.strictEqual(typeof response, 'object')
-    assert.notStrictEqual((response).status, undefined)
-    assert.notStrictEqual((response).transactionId, undefined)
+    assert.notStrictEqual(response.status, undefined)
+    assert.notStrictEqual(response.transactionId, undefined)
 
     // Verify status is valid enum value
     assert.ok(Object.values(RequestStartStopStatusEnumType).includes(response.status))
@@ -352,7 +357,9 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     // Verify transactionId is a string (UUID format in OCPP 2.0)
     assert.strictEqual(typeof response.transactionId, 'string')
     assert.notStrictEqual(response.transactionId, undefined)
-    if (response.transactionId == null) { assert.fail('Expected transactionId to be defined') }
+    if (response.transactionId == null) {
+      assert.fail('Expected transactionId to be defined')
+    }
     assert.ok(response.transactionId.length > 0)
   })
 })

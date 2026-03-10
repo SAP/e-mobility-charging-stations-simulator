@@ -89,29 +89,36 @@ await describe('OCPPServiceUtils — pure functions', async () => {
     })
 
     await it('should return TypeConstraintViolation for type keyword', () => {
-      assert.strictEqual(ajvErrorsToErrorType([makeAjvError('type')]), ErrorType.TYPE_CONSTRAINT_VIOLATION)
+      assert.strictEqual(
+        ajvErrorsToErrorType([makeAjvError('type')]),
+        ErrorType.TYPE_CONSTRAINT_VIOLATION
+      )
     })
 
     await it('should return OccurrenceConstraintViolation for required keyword', () => {
-      assert.strictEqual(ajvErrorsToErrorType([makeAjvError('required')]),
+      assert.strictEqual(
+        ajvErrorsToErrorType([makeAjvError('required')]),
         ErrorType.OCCURRENCE_CONSTRAINT_VIOLATION
       )
     })
 
     await it('should return OccurrenceConstraintViolation for dependencies keyword', () => {
-      assert.strictEqual(ajvErrorsToErrorType([makeAjvError('dependencies')]),
+      assert.strictEqual(
+        ajvErrorsToErrorType([makeAjvError('dependencies')]),
         ErrorType.OCCURRENCE_CONSTRAINT_VIOLATION
       )
     })
 
     await it('should return PropertyConstraintViolation for format keyword', () => {
-      assert.strictEqual(ajvErrorsToErrorType([makeAjvError('format')]),
+      assert.strictEqual(
+        ajvErrorsToErrorType([makeAjvError('format')]),
         ErrorType.PROPERTY_CONSTRAINT_VIOLATION
       )
     })
 
     await it('should return PropertyConstraintViolation for pattern keyword', () => {
-      assert.strictEqual(ajvErrorsToErrorType([makeAjvError('pattern')]),
+      assert.strictEqual(
+        ajvErrorsToErrorType([makeAjvError('pattern')]),
         ErrorType.PROPERTY_CONSTRAINT_VIOLATION
       )
     })
@@ -133,8 +140,9 @@ await describe('OCPPServiceUtils — pure functions', async () => {
         ((obj as Record<string, unknown>).nested as Record<string, unknown>).deep as Record<
           string,
           unknown
-        >
-        , { created: '2025-06-01T12:00:00.000Z' })
+        >,
+        { created: '2025-06-01T12:00:00.000Z' }
+      )
     })
 
     await it('should convert Date values inside arrays', () => {

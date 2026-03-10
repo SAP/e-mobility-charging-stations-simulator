@@ -55,14 +55,18 @@ await describe('AuthComponentFactory', async () => {
         stationInfo: { ocppVersion: 'VERSION_15' as OCPPVersion },
       })
 
-      await assert.rejects(AuthComponentFactory.createAdapters(chargingStation), { message: /Unsupported OCPP version/ })
+      await assert.rejects(AuthComponentFactory.createAdapters(chargingStation), {
+        message: /Unsupported OCPP version/,
+      })
     })
 
     await it('should throw error when no OCPP version', async () => {
       const { station: chargingStation } = createMockChargingStation()
       chargingStation.stationInfo = undefined
 
-      await assert.rejects(AuthComponentFactory.createAdapters(chargingStation), { message: /OCPP version not found/ })
+      await assert.rejects(AuthComponentFactory.createAdapters(chargingStation), {
+        message: /OCPP version not found/,
+      })
     })
   })
 

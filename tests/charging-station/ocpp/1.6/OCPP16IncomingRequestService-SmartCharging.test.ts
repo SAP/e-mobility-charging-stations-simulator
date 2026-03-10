@@ -14,9 +14,7 @@ import type {
 } from '../../../../src/types/index.js'
 
 import { GenericStatus, OCPP16StandardParametersKey } from '../../../../src/types/index.js'
-import {
-  OCPP16ChargingProfilePurposeType,
-} from '../../../../src/types/ocpp/1.6/ChargingProfile.js'
+import { OCPP16ChargingProfilePurposeType } from '../../../../src/types/ocpp/1.6/ChargingProfile.js'
 import {
   OCPP16ChargingProfileStatus,
   OCPP16ClearChargingProfileStatus,
@@ -134,11 +132,7 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
     await it('should return NotSupported when SmartCharging feature profile is not enabled', () => {
       // Arrange
       const { station, testableService } = context
-      upsertConfigurationKey(
-        station,
-        OCPP16StandardParametersKey.SupportedFeatureProfiles,
-        'Core'
-      )
+      upsertConfigurationKey(station, OCPP16StandardParametersKey.SupportedFeatureProfiles, 'Core')
       const profile = ChargingProfileFixtures.createTxDefaultProfile()
       const request: SetChargingProfileRequest = {
         connectorId: 1,
@@ -238,11 +232,7 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
     await it('should return Unknown when SmartCharging feature profile is not enabled', () => {
       // Arrange
       const { station, testableService } = context
-      upsertConfigurationKey(
-        station,
-        OCPP16StandardParametersKey.SupportedFeatureProfiles,
-        'Core'
-      )
+      upsertConfigurationKey(station, OCPP16StandardParametersKey.SupportedFeatureProfiles, 'Core')
       const request: OCPP16ClearChargingProfileRequest = {
         id: 1,
       }
@@ -363,11 +353,7 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
     await it('should return Rejected when SmartCharging feature profile is not enabled', () => {
       // Arrange
       const { station, testableService } = context
-      upsertConfigurationKey(
-        station,
-        OCPP16StandardParametersKey.SupportedFeatureProfiles,
-        'Core'
-      )
+      upsertConfigurationKey(station, OCPP16StandardParametersKey.SupportedFeatureProfiles, 'Core')
       const request: OCPP16GetCompositeScheduleRequest = {
         connectorId: 1,
         duration: 3600,

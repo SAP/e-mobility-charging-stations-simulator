@@ -40,11 +40,7 @@ await describe('OCPP16 Integration — Configuration Management', async () => {
   await it('should reflect changed value when retrieving a mutable key after ChangeConfiguration', () => {
     // Arrange
     const { station, testableService } = testContext
-    upsertConfigurationKey(
-      station,
-      OCPP16StandardParametersKey.MeterValueSampleInterval,
-      '60'
-    )
+    upsertConfigurationKey(station, OCPP16StandardParametersKey.MeterValueSampleInterval, '60')
     const changeRequest: ChangeConfigurationRequest = {
       key: OCPP16StandardParametersKey.MeterValueSampleInterval,
       value: '15',
@@ -64,7 +60,8 @@ await describe('OCPP16 Integration — Configuration Management', async () => {
 
     // Assert — Value matches what was set
     assert.strictEqual(getResponse.configurationKey.length, 1)
-    assert.strictEqual(getResponse.configurationKey[0].key,
+    assert.strictEqual(
+      getResponse.configurationKey[0].key,
       OCPP16StandardParametersKey.MeterValueSampleInterval
     )
     assert.strictEqual(getResponse.configurationKey[0].value, '15')
@@ -78,21 +75,9 @@ await describe('OCPP16 Integration — Configuration Management', async () => {
   await it('should reflect all changed values when getting configuration after multiple changes', () => {
     // Arrange
     const { station, testableService } = testContext
-    upsertConfigurationKey(
-      station,
-      OCPP16StandardParametersKey.MeterValueSampleInterval,
-      '60'
-    )
-    upsertConfigurationKey(
-      station,
-      OCPP16StandardParametersKey.WebSocketPingInterval,
-      '30'
-    )
-    upsertConfigurationKey(
-      station,
-      OCPP16StandardParametersKey.ConnectionTimeOut,
-      '120'
-    )
+    upsertConfigurationKey(station, OCPP16StandardParametersKey.MeterValueSampleInterval, '60')
+    upsertConfigurationKey(station, OCPP16StandardParametersKey.WebSocketPingInterval, '30')
+    upsertConfigurationKey(station, OCPP16StandardParametersKey.ConnectionTimeOut, '120')
 
     // Act — Change multiple keys
     const change1 = testableService.handleRequestChangeConfiguration(station, {
@@ -141,12 +126,7 @@ await describe('OCPP16 Integration — Configuration Management', async () => {
   await it('should reject changing a readonly key and preserve original value on retrieval', () => {
     // Arrange
     const { station, testableService } = testContext
-    upsertConfigurationKey(
-      station,
-      OCPP16StandardParametersKey.HeartbeatInterval,
-      '60',
-      true
-    )
+    upsertConfigurationKey(station, OCPP16StandardParametersKey.HeartbeatInterval, '60', true)
 
     // Act — Attempt to change readonly key
     const changeRequest: ChangeConfigurationRequest = {
@@ -239,16 +219,8 @@ await describe('OCPP16 Integration — Configuration Management', async () => {
   await it('should return all visible keys including changed ones when getting all configuration', () => {
     // Arrange
     const { station, testableService } = testContext
-    upsertConfigurationKey(
-      station,
-      OCPP16StandardParametersKey.HeartbeatInterval,
-      '30'
-    )
-    upsertConfigurationKey(
-      station,
-      OCPP16StandardParametersKey.MeterValueSampleInterval,
-      '60'
-    )
+    upsertConfigurationKey(station, OCPP16StandardParametersKey.HeartbeatInterval, '30')
+    upsertConfigurationKey(station, OCPP16StandardParametersKey.MeterValueSampleInterval, '60')
     upsertConfigurationKey(station, 'VendorCustomKey', 'initial')
 
     // Act — Change some keys
@@ -274,9 +246,7 @@ await describe('OCPP16 Integration — Configuration Management', async () => {
     const meterInterval = getResponse.configurationKey.find(
       k => k.key === (OCPP16StandardParametersKey.MeterValueSampleInterval as string)
     )
-    const vendorKey = getResponse.configurationKey.find(
-      k => k.key === 'VendorCustomKey'
-    )
+    const vendorKey = getResponse.configurationKey.find(k => k.key === 'VendorCustomKey')
 
     assert.notStrictEqual(heartbeat, undefined)
     assert.strictEqual(heartbeat?.value, '30')

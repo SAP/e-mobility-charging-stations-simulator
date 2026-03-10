@@ -365,7 +365,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
     // Verify response structure
     assert.notStrictEqual(response, undefined)
     assert.strictEqual(typeof response, 'object')
-    assert.notStrictEqual((response).status, undefined)
+    assert.notStrictEqual(response.status, undefined)
 
     // Verify status is valid enum value
     assert.ok(Object.values(RequestStartStopStatusEnumType).includes(response.status))
@@ -468,7 +468,9 @@ await describe('F03 - Remote Stop Transaction', async () => {
     assert.strictEqual(transactionEvent.eventType, OCPP20TransactionEventEnumType.Ended)
 
     assert.notStrictEqual(transactionEvent.meterValue, undefined)
-    if (transactionEvent.meterValue == null) { assert.fail('Expected meterValue to be defined') }
+    if (transactionEvent.meterValue == null) {
+      assert.fail('Expected meterValue to be defined')
+    }
     assert.strictEqual(transactionEvent.meterValue.length, 1)
 
     const meterValue = transactionEvent.meterValue[0]

@@ -88,7 +88,8 @@ await describe('B06 - Get Variables', async () => {
     const firstResult = response.getVariableResult[0]
     assert.strictEqual(firstResult.attributeStatus, GetVariableStatusEnumType.Accepted)
     assert.strictEqual(firstResult.attributeType, AttributeEnumType.Actual)
-    assert.strictEqual(firstResult.attributeValue,
+    assert.strictEqual(
+      firstResult.attributeValue,
       millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL).toString()
     )
     assert.strictEqual(firstResult.component.name, OCPP20ComponentName.OCPPCommCtrlr)
@@ -99,7 +100,10 @@ await describe('B06 - Get Variables', async () => {
     const secondResult = response.getVariableResult[1]
     assert.strictEqual(secondResult.attributeStatus, GetVariableStatusEnumType.Accepted)
     assert.strictEqual(secondResult.attributeType, AttributeEnumType.Actual)
-    assert.strictEqual(secondResult.attributeValue, Constants.DEFAULT_WEBSOCKET_PING_INTERVAL.toString())
+    assert.strictEqual(
+      secondResult.attributeValue,
+      Constants.DEFAULT_WEBSOCKET_PING_INTERVAL.toString()
+    )
     assert.strictEqual(secondResult.component.name, OCPP20ComponentName.ChargingStation)
     assert.strictEqual(secondResult.variable.name, OCPP20OptionalVariableName.WebSocketPingInterval)
     assert.strictEqual(secondResult.attributeStatusInfo, undefined)
@@ -441,17 +445,20 @@ await describe('B06 - Get Variables', async () => {
     assert.strictEqual(response.getVariableResult.length, 3)
     const txStarted = response.getVariableResult[0]
     assert.strictEqual(txStarted.attributeStatus, GetVariableStatusEnumType.Accepted)
-    assert.strictEqual(txStarted.attributeValue,
+    assert.strictEqual(
+      txStarted.attributeValue,
       `${OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER},${OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT},${OCPP20MeasurandEnumType.VOLTAGE}`
     )
     const txEnded = response.getVariableResult[1]
     assert.strictEqual(txEnded.attributeStatus, GetVariableStatusEnumType.Accepted)
-    assert.strictEqual(txEnded.attributeValue,
+    assert.strictEqual(
+      txEnded.attributeValue,
       `${OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER},${OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL},${OCPP20MeasurandEnumType.VOLTAGE}`
     )
     const txUpdated = response.getVariableResult[2]
     assert.strictEqual(txUpdated.attributeStatus, GetVariableStatusEnumType.Accepted)
-    assert.strictEqual(txUpdated.attributeValue,
+    assert.strictEqual(
+      txUpdated.attributeValue,
       `${OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER},${OCPP20MeasurandEnumType.CURRENT_IMPORT},${OCPP20MeasurandEnumType.VOLTAGE}`
     )
   })
@@ -586,7 +593,9 @@ await describe('B06 - Get Variables', async () => {
     const result = response.getVariableResult[0]
     assert.strictEqual(result.attributeStatus, GetVariableStatusEnumType.Accepted)
     assert.notStrictEqual(result.attributeValue, undefined)
-    if (result.attributeValue == null) { assert.fail('Expected attributeValue to be defined') }
+    if (result.attributeValue == null) {
+      assert.fail('Expected attributeValue to be defined')
+    }
     assert.ok(result.attributeValue.length <= 3)
     resetReportingValueSize(station)
   })

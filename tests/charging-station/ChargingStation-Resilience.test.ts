@@ -213,7 +213,10 @@ await describe('ChargingStation Resilience', async () => {
       assert.strictEqual(station.inAcceptedState(), false)
 
       // Station in rejected state should not initiate messages per OCPP spec (B03.FR.03)
-      assert.strictEqual(station.bootNotificationResponse?.status, RegistrationStatusEnumType.REJECTED)
+      assert.strictEqual(
+        station.bootNotificationResponse?.status,
+        RegistrationStatusEnumType.REJECTED
+      )
     })
 
     await it('should maintain connector states during connection failure', () => {
@@ -438,9 +441,11 @@ await describe('ChargingStation Resilience', async () => {
 
       // Verify first and last message are in correct positions
       assert.ok(stationWithQueue.messageQueue[0].includes('msg-0'))
-      assert.ok(stationWithQueue.messageQueue[messageCount - 1].includes(
-        `msg-${(messageCount - 1).toString()}`
-      ))
+      assert.ok(
+        stationWithQueue.messageQueue[messageCount - 1].includes(
+          `msg-${(messageCount - 1).toString()}`
+        )
+      )
     })
 
     // -------------------------------------------------------------------------
@@ -520,9 +525,11 @@ await describe('ChargingStation Resilience', async () => {
       const stationWithQueue = station as unknown as { messageQueue: string[] }
       assert.strictEqual(stationWithQueue.messageQueue.length, totalExpectedMessages)
       assert.ok(stationWithQueue.messageQueue[0].includes('cycle-0-msg-0'))
-      assert.ok(stationWithQueue.messageQueue[totalExpectedMessages - 1].includes(
-        `cycle-${(cycleCount - 1).toString()}-msg-${(messagesPerCycle - 1).toString()}`
-      ))
+      assert.ok(
+        stationWithQueue.messageQueue[totalExpectedMessages - 1].includes(
+          `cycle-${(cycleCount - 1).toString()}-msg-${(messagesPerCycle - 1).toString()}`
+        )
+      )
     })
   })
 })

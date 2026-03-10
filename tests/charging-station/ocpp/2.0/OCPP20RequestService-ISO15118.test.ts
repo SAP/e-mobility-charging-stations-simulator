@@ -244,7 +244,10 @@ await describe('OCPP20 ISO15118 Request Service', async () => {
         assert.notStrictEqual(sentPayload.ocspRequestData, undefined)
         assert.strictEqual(sentPayload.ocspRequestData.hashAlgorithm, HashAlgorithmEnumType.SHA256)
         assert.strictEqual(sentPayload.ocspRequestData.issuerKeyHash, ocspRequestData.issuerKeyHash)
-        assert.strictEqual(sentPayload.ocspRequestData.issuerNameHash, ocspRequestData.issuerNameHash)
+        assert.strictEqual(
+          sentPayload.ocspRequestData.issuerNameHash,
+          ocspRequestData.issuerNameHash
+        )
         assert.strictEqual(sentPayload.ocspRequestData.serialNumber, ocspRequestData.serialNumber)
         assert.strictEqual(sentPayload.ocspRequestData.responderURL, ocspRequestData.responderURL)
       })

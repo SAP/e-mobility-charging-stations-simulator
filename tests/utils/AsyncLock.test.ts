@@ -25,7 +25,10 @@ await describe('AsyncLock', async () => {
       promises.push(AsyncLock.runExclusive(AsyncLockType.configuration, fn))
     }
     await Promise.all(promises)
-    assert.deepStrictEqual(executed, new Array(runs).fill(0).map((_, i) => ++i))
+    assert.deepStrictEqual(
+      executed,
+      new Array(runs).fill(0).map((_, i) => ++i)
+    )
   })
 
   await it('should run asynchronous functions exclusively in sequence', async () => {
@@ -45,7 +48,10 @@ await describe('AsyncLock', async () => {
       promises.push(AsyncLock.runExclusive(AsyncLockType.configuration, asyncFn))
     }
     await Promise.all(promises)
-    assert.deepStrictEqual(executed, new Array(runs).fill(0).map((_, i) => ++i))
+    assert.deepStrictEqual(
+      executed,
+      new Array(runs).fill(0).map((_, i) => ++i)
+    )
   })
 
   await it('should propagate error thrown in exclusive function', async () => {

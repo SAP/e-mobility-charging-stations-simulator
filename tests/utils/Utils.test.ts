@@ -134,8 +134,18 @@ await describe('Utils', async () => {
   await it('should convert various input types to Date objects', () => {
     assert.strictEqual(convertToDate(undefined), undefined)
     assert.strictEqual(convertToDate(null), undefined)
-    assert.throws(() => { convertToDate('') }, { message: /Cannot convert to date: ''/ })
-    assert.throws(() => { convertToDate('00:70:61') }, { message: /Cannot convert to date: '00:70:61'/ })
+    assert.throws(
+      () => {
+        convertToDate('')
+      },
+      { message: /Cannot convert to date: ''/ }
+    )
+    assert.throws(
+      () => {
+        convertToDate('00:70:61')
+      },
+      { message: /Cannot convert to date: '00:70:61'/ }
+    )
     assert.deepStrictEqual(convertToDate(0), new Date('1970-01-01T00:00:00.000Z'))
     assert.deepStrictEqual(convertToDate(-1), new Date('1969-12-31T23:59:59.999Z'))
     const dateStr = '2020-01-01T00:00:00.000Z'
@@ -163,9 +173,12 @@ await describe('Utils', async () => {
     assert.strictEqual(convertToInt(1.1), 1)
     assert.strictEqual(convertToInt(1.9), 1)
     assert.strictEqual(convertToInt(1.999), 1)
-    assert.throws(() => {
-      convertToInt('NaN')
-    }, { message: /Cannot convert to integer: 'NaN'/ })
+    assert.throws(
+      () => {
+        convertToInt('NaN')
+      },
+      { message: /Cannot convert to integer: 'NaN'/ }
+    )
   })
 
   await it('should convert various input types to floats', () => {
@@ -184,9 +197,12 @@ await describe('Utils', async () => {
     assert.strictEqual(convertToFloat(1.1), 1.1)
     assert.strictEqual(convertToFloat(1.9), 1.9)
     assert.strictEqual(convertToFloat(1.999), 1.999)
-    assert.throws(() => {
-      convertToFloat('NaN')
-    }, { message: /Cannot convert to float: 'NaN'/ })
+    assert.throws(
+      () => {
+        convertToFloat('NaN')
+      },
+      { message: /Cannot convert to float: 'NaN'/ }
+    )
   })
 
   await it('should convert various input types to booleans', () => {
@@ -234,8 +250,18 @@ await describe('Utils', async () => {
     assert.ok(randomFloat >= 0)
     assert.ok(randomFloat <= Number.MAX_VALUE)
     assert.notDeepStrictEqual(randomFloat, getRandomFloat())
-    assert.throws(() => { getRandomFloat(0, 1) }, { message: /Invalid interval/ })
-    assert.throws(() => { getRandomFloat(Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY) }, { message: /Invalid interval/ })
+    assert.throws(
+      () => {
+        getRandomFloat(0, 1)
+      },
+      { message: /Invalid interval/ }
+    )
+    assert.throws(
+      () => {
+        getRandomFloat(Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY)
+      },
+      { message: /Invalid interval/ }
+    )
     randomFloat = getRandomFloat(0, -Number.MAX_VALUE)
     assert.ok(randomFloat >= -Number.MAX_VALUE)
     assert.ok(randomFloat <= 0)
@@ -347,7 +373,12 @@ await describe('Utils', async () => {
     assert.ok(!(clone(date) === date))
     if (runtime === JSRuntime.node && satisfies(version, '>=22.0.0')) {
       const url = new URL('https://domain.tld')
-      assert.throws(() => { clone(url) }, { message: /Cannot clone object of unsupported type./ })
+      assert.throws(
+        () => {
+          clone(url)
+        },
+        { message: /Cannot clone object of unsupported type./ }
+      )
     }
     const map = new Map([['1', '2']])
     assert.deepStrictEqual(clone(map), map)
@@ -356,9 +387,19 @@ await describe('Utils', async () => {
     assert.deepStrictEqual(clone(set), set)
     assert.ok(!(clone(set) === set))
     const weakMap = new WeakMap([[{ 1: 1 }, { 2: 2 }]])
-    assert.throws(() => { clone(weakMap) }, { message: /#<WeakMap> could not be cloned./ })
+    assert.throws(
+      () => {
+        clone(weakMap)
+      },
+      { message: /#<WeakMap> could not be cloned./ }
+    )
     const weakSet = new WeakSet([{ 1: 1 }, { 2: 2 }])
-    assert.throws(() => { clone(weakSet) }, { message: /#<WeakSet> could not be cloned./ })
+    assert.throws(
+      () => {
+        clone(weakSet)
+      },
+      { message: /#<WeakSet> could not be cloned./ }
+    )
   })
 
   await it('should execute function only once regardless of call count', () => {
@@ -465,23 +506,43 @@ await describe('Utils', async () => {
   })
 
   await it('should check if array is sorted according to comparator', () => {
-    assert.strictEqual(isArraySorted<number>([], (a, b) => a - b), true)
-    assert.strictEqual(isArraySorted<number>([1], (a, b) => a - b), true)
-    assert.strictEqual(isArraySorted<number>([1, 2, 3, 4, 5], (a, b) => a - b), true)
-    assert.strictEqual(isArraySorted<number>([1, 2, 3, 5, 4], (a, b) => a - b), false)
-    assert.strictEqual(isArraySorted<number>([2, 1, 3, 4, 5], (a, b) => a - b), false)
+    assert.strictEqual(
+      isArraySorted<number>([], (a, b) => a - b),
+      true
+    )
+    assert.strictEqual(
+      isArraySorted<number>([1], (a, b) => a - b),
+      true
+    )
+    assert.strictEqual(
+      isArraySorted<number>([1, 2, 3, 4, 5], (a, b) => a - b),
+      true
+    )
+    assert.strictEqual(
+      isArraySorted<number>([1, 2, 3, 5, 4], (a, b) => a - b),
+      false
+    )
+    assert.strictEqual(
+      isArraySorted<number>([2, 1, 3, 4, 5], (a, b) => a - b),
+      false
+    )
   })
 
   await it('should clamp values to safe timer range (0 to MAX_SETINTERVAL_DELAY)', () => {
     assert.strictEqual(clampToSafeTimerValue(0), 0)
     assert.strictEqual(clampToSafeTimerValue(1000), 1000)
-    assert.strictEqual(clampToSafeTimerValue(Constants.MAX_SETINTERVAL_DELAY),
+    assert.strictEqual(
+      clampToSafeTimerValue(Constants.MAX_SETINTERVAL_DELAY),
       Constants.MAX_SETINTERVAL_DELAY
     )
-    assert.strictEqual(clampToSafeTimerValue(Constants.MAX_SETINTERVAL_DELAY + 1),
+    assert.strictEqual(
+      clampToSafeTimerValue(Constants.MAX_SETINTERVAL_DELAY + 1),
       Constants.MAX_SETINTERVAL_DELAY
     )
-    assert.strictEqual(clampToSafeTimerValue(Number.MAX_SAFE_INTEGER), Constants.MAX_SETINTERVAL_DELAY)
+    assert.strictEqual(
+      clampToSafeTimerValue(Number.MAX_SAFE_INTEGER),
+      Constants.MAX_SETINTERVAL_DELAY
+    )
     assert.strictEqual(clampToSafeTimerValue(-1), 0)
     assert.strictEqual(clampToSafeTimerValue(-1000), 0)
   })
@@ -658,7 +719,10 @@ await describe('Utils', async () => {
     const map = new Map([['key', { value: 1 }]])
     assert.strictEqual(JSONStringify(map), '[["key",{"value":1}]]')
     // Map as object
-    assert.strictEqual(JSONStringify(map, undefined, MapStringifyFormat.object), '{"key":{"value":1}}')
+    assert.strictEqual(
+      JSONStringify(map, undefined, MapStringifyFormat.object),
+      '{"key":{"value":1}}'
+    )
     // Set
     const set = new Set([{ a: 1 }])
     assert.strictEqual(JSONStringify(set), '[{"a":1}]')
@@ -710,8 +774,12 @@ await describe('Utils', async () => {
     assert.ok(result >= 90)
     assert.ok(result <= 110)
     // Invalid fluctuation percent
-    assert.throws(() => { getRandomFloatFluctuatedRounded(100, -1) }, RangeError)
-    assert.throws(() => { getRandomFloatFluctuatedRounded(100, 101) }, RangeError)
+    assert.throws(() => {
+      getRandomFloatFluctuatedRounded(100, -1)
+    }, RangeError)
+    assert.throws(() => {
+      getRandomFloatFluctuatedRounded(100, 101)
+    }, RangeError)
     // Negative static value with fluctuation
     const negResult = getRandomFloatFluctuatedRounded(-100, 10)
     assert.ok(negResult >= -110)

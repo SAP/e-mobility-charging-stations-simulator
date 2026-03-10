@@ -169,9 +169,13 @@ await describe('F06 - TriggerMessage', async () => {
       )
 
       assert.strictEqual(response.status, TriggerMessageStatusEnumType.NotImplemented)
-      if (response.statusInfo == null) { assert.fail('Expected statusInfo to be defined') }
+      if (response.statusInfo == null) {
+        assert.fail('Expected statusInfo to be defined')
+      }
       assert.strictEqual(response.statusInfo.reasonCode, ReasonCodeEnumType.UnsupportedRequest)
-      if (response.statusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      if (response.statusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
       assert.ok(response.statusInfo.additionalInfo.includes('MeterValues'))
     })
 
@@ -246,9 +250,13 @@ await describe('F06 - TriggerMessage', async () => {
       )
 
       assert.strictEqual(response.status, TriggerMessageStatusEnumType.Rejected)
-      if (response.statusInfo == null) { assert.fail('Expected statusInfo to be defined') }
+      if (response.statusInfo == null) {
+        assert.fail('Expected statusInfo to be defined')
+      }
       assert.strictEqual(response.statusInfo.reasonCode, ReasonCodeEnumType.UnsupportedRequest)
-      if (response.statusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      if (response.statusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
       assert.ok(response.statusInfo.additionalInfo.includes('does not support EVSEs'))
     })
 
@@ -264,9 +272,13 @@ await describe('F06 - TriggerMessage', async () => {
       )
 
       assert.strictEqual(response.status, TriggerMessageStatusEnumType.Rejected)
-      if (response.statusInfo == null) { assert.fail('Expected statusInfo to be defined') }
+      if (response.statusInfo == null) {
+        assert.fail('Expected statusInfo to be defined')
+      }
       assert.strictEqual(response.statusInfo.reasonCode, ReasonCodeEnumType.UnknownEvse)
-      if (response.statusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      if (response.statusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
       assert.ok(response.statusInfo.additionalInfo.includes('999'))
     })
 
@@ -306,9 +318,13 @@ await describe('F06 - TriggerMessage', async () => {
       )
 
       assert.strictEqual(response.status, TriggerMessageStatusEnumType.Rejected)
-      if (response.statusInfo == null) { assert.fail('Expected statusInfo to be defined') }
+      if (response.statusInfo == null) {
+        assert.fail('Expected statusInfo to be defined')
+      }
       assert.strictEqual(response.statusInfo.reasonCode, ReasonCodeEnumType.NotEnabled)
-      if (response.statusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      if (response.statusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
       assert.ok(response.statusInfo.additionalInfo.includes('F06.FR.17'))
     })
 

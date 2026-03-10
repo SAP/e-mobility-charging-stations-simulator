@@ -80,9 +80,13 @@ await describe('F05 - UnlockConnector', async () => {
         await testableService.handleRequestUnlockConnector(mockStation, request)
 
       assert.strictEqual(response.status, UnlockStatusEnumType.UnknownConnector)
-      if (response.statusInfo == null) { assert.fail('Expected statusInfo to be defined') }
+      if (response.statusInfo == null) {
+        assert.fail('Expected statusInfo to be defined')
+      }
       assert.strictEqual(response.statusInfo.reasonCode, ReasonCodeEnumType.UnsupportedRequest)
-      if (response.statusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      if (response.statusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
       assert.ok(response.statusInfo.additionalInfo.includes('does not support EVSEs'))
     })
   })
@@ -96,9 +100,13 @@ await describe('F05 - UnlockConnector', async () => {
         await testableService.handleRequestUnlockConnector(mockStation, request)
 
       assert.strictEqual(response.status, UnlockStatusEnumType.UnknownConnector)
-      if (response.statusInfo == null) { assert.fail('Expected statusInfo to be defined') }
+      if (response.statusInfo == null) {
+        assert.fail('Expected statusInfo to be defined')
+      }
       assert.strictEqual(response.statusInfo.reasonCode, ReasonCodeEnumType.UnknownEvse)
-      if (response.statusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      if (response.statusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
       assert.ok(response.statusInfo.additionalInfo.includes('999'))
     })
   })
@@ -113,9 +121,13 @@ await describe('F05 - UnlockConnector', async () => {
         await testableService.handleRequestUnlockConnector(mockStation, request)
 
       assert.strictEqual(response.status, UnlockStatusEnumType.UnknownConnector)
-      if (response.statusInfo == null) { assert.fail('Expected statusInfo to be defined') }
+      if (response.statusInfo == null) {
+        assert.fail('Expected statusInfo to be defined')
+      }
       assert.strictEqual(response.statusInfo.reasonCode, ReasonCodeEnumType.UnknownConnectorId)
-      if (response.statusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      if (response.statusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
       assert.ok(response.statusInfo.additionalInfo.includes('99'))
       assert.ok(response.statusInfo.additionalInfo.includes('1'))
     })
@@ -136,9 +148,13 @@ await describe('F05 - UnlockConnector', async () => {
         await testableService.handleRequestUnlockConnector(mockStation, request)
 
       assert.strictEqual(response.status, UnlockStatusEnumType.OngoingAuthorizedTransaction)
-      if (response.statusInfo == null) { assert.fail('Expected statusInfo to be defined') }
+      if (response.statusInfo == null) {
+        assert.fail('Expected statusInfo to be defined')
+      }
       assert.strictEqual(response.statusInfo.reasonCode, ReasonCodeEnumType.TxInProgress)
-      if (response.statusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      if (response.statusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
       assert.ok(response.statusInfo.additionalInfo.includes('1'))
     })
 

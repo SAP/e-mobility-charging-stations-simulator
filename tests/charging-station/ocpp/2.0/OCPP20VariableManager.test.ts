@@ -139,7 +139,8 @@ await describe('B05 - OCPP20VariableManager', async () => {
       // First variable: HeartbeatInterval
       assert.strictEqual(result[0].attributeStatus, GetVariableStatusEnumType.Accepted)
       assert.strictEqual(result[0].attributeType, AttributeEnumType.Actual)
-      assert.strictEqual(result[0].attributeValue,
+      assert.strictEqual(
+        result[0].attributeValue,
         millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL).toString()
       )
       assert.strictEqual(result[0].component.name, OCPP20ComponentName.OCPPCommCtrlr)
@@ -148,7 +149,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
       // Second variable: EVConnectionTimeOut
       assert.strictEqual(result[1].attributeStatus, GetVariableStatusEnumType.Accepted)
       assert.strictEqual(result[1].attributeType, AttributeEnumType.Actual)
-      assert.strictEqual(result[1].attributeValue, Constants.DEFAULT_EV_CONNECTION_TIMEOUT.toString())
+      assert.strictEqual(
+        result[1].attributeValue,
+        Constants.DEFAULT_EV_CONNECTION_TIMEOUT.toString()
+      )
       assert.strictEqual(result[1].component.name, OCPP20ComponentName.TxCtrlr)
       assert.strictEqual(result[1].variable.name, OCPP20RequiredVariableName.EVConnectionTimeOut)
       assert.strictEqual(result[1].attributeStatusInfo, undefined)
@@ -221,8 +225,12 @@ await describe('B05 - OCPP20VariableManager', async () => {
       assert.strictEqual(result[0].attributeValue, undefined)
       assert.strictEqual(result[0].component.name, 'InvalidComponent')
       assert.strictEqual(result[0].variable.name, 'SomeVariable')
-      if (result[0].attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
-      if (result[0].attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      if (result[0].attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
+      if (result[0].attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
       assert.strictEqual(result[0].attributeStatusInfo.reasonCode, ReasonCodeEnumType.NotFound)
       assert.ok(result[0].attributeStatusInfo.additionalInfo.includes('Component InvalidComponent'))
     })
@@ -240,17 +248,29 @@ await describe('B05 - OCPP20VariableManager', async () => {
 
       assert.ok(Array.isArray(result))
       assert.strictEqual(result.length, 1)
-      assert.strictEqual(result[0].attributeStatus, GetVariableStatusEnumType.NotSupportedAttributeType)
+      assert.strictEqual(
+        result[0].attributeStatus,
+        GetVariableStatusEnumType.NotSupportedAttributeType
+      )
       assert.strictEqual(result[0].attributeType, AttributeEnumType.Target)
       assert.strictEqual(result[0].attributeValue, undefined)
       assert.strictEqual(result[0].component.name, OCPP20ComponentName.OCPPCommCtrlr)
       assert.strictEqual(result[0].variable.name, OCPP20OptionalVariableName.HeartbeatInterval)
-      if (result[0].attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
-      if (result[0].attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
-      assert.strictEqual(result[0].attributeStatusInfo.reasonCode, ReasonCodeEnumType.UnsupportedParam)
-      assert.ok(result[0].attributeStatusInfo.additionalInfo.includes(
-        'Attribute type Target is not supported'
-      ))
+      if (result[0].attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
+      if (result[0].attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
+      assert.strictEqual(
+        result[0].attributeStatusInfo.reasonCode,
+        ReasonCodeEnumType.UnsupportedParam
+      )
+      assert.ok(
+        result[0].attributeStatusInfo.additionalInfo.includes(
+          'Attribute type Target is not supported'
+        )
+      )
     })
 
     await it('should reject Target attribute for WebSocketPingInterval', () => {
@@ -263,7 +283,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
       ]
       const result = manager.getVariables(station, request)
       assert.strictEqual(result.length, 1)
-      assert.strictEqual(result[0].attributeStatus, GetVariableStatusEnumType.NotSupportedAttributeType)
+      assert.strictEqual(
+        result[0].attributeStatus,
+        GetVariableStatusEnumType.NotSupportedAttributeType
+      )
       assert.strictEqual(result[0].variable.name, OCPP20OptionalVariableName.WebSocketPingInterval)
     })
 
@@ -288,12 +311,18 @@ await describe('B05 - OCPP20VariableManager', async () => {
       assert.strictEqual(result[0].component.name, OCPP20ComponentName.Connector)
       assert.strictEqual(result[0].component.instance, '999')
       assert.strictEqual(result[0].variable.name, OCPP20RequiredVariableName.AuthorizeRemoteStart)
-      if (result[0].attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
-      if (result[0].attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      if (result[0].attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
+      if (result[0].attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
       assert.strictEqual(result[0].attributeStatusInfo.reasonCode, ReasonCodeEnumType.NotFound)
-      assert.ok(result[0].attributeStatusInfo.additionalInfo.includes(
-        'Component Connector is not supported'
-      ))
+      assert.ok(
+        result[0].attributeStatusInfo.additionalInfo.includes(
+          'Component Connector is not supported'
+        )
+      )
     })
 
     await it('should handle multiple variables in single request', () => {
@@ -320,7 +349,8 @@ await describe('B05 - OCPP20VariableManager', async () => {
       // First variable: HeartbeatInterval
       assert.strictEqual(result[0].attributeStatus, GetVariableStatusEnumType.Accepted)
       assert.strictEqual(result[0].attributeType, AttributeEnumType.Actual)
-      assert.strictEqual(result[0].attributeValue,
+      assert.strictEqual(
+        result[0].attributeValue,
         millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL).toString()
       )
       assert.strictEqual(result[0].component.name, OCPP20ComponentName.OCPPCommCtrlr)
@@ -329,7 +359,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
       // Second variable: WebSocketPingInterval
       assert.strictEqual(result[1].attributeStatus, GetVariableStatusEnumType.Accepted)
       assert.strictEqual(result[1].attributeType, AttributeEnumType.Actual)
-      assert.strictEqual(result[1].attributeValue, Constants.DEFAULT_WEBSOCKET_PING_INTERVAL.toString())
+      assert.strictEqual(
+        result[1].attributeValue,
+        Constants.DEFAULT_WEBSOCKET_PING_INTERVAL.toString()
+      )
       assert.strictEqual(result[1].component.name, OCPP20ComponentName.ChargingStation)
       assert.strictEqual(result[1].variable.name, OCPP20OptionalVariableName.WebSocketPingInterval)
       assert.strictEqual(result[1].attributeStatusInfo, undefined)
@@ -518,8 +551,14 @@ await describe('B05 - OCPP20VariableManager', async () => {
       const result = manager.setVariables(station, request)
 
       assert.strictEqual(result.length, 1)
-      assert.strictEqual(result[0].attributeStatus, SetVariableStatusEnumType.NotSupportedAttributeType)
-      assert.strictEqual(result[0].attributeStatusInfo?.reasonCode, ReasonCodeEnumType.UnsupportedParam)
+      assert.strictEqual(
+        result[0].attributeStatus,
+        SetVariableStatusEnumType.NotSupportedAttributeType
+      )
+      assert.strictEqual(
+        result[0].attributeStatusInfo?.reasonCode,
+        ReasonCodeEnumType.UnsupportedParam
+      )
     })
 
     await it('should reject value exceeding max length', () => {
@@ -536,12 +575,19 @@ await describe('B05 - OCPP20VariableManager', async () => {
 
       assert.strictEqual(result.length, 1)
       assert.strictEqual(result[0].attributeStatus, SetVariableStatusEnumType.Rejected)
-      if (result[0].attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
-      if (result[0].attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
-      assert.strictEqual(result[0].attributeStatusInfo.reasonCode, ReasonCodeEnumType.TooLargeElement)
-      assert.ok(result[0].attributeStatusInfo.additionalInfo.includes(
-        'exceeds effective size limit'
-      ))
+      if (result[0].attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
+      if (result[0].attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
+      assert.strictEqual(
+        result[0].attributeStatusInfo.reasonCode,
+        ReasonCodeEnumType.TooLargeElement
+      )
+      assert.ok(
+        result[0].attributeStatusInfo.additionalInfo.includes('exceeds effective size limit')
+      )
     })
 
     await it('should handle multiple mixed SetVariables in one call', () => {
@@ -594,18 +640,38 @@ await describe('B05 - OCPP20VariableManager', async () => {
       const negRes = manager.setVariables(station, negReq)[0]
       const nonIntRes = manager.setVariables(station, nonIntReq)[0]
       assert.strictEqual(zeroRes.attributeStatus, SetVariableStatusEnumType.Rejected)
-      if (zeroRes.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
-      if (zeroRes.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
-      assert.strictEqual(zeroRes.attributeStatusInfo.reasonCode, ReasonCodeEnumType.ValuePositiveOnly)
-      assert.ok(zeroRes.attributeStatusInfo.additionalInfo.includes('Positive integer > 0 required'))
+      if (zeroRes.attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
+      if (zeroRes.attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
+      assert.strictEqual(
+        zeroRes.attributeStatusInfo.reasonCode,
+        ReasonCodeEnumType.ValuePositiveOnly
+      )
+      assert.ok(
+        zeroRes.attributeStatusInfo.additionalInfo.includes('Positive integer > 0 required')
+      )
       assert.strictEqual(negRes.attributeStatus, SetVariableStatusEnumType.Rejected)
-      if (negRes.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
-      if (negRes.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
-      assert.strictEqual(negRes.attributeStatusInfo.reasonCode, ReasonCodeEnumType.ValuePositiveOnly)
+      if (negRes.attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
+      if (negRes.attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
+      assert.strictEqual(
+        negRes.attributeStatusInfo.reasonCode,
+        ReasonCodeEnumType.ValuePositiveOnly
+      )
       assert.ok(negRes.attributeStatusInfo.additionalInfo.includes('Positive integer > 0 required'))
       assert.strictEqual(nonIntRes.attributeStatus, SetVariableStatusEnumType.Rejected)
-      if (nonIntRes.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
-      if (nonIntRes.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      if (nonIntRes.attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
+      if (nonIntRes.attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
       assert.strictEqual(nonIntRes.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidValue)
       assert.ok(nonIntRes.attributeStatusInfo.additionalInfo.includes('Positive integer'))
     })
@@ -726,8 +792,14 @@ await describe('B05 - OCPP20VariableManager', async () => {
       ]
       const result = manager.setVariables(station, request)
       assert.strictEqual(result.length, 1)
-      assert.strictEqual(result[0].attributeStatus, SetVariableStatusEnumType.NotSupportedAttributeType)
-      assert.strictEqual(result[0].attributeStatusInfo?.reasonCode, ReasonCodeEnumType.UnsupportedParam)
+      assert.strictEqual(
+        result[0].attributeStatus,
+        SetVariableStatusEnumType.NotSupportedAttributeType
+      )
+      assert.strictEqual(
+        result[0].attributeStatusInfo?.reasonCode,
+        ReasonCodeEnumType.UnsupportedParam
+      )
     })
 
     await it('should validate HeartbeatInterval positive integer >0', () => {
@@ -767,16 +839,36 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ])[0]
-      if (zeroRes.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
-      if (zeroRes.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
-      assert.strictEqual(zeroRes.attributeStatusInfo.reasonCode, ReasonCodeEnumType.ValuePositiveOnly)
-      assert.ok(zeroRes.attributeStatusInfo.additionalInfo.includes('Positive integer > 0 required'))
-      if (negRes.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
-      if (negRes.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
-      assert.strictEqual(negRes.attributeStatusInfo.reasonCode, ReasonCodeEnumType.ValuePositiveOnly)
+      if (zeroRes.attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
+      if (zeroRes.attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
+      assert.strictEqual(
+        zeroRes.attributeStatusInfo.reasonCode,
+        ReasonCodeEnumType.ValuePositiveOnly
+      )
+      assert.ok(
+        zeroRes.attributeStatusInfo.additionalInfo.includes('Positive integer > 0 required')
+      )
+      if (negRes.attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
+      if (negRes.attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
+      assert.strictEqual(
+        negRes.attributeStatusInfo.reasonCode,
+        ReasonCodeEnumType.ValuePositiveOnly
+      )
       assert.ok(negRes.attributeStatusInfo.additionalInfo.includes('Positive integer > 0 required'))
-      if (nonIntRes.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
-      if (nonIntRes.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      if (nonIntRes.attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
+      if (nonIntRes.attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
       assert.strictEqual(nonIntRes.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidValue)
       assert.ok(nonIntRes.attributeStatusInfo.additionalInfo.includes('Positive integer'))
     })
@@ -817,13 +909,27 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20OptionalVariableName.WebSocketPingInterval },
         },
       ])[0]
-      if (negRes.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
-      if (negRes.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
-      assert.strictEqual(negRes.attributeStatusInfo.reasonCode, ReasonCodeEnumType.ValueZeroNotAllowed)
+      if (negRes.attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
+      if (negRes.attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
+      assert.strictEqual(
+        negRes.attributeStatusInfo.reasonCode,
+        ReasonCodeEnumType.ValueZeroNotAllowed
+      )
       assert.ok(negRes.attributeStatusInfo.additionalInfo.includes('Integer >= 0 required'))
-      if (nonIntRes.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
-      if (nonIntRes.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
-      assert.strictEqual(nonIntRes.attributeStatusInfo.reasonCode, ReasonCodeEnumType.ValueZeroNotAllowed)
+      if (nonIntRes.attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
+      if (nonIntRes.attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
+      assert.strictEqual(
+        nonIntRes.attributeStatusInfo.reasonCode,
+        ReasonCodeEnumType.ValueZeroNotAllowed
+      )
       assert.ok(nonIntRes.attributeStatusInfo.additionalInfo.includes('Integer >= 0 required'))
     })
 
@@ -858,16 +964,36 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20RequiredVariableName.EVConnectionTimeOut },
         },
       ])[0]
-      if (zeroRes.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
-      if (zeroRes.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
-      assert.strictEqual(zeroRes.attributeStatusInfo.reasonCode, ReasonCodeEnumType.ValuePositiveOnly)
-      assert.ok(zeroRes.attributeStatusInfo.additionalInfo.includes('Positive integer > 0 required'))
-      if (negRes.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
-      if (negRes.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
-      assert.strictEqual(negRes.attributeStatusInfo.reasonCode, ReasonCodeEnumType.ValuePositiveOnly)
+      if (zeroRes.attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
+      if (zeroRes.attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
+      assert.strictEqual(
+        zeroRes.attributeStatusInfo.reasonCode,
+        ReasonCodeEnumType.ValuePositiveOnly
+      )
+      assert.ok(
+        zeroRes.attributeStatusInfo.additionalInfo.includes('Positive integer > 0 required')
+      )
+      if (negRes.attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
+      if (negRes.attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
+      assert.strictEqual(
+        negRes.attributeStatusInfo.reasonCode,
+        ReasonCodeEnumType.ValuePositiveOnly
+      )
       assert.ok(negRes.attributeStatusInfo.additionalInfo.includes('Positive integer > 0 required'))
-      if (nonIntRes.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
-      if (nonIntRes.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      if (nonIntRes.attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
+      if (nonIntRes.attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
       assert.strictEqual(nonIntRes.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidValue)
       assert.ok(nonIntRes.attributeStatusInfo.additionalInfo.includes('Positive integer'))
     })
@@ -903,16 +1029,36 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20RequiredVariableName.MessageTimeout },
         },
       ])[0]
-      if (zeroRes.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
-      if (zeroRes.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
-      assert.strictEqual(zeroRes.attributeStatusInfo.reasonCode, ReasonCodeEnumType.ValuePositiveOnly)
-      assert.ok(zeroRes.attributeStatusInfo.additionalInfo.includes('Positive integer > 0 required'))
-      if (negRes.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
-      if (negRes.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
-      assert.strictEqual(negRes.attributeStatusInfo.reasonCode, ReasonCodeEnumType.ValuePositiveOnly)
+      if (zeroRes.attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
+      if (zeroRes.attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
+      assert.strictEqual(
+        zeroRes.attributeStatusInfo.reasonCode,
+        ReasonCodeEnumType.ValuePositiveOnly
+      )
+      assert.ok(
+        zeroRes.attributeStatusInfo.additionalInfo.includes('Positive integer > 0 required')
+      )
+      if (negRes.attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
+      if (negRes.attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
+      assert.strictEqual(
+        negRes.attributeStatusInfo.reasonCode,
+        ReasonCodeEnumType.ValuePositiveOnly
+      )
       assert.ok(negRes.attributeStatusInfo.additionalInfo.includes('Positive integer > 0 required'))
-      if (nonIntRes.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
-      if (nonIntRes.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      if (nonIntRes.attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
+      if (nonIntRes.attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
       assert.strictEqual(nonIntRes.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidValue)
       assert.ok(nonIntRes.attributeStatusInfo.additionalInfo.includes('Positive integer'))
     })
@@ -1022,12 +1168,16 @@ await describe('B05 - OCPP20VariableManager', async () => {
         },
       ])[0]
       assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Rejected)
-      if (res.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
-      if (res.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      if (res.attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
+      if (res.attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
       assert.strictEqual(res.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidValue)
-      assert.ok(res.attributeStatusInfo.additionalInfo.includes(
-        'Non-empty digits only string required'
-      ))
+      assert.ok(
+        res.attributeStatusInfo.additionalInfo.includes('Non-empty digits only string required')
+      )
     })
 
     await it('should reject HeartbeatInterval with trailing whitespace', () => {
@@ -1039,12 +1189,16 @@ await describe('B05 - OCPP20VariableManager', async () => {
         },
       ])[0]
       assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Rejected)
-      if (res.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
-      if (res.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      if (res.attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
+      if (res.attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
       assert.strictEqual(res.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidValue)
-      assert.ok(res.attributeStatusInfo.additionalInfo.includes(
-        'Non-empty digits only string required'
-      ))
+      assert.ok(
+        res.attributeStatusInfo.additionalInfo.includes('Non-empty digits only string required')
+      )
     })
 
     await it('should reject HeartbeatInterval with plus sign prefix', () => {
@@ -1056,12 +1210,16 @@ await describe('B05 - OCPP20VariableManager', async () => {
         },
       ])[0]
       assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Rejected)
-      if (res.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
-      if (res.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      if (res.attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
+      if (res.attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
       assert.strictEqual(res.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidValue)
-      assert.ok(res.attributeStatusInfo.additionalInfo.includes(
-        'Non-empty digits only string required'
-      ))
+      assert.ok(
+        res.attributeStatusInfo.additionalInfo.includes('Non-empty digits only string required')
+      )
     })
 
     await it('should accept HeartbeatInterval with leading zeros', () => {
@@ -1085,12 +1243,16 @@ await describe('B05 - OCPP20VariableManager', async () => {
         },
       ])[0]
       assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Rejected)
-      if (res.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
-      if (res.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      if (res.attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
+      if (res.attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
       assert.strictEqual(res.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidValue)
-      assert.ok(res.attributeStatusInfo.additionalInfo.includes(
-        'Non-empty digits only string required'
-      ))
+      assert.ok(
+        res.attributeStatusInfo.additionalInfo.includes('Non-empty digits only string required')
+      )
     })
 
     await it('should reject HeartbeatInterval with internal space', () => {
@@ -1102,12 +1264,16 @@ await describe('B05 - OCPP20VariableManager', async () => {
         },
       ])[0]
       assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Rejected)
-      if (res.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
-      if (res.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      if (res.attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
+      if (res.attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
       assert.strictEqual(res.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidValue)
-      assert.ok(res.attributeStatusInfo.additionalInfo.includes(
-        'Non-empty digits only string required'
-      ))
+      assert.ok(
+        res.attributeStatusInfo.additionalInfo.includes('Non-empty digits only string required')
+      )
     })
 
     await it('should reject ConnectionUrl missing scheme', () => {
@@ -1119,8 +1285,12 @@ await describe('B05 - OCPP20VariableManager', async () => {
         },
       ])[0]
       assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Rejected)
-      if (res.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
-      if (res.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      if (res.attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
+      if (res.attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
       assert.strictEqual(res.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidURL)
       assert.ok(res.attributeStatusInfo.additionalInfo.includes('Invalid URL format'))
     })
@@ -1135,12 +1305,18 @@ await describe('B05 - OCPP20VariableManager', async () => {
         },
       ])[0]
       assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Rejected)
-      if (res.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
-      if (res.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      if (res.attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
+      if (res.attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
       assert.strictEqual(res.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidValue)
-      assert.ok(res.attributeStatusInfo.additionalInfo.includes(
-        `exceeds maximum length (${CONNECTION_URL_MAX_LENGTH.toString()})`
-      ))
+      assert.ok(
+        res.attributeStatusInfo.additionalInfo.includes(
+          `exceeds maximum length (${CONNECTION_URL_MAX_LENGTH.toString()})`
+        )
+      )
     })
 
     await it('should reject HeartbeatInterval exceeding max length', () => {
@@ -1152,16 +1328,22 @@ await describe('B05 - OCPP20VariableManager', async () => {
         },
       ])[0]
       assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Rejected)
-      if (res.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
-      if (res.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      if (res.attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
+      if (res.attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
       assert.strictEqual(res.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidValue)
       const HEARTBEAT_INTERVAL_MAX_LENGTH =
         VARIABLE_REGISTRY[
           `${OCPP20ComponentName.OCPPCommCtrlr}::${OCPP20OptionalVariableName.HeartbeatInterval}`
         ].maxLength ?? 10
-      assert.ok(res.attributeStatusInfo.additionalInfo.includes(
-        `exceeds maximum length (${HEARTBEAT_INTERVAL_MAX_LENGTH.toString()})`
-      ))
+      assert.ok(
+        res.attributeStatusInfo.additionalInfo.includes(
+          `exceeds maximum length (${HEARTBEAT_INTERVAL_MAX_LENGTH.toString()})`
+        )
+      )
     })
 
     // Effective value size limit tests combining ConfigurationValueSize and ValueSize
@@ -1190,7 +1372,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
         },
       ])[0]
       assert.strictEqual(tooLongRes.attributeStatus, SetVariableStatusEnumType.Rejected)
-      assert.strictEqual(tooLongRes.attributeStatusInfo?.reasonCode, ReasonCodeEnumType.TooLargeElement)
+      assert.strictEqual(
+        tooLongRes.attributeStatusInfo?.reasonCode,
+        ReasonCodeEnumType.TooLargeElement
+      )
     })
 
     await it('should enforce ValueSize when ConfigurationValueSize unset', () => {
@@ -1217,7 +1402,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
         },
       ])[0]
       assert.strictEqual(tooLongRes.attributeStatus, SetVariableStatusEnumType.Rejected)
-      assert.strictEqual(tooLongRes.attributeStatusInfo?.reasonCode, ReasonCodeEnumType.TooLargeElement)
+      assert.strictEqual(
+        tooLongRes.attributeStatusInfo?.reasonCode,
+        ReasonCodeEnumType.TooLargeElement
+      )
     })
 
     await it('should use smaller of ConfigurationValueSize and ValueSize (ValueSize smaller)', () => {
@@ -1240,7 +1428,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
         },
       ])[0]
       assert.strictEqual(tooLongRes.attributeStatus, SetVariableStatusEnumType.Rejected)
-      assert.strictEqual(tooLongRes.attributeStatusInfo?.reasonCode, ReasonCodeEnumType.TooLargeElement)
+      assert.strictEqual(
+        tooLongRes.attributeStatusInfo?.reasonCode,
+        ReasonCodeEnumType.TooLargeElement
+      )
     })
 
     await it('should use smaller of ConfigurationValueSize and ValueSize (ConfigurationValueSize smaller)', () => {
@@ -1263,7 +1454,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
         },
       ])[0]
       assert.strictEqual(tooLongRes.attributeStatus, SetVariableStatusEnumType.Rejected)
-      assert.strictEqual(tooLongRes.attributeStatusInfo?.reasonCode, ReasonCodeEnumType.TooLargeElement)
+      assert.strictEqual(
+        tooLongRes.attributeStatusInfo?.reasonCode,
+        ReasonCodeEnumType.TooLargeElement
+      )
     })
 
     await it('should fallback to default limit when both invalid/non-positive', () => {
@@ -1393,8 +1587,12 @@ await describe('B05 - OCPP20VariableManager', async () => {
         },
       ])[0]
       assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Rejected)
-      if (res.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
-      if (res.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      if (res.attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
+      if (res.attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
       assert.strictEqual(res.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidValue)
       assert.ok(res.attributeStatusInfo.additionalInfo.includes('Member not in enumeration'))
     })
@@ -1447,7 +1645,9 @@ await describe('B05 - OCPP20VariableManager', async () => {
             },
           ])[0]
           assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Rejected)
-          if (res.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
+          if (res.attributeStatusInfo == null) {
+            assert.fail('Expected attributeStatusInfo to be defined')
+          }
           if (lv.name === OCPP20RequiredVariableName.FileTransferProtocols) {
             assert.strictEqual(res.attributeStatusInfo.reasonCode, ReasonCodeEnumType.ReadOnly)
           } else {
@@ -1457,7 +1657,9 @@ await describe('B05 - OCPP20VariableManager', async () => {
             // Read-only variable: additionalInfo reflects read-only status, skip format/member detail assertions
             continue
           }
-          if (res.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+          if (res.attributeStatusInfo.additionalInfo == null) {
+            assert.fail('Expected additionalInfo to be defined')
+          }
           if (pattern === '') {
             assert.ok(res.attributeStatusInfo.additionalInfo.includes('List cannot be empty'))
           } else if (pattern.startsWith(',') || pattern.endsWith(',')) {
@@ -1482,8 +1684,12 @@ await describe('B05 - OCPP20VariableManager', async () => {
       },
     ])[0]
     assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Rejected)
-    if (res.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
-    if (res.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+    if (res.attributeStatusInfo == null) {
+      assert.fail('Expected attributeStatusInfo to be defined')
+    }
+    if (res.attributeStatusInfo.additionalInfo == null) {
+      assert.fail('Expected additionalInfo to be defined')
+    }
     assert.strictEqual(res.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidValue)
     assert.ok(res.attributeStatusInfo.additionalInfo.includes('Member not in enumeration'))
   })
@@ -1745,7 +1951,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20RequiredVariableName.MessageAttemptInterval },
         },
       ])[0]
-      assert.strictEqual(minSetRes.attributeStatus, SetVariableStatusEnumType.NotSupportedAttributeType)
+      assert.strictEqual(
+        minSetRes.attributeStatus,
+        SetVariableStatusEnumType.NotSupportedAttributeType
+      )
       const getMin = manager.getVariables(station, [
         {
           attributeType: AttributeEnumType.MinSet,
@@ -1753,7 +1962,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20RequiredVariableName.MessageAttemptInterval },
         },
       ])[0]
-      assert.strictEqual(getMin.attributeStatus, GetVariableStatusEnumType.NotSupportedAttributeType)
+      assert.strictEqual(
+        getMin.attributeStatus,
+        GetVariableStatusEnumType.NotSupportedAttributeType
+      )
 
       // Negative: MaxSet not supported
       const maxSetRes = manager.setVariables(station, [
@@ -1764,7 +1976,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20RequiredVariableName.MessageAttemptInterval },
         },
       ])[0]
-      assert.strictEqual(maxSetRes.attributeStatus, SetVariableStatusEnumType.NotSupportedAttributeType)
+      assert.strictEqual(
+        maxSetRes.attributeStatus,
+        SetVariableStatusEnumType.NotSupportedAttributeType
+      )
       const getMax = manager.getVariables(station, [
         {
           attributeType: AttributeEnumType.MaxSet,
@@ -1772,7 +1987,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20RequiredVariableName.MessageAttemptInterval },
         },
       ])[0]
-      assert.strictEqual(getMax.attributeStatus, GetVariableStatusEnumType.NotSupportedAttributeType)
+      assert.strictEqual(
+        getMax.attributeStatus,
+        GetVariableStatusEnumType.NotSupportedAttributeType
+      )
 
       // Attempt Actual value below registry min (min=1) -> reject
       const belowMinRes = manager.setVariables(station, [
@@ -1783,7 +2001,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
         },
       ])[0]
       assert.strictEqual(belowMinRes.attributeStatus, SetVariableStatusEnumType.Rejected)
-      assert.strictEqual(belowMinRes.attributeStatusInfo?.reasonCode, ReasonCodeEnumType.ValuePositiveOnly)
+      assert.strictEqual(
+        belowMinRes.attributeStatusInfo?.reasonCode,
+        ReasonCodeEnumType.ValuePositiveOnly
+      )
 
       // Attempt Actual value above registry max (max=3600) -> reject
       const aboveMaxRes = manager.setVariables(station, [
@@ -1794,7 +2015,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
         },
       ])[0]
       assert.strictEqual(aboveMaxRes.attributeStatus, SetVariableStatusEnumType.Rejected)
-      assert.strictEqual(aboveMaxRes.attributeStatusInfo?.reasonCode, ReasonCodeEnumType.ValueTooHigh)
+      assert.strictEqual(
+        aboveMaxRes.attributeStatusInfo?.reasonCode,
+        ReasonCodeEnumType.ValueTooHigh
+      )
 
       // Accept Actual value within metadata bounds
       const withinRes = manager.setVariables(station, [

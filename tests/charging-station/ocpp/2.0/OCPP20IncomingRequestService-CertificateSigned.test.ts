@@ -288,7 +288,9 @@ await describe('I04 - CertificateSigned', async () => {
         await testableService.handleRequestCertificateSigned(station, request)
 
       assert.strictEqual(response.status, GenericStatus.Rejected)
-      if (response.statusInfo == null) { assert.fail('Expected statusInfo to be defined') }
+      if (response.statusInfo == null) {
+        assert.fail('Expected statusInfo to be defined')
+      }
       assert.strictEqual(typeof response.statusInfo.reasonCode, 'string')
       assert.ok(response.statusInfo.reasonCode.length > 0)
       assert.ok(response.statusInfo.reasonCode.length <= 20)

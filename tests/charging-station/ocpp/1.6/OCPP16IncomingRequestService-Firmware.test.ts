@@ -59,11 +59,7 @@ await describe('OCPP16IncomingRequestService — Firmware', async () => {
     await it('should return empty response when FirmwareManagement feature profile is not enabled', async () => {
       // Arrange
       const { station, testableService } = context
-      upsertConfigurationKey(
-        station,
-        OCPP16StandardParametersKey.SupportedFeatureProfiles,
-        'Core'
-      )
+      upsertConfigurationKey(station, OCPP16StandardParametersKey.SupportedFeatureProfiles, 'Core')
 
       const request: GetDiagnosticsRequest = {
         location: 'ftp://localhost/diagnostics',
@@ -120,11 +116,7 @@ await describe('OCPP16IncomingRequestService — Firmware', async () => {
     await it('should return empty response when FirmwareManagement feature profile is not enabled', () => {
       // Arrange
       const { station, testableService } = context
-      upsertConfigurationKey(
-        station,
-        OCPP16StandardParametersKey.SupportedFeatureProfiles,
-        'Core'
-      )
+      upsertConfigurationKey(station, OCPP16StandardParametersKey.SupportedFeatureProfiles, 'Core')
 
       // Act
       const response = testableService.handleRequestUpdateFirmware(station, {

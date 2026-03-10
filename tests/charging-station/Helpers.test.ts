@@ -60,13 +60,15 @@ await describe('Helpers', async () => {
     }) as Reservation
 
   await it('should return formatted charging station ID with index', () => {
-    assert.strictEqual(getChargingStationId(1, chargingStationTemplate),
+    assert.strictEqual(
+      getChargingStationId(1, chargingStationTemplate),
       `${TEST_CHARGING_STATION_BASE_NAME}-00001`
     )
   })
 
   await it('should return consistent hash ID for same template and index', () => {
-    assert.strictEqual(getHashId(1, chargingStationTemplate),
+    assert.strictEqual(
+      getHashId(1, chargingStationTemplate),
       'b4b1e8ec4fca79091d99ea9a7ea5901548010e6c0e98be9296f604b9d68734444dfdae73d7d406b6124b42815214d088'
     )
   })
@@ -81,9 +83,12 @@ await describe('Helpers', async () => {
     stationNoInfo.stationInfo = undefined
 
     // Act & Assert
-    assert.throws(() => {
-      validateStationInfo(stationNoInfo)
-    }, { message: /Missing charging station information/ })
+    assert.throws(
+      () => {
+        validateStationInfo(stationNoInfo)
+      },
+      { message: /Missing charging station information/ }
+    )
   })
 
   await it('should throw when stationInfo is empty object', () => {
@@ -95,9 +100,12 @@ await describe('Helpers', async () => {
     stationEmptyInfo.stationInfo = {} as ChargingStationInfo
 
     // Act & Assert
-    assert.throws(() => {
-      validateStationInfo(stationEmptyInfo)
-    }, { message: /Missing charging station information/ })
+    assert.throws(
+      () => {
+        validateStationInfo(stationEmptyInfo)
+      },
+      { message: /Missing charging station information/ }
+    )
   })
 
   await it('should throw when chargingStationId is undefined', () => {
@@ -108,9 +116,12 @@ await describe('Helpers', async () => {
     })
 
     // Act & Assert
-    assert.throws(() => {
-      validateStationInfo(stationMissingId)
-    }, { message: /Missing chargingStationId in stationInfo properties/ })
+    assert.throws(
+      () => {
+        validateStationInfo(stationMissingId)
+      },
+      { message: /Missing chargingStationId in stationInfo properties/ }
+    )
   })
 
   await it('should throw when chargingStationId is empty string', () => {
@@ -121,9 +132,12 @@ await describe('Helpers', async () => {
     })
 
     // Act & Assert
-    assert.throws(() => {
-      validateStationInfo(stationEmptyId)
-    }, { message: /Missing chargingStationId in stationInfo properties/ })
+    assert.throws(
+      () => {
+        validateStationInfo(stationEmptyId)
+      },
+      { message: /Missing chargingStationId in stationInfo properties/ }
+    )
   })
 
   await it('should throw when hashId is undefined', () => {
@@ -138,9 +152,12 @@ await describe('Helpers', async () => {
     })
 
     // Act & Assert
-    assert.throws(() => {
-      validateStationInfo(stationMissingHash)
-    }, { message: /Missing hashId in stationInfo properties/ })
+    assert.throws(
+      () => {
+        validateStationInfo(stationMissingHash)
+      },
+      { message: /Missing hashId in stationInfo properties/ }
+    )
   })
 
   await it('should throw when hashId is empty string', () => {
@@ -155,9 +172,12 @@ await describe('Helpers', async () => {
     })
 
     // Act & Assert
-    assert.throws(() => {
-      validateStationInfo(stationEmptyHash)
-    }, { message: /Missing hashId in stationInfo properties/ })
+    assert.throws(
+      () => {
+        validateStationInfo(stationEmptyHash)
+      },
+      { message: /Missing hashId in stationInfo properties/ }
+    )
   })
 
   await it('should throw when templateIndex is undefined', () => {
@@ -173,9 +193,12 @@ await describe('Helpers', async () => {
     })
 
     // Act & Assert
-    assert.throws(() => {
-      validateStationInfo(stationMissingTemplate)
-    }, { message: /Missing templateIndex in stationInfo properties/ })
+    assert.throws(
+      () => {
+        validateStationInfo(stationMissingTemplate)
+      },
+      { message: /Missing templateIndex in stationInfo properties/ }
+    )
   })
 
   await it('should throw when templateIndex is zero', () => {
@@ -191,9 +214,12 @@ await describe('Helpers', async () => {
     })
 
     // Act & Assert
-    assert.throws(() => {
-      validateStationInfo(stationInvalidTemplate)
-    }, { message: /Invalid templateIndex value in stationInfo properties/ })
+    assert.throws(
+      () => {
+        validateStationInfo(stationInvalidTemplate)
+      },
+      { message: /Invalid templateIndex value in stationInfo properties/ }
+    )
   })
 
   await it('should throw when templateName is undefined', () => {
@@ -210,9 +236,12 @@ await describe('Helpers', async () => {
     })
 
     // Act & Assert
-    assert.throws(() => {
-      validateStationInfo(stationMissingName)
-    }, { message: /Missing templateName in stationInfo properties/ })
+    assert.throws(
+      () => {
+        validateStationInfo(stationMissingName)
+      },
+      { message: /Missing templateName in stationInfo properties/ }
+    )
   })
 
   await it('should throw when templateName is empty string', () => {
@@ -229,9 +258,12 @@ await describe('Helpers', async () => {
     })
 
     // Act & Assert
-    assert.throws(() => {
-      validateStationInfo(stationEmptyName)
-    }, { message: /Missing templateName in stationInfo properties/ })
+    assert.throws(
+      () => {
+        validateStationInfo(stationEmptyName)
+      },
+      { message: /Missing templateName in stationInfo properties/ }
+    )
   })
 
   await it('should throw when maximumPower is undefined', () => {
@@ -249,9 +281,12 @@ await describe('Helpers', async () => {
     })
 
     // Act & Assert
-    assert.throws(() => {
-      validateStationInfo(stationMissingPower)
-    }, { message: /Missing maximumPower in stationInfo properties/ })
+    assert.throws(
+      () => {
+        validateStationInfo(stationMissingPower)
+      },
+      { message: /Missing maximumPower in stationInfo properties/ }
+    )
   })
 
   await it('should throw when maximumPower is zero', () => {
@@ -269,9 +304,12 @@ await describe('Helpers', async () => {
     })
 
     // Act & Assert
-    assert.throws(() => {
-      validateStationInfo(stationInvalidPower)
-    }, { message: /Invalid maximumPower value in stationInfo properties/ })
+    assert.throws(
+      () => {
+        validateStationInfo(stationInvalidPower)
+      },
+      { message: /Invalid maximumPower value in stationInfo properties/ }
+    )
   })
 
   await it('should throw when maximumAmperage is undefined', () => {
@@ -290,9 +328,12 @@ await describe('Helpers', async () => {
     })
 
     // Act & Assert
-    assert.throws(() => {
-      validateStationInfo(stationMissingAmperage)
-    }, { message: /Missing maximumAmperage in stationInfo properties/ })
+    assert.throws(
+      () => {
+        validateStationInfo(stationMissingAmperage)
+      },
+      { message: /Missing maximumAmperage in stationInfo properties/ }
+    )
   })
 
   await it('should throw when maximumAmperage is zero', () => {
@@ -311,9 +352,12 @@ await describe('Helpers', async () => {
     })
 
     // Act & Assert
-    assert.throws(() => {
-      validateStationInfo(stationInvalidAmperage)
-    }, { message: /Invalid maximumAmperage value in stationInfo properties/ })
+    assert.throws(
+      () => {
+        validateStationInfo(stationInvalidAmperage)
+      },
+      { message: /Invalid maximumAmperage value in stationInfo properties/ }
+    )
   })
 
   await it('should pass validation with complete valid configuration', () => {
@@ -356,9 +400,15 @@ await describe('Helpers', async () => {
     })
 
     // Act & Assert
-    assert.throws(() => {
-      validateStationInfo(stationOcpp20)
-    }, { message: /requires at least one EVSE defined in the charging station template\/configuration/ })
+    assert.throws(
+      () => {
+        validateStationInfo(stationOcpp20)
+      },
+      {
+        message:
+          /requires at least one EVSE defined in the charging station template\/configuration/,
+      }
+    )
   })
 
   await it('should throw for OCPP 2.0.1 without EVSE configuration', () => {
@@ -380,9 +430,15 @@ await describe('Helpers', async () => {
     })
 
     // Act & Assert
-    assert.throws(() => {
-      validateStationInfo(stationOcpp201)
-    }, { message: /requires at least one EVSE defined in the charging station template\/configuration/ })
+    assert.throws(
+      () => {
+        validateStationInfo(stationOcpp201)
+      },
+      {
+        message:
+          /requires at least one EVSE defined in the charging station template\/configuration/,
+      }
+    )
   })
 
   await it('should return false and warn when station is not started or starting', t => {
@@ -462,13 +518,19 @@ await describe('Helpers', async () => {
     const errorMock = t.mock.method(logger, 'error')
 
     // Act & Assert
-    assert.throws(() => {
-      checkTemplate(undefined, 'log prefix |', 'test-template.json')
-    }, { message: /Failed to read charging station template file test-template\.json/ })
+    assert.throws(
+      () => {
+        checkTemplate(undefined, 'log prefix |', 'test-template.json')
+      },
+      { message: /Failed to read charging station template file test-template\.json/ }
+    )
     assert.strictEqual(errorMock.mock.calls.length, 1)
-    assert.throws(() => {
-      checkTemplate({} as ChargingStationTemplate, 'log prefix |', 'test-template.json')
-    }, { message: /Empty charging station information from template file test-template\.json/ })
+    assert.throws(
+      () => {
+        checkTemplate({} as ChargingStationTemplate, 'log prefix |', 'test-template.json')
+      },
+      { message: /Empty charging station information from template file test-template\.json/ }
+    )
     assert.strictEqual(errorMock.mock.calls.length, 2)
     checkTemplate(chargingStationTemplate, 'log prefix |', 'test-template.json')
     assert.strictEqual(warnMock.mock.calls.length, 1)
@@ -479,13 +541,19 @@ await describe('Helpers', async () => {
     const errorMock = t.mock.method(logger, 'error')
 
     // Act & Assert
-    assert.throws(() => {
-      checkConfiguration(undefined, 'log prefix |', 'configuration.json')
-    }, { message: /Failed to read charging station configuration file configuration\.json/ })
+    assert.throws(
+      () => {
+        checkConfiguration(undefined, 'log prefix |', 'configuration.json')
+      },
+      { message: /Failed to read charging station configuration file configuration\.json/ }
+    )
     assert.strictEqual(errorMock.mock.calls.length, 1)
-    assert.throws(() => {
-      checkConfiguration({} as ChargingStationConfiguration, 'log prefix |', 'configuration.json')
-    }, { message: /Empty charging station configuration from file configuration\.json/ })
+    assert.throws(
+      () => {
+        checkConfiguration({} as ChargingStationConfiguration, 'log prefix |', 'configuration.json')
+      },
+      { message: /Empty charging station configuration from file configuration\.json/ }
+    )
     assert.strictEqual(errorMock.mock.calls.length, 2)
   })
 
@@ -513,7 +581,8 @@ await describe('Helpers', async () => {
     const connectorStatus = {} as ConnectorStatus
 
     // Act & Assert
-    assert.strictEqual(getBootConnectorStatus(chargingStation, 1, connectorStatus),
+    assert.strictEqual(
+      getBootConnectorStatus(chargingStation, 1, connectorStatus),
       ConnectorStatusEnum.Available
     )
   })
@@ -529,7 +598,8 @@ await describe('Helpers', async () => {
     } as ConnectorStatus
 
     // Act & Assert
-    assert.strictEqual(getBootConnectorStatus(chargingStation, 1, connectorStatus),
+    assert.strictEqual(
+      getBootConnectorStatus(chargingStation, 1, connectorStatus),
       ConnectorStatusEnum.Unavailable
     )
   })
@@ -546,7 +616,8 @@ await describe('Helpers', async () => {
     } as ConnectorStatus
 
     // Act & Assert
-    assert.strictEqual(getBootConnectorStatus(chargingStation, 1, connectorStatus),
+    assert.strictEqual(
+      getBootConnectorStatus(chargingStation, 1, connectorStatus),
       ConnectorStatusEnum.Unavailable
     )
   })
@@ -564,7 +635,8 @@ await describe('Helpers', async () => {
     } as ConnectorStatus
 
     // Act & Assert
-    assert.strictEqual(getBootConnectorStatus(chargingStation, 1, connectorStatus),
+    assert.strictEqual(
+      getBootConnectorStatus(chargingStation, 1, connectorStatus),
       ConnectorStatusEnum.Unavailable
     )
   })
@@ -582,7 +654,8 @@ await describe('Helpers', async () => {
     } as ConnectorStatus
 
     // Act & Assert
-    assert.strictEqual(getBootConnectorStatus(chargingStation, 1, connectorStatus),
+    assert.strictEqual(
+      getBootConnectorStatus(chargingStation, 1, connectorStatus),
       ConnectorStatusEnum.Charging
     )
   })
@@ -600,7 +673,8 @@ await describe('Helpers', async () => {
     } as ConnectorStatus
 
     // Act & Assert
-    assert.strictEqual(getBootConnectorStatus(chargingStation, 1, connectorStatus),
+    assert.strictEqual(
+      getBootConnectorStatus(chargingStation, 1, connectorStatus),
       ConnectorStatusEnum.Available
     )
   })

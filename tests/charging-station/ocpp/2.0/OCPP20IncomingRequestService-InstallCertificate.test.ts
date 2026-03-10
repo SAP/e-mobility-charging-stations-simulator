@@ -222,11 +222,13 @@ await describe('I03 - InstallCertificate', async () => {
       assert.strictEqual(typeof response, 'object')
 
       assert.notStrictEqual(response.status, undefined)
-      assert.ok([
-        InstallCertificateStatusEnumType.Accepted,
-        InstallCertificateStatusEnumType.Failed,
-        InstallCertificateStatusEnumType.Rejected,
-      ].includes(response.status))
+      assert.ok(
+        [
+          InstallCertificateStatusEnumType.Accepted,
+          InstallCertificateStatusEnumType.Failed,
+          InstallCertificateStatusEnumType.Rejected,
+        ].includes(response.status)
+      )
 
       if (response.statusInfo != null) {
         assert.notStrictEqual(response.statusInfo.reasonCode, undefined)
@@ -252,7 +254,9 @@ await describe('I03 - InstallCertificate', async () => {
         await testableService.handleRequestInstallCertificate(mockStation, request)
 
       assert.strictEqual(response.status, InstallCertificateStatusEnumType.Rejected)
-      if (response.statusInfo == null) { assert.fail('Expected statusInfo to be defined') }
+      if (response.statusInfo == null) {
+        assert.fail('Expected statusInfo to be defined')
+      }
       assert.strictEqual(typeof response.statusInfo.reasonCode, 'string')
       assert.ok(response.statusInfo.reasonCode.length > 0)
       assert.ok(response.statusInfo.reasonCode.length <= 20)

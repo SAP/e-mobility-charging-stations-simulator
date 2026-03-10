@@ -128,7 +128,9 @@ await describe('B01 - BootNotificationResponse handler', async () => {
     await dispatch(payload)
     const configKey = mockStation.ocppConfiguration?.configurationKey
     assert.notStrictEqual(configKey, undefined)
-    if (configKey == null) { assert.fail('Expected configKey to be defined') }
+    if (configKey == null) {
+      assert.fail('Expected configKey to be defined')
+    }
     assert.strictEqual(configKey.length, 1)
     assert.strictEqual(configKey[0].key, OCPP20OptionalVariableName.HeartbeatInterval)
     assert.strictEqual(configKey[0].value, '300')

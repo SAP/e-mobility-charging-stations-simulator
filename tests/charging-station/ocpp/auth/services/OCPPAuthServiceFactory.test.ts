@@ -62,7 +62,7 @@ await describe('OCPPAuthServiceFactory', async () => {
         assert.strictEqual(true, false) // Force failure
       } catch (error) {
         assert.ok(error instanceof Error)
-        assert.ok((error).message.includes('OCPP version not found in charging station'))
+        assert.ok(error.message.includes('OCPP version not found in charging station'))
       }
     })
   })

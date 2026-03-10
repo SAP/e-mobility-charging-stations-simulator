@@ -257,10 +257,12 @@ await describe('B05 - Set Variables', async () => {
     assert.strictEqual(accepted.attributeStatus, SetVariableStatusEnumType.Accepted)
     assert.strictEqual(accepted.attributeStatusInfo, undefined)
     assert.strictEqual(unknownVariable.attributeStatus, SetVariableStatusEnumType.UnknownVariable)
-    assert.strictEqual(unsupportedAttrHeartbeat.attributeStatus,
+    assert.strictEqual(
+      unsupportedAttrHeartbeat.attributeStatus,
       SetVariableStatusEnumType.NotSupportedAttributeType
     )
-    assert.strictEqual(unsupportedAttrWs.attributeStatus,
+    assert.strictEqual(
+      unsupportedAttrWs.attributeStatus,
       SetVariableStatusEnumType.NotSupportedAttributeType
     )
     assert.strictEqual(oversize.attributeStatus, SetVariableStatusEnumType.Rejected)
@@ -417,9 +419,13 @@ await describe('B05 - Set Variables', async () => {
     assert.strictEqual(response.setVariableResult.length, 2)
     response.setVariableResult.forEach(r => {
       assert.strictEqual(r.attributeStatus, SetVariableStatusEnumType.Rejected)
-      if (r.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
+      if (r.attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
       assert.strictEqual(r.attributeStatusInfo.reasonCode, ReasonCodeEnumType.TooManyElements)
-      if (r.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      if (r.attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
       assert.match(r.attributeStatusInfo.additionalInfo, /ItemsPerMessage limit 1 exceeded/)
     })
     resetLimits(mockStation)
@@ -447,9 +453,13 @@ await describe('B05 - Set Variables', async () => {
     assert.strictEqual(response.setVariableResult.length, 2)
     response.setVariableResult.forEach(r => {
       assert.strictEqual(r.attributeStatus, SetVariableStatusEnumType.Rejected)
-      if (r.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
+      if (r.attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
       assert.strictEqual(r.attributeStatusInfo.reasonCode, ReasonCodeEnumType.TooLargeElement)
-      if (r.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      if (r.attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
       assert.match(r.attributeStatusInfo.additionalInfo, /BytesPerMessage limit 10 exceeded/)
     })
     resetLimits(mockStation)
@@ -512,10 +522,15 @@ await describe('B05 - Set Variables', async () => {
     assert.strictEqual(response.setVariableResult.length, request.setVariableData.length)
     response.setVariableResult.forEach(r => {
       assert.strictEqual(r.attributeStatus, SetVariableStatusEnumType.Rejected)
-      if (r.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
+      if (r.attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
       assert.strictEqual(r.attributeStatusInfo.reasonCode, ReasonCodeEnumType.TooLargeElement)
-      if (r.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
-      assert.match(r.attributeStatusInfo.additionalInfo,
+      if (r.attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
+      assert.match(
+        r.attributeStatusInfo.additionalInfo,
         new RegExp(`BytesPerMessage limit ${postCalcLimit.toString()} exceeded`)
       )
     })
@@ -539,7 +554,10 @@ await describe('B05 - Set Variables', async () => {
         },
       ],
     })
-    assert.strictEqual(response.setVariableResult[0].attributeStatus, SetVariableStatusEnumType.Accepted)
+    assert.strictEqual(
+      response.setVariableResult[0].attributeStatus,
+      SetVariableStatusEnumType.Accepted
+    )
     response = testableService.handleRequestSetVariables(mockStation, {
       setVariableData: [
         {
@@ -571,7 +589,10 @@ await describe('B05 - Set Variables', async () => {
         },
       ],
     })
-    assert.strictEqual(response.setVariableResult[0].attributeStatus, SetVariableStatusEnumType.Accepted)
+    assert.strictEqual(
+      response.setVariableResult[0].attributeStatus,
+      SetVariableStatusEnumType.Accepted
+    )
     response = testableService.handleRequestSetVariables(mockStation, {
       setVariableData: [
         {
@@ -603,7 +624,10 @@ await describe('B05 - Set Variables', async () => {
         },
       ],
     })
-    assert.strictEqual(response.setVariableResult[0].attributeStatus, SetVariableStatusEnumType.Accepted)
+    assert.strictEqual(
+      response.setVariableResult[0].attributeStatus,
+      SetVariableStatusEnumType.Accepted
+    )
     response = testableService.handleRequestSetVariables(mockStation, {
       setVariableData: [
         {
@@ -635,7 +659,10 @@ await describe('B05 - Set Variables', async () => {
         },
       ],
     })
-    assert.strictEqual(response.setVariableResult[0].attributeStatus, SetVariableStatusEnumType.Accepted)
+    assert.strictEqual(
+      response.setVariableResult[0].attributeStatus,
+      SetVariableStatusEnumType.Accepted
+    )
     response = testableService.handleRequestSetVariables(mockStation, {
       setVariableData: [
         {

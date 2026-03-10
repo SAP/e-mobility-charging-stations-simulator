@@ -64,11 +64,13 @@ await describe('B11 & B12 - Reset', async () => {
       assert.strictEqual(typeof response, 'object')
       assert.notStrictEqual(response.status, undefined)
       assert.strictEqual(typeof response.status, 'string')
-      assert.ok([
-        ResetStatusEnumType.Accepted,
-        ResetStatusEnumType.Rejected,
-        ResetStatusEnumType.Scheduled,
-      ].includes(response.status))
+      assert.ok(
+        [
+          ResetStatusEnumType.Accepted,
+          ResetStatusEnumType.Rejected,
+          ResetStatusEnumType.Scheduled,
+        ].includes(response.status)
+      )
     })
 
     await it('should handle Reset request with OnIdle type when no transactions', async () => {
@@ -83,11 +85,13 @@ await describe('B11 & B12 - Reset', async () => {
 
       assert.notStrictEqual(response, undefined)
       assert.notStrictEqual(response.status, undefined)
-      assert.ok([
-        ResetStatusEnumType.Accepted,
-        ResetStatusEnumType.Rejected,
-        ResetStatusEnumType.Scheduled,
-      ].includes(response.status))
+      assert.ok(
+        [
+          ResetStatusEnumType.Accepted,
+          ResetStatusEnumType.Rejected,
+          ResetStatusEnumType.Scheduled,
+        ].includes(response.status)
+      )
     })
 
     // FR: B11.FR.03
@@ -104,11 +108,13 @@ await describe('B11 & B12 - Reset', async () => {
 
       assert.notStrictEqual(response, undefined)
       assert.notStrictEqual(response.status, undefined)
-      assert.ok([
-        ResetStatusEnumType.Accepted,
-        ResetStatusEnumType.Rejected,
-        ResetStatusEnumType.Scheduled,
-      ].includes(response.status))
+      assert.ok(
+        [
+          ResetStatusEnumType.Accepted,
+          ResetStatusEnumType.Rejected,
+          ResetStatusEnumType.Scheduled,
+        ].includes(response.status)
+      )
     })
 
     await it('should reject reset for non-existent EVSE when no transactions', async () => {
@@ -124,9 +130,13 @@ await describe('B11 & B12 - Reset', async () => {
 
       assert.notStrictEqual(response, undefined)
       assert.strictEqual(response.status, ResetStatusEnumType.Rejected)
-      if (response.statusInfo == null) { assert.fail('Expected statusInfo to be defined') }
+      if (response.statusInfo == null) {
+        assert.fail('Expected statusInfo to be defined')
+      }
       assert.strictEqual(response.statusInfo.reasonCode, ReasonCodeEnumType.UnknownEvse)
-      if (response.statusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      if (response.statusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
       assert.ok(response.statusInfo.additionalInfo.includes('EVSE 999'))
     })
 
@@ -184,12 +194,16 @@ await describe('B11 & B12 - Reset', async () => {
 
       assert.notStrictEqual(response, undefined)
       assert.strictEqual(response.status, ResetStatusEnumType.Rejected)
-      if (response.statusInfo == null) { assert.fail('Expected statusInfo to be defined') }
+      if (response.statusInfo == null) {
+        assert.fail('Expected statusInfo to be defined')
+      }
       assert.strictEqual(response.statusInfo.reasonCode, ReasonCodeEnumType.UnsupportedRequest)
-      if (response.statusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
-      assert.ok(response.statusInfo.additionalInfo.includes(
-        'does not support resetting individual EVSE'
-      ))
+      if (response.statusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
+      assert.ok(
+        response.statusInfo.additionalInfo.includes('does not support resetting individual EVSE')
+      )
 
       // Restore EVSE support
       Object.defineProperty(mockStation, 'hasEvses', {
@@ -278,9 +292,9 @@ await describe('B11 & B12 - Reset', async () => {
 
       assert.notStrictEqual(response, undefined)
       assert.notStrictEqual(response.status, undefined)
-      assert.ok([ResetStatusEnumType.Accepted, ResetStatusEnumType.Scheduled].includes(
-        response.status
-      ))
+      assert.ok(
+        [ResetStatusEnumType.Accepted, ResetStatusEnumType.Scheduled].includes(response.status)
+      )
     })
 
     await it('should reject EVSE reset when not supported with active transactions', async () => {
@@ -304,12 +318,16 @@ await describe('B11 & B12 - Reset', async () => {
 
       assert.notStrictEqual(response, undefined)
       assert.strictEqual(response.status, ResetStatusEnumType.Rejected)
-      if (response.statusInfo == null) { assert.fail('Expected statusInfo to be defined') }
+      if (response.statusInfo == null) {
+        assert.fail('Expected statusInfo to be defined')
+      }
       assert.strictEqual(response.statusInfo.reasonCode, ReasonCodeEnumType.UnsupportedRequest)
-      if (response.statusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
-      assert.ok(response.statusInfo.additionalInfo.includes(
-        'does not support resetting individual EVSE'
-      ))
+      if (response.statusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
+      assert.ok(
+        response.statusInfo.additionalInfo.includes('does not support resetting individual EVSE')
+      )
 
       // Restore EVSE support
       Object.defineProperty(mockStation, 'hasEvses', {

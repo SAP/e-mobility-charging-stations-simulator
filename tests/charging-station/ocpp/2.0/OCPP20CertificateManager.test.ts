@@ -65,7 +65,9 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
 
       assert.notStrictEqual(result, undefined)
       assert.strictEqual(result.success, true)
-      if (result.filePath == null) { assert.fail('Expected filePath to be defined') }
+      if (result.filePath == null) {
+        assert.fail('Expected filePath to be defined')
+      }
       assert.ok(result.filePath.includes(TEST_STATION_HASH_ID))
       assert.ok(result.filePath.includes('certs'))
       assert.match(result.filePath, /\.pem$/)
@@ -80,7 +82,9 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
 
       assert.notStrictEqual(result, undefined)
       assert.strictEqual(result.success, false)
-      if (result.error == null) { assert.fail('Expected error to be defined') }
+      if (result.error == null) {
+        assert.fail('Expected error to be defined')
+      }
       assert.ok(result.error.includes('Invalid PEM format'))
     })
 
@@ -105,7 +109,9 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
 
       assert.notStrictEqual(result, undefined)
       assert.strictEqual(result.success, true)
-      if (result.filePath == null) { assert.fail('Expected filePath to be defined') }
+      if (result.filePath == null) {
+        assert.fail('Expected filePath to be defined')
+      }
       assert.ok(result.filePath.includes('V2GRootCertificate'))
     })
   })
@@ -339,9 +345,11 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
 
       assert.notStrictEqual(path, undefined)
       const filename = path.split('/').pop()
-      if (filename == null) { assert.fail('Expected filename to be defined') }
-      assert.ok(!(filename).includes(':'))
-      assert.ok(!(filename).includes('/'))
+      if (filename == null) {
+        assert.fail('Expected filename to be defined')
+      }
+      assert.ok(!filename.includes(':'))
+      assert.ok(!filename.includes('/'))
     })
 
     await it('should return different paths for different certificate types', () => {
@@ -411,7 +419,7 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
 
       const path = manager.getCertificatePath(maliciousHashId, TEST_CERT_TYPE, 'SERIAL-001')
 
-      assert.ok(!(path).includes('..'))
+      assert.ok(!path.includes('..'))
     })
   })
 })

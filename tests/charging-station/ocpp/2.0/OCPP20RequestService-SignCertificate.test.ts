@@ -121,7 +121,8 @@ await describe('I02 - SignCertificate Request', async () => {
 
       const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
 
-      assert.strictEqual(sentPayload.certificateType,
+      assert.strictEqual(
+        sentPayload.certificateType,
         CertificateSigningUseEnumType.ChargingStationCertificate
       )
     })

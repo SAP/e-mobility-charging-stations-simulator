@@ -82,8 +82,13 @@ await describe('OCPP16 Integration — Charging Profile Management', async () =>
     assert.strictEqual(getResponse.status, GenericStatus.Accepted)
     assert.strictEqual(getResponse.connectorId, 1)
     assert.notStrictEqual(getResponse.chargingSchedule, undefined)
-    if (getResponse.chargingSchedule == null) { assert.fail('Expected chargingSchedule to be defined') }
-    assert.strictEqual(getResponse.chargingSchedule.chargingRateUnit, OCPP16ChargingRateUnitType.AMPERE)
+    if (getResponse.chargingSchedule == null) {
+      assert.fail('Expected chargingSchedule to be defined')
+    }
+    assert.strictEqual(
+      getResponse.chargingSchedule.chargingRateUnit,
+      OCPP16ChargingRateUnitType.AMPERE
+    )
     assert.notStrictEqual(getResponse.chargingSchedule.chargingSchedulePeriod, undefined)
     assert.notStrictEqual(getResponse.scheduleStart, undefined)
   })
