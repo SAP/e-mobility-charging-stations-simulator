@@ -4,7 +4,7 @@
  *   accepted triggers, unimplemented triggers, and feature profile validation
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import {
@@ -47,7 +47,7 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
       })
 
       // Assert
-      expect(response.status).toBe(OCPP16TriggerMessageStatus.ACCEPTED)
+      assert.strictEqual(response.status, OCPP16TriggerMessageStatus.ACCEPTED)
     })
   })
 
@@ -63,7 +63,7 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
       })
 
       // Assert
-      expect(response.status).toBe(OCPP16TriggerMessageStatus.ACCEPTED)
+      assert.strictEqual(response.status, OCPP16TriggerMessageStatus.ACCEPTED)
     })
   })
 
@@ -79,7 +79,7 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
       })
 
       // Assert
-      expect(response.status).toBe(OCPP16TriggerMessageStatus.ACCEPTED)
+      assert.strictEqual(response.status, OCPP16TriggerMessageStatus.ACCEPTED)
     })
   })
 
@@ -95,7 +95,7 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
       })
 
       // Assert
-      expect(response.status).toBe(OCPP16TriggerMessageStatus.NOT_IMPLEMENTED)
+      assert.strictEqual(response.status, OCPP16TriggerMessageStatus.NOT_IMPLEMENTED)
     })
   })
 
@@ -110,7 +110,7 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
       })
 
       // Assert
-      expect(response.status).toBe(OCPP16TriggerMessageStatus.NOT_IMPLEMENTED)
+      assert.strictEqual(response.status, OCPP16TriggerMessageStatus.NOT_IMPLEMENTED)
     })
   })
 
@@ -125,7 +125,7 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
       })
 
       // Assert
-      expect(response.status).toBe(OCPP16TriggerMessageStatus.NOT_IMPLEMENTED)
+      assert.strictEqual(response.status, OCPP16TriggerMessageStatus.NOT_IMPLEMENTED)
     })
   })
 
@@ -140,7 +140,7 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
       })
 
       // Assert
-      expect(response.status).toBe(OCPP16TriggerMessageStatus.NOT_IMPLEMENTED)
+      assert.strictEqual(response.status, OCPP16TriggerMessageStatus.NOT_IMPLEMENTED)
     })
   })
 
@@ -160,7 +160,7 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
       })
 
       // Assert
-      expect(response.status).toBe(OCPP16TriggerMessageStatus.NOT_IMPLEMENTED)
+      assert.strictEqual(response.status, OCPP16TriggerMessageStatus.NOT_IMPLEMENTED)
     })
   })
 })

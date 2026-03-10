@@ -5,7 +5,7 @@
  * active transaction scheduling, and invalid connector rejection.
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
@@ -54,7 +54,7 @@ await describe('OCPP16IncomingRequestService — ChangeAvailability', async () =
       const response = await testableService.handleRequestChangeAvailability(station, request)
 
       // Assert
-      expect(response.status).toBe(OCPP16AvailabilityStatus.ACCEPTED)
+      assert.strictEqual(response.status, OCPP16AvailabilityStatus.ACCEPTED)
     })
 
     await it('should return Accepted when setting all connectors to Inoperative', async () => {
@@ -68,7 +68,7 @@ await describe('OCPP16IncomingRequestService — ChangeAvailability', async () =
       const response = await testableService.handleRequestChangeAvailability(station, request)
 
       // Assert
-      expect(response.status).toBe(OCPP16AvailabilityStatus.ACCEPTED)
+      assert.strictEqual(response.status, OCPP16AvailabilityStatus.ACCEPTED)
     })
   })
 
@@ -86,7 +86,7 @@ await describe('OCPP16IncomingRequestService — ChangeAvailability', async () =
       const response = await testableService.handleRequestChangeAvailability(station, request)
 
       // Assert
-      expect(response.status).toBe(OCPP16AvailabilityStatus.ACCEPTED)
+      assert.strictEqual(response.status, OCPP16AvailabilityStatus.ACCEPTED)
     })
 
     await it('should return Accepted when setting connector to Inoperative', async () => {
@@ -100,7 +100,7 @@ await describe('OCPP16IncomingRequestService — ChangeAvailability', async () =
       const response = await testableService.handleRequestChangeAvailability(station, request)
 
       // Assert
-      expect(response.status).toBe(OCPP16AvailabilityStatus.ACCEPTED)
+      assert.strictEqual(response.status, OCPP16AvailabilityStatus.ACCEPTED)
     })
   })
 
@@ -121,7 +121,7 @@ await describe('OCPP16IncomingRequestService — ChangeAvailability', async () =
     const response = await testableService.handleRequestChangeAvailability(station, request)
 
     // Assert
-    expect(response.status).toBe(OCPP16AvailabilityStatus.SCHEDULED)
+    assert.strictEqual(response.status, OCPP16AvailabilityStatus.SCHEDULED)
   })
 
   // ─── Invalid connectorId → Rejected ──────────────────────────────────
@@ -137,6 +137,6 @@ await describe('OCPP16IncomingRequestService — ChangeAvailability', async () =
     const response = await testableService.handleRequestChangeAvailability(station, request)
 
     // Assert
-    expect(response.status).toBe(OCPP16AvailabilityStatus.REJECTED)
+    assert.strictEqual(response.status, OCPP16AvailabilityStatus.REJECTED)
   })
 })

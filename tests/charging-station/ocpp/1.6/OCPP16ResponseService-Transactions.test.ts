@@ -5,7 +5,7 @@
  * reservation handling, connector state mutations, and transaction lifecycle.
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
@@ -92,10 +92,11 @@ await describe('OCPP16ResponseService — StartTransaction and StopTransaction',
 
       // Assert
       const connector = station.getConnectorStatus(connectorId)
-      expect(connector?.transactionId).toBe(transactionId)
-      expect(connector?.transactionStarted).toBe(true)
-      expect(connector?.transactionIdTag).toBe('TEST-TAG-001')
-      expect(connector?.transactionEnergyActiveImportRegisterValue).toBe(0)
+      if (connector == null) { assert.fail('Expected connector to be defined') }
+      assert.strictEqual(connector.transactionId, transactionId)
+      assert.strictEqual(connector.transactionStarted, true)
+      assert.strictEqual(connector.transactionIdTag, 'TEST-TAG-001')
+      assert.strictEqual(connector.transactionEnergyActiveImportRegisterValue, 0)
     })
 
     // @spec §5.14 — TC_004_CS
@@ -123,8 +124,9 @@ await describe('OCPP16ResponseService — StartTransaction and StopTransaction',
 
       // Assert — connector should be reset (no transactionId)
       const connector = station.getConnectorStatus(connectorId)
-      expect(connector?.transactionStarted).toBe(false)
-      expect(connector?.transactionId).toBe(undefined)
+      if (connector == null) { assert.fail('Expected connector to be defined') }
+      assert.strictEqual(connector.transactionStarted, false)
+      assert.strictEqual(connector.transactionId, undefined)
     })
 
     // @spec §5.14 — TC_010_CS
@@ -163,9 +165,10 @@ await describe('OCPP16ResponseService — StartTransaction and StopTransaction',
 
       // Assert — reservation should be cleared
       const connectorAfter = station.getConnectorStatus(connectorId)
-      expect(connectorAfter?.reservation).toBe(undefined)
-      expect(connectorAfter?.transactionId).toBe(100)
-      expect(connectorAfter?.transactionStarted).toBe(true)
+      if (connectorAfter == null) { assert.fail('Expected connector to be defined') }
+      assert.strictEqual(connectorAfter.reservation, undefined)
+      assert.strictEqual(connectorAfter.transactionId, 100)
+      assert.strictEqual(connectorAfter.transactionStarted, true)
     })
 
     await it('should set transactionStarted and transactionStart on Accepted response', async () => {
@@ -193,8 +196,9 @@ await describe('OCPP16ResponseService — StartTransaction and StopTransaction',
 
       // Assert
       const connector = station.getConnectorStatus(connectorId)
-      expect(connector?.transactionStarted).toBe(true)
-      expect(connector?.transactionStart).toStrictEqual(requestTimestamp)
+      if (connector == null) { assert.fail('Expected connector to be defined') }
+      assert.strictEqual(connector.transactionStarted, true)
+      assert.deepStrictEqual(connector.transactionStart, requestTimestamp)
     })
 
     await it('should reset connector on rejected with Invalid status', async () => {
@@ -221,9 +225,10 @@ await describe('OCPP16ResponseService — StartTransaction and StopTransaction',
 
       // Assert — connector should be reset
       const connector = station.getConnectorStatus(connectorId)
-      expect(connector?.transactionStarted).toBe(false)
-      expect(connector?.transactionId).toBe(undefined)
-      expect(connector?.transactionIdTag).toBe(undefined)
+      if (connector == null) { assert.fail('Expected connector to be defined') }
+      assert.strictEqual(connector.transactionStarted, false)
+      assert.strictEqual(connector.transactionId, undefined)
+      assert.strictEqual(connector.transactionIdTag, undefined)
     })
   })
 
@@ -253,8 +258,9 @@ await describe('OCPP16ResponseService — StartTransaction and StopTransaction',
 
       // Assert — connector should be reset after stop
       const connector = station.getConnectorStatus(1)
-      expect(connector?.transactionStarted).toBe(false)
-      expect(connector?.transactionId).toBe(undefined)
+      if (connector == null) { assert.fail('Expected connector to be defined') }
+      assert.strictEqual(connector.transactionStarted, false)
+      assert.strictEqual(connector.transactionId, undefined)
     })
 
     // @spec §5.16 — TC_072_CS
@@ -278,8 +284,9 @@ await describe('OCPP16ResponseService — StartTransaction and StopTransaction',
 
       // Assert — connector should still be reset
       const connector = station.getConnectorStatus(1)
-      expect(connector?.transactionStarted).toBe(false)
-      expect(connector?.transactionId).toBe(undefined)
+      if (connector == null) { assert.fail('Expected connector to be defined') }
+      assert.strictEqual(connector.transactionStarted, false)
+      assert.strictEqual(connector.transactionId, undefined)
     })
 
     await it('should clear transactionIdTag and energy register after stop', async () => {
@@ -308,11 +315,12 @@ await describe('OCPP16ResponseService — StartTransaction and StopTransaction',
 
       // Assert
       const connector = station.getConnectorStatus(1)
-      expect(connector?.transactionStarted).toBe(false)
-      expect(connector?.transactionId).toBe(undefined)
-      expect(connector?.transactionIdTag).toBe(undefined)
-      expect(connector?.transactionEnergyActiveImportRegisterValue).toBe(0)
-      expect(connector?.transactionRemoteStarted).toBe(false)
+      if (connector == null) { assert.fail('Expected connector to be defined') }
+      assert.strictEqual(connector.transactionStarted, false)
+      assert.strictEqual(connector.transactionId, undefined)
+      assert.strictEqual(connector.transactionIdTag, undefined)
+      assert.strictEqual(connector.transactionEnergyActiveImportRegisterValue, 0)
+      assert.strictEqual(connector.transactionRemoteStarted, false)
     })
 
     await it('should not throw when transactionId does not match any connector', async () => {

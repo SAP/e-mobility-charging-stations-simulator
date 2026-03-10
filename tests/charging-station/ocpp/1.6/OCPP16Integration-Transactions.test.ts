@@ -6,7 +6,7 @@
  * and ResponseService boundaries for the OCPP 1.6 transaction lifecycle.
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
@@ -128,7 +128,7 @@ await describe('OCPP16 Integration — Transaction Lifecycle', async () => {
       remoteStartRequest
     )
 
-    expect(remoteStartResponse.status).toBe(GenericStatus.Accepted)
+    assert.strictEqual(remoteStartResponse.status, GenericStatus.Accepted)
 
     // Step 2: StartTransaction response — CSMS accepts the transaction
     const startTxRequest: OCPP16StartTransactionRequest = {
@@ -151,9 +151,10 @@ await describe('OCPP16 Integration — Transaction Lifecycle', async () => {
 
     // Verify connector state after StartTransaction accepted
     const connectorAfterStart = station.getConnectorStatus(connectorId)
-    expect(connectorAfterStart?.transactionStarted).toBe(true)
-    expect(connectorAfterStart?.transactionId).toBe(transactionId)
-    expect(connectorAfterStart?.transactionIdTag).toBe(idTag)
+    if (connectorAfterStart == null) { assert.fail('Expected connector to be defined') }
+    assert.strictEqual(connectorAfterStart.transactionStarted, true)
+    assert.strictEqual(connectorAfterStart.transactionId, transactionId)
+    assert.strictEqual(connectorAfterStart.transactionIdTag, idTag)
 
     // Step 3: StopTransaction response — transaction ends
     const stopTxRequest: OCPP16StopTransactionRequest = {
@@ -174,9 +175,10 @@ await describe('OCPP16 Integration — Transaction Lifecycle', async () => {
 
     // Verify connector state is reset after StopTransaction
     const connectorAfterStop = station.getConnectorStatus(connectorId)
-    expect(connectorAfterStop?.transactionStarted).toBe(false)
-    expect(connectorAfterStop?.transactionId).toBe(undefined)
-    expect(connectorAfterStop?.transactionIdTag).toBe(undefined)
+    if (connectorAfterStop == null) { assert.fail('Expected connector to be defined') }
+    assert.strictEqual(connectorAfterStop.transactionStarted, false)
+    assert.strictEqual(connectorAfterStop.transactionId, undefined)
+    assert.strictEqual(connectorAfterStop.transactionIdTag, undefined)
   })
 
   // ─── Remote stop path ────────────────────────────────────────────────
@@ -198,7 +200,7 @@ await describe('OCPP16 Integration — Transaction Lifecycle', async () => {
     )
 
     // Assert: remote stop is accepted
-    expect(remoteStopResponse.status).toBe(GenericStatus.Accepted)
+    assert.strictEqual(remoteStopResponse.status, GenericStatus.Accepted)
   })
 
   await it('should reject RemoteStopTransaction for a non-existing transaction', () => {
@@ -212,7 +214,7 @@ await describe('OCPP16 Integration — Transaction Lifecycle', async () => {
     )
 
     // Assert: remote stop is rejected
-    expect(remoteStopResponse.status).toBe(GenericStatus.Rejected)
+    assert.strictEqual(remoteStopResponse.status, GenericStatus.Rejected)
   })
 
   // ─── Authorization failure path ──────────────────────────────────────
@@ -234,9 +236,10 @@ await describe('OCPP16 Integration — Transaction Lifecycle', async () => {
     const response = await testableService.handleRequestRemoteStartTransaction(station, request)
 
     // Assert: rejected, no transaction started
-    expect(response.status).toBe(GenericStatus.Rejected)
-    expect(connectorStatus?.transactionStarted).toBe(false)
-    expect(connectorStatus?.transactionId).toBe(undefined)
+    assert.strictEqual(response.status, GenericStatus.Rejected)
+    if (connectorStatus == null) { assert.fail('Expected connector to be defined') }
+    assert.strictEqual(connectorStatus.transactionStarted, false)
+    assert.strictEqual(connectorStatus.transactionId, undefined)
   })
 
   // ─── Transaction rejection path ──────────────────────────────────────
@@ -266,8 +269,9 @@ await describe('OCPP16 Integration — Transaction Lifecycle', async () => {
 
     // Assert: connector should be reset, no active transaction
     const connector = station.getConnectorStatus(connectorId)
-    expect(connector?.transactionStarted).toBe(false)
-    expect(connector?.transactionId).toBe(undefined)
+    if (connector == null) { assert.fail('Expected connector to be defined') }
+    assert.strictEqual(connector.transactionStarted, false)
+    assert.strictEqual(connector.transactionId, undefined)
   })
 
   // ─── State consistency ───────────────────────────────────────────────
@@ -279,14 +283,14 @@ await describe('OCPP16 Integration — Transaction Lifecycle', async () => {
 
     // Verify initial state
     const connectorBefore = station.getConnectorStatus(connectorId)
-    expect(connectorBefore?.status).toBe(OCPP16ChargePointStatus.Available)
+    assert.strictEqual(connectorBefore?.status, OCPP16ChargePointStatus.Available)
 
     // Step 1: RemoteStart accepted
     const remoteStartResponse = await testableService.handleRequestRemoteStartTransaction(
       station,
       { connectorId, idTag }
     )
-    expect(remoteStartResponse.status).toBe(GenericStatus.Accepted)
+    assert.strictEqual(remoteStartResponse.status, GenericStatus.Accepted)
 
     // Step 2: StartTransaction accepted — connector moves to Charging
     const startTxRequest: OCPP16StartTransactionRequest = {
@@ -308,8 +312,9 @@ await describe('OCPP16 Integration — Transaction Lifecycle', async () => {
     )
 
     const connectorDuringTx = station.getConnectorStatus(connectorId)
-    expect(connectorDuringTx?.transactionStarted).toBe(true)
-    expect(connectorDuringTx?.status).toBe(OCPP16ChargePointStatus.Charging)
+    if (connectorDuringTx == null) { assert.fail('Expected connector to be defined') }
+    assert.strictEqual(connectorDuringTx.transactionStarted, true)
+    assert.strictEqual(connectorDuringTx.status, OCPP16ChargePointStatus.Charging)
 
     // Step 3: StopTransaction — connector returns to Available
     const stopTxRequest: OCPP16StopTransactionRequest = {
@@ -330,10 +335,11 @@ await describe('OCPP16 Integration — Transaction Lifecycle', async () => {
 
     // Verify: connector is back to Available with no active transaction
     const connectorAfter = station.getConnectorStatus(connectorId)
-    expect(connectorAfter?.status).toBe(OCPP16ChargePointStatus.Available)
-    expect(connectorAfter?.transactionStarted).toBe(false)
-    expect(connectorAfter?.transactionId).toBe(undefined)
-    expect(connectorAfter?.transactionIdTag).toBe(undefined)
+    if (connectorAfter == null) { assert.fail('Expected connector to be defined') }
+    assert.strictEqual(connectorAfter.status, OCPP16ChargePointStatus.Available)
+    assert.strictEqual(connectorAfter.transactionStarted, false)
+    assert.strictEqual(connectorAfter.transactionId, undefined)
+    assert.strictEqual(connectorAfter.transactionIdTag, undefined)
   })
 
   // ─── Cross-service: RemoteStop with active transaction ───────────────
@@ -364,14 +370,15 @@ await describe('OCPP16 Integration — Transaction Lifecycle', async () => {
 
     // Verify transaction is active
     const connectorDuring = station.getConnectorStatus(connectorId)
-    expect(connectorDuring?.transactionStarted).toBe(true)
-    expect(connectorDuring?.transactionId).toBe(transactionId)
+    if (connectorDuring == null) { assert.fail('Expected connector to be defined') }
+    assert.strictEqual(connectorDuring.transactionStarted, true)
+    assert.strictEqual(connectorDuring.transactionId, transactionId)
 
     // Act: RemoteStopTransaction via incoming request service
     const remoteStopResponse = testableService.handleRequestRemoteStopTransaction(station, {
       transactionId,
     })
-    expect(remoteStopResponse.status).toBe(GenericStatus.Accepted)
+    assert.strictEqual(remoteStopResponse.status, GenericStatus.Accepted)
 
     // Act: Complete the stop via response service
     const stopTxRequest: OCPP16StopTransactionRequest = {
@@ -392,8 +399,9 @@ await describe('OCPP16 Integration — Transaction Lifecycle', async () => {
 
     // Assert: connector fully reset
     const connectorAfter = station.getConnectorStatus(connectorId)
-    expect(connectorAfter?.transactionStarted).toBe(false)
-    expect(connectorAfter?.transactionId).toBe(undefined)
-    expect(connectorAfter?.status).toBe(OCPP16ChargePointStatus.Available)
+    if (connectorAfter == null) { assert.fail('Expected connector to be defined') }
+    assert.strictEqual(connectorAfter.transactionStarted, false)
+    assert.strictEqual(connectorAfter.transactionId, undefined)
+    assert.strictEqual(connectorAfter.status, OCPP16ChargePointStatus.Available)
   })
 })

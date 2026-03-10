@@ -10,7 +10,7 @@
  * - §4.2 AuthorizeResponse: No matching connector leaves state unchanged
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { OCPP16AuthorizeRequest, OCPP16AuthorizeResponse } from '../../../../src/types/ocpp/1.6/Transaction.js'
@@ -87,10 +87,10 @@ await describe('OCPP16ResponseService — BootNotification and Authorize', async
 
     await dispatchBootNotification(payload)
 
-    expect(ctx.station.bootNotificationResponse).toBe(payload)
-    expect(ctx.station.inAcceptedState()).toBe(true)
-    expect(emitSpy.mock.calls.length).toBe(1)
-    expect(emitSpy.mock.calls[0].arguments[0]).toBe(ChargingStationEvents.accepted)
+    assert.strictEqual(ctx.station.bootNotificationResponse, payload)
+    assert.strictEqual(ctx.station.inAcceptedState(), true)
+    assert.strictEqual(emitSpy.mock.calls.length, 1)
+    assert.strictEqual(emitSpy.mock.calls[0].arguments[0], ChargingStationEvents.accepted)
   })
 
   // @spec §4.1 — TC_002_CS
@@ -104,11 +104,11 @@ await describe('OCPP16ResponseService — BootNotification and Authorize', async
 
     await dispatchBootNotification(payload)
 
-    expect(ctx.station.bootNotificationResponse).toBe(payload)
-    expect(ctx.station.inPendingState()).toBe(true)
-    expect(ctx.station.inAcceptedState()).toBe(false)
-    expect(emitSpy.mock.calls.length).toBe(1)
-    expect(emitSpy.mock.calls[0].arguments[0]).toBe(ChargingStationEvents.pending)
+    assert.strictEqual(ctx.station.bootNotificationResponse, payload)
+    assert.strictEqual(ctx.station.inPendingState(), true)
+    assert.strictEqual(ctx.station.inAcceptedState(), false)
+    assert.strictEqual(emitSpy.mock.calls.length, 1)
+    assert.strictEqual(emitSpy.mock.calls[0].arguments[0], ChargingStationEvents.pending)
   })
 
   await it('should store response and emit rejected event for Rejected status', async () => {
@@ -121,11 +121,11 @@ await describe('OCPP16ResponseService — BootNotification and Authorize', async
 
     await dispatchBootNotification(payload)
 
-    expect(ctx.station.bootNotificationResponse).toBe(payload)
-    expect(ctx.station.inRejectedState()).toBe(true)
-    expect(ctx.station.inAcceptedState()).toBe(false)
-    expect(emitSpy.mock.calls.length).toBe(1)
-    expect(emitSpy.mock.calls[0].arguments[0]).toBe(ChargingStationEvents.rejected)
+    assert.strictEqual(ctx.station.bootNotificationResponse, payload)
+    assert.strictEqual(ctx.station.inRejectedState(), true)
+    assert.strictEqual(ctx.station.inAcceptedState(), false)
+    assert.strictEqual(emitSpy.mock.calls.length, 1)
+    assert.strictEqual(emitSpy.mock.calls[0].arguments[0], ChargingStationEvents.rejected)
   })
 
   await it('should update HeartbeatInterval configuration key from response interval', async () => {
@@ -138,20 +138,20 @@ await describe('OCPP16ResponseService — BootNotification and Authorize', async
     await dispatchBootNotification(payload)
 
     const configKeys = ctx.station.ocppConfiguration?.configurationKey
-    expect(configKeys).toBeDefined()
+    assert.notStrictEqual(configKeys, undefined)
 
     const heartbeatKey = configKeys?.find(
       k => k.key === (OCPP16StandardParametersKey.HeartbeatInterval as string)
     )
-    expect(heartbeatKey).toBeDefined()
-    expect(heartbeatKey?.value).toBe('120')
+    assert.notStrictEqual(heartbeatKey, undefined)
+    assert.strictEqual(heartbeatKey?.value, '120')
 
     // Handler also sets the variant HeartBeatInterval (hidden)
     const heartBeatKey = configKeys?.find(
       k => k.key === (OCPP16StandardParametersKey.HeartBeatInterval as string)
     )
-    expect(heartBeatKey).toBeDefined()
-    expect(heartBeatKey?.value).toBe('120')
+    assert.notStrictEqual(heartBeatKey, undefined)
+    assert.strictEqual(heartBeatKey?.value, '120')
   })
 
   // ============================================================================
@@ -162,10 +162,8 @@ await describe('OCPP16ResponseService — BootNotification and Authorize', async
   await it('should set idTagAuthorized to true when idTagInfo status is Accepted', async () => {
     // Arrange — set authorizeIdTag on connector 1
     const connectorStatus = ctx.station.getConnectorStatus(1)
-    expect(connectorStatus).toBeDefined()
-    if (connectorStatus != null) {
-      connectorStatus.authorizeIdTag = 'TEST_TAG'
-    }
+    if (connectorStatus == null) { assert.fail('Expected connector status to be defined') }
+    connectorStatus.authorizeIdTag = 'TEST_TAG'
 
     // Act
     await dispatchAuthorize(
@@ -174,18 +172,16 @@ await describe('OCPP16ResponseService — BootNotification and Authorize', async
     )
 
     // Assert
-    expect(connectorStatus?.idTagAuthorized).toBe(true)
-    expect(connectorStatus?.authorizeIdTag).toBe('TEST_TAG')
+    assert.strictEqual(connectorStatus.idTagAuthorized, true)
+    assert.strictEqual(connectorStatus.authorizeIdTag, 'TEST_TAG')
   })
 
   // @spec §4.2 — TC_010_CS
   await it('should set idTagAuthorized to false and clear authorizeIdTag for non-Accepted status', async () => {
     // Arrange — set authorizeIdTag on connector 1
     const connectorStatus = ctx.station.getConnectorStatus(1)
-    expect(connectorStatus).toBeDefined()
-    if (connectorStatus != null) {
-      connectorStatus.authorizeIdTag = 'TEST_TAG'
-    }
+    if (connectorStatus == null) { assert.fail('Expected connector status to be defined') }
+    connectorStatus.authorizeIdTag = 'TEST_TAG'
 
     // Act — Blocked status
     await dispatchAuthorize(
@@ -194,14 +190,14 @@ await describe('OCPP16ResponseService — BootNotification and Authorize', async
     )
 
     // Assert
-    expect(connectorStatus?.idTagAuthorized).toBe(false)
-    expect(connectorStatus?.authorizeIdTag).toBeUndefined()
+    assert.strictEqual(connectorStatus.idTagAuthorized, false)
+    assert.strictEqual(connectorStatus.authorizeIdTag, undefined)
   })
 
   await it('should not change connector state when no connector matches authorizeIdTag', async () => {
     // Arrange — connector 1 has no authorizeIdTag matching the request
     const connectorStatus = ctx.station.getConnectorStatus(1)
-    expect(connectorStatus).toBeDefined()
+    assert.notStrictEqual(connectorStatus, undefined)
     const originalIdTagAuthorized = connectorStatus?.idTagAuthorized
 
     // Act — no connector has authorizeIdTag === 'UNKNOWN_TAG'
@@ -211,7 +207,7 @@ await describe('OCPP16ResponseService — BootNotification and Authorize', async
     )
 
     // Assert — no state change
-    expect(connectorStatus?.idTagAuthorized).toBe(originalIdTagAuthorized)
-    expect(connectorStatus?.authorizeIdTag).toBeUndefined()
+    assert.strictEqual(connectorStatus?.idTagAuthorized, originalIdTagAuthorized)
+    assert.strictEqual(connectorStatus?.authorizeIdTag, undefined)
   })
 })

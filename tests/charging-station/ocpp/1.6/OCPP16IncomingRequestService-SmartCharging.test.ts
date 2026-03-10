@@ -4,7 +4,7 @@
  *   and GetCompositeSchedule (§9.2) incoming request handlers
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type {
@@ -64,7 +64,7 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
       const response = testableService.handleRequestSetChargingProfile(station, request)
 
       // Assert
-      expect(response.status).toBe(OCPP16ChargingProfileStatus.ACCEPTED)
+      assert.strictEqual(response.status, OCPP16ChargingProfileStatus.ACCEPTED)
     })
 
     await it('should accept a ChargePointMaxProfile on connector 0', () => {
@@ -85,7 +85,7 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
       const response = testableService.handleRequestSetChargingProfile(station, request)
 
       // Assert
-      expect(response.status).toBe(OCPP16ChargingProfileStatus.ACCEPTED)
+      assert.strictEqual(response.status, OCPP16ChargingProfileStatus.ACCEPTED)
     })
 
     // @spec §9.3 — TC_058_CS
@@ -107,7 +107,7 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
       const response = testableService.handleRequestSetChargingProfile(station, request)
 
       // Assert
-      expect(response.status).toBe(OCPP16ChargingProfileStatus.REJECTED)
+      assert.strictEqual(response.status, OCPP16ChargingProfileStatus.REJECTED)
     })
 
     await it('should reject a ChargePointMaxProfile on a non-zero connector', () => {
@@ -128,7 +128,7 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
       const response = testableService.handleRequestSetChargingProfile(station, request)
 
       // Assert
-      expect(response.status).toBe(OCPP16ChargingProfileStatus.REJECTED)
+      assert.strictEqual(response.status, OCPP16ChargingProfileStatus.REJECTED)
     })
 
     await it('should return NotSupported when SmartCharging feature profile is not enabled', () => {
@@ -149,7 +149,7 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
       const response = testableService.handleRequestSetChargingProfile(station, request)
 
       // Assert
-      expect(response.status).toBe(OCPP16ChargingProfileStatus.NOT_SUPPORTED)
+      assert.strictEqual(response.status, OCPP16ChargingProfileStatus.NOT_SUPPORTED)
     })
   })
 
@@ -180,7 +180,7 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
       const response = testableService.handleRequestClearChargingProfile(station, request)
 
       // Assert
-      expect(response.status).toBe(OCPP16ClearChargingProfileStatus.ACCEPTED)
+      assert.strictEqual(response.status, OCPP16ClearChargingProfileStatus.ACCEPTED)
     })
 
     // @spec §9.1 — TC_056_CS
@@ -206,7 +206,7 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
       const response = testableService.handleRequestClearChargingProfile(station, request)
 
       // Assert
-      expect(response.status).toBe(OCPP16ClearChargingProfileStatus.ACCEPTED)
+      assert.strictEqual(response.status, OCPP16ClearChargingProfileStatus.ACCEPTED)
     })
 
     await it('should return Unknown when no matching profiles exist', () => {
@@ -232,7 +232,7 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
       const response = testableService.handleRequestClearChargingProfile(station, request)
 
       // Assert
-      expect(response.status).toBe(OCPP16ClearChargingProfileStatus.UNKNOWN)
+      assert.strictEqual(response.status, OCPP16ClearChargingProfileStatus.UNKNOWN)
     })
 
     await it('should return Unknown when SmartCharging feature profile is not enabled', () => {
@@ -251,7 +251,7 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
       const response = testableService.handleRequestClearChargingProfile(station, request)
 
       // Assert
-      expect(response.status).toBe(OCPP16ClearChargingProfileStatus.UNKNOWN)
+      assert.strictEqual(response.status, OCPP16ClearChargingProfileStatus.UNKNOWN)
     })
   })
 
@@ -285,10 +285,10 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
       const response = testableService.handleRequestGetCompositeSchedule(station, request)
 
       // Assert
-      expect(response.status).toBe(GenericStatus.Accepted)
-      expect(response.connectorId).toBe(1)
-      expect(response.chargingSchedule).toBeDefined()
-      expect(response.scheduleStart).toBeDefined()
+      assert.strictEqual(response.status, GenericStatus.Accepted)
+      assert.strictEqual(response.connectorId, 1)
+      assert.notStrictEqual(response.chargingSchedule, undefined)
+      assert.notStrictEqual(response.scheduleStart, undefined)
     })
 
     await it('should return Rejected for a non-existing connector', () => {
@@ -308,7 +308,7 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
       const response = testableService.handleRequestGetCompositeSchedule(station, request)
 
       // Assert
-      expect(response.status).toBe(GenericStatus.Rejected)
+      assert.strictEqual(response.status, GenericStatus.Rejected)
     })
 
     await it('should return Rejected for connector 0', () => {
@@ -328,7 +328,7 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
       const response = testableService.handleRequestGetCompositeSchedule(station, request)
 
       // Assert
-      expect(response.status).toBe(GenericStatus.Rejected)
+      assert.strictEqual(response.status, GenericStatus.Rejected)
     })
 
     await it('should return Rejected when no profiles are set on connector', () => {
@@ -357,7 +357,7 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
       const response = testableService.handleRequestGetCompositeSchedule(station, request)
 
       // Assert
-      expect(response.status).toBe(GenericStatus.Rejected)
+      assert.strictEqual(response.status, GenericStatus.Rejected)
     })
 
     await it('should return Rejected when SmartCharging feature profile is not enabled', () => {
@@ -377,7 +377,7 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
       const response = testableService.handleRequestGetCompositeSchedule(station, request)
 
       // Assert
-      expect(response.status).toBe(GenericStatus.Rejected)
+      assert.strictEqual(response.status, GenericStatus.Rejected)
     })
   })
 })

@@ -4,7 +4,7 @@
  *   incoming request handlers
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type {
@@ -54,7 +54,7 @@ await describe('OCPP16IncomingRequestService — Configuration', async () => {
     const response = testableService.handleRequestChangeConfiguration(station, request)
 
     // Assert
-    expect(response.status).toBe(OCPP16ConfigurationStatus.ACCEPTED)
+    assert.strictEqual(response.status, OCPP16ConfigurationStatus.ACCEPTED)
   })
 
   // @spec §5.4 — TC_031_CS: Change a readonly key → Rejected
@@ -76,7 +76,7 @@ await describe('OCPP16IncomingRequestService — Configuration', async () => {
     const response = testableService.handleRequestChangeConfiguration(station, request)
 
     // Assert
-    expect(response.status).toBe(OCPP16ConfigurationStatus.REJECTED)
+    assert.strictEqual(response.status, OCPP16ConfigurationStatus.REJECTED)
   })
 
   // @spec §5.4 — TC_032_CS: Change key with reboot: true → RebootRequired
@@ -100,7 +100,7 @@ await describe('OCPP16IncomingRequestService — Configuration', async () => {
     const response = testableService.handleRequestChangeConfiguration(station, request)
 
     // Assert
-    expect(response.status).toBe(OCPP16ConfigurationStatus.REBOOT_REQUIRED)
+    assert.strictEqual(response.status, OCPP16ConfigurationStatus.REBOOT_REQUIRED)
   })
 
   // @spec §5.4 — TC_033_CS: Change unknown key → NotSupported
@@ -116,7 +116,7 @@ await describe('OCPP16IncomingRequestService — Configuration', async () => {
     const response = testableService.handleRequestChangeConfiguration(station, request)
 
     // Assert
-    expect(response.status).toBe(OCPP16ConfigurationStatus.NOT_SUPPORTED)
+    assert.strictEqual(response.status, OCPP16ConfigurationStatus.NOT_SUPPORTED)
   })
 
   // ---------------------------------------------------------------------------
@@ -143,14 +143,14 @@ await describe('OCPP16IncomingRequestService — Configuration', async () => {
     const response = testableService.handleRequestGetConfiguration(station, request)
 
     // Assert
-    expect(response.configurationKey).toBeDefined()
-    expect(response.unknownKey).toBeDefined()
-    expect(response.configurationKey.length >= 2).toBe(true)
+    assert.notStrictEqual(response.configurationKey, undefined)
+    assert.notStrictEqual(response.unknownKey, undefined)
+    assert.strictEqual(response.configurationKey.length >= 2, true)
     const heartbeatKey = response.configurationKey.find(
       k => k.key === (OCPP16StandardParametersKey.HeartbeatInterval as string)
     )
-    expect(heartbeatKey).toBeDefined()
-    expect(heartbeatKey?.value).toBe('60')
+    assert.notStrictEqual(heartbeatKey, undefined)
+    assert.strictEqual(heartbeatKey?.value, '60')
   })
 
   // @spec §5.8 — TC_031_CS: Get specific existing key → returns matching key
@@ -170,12 +170,13 @@ await describe('OCPP16IncomingRequestService — Configuration', async () => {
     const response = testableService.handleRequestGetConfiguration(station, request)
 
     // Assert
-    expect(response.configurationKey.length).toBe(1)
-    expect(response.configurationKey[0].key).toBe(
+    assert.strictEqual(response.configurationKey.length, 1)
+    assert.strictEqual(
+      response.configurationKey[0].key,
       OCPP16StandardParametersKey.WebSocketPingInterval
     )
-    expect(response.configurationKey[0].value).toBe('10')
-    expect(response.unknownKey.length).toBe(0)
+    assert.strictEqual(response.configurationKey[0].value, '10')
+    assert.strictEqual(response.unknownKey.length, 0)
   })
 
   // @spec §5.8 — TC_032_CS: Get non-existent key → appears in unknownKey list
@@ -190,9 +191,9 @@ await describe('OCPP16IncomingRequestService — Configuration', async () => {
     const response = testableService.handleRequestGetConfiguration(station, request)
 
     // Assert
-    expect(response.configurationKey.length).toBe(0)
-    expect(response.unknownKey.length).toBe(1)
-    expect(response.unknownKey[0]).toBe('CompletelyUnknownKey')
+    assert.strictEqual(response.configurationKey.length, 0)
+    assert.strictEqual(response.unknownKey.length, 1)
+    assert.strictEqual(response.unknownKey[0], 'CompletelyUnknownKey')
   })
 
   // @spec §5.8 — TC_033_CS: Get mix of existing and non-existent keys
@@ -212,12 +213,13 @@ await describe('OCPP16IncomingRequestService — Configuration', async () => {
     const response = testableService.handleRequestGetConfiguration(station, request)
 
     // Assert
-    expect(response.configurationKey.length).toBe(1)
-    expect(response.configurationKey[0].key).toBe(
+    assert.strictEqual(response.configurationKey.length, 1)
+    assert.strictEqual(
+      response.configurationKey[0].key,
       OCPP16StandardParametersKey.HeartbeatInterval
     )
-    expect(response.configurationKey[0].value).toBe('45')
-    expect(response.unknownKey.length).toBe(1)
-    expect(response.unknownKey[0]).toBe('DoesNotExistKey')
+    assert.strictEqual(response.configurationKey[0].value, '45')
+    assert.strictEqual(response.unknownKey.length, 1)
+    assert.strictEqual(response.unknownKey[0], 'DoesNotExistKey')
   })
 })

@@ -3,7 +3,7 @@
  * @description Unit tests for OCPP 1.6 Reset incoming request handler (§5.13)
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ResetRequest } from '../../../../src/types/index.js'
@@ -41,10 +41,10 @@ await describe('OCPP16IncomingRequestService — Reset', async () => {
     const response = testableService.handleRequestReset(station, resetRequest)
 
     // Assert
-    expect(response).toBeDefined()
-    expect(typeof response).toBe('object')
-    expect(response.status).toBeDefined()
-    expect(response.status).toBe(GenericStatus.Accepted)
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(typeof response, 'object')
+    assert.notStrictEqual(response.status, undefined)
+    assert.strictEqual(response.status, GenericStatus.Accepted)
   })
 
   // @spec §5.13 — TC_023_CS: Soft reset without active transactions
@@ -60,10 +60,10 @@ await describe('OCPP16IncomingRequestService — Reset', async () => {
     const response = testableService.handleRequestReset(station, resetRequest)
 
     // Assert
-    expect(response).toBeDefined()
-    expect(typeof response).toBe('object')
-    expect(response.status).toBeDefined()
-    expect(response.status).toBe(GenericStatus.Accepted)
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(typeof response, 'object')
+    assert.notStrictEqual(response.status, undefined)
+    assert.strictEqual(response.status, GenericStatus.Accepted)
   })
 
   // @spec §5.13 — TC_024_CS: Hard reset with active transaction
@@ -85,10 +85,10 @@ await describe('OCPP16IncomingRequestService — Reset', async () => {
     const response = testableService.handleRequestReset(station, resetRequest)
 
     // Assert
-    expect(response).toBeDefined()
-    expect(typeof response).toBe('object')
-    expect(response.status).toBeDefined()
-    expect(response.status).toBe(GenericStatus.Accepted)
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(typeof response, 'object')
+    assert.notStrictEqual(response.status, undefined)
+    assert.strictEqual(response.status, GenericStatus.Accepted)
   })
 
   // @spec §5.13 — TC_025_CS: Soft reset with active transaction
@@ -110,10 +110,10 @@ await describe('OCPP16IncomingRequestService — Reset', async () => {
     const response = testableService.handleRequestReset(station, resetRequest)
 
     // Assert
-    expect(response).toBeDefined()
-    expect(typeof response).toBe('object')
-    expect(response.status).toBeDefined()
-    expect(response.status).toBe(GenericStatus.Accepted)
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(typeof response, 'object')
+    assert.notStrictEqual(response.status, undefined)
+    assert.strictEqual(response.status, GenericStatus.Accepted)
   })
 
   // Additional test: Verify response structure
@@ -129,9 +129,9 @@ await describe('OCPP16IncomingRequestService — Reset', async () => {
     const response = testableService.handleRequestReset(station, resetRequest)
 
     // Assert
-    expect(response).toBeDefined()
-    expect(response.status).toBeDefined()
-    expect(typeof response.status).toBe('string')
-    expect([GenericStatus.Accepted, GenericStatus.Rejected]).toContain(response.status)
+    assert.notStrictEqual(response, undefined)
+    assert.notStrictEqual(response.status, undefined)
+    assert.strictEqual(typeof response.status, 'string')
+    assert.ok([GenericStatus.Accepted, GenericStatus.Rejected].includes(response.status))
   })
 })

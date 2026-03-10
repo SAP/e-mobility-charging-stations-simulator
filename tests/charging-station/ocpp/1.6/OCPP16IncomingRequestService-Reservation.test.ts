@@ -4,7 +4,7 @@
  * incoming request handlers
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
@@ -89,7 +89,7 @@ await describe('OCPP16IncomingRequestService — Reservation', async () => {
       const response = await testableService.handleRequestReserveNow(station, request)
 
       // Assert
-      expect(response.status).toBe(OCPP16ReservationStatus.ACCEPTED)
+      assert.strictEqual(response.status, OCPP16ReservationStatus.ACCEPTED)
     })
 
     // @spec §8.2 — TC_050_CS
@@ -108,7 +108,7 @@ await describe('OCPP16IncomingRequestService — Reservation', async () => {
       const response = await testableService.handleRequestReserveNow(station, request)
 
       // Assert
-      expect(response.status).toBe(OCPP16ReservationStatus.ACCEPTED)
+      assert.strictEqual(response.status, OCPP16ReservationStatus.ACCEPTED)
     })
 
     // @spec §8.2 — TC_050_CS
@@ -127,7 +127,7 @@ await describe('OCPP16IncomingRequestService — Reservation', async () => {
       const response = await testableService.handleRequestReserveNow(station, request)
 
       // Assert
-      expect(response.status).toBe(OCPP16ReservationStatus.REJECTED)
+      assert.strictEqual(response.status, OCPP16ReservationStatus.REJECTED)
     })
 
     // @spec §8.2 — TC_052_CS
@@ -150,7 +150,7 @@ await describe('OCPP16IncomingRequestService — Reservation', async () => {
       const response = await testableService.handleRequestReserveNow(station, request)
 
       // Assert
-      expect(response.status).toBe(OCPP16ReservationStatus.OCCUPIED)
+      assert.strictEqual(response.status, OCPP16ReservationStatus.OCCUPIED)
     })
 
     await it('should reject reservation when feature profile is not enabled', async () => {
@@ -173,7 +173,7 @@ await describe('OCPP16IncomingRequestService — Reservation', async () => {
       const response = await testableService.handleRequestReserveNow(station, request)
 
       // Assert
-      expect(response.status).toBe(OCPP16ReservationStatus.REJECTED)
+      assert.strictEqual(response.status, OCPP16ReservationStatus.REJECTED)
     })
 
     await it('should reject reservation for non-existing connectorId', async () => {
@@ -191,7 +191,7 @@ await describe('OCPP16IncomingRequestService — Reservation', async () => {
       const response = await testableService.handleRequestReserveNow(station, request)
 
       // Assert
-      expect(response.status).toBe(OCPP16ReservationStatus.REJECTED)
+      assert.strictEqual(response.status, OCPP16ReservationStatus.REJECTED)
     })
   })
 
@@ -215,7 +215,7 @@ await describe('OCPP16IncomingRequestService — Reservation', async () => {
         reservationId: reservation.reservationId,
       }
       const reserveResponse = await testableService.handleRequestReserveNow(station, reserveRequest)
-      expect(reserveResponse.status).toBe(OCPP16ReservationStatus.ACCEPTED)
+      assert.strictEqual(reserveResponse.status, OCPP16ReservationStatus.ACCEPTED)
 
       // Act — cancel the reservation
       const cancelRequest: OCPP16CancelReservationRequest = {
@@ -224,7 +224,7 @@ await describe('OCPP16IncomingRequestService — Reservation', async () => {
       const response = await testableService.handleRequestCancelReservation(station, cancelRequest)
 
       // Assert
-      expect(response.status).toBe(GenericStatus.Accepted)
+      assert.strictEqual(response.status, GenericStatus.Accepted)
     })
 
     await it('should reject cancellation for non-existent reservation', async () => {
@@ -239,7 +239,7 @@ await describe('OCPP16IncomingRequestService — Reservation', async () => {
       const response = await testableService.handleRequestCancelReservation(station, cancelRequest)
 
       // Assert
-      expect(response.status).toBe(GenericStatus.Rejected)
+      assert.strictEqual(response.status, GenericStatus.Rejected)
     })
 
     await it('should reject cancellation when feature profile is not enabled', async () => {
@@ -259,7 +259,7 @@ await describe('OCPP16IncomingRequestService — Reservation', async () => {
       const response = await testableService.handleRequestCancelReservation(station, cancelRequest)
 
       // Assert
-      expect(response.status).toBe(GenericStatus.Rejected)
+      assert.strictEqual(response.status, GenericStatus.Rejected)
     })
   })
 })

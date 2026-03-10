@@ -5,7 +5,7 @@
  *   roundtrips for OCPP 1.6 configuration management flows
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type {
@@ -54,7 +54,7 @@ await describe('OCPP16 Integration — Configuration Management', async () => {
     const changeResponse = testableService.handleRequestChangeConfiguration(station, changeRequest)
 
     // Assert — Change accepted
-    expect(changeResponse.status).toBe(OCPP16ConfigurationStatus.ACCEPTED)
+    assert.strictEqual(changeResponse.status, OCPP16ConfigurationStatus.ACCEPTED)
 
     // Act — Get
     const getRequest: GetConfigurationRequest = {
@@ -63,12 +63,12 @@ await describe('OCPP16 Integration — Configuration Management', async () => {
     const getResponse = testableService.handleRequestGetConfiguration(station, getRequest)
 
     // Assert — Value matches what was set
-    expect(getResponse.configurationKey.length).toBe(1)
-    expect(getResponse.configurationKey[0].key).toBe(
+    assert.strictEqual(getResponse.configurationKey.length, 1)
+    assert.strictEqual(getResponse.configurationKey[0].key,
       OCPP16StandardParametersKey.MeterValueSampleInterval
     )
-    expect(getResponse.configurationKey[0].value).toBe('15')
-    expect(getResponse.unknownKey.length).toBe(0)
+    assert.strictEqual(getResponse.configurationKey[0].value, '15')
+    assert.strictEqual(getResponse.unknownKey.length, 0)
   })
 
   // ---------------------------------------------------------------------------
@@ -109,9 +109,9 @@ await describe('OCPP16 Integration — Configuration Management', async () => {
     })
 
     // Assert — All changes accepted
-    expect(change1.status).toBe(OCPP16ConfigurationStatus.ACCEPTED)
-    expect(change2.status).toBe(OCPP16ConfigurationStatus.ACCEPTED)
-    expect(change3.status).toBe(OCPP16ConfigurationStatus.ACCEPTED)
+    assert.strictEqual(change1.status, OCPP16ConfigurationStatus.ACCEPTED)
+    assert.strictEqual(change2.status, OCPP16ConfigurationStatus.ACCEPTED)
+    assert.strictEqual(change3.status, OCPP16ConfigurationStatus.ACCEPTED)
 
     // Act — Get all keys
     const getResponse = testableService.handleRequestGetConfiguration(station, {})
@@ -126,12 +126,12 @@ await describe('OCPP16 Integration — Configuration Management', async () => {
     const connKey = getResponse.configurationKey.find(
       k => k.key === (OCPP16StandardParametersKey.ConnectionTimeOut as string)
     )
-    expect(meterKey).toBeDefined()
-    expect(meterKey?.value).toBe('10')
-    expect(wsKey).toBeDefined()
-    expect(wsKey?.value).toBe('5')
-    expect(connKey).toBeDefined()
-    expect(connKey?.value).toBe('60')
+    assert.notStrictEqual(meterKey, undefined)
+    assert.strictEqual(meterKey?.value, '10')
+    assert.notStrictEqual(wsKey, undefined)
+    assert.strictEqual(wsKey?.value, '5')
+    assert.notStrictEqual(connKey, undefined)
+    assert.strictEqual(connKey?.value, '60')
   })
 
   // ---------------------------------------------------------------------------
@@ -156,7 +156,7 @@ await describe('OCPP16 Integration — Configuration Management', async () => {
     const changeResponse = testableService.handleRequestChangeConfiguration(station, changeRequest)
 
     // Assert — Rejected
-    expect(changeResponse.status).toBe(OCPP16ConfigurationStatus.REJECTED)
+    assert.strictEqual(changeResponse.status, OCPP16ConfigurationStatus.REJECTED)
 
     // Act — Verify value unchanged via GetConfiguration
     const getResponse = testableService.handleRequestGetConfiguration(station, {
@@ -164,9 +164,9 @@ await describe('OCPP16 Integration — Configuration Management', async () => {
     })
 
     // Assert — Original value preserved
-    expect(getResponse.configurationKey.length).toBe(1)
-    expect(getResponse.configurationKey[0].value).toBe('60')
-    expect(getResponse.configurationKey[0].readonly).toBe(true)
+    assert.strictEqual(getResponse.configurationKey.length, 1)
+    assert.strictEqual(getResponse.configurationKey[0].value, '60')
+    assert.strictEqual(getResponse.configurationKey[0].readonly, true)
   })
 
   // ---------------------------------------------------------------------------
@@ -191,7 +191,7 @@ await describe('OCPP16 Integration — Configuration Management', async () => {
     })
 
     // Assert — RebootRequired returned
-    expect(changeResponse.status).toBe(OCPP16ConfigurationStatus.REBOOT_REQUIRED)
+    assert.strictEqual(changeResponse.status, OCPP16ConfigurationStatus.REBOOT_REQUIRED)
 
     // Act — Verify value was actually updated despite reboot being needed
     const getResponse = testableService.handleRequestGetConfiguration(station, {
@@ -199,9 +199,9 @@ await describe('OCPP16 Integration — Configuration Management', async () => {
     })
 
     // Assert — Value updated
-    expect(getResponse.configurationKey.length).toBe(1)
-    expect(getResponse.configurationKey[0].key).toBe('RebootRequiredKey')
-    expect(getResponse.configurationKey[0].value).toBe('newValue')
+    assert.strictEqual(getResponse.configurationKey.length, 1)
+    assert.strictEqual(getResponse.configurationKey[0].key, 'RebootRequiredKey')
+    assert.strictEqual(getResponse.configurationKey[0].value, 'newValue')
   })
 
   // ---------------------------------------------------------------------------
@@ -219,7 +219,7 @@ await describe('OCPP16 Integration — Configuration Management', async () => {
     })
 
     // Assert — NotSupported
-    expect(changeResponse.status).toBe(OCPP16ConfigurationStatus.NOT_SUPPORTED)
+    assert.strictEqual(changeResponse.status, OCPP16ConfigurationStatus.NOT_SUPPORTED)
 
     // Act — Verify key is not in configuration
     const getResponse = testableService.handleRequestGetConfiguration(station, {
@@ -227,9 +227,9 @@ await describe('OCPP16 Integration — Configuration Management', async () => {
     })
 
     // Assert — Key appears in unknownKey list, not in configurationKey
-    expect(getResponse.configurationKey.length).toBe(0)
-    expect(getResponse.unknownKey.length).toBe(1)
-    expect(getResponse.unknownKey[0]).toBe('CompletelyUnknownConfigKey')
+    assert.strictEqual(getResponse.configurationKey.length, 0)
+    assert.strictEqual(getResponse.unknownKey.length, 1)
+    assert.strictEqual(getResponse.unknownKey[0], 'CompletelyUnknownConfigKey')
   })
 
   // ---------------------------------------------------------------------------
@@ -265,8 +265,8 @@ await describe('OCPP16 Integration — Configuration Management', async () => {
     const getResponse = testableService.handleRequestGetConfiguration(station, {})
 
     // Assert — All visible keys returned with correct values
-    expect(getResponse.configurationKey.length >= 3).toBe(true)
-    expect(getResponse.unknownKey.length).toBe(0)
+    assert.ok(getResponse.configurationKey.length >= 3)
+    assert.strictEqual(getResponse.unknownKey.length, 0)
 
     const heartbeat = getResponse.configurationKey.find(
       k => k.key === (OCPP16StandardParametersKey.HeartbeatInterval as string)
@@ -278,11 +278,11 @@ await describe('OCPP16 Integration — Configuration Management', async () => {
       k => k.key === 'VendorCustomKey'
     )
 
-    expect(heartbeat).toBeDefined()
-    expect(heartbeat?.value).toBe('30')
-    expect(meterInterval).toBeDefined()
-    expect(meterInterval?.value).toBe('20')
-    expect(vendorKey).toBeDefined()
-    expect(vendorKey?.value).toBe('updated')
+    assert.notStrictEqual(heartbeat, undefined)
+    assert.strictEqual(heartbeat?.value, '30')
+    assert.notStrictEqual(meterInterval, undefined)
+    assert.strictEqual(meterInterval?.value, '20')
+    assert.notStrictEqual(vendorKey, undefined)
+    assert.strictEqual(vendorKey?.value, 'updated')
   })
 })

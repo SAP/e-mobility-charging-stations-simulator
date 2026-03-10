@@ -3,7 +3,7 @@
  * @description Unit tests for OCPP 1.6 RemoteStartTransaction incoming request handler (§5.11)
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { RemoteStartTransactionRequest } from '../../../../src/types/index.js'
@@ -39,7 +39,7 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
     const response = await testableService.handleRequestRemoteStartTransaction(station, request)
 
     // Assert
-    expect(response.status).toBe(GenericStatus.Rejected)
+    assert.strictEqual(response.status, GenericStatus.Rejected)
   })
 
   // @spec §5.11 — TC_013_CS: Valid connectorId with available connector
@@ -55,7 +55,7 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
     const response = await testableService.handleRequestRemoteStartTransaction(station, request)
 
     // Assert
-    expect(response.status).toBe(GenericStatus.Accepted)
+    assert.strictEqual(response.status, GenericStatus.Accepted)
   })
 
   // @spec §5.11 — TC_014_CS: All connectors have active transactions, no connectorId specified
@@ -80,7 +80,7 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
     const response = await testableService.handleRequestRemoteStartTransaction(station, request)
 
     // Assert
-    expect(response.status).toBe(GenericStatus.Rejected)
+    assert.strictEqual(response.status, GenericStatus.Rejected)
   })
 
   // @spec §5.11 — TC_015_CS: No connectorId specified, finds first available connector
@@ -95,7 +95,7 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
     const response = await testableService.handleRequestRemoteStartTransaction(station, request)
 
     // Assert
-    expect(response.status).toBe(GenericStatus.Accepted)
+    assert.strictEqual(response.status, GenericStatus.Accepted)
   })
 
   // @spec §5.11 — Connector in Unavailable (Inoperative) status
@@ -118,7 +118,7 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
     const response = await testableService.handleRequestRemoteStartTransaction(station, request)
 
     // Assert
-    expect(response.status).toBe(GenericStatus.Rejected)
+    assert.strictEqual(response.status, GenericStatus.Rejected)
   })
 
   // @spec §5.11 — Station-level unavailability
@@ -141,7 +141,7 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
     const response = await testableService.handleRequestRemoteStartTransaction(station, request)
 
     // Assert
-    expect(response.status).toBe(GenericStatus.Rejected)
+    assert.strictEqual(response.status, GenericStatus.Rejected)
   })
 
   // @spec §5.11 — Non-existing connector
@@ -157,6 +157,6 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
     const response = await testableService.handleRequestRemoteStartTransaction(station, request)
 
     // Assert
-    expect(response.status).toBe(GenericStatus.Rejected)
+    assert.strictEqual(response.status, GenericStatus.Rejected)
   })
 })

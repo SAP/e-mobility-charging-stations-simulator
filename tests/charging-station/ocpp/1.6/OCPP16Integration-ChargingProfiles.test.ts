@@ -5,7 +5,7 @@
  *   ClearChargingProfile, and GetCompositeSchedule handlers for OCPP 1.6 Smart Charging
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type {
@@ -69,7 +69,7 @@ await describe('OCPP16 Integration — Charging Profile Management', async () =>
     const setResponse = testableService.handleRequestSetChargingProfile(station, setRequest)
 
     // Assert — Step 1: Profile accepted
-    expect(setResponse.status).toBe(OCPP16ChargingProfileStatus.ACCEPTED)
+    assert.strictEqual(setResponse.status, OCPP16ChargingProfileStatus.ACCEPTED)
 
     // Act — Step 2: Get composite schedule
     const getRequest: OCPP16GetCompositeScheduleRequest = {
@@ -79,12 +79,13 @@ await describe('OCPP16 Integration — Charging Profile Management', async () =>
     const getResponse = testableService.handleRequestGetCompositeSchedule(station, getRequest)
 
     // Assert — Step 2: Schedule returned from the set profile
-    expect(getResponse.status).toBe(GenericStatus.Accepted)
-    expect(getResponse.connectorId).toBe(1)
-    expect(getResponse.chargingSchedule).toBeDefined()
-    expect(getResponse.chargingSchedule?.chargingRateUnit).toBe(OCPP16ChargingRateUnitType.AMPERE)
-    expect(getResponse.chargingSchedule?.chargingSchedulePeriod).toBeDefined()
-    expect(getResponse.scheduleStart).toBeDefined()
+    assert.strictEqual(getResponse.status, GenericStatus.Accepted)
+    assert.strictEqual(getResponse.connectorId, 1)
+    assert.notStrictEqual(getResponse.chargingSchedule, undefined)
+    if (getResponse.chargingSchedule == null) { assert.fail('Expected chargingSchedule to be defined') }
+    assert.strictEqual(getResponse.chargingSchedule.chargingRateUnit, OCPP16ChargingRateUnitType.AMPERE)
+    assert.notStrictEqual(getResponse.chargingSchedule.chargingSchedulePeriod, undefined)
+    assert.notStrictEqual(getResponse.scheduleStart, undefined)
   })
 
   // ============================================================================
@@ -109,7 +110,7 @@ await describe('OCPP16 Integration — Charging Profile Management', async () =>
       connectorId: 1,
       csChargingProfiles: profile,
     })
-    expect(setResponse.status).toBe(OCPP16ChargingProfileStatus.ACCEPTED)
+    assert.strictEqual(setResponse.status, OCPP16ChargingProfileStatus.ACCEPTED)
 
     // Act — Step 2: Clear by connector ID
     const clearRequest: OCPP16ClearChargingProfileRequest = {
@@ -118,7 +119,7 @@ await describe('OCPP16 Integration — Charging Profile Management', async () =>
     const clearResponse = testableService.handleRequestClearChargingProfile(station, clearRequest)
 
     // Assert — Step 2: Clear accepted
-    expect(clearResponse.status).toBe(OCPP16ClearChargingProfileStatus.ACCEPTED)
+    assert.strictEqual(clearResponse.status, OCPP16ClearChargingProfileStatus.ACCEPTED)
 
     // Act — Step 3: Get composite schedule should now be Rejected (no profiles)
     const getRequest: OCPP16GetCompositeScheduleRequest = {
@@ -128,7 +129,7 @@ await describe('OCPP16 Integration — Charging Profile Management', async () =>
     const getResponse = testableService.handleRequestGetCompositeSchedule(station, getRequest)
 
     // Assert — Step 3: Rejected since all profiles were cleared
-    expect(getResponse.status).toBe(GenericStatus.Rejected)
+    assert.strictEqual(getResponse.status, GenericStatus.Rejected)
   })
 
   // ============================================================================
@@ -158,12 +159,12 @@ await describe('OCPP16 Integration — Charging Profile Management', async () =>
     })
 
     // Assert — Both accepted
-    expect(setLow.status).toBe(OCPP16ChargingProfileStatus.ACCEPTED)
-    expect(setHigh.status).toBe(OCPP16ChargingProfileStatus.ACCEPTED)
+    assert.strictEqual(setLow.status, OCPP16ChargingProfileStatus.ACCEPTED)
+    assert.strictEqual(setHigh.status, OCPP16ChargingProfileStatus.ACCEPTED)
 
     // Verify both profiles are stored
     const connectorStatus = station.getConnectorStatus(1)
-    expect(connectorStatus?.chargingProfiles?.length).toBe(2)
+    assert.strictEqual(connectorStatus?.chargingProfiles?.length, 2)
 
     // Act — Get composite schedule
     const getResponse = testableService.handleRequestGetCompositeSchedule(station, {
@@ -172,9 +173,9 @@ await describe('OCPP16 Integration — Charging Profile Management', async () =>
     })
 
     // Assert — Accepted with valid schedule
-    expect(getResponse.status).toBe(GenericStatus.Accepted)
-    expect(getResponse.connectorId).toBe(1)
-    expect(getResponse.chargingSchedule).toBeDefined()
+    assert.strictEqual(getResponse.status, GenericStatus.Accepted)
+    assert.strictEqual(getResponse.connectorId, 1)
+    assert.notStrictEqual(getResponse.chargingSchedule, undefined)
   })
 
   // ============================================================================
@@ -207,22 +208,21 @@ await describe('OCPP16 Integration — Charging Profile Management', async () =>
       connectorId: 1,
       csChargingProfiles: originalProfile,
     })
-    expect(setOriginal.status).toBe(OCPP16ChargingProfileStatus.ACCEPTED)
+    assert.strictEqual(setOriginal.status, OCPP16ChargingProfileStatus.ACCEPTED)
 
     // Act — Step 2: Set replacement (same stackLevel=0, same purpose=TxDefaultProfile)
     const setReplacement = testableService.handleRequestSetChargingProfile(station, {
       connectorId: 1,
       csChargingProfiles: replacementProfile,
     })
-    expect(setReplacement.status).toBe(OCPP16ChargingProfileStatus.ACCEPTED)
+    assert.strictEqual(setReplacement.status, OCPP16ChargingProfileStatus.ACCEPTED)
 
     // Assert — Only one profile stored (replacement overwrote original)
     const connectorStatus = station.getConnectorStatus(1)
-    expect(connectorStatus?.chargingProfiles?.length).toBe(1)
-    expect(connectorStatus?.chargingProfiles?.[0].chargingProfileId).toBe(5)
-    const storedProfile = connectorStatus?.chargingProfiles?.[0] as OCPP16ChargingProfile | undefined
-    expect(storedProfile?.chargingSchedule.chargingSchedulePeriod[0].limit)
-      .toBe(16)
+    assert.strictEqual(connectorStatus?.chargingProfiles?.length, 1)
+    assert.strictEqual(connectorStatus.chargingProfiles[0].chargingProfileId, 5)
+    const storedProfile = connectorStatus.chargingProfiles[0] as OCPP16ChargingProfile | undefined
+    assert.strictEqual(storedProfile?.chargingSchedule.chargingSchedulePeriod[0].limit, 16)
   })
 
   // ============================================================================
@@ -248,18 +248,18 @@ await describe('OCPP16 Integration — Charging Profile Management', async () =>
       connectorId: 1,
       csChargingProfiles: txDefaultProfile,
     })
-    expect(setTxDefault.status).toBe(OCPP16ChargingProfileStatus.ACCEPTED)
+    assert.strictEqual(setTxDefault.status, OCPP16ChargingProfileStatus.ACCEPTED)
 
     // Set ChargePointMaxProfile on connector 0
     const setChargePointMax = testableService.handleRequestSetChargingProfile(station, {
       connectorId: 0,
       csChargingProfiles: chargePointMaxProfile,
     })
-    expect(setChargePointMax.status).toBe(OCPP16ChargingProfileStatus.ACCEPTED)
+    assert.strictEqual(setChargePointMax.status, OCPP16ChargingProfileStatus.ACCEPTED)
 
     // Verify both connectors have profiles
-    expect(station.getConnectorStatus(1)?.chargingProfiles?.length).toBe(1)
-    expect(station.getConnectorStatus(0)?.chargingProfiles?.length).toBe(1)
+    assert.strictEqual(station.getConnectorStatus(1)?.chargingProfiles?.length, 1)
+    assert.strictEqual(station.getConnectorStatus(0)?.chargingProfiles?.length, 1)
 
     // Act — Clear only TxDefaultProfile purpose (no connectorId specified → scans all connectors)
     const clearRequest: OCPP16ClearChargingProfileRequest = {
@@ -268,14 +268,14 @@ await describe('OCPP16 Integration — Charging Profile Management', async () =>
     const clearResponse = testableService.handleRequestClearChargingProfile(station, clearRequest)
 
     // Assert — Clear accepted (TxDefaultProfile found and cleared)
-    expect(clearResponse.status).toBe(OCPP16ClearChargingProfileStatus.ACCEPTED)
+    assert.strictEqual(clearResponse.status, OCPP16ClearChargingProfileStatus.ACCEPTED)
 
     // Assert — TxDefaultProfile cleared from connector 1
-    expect(station.getConnectorStatus(1)?.chargingProfiles?.length).toBe(0)
+    assert.strictEqual(station.getConnectorStatus(1)?.chargingProfiles?.length, 0)
 
     // Assert — ChargePointMaxProfile on connector 0 is untouched
-    expect(station.getConnectorStatus(0)?.chargingProfiles?.length).toBe(1)
-    expect(station.getConnectorStatus(0)?.chargingProfiles?.[0].chargingProfileId).toBe(2)
+    assert.strictEqual(station.getConnectorStatus(0)?.chargingProfiles?.length, 1)
+    assert.strictEqual(station.getConnectorStatus(0)?.chargingProfiles?.[0].chargingProfileId, 2)
   })
 
   // ============================================================================
@@ -306,7 +306,7 @@ await describe('OCPP16 Integration — Charging Profile Management', async () =>
     })
 
     // Verify both stored
-    expect(station.getConnectorStatus(1)?.chargingProfiles?.length).toBe(2)
+    assert.strictEqual(station.getConnectorStatus(1)?.chargingProfiles?.length, 2)
 
     // Act — Clear only profile with ID 10
     const clearResponse = testableService.handleRequestClearChargingProfile(station, {
@@ -314,18 +314,18 @@ await describe('OCPP16 Integration — Charging Profile Management', async () =>
     })
 
     // Assert — Clear accepted
-    expect(clearResponse.status).toBe(OCPP16ClearChargingProfileStatus.ACCEPTED)
+    assert.strictEqual(clearResponse.status, OCPP16ClearChargingProfileStatus.ACCEPTED)
 
     // Assert — Only profile B remains
     const remaining = station.getConnectorStatus(1)?.chargingProfiles
-    expect(remaining?.length).toBe(1)
-    expect(remaining?.[0].chargingProfileId).toBe(20)
+    assert.strictEqual(remaining?.length, 1)
+    assert.strictEqual(remaining[0].chargingProfileId, 20)
 
     // Verify composite schedule still works with remaining profile
     const getResponse = testableService.handleRequestGetCompositeSchedule(station, {
       connectorId: 1,
       duration: 3600,
     })
-    expect(getResponse.status).toBe(GenericStatus.Accepted)
+    assert.strictEqual(getResponse.status, GenericStatus.Accepted)
   })
 })

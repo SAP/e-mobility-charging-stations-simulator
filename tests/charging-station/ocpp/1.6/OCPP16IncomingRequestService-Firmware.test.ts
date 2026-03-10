@@ -4,7 +4,7 @@
  *   incoming request handlers
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { GetDiagnosticsRequest } from '../../../../src/types/index.js'
@@ -51,8 +51,8 @@ await describe('OCPP16IncomingRequestService — Firmware', async () => {
       const response = await testableService.handleRequestGetDiagnostics(station, request)
 
       // Assert
-      expect(response).toBeDefined()
-      expect(Object.keys(response).length).toBe(0)
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(Object.keys(response).length, 0)
     })
 
     // @spec §6.1 — TC_047_CS
@@ -73,8 +73,8 @@ await describe('OCPP16IncomingRequestService — Firmware', async () => {
       const response = await testableService.handleRequestGetDiagnostics(station, request)
 
       // Assert
-      expect(response).toBeDefined()
-      expect(Object.keys(response).length).toBe(0)
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(Object.keys(response).length, 0)
     })
 
     await it('should return empty response when SupportedFeatureProfiles key is missing', async () => {
@@ -89,8 +89,8 @@ await describe('OCPP16IncomingRequestService — Firmware', async () => {
       const response = await testableService.handleRequestGetDiagnostics(station, request)
 
       // Assert
-      expect(response).toBeDefined()
-      expect(Object.keys(response).length).toBe(0)
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(Object.keys(response).length, 0)
     })
   })
 
@@ -113,8 +113,8 @@ await describe('OCPP16IncomingRequestService — Firmware', async () => {
       })
 
       // Assert
-      expect(response).toBeDefined()
-      expect(Object.keys(response).length).toBe(0)
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(Object.keys(response).length, 0)
     })
 
     await it('should return empty response when FirmwareManagement feature profile is not enabled', () => {
@@ -133,8 +133,8 @@ await describe('OCPP16IncomingRequestService — Firmware', async () => {
       })
 
       // Assert
-      expect(response).toBeDefined()
-      expect(Object.keys(response).length).toBe(0)
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(Object.keys(response).length, 0)
     })
 
     await it('should return empty response when firmware update is already in progress', () => {
@@ -156,8 +156,8 @@ await describe('OCPP16IncomingRequestService — Firmware', async () => {
       })
 
       // Assert
-      expect(response).toBeDefined()
-      expect(Object.keys(response).length).toBe(0)
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(Object.keys(response).length, 0)
     })
   })
 })

@@ -6,7 +6,7 @@
  * charging profile management, feature profile checking, and command support checks.
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
 import { OCPP16ServiceUtils } from '../../../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
@@ -62,11 +62,11 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       const meterValue = OCPP16ServiceUtils.buildTransactionBeginMeterValue(station, 1, 1000)
 
       // Assert
-      expect(meterValue).toBeDefined()
-      expect(meterValue.timestamp).toBeInstanceOf(Date)
-      expect(Array.isArray(meterValue.sampledValue)).toBe(true)
-      expect(meterValue.sampledValue.length).toBe(1)
-      expect(meterValue.sampledValue[0].context).toBe(OCPP16MeterValueContext.TRANSACTION_BEGIN)
+      assert.notStrictEqual(meterValue, undefined)
+      assert.ok(meterValue.timestamp instanceof Date)
+      assert.strictEqual(Array.isArray(meterValue.sampledValue), true)
+      assert.strictEqual(meterValue.sampledValue.length, 1)
+      assert.strictEqual(meterValue.sampledValue[0].context, OCPP16MeterValueContext.TRANSACTION_BEGIN)
     })
 
     await it('should apply Wh unit divider of 1 for meterStart', () => {
@@ -90,7 +90,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       const meterValue = OCPP16ServiceUtils.buildTransactionBeginMeterValue(station, 1, 5000)
 
       // Assert — Wh divider is 1, so value = 5000 / 1 = 5000
-      expect(meterValue.sampledValue[0].value).toBe('5000')
+      assert.strictEqual(meterValue.sampledValue[0].value, '5000')
     })
 
     await it('should apply kWh unit divider of 1000 for meterStart', () => {
@@ -114,7 +114,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       const meterValue = OCPP16ServiceUtils.buildTransactionBeginMeterValue(station, 1, 5000)
 
       // Assert — kWh divider is 1000, so value = 5000 / 1000 = 5
-      expect(meterValue.sampledValue[0].value).toBe('5')
+      assert.strictEqual(meterValue.sampledValue[0].value, '5')
     })
 
     await it('should use meterStart 0 when undefined', () => {
@@ -142,7 +142,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       )
 
       // Assert — undefined meterStart defaults to 0
-      expect(meterValue.sampledValue[0].value).toBe('0')
+      assert.strictEqual(meterValue.sampledValue[0].value, '0')
     })
 
     await it('should throw when MeterValues template is empty (missing default measurand)', () => {
@@ -151,9 +151,9 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
         stationInfo: { ocppVersion: OCPPVersion.VERSION_16 },
       })
 
-      expect(() => {
+      assert.throws(() => {
         OCPP16ServiceUtils.buildTransactionBeginMeterValue(station, 1, 100)
-      }).toThrow('Missing MeterValues for default measurand')
+      }, { message: /Missing MeterValues for default measurand/ })
     })
   })
 
@@ -178,9 +178,9 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       )
 
       // Assert
-      expect(result.length).toBe(2)
-      expect(result[0]).toBe(beginMeterValue)
-      expect(result[1]).toBe(endMeterValue)
+      assert.strictEqual(result.length, 2)
+      assert.strictEqual(result[0], beginMeterValue)
+      assert.strictEqual(result[1], endMeterValue)
     })
 
     await it('should return a new array instance', () => {
@@ -203,7 +203,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       )
 
       // Different array instances
-      expect(result1 !== result2).toBe(true)
+      assert.strictEqual(result1 !== result2, true)
     })
   })
 
@@ -231,10 +231,10 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       const meterValue = OCPPServiceUtils.buildTransactionEndMeterValue(station, 1, 10000)
 
       // Assert
-      expect(meterValue).toBeDefined()
-      expect(meterValue.timestamp).toBeInstanceOf(Date)
-      expect(meterValue.sampledValue.length).toBe(1)
-      expect(meterValue.sampledValue[0].context).toBe(OCPP16MeterValueContext.TRANSACTION_END)
+      assert.notStrictEqual(meterValue, undefined)
+      assert.ok(meterValue.timestamp instanceof Date)
+      assert.strictEqual(meterValue.sampledValue.length, 1)
+      assert.strictEqual(meterValue.sampledValue[0].context, OCPP16MeterValueContext.TRANSACTION_END)
     })
 
     await it('should apply kWh unit divider for end meter value', () => {
@@ -258,7 +258,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       const meterValue = OCPPServiceUtils.buildTransactionEndMeterValue(station, 1, 3000)
 
       // Assert — kWh divider: 3000 / 1000 = 3
-      expect(meterValue.sampledValue[0].value).toBe('3')
+      assert.strictEqual(meterValue.sampledValue[0].value, '3')
     })
   })
 
@@ -295,7 +295,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
 
       const result = OCPP16ServiceUtils.clearChargingProfiles(station, payload, undefined)
 
-      expect(result).toBe(false)
+      assert.strictEqual(result, false)
     })
 
     await it('should return false for empty profiles array', () => {
@@ -304,7 +304,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
 
       const result = OCPP16ServiceUtils.clearChargingProfiles(station, payload, [])
 
-      expect(result).toBe(false)
+      assert.strictEqual(result, false)
     })
 
     await it('should clear profile matching by id', () => {
@@ -317,10 +317,10 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
 
       const result = OCPP16ServiceUtils.clearChargingProfiles(station, payload, profiles)
 
-      expect(result).toBe(true)
+      assert.strictEqual(result, true)
       // Profile with id 1 should be removed
-      expect(profiles.length).toBe(1)
-      expect(profiles[0].chargingProfileId).toBe(2)
+      assert.strictEqual(profiles.length, 1)
+      assert.strictEqual(profiles[0].chargingProfileId, 2)
     })
 
     await it('should clear profile matching by purpose', () => {
@@ -335,9 +335,10 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
 
       const result = OCPP16ServiceUtils.clearChargingProfiles(station, payload, profiles)
 
-      expect(result).toBe(true)
-      expect(profiles.length).toBe(1)
-      expect(profiles[0].chargingProfilePurpose).toBe(
+      assert.strictEqual(result, true)
+      assert.strictEqual(profiles.length, 1)
+      assert.strictEqual(
+        profiles[0].chargingProfilePurpose,
         OCPP16ChargingProfilePurposeType.TX_DEFAULT_PROFILE
       )
     })
@@ -352,9 +353,9 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
 
       const result = OCPP16ServiceUtils.clearChargingProfiles(station, payload, profiles)
 
-      expect(result).toBe(true)
-      expect(profiles.length).toBe(1)
-      expect(profiles[0].chargingProfileId).toBe(1)
+      assert.strictEqual(result, true)
+      assert.strictEqual(profiles.length, 1)
+      assert.strictEqual(profiles[0].chargingProfileId, 1)
     })
 
     await it('should return false when no profiles match', () => {
@@ -366,8 +367,8 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
 
       const result = OCPP16ServiceUtils.clearChargingProfiles(station, payload, profiles)
 
-      expect(result).toBe(false)
-      expect(profiles.length).toBe(1)
+      assert.strictEqual(result, false)
+      assert.strictEqual(profiles.length, 1)
     })
   })
 
@@ -407,7 +408,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
         compositeInterval
       )
 
-      expect(result).toBe(undefined)
+      assert.strictEqual(result, undefined)
     })
 
     await it('should return higher schedule when lower is undefined', () => {
@@ -423,8 +424,8 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
         compositeInterval
       )
 
-      expect(result).toBeDefined()
-      expect(result?.chargingSchedulePeriod[0].limit).toBe(11000)
+      assert.notStrictEqual(result, undefined)
+      assert.strictEqual(result?.chargingSchedulePeriod[0].limit, 11000)
     })
 
     await it('should return lower schedule when higher is undefined', () => {
@@ -440,8 +441,8 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
         compositeInterval
       )
 
-      expect(result).toBeDefined()
-      expect(result?.chargingSchedulePeriod[0].limit).toBe(7000)
+      assert.notStrictEqual(result, undefined)
+      assert.strictEqual(result?.chargingSchedulePeriod[0].limit, 7000)
     })
 
     await it('should compose non-overlapping schedules', () => {
@@ -459,11 +460,12 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
         compositeInterval
       )
 
-      expect(result).toBeDefined()
-      expect(result?.chargingSchedulePeriod.length).toBe(2)
+      assert.notStrictEqual(result, undefined)
+      if (result == null) { assert.fail('Expected result to be defined') }
+      assert.strictEqual(result.chargingSchedulePeriod.length, 2)
       // Should be sorted by startPeriod
-      const periods = result?.chargingSchedulePeriod ?? []
-      expect(periods[0].startPeriod <= periods[1].startPeriod).toBe(true)
+      const periods = result.chargingSchedulePeriod
+      assert.strictEqual(periods[0].startPeriod <= periods[1].startPeriod, true)
     })
   })
 
@@ -493,7 +495,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       )
 
       // Assert
-      expect(result).toBe(true)
+      assert.strictEqual(result, true)
     })
 
     await it('should return false when feature profile is not in configuration', () => {
@@ -519,7 +521,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       )
 
       // Assert
-      expect(result).toBe(false)
+      assert.strictEqual(result, false)
     })
 
     await it('should return false when SupportedFeatureProfiles key is missing', () => {
@@ -537,7 +539,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       )
 
       // Assert
-      expect(result).toBe(false)
+      assert.strictEqual(result, false)
     })
   })
 
@@ -558,7 +560,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       )
 
       // Assert
-      expect(result).toBe(true)
+      assert.strictEqual(result, true)
     })
 
     await it('should return true when command is explicitly enabled', () => {
@@ -579,7 +581,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
         OCPP16RequestCommand.HEARTBEAT
       )
 
-      expect(result).toBe(true)
+      assert.strictEqual(result, true)
     })
 
     await it('should return false when command is explicitly disabled', () => {
@@ -600,7 +602,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
         OCPP16RequestCommand.HEARTBEAT
       )
 
-      expect(result).toBe(false)
+      assert.strictEqual(result, false)
     })
   })
 
@@ -618,7 +620,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
         OCPP16IncomingRequestCommand.RESET
       )
 
-      expect(result).toBe(true)
+      assert.strictEqual(result, true)
     })
 
     await it('should return true when incoming command is explicitly enabled', () => {
@@ -638,7 +640,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
         OCPP16IncomingRequestCommand.RESET
       )
 
-      expect(result).toBe(true)
+      assert.strictEqual(result, true)
     })
 
     await it('should return false when incoming command is explicitly disabled', () => {
@@ -658,7 +660,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
         OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION
       )
 
-      expect(result).toBe(false)
+      assert.strictEqual(result, false)
     })
   })
 
@@ -672,7 +674,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
         value: 'TestValue',
       })
 
-      expect(result).toBe(true)
+      assert.strictEqual(result, true)
     })
 
     await it('should return true when visible is true', () => {
@@ -683,7 +685,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
         visible: true,
       })
 
-      expect(result).toBe(true)
+      assert.strictEqual(result, true)
     })
 
     await it('should return false when visible is false', () => {
@@ -694,7 +696,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
         visible: false,
       })
 
-      expect(result).toBe(false)
+      assert.strictEqual(result, false)
     })
   })
 })

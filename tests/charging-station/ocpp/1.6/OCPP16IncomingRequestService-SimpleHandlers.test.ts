@@ -3,7 +3,7 @@
  * @description Tests for ClearCache (§5.5) and DataTransfer (§5.6) incoming request handlers
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import { OCPP16DataTransferStatus } from '../../../../src/types/ocpp/1.6/Responses.js'
@@ -34,9 +34,9 @@ await describe('OCPP16IncomingRequestService — SimpleHandlers', async () => {
       const response = testableService.handleRequestClearCache(station)
 
       // Assert
-      expect(response).toBeDefined()
-      expect(response.status).toBeDefined()
-      expect(typeof response.status).toBe('string')
+      assert.notStrictEqual(response, undefined)
+      assert.notStrictEqual(response.status, undefined)
+      assert.strictEqual(typeof response.status, 'string')
     })
   })
 
@@ -55,9 +55,9 @@ await describe('OCPP16IncomingRequestService — SimpleHandlers', async () => {
       const response = testableService.handleRequestDataTransfer(station, dataTransferRequest)
 
       // Assert
-      expect(response).toBeDefined()
-      expect(response.status).toBe(OCPP16DataTransferStatus.UNKNOWN_VENDOR_ID)
-      expect(typeof response.status).toBe('string')
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, OCPP16DataTransferStatus.UNKNOWN_VENDOR_ID)
+      assert.strictEqual(typeof response.status, 'string')
     })
 
     await it('should return Accepted status for matching vendor', () => {
@@ -77,9 +77,9 @@ await describe('OCPP16IncomingRequestService — SimpleHandlers', async () => {
       const response = testableService.handleRequestDataTransfer(station, dataTransferRequest)
 
       // Assert
-      expect(response).toBeDefined()
-      expect(response.status).toBe('Accepted')
-      expect(typeof response.status).toBe('string')
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, 'Accepted')
+      assert.strictEqual(typeof response.status, 'string')
     })
   })
 })

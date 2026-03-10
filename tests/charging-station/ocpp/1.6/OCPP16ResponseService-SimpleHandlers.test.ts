@@ -6,7 +6,7 @@
  * Heartbeat, MeterValues, and StatusNotification response handling
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { MockChargingStation } from '../../ChargingStationTestUtils.js'
@@ -63,84 +63,84 @@ await describe('OCPP16ResponseService — SimpleHandlers', async () => {
   await describe('DataTransfer response handler', async () => {
     await it('should handle DataTransfer response without throwing', async () => {
       const payload: OCPP16DataTransferResponse = { status: OCPP16DataTransferStatus.ACCEPTED }
-      await expect(
+      await assert.doesNotReject(
         responseService.responseHandler(
           mockStation,
           OCPP16RequestCommand.DATA_TRANSFER,
           payload as unknown as Parameters<typeof responseService.responseHandler>[2],
           {} as Parameters<typeof responseService.responseHandler>[3]
         )
-      ).resolves.toBeUndefined()
+      )
     })
   })
 
   await describe('DiagnosticsStatusNotification response handler', async () => {
     await it('should handle DiagnosticsStatusNotification response without throwing', async () => {
       const payload: OCPP16DiagnosticsStatusNotificationResponse = {}
-      await expect(
+      await assert.doesNotReject(
         responseService.responseHandler(
           mockStation,
           OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
           payload as unknown as Parameters<typeof responseService.responseHandler>[2],
           {} as Parameters<typeof responseService.responseHandler>[3]
         )
-      ).resolves.toBeUndefined()
+      )
     })
   })
 
   await describe('FirmwareStatusNotification response handler', async () => {
     await it('should handle FirmwareStatusNotification response without throwing', async () => {
       const payload: OCPP16FirmwareStatusNotificationResponse = {}
-      await expect(
+      await assert.doesNotReject(
         responseService.responseHandler(
           mockStation,
           OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
           payload as unknown as Parameters<typeof responseService.responseHandler>[2],
           {} as Parameters<typeof responseService.responseHandler>[3]
         )
-      ).resolves.toBeUndefined()
+      )
     })
   })
 
   await describe('Heartbeat response handler', async () => {
     await it('should handle Heartbeat response without throwing', async () => {
       const payload: OCPP16HeartbeatResponse = { currentTime: new Date() }
-      await expect(
+      await assert.doesNotReject(
         responseService.responseHandler(
           mockStation,
           OCPP16RequestCommand.HEARTBEAT,
           payload as unknown as Parameters<typeof responseService.responseHandler>[2],
           {} as Parameters<typeof responseService.responseHandler>[3]
         )
-      ).resolves.toBeUndefined()
+      )
     })
   })
 
   await describe('MeterValues response handler', async () => {
     await it('should handle MeterValues response without throwing', async () => {
       const payload: OCPP16MeterValuesResponse = {}
-      await expect(
+      await assert.doesNotReject(
         responseService.responseHandler(
           mockStation,
           OCPP16RequestCommand.METER_VALUES,
           payload as unknown as Parameters<typeof responseService.responseHandler>[2],
           {} as Parameters<typeof responseService.responseHandler>[3]
         )
-      ).resolves.toBeUndefined()
+      )
     })
   })
 
   await describe('StatusNotification response handler', async () => {
     await it('should handle StatusNotification response without throwing', async () => {
       const payload: OCPP16StatusNotificationResponse = {}
-      await expect(
+      await assert.doesNotReject(
         responseService.responseHandler(
           mockStation,
           OCPP16RequestCommand.STATUS_NOTIFICATION,
           payload as unknown as Parameters<typeof responseService.responseHandler>[2],
           {} as Parameters<typeof responseService.responseHandler>[3]
         )
-      ).resolves.toBeUndefined()
+      )
     })
   })
 })

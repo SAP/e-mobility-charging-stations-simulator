@@ -5,7 +5,7 @@
  * ReserveNow → CancelReservation and ReserveNow → RemoteStartTransaction flows.
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
@@ -90,12 +90,16 @@ await describe('OCPP16 Integration — Reservation Flow', async () => {
       )
 
       // Assert — reservation accepted and stored
-      expect(reserveResponse.status).toBe(OCPP16ReservationStatus.ACCEPTED)
+      assert.strictEqual(reserveResponse.status, OCPP16ReservationStatus.ACCEPTED)
       const connectorAfterReserve = station.getConnectorStatus(1)
-      expect(connectorAfterReserve).toBeDefined()
-      expect(connectorAfterReserve?.reservation).toBeDefined()
-      expect(connectorAfterReserve?.reservation?.reservationId).toBe(100)
-      expect(connectorAfterReserve?.reservation?.idTag).toBe('TAG-RESERVE-CANCEL')
+      if (connectorAfterReserve == null) {
+        assert.fail('Expected connector to be defined after reserve')
+      }
+      if (connectorAfterReserve.reservation == null) {
+        assert.fail('Expected reservation to be defined after reserve')
+      }
+      assert.strictEqual(connectorAfterReserve.reservation.reservationId, 100)
+      assert.strictEqual(connectorAfterReserve.reservation.idTag, 'TAG-RESERVE-CANCEL')
 
       // Act — cancel
       const cancelRequest: OCPP16CancelReservationRequest = { reservationId: 100 }
@@ -105,10 +109,10 @@ await describe('OCPP16 Integration — Reservation Flow', async () => {
       )
 
       // Assert — cancellation accepted and reservation cleared
-      expect(cancelResponse.status).toBe(GenericStatus.Accepted)
+      assert.strictEqual(cancelResponse.status, GenericStatus.Accepted)
       const connectorAfterCancel = station.getConnectorStatus(1)
-      expect(connectorAfterCancel).toBeDefined()
-      expect(connectorAfterCancel?.reservation).toBe(undefined)
+      assert.notStrictEqual(connectorAfterCancel, undefined)
+      assert.strictEqual(connectorAfterCancel?.reservation, undefined)
     })
   })
 
@@ -135,7 +139,7 @@ await describe('OCPP16 Integration — Reservation Flow', async () => {
         station,
         reserveRequest
       )
-      expect(reserveResponse.status).toBe(OCPP16ReservationStatus.ACCEPTED)
+      assert.strictEqual(reserveResponse.status, OCPP16ReservationStatus.ACCEPTED)
 
       // Act — remote start on same connector with matching idTag
       const startRequest: RemoteStartTransactionRequest = {
@@ -148,7 +152,7 @@ await describe('OCPP16 Integration — Reservation Flow', async () => {
       )
 
       // Assert — remote start accepted on the reserved connector
-      expect(startResponse.status).toBe(GenericStatus.Accepted)
+      assert.strictEqual(startResponse.status, GenericStatus.Accepted)
     })
   })
 
@@ -174,7 +178,7 @@ await describe('OCPP16 Integration — Reservation Flow', async () => {
         station,
         reserveRequest
       )
-      expect(reserveResponse.status).toBe(OCPP16ReservationStatus.ACCEPTED)
+      assert.strictEqual(reserveResponse.status, OCPP16ReservationStatus.ACCEPTED)
 
       // Act — remote start on connector 2 (different connector)
       const startRequest: RemoteStartTransactionRequest = {
@@ -187,19 +191,23 @@ await describe('OCPP16 Integration — Reservation Flow', async () => {
       )
 
       // Assert — start accepted on connector 2
-      expect(startResponse.status).toBe(GenericStatus.Accepted)
+      assert.strictEqual(startResponse.status, GenericStatus.Accepted)
 
       // Assert — connector 1 reservation unchanged
       const connector1 = station.getConnectorStatus(1)
-      expect(connector1).toBeDefined()
-      expect(connector1?.reservation).toBeDefined()
-      expect(connector1?.reservation?.reservationId).toBe(300)
-      expect(connector1?.reservation?.idTag).toBe('TAG-CONN1')
+      if (connector1 == null) {
+        assert.fail('Expected connector 1 to be defined')
+      }
+      if (connector1.reservation == null) {
+        assert.fail('Expected reservation to be defined on connector 1')
+      }
+      assert.strictEqual(connector1.reservation.reservationId, 300)
+      assert.strictEqual(connector1.reservation.idTag, 'TAG-CONN1')
 
       // Assert — connector 2 has no reservation
       const connector2 = station.getConnectorStatus(2)
-      expect(connector2).toBeDefined()
-      expect(connector2?.reservation).toBe(undefined)
+      assert.notStrictEqual(connector2, undefined)
+      assert.strictEqual(connector2?.reservation, undefined)
     })
   })
 
@@ -222,11 +230,11 @@ await describe('OCPP16 Integration — Reservation Flow', async () => {
 
       // Act — first reservation
       const firstResponse = await testableService.handleRequestReserveNow(station, firstRequest)
-      expect(firstResponse.status).toBe(OCPP16ReservationStatus.ACCEPTED)
+      assert.strictEqual(firstResponse.status, OCPP16ReservationStatus.ACCEPTED)
 
       // Verify first reservation stored
       const connectorAfterFirst = station.getConnectorStatus(1)
-      expect(connectorAfterFirst?.reservation?.reservationId).toBe(400)
+      assert.strictEqual(connectorAfterFirst?.reservation?.reservationId, 400)
 
       // Act — second reservation with different ID on same connector
       const secondReservation = ReservationFixtures.createReservation(1, 401, 'TAG-SECOND')
@@ -239,10 +247,16 @@ await describe('OCPP16 Integration — Reservation Flow', async () => {
       const secondResponse = await testableService.handleRequestReserveNow(station, secondRequest)
 
       // Assert — second reservation accepted, replaces first
-      expect(secondResponse.status).toBe(OCPP16ReservationStatus.ACCEPTED)
+      assert.strictEqual(secondResponse.status, OCPP16ReservationStatus.ACCEPTED)
       const connectorAfterSecond = station.getConnectorStatus(1)
-      expect(connectorAfterSecond?.reservation?.reservationId).toBe(401)
-      expect(connectorAfterSecond?.reservation?.idTag).toBe('TAG-SECOND')
+      if (connectorAfterSecond == null) {
+        assert.fail('Expected connector to be defined after second reservation')
+      }
+      if (connectorAfterSecond.reservation == null) {
+        assert.fail('Expected reservation to be defined after second reservation')
+      }
+      assert.strictEqual(connectorAfterSecond.reservation.reservationId, 401)
+      assert.strictEqual(connectorAfterSecond.reservation.idTag, 'TAG-SECOND')
     })
   })
 
@@ -268,7 +282,7 @@ await describe('OCPP16 Integration — Reservation Flow', async () => {
         station,
         reserveRequest
       )
-      expect(reserveResponse.status).toBe(OCPP16ReservationStatus.ACCEPTED)
+      assert.strictEqual(reserveResponse.status, OCPP16ReservationStatus.ACCEPTED)
 
       // Act — cancel with wrong reservation ID
       const cancelRequest: OCPP16CancelReservationRequest = { reservationId: 999 }
@@ -278,14 +292,18 @@ await describe('OCPP16 Integration — Reservation Flow', async () => {
       )
 
       // Assert — cancellation rejected
-      expect(cancelResponse.status).toBe(GenericStatus.Rejected)
+      assert.strictEqual(cancelResponse.status, GenericStatus.Rejected)
 
       // Assert — original reservation still intact
       const connector = station.getConnectorStatus(1)
-      expect(connector).toBeDefined()
-      expect(connector?.reservation).toBeDefined()
-      expect(connector?.reservation?.reservationId).toBe(500)
-      expect(connector?.reservation?.idTag).toBe('TAG-KEEP')
+      if (connector == null) {
+        assert.fail('Expected connector to be defined')
+      }
+      if (connector.reservation == null) {
+        assert.fail('Expected reservation to be defined')
+      }
+      assert.strictEqual(connector.reservation.reservationId, 500)
+      assert.strictEqual(connector.reservation.idTag, 'TAG-KEEP')
     })
   })
 })

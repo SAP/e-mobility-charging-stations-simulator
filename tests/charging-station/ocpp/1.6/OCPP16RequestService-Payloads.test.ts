@@ -5,7 +5,7 @@
  *   §4.7 MeterValues, §6.2 DiagnosticsStatusNotification, §6.5 FirmwareStatusNotification
  * @description Unit tests for OCPP 1.6 request payload construction across all 10 request commands
  */
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
@@ -52,8 +52,8 @@ await describe('OCPP16RequestService — buildRequestPayload', async () => {
         {}
       )
 
-      expect(payload).toBeDefined()
-      expect((payload as { idTag: string }).idTag).toBe('00000000')
+      assert.notStrictEqual(payload, undefined)
+      assert.strictEqual((payload as { idTag: string }).idTag, '00000000')
     })
 
     await it('should build Authorize payload with provided idTag overriding default', () => {
@@ -63,8 +63,8 @@ await describe('OCPP16RequestService — buildRequestPayload', async () => {
         { idTag: 'MY-TAG-001' }
       )
 
-      expect(payload).toBeDefined()
-      expect((payload as { idTag: string }).idTag).toBe('MY-TAG-001')
+      assert.notStrictEqual(payload, undefined)
+      assert.strictEqual((payload as { idTag: string }).idTag, 'MY-TAG-001')
     })
   })
 
@@ -82,8 +82,8 @@ await describe('OCPP16RequestService — buildRequestPayload', async () => {
       params
     )
 
-    expect(payload).toBeDefined()
-    expect(payload).toStrictEqual(params)
+    assert.notStrictEqual(payload, undefined)
+    assert.deepStrictEqual(payload, params)
   })
 
   // ---- DATA_TRANSFER ----
@@ -99,9 +99,9 @@ await describe('OCPP16RequestService — buildRequestPayload', async () => {
       params
     )
 
-    expect(payload).toBeDefined()
-    expect((payload as OCPP16DataTransferRequest).vendorId).toBe('TestVendor')
-    expect((payload as OCPP16DataTransferRequest).data).toBe('test-data')
+    assert.notStrictEqual(payload, undefined)
+    assert.strictEqual((payload as OCPP16DataTransferRequest).vendorId, 'TestVendor')
+    assert.strictEqual((payload as OCPP16DataTransferRequest).data, 'test-data')
   })
 
   // ---- DIAGNOSTICS_STATUS_NOTIFICATION ----
@@ -116,8 +116,9 @@ await describe('OCPP16RequestService — buildRequestPayload', async () => {
       params
     )
 
-    expect(payload).toBeDefined()
-    expect((payload as OCPP16DiagnosticsStatusNotificationRequest).status).toBe(
+    assert.notStrictEqual(payload, undefined)
+    assert.strictEqual(
+      (payload as OCPP16DiagnosticsStatusNotificationRequest).status,
       OCPP16DiagnosticsStatus.Uploading
     )
   })
@@ -134,8 +135,9 @@ await describe('OCPP16RequestService — buildRequestPayload', async () => {
       params
     )
 
-    expect(payload).toBeDefined()
-    expect((payload as OCPP16FirmwareStatusNotificationRequest).status).toBe(
+    assert.notStrictEqual(payload, undefined)
+    assert.strictEqual(
+      (payload as OCPP16FirmwareStatusNotificationRequest).status,
       OCPP16FirmwareStatus.Downloaded
     )
   })
@@ -147,8 +149,8 @@ await describe('OCPP16RequestService — buildRequestPayload', async () => {
       OCPP16RequestCommand.HEARTBEAT
     )
 
-    expect(payload).toBeDefined()
-    expect(Object.keys(payload as object)).toHaveLength(0)
+    assert.notStrictEqual(payload, undefined)
+    assert.strictEqual(Object.keys(payload as object).length, 0)
   })
 
   // ---- METER_VALUES ----
@@ -165,9 +167,9 @@ await describe('OCPP16RequestService — buildRequestPayload', async () => {
       params
     )
 
-    expect(payload).toBeDefined()
-    expect((payload as OCPP16MeterValuesRequest).connectorId).toBe(1)
-    expect((payload as OCPP16MeterValuesRequest).transactionId).toBe(1)
+    assert.notStrictEqual(payload, undefined)
+    assert.strictEqual((payload as OCPP16MeterValuesRequest).connectorId, 1)
+    assert.strictEqual((payload as OCPP16MeterValuesRequest).transactionId, 1)
   })
 
   // ---- START_TRANSACTION ----
@@ -184,11 +186,11 @@ await describe('OCPP16RequestService — buildRequestPayload', async () => {
         { connectorId: 1, idTag: 'TEST-TAG-001' }
       ) as OCPP16StartTransactionRequest
 
-      expect(payload).toBeDefined()
-      expect(payload.connectorId).toBe(1)
-      expect(payload.idTag).toBe('TEST-TAG-001')
-      expect(typeof payload.meterStart).toBe('number')
-      expect(payload.timestamp).toBeDefined()
+      assert.notStrictEqual(payload, undefined)
+      assert.strictEqual(payload.connectorId, 1)
+      assert.strictEqual(payload.idTag, 'TEST-TAG-001')
+      assert.strictEqual(typeof payload.meterStart, 'number')
+      assert.notStrictEqual(payload.timestamp, undefined)
     })
 
     await it('should build StartTransaction payload with meterStart from connector energy reading', () => {
@@ -206,8 +208,8 @@ await describe('OCPP16RequestService — buildRequestPayload', async () => {
       ) as OCPP16StartTransactionRequest
 
       // Assert
-      expect(payload.meterStart).toBe(1500)
-      expect(payload.idTag).toBe('ENERGY-TAG')
+      assert.strictEqual(payload.meterStart, 1500)
+      assert.strictEqual(payload.idTag, 'ENERGY-TAG')
     })
   })
 
@@ -225,12 +227,14 @@ await describe('OCPP16RequestService — buildRequestPayload', async () => {
       params
     )
 
-    expect(payload).toBeDefined()
-    expect((payload as OCPP16StatusNotificationRequest).connectorId).toBe(1)
-    expect((payload as OCPP16StatusNotificationRequest).errorCode).toBe(
+    assert.notStrictEqual(payload, undefined)
+    assert.strictEqual((payload as OCPP16StatusNotificationRequest).connectorId, 1)
+    assert.strictEqual(
+      (payload as OCPP16StatusNotificationRequest).errorCode,
       OCPP16ChargePointErrorCode.NO_ERROR
     )
-    expect((payload as OCPP16StatusNotificationRequest).status).toBe(
+    assert.strictEqual(
+      (payload as OCPP16StatusNotificationRequest).status,
       OCPP16ChargePointStatus.Available
     )
   })
@@ -254,11 +258,11 @@ await describe('OCPP16RequestService — buildRequestPayload', async () => {
       ) as OCPP16StopTransactionRequest
 
       // Assert
-      expect(payload).toBeDefined()
-      expect(payload.transactionId).toBe(42)
-      expect(payload.meterStop).toBe(5000)
-      expect(payload.idTag).toBe('STOP-TAG-001')
-      expect(payload.timestamp).toBeDefined()
+      assert.notStrictEqual(payload, undefined)
+      assert.strictEqual(payload.transactionId, 42)
+      assert.strictEqual(payload.meterStop, 5000)
+      assert.strictEqual(payload.idTag, 'STOP-TAG-001')
+      assert.notStrictEqual(payload.timestamp, undefined)
     })
 
     await it('should build StopTransaction payload with transactionData when enabled', () => {
@@ -286,11 +290,11 @@ await describe('OCPP16RequestService — buildRequestPayload', async () => {
       ) as OCPP16StopTransactionRequest
 
       // Assert
-      expect(payload).toBeDefined()
-      expect(payload.transactionId).toBe(99)
-      expect(payload.meterStop).toBe(3000)
-      expect(payload.transactionData).toBeDefined()
-      expect(Array.isArray(payload.transactionData)).toBe(true)
+      assert.notStrictEqual(payload, undefined)
+      assert.strictEqual(payload.transactionId, 99)
+      assert.strictEqual(payload.meterStop, 3000)
+      assert.notStrictEqual(payload.transactionData, undefined)
+      assert.strictEqual(Array.isArray(payload.transactionData), true)
     })
   })
 })

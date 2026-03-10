@@ -5,7 +5,7 @@
  * connector unlock with and without active transactions, and invalid connector handling.
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
@@ -57,7 +57,7 @@ await describe('OCPP16IncomingRequestService — RemoteStopTransaction and Unloc
       })
 
       // Assert
-      expect(response.status).toBe(GenericStatus.Accepted)
+      assert.strictEqual(response.status, GenericStatus.Accepted)
     })
 
     // @spec §5.12 — TC_020_CS
@@ -68,7 +68,7 @@ await describe('OCPP16IncomingRequestService — RemoteStopTransaction and Unloc
       })
 
       // Assert
-      expect(response.status).toBe(GenericStatus.Rejected)
+      assert.strictEqual(response.status, GenericStatus.Rejected)
     })
 
     await it('should return a response with exactly one status property', () => {
@@ -78,8 +78,8 @@ await describe('OCPP16IncomingRequestService — RemoteStopTransaction and Unloc
       })
 
       // Assert
-      expect(Object.keys(response).length).toBe(1)
-      expect(response.status).toBeDefined()
+      assert.strictEqual(Object.keys(response).length, 1)
+      assert.notStrictEqual(response.status, undefined)
     })
   })
 
@@ -94,7 +94,7 @@ await describe('OCPP16IncomingRequestService — RemoteStopTransaction and Unloc
       })
 
       // Assert
-      expect(response.status).toBe(OCPP16UnlockStatus.UNLOCKED)
+      assert.strictEqual(response.status, OCPP16UnlockStatus.UNLOCKED)
     })
 
     // @spec §5.17 — TC_027_CS
@@ -108,7 +108,7 @@ await describe('OCPP16IncomingRequestService — RemoteStopTransaction and Unloc
       })
 
       // Assert
-      expect(response.status).toBe(OCPP16UnlockStatus.UNLOCKED)
+      assert.strictEqual(response.status, OCPP16UnlockStatus.UNLOCKED)
     })
 
     // @spec §5.17 — TC_029_CS
@@ -119,7 +119,7 @@ await describe('OCPP16IncomingRequestService — RemoteStopTransaction and Unloc
       })
 
       // Assert
-      expect(response.status).toBe(OCPP16UnlockStatus.NOT_SUPPORTED)
+      assert.strictEqual(response.status, OCPP16UnlockStatus.NOT_SUPPORTED)
     })
 
     // @spec §5.17 — TC_037_CS
@@ -130,7 +130,7 @@ await describe('OCPP16IncomingRequestService — RemoteStopTransaction and Unloc
       })
 
       // Assert
-      expect(response.status).toBe(OCPP16UnlockStatus.NOT_SUPPORTED)
+      assert.strictEqual(response.status, OCPP16UnlockStatus.NOT_SUPPORTED)
     })
 
     await it('should return UnlockFailed when active transaction stop is rejected', async () => {
@@ -145,7 +145,7 @@ await describe('OCPP16IncomingRequestService — RemoteStopTransaction and Unloc
       })
 
       // Assert
-      expect(response.status).toBe(OCPP16UnlockStatus.UNLOCK_FAILED)
+      assert.strictEqual(response.status, OCPP16UnlockStatus.UNLOCK_FAILED)
     })
 
     await it('should return a response with exactly one status property', async () => {
@@ -155,8 +155,8 @@ await describe('OCPP16IncomingRequestService — RemoteStopTransaction and Unloc
       })
 
       // Assert
-      expect(Object.keys(response).length).toBe(1)
-      expect(response.status).toBeDefined()
+      assert.strictEqual(Object.keys(response).length, 1)
+      assert.notStrictEqual(response.status, undefined)
     })
   })
 })
