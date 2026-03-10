@@ -2,7 +2,7 @@
  * @file Tests for ErrorUtils
  * @description Unit tests for error handling utilities
  */
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import process from 'node:process'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
@@ -49,47 +49,47 @@ await describe('ErrorUtils', async () => {
     const { errorMock } = createLoggerMocks(t, logger)
     const error = new Error() as NodeJS.ErrnoException
     error.code = 'ENOENT'
-    expect(() => {
+    assert.throws(() => {
       handleFileException('path/to/module.js', FileType.Authorization, error, 'log prefix |', {})
-    }).toThrow(error)
-    expect(errorMock.mock.calls.length).toBe(1)
+    }, error)
+    assert.strictEqual(errorMock.mock.calls.length, 1)
   })
 
   await it('should log warning with logger when throwError is false', t => {
     const { warnMock } = createLoggerMocks(t, logger)
     const error = new Error() as NodeJS.ErrnoException
     error.code = 'ENOENT'
-    expect(() => {
+    assert.doesNotThrow(() => {
       handleFileException('path/to/module.js', FileType.Authorization, error, 'log prefix |', {
         throwError: false,
       })
-    }).not.toThrow()
-    expect(warnMock.mock.calls.length).toBe(1)
+    })
+    assert.strictEqual(warnMock.mock.calls.length, 1)
   })
 
   await it('should throw error with console output when consoleOut is true', t => {
     const { errorMock } = createConsoleMocks(t, { error: true })
     const error = new Error() as NodeJS.ErrnoException
     error.code = 'ENOENT'
-    expect(() => {
+    assert.throws(() => {
       handleFileException('path/to/module.js', FileType.Authorization, error, 'log prefix |', {
         consoleOut: true,
       })
-    }).toThrow(error)
-    expect(errorMock?.mock.calls.length).toBe(1)
+    }, error)
+    assert.strictEqual(errorMock?.mock.calls.length, 1)
   })
 
   await it('should log console warning when consoleOut and throwError are false', t => {
     const { warnMock } = createConsoleMocks(t, { error: true, warn: true })
     const error = new Error() as NodeJS.ErrnoException
     error.code = 'ENOENT'
-    expect(() => {
+    assert.doesNotThrow(() => {
       handleFileException('path/to/module.js', FileType.Authorization, error, 'log prefix |', {
         consoleOut: true,
         throwError: false,
       })
-    }).not.toThrow()
-    expect(warnMock?.mock.calls.length).toBe(1)
+    })
+    assert.strictEqual(warnMock?.mock.calls.length, 1)
   })
 
   await it('should produce correct log message for each error code', t => {
@@ -112,47 +112,47 @@ await describe('ErrorUtils', async () => {
         throwError: false,
       })
     }
-    expect(warnMock.mock.calls.length).toBe(errorCodes.length)
+    assert.strictEqual(warnMock.mock.calls.length, errorCodes.length)
     for (let i = 0; i < errorCodes.length; i++) {
       const logMessage = String(warnMock.mock.calls[i].arguments[0]).toLowerCase()
-      expect(logMessage.includes(errorCodes[i].expectedSubstring)).toBe(true)
+      assert.ok(logMessage.includes(errorCodes[i].expectedSubstring))
     }
   })
 
   await it('should register uncaught exception handler on process', t => {
     const onMock = t.mock.method(process, 'on')
     handleUncaughtException()
-    expect(onMock.mock.calls.length).toBe(1)
-    expect(onMock.mock.calls[0].arguments[0]).toBe('uncaughtException')
+    assert.strictEqual(onMock.mock.calls.length, 1)
+    assert.strictEqual(onMock.mock.calls[0].arguments[0], 'uncaughtException')
   })
 
   await it('should register unhandled rejection handler on process', t => {
     const onMock = t.mock.method(process, 'on')
     handleUnhandledRejection()
-    expect(onMock.mock.calls.length).toBe(1)
-    expect(onMock.mock.calls[0].arguments[0]).toBe('unhandledRejection')
+    assert.strictEqual(onMock.mock.calls.length, 1)
+    assert.strictEqual(onMock.mock.calls[0].arguments[0], 'unhandledRejection')
   })
 
   await it('should log error and not throw for send message errors by default', t => {
     const { errorMock } = createLoggerMocks(t, logger)
     t.mock.method(chargingStation, 'logPrefix')
     const error = new Error()
-    expect(() => {
+    assert.doesNotThrow(() => {
       handleSendMessageError(
         chargingStation,
         RequestCommand.BOOT_NOTIFICATION,
         MessageType.CALL_MESSAGE,
         error
       )
-    }).not.toThrow()
-    expect(errorMock.mock.calls.length).toBe(1)
+    })
+    assert.strictEqual(errorMock.mock.calls.length, 1)
   })
 
   await it('should throw for send message errors when throwError is true', t => {
     const { errorMock } = createLoggerMocks(t, logger)
     t.mock.method(chargingStation, 'logPrefix')
     const error = new Error()
-    expect(() => {
+    assert.throws(() => {
       handleSendMessageError(
         chargingStation,
         RequestCommand.BOOT_NOTIFICATION,
@@ -160,29 +160,29 @@ await describe('ErrorUtils', async () => {
         error,
         { throwError: true }
       )
-    }).toThrow(error)
-    expect(errorMock.mock.calls.length).toBe(1)
+    }, error)
+    assert.strictEqual(errorMock.mock.calls.length, 1)
   })
 
   await it('should log error and not throw for incoming request errors by default', t => {
     const { errorMock } = createLoggerMocks(t, logger)
     t.mock.method(chargingStation, 'logPrefix')
     const error = new Error()
-    expect(() => {
+    assert.doesNotThrow(() => {
       handleIncomingRequestError(chargingStation, IncomingRequestCommand.CLEAR_CACHE, error)
-    }).not.toThrow(error)
-    expect(errorMock.mock.calls.length).toBe(1)
+    })
+    assert.strictEqual(errorMock.mock.calls.length, 1)
   })
 
   await it('should throw for incoming request errors when throwError is true', t => {
     createLoggerMocks(t, logger)
     t.mock.method(chargingStation, 'logPrefix')
     const error = new Error()
-    expect(() => {
+    assert.throws(() => {
       handleIncomingRequestError(chargingStation, IncomingRequestCommand.CLEAR_CACHE, error, {
         throwError: true,
       })
-    }).toThrow()
+    })
   })
 
   await it('should return error response for incoming request errors', t => {
@@ -192,11 +192,12 @@ await describe('ErrorUtils', async () => {
     const errorResponse = {
       status: GenericStatus.Rejected,
     }
-    expect(
+    assert.deepStrictEqual(
       handleIncomingRequestError(chargingStation, IncomingRequestCommand.CLEAR_CACHE, error, {
         errorResponse,
-      })
-    ).toStrictEqual(errorResponse)
-    expect(errorMock.mock.calls.length).toBe(1)
+      }),
+      errorResponse
+    )
+    assert.strictEqual(errorMock.mock.calls.length, 1)
   })
 })

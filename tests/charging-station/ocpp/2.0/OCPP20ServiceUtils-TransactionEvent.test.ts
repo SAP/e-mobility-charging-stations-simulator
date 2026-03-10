@@ -10,8 +10,7 @@
  * - Periodic TransactionEvent at TxUpdatedInterval
  */
 
-import { expect } from '@std/expect'
-import assert from 'node:assert'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
@@ -125,20 +124,22 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
 
         // Validate required fields
-        expect(transactionEvent.eventType).toBe(OCPP20TransactionEventEnumType.Started)
-        expect(transactionEvent.triggerReason).toBe(triggerReason)
-        expect(transactionEvent.seqNo).toBe(0) // First event should have seqNo 0
-        expect(transactionEvent.timestamp).toBeInstanceOf(Date)
-        expect(transactionEvent.evse).toBeDefined()
-        expect(transactionEvent.evse?.id).toBe(1) // EVSE ID should match connector ID for this setup
-        expect(transactionEvent.transactionInfo).toBeDefined()
-        expect(transactionEvent.transactionInfo.transactionId).toBe(transactionId)
+        assert.strictEqual(transactionEvent.eventType, OCPP20TransactionEventEnumType.Started)
+        assert.strictEqual(transactionEvent.triggerReason, triggerReason)
+        assert.strictEqual(transactionEvent.seqNo, 0) // First event should have seqNo 0
+        assert.ok(transactionEvent.timestamp instanceof Date)
+        if (transactionEvent.evse == null) {
+          assert.fail('Expected evse to be defined')
+        }
+        assert.strictEqual(transactionEvent.evse.id, 1) // EVSE ID should match connector ID for this setup
+        assert.notStrictEqual(transactionEvent.transactionInfo, undefined)
+        assert.strictEqual(transactionEvent.transactionInfo.transactionId, transactionId)
 
         // Validate structure matches OCPP 2.0.1 schema requirements
-        expect(typeof transactionEvent.eventType).toBe('string')
-        expect(typeof transactionEvent.triggerReason).toBe('string')
-        expect(typeof transactionEvent.seqNo).toBe('number')
-        expect(transactionEvent.seqNo).toBeGreaterThanOrEqual(0)
+        assert.strictEqual(typeof transactionEvent.eventType, 'string')
+        assert.strictEqual(typeof transactionEvent.triggerReason, 'string')
+        assert.strictEqual(typeof transactionEvent.seqNo, 'number')
+        assert.strictEqual(transactionEvent.seqNo, 0)
       })
 
       await it('should increment sequence number for subsequent events', () => {
@@ -177,14 +178,14 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
 
         // Validate sequence number progression: 0 → 1 → 2
-        expect(startEvent.seqNo).toBe(0)
-        expect(updateEvent.seqNo).toBe(1)
-        expect(endEvent.seqNo).toBe(2)
+        assert.strictEqual(startEvent.seqNo, 0)
+        assert.strictEqual(updateEvent.seqNo, 1)
+        assert.strictEqual(endEvent.seqNo, 2)
 
         // Validate all events share same transaction ID
-        expect(startEvent.transactionInfo.transactionId).toBe(transactionId)
-        expect(updateEvent.transactionInfo.transactionId).toBe(transactionId)
-        expect(endEvent.transactionInfo.transactionId).toBe(transactionId)
+        assert.strictEqual(startEvent.transactionInfo.transactionId, transactionId)
+        assert.strictEqual(updateEvent.transactionInfo.transactionId, transactionId)
+        assert.strictEqual(endEvent.transactionInfo.transactionId, transactionId)
       })
 
       await it('should handle optional parameters correctly', () => {
@@ -213,17 +214,20 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
 
         // Validate optional fields are included
-        expect(transactionEvent.idToken).toBeDefined()
-        expect(transactionEvent.idToken?.idToken).toBe('TEST_TOKEN_123')
-        expect(transactionEvent.idToken?.type).toBe(OCPP20IdTokenEnumType.ISO14443)
-        expect(transactionEvent.transactionInfo.chargingState).toBe(
+        if (transactionEvent.idToken == null) {
+          assert.fail('Expected idToken to be defined')
+        }
+        assert.strictEqual(transactionEvent.idToken.idToken, 'TEST_TOKEN_123')
+        assert.strictEqual(transactionEvent.idToken.type, OCPP20IdTokenEnumType.ISO14443)
+        assert.strictEqual(
+          transactionEvent.transactionInfo.chargingState,
           OCPP20ChargingStateEnumType.Charging
         )
-        expect(transactionEvent.transactionInfo.remoteStartId).toBe(12345)
-        expect(transactionEvent.cableMaxCurrent).toBe(32)
-        expect(transactionEvent.numberOfPhasesUsed).toBe(3)
-        expect(transactionEvent.offline).toBe(false)
-        expect(transactionEvent.reservationId).toBe(67890)
+        assert.strictEqual(transactionEvent.transactionInfo.remoteStartId, 12345)
+        assert.strictEqual(transactionEvent.cableMaxCurrent, 32)
+        assert.strictEqual(transactionEvent.numberOfPhasesUsed, 3)
+        assert.strictEqual(transactionEvent.offline, false)
+        assert.strictEqual(transactionEvent.reservationId, 67890)
       })
 
       await it('should validate transaction ID format (identifier string ≤36 chars)', () => {
@@ -241,8 +245,8 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           )
           throw new Error('Should have thrown error for invalid identifier string')
         } catch (error) {
-          expect((error as Error).message).toContain('Invalid transaction ID format')
-          expect((error as Error).message).toContain('≤36 characters')
+          assert.ok((error as Error).message.includes('Invalid transaction ID format'))
+          assert.ok((error as Error).message.includes('≤36 characters'))
         }
       })
 
@@ -287,8 +291,8 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             transactionId
           )
 
-          expect(transactionEvent.triggerReason).toBe(triggerReason)
-          expect(transactionEvent.eventType).toBe(OCPP20TransactionEventEnumType.Updated)
+          assert.strictEqual(transactionEvent.triggerReason, triggerReason)
+          assert.strictEqual(transactionEvent.eventType, OCPP20TransactionEventEnumType.Updated)
         }
       })
     })
@@ -308,8 +312,8 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
 
         // Validate response structure (EmptyObject for OCPP 2.0.1 TransactionEventResponse)
-        expect(response).toBeDefined()
-        expect(typeof response).toBe('object')
+        assert.notStrictEqual(response, undefined)
+        assert.strictEqual(typeof response, 'object')
       })
 
       await it('should handle errors gracefully', async () => {
@@ -344,7 +348,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           )
           throw new Error('Should have thrown error')
         } catch (error) {
-          expect((error as Error).message).toContain('Network error')
+          assert.ok((error as Error).message.includes('Network error'))
         }
       })
     })
@@ -365,22 +369,22 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         // Verify sequence number is set
         const connectorStatus = mockStation.getConnectorStatus(connectorId)
-        expect(connectorStatus?.transactionSeqNo).toBeDefined()
+        assert.notStrictEqual(connectorStatus?.transactionSeqNo, undefined)
 
         // Reset sequence number
         OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
 
         // Verify sequence number is reset
-        expect(connectorStatus?.transactionSeqNo).toBeUndefined()
+        assert.strictEqual(connectorStatus?.transactionSeqNo, undefined)
       })
 
       await it('should handle non-existent connector gracefully', () => {
         const nonExistentConnectorId = 999
 
         // Should not throw error for non-existent connector
-        expect(() => {
+        assert.doesNotThrow(() => {
           OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, nonExistentConnectorId)
-        }).not.toThrow()
+        })
       })
     })
 
@@ -416,29 +420,35 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           'transactionInfo',
         ]
         for (const field of requiredFields) {
-          expect(transactionEvent).toHaveProperty(field)
-          expect(transactionEvent[field as keyof typeof transactionEvent]).toBeDefined()
+          assert.ok(field in transactionEvent)
+          assert.notStrictEqual(transactionEvent[field as keyof typeof transactionEvent], undefined)
         }
 
         // Validate field types match schema requirements
-        expect(typeof transactionEvent.eventType).toBe('string')
-        expect(transactionEvent.timestamp).toBeInstanceOf(Date)
-        expect(typeof transactionEvent.triggerReason).toBe('string')
-        expect(typeof transactionEvent.seqNo).toBe('number')
-        expect(typeof transactionEvent.evse).toBe('object')
-        expect(typeof transactionEvent.transactionInfo).toBe('object')
+        assert.strictEqual(typeof transactionEvent.eventType, 'string')
+        assert.ok(transactionEvent.timestamp instanceof Date)
+        assert.strictEqual(typeof transactionEvent.triggerReason, 'string')
+        assert.strictEqual(typeof transactionEvent.seqNo, 'number')
+        assert.strictEqual(typeof transactionEvent.evse, 'object')
+        assert.strictEqual(typeof transactionEvent.transactionInfo, 'object')
 
         // Validate EVSE structure
-        expect(transactionEvent.evse).toBeDefined()
-        expect(typeof transactionEvent.evse?.id).toBe('number')
-        expect(transactionEvent.evse?.id).toBeGreaterThan(0)
+        if (transactionEvent.evse == null) {
+          assert.fail('Expected evse to be defined')
+        }
+        assert.strictEqual(typeof transactionEvent.evse.id, 'number')
+        assert.ok(transactionEvent.evse.id > 0)
 
         // Validate transactionInfo structure
-        expect(typeof transactionEvent.transactionInfo.transactionId).toBe('string')
+        assert.strictEqual(typeof transactionEvent.transactionInfo.transactionId, 'string')
 
         // Validate enum values are strings (not numbers)
-        expect(Object.values(OCPP20TransactionEventEnumType)).toContain(transactionEvent.eventType)
-        expect(Object.values(OCPP20TriggerReasonEnumType)).toContain(transactionEvent.triggerReason)
+        assert.ok(
+          Object.values(OCPP20TransactionEventEnumType).includes(transactionEvent.eventType)
+        )
+        assert.ok(
+          Object.values(OCPP20TriggerReasonEnumType).includes(transactionEvent.triggerReason)
+        )
       })
 
       await it('should handle EVSE/connector mapping correctly', () => {
@@ -456,12 +466,14 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
 
         // For this test setup, EVSE ID should match connector ID
-        expect(transactionEvent.evse).toBeDefined()
-        expect(transactionEvent.evse?.id).toBe(connectorId)
+        if (transactionEvent.evse == null) {
+          assert.fail('Expected evse to be defined')
+        }
+        assert.strictEqual(transactionEvent.evse.id, connectorId)
 
         // connectorId should only be included if different from EVSE ID
         // In this case they should be the same, so connectorId should not be present
-        expect(transactionEvent.evse?.connectorId).toBeUndefined()
+        assert.strictEqual(transactionEvent.evse.connectorId, undefined)
       })
     })
 
@@ -479,7 +491,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             context
           )
 
-          expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.RemoteStart)
+          assert.strictEqual(triggerReason, OCPP20TriggerReasonEnumType.RemoteStart)
         })
 
         await it('should select RemoteStop for remote_command context with RequestStopTransaction', () => {
@@ -493,7 +505,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             context
           )
 
-          expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.RemoteStop)
+          assert.strictEqual(triggerReason, OCPP20TriggerReasonEnumType.RemoteStop)
         })
 
         await it('should select UnlockCommand for remote_command context with UnlockConnector', () => {
@@ -507,7 +519,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             context
           )
 
-          expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.UnlockCommand)
+          assert.strictEqual(triggerReason, OCPP20TriggerReasonEnumType.UnlockCommand)
         })
 
         await it('should select ResetCommand for remote_command context with Reset', () => {
@@ -521,7 +533,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             context
           )
 
-          expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.ResetCommand)
+          assert.strictEqual(triggerReason, OCPP20TriggerReasonEnumType.ResetCommand)
         })
 
         await it('should select Trigger for remote_command context with TriggerMessage', () => {
@@ -535,7 +547,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             context
           )
 
-          expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.Trigger)
+          assert.strictEqual(triggerReason, OCPP20TriggerReasonEnumType.Trigger)
         })
 
         await it('should select Authorized for local_authorization context with idToken', () => {
@@ -549,7 +561,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             context
           )
 
-          expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.Authorized)
+          assert.strictEqual(triggerReason, OCPP20TriggerReasonEnumType.Authorized)
         })
 
         await it('should select StopAuthorized for local_authorization context with stopAuthorized', () => {
@@ -563,7 +575,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             context
           )
 
-          expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.StopAuthorized)
+          assert.strictEqual(triggerReason, OCPP20TriggerReasonEnumType.StopAuthorized)
         })
 
         await it('should select Deauthorized when isDeauthorized flag is true', () => {
@@ -578,7 +590,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             context
           )
 
-          expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.Deauthorized)
+          assert.strictEqual(triggerReason, OCPP20TriggerReasonEnumType.Deauthorized)
         })
 
         await it('should select CablePluggedIn for cable_action context with plugged_in', () => {
@@ -592,7 +604,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             context
           )
 
-          expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.CablePluggedIn)
+          assert.strictEqual(triggerReason, OCPP20TriggerReasonEnumType.CablePluggedIn)
         })
 
         await it('should select EVDetected for cable_action context with detected', () => {
@@ -606,7 +618,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             context
           )
 
-          expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.EVDetected)
+          assert.strictEqual(triggerReason, OCPP20TriggerReasonEnumType.EVDetected)
         })
 
         await it('should select EVDeparted for cable_action context with unplugged', () => {
@@ -620,7 +632,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             context
           )
 
-          expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.EVDeparted)
+          assert.strictEqual(triggerReason, OCPP20TriggerReasonEnumType.EVDeparted)
         })
 
         await it('should select ChargingStateChanged for charging_state context', () => {
@@ -637,7 +649,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             context
           )
 
-          expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.ChargingStateChanged)
+          assert.strictEqual(triggerReason, OCPP20TriggerReasonEnumType.ChargingStateChanged)
         })
 
         await it('should select MeterValuePeriodic for meter_value context with periodic flag', () => {
@@ -651,7 +663,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             context
           )
 
-          expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.MeterValuePeriodic)
+          assert.strictEqual(triggerReason, OCPP20TriggerReasonEnumType.MeterValuePeriodic)
         })
 
         await it('should select MeterValueClock for meter_value context without periodic flag', () => {
@@ -665,7 +677,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             context
           )
 
-          expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.MeterValueClock)
+          assert.strictEqual(triggerReason, OCPP20TriggerReasonEnumType.MeterValueClock)
         })
 
         await it('should select SignedDataReceived when isSignedDataReceived flag is true', () => {
@@ -679,7 +691,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             context
           )
 
-          expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.SignedDataReceived)
+          assert.strictEqual(triggerReason, OCPP20TriggerReasonEnumType.SignedDataReceived)
         })
 
         await it('should select appropriate system events for system_event context', () => {
@@ -713,7 +725,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
               context
             )
 
-            expect(triggerReason).toBe(testCase.expected)
+            assert.strictEqual(triggerReason, testCase.expected)
           }
         })
 
@@ -727,7 +739,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             context
           )
 
-          expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.EnergyLimitReached)
+          assert.strictEqual(triggerReason, OCPP20TriggerReasonEnumType.EnergyLimitReached)
         })
 
         await it('should select TimeLimitReached for time_limit context', () => {
@@ -740,7 +752,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             context
           )
 
-          expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.TimeLimitReached)
+          assert.strictEqual(triggerReason, OCPP20TriggerReasonEnumType.TimeLimitReached)
         })
 
         await it('should select AbnormalCondition for abnormal_condition context', () => {
@@ -754,7 +766,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             context
           )
 
-          expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.AbnormalCondition)
+          assert.strictEqual(triggerReason, OCPP20TriggerReasonEnumType.AbnormalCondition)
         })
 
         await it('should handle priority ordering with multiple applicable contexts', () => {
@@ -772,7 +784,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           )
 
           // Should select RemoteStart (priority 1) over Deauthorized (priority 2) or CablePluggedIn (priority 3)
-          expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.RemoteStart)
+          assert.strictEqual(triggerReason, OCPP20TriggerReasonEnumType.RemoteStart)
         })
 
         await it('should fallback to Trigger for unknown context source', () => {
@@ -785,7 +797,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             context
           )
 
-          expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.Trigger)
+          assert.strictEqual(triggerReason, OCPP20TriggerReasonEnumType.Trigger)
         })
 
         await it('should fallback to Trigger for incomplete context', () => {
@@ -799,7 +811,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             context
           )
 
-          expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.Trigger)
+          assert.strictEqual(triggerReason, OCPP20TriggerReasonEnumType.Trigger)
         })
       })
 
@@ -822,10 +834,13 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             transactionId
           )
 
-          expect(transactionEvent.eventType).toBe(OCPP20TransactionEventEnumType.Started)
-          expect(transactionEvent.triggerReason).toBe(OCPP20TriggerReasonEnumType.RemoteStart)
-          expect(transactionEvent.seqNo).toBe(0)
-          expect(transactionEvent.transactionInfo.transactionId).toBe(transactionId)
+          assert.strictEqual(transactionEvent.eventType, OCPP20TransactionEventEnumType.Started)
+          assert.strictEqual(
+            transactionEvent.triggerReason,
+            OCPP20TriggerReasonEnumType.RemoteStart
+          )
+          assert.strictEqual(transactionEvent.seqNo, 0)
+          assert.strictEqual(transactionEvent.transactionInfo.transactionId, transactionId)
         })
 
         await it('should pass through optional parameters correctly', () => {
@@ -852,9 +867,10 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             options
           )
 
-          expect(transactionEvent.triggerReason).toBe(OCPP20TriggerReasonEnumType.Authorized)
-          expect(transactionEvent.idToken?.idToken).toBe('CONTEXT_TEST_TOKEN')
-          expect(transactionEvent.transactionInfo.chargingState).toBe(
+          assert.strictEqual(transactionEvent.triggerReason, OCPP20TriggerReasonEnumType.Authorized)
+          assert.strictEqual(transactionEvent.idToken?.idToken, 'CONTEXT_TEST_TOKEN')
+          assert.strictEqual(
+            transactionEvent.transactionInfo.chargingState,
             OCPP20ChargingStateEnumType.Charging
           )
         })
@@ -878,8 +894,8 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           )
 
           // Validate response structure
-          expect(response).toBeDefined()
-          expect(typeof response).toBe('object')
+          assert.notStrictEqual(response, undefined)
+          assert.strictEqual(typeof response, 'object')
         })
 
         await it('should handle context-aware error scenarios gracefully', async () => {
@@ -918,7 +934,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             )
             throw new Error('Should have thrown error')
           } catch (error) {
-            expect((error as Error).message).toContain('Context test error')
+            assert.ok((error as Error).message.includes('Context test error'))
           }
         })
       })
@@ -939,9 +955,9 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             transactionId
           )
 
-          expect(oldEvent.eventType).toBe(OCPP20TransactionEventEnumType.Started)
-          expect(oldEvent.triggerReason).toBe(OCPP20TriggerReasonEnumType.Authorized)
-          expect(oldEvent.seqNo).toBe(0)
+          assert.strictEqual(oldEvent.eventType, OCPP20TransactionEventEnumType.Started)
+          assert.strictEqual(oldEvent.triggerReason, OCPP20TriggerReasonEnumType.Authorized)
+          assert.strictEqual(oldEvent.seqNo, 0)
         })
 
         await it('should maintain compatibility with existing sendTransactionEvent calls', async () => {
@@ -957,8 +973,8 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             transactionId
           )
 
-          expect(response).toBeDefined()
-          expect(typeof response).toBe('object')
+          assert.notStrictEqual(response, undefined)
+          assert.strictEqual(typeof response, 'object')
         })
       })
     })
@@ -981,7 +997,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
               OCPP20TransactionEventEnumType.Started,
               startContext
             )
-            expect(triggerReason).toBe(expectedStartTrigger)
+            assert.strictEqual(triggerReason, expectedStartTrigger)
           })
 
           await it(`should build correct Started event for ${description}`, () => {
@@ -1002,14 +1018,14 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
               idToken != null ? { idToken } : undefined
             )
 
-            expect(startedEvent.eventType).toBe(OCPP20TransactionEventEnumType.Started)
-            expect(startedEvent.triggerReason).toBe(expectedStartTrigger)
-            expect(startedEvent.seqNo).toBe(0)
-            expect(startedEvent.transactionInfo.transactionId).toBe(transactionId)
+            assert.strictEqual(startedEvent.eventType, OCPP20TransactionEventEnumType.Started)
+            assert.strictEqual(startedEvent.triggerReason, expectedStartTrigger)
+            assert.strictEqual(startedEvent.seqNo, 0)
+            assert.strictEqual(startedEvent.transactionInfo.transactionId, transactionId)
 
             if (includeIdToken) {
-              expect(startedEvent.idToken).toBeDefined()
-              expect(startedEvent.idToken?.idToken).toBe(`${id.toUpperCase()}_TOKEN_001`)
+              assert.notStrictEqual(startedEvent.idToken, undefined)
+              assert.strictEqual(startedEvent.idToken?.idToken, `${id.toUpperCase()}_TOKEN_001`)
             }
           })
 
@@ -1055,14 +1071,14 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             )
 
             // Validate event sequence
-            expect(startedEvent.seqNo).toBe(0)
-            expect(chargingEvent.seqNo).toBe(1)
-            expect(endedEvent.seqNo).toBe(2)
+            assert.strictEqual(startedEvent.seqNo, 0)
+            assert.strictEqual(chargingEvent.seqNo, 1)
+            assert.strictEqual(endedEvent.seqNo, 2)
 
             // All events share same transaction ID
-            expect(startedEvent.transactionInfo.transactionId).toBe(transactionId)
-            expect(chargingEvent.transactionInfo.transactionId).toBe(transactionId)
-            expect(endedEvent.transactionInfo.transactionId).toBe(transactionId)
+            assert.strictEqual(startedEvent.transactionInfo.transactionId, transactionId)
+            assert.strictEqual(chargingEvent.transactionInfo.transactionId, transactionId)
+            assert.strictEqual(endedEvent.transactionInfo.transactionId, transactionId)
           })
 
           await it(`should maintain independent sequence numbers on different connectors for ${description}`, () => {
@@ -1111,14 +1127,14 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             )
 
             // Verify independent sequence numbers
-            expect(conn1Event1.seqNo).toBe(0)
-            expect(conn1Event2.seqNo).toBe(1)
-            expect(conn2Event1.seqNo).toBe(0)
-            expect(conn2Event2.seqNo).toBe(1)
+            assert.strictEqual(conn1Event1.seqNo, 0)
+            assert.strictEqual(conn1Event2.seqNo, 1)
+            assert.strictEqual(conn2Event1.seqNo, 0)
+            assert.strictEqual(conn2Event2.seqNo, 1)
 
             // Verify independent transaction IDs
-            expect(conn1Event1.transactionInfo.transactionId).toBe(transaction1Id)
-            expect(conn2Event1.transactionInfo.transactionId).toBe(transaction2Id)
+            assert.strictEqual(conn1Event1.transactionInfo.transactionId, transaction1Id)
+            assert.strictEqual(conn2Event1.transactionInfo.transactionId, transaction2Id)
           })
         })
       }
@@ -1168,19 +1184,19 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           )
 
           // Assert sequence numbers follow correct order
-          expect(cablePluggedEvent.seqNo).toBe(0)
-          expect(evDetectedEvent.seqNo).toBe(1)
-          expect(chargingStartedEvent.seqNo).toBe(2)
+          assert.strictEqual(cablePluggedEvent.seqNo, 0)
+          assert.strictEqual(evDetectedEvent.seqNo, 1)
+          assert.strictEqual(chargingStartedEvent.seqNo, 2)
 
           // Assert all events share the same transaction ID
-          expect(cablePluggedEvent.transactionInfo.transactionId).toBe(transactionId)
-          expect(evDetectedEvent.transactionInfo.transactionId).toBe(transactionId)
-          expect(chargingStartedEvent.transactionInfo.transactionId).toBe(transactionId)
+          assert.strictEqual(cablePluggedEvent.transactionInfo.transactionId, transactionId)
+          assert.strictEqual(evDetectedEvent.transactionInfo.transactionId, transactionId)
+          assert.strictEqual(chargingStartedEvent.transactionInfo.transactionId, transactionId)
 
           // Assert event types match expected pattern
-          expect(cablePluggedEvent.eventType).toBe(OCPP20TransactionEventEnumType.Started)
-          expect(evDetectedEvent.eventType).toBe(OCPP20TransactionEventEnumType.Updated)
-          expect(chargingStartedEvent.eventType).toBe(OCPP20TransactionEventEnumType.Updated)
+          assert.strictEqual(cablePluggedEvent.eventType, OCPP20TransactionEventEnumType.Started)
+          assert.strictEqual(evDetectedEvent.eventType, OCPP20TransactionEventEnumType.Updated)
+          assert.strictEqual(chargingStartedEvent.eventType, OCPP20TransactionEventEnumType.Updated)
         })
 
         await it('should handle EVDeparted for cable removal ending transaction', () => {
@@ -1208,11 +1224,11 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           )
 
           // Assert proper sequencing for cable-initiated start and end
-          expect(startEvent.seqNo).toBe(0)
-          expect(startEvent.triggerReason).toBe(OCPP20TriggerReasonEnumType.CablePluggedIn)
-          expect(endEvent.seqNo).toBe(1)
-          expect(endEvent.triggerReason).toBe(OCPP20TriggerReasonEnumType.EVDeparted)
-          expect(endEvent.eventType).toBe(OCPP20TransactionEventEnumType.Ended)
+          assert.strictEqual(startEvent.seqNo, 0)
+          assert.strictEqual(startEvent.triggerReason, OCPP20TriggerReasonEnumType.CablePluggedIn)
+          assert.strictEqual(endEvent.seqNo, 1)
+          assert.strictEqual(endEvent.triggerReason, OCPP20TriggerReasonEnumType.EVDeparted)
+          assert.strictEqual(endEvent.eventType, OCPP20TransactionEventEnumType.Ended)
         })
       })
 
@@ -1257,14 +1273,17 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           ]
 
           // Assert EVDetected comes after CablePluggedIn and before authorization
-          expect(events[0].triggerReason).toBe(OCPP20TriggerReasonEnumType.CablePluggedIn)
-          expect(events[1].triggerReason).toBe(OCPP20TriggerReasonEnumType.EVDetected)
-          expect(events[2].triggerReason).toBe(OCPP20TriggerReasonEnumType.Authorized)
-          expect(events[3].triggerReason).toBe(OCPP20TriggerReasonEnumType.ChargingStateChanged)
+          assert.strictEqual(events[0].triggerReason, OCPP20TriggerReasonEnumType.CablePluggedIn)
+          assert.strictEqual(events[1].triggerReason, OCPP20TriggerReasonEnumType.EVDetected)
+          assert.strictEqual(events[2].triggerReason, OCPP20TriggerReasonEnumType.Authorized)
+          assert.strictEqual(
+            events[3].triggerReason,
+            OCPP20TriggerReasonEnumType.ChargingStateChanged
+          )
 
           // Assert continuous sequence numbers
           for (let i = 0; i < events.length; i++) {
-            expect(events[i].seqNo).toBe(i)
+            assert.strictEqual(events[i].seqNo, i)
           }
         })
       })
@@ -1275,30 +1294,30 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
           // Get connector status object
           const connectorStatus = mockStation.getConnectorStatus(connectorId)
-          expect(connectorStatus).toBeDefined()
+          assert.notStrictEqual(connectorStatus, undefined)
           if (connectorStatus == null) {
             throw new Error('Connector status should be defined')
           }
 
           // Initial state: Available
           connectorStatus.status = ConnectorStatusEnum.Available
-          expect(connectorStatus.status).toBe(ConnectorStatusEnum.Available)
+          assert.strictEqual(connectorStatus.status, ConnectorStatusEnum.Available)
 
           // After cable plug: Preparing (implied by transaction start)
           connectorStatus.status = ConnectorStatusEnum.Preparing
           connectorStatus.transactionStarted = true
-          expect(connectorStatus.status).toBe(ConnectorStatusEnum.Preparing)
-          expect(connectorStatus.transactionStarted).toBe(true)
+          assert.strictEqual(connectorStatus.status, ConnectorStatusEnum.Preparing)
+          assert.strictEqual(connectorStatus.transactionStarted, true)
 
           // After EV detected and auth: Charging
           connectorStatus.status = ConnectorStatusEnum.Charging
-          expect(connectorStatus.status).toBe(ConnectorStatusEnum.Charging)
+          assert.strictEqual(connectorStatus.status, ConnectorStatusEnum.Charging)
 
           // After EV departed: Available again
           connectorStatus.status = ConnectorStatusEnum.Available
           connectorStatus.transactionStarted = false
-          expect(connectorStatus.status).toBe(ConnectorStatusEnum.Available)
-          expect(connectorStatus.transactionStarted).toBe(false)
+          assert.strictEqual(connectorStatus.status, ConnectorStatusEnum.Available)
+          assert.strictEqual(connectorStatus.transactionStarted, false)
         })
 
         await it('should preserve transaction ID through cable-first flow states', () => {
@@ -1306,7 +1325,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           const transactionId = generateUUID()
 
           const connectorStatus = mockStation.getConnectorStatus(connectorId)
-          expect(connectorStatus).toBeDefined()
+          assert.notStrictEqual(connectorStatus, undefined)
           if (connectorStatus == null) {
             throw new Error('Connector status should be defined')
           }
@@ -1320,14 +1339,14 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           connectorStatus.status = ConnectorStatusEnum.Charging
 
           // Transaction ID should persist through state changes
-          expect(connectorStatus.transactionId).toBe(transactionId)
-          expect(connectorStatus.transactionStarted).toBe(true)
+          assert.strictEqual(connectorStatus.transactionId, transactionId)
+          assert.strictEqual(connectorStatus.transactionStarted, true)
 
           // Transition to finished
           connectorStatus.status = ConnectorStatusEnum.Finishing
 
           // Still same transaction until fully ended
-          expect(connectorStatus.transactionId).toBe(transactionId)
+          assert.strictEqual(connectorStatus.transactionId, transactionId)
         })
       })
 
@@ -1387,12 +1406,12 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
           // Verify sequence numbers are continuous through suspend/resume
           for (let i = 0; i < events.length; i++) {
-            expect(events[i].seqNo).toBe(i)
+            assert.strictEqual(events[i].seqNo, i)
           }
 
           // Verify all share same transaction ID
           for (const event of events) {
-            expect(event.transactionInfo.transactionId).toBe(transactionId)
+            assert.strictEqual(event.transactionInfo.transactionId, transactionId)
           }
         })
       })
@@ -1404,7 +1423,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             TransactionContextFixtures.cablePluggedIn()
           )
 
-          expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.CablePluggedIn)
+          assert.strictEqual(triggerReason, OCPP20TriggerReasonEnumType.CablePluggedIn)
         })
 
         await it('should select EVDetected from cable_action context with detected state', () => {
@@ -1413,7 +1432,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             TransactionContextFixtures.evDetected()
           )
 
-          expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.EVDetected)
+          assert.strictEqual(triggerReason, OCPP20TriggerReasonEnumType.EVDetected)
         })
 
         await it('should select EVDeparted from cable_action context with unplugged state', () => {
@@ -1422,7 +1441,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             TransactionContextFixtures.evDeparted()
           )
 
-          expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.EVDeparted)
+          assert.strictEqual(triggerReason, OCPP20TriggerReasonEnumType.EVDeparted)
         })
       })
     })
@@ -1447,7 +1466,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             context
           )
 
-          expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.Authorized)
+          assert.strictEqual(triggerReason, OCPP20TriggerReasonEnumType.Authorized)
         })
 
         await it('should differentiate IdToken-first from Cable-first by trigger reason', () => {
@@ -1473,9 +1492,9 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             cableFirstContext
           )
 
-          expect(idTokenTrigger).toBe(OCPP20TriggerReasonEnumType.Authorized)
-          expect(cableTrigger).toBe(OCPP20TriggerReasonEnumType.CablePluggedIn)
-          expect(idTokenTrigger).not.toBe(cableTrigger)
+          assert.strictEqual(idTokenTrigger, OCPP20TriggerReasonEnumType.Authorized)
+          assert.strictEqual(cableTrigger, OCPP20TriggerReasonEnumType.CablePluggedIn)
+          assert.notStrictEqual(idTokenTrigger, cableTrigger)
         })
       })
 
@@ -1500,11 +1519,13 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             { idToken }
           )
 
-          expect(startedEvent.idToken).toBeDefined()
-          expect(startedEvent.idToken?.idToken).toBe('VALID_TOKEN_E03_001')
-          expect(startedEvent.idToken?.type).toBe(OCPP20IdTokenEnumType.ISO14443)
-          expect(startedEvent.eventType).toBe(OCPP20TransactionEventEnumType.Started)
-          expect(startedEvent.triggerReason).toBe(OCPP20TriggerReasonEnumType.Authorized)
+          if (startedEvent.idToken == null) {
+            assert.fail('Expected idToken to be defined')
+          }
+          assert.strictEqual(startedEvent.idToken.idToken, 'VALID_TOKEN_E03_001')
+          assert.strictEqual(startedEvent.idToken.type, OCPP20IdTokenEnumType.ISO14443)
+          assert.strictEqual(startedEvent.eventType, OCPP20TransactionEventEnumType.Started)
+          assert.strictEqual(startedEvent.triggerReason, OCPP20TriggerReasonEnumType.Authorized)
         })
 
         await it('should not include idToken in subsequent events (E03.FR.01 compliance)', () => {
@@ -1537,8 +1558,8 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             { chargingState: OCPP20ChargingStateEnumType.Charging, idToken }
           )
 
-          expect(startedEvent.idToken).toBeDefined()
-          expect(updatedEvent.idToken).toBeUndefined()
+          assert.notStrictEqual(startedEvent.idToken, undefined)
+          assert.strictEqual(updatedEvent.idToken, undefined)
         })
 
         await it('should support various IdToken types for E03 flow', () => {
@@ -1562,7 +1583,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             { idToken: rfidToken }
           )
 
-          expect(rfidEvent.idToken?.type).toBe(OCPP20IdTokenEnumType.ISO14443)
+          assert.strictEqual(rfidEvent.idToken?.type, OCPP20IdTokenEnumType.ISO14443)
 
           // Reset for eMAID test
           OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
@@ -1586,8 +1607,8 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             { idToken: emaidToken }
           )
 
-          expect(emaidEvent.idToken?.type).toBe(OCPP20IdTokenEnumType.eMAID)
-          expect(emaidEvent.idToken?.idToken).toBe('DE*ABC*E123456*1')
+          assert.strictEqual(emaidEvent.idToken?.type, OCPP20IdTokenEnumType.eMAID)
+          assert.strictEqual(emaidEvent.idToken.idToken, 'DE*ABC*E123456*1')
         })
       })
 
@@ -1641,27 +1662,30 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           )
 
           // Validate event sequence
-          expect(authorizedEvent.eventType).toBe(OCPP20TransactionEventEnumType.Started)
-          expect(authorizedEvent.triggerReason).toBe(OCPP20TriggerReasonEnumType.Authorized)
-          expect(authorizedEvent.idToken).toBeDefined()
-          expect(authorizedEvent.seqNo).toBe(0)
+          assert.strictEqual(authorizedEvent.eventType, OCPP20TransactionEventEnumType.Started)
+          assert.strictEqual(authorizedEvent.triggerReason, OCPP20TriggerReasonEnumType.Authorized)
+          assert.notStrictEqual(authorizedEvent.idToken, undefined)
+          assert.strictEqual(authorizedEvent.seqNo, 0)
 
-          expect(cableConnectedEvent.eventType).toBe(OCPP20TransactionEventEnumType.Updated)
-          expect(cableConnectedEvent.triggerReason).toBe(OCPP20TriggerReasonEnumType.CablePluggedIn)
-          expect(cableConnectedEvent.idToken).toBeUndefined() // E03.FR.01: idToken only in first event
-          expect(cableConnectedEvent.seqNo).toBe(1)
+          assert.strictEqual(cableConnectedEvent.eventType, OCPP20TransactionEventEnumType.Updated)
+          assert.strictEqual(
+            cableConnectedEvent.triggerReason,
+            OCPP20TriggerReasonEnumType.CablePluggedIn
+          )
+          assert.strictEqual(cableConnectedEvent.idToken, undefined) // E03.FR.01: idToken only in first event
+          assert.strictEqual(cableConnectedEvent.seqNo, 1)
 
-          expect(chargingEvent.eventType).toBe(OCPP20TransactionEventEnumType.Updated)
-          expect(chargingEvent.seqNo).toBe(2)
+          assert.strictEqual(chargingEvent.eventType, OCPP20TransactionEventEnumType.Updated)
+          assert.strictEqual(chargingEvent.seqNo, 2)
 
-          expect(endedEvent.eventType).toBe(OCPP20TransactionEventEnumType.Ended)
-          expect(endedEvent.seqNo).toBe(3)
+          assert.strictEqual(endedEvent.eventType, OCPP20TransactionEventEnumType.Ended)
+          assert.strictEqual(endedEvent.seqNo, 3)
 
           // All events share same transaction ID
-          expect(authorizedEvent.transactionInfo.transactionId).toBe(transactionId)
-          expect(cableConnectedEvent.transactionInfo.transactionId).toBe(transactionId)
-          expect(chargingEvent.transactionInfo.transactionId).toBe(transactionId)
-          expect(endedEvent.transactionInfo.transactionId).toBe(transactionId)
+          assert.strictEqual(authorizedEvent.transactionInfo.transactionId, transactionId)
+          assert.strictEqual(cableConnectedEvent.transactionInfo.transactionId, transactionId)
+          assert.strictEqual(chargingEvent.transactionInfo.transactionId, transactionId)
+          assert.strictEqual(endedEvent.transactionInfo.transactionId, transactionId)
         })
 
         await it('should differentiate E03 lifecycle from E02 Cable-First lifecycle', () => {
@@ -1704,12 +1728,12 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           )
 
           // Key difference: E03 starts with Authorized, E02 starts with CablePluggedIn
-          expect(e03Start.triggerReason).toBe(OCPP20TriggerReasonEnumType.Authorized)
-          expect(e02Start.triggerReason).toBe(OCPP20TriggerReasonEnumType.CablePluggedIn)
+          assert.strictEqual(e03Start.triggerReason, OCPP20TriggerReasonEnumType.Authorized)
+          assert.strictEqual(e02Start.triggerReason, OCPP20TriggerReasonEnumType.CablePluggedIn)
 
           // E03 includes idToken in first event, E02 may not
-          expect(e03Start.idToken).toBeDefined()
-          expect(e02Start.idToken).toBeUndefined()
+          assert.notStrictEqual(e03Start.idToken, undefined)
+          assert.strictEqual(e02Start.idToken, undefined)
         })
       })
 
@@ -1743,15 +1767,19 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             transactionId
           )
 
-          expect(authorizedEvent.eventType).toBe(OCPP20TransactionEventEnumType.Started)
-          expect(authorizedEvent.triggerReason).toBe(OCPP20TriggerReasonEnumType.Authorized)
+          assert.strictEqual(authorizedEvent.eventType, OCPP20TransactionEventEnumType.Started)
+          assert.strictEqual(authorizedEvent.triggerReason, OCPP20TriggerReasonEnumType.Authorized)
 
-          expect(timeoutEvent.eventType).toBe(OCPP20TransactionEventEnumType.Ended)
-          expect(timeoutEvent.triggerReason).toBe(OCPP20TriggerReasonEnumType.EVConnectTimeout)
-          expect(timeoutEvent.seqNo).toBe(1)
+          assert.strictEqual(timeoutEvent.eventType, OCPP20TransactionEventEnumType.Ended)
+          assert.strictEqual(
+            timeoutEvent.triggerReason,
+            OCPP20TriggerReasonEnumType.EVConnectTimeout
+          )
+          assert.strictEqual(timeoutEvent.seqNo, 1)
 
           // Same transaction ID for both events
-          expect(authorizedEvent.transactionInfo.transactionId).toBe(
+          assert.strictEqual(
+            authorizedEvent.transactionInfo.transactionId,
             timeoutEvent.transactionInfo.transactionId
           )
         })
@@ -1770,7 +1798,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             context
           )
 
-          expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.Deauthorized)
+          assert.strictEqual(triggerReason, OCPP20TriggerReasonEnumType.Deauthorized)
         })
 
         await it('should handle transaction end after token revocation', () => {
@@ -1802,9 +1830,9 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             transactionId
           )
 
-          expect(startEvent.eventType).toBe(OCPP20TransactionEventEnumType.Started)
-          expect(revokedEvent.eventType).toBe(OCPP20TransactionEventEnumType.Ended)
-          expect(revokedEvent.triggerReason).toBe(OCPP20TriggerReasonEnumType.Deauthorized)
+          assert.strictEqual(startEvent.eventType, OCPP20TransactionEventEnumType.Started)
+          assert.strictEqual(revokedEvent.eventType, OCPP20TransactionEventEnumType.Ended)
+          assert.strictEqual(revokedEvent.triggerReason, OCPP20TriggerReasonEnumType.Deauthorized)
         })
 
         await it('should support StopAuthorized trigger for normal transaction end', () => {
@@ -1818,7 +1846,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             context
           )
 
-          expect(triggerReason).toBe(OCPP20TriggerReasonEnumType.StopAuthorized)
+          assert.strictEqual(triggerReason, OCPP20TriggerReasonEnumType.StopAuthorized)
         })
       })
 
@@ -1874,7 +1902,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
           // E03.FR.07: Sequence numbers must be continuous
           events.forEach((event, index) => {
-            expect(event.seqNo).toBe(index)
+            assert.strictEqual(event.seqNo, index)
           })
         })
 
@@ -1887,7 +1915,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           const transaction2Id = generateUUID()
 
           // E03.FR.08: transactionId MUST be unique
-          expect(transaction1Id).not.toBe(transaction2Id)
+          assert.notStrictEqual(transaction1Id, transaction2Id)
 
           const event1 = OCPP20ServiceUtils.buildTransactionEvent(
             mockStation,
@@ -1907,9 +1935,10 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             transaction2Id
           )
 
-          expect(event1.transactionInfo.transactionId).toBe(transaction1Id)
-          expect(event2.transactionInfo.transactionId).toBe(transaction2Id)
-          expect(event1.transactionInfo.transactionId).not.toBe(
+          assert.strictEqual(event1.transactionInfo.transactionId, transaction1Id)
+          assert.strictEqual(event2.transactionInfo.transactionId, transaction2Id)
+          assert.notStrictEqual(
+            event1.transactionInfo.transactionId,
             event2.transactionInfo.transactionId
           )
         })
@@ -1961,15 +1990,15 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           transactionId
         )
 
-        expect(sentRequests.length).toBe(0)
+        assert.strictEqual(sentRequests.length, 0)
 
-        expect(response.idTokenInfo).toBeUndefined()
+        assert.strictEqual(response.idTokenInfo, undefined)
 
         const connector = mockStation.getConnectorStatus(connectorId)
         assert(connector != null)
         assert(connector.transactionEventQueue != null)
-        expect(connector.transactionEventQueue.length).toBe(1)
-        expect(connector.transactionEventQueue[0].seqNo).toBe(0)
+        assert.strictEqual(connector.transactionEventQueue.length, 1)
+        assert.strictEqual(connector.transactionEventQueue[0].seqNo, 0)
       })
 
       await it('should queue multiple TransactionEvents in order when offline', async () => {
@@ -2005,21 +2034,22 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
 
         const connector = mockStation.getConnectorStatus(connectorId)
-        expect(connector?.transactionEventQueue?.length).toBe(3)
-        assert(connector != null)
-        assert(connector.transactionEventQueue != null)
+        assert.strictEqual(connector?.transactionEventQueue?.length, 3)
 
-        expect(connector.transactionEventQueue[0].seqNo).toBe(0)
-        expect(connector.transactionEventQueue[1].seqNo).toBe(1)
-        expect(connector.transactionEventQueue[2].seqNo).toBe(2)
+        assert.strictEqual(connector.transactionEventQueue[0].seqNo, 0)
+        assert.strictEqual(connector.transactionEventQueue[1].seqNo, 1)
+        assert.strictEqual(connector.transactionEventQueue[2].seqNo, 2)
 
-        expect(connector.transactionEventQueue[0].request.eventType).toBe(
+        assert.ok(
+          connector.transactionEventQueue[0].request.eventType,
           OCPP20TransactionEventEnumType.Started
         )
-        expect(connector.transactionEventQueue[1].request.eventType).toBe(
+        assert.strictEqual(
+          connector.transactionEventQueue[1].request.eventType,
           OCPP20TransactionEventEnumType.Updated
         )
-        expect(connector.transactionEventQueue[2].request.eventType).toBe(
+        assert.strictEqual(
+          connector.transactionEventQueue[2].request.eventType,
           OCPP20TransactionEventEnumType.Ended
         )
       })
@@ -2039,8 +2069,8 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           transactionId
         )
 
-        expect(sentRequests.length).toBe(1)
-        expect(sentRequests[0].payload.seqNo).toBe(0)
+        assert.strictEqual(sentRequests.length, 1)
+        assert.strictEqual(sentRequests[0].payload.seqNo, 0)
 
         setOnline(false)
 
@@ -2061,11 +2091,9 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
 
         const connector = mockStation.getConnectorStatus(connectorId)
-        expect(connector?.transactionEventQueue?.length).toBe(2)
-        assert(connector != null)
-        assert(connector.transactionEventQueue != null)
-        expect(connector.transactionEventQueue[0].seqNo).toBe(1)
-        expect(connector.transactionEventQueue[1].seqNo).toBe(2)
+        assert.strictEqual(connector?.transactionEventQueue?.length, 2)
+        assert.strictEqual(connector.transactionEventQueue[0].seqNo, 1)
+        assert.strictEqual(connector.transactionEventQueue[1].seqNo, 2)
       })
 
       await it('should include timestamp in queued events', async () => {
@@ -2086,15 +2114,12 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const afterQueue = new Date()
 
         const connector = mockStation.getConnectorStatus(connectorId)
-        expect(connector?.transactionEventQueue?.[0]?.timestamp).toBeInstanceOf(Date)
-        assert(connector != null)
-        assert(connector.transactionEventQueue != null)
-        expect(connector.transactionEventQueue[0].timestamp.getTime()).toBeGreaterThanOrEqual(
-          beforeQueue.getTime()
+        assert.ok(connector?.transactionEventQueue?.[0]?.timestamp instanceof Date)
+        assert.strictEqual(
+          connector.transactionEventQueue[0].timestamp.getTime() >= beforeQueue.getTime(),
+          true
         )
-        expect(connector.transactionEventQueue[0].timestamp.getTime()).toBeLessThanOrEqual(
-          afterQueue.getTime()
-        )
+        assert.ok(connector.transactionEventQueue[0].timestamp.getTime() <= afterQueue.getTime())
       })
     })
 
@@ -2122,15 +2147,15 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           transactionId
         )
 
-        expect(sentRequests.length).toBe(0)
+        assert.strictEqual(sentRequests.length, 0)
 
         setOnline(true)
 
         await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockStation, connectorId)
 
-        expect(sentRequests.length).toBe(2)
-        expect(sentRequests[0].payload.seqNo).toBe(0)
-        expect(sentRequests[1].payload.seqNo).toBe(1)
+        assert.strictEqual(sentRequests.length, 2)
+        assert.strictEqual(sentRequests[0].payload.seqNo, 0)
+        assert.strictEqual(sentRequests[1].payload.seqNo, 1)
       })
 
       await it('should clear queue after sending', async () => {
@@ -2149,14 +2174,12 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
 
         const connector = mockStation.getConnectorStatus(connectorId)
-        expect(connector?.transactionEventQueue?.length).toBe(1)
-        assert(connector != null)
-        assert(connector.transactionEventQueue != null)
+        assert.strictEqual(connector?.transactionEventQueue?.length, 1)
 
         setOnline(true)
         await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockStation, connectorId)
 
-        expect(connector.transactionEventQueue.length).toBe(0)
+        assert.strictEqual(connector.transactionEventQueue.length, 0)
       })
 
       await it('should preserve FIFO order when draining queue', async () => {
@@ -2193,23 +2216,29 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         setOnline(true)
         await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockStation, connectorId)
 
-        expect(sentRequests[0].payload.eventType).toBe(OCPP20TransactionEventEnumType.Started)
-        expect(sentRequests[1].payload.eventType).toBe(OCPP20TransactionEventEnumType.Updated)
-        expect(sentRequests[2].payload.eventType).toBe(OCPP20TransactionEventEnumType.Ended)
+        assert.strictEqual(
+          sentRequests[0].payload.eventType,
+          OCPP20TransactionEventEnumType.Started
+        )
+        assert.strictEqual(
+          sentRequests[1].payload.eventType,
+          OCPP20TransactionEventEnumType.Updated
+        )
+        assert.strictEqual(sentRequests[2].payload.eventType, OCPP20TransactionEventEnumType.Ended)
 
-        expect(sentRequests[0].payload.seqNo).toBe(0)
-        expect(sentRequests[1].payload.seqNo).toBe(1)
-        expect(sentRequests[2].payload.seqNo).toBe(2)
+        assert.strictEqual(sentRequests[0].payload.seqNo, 0)
+        assert.strictEqual(sentRequests[1].payload.seqNo, 1)
+        assert.strictEqual(sentRequests[2].payload.seqNo, 2)
       })
 
       await it('should handle empty queue gracefully', async () => {
         const connectorId = 1
 
-        await expect(
+        await assert.doesNotReject(
           OCPP20ServiceUtils.sendQueuedTransactionEvents(mockStation, connectorId)
-        ).resolves.toBeUndefined()
+        )
 
-        expect(sentRequests.length).toBe(0)
+        assert.strictEqual(sentRequests.length, 0)
       })
 
       await it('should handle null queue gracefully', async () => {
@@ -2218,11 +2247,11 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert(connector != null)
         connector.transactionEventQueue = undefined
 
-        await expect(
+        await assert.doesNotReject(
           OCPP20ServiceUtils.sendQueuedTransactionEvents(mockStation, connectorId)
-        ).resolves.toBeUndefined()
+        )
 
-        expect(sentRequests.length).toBe(0)
+        assert.strictEqual(sentRequests.length, 0)
       })
     })
 
@@ -2241,7 +2270,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           connectorId,
           transactionId
         )
-        expect(sentRequests[0].payload.seqNo).toBe(0)
+        assert.strictEqual(sentRequests[0].payload.seqNo, 0)
 
         setOnline(false)
 
@@ -2265,8 +2294,8 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockStation, connectorId)
 
-        expect(sentRequests[1].payload.seqNo).toBe(1)
-        expect(sentRequests[2].payload.seqNo).toBe(2)
+        assert.strictEqual(sentRequests[1].payload.seqNo, 1)
+        assert.strictEqual(sentRequests[2].payload.seqNo, 2)
 
         await OCPP20ServiceUtils.sendTransactionEvent(
           mockStation,
@@ -2276,10 +2305,10 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           transactionId
         )
 
-        expect(sentRequests[3].payload.seqNo).toBe(3)
+        assert.strictEqual(sentRequests[3].payload.seqNo, 3)
 
         for (let i = 0; i < sentRequests.length; i++) {
-          expect(sentRequests[i].payload.seqNo).toBe(i)
+          assert.strictEqual(sentRequests[i].payload.seqNo, i)
         }
       })
     })
@@ -2320,17 +2349,15 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         const connector1 = mockStation.getConnectorStatus(1)
         const connector2 = mockStation.getConnectorStatus(2)
 
-        expect(connector1?.transactionEventQueue?.length).toBe(2)
-        expect(connector2?.transactionEventQueue?.length).toBe(1)
-        assert(connector1 != null)
-        assert(connector1.transactionEventQueue != null)
-        assert(connector2 != null)
-        assert(connector2.transactionEventQueue != null)
+        assert.strictEqual(connector1?.transactionEventQueue?.length, 2)
+        assert.strictEqual(connector2?.transactionEventQueue?.length, 1)
 
-        expect(connector1.transactionEventQueue[0].request.transactionInfo.transactionId).toBe(
+        assert.strictEqual(
+          connector1.transactionEventQueue[0].request.transactionInfo.transactionId,
           transactionId1
         )
-        expect(connector2.transactionEventQueue[0].request.transactionInfo.transactionId).toBe(
+        assert.strictEqual(
+          connector2.transactionEventQueue[0].request.transactionInfo.transactionId,
           transactionId2
         )
       })
@@ -2363,20 +2390,22 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockStation, 1)
 
-        expect(sentRequests.length).toBe(1)
-        expect(
-          (sentRequests[0].payload.transactionInfo as Record<string, unknown>).transactionId
-        ).toBe(transactionId1)
+        assert.strictEqual(sentRequests.length, 1)
+        assert.strictEqual(
+          (sentRequests[0].payload.transactionInfo as Record<string, unknown>).transactionId,
+          transactionId1
+        )
 
         const connector2 = mockStation.getConnectorStatus(2)
-        expect(connector2?.transactionEventQueue?.length).toBe(1)
+        assert.strictEqual(connector2?.transactionEventQueue?.length, 1)
 
         await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockStation, 2)
 
-        expect(sentRequests.length).toBe(2)
-        expect(
-          (sentRequests[1].payload.transactionInfo as Record<string, unknown>).transactionId
-        ).toBe(transactionId2)
+        assert.strictEqual(sentRequests.length, 2)
+        assert.strictEqual(
+          (sentRequests[1].payload.transactionInfo as Record<string, unknown>).transactionId,
+          transactionId2
+        )
       })
     })
 
@@ -2441,7 +2470,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         await OCPP20ServiceUtils.sendQueuedTransactionEvents(errorStation, connectorId)
 
-        expect(callCount).toBe(3)
+        assert.strictEqual(callCount, 3)
       })
     })
   })
@@ -2488,7 +2517,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         // Verify no timer was started (method should return early)
         const connector = ocpp16Station.getConnectorStatus(1)
-        expect(connector?.transactionTxUpdatedSetInterval).toBeUndefined()
+        assert.strictEqual(connector?.transactionTxUpdatedSetInterval, undefined)
       })
 
       await it('should not start timer when interval is zero', () => {
@@ -2496,34 +2525,34 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         // Simulate startTxUpdatedInterval with zero interval
         const connector = mockStation.getConnectorStatus(connectorId)
-        expect(connector).toBeDefined()
+        assert.notStrictEqual(connector, undefined)
         assert(connector != null)
 
         // Zero interval should not start timer
         // This is verified by the implementation logging debug message
-        expect(connector.transactionTxUpdatedSetInterval).toBeUndefined()
+        assert.strictEqual(connector.transactionTxUpdatedSetInterval, undefined)
       })
 
       await it('should not start timer when interval is negative', () => {
         const connectorId = 1
         const connector = mockStation.getConnectorStatus(connectorId)
-        expect(connector).toBeDefined()
+        assert.notStrictEqual(connector, undefined)
         assert(connector != null)
 
         // Negative interval should not start timer
-        expect(connector.transactionTxUpdatedSetInterval).toBeUndefined()
+        assert.strictEqual(connector.transactionTxUpdatedSetInterval, undefined)
       })
 
       await it('should handle non-existent connector gracefully', () => {
         const nonExistentConnectorId = 999
 
         // Should not throw for non-existent connector
-        expect(() => {
+        assert.doesNotThrow(() => {
           mockStation.getConnectorStatus(nonExistentConnectorId)
-        }).not.toThrow()
+        })
 
         // Should return undefined for non-existent connector
-        expect(mockStation.getConnectorStatus(nonExistentConnectorId)).toBeUndefined()
+        assert.strictEqual(mockStation.getConnectorStatus(nonExistentConnectorId), undefined)
       })
     })
 
@@ -2545,10 +2574,14 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
 
         // Verify the request was sent with correct trigger reason
-        expect(sentRequests.length).toBe(1)
-        expect(sentRequests[0].command).toBe('TransactionEvent')
-        expect(sentRequests[0].payload.eventType).toBe(OCPP20TransactionEventEnumType.Updated)
-        expect(sentRequests[0].payload.triggerReason).toBe(
+        assert.strictEqual(sentRequests.length, 1)
+        assert.strictEqual(sentRequests[0].command, 'TransactionEvent')
+        assert.strictEqual(
+          sentRequests[0].payload.eventType,
+          OCPP20TransactionEventEnumType.Updated
+        )
+        assert.strictEqual(
+          sentRequests[0].payload.triggerReason,
           OCPP20TriggerReasonEnumType.MeterValuePeriodic
         )
       })
@@ -2568,7 +2601,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           connectorId,
           transactionId
         )
-        expect(startEvent.seqNo).toBe(0)
+        assert.strictEqual(startEvent.seqNo, 0)
 
         // Send multiple periodic events (simulating timer ticks)
         for (let i = 1; i <= 3; i++) {
@@ -2579,12 +2612,12 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             connectorId,
             transactionId
           )
-          expect(periodicEvent.seqNo).toBe(i)
+          assert.strictEqual(periodicEvent.seqNo, i)
         }
 
         // Verify sequence numbers are continuous: 0, 1, 2, 3
         const connector = mockStation.getConnectorStatus(connectorId)
-        expect(connector?.transactionSeqNo).toBe(3)
+        assert.strictEqual(connector?.transactionSeqNo, 3)
       })
 
       await it('should maintain correct eventType (Updated) for periodic events', async () => {
@@ -2603,7 +2636,10 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
 
         // Verify eventType is Updated (not Started or Ended)
-        expect(sentRequests[0].payload.eventType).toBe(OCPP20TransactionEventEnumType.Updated)
+        assert.strictEqual(
+          sentRequests[0].payload.eventType,
+          OCPP20TransactionEventEnumType.Updated
+        )
       })
 
       await it('should include EVSE information in periodic events', async () => {
@@ -2621,8 +2657,11 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
 
         // Verify EVSE info is present
-        expect(sentRequests[0].payload.evse).toBeDefined()
-        expect((sentRequests[0].payload.evse as Record<string, unknown>).id).toBe(connectorId)
+        assert.notStrictEqual(sentRequests[0].payload.evse, undefined)
+        assert.strictEqual(
+          (sentRequests[0].payload.evse as Record<string, unknown>).id,
+          connectorId
+        )
       })
 
       await it('should include transactionInfo with correct transactionId', async () => {
@@ -2640,10 +2679,11 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
 
         // Verify transactionInfo contains the transaction ID
-        expect(sentRequests[0].payload.transactionInfo).toBeDefined()
-        expect(
-          (sentRequests[0].payload.transactionInfo as Record<string, unknown>).transactionId
-        ).toBe(transactionId)
+        assert.notStrictEqual(sentRequests[0].payload.transactionInfo, undefined)
+        assert.strictEqual(
+          (sentRequests[0].payload.transactionInfo as Record<string, unknown>).transactionId,
+          transactionId
+        )
       })
     })
 
@@ -2664,7 +2704,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           connectorId,
           transactionId
         )
-        expect(startEvent.seqNo).toBe(0)
+        assert.strictEqual(startEvent.seqNo, 0)
 
         // 2. Multiple periodic updates (seqNo: 1, 2, 3)
         for (let i = 1; i <= 3; i++) {
@@ -2675,7 +2715,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
             connectorId,
             transactionId
           )
-          expect(updateEvent.seqNo).toBe(i)
+          assert.strictEqual(updateEvent.seqNo, i)
         }
 
         // 3. Ended event (seqNo: 4)
@@ -2686,7 +2726,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           connectorId,
           transactionId
         )
-        expect(endEvent.seqNo).toBe(4)
+        assert.strictEqual(endEvent.seqNo, 4)
       })
 
       await it('should handle multiple connectors with independent timers', () => {
@@ -2730,14 +2770,14 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
 
         // Verify independent sequence numbers
-        expect(event1Start.seqNo).toBe(0)
-        expect(event1Update.seqNo).toBe(1)
-        expect(event2Start.seqNo).toBe(0)
-        expect(event2Update.seqNo).toBe(1)
+        assert.strictEqual(event1Start.seqNo, 0)
+        assert.strictEqual(event1Update.seqNo, 1)
+        assert.strictEqual(event2Start.seqNo, 0)
+        assert.strictEqual(event2Update.seqNo, 1)
 
         // Verify different transaction IDs
-        expect(event1Start.transactionInfo.transactionId).toBe(transactionId1)
-        expect(event2Start.transactionInfo.transactionId).toBe(transactionId2)
+        assert.strictEqual(event1Start.transactionInfo.transactionId, transactionId1)
+        assert.strictEqual(event2Start.transactionInfo.transactionId, transactionId2)
       })
     })
 
@@ -2776,7 +2816,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           )
           throw new Error('Should have thrown network error')
         } catch (error) {
-          expect((error as Error).message).toContain('Network timeout')
+          assert.ok((error as Error).message.includes('Network timeout'))
         }
       })
     })

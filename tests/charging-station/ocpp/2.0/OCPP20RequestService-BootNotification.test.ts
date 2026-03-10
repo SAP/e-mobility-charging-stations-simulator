@@ -2,7 +2,7 @@
  * @file Tests for OCPP20RequestService BootNotification
  * @description Unit tests for OCPP 2.0 BootNotification request building (B01)
  */
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
@@ -66,13 +66,13 @@ await describe('B01 - Cold Boot Charging Station', async () => {
       requestParams
     ) as OCPP20BootNotificationRequest
 
-    expect(payload).toBeDefined()
-    expect(payload.chargingStation).toBeDefined()
-    expect(payload.chargingStation.model).toBe(TEST_CHARGE_POINT_MODEL)
-    expect(payload.chargingStation.vendorName).toBe(TEST_CHARGE_POINT_VENDOR)
-    expect(payload.chargingStation.firmwareVersion).toBe(TEST_FIRMWARE_VERSION)
-    expect(payload.chargingStation.serialNumber).toBe(TEST_CHARGE_POINT_SERIAL_NUMBER)
-    expect(payload.reason).toBe(BootReasonEnumType.PowerUp)
+    assert.notStrictEqual(payload, undefined)
+    assert.notStrictEqual(payload.chargingStation, undefined)
+    assert.strictEqual(payload.chargingStation.model, TEST_CHARGE_POINT_MODEL)
+    assert.strictEqual(payload.chargingStation.vendorName, TEST_CHARGE_POINT_VENDOR)
+    assert.strictEqual(payload.chargingStation.firmwareVersion, TEST_FIRMWARE_VERSION)
+    assert.strictEqual(payload.chargingStation.serialNumber, TEST_CHARGE_POINT_SERIAL_NUMBER)
+    assert.strictEqual(payload.reason, BootReasonEnumType.PowerUp)
   })
 
   // FR: B01.FR.02
@@ -95,13 +95,13 @@ await describe('B01 - Cold Boot Charging Station', async () => {
       requestParams
     ) as OCPP20BootNotificationRequest
 
-    expect(payload).toBeDefined()
-    expect(payload.chargingStation).toBeDefined()
-    expect(payload.chargingStation.model).toBe('Advanced Model X1')
-    expect(payload.chargingStation.vendorName).toBe('Advanced Vendor')
-    expect(payload.chargingStation.firmwareVersion).toBe('2.1.3')
-    expect(payload.chargingStation.serialNumber).toBe('ADV-SN-002')
-    expect(payload.reason).toBe(BootReasonEnumType.ApplicationReset)
+    assert.notStrictEqual(payload, undefined)
+    assert.notStrictEqual(payload.chargingStation, undefined)
+    assert.strictEqual(payload.chargingStation.model, 'Advanced Model X1')
+    assert.strictEqual(payload.chargingStation.vendorName, 'Advanced Vendor')
+    assert.strictEqual(payload.chargingStation.firmwareVersion, '2.1.3')
+    assert.strictEqual(payload.chargingStation.serialNumber, 'ADV-SN-002')
+    assert.strictEqual(payload.reason, BootReasonEnumType.ApplicationReset)
   })
 
   // FR: B01.FR.03
@@ -123,13 +123,13 @@ await describe('B01 - Cold Boot Charging Station', async () => {
       requestParams
     ) as OCPP20BootNotificationRequest
 
-    expect(payload).toBeDefined()
-    expect(payload.chargingStation).toBeDefined()
-    expect(payload.chargingStation.model).toBe('Basic Model')
-    expect(payload.chargingStation.vendorName).toBe('Basic Vendor')
-    expect(payload.chargingStation.firmwareVersion).toBeUndefined()
-    expect(payload.chargingStation.serialNumber).toBeUndefined()
-    expect(payload.reason).toBe(BootReasonEnumType.FirmwareUpdate)
+    assert.notStrictEqual(payload, undefined)
+    assert.notStrictEqual(payload.chargingStation, undefined)
+    assert.strictEqual(payload.chargingStation.model, 'Basic Model')
+    assert.strictEqual(payload.chargingStation.vendorName, 'Basic Vendor')
+    assert.strictEqual(payload.chargingStation.firmwareVersion, undefined)
+    assert.strictEqual(payload.chargingStation.serialNumber, undefined)
+    assert.strictEqual(payload.reason, BootReasonEnumType.FirmwareUpdate)
   })
 
   // FR: B01.FR.04
@@ -163,9 +163,9 @@ await describe('B01 - Cold Boot Charging Station', async () => {
         requestParams
       ) as OCPP20BootNotificationRequest
 
-      expect(payload).toBeDefined()
-      expect(payload.reason).toBe(reason)
-      expect(payload.chargingStation).toBeDefined()
+      assert.notStrictEqual(payload, undefined)
+      assert.strictEqual(payload.reason, reason)
+      assert.notStrictEqual(payload.chargingStation, undefined)
     })
   })
 
@@ -193,27 +193,27 @@ await describe('B01 - Cold Boot Charging Station', async () => {
     ) as OCPP20BootNotificationRequest
 
     // Validate that the payload has the exact structure of OCPP20BootNotificationRequest
-    expect(typeof payload).toBe('object')
-    expect(payload).toHaveProperty('chargingStation')
-    expect(payload).toHaveProperty('reason')
-    expect(Object.keys(payload as object)).toHaveLength(2)
+    assert.strictEqual(typeof payload, 'object')
+    assert.notStrictEqual(payload.chargingStation, undefined)
+    assert.notStrictEqual(payload.reason, undefined)
+    assert.strictEqual(Object.keys(payload as object).length, 2)
 
     // Validate chargingStation structure
-    expect(typeof payload.chargingStation).toBe('object')
-    expect(payload.chargingStation).toHaveProperty('model')
-    expect(payload.chargingStation).toHaveProperty('vendorName')
-    expect(typeof payload.chargingStation.model).toBe('string')
-    expect(typeof payload.chargingStation.vendorName).toBe('string')
+    assert.strictEqual(typeof payload.chargingStation, 'object')
+    assert.notStrictEqual(payload.chargingStation.model, undefined)
+    assert.notStrictEqual(payload.chargingStation.vendorName, undefined)
+    assert.strictEqual(typeof payload.chargingStation.model, 'string')
+    assert.strictEqual(typeof payload.chargingStation.vendorName, 'string')
 
     // Validate optional fields
     if (payload.chargingStation.firmwareVersion !== undefined) {
-      expect(typeof payload.chargingStation.firmwareVersion).toBe('string')
+      assert.strictEqual(typeof payload.chargingStation.firmwareVersion, 'string')
     }
     if (payload.chargingStation.serialNumber !== undefined) {
-      expect(typeof payload.chargingStation.serialNumber).toBe('string')
+      assert.strictEqual(typeof payload.chargingStation.serialNumber, 'string')
     }
     if (payload.chargingStation.customData !== undefined) {
-      expect(typeof payload.chargingStation.customData).toBe('object')
+      assert.strictEqual(typeof payload.chargingStation.customData, 'object')
     }
   })
 })

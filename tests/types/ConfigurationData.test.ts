@@ -2,7 +2,7 @@
  * @file Tests for ConfigurationData
  * @description Unit tests for configuration data types and enumerations
  */
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
 import {
@@ -18,20 +18,23 @@ await describe('ConfigurationData', async () => {
   })
 
   await it('should define ConfigurationSection enumeration values', () => {
-    expect(ConfigurationSection.log).toBe('log')
-    expect(ConfigurationSection.performanceStorage).toBe('performanceStorage')
-    expect(ConfigurationSection.uiServer).toBe('uiServer')
-    expect(ConfigurationSection.worker).toBe('worker')
+    assert.strictEqual(ConfigurationSection.log, 'log')
+    assert.strictEqual(ConfigurationSection.performanceStorage, 'performanceStorage')
+    assert.strictEqual(ConfigurationSection.uiServer, 'uiServer')
+    assert.strictEqual(ConfigurationSection.worker, 'worker')
   })
 
   await it('should define SupervisionUrlDistribution enumeration values', () => {
-    expect(SupervisionUrlDistribution.CHARGING_STATION_AFFINITY).toBe('charging-station-affinity')
-    expect(SupervisionUrlDistribution.RANDOM).toBe('random')
-    expect(SupervisionUrlDistribution.ROUND_ROBIN).toBe('round-robin')
+    assert.strictEqual(
+      SupervisionUrlDistribution.CHARGING_STATION_AFFINITY,
+      'charging-station-affinity'
+    )
+    assert.strictEqual(SupervisionUrlDistribution.RANDOM, 'random')
+    assert.strictEqual(SupervisionUrlDistribution.ROUND_ROBIN, 'round-robin')
   })
 
   await it('should define ApplicationProtocolVersion enumeration values', () => {
-    expect(ApplicationProtocolVersion.VERSION_11).toBe('1.1')
-    expect(ApplicationProtocolVersion.VERSION_20).toBe('2.0')
+    assert.strictEqual(ApplicationProtocolVersion.VERSION_11, '1.1')
+    assert.strictEqual(ApplicationProtocolVersion.VERSION_20, '2.0')
   })
 })

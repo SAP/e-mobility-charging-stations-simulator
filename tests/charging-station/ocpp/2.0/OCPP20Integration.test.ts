@@ -3,7 +3,7 @@
  * @description Verifies that SetVariables and GetVariables produce consistent results
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
@@ -91,19 +91,19 @@ await describe('OCPP 2.0 Integration — SetVariables → GetVariables consisten
       setRequest
     )
 
-    expect(setResponse.setVariableResult).toHaveLength(1)
+    assert.strictEqual(setResponse.setVariableResult.length, 1)
     const setResult = setResponse.setVariableResult[0]
-    expect(setResult.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+    assert.strictEqual(setResult.attributeStatus, SetVariableStatusEnumType.Accepted)
 
     const getResponse: OCPP20GetVariablesResponse = testableService.handleRequestGetVariables(
       station,
       getRequest
     )
 
-    expect(getResponse.getVariableResult).toHaveLength(1)
+    assert.strictEqual(getResponse.getVariableResult.length, 1)
     const getResult = getResponse.getVariableResult[0]
-    expect(getResult.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-    expect(getResult.attributeValue).toBe('60')
+    assert.strictEqual(getResult.attributeStatus, GetVariableStatusEnumType.Accepted)
+    assert.strictEqual(getResult.attributeValue, '60')
   })
 
   await it('should return UnknownVariable for GetVariables on an unknown variable name', () => {
@@ -118,12 +118,13 @@ await describe('OCPP 2.0 Integration — SetVariables → GetVariables consisten
 
     const getResponse = testableService.handleRequestGetVariables(station, getRequest)
 
-    expect(getResponse.getVariableResult).toHaveLength(1)
+    assert.strictEqual(getResponse.getVariableResult.length, 1)
     const result = getResponse.getVariableResult[0]
-    expect(
+    assert.strictEqual(
       result.attributeStatus === GetVariableStatusEnumType.UnknownVariable ||
-        result.attributeStatus === GetVariableStatusEnumType.UnknownComponent
-    ).toBe(true)
+        result.attributeStatus === GetVariableStatusEnumType.UnknownComponent,
+      true
+    )
   })
 
   await it('should handle multiple variables in a single SetVariables→GetVariables round trip', () => {
@@ -143,7 +144,7 @@ await describe('OCPP 2.0 Integration — SetVariables → GetVariables consisten
     }
 
     const setResponse = testableService.handleRequestSetVariables(station, setRequest)
-    expect(setResponse.setVariableResult).toHaveLength(2)
+    assert.strictEqual(setResponse.setVariableResult.length, 2)
 
     const getRequest: OCPP20GetVariablesRequest = {
       getVariableData: [
@@ -159,9 +160,9 @@ await describe('OCPP 2.0 Integration — SetVariables → GetVariables consisten
     }
     const getResponse = testableService.handleRequestGetVariables(station, getRequest)
 
-    expect(getResponse.getVariableResult).toHaveLength(2)
+    assert.strictEqual(getResponse.getVariableResult.length, 2)
     for (const result of getResponse.getVariableResult) {
-      expect(result.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      assert.strictEqual(result.attributeStatus, GetVariableStatusEnumType.Accepted)
     }
   })
 
@@ -181,13 +182,14 @@ await describe('OCPP 2.0 Integration — SetVariables → GetVariables consisten
     }
     const setResponse = testableService.handleRequestSetVariables(station, setRequest)
 
-    expect(setResponse.setVariableResult).toHaveLength(1)
+    assert.strictEqual(setResponse.setVariableResult.length, 1)
     const setResult = setResponse.setVariableResult[0]
-    expect(
+    assert.strictEqual(
       setResult.attributeStatus === SetVariableStatusEnumType.UnknownComponent ||
         setResult.attributeStatus === SetVariableStatusEnumType.UnknownVariable ||
-        setResult.attributeStatus === SetVariableStatusEnumType.Rejected
-    ).toBe(true)
+        setResult.attributeStatus === SetVariableStatusEnumType.Rejected,
+      true
+    )
 
     // Confirm GetVariables also rejects lookup on the same unknown component
     const getRequest: OCPP20GetVariablesRequest = {
@@ -200,11 +202,12 @@ await describe('OCPP 2.0 Integration — SetVariables → GetVariables consisten
     }
     const getResponse = testableService.handleRequestGetVariables(station, getRequest)
 
-    expect(getResponse.getVariableResult).toHaveLength(1)
+    assert.strictEqual(getResponse.getVariableResult.length, 1)
     const getResult = getResponse.getVariableResult[0]
-    expect(
+    assert.strictEqual(
       getResult.attributeStatus === GetVariableStatusEnumType.UnknownComponent ||
-        getResult.attributeStatus === GetVariableStatusEnumType.UnknownVariable
-    ).toBe(true)
+        getResult.attributeStatus === GetVariableStatusEnumType.UnknownVariable,
+      true
+    )
   })
 })

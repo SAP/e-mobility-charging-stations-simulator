@@ -2,7 +2,7 @@
  * @file Tests for AuthValidators
  * @description Unit tests for authentication validation utilities
  */
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
 import {
@@ -20,125 +20,126 @@ await describe('AuthValidators', async () => {
   })
   await describe('isValidCacheTTL', async () => {
     await it('should return true for undefined TTL', () => {
-      expect(AuthValidators.isValidCacheTTL(undefined)).toBe(true)
+      assert.strictEqual(AuthValidators.isValidCacheTTL(undefined), true)
     })
 
     await it('should return true for zero TTL', () => {
-      expect(AuthValidators.isValidCacheTTL(0)).toBe(true)
+      assert.strictEqual(AuthValidators.isValidCacheTTL(0), true)
     })
 
     await it('should return true for positive TTL', () => {
-      expect(AuthValidators.isValidCacheTTL(3600)).toBe(true)
+      assert.strictEqual(AuthValidators.isValidCacheTTL(3600), true)
     })
 
     await it('should return false for negative TTL', () => {
-      expect(AuthValidators.isValidCacheTTL(-1)).toBe(false)
+      assert.strictEqual(AuthValidators.isValidCacheTTL(-1), false)
     })
 
     await it('should return false for infinite TTL', () => {
-      expect(AuthValidators.isValidCacheTTL(Infinity)).toBe(false)
+      assert.strictEqual(AuthValidators.isValidCacheTTL(Infinity), false)
     })
 
     await it('should return false for NaN TTL', () => {
-      expect(AuthValidators.isValidCacheTTL(NaN)).toBe(false)
+      assert.strictEqual(AuthValidators.isValidCacheTTL(NaN), false)
     })
   })
 
   await describe('isValidConnectorId', async () => {
     await it('should return true for undefined connector ID', () => {
-      expect(AuthValidators.isValidConnectorId(undefined)).toBe(true)
+      assert.strictEqual(AuthValidators.isValidConnectorId(undefined), true)
     })
 
     await it('should return true for zero connector ID', () => {
-      expect(AuthValidators.isValidConnectorId(0)).toBe(true)
+      assert.strictEqual(AuthValidators.isValidConnectorId(0), true)
     })
 
     await it('should return true for positive connector ID', () => {
-      expect(AuthValidators.isValidConnectorId(1)).toBe(true)
-      expect(AuthValidators.isValidConnectorId(100)).toBe(true)
+      assert.strictEqual(AuthValidators.isValidConnectorId(1), true)
+      assert.strictEqual(AuthValidators.isValidConnectorId(100), true)
     })
 
     await it('should return false for negative connector ID', () => {
-      expect(AuthValidators.isValidConnectorId(-1)).toBe(false)
+      assert.strictEqual(AuthValidators.isValidConnectorId(-1), false)
     })
 
     await it('should return false for non-integer connector ID', () => {
-      expect(AuthValidators.isValidConnectorId(1.5)).toBe(false)
+      assert.strictEqual(AuthValidators.isValidConnectorId(1.5), false)
     })
   })
 
   await describe('isValidIdentifierValue', async () => {
     await it('should return false for empty string', () => {
-      expect(AuthValidators.isValidIdentifierValue('')).toBe(false)
+      assert.strictEqual(AuthValidators.isValidIdentifierValue(''), false)
     })
 
     await it('should return false for whitespace-only string', () => {
-      expect(AuthValidators.isValidIdentifierValue('   ')).toBe(false)
+      assert.strictEqual(AuthValidators.isValidIdentifierValue('   '), false)
     })
 
     await it('should return true for valid identifier', () => {
-      expect(AuthValidators.isValidIdentifierValue('TEST123')).toBe(true)
+      assert.strictEqual(AuthValidators.isValidIdentifierValue('TEST123'), true)
     })
 
     await it('should return true for identifier with spaces', () => {
-      expect(AuthValidators.isValidIdentifierValue(' TEST123 ')).toBe(true)
+      assert.strictEqual(AuthValidators.isValidIdentifierValue(' TEST123 '), true)
     })
 
     await it('should return false for non-string input', () => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any -- testing invalid type input
-      expect(AuthValidators.isValidIdentifierValue(123 as any)).toBe(false)
+      assert.strictEqual(AuthValidators.isValidIdentifierValue(123 as any), false)
     })
   })
 
   await describe('sanitizeIdTag', async () => {
     await it('should trim whitespace', () => {
-      expect(AuthValidators.sanitizeIdTag('  TEST123  ')).toBe('TEST123')
+      assert.strictEqual(AuthValidators.sanitizeIdTag('  TEST123  '), 'TEST123')
     })
 
     await it('should truncate to 20 characters', () => {
       const longIdTag = 'VERY_LONG_IDENTIFIER_VALUE_123456789'
-      expect(AuthValidators.sanitizeIdTag(longIdTag)).toBe('VERY_LONG_IDENTIFIER')
-      expect(AuthValidators.sanitizeIdTag(longIdTag).length).toBe(20)
+      assert.strictEqual(AuthValidators.sanitizeIdTag(longIdTag), 'VERY_LONG_IDENTIFIER')
+      assert.strictEqual(AuthValidators.sanitizeIdTag(longIdTag).length, 20)
     })
 
     await it('should not truncate short identifiers', () => {
-      expect(AuthValidators.sanitizeIdTag('SHORT')).toBe('SHORT')
+      assert.strictEqual(AuthValidators.sanitizeIdTag('SHORT'), 'SHORT')
     })
 
     await it('should return empty string for non-string input', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- testing invalid type input
-      expect(AuthValidators.sanitizeIdTag(123 as any)).toBe('')
+      assert.strictEqual(AuthValidators.sanitizeIdTag(123 as any), '')
     })
 
     await it('should handle empty string', () => {
-      expect(AuthValidators.sanitizeIdTag('')).toBe('')
+      assert.strictEqual(AuthValidators.sanitizeIdTag(''), '')
     })
   })
 
   await describe('sanitizeIdToken', async () => {
     await it('should trim whitespace', () => {
-      expect(AuthValidators.sanitizeIdToken('  TOKEN123  ')).toBe('TOKEN123')
+      assert.strictEqual(AuthValidators.sanitizeIdToken('  TOKEN123  '), 'TOKEN123')
     })
 
     await it('should truncate to 36 characters', () => {
       const longIdToken = 'VERY_LONG_IDENTIFIER_VALUE_1234567890123456789'
-      expect(AuthValidators.sanitizeIdToken(longIdToken)).toBe(
+      assert.strictEqual(
+        AuthValidators.sanitizeIdToken(longIdToken),
         'VERY_LONG_IDENTIFIER_VALUE_123456789'
       )
-      expect(AuthValidators.sanitizeIdToken(longIdToken).length).toBe(36)
+      assert.strictEqual(AuthValidators.sanitizeIdToken(longIdToken).length, 36)
     })
 
     await it('should not truncate short identifiers', () => {
-      expect(AuthValidators.sanitizeIdToken('SHORT_TOKEN')).toBe('SHORT_TOKEN')
+      assert.strictEqual(AuthValidators.sanitizeIdToken('SHORT_TOKEN'), 'SHORT_TOKEN')
     })
 
     await it('should return empty string for non-string input', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- testing invalid type input
-      expect(AuthValidators.sanitizeIdToken(123 as any)).toBe('')
+      assert.strictEqual(AuthValidators.sanitizeIdToken(123 as any), '')
     })
 
     await it('should handle empty string', () => {
-      expect(AuthValidators.sanitizeIdToken('')).toBe('')
+      assert.strictEqual(AuthValidators.sanitizeIdToken(''), '')
     })
   })
 
@@ -155,17 +156,17 @@ await describe('AuthValidators', async () => {
         offlineAuthorizationEnabled: false,
       }
 
-      expect(AuthValidators.validateAuthConfiguration(config)).toBe(true)
+      assert.strictEqual(AuthValidators.validateAuthConfiguration(config), true)
     })
 
     await it('should return false for null configuration', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- testing null input
-      expect(AuthValidators.validateAuthConfiguration(null as any)).toBe(false)
+      assert.strictEqual(AuthValidators.validateAuthConfiguration(null as any), false)
     })
 
     await it('should return false for undefined configuration', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- testing undefined input
-      expect(AuthValidators.validateAuthConfiguration(undefined as any)).toBe(false)
+      assert.strictEqual(AuthValidators.validateAuthConfiguration(undefined as any), false)
     })
 
     await it('should return false for missing required boolean fields', () => {
@@ -179,7 +180,7 @@ await describe('AuthValidators', async () => {
         // certificateAuthEnabled missing
       } as Partial<AuthConfiguration>
 
-      expect(AuthValidators.validateAuthConfiguration(config)).toBe(false)
+      assert.strictEqual(AuthValidators.validateAuthConfiguration(config), false)
     })
 
     await it('should return false for non-positive authorization timeout', () => {
@@ -193,7 +194,7 @@ await describe('AuthValidators', async () => {
         offlineAuthorizationEnabled: false,
       }
 
-      expect(AuthValidators.validateAuthConfiguration(config)).toBe(false)
+      assert.strictEqual(AuthValidators.validateAuthConfiguration(config), false)
     })
 
     await it('should return false for negative cache lifetime', () => {
@@ -208,7 +209,7 @@ await describe('AuthValidators', async () => {
         offlineAuthorizationEnabled: false,
       }
 
-      expect(AuthValidators.validateAuthConfiguration(config)).toBe(false)
+      assert.strictEqual(AuthValidators.validateAuthConfiguration(config), false)
     })
 
     await it('should return false for non-integer max cache entries', () => {
@@ -223,7 +224,7 @@ await describe('AuthValidators', async () => {
         offlineAuthorizationEnabled: false,
       }
 
-      expect(AuthValidators.validateAuthConfiguration(config)).toBe(false)
+      assert.strictEqual(AuthValidators.validateAuthConfiguration(config), false)
     })
 
     await it('should return true for valid configuration with optional fields', () => {
@@ -239,19 +240,19 @@ await describe('AuthValidators', async () => {
         offlineAuthorizationEnabled: false,
       }
 
-      expect(AuthValidators.validateAuthConfiguration(config)).toBe(true)
+      assert.strictEqual(AuthValidators.validateAuthConfiguration(config), true)
     })
   })
 
   await describe('validateIdentifier', async () => {
     await it('should return false for undefined identifier', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- testing undefined input
-      expect(AuthValidators.validateIdentifier(undefined as any)).toBe(false)
+      assert.strictEqual(AuthValidators.validateIdentifier(undefined as any), false)
     })
 
     await it('should return false for null identifier', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- testing null input
-      expect(AuthValidators.validateIdentifier(null as any)).toBe(false)
+      assert.strictEqual(AuthValidators.validateIdentifier(null as any), false)
     })
 
     await it('should return false for empty value', () => {
@@ -261,7 +262,7 @@ await describe('AuthValidators', async () => {
         value: '',
       }
 
-      expect(AuthValidators.validateIdentifier(identifier)).toBe(false)
+      assert.strictEqual(AuthValidators.validateIdentifier(identifier), false)
     })
 
     await it('should return false for ID_TAG exceeding 20 characters', () => {
@@ -271,7 +272,7 @@ await describe('AuthValidators', async () => {
         value: 'VERY_LONG_IDENTIFIER_VALUE_123456789',
       }
 
-      expect(AuthValidators.validateIdentifier(identifier)).toBe(false)
+      assert.strictEqual(AuthValidators.validateIdentifier(identifier), false)
     })
 
     await it('should return true for valid ID_TAG within 20 characters', () => {
@@ -281,7 +282,7 @@ await describe('AuthValidators', async () => {
         value: 'VALID_ID_TAG',
       }
 
-      expect(AuthValidators.validateIdentifier(identifier)).toBe(true)
+      assert.strictEqual(AuthValidators.validateIdentifier(identifier), true)
     })
 
     await it('should return true for OCPP 2.0 LOCAL type within 36 characters', () => {
@@ -291,7 +292,7 @@ await describe('AuthValidators', async () => {
         value: 'LOCAL_TOKEN_123',
       }
 
-      expect(AuthValidators.validateIdentifier(identifier)).toBe(true)
+      assert.strictEqual(AuthValidators.validateIdentifier(identifier), true)
     })
 
     await it('should return false for OCPP 2.0 type exceeding 36 characters', () => {
@@ -301,7 +302,7 @@ await describe('AuthValidators', async () => {
         value: 'VERY_LONG_CENTRAL_IDENTIFIER_VALUE_1234567890123456789',
       }
 
-      expect(AuthValidators.validateIdentifier(identifier)).toBe(false)
+      assert.strictEqual(AuthValidators.validateIdentifier(identifier), false)
     })
 
     await it('should return true for CENTRAL type within 36 characters', () => {
@@ -311,7 +312,7 @@ await describe('AuthValidators', async () => {
         value: 'CENTRAL_TOKEN',
       }
 
-      expect(AuthValidators.validateIdentifier(identifier)).toBe(true)
+      assert.strictEqual(AuthValidators.validateIdentifier(identifier), true)
     })
 
     await it('should return true for E_MAID type', () => {
@@ -321,7 +322,7 @@ await describe('AuthValidators', async () => {
         value: 'DE-ABC-123456',
       }
 
-      expect(AuthValidators.validateIdentifier(identifier)).toBe(true)
+      assert.strictEqual(AuthValidators.validateIdentifier(identifier), true)
     })
 
     await it('should return true for ISO14443 type', () => {
@@ -331,7 +332,7 @@ await describe('AuthValidators', async () => {
         value: '04A2B3C4D5E6F7',
       }
 
-      expect(AuthValidators.validateIdentifier(identifier)).toBe(true)
+      assert.strictEqual(AuthValidators.validateIdentifier(identifier), true)
     })
 
     await it('should return true for KEY_CODE type', () => {
@@ -341,7 +342,7 @@ await describe('AuthValidators', async () => {
         value: '1234',
       }
 
-      expect(AuthValidators.validateIdentifier(identifier)).toBe(true)
+      assert.strictEqual(AuthValidators.validateIdentifier(identifier), true)
     })
 
     await it('should return true for MAC_ADDRESS type', () => {
@@ -351,7 +352,7 @@ await describe('AuthValidators', async () => {
         value: '00:11:22:33:44:55',
       }
 
-      expect(AuthValidators.validateIdentifier(identifier)).toBe(true)
+      assert.strictEqual(AuthValidators.validateIdentifier(identifier), true)
     })
 
     await it('should return true for NO_AUTHORIZATION type', () => {
@@ -361,7 +362,7 @@ await describe('AuthValidators', async () => {
         value: 'NO_AUTH',
       }
 
-      expect(AuthValidators.validateIdentifier(identifier)).toBe(true)
+      assert.strictEqual(AuthValidators.validateIdentifier(identifier), true)
     })
 
     await it('should return false for unsupported type', () => {
@@ -372,7 +373,7 @@ await describe('AuthValidators', async () => {
         value: 'VALUE',
       }
 
-      expect(AuthValidators.validateIdentifier(identifier)).toBe(false)
+      assert.strictEqual(AuthValidators.validateIdentifier(identifier), false)
     })
   })
 })

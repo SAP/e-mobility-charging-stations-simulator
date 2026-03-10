@@ -2,7 +2,7 @@
  * @file Tests for OCPP20AuthAdapter
  * @description Unit tests for OCPP 2.0 authentication adapter
  */
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../../src/charging-station/ChargingStation.js'
@@ -47,7 +47,7 @@ await describe('OCPP20AuthAdapter', async () => {
 
   await describe('constructor', async () => {
     await it('should initialize with correct OCPP version', () => {
-      expect(adapter.ocppVersion).toBe(OCPPVersion.VERSION_20)
+      assert.strictEqual(adapter.ocppVersion, OCPPVersion.VERSION_20)
     })
   })
 
@@ -61,19 +61,19 @@ await describe('OCPP20AuthAdapter', async () => {
       const result = adapter.convertToUnifiedIdentifier(idToken)
       const expected = createMockIdentifier(OCPPVersion.VERSION_20, 'TEST_TOKEN')
 
-      expect(result.value).toBe(expected.value)
-      expect(result.type).toBe(IdentifierType.ID_TAG)
-      expect(result.ocppVersion).toBe(expected.ocppVersion)
-      expect(result.additionalInfo?.ocpp20Type).toBe(OCPP20IdTokenEnumType.Central)
+      assert.strictEqual(result.value, expected.value)
+      assert.strictEqual(result.type, IdentifierType.ID_TAG)
+      assert.strictEqual(result.ocppVersion, expected.ocppVersion)
+      assert.strictEqual(result.additionalInfo?.ocpp20Type, OCPP20IdTokenEnumType.Central)
     })
 
     await it('should convert string to unified identifier', () => {
       const result = adapter.convertToUnifiedIdentifier('STRING_TOKEN')
       const expected = createMockIdentifier(OCPPVersion.VERSION_20, 'STRING_TOKEN')
 
-      expect(result.value).toBe(expected.value)
-      expect(result.type).toBe(expected.type)
-      expect(result.ocppVersion).toBe(expected.ocppVersion)
+      assert.strictEqual(result.value, expected.value)
+      assert.strictEqual(result.type, expected.type)
+      assert.strictEqual(result.ocppVersion, expected.ocppVersion)
     })
 
     await it('should handle eMAID type correctly', () => {
@@ -84,8 +84,8 @@ await describe('OCPP20AuthAdapter', async () => {
 
       const result = adapter.convertToUnifiedIdentifier(idToken)
 
-      expect(result.value).toBe('EMAID123')
-      expect(result.type).toBe(IdentifierType.E_MAID)
+      assert.strictEqual(result.value, 'EMAID123')
+      assert.strictEqual(result.type, IdentifierType.E_MAID)
     })
 
     await it('should include additional info from IdToken', () => {
@@ -100,9 +100,9 @@ await describe('OCPP20AuthAdapter', async () => {
 
       const result = adapter.convertToUnifiedIdentifier(idToken)
 
-      expect(result.additionalInfo).toBeDefined()
-      expect(result.additionalInfo?.info_0).toBeDefined()
-      expect(result.additionalInfo?.info_1).toBeDefined()
+      assert.notStrictEqual(result.additionalInfo, undefined)
+      assert.notStrictEqual(result.additionalInfo?.info_0, undefined)
+      assert.notStrictEqual(result.additionalInfo?.info_1, undefined)
     })
   })
 
@@ -116,8 +116,8 @@ await describe('OCPP20AuthAdapter', async () => {
 
       const result = adapter.convertFromUnifiedIdentifier(identifier)
 
-      expect(result.idToken).toBe('CENTRAL_TOKEN')
-      expect(result.type).toBe(OCPP20IdTokenEnumType.Central)
+      assert.strictEqual(result.idToken, 'CENTRAL_TOKEN')
+      assert.strictEqual(result.type, OCPP20IdTokenEnumType.Central)
     })
 
     await it('should map E_MAID type correctly', () => {
@@ -129,8 +129,8 @@ await describe('OCPP20AuthAdapter', async () => {
 
       const result = adapter.convertFromUnifiedIdentifier(identifier)
 
-      expect(result.idToken).toBe('EMAID_TOKEN')
-      expect(result.type).toBe(OCPP20IdTokenEnumType.eMAID)
+      assert.strictEqual(result.idToken, 'EMAID_TOKEN')
+      assert.strictEqual(result.type, OCPP20IdTokenEnumType.eMAID)
     })
 
     await it('should handle ID_TAG to Local mapping', () => {
@@ -138,7 +138,7 @@ await describe('OCPP20AuthAdapter', async () => {
 
       const result = adapter.convertFromUnifiedIdentifier(identifier)
 
-      expect(result.type).toBe(OCPP20IdTokenEnumType.Local)
+      assert.strictEqual(result.type, OCPP20IdTokenEnumType.Local)
     })
   })
 
@@ -150,13 +150,13 @@ await describe('OCPP20AuthAdapter', async () => {
         IdentifierType.CENTRAL
       )
 
-      expect(adapter.isValidIdentifier(identifier)).toBe(true)
+      assert.strictEqual(adapter.isValidIdentifier(identifier), true)
     })
 
     await it('should reject identifier with empty value', () => {
       const identifier = createMockIdentifier(OCPPVersion.VERSION_20, '', IdentifierType.CENTRAL)
 
-      expect(adapter.isValidIdentifier(identifier)).toBe(false)
+      assert.strictEqual(adapter.isValidIdentifier(identifier), false)
     })
 
     await it('should reject identifier exceeding max length (36 chars)', () => {
@@ -166,7 +166,7 @@ await describe('OCPP20AuthAdapter', async () => {
         IdentifierType.CENTRAL
       )
 
-      expect(adapter.isValidIdentifier(identifier)).toBe(false)
+      assert.strictEqual(adapter.isValidIdentifier(identifier), false)
     })
 
     await it('should accept all OCPP 2.0 identifier types', () => {
@@ -182,7 +182,7 @@ await describe('OCPP20AuthAdapter', async () => {
 
       for (const type of validTypes) {
         const identifier = createMockIdentifier(OCPPVersion.VERSION_20, 'VALID_TOKEN', type)
-        expect(adapter.isValidIdentifier(identifier)).toBe(true)
+        assert.strictEqual(adapter.isValidIdentifier(identifier), true)
       }
     })
   })
@@ -196,25 +196,25 @@ await describe('OCPP20AuthAdapter', async () => {
         'started'
       )
 
-      expect(request.identifier.value).toBe('TEST_TOKEN')
-      expect(request.connectorId).toBe(1)
-      expect(request.transactionId).toBe('trans_123')
-      expect(request.context).toBe(AuthContext.TRANSACTION_START)
-      expect(request.metadata?.ocppVersion).toBe(OCPPVersion.VERSION_20)
+      assert.strictEqual(request.identifier.value, 'TEST_TOKEN')
+      assert.strictEqual(request.connectorId, 1)
+      assert.strictEqual(request.transactionId, 'trans_123')
+      assert.strictEqual(request.context, AuthContext.TRANSACTION_START)
+      assert.strictEqual(request.metadata?.ocppVersion, OCPPVersion.VERSION_20)
     })
 
     await it('should map OCPP 2.0 contexts correctly', () => {
       const startReq = adapter.createAuthRequest('TOKEN', 1, undefined, 'started')
-      expect(startReq.context).toBe(AuthContext.TRANSACTION_START)
+      assert.strictEqual(startReq.context, AuthContext.TRANSACTION_START)
 
       const stopReq = adapter.createAuthRequest('TOKEN', 2, undefined, 'ended')
-      expect(stopReq.context).toBe(AuthContext.TRANSACTION_STOP)
+      assert.strictEqual(stopReq.context, AuthContext.TRANSACTION_STOP)
 
       const remoteStartReq = adapter.createAuthRequest('TOKEN', 3, undefined, 'remote_start')
-      expect(remoteStartReq.context).toBe(AuthContext.REMOTE_START)
+      assert.strictEqual(remoteStartReq.context, AuthContext.REMOTE_START)
 
       const defaultReq = adapter.createAuthRequest('TOKEN', 4, undefined, 'unknown')
-      expect(defaultReq.context).toBe(AuthContext.TRANSACTION_START)
+      assert.strictEqual(defaultReq.context, AuthContext.TRANSACTION_START)
     })
   })
 
@@ -245,10 +245,10 @@ await describe('OCPP20AuthAdapter', async () => {
 
       const result = await adapter.authorizeRemote(identifier, 1, 'tx_123')
 
-      expect(result.status).toBe(AuthorizationStatus.ACCEPTED)
-      expect(result.method).toBe(AuthenticationMethod.REMOTE_AUTHORIZATION)
-      expect(result.isOffline).toBe(false)
-      expect(result.timestamp).toBeInstanceOf(Date)
+      assert.strictEqual(result.status, AuthorizationStatus.ACCEPTED)
+      assert.strictEqual(result.method, AuthenticationMethod.REMOTE_AUTHORIZATION)
+      assert.strictEqual(result.isOffline, false)
+      assert.ok(result.timestamp instanceof Date)
     })
 
     await it('should handle invalid token gracefully', async () => {
@@ -256,8 +256,8 @@ await describe('OCPP20AuthAdapter', async () => {
 
       const result = await adapter.authorizeRemote(identifier, 1)
 
-      expect(result.status).toBe(AuthorizationStatus.INVALID)
-      expect(result.additionalInfo?.error).toBeDefined()
+      assert.strictEqual(result.status, AuthorizationStatus.INVALID)
+      assert.notStrictEqual(result.additionalInfo?.error, undefined)
     })
   })
 
@@ -270,7 +270,7 @@ await describe('OCPP20AuthAdapter', async () => {
       )
 
       const isAvailable = adapter.isRemoteAvailable()
-      expect(isAvailable).toBe(true)
+      assert.strictEqual(isAvailable, true)
     })
 
     await it('should return false when station is offline', t => {
@@ -282,7 +282,7 @@ await describe('OCPP20AuthAdapter', async () => {
       )
 
       const isAvailable = adapter.isRemoteAvailable()
-      expect(isAvailable).toBe(false)
+      assert.strictEqual(isAvailable, false)
     })
   })
 
@@ -300,7 +300,7 @@ await describe('OCPP20AuthAdapter', async () => {
       }
 
       const isValid = adapter.validateConfiguration(config)
-      expect(isValid).toBe(true)
+      assert.strictEqual(isValid, true)
     })
 
     await it('should reject configuration with no auth methods', () => {
@@ -316,7 +316,7 @@ await describe('OCPP20AuthAdapter', async () => {
       }
 
       const isValid = adapter.validateConfiguration(config)
-      expect(isValid).toBe(false)
+      assert.strictEqual(isValid, false)
     })
 
     await it('should reject configuration with invalid timeout', () => {
@@ -332,7 +332,7 @@ await describe('OCPP20AuthAdapter', async () => {
       }
 
       const isValid = adapter.validateConfiguration(config)
-      expect(isValid).toBe(false)
+      assert.strictEqual(isValid, false)
     })
   })
 
@@ -340,11 +340,11 @@ await describe('OCPP20AuthAdapter', async () => {
     await it('should return adapter status information', () => {
       const status = adapter.getStatus()
 
-      expect(status.ocppVersion).toBe(OCPPVersion.VERSION_20)
-      expect(status.isOnline).toBe(true)
-      expect(status.stationId).toBe('TEST-002')
-      expect(status.supportsIdTokenTypes).toBeDefined()
-      expect(Array.isArray(status.supportsIdTokenTypes)).toBe(true)
+      assert.strictEqual(status.ocppVersion, OCPPVersion.VERSION_20)
+      assert.strictEqual(status.isOnline, true)
+      assert.strictEqual(status.stationId, 'TEST-002')
+      assert.notStrictEqual(status.supportsIdTokenTypes, undefined)
+      assert.ok(Array.isArray(status.supportsIdTokenTypes))
     })
   })
 
@@ -352,14 +352,14 @@ await describe('OCPP20AuthAdapter', async () => {
     await it('should return OCPP 2.0 configuration schema', () => {
       const schema = adapter.getConfigurationSchema()
 
-      expect(schema.type).toBe('object')
-      expect(schema.properties).toBeDefined()
+      assert.strictEqual(schema.type, 'object')
+      assert.notStrictEqual(schema.properties, undefined)
       const properties = schema.properties as Record<string, unknown>
-      expect(properties.authorizeRemoteStart).toBeDefined()
-      expect(properties.localAuthorizeOffline).toBeDefined()
+      assert.notStrictEqual(properties.authorizeRemoteStart, undefined)
+      assert.notStrictEqual(properties.localAuthorizeOffline, undefined)
       const required = schema.required as string[]
-      expect(required).toContain('authorizeRemoteStart')
-      expect(required).toContain('localAuthorizeOffline')
+      assert.ok(required.includes('authorizeRemoteStart'))
+      assert.ok(required.includes('localAuthorizeOffline'))
     })
   })
 
@@ -370,7 +370,7 @@ await describe('OCPP20AuthAdapter', async () => {
       })
 
       const response = adapter.convertToOCPP20Response(result)
-      expect(response).toBe(RequestStartStopStatusEnumType.Accepted)
+      assert.strictEqual(response, RequestStartStopStatusEnumType.Accepted)
     })
 
     await it('should convert unified rejection statuses to OCPP 2.0 Rejected', () => {
@@ -386,7 +386,7 @@ await describe('OCPP20AuthAdapter', async () => {
           status,
         })
         const response = adapter.convertToOCPP20Response(result)
-        expect(response).toBe(RequestStartStopStatusEnumType.Rejected)
+        assert.strictEqual(response, RequestStartStopStatusEnumType.Rejected)
       }
     })
   })
@@ -420,7 +420,7 @@ await describe('OCPP20AuthAdapter', async () => {
         const isAvailable = offlineAdapter.isRemoteAvailable()
 
         // Then: Remote should not be available
-        expect(isAvailable).toBe(false)
+        assert.strictEqual(isAvailable, false)
       })
 
       await it('should detect station is online when in accepted state', () => {
@@ -431,12 +431,12 @@ await describe('OCPP20AuthAdapter', async () => {
         const isAvailable = offlineAdapter.isRemoteAvailable()
 
         // Then: Remote should be available (assuming AuthorizeRemoteStart is enabled by default)
-        expect(isAvailable).toBe(true)
+        assert.strictEqual(isAvailable, true)
       })
 
       await it('should have correct OCPP version for offline tests', () => {
         // Verify we're testing the correct OCPP version
-        expect(offlineAdapter.ocppVersion).toBe(OCPPVersion.VERSION_20)
+        assert.strictEqual(offlineAdapter.ocppVersion, OCPPVersion.VERSION_20)
       })
     })
 
@@ -449,7 +449,7 @@ await describe('OCPP20AuthAdapter', async () => {
         const isAvailable = offlineAdapter.isRemoteAvailable()
 
         // Then: Should not be available
-        expect(isAvailable).toBe(false)
+        assert.strictEqual(isAvailable, false)
       })
 
       await it('should handle errors gracefully when checking availability', () => {
@@ -462,7 +462,7 @@ await describe('OCPP20AuthAdapter', async () => {
         const isAvailable = offlineAdapter.isRemoteAvailable()
 
         // Then: Should safely return false
-        expect(isAvailable).toBe(false)
+        assert.strictEqual(isAvailable, false)
       })
     })
 
@@ -470,7 +470,7 @@ await describe('OCPP20AuthAdapter', async () => {
       await it('should initialize with default configuration for offline scenarios', () => {
         // When: Adapter is created
         // Then: Should have OCPP 2.0 version
-        expect(offlineAdapter.ocppVersion).toBe(OCPPVersion.VERSION_20)
+        assert.strictEqual(offlineAdapter.ocppVersion, OCPPVersion.VERSION_20)
       })
 
       await it('should validate configuration schema for offline auth', () => {
@@ -478,8 +478,8 @@ await describe('OCPP20AuthAdapter', async () => {
         const schema = offlineAdapter.getConfigurationSchema()
 
         // Then: Should have required offline auth properties
-        expect(schema).toBeDefined()
-        expect(schema.properties).toBeDefined()
+        assert.notStrictEqual(schema, undefined)
+        assert.notStrictEqual(schema.properties, undefined)
         // OCPP 2.0 uses variables, not configuration keys
         // The actual offline behavior is controlled by AuthCtrlr variables
       })
@@ -489,9 +489,9 @@ await describe('OCPP20AuthAdapter', async () => {
         const status = offlineAdapter.getStatus()
 
         // Then: Status should be defined and include online state
-        expect(status).toBeDefined()
-        expect(typeof status.isOnline).toBe('boolean')
-        expect(status.ocppVersion).toBe(OCPPVersion.VERSION_20)
+        assert.notStrictEqual(status, undefined)
+        assert.strictEqual(typeof status.isOnline, 'boolean')
+        assert.strictEqual(status.ocppVersion, OCPPVersion.VERSION_20)
       })
     })
   })

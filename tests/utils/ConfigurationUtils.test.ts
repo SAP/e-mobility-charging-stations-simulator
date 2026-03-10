@@ -2,7 +2,7 @@
  * @file Tests for ConfigurationUtils
  * @description Unit tests for configuration utility functions
  */
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
 import { StorageType } from '../../src/types/index.js'
@@ -20,56 +20,56 @@ await describe('ConfigurationUtils', async () => {
   })
 
   await it('should return log prefix with simulator configuration', () => {
-    expect(logPrefix()).toContain(' Simulator configuration |')
+    assert.ok(logPrefix().includes(' Simulator configuration |'))
   })
 
   await it('should build file URI path for performance storage', () => {
     const result = buildPerformanceUriFilePath('test.json')
-    expect(result).toContain('test.json')
-    expect(result).toMatch(/^file:\/\/.*test\.json$/)
+    assert.ok(result.includes('test.json'))
+    assert.match(result, /^file:\/\/.*test\.json$/)
   })
 
   await it('should return appropriate URI for storage types', () => {
     // Test JSON_FILE storage type
     const jsonUri = getDefaultPerformanceStorageUri(StorageType.JSON_FILE)
-    expect(jsonUri).toMatch(/^file:\/\/.*\.json$/)
-    expect(jsonUri).toContain('performanceRecords.json')
+    assert.match(jsonUri, /^file:\/\/.*\.json$/)
+    assert.ok(jsonUri.includes('performanceRecords.json'))
 
     // Test SQLITE storage type
     const sqliteUri = getDefaultPerformanceStorageUri(StorageType.SQLITE)
-    expect(sqliteUri).toMatch(/^file:\/\/.*\.db$/)
-    expect(sqliteUri).toContain('charging-stations-simulator.db')
+    assert.match(sqliteUri, /^file:\/\/.*\.db$/)
+    assert.ok(sqliteUri.includes('charging-stations-simulator.db'))
 
     // Test unsupported storage type
-    expect(() => {
+    assert.throws(() => {
       getDefaultPerformanceStorageUri('unsupported' as StorageType)
-    }).toThrow(Error)
+    }, Error)
   })
 
   await it('should validate worker elements per worker configuration', () => {
     // These calls should not throw exceptions
-    expect(() => {
+    assert.doesNotThrow(() => {
       checkWorkerElementsPerWorker(undefined)
-    }).not.toThrow()
-    expect(() => {
+    })
+    assert.doesNotThrow(() => {
       checkWorkerElementsPerWorker('auto')
-    }).not.toThrow()
-    expect(() => {
+    })
+    assert.doesNotThrow(() => {
       checkWorkerElementsPerWorker('all')
-    }).not.toThrow()
-    expect(() => {
+    })
+    assert.doesNotThrow(() => {
       checkWorkerElementsPerWorker(4)
-    }).not.toThrow()
+    })
 
     // These calls should throw exceptions
-    expect(() => {
+    assert.throws(() => {
       checkWorkerElementsPerWorker(0)
-    }).toThrow(RangeError)
-    expect(() => {
+    }, RangeError)
+    assert.throws(() => {
       checkWorkerElementsPerWorker(-1)
-    }).toThrow(RangeError)
-    expect(() => {
+    }, RangeError)
+    assert.throws(() => {
       checkWorkerElementsPerWorker(1.5)
-    }).toThrow(SyntaxError)
+    }, SyntaxError)
   })
 })

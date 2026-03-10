@@ -2,7 +2,7 @@
  * @file Tests for ChargingStation Configuration Management
  * @description Unit tests for boot notification, config persistence, and WebSocket handling
  */
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
@@ -37,9 +37,11 @@ await describe('ChargingStation Configuration Management', async () => {
       station = result.station
 
       // Assert - Pending response should have interval for retry
-      expect(station.bootNotificationResponse).toBeDefined()
-      expect(station.bootNotificationResponse?.interval).toBeGreaterThan(0)
-      expect(station.inPendingState()).toBe(true)
+      if (station.bootNotificationResponse == null) {
+        assert.fail('Expected bootNotificationResponse to be defined')
+      }
+      assert.ok(station.bootNotificationResponse.interval > 0)
+      assert.strictEqual(station.inPendingState(), true)
     })
 
     // B02.FR.02: Station should be able to transition out of Pending via new response
@@ -49,7 +51,7 @@ await describe('ChargingStation Configuration Management', async () => {
         bootNotificationStatus: RegistrationStatusEnumType.PENDING,
       })
       station = result.station
-      expect(station.inPendingState()).toBe(true)
+      assert.strictEqual(station.inPendingState(), true)
 
       // Act - Simulate receiving Accepted response (as would happen after retry)
       station.bootNotificationResponse = {
@@ -59,8 +61,8 @@ await describe('ChargingStation Configuration Management', async () => {
       }
 
       // Assert - Should now be in Accepted state
-      expect(station.inAcceptedState()).toBe(true)
-      expect(station.inPendingState()).toBe(false)
+      assert.strictEqual(station.inAcceptedState(), true)
+      assert.strictEqual(station.inPendingState(), false)
     })
 
     // B02.FR.03: Pending station should have valid heartbeat interval for operation
@@ -74,8 +76,8 @@ await describe('ChargingStation Configuration Management', async () => {
       station = result.station
 
       // Assert - Heartbeat interval should match response interval
-      expect(station.getHeartbeatInterval()).toBe(customInterval * 1000)
-      expect(station.inPendingState()).toBe(true)
+      assert.strictEqual(station.getHeartbeatInterval(), customInterval * 1000)
+      assert.strictEqual(station.inPendingState(), true)
     })
 
     // B02.FR.06: Station should handle clock synchronization from response
@@ -87,8 +89,8 @@ await describe('ChargingStation Configuration Management', async () => {
       station = result.station
 
       // Assert - currentTime should be present for clock synchronization
-      expect(station.bootNotificationResponse?.currentTime).toBeDefined()
-      expect(station.bootNotificationResponse?.currentTime instanceof Date).toBe(true)
+      assert.notStrictEqual(station.bootNotificationResponse?.currentTime, undefined)
+      assert.ok(station.bootNotificationResponse?.currentTime instanceof Date)
     })
 
     // B02.FR.04/05: Station should be able to transition to Rejected from Pending
@@ -98,7 +100,7 @@ await describe('ChargingStation Configuration Management', async () => {
         bootNotificationStatus: RegistrationStatusEnumType.PENDING,
       })
       station = result.station
-      expect(station.inPendingState()).toBe(true)
+      assert.strictEqual(station.inPendingState(), true)
 
       // Act - Simulate receiving Rejected response
       station.bootNotificationResponse = {
@@ -108,8 +110,8 @@ await describe('ChargingStation Configuration Management', async () => {
       }
 
       // Assert - Should now be in Rejected state
-      expect(station.inRejectedState()).toBe(true)
-      expect(station.inPendingState()).toBe(false)
+      assert.strictEqual(station.inRejectedState(), true)
+      assert.strictEqual(station.inPendingState(), false)
     })
   })
 
@@ -135,9 +137,11 @@ await describe('ChargingStation Configuration Management', async () => {
       station = result.station
 
       // Assert - Rejected response should have interval for retry (typically longer)
-      expect(station.bootNotificationResponse).toBeDefined()
-      expect(station.bootNotificationResponse?.interval).toBeGreaterThan(0)
-      expect(station.inRejectedState()).toBe(true)
+      if (station.bootNotificationResponse == null) {
+        assert.fail('Expected bootNotificationResponse to be defined')
+      }
+      assert.ok(station.bootNotificationResponse.interval > 0)
+      assert.strictEqual(station.inRejectedState(), true)
     })
 
     // B03.FR.03: Station should NOT initiate non-boot messages when Rejected
@@ -154,11 +158,11 @@ await describe('ChargingStation Configuration Management', async () => {
       mocks.webSocket.clearMessages()
 
       // Assert - Station is in rejected state
-      expect(station.inRejectedState()).toBe(true)
+      assert.strictEqual(station.inRejectedState(), true)
 
       // Assert - No messages should have been sent (station should be silent)
       // Per B03.FR.03: CS SHALL NOT send any OCPP message until interval expires
-      expect(mocks.webSocket.sentMessages.length).toBe(0)
+      assert.strictEqual(mocks.webSocket.sentMessages.length, 0)
     })
 
     // B03.FR.04: Station should transition from Rejected to Accepted
@@ -168,7 +172,7 @@ await describe('ChargingStation Configuration Management', async () => {
         bootNotificationStatus: RegistrationStatusEnumType.REJECTED,
       })
       station = result.station
-      expect(station.inRejectedState()).toBe(true)
+      assert.strictEqual(station.inRejectedState(), true)
 
       // Act - Simulate receiving Accepted response after retry
       station.bootNotificationResponse = {
@@ -178,8 +182,8 @@ await describe('ChargingStation Configuration Management', async () => {
       }
 
       // Assert - Should now be in Accepted state
-      expect(station.inAcceptedState()).toBe(true)
-      expect(station.inRejectedState()).toBe(false)
+      assert.strictEqual(station.inAcceptedState(), true)
+      assert.strictEqual(station.inRejectedState(), false)
     })
 
     // B03.FR.05: Station should have currentTime for clock synchronization
@@ -191,8 +195,8 @@ await describe('ChargingStation Configuration Management', async () => {
       station = result.station
 
       // Assert - currentTime should be present
-      expect(station.bootNotificationResponse?.currentTime).toBeDefined()
-      expect(station.bootNotificationResponse?.currentTime instanceof Date).toBe(true)
+      assert.notStrictEqual(station.bootNotificationResponse?.currentTime, undefined)
+      assert.ok(station.bootNotificationResponse?.currentTime instanceof Date)
     })
 
     // B03.FR.02: Rejected state should use different (typically longer) retry interval
@@ -209,10 +213,10 @@ await describe('ChargingStation Configuration Management', async () => {
       })
 
       // Assert - Both should have their respective intervals
-      expect(pendingStation.station.inPendingState()).toBe(true)
-      expect(rejectedStation.station.inRejectedState()).toBe(true)
-      expect(pendingStation.station.getHeartbeatInterval()).toBe(60000)
-      expect(rejectedStation.station.getHeartbeatInterval()).toBe(TEST_ONE_HOUR_MS)
+      assert.strictEqual(pendingStation.station.inPendingState(), true)
+      assert.strictEqual(rejectedStation.station.inRejectedState(), true)
+      assert.strictEqual(pendingStation.station.getHeartbeatInterval(), 60000)
+      assert.strictEqual(rejectedStation.station.getHeartbeatInterval(), TEST_ONE_HOUR_MS)
 
       // Cleanup
       cleanupChargingStation(pendingStation.station)
@@ -235,8 +239,8 @@ await describe('ChargingStation Configuration Management', async () => {
       }
 
       // Assert - Connector state should be preserved even in Rejected state
-      expect(station.getConnectorStatus(1)?.availability).toBe(AvailabilityType.Operative)
-      expect(station.hasConnector(1)).toBe(true)
+      assert.strictEqual(station.getConnectorStatus(1)?.availability, AvailabilityType.Operative)
+      assert.strictEqual(station.hasConnector(1), true)
     })
   })
 
@@ -261,7 +265,7 @@ await describe('ChargingStation Configuration Management', async () => {
       station = result.station
 
       // Act & Assert - should convert seconds to milliseconds
-      expect(station.getHeartbeatInterval()).toBe(60000)
+      assert.strictEqual(station.getHeartbeatInterval(), 60000)
     })
 
     await it('should return default heartbeat interval when not explicitly configured', () => {
@@ -270,7 +274,7 @@ await describe('ChargingStation Configuration Management', async () => {
       station = result.station
 
       // Act & Assert - default 60s * 1000 = 60000ms
-      expect(station.getHeartbeatInterval()).toBe(60000)
+      assert.strictEqual(station.getHeartbeatInterval(), 60000)
     })
 
     await it('should return connection timeout in milliseconds', () => {
@@ -279,7 +283,7 @@ await describe('ChargingStation Configuration Management', async () => {
       station = result.station
 
       // Act & Assert - default connection timeout is 30 seconds
-      expect(station.getConnectionTimeout()).toBe(TEST_HEARTBEAT_INTERVAL_MS)
+      assert.strictEqual(station.getConnectionTimeout(), TEST_HEARTBEAT_INTERVAL_MS)
     })
 
     await it('should return authorize remote TX requests as boolean', () => {
@@ -289,7 +293,7 @@ await describe('ChargingStation Configuration Management', async () => {
 
       // Act & Assert - getAuthorizeRemoteTxRequests returns boolean
       const authorizeRemoteTx = station.getAuthorizeRemoteTxRequests()
-      expect(typeof authorizeRemoteTx).toBe('boolean')
+      assert.strictEqual(typeof authorizeRemoteTx, 'boolean')
     })
 
     await it('should return local auth list enabled as boolean', () => {
@@ -299,7 +303,7 @@ await describe('ChargingStation Configuration Management', async () => {
 
       // Act & Assert - getLocalAuthListEnabled returns boolean
       const localAuthEnabled = station.getLocalAuthListEnabled()
-      expect(typeof localAuthEnabled).toBe('boolean')
+      assert.strictEqual(typeof localAuthEnabled, 'boolean')
     })
 
     // === Configuration Save Operations ===
@@ -310,7 +314,9 @@ await describe('ChargingStation Configuration Management', async () => {
       station = result.station
 
       // Act & Assert - should not throw
-      expect(() => station?.saveOcppConfiguration()).not.toThrow()
+      assert.doesNotThrow(() => {
+        station?.saveOcppConfiguration()
+      })
     })
 
     await it('should have ocppConfiguration object with configurationKey array', () => {
@@ -319,9 +325,9 @@ await describe('ChargingStation Configuration Management', async () => {
       station = result.station
 
       // Act & Assert - configuration structure should be present
-      expect(station.ocppConfiguration).toBeDefined()
-      expect(station.ocppConfiguration?.configurationKey).toBeDefined()
-      expect(Array.isArray(station.ocppConfiguration?.configurationKey)).toBe(true)
+      assert.notStrictEqual(station.ocppConfiguration, undefined)
+      assert.notStrictEqual(station.ocppConfiguration?.configurationKey, undefined)
+      assert.ok(Array.isArray(station.ocppConfiguration?.configurationKey))
     })
 
     // === Configuration Mutation ===
@@ -331,15 +337,15 @@ await describe('ChargingStation Configuration Management', async () => {
       const result = createMockChargingStation({ heartbeatInterval: 60 })
       station = result.station
       const initialInterval = station.getHeartbeatInterval()
-      expect(initialInterval).toBe(60000)
+      assert.strictEqual(initialInterval, 60000)
 
       // Act - simulate configuration change by creating new station with different interval
       const result2 = createMockChargingStation({ heartbeatInterval: 120 })
       const station2 = result2.station
 
       // Assert - different configurations have different intervals
-      expect(station2.getHeartbeatInterval()).toBe(120000)
-      expect(station.getHeartbeatInterval()).toBe(60000) // Original unchanged
+      assert.strictEqual(station2.getHeartbeatInterval(), 120000)
+      assert.strictEqual(station.getHeartbeatInterval(), 60000) // Original unchanged
 
       // Cleanup second station
       cleanupChargingStation(station2)
@@ -352,10 +358,12 @@ await describe('ChargingStation Configuration Management', async () => {
 
       // Act & Assert - setSupervisionUrl should be a function if available
       if ('setSupervisionUrl' in station && typeof station.setSupervisionUrl === 'function') {
-        expect(() => station?.setSupervisionUrl('ws://new-server:8080')).not.toThrow()
+        assert.doesNotThrow(() => {
+          station?.setSupervisionUrl('ws://new-server:8080')
+        })
       } else {
         // Mock station may not have setSupervisionUrl, which is expected
-        expect(station).toBeDefined()
+        assert.notStrictEqual(station, undefined)
       }
     })
 
@@ -367,7 +375,7 @@ await describe('ChargingStation Configuration Management', async () => {
       station = result.station
 
       // Act & Assert - station info should have template reference
-      expect(station.stationInfo?.templateName).toBe('custom-template.json')
+      assert.strictEqual(station.stationInfo?.templateName, 'custom-template.json')
     })
 
     await it('should have hashId for configuration persistence', () => {
@@ -376,8 +384,8 @@ await describe('ChargingStation Configuration Management', async () => {
       station = result.station
 
       // Act & Assert - hashId is used for configuration file naming
-      expect(station.stationInfo?.hashId).toBeDefined()
-      expect(typeof station.stationInfo?.hashId).toBe('string')
+      assert.notStrictEqual(station.stationInfo?.hashId, undefined)
+      assert.strictEqual(typeof station.stationInfo?.hashId, 'string')
     })
 
     await it('should preserve station info properties for persistence', () => {
@@ -389,10 +397,10 @@ await describe('ChargingStation Configuration Management', async () => {
       station = result.station
 
       // Act & Assert - station info should have all properties for persistence
-      expect(station.stationInfo).toBeDefined()
-      expect(station.stationInfo?.baseName).toBe('PERSIST-CS')
-      expect(station.stationInfo?.chargingStationId).toContain('PERSIST-CS')
-      expect(station.stationInfo?.templateIndex).toBe(5)
+      assert.notStrictEqual(station.stationInfo, undefined)
+      assert.strictEqual(station.stationInfo?.baseName, 'PERSIST-CS')
+      assert.ok(station.stationInfo.chargingStationId?.includes('PERSIST-CS'))
+      assert.strictEqual(station.stationInfo.templateIndex, 5)
     })
 
     await it('should track configuration file path via templateFile', () => {
@@ -401,8 +409,8 @@ await describe('ChargingStation Configuration Management', async () => {
       station = result.station
 
       // Act & Assert - templateFile is used to track configuration source
-      expect(station.templateFile).toBeDefined()
-      expect(typeof station.templateFile).toBe('string')
+      assert.notStrictEqual(station.templateFile, undefined)
+      assert.strictEqual(typeof station.templateFile, 'string')
     })
 
     await it('should use mocked file system without real file writes', () => {
@@ -415,10 +423,10 @@ await describe('ChargingStation Configuration Management', async () => {
       station.saveOcppConfiguration()
 
       // Assert - mock file system is available for tracking (no real writes)
-      expect(mocks.fileSystem).toBeDefined()
-      expect(mocks.fileSystem.writtenFiles).toBeInstanceOf(Map)
+      assert.notStrictEqual(mocks.fileSystem, undefined)
+      assert.ok(mocks.fileSystem.writtenFiles instanceof Map)
       // In mock mode, saveOcppConfiguration is a no-op, so no files are written
-      expect(mocks.fileSystem.writtenFiles.size).toBe(0)
+      assert.strictEqual(mocks.fileSystem.writtenFiles.size, 0)
     })
   })
 
@@ -444,13 +452,13 @@ await describe('ChargingStation Configuration Management', async () => {
       const mocks = result.mocks
 
       // Assert - connection is open by default
-      expect(station.isWebSocketConnectionOpened()).toBe(true)
+      assert.strictEqual(station.isWebSocketConnectionOpened(), true)
 
       // Act - change ready state to CLOSED
       mocks.webSocket.readyState = 3 // WebSocketReadyState.CLOSED
 
       // Assert
-      expect(station.isWebSocketConnectionOpened()).toBe(false)
+      assert.strictEqual(station.isWebSocketConnectionOpened(), false)
     })
 
     await it('should return false when WebSocket is CONNECTING', () => {
@@ -463,7 +471,7 @@ await describe('ChargingStation Configuration Management', async () => {
       mocks.webSocket.readyState = 0 // WebSocketReadyState.CONNECTING
 
       // Assert
-      expect(station.isWebSocketConnectionOpened()).toBe(false)
+      assert.strictEqual(station.isWebSocketConnectionOpened(), false)
     })
 
     await it('should return false when WebSocket is CLOSING', () => {
@@ -476,7 +484,7 @@ await describe('ChargingStation Configuration Management', async () => {
       mocks.webSocket.readyState = 2 // WebSocketReadyState.CLOSING
 
       // Assert
-      expect(station.isWebSocketConnectionOpened()).toBe(false)
+      assert.strictEqual(station.isWebSocketConnectionOpened(), false)
     })
 
     await it('should close WebSocket connection via closeWSConnection()', () => {
@@ -485,13 +493,13 @@ await describe('ChargingStation Configuration Management', async () => {
       station = result.station
 
       // Assert - connection exists initially
-      expect(station.wsConnection).not.toBeNull()
+      assert.notStrictEqual(station.wsConnection, null)
 
       // Act
       station.closeWSConnection()
 
       // Assert - connection is nullified
-      expect(station.wsConnection).toBeNull()
+      assert.strictEqual(station.wsConnection, null)
     })
 
     await it('should handle closeWSConnection() when already closed', () => {
@@ -504,7 +512,7 @@ await describe('ChargingStation Configuration Management', async () => {
       station.closeWSConnection()
 
       // Assert - no error, connection remains null
-      expect(station.wsConnection).toBeNull()
+      assert.strictEqual(station.wsConnection, null)
     })
 
     // === Message Capture Tests ===
@@ -520,9 +528,10 @@ await describe('ChargingStation Configuration Management', async () => {
       mocks.webSocket.send('["2","uuid-2","StatusNotification",{"connectorId":1}]')
 
       // Assert
-      expect(mocks.webSocket.sentMessages.length).toBe(2)
-      expect(mocks.webSocket.sentMessages[0]).toBe('["2","uuid-1","Heartbeat",{}]')
-      expect(mocks.webSocket.sentMessages[1]).toBe(
+      assert.strictEqual(mocks.webSocket.sentMessages.length, 2)
+      assert.strictEqual(mocks.webSocket.sentMessages[0], '["2","uuid-1","Heartbeat",{}]')
+      assert.strictEqual(
+        mocks.webSocket.sentMessages[1],
         '["2","uuid-2","StatusNotification",{"connectorId":1}]'
       )
     })
@@ -538,7 +547,10 @@ await describe('ChargingStation Configuration Management', async () => {
       mocks.webSocket.send('["2","uuid-2","BootNotification",{}]')
 
       // Assert
-      expect(mocks.webSocket.getLastSentMessage()).toBe('["2","uuid-2","BootNotification",{}]')
+      assert.strictEqual(
+        mocks.webSocket.getLastSentMessage(),
+        '["2","uuid-2","BootNotification",{}]'
+      )
     })
 
     await it('should return undefined for getLastSentMessage() when no messages sent', () => {
@@ -548,7 +560,7 @@ await describe('ChargingStation Configuration Management', async () => {
       const mocks = result.mocks
 
       // Assert
-      expect(mocks.webSocket.getLastSentMessage()).toBeUndefined()
+      assert.strictEqual(mocks.webSocket.getLastSentMessage(), undefined)
     })
 
     await it('should parse sent messages as JSON via getSentMessagesAsJson()', () => {
@@ -562,8 +574,8 @@ await describe('ChargingStation Configuration Management', async () => {
 
       // Assert
       const parsed = mocks.webSocket.getSentMessagesAsJson()
-      expect(parsed.length).toBe(1)
-      expect(parsed[0]).toStrictEqual([2, 'uuid-1', 'Heartbeat', {}])
+      assert.strictEqual(parsed.length, 1)
+      assert.deepStrictEqual(parsed[0], [2, 'uuid-1', 'Heartbeat', {}])
     })
 
     await it('should clear captured messages via clearMessages()', () => {
@@ -575,14 +587,14 @@ await describe('ChargingStation Configuration Management', async () => {
       // Populate messages
       mocks.webSocket.send('["2","uuid-1","Heartbeat",{}]')
       mocks.webSocket.send('["2","uuid-2","Heartbeat",{}]')
-      expect(mocks.webSocket.sentMessages.length).toBe(2)
+      assert.strictEqual(mocks.webSocket.sentMessages.length, 2)
 
       // Act
       mocks.webSocket.clearMessages()
 
       // Assert
-      expect(mocks.webSocket.sentMessages.length).toBe(0)
-      expect(mocks.webSocket.sentBinaryMessages.length).toBe(0)
+      assert.strictEqual(mocks.webSocket.sentMessages.length, 0)
+      assert.strictEqual(mocks.webSocket.sentBinaryMessages.length, 0)
     })
 
     // === Event Simulation Tests ===
@@ -603,8 +615,8 @@ await describe('ChargingStation Configuration Management', async () => {
       mocks.webSocket.simulateMessage('[3,"uuid-1",{}]')
 
       // Assert
-      expect(receivedData).toBeDefined()
-      expect(Buffer.isBuffer(receivedData)).toBe(true)
+      assert.notStrictEqual(receivedData, undefined)
+      assert.ok(Buffer.isBuffer(receivedData))
     })
 
     await it('should emit open event and set readyState via simulateOpen()', () => {
@@ -626,8 +638,8 @@ await describe('ChargingStation Configuration Management', async () => {
       mocks.webSocket.simulateOpen()
 
       // Assert
-      expect(openEventFired).toBe(true)
-      expect(mocks.webSocket.readyState).toBe(1) // WebSocketReadyState.OPEN
+      assert.strictEqual(openEventFired, true)
+      assert.strictEqual(mocks.webSocket.readyState, 1) // WebSocketReadyState.OPEN
     })
 
     await it('should emit close event and set readyState via simulateClose()', () => {
@@ -646,8 +658,8 @@ await describe('ChargingStation Configuration Management', async () => {
       mocks.webSocket.simulateClose(1001, 'Going away')
 
       // Assert
-      expect(closeCode).toBe(1001)
-      expect(mocks.webSocket.readyState).toBe(3) // WebSocketReadyState.CLOSED
+      assert.strictEqual(closeCode, 1001)
+      assert.strictEqual(mocks.webSocket.readyState, 3) // WebSocketReadyState.CLOSED
     })
 
     await it('should emit error event via simulateError()', () => {
@@ -667,8 +679,8 @@ await describe('ChargingStation Configuration Management', async () => {
       mocks.webSocket.simulateError(testError)
 
       // Assert
-      expect(receivedError).toBe(testError)
-      expect(receivedError?.message).toBe('Connection refused')
+      assert.strictEqual(receivedError, testError)
+      assert.strictEqual(receivedError.message, 'Connection refused')
     })
 
     await it('should emit ping event via simulatePing()', () => {
@@ -689,8 +701,8 @@ await describe('ChargingStation Configuration Management', async () => {
       mocks.webSocket.simulatePing(Buffer.from('ping-data'))
 
       // Assert
-      expect(pingReceived).toBe(true)
-      expect(pingData?.toString()).toBe('ping-data')
+      assert.strictEqual(pingReceived, true)
+      assert.strictEqual(pingData?.toString(), 'ping-data')
     })
 
     await it('should emit pong event via simulatePong()', () => {
@@ -711,8 +723,8 @@ await describe('ChargingStation Configuration Management', async () => {
       mocks.webSocket.simulatePong(Buffer.from('pong-data'))
 
       // Assert
-      expect(pongReceived).toBe(true)
-      expect(pongData?.toString()).toBe('pong-data')
+      assert.strictEqual(pongReceived, true)
+      assert.strictEqual(pongData?.toString(), 'pong-data')
     })
 
     // === Edge Case Tests ===
@@ -727,9 +739,12 @@ await describe('ChargingStation Configuration Management', async () => {
       mocks.webSocket.readyState = 3 // WebSocketReadyState.CLOSED
 
       // Act & Assert
-      expect(() => {
-        mocks.webSocket.send('["2","uuid","Heartbeat",{}]')
-      }).toThrow('WebSocket is not open')
+      assert.throws(
+        () => {
+          mocks.webSocket.send('["2","uuid","Heartbeat",{}]')
+        },
+        { message: /WebSocket is not open/ }
+      )
     })
 
     await it('should capture URL from WebSocket connection', () => {
@@ -739,9 +754,9 @@ await describe('ChargingStation Configuration Management', async () => {
       const mocks = result.mocks
 
       // Assert
-      expect(mocks.webSocket.url).toBeDefined()
-      expect(typeof mocks.webSocket.url).toBe('string')
-      expect(mocks.webSocket.url.length).toBeGreaterThan(0)
+      assert.notStrictEqual(mocks.webSocket.url, undefined)
+      assert.strictEqual(typeof mocks.webSocket.url, 'string')
+      assert.ok(mocks.webSocket.url.length > 0)
     })
   })
 
@@ -768,8 +783,8 @@ await describe('ChargingStation Configuration Management', async () => {
         const pingInterval = station.getWebSocketPingInterval()
 
         // Assert - should return a valid interval value
-        expect(pingInterval).toBeGreaterThanOrEqual(0)
-        expect(typeof pingInterval).toBe('number')
+        assert.ok(pingInterval >= 0)
+        assert.strictEqual(typeof pingInterval, 'number')
       })
     })
 
@@ -783,7 +798,7 @@ await describe('ChargingStation Configuration Management', async () => {
         station.restartWebSocketPing()
 
         // Assert - should complete without error
-        expect(station).toBeDefined()
+        assert.notStrictEqual(station, undefined)
       })
     })
   })

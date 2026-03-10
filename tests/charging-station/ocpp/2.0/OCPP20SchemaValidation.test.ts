@@ -9,9 +9,9 @@
  * mode rejects at compile time).
  */
 
-import { expect } from '@std/expect'
 import _Ajv, { type ValidateFunction } from 'ajv'
 import _ajvFormats from 'ajv-formats'
+import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterEach, describe, it } from 'node:test'
@@ -57,147 +57,151 @@ await describe('OCPP 2.0 schema validation — negative tests', async () => {
 
   await it('should compile ResetRequest schema without error (strict:false required)', () => {
     // Verifies the AJV configuration works for schemas using additionalItems pattern
-    expect(() => makeValidator('ResetRequest.json')).not.toThrow()
+    assert.doesNotThrow(() => {
+      makeValidator('ResetRequest.json')
+    })
   })
 
   await it('should compile GetVariablesRequest schema without error (uses additionalItems)', () => {
     // GetVariablesRequest uses additionalItems:false — would fail in strict mode
-    expect(() => makeValidator('GetVariablesRequest.json')).not.toThrow()
+    assert.doesNotThrow(() => {
+      makeValidator('GetVariablesRequest.json')
+    })
   })
 
   await it('should fail validation when Reset payload is missing required "type" field', () => {
     const validate = makeValidator('ResetRequest.json')
-    expect(validate({})).toBe(false)
-    expect(validate.errors).toBeDefined()
+    assert.strictEqual(validate({}), false)
+    assert.notStrictEqual(validate.errors, undefined)
     // AJV reports missingProperty for required field violations
     const hasMissingType = validate.errors?.some(
       e =>
         e.keyword === 'required' &&
         (e.params as { missingProperty?: string }).missingProperty === 'type'
     )
-    expect(hasMissingType).toBe(true)
+    assert.strictEqual(hasMissingType, true)
   })
 
   await it('should fail validation when Reset payload has invalid "type" enum value', () => {
     const validate = makeValidator('ResetRequest.json')
     // Valid values are Immediate and OnIdle only; HardReset is OCPP 1.6
-    expect(validate({ type: 'HardReset' })).toBe(false)
-    expect(validate.errors).toBeDefined()
+    assert.strictEqual(validate({ type: 'HardReset' }), false)
+    assert.notStrictEqual(validate.errors, undefined)
     const hasEnumError = validate.errors?.some(e => e.keyword === 'enum')
-    expect(hasEnumError).toBe(true)
+    assert.strictEqual(hasEnumError, true)
   })
 
   await it('should fail validation when GetVariables has empty getVariableData array', () => {
     const validate = makeValidator('GetVariablesRequest.json')
-    expect(validate({ getVariableData: [] })).toBe(false)
-    expect(validate.errors).toBeDefined()
+    assert.strictEqual(validate({ getVariableData: [] }), false)
+    assert.notStrictEqual(validate.errors, undefined)
     const hasMinItemsError = validate.errors?.some(e => e.keyword === 'minItems')
-    expect(hasMinItemsError).toBe(true)
+    assert.strictEqual(hasMinItemsError, true)
   })
 
   await it('should fail validation when GetVariables is missing required getVariableData', () => {
     const validate = makeValidator('GetVariablesRequest.json')
-    expect(validate({})).toBe(false)
-    expect(validate.errors).toBeDefined()
+    assert.strictEqual(validate({}), false)
+    assert.notStrictEqual(validate.errors, undefined)
     const hasMissingProp = validate.errors?.some(
       e =>
         e.keyword === 'required' &&
         (e.params as { missingProperty?: string }).missingProperty === 'getVariableData'
     )
-    expect(hasMissingProp).toBe(true)
+    assert.strictEqual(hasMissingProp, true)
   })
 
   await it('should fail validation when SetVariables is missing required setVariableData', () => {
     const validate = makeValidator('SetVariablesRequest.json')
-    expect(validate({})).toBe(false)
-    expect(validate.errors).toBeDefined()
+    assert.strictEqual(validate({}), false)
+    assert.notStrictEqual(validate.errors, undefined)
     const hasMissingProp = validate.errors?.some(
       e =>
         e.keyword === 'required' &&
         (e.params as { missingProperty?: string }).missingProperty === 'setVariableData'
     )
-    expect(hasMissingProp).toBe(true)
+    assert.strictEqual(hasMissingProp, true)
   })
 
   await it('should fail validation when TriggerMessage has invalid requestedMessage enum value', () => {
     const validate = makeValidator('TriggerMessageRequest.json')
-    expect(validate({ requestedMessage: 'INVALID_MESSAGE_TYPE_XYZ' })).toBe(false)
-    expect(validate.errors).toBeDefined()
+    assert.strictEqual(validate({ requestedMessage: 'INVALID_MESSAGE_TYPE_XYZ' }), false)
+    assert.notStrictEqual(validate.errors, undefined)
     const hasEnumError = validate.errors?.some(e => e.keyword === 'enum')
-    expect(hasEnumError).toBe(true)
+    assert.strictEqual(hasEnumError, true)
   })
 
   await it('should fail validation when TriggerMessage is missing required requestedMessage', () => {
     const validate = makeValidator('TriggerMessageRequest.json')
-    expect(validate({})).toBe(false)
-    expect(validate.errors).toBeDefined()
+    assert.strictEqual(validate({}), false)
+    assert.notStrictEqual(validate.errors, undefined)
     const hasMissingProp = validate.errors?.some(
       e =>
         e.keyword === 'required' &&
         (e.params as { missingProperty?: string }).missingProperty === 'requestedMessage'
     )
-    expect(hasMissingProp).toBe(true)
+    assert.strictEqual(hasMissingProp, true)
   })
 
   await it('should fail validation when UnlockConnector is missing required evseId', () => {
     const validate = makeValidator('UnlockConnectorRequest.json')
-    expect(validate({ connectorId: 1 })).toBe(false)
-    expect(validate.errors).toBeDefined()
+    assert.strictEqual(validate({ connectorId: 1 }), false)
+    assert.notStrictEqual(validate.errors, undefined)
     const hasMissingProp = validate.errors?.some(
       e =>
         e.keyword === 'required' &&
         (e.params as { missingProperty?: string }).missingProperty === 'evseId'
     )
-    expect(hasMissingProp).toBe(true)
+    assert.strictEqual(hasMissingProp, true)
   })
 
   await it('should fail validation when UnlockConnector is missing required connectorId', () => {
     const validate = makeValidator('UnlockConnectorRequest.json')
-    expect(validate({ evseId: 1 })).toBe(false)
-    expect(validate.errors).toBeDefined()
+    assert.strictEqual(validate({ evseId: 1 }), false)
+    assert.notStrictEqual(validate.errors, undefined)
     const hasMissingProp = validate.errors?.some(
       e =>
         e.keyword === 'required' &&
         (e.params as { missingProperty?: string }).missingProperty === 'connectorId'
     )
-    expect(hasMissingProp).toBe(true)
+    assert.strictEqual(hasMissingProp, true)
   })
 
   await it('should fail validation when RequestStartTransaction is missing required idToken', () => {
     const validate = makeValidator('RequestStartTransactionRequest.json')
     // remoteStartId is also required; provide it but omit idToken
-    expect(validate({ remoteStartId: 1 })).toBe(false)
-    expect(validate.errors).toBeDefined()
+    assert.strictEqual(validate({ remoteStartId: 1 }), false)
+    assert.notStrictEqual(validate.errors, undefined)
     const hasMissingProp = validate.errors?.some(
       e =>
         e.keyword === 'required' &&
         (e.params as { missingProperty?: string }).missingProperty === 'idToken'
     )
-    expect(hasMissingProp).toBe(true)
+    assert.strictEqual(hasMissingProp, true)
   })
 
   await it('should fail validation when CertificateSigned is missing required certificateChain', () => {
     const validate = makeValidator('CertificateSignedRequest.json')
-    expect(validate({})).toBe(false)
-    expect(validate.errors).toBeDefined()
+    assert.strictEqual(validate({}), false)
+    assert.notStrictEqual(validate.errors, undefined)
     const hasMissingProp = validate.errors?.some(
       e =>
         e.keyword === 'required' &&
         (e.params as { missingProperty?: string }).missingProperty === 'certificateChain'
     )
-    expect(hasMissingProp).toBe(true)
+    assert.strictEqual(hasMissingProp, true)
   })
 
   await it('should pass validation for valid Reset payloads', () => {
     const validate = makeValidator('ResetRequest.json')
-    expect(validate({ type: 'Immediate' })).toBe(true)
-    expect(validate({ type: 'OnIdle' })).toBe(true)
-    expect(validate({ evseId: 1, type: 'OnIdle' })).toBe(true)
+    assert.strictEqual(validate({ type: 'Immediate' }), true)
+    assert.strictEqual(validate({ type: 'OnIdle' }), true)
+    assert.strictEqual(validate({ evseId: 1, type: 'OnIdle' }), true)
   })
 
   await it('should pass validation for valid TriggerMessage payloads', () => {
     const validate = makeValidator('TriggerMessageRequest.json')
-    expect(validate({ requestedMessage: 'Heartbeat' })).toBe(true)
-    expect(validate({ requestedMessage: 'BootNotification' })).toBe(true)
+    assert.strictEqual(validate({ requestedMessage: 'Heartbeat' }), true)
+    assert.strictEqual(validate({ requestedMessage: 'BootNotification' }), true)
   })
 })

@@ -2,7 +2,7 @@
  * @file MockFactories
  * @description Mock factory functions for authentication testing
  */
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 
 import type { ChargingStation } from '../../../../../src/charging-station/ChargingStation.js'
 import type {
@@ -235,10 +235,10 @@ export const expectAcceptedAuthorization = (
   result: AuthorizationResult,
   expectedMethod?: AuthenticationMethod
 ): void => {
-  expect(result.status).toBe(AuthorizationStatus.ACCEPTED)
-  expect(result.timestamp).toBeInstanceOf(Date)
+  assert.strictEqual(result.status, AuthorizationStatus.ACCEPTED)
+  assert.ok(result.timestamp instanceof Date)
   if (expectedMethod !== undefined) {
-    expect(result.method).toBe(expectedMethod)
+    assert.strictEqual(result.method, expectedMethod)
   }
 }
 
@@ -251,9 +251,9 @@ export const expectRejectedAuthorization = (
   result: AuthorizationResult,
   expectedStatus: AuthorizationStatus = AuthorizationStatus.INVALID
 ): void => {
-  expect(result.status).toBe(expectedStatus)
-  expect(result.status).not.toBe(AuthorizationStatus.ACCEPTED)
-  expect(result.timestamp).toBeInstanceOf(Date)
+  assert.strictEqual(result.status, expectedStatus)
+  assert.notStrictEqual(result.status, AuthorizationStatus.ACCEPTED)
+  assert.ok(result.timestamp instanceof Date)
 }
 
 // ============================================================================

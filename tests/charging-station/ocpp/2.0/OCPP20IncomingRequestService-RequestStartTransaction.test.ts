@@ -2,7 +2,7 @@
  * @file Tests for OCPP20IncomingRequestService RequestStartTransaction
  * @description Unit tests for OCPP 2.0 RequestStartTransaction command handling (F01/F02)
  */
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
@@ -79,10 +79,10 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
 
     const response = await testableService.handleRequestStartTransaction(mockStation, validRequest)
 
-    expect(response).toBeDefined()
-    expect(response.status).toBe(RequestStartStopStatusEnumType.Accepted)
-    expect(response.transactionId).toBeDefined()
-    expect(typeof response.transactionId).toBe('string')
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
+    assert.notStrictEqual(response.transactionId, undefined)
+    assert.strictEqual(typeof response.transactionId, 'string')
   })
 
   // FR: F01.FR.17, F02.FR.05 - Verify remoteStartId and idToken are stored for later TransactionEvent
@@ -119,16 +119,19 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       requestWithRemoteStartId
     )
 
-    expect(response).toBeDefined()
-    expect(response.status).toBe(RequestStartStopStatusEnumType.Accepted)
-    expect(response.transactionId).toBeDefined()
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
+    assert.notStrictEqual(response.transactionId, undefined)
 
     const connectorStatus = spyChargingStation.getConnectorStatus(1)
-    expect(connectorStatus).toBeDefined()
-    expect(connectorStatus?.remoteStartId).toBe(42)
-    expect(connectorStatus?.transactionIdTag).toBe('REMOTE_TOKEN_456')
-    expect(connectorStatus?.transactionStarted).toBe(true)
-    expect(connectorStatus?.transactionId).toBe(response.transactionId)
+    assert.notStrictEqual(connectorStatus, undefined)
+    if (connectorStatus == null) {
+      assert.fail('Expected connectorStatus to be defined')
+    }
+    assert.strictEqual(connectorStatus.remoteStartId, 42)
+    assert.strictEqual(connectorStatus.transactionIdTag, 'REMOTE_TOKEN_456')
+    assert.strictEqual(connectorStatus.transactionStarted, true)
+    assert.strictEqual(connectorStatus.transactionId, response.transactionId)
 
     OCPPAuthServiceFactory.clearAllInstances()
   })
@@ -153,9 +156,9 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       requestWithGroupToken
     )
 
-    expect(response).toBeDefined()
-    expect(response.status).toBe(RequestStartStopStatusEnumType.Accepted)
-    expect(response.transactionId).toBeDefined()
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
+    assert.notStrictEqual(response.transactionId, undefined)
   })
 
   // OCPP 2.0.1 §2.10 ChargingProfile validation tests
@@ -194,9 +197,9 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       requestWithValidProfile
     )
 
-    expect(response).toBeDefined()
-    expect(response.status).toBe(RequestStartStopStatusEnumType.Accepted)
-    expect(response.transactionId).toBeDefined()
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
+    assert.notStrictEqual(response.transactionId, undefined)
   })
 
   // OCPP 2.0.1 §2.10: RequestStartTransaction requires chargingProfilePurpose=TxProfile
@@ -235,8 +238,8 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       requestWithInvalidProfile
     )
 
-    expect(response).toBeDefined()
-    expect(response.status).toBe(RequestStartStopStatusEnumType.Rejected)
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
   })
 
   // OCPP 2.0.1 §2.10: transactionId MUST NOT be present at RequestStartTransaction time
@@ -276,8 +279,8 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       requestWithTransactionIdProfile
     )
 
-    expect(response).toBeDefined()
-    expect(response.status).toBe(RequestStartStopStatusEnumType.Rejected)
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
   })
 
   // FR: F01.FR.07
@@ -292,9 +295,10 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     }
 
     // Should throw OCPPError for invalid evseId
-    await expect(
-      testableService.handleRequestStartTransaction(mockStation, invalidEvseRequest)
-    ).rejects.toThrow('EVSE 999 does not exist on charging station')
+    await assert.rejects(
+      testableService.handleRequestStartTransaction(mockStation, invalidEvseRequest),
+      { message: /EVSE 999 does not exist on charging station/ }
+    )
   })
 
   // FR: F01.FR.09, F01.FR.10
@@ -323,9 +327,9 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
 
     const response = await testableService.handleRequestStartTransaction(mockStation, secondRequest)
 
-    expect(response).toBeDefined()
-    expect(response.status).toBe(RequestStartStopStatusEnumType.Rejected)
-    expect(response.transactionId).toBeDefined()
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
+    assert.notStrictEqual(response.transactionId, undefined)
   })
 
   // FR: F02.FR.01
@@ -342,17 +346,20 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     const response = await testableService.handleRequestStartTransaction(mockStation, validRequest)
 
     // Verify response structure
-    expect(response).toBeDefined()
-    expect(typeof response).toBe('object')
-    expect(response).toHaveProperty('status')
-    expect(response).toHaveProperty('transactionId')
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(typeof response, 'object')
+    assert.notStrictEqual(response.status, undefined)
+    assert.notStrictEqual(response.transactionId, undefined)
 
     // Verify status is valid enum value
-    expect(Object.values(RequestStartStopStatusEnumType)).toContain(response.status)
+    assert.ok(Object.values(RequestStartStopStatusEnumType).includes(response.status))
 
     // Verify transactionId is a string (UUID format in OCPP 2.0)
-    expect(typeof response.transactionId).toBe('string')
-    expect(response.transactionId).toBeDefined()
-    expect(response.transactionId?.length).toBeGreaterThan(0)
+    assert.strictEqual(typeof response.transactionId, 'string')
+    assert.notStrictEqual(response.transactionId, undefined)
+    if (response.transactionId == null) {
+      assert.fail('Expected transactionId to be defined')
+    }
+    assert.ok(response.transactionId.length > 0)
   })
 })

@@ -3,7 +3,7 @@
  * @description Unit tests for OCPP 2.0 InstallCertificate command handling
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
@@ -80,12 +80,12 @@ await describe('I03 - InstallCertificate', async () => {
       const response: OCPP20InstallCertificateResponse =
         await testableService.handleRequestInstallCertificate(mockStation, request)
 
-      expect(response).toBeDefined()
-      expect(typeof response).toBe('object')
-      expect(response.status).toBeDefined()
-      expect(typeof response.status).toBe('string')
-      expect(response.status).toBe(InstallCertificateStatusEnumType.Accepted)
-      expect(response.statusInfo).toBeUndefined()
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(typeof response, 'object')
+      assert.notStrictEqual(response.status, undefined)
+      assert.strictEqual(typeof response.status, 'string')
+      assert.strictEqual(response.status, InstallCertificateStatusEnumType.Accepted)
+      assert.strictEqual(response.statusInfo, undefined)
     })
 
     await it('should accept valid MORootCertificate', async () => {
@@ -101,9 +101,9 @@ await describe('I03 - InstallCertificate', async () => {
       const response: OCPP20InstallCertificateResponse =
         await testableService.handleRequestInstallCertificate(mockStation, request)
 
-      expect(response).toBeDefined()
-      expect(response.status).toBe(InstallCertificateStatusEnumType.Accepted)
-      expect(response.statusInfo).toBeUndefined()
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, InstallCertificateStatusEnumType.Accepted)
+      assert.strictEqual(response.statusInfo, undefined)
     })
 
     await it('should accept valid CSMSRootCertificate', async () => {
@@ -119,9 +119,9 @@ await describe('I03 - InstallCertificate', async () => {
       const response: OCPP20InstallCertificateResponse =
         await testableService.handleRequestInstallCertificate(mockStation, request)
 
-      expect(response).toBeDefined()
-      expect(response.status).toBe(InstallCertificateStatusEnumType.Accepted)
-      expect(response.statusInfo).toBeUndefined()
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, InstallCertificateStatusEnumType.Accepted)
+      assert.strictEqual(response.statusInfo, undefined)
     })
 
     await it('should accept valid ManufacturerRootCertificate', async () => {
@@ -137,9 +137,9 @@ await describe('I03 - InstallCertificate', async () => {
       const response: OCPP20InstallCertificateResponse =
         await testableService.handleRequestInstallCertificate(mockStation, request)
 
-      expect(response).toBeDefined()
-      expect(response.status).toBe(InstallCertificateStatusEnumType.Accepted)
-      expect(response.statusInfo).toBeUndefined()
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, InstallCertificateStatusEnumType.Accepted)
+      assert.strictEqual(response.statusInfo, undefined)
     })
   })
 
@@ -153,11 +153,11 @@ await describe('I03 - InstallCertificate', async () => {
       const response: OCPP20InstallCertificateResponse =
         await testableService.handleRequestInstallCertificate(mockStation, request)
 
-      expect(response).toBeDefined()
-      expect(response.status).toBe(InstallCertificateStatusEnumType.Rejected)
-      expect(response.statusInfo).toBeDefined()
-      expect(response.statusInfo?.reasonCode).toBeDefined()
-      expect(typeof response.statusInfo?.reasonCode).toBe('string')
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, InstallCertificateStatusEnumType.Rejected)
+      assert.notStrictEqual(response.statusInfo, undefined)
+      assert.notStrictEqual(response.statusInfo?.reasonCode, undefined)
+      assert.strictEqual(typeof response.statusInfo?.reasonCode, 'string')
     })
 
     await it('should reject expired certificate when validation is enabled', async () => {
@@ -174,10 +174,10 @@ await describe('I03 - InstallCertificate', async () => {
       const response: OCPP20InstallCertificateResponse =
         await testableService.handleRequestInstallCertificate(mockStation, request)
 
-      expect(response).toBeDefined()
-      expect(response.status).toBe(InstallCertificateStatusEnumType.Rejected)
-      expect(response.statusInfo).toBeDefined()
-      expect(response.statusInfo?.reasonCode).toBeDefined()
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, InstallCertificateStatusEnumType.Rejected)
+      assert.notStrictEqual(response.statusInfo, undefined)
+      assert.notStrictEqual(response.statusInfo?.reasonCode, undefined)
 
       delete (mockStation.stationInfo as Record<string, unknown>).validateCertificateExpiry
     })
@@ -197,10 +197,10 @@ await describe('I03 - InstallCertificate', async () => {
       const response: OCPP20InstallCertificateResponse =
         await testableService.handleRequestInstallCertificate(mockStation, request)
 
-      expect(response).toBeDefined()
-      expect(response.status).toBe(InstallCertificateStatusEnumType.Failed)
-      expect(response.statusInfo).toBeDefined()
-      expect(response.statusInfo?.reasonCode).toBeDefined()
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, InstallCertificateStatusEnumType.Failed)
+      assert.notStrictEqual(response.statusInfo, undefined)
+      assert.notStrictEqual(response.statusInfo?.reasonCode, undefined)
     })
   })
 
@@ -218,27 +218,29 @@ await describe('I03 - InstallCertificate', async () => {
       const response: OCPP20InstallCertificateResponse =
         await testableService.handleRequestInstallCertificate(mockStation, request)
 
-      expect(response).toBeDefined()
-      expect(typeof response).toBe('object')
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(typeof response, 'object')
 
-      expect(response.status).toBeDefined()
-      expect([
-        InstallCertificateStatusEnumType.Accepted,
-        InstallCertificateStatusEnumType.Rejected,
-        InstallCertificateStatusEnumType.Failed,
-      ]).toContain(response.status)
+      assert.notStrictEqual(response.status, undefined)
+      assert.ok(
+        [
+          InstallCertificateStatusEnumType.Accepted,
+          InstallCertificateStatusEnumType.Failed,
+          InstallCertificateStatusEnumType.Rejected,
+        ].includes(response.status)
+      )
 
       if (response.statusInfo != null) {
-        expect(response.statusInfo.reasonCode).toBeDefined()
-        expect(typeof response.statusInfo.reasonCode).toBe('string')
+        assert.notStrictEqual(response.statusInfo.reasonCode, undefined)
+        assert.strictEqual(typeof response.statusInfo.reasonCode, 'string')
         if (response.statusInfo.additionalInfo != null) {
-          expect(typeof response.statusInfo.additionalInfo).toBe('string')
+          assert.strictEqual(typeof response.statusInfo.additionalInfo, 'string')
         }
       }
 
       if (response.customData != null) {
-        expect(response.customData.vendorId).toBeDefined()
-        expect(typeof response.customData.vendorId).toBe('string')
+        assert.notStrictEqual(response.customData.vendorId, undefined)
+        assert.strictEqual(typeof response.customData.vendorId, 'string')
       }
     })
 
@@ -251,12 +253,13 @@ await describe('I03 - InstallCertificate', async () => {
       const response: OCPP20InstallCertificateResponse =
         await testableService.handleRequestInstallCertificate(mockStation, request)
 
-      expect(response.status).toBe(InstallCertificateStatusEnumType.Rejected)
-      expect(response.statusInfo).toBeDefined()
-      expect(response.statusInfo?.reasonCode).toBeDefined()
-      expect(typeof response.statusInfo?.reasonCode).toBe('string')
-      expect(response.statusInfo?.reasonCode.length).toBeGreaterThan(0)
-      expect(response.statusInfo?.reasonCode.length).toBeLessThanOrEqual(20)
+      assert.strictEqual(response.status, InstallCertificateStatusEnumType.Rejected)
+      if (response.statusInfo == null) {
+        assert.fail('Expected statusInfo to be defined')
+      }
+      assert.strictEqual(typeof response.statusInfo.reasonCode, 'string')
+      assert.ok(response.statusInfo.reasonCode.length > 0)
+      assert.ok(response.statusInfo.reasonCode.length <= 20)
     })
   })
 })

@@ -4,7 +4,7 @@
  */
 /* cspell:ignore Bvbn NQIF CBCYX */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import { createTestableRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
@@ -72,12 +72,12 @@ await describe('OCPP20 ISO15118 Request Service', async () => {
           MOCK_EXI_REQUEST
         )
 
-        expect(sendMessageMock.mock.calls.length).toBe(1)
+        assert.strictEqual(sendMessageMock.mock.calls.length, 1)
 
         const sentPayload = sendMessageMock.mock.calls[0]
           .arguments[2] as OCPP20Get15118EVCertificateRequest
-        expect(sentPayload.exiRequest).toBe(MOCK_EXI_REQUEST)
-        expect(sentPayload.action).toBe(CertificateActionEnumType.Install)
+        assert.strictEqual(sentPayload.exiRequest, MOCK_EXI_REQUEST)
+        assert.strictEqual(sentPayload.action, CertificateActionEnumType.Install)
       })
     })
 
@@ -100,8 +100,8 @@ await describe('OCPP20 ISO15118 Request Service', async () => {
 
         const sentPayload = sendMessageMock.mock.calls[0]
           .arguments[2] as OCPP20Get15118EVCertificateRequest
-        expect(sentPayload.exiRequest).toBe(MOCK_EXI_REQUEST)
-        expect(sentPayload.action).toBe(CertificateActionEnumType.Update)
+        assert.strictEqual(sentPayload.exiRequest, MOCK_EXI_REQUEST)
+        assert.strictEqual(sentPayload.action, CertificateActionEnumType.Update)
       })
     })
 
@@ -121,9 +121,9 @@ await describe('OCPP20 ISO15118 Request Service', async () => {
           MOCK_EXI_REQUEST
         )
 
-        expect(response).toBeDefined()
-        expect(response.status).toBe(Iso15118EVCertificateStatusEnumType.Accepted)
-        expect(response.exiResponse).toBe(MOCK_EXI_RESPONSE)
+        assert.notStrictEqual(response, undefined)
+        assert.strictEqual(response.status, Iso15118EVCertificateStatusEnumType.Accepted)
+        assert.strictEqual(response.exiResponse, MOCK_EXI_RESPONSE)
       })
 
       await it('should return Failed response from CSMS', async () => {
@@ -144,9 +144,9 @@ await describe('OCPP20 ISO15118 Request Service', async () => {
           MOCK_EXI_REQUEST
         )
 
-        expect(response).toBeDefined()
-        expect(response.status).toBe(Iso15118EVCertificateStatusEnumType.Failed)
-        expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidCertificate)
+        assert.notStrictEqual(response, undefined)
+        assert.strictEqual(response.status, Iso15118EVCertificateStatusEnumType.Failed)
+        assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.InvalidCertificate)
       })
     })
 
@@ -169,7 +169,7 @@ await describe('OCPP20 ISO15118 Request Service', async () => {
 
         const sentPayload = sendMessageMock.mock.calls[0]
           .arguments[2] as OCPP20Get15118EVCertificateRequest
-        expect(sentPayload.iso15118SchemaVersion).toBe(MOCK_ISO15118_SCHEMA_VERSION)
+        assert.strictEqual(sentPayload.iso15118SchemaVersion, MOCK_ISO15118_SCHEMA_VERSION)
       })
     })
 
@@ -196,7 +196,7 @@ await describe('OCPP20 ISO15118 Request Service', async () => {
         const sentPayload = sendMessageMock.mock.calls[0]
           .arguments[2] as OCPP20Get15118EVCertificateRequest
         // EXI should be passed through unchanged - no decoding/encoding
-        expect(sentPayload.exiRequest).toBe(complexBase64EXI)
+        assert.strictEqual(sentPayload.exiRequest, complexBase64EXI)
       })
     })
   })
@@ -237,16 +237,19 @@ await describe('OCPP20 ISO15118 Request Service', async () => {
 
         await service.requestGetCertificateStatus(station, ocspRequestData)
 
-        expect(sendMessageMock.mock.calls.length).toBe(1)
+        assert.strictEqual(sendMessageMock.mock.calls.length, 1)
 
         const sentPayload = sendMessageMock.mock.calls[0]
           .arguments[2] as OCPP20GetCertificateStatusRequest
-        expect(sentPayload.ocspRequestData).toBeDefined()
-        expect(sentPayload.ocspRequestData.hashAlgorithm).toBe(HashAlgorithmEnumType.SHA256)
-        expect(sentPayload.ocspRequestData.issuerKeyHash).toBe(ocspRequestData.issuerKeyHash)
-        expect(sentPayload.ocspRequestData.issuerNameHash).toBe(ocspRequestData.issuerNameHash)
-        expect(sentPayload.ocspRequestData.serialNumber).toBe(ocspRequestData.serialNumber)
-        expect(sentPayload.ocspRequestData.responderURL).toBe(ocspRequestData.responderURL)
+        assert.notStrictEqual(sentPayload.ocspRequestData, undefined)
+        assert.strictEqual(sentPayload.ocspRequestData.hashAlgorithm, HashAlgorithmEnumType.SHA256)
+        assert.strictEqual(sentPayload.ocspRequestData.issuerKeyHash, ocspRequestData.issuerKeyHash)
+        assert.strictEqual(
+          sentPayload.ocspRequestData.issuerNameHash,
+          ocspRequestData.issuerNameHash
+        )
+        assert.strictEqual(sentPayload.ocspRequestData.serialNumber, ocspRequestData.serialNumber)
+        assert.strictEqual(sentPayload.ocspRequestData.responderURL, ocspRequestData.responderURL)
       })
     })
 
@@ -264,9 +267,9 @@ await describe('OCPP20 ISO15118 Request Service', async () => {
           createMockOCSPRequestData()
         )
 
-        expect(response).toBeDefined()
-        expect(response.status).toBe(GetCertificateStatusEnumType.Accepted)
-        expect(response.ocspResult).toBe(MOCK_OCSP_RESULT)
+        assert.notStrictEqual(response, undefined)
+        assert.strictEqual(response.status, GetCertificateStatusEnumType.Accepted)
+        assert.strictEqual(response.ocspResult, MOCK_OCSP_RESULT)
       })
 
       await it('should return Failed response from CSMS', async () => {
@@ -284,9 +287,9 @@ await describe('OCPP20 ISO15118 Request Service', async () => {
           createMockOCSPRequestData()
         )
 
-        expect(response).toBeDefined()
-        expect(response.status).toBe(GetCertificateStatusEnumType.Failed)
-        expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.InternalError)
+        assert.notStrictEqual(response, undefined)
+        assert.strictEqual(response.status, GetCertificateStatusEnumType.Failed)
+        assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.InternalError)
       })
     })
 
@@ -309,12 +312,12 @@ await describe('OCPP20 ISO15118 Request Service', async () => {
           createMockOCSPRequestData()
         )
 
-        expect(response).toBeDefined()
-        expect(response.status).toBe(GetCertificateStatusEnumType.Accepted)
-        expect(response.ocspResult).toBe(stubOcspResult)
+        assert.notStrictEqual(response, undefined)
+        assert.strictEqual(response.status, GetCertificateStatusEnumType.Accepted)
+        assert.strictEqual(response.ocspResult, stubOcspResult)
 
         // Verify sendMessage was called (no real network call)
-        expect(sendMessageMock.mock.calls.length).toBe(1)
+        assert.strictEqual(sendMessageMock.mock.calls.length, 1)
       })
     })
   })
@@ -358,7 +361,7 @@ await describe('OCPP20 ISO15118 Request Service', async () => {
       )
 
       const commandName = sendMessageMock.mock.calls[0].arguments[3]
-      expect(commandName).toBe(OCPP20RequestCommand.GET_15118_EV_CERTIFICATE)
+      assert.strictEqual(commandName, OCPP20RequestCommand.GET_15118_EV_CERTIFICATE)
     })
 
     await it('should send GET_CERTIFICATE_STATUS command name', async () => {
@@ -373,7 +376,7 @@ await describe('OCPP20 ISO15118 Request Service', async () => {
       await service.requestGetCertificateStatus(station, createMockOCSPRequestData())
 
       const commandName = sendMessageMock.mock.calls[0].arguments[3]
-      expect(commandName).toBe(OCPP20RequestCommand.GET_CERTIFICATE_STATUS)
+      assert.strictEqual(commandName, OCPP20RequestCommand.GET_CERTIFICATE_STATUS)
     })
   })
 })

@@ -2,7 +2,7 @@
  * @file Tests for OCPPAuthServiceFactory
  * @description Unit tests for OCPP authentication service factory
  */
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../../src/charging-station/ChargingStation.js'
@@ -31,23 +31,23 @@ await describe('OCPPAuthServiceFactory', async () => {
     await it('should create a new instance for a charging station', async () => {
       const authService = await OCPPAuthServiceFactory.getInstance(mockStation16)
 
-      expect(authService).toBeDefined()
-      expect(typeof authService.authorize).toBe('function')
-      expect(typeof authService.getConfiguration).toBe('function')
+      assert.notStrictEqual(authService, undefined)
+      assert.strictEqual(typeof authService.authorize, 'function')
+      assert.strictEqual(typeof authService.getConfiguration, 'function')
     })
 
     await it('should return cached instance for same charging station', async () => {
       const authService1 = await OCPPAuthServiceFactory.getInstance(mockStation20)
       const authService2 = await OCPPAuthServiceFactory.getInstance(mockStation20)
 
-      expect(authService1).toBe(authService2)
+      assert.strictEqual(authService1, authService2)
     })
 
     await it('should create different instances for different charging stations', async () => {
       const authService1 = await OCPPAuthServiceFactory.getInstance(mockStation16)
       const authService2 = await OCPPAuthServiceFactory.getInstance(mockStation20)
 
-      expect(authService1).not.toBe(authService2)
+      assert.notStrictEqual(authService1, authService2)
     })
 
     await it('should throw error for charging station without stationInfo', async () => {
@@ -59,10 +59,10 @@ await describe('OCPPAuthServiceFactory', async () => {
       try {
         await OCPPAuthServiceFactory.getInstance(mockStation)
         // If we get here, the test should fail
-        expect(true).toBe(false) // Force failure
+        assert.strictEqual(true, false) // Force failure
       } catch (error) {
-        expect(error).toBeInstanceOf(Error)
-        expect((error as Error).message).toContain('OCPP version not found in charging station')
+        assert.ok(error instanceof Error)
+        assert.ok(error.message.includes('OCPP version not found in charging station'))
       }
     })
   })
@@ -80,9 +80,9 @@ await describe('OCPPAuthServiceFactory', async () => {
       const authService1 = await OCPPAuthServiceFactory.createInstance(mockStation16)
       const authService2 = await OCPPAuthServiceFactory.createInstance(mockStation16)
 
-      expect(authService1).toBeDefined()
-      expect(authService2).toBeDefined()
-      expect(authService1).not.toBe(authService2)
+      assert.notStrictEqual(authService1, undefined)
+      assert.notStrictEqual(authService2, undefined)
+      assert.notStrictEqual(authService1, authService2)
     })
 
     await it('should not cache created instances', async () => {
@@ -90,7 +90,7 @@ await describe('OCPPAuthServiceFactory', async () => {
       await OCPPAuthServiceFactory.createInstance(mockStation20)
       const finalCount = OCPPAuthServiceFactory.getCachedInstanceCount()
 
-      expect(finalCount).toBe(initialCount)
+      assert.strictEqual(finalCount, initialCount)
     })
   })
 
@@ -113,13 +113,13 @@ await describe('OCPPAuthServiceFactory', async () => {
       // Get instance again - should be a new instance
       const authService2 = await OCPPAuthServiceFactory.getInstance(mockStation16)
 
-      expect(authService1).not.toBe(authService2)
+      assert.notStrictEqual(authService1, authService2)
     })
 
     await it('should not throw when clearing non-existent instance', () => {
-      expect(() => {
+      assert.doesNotThrow(() => {
         OCPPAuthServiceFactory.clearInstance(mockStation20)
-      }).not.toThrow()
+      })
     })
   })
 
@@ -142,7 +142,7 @@ await describe('OCPPAuthServiceFactory', async () => {
 
       // Verify all cleared
       const count = OCPPAuthServiceFactory.getCachedInstanceCount()
-      expect(count).toBe(0)
+      assert.strictEqual(count, 0)
     })
   })
 
@@ -157,17 +157,17 @@ await describe('OCPPAuthServiceFactory', async () => {
     })
 
     await it('should return the number of cached instances', async () => {
-      expect(OCPPAuthServiceFactory.getCachedInstanceCount()).toBe(0)
+      assert.strictEqual(OCPPAuthServiceFactory.getCachedInstanceCount(), 0)
 
       await OCPPAuthServiceFactory.getInstance(mockStation16)
-      expect(OCPPAuthServiceFactory.getCachedInstanceCount()).toBe(1)
+      assert.strictEqual(OCPPAuthServiceFactory.getCachedInstanceCount(), 1)
 
       await OCPPAuthServiceFactory.getInstance(mockStation20)
-      expect(OCPPAuthServiceFactory.getCachedInstanceCount()).toBe(2)
+      assert.strictEqual(OCPPAuthServiceFactory.getCachedInstanceCount(), 2)
 
       // Getting same instance should not increase count
       await OCPPAuthServiceFactory.getInstance(mockStation16)
-      expect(OCPPAuthServiceFactory.getCachedInstanceCount()).toBe(2)
+      assert.strictEqual(OCPPAuthServiceFactory.getCachedInstanceCount(), 2)
     })
   })
 
@@ -187,11 +187,11 @@ await describe('OCPPAuthServiceFactory', async () => {
 
       const stats = OCPPAuthServiceFactory.getStatistics()
 
-      expect(stats).toBeDefined()
-      expect(stats.cachedInstances).toBe(2)
-      expect(stats.stationIds).toHaveLength(2)
-      expect(stats.stationIds).toContain('TEST-CS-stats-16')
-      expect(stats.stationIds).toContain('TEST-CS-stats-20')
+      assert.notStrictEqual(stats, undefined)
+      assert.strictEqual(stats.cachedInstances, 2)
+      assert.strictEqual(stats.stationIds.length, 2)
+      assert.ok(stats.stationIds.includes('TEST-CS-stats-16'))
+      assert.ok(stats.stationIds.includes('TEST-CS-stats-20'))
     })
 
     await it('should return empty statistics when no instances cached', () => {
@@ -199,8 +199,8 @@ await describe('OCPPAuthServiceFactory', async () => {
 
       const stats = OCPPAuthServiceFactory.getStatistics()
 
-      expect(stats.cachedInstances).toBe(0)
-      expect(stats.stationIds).toHaveLength(0)
+      assert.strictEqual(stats.cachedInstances, 0)
+      assert.strictEqual(stats.stationIds.length, 0)
     })
   })
 
@@ -216,17 +216,17 @@ await describe('OCPPAuthServiceFactory', async () => {
     await it('should create service for OCPP 1.6 station', async () => {
       const authService = await OCPPAuthServiceFactory.getInstance(mockStation16)
 
-      expect(authService).toBeDefined()
-      expect(typeof authService.authorize).toBe('function')
-      expect(typeof authService.getConfiguration).toBe('function')
+      assert.notStrictEqual(authService, undefined)
+      assert.strictEqual(typeof authService.authorize, 'function')
+      assert.strictEqual(typeof authService.getConfiguration, 'function')
     })
 
     await it('should create service for OCPP 2.0 station', async () => {
       const authService = await OCPPAuthServiceFactory.getInstance(mockStation20)
 
-      expect(authService).toBeDefined()
-      expect(typeof authService.authorize).toBe('function')
-      expect(typeof authService.testConnectivity).toBe('function')
+      assert.notStrictEqual(authService, undefined)
+      assert.strictEqual(typeof authService.authorize, 'function')
+      assert.strictEqual(typeof authService.testConnectivity, 'function')
     })
   })
 
@@ -249,15 +249,15 @@ await describe('OCPPAuthServiceFactory', async () => {
         await OCPPAuthServiceFactory.getInstance(station)
       }
 
-      expect(OCPPAuthServiceFactory.getCachedInstanceCount()).toBe(5)
+      assert.strictEqual(OCPPAuthServiceFactory.getCachedInstanceCount(), 5)
 
       // Clear one instance
       OCPPAuthServiceFactory.clearInstance(mockStations[0])
-      expect(OCPPAuthServiceFactory.getCachedInstanceCount()).toBe(4)
+      assert.strictEqual(OCPPAuthServiceFactory.getCachedInstanceCount(), 4)
 
       // Clear all
       OCPPAuthServiceFactory.clearAllInstances()
-      expect(OCPPAuthServiceFactory.getCachedInstanceCount()).toBe(0)
+      assert.strictEqual(OCPPAuthServiceFactory.getCachedInstanceCount(), 0)
     })
   })
 })

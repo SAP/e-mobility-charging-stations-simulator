@@ -14,7 +14,7 @@
  * ChargingStation interaction. Those are integration-level concerns.
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
@@ -72,7 +72,7 @@ function getConnectorStatus (
   connectorId: number
 ): NonNullable<ConnectorStatus> {
   const status = atg.connectorsStatus.get(connectorId)
-  expect(status).toBeDefined()
+  assert.notStrictEqual(status, undefined)
   if (status == null) {
     throw new BaseError(`Connector ${String(connectorId)} status unexpectedly undefined`)
   }
@@ -86,7 +86,7 @@ function getConnectorStatus (
  */
 function getDefinedATG (station: ChargingStation): AutomaticTransactionGenerator {
   const atg = AutomaticTransactionGenerator.getInstance(station)
-  expect(atg).toBeDefined()
+  assert.notStrictEqual(atg, undefined)
   if (atg == null) {
     throw new BaseError('ATG instance unexpectedly undefined')
   }
@@ -146,7 +146,7 @@ await describe('AutomaticTransactionGenerator', async () => {
 
       const atg = getDefinedATG(station)
 
-      expect(atg.connectorsStatus.size).toBe(2)
+      assert.strictEqual(atg.connectorsStatus.size, 2)
     })
 
     await it('should return the same instance for the same station', () => {
@@ -155,7 +155,7 @@ await describe('AutomaticTransactionGenerator', async () => {
       const atg1 = AutomaticTransactionGenerator.getInstance(station)
       const atg2 = AutomaticTransactionGenerator.getInstance(station)
 
-      expect(atg1).toBe(atg2)
+      assert.strictEqual(atg1, atg2)
     })
 
     await it('should delete an instance', () => {
@@ -165,7 +165,7 @@ await describe('AutomaticTransactionGenerator', async () => {
       AutomaticTransactionGenerator.deleteInstance(station)
       const atg2 = AutomaticTransactionGenerator.getInstance(station)
 
-      expect(atg1).not.toBe(atg2)
+      assert.notStrictEqual(atg1, atg2)
     })
   })
 
@@ -177,7 +177,7 @@ await describe('AutomaticTransactionGenerator', async () => {
 
       atg.start()
 
-      expect(atg.started).toBe(true)
+      assert.strictEqual(atg.started, true)
     })
 
     await it('should not start when station is not started', () => {
@@ -186,7 +186,7 @@ await describe('AutomaticTransactionGenerator', async () => {
 
       atg.start()
 
-      expect(atg.started).toBe(false)
+      assert.strictEqual(atg.started, false)
     })
 
     await it('should warn and not restart when already started', () => {
@@ -197,7 +197,7 @@ await describe('AutomaticTransactionGenerator', async () => {
       atg.start()
       atg.start()
 
-      expect(atg.started).toBe(true)
+      assert.strictEqual(atg.started, true)
     })
   })
 
@@ -208,10 +208,10 @@ await describe('AutomaticTransactionGenerator', async () => {
       mockInternalStartConnector(atg)
 
       atg.start()
-      expect(atg.started).toBe(true)
+      assert.strictEqual(atg.started, true)
 
       atg.stop()
-      expect(atg.started).toBe(false)
+      assert.strictEqual(atg.started, false)
     })
 
     await it('should warn when stopping an already stopped ATG', () => {
@@ -220,7 +220,7 @@ await describe('AutomaticTransactionGenerator', async () => {
 
       atg.stop()
 
-      expect(atg.started).toBe(false)
+      assert.strictEqual(atg.started, false)
     })
   })
 
@@ -233,16 +233,16 @@ await describe('AutomaticTransactionGenerator', async () => {
 
       atg.stopConnector(1)
 
-      expect(connectorStatus.start).toBe(false)
+      assert.strictEqual(connectorStatus.start, false)
     })
 
     await it('should throw when stopping a non-existent connector', () => {
       const station = createStationForATG()
       const atg = getDefinedATG(station)
 
-      expect(() => {
+      assert.throws(() => {
         atg.stopConnector(99)
-      }).toThrow(BaseError)
+      }, BaseError)
     })
   })
 
@@ -258,9 +258,9 @@ await describe('AutomaticTransactionGenerator', async () => {
         transactionId: 1,
       } as StartTransactionResponse)
 
-      expect(connectorStatus.startTransactionRequests).toBe(1)
-      expect(connectorStatus.acceptedStartTransactionRequests).toBe(1)
-      expect(connectorStatus.rejectedStartTransactionRequests).toBe(0)
+      assert.strictEqual(connectorStatus.startTransactionRequests, 1)
+      assert.strictEqual(connectorStatus.acceptedStartTransactionRequests, 1)
+      assert.strictEqual(connectorStatus.rejectedStartTransactionRequests, 0)
     })
 
     await it('should increment rejected counters on rejected start response', () => {
@@ -274,9 +274,9 @@ await describe('AutomaticTransactionGenerator', async () => {
         transactionId: 1,
       } as StartTransactionResponse)
 
-      expect(connectorStatus.startTransactionRequests).toBe(1)
-      expect(connectorStatus.acceptedStartTransactionRequests).toBe(0)
-      expect(connectorStatus.rejectedStartTransactionRequests).toBe(1)
+      assert.strictEqual(connectorStatus.startTransactionRequests, 1)
+      assert.strictEqual(connectorStatus.acceptedStartTransactionRequests, 0)
+      assert.strictEqual(connectorStatus.rejectedStartTransactionRequests, 1)
     })
   })
 })

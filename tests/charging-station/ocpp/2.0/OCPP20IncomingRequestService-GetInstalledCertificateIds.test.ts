@@ -3,7 +3,7 @@
  * @description Unit tests for OCPP 2.0 GetInstalledCertificateIds command handling
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
@@ -79,11 +79,11 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
       const response: OCPP20GetInstalledCertificateIdsResponse =
         await testableService.handleRequestGetInstalledCertificateIds(station, request)
 
-      expect(response).toBeDefined()
-      expect(response.status).toBe(GetInstalledCertificateStatusEnumType.Accepted)
-      expect(response.certificateHashDataChain).toBeDefined()
-      expect(Array.isArray(response.certificateHashDataChain)).toBe(true)
-      expect(response.certificateHashDataChain?.length).toBe(3)
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, GetInstalledCertificateStatusEnumType.Accepted)
+      assert.notStrictEqual(response.certificateHashDataChain, undefined)
+      assert.ok(Array.isArray(response.certificateHashDataChain))
+      assert.strictEqual(response.certificateHashDataChain.length, 3)
     })
   })
 
@@ -105,11 +105,15 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
       const response: OCPP20GetInstalledCertificateIdsResponse =
         await testableService.handleRequestGetInstalledCertificateIds(station, request)
 
-      expect(response).toBeDefined()
-      expect(response.status).toBe(GetInstalledCertificateStatusEnumType.Accepted)
-      expect(response.certificateHashDataChain).toBeDefined()
-      expect(response.certificateHashDataChain?.length).toBe(1)
-      expect(response.certificateHashDataChain?.[0].certificateType).toBe(
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, GetInstalledCertificateStatusEnumType.Accepted)
+      assert.notStrictEqual(response.certificateHashDataChain, undefined)
+      if (response.certificateHashDataChain == null) {
+        assert.fail('Expected certificateHashDataChain to be defined')
+      }
+      assert.strictEqual(response.certificateHashDataChain.length, 1)
+      assert.strictEqual(
+        response.certificateHashDataChain[0].certificateType,
         GetCertificateIdUseEnumType.V2GRootCertificate
       )
     })
@@ -134,9 +138,9 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
       const response: OCPP20GetInstalledCertificateIdsResponse =
         await testableService.handleRequestGetInstalledCertificateIds(station, request)
 
-      expect(response).toBeDefined()
-      expect(response.status).toBe(GetInstalledCertificateStatusEnumType.Accepted)
-      expect(response.certificateHashDataChain?.length).toBe(2)
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, GetInstalledCertificateStatusEnumType.Accepted)
+      assert.strictEqual(response.certificateHashDataChain?.length, 2)
     })
   })
 
@@ -151,11 +155,11 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
       const response: OCPP20GetInstalledCertificateIdsResponse =
         await testableService.handleRequestGetInstalledCertificateIds(station, request)
 
-      expect(response).toBeDefined()
+      assert.notStrictEqual(response, undefined)
       // Per OCPP 2.0.1 spec: NotFound is returned when no certificates match the request
-      expect(response.status).toBe(GetInstalledCertificateStatusEnumType.NotFound)
+      assert.strictEqual(response.status, GetInstalledCertificateStatusEnumType.NotFound)
       // Per OCPP spec: certificateHashDataChain is omitted when empty, not an empty array
-      expect(response.certificateHashDataChain).toBeUndefined()
+      assert.strictEqual(response.certificateHashDataChain, undefined)
     })
 
     await it('should return NotFound when filtered type has no certificates', async () => {
@@ -170,8 +174,8 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
       const response: OCPP20GetInstalledCertificateIdsResponse =
         await testableService.handleRequestGetInstalledCertificateIds(station, request)
 
-      expect(response).toBeDefined()
-      expect(response.status).toBe(GetInstalledCertificateStatusEnumType.NotFound)
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, GetInstalledCertificateStatusEnumType.NotFound)
     })
   })
 
@@ -186,13 +190,15 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
       const response: OCPP20GetInstalledCertificateIdsResponse =
         await testableService.handleRequestGetInstalledCertificateIds(station, request)
 
-      expect(response).toBeDefined()
-      expect(typeof response).toBe('object')
-      expect(response.status).toBeDefined()
-      expect([
-        GetInstalledCertificateStatusEnumType.Accepted,
-        GetInstalledCertificateStatusEnumType.NotFound,
-      ]).toContain(response.status)
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(typeof response, 'object')
+      assert.notStrictEqual(response.status, undefined)
+      assert.ok(
+        [
+          GetInstalledCertificateStatusEnumType.Accepted,
+          GetInstalledCertificateStatusEnumType.NotFound,
+        ].includes(response.status)
+      )
     })
 
     await it('should return valid CertificateHashDataChain structure', async () => {
@@ -210,17 +216,20 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
       const response: OCPP20GetInstalledCertificateIdsResponse =
         await testableService.handleRequestGetInstalledCertificateIds(station, request)
 
-      expect(response.status).toBe(GetInstalledCertificateStatusEnumType.Accepted)
-      expect(response.certificateHashDataChain).toBeDefined()
-      expect(response.certificateHashDataChain?.length).toBe(1)
+      assert.strictEqual(response.status, GetInstalledCertificateStatusEnumType.Accepted)
+      assert.notStrictEqual(response.certificateHashDataChain, undefined)
+      if (response.certificateHashDataChain == null) {
+        assert.fail('Expected certificateHashDataChain to be defined')
+      }
+      assert.strictEqual(response.certificateHashDataChain.length, 1)
 
-      const chain = response.certificateHashDataChain?.[0]
-      expect(chain?.certificateType).toBeDefined()
-      expect(chain?.certificateHashData).toBeDefined()
-      expect(chain?.certificateHashData.hashAlgorithm).toBeDefined()
-      expect(chain?.certificateHashData.issuerNameHash).toBeDefined()
-      expect(chain?.certificateHashData.issuerKeyHash).toBeDefined()
-      expect(chain?.certificateHashData.serialNumber).toBeDefined()
+      const chain = response.certificateHashDataChain[0]
+      assert.notStrictEqual(chain.certificateType, undefined)
+      assert.notStrictEqual(chain.certificateHashData, undefined)
+      assert.notStrictEqual(chain.certificateHashData.hashAlgorithm, undefined)
+      assert.notStrictEqual(chain.certificateHashData.issuerNameHash, undefined)
+      assert.notStrictEqual(chain.certificateHashData.issuerKeyHash, undefined)
+      assert.notStrictEqual(chain.certificateHashData.serialNumber, undefined)
     })
   })
 
@@ -252,9 +261,9 @@ await describe('I04 - GetInstalledCertificateIds', async () => {
           request
         )
 
-      expect(response).toBeDefined()
-      expect(response.status).toBe(GetInstalledCertificateStatusEnumType.NotFound)
-      expect(response.statusInfo).toBeDefined()
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, GetInstalledCertificateStatusEnumType.NotFound)
+      assert.notStrictEqual(response.statusInfo, undefined)
     })
   })
 })

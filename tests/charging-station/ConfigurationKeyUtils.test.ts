@@ -2,7 +2,7 @@
  * @file Tests for ConfigurationKeyUtils
  * @description Unit tests for OCPP configuration key management utilities
  */
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
 import type { ChargingStationOcppConfiguration } from '../../src/types/index.js'
@@ -34,7 +34,7 @@ await describe('ConfigurationKeyUtils', async () => {
       cs.ocppConfiguration = {} as Partial<ChargingStationOcppConfiguration>
 
       // Act & Assert
-      expect(getConfigurationKey(cs, TEST_KEY_1)).toBeUndefined()
+      assert.strictEqual(getConfigurationKey(cs, TEST_KEY_1), undefined)
     })
 
     await it('should find existing key (case-sensitive)', () => {
@@ -46,8 +46,11 @@ await describe('ConfigurationKeyUtils', async () => {
       const k = getConfigurationKey(cs, TEST_KEY_1)
 
       // Assert
-      expect(k?.key).toBe(TEST_KEY_1)
-      expect(k?.value).toBe(VALUE_A)
+      if (k == null) {
+        assert.fail('Expected configuration key to be found')
+      }
+      assert.strictEqual(k.key, TEST_KEY_1)
+      assert.strictEqual(k.value, VALUE_A)
     })
 
     await it('should respect case sensitivity (no match)', () => {
@@ -56,7 +59,7 @@ await describe('ConfigurationKeyUtils', async () => {
       addConfigurationKey(cs, MIXED_CASE_KEY, VALUE_A, undefined, { save: false })
 
       // Act & Assert
-      expect(getConfigurationKey(cs, MIXED_CASE_KEY.toLowerCase())).toBeUndefined()
+      assert.strictEqual(getConfigurationKey(cs, MIXED_CASE_KEY.toLowerCase()), undefined)
     })
 
     await it('should support caseInsensitive lookup', () => {
@@ -68,7 +71,10 @@ await describe('ConfigurationKeyUtils', async () => {
       const k = getConfigurationKey(cs, MIXED_CASE_KEY.toLowerCase(), true)
 
       // Assert
-      expect(k?.key).toBe(MIXED_CASE_KEY)
+      if (k == null) {
+        assert.fail('Expected configuration key to be found')
+      }
+      assert.strictEqual(k.key, MIXED_CASE_KEY)
     })
   })
 
@@ -83,7 +89,7 @@ await describe('ConfigurationKeyUtils', async () => {
       addConfigurationKey(cs, TEST_KEY_1, VALUE_A)
 
       // Assert
-      expect(getConfigurationKey(cs, TEST_KEY_1)).toBeUndefined()
+      assert.strictEqual(getConfigurationKey(cs, TEST_KEY_1), undefined)
     })
 
     await it('should add new key with default options', () => {
@@ -95,12 +101,14 @@ await describe('ConfigurationKeyUtils', async () => {
       const k = getConfigurationKey(cs, TEST_KEY_1)
 
       // Assert
-      expect(k).toBeDefined()
-      expect(k?.value).toBe(VALUE_A)
+      if (k == null) {
+        assert.fail('Expected configuration key to be found')
+      }
+      assert.strictEqual(k.value, VALUE_A)
       // defaults
-      expect(k?.readonly).toBe(false)
-      expect(k?.reboot).toBe(false)
-      expect(k?.visible).toBe(true)
+      assert.strictEqual(k.readonly, false)
+      assert.strictEqual(k.reboot, false)
+      assert.strictEqual(k.visible, true)
     })
 
     await it('should add new key with custom options', () => {
@@ -118,9 +126,12 @@ await describe('ConfigurationKeyUtils', async () => {
       const k = getConfigurationKey(cs, TEST_KEY_1)
 
       // Assert
-      expect(k?.readonly).toBe(true)
-      expect(k?.reboot).toBe(true)
-      expect(k?.visible).toBe(false)
+      if (k == null) {
+        assert.fail('Expected configuration key to be found')
+      }
+      assert.strictEqual(k.readonly, true)
+      assert.strictEqual(k.reboot, true)
+      assert.strictEqual(k.visible, false)
     })
 
     await it('should log error and not overwrite value when key exists and overwrite=false', t => {
@@ -141,13 +152,16 @@ await describe('ConfigurationKeyUtils', async () => {
       const k = getConfigurationKey(cs, TEST_KEY_1)
 
       // Assert
+      if (k == null) {
+        assert.fail('Expected configuration key to be found')
+      }
       // value unchanged
-      expect(k?.value).toBe(VALUE_A)
+      assert.strictEqual(k.value, VALUE_A)
       // options updated only where differing (all provided differ)
-      expect(k?.reboot).toBe(true)
-      expect(k?.readonly).toBe(true)
-      expect(k?.visible).toBe(false)
-      expect(errorMock.mock.calls.length).toBe(1)
+      assert.strictEqual(k.reboot, true)
+      assert.strictEqual(k.readonly, true)
+      assert.strictEqual(k.visible, false)
+      assert.strictEqual(errorMock.mock.calls.length, 1)
     })
 
     await it('should log error and leave key untouched when identical options & value attempted (overwrite=false)', t => {
@@ -174,11 +188,14 @@ await describe('ConfigurationKeyUtils', async () => {
       const k = getConfigurationKey(cs, TEST_KEY_1)
 
       // Assert
-      expect(k?.value).toBe(VALUE_A)
-      expect(k?.readonly).toBe(true)
-      expect(k?.reboot).toBe(false)
-      expect(k?.visible).toBe(true)
-      expect(errorMock.mock.calls.length).toBe(1)
+      if (k == null) {
+        assert.fail('Expected configuration key to be found')
+      }
+      assert.strictEqual(k.value, VALUE_A)
+      assert.strictEqual(k.readonly, true)
+      assert.strictEqual(k.reboot, false)
+      assert.strictEqual(k.visible, true)
+      assert.strictEqual(errorMock.mock.calls.length, 1)
     })
 
     await it('should overwrite existing key value and options when overwrite=true', () => {
@@ -197,10 +214,13 @@ await describe('ConfigurationKeyUtils', async () => {
       const k = getConfigurationKey(cs, TEST_KEY_1)
 
       // Assert
-      expect(k?.value).toBe(VALUE_B)
-      expect(k?.readonly).toBe(true)
-      expect(k?.reboot).toBe(true)
-      expect(k?.visible).toBe(false)
+      if (k == null) {
+        assert.fail('Expected configuration key to be found')
+      }
+      assert.strictEqual(k.value, VALUE_B)
+      assert.strictEqual(k.readonly, true)
+      assert.strictEqual(k.reboot, true)
+      assert.strictEqual(k.visible, false)
     })
 
     await it('should caseInsensitive overwrite update existing differently cased key', () => {
@@ -219,8 +239,11 @@ await describe('ConfigurationKeyUtils', async () => {
       const k = getConfigurationKey(cs, MIXED_CASE_KEY)
 
       // Assert
-      expect(k?.value).toBe(VALUE_B)
-      expect(k?.readonly).toBe(true)
+      if (k == null) {
+        assert.fail('Expected configuration key to be found')
+      }
+      assert.strictEqual(k.value, VALUE_B)
+      assert.strictEqual(k.readonly, true)
     })
 
     await it('should case-insensitive false create separate key with different case', () => {
@@ -237,9 +260,9 @@ await describe('ConfigurationKeyUtils', async () => {
       const second = getConfigurationKey(cs, MIXED_CASE_KEY.toLowerCase())
 
       // Assert
-      expect(orig).toBeDefined()
-      expect(second).toBeDefined()
-      expect(orig).not.toBe(second)
+      assert.notStrictEqual(orig, undefined)
+      assert.notStrictEqual(second, undefined)
+      assert.notStrictEqual(orig, second)
     })
 
     await it('should call saveOcppConfiguration when params.save=true (new key)', t => {
@@ -251,7 +274,7 @@ await describe('ConfigurationKeyUtils', async () => {
       addConfigurationKey(cs, TEST_KEY_1, VALUE_A, undefined, { save: true })
 
       // Assert
-      expect(saveMock.mock.calls.length).toBe(1)
+      assert.strictEqual(saveMock.mock.calls.length, 1)
     })
 
     await it('should call saveOcppConfiguration when overwriting existing key and save=true', t => {
@@ -270,7 +293,7 @@ await describe('ConfigurationKeyUtils', async () => {
       )
 
       // Assert
-      expect(saveMock.mock.calls.length).toBe(1)
+      assert.strictEqual(saveMock.mock.calls.length, 1)
     })
   })
 
@@ -284,8 +307,8 @@ await describe('ConfigurationKeyUtils', async () => {
       const res = setConfigurationKeyValue(cs, TEST_KEY_1, VALUE_A)
 
       // Assert
-      expect(res).toBeUndefined()
-      expect(errorMock.mock.calls.length).toBe(1)
+      assert.strictEqual(res, undefined)
+      assert.strictEqual(errorMock.mock.calls.length, 1)
     })
 
     await it('should return undefined without logging when configurationKey array missing', t => {
@@ -299,8 +322,8 @@ await describe('ConfigurationKeyUtils', async () => {
       const res = setConfigurationKeyValue(cs, TEST_KEY_1, VALUE_A)
 
       // Assert
-      expect(res).toBeUndefined()
-      expect(errorMock.mock.calls.length).toBe(0)
+      assert.strictEqual(res, undefined)
+      assert.strictEqual(errorMock.mock.calls.length, 0)
     })
 
     await it('should update existing key value and save', t => {
@@ -313,8 +336,8 @@ await describe('ConfigurationKeyUtils', async () => {
       const updated = setConfigurationKeyValue(cs, TEST_KEY_1, VALUE_B)
 
       // Assert
-      expect(updated?.value).toBe(VALUE_B)
-      expect(saveMock.mock.calls.length).toBe(1)
+      assert.strictEqual(updated?.value, VALUE_B)
+      assert.strictEqual(saveMock.mock.calls.length, 1)
     })
 
     await it('should caseInsensitive value update work', () => {
@@ -326,7 +349,7 @@ await describe('ConfigurationKeyUtils', async () => {
       const updated = setConfigurationKeyValue(cs, MIXED_CASE_KEY.toLowerCase(), VALUE_B, true)
 
       // Assert
-      expect(updated?.value).toBe(VALUE_B)
+      assert.strictEqual(updated?.value, VALUE_B)
     })
   })
 
@@ -341,7 +364,7 @@ await describe('ConfigurationKeyUtils', async () => {
       const res = deleteConfigurationKey(cs, TEST_KEY_1)
 
       // Assert
-      expect(res).toBeUndefined()
+      assert.strictEqual(res, undefined)
     })
 
     await it('should return undefined when key does not exist', () => {
@@ -352,7 +375,7 @@ await describe('ConfigurationKeyUtils', async () => {
       const res = deleteConfigurationKey(cs, TEST_KEY_1)
 
       // Assert
-      expect(res).toBeUndefined()
+      assert.strictEqual(res, undefined)
     })
 
     await it('should delete existing key and save by default', t => {
@@ -365,11 +388,14 @@ await describe('ConfigurationKeyUtils', async () => {
       const deleted = deleteConfigurationKey(cs, TEST_KEY_1)
 
       // Assert
-      expect(Array.isArray(deleted)).toBe(true)
-      expect(deleted).toHaveLength(1)
-      expect(deleted?.[0].key).toBe(TEST_KEY_1)
-      expect(getConfigurationKey(cs, TEST_KEY_1)).toBeUndefined()
-      expect(saveMock.mock.calls.length).toBe(1)
+      if (deleted == null) {
+        assert.fail('Expected deleted to be defined')
+      }
+      assert.ok(Array.isArray(deleted))
+      assert.strictEqual(deleted.length, 1)
+      assert.strictEqual(deleted[0].key, TEST_KEY_1)
+      assert.strictEqual(getConfigurationKey(cs, TEST_KEY_1), undefined)
+      assert.strictEqual(saveMock.mock.calls.length, 1)
     })
 
     await it('should not save when params.save=false', t => {
@@ -382,8 +408,11 @@ await describe('ConfigurationKeyUtils', async () => {
       const deleted = deleteConfigurationKey(cs, TEST_KEY_1, { save: false })
 
       // Assert
-      expect(deleted).toHaveLength(1)
-      expect(saveMock.mock.calls.length).toBe(0)
+      if (deleted == null) {
+        assert.fail('Expected deleted to be defined')
+      }
+      assert.strictEqual(deleted.length, 1)
+      assert.strictEqual(saveMock.mock.calls.length, 0)
     })
 
     await it('should caseInsensitive deletion remove key with different case', () => {
@@ -398,8 +427,11 @@ await describe('ConfigurationKeyUtils', async () => {
       })
 
       // Assert
-      expect(deleted).toHaveLength(1)
-      expect(getConfigurationKey(cs, MIXED_CASE_KEY)).toBeUndefined()
+      if (deleted == null) {
+        assert.fail('Expected deleted to be defined')
+      }
+      assert.strictEqual(deleted.length, 1)
+      assert.strictEqual(getConfigurationKey(cs, MIXED_CASE_KEY), undefined)
     })
   })
 
@@ -414,9 +446,9 @@ await describe('ConfigurationKeyUtils', async () => {
       const delRes = deleteConfigurationKey(cs, TEST_KEY_1, { save: false })
 
       // Assert
-      expect(setRes?.value).toBe(VALUE_B)
-      expect(delRes).toHaveLength(1)
-      expect(getConfigurationKey(cs, TEST_KEY_1)).toBeUndefined()
+      assert.strictEqual(setRes?.value, VALUE_B)
+      assert.strictEqual(delRes?.length, 1)
+      assert.strictEqual(getConfigurationKey(cs, TEST_KEY_1), undefined)
     })
   })
 })

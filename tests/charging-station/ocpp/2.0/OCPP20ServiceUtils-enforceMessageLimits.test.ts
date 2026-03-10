@@ -3,7 +3,7 @@
  * @description Verifies message limit enforcement logic for OCPP 2.0 payloads
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
@@ -86,8 +86,8 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
         logger
       )
 
-      expect(result.rejected).toBe(false)
-      expect(result.results).toStrictEqual([])
+      assert.strictEqual(result.rejected, false)
+      assert.deepStrictEqual(result.results, [])
     })
 
     await it('should return rejected:false for empty data array with both limits 0', () => {
@@ -105,8 +105,8 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
         logger
       )
 
-      expect(result.rejected).toBe(false)
-      expect(result.results).toStrictEqual([])
+      assert.strictEqual(result.rejected, false)
+      assert.deepStrictEqual(result.results, [])
     })
   })
 
@@ -127,8 +127,8 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
         logger
       )
 
-      expect(result.rejected).toBe(false)
-      expect(result.results).toStrictEqual([])
+      assert.strictEqual(result.rejected, false)
+      assert.deepStrictEqual(result.results, [])
     })
 
     await it('should return rejected:false when data length equals the items limit', () => {
@@ -147,8 +147,8 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
         logger
       )
 
-      expect(result.rejected).toBe(false)
-      expect(result.results).toStrictEqual([])
+      assert.strictEqual(result.rejected, false)
+      assert.deepStrictEqual(result.results, [])
     })
 
     await it('should reject all items with TooManyElements when items limit is exceeded', () => {
@@ -167,11 +167,11 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
         logger
       )
 
-      expect(result.rejected).toBe(true)
-      expect(result.results).toHaveLength(3)
+      assert.strictEqual(result.rejected, true)
+      assert.strictEqual(result.results.length, 3)
       for (const r of result.results as RejectedResult[]) {
-        expect(r.reasonCode).toBe('TooManyElements')
-        expect(r.info).toContain('ItemsPerMessage limit 2')
+        assert.strictEqual(r.reasonCode, 'TooManyElements')
+        assert.ok(r.info.includes('ItemsPerMessage limit 2'))
       }
     })
 
@@ -191,10 +191,10 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
         logger
       )
 
-      expect(result.rejected).toBe(true)
-      expect(result.results).toHaveLength(2)
+      assert.strictEqual(result.rejected, true)
+      assert.strictEqual(result.results.length, 2)
       for (const r of result.results as RejectedResult[]) {
-        expect(r.reasonCode).toBe('TooManyElements')
+        assert.strictEqual(r.reasonCode, 'TooManyElements')
       }
     })
 
@@ -214,8 +214,8 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
         logger
       )
 
-      expect(logger.debugCalls).toHaveLength(1)
-      expect(String(logger.debugCalls[0][0])).toContain('ItemsPerMessage limit')
+      assert.strictEqual(logger.debugCalls.length, 1)
+      assert.ok(String(logger.debugCalls[0][0]).includes('ItemsPerMessage limit'))
     })
   })
 
@@ -236,8 +236,8 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
         logger
       )
 
-      expect(result.rejected).toBe(false)
-      expect(result.results).toStrictEqual([])
+      assert.strictEqual(result.rejected, false)
+      assert.deepStrictEqual(result.results, [])
     })
 
     await it('should reject all items with TooLargeElement when bytes limit is exceeded', () => {
@@ -256,11 +256,11 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
         logger
       )
 
-      expect(result.rejected).toBe(true)
-      expect(result.results).toHaveLength(1)
+      assert.strictEqual(result.rejected, true)
+      assert.strictEqual(result.results.length, 1)
       const r = (result.results as RejectedResult[])[0]
-      expect(r.reasonCode).toBe('TooLargeElement')
-      expect(r.info).toContain('BytesPerMessage limit 1')
+      assert.strictEqual(r.reasonCode, 'TooLargeElement')
+      assert.ok(r.info.includes('BytesPerMessage limit 1'))
     })
 
     await it('should reject all items with TooLargeElement for multiple items over bytes limit', () => {
@@ -279,10 +279,10 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
         logger
       )
 
-      expect(result.rejected).toBe(true)
-      expect(result.results).toHaveLength(2)
+      assert.strictEqual(result.rejected, true)
+      assert.strictEqual(result.results.length, 2)
       for (const r of result.results as RejectedResult[]) {
-        expect(r.reasonCode).toBe('TooLargeElement')
+        assert.strictEqual(r.reasonCode, 'TooLargeElement')
       }
     })
 
@@ -302,8 +302,8 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
         logger
       )
 
-      expect(logger.debugCalls).toHaveLength(1)
-      expect(String(logger.debugCalls[0][0])).toContain('BytesPerMessage limit')
+      assert.strictEqual(logger.debugCalls.length, 1)
+      assert.ok(String(logger.debugCalls[0][0]).includes('BytesPerMessage limit'))
     })
   })
 
@@ -324,9 +324,9 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
         logger
       )
 
-      expect(result.rejected).toBe(true)
+      assert.strictEqual(result.rejected, true)
       for (const r of result.results as RejectedResult[]) {
-        expect(r.reasonCode).toBe('TooManyElements')
+        assert.strictEqual(r.reasonCode, 'TooManyElements')
       }
     })
   })
@@ -352,8 +352,8 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
         logger
       )
 
-      expect(capturedItems).toHaveLength(1)
-      expect(capturedItems[0]).toBe(item)
+      assert.strictEqual(capturedItems.length, 1)
+      assert.strictEqual(capturedItems[0], item)
     })
 
     await it('should pass reason with info and reasonCode to buildRejected callback', () => {
@@ -376,10 +376,10 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
         logger
       )
 
-      expect(capturedReasons).toHaveLength(1)
-      expect(capturedReasons[0].reasonCode).toBe('TooLargeElement')
-      expect(typeof capturedReasons[0].info).toBe('string')
-      expect(capturedReasons[0].info.length).toBeGreaterThan(0)
+      assert.strictEqual(capturedReasons.length, 1)
+      assert.strictEqual(capturedReasons[0].reasonCode, 'TooLargeElement')
+      assert.strictEqual(typeof capturedReasons[0].info, 'string')
+      assert.ok(capturedReasons[0].info.length > 0)
     })
   })
 })

@@ -2,7 +2,7 @@
  * @file Tests for OCPPAuthServiceImpl
  * @description Unit tests for OCPP authentication service implementation
  */
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../../src/charging-station/ChargingStation.js'
@@ -38,15 +38,15 @@ await describe('OCPPAuthServiceImpl', async () => {
     await it('should initialize with OCPP 1.6 charging station', () => {
       const authService: OCPPAuthService = new OCPPAuthServiceImpl(mockStation16)
 
-      expect(authService).toBeDefined()
-      expect(typeof authService.authorize).toBe('function')
-      expect(typeof authService.getConfiguration).toBe('function')
+      assert.notStrictEqual(authService, undefined)
+      assert.strictEqual(typeof authService.authorize, 'function')
+      assert.strictEqual(typeof authService.getConfiguration, 'function')
     })
 
     await it('should initialize with OCPP 2.0 charging station', () => {
       const authService = new OCPPAuthServiceImpl(mockStation20)
 
-      expect(authService).toBeDefined()
+      assert.notStrictEqual(authService, undefined)
     })
   })
 
@@ -61,10 +61,10 @@ await describe('OCPPAuthServiceImpl', async () => {
       const authService = new OCPPAuthServiceImpl(mockStation)
       const config = authService.getConfiguration()
 
-      expect(config).toBeDefined()
-      expect(config.localAuthListEnabled).toBe(true)
-      expect(config.authorizationCacheEnabled).toBe(true)
-      expect(config.offlineAuthorizationEnabled).toBe(true)
+      assert.notStrictEqual(config, undefined)
+      assert.strictEqual(config.localAuthListEnabled, true)
+      assert.strictEqual(config.authorizationCacheEnabled, true)
+      assert.strictEqual(config.offlineAuthorizationEnabled, true)
     })
   })
 
@@ -84,8 +84,8 @@ await describe('OCPPAuthServiceImpl', async () => {
       })
 
       const config = authService.getConfiguration()
-      expect(config.authorizationTimeout).toBe(60)
-      expect(config.localAuthListEnabled).toBe(false)
+      assert.strictEqual(config.authorizationTimeout, 60)
+      assert.strictEqual(config.localAuthListEnabled, false)
     })
   })
 
@@ -108,7 +108,7 @@ await describe('OCPPAuthServiceImpl', async () => {
         value: 'VALID_ID_TAG',
       }
 
-      expect(authService.isSupported(idTagIdentifier)).toBe(true)
+      assert.strictEqual(authService.isSupported(idTagIdentifier), true)
     })
 
     await it('should check if identifier type is supported for OCPP 2.0', async () => {
@@ -121,7 +121,7 @@ await describe('OCPPAuthServiceImpl', async () => {
         value: 'CENTRAL_ID',
       }
 
-      expect(authService.isSupported(centralIdentifier)).toBe(true)
+      assert.strictEqual(authService.isSupported(centralIdentifier), true)
     })
   })
 
@@ -136,7 +136,7 @@ await describe('OCPPAuthServiceImpl', async () => {
       const authService = new OCPPAuthServiceImpl(mockStation)
       const isConnected = authService.testConnectivity()
 
-      expect(typeof isConnected).toBe('boolean')
+      assert.strictEqual(typeof isConnected, 'boolean')
     })
   })
 
@@ -150,9 +150,9 @@ await describe('OCPPAuthServiceImpl', async () => {
     await it('should clear authorization cache', () => {
       const authService = new OCPPAuthServiceImpl(mockStation)
 
-      expect(() => {
+      assert.doesNotThrow(() => {
         authService.clearCache()
-      }).not.toThrow()
+      })
     })
   })
 
@@ -172,9 +172,9 @@ await describe('OCPPAuthServiceImpl', async () => {
         value: 'TAG_TO_INVALIDATE',
       }
 
-      expect(() => {
+      assert.doesNotThrow(() => {
         authService.invalidateCache(identifier)
-      }).not.toThrow()
+      })
     })
   })
 
@@ -189,11 +189,11 @@ await describe('OCPPAuthServiceImpl', async () => {
       const authService = new OCPPAuthServiceImpl(mockStation)
       const stats = await authService.getStats()
 
-      expect(stats).toBeDefined()
-      expect(stats.totalRequests).toBeDefined()
-      expect(stats.successfulAuth).toBeDefined()
-      expect(stats.failedAuth).toBeDefined()
-      expect(stats.cacheHitRate).toBeDefined()
+      assert.notStrictEqual(stats, undefined)
+      assert.notStrictEqual(stats.totalRequests, undefined)
+      assert.notStrictEqual(stats.successfulAuth, undefined)
+      assert.notStrictEqual(stats.failedAuth, undefined)
+      assert.notStrictEqual(stats.cacheHitRate, undefined)
     })
   })
 
@@ -221,9 +221,9 @@ await describe('OCPPAuthServiceImpl', async () => {
         timestamp: new Date(),
       })
 
-      expect(result).toBeDefined()
-      expect(result.status).toBeDefined()
-      expect(result.timestamp).toBeInstanceOf(Date)
+      assert.notStrictEqual(result, undefined)
+      assert.notStrictEqual(result.status, undefined)
+      assert.ok(result.timestamp instanceof Date)
     })
 
     await it('should return INVALID status when all strategies fail', async () => {
@@ -243,8 +243,8 @@ await describe('OCPPAuthServiceImpl', async () => {
         timestamp: new Date(),
       })
 
-      expect(result.status).toBe(AuthorizationStatus.INVALID)
-      expect(result.method).toBe(AuthenticationMethod.NONE)
+      assert.strictEqual(result.status, AuthorizationStatus.INVALID)
+      assert.strictEqual(result.method, AuthenticationMethod.NONE)
     })
   })
 
@@ -267,7 +267,7 @@ await describe('OCPPAuthServiceImpl', async () => {
       const result = await authService.isLocallyAuthorized(identifier, 1)
 
       // Result can be undefined or AuthorizationResult
-      expect(result === undefined || typeof result === 'object').toBe(true)
+      assert.ok(result === undefined || typeof result === 'object')
     })
   })
 
@@ -297,7 +297,7 @@ await describe('OCPPAuthServiceImpl', async () => {
         timestamp: new Date(),
       })
 
-      expect(result).toBeDefined()
+      assert.notStrictEqual(result, undefined)
     })
 
     await it('should handle OCPP 2.0 specific identifiers', async () => {
@@ -317,7 +317,7 @@ await describe('OCPPAuthServiceImpl', async () => {
         timestamp: new Date(),
       })
 
-      expect(result).toBeDefined()
+      assert.notStrictEqual(result, undefined)
     })
   })
 
@@ -345,7 +345,7 @@ await describe('OCPPAuthServiceImpl', async () => {
         timestamp: new Date(),
       })
 
-      expect(result.status).toBe(AuthorizationStatus.INVALID)
+      assert.strictEqual(result.status, AuthorizationStatus.INVALID)
     })
   })
 
@@ -375,8 +375,8 @@ await describe('OCPPAuthServiceImpl', async () => {
         timestamp: new Date(),
       })
 
-      expect(result).toBeDefined()
-      expect(result.timestamp).toBeInstanceOf(Date)
+      assert.notStrictEqual(result, undefined)
+      assert.ok(result.timestamp instanceof Date)
     })
 
     await it('should handle TRANSACTION_STOP context', async () => {
@@ -397,7 +397,7 @@ await describe('OCPPAuthServiceImpl', async () => {
         transactionId: 'TXN-123',
       })
 
-      expect(result).toBeDefined()
+      assert.notStrictEqual(result, undefined)
     })
 
     await it('should handle REMOTE_START context', async () => {
@@ -417,7 +417,7 @@ await describe('OCPPAuthServiceImpl', async () => {
         timestamp: new Date(),
       })
 
-      expect(result).toBeDefined()
+      assert.notStrictEqual(result, undefined)
     })
   })
 
@@ -433,11 +433,11 @@ await describe('OCPPAuthServiceImpl', async () => {
       await authService.initialize()
 
       const localStrategy = authService.getStrategy('local')
-      expect(localStrategy).toBeDefined()
-      expect(localStrategy).toBeInstanceOf(LocalAuthStrategy)
+      assert.notStrictEqual(localStrategy, undefined)
+      assert.ok(localStrategy instanceof LocalAuthStrategy)
 
-      const local = localStrategy as LocalAuthStrategy
-      expect(local.getAuthCache()).toBeDefined()
+      const local = localStrategy
+      assert.notStrictEqual(local.getAuthCache(), undefined)
     })
   })
 })

@@ -8,7 +8,7 @@
  * - ChargingStation-Transactions.test.ts: transaction handling and energy meters
  * - ChargingStation-Configuration.test.ts: boot notification, config persistence, WebSocket, error handling
  */
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
@@ -39,9 +39,9 @@ await describe('ChargingStation', async () => {
       const result = createMockChargingStation()
       const station = result.station
 
-      expect(station).toBeDefined()
-      expect(station.connectors.size).toBeGreaterThan(0)
-      expect(station.stationInfo).toBeDefined()
+      assert.notStrictEqual(station, undefined)
+      assert.ok(station.connectors.size > 0)
+      assert.notStrictEqual(station.stationInfo, undefined)
 
       cleanupChargingStation(station)
     })
@@ -51,8 +51,8 @@ await describe('ChargingStation', async () => {
       const station = result.station
 
       // 5 connectors + connector 0 = 6 total
-      expect(station.connectors.size).toBe(6)
-      expect(station.hasConnector(5)).toBe(true)
+      assert.strictEqual(station.connectors.size, 6)
+      assert.strictEqual(station.hasConnector(5), true)
 
       cleanupChargingStation(station)
     })
@@ -64,8 +64,8 @@ await describe('ChargingStation', async () => {
       })
       const station = result.station
 
-      expect(station.hasEvses).toBe(true)
-      expect(station.getNumberOfEvses()).toBe(2)
+      assert.strictEqual(station.hasEvses, true)
+      assert.strictEqual(station.getNumberOfEvses(), 2)
 
       cleanupChargingStation(station)
     })
@@ -74,9 +74,9 @@ await describe('ChargingStation', async () => {
       const result = createMockChargingStation()
       const mocks = result.mocks
 
-      expect(mocks.webSocket).toBeDefined()
-      expect(mocks.webSocket).toBeInstanceOf(MockWebSocket)
-      expect(mocks.webSocket.readyState).toBe(WebSocketReadyState.OPEN)
+      assert.notStrictEqual(mocks.webSocket, undefined)
+      assert.ok(mocks.webSocket instanceof MockWebSocket)
+      assert.strictEqual(mocks.webSocket.readyState, WebSocketReadyState.OPEN)
 
       cleanupChargingStation(result.station)
     })
@@ -85,10 +85,10 @@ await describe('ChargingStation', async () => {
       const result = createMockChargingStation()
       const mocks = result.mocks
 
-      expect(mocks.sharedLRUCache).toBeDefined()
-      expect(mocks.sharedLRUCache).toBeInstanceOf(MockSharedLRUCache)
-      expect(mocks.idTagsCache).toBeDefined()
-      expect(mocks.idTagsCache).toBeInstanceOf(MockIdTagsCache)
+      assert.notStrictEqual(mocks.sharedLRUCache, undefined)
+      assert.ok(mocks.sharedLRUCache instanceof MockSharedLRUCache)
+      assert.notStrictEqual(mocks.idTagsCache, undefined)
+      assert.ok(mocks.idTagsCache instanceof MockIdTagsCache)
 
       cleanupChargingStation(result.station)
     })
@@ -98,21 +98,21 @@ await describe('ChargingStation', async () => {
       const acceptedResult = createMockChargingStation({
         bootNotificationStatus: RegistrationStatusEnumType.ACCEPTED,
       })
-      expect(acceptedResult.station.inAcceptedState()).toBe(true)
+      assert.strictEqual(acceptedResult.station.inAcceptedState(), true)
       cleanupChargingStation(acceptedResult.station)
 
       // Test PENDING state
       const pendingResult = createMockChargingStation({
         bootNotificationStatus: RegistrationStatusEnumType.PENDING,
       })
-      expect(pendingResult.station.inPendingState()).toBe(true)
+      assert.strictEqual(pendingResult.station.inPendingState(), true)
       cleanupChargingStation(pendingResult.station)
 
       // Test REJECTED state
       const rejectedResult = createMockChargingStation({
         bootNotificationStatus: RegistrationStatusEnumType.REJECTED,
       })
-      expect(rejectedResult.station.inRejectedState()).toBe(true)
+      assert.strictEqual(rejectedResult.station.inRejectedState(), true)
       cleanupChargingStation(rejectedResult.station)
     })
   })
@@ -137,7 +137,7 @@ await describe('ChargingStation', async () => {
 
       // Start station
       station.start()
-      expect(station.started).toBe(true)
+      assert.strictEqual(station.started, true)
 
       // Set up transaction
       const connector1 = station.getConnectorStatus(1)
@@ -149,15 +149,16 @@ await describe('ChargingStation', async () => {
       }
 
       // Verify transaction
-      expect(station.getNumberOfRunningTransactions()).toBe(1)
-      expect(station.getTransactionIdTag(TEST_TRANSACTION_ID)).toBe(TEST_ID_TAG)
-      expect(station.getEnergyActiveImportRegisterByTransactionId(TEST_TRANSACTION_ID)).toBe(
+      assert.strictEqual(station.getNumberOfRunningTransactions(), 1)
+      assert.strictEqual(station.getTransactionIdTag(TEST_TRANSACTION_ID), TEST_ID_TAG)
+      assert.strictEqual(
+        station.getEnergyActiveImportRegisterByTransactionId(TEST_TRANSACTION_ID),
         TEST_TRANSACTION_ENERGY_WH
       )
 
       // Stop station
       await station.stop()
-      expect(station.started).toBe(false)
+      assert.strictEqual(station.started, false)
 
       cleanupChargingStation(station)
       station = undefined
@@ -174,16 +175,16 @@ await describe('ChargingStation', async () => {
 
       // Send WebSocket messages
       mocks.webSocket.send('["2","uuid-1","Heartbeat",{}]')
-      expect(mocks.webSocket.sentMessages.length).toBe(1)
+      assert.strictEqual(mocks.webSocket.sentMessages.length, 1)
 
       // Simulate connection close
       mocks.webSocket.simulateClose(1006, 'Connection lost')
-      expect(mocks.webSocket.readyState).toBe(WebSocketReadyState.CLOSED)
+      assert.strictEqual(mocks.webSocket.readyState, WebSocketReadyState.CLOSED)
 
       // Buffer messages while disconnected
       station.bufferMessage('["2","uuid-2","StatusNotification",{}]')
       const stationWithQueue = station as unknown as { messageQueue: string[] }
-      expect(stationWithQueue.messageQueue.length).toBe(1)
+      assert.strictEqual(stationWithQueue.messageQueue.length, 1)
 
       cleanupChargingStation(station)
       station = undefined
@@ -198,8 +199,8 @@ await describe('ChargingStation', async () => {
       station = result.station
 
       // Verify EVSE structure
-      expect(station.hasEvses).toBe(true)
-      expect(station.getEvseIdByConnectorId(1)).toBe(1)
+      assert.strictEqual(station.hasEvses, true)
+      assert.strictEqual(station.getEvseIdByConnectorId(1), 1)
 
       // Add reservation
       const reservation = {
@@ -212,12 +213,12 @@ await describe('ChargingStation', async () => {
 
       // Verify reservation
       const found = station.getReservationBy('reservationId', 1)
-      expect(found).toBeDefined()
-      expect(found?.idTag).toBe('RESERVATION-TAG')
+      assert.notStrictEqual(found, undefined)
+      assert.strictEqual(found?.idTag, 'RESERVATION-TAG')
 
       // Check reservability
-      expect(station.isConnectorReservable(1)).toBe(false)
-      expect(station.isConnectorReservable(999)).toBe(true)
+      assert.strictEqual(station.isConnectorReservable(1), false)
+      assert.strictEqual(station.isConnectorReservable(999), true)
 
       cleanupChargingStation(station)
       station = undefined
@@ -233,8 +234,8 @@ await describe('ChargingStation', async () => {
       station = result.station
 
       // Verify initial state
-      expect(station.inPendingState()).toBe(true)
-      expect(station.getHeartbeatInterval()).toBe(120000)
+      assert.strictEqual(station.inPendingState(), true)
+      assert.strictEqual(station.getHeartbeatInterval(), 120000)
 
       // Transition to accepted
       station.bootNotificationResponse = {
@@ -244,8 +245,8 @@ await describe('ChargingStation', async () => {
       }
 
       // Verify state change
-      expect(station.inAcceptedState()).toBe(true)
-      expect(station.inPendingState()).toBe(false)
+      assert.strictEqual(station.inAcceptedState(), true)
+      assert.strictEqual(station.inPendingState(), false)
 
       cleanupChargingStation(station)
       station = undefined
@@ -260,7 +261,7 @@ await describe('ChargingStation', async () => {
 
       // Store some data in cache
       mocks1.idTagsCache.setIdTags('test-file.json', ['tag1', 'tag2'])
-      expect(mocks1.idTagsCache.getIdTags('test-file.json')).toStrictEqual(['tag1', 'tag2'])
+      assert.deepStrictEqual(mocks1.idTagsCache.getIdTags('test-file.json'), ['tag1', 'tag2'])
 
       // Cleanup first station
       cleanupChargingStation(result1.station)
@@ -271,7 +272,7 @@ await describe('ChargingStation', async () => {
 
       // Cache should be fresh (singletons reset in cleanup)
       // The resetInstance is called in cleanup, so new getInstance creates fresh instance
-      expect(mocks2.idTagsCache.getIdTags('test-file.json')).toBeUndefined()
+      assert.strictEqual(mocks2.idTagsCache.getIdTags('test-file.json'), undefined)
 
       cleanupChargingStation(result2.station)
     })

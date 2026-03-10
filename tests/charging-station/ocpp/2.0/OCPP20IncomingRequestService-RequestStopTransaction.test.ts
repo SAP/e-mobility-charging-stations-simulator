@@ -3,7 +3,7 @@
  * @description Unit tests for OCPP 2.0 RequestStopTransaction command handling (F03)
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
@@ -116,8 +116,8 @@ await describe('F03 - Remote Stop Transaction', async () => {
       startRequest
     )
 
-    expect(startResponse.status).toBe(RequestStartStopStatusEnumType.Accepted)
-    expect(startResponse.transactionId).toBeDefined()
+    assert.strictEqual(startResponse.status, RequestStartStopStatusEnumType.Accepted)
+    assert.notStrictEqual(startResponse.transactionId, undefined)
     return startResponse.transactionId as string
   }
 
@@ -138,18 +138,18 @@ await describe('F03 - Remote Stop Transaction', async () => {
     const response = await testableService.handleRequestStopTransaction(mockStation, stopRequest)
 
     // Verify response
-    expect(response).toBeDefined()
-    expect(response.status).toBe(RequestStartStopStatusEnumType.Accepted)
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
 
     // Verify TransactionEvent was sent
-    expect(sentTransactionEvents).toHaveLength(1)
+    assert.strictEqual(sentTransactionEvents.length, 1)
     const transactionEvent = sentTransactionEvents[0]
 
-    expect(transactionEvent.eventType).toBe(OCPP20TransactionEventEnumType.Ended)
-    expect(transactionEvent.triggerReason).toBe(OCPP20TriggerReasonEnumType.RemoteStop)
-    expect(transactionEvent.transactionInfo.transactionId).toBe(transactionId)
-    expect(transactionEvent.transactionInfo.stoppedReason).toBe(OCPP20ReasonEnumType.Remote)
-    expect(transactionEvent.evse?.id).toBe(1)
+    assert.strictEqual(transactionEvent.eventType, OCPP20TransactionEventEnumType.Ended)
+    assert.strictEqual(transactionEvent.triggerReason, OCPP20TriggerReasonEnumType.RemoteStop)
+    assert.strictEqual(transactionEvent.transactionInfo.transactionId, transactionId)
+    assert.strictEqual(transactionEvent.transactionInfo.stoppedReason, OCPP20ReasonEnumType.Remote)
+    assert.strictEqual(transactionEvent.evse?.id, 1)
   })
 
   // FR: F03.FR.02, F03.FR.03
@@ -173,19 +173,19 @@ await describe('F03 - Remote Stop Transaction', async () => {
     const response = await testableService.handleRequestStopTransaction(mockStation, stopRequest)
 
     // Verify response
-    expect(response).toBeDefined()
-    expect(response.status).toBe(RequestStartStopStatusEnumType.Accepted)
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
 
     // Verify correct TransactionEvent was sent
-    expect(sentTransactionEvents).toHaveLength(1)
+    assert.strictEqual(sentTransactionEvents.length, 1)
     const transactionEvent = sentTransactionEvents[0]
 
-    expect(transactionEvent.transactionInfo.transactionId).toBe(transactionId2)
-    expect(transactionEvent.evse?.id).toBe(2)
+    assert.strictEqual(transactionEvent.transactionInfo.transactionId, transactionId2)
+    assert.strictEqual(transactionEvent.evse?.id, 2)
 
     // Verify other transactions are still active (test implementation dependent)
-    expect(mockStation.getConnectorIdByTransactionId(transactionId1)).toBe(1)
-    expect(mockStation.getConnectorIdByTransactionId(transactionId3)).toBe(3)
+    assert.strictEqual(mockStation.getConnectorIdByTransactionId(transactionId1), 1)
+    assert.strictEqual(mockStation.getConnectorIdByTransactionId(transactionId3), 3)
   })
 
   // FR: F03.FR.08
@@ -201,11 +201,11 @@ await describe('F03 - Remote Stop Transaction', async () => {
     const response = await testableService.handleRequestStopTransaction(mockStation, stopRequest)
 
     // Verify rejection
-    expect(response).toBeDefined()
-    expect(response.status).toBe(RequestStartStopStatusEnumType.Rejected)
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
 
     // Verify no TransactionEvent was sent
-    expect(sentTransactionEvents).toHaveLength(0)
+    assert.strictEqual(sentTransactionEvents.length, 0)
   })
 
   // FR: F03.FR.08
@@ -220,11 +220,11 @@ await describe('F03 - Remote Stop Transaction', async () => {
     const response = await testableService.handleRequestStopTransaction(mockStation, invalidRequest)
 
     // Verify rejection
-    expect(response).toBeDefined()
-    expect(response.status).toBe(RequestStartStopStatusEnumType.Rejected)
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
 
     // Verify no TransactionEvent was sent
-    expect(sentTransactionEvents).toHaveLength(0)
+    assert.strictEqual(sentTransactionEvents.length, 0)
   })
 
   // FR: F03.FR.08
@@ -241,11 +241,11 @@ await describe('F03 - Remote Stop Transaction', async () => {
     const response = await testableService.handleRequestStopTransaction(mockStation, invalidRequest)
 
     // Verify rejection
-    expect(response).toBeDefined()
-    expect(response.status).toBe(RequestStartStopStatusEnumType.Rejected)
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
 
     // Verify no TransactionEvent was sent
-    expect(sentTransactionEvents).toHaveLength(0)
+    assert.strictEqual(sentTransactionEvents.length, 0)
   })
 
   // FR: F03.FR.02
@@ -280,11 +280,11 @@ await describe('F03 - Remote Stop Transaction', async () => {
     const response = await testableService.handleRequestStopTransaction(mockStation, stopRequest)
 
     // Verify acceptance (format is valid)
-    expect(response).toBeDefined()
-    expect(response.status).toBe(RequestStartStopStatusEnumType.Accepted)
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
 
     // Verify TransactionEvent was sent
-    expect(sentTransactionEvents).toHaveLength(1)
+    assert.strictEqual(sentTransactionEvents.length, 1)
   })
 
   await it('should handle TransactionEvent request failure gracefully', async () => {
@@ -344,8 +344,8 @@ await describe('F03 - Remote Stop Transaction', async () => {
     )
 
     // Should be rejected due to TransactionEvent failure
-    expect(response).toBeDefined()
-    expect(response.status).toBe(RequestStartStopStatusEnumType.Rejected)
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
   })
 
   // FR: F04.FR.01
@@ -363,15 +363,15 @@ await describe('F03 - Remote Stop Transaction', async () => {
     const response = await testableService.handleRequestStopTransaction(mockStation, stopRequest)
 
     // Verify response structure
-    expect(response).toBeDefined()
-    expect(typeof response).toBe('object')
-    expect(response).toHaveProperty('status')
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(typeof response, 'object')
+    assert.notStrictEqual(response.status, undefined)
 
     // Verify status is valid enum value
-    expect(Object.values(RequestStartStopStatusEnumType)).toContain(response.status)
+    assert.ok(Object.values(RequestStartStopStatusEnumType).includes(response.status))
 
     // OCPP 2.0 RequestStopTransaction response should only contain status
-    expect(Object.keys(response as object)).toStrictEqual(['status'])
+    assert.deepStrictEqual(Object.keys(response as object), ['status'])
   })
 
   await it('should handle custom data in request payload', async () => {
@@ -395,11 +395,11 @@ await describe('F03 - Remote Stop Transaction', async () => {
     )
 
     // Verify response
-    expect(response).toBeDefined()
-    expect(response.status).toBe(RequestStartStopStatusEnumType.Accepted)
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
 
     // Verify TransactionEvent was sent despite custom data
-    expect(sentTransactionEvents).toHaveLength(1)
+    assert.strictEqual(sentTransactionEvents.length, 1)
   })
 
   // FR: F03.FR.07, F03.FR.09
@@ -416,28 +416,28 @@ await describe('F03 - Remote Stop Transaction', async () => {
 
     const response = await testableService.handleRequestStopTransaction(mockStation, stopRequest)
 
-    expect(response.status).toBe(RequestStartStopStatusEnumType.Accepted)
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
 
     // Verify TransactionEvent structure and content
-    expect(sentTransactionEvents).toHaveLength(1)
+    assert.strictEqual(sentTransactionEvents.length, 1)
     const transactionEvent = sentTransactionEvents[0]
 
     // Validate required fields
-    expect(transactionEvent.eventType).toBe(OCPP20TransactionEventEnumType.Ended)
-    expect(transactionEvent.timestamp).toBeDefined()
-    expect(transactionEvent.timestamp).toBeInstanceOf(Date)
-    expect(transactionEvent.triggerReason).toBe(OCPP20TriggerReasonEnumType.RemoteStop)
-    expect(transactionEvent.seqNo).toBeDefined()
-    expect(typeof transactionEvent.seqNo).toBe('number')
+    assert.strictEqual(transactionEvent.eventType, OCPP20TransactionEventEnumType.Ended)
+    assert.notStrictEqual(transactionEvent.timestamp, undefined)
+    assert.ok(transactionEvent.timestamp instanceof Date)
+    assert.strictEqual(transactionEvent.triggerReason, OCPP20TriggerReasonEnumType.RemoteStop)
+    assert.notStrictEqual(transactionEvent.seqNo, undefined)
+    assert.strictEqual(typeof transactionEvent.seqNo, 'number')
 
     // Validate transaction info
-    expect(transactionEvent.transactionInfo).toBeDefined()
-    expect(transactionEvent.transactionInfo.transactionId).toBe(transactionId)
-    expect(transactionEvent.transactionInfo.stoppedReason).toBe(OCPP20ReasonEnumType.Remote)
+    assert.notStrictEqual(transactionEvent.transactionInfo, undefined)
+    assert.strictEqual(transactionEvent.transactionInfo.transactionId, transactionId)
+    assert.strictEqual(transactionEvent.transactionInfo.stoppedReason, OCPP20ReasonEnumType.Remote)
 
     // Validate EVSE info
-    expect(transactionEvent.evse).toBeDefined()
-    expect(transactionEvent.evse?.id).toBe(2) // Should match the EVSE we used
+    assert.notStrictEqual(transactionEvent.evse, undefined)
+    assert.strictEqual(transactionEvent.evse?.id, 2) // Should match the EVSE we used
   })
 
   // FR: F03.FR.09
@@ -447,7 +447,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
     const transactionId = await startTransaction(3, 700)
 
     const connectorStatus = mockStation.getConnectorStatus(3)
-    expect(connectorStatus).toBeDefined()
+    assert.notStrictEqual(connectorStatus, undefined)
     if (connectorStatus != null) {
       connectorStatus.transactionEnergyActiveImportRegisterValue = 12345.67
     }
@@ -460,26 +460,28 @@ await describe('F03 - Remote Stop Transaction', async () => {
 
     const response = await testableService.handleRequestStopTransaction(mockStation, stopRequest)
 
-    expect(response.status).toBe(RequestStartStopStatusEnumType.Accepted)
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
 
-    expect(sentTransactionEvents).toHaveLength(1)
+    assert.strictEqual(sentTransactionEvents.length, 1)
     const transactionEvent = sentTransactionEvents[0]
 
-    expect(transactionEvent.eventType).toBe(OCPP20TransactionEventEnumType.Ended)
+    assert.strictEqual(transactionEvent.eventType, OCPP20TransactionEventEnumType.Ended)
 
-    expect(transactionEvent.meterValue).toBeDefined()
-    expect(transactionEvent.meterValue).toHaveLength(1)
+    assert.notStrictEqual(transactionEvent.meterValue, undefined)
+    if (transactionEvent.meterValue == null) {
+      assert.fail('Expected meterValue to be defined')
+    }
+    assert.strictEqual(transactionEvent.meterValue.length, 1)
 
-    const meterValue = transactionEvent.meterValue?.[0]
-    expect(meterValue).toBeDefined()
-    if (meterValue == null) return
-    expect(meterValue.timestamp).toBeInstanceOf(Date)
-    expect(meterValue.sampledValue).toBeDefined()
-    expect(meterValue.sampledValue).toHaveLength(1)
+    const meterValue = transactionEvent.meterValue[0]
+    assert.notStrictEqual(meterValue, undefined)
+    assert.ok(meterValue.timestamp instanceof Date)
+    assert.notStrictEqual(meterValue.sampledValue, undefined)
+    assert.strictEqual(meterValue.sampledValue.length, 1)
 
     const sampledValue = meterValue.sampledValue[0]
-    expect(sampledValue.value).toBe(12345.67)
-    expect(sampledValue.context).toBe('Transaction.End')
-    expect(sampledValue.measurand).toBe('Energy.Active.Import.Register')
+    assert.strictEqual(sampledValue.value, 12345.67)
+    assert.strictEqual(sampledValue.context, 'Transaction.End')
+    assert.strictEqual(sampledValue.measurand, 'Energy.Active.Import.Register')
   })
 })

@@ -2,7 +2,7 @@
  * @file Tests for MongoDBStorage
  * @description Unit tests for MongoDB-based performance storage
  */
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import { MongoDBStorage } from '../../../src/performance/storage/MongoDBStorage.js'
@@ -111,11 +111,11 @@ await describe('MongoDBStorage', async () => {
   await describe('constructor', async () => {
     await it('should extract database name from URI path', () => {
       const dbName = Reflect.get(storage, 'dbName') as string
-      expect(dbName).toBe('e-mobility-test')
+      assert.strictEqual(dbName, 'e-mobility-test')
     })
 
     await it('should initialize with opened set to false', () => {
-      expect(storage.getOpened()).toBe(false)
+      assert.strictEqual(storage.getOpened(), false)
     })
   })
 
@@ -126,13 +126,13 @@ await describe('MongoDBStorage', async () => {
       storage.setClient(mockClient)
       storage.setOpened(true)
       await storage.storePerformanceStatistics(buildTestStatistics('station-1'))
-      expect([...storage.getPerformanceStatistics()].length).toBe(1)
+      assert.strictEqual([...storage.getPerformanceStatistics()].length, 1)
 
       // Act
       await storage.close()
 
       // Assert
-      expect([...storage.getPerformanceStatistics()].length).toBe(0)
+      assert.strictEqual([...storage.getPerformanceStatistics()].length, 0)
     })
 
     await it('should call client.close when opened', async t => {
@@ -146,7 +146,7 @@ await describe('MongoDBStorage', async () => {
       await storage.close()
 
       // Assert
-      expect(closeMock.mock.calls.length).toBe(1)
+      assert.strictEqual(closeMock.mock.calls.length, 1)
     })
 
     await it('should set opened to false after closing', async () => {
@@ -159,7 +159,7 @@ await describe('MongoDBStorage', async () => {
       await storage.close()
 
       // Assert
-      expect(storage.getOpened()).toBe(false)
+      assert.strictEqual(storage.getOpened(), false)
     })
 
     await it('should not call client.close when not opened', async t => {
@@ -172,7 +172,7 @@ await describe('MongoDBStorage', async () => {
       await storage.close()
 
       // Assert
-      expect(closeMock.mock.calls.length).toBe(0)
+      assert.strictEqual(closeMock.mock.calls.length, 0)
     })
 
     await it('should log error when client.close throws', async t => {
@@ -190,7 +190,7 @@ await describe('MongoDBStorage', async () => {
       await storage.close()
 
       // Assert
-      expect(errorMock.mock.calls.length).toBe(1)
+      assert.strictEqual(errorMock.mock.calls.length, 1)
     })
   })
 
@@ -205,8 +205,8 @@ await describe('MongoDBStorage', async () => {
       await storage.open()
 
       // Assert
-      expect(connectMock.mock.calls.length).toBe(1)
-      expect(storage.getOpened()).toBe(true)
+      assert.strictEqual(connectMock.mock.calls.length, 1)
+      assert.strictEqual(storage.getOpened(), true)
     })
 
     await it('should not connect when already opened', async t => {
@@ -220,7 +220,7 @@ await describe('MongoDBStorage', async () => {
       await storage.open()
 
       // Assert
-      expect(connectMock.mock.calls.length).toBe(0)
+      assert.strictEqual(connectMock.mock.calls.length, 0)
     })
 
     await it('should log error when connect throws', async t => {
@@ -237,7 +237,7 @@ await describe('MongoDBStorage', async () => {
       await storage.open()
 
       // Assert
-      expect(errorMock.mock.calls.length).toBe(1)
+      assert.strictEqual(errorMock.mock.calls.length, 1)
     })
   })
 
@@ -253,14 +253,14 @@ await describe('MongoDBStorage', async () => {
       await storage.storePerformanceStatistics(stats)
 
       // Assert
-      expect(replaceOneCalls.length).toBe(1)
+      assert.strictEqual(replaceOneCalls.length, 1)
       const replacement = replaceOneCalls[0].replacement as Record<string, unknown>
       const statsArray = replacement.statisticsData as Record<string, unknown>[]
-      expect(Array.isArray(statsArray)).toBe(true)
-      expect(statsArray.length).toBe(1)
-      expect(statsArray[0].name).toBe('Heartbeat')
-      expect(statsArray[0].requestCount).toBe(100)
-      expect(statsArray[0].avgTimeMeasurement).toBe(10.5)
+      assert.ok(Array.isArray(statsArray))
+      assert.strictEqual(statsArray.length, 1)
+      assert.strictEqual(statsArray[0].name, 'Heartbeat')
+      assert.strictEqual(statsArray[0].requestCount, 100)
+      assert.strictEqual(statsArray[0].avgTimeMeasurement, 10.5)
     })
 
     await it('should spread measurementTimeSeries into plain array', async () => {
@@ -276,8 +276,8 @@ await describe('MongoDBStorage', async () => {
       const replacement = replaceOneCalls[0].replacement as Record<string, unknown>
       const statsArray = replacement.statisticsData as Record<string, unknown>[]
       const timeSeries = statsArray[0].measurementTimeSeries as unknown[]
-      expect(Array.isArray(timeSeries)).toBe(true)
-      expect(timeSeries.length).toBe(2)
+      assert.ok(Array.isArray(timeSeries))
+      assert.strictEqual(timeSeries.length, 2)
     })
 
     await it('should call replaceOne with upsert and correct filter', async () => {
@@ -290,9 +290,9 @@ await describe('MongoDBStorage', async () => {
       await storage.storePerformanceStatistics(buildTestStatistics('station-1'))
 
       // Assert
-      expect(replaceOneCalls.length).toBe(1)
-      expect(replaceOneCalls[0].filter).toStrictEqual({ id: 'station-1' })
-      expect(replaceOneCalls[0].options).toStrictEqual({ upsert: true })
+      assert.strictEqual(replaceOneCalls.length, 1)
+      assert.deepStrictEqual(replaceOneCalls[0].filter, { id: 'station-1' })
+      assert.deepStrictEqual(replaceOneCalls[0].options, { upsert: true })
     })
 
     await it('should use correct collection name', async () => {
@@ -305,8 +305,8 @@ await describe('MongoDBStorage', async () => {
       await storage.storePerformanceStatistics(buildTestStatistics('station-1'))
 
       // Assert
-      expect(collectionCalls.length).toBe(1)
-      expect(collectionCalls[0].collectionName).toBe(Constants.PERFORMANCE_RECORDS_TABLE)
+      assert.strictEqual(collectionCalls.length, 1)
+      assert.strictEqual(collectionCalls[0].collectionName, Constants.PERFORMANCE_RECORDS_TABLE)
     })
 
     await it('should cache statistics in memory after store', async () => {
@@ -320,8 +320,8 @@ await describe('MongoDBStorage', async () => {
 
       // Assert
       const cached = [...storage.getPerformanceStatistics()]
-      expect(cached.length).toBe(1)
-      expect(cached[0].id).toBe('station-1')
+      assert.strictEqual(cached.length, 1)
+      assert.strictEqual(cached[0].id, 'station-1')
     })
 
     await it('should handle multiple distinct records', async () => {
@@ -336,9 +336,9 @@ await describe('MongoDBStorage', async () => {
       await storage.storePerformanceStatistics(buildTestStatistics('station-3'))
 
       // Assert
-      expect(replaceOneCalls.length).toBe(3)
+      assert.strictEqual(replaceOneCalls.length, 3)
       const cached = [...storage.getPerformanceStatistics()]
-      expect(cached.length).toBe(3)
+      assert.strictEqual(cached.length, 3)
     })
 
     await it('should handle statisticsData entry without measurementTimeSeries', async () => {
@@ -358,10 +358,10 @@ await describe('MongoDBStorage', async () => {
       // Assert
       const replacement = replaceOneCalls[0].replacement as Record<string, unknown>
       const statsArray = replacement.statisticsData as Record<string, unknown>[]
-      expect(statsArray.length).toBe(2)
+      assert.strictEqual(statsArray.length, 2)
       const statusEntry = statsArray.find(e => e.name === 'StatusNotification')
-      expect(statusEntry).toBeDefined()
-      expect(statusEntry?.measurementTimeSeries).toBeUndefined()
+      assert.notStrictEqual(statusEntry, undefined)
+      assert.strictEqual(statusEntry?.measurementTimeSeries, undefined)
     })
   })
 
@@ -374,7 +374,7 @@ await describe('MongoDBStorage', async () => {
       await storage.storePerformanceStatistics(buildTestStatistics('station-1'))
 
       // Assert
-      expect(errorMock.mock.calls.length).toBe(1)
+      assert.strictEqual(errorMock.mock.calls.length, 1)
     })
 
     await it('should still cache statistics even when store fails', async () => {
@@ -383,8 +383,8 @@ await describe('MongoDBStorage', async () => {
 
       // Assert
       const cached = [...storage.getPerformanceStatistics()]
-      expect(cached.length).toBe(1)
-      expect(cached[0].id).toBe('station-1')
+      assert.strictEqual(cached.length, 1)
+      assert.strictEqual(cached[0].id, 'station-1')
     })
 
     await it('should log error when replaceOne throws', async t => {
@@ -405,7 +405,7 @@ await describe('MongoDBStorage', async () => {
       await storage.storePerformanceStatistics(buildTestStatistics('station-1'))
 
       // Assert
-      expect(errorMock.mock.calls.length).toBe(1)
+      assert.strictEqual(errorMock.mock.calls.length, 1)
     })
   })
 })

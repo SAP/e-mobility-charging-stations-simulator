@@ -2,7 +2,7 @@
  * @file Tests for OCPP20RequestService StatusNotification
  * @description Unit tests for OCPP 2.0 StatusNotification request building (G01)
  */
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
@@ -64,11 +64,11 @@ await describe('G01 - Status Notification', async () => {
       requestParams
     ) as OCPP20StatusNotificationRequest
 
-    expect(payload).toBeDefined()
-    expect(payload.connectorId).toBe(1)
-    expect(payload.connectorStatus).toBe(OCPP20ConnectorStatusEnumType.Available)
-    expect(payload.evseId).toBe(1)
-    expect(payload.timestamp).toBe(testTimestamp)
+    assert.notStrictEqual(payload, undefined)
+    assert.strictEqual(payload.connectorId, 1)
+    assert.strictEqual(payload.connectorStatus, OCPP20ConnectorStatusEnumType.Available)
+    assert.strictEqual(payload.evseId, 1)
+    assert.strictEqual(payload.timestamp, testTimestamp)
   })
 
   // FR: G01.FR.02
@@ -88,11 +88,11 @@ await describe('G01 - Status Notification', async () => {
       requestParams
     ) as OCPP20StatusNotificationRequest
 
-    expect(payload).toBeDefined()
-    expect(payload.connectorId).toBe(2)
-    expect(payload.connectorStatus).toBe(OCPP20ConnectorStatusEnumType.Occupied)
-    expect(payload.evseId).toBe(2)
-    expect(payload.timestamp).toBe(testTimestamp)
+    assert.notStrictEqual(payload, undefined)
+    assert.strictEqual(payload.connectorId, 2)
+    assert.strictEqual(payload.connectorStatus, OCPP20ConnectorStatusEnumType.Occupied)
+    assert.strictEqual(payload.evseId, 2)
+    assert.strictEqual(payload.timestamp, testTimestamp)
   })
 
   // FR: G01.FR.03
@@ -112,11 +112,11 @@ await describe('G01 - Status Notification', async () => {
       requestParams
     ) as OCPP20StatusNotificationRequest
 
-    expect(payload).toBeDefined()
-    expect(payload.connectorId).toBe(1)
-    expect(payload.connectorStatus).toBe(OCPP20ConnectorStatusEnumType.Faulted)
-    expect(payload.evseId).toBe(1)
-    expect(payload.timestamp).toBe(testTimestamp)
+    assert.notStrictEqual(payload, undefined)
+    assert.strictEqual(payload.connectorId, 1)
+    assert.strictEqual(payload.connectorStatus, OCPP20ConnectorStatusEnumType.Faulted)
+    assert.strictEqual(payload.evseId, 1)
+    assert.strictEqual(payload.timestamp, testTimestamp)
   })
 
   // FR: G01.FR.04
@@ -145,11 +145,11 @@ await describe('G01 - Status Notification', async () => {
         requestParams
       ) as OCPP20StatusNotificationRequest
 
-      expect(payload).toBeDefined()
-      expect(payload.connectorStatus).toBe(status)
-      expect(payload.connectorId).toBe(index + 1)
-      expect(payload.evseId).toBe(index + 1)
-      expect(payload.timestamp).toBe(testTimestamp)
+      assert.notStrictEqual(payload, undefined)
+      assert.strictEqual(payload.connectorStatus, status)
+      assert.strictEqual(payload.connectorId, index + 1)
+      assert.strictEqual(payload.evseId, index + 1)
+      assert.strictEqual(payload.timestamp, testTimestamp)
     })
   })
 
@@ -171,24 +171,24 @@ await describe('G01 - Status Notification', async () => {
     ) as OCPP20StatusNotificationRequest
 
     // Validate that the payload has the exact structure of OCPP20StatusNotificationRequest
-    expect(typeof payload).toBe('object')
-    expect(payload).toHaveProperty('connectorId')
-    expect(payload).toHaveProperty('connectorStatus')
-    expect(payload).toHaveProperty('evseId')
-    expect(payload).toHaveProperty('timestamp')
-    expect(Object.keys(payload as object)).toHaveLength(4)
+    assert.strictEqual(typeof payload, 'object')
+    assert.notStrictEqual(payload.connectorId, undefined)
+    assert.notStrictEqual(payload.connectorStatus, undefined)
+    assert.notStrictEqual(payload.evseId, undefined)
+    assert.notStrictEqual(payload.timestamp, undefined)
+    assert.strictEqual(Object.keys(payload as object).length, 4)
 
     // Validate field types
-    expect(typeof payload.connectorId).toBe('number')
-    expect(typeof payload.connectorStatus).toBe('string')
-    expect(typeof payload.evseId).toBe('number')
-    expect(payload.timestamp).toBeInstanceOf(Date)
+    assert.strictEqual(typeof payload.connectorId, 'number')
+    assert.strictEqual(typeof payload.connectorStatus, 'string')
+    assert.strictEqual(typeof payload.evseId, 'number')
+    assert.ok(payload.timestamp instanceof Date)
 
     // Validate field values
-    expect(payload.connectorId).toBe(3)
-    expect(payload.connectorStatus).toBe(OCPP20ConnectorStatusEnumType.Reserved)
-    expect(payload.evseId).toBe(2)
-    expect(payload.timestamp).toBe(testTimestamp)
+    assert.strictEqual(payload.connectorId, 3)
+    assert.strictEqual(payload.connectorStatus, OCPP20ConnectorStatusEnumType.Reserved)
+    assert.strictEqual(payload.evseId, 2)
+    assert.strictEqual(payload.timestamp, testTimestamp)
   })
 
   // FR: G01.FR.06
@@ -209,11 +209,11 @@ await describe('G01 - Status Notification', async () => {
       requestParamsConnector0
     ) as OCPP20StatusNotificationRequest
 
-    expect(payloadConnector0).toBeDefined()
-    expect(payloadConnector0.connectorId).toBe(0)
-    expect(payloadConnector0.connectorStatus).toBe(OCPP20ConnectorStatusEnumType.Available)
-    expect(payloadConnector0.evseId).toBe(1)
-    expect(payloadConnector0.timestamp).toBe(testTimestamp)
+    assert.notStrictEqual(payloadConnector0, undefined)
+    assert.strictEqual(payloadConnector0.connectorId, 0)
+    assert.strictEqual(payloadConnector0.connectorStatus, OCPP20ConnectorStatusEnumType.Available)
+    assert.strictEqual(payloadConnector0.evseId, 1)
+    assert.strictEqual(payloadConnector0.timestamp, testTimestamp)
 
     // Test with EVSE ID 0 (valid in OCPP 2.0 for the charging station itself)
     const requestParamsEvse0: OCPP20StatusNotificationRequest = {
@@ -229,11 +229,11 @@ await describe('G01 - Status Notification', async () => {
       requestParamsEvse0
     ) as OCPP20StatusNotificationRequest
 
-    expect(payloadEvse0).toBeDefined()
-    expect(payloadEvse0.connectorId).toBe(1)
-    expect(payloadEvse0.connectorStatus).toBe(OCPP20ConnectorStatusEnumType.Unavailable)
-    expect(payloadEvse0.evseId).toBe(0)
-    expect(payloadEvse0.timestamp).toBe(testTimestamp)
+    assert.notStrictEqual(payloadEvse0, undefined)
+    assert.strictEqual(payloadEvse0.connectorId, 1)
+    assert.strictEqual(payloadEvse0.connectorStatus, OCPP20ConnectorStatusEnumType.Unavailable)
+    assert.strictEqual(payloadEvse0.evseId, 0)
+    assert.strictEqual(payloadEvse0.timestamp, testTimestamp)
   })
 
   // FR: G01.FR.07
@@ -259,9 +259,9 @@ await describe('G01 - Status Notification', async () => {
         requestParams
       ) as OCPP20StatusNotificationRequest
 
-      expect(payload).toBeDefined()
-      expect(payload.timestamp).toBe(timestamp)
-      expect(payload.timestamp).toBeInstanceOf(Date)
+      assert.notStrictEqual(payload, undefined)
+      assert.strictEqual(payload.timestamp, timestamp)
+      assert.ok(payload.timestamp instanceof Date)
     })
   })
 })

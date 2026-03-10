@@ -2,7 +2,7 @@
  * @file Tests for AuthTypes
  * @description Unit tests for authentication type definitions and mappings
  */
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
 import {
@@ -37,31 +37,31 @@ await describe('AuthTypes', async () => {
   })
   await describe('IdentifierTypeGuards', async () => {
     await it('should correctly identify OCPP 1.6 types', () => {
-      expect(isOCPP16Type(IdentifierType.ID_TAG)).toBe(true)
-      expect(isOCPP16Type(IdentifierType.CENTRAL)).toBe(false)
-      expect(isOCPP16Type(IdentifierType.LOCAL)).toBe(false)
+      assert.strictEqual(isOCPP16Type(IdentifierType.ID_TAG), true)
+      assert.strictEqual(isOCPP16Type(IdentifierType.CENTRAL), false)
+      assert.strictEqual(isOCPP16Type(IdentifierType.LOCAL), false)
     })
 
     await it('should correctly identify OCPP 2.0 types', () => {
-      expect(isOCPP20Type(IdentifierType.CENTRAL)).toBe(true)
-      expect(isOCPP20Type(IdentifierType.LOCAL)).toBe(true)
-      expect(isOCPP20Type(IdentifierType.E_MAID)).toBe(true)
-      expect(isOCPP20Type(IdentifierType.ID_TAG)).toBe(false)
+      assert.strictEqual(isOCPP20Type(IdentifierType.CENTRAL), true)
+      assert.strictEqual(isOCPP20Type(IdentifierType.LOCAL), true)
+      assert.strictEqual(isOCPP20Type(IdentifierType.E_MAID), true)
+      assert.strictEqual(isOCPP20Type(IdentifierType.ID_TAG), false)
     })
 
     await it('should correctly identify certificate-based types', () => {
-      expect(isCertificateBased(IdentifierType.CERTIFICATE)).toBe(true)
-      expect(isCertificateBased(IdentifierType.ID_TAG)).toBe(false)
-      expect(isCertificateBased(IdentifierType.LOCAL)).toBe(false)
+      assert.strictEqual(isCertificateBased(IdentifierType.CERTIFICATE), true)
+      assert.strictEqual(isCertificateBased(IdentifierType.ID_TAG), false)
+      assert.strictEqual(isCertificateBased(IdentifierType.LOCAL), false)
     })
 
     await it('should identify types requiring additional info', () => {
-      expect(requiresAdditionalInfo(IdentifierType.E_MAID)).toBe(true)
-      expect(requiresAdditionalInfo(IdentifierType.ISO14443)).toBe(true)
-      expect(requiresAdditionalInfo(IdentifierType.ISO15693)).toBe(true)
-      expect(requiresAdditionalInfo(IdentifierType.MAC_ADDRESS)).toBe(true)
-      expect(requiresAdditionalInfo(IdentifierType.ID_TAG)).toBe(false)
-      expect(requiresAdditionalInfo(IdentifierType.LOCAL)).toBe(false)
+      assert.strictEqual(requiresAdditionalInfo(IdentifierType.E_MAID), true)
+      assert.strictEqual(requiresAdditionalInfo(IdentifierType.ISO14443), true)
+      assert.strictEqual(requiresAdditionalInfo(IdentifierType.ISO15693), true)
+      assert.strictEqual(requiresAdditionalInfo(IdentifierType.MAC_ADDRESS), true)
+      assert.strictEqual(requiresAdditionalInfo(IdentifierType.ID_TAG), false)
+      assert.strictEqual(requiresAdditionalInfo(IdentifierType.LOCAL), false)
     })
   })
 
@@ -69,81 +69,84 @@ await describe('AuthTypes', async () => {
     await describe('OCPP 1.6 Status Mapping', async () => {
       await it('should map OCPP 1.6 ACCEPTED to unified ACCEPTED', () => {
         const result = mapOCPP16Status(OCPP16AuthorizationStatus.ACCEPTED)
-        expect(result).toBe(AuthorizationStatus.ACCEPTED)
+        assert.strictEqual(result, AuthorizationStatus.ACCEPTED)
       })
 
       await it('should map OCPP 1.6 BLOCKED to unified BLOCKED', () => {
         const result = mapOCPP16Status(OCPP16AuthorizationStatus.BLOCKED)
-        expect(result).toBe(AuthorizationStatus.BLOCKED)
+        assert.strictEqual(result, AuthorizationStatus.BLOCKED)
       })
 
       await it('should map OCPP 1.6 EXPIRED to unified EXPIRED', () => {
         const result = mapOCPP16Status(OCPP16AuthorizationStatus.EXPIRED)
-        expect(result).toBe(AuthorizationStatus.EXPIRED)
+        assert.strictEqual(result, AuthorizationStatus.EXPIRED)
       })
 
       await it('should map OCPP 1.6 INVALID to unified INVALID', () => {
         const result = mapOCPP16Status(OCPP16AuthorizationStatus.INVALID)
-        expect(result).toBe(AuthorizationStatus.INVALID)
+        assert.strictEqual(result, AuthorizationStatus.INVALID)
       })
 
       await it('should map OCPP 1.6 CONCURRENT_TX to unified CONCURRENT_TX', () => {
         const result = mapOCPP16Status(OCPP16AuthorizationStatus.CONCURRENT_TX)
-        expect(result).toBe(AuthorizationStatus.CONCURRENT_TX)
+        assert.strictEqual(result, AuthorizationStatus.CONCURRENT_TX)
       })
     })
 
     await describe('OCPP 2.0 Token Type Mapping', async () => {
       await it('should map OCPP 2.0 Central to unified CENTRAL', () => {
         const result = mapOCPP20TokenType(OCPP20IdTokenEnumType.Central)
-        expect(result).toBe(IdentifierType.CENTRAL)
+        assert.strictEqual(result, IdentifierType.CENTRAL)
       })
 
       await it('should map OCPP 2.0 Local to unified LOCAL', () => {
         const result = mapOCPP20TokenType(OCPP20IdTokenEnumType.Local)
-        expect(result).toBe(IdentifierType.LOCAL)
+        assert.strictEqual(result, IdentifierType.LOCAL)
       })
 
       await it('should map OCPP 2.0 eMAID to unified E_MAID', () => {
         const result = mapOCPP20TokenType(OCPP20IdTokenEnumType.eMAID)
-        expect(result).toBe(IdentifierType.E_MAID)
+        assert.strictEqual(result, IdentifierType.E_MAID)
       })
 
       await it('should map OCPP 2.0 ISO14443 to unified ISO14443', () => {
         const result = mapOCPP20TokenType(OCPP20IdTokenEnumType.ISO14443)
-        expect(result).toBe(IdentifierType.ISO14443)
+        assert.strictEqual(result, IdentifierType.ISO14443)
       })
 
       await it('should map OCPP 2.0 KeyCode to unified KEY_CODE', () => {
         const result = mapOCPP20TokenType(OCPP20IdTokenEnumType.KeyCode)
-        expect(result).toBe(IdentifierType.KEY_CODE)
+        assert.strictEqual(result, IdentifierType.KEY_CODE)
       })
     })
 
     await describe('Unified to OCPP 1.6 Status Mapping', async () => {
       await it('should map unified ACCEPTED to OCPP 1.6 ACCEPTED', () => {
         const result = mapToOCPP16Status(AuthorizationStatus.ACCEPTED)
-        expect(result).toBe(OCPP16AuthorizationStatus.ACCEPTED)
+        assert.strictEqual(result, OCPP16AuthorizationStatus.ACCEPTED)
       })
 
       await it('should map unified BLOCKED to OCPP 1.6 BLOCKED', () => {
         const result = mapToOCPP16Status(AuthorizationStatus.BLOCKED)
-        expect(result).toBe(OCPP16AuthorizationStatus.BLOCKED)
+        assert.strictEqual(result, OCPP16AuthorizationStatus.BLOCKED)
       })
 
       await it('should map unified EXPIRED to OCPP 1.6 EXPIRED', () => {
         const result = mapToOCPP16Status(AuthorizationStatus.EXPIRED)
-        expect(result).toBe(OCPP16AuthorizationStatus.EXPIRED)
+        assert.strictEqual(result, OCPP16AuthorizationStatus.EXPIRED)
       })
 
       await it('should map unsupported statuses to OCPP 1.6 INVALID', () => {
-        expect(mapToOCPP16Status(AuthorizationStatus.PENDING)).toBe(
+        assert.strictEqual(
+          mapToOCPP16Status(AuthorizationStatus.PENDING),
           OCPP16AuthorizationStatus.INVALID
         )
-        expect(mapToOCPP16Status(AuthorizationStatus.UNKNOWN)).toBe(
+        assert.strictEqual(
+          mapToOCPP16Status(AuthorizationStatus.UNKNOWN),
           OCPP16AuthorizationStatus.INVALID
         )
-        expect(mapToOCPP16Status(AuthorizationStatus.NOT_AT_THIS_LOCATION)).toBe(
+        assert.strictEqual(
+          mapToOCPP16Status(AuthorizationStatus.NOT_AT_THIS_LOCATION),
           OCPP16AuthorizationStatus.INVALID
         )
       })
@@ -152,17 +155,20 @@ await describe('AuthTypes', async () => {
     await describe('Unified to OCPP 2.0 Status Mapping', async () => {
       await it('should map unified ACCEPTED to OCPP 2.0 Accepted', () => {
         const result = mapToOCPP20Status(AuthorizationStatus.ACCEPTED)
-        expect(result).toBe(RequestStartStopStatusEnumType.Accepted)
+        assert.strictEqual(result, RequestStartStopStatusEnumType.Accepted)
       })
 
       await it('should map rejection statuses to OCPP 2.0 Rejected', () => {
-        expect(mapToOCPP20Status(AuthorizationStatus.BLOCKED)).toBe(
+        assert.strictEqual(
+          mapToOCPP20Status(AuthorizationStatus.BLOCKED),
           RequestStartStopStatusEnumType.Rejected
         )
-        expect(mapToOCPP20Status(AuthorizationStatus.INVALID)).toBe(
+        assert.strictEqual(
+          mapToOCPP20Status(AuthorizationStatus.INVALID),
           RequestStartStopStatusEnumType.Rejected
         )
-        expect(mapToOCPP20Status(AuthorizationStatus.EXPIRED)).toBe(
+        assert.strictEqual(
+          mapToOCPP20Status(AuthorizationStatus.EXPIRED),
           RequestStartStopStatusEnumType.Rejected
         )
       })
@@ -171,22 +177,22 @@ await describe('AuthTypes', async () => {
     await describe('Unified to OCPP 2.0 Token Type Mapping', async () => {
       await it('should map unified CENTRAL to OCPP 2.0 Central', () => {
         const result = mapToOCPP20TokenType(IdentifierType.CENTRAL)
-        expect(result).toBe(OCPP20IdTokenEnumType.Central)
+        assert.strictEqual(result, OCPP20IdTokenEnumType.Central)
       })
 
       await it('should map unified E_MAID to OCPP 2.0 eMAID', () => {
         const result = mapToOCPP20TokenType(IdentifierType.E_MAID)
-        expect(result).toBe(OCPP20IdTokenEnumType.eMAID)
+        assert.strictEqual(result, OCPP20IdTokenEnumType.eMAID)
       })
 
       await it('should map unified ID_TAG to OCPP 2.0 Local', () => {
         const result = mapToOCPP20TokenType(IdentifierType.ID_TAG)
-        expect(result).toBe(OCPP20IdTokenEnumType.Local)
+        assert.strictEqual(result, OCPP20IdTokenEnumType.Local)
       })
 
       await it('should map unified LOCAL to OCPP 2.0 Local', () => {
         const result = mapToOCPP20TokenType(IdentifierType.LOCAL)
-        expect(result).toBe(OCPP20IdTokenEnumType.Local)
+        assert.strictEqual(result, OCPP20IdTokenEnumType.Local)
       })
     })
   })
@@ -195,11 +201,11 @@ await describe('AuthTypes', async () => {
     await it('should create error with required properties', () => {
       const error = new AuthenticationError('Test error', AuthErrorCode.INVALID_IDENTIFIER)
 
-      expect(error).toBeInstanceOf(Error)
-      expect(error).toBeInstanceOf(AuthenticationError)
-      expect(error.name).toBe('AuthenticationError')
-      expect(error.message).toBe('Test error')
-      expect(error.code).toBe(AuthErrorCode.INVALID_IDENTIFIER)
+      assert.ok(error instanceof Error)
+      assert.ok(error instanceof AuthenticationError)
+      assert.strictEqual(error.name, 'AuthenticationError')
+      assert.strictEqual(error.message, 'Test error')
+      assert.strictEqual(error.code, AuthErrorCode.INVALID_IDENTIFIER)
     })
 
     await it('should create error with optional context', () => {
@@ -209,9 +215,9 @@ await describe('AuthTypes', async () => {
         ocppVersion: OCPPVersion.VERSION_16,
       })
 
-      expect(error.context).toBe(AuthContext.TRANSACTION_START)
-      expect(error.identifier).toBe('TEST_ID')
-      expect(error.ocppVersion).toBe(OCPPVersion.VERSION_16)
+      assert.strictEqual(error.context, AuthContext.TRANSACTION_START)
+      assert.strictEqual(error.identifier, 'TEST_ID')
+      assert.strictEqual(error.ocppVersion, OCPPVersion.VERSION_16)
     })
 
     await it('should create error with cause', () => {
@@ -220,7 +226,7 @@ await describe('AuthTypes', async () => {
         cause,
       })
 
-      expect(error.cause).toBe(cause)
+      assert.strictEqual(error.cause, cause)
     })
 
     await it('should support all error codes', () => {
@@ -239,7 +245,7 @@ await describe('AuthTypes', async () => {
 
       for (const code of errorCodes) {
         const error = new AuthenticationError('Test', code)
-        expect(error.code).toBe(code)
+        assert.strictEqual(error.code, code)
       }
     })
   })
@@ -252,9 +258,9 @@ await describe('AuthTypes', async () => {
         value: 'VALID_ID_TAG',
       }
 
-      expect(identifier.value).toBe('VALID_ID_TAG')
-      expect(identifier.type).toBe(IdentifierType.ID_TAG)
-      expect(identifier.ocppVersion).toBe(OCPPVersion.VERSION_16)
+      assert.strictEqual(identifier.value, 'VALID_ID_TAG')
+      assert.strictEqual(identifier.type, IdentifierType.ID_TAG)
+      assert.strictEqual(identifier.ocppVersion, OCPPVersion.VERSION_16)
     })
 
     await it('should create valid OCPP 2.0 identifier with additional info', () => {
@@ -268,11 +274,11 @@ await describe('AuthTypes', async () => {
         value: 'EMAID123456',
       }
 
-      expect(identifier.value).toBe('EMAID123456')
-      expect(identifier.type).toBe(IdentifierType.E_MAID)
-      expect(identifier.ocppVersion).toBe(OCPPVersion.VERSION_20)
-      expect(identifier.additionalInfo).toBeDefined()
-      expect(identifier.additionalInfo?.issuer).toBe('EMSProvider')
+      assert.strictEqual(identifier.value, 'EMAID123456')
+      assert.strictEqual(identifier.type, IdentifierType.E_MAID)
+      assert.strictEqual(identifier.ocppVersion, OCPPVersion.VERSION_20)
+      assert.notStrictEqual(identifier.additionalInfo, undefined)
+      assert.strictEqual(identifier.additionalInfo?.issuer, 'EMSProvider')
     })
 
     await it('should support certificate-based identifier', () => {
@@ -288,43 +294,43 @@ await describe('AuthTypes', async () => {
         value: 'CERT_IDENTIFIER',
       }
 
-      expect(identifier.certificateHashData).toBeDefined()
-      expect(identifier.certificateHashData?.hashAlgorithm).toBe('SHA256')
+      assert.notStrictEqual(identifier.certificateHashData, undefined)
+      assert.strictEqual(identifier.certificateHashData?.hashAlgorithm, 'SHA256')
     })
   })
 
   await describe('Enums', async () => {
     await it('should have correct AuthContext values', () => {
-      expect(AuthContext.TRANSACTION_START).toBe('TransactionStart')
-      expect(AuthContext.TRANSACTION_STOP).toBe('TransactionStop')
-      expect(AuthContext.REMOTE_START).toBe('RemoteStart')
-      expect(AuthContext.REMOTE_STOP).toBe('RemoteStop')
-      expect(AuthContext.RESERVATION).toBe('Reservation')
-      expect(AuthContext.UNLOCK_CONNECTOR).toBe('UnlockConnector')
+      assert.strictEqual(AuthContext.TRANSACTION_START, 'TransactionStart')
+      assert.strictEqual(AuthContext.TRANSACTION_STOP, 'TransactionStop')
+      assert.strictEqual(AuthContext.REMOTE_START, 'RemoteStart')
+      assert.strictEqual(AuthContext.REMOTE_STOP, 'RemoteStop')
+      assert.strictEqual(AuthContext.RESERVATION, 'Reservation')
+      assert.strictEqual(AuthContext.UNLOCK_CONNECTOR, 'UnlockConnector')
     })
 
     await it('should have correct AuthenticationMethod values', () => {
-      expect(AuthenticationMethod.LOCAL_LIST).toBe('LocalList')
-      expect(AuthenticationMethod.REMOTE_AUTHORIZATION).toBe('RemoteAuthorization')
-      expect(AuthenticationMethod.CACHE).toBe('Cache')
-      expect(AuthenticationMethod.CERTIFICATE_BASED).toBe('CertificateBased')
-      expect(AuthenticationMethod.OFFLINE_FALLBACK).toBe('OfflineFallback')
+      assert.strictEqual(AuthenticationMethod.LOCAL_LIST, 'LocalList')
+      assert.strictEqual(AuthenticationMethod.REMOTE_AUTHORIZATION, 'RemoteAuthorization')
+      assert.strictEqual(AuthenticationMethod.CACHE, 'Cache')
+      assert.strictEqual(AuthenticationMethod.CERTIFICATE_BASED, 'CertificateBased')
+      assert.strictEqual(AuthenticationMethod.OFFLINE_FALLBACK, 'OfflineFallback')
     })
 
     await it('should have correct AuthorizationStatus values', () => {
-      expect(AuthorizationStatus.ACCEPTED).toBe('Accepted')
-      expect(AuthorizationStatus.BLOCKED).toBe('Blocked')
-      expect(AuthorizationStatus.EXPIRED).toBe('Expired')
-      expect(AuthorizationStatus.INVALID).toBe('Invalid')
-      expect(AuthorizationStatus.CONCURRENT_TX).toBe('ConcurrentTx')
+      assert.strictEqual(AuthorizationStatus.ACCEPTED, 'Accepted')
+      assert.strictEqual(AuthorizationStatus.BLOCKED, 'Blocked')
+      assert.strictEqual(AuthorizationStatus.EXPIRED, 'Expired')
+      assert.strictEqual(AuthorizationStatus.INVALID, 'Invalid')
+      assert.strictEqual(AuthorizationStatus.CONCURRENT_TX, 'ConcurrentTx')
     })
 
     await it('should have correct IdentifierType values', () => {
-      expect(IdentifierType.ID_TAG).toBe('IdTag')
-      expect(IdentifierType.CENTRAL).toBe('Central')
-      expect(IdentifierType.LOCAL).toBe('Local')
-      expect(IdentifierType.E_MAID).toBe('eMAID')
-      expect(IdentifierType.KEY_CODE).toBe('KeyCode')
+      assert.strictEqual(IdentifierType.ID_TAG, 'IdTag')
+      assert.strictEqual(IdentifierType.CENTRAL, 'Central')
+      assert.strictEqual(IdentifierType.LOCAL, 'Local')
+      assert.strictEqual(IdentifierType.E_MAID, 'eMAID')
+      assert.strictEqual(IdentifierType.KEY_CODE, 'KeyCode')
     })
   })
 })

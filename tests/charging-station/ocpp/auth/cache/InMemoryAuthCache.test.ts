@@ -2,7 +2,7 @@
  * @file Tests for InMemoryAuthCache
  * @description Unit tests for in-memory authorization cache conformance (G03.FR.01)
  */
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { AuthorizationResult } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
@@ -66,9 +66,9 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       // Retrieve from cache
       const cachedResult = cache.get(identifier)
 
-      expect(cachedResult).toBeDefined()
-      expect(cachedResult?.status).toBe(AuthorizationStatus.ACCEPTED)
-      expect(cachedResult?.timestamp).toStrictEqual(mockResult.timestamp)
+      assert.notStrictEqual(cachedResult, undefined)
+      assert.strictEqual(cachedResult?.status, AuthorizationStatus.ACCEPTED)
+      assert.deepStrictEqual(cachedResult.timestamp, mockResult.timestamp)
     })
 
     await it('should track cache hits in statistics', () => {
@@ -79,9 +79,9 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       cache.get(identifier)
 
       const stats = cache.getStats()
-      expect(stats.hits).toBe(2)
-      expect(stats.misses).toBe(0)
-      expect(stats.hitRate).toBe(100)
+      assert.strictEqual(stats.hits, 2)
+      assert.strictEqual(stats.misses, 0)
+      assert.strictEqual(stats.hitRate, 100)
     })
 
     await it('should update LRU order on cache hit', () => {
@@ -99,7 +99,7 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
 
       // Access token-3 to make it most recently used
       const access3 = lruCache.get('token-3')
-      expect(access3).toBeDefined() // Verify it's accessible before eviction test
+      assert.notStrictEqual(access3, undefined) // Verify it's accessible before eviction test
 
       // Add new entry to trigger eviction
       lruCache.set('token-4', mockResult)
@@ -109,9 +109,9 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       const token3 = lruCache.get('token-3')
       const token4 = lruCache.get('token-4')
 
-      expect(token1).toBeUndefined()
-      expect(token3).toBeDefined()
-      expect(token4).toBeDefined()
+      assert.strictEqual(token1, undefined)
+      assert.notStrictEqual(token3, undefined)
+      assert.notStrictEqual(token4, undefined)
     })
   })
 
@@ -125,7 +125,7 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
     await it('should return undefined on cache miss', () => {
       const result = cache.get('non-existent-token')
 
-      expect(result).toBeUndefined()
+      assert.strictEqual(result, undefined)
     })
 
     await it('should track cache misses in statistics', () => {
@@ -134,9 +134,9 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       cache.get('miss-3')
 
       const stats = cache.getStats()
-      expect(stats.misses).toBe(3)
-      expect(stats.hits).toBe(0)
-      expect(stats.hitRate).toBe(0)
+      assert.strictEqual(stats.misses, 3)
+      assert.strictEqual(stats.hits, 0)
+      assert.strictEqual(stats.hitRate, 0)
     })
 
     await it('should calculate hit rate correctly with mixed hits/misses', () => {
@@ -154,9 +154,9 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       cache.get('miss-3')
 
       const stats = cache.getStats()
-      expect(stats.hits).toBe(2)
-      expect(stats.misses).toBe(3)
-      expect(stats.hitRate).toBe(40) // 2/(2+3) * 100 = 40%
+      assert.strictEqual(stats.hits, 2)
+      assert.strictEqual(stats.misses, 3)
+      assert.strictEqual(stats.hitRate, 40) // 2/(2+3) * 100 = 40%
     })
   })
 
@@ -177,8 +177,8 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
 
         const result = cache.get(identifier)
 
-        expect(result).toBeDefined()
-        expect(result?.status).toBe(AuthorizationStatus.EXPIRED)
+        assert.notStrictEqual(result, undefined)
+        assert.strictEqual(result?.status, AuthorizationStatus.EXPIRED)
       })
     })
 
@@ -196,7 +196,7 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
         cache.get('token-2')
 
         const stats = cache.getStats()
-        expect(stats.expiredEntries).toBeGreaterThanOrEqual(2)
+        assert.ok(stats.expiredEntries >= 2)
       })
     })
 
@@ -211,8 +211,8 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
         t.mock.timers.tick(10)
 
         const result = cacheWithShortTTL.get('token')
-        expect(result).toBeDefined()
-        expect(result?.status).toBe(AuthorizationStatus.EXPIRED)
+        assert.notStrictEqual(result, undefined)
+        assert.strictEqual(result?.status, AuthorizationStatus.EXPIRED)
       })
     })
 
@@ -225,8 +225,8 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       // Immediately retrieve
       const result = cache.get(identifier)
 
-      expect(result).toBeDefined()
-      expect(result?.status).toBe(mockResult.status)
+      assert.notStrictEqual(result, undefined)
+      assert.strictEqual(result?.status, mockResult.status)
     })
   })
 
@@ -244,14 +244,14 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
 
       // Verify it exists
       let result = cache.get(identifier)
-      expect(result).toBeDefined()
+      assert.notStrictEqual(result, undefined)
 
       // Remove it
       cache.remove(identifier)
 
       // Verify it's gone
       result = cache.get(identifier)
-      expect(result).toBeUndefined()
+      assert.strictEqual(result, undefined)
     })
 
     await it('should clear all entries', () => {
@@ -260,12 +260,12 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       cache.set('token-3', mockResult)
 
       const statsBefore = cache.getStats()
-      expect(statsBefore.totalEntries).toBe(3)
+      assert.strictEqual(statsBefore.totalEntries, 3)
 
       cache.clear()
 
       const statsAfter = cache.getStats()
-      expect(statsAfter.totalEntries).toBe(0)
+      assert.strictEqual(statsAfter.totalEntries, 0)
     })
 
     await it('should preserve statistics on clear', () => {
@@ -274,15 +274,15 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       cache.get('miss')
 
       const statsBefore = cache.getStats()
-      expect(statsBefore.hits).toBeGreaterThan(0)
-      expect(statsBefore.misses).toBeGreaterThan(0)
+      assert.ok(statsBefore.hits > 0)
+      assert.ok(statsBefore.misses > 0)
 
       cache.clear()
 
       const statsAfter = cache.getStats()
-      expect(statsAfter.hits).toBe(statsBefore.hits)
-      expect(statsAfter.misses).toBe(statsBefore.misses)
-      expect(statsAfter.totalEntries).toBe(0)
+      assert.strictEqual(statsAfter.hits, statsBefore.hits)
+      assert.strictEqual(statsAfter.misses, statsBefore.misses)
+      assert.strictEqual(statsAfter.totalEntries, 0)
     })
   })
 
@@ -303,10 +303,10 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
 
       // 4th request should be rate limited
       const result = cache.get(identifier)
-      expect(result).toBeUndefined()
+      assert.strictEqual(result, undefined)
 
       const stats = cache.getStats()
-      expect(stats.rateLimit.blockedRequests).toBeGreaterThan(0)
+      assert.ok(stats.rateLimit.blockedRequests > 0)
     })
 
     await it('should track rate limit statistics', () => {
@@ -319,8 +319,8 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       cache.set(identifier, mockResult) // Should be blocked
 
       const stats = cache.getStats()
-      expect(stats.rateLimit.totalChecks).toBeGreaterThan(0)
-      expect(stats.rateLimit.blockedRequests).toBeGreaterThan(0)
+      assert.ok(stats.rateLimit.totalChecks > 0)
+      assert.ok(stats.rateLimit.blockedRequests > 0)
     })
 
     await it('should reset rate limit after window expires', async t => {
@@ -334,7 +334,7 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
         t.mock.timers.tick(1100)
 
         const result = cache.get(identifier)
-        expect(result).toBeDefined()
+        assert.notStrictEqual(result, undefined)
       })
     })
 
@@ -348,7 +348,7 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       // token-2 should still work
       cache.set('token-2', mockResult)
       const result = cache.get('token-2')
-      expect(result).toBeDefined()
+      assert.notStrictEqual(result, undefined)
     })
 
     await it('should allow disabling rate limiting', () => {
@@ -362,10 +362,10 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       }
 
       const result = unratedCache.get('token')
-      expect(result).toBeDefined()
+      assert.notStrictEqual(result, undefined)
 
       const stats = unratedCache.getStats()
-      expect(stats.rateLimit.blockedRequests).toBe(0)
+      assert.strictEqual(stats.rateLimit.blockedRequests, 0)
     })
   })
 
@@ -388,15 +388,15 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       cache.set('token-6', mockResult)
 
       const stats = cache.getStats()
-      expect(stats.totalEntries).toBe(5)
+      assert.strictEqual(stats.totalEntries, 5)
 
       // token-1 should be evicted
       const token1 = cache.get('token-1')
-      expect(token1).toBeUndefined()
+      assert.strictEqual(token1, undefined)
 
       // token-6 should exist
       const token6 = cache.get('token-6')
-      expect(token6).toBeDefined()
+      assert.notStrictEqual(token6, undefined)
     })
 
     await it('should track eviction count in statistics', () => {
@@ -406,9 +406,9 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       }
 
       const stats = cache.getStats()
-      expect(stats.totalEntries).toBe(5)
+      assert.strictEqual(stats.totalEntries, 5)
       // Should have 5 evictions (10 sets - 5 capacity = 5 evictions)
-      expect(stats.evictions).toBe(5)
+      assert.strictEqual(stats.evictions, 5)
     })
   })
 
@@ -427,11 +427,11 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
 
       const stats = cache.getStats()
 
-      expect(stats.totalEntries).toBe(2)
-      expect(stats.hits).toBe(1)
-      expect(stats.misses).toBe(1)
-      expect(stats.hitRate).toBe(50)
-      expect(stats.memoryUsage).toBeGreaterThan(0)
+      assert.strictEqual(stats.totalEntries, 2)
+      assert.strictEqual(stats.hits, 1)
+      assert.strictEqual(stats.misses, 1)
+      assert.strictEqual(stats.hitRate, 50)
+      assert.ok(stats.memoryUsage > 0)
     })
 
     await it('should track memory usage estimate', () => {
@@ -446,7 +446,7 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       const statsAfter = cache.getStats()
       const memoryAfter = statsAfter.memoryUsage
 
-      expect(memoryAfter).toBeGreaterThan(memoryBefore)
+      assert.ok(memoryAfter > memoryBefore)
     })
 
     await it('should provide rate limit statistics', () => {
@@ -458,10 +458,10 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
 
       const stats = cache.getStats()
 
-      expect(stats.rateLimit).toBeDefined()
-      expect(stats.rateLimit.totalChecks).toBeGreaterThan(0)
-      expect(stats.rateLimit.blockedRequests).toBeGreaterThan(0)
-      expect(stats.rateLimit.rateLimitedIdentifiers).toBeGreaterThan(0)
+      assert.notStrictEqual(stats.rateLimit, undefined)
+      assert.ok(stats.rateLimit.totalChecks > 0)
+      assert.ok(stats.rateLimit.blockedRequests > 0)
+      assert.ok(stats.rateLimit.rateLimitedIdentifiers > 0)
     })
   })
 
@@ -476,7 +476,7 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       cache.set('', mockResult)
       const result = cache.get('')
 
-      expect(result).toBeDefined()
+      assert.notStrictEqual(result, undefined)
     })
 
     await it('should handle very long identifier strings', () => {
@@ -485,7 +485,7 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       cache.set(longIdentifier, mockResult)
       const result = cache.get(longIdentifier)
 
-      expect(result).toBeDefined()
+      assert.notStrictEqual(result, undefined)
     })
 
     await it('should handle concurrent operations', () => {
@@ -497,17 +497,17 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       // Concurrent gets
       const results = [cache.get('token-1'), cache.get('token-2'), cache.get('token-3')]
 
-      expect(results[0]).toBeDefined()
-      expect(results[1]).toBeDefined()
-      expect(results[2]).toBeDefined()
+      assert.notStrictEqual(results[0], undefined)
+      assert.notStrictEqual(results[1], undefined)
+      assert.notStrictEqual(results[2], undefined)
     })
 
     await it('should handle zero TTL (immediate expiration)', () => {
       cache.set('token', mockResult, 0)
 
       const result = cache.get('token')
-      expect(result).toBeDefined()
-      expect(result?.status).toBe(AuthorizationStatus.EXPIRED)
+      assert.notStrictEqual(result, undefined)
+      assert.strictEqual(result?.status, AuthorizationStatus.EXPIRED)
     })
 
     await it('should handle very large TTL values', () => {
@@ -515,7 +515,7 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       cache.set('token', mockResult, 31536000)
 
       const result = cache.get('token')
-      expect(result).toBeDefined()
+      assert.notStrictEqual(result, undefined)
     })
   })
 
@@ -529,8 +529,8 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       cache.set('valid-token', mockResult)
       const result = cache.get('valid-token')
 
-      expect(result?.status).toBe(AuthorizationStatus.ACCEPTED)
-      expect(result?.method).toBe(AuthenticationMethod.REMOTE_AUTHORIZATION)
+      assert.strictEqual(result?.status, AuthorizationStatus.ACCEPTED)
+      assert.strictEqual(result.method, AuthenticationMethod.REMOTE_AUTHORIZATION)
     })
 
     await it('should handle BLOCKED authorization results', () => {
@@ -541,7 +541,7 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       cache.set('blocked-token', mockResult)
       const result = cache.get('blocked-token')
 
-      expect(result?.status).toBe(AuthorizationStatus.BLOCKED)
+      assert.strictEqual(result?.status, AuthorizationStatus.BLOCKED)
     })
 
     await it('should preserve authorization result metadata', () => {
@@ -556,8 +556,14 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       cache.set('token', mockResult)
       const result = cache.get('token')
 
-      expect(result?.additionalInfo?.customField).toBe('test-value')
-      expect(result?.additionalInfo?.reason).toBe('test-reason')
+      if (result == null) {
+        assert.fail('Expected result to be defined')
+      }
+      if (result.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
+      assert.strictEqual(result.additionalInfo.customField, 'test-value')
+      assert.strictEqual(result.additionalInfo.reason, 'test-reason')
     })
 
     await it('should handle offline authorization results', () => {
@@ -570,8 +576,11 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       cache.set('offline-token', mockResult)
       const result = cache.get('offline-token')
 
-      expect(result?.isOffline).toBe(true)
-      expect(result?.method).toBe(AuthenticationMethod.OFFLINE_FALLBACK)
+      if (result == null) {
+        assert.fail('Expected result to be defined')
+      }
+      assert.strictEqual(result.isOffline, true)
+      assert.strictEqual(result.method, AuthenticationMethod.OFFLINE_FALLBACK)
     })
   })
 
@@ -599,10 +608,10 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       const blockedResult = lruCache.get('blocked-token')
       const newResult = lruCache.get('new-token')
 
-      expect(validResult).toBeDefined()
-      expect(validResult?.status).toBe(AuthorizationStatus.ACCEPTED)
-      expect(blockedResult).toBeUndefined()
-      expect(newResult).toBeDefined()
+      assert.notStrictEqual(validResult, undefined)
+      assert.strictEqual(validResult?.status, AuthorizationStatus.ACCEPTED)
+      assert.strictEqual(blockedResult, undefined)
+      assert.notStrictEqual(newResult, undefined)
     })
 
     await it('G03.FR.01.T5.02 - should fall back to LRU when all entries are ACCEPTED', () => {
@@ -627,9 +636,9 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       const resultB = lruCache.get('token-b')
       const resultC = lruCache.get('token-c')
 
-      expect(resultA).toBeUndefined()
-      expect(resultB).toBeDefined()
-      expect(resultC).toBeDefined()
+      assert.strictEqual(resultA, undefined)
+      assert.notStrictEqual(resultB, undefined)
+      assert.notStrictEqual(resultC, undefined)
     })
   })
 
@@ -647,13 +656,13 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
 
         t.mock.timers.tick(50)
         const midResult = shortCache.get('token')
-        expect(midResult).toBeDefined()
-        expect(midResult?.status).toBe(AuthorizationStatus.ACCEPTED)
+        assert.notStrictEqual(midResult, undefined)
+        assert.strictEqual(midResult?.status, AuthorizationStatus.ACCEPTED)
 
         t.mock.timers.tick(50)
         const lateResult = shortCache.get('token')
-        expect(lateResult).toBeDefined()
-        expect(lateResult?.status).toBe(AuthorizationStatus.ACCEPTED)
+        assert.notStrictEqual(lateResult, undefined)
+        assert.strictEqual(lateResult?.status, AuthorizationStatus.ACCEPTED)
       })
     })
 
@@ -670,8 +679,8 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
 
         t.mock.timers.tick(200)
         const result = shortCache.get('token')
-        expect(result).toBeDefined()
-        expect(result?.status).toBe(AuthorizationStatus.EXPIRED)
+        assert.notStrictEqual(result, undefined)
+        assert.strictEqual(result?.status, AuthorizationStatus.EXPIRED)
       })
     })
   })
@@ -691,8 +700,8 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
         t.mock.timers.tick(10)
 
         const result = shortCache.get('token')
-        expect(result).toBeDefined()
-        expect(result?.status).toBe(AuthorizationStatus.EXPIRED)
+        assert.notStrictEqual(result, undefined)
+        assert.strictEqual(result?.status, AuthorizationStatus.EXPIRED)
       })
     })
 
@@ -711,15 +720,15 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
 
         // First access transitions to EXPIRED
         const first = shortCache.get('token')
-        expect(first?.status).toBe(AuthorizationStatus.EXPIRED)
+        assert.strictEqual(first?.status, AuthorizationStatus.EXPIRED)
 
         // Second access should still return the entry (now with refreshed TTL as EXPIRED)
         const second = shortCache.get('token')
-        expect(second).toBeDefined()
-        expect(second?.status).toBe(AuthorizationStatus.EXPIRED)
+        assert.notStrictEqual(second, undefined)
+        assert.strictEqual(second?.status, AuthorizationStatus.EXPIRED)
 
         const stats = shortCache.getStats()
-        expect(stats.totalEntries).toBe(1)
+        assert.strictEqual(stats.totalEntries, 1)
       })
     })
   })
@@ -727,12 +736,12 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
   await describe('Helper - truncateId', async () => {
     await it('should return identifier unchanged when short', () => {
       const result = truncateId('ABCD')
-      expect(result).toBe('ABCD')
+      assert.strictEqual(result, 'ABCD')
     })
 
     await it('should truncate long identifier with ellipsis', () => {
       const result = truncateId('ABCDEFGHIJKLMNOP')
-      expect(result).toBe('ABCDEFGH...')
+      assert.strictEqual(result, 'ABCDEFGH...')
     })
   })
 
@@ -744,12 +753,12 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
         maxEntries: 10,
         rateLimit: { enabled: false },
       })
-      expect(() => {
+      assert.doesNotThrow(() => {
         cleanupCache.dispose()
-      }).not.toThrow()
-      expect(() => {
+      })
+      assert.doesNotThrow(() => {
         cleanupCache.dispose()
-      }).not.toThrow()
+      })
     })
 
     await it('G03.FR.01.T10.02 - cleanup interval is not started when cleanupIntervalSeconds is 0', () => {
@@ -759,7 +768,7 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
         maxEntries: 10,
         rateLimit: { enabled: false },
       })
-      expect(noCleanupCache.hasCleanupInterval()).toBe(false)
+      assert.strictEqual(noCleanupCache.hasCleanupInterval(), false)
       noCleanupCache.dispose()
     })
 
@@ -776,23 +785,23 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
         cleanupCache.set('id-2', createMockAuthorizationResult())
 
         const statsBefore = cleanupCache.getStats()
-        expect(statsBefore.totalEntries).toBe(2)
+        assert.strictEqual(statsBefore.totalEntries, 2)
 
         t.mock.timers.tick(1100)
 
         cleanupCache.runCleanup()
 
         const statsAfterFirst = cleanupCache.getStats()
-        expect(statsAfterFirst.totalEntries).toBe(2)
-        expect(statsAfterFirst.expiredEntries).toBe(2)
+        assert.strictEqual(statsAfterFirst.totalEntries, 2)
+        assert.strictEqual(statsAfterFirst.expiredEntries, 2)
 
         t.mock.timers.tick(1100)
 
         cleanupCache.runCleanup()
 
         const statsAfterSecond = cleanupCache.getStats()
-        expect(statsAfterSecond.totalEntries).toBe(0)
-        expect(statsAfterSecond.expiredEntries).toBe(2)
+        assert.strictEqual(statsAfterSecond.totalEntries, 0)
+        assert.strictEqual(statsAfterSecond.expiredEntries, 2)
         cleanupCache.dispose()
       })
     })
@@ -810,7 +819,7 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       }
 
       const rateLimitsSize = boundedCache.getStats().rateLimit.rateLimitedIdentifiers
-      expect(rateLimitsSize).toBeLessThanOrEqual(4)
+      assert.ok(rateLimitsSize <= 4)
       boundedCache.dispose()
     })
   })
@@ -831,17 +840,17 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       statsCache.get('id-miss') // miss
 
       const before = statsCache.getStats()
-      expect(before.evictions).toBeGreaterThan(0)
-      expect(before.hits).toBeGreaterThan(0)
-      expect(before.misses).toBeGreaterThan(0)
+      assert.ok(before.evictions > 0)
+      assert.ok(before.hits > 0)
+      assert.ok(before.misses > 0)
 
       statsCache.clear()
 
       const after = statsCache.getStats()
-      expect(after.evictions).toBe(before.evictions)
-      expect(after.hits).toBe(before.hits)
-      expect(after.misses).toBe(before.misses)
-      expect(after.totalEntries).toBe(0)
+      assert.strictEqual(after.evictions, before.evictions)
+      assert.strictEqual(after.hits, before.hits)
+      assert.strictEqual(after.misses, before.misses)
+      assert.strictEqual(after.totalEntries, 0)
       statsCache.dispose()
     })
 
@@ -858,15 +867,15 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       statsCache.get('id-miss') // miss
 
       const before = statsCache.getStats()
-      expect(before.hits).toBeGreaterThan(0)
-      expect(before.misses).toBeGreaterThan(0)
+      assert.ok(before.hits > 0)
+      assert.ok(before.misses > 0)
 
       statsCache.resetStats()
 
       const after = statsCache.getStats()
-      expect(after.hits).toBe(0)
-      expect(after.misses).toBe(0)
-      expect(after.evictions).toBe(0)
+      assert.strictEqual(after.hits, 0)
+      assert.strictEqual(after.misses, 0)
+      assert.strictEqual(after.evictions, 0)
       statsCache.dispose()
     })
 
@@ -884,14 +893,14 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       statsCache.clear() // clears entries but preserves stats
 
       const afterClear = statsCache.getStats()
-      expect(afterClear.hits).toBeGreaterThan(0) // stats preserved
-      expect(afterClear.totalEntries).toBe(0) // entries gone
+      assert.ok(afterClear.hits > 0) // stats preserved
+      assert.strictEqual(afterClear.totalEntries, 0) // entries gone
 
       statsCache.resetStats() // now zero out
 
       const afterReset = statsCache.getStats()
-      expect(afterReset.hits).toBe(0)
-      expect(afterReset.misses).toBe(0)
+      assert.strictEqual(afterReset.hits, 0)
+      assert.strictEqual(afterReset.misses, 0)
       statsCache.dispose()
     })
   })

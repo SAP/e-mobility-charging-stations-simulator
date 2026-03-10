@@ -3,8 +3,8 @@
  * @description Unit tests for OCPP 2.0 SetVariables command handling
  */
 
-import { expect } from '@std/expect'
 import { millisecondsToSeconds } from 'date-fns'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
@@ -94,24 +94,24 @@ await describe('B05 - Set Variables', async () => {
     const response: { setVariableResult: OCPP20SetVariableResultType[] } =
       testableService.handleRequestSetVariables(mockStation, request)
 
-    expect(response).toBeDefined()
-    expect(response.setVariableResult).toBeDefined()
-    expect(Array.isArray(response.setVariableResult)).toBe(true)
-    expect(response.setVariableResult).toHaveLength(2)
+    assert.notStrictEqual(response, undefined)
+    assert.notStrictEqual(response.setVariableResult, undefined)
+    assert.ok(Array.isArray(response.setVariableResult))
+    assert.strictEqual(response.setVariableResult.length, 2)
 
     const firstResult = response.setVariableResult[0]
-    expect(firstResult.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
-    expect(firstResult.attributeType).toBe(AttributeEnumType.Actual)
-    expect(firstResult.component.name).toBe(OCPP20ComponentName.ChargingStation)
-    expect(firstResult.variable.name).toBe(OCPP20OptionalVariableName.WebSocketPingInterval)
-    expect(firstResult.attributeStatusInfo).toBeUndefined()
+    assert.strictEqual(firstResult.attributeStatus, SetVariableStatusEnumType.Accepted)
+    assert.strictEqual(firstResult.attributeType, AttributeEnumType.Actual)
+    assert.strictEqual(firstResult.component.name, OCPP20ComponentName.ChargingStation)
+    assert.strictEqual(firstResult.variable.name, OCPP20OptionalVariableName.WebSocketPingInterval)
+    assert.strictEqual(firstResult.attributeStatusInfo, undefined)
 
     const secondResult = response.setVariableResult[1]
-    expect(secondResult.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
-    expect(secondResult.attributeType).toBe(AttributeEnumType.Actual)
-    expect(secondResult.component.name).toBe(OCPP20ComponentName.OCPPCommCtrlr)
-    expect(secondResult.variable.name).toBe(OCPP20OptionalVariableName.HeartbeatInterval)
-    expect(secondResult.attributeStatusInfo).toBeUndefined()
+    assert.strictEqual(secondResult.attributeStatus, SetVariableStatusEnumType.Accepted)
+    assert.strictEqual(secondResult.attributeType, AttributeEnumType.Actual)
+    assert.strictEqual(secondResult.component.name, OCPP20ComponentName.OCPPCommCtrlr)
+    assert.strictEqual(secondResult.variable.name, OCPP20OptionalVariableName.HeartbeatInterval)
+    assert.strictEqual(secondResult.attributeStatusInfo, undefined)
   })
 
   // FR: B07.FR.02
@@ -134,13 +134,13 @@ await describe('B05 - Set Variables', async () => {
     const response: { setVariableResult: OCPP20SetVariableResultType[] } =
       testableService.handleRequestSetVariables(mockStation, request)
 
-    expect(response.setVariableResult).toHaveLength(2)
+    assert.strictEqual(response.setVariableResult.length, 2)
     const firstResult = response.setVariableResult[0]
-    expect(firstResult.attributeStatus).toBe(SetVariableStatusEnumType.UnknownVariable)
-    expect(firstResult.attributeStatusInfo).toBeDefined()
+    assert.strictEqual(firstResult.attributeStatus, SetVariableStatusEnumType.UnknownVariable)
+    assert.notStrictEqual(firstResult.attributeStatusInfo, undefined)
     const secondResult = response.setVariableResult[1]
-    expect(secondResult.attributeStatus).toBe(SetVariableStatusEnumType.UnknownComponent)
-    expect(secondResult.attributeStatusInfo).toBeDefined()
+    assert.strictEqual(secondResult.attributeStatus, SetVariableStatusEnumType.UnknownComponent)
+    assert.notStrictEqual(secondResult.attributeStatusInfo, undefined)
   })
 
   // FR: B07.FR.03
@@ -159,10 +159,10 @@ await describe('B05 - Set Variables', async () => {
     const response: { setVariableResult: OCPP20SetVariableResultType[] } =
       testableService.handleRequestSetVariables(mockStation, request)
 
-    expect(response.setVariableResult).toHaveLength(1)
+    assert.strictEqual(response.setVariableResult.length, 1)
     const result = response.setVariableResult[0]
-    expect(result.attributeStatus).toBe(SetVariableStatusEnumType.NotSupportedAttributeType)
-    expect(result.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
+    assert.strictEqual(result.attributeStatus, SetVariableStatusEnumType.NotSupportedAttributeType)
+    assert.strictEqual(result.attributeStatusInfo?.reasonCode, ReasonCodeEnumType.UnsupportedParam)
   })
 
   // FR: B07.FR.04
@@ -181,9 +181,9 @@ await describe('B05 - Set Variables', async () => {
     }
     const response: { setVariableResult: OCPP20SetVariableResultType[] } =
       testableService.handleRequestSetVariables(mockStation, request)
-    expect(response.setVariableResult).toHaveLength(1)
+    assert.strictEqual(response.setVariableResult.length, 1)
     const result = response.setVariableResult[0]
-    expect(result.attributeStatus).toBe(SetVariableStatusEnumType.UnknownComponent)
+    assert.strictEqual(result.attributeStatus, SetVariableStatusEnumType.UnknownComponent)
   })
 
   // FR: B07.FR.05
@@ -202,10 +202,10 @@ await describe('B05 - Set Variables', async () => {
     const response: { setVariableResult: OCPP20SetVariableResultType[] } =
       testableService.handleRequestSetVariables(mockStation, request)
 
-    expect(response.setVariableResult).toHaveLength(1)
+    assert.strictEqual(response.setVariableResult.length, 1)
     const result = response.setVariableResult[0]
-    expect(result.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-    expect(result.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
+    assert.strictEqual(result.attributeStatus, SetVariableStatusEnumType.Rejected)
+    assert.strictEqual(result.attributeStatusInfo?.reasonCode, ReasonCodeEnumType.TooLargeElement)
   })
 
   // FR: B07.FR.07
@@ -251,20 +251,22 @@ await describe('B05 - Set Variables', async () => {
     const response: { setVariableResult: OCPP20SetVariableResultType[] } =
       testableService.handleRequestSetVariables(mockStation, request)
 
-    expect(response.setVariableResult).toHaveLength(5)
+    assert.strictEqual(response.setVariableResult.length, 5)
     const [accepted, unknownVariable, unsupportedAttrHeartbeat, unsupportedAttrWs, oversize] =
       response.setVariableResult
-    expect(accepted.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
-    expect(accepted.attributeStatusInfo).toBeUndefined()
-    expect(unknownVariable.attributeStatus).toBe(SetVariableStatusEnumType.UnknownVariable)
-    expect(unsupportedAttrHeartbeat.attributeStatus).toBe(
+    assert.strictEqual(accepted.attributeStatus, SetVariableStatusEnumType.Accepted)
+    assert.strictEqual(accepted.attributeStatusInfo, undefined)
+    assert.strictEqual(unknownVariable.attributeStatus, SetVariableStatusEnumType.UnknownVariable)
+    assert.strictEqual(
+      unsupportedAttrHeartbeat.attributeStatus,
       SetVariableStatusEnumType.NotSupportedAttributeType
     )
-    expect(unsupportedAttrWs.attributeStatus).toBe(
+    assert.strictEqual(
+      unsupportedAttrWs.attributeStatus,
       SetVariableStatusEnumType.NotSupportedAttributeType
     )
-    expect(oversize.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-    expect(oversize.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
+    assert.strictEqual(oversize.attributeStatus, SetVariableStatusEnumType.Rejected)
+    assert.strictEqual(oversize.attributeStatusInfo?.reasonCode, ReasonCodeEnumType.TooLargeElement)
   })
 
   // FR: B07.FR.08
@@ -281,10 +283,10 @@ await describe('B05 - Set Variables', async () => {
     }
     const response: { setVariableResult: OCPP20SetVariableResultType[] } =
       testableService.handleRequestSetVariables(mockStation, request)
-    expect(response.setVariableResult).toHaveLength(1)
+    assert.strictEqual(response.setVariableResult.length, 1)
     const result = response.setVariableResult[0]
-    expect(result.attributeStatus).toBe(SetVariableStatusEnumType.NotSupportedAttributeType)
-    expect(result.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
+    assert.strictEqual(result.attributeStatus, SetVariableStatusEnumType.NotSupportedAttributeType)
+    assert.strictEqual(result.attributeStatusInfo?.reasonCode, ReasonCodeEnumType.UnsupportedParam)
   })
 
   // FR: B07.FR.09
@@ -301,10 +303,10 @@ await describe('B05 - Set Variables', async () => {
     }
     const response: { setVariableResult: OCPP20SetVariableResultType[] } =
       testableService.handleRequestSetVariables(mockStation, request)
-    expect(response.setVariableResult).toHaveLength(1)
+    assert.strictEqual(response.setVariableResult.length, 1)
     const result = response.setVariableResult[0]
-    expect(result.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-    expect(result.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ReadOnly)
+    assert.strictEqual(result.attributeStatus, SetVariableStatusEnumType.Rejected)
+    assert.strictEqual(result.attributeStatusInfo?.reasonCode, ReasonCodeEnumType.ReadOnly)
   })
 
   // FR: B07.FR.10
@@ -343,12 +345,12 @@ await describe('B05 - Set Variables', async () => {
         ],
       })
 
-    expect(getResponse.getVariableResult).toHaveLength(2)
+    assert.strictEqual(getResponse.getVariableResult.length, 2)
     const hbResult = getResponse.getVariableResult[0]
     const wsResult = getResponse.getVariableResult[1]
-    expect(hbResult.attributeStatus).toBeDefined()
-    expect(hbResult.attributeValue).toBe(hbNew)
-    expect(wsResult.attributeValue).toBe(wsNew)
+    assert.notStrictEqual(hbResult.attributeStatus, undefined)
+    assert.strictEqual(hbResult.attributeValue, hbNew)
+    assert.strictEqual(wsResult.attributeValue, wsNew)
   })
 
   // FR: B07.FR.11
@@ -375,7 +377,7 @@ await describe('B05 - Set Variables', async () => {
           },
         ],
       })
-    expect(getBefore.getVariableResult[0].attributeValue).toBe(txValue)
+    assert.strictEqual(getBefore.getVariableResult[0].attributeValue, txValue)
 
     const { OCPP20VariableManager } =
       await import('../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js')
@@ -390,7 +392,7 @@ await describe('B05 - Set Variables', async () => {
           },
         ],
       })
-    expect(getAfter.getVariableResult[0].attributeValue).toBe('30') // default
+    assert.strictEqual(getAfter.getVariableResult[0].attributeValue, '30') // default
   })
 
   // FR: B07.FR.12
@@ -414,11 +416,17 @@ await describe('B05 - Set Variables', async () => {
     }
     const response: { setVariableResult: OCPP20SetVariableResultType[] } =
       testableService.handleRequestSetVariables(mockStation, request)
-    expect(response.setVariableResult).toHaveLength(2)
+    assert.strictEqual(response.setVariableResult.length, 2)
     response.setVariableResult.forEach(r => {
-      expect(r.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(r.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooManyElements)
-      expect(r.attributeStatusInfo?.additionalInfo).toMatch(/ItemsPerMessage limit 1 exceeded/)
+      assert.strictEqual(r.attributeStatus, SetVariableStatusEnumType.Rejected)
+      if (r.attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
+      assert.strictEqual(r.attributeStatusInfo.reasonCode, ReasonCodeEnumType.TooManyElements)
+      if (r.attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
+      assert.match(r.attributeStatusInfo.additionalInfo, /ItemsPerMessage limit 1 exceeded/)
     })
     resetLimits(mockStation)
   })
@@ -442,11 +450,17 @@ await describe('B05 - Set Variables', async () => {
     }
     const response: { setVariableResult: OCPP20SetVariableResultType[] } =
       testableService.handleRequestSetVariables(mockStation, request)
-    expect(response.setVariableResult).toHaveLength(2)
+    assert.strictEqual(response.setVariableResult.length, 2)
     response.setVariableResult.forEach(r => {
-      expect(r.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(r.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
-      expect(r.attributeStatusInfo?.additionalInfo).toMatch(/BytesPerMessage limit 10 exceeded/)
+      assert.strictEqual(r.attributeStatus, SetVariableStatusEnumType.Rejected)
+      if (r.attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
+      assert.strictEqual(r.attributeStatusInfo.reasonCode, ReasonCodeEnumType.TooLargeElement)
+      if (r.attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
+      assert.match(r.attributeStatusInfo.additionalInfo, /BytesPerMessage limit 10 exceeded/)
     })
     resetLimits(mockStation)
   })
@@ -500,16 +514,23 @@ await describe('B05 - Set Variables', async () => {
       postCalcLimit.toString(),
       false
     )
-    expect(preEstimate).toBeLessThan(postCalcLimit)
+    assert.ok(preEstimate < postCalcLimit)
     const response: { setVariableResult: OCPP20SetVariableResultType[] } =
       testableService.handleRequestSetVariables(mockStation, request)
     const actualSize = Buffer.byteLength(JSON.stringify(response.setVariableResult), 'utf8')
-    expect(actualSize).toBeGreaterThan(postCalcLimit)
-    expect(response.setVariableResult).toHaveLength(request.setVariableData.length)
+    assert.ok(actualSize > postCalcLimit)
+    assert.strictEqual(response.setVariableResult.length, request.setVariableData.length)
     response.setVariableResult.forEach(r => {
-      expect(r.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(r.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
-      expect(r.attributeStatusInfo?.additionalInfo).toMatch(
+      assert.strictEqual(r.attributeStatus, SetVariableStatusEnumType.Rejected)
+      if (r.attributeStatusInfo == null) {
+        assert.fail('Expected attributeStatusInfo to be defined')
+      }
+      assert.strictEqual(r.attributeStatusInfo.reasonCode, ReasonCodeEnumType.TooLargeElement)
+      if (r.attributeStatusInfo.additionalInfo == null) {
+        assert.fail('Expected additionalInfo to be defined')
+      }
+      assert.match(
+        r.attributeStatusInfo.additionalInfo,
         new RegExp(`BytesPerMessage limit ${postCalcLimit.toString()} exceeded`)
       )
     })
@@ -533,7 +554,10 @@ await describe('B05 - Set Variables', async () => {
         },
       ],
     })
-    expect(response.setVariableResult[0].attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+    assert.strictEqual(
+      response.setVariableResult[0].attributeStatus,
+      SetVariableStatusEnumType.Accepted
+    )
     response = testableService.handleRequestSetVariables(mockStation, {
       setVariableData: [
         {
@@ -544,8 +568,8 @@ await describe('B05 - Set Variables', async () => {
       ],
     })
     const res = response.setVariableResult[0]
-    expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-    expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
+    assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Rejected)
+    assert.strictEqual(res.attributeStatusInfo?.reasonCode, ReasonCodeEnumType.TooLargeElement)
     resetValueSizeLimits(mockStation)
   })
 
@@ -565,7 +589,10 @@ await describe('B05 - Set Variables', async () => {
         },
       ],
     })
-    expect(response.setVariableResult[0].attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+    assert.strictEqual(
+      response.setVariableResult[0].attributeStatus,
+      SetVariableStatusEnumType.Accepted
+    )
     response = testableService.handleRequestSetVariables(mockStation, {
       setVariableData: [
         {
@@ -576,8 +603,8 @@ await describe('B05 - Set Variables', async () => {
       ],
     })
     const res = response.setVariableResult[0]
-    expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-    expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
+    assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Rejected)
+    assert.strictEqual(res.attributeStatusInfo?.reasonCode, ReasonCodeEnumType.TooLargeElement)
     resetValueSizeLimits(mockStation)
   })
 
@@ -597,7 +624,10 @@ await describe('B05 - Set Variables', async () => {
         },
       ],
     })
-    expect(response.setVariableResult[0].attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+    assert.strictEqual(
+      response.setVariableResult[0].attributeStatus,
+      SetVariableStatusEnumType.Accepted
+    )
     response = testableService.handleRequestSetVariables(mockStation, {
       setVariableData: [
         {
@@ -608,8 +638,8 @@ await describe('B05 - Set Variables', async () => {
       ],
     })
     const res = response.setVariableResult[0]
-    expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-    expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
+    assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Rejected)
+    assert.strictEqual(res.attributeStatusInfo?.reasonCode, ReasonCodeEnumType.TooLargeElement)
     resetValueSizeLimits(mockStation)
   })
 
@@ -629,7 +659,10 @@ await describe('B05 - Set Variables', async () => {
         },
       ],
     })
-    expect(response.setVariableResult[0].attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+    assert.strictEqual(
+      response.setVariableResult[0].attributeStatus,
+      SetVariableStatusEnumType.Accepted
+    )
     response = testableService.handleRequestSetVariables(mockStation, {
       setVariableData: [
         {
@@ -640,8 +673,8 @@ await describe('B05 - Set Variables', async () => {
       ],
     })
     const res = response.setVariableResult[0]
-    expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-    expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
+    assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Rejected)
+    assert.strictEqual(res.attributeStatusInfo?.reasonCode, ReasonCodeEnumType.TooLargeElement)
     resetValueSizeLimits(mockStation)
   })
 
@@ -661,8 +694,8 @@ await describe('B05 - Set Variables', async () => {
       ],
     })
     const res = response.setVariableResult[0]
-    expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
-    expect(res.attributeStatusInfo).toBeUndefined()
+    assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Accepted)
+    assert.strictEqual(res.attributeStatusInfo, undefined)
     resetValueSizeLimits(mockStation)
   })
 
@@ -690,11 +723,11 @@ await describe('B05 - Set Variables', async () => {
           },
         ],
       })
-    expect(getResponse.getVariableResult).toHaveLength(1)
+    assert.strictEqual(getResponse.getVariableResult.length, 1)
     const result = getResponse.getVariableResult[0]
-    expect(result.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-    expect(result.attributeValue).toBe(url)
-    expect(result.attributeStatusInfo).toBeUndefined()
+    assert.strictEqual(result.attributeStatus, GetVariableStatusEnumType.Accepted)
+    assert.strictEqual(result.attributeValue, url)
+    assert.strictEqual(result.attributeStatusInfo, undefined)
     resetLimits(mockStation)
   })
 
@@ -712,10 +745,10 @@ await describe('B05 - Set Variables', async () => {
     }
     const response: { setVariableResult: OCPP20SetVariableResultType[] } =
       testableService.handleRequestSetVariables(mockStation, setRequest)
-    expect(response.setVariableResult).toHaveLength(1)
+    assert.strictEqual(response.setVariableResult.length, 1)
     const setResult = response.setVariableResult[0]
-    expect(setResult.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
-    expect(setResult.attributeStatusInfo).toBeUndefined()
+    assert.strictEqual(setResult.attributeStatus, SetVariableStatusEnumType.Accepted)
+    assert.strictEqual(setResult.attributeStatusInfo, undefined)
     const getResponse: { getVariableResult: OCPP20GetVariableResultType[] } =
       testableService.handleRequestGetVariables(mockStation, {
         getVariableData: [
@@ -726,11 +759,11 @@ await describe('B05 - Set Variables', async () => {
           },
         ],
       })
-    expect(getResponse.getVariableResult).toHaveLength(1)
+    assert.strictEqual(getResponse.getVariableResult.length, 1)
     const getResult = getResponse.getVariableResult[0]
-    expect(getResult.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-    expect(getResult.attributeValue).toBe(url)
-    expect(getResult.attributeStatusInfo).toBeUndefined()
+    assert.strictEqual(getResult.attributeStatus, GetVariableStatusEnumType.Accepted)
+    assert.strictEqual(getResult.attributeValue, url)
+    assert.strictEqual(getResult.attributeStatusInfo, undefined)
     resetLimits(mockStation)
   })
 })

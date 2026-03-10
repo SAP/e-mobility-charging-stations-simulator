@@ -2,7 +2,7 @@
  * @file Tests for CertificateAuthStrategy
  * @description Unit tests for certificate-based authentication strategy
  */
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../../src/charging-station/ChargingStation.js'
@@ -66,24 +66,24 @@ await describe('CertificateAuthStrategy', async () => {
 
   await describe('constructor', async () => {
     await it('should initialize with correct name and priority', () => {
-      expect(strategy.name).toBe('CertificateAuthStrategy')
-      expect(strategy.priority).toBe(3)
+      assert.strictEqual(strategy.name, 'CertificateAuthStrategy')
+      assert.strictEqual(strategy.priority, 3)
     })
   })
 
   await describe('initialize', async () => {
     await it('should initialize successfully when certificate auth is enabled', () => {
       const config = createTestAuthConfig({ certificateAuthEnabled: true })
-      expect(() => {
+      assert.doesNotThrow(() => {
         strategy.initialize(config)
-      }).not.toThrow()
+      })
     })
 
     await it('should handle disabled certificate auth gracefully', () => {
       const config = createTestAuthConfig({ certificateAuthEnabled: false })
-      expect(() => {
+      assert.doesNotThrow(() => {
         strategy.initialize(config)
-      }).not.toThrow()
+      })
     })
   })
 
@@ -109,7 +109,7 @@ await describe('CertificateAuthStrategy', async () => {
         },
       })
 
-      expect(strategy.canHandle(request, config)).toBe(true)
+      assert.strictEqual(strategy.canHandle(request, config), true)
     })
 
     await it('should return false for non-certificate identifiers', () => {
@@ -122,7 +122,7 @@ await describe('CertificateAuthStrategy', async () => {
         },
       })
 
-      expect(strategy.canHandle(request, config)).toBe(false)
+      assert.strictEqual(strategy.canHandle(request, config), false)
     })
 
     await it('should return false for OCPP 1.6', () => {
@@ -135,7 +135,7 @@ await describe('CertificateAuthStrategy', async () => {
         },
       })
 
-      expect(strategy.canHandle(request, config)).toBe(false)
+      assert.strictEqual(strategy.canHandle(request, config), false)
     })
 
     await it('should return false when certificate auth is disabled', () => {
@@ -154,7 +154,7 @@ await describe('CertificateAuthStrategy', async () => {
         },
       })
 
-      expect(strategy.canHandle(request, config)).toBe(false)
+      assert.strictEqual(strategy.canHandle(request, config), false)
     })
 
     await it('should return false when missing certificate data', () => {
@@ -167,7 +167,7 @@ await describe('CertificateAuthStrategy', async () => {
         },
       })
 
-      expect(strategy.canHandle(request, config)).toBe(false)
+      assert.strictEqual(strategy.canHandle(request, config), false)
     })
   })
 
@@ -195,9 +195,9 @@ await describe('CertificateAuthStrategy', async () => {
 
       const result = await strategy.authenticate(request, config)
 
-      expect(result).toBeDefined()
-      expect(result?.status).toBe(AuthorizationStatus.ACCEPTED)
-      expect(result?.method).toBe(AuthenticationMethod.CERTIFICATE_BASED)
+      assert.notStrictEqual(result, undefined)
+      assert.strictEqual(result?.status, AuthorizationStatus.ACCEPTED)
+      assert.strictEqual(result.method, AuthenticationMethod.CERTIFICATE_BASED)
     })
 
     await it('should reject invalid certificate serial numbers', async () => {
@@ -218,8 +218,8 @@ await describe('CertificateAuthStrategy', async () => {
 
       const result = await strategy.authenticate(request, config)
 
-      expect(result).toBeDefined()
-      expect(result?.status).toBe(AuthorizationStatus.BLOCKED)
+      assert.notStrictEqual(result, undefined)
+      assert.strictEqual(result?.status, AuthorizationStatus.BLOCKED)
     })
 
     await it('should reject revoked certificates', async () => {
@@ -240,8 +240,8 @@ await describe('CertificateAuthStrategy', async () => {
 
       const result = await strategy.authenticate(request, config)
 
-      expect(result).toBeDefined()
-      expect(result?.status).toBe(AuthorizationStatus.BLOCKED)
+      assert.notStrictEqual(result, undefined)
+      assert.strictEqual(result?.status, AuthorizationStatus.BLOCKED)
     })
 
     await it('should handle missing certificate data', async () => {
@@ -256,8 +256,8 @@ await describe('CertificateAuthStrategy', async () => {
 
       const result = await strategy.authenticate(request, config)
 
-      expect(result).toBeDefined()
-      expect(result?.status).toBe(AuthorizationStatus.INVALID)
+      assert.notStrictEqual(result, undefined)
+      assert.strictEqual(result?.status, AuthorizationStatus.INVALID)
     })
 
     await it('should handle invalid hash algorithm', async () => {
@@ -278,8 +278,8 @@ await describe('CertificateAuthStrategy', async () => {
 
       const result = await strategy.authenticate(request, config)
 
-      expect(result).toBeDefined()
-      expect(result?.status).toBe(AuthorizationStatus.INVALID)
+      assert.notStrictEqual(result, undefined)
+      assert.strictEqual(result?.status, AuthorizationStatus.INVALID)
     })
 
     await it('should handle invalid hash format', async () => {
@@ -300,8 +300,8 @@ await describe('CertificateAuthStrategy', async () => {
 
       const result = await strategy.authenticate(request, config)
 
-      expect(result).toBeDefined()
-      expect(result?.status).toBe(AuthorizationStatus.INVALID)
+      assert.notStrictEqual(result, undefined)
+      assert.strictEqual(result?.status, AuthorizationStatus.INVALID)
     })
   })
 
@@ -309,10 +309,10 @@ await describe('CertificateAuthStrategy', async () => {
     await it('should return strategy statistics', () => {
       const stats = strategy.getStats()
 
-      expect(stats.isInitialized).toBe(false)
-      expect(stats.totalRequests).toBe(0)
-      expect(stats.successfulAuths).toBe(0)
-      expect(stats.failedAuths).toBe(0)
+      assert.strictEqual(stats.isInitialized, false)
+      assert.strictEqual(stats.totalRequests, 0)
+      assert.strictEqual(stats.successfulAuths, 0)
+      assert.strictEqual(stats.failedAuths, 0)
     })
 
     await it('should update stats after authentication', async () => {
@@ -336,8 +336,8 @@ await describe('CertificateAuthStrategy', async () => {
       await strategy.authenticate(request, config)
 
       const stats = strategy.getStats()
-      expect(stats.totalRequests).toBe(1)
-      expect(stats.successfulAuths).toBe(1)
+      assert.strictEqual(stats.totalRequests, 1)
+      assert.strictEqual(stats.successfulAuths, 1)
     })
   })
 
@@ -347,7 +347,7 @@ await describe('CertificateAuthStrategy', async () => {
 
       strategy.cleanup()
       const stats = strategy.getStats()
-      expect(stats.isInitialized).toBe(false)
+      assert.strictEqual(stats.isInitialized, false)
     })
   })
 })

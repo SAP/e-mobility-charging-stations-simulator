@@ -11,7 +11,7 @@
  * wrapper/dispatch layer only — no overlap.
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
 import { getIdTagsFile } from '../../../src/charging-station/Helpers.js'
@@ -62,7 +62,7 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
         stationInfo: { remoteAuthorization: false },
       })
       const result = await isIdTagAuthorized(station, 1, 'TAG-001')
-      expect(result).toBe(false)
+      assert.strictEqual(result, false)
     })
 
     await it('should authorize locally when tag is in local auth list', async () => {
@@ -72,7 +72,7 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
       setupLocalAuth(station, mocks, ['TAG-001', 'TAG-002'])
 
       const result = await isIdTagAuthorized(station, 1, 'TAG-001')
-      expect(result).toBe(true)
+      assert.strictEqual(result, true)
     })
 
     await it('should set localAuthorizeIdTag and idTagLocalAuthorized on local auth success', async () => {
@@ -84,8 +84,8 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
       await isIdTagAuthorized(station, 1, 'TAG-001')
 
       const connectorStatus = station.getConnectorStatus(1)
-      expect(connectorStatus?.localAuthorizeIdTag).toBe('TAG-001')
-      expect(connectorStatus?.idTagLocalAuthorized).toBe(true)
+      assert.strictEqual(connectorStatus?.localAuthorizeIdTag, 'TAG-001')
+      assert.strictEqual(connectorStatus.idTagLocalAuthorized, true)
     })
 
     await it('should authorize remotely when local auth is disabled and remote returns accepted', async () => {
@@ -100,7 +100,7 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
       })
 
       const result = await isIdTagAuthorized(station, 1, 'TAG-001')
-      expect(result).toBe(true)
+      assert.strictEqual(result, true)
     })
 
     await it('should return false when remote authorization rejects the tag', async () => {
@@ -115,7 +115,7 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
       })
 
       const result = await isIdTagAuthorized(station, 1, 'TAG-999')
-      expect(result).toBe(false)
+      assert.strictEqual(result, false)
     })
 
     await it('should return false for non-existent connector even with local auth enabled', async () => {
@@ -125,7 +125,7 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
       setupLocalAuth(station, mocks, ['TAG-001'])
 
       const result = await isIdTagAuthorized(station, 99, 'TAG-001')
-      expect(result).toBe(false)
+      assert.strictEqual(result, false)
     })
   })
 
@@ -137,7 +137,7 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
       setupLocalAuth(station, mocks, ['TAG-001'])
 
       const result = await isIdTagAuthorizedUnified(station, 1, 'TAG-001')
-      expect(result).toBe(true)
+      assert.strictEqual(result, true)
     })
 
     await it('should return false on auth error for OCPP 2.0 station', async () => {
@@ -146,7 +146,7 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
       })
 
       const result = await isIdTagAuthorizedUnified(station, 1, 'TAG-001')
-      expect(result).toBe(false)
+      assert.strictEqual(result, false)
     })
 
     await it('should attempt unified auth service for OCPP 2.0.1 station', async () => {
@@ -155,7 +155,7 @@ await describe('OCPPServiceUtils — authorization wrappers', async () => {
       })
 
       const result = await isIdTagAuthorizedUnified(station, 1, 'TAG-001')
-      expect(result).toBe(false)
+      assert.strictEqual(result, false)
     })
   })
 })

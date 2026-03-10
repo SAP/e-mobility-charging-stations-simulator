@@ -3,7 +3,7 @@
  * @description Verifies Heartbeat, NotifyReport, and StatusNotification response handling
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { MockChargingStation } from '../../ChargingStationTestUtils.js'
@@ -57,42 +57,42 @@ await describe('Simple response handlers', async () => {
   await describe('G02 - HeartbeatResponse handler', async () => {
     await it('should handle Heartbeat response without throwing', async () => {
       const payload: OCPP20HeartbeatResponse = { currentTime: new Date() }
-      await expect(
+      await assert.doesNotReject(
         responseService.responseHandler(
           mockStation,
           OCPP20RequestCommand.HEARTBEAT,
           payload as unknown as Parameters<typeof responseService.responseHandler>[2],
           {} as Parameters<typeof responseService.responseHandler>[3]
         )
-      ).resolves.toBeUndefined()
+      )
     })
   })
 
   await describe('B07 - NotifyReportResponse handler', async () => {
     await it('should handle NotifyReport response without throwing', async () => {
       const payload: OCPP20NotifyReportResponse = {}
-      await expect(
+      await assert.doesNotReject(
         responseService.responseHandler(
           mockStation,
           OCPP20RequestCommand.NOTIFY_REPORT,
           payload as unknown as Parameters<typeof responseService.responseHandler>[2],
           {} as Parameters<typeof responseService.responseHandler>[3]
         )
-      ).resolves.toBeUndefined()
+      )
     })
   })
 
   await describe('G01 - StatusNotificationResponse handler', async () => {
     await it('should handle StatusNotification response without throwing', async () => {
       const payload: OCPP20StatusNotificationResponse = {}
-      await expect(
+      await assert.doesNotReject(
         responseService.responseHandler(
           mockStation,
           OCPP20RequestCommand.STATUS_NOTIFICATION,
           payload as unknown as Parameters<typeof responseService.responseHandler>[2],
           {} as Parameters<typeof responseService.responseHandler>[3]
         )
-      ).resolves.toBeUndefined()
+      )
     })
   })
 })

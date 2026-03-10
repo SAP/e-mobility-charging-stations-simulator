@@ -3,7 +3,7 @@
  * @description Unit tests for HTTP-based UI server and response handling
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 import { gunzipSync } from 'node:zlib'
 
@@ -61,19 +61,19 @@ await describe('UIHttpServer', async () => {
     const res = new MockServerResponse()
 
     server.addResponseHandler(TEST_UUID, res)
-    expect(server.hasResponseHandler(TEST_UUID)).toBe(true)
+    assert.strictEqual(server.hasResponseHandler(TEST_UUID), true)
 
     server.sendResponse([TEST_UUID, { status: ResponseStatus.SUCCESS }])
 
-    expect(server.hasResponseHandler(TEST_UUID)).toBe(false)
-    expect(res.ended).toBe(true)
-    expect(res.statusCode).toBe(200)
+    assert.strictEqual(server.hasResponseHandler(TEST_UUID), false)
+    assert.strictEqual(res.ended, true)
+    assert.strictEqual(res.statusCode, 200)
   })
 
   await it('should log error when response handler not found', () => {
     server.sendResponse([TEST_UUID, { status: ResponseStatus.SUCCESS }])
 
-    expect(server.hasResponseHandler(TEST_UUID)).toBe(false)
+    assert.strictEqual(server.hasResponseHandler(TEST_UUID), false)
   })
 
   await it('should set status code 400 for failure responses', () => {
@@ -82,9 +82,9 @@ await describe('UIHttpServer', async () => {
     server.addResponseHandler(TEST_UUID, res)
     server.sendResponse([TEST_UUID, { status: ResponseStatus.FAILURE }])
 
-    expect(server.hasResponseHandler(TEST_UUID)).toBe(false)
-    expect(res.ended).toBe(true)
-    expect(res.statusCode).toBe(400)
+    assert.strictEqual(server.hasResponseHandler(TEST_UUID), false)
+    assert.strictEqual(res.ended, true)
+    assert.strictEqual(res.statusCode, 400)
   })
 
   await it('should handle send errors gracefully without throwing', () => {
@@ -96,7 +96,7 @@ await describe('UIHttpServer', async () => {
     server.addResponseHandler(TEST_UUID, res)
     server.sendResponse([TEST_UUID, { status: ResponseStatus.SUCCESS }])
 
-    expect(server.hasResponseHandler(TEST_UUID)).toBe(false)
+    assert.strictEqual(server.hasResponseHandler(TEST_UUID), false)
   })
 
   await it('should set application/json Content-Type header', () => {
@@ -105,7 +105,7 @@ await describe('UIHttpServer', async () => {
     server.addResponseHandler(TEST_UUID, res)
     server.sendResponse([TEST_UUID, { status: ResponseStatus.SUCCESS }])
 
-    expect(res.headers['Content-Type']).toBe('application/json')
+    assert.strictEqual(res.headers['Content-Type'], 'application/json')
   })
 
   await it('should clean up response handlers after each response', () => {
@@ -114,24 +114,24 @@ await describe('UIHttpServer', async () => {
 
     server.addResponseHandler('uuid-1' as UUIDv4, res1)
     server.addResponseHandler('uuid-2' as UUIDv4, res2)
-    expect(server.getResponseHandlersSize()).toBe(2)
+    assert.strictEqual(server.getResponseHandlersSize(), 2)
 
     server.sendResponse(['uuid-1' as UUIDv4, { status: ResponseStatus.SUCCESS }])
-    expect(server.getResponseHandlersSize()).toBe(1)
+    assert.strictEqual(server.getResponseHandlersSize(), 1)
 
     server.sendResponse(['uuid-2' as UUIDv4, { status: ResponseStatus.SUCCESS }])
-    expect(server.getResponseHandlersSize()).toBe(0)
+    assert.strictEqual(server.getResponseHandlersSize(), 0)
   })
 
   await it('should clear all handlers on server stop', () => {
     const res = new MockServerResponse()
 
     server.addResponseHandler(TEST_UUID, res)
-    expect(server.getResponseHandlersSize()).toBe(1)
+    assert.strictEqual(server.getResponseHandlersSize(), 1)
 
     server.stop()
 
-    expect(server.getResponseHandlersSize()).toBe(0)
+    assert.strictEqual(server.getResponseHandlersSize(), 0)
   })
 
   await it('should serialize response payload to JSON correctly', () => {
@@ -144,10 +144,10 @@ await describe('UIHttpServer', async () => {
     server.addResponseHandler(TEST_UUID, res)
     server.sendResponse([TEST_UUID, payload])
 
-    expect(res.body).toBeDefined()
+    assert.notStrictEqual(res.body, undefined)
     const parsedBody = JSON.parse(res.body ?? '{}') as Record<string, unknown>
-    expect(parsedBody.status).toBe('success')
-    expect(parsedBody.hashIdsSucceeded).toStrictEqual(['station-1', 'station-2'])
+    assert.strictEqual(parsedBody.status, 'success')
+    assert.deepStrictEqual(parsedBody.hashIdsSucceeded, ['station-1', 'station-2'])
   })
 
   await it('should include error details in failure response', () => {
@@ -161,15 +161,15 @@ await describe('UIHttpServer', async () => {
     server.addResponseHandler(TEST_UUID, res)
     server.sendResponse([TEST_UUID, payload])
 
-    expect(res.body).toBeDefined()
+    assert.notStrictEqual(res.body, undefined)
     const parsedBody = JSON.parse(res.body ?? '{}') as Record<string, unknown>
-    expect(parsedBody.status).toBe('failure')
-    expect(parsedBody.errorMessage).toBe('Test error')
-    expect(parsedBody.hashIdsFailed).toStrictEqual(['station-1'])
+    assert.strictEqual(parsedBody.status, 'failure')
+    assert.strictEqual(parsedBody.errorMessage, 'Test error')
+    assert.deepStrictEqual(parsedBody.hashIdsFailed, ['station-1'])
   })
 
   await it('should create server with valid HTTP configuration', () => {
-    expect(server).toBeDefined()
+    assert.notStrictEqual(server, undefined)
   })
 
   await it('should create server with custom host and port', () => {
@@ -183,7 +183,7 @@ await describe('UIHttpServer', async () => {
       })
     )
 
-    expect(serverCustom).toBeDefined()
+    assert.notStrictEqual(serverCustom, undefined)
   })
 
   await describe('Gzip compression', async () => {
@@ -200,8 +200,8 @@ await describe('UIHttpServer', async () => {
       gzipServer.setAcceptsGzip(TEST_UUID, false)
       gzipServer.sendResponse([TEST_UUID, createLargePayload()])
 
-      expect(res.headers['Content-Encoding']).toBeUndefined()
-      expect(res.headers['Content-Type']).toBe('application/json')
+      assert.strictEqual(res.headers['Content-Encoding'], undefined)
+      assert.strictEqual(res.headers['Content-Type'], 'application/json')
     })
 
     await it('should skip compression for small response payloads', () => {
@@ -211,8 +211,8 @@ await describe('UIHttpServer', async () => {
       gzipServer.setAcceptsGzip(TEST_UUID, true)
       gzipServer.sendResponse([TEST_UUID, { status: ResponseStatus.SUCCESS }])
 
-      expect(res.headers['Content-Encoding']).toBeUndefined()
-      expect(res.headers['Content-Type']).toBe('application/json')
+      assert.strictEqual(res.headers['Content-Encoding'], undefined)
+      assert.strictEqual(res.headers['Content-Type'], 'application/json')
     })
 
     await it('should skip compression when payload below threshold', () => {
@@ -226,7 +226,7 @@ await describe('UIHttpServer', async () => {
       gzipServer.setAcceptsGzip(TEST_UUID, true)
       gzipServer.sendResponse([TEST_UUID, smallPayload])
 
-      expect(res.headers['Content-Encoding']).toBeUndefined()
+      assert.strictEqual(res.headers['Content-Encoding'], undefined)
     })
 
     await it('should set gzip Content-Encoding header for large responses', async () => {
@@ -238,9 +238,9 @@ await describe('UIHttpServer', async () => {
 
       await waitForStreamFlush(GZIP_STREAM_FLUSH_DELAY_MS)
 
-      expect(res.headers['Content-Encoding']).toBe('gzip')
-      expect(res.headers['Content-Type']).toBe('application/json')
-      expect(res.headers.Vary).toBe('Accept-Encoding')
+      assert.strictEqual(res.headers['Content-Encoding'], 'gzip')
+      assert.strictEqual(res.headers['Content-Type'], 'application/json')
+      assert.strictEqual(res.headers.Vary, 'Accept-Encoding')
     })
 
     await it('should decompress gzip response to original payload', async () => {
@@ -253,14 +253,14 @@ await describe('UIHttpServer', async () => {
 
       await waitForStreamFlush(GZIP_STREAM_FLUSH_DELAY_MS)
 
-      expect(res.bodyBuffer).toBeDefined()
+      assert.notStrictEqual(res.bodyBuffer, undefined)
       if (res.bodyBuffer == null) {
         throw new Error('Expected bodyBuffer to be defined')
       }
       const decompressed = gunzipSync(res.bodyBuffer).toString('utf8')
       const parsedBody = JSON.parse(decompressed) as Record<string, unknown>
-      expect(parsedBody.status).toBe('success')
-      expect(parsedBody.data).toBe(payload.data)
+      assert.strictEqual(parsedBody.status, 'success')
+      assert.strictEqual(parsedBody.data, payload.data)
     })
 
     await it('should skip compression when acceptsGzip context missing', () => {
@@ -269,8 +269,8 @@ await describe('UIHttpServer', async () => {
       gzipServer.addResponseHandler(TEST_UUID, res)
       gzipServer.sendResponse([TEST_UUID, createLargePayload()])
 
-      expect(res.headers['Content-Encoding']).toBeUndefined()
-      expect(res.headers['Content-Type']).toBe('application/json')
+      assert.strictEqual(res.headers['Content-Encoding'], undefined)
+      assert.strictEqual(res.headers['Content-Type'], 'application/json')
     })
 
     await it('should cleanup acceptsGzip context after response sent', async () => {
@@ -278,13 +278,13 @@ await describe('UIHttpServer', async () => {
 
       gzipServer.addResponseHandler(TEST_UUID, res)
       gzipServer.setAcceptsGzip(TEST_UUID, true)
-      expect(gzipServer.getAcceptsGzip().has(TEST_UUID)).toBe(true)
+      assert.strictEqual(gzipServer.getAcceptsGzip().has(TEST_UUID), true)
 
       gzipServer.sendResponse([TEST_UUID, createLargePayload()])
 
       await waitForStreamFlush(GZIP_STREAM_FLUSH_DELAY_MS)
 
-      expect(gzipServer.getAcceptsGzip().has(TEST_UUID)).toBe(false)
+      assert.strictEqual(gzipServer.getAcceptsGzip().has(TEST_UUID), false)
     })
   })
 })

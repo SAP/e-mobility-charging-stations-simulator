@@ -12,7 +12,7 @@
  * - Invalid registration status — deletes response and logs error
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { MockChargingStation } from '../../ChargingStationTestUtils.js'
@@ -88,9 +88,9 @@ await describe('B01 - BootNotificationResponse handler', async () => {
       status: RegistrationStatusEnumType.ACCEPTED,
     }
     await dispatch(payload)
-    expect(mockStation.bootNotificationResponse).toBe(payload)
-    expect(emitSpy.mock.calls.length).toBe(1)
-    expect(emitSpy.mock.calls[0].arguments[0]).toBe(ChargingStationEvents.accepted)
+    assert.strictEqual(mockStation.bootNotificationResponse, payload)
+    assert.strictEqual(emitSpy.mock.calls.length, 1)
+    assert.strictEqual(emitSpy.mock.calls[0].arguments[0], ChargingStationEvents.accepted)
   })
 
   await it('should store response and emit pending event for PENDING status', async () => {
@@ -101,9 +101,9 @@ await describe('B01 - BootNotificationResponse handler', async () => {
       status: RegistrationStatusEnumType.PENDING,
     }
     await dispatch(payload)
-    expect(mockStation.bootNotificationResponse).toBe(payload)
-    expect(emitSpy.mock.calls.length).toBe(1)
-    expect(emitSpy.mock.calls[0].arguments[0]).toBe(ChargingStationEvents.pending)
+    assert.strictEqual(mockStation.bootNotificationResponse, payload)
+    assert.strictEqual(emitSpy.mock.calls.length, 1)
+    assert.strictEqual(emitSpy.mock.calls[0].arguments[0], ChargingStationEvents.pending)
   })
 
   await it('should store response and emit rejected event for REJECTED status', async () => {
@@ -114,9 +114,9 @@ await describe('B01 - BootNotificationResponse handler', async () => {
       status: RegistrationStatusEnumType.REJECTED,
     }
     await dispatch(payload)
-    expect(mockStation.bootNotificationResponse).toBe(payload)
-    expect(emitSpy.mock.calls.length).toBe(1)
-    expect(emitSpy.mock.calls[0].arguments[0]).toBe(ChargingStationEvents.rejected)
+    assert.strictEqual(mockStation.bootNotificationResponse, payload)
+    assert.strictEqual(emitSpy.mock.calls.length, 1)
+    assert.strictEqual(emitSpy.mock.calls[0].arguments[0], ChargingStationEvents.rejected)
   })
 
   await it('should set HeartbeatInterval configuration key when interval is provided', async () => {
@@ -127,10 +127,13 @@ await describe('B01 - BootNotificationResponse handler', async () => {
     }
     await dispatch(payload)
     const configKey = mockStation.ocppConfiguration?.configurationKey
-    expect(configKey).toBeDefined()
-    expect(configKey?.length).toBe(1)
-    expect(configKey?.[0]?.key).toBe(OCPP20OptionalVariableName.HeartbeatInterval)
-    expect(configKey?.[0]?.value).toBe('300')
+    assert.notStrictEqual(configKey, undefined)
+    if (configKey == null) {
+      assert.fail('Expected configKey to be defined')
+    }
+    assert.strictEqual(configKey.length, 1)
+    assert.strictEqual(configKey[0].key, OCPP20OptionalVariableName.HeartbeatInterval)
+    assert.strictEqual(configKey[0].value, '300')
   })
 
   await it('should skip interval handling when interval is not provided', async () => {
@@ -140,8 +143,8 @@ await describe('B01 - BootNotificationResponse handler', async () => {
     } as unknown as OCPP20BootNotificationResponse
     await dispatch(payload)
     const configKey = mockStation.ocppConfiguration?.configurationKey
-    expect(configKey).toBeDefined()
-    expect(configKey?.length).toBe(0)
+    assert.notStrictEqual(configKey, undefined)
+    assert.strictEqual(configKey?.length, 0)
   })
 
   await it('should delete response and log error for invalid registration status', async () => {
@@ -151,6 +154,6 @@ await describe('B01 - BootNotificationResponse handler', async () => {
       status: 'INVALID_STATUS',
     } as unknown as OCPP20BootNotificationResponse
     await dispatch(payload)
-    expect(mockStation.bootNotificationResponse).toBeUndefined()
+    assert.strictEqual(mockStation.bootNotificationResponse, undefined)
   })
 })

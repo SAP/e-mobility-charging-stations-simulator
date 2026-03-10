@@ -7,7 +7,7 @@
  * - restoreConnectorStatus — restores Reserved or Available based on reservation state
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../src/charging-station/ChargingStation.js'
@@ -50,8 +50,8 @@ await describe('OCPPServiceUtils — connector status management', async () => {
 
       await sendAndSetConnectorStatus(station, 1, ConnectorStatusEnum.Occupied)
 
-      expect(requestHandler.mock.calls.length).toBe(1)
-      expect(station.getConnectorStatus(1)?.status).toBe(ConnectorStatusEnum.Occupied)
+      assert.strictEqual(requestHandler.mock.calls.length, 1)
+      assert.strictEqual(station.getConnectorStatus(1)?.status, ConnectorStatusEnum.Occupied)
     })
 
     await it('should return early when connector does not exist', async () => {
@@ -59,7 +59,7 @@ await describe('OCPPServiceUtils — connector status management', async () => {
 
       await sendAndSetConnectorStatus(station, 99, ConnectorStatusEnum.Occupied)
 
-      expect(requestHandler.mock.calls.length).toBe(0)
+      assert.strictEqual(requestHandler.mock.calls.length, 0)
     })
 
     await it('should skip sending when options.send is false', async () => {
@@ -69,18 +69,18 @@ await describe('OCPPServiceUtils — connector status management', async () => {
         send: false,
       })
 
-      expect(requestHandler.mock.calls.length).toBe(0)
-      expect(station.getConnectorStatus(1)?.status).toBe(ConnectorStatusEnum.Occupied)
+      assert.strictEqual(requestHandler.mock.calls.length, 0)
+      assert.strictEqual(station.getConnectorStatus(1)?.status, ConnectorStatusEnum.Occupied)
     })
 
     await it('should update connector status even when send is true', async () => {
       const { station } = createStationWithRequestHandler()
 
-      expect(station.getConnectorStatus(1)?.status).toBe(ConnectorStatusEnum.Available)
+      assert.strictEqual(station.getConnectorStatus(1)?.status, ConnectorStatusEnum.Available)
 
       await sendAndSetConnectorStatus(station, 1, ConnectorStatusEnum.Unavailable)
 
-      expect(station.getConnectorStatus(1)?.status).toBe(ConnectorStatusEnum.Unavailable)
+      assert.strictEqual(station.getConnectorStatus(1)?.status, ConnectorStatusEnum.Unavailable)
     })
 
     await it('should call emitChargingStationEvent with connectorStatusChanged', async () => {
@@ -90,7 +90,7 @@ await describe('OCPPServiceUtils — connector status management', async () => {
 
       await sendAndSetConnectorStatus(station, 1, ConnectorStatusEnum.Occupied)
 
-      expect(emitSpy.mock.calls.length).toBe(1)
+      assert.strictEqual(emitSpy.mock.calls.length, 1)
     })
 
     await it('should pass evseId to buildStatusNotificationRequest for OCPP 2.0', async () => {
@@ -100,8 +100,8 @@ await describe('OCPPServiceUtils — connector status management', async () => {
 
       await sendAndSetConnectorStatus(station, 1, ConnectorStatusEnum.Occupied, 1)
 
-      expect(requestHandler.mock.calls.length).toBe(1)
-      expect(station.getConnectorStatus(1)?.status).toBe(ConnectorStatusEnum.Occupied)
+      assert.strictEqual(requestHandler.mock.calls.length, 1)
+      assert.strictEqual(station.getConnectorStatus(1)?.status, ConnectorStatusEnum.Occupied)
     })
 
     await it('should default options.send to true when options not provided', async () => {
@@ -109,7 +109,7 @@ await describe('OCPPServiceUtils — connector status management', async () => {
 
       await sendAndSetConnectorStatus(station, 1, ConnectorStatusEnum.Occupied)
 
-      expect(requestHandler.mock.calls.length).toBe(1)
+      assert.strictEqual(requestHandler.mock.calls.length, 1)
     })
   })
 
@@ -130,7 +130,7 @@ await describe('OCPPServiceUtils — connector status management', async () => {
 
       await restoreConnectorStatus(station, 1, connector)
 
-      expect(station.getConnectorStatus(1)?.status).toBe(ConnectorStatusEnum.Reserved)
+      assert.strictEqual(station.getConnectorStatus(1)?.status, ConnectorStatusEnum.Reserved)
     })
 
     await it('should restore to Available when connector has no reservation and is not Available', async () => {
@@ -143,7 +143,7 @@ await describe('OCPPServiceUtils — connector status management', async () => {
 
       await restoreConnectorStatus(station, 1, connector)
 
-      expect(station.getConnectorStatus(1)?.status).toBe(ConnectorStatusEnum.Available)
+      assert.strictEqual(station.getConnectorStatus(1)?.status, ConnectorStatusEnum.Available)
     })
 
     await it('should not change status when connector is already Available with no reservation', async () => {
@@ -156,8 +156,8 @@ await describe('OCPPServiceUtils — connector status management', async () => {
 
       await restoreConnectorStatus(station, 1, connector)
 
-      expect(requestHandler.mock.calls.length).toBe(0)
-      expect(station.getConnectorStatus(1)?.status).toBe(ConnectorStatusEnum.Available)
+      assert.strictEqual(requestHandler.mock.calls.length, 0)
+      assert.strictEqual(station.getConnectorStatus(1)?.status, ConnectorStatusEnum.Available)
     })
   })
 })

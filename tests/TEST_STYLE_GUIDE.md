@@ -7,7 +7,7 @@ Conventions for writing maintainable, consistent tests in the e-mobility chargin
 - **Test behavior, not implementation**: Focus on what code does, not how
 - **Isolation is mandatory**: Each test runs independently with fresh state
 - **Determinism required**: Tests must produce identical results on every run
-- **Strict assertions**: Use `toBe`, `toStrictEqual` — never `toEqual`, `toBeTruthy`
+- **Strict assertions**: Use `assert.strictEqual`, `assert.deepStrictEqual`, `assert.ok` — never loose equality
 - **Coverage target**: 80%+ on new code
 
 ---
@@ -60,7 +60,7 @@ it('should calculate total power correctly', () => {
   const actualPower = station.getTotalPower()
 
   // Assert
-  expect(actualPower).toBe(expectedPower)
+  assert.strictEqual(actualPower, expectedPower)
 })
 ```
 
@@ -141,12 +141,12 @@ afterEach(() => {
 it('should start charging session', async () => {
   const { station } = createMockChargingStation()
   const result = await station.startTransaction(1, 'VALID_TAG')
-  expect(result.status).toBe('Accepted')
+  assert.strictEqual(result.status, 'Accepted')
 })
 
 it('should reject invalid connector', async () => {
   const { station } = createMockChargingStation()
-  await expect(station.startTransaction(99, 'TAG')).rejects.toThrow('Invalid')
+  await assert.rejects(station.startTransaction(99, 'TAG'), { message: /Invalid/ })
 })
 ```
 
@@ -158,7 +158,7 @@ it('should timeout', async t => {
   await withMockTimers(t, ['setTimeout'], async () => {
     const promise = station.sendHeartbeat()
     t.mock.timers.tick(30000)
-    await expect(promise).rejects.toThrow('Timeout')
+    await assert.rejects(promise, { message: /Timeout/ })
   })
 })
 
@@ -232,15 +232,15 @@ Available constants: `tests/charging-station/ChargingStationTestConstants.ts`
 
 ```typescript
 // ✅ Good
-expect(result).toStrictEqual({ status: 'ok' }) // Exact match
-expect(count).toBe(5) // Primitive
-expect(value).toBe(true) // Explicit boolean
-expect(item).toBeDefined() // Existence check
+assert.deepStrictEqual(result, { status: 'ok' }) // Exact match
+assert.strictEqual(count, 5) // Primitive
+assert.strictEqual(value, true) // Explicit boolean
+assert.notStrictEqual(item, undefined) // Existence check
 
 // ❌ Bad
-expect(result).toEqual({ status: 'ok' }) // Ignores extra properties
-expect(value).toBeTruthy() // Too vague
-expect(count == '5').toBe(true) // Type coercion
+assert.deepEqual(result, { status: 'ok' }) // Not strict
+assert.ok(value) // Too vague for specific value checks
+assert.strictEqual(count == '5', true) // Type coercion
 ```
 
 ---
@@ -263,7 +263,7 @@ testable.buildRequestPayload(station, command)
 ```typescript
 // Acceptable when testing defensive code
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-expect(AuthValidators.isValidIdentifierValue(123 as any)).toBe(false)
+assert.strictEqual(AuthValidators.isValidIdentifierValue(123 as any), false)
 ```
 
 ---
@@ -288,7 +288,7 @@ const { station, mocks } = createMockChargingStation({
 })
 
 // Verify sent messages
-expect(mocks.webSocket.sentMessages).toContain(expectedMessage)
+assert.ok(mocks.webSocket.sentMessages.includes(expectedMessage))
 ```
 
 ---
@@ -344,7 +344,7 @@ expect(mocks.webSocket.sentMessages).toContain(expectedMessage)
 4. **Async**: Use `async/await`, mock timers
 5. **Platform**: Single top-level `describe`, `--test-force-exit` for Windows
 6. **Constants**: Import from `ChargingStationTestConstants.ts`
-7. **Assert**: Strict only (`toBe`, `toStrictEqual`)
+7. **Assert**: Strict only (`assert.strictEqual`, `assert.deepStrictEqual`)
 8. **Types**: No `as any`, use testable interfaces
 9. **Mocks**: Use appropriate factory for your use case
 10. **Utils**: Leverage lifecycle helpers and mock classes
