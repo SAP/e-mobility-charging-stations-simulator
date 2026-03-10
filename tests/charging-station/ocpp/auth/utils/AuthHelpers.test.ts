@@ -159,60 +159,73 @@ await describe('AuthHelpers', async () => {
 
   await describe('getStatusMessage', async () => {
     await it('should return message for ACCEPTED status', () => {
-      assert.strictEqual(AuthHelpers.getStatusMessage(AuthorizationStatus.ACCEPTED),
+      assert.strictEqual(
+        AuthHelpers.getStatusMessage(AuthorizationStatus.ACCEPTED),
         'Authorization accepted'
       )
     })
 
     await it('should return message for BLOCKED status', () => {
-      assert.strictEqual(AuthHelpers.getStatusMessage(AuthorizationStatus.BLOCKED),
+      assert.strictEqual(
+        AuthHelpers.getStatusMessage(AuthorizationStatus.BLOCKED),
         'Identifier is blocked'
       )
     })
 
     await it('should return message for EXPIRED status', () => {
-      assert.strictEqual(AuthHelpers.getStatusMessage(AuthorizationStatus.EXPIRED),
+      assert.strictEqual(
+        AuthHelpers.getStatusMessage(AuthorizationStatus.EXPIRED),
         'Authorization has expired'
       )
     })
 
     await it('should return message for INVALID status', () => {
-      assert.strictEqual(AuthHelpers.getStatusMessage(AuthorizationStatus.INVALID), 'Invalid identifier')
+      assert.strictEqual(
+        AuthHelpers.getStatusMessage(AuthorizationStatus.INVALID),
+        'Invalid identifier'
+      )
     })
 
     await it('should return message for CONCURRENT_TX status', () => {
-      assert.strictEqual(AuthHelpers.getStatusMessage(AuthorizationStatus.CONCURRENT_TX),
+      assert.strictEqual(
+        AuthHelpers.getStatusMessage(AuthorizationStatus.CONCURRENT_TX),
         'Concurrent transaction in progress'
       )
     })
 
     await it('should return message for NOT_AT_THIS_LOCATION status', () => {
-      assert.strictEqual(AuthHelpers.getStatusMessage(AuthorizationStatus.NOT_AT_THIS_LOCATION),
+      assert.strictEqual(
+        AuthHelpers.getStatusMessage(AuthorizationStatus.NOT_AT_THIS_LOCATION),
         'Not authorized at this location'
       )
     })
 
     await it('should return message for NOT_AT_THIS_TIME status', () => {
-      assert.strictEqual(AuthHelpers.getStatusMessage(AuthorizationStatus.NOT_AT_THIS_TIME),
+      assert.strictEqual(
+        AuthHelpers.getStatusMessage(AuthorizationStatus.NOT_AT_THIS_TIME),
         'Not authorized at this time'
       )
     })
 
     await it('should return message for PENDING status', () => {
-      assert.strictEqual(AuthHelpers.getStatusMessage(AuthorizationStatus.PENDING),
+      assert.strictEqual(
+        AuthHelpers.getStatusMessage(AuthorizationStatus.PENDING),
         'Authorization pending'
       )
     })
 
     await it('should return message for UNKNOWN status', () => {
-      assert.strictEqual(AuthHelpers.getStatusMessage(AuthorizationStatus.UNKNOWN),
+      assert.strictEqual(
+        AuthHelpers.getStatusMessage(AuthorizationStatus.UNKNOWN),
         'Unknown authorization status'
       )
     })
 
     await it('should return generic message for unknown status', () => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any -- testing invalid status value
-      assert.strictEqual(AuthHelpers.getStatusMessage('INVALID_STATUS' as any), 'Authorization failed')
+      assert.strictEqual(
+        AuthHelpers.getStatusMessage(AuthorizationStatus.NO_CREDIT),
+        'Authorization failed'
+      )
     })
   })
 
