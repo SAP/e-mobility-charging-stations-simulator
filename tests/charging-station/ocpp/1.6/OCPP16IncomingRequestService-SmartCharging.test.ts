@@ -16,7 +16,6 @@ import type {
 import { GenericStatus, OCPP16StandardParametersKey } from '../../../../src/types/index.js'
 import {
   OCPP16ChargingProfilePurposeType,
-  OCPP16ChargingRateUnitType,
 } from '../../../../src/types/ocpp/1.6/ChargingProfile.js'
 import {
   OCPP16ChargingProfileStatus,
@@ -47,9 +46,9 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
 
   await describe('handleRequestSetChargingProfile', async () => {
     // @spec §9.3 — TC_053_CS
-    it('should accept a valid TxDefaultProfile on a valid connector', () => {
+    await it('should accept a valid TxDefaultProfile on a valid connector', () => {
       // Arrange
-      const { testableService, station } = context
+      const { station, testableService } = context
       upsertConfigurationKey(
         station,
         OCPP16StandardParametersKey.SupportedFeatureProfiles,
@@ -68,9 +67,9 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
       expect(response.status).toBe(OCPP16ChargingProfileStatus.ACCEPTED)
     })
 
-    it('should accept a ChargePointMaxProfile on connector 0', () => {
+    await it('should accept a ChargePointMaxProfile on connector 0', () => {
       // Arrange
-      const { testableService, station } = context
+      const { station, testableService } = context
       upsertConfigurationKey(
         station,
         OCPP16StandardParametersKey.SupportedFeatureProfiles,
@@ -90,9 +89,9 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
     })
 
     // @spec §9.3 — TC_058_CS
-    it('should reject a profile for a non-existing connector', () => {
+    await it('should reject a profile for a non-existing connector', () => {
       // Arrange
-      const { testableService, station } = context
+      const { station, testableService } = context
       upsertConfigurationKey(
         station,
         OCPP16StandardParametersKey.SupportedFeatureProfiles,
@@ -111,9 +110,9 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
       expect(response.status).toBe(OCPP16ChargingProfileStatus.REJECTED)
     })
 
-    it('should reject a ChargePointMaxProfile on a non-zero connector', () => {
+    await it('should reject a ChargePointMaxProfile on a non-zero connector', () => {
       // Arrange
-      const { testableService, station } = context
+      const { station, testableService } = context
       upsertConfigurationKey(
         station,
         OCPP16StandardParametersKey.SupportedFeatureProfiles,
@@ -132,9 +131,9 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
       expect(response.status).toBe(OCPP16ChargingProfileStatus.REJECTED)
     })
 
-    it('should return NotSupported when SmartCharging feature profile is not enabled', () => {
+    await it('should return NotSupported when SmartCharging feature profile is not enabled', () => {
       // Arrange
-      const { testableService, station } = context
+      const { station, testableService } = context
       upsertConfigurationKey(
         station,
         OCPP16StandardParametersKey.SupportedFeatureProfiles,
@@ -160,9 +159,9 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
 
   await describe('handleRequestClearChargingProfile', async () => {
     // @spec §9.1 — TC_055_CS
-    it('should accept clearing profiles by profile ID', () => {
+    await it('should accept clearing profiles by profile ID', () => {
       // Arrange
-      const { testableService, station } = context
+      const { station, testableService } = context
       upsertConfigurationKey(
         station,
         OCPP16StandardParametersKey.SupportedFeatureProfiles,
@@ -185,9 +184,9 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
     })
 
     // @spec §9.1 — TC_056_CS
-    it('should accept clearing profiles by purpose and stack level', () => {
+    await it('should accept clearing profiles by purpose and stack level', () => {
       // Arrange
-      const { testableService, station } = context
+      const { station, testableService } = context
       upsertConfigurationKey(
         station,
         OCPP16StandardParametersKey.SupportedFeatureProfiles,
@@ -210,9 +209,9 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
       expect(response.status).toBe(OCPP16ClearChargingProfileStatus.ACCEPTED)
     })
 
-    it('should return Unknown when no matching profiles exist', () => {
+    await it('should return Unknown when no matching profiles exist', () => {
       // Arrange
-      const { testableService, station } = context
+      const { station, testableService } = context
       upsertConfigurationKey(
         station,
         OCPP16StandardParametersKey.SupportedFeatureProfiles,
@@ -236,9 +235,9 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
       expect(response.status).toBe(OCPP16ClearChargingProfileStatus.UNKNOWN)
     })
 
-    it('should return Unknown when SmartCharging feature profile is not enabled', () => {
+    await it('should return Unknown when SmartCharging feature profile is not enabled', () => {
       // Arrange
-      const { testableService, station } = context
+      const { station, testableService } = context
       upsertConfigurationKey(
         station,
         OCPP16StandardParametersKey.SupportedFeatureProfiles,
@@ -262,9 +261,9 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
 
   await describe('handleRequestGetCompositeSchedule', async () => {
     // @spec §9.2 — TC_054_CS
-    it('should return Accepted with schedule when profiles exist on connector', () => {
+    await it('should return Accepted with schedule when profiles exist on connector', () => {
       // Arrange
-      const { testableService, station } = context
+      const { station, testableService } = context
       upsertConfigurationKey(
         station,
         OCPP16StandardParametersKey.SupportedFeatureProfiles,
@@ -292,9 +291,9 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
       expect(response.scheduleStart).toBeDefined()
     })
 
-    it('should return Rejected for a non-existing connector', () => {
+    await it('should return Rejected for a non-existing connector', () => {
       // Arrange
-      const { testableService, station } = context
+      const { station, testableService } = context
       upsertConfigurationKey(
         station,
         OCPP16StandardParametersKey.SupportedFeatureProfiles,
@@ -312,9 +311,9 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
       expect(response.status).toBe(GenericStatus.Rejected)
     })
 
-    it('should return Rejected for connector 0', () => {
+    await it('should return Rejected for connector 0', () => {
       // Arrange
-      const { testableService, station } = context
+      const { station, testableService } = context
       upsertConfigurationKey(
         station,
         OCPP16StandardParametersKey.SupportedFeatureProfiles,
@@ -332,9 +331,9 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
       expect(response.status).toBe(GenericStatus.Rejected)
     })
 
-    it('should return Rejected when no profiles are set on connector', () => {
+    await it('should return Rejected when no profiles are set on connector', () => {
       // Arrange
-      const { testableService, station } = context
+      const { station, testableService } = context
       upsertConfigurationKey(
         station,
         OCPP16StandardParametersKey.SupportedFeatureProfiles,
@@ -361,9 +360,9 @@ await describe('OCPP16IncomingRequestService — SmartCharging', async () => {
       expect(response.status).toBe(GenericStatus.Rejected)
     })
 
-    it('should return Rejected when SmartCharging feature profile is not enabled', () => {
+    await it('should return Rejected when SmartCharging feature profile is not enabled', () => {
       // Arrange
-      const { testableService, station } = context
+      const { station, testableService } = context
       upsertConfigurationKey(
         station,
         OCPP16StandardParametersKey.SupportedFeatureProfiles,

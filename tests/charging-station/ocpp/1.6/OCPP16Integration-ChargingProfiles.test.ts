@@ -1,5 +1,6 @@
 /**
  * @file Tests for OCPP 1.6 Charging Profile Management — Integration
+ * @see OCPP 1.6 — §9.3 SetChargingProfile, §9.1 ClearChargingProfile, §9.2 GetCompositeSchedule
  * @description Multi-step integration tests verifying roundtrip flows across SetChargingProfile,
  *   ClearChargingProfile, and GetCompositeSchedule handlers for OCPP 1.6 Smart Charging
  */
@@ -12,6 +13,7 @@ import type {
   OCPP16GetCompositeScheduleRequest,
   SetChargingProfileRequest,
 } from '../../../../src/types/index.js'
+import type { OCPP16ChargingProfile } from '../../../../src/types/ocpp/1.6/ChargingProfile.js'
 
 import { GenericStatus, OCPP16StandardParametersKey } from '../../../../src/types/index.js'
 import {
@@ -51,9 +53,9 @@ await describe('OCPP16 Integration — Charging Profile Management', async () =>
   // Set → Get Roundtrip
   // ============================================================================
 
-  it('should return composite schedule matching a set TxDefaultProfile', () => {
+  await it('should return composite schedule matching a set TxDefaultProfile', () => {
     // Arrange
-    const { testableService, station } = context
+    const { station, testableService } = context
     const profile = ChargingProfileFixtures.createTxDefaultProfile(1, 0)
     profile.chargingSchedule.startSchedule = new Date()
     profile.chargingSchedule.duration = 3600
@@ -89,9 +91,9 @@ await describe('OCPP16 Integration — Charging Profile Management', async () =>
   // Set → Clear → Get Roundtrip
   // ============================================================================
 
-  it('should return Rejected from GetCompositeSchedule after clearing a set profile', () => {
+  await it('should return Rejected from GetCompositeSchedule after clearing a set profile', () => {
     // Arrange
-    const { testableService, station } = context
+    const { station, testableService } = context
     const profile = ChargingProfileFixtures.createTxDefaultProfile(10, 0)
     profile.chargingSchedule.startSchedule = new Date()
     profile.chargingSchedule.duration = 3600
@@ -133,9 +135,9 @@ await describe('OCPP16 Integration — Charging Profile Management', async () =>
   // Multiple Profiles with Different Stack Levels → GetCompositeSchedule
   // ============================================================================
 
-  it('should return Accepted composite schedule with multiple profiles at different stack levels', () => {
+  await it('should return Accepted composite schedule with multiple profiles at different stack levels', () => {
     // Arrange
-    const { testableService, station } = context
+    const { station, testableService } = context
     const profileLow = ChargingProfileFixtures.createTxDefaultProfile(1, 0)
     profileLow.chargingSchedule.startSchedule = new Date()
     profileLow.chargingSchedule.duration = 3600
@@ -179,9 +181,9 @@ await describe('OCPP16 Integration — Charging Profile Management', async () =>
   // Replace Profile (Same stackLevel + Purpose)
   // ============================================================================
 
-  it('should replace a profile with same stackLevel and purpose, keeping only one profile', () => {
+  await it('should replace a profile with same stackLevel and purpose, keeping only one profile', () => {
     // Arrange
-    const { testableService, station } = context
+    const { station, testableService } = context
     const originalProfile = ChargingProfileFixtures.createTxDefaultProfile(1, 0)
     originalProfile.chargingSchedule.startSchedule = new Date()
     originalProfile.chargingSchedule.duration = 3600
@@ -218,7 +220,8 @@ await describe('OCPP16 Integration — Charging Profile Management', async () =>
     const connectorStatus = station.getConnectorStatus(1)
     expect(connectorStatus?.chargingProfiles?.length).toBe(1)
     expect(connectorStatus?.chargingProfiles?.[0].chargingProfileId).toBe(5)
-    expect(connectorStatus?.chargingProfiles?.[0].chargingSchedule.chargingSchedulePeriod[0].limit)
+    const storedProfile = connectorStatus?.chargingProfiles?.[0] as OCPP16ChargingProfile | undefined
+    expect(storedProfile?.chargingSchedule.chargingSchedulePeriod[0].limit)
       .toBe(16)
   })
 
@@ -226,9 +229,9 @@ await describe('OCPP16 Integration — Charging Profile Management', async () =>
   // Clear by Purpose — Only Matching Profiles Cleared
   // ============================================================================
 
-  it('should clear only profiles matching the specified purpose when clearing by purpose', () => {
+  await it('should clear only profiles matching the specified purpose when clearing by purpose', () => {
     // Arrange
-    const { testableService, station } = context
+    const { station, testableService } = context
 
     // Set a TxDefaultProfile on connector 1 (stackLevel 0)
     const txDefaultProfile = ChargingProfileFixtures.createTxDefaultProfile(1, 0)
@@ -279,9 +282,9 @@ await describe('OCPP16 Integration — Charging Profile Management', async () =>
   // Clear by Profile ID → Verify Specific Profile Removed
   // ============================================================================
 
-  it('should clear only the profile with matching ID when clearing by ID', () => {
+  await it('should clear only the profile with matching ID when clearing by ID', () => {
     // Arrange
-    const { testableService, station } = context
+    const { station, testableService } = context
 
     // Set two TxDefaultProfiles with different IDs and stack levels on connector 1
     const profileA = ChargingProfileFixtures.createTxDefaultProfile(10, 0)

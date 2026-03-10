@@ -141,14 +141,14 @@ await describe('OCPP16ResponseService — BootNotification and Authorize', async
     expect(configKeys).toBeDefined()
 
     const heartbeatKey = configKeys?.find(
-      k => k.key === OCPP16StandardParametersKey.HeartbeatInterval
+      k => k.key === (OCPP16StandardParametersKey.HeartbeatInterval as string)
     )
     expect(heartbeatKey).toBeDefined()
     expect(heartbeatKey?.value).toBe('120')
 
     // Handler also sets the variant HeartBeatInterval (hidden)
     const heartBeatKey = configKeys?.find(
-      k => k.key === OCPP16StandardParametersKey.HeartBeatInterval
+      k => k.key === (OCPP16StandardParametersKey.HeartBeatInterval as string)
     )
     expect(heartBeatKey).toBeDefined()
     expect(heartBeatKey?.value).toBe('120')
@@ -163,7 +163,9 @@ await describe('OCPP16ResponseService — BootNotification and Authorize', async
     // Arrange — set authorizeIdTag on connector 1
     const connectorStatus = ctx.station.getConnectorStatus(1)
     expect(connectorStatus).toBeDefined()
-    connectorStatus!.authorizeIdTag = 'TEST_TAG'
+    if (connectorStatus != null) {
+      connectorStatus.authorizeIdTag = 'TEST_TAG'
+    }
 
     // Act
     await dispatchAuthorize(
@@ -172,8 +174,8 @@ await describe('OCPP16ResponseService — BootNotification and Authorize', async
     )
 
     // Assert
-    expect(connectorStatus!.idTagAuthorized).toBe(true)
-    expect(connectorStatus!.authorizeIdTag).toBe('TEST_TAG')
+    expect(connectorStatus?.idTagAuthorized).toBe(true)
+    expect(connectorStatus?.authorizeIdTag).toBe('TEST_TAG')
   })
 
   // @spec §4.2 — TC_010_CS
@@ -181,7 +183,9 @@ await describe('OCPP16ResponseService — BootNotification and Authorize', async
     // Arrange — set authorizeIdTag on connector 1
     const connectorStatus = ctx.station.getConnectorStatus(1)
     expect(connectorStatus).toBeDefined()
-    connectorStatus!.authorizeIdTag = 'TEST_TAG'
+    if (connectorStatus != null) {
+      connectorStatus.authorizeIdTag = 'TEST_TAG'
+    }
 
     // Act — Blocked status
     await dispatchAuthorize(
@@ -190,15 +194,15 @@ await describe('OCPP16ResponseService — BootNotification and Authorize', async
     )
 
     // Assert
-    expect(connectorStatus!.idTagAuthorized).toBe(false)
-    expect(connectorStatus!.authorizeIdTag).toBeUndefined()
+    expect(connectorStatus?.idTagAuthorized).toBe(false)
+    expect(connectorStatus?.authorizeIdTag).toBeUndefined()
   })
 
   await it('should not change connector state when no connector matches authorizeIdTag', async () => {
     // Arrange — connector 1 has no authorizeIdTag matching the request
     const connectorStatus = ctx.station.getConnectorStatus(1)
     expect(connectorStatus).toBeDefined()
-    const originalIdTagAuthorized = connectorStatus!.idTagAuthorized
+    const originalIdTagAuthorized = connectorStatus?.idTagAuthorized
 
     // Act — no connector has authorizeIdTag === 'UNKNOWN_TAG'
     await dispatchAuthorize(
@@ -207,7 +211,7 @@ await describe('OCPP16ResponseService — BootNotification and Authorize', async
     )
 
     // Assert — no state change
-    expect(connectorStatus!.idTagAuthorized).toBe(originalIdTagAuthorized)
-    expect(connectorStatus!.authorizeIdTag).toBeUndefined()
+    expect(connectorStatus?.idTagAuthorized).toBe(originalIdTagAuthorized)
+    expect(connectorStatus?.authorizeIdTag).toBeUndefined()
   })
 })

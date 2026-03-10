@@ -147,7 +147,7 @@ await describe('OCPP16IncomingRequestService — Configuration', async () => {
     expect(response.unknownKey).toBeDefined()
     expect(response.configurationKey.length >= 2).toBe(true)
     const heartbeatKey = response.configurationKey.find(
-      k => k.key === OCPP16StandardParametersKey.HeartbeatInterval
+      k => k.key === (OCPP16StandardParametersKey.HeartbeatInterval as string)
     )
     expect(heartbeatKey).toBeDefined()
     expect(heartbeatKey?.value).toBe('60')

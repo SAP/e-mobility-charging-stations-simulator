@@ -10,6 +10,8 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
 import type { TestableOCPP16IncomingRequestService } from '../../../../src/charging-station/ocpp/1.6/__testable__/index.js'
+import type { MockOCPPRequestService } from '../../ChargingStationTestUtils.js'
+
 import {
   OCPP16AvailabilityType,
   type OCPP16ChangeAvailabilityRequest,
@@ -30,7 +32,8 @@ await describe('OCPP16IncomingRequestService — ChangeAvailability', async () =
     testableService = ctx.testableService
 
     // Mock requestHandler so sendAndSetConnectorStatus resolves without error
-    station.ocppRequestService.requestHandler = async () => Promise.resolve({})
+    ;(station.ocppRequestService as unknown as MockOCPPRequestService).requestHandler =
+      async () => Promise.resolve({})
   })
 
   afterEach(() => {

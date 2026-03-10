@@ -1,5 +1,7 @@
 /**
  * @file Tests for OCPP 1.6 JSON schema validation
+ * @module OCPP 1.6 — §4.1 BootNotification, §5.11 RemoteStartTransaction, §9.3 SetChargingProfile,
+ *   §5.13 Reset, §5.3 ChangeAvailability (representative schema coverage)
  * @description Verifies that OCPP 1.6 JSON schemas correctly validate and reject payloads
  * when compiled with AJV. Tests representative command pairs (request + response schemas).
  */

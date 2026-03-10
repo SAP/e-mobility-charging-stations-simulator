@@ -1,5 +1,8 @@
 /**
  * @file Tests for OCPP16RequestService buildRequestPayload
+ * @see OCPP 1.6 — §4.1 BootNotification, §4.2 Authorize, §4.9 DataTransfer,
+ *   §4.8 StatusNotification, §4.10 Heartbeat, §4.3 StartTransaction, §4.4 StopTransaction,
+ *   §4.7 MeterValues, §6.2 DiagnosticsStatusNotification, §6.5 FirmwareStatusNotification
  * @description Unit tests for OCPP 1.6 request payload construction across all 10 request commands
  */
 import { expect } from '@std/expect'
@@ -17,6 +20,7 @@ import {
   OCPP16FirmwareStatus,
   type OCPP16FirmwareStatusNotificationRequest,
   type OCPP16MeterValuesRequest,
+  OCPP16MeterValueUnit,
   OCPP16RequestCommand,
   type OCPP16StartTransactionRequest,
   type OCPP16StatusNotificationRequest,
@@ -271,7 +275,7 @@ await describe('OCPP16RequestService — buildRequestPayload', async () => {
           sampledValue: [{ value: '0' }],
           timestamp: new Date(),
         }
-        connectorStatus.MeterValues = [{ unit: 'Wh' }]
+        connectorStatus.MeterValues = [{ unit: OCPP16MeterValueUnit.WATT_HOUR, value: '0' }]
       }
 
       // Act

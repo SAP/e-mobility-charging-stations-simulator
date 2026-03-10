@@ -1,5 +1,6 @@
 /**
  * @file Tests for OCPP16 Integration — Configuration Management
+ * @see OCPP 1.6 — §5.4 ChangeConfiguration, §5.8 GetConfiguration
  * @description Multi-step integration tests verifying ChangeConfiguration → GetConfiguration
  *   roundtrips for OCPP 1.6 configuration management flows
  */
@@ -117,13 +118,13 @@ await describe('OCPP16 Integration — Configuration Management', async () => {
 
     // Assert — All changed values reflected
     const meterKey = getResponse.configurationKey.find(
-      k => k.key === OCPP16StandardParametersKey.MeterValueSampleInterval
+      k => k.key === (OCPP16StandardParametersKey.MeterValueSampleInterval as string)
     )
     const wsKey = getResponse.configurationKey.find(
-      k => k.key === OCPP16StandardParametersKey.WebSocketPingInterval
+      k => k.key === (OCPP16StandardParametersKey.WebSocketPingInterval as string)
     )
     const connKey = getResponse.configurationKey.find(
-      k => k.key === OCPP16StandardParametersKey.ConnectionTimeOut
+      k => k.key === (OCPP16StandardParametersKey.ConnectionTimeOut as string)
     )
     expect(meterKey).toBeDefined()
     expect(meterKey?.value).toBe('10')
@@ -268,10 +269,10 @@ await describe('OCPP16 Integration — Configuration Management', async () => {
     expect(getResponse.unknownKey.length).toBe(0)
 
     const heartbeat = getResponse.configurationKey.find(
-      k => k.key === OCPP16StandardParametersKey.HeartbeatInterval
+      k => k.key === (OCPP16StandardParametersKey.HeartbeatInterval as string)
     )
     const meterInterval = getResponse.configurationKey.find(
-      k => k.key === OCPP16StandardParametersKey.MeterValueSampleInterval
+      k => k.key === (OCPP16StandardParametersKey.MeterValueSampleInterval as string)
     )
     const vendorKey = getResponse.configurationKey.find(
       k => k.key === 'VendorCustomKey'

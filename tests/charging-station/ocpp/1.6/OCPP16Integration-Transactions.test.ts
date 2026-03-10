@@ -1,5 +1,7 @@
 /**
  * @file Tests for OCPP 1.6 integration — Transaction lifecycle
+ * @module OCPP 1.6 — §5.11 RemoteStartTransaction, §5.12 RemoteStopTransaction,
+ *   §5.14 StartTransaction (response), §5.16 StopTransaction (response)
  * @description Multi-step integration tests crossing IncomingRequestService, RequestService,
  * and ResponseService boundaries for the OCPP 1.6 transaction lifecycle.
  */
@@ -28,6 +30,7 @@ import {
   AvailabilityType,
   GenericStatus,
   OCPP16ChargePointStatus,
+  OCPP16MeterValueUnit,
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { OCPP16RequestCommand } from '../../../../src/types/ocpp/1.6/Requests.js'
@@ -84,7 +87,7 @@ function createIntegrationContext (): {
     if (connectorId > 0) {
       const connector = station.getConnectorStatus(connectorId)
       if (connector != null) {
-        connector.MeterValues = [{ unit: 'Wh' }]
+        connector.MeterValues = [{ unit: OCPP16MeterValueUnit.WATT_HOUR, value: '0' }]
       }
     }
   }

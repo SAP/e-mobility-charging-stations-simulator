@@ -32,9 +32,9 @@ await describe('OCPP16IncomingRequestService — Firmware', async () => {
   // §6.1: GetDiagnostics
   await describe('handleRequestGetDiagnostics', async () => {
     // @spec §6.1 — TC_048_CS
-    it('should return empty response for non-FTP location', async () => {
+    await it('should return empty response for non-FTP location', async () => {
       // Arrange
-      const { testableService, station } = context
+      const { station, testableService } = context
       upsertConfigurationKey(
         station,
         OCPP16StandardParametersKey.SupportedFeatureProfiles,
@@ -56,9 +56,9 @@ await describe('OCPP16IncomingRequestService — Firmware', async () => {
     })
 
     // @spec §6.1 — TC_047_CS
-    it('should return empty response when FirmwareManagement feature profile is not enabled', async () => {
+    await it('should return empty response when FirmwareManagement feature profile is not enabled', async () => {
       // Arrange
-      const { testableService, station } = context
+      const { station, testableService } = context
       upsertConfigurationKey(
         station,
         OCPP16StandardParametersKey.SupportedFeatureProfiles,
@@ -77,9 +77,9 @@ await describe('OCPP16IncomingRequestService — Firmware', async () => {
       expect(Object.keys(response).length).toBe(0)
     })
 
-    it('should return empty response when SupportedFeatureProfiles key is missing', async () => {
+    await it('should return empty response when SupportedFeatureProfiles key is missing', async () => {
       // Arrange
-      const { testableService, station } = context
+      const { station, testableService } = context
 
       const request: GetDiagnosticsRequest = {
         location: 'ftp://localhost/diagnostics',
@@ -97,9 +97,9 @@ await describe('OCPP16IncomingRequestService — Firmware', async () => {
   // §6.4: UpdateFirmware
   await describe('handleRequestUpdateFirmware', async () => {
     // @spec §6.4 — TC_044_CS
-    it('should return empty response for valid location with immediate retrieve date', () => {
+    await it('should return empty response for valid location with immediate retrieve date', () => {
       // Arrange
-      const { testableService, station } = context
+      const { station, testableService } = context
       upsertConfigurationKey(
         station,
         OCPP16StandardParametersKey.SupportedFeatureProfiles,
@@ -117,9 +117,9 @@ await describe('OCPP16IncomingRequestService — Firmware', async () => {
       expect(Object.keys(response).length).toBe(0)
     })
 
-    it('should return empty response when FirmwareManagement feature profile is not enabled', () => {
+    await it('should return empty response when FirmwareManagement feature profile is not enabled', () => {
       // Arrange
-      const { testableService, station } = context
+      const { station, testableService } = context
       upsertConfigurationKey(
         station,
         OCPP16StandardParametersKey.SupportedFeatureProfiles,
@@ -137,17 +137,16 @@ await describe('OCPP16IncomingRequestService — Firmware', async () => {
       expect(Object.keys(response).length).toBe(0)
     })
 
-    it('should return empty response when firmware update is already in progress', () => {
+    await it('should return empty response when firmware update is already in progress', () => {
       // Arrange
-      const { testableService, station } = context
+      const { station, testableService } = context
       upsertConfigurationKey(
         station,
         OCPP16StandardParametersKey.SupportedFeatureProfiles,
         'Core,FirmwareManagement'
       )
-      station.stationInfo = {
-        ...station.stationInfo,
-        firmwareStatus: OCPP16FirmwareStatus.Downloading,
+      if (station.stationInfo != null) {
+        station.stationInfo.firmwareStatus = OCPP16FirmwareStatus.Downloading
       }
 
       // Act

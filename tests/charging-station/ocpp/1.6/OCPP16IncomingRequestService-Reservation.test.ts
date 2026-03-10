@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
 import type { OCPP16CancelReservationRequest, OCPP16ReserveNowRequest } from '../../../../src/types/index.js'
+import type { MockOCPPRequestService } from '../../ChargingStationTestUtils.js'
 
 import {
   GenericStatus,
@@ -51,8 +52,8 @@ function enableReservationProfile (
   }
   stationWithReserve.getReserveConnectorZeroSupported = () => reserveConnectorZeroSupported
   // Mock auth: remote authorization returns Accepted
-  station.ocppRequestService.requestHandler = () =>
-    Promise.resolve({ idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } })
+  ;(station.ocppRequestService as unknown as MockOCPPRequestService).requestHandler =
+    async () => Promise.resolve({ idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } })
 }
 
 await describe('OCPP16IncomingRequestService — Reservation', async () => {

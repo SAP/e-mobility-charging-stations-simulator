@@ -1,5 +1,6 @@
 /**
  * @file Tests for OCPP 1.6 Reservation integration flows
+ * @module OCPP 1.6 — §8.2 ReserveNow, §8.1 CancelReservation, §5.11 RemoteStartTransaction
  * @description Multi-step integration tests for reservation lifecycle:
  * ReserveNow → CancelReservation and ReserveNow → RemoteStartTransaction flows.
  */
@@ -13,6 +14,7 @@ import type {
   OCPP16ReserveNowRequest,
   RemoteStartTransactionRequest,
 } from '../../../../src/types/index.js'
+import type { MockOCPPRequestService } from '../../ChargingStationTestUtils.js'
 
 import {
   GenericStatus,
@@ -49,8 +51,8 @@ function enableReservationProfile (context: OCPP16IncomingRequestTestContext): v
   }
   stationWithReserve.getReserveConnectorZeroSupported = () => false
   // Mock auth: remote authorization returns Accepted
-  station.ocppRequestService.requestHandler = () =>
-    Promise.resolve({ idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } })
+  ;(station.ocppRequestService as unknown as MockOCPPRequestService).requestHandler =
+    async () => Promise.resolve({ idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } })
 }
 
 await describe('OCPP16 Integration — Reservation Flow', async () => {

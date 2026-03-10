@@ -1,5 +1,7 @@
 /**
  * @file Tests for OCPP16ServiceUtils pure utility functions
+ * @module OCPP 1.6 — §4.7 MeterValues (meter value building), §9.3 SetChargingProfile
+ *   (charging profile management), §3 ChargePoint status (connector status transitions)
  * @description Verifies pure static methods on OCPP16ServiceUtils: meter value building,
  * charging profile management, feature profile checking, and command support checks.
  */
@@ -10,6 +12,7 @@ import { afterEach, describe, it } from 'node:test'
 import { OCPP16ServiceUtils } from '../../../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
 import { OCPPServiceUtils } from '../../../../src/charging-station/ocpp/OCPPServiceUtils.js'
 import {
+  IncomingRequestCommand,
   type OCPP16ChargingProfile,
   OCPP16ChargingProfilePurposeType,
   OCPP16ChargingRateUnitType,
@@ -23,7 +26,6 @@ import {
   OCPP16RequestCommand,
   OCPP16StandardParametersKey,
   OCPP16SupportedFeatureProfiles,
-  IncomingRequestCommand,
   OCPPVersion,
   RequestCommand,
 } from '../../../../src/types/index.js'

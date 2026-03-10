@@ -1,3 +1,9 @@
+/**
+ * @file OCPP 1.6 test utilities, fixtures, and mock helpers
+ * @description Provides context factories, charging profile fixtures, reservation fixtures,
+ *   and configuration key helpers for OCPP 1.6 unit and integration tests.
+ */
+
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
 import type { ConfigurationKey } from '../../../../src/types/ChargingStationOcppConfiguration.js'
 import type {
@@ -256,6 +262,11 @@ export function upsertConfigurationKey (
   }
 }
 
+/**
+ * Ensure configuration key array exists on the charging station.
+ * @param chargingStation - Charging station instance to ensure configuration for
+ * @returns The configuration key array
+ */
 function ensureConfig (chargingStation: ChargingStation): ConfigurationKey[] {
   chargingStation.ocppConfiguration ??= { configurationKey: [] }
   chargingStation.ocppConfiguration.configurationKey ??= []

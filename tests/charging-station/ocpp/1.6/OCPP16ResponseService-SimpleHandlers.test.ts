@@ -1,5 +1,7 @@
 /**
  * @file Tests for OCPP16ResponseService simple response handlers
+ * @module OCPP 1.6 — §4.9 DataTransfer, §6.2 DiagnosticsStatusNotification,
+ *   §6.5 FirmwareStatusNotification, §4.10 Heartbeat, §4.7 MeterValues, §4.8 StatusNotification
  * @description Verifies DataTransfer, DiagnosticsStatusNotification, FirmwareStatusNotification,
  * Heartbeat, MeterValues, and StatusNotification response handling
  */
@@ -12,6 +14,7 @@ import type { MockChargingStation } from '../../ChargingStationTestUtils.js'
 import { OCPP16ResponseService } from '../../../../src/charging-station/ocpp/1.6/OCPP16ResponseService.js'
 import {
   type OCPP16DataTransferResponse,
+  OCPP16DataTransferStatus,
   type OCPP16DiagnosticsStatusNotificationResponse,
   type OCPP16FirmwareStatusNotificationResponse,
   type OCPP16HeartbeatResponse,
@@ -59,7 +62,7 @@ await describe('OCPP16ResponseService — SimpleHandlers', async () => {
 
   await describe('DataTransfer response handler', async () => {
     await it('should handle DataTransfer response without throwing', async () => {
-      const payload: OCPP16DataTransferResponse = {}
+      const payload: OCPP16DataTransferResponse = { status: OCPP16DataTransferStatus.ACCEPTED }
       await expect(
         responseService.responseHandler(
           mockStation,
@@ -101,7 +104,7 @@ await describe('OCPP16ResponseService — SimpleHandlers', async () => {
 
   await describe('Heartbeat response handler', async () => {
     await it('should handle Heartbeat response without throwing', async () => {
-      const payload: OCPP16HeartbeatResponse = { currentTime: new Date().toISOString() }
+      const payload: OCPP16HeartbeatResponse = { currentTime: new Date() }
       await expect(
         responseService.responseHandler(
           mockStation,

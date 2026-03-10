@@ -6,12 +6,12 @@
 import { expect } from '@std/expect'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
+import { OCPP16DataTransferStatus } from '../../../../src/types/ocpp/1.6/Responses.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import {
   createOCPP16IncomingRequestTestContext,
   type OCPP16IncomingRequestTestContext,
 } from './OCPP16TestUtils.js'
-import { OCPP16DataTransferStatus } from '../../../../src/types/ocpp/1.6/Responses.js'
 
 await describe('OCPP16IncomingRequestService — SimpleHandlers', async () => {
   let context: OCPP16IncomingRequestTestContext
@@ -26,9 +26,9 @@ await describe('OCPP16IncomingRequestService — SimpleHandlers', async () => {
 
   // @spec §5.5: ClearCache
   await describe('handleRequestClearCache', async () => {
-    it('should return response with status field', () => {
+    await it('should return response with status field', () => {
       // Arrange
-      const { testableService, station } = context
+      const { station, testableService } = context
 
       // Act
       const response = testableService.handleRequestClearCache(station)
@@ -42,13 +42,13 @@ await describe('OCPP16IncomingRequestService — SimpleHandlers', async () => {
 
   // @spec §5.6: DataTransfer
   await describe('handleRequestDataTransfer', async () => {
-    it('should return UnknownVendorId status for unknown vendor', () => {
+    await it('should return UnknownVendorId status for unknown vendor', () => {
       // Arrange
-      const { testableService, station } = context
+      const { station, testableService } = context
       const dataTransferRequest = {
-        vendorId: 'unknown-vendor-xyz',
-        messageId: 'test-msg',
         data: 'test-data',
+        messageId: 'test-msg',
+        vendorId: 'unknown-vendor-xyz',
       }
 
       // Act
@@ -60,15 +60,17 @@ await describe('OCPP16IncomingRequestService — SimpleHandlers', async () => {
       expect(typeof response.status).toBe('string')
     })
 
-    it('should return Accepted status for matching vendor', () => {
+    await it('should return Accepted status for matching vendor', () => {
       // Arrange
-      const { testableService, station } = context
+      const { station, testableService } = context
       const matchingVendor = 'test-vendor-match'
-      station.stationInfo = { ...station.stationInfo, chargePointVendor: matchingVendor }
+      if (station.stationInfo != null) {
+        station.stationInfo.chargePointVendor = matchingVendor
+      }
       const dataTransferRequest = {
-        vendorId: matchingVendor,
-        messageId: 'test-msg',
         data: 'test-data',
+        messageId: 'test-msg',
+        vendorId: matchingVendor,
       }
 
       // Act

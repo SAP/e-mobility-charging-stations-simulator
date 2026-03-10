@@ -10,9 +10,11 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
 import type { TestableOCPP16IncomingRequestService } from '../../../../src/charging-station/ocpp/1.6/__testable__/index.js'
+import type { MockOCPPRequestService } from '../../ChargingStationTestUtils.js'
+
+import { OCPP16UnlockStatus } from '../../../../src/types/ocpp/1.6/Responses.js'
 import { OCPP16AuthorizationStatus } from '../../../../src/types/ocpp/1.6/Transaction.js'
 import { GenericStatus } from '../../../../src/types/ocpp/Common.js'
-import { OCPP16UnlockStatus } from '../../../../src/types/ocpp/1.6/Responses.js'
 import {
   setupConnectorWithTransaction,
   standardCleanup,
@@ -29,8 +31,8 @@ await describe('OCPP16IncomingRequestService — RemoteStopTransaction and Unloc
     testableService = ctx.testableService
 
     // Mock requestHandler so OCPP requests (StatusNotification, StopTransaction) resolve
-    station.ocppRequestService.requestHandler = async () =>
-      Promise.resolve({ idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } })
+    ;(station.ocppRequestService as unknown as MockOCPPRequestService).requestHandler =
+      async () => Promise.resolve({ idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } })
 
     // Mock stopTransactionOnConnector — called by UnlockConnector when transaction is active
     station.stopTransactionOnConnector = async () =>

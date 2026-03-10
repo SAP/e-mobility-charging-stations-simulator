@@ -37,9 +37,9 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
 
   // @spec §10.1 — TC_061_CS
   await describe('BootNotification trigger', async () => {
-    it('should return Accepted for BootNotification trigger', () => {
+    await it('should return Accepted for BootNotification trigger', () => {
       // Arrange
-      const { testableService, station } = context
+      const { station, testableService } = context
 
       // Act
       const response = testableService.handleRequestTriggerMessage(station, {
@@ -53,9 +53,9 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
 
   // @spec §10.1 — TC_062_CS
   await describe('Heartbeat trigger', async () => {
-    it('should return Accepted for Heartbeat trigger', () => {
+    await it('should return Accepted for Heartbeat trigger', () => {
       // Arrange
-      const { testableService, station } = context
+      const { station, testableService } = context
 
       // Act
       const response = testableService.handleRequestTriggerMessage(station, {
@@ -68,9 +68,9 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
   })
 
   await describe('StatusNotification trigger', async () => {
-    it('should return Accepted for StatusNotification trigger with connectorId', () => {
+    await it('should return Accepted for StatusNotification trigger with connectorId', () => {
       // Arrange
-      const { testableService, station } = context
+      const { station, testableService } = context
 
       // Act
       const response = testableService.handleRequestTriggerMessage(station, {
@@ -84,9 +84,9 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
   })
 
   await describe('MeterValues trigger', async () => {
-    it('should return NotImplemented for MeterValues trigger', () => {
+    await it('should return NotImplemented for MeterValues trigger', () => {
       // Arrange
-      const { testableService, station } = context
+      const { station, testableService } = context
 
       // Act
       const response = testableService.handleRequestTriggerMessage(station, {
@@ -100,9 +100,9 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
   })
 
   await describe('DiagnosticsStatusNotification trigger', async () => {
-    it('should return NotImplemented for DiagnosticsStatusNotification trigger', () => {
+    await it('should return NotImplemented for DiagnosticsStatusNotification trigger', () => {
       // Arrange
-      const { testableService, station } = context
+      const { station, testableService } = context
 
       // Act
       const response = testableService.handleRequestTriggerMessage(station, {
@@ -115,9 +115,9 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
   })
 
   await describe('FirmwareStatusNotification trigger', async () => {
-    it('should return NotImplemented for FirmwareStatusNotification trigger', () => {
+    await it('should return NotImplemented for FirmwareStatusNotification trigger', () => {
       // Arrange
-      const { testableService, station } = context
+      const { station, testableService } = context
 
       // Act
       const response = testableService.handleRequestTriggerMessage(station, {
@@ -130,9 +130,9 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
   })
 
   await describe('unsupported requestedMessage', async () => {
-    it('should return NotImplemented for unknown requestedMessage value', () => {
+    await it('should return NotImplemented for unknown requestedMessage value', () => {
       // Arrange
-      const { testableService, station } = context
+      const { station, testableService } = context
 
       // Act
       const response = testableService.handleRequestTriggerMessage(station, {
@@ -145,9 +145,9 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
   })
 
   await describe('feature profile not enabled', async () => {
-    it('should return NotImplemented when RemoteTrigger profile is not enabled', () => {
+    await it('should return NotImplemented when RemoteTrigger profile is not enabled', () => {
       // Arrange
-      const { testableService, station } = context
+      const { station, testableService } = context
       upsertConfigurationKey(
         station,
         OCPP16StandardParametersKey.SupportedFeatureProfiles,

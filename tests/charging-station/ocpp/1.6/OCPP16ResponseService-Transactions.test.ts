@@ -16,7 +16,9 @@ import type {
   OCPP16StopTransactionRequest,
   OCPP16StopTransactionResponse,
 } from '../../../../src/types/ocpp/1.6/Transaction.js'
+import type { MockOCPPRequestService } from '../../ChargingStationTestUtils.js'
 
+import { OCPP16MeterValueUnit } from '../../../../src/types/index.js'
 import { OCPP16RequestCommand } from '../../../../src/types/ocpp/1.6/Requests.js'
 import { OCPP16AuthorizationStatus } from '../../../../src/types/ocpp/1.6/Transaction.js'
 import {
@@ -35,7 +37,8 @@ await describe('OCPP16ResponseService — StartTransaction and StopTransaction',
     responseService = ctx.responseService
 
     // Mock requestHandler so OCPP requests (StatusNotification, MeterValues) resolve
-    station.ocppRequestService.requestHandler = async () => Promise.resolve({})
+    ;(station.ocppRequestService as unknown as MockOCPPRequestService).requestHandler =
+      async () => Promise.resolve({})
 
     // Mock startMeterValues/stopMeterValues to avoid real timer setup
     station.startMeterValues = (_connectorId: number, _interval: number) => {
@@ -50,7 +53,7 @@ await describe('OCPP16ResponseService — StartTransaction and StopTransaction',
       if (connectorId > 0) {
         const connector = station.getConnectorStatus(connectorId)
         if (connector != null) {
-          connector.MeterValues = [{ unit: 'Wh' }]
+          connector.MeterValues = [{ unit: OCPP16MeterValueUnit.WATT_HOUR, value: '0' }]
         }
       }
     }
