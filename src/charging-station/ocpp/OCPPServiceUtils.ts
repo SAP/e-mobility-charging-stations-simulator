@@ -67,8 +67,6 @@ import {
   min,
   roundTo,
 } from '../../utils/index.js'
-import { OCPP16Constants } from './1.6/OCPP16Constants.js'
-import { OCPP20Constants } from './2.0/OCPP20Constants.js'
 import { OCPPConstants } from './OCPPConstants.js'
 
 const moduleName = 'OCPPServiceUtils'
@@ -307,7 +305,7 @@ export const sendAndSetConnectorStatus = async (
     return
   }
   if (options.send) {
-    checkConnectorStatusTransition(chargingStation, connectorId, status)
+    await checkConnectorStatusTransition(chargingStation, connectorId, status)
     await chargingStation.ocppRequestService.requestHandler<
       StatusNotificationRequest,
       StatusNotificationResponse
@@ -339,15 +337,16 @@ export const restoreConnectorStatus = async (
   }
 }
 
-const checkConnectorStatusTransition = (
+const checkConnectorStatusTransition = async (
   chargingStation: ChargingStation,
   connectorId: number,
   status: ConnectorStatusEnum
-): boolean => {
+): Promise<boolean> => {
   const fromStatus = chargingStation.getConnectorStatus(connectorId)?.status
   let transitionAllowed = false
   switch (chargingStation.stationInfo?.ocppVersion) {
-    case OCPPVersion.VERSION_16:
+    case OCPPVersion.VERSION_16: {
+      const { OCPP16Constants } = await import('./1.6/OCPP16Constants.js')
       if (
         (connectorId === 0 &&
           OCPP16Constants.ChargePointStatusChargingStationTransitions.findIndex(
@@ -361,8 +360,10 @@ const checkConnectorStatusTransition = (
         transitionAllowed = true
       }
       break
+    }
     case OCPPVersion.VERSION_20:
-    case OCPPVersion.VERSION_201:
+    case OCPPVersion.VERSION_201: {
+      const { OCPP20Constants } = await import('./2.0/OCPP20Constants.js')
       if (
         (connectorId === 0 &&
           OCPP20Constants.ChargingStationStatusTransitions.findIndex(
@@ -376,6 +377,7 @@ const checkConnectorStatusTransition = (
         transitionAllowed = true
       }
       break
+    }
     default:
       throw new OCPPError(
         ErrorType.INTERNAL_ERROR,
