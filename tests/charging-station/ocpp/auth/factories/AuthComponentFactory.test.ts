@@ -3,7 +3,7 @@
  * @description Unit tests for authentication component factory
  */
 /* eslint-disable @typescript-eslint/no-confusing-void-expression */
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
 import type { AuthConfiguration } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
@@ -26,8 +26,8 @@ await describe('AuthComponentFactory', async () => {
       })
       const result = await AuthComponentFactory.createAdapters(chargingStation)
 
-      expect(result.ocpp16Adapter).toBeDefined()
-      expect(result.ocpp20Adapter).toBeUndefined()
+      assert.notStrictEqual(result.ocpp16Adapter, undefined)
+      assert.strictEqual(result.ocpp20Adapter, undefined)
     })
 
     await it('should create OCPP 2.0 adapter', async () => {
@@ -36,8 +36,8 @@ await describe('AuthComponentFactory', async () => {
       })
       const result = await AuthComponentFactory.createAdapters(chargingStation)
 
-      expect(result.ocpp16Adapter).toBeUndefined()
-      expect(result.ocpp20Adapter).toBeDefined()
+      assert.strictEqual(result.ocpp16Adapter, undefined)
+      assert.notStrictEqual(result.ocpp20Adapter, undefined)
     })
 
     await it('should create OCPP 2.0.1 adapter', async () => {
@@ -46,8 +46,8 @@ await describe('AuthComponentFactory', async () => {
       })
       const result = await AuthComponentFactory.createAdapters(chargingStation)
 
-      expect(result.ocpp16Adapter).toBeUndefined()
-      expect(result.ocpp20Adapter).toBeDefined()
+      assert.strictEqual(result.ocpp16Adapter, undefined)
+      assert.notStrictEqual(result.ocpp20Adapter, undefined)
     })
 
     await it('should throw error for unsupported version', async () => {
@@ -55,18 +55,14 @@ await describe('AuthComponentFactory', async () => {
         stationInfo: { ocppVersion: 'VERSION_15' as OCPPVersion },
       })
 
-      await expect(AuthComponentFactory.createAdapters(chargingStation)).rejects.toThrow(
-        'Unsupported OCPP version'
-      )
+      await assert.rejects(AuthComponentFactory.createAdapters(chargingStation), { message: /Unsupported OCPP version/ })
     })
 
     await it('should throw error when no OCPP version', async () => {
       const { station: chargingStation } = createMockChargingStation()
       chargingStation.stationInfo = undefined
 
-      await expect(AuthComponentFactory.createAdapters(chargingStation)).rejects.toThrow(
-        'OCPP version not found'
-      )
+      await assert.rejects(AuthComponentFactory.createAdapters(chargingStation), { message: /OCPP version not found/ })
     })
   })
 
@@ -84,11 +80,11 @@ await describe('AuthComponentFactory', async () => {
 
       const result = AuthComponentFactory.createAuthCache(config)
 
-      expect(result).toBeDefined()
-      expect(result).toHaveProperty('get')
-      expect(result).toHaveProperty('set')
-      expect(result).toHaveProperty('clear')
-      expect(result).toHaveProperty('getStats')
+      assert.notStrictEqual(result, undefined)
+      assert.strictEqual(typeof result.get, 'function')
+      assert.strictEqual(typeof result.set, 'function')
+      assert.strictEqual(typeof result.clear, 'function')
+      assert.strictEqual(typeof result.getStats, 'function')
     })
   })
 
@@ -107,7 +103,7 @@ await describe('AuthComponentFactory', async () => {
 
       const result = AuthComponentFactory.createLocalAuthListManager(chargingStation, config)
 
-      expect(result).toBeUndefined()
+      assert.strictEqual(result, undefined)
     })
   })
 
@@ -125,7 +121,7 @@ await describe('AuthComponentFactory', async () => {
 
       const result = await AuthComponentFactory.createLocalStrategy(undefined, undefined, config)
 
-      expect(result).toBeUndefined()
+      assert.strictEqual(result, undefined)
     })
 
     await it('should create local strategy when enabled', async () => {
@@ -141,9 +137,9 @@ await describe('AuthComponentFactory', async () => {
 
       const result = await AuthComponentFactory.createLocalStrategy(undefined, undefined, config)
 
-      expect(result).toBeDefined()
+      assert.notStrictEqual(result, undefined)
       if (result) {
-        expect(result.priority).toBe(1)
+        assert.strictEqual(result.priority, 1)
       }
     })
   })
@@ -167,7 +163,7 @@ await describe('AuthComponentFactory', async () => {
 
       const result = await AuthComponentFactory.createRemoteStrategy(adapters, undefined, config)
 
-      expect(result).toBeUndefined()
+      assert.strictEqual(result, undefined)
     })
 
     await it('should create remote strategy when enabled', async () => {
@@ -188,9 +184,9 @@ await describe('AuthComponentFactory', async () => {
 
       const result = await AuthComponentFactory.createRemoteStrategy(adapters, undefined, config)
 
-      expect(result).toBeDefined()
+      assert.notStrictEqual(result, undefined)
       if (result) {
-        expect(result.priority).toBe(2)
+        assert.strictEqual(result.priority, 2)
       }
     })
   })
@@ -217,8 +213,8 @@ await describe('AuthComponentFactory', async () => {
         config
       )
 
-      expect(result).toBeDefined()
-      expect(result.priority).toBe(3)
+      assert.notStrictEqual(result, undefined)
+      assert.strictEqual(result.priority, 3)
     })
   })
 
@@ -246,8 +242,8 @@ await describe('AuthComponentFactory', async () => {
         config
       )
 
-      expect(result).toHaveLength(1)
-      expect(result[0].priority).toBe(3)
+      assert.strictEqual(result.length, 1)
+      assert.strictEqual(result[0].priority, 3)
     })
 
     await it('should create and sort all strategies when enabled', async () => {
@@ -274,10 +270,10 @@ await describe('AuthComponentFactory', async () => {
         config
       )
 
-      expect(result).toHaveLength(3)
-      expect(result[0].priority).toBe(1) // Local
-      expect(result[1].priority).toBe(2) // Remote
-      expect(result[2].priority).toBe(3) // Certificate
+      assert.strictEqual(result.length, 3)
+      assert.strictEqual(result[0].priority, 1) // Local
+      assert.strictEqual(result[1].priority, 2) // Remote
+      assert.strictEqual(result[2].priority, 3) // Certificate
     })
   })
 
@@ -295,9 +291,9 @@ await describe('AuthComponentFactory', async () => {
         remoteAuthorization: true,
       }
 
-      expect(() => {
+      assert.doesNotThrow(() => {
         AuthComponentFactory.validateConfiguration(config)
-      }).not.toThrow()
+      })
     })
 
     await it('should throw on invalid configuration', () => {
@@ -312,9 +308,9 @@ await describe('AuthComponentFactory', async () => {
         offlineAuthorizationEnabled: false,
       }
 
-      expect(() => {
+      assert.throws(() => {
         AuthComponentFactory.validateConfiguration(config)
-      }).toThrow()
+      })
     })
   })
 })

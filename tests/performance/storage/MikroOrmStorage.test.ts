@@ -3,7 +3,7 @@
  * @description Unit and integration tests for MikroORM-based performance storage
  */
 import { MikroORM } from '@mikro-orm/better-sqlite'
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { existsSync, rmSync } from 'node:fs'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
@@ -104,13 +104,13 @@ await describe('MikroOrmStorage', async () => {
       const { mockOrm } = buildMockOrm()
       storage.setOrm(mockOrm)
       await storage.storePerformanceStatistics(buildTestStatistics('station-1'))
-      expect([...storage.getPerformanceStatistics()].length).toBe(1)
+      assert.strictEqual([...storage.getPerformanceStatistics()].length, 1)
 
       // Act
       await storage.close()
 
       // Assert
-      expect([...storage.getPerformanceStatistics()].length).toBe(0)
+      assert.strictEqual([...storage.getPerformanceStatistics()].length, 0)
     })
 
     await it('should call orm.close when ORM is initialized', async t => {
@@ -123,7 +123,7 @@ await describe('MikroOrmStorage', async () => {
       await storage.close()
 
       // Assert
-      expect(closeMock.mock.calls.length).toBe(1)
+      assert.strictEqual(closeMock.mock.calls.length, 1)
     })
 
     await it('should delete orm reference after closing', async () => {
@@ -135,7 +135,7 @@ await describe('MikroOrmStorage', async () => {
       await storage.close()
 
       // Assert
-      expect(storage.getOrm()).toBeUndefined()
+      assert.strictEqual(storage.getOrm(), undefined)
     })
 
     await it('should not fail when closing without prior open', async () => {
@@ -157,7 +157,7 @@ await describe('MikroOrmStorage', async () => {
       await storage.close()
 
       // Assert
-      expect(errorMock.mock.calls.length).toBe(1)
+      assert.strictEqual(errorMock.mock.calls.length, 1)
     })
   })
 
@@ -172,15 +172,15 @@ await describe('MikroOrmStorage', async () => {
       await storage.storePerformanceStatistics(stats)
 
       // Assert
-      expect(upsertCalls.length).toBe(1)
+      assert.strictEqual(upsertCalls.length, 1)
       const call = upsertCalls[0] as { data: Record<string, unknown>; entity: unknown }
-      expect(call.entity).toBe(PerformanceRecord)
+      assert.strictEqual(call.entity, PerformanceRecord)
       const statsArray = call.data.statisticsData as Record<string, unknown>[]
-      expect(Array.isArray(statsArray)).toBe(true)
-      expect(statsArray.length).toBe(1)
-      expect(statsArray[0].name).toBe('Heartbeat')
-      expect(statsArray[0].requestCount).toBe(100)
-      expect(statsArray[0].avgTimeMeasurement).toBe(10.5)
+      assert.ok(Array.isArray(statsArray))
+      assert.strictEqual(statsArray.length, 1)
+      assert.strictEqual(statsArray[0].name, 'Heartbeat')
+      assert.strictEqual(statsArray[0].requestCount, 100)
+      assert.strictEqual(statsArray[0].avgTimeMeasurement, 10.5)
     })
 
     await it('should spread measurementTimeSeries into plain array', async () => {
@@ -195,8 +195,8 @@ await describe('MikroOrmStorage', async () => {
       const call = upsertCalls[0] as { data: Record<string, unknown> }
       const statsArray = call.data.statisticsData as Record<string, unknown>[]
       const timeSeries = statsArray[0].measurementTimeSeries as unknown[]
-      expect(Array.isArray(timeSeries)).toBe(true)
-      expect(timeSeries.length).toBe(2)
+      assert.ok(Array.isArray(timeSeries))
+      assert.strictEqual(timeSeries.length, 2)
     })
 
     await it('should call upsert with PerformanceRecord entity class', async () => {
@@ -209,7 +209,7 @@ await describe('MikroOrmStorage', async () => {
 
       // Assert
       const call = upsertCalls[0] as { entity: unknown }
-      expect(call.entity).toBe(PerformanceRecord)
+      assert.strictEqual(call.entity, PerformanceRecord)
     })
 
     await it('should cache statistics in memory after store', async () => {
@@ -222,8 +222,8 @@ await describe('MikroOrmStorage', async () => {
 
       // Assert
       const cached = [...storage.getPerformanceStatistics()]
-      expect(cached.length).toBe(1)
-      expect(cached[0].id).toBe('station-1')
+      assert.strictEqual(cached.length, 1)
+      assert.strictEqual(cached[0].id, 'station-1')
     })
 
     await it('should handle multiple distinct records', async () => {
@@ -237,9 +237,9 @@ await describe('MikroOrmStorage', async () => {
       await storage.storePerformanceStatistics(buildTestStatistics('station-3'))
 
       // Assert
-      expect(upsertCalls.length).toBe(3)
+      assert.strictEqual(upsertCalls.length, 3)
       const cached = [...storage.getPerformanceStatistics()]
-      expect(cached.length).toBe(3)
+      assert.strictEqual(cached.length, 3)
     })
 
     await it('should handle statisticsData entry without measurementTimeSeries', async () => {
@@ -258,10 +258,10 @@ await describe('MikroOrmStorage', async () => {
       // Assert
       const call = upsertCalls[0] as { data: Record<string, unknown> }
       const statsArray = call.data.statisticsData as Record<string, unknown>[]
-      expect(statsArray.length).toBe(2)
+      assert.strictEqual(statsArray.length, 2)
       const statusEntry = statsArray.find(e => e.name === 'StatusNotification')
-      expect(statusEntry).toBeDefined()
-      expect(statusEntry?.measurementTimeSeries).toBeUndefined()
+      assert.notStrictEqual(statusEntry, undefined)
+      assert.strictEqual(statusEntry?.measurementTimeSeries, undefined)
     })
   })
 
@@ -274,7 +274,7 @@ await describe('MikroOrmStorage', async () => {
       await storage.storePerformanceStatistics(buildTestStatistics('station-1'))
 
       // Assert
-      expect(errorMock.mock.calls.length).toBe(1)
+      assert.strictEqual(errorMock.mock.calls.length, 1)
     })
 
     await it('should still cache statistics even when store fails', async () => {
@@ -283,8 +283,8 @@ await describe('MikroOrmStorage', async () => {
 
       // Assert
       const cached = [...storage.getPerformanceStatistics()]
-      expect(cached.length).toBe(1)
-      expect(cached[0].id).toBe('station-1')
+      assert.strictEqual(cached.length, 1)
+      assert.strictEqual(cached[0].id, 'station-1')
     })
 
     await it('should log error when upsert throws', async t => {
@@ -305,7 +305,7 @@ await describe('MikroOrmStorage', async () => {
       await storage.storePerformanceStatistics(buildTestStatistics('station-1'))
 
       // Assert
-      expect(errorMock.mock.calls.length).toBe(1)
+      assert.strictEqual(errorMock.mock.calls.length, 1)
     })
   })
 
@@ -313,7 +313,7 @@ await describe('MikroOrmStorage', async () => {
     await it('should open database and create schema', { skip: SKIP_SQLITE }, async () => {
       await storage.open()
 
-      expect(existsSync(TEST_DB_PATH)).toBe(true)
+      assert.ok(existsSync(TEST_DB_PATH))
     })
 
     await it('should persist record to SQLite database', { skip: SKIP_SQLITE }, async () => {
@@ -330,9 +330,9 @@ await describe('MikroOrmStorage', async () => {
       })
       try {
         const record = await verifyOrm.em.fork().findOne(PerformanceRecord, { id: 'station-1' })
-        expect(record).toBeDefined()
-        expect(record?.name).toBe('cs-station-1')
-        expect(record?.uri).toBe('ws://localhost:8080')
+        assert.notStrictEqual(record, undefined)
+        assert.strictEqual(record?.name, 'cs-station-1')
+        assert.strictEqual(record.uri, 'ws://localhost:8080')
       } finally {
         await verifyOrm.close()
       }
@@ -353,8 +353,8 @@ await describe('MikroOrmStorage', async () => {
       })
       try {
         const records = await verifyOrm.em.fork().findAll(PerformanceRecord)
-        expect(records.length).toBe(1)
-        expect(records[0].name).toBe('updated')
+        assert.strictEqual(records.length, 1)
+        assert.strictEqual(records[0].name, 'updated')
       } finally {
         await verifyOrm.close()
       }
@@ -377,13 +377,15 @@ await describe('MikroOrmStorage', async () => {
         })
         try {
           const record = await verifyOrm.em.fork().findOne(PerformanceRecord, { id: 'station-1' })
-          expect(record).toBeDefined()
-          expect(Array.isArray(record?.statisticsData)).toBe(true)
-          expect(record?.statisticsData.length).toBe(1)
-          const entry = record?.statisticsData[0]
-          expect(entry).toBeDefined()
-          expect(entry?.name).toBe('Heartbeat')
-          expect(entry?.requestCount).toBe(100)
+          if (record == null) {
+            assert.fail('Expected record to be defined')
+          }
+          assert.ok(Array.isArray(record.statisticsData))
+          assert.strictEqual(record.statisticsData.length, 1)
+          const entry = record.statisticsData[0]
+          assert.notStrictEqual(entry, undefined)
+          assert.strictEqual(entry.name, 'Heartbeat')
+          assert.strictEqual(entry.requestCount, 100)
         } finally {
           await verifyOrm.close()
         }
@@ -411,8 +413,8 @@ await describe('MikroOrmStorage', async () => {
       })
       try {
         const record = await verifyOrm.em.fork().findOne(PerformanceRecord, { id: 'station-1' })
-        expect(record).toBeDefined()
-        expect(record?.name).toBe('cs-station-1')
+        assert.notStrictEqual(record, undefined)
+        assert.strictEqual(record?.name, 'cs-station-1')
       } finally {
         await verifyOrm.close()
         await freshStorage.close()
@@ -435,9 +437,9 @@ await describe('MikroOrmStorage', async () => {
       })
       try {
         const records = await verifyOrm.em.fork().findAll(PerformanceRecord)
-        expect(records.length).toBe(3)
+        assert.strictEqual(records.length, 3)
         const ids = records.map(r => r.id).sort()
-        expect(ids).toStrictEqual(['station-1', 'station-2', 'station-3'])
+        assert.deepStrictEqual(ids, ['station-1', 'station-2', 'station-3'])
       } finally {
         await verifyOrm.close()
       }

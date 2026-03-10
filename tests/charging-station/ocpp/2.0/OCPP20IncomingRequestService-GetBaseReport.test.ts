@@ -1,9 +1,9 @@
+import { millisecondsToSeconds } from 'date-fns'
 /**
  * @file Tests for OCPP20IncomingRequestService GetBaseReport
  * @description Unit tests for OCPP 2.0 GetBaseReport command handling (B07)
  */
-import { expect } from '@std/expect'
-import { millisecondsToSeconds } from 'date-fns'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
@@ -97,8 +97,8 @@ await describe('B07 - Get Base Report', async () => {
 
     const response = testableService.handleRequestGetBaseReport(station, request)
 
-    expect(response).toBeDefined()
-    expect(response.status).toBe(GenericDeviceModelStatusEnumType.Accepted)
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(response.status, GenericDeviceModelStatusEnumType.Accepted)
   })
 
   // FR: B08.FR.02
@@ -110,8 +110,8 @@ await describe('B07 - Get Base Report', async () => {
 
     const response = testableService.handleRequestGetBaseReport(station, request)
 
-    expect(response).toBeDefined()
-    expect(response.status).toBe(GenericDeviceModelStatusEnumType.Accepted)
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(response.status, GenericDeviceModelStatusEnumType.Accepted)
   })
 
   await it('should include registry variables with Actual attribute only for unsupported types', () => {
@@ -121,12 +121,12 @@ await describe('B07 - Get Base Report', async () => {
         item.variable.name === (OCPP20OptionalVariableName.HeartbeatInterval as string) &&
         item.component.name === (OCPP20ComponentName.OCPPCommCtrlr as string)
     )
-    expect(heartbeatEntry).toBeDefined()
+    assert.notStrictEqual(heartbeatEntry, undefined)
     if (heartbeatEntry) {
       const types =
         heartbeatEntry.variableAttribute?.map((a: { type?: string; value?: string }) => a.type) ??
         []
-      expect(types).toStrictEqual([AttributeEnumType.Actual])
+      assert.deepStrictEqual(types, [AttributeEnumType.Actual])
     }
     // Boolean variable (AuthorizeRemoteStart) should only include Actual
     const authorizeRemoteStartEntry = reportData.find(
@@ -134,13 +134,13 @@ await describe('B07 - Get Base Report', async () => {
         item.variable.name === (OCPP20RequiredVariableName.AuthorizeRemoteStart as string) &&
         item.component.name === (OCPP20ComponentName.AuthCtrlr as string)
     )
-    expect(authorizeRemoteStartEntry).toBeDefined()
+    assert.notStrictEqual(authorizeRemoteStartEntry, undefined)
     if (authorizeRemoteStartEntry) {
       const types =
         authorizeRemoteStartEntry.variableAttribute?.map(
           (a: { type?: string; value?: string }) => a.type
         ) ?? []
-      expect(types).toStrictEqual([AttributeEnumType.Actual])
+      assert.deepStrictEqual(types, [AttributeEnumType.Actual])
     }
   })
 
@@ -153,8 +153,8 @@ await describe('B07 - Get Base Report', async () => {
 
     const response = testableService.handleRequestGetBaseReport(station, request)
 
-    expect(response).toBeDefined()
-    expect(response.status).toBe(GenericDeviceModelStatusEnumType.Accepted)
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(response.status, GenericDeviceModelStatusEnumType.Accepted)
   })
 
   // FR: B08.FR.04
@@ -166,8 +166,8 @@ await describe('B07 - Get Base Report', async () => {
 
     const response = testableService.handleRequestGetBaseReport(station, request)
 
-    expect(response).toBeDefined()
-    expect(response.status).toBe(GenericDeviceModelStatusEnumType.NotSupported)
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(response.status, GenericDeviceModelStatusEnumType.NotSupported)
   })
 
   // FR: B08.FR.05
@@ -181,8 +181,8 @@ await describe('B07 - Get Base Report', async () => {
 
     const response = testableService.handleRequestGetBaseReport(station, request)
 
-    expect(response).toBeDefined()
-    expect(response.status).toBe(GenericDeviceModelStatusEnumType.Accepted)
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(response.status, GenericDeviceModelStatusEnumType.Accepted)
   })
 
   // FR: B08.FR.06
@@ -196,8 +196,8 @@ await describe('B07 - Get Base Report', async () => {
     // and checking if it returns Accepted status (which means data was built successfully)
     const response = testableService.handleRequestGetBaseReport(station, request)
 
-    expect(response).toBeDefined()
-    expect(response.status).toBe(GenericDeviceModelStatusEnumType.Accepted)
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(response.status, GenericDeviceModelStatusEnumType.Accepted)
 
     // We can also test the buildReportData method directly if needed
     const reportData = testableService.buildReportData(
@@ -205,18 +205,18 @@ await describe('B07 - Get Base Report', async () => {
       ReportBaseEnumType.ConfigurationInventory
     )
 
-    expect(Array.isArray(reportData)).toBe(true)
-    expect(reportData.length).toBeGreaterThan(0)
+    assert.ok(Array.isArray(reportData))
+    assert.ok(reportData.length > 0)
 
     // Check that each report data item has the expected structure
     for (const item of reportData) {
-      expect(item.component).toBeDefined()
-      expect(item.component.name).toBeDefined()
-      expect(item.variable).toBeDefined()
-      expect(item.variable.name).toBeDefined()
-      expect(item.variableAttribute).toBeDefined()
-      expect(Array.isArray(item.variableAttribute)).toBe(true)
-      expect(item.variableCharacteristics).toBeDefined()
+      assert.notStrictEqual(item.component, undefined)
+      assert.notStrictEqual(item.component.name, undefined)
+      assert.notStrictEqual(item.variable, undefined)
+      assert.notStrictEqual(item.variable.name, undefined)
+      assert.notStrictEqual(item.variableAttribute, undefined)
+      assert.ok(Array.isArray(item.variableAttribute))
+      assert.notStrictEqual(item.variableCharacteristics, undefined)
     }
   })
 
@@ -224,8 +224,8 @@ await describe('B07 - Get Base Report', async () => {
   await it('should build correct report data for FullInventory with station info', () => {
     const reportData = testableService.buildReportData(station, ReportBaseEnumType.FullInventory)
 
-    expect(Array.isArray(reportData)).toBe(true)
-    expect(reportData.length).toBeGreaterThan(0)
+    assert.ok(Array.isArray(reportData))
+    assert.ok(reportData.length > 0)
 
     // Check for station info variables
     const modelVariable = reportData.find(
@@ -233,9 +233,9 @@ await describe('B07 - Get Base Report', async () => {
         item.variable.name === (OCPP20DeviceInfoVariableName.Model as string) &&
         item.component.name === (OCPP20ComponentName.ChargingStation as string)
     )
-    expect(modelVariable).toBeDefined()
+    assert.notStrictEqual(modelVariable, undefined)
     if (modelVariable) {
-      expect(modelVariable.variableAttribute?.[0]?.value).toBe(TEST_CHARGE_POINT_MODEL)
+      assert.strictEqual(modelVariable.variableAttribute?.[0]?.value, TEST_CHARGE_POINT_MODEL)
     }
 
     const vendorVariable = reportData.find(
@@ -243,9 +243,9 @@ await describe('B07 - Get Base Report', async () => {
         item.variable.name === (OCPP20DeviceInfoVariableName.VendorName as string) &&
         item.component.name === (OCPP20ComponentName.ChargingStation as string)
     )
-    expect(vendorVariable).toBeDefined()
+    assert.notStrictEqual(vendorVariable, undefined)
     if (vendorVariable) {
-      expect(vendorVariable.variableAttribute?.[0]?.value).toBe(TEST_CHARGE_POINT_VENDOR)
+      assert.strictEqual(vendorVariable.variableAttribute?.[0]?.value, TEST_CHARGE_POINT_VENDOR)
     }
   })
 
@@ -253,8 +253,8 @@ await describe('B07 - Get Base Report', async () => {
   await it('should build correct report data for SummaryInventory', () => {
     const reportData = testableService.buildReportData(station, ReportBaseEnumType.SummaryInventory)
 
-    expect(Array.isArray(reportData)).toBe(true)
-    expect(reportData.length).toBeGreaterThan(0)
+    assert.ok(Array.isArray(reportData))
+    assert.ok(reportData.length > 0)
 
     // Check for availability state variable
     const availabilityVariable = reportData.find(
@@ -262,9 +262,9 @@ await describe('B07 - Get Base Report', async () => {
         item.variable.name === (OCPP20DeviceInfoVariableName.AvailabilityState as string) &&
         item.component.name === (OCPP20ComponentName.ChargingStation as string)
     )
-    expect(availabilityVariable).toBeDefined()
+    assert.notStrictEqual(availabilityVariable, undefined)
     if (availabilityVariable) {
-      expect(availabilityVariable.variableCharacteristics?.supportsMonitoring).toBe(true)
+      assert.strictEqual(availabilityVariable.variableCharacteristics?.supportsMonitoring, true)
     }
   })
 
@@ -291,7 +291,7 @@ await describe('B07 - Get Base Report', async () => {
         variable: { name: OCPP20RequiredVariableName.TimeSource },
       },
     ])
-    expect(setResult[0].attributeStatus).toBe('Accepted')
+    assert.strictEqual(setResult[0].attributeStatus, 'Accepted')
 
     // Build report; value should be truncated to length 10
     const reportData = testableService.buildReportData(station, ReportBaseEnumType.FullInventory)
@@ -300,15 +300,15 @@ await describe('B07 - Get Base Report', async () => {
         item.variable.name === (OCPP20RequiredVariableName.TimeSource as string) &&
         item.component.name === (OCPP20ComponentName.ClockCtrlr as string)
     )
-    expect(timeSourceEntry).toBeDefined()
+    assert.notStrictEqual(timeSourceEntry, undefined)
     if (timeSourceEntry) {
       const reportedAttr = timeSourceEntry.variableAttribute?.find(
         (a: { type?: string; value?: string }) => a.type === AttributeEnumType.Actual
       )
-      expect(reportedAttr).toBeDefined()
+      assert.notStrictEqual(reportedAttr, undefined)
       if (reportedAttr && typeof reportedAttr.value === 'string') {
-        expect(reportedAttr.value.length).toBe(10)
-        expect(longValue.startsWith(reportedAttr.value)).toBe(true)
+        assert.strictEqual(reportedAttr.value.length, 10)
+        assert.ok(longValue.startsWith(reportedAttr.value))
       }
     }
   })
@@ -333,15 +333,15 @@ await describe('B07 - Get Base Report', async () => {
       ReportBaseEnumType.FullInventory
     )
 
-    expect(Array.isArray(reportData)).toBe(true)
-    expect(reportData.length).toBeGreaterThan(0)
+    assert.ok(Array.isArray(reportData))
+    assert.ok(reportData.length > 0)
 
     // Check if EVSE components are included when EVSEs exist
     const evseComponents = reportData.filter(
       (item: ReportDataType) => item.component.name === (OCPP20ComponentName.EVSE as string)
     )
     if (stationWithEvses.hasEvses) {
-      expect(evseComponents.length).toBeGreaterThan(0)
+      assert.ok(evseComponents.length > 0)
     }
   })
 
@@ -352,7 +352,7 @@ await describe('B07 - Get Base Report', async () => {
       'InvalidReportBase' as unknown as ReportBaseEnumType
     )
 
-    expect(Array.isArray(reportData)).toBe(true)
-    expect(reportData.length).toBe(0)
+    assert.ok(Array.isArray(reportData))
+    assert.strictEqual(reportData.length, 0)
   })
 })

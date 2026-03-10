@@ -2,7 +2,7 @@
  * @file Tests for OCPP16AuthAdapter
  * @description Unit tests for OCPP 1.6 authentication adapter
  */
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../../src/charging-station/ChargingStation.js'
@@ -61,7 +61,7 @@ await describe('OCPP16AuthAdapter', async () => {
 
   await describe('constructor', async () => {
     await it('should initialize with correct OCPP version', () => {
-      expect(adapter.ocppVersion).toBe(OCPPVersion.VERSION_16)
+      assert.strictEqual(adapter.ocppVersion, OCPPVersion.VERSION_16)
     })
   })
 
@@ -71,9 +71,9 @@ await describe('OCPP16AuthAdapter', async () => {
       const result = adapter.convertToUnifiedIdentifier(idTag)
 
       const expected = createMockIdentifier(OCPPVersion.VERSION_16, idTag)
-      expect(result.value).toBe(expected.value)
-      expect(result.type).toBe(expected.type)
-      expect(result.ocppVersion).toBe(expected.ocppVersion)
+      assert.strictEqual(result.value, expected.value)
+      assert.strictEqual(result.type, expected.type)
+      assert.strictEqual(result.ocppVersion, expected.ocppVersion)
     })
 
     await it('should include additional data in unified identifier', () => {
@@ -81,9 +81,9 @@ await describe('OCPP16AuthAdapter', async () => {
       const additionalData = { customField: 'customValue', parentId: 'PARENT_TAG' }
       const result = adapter.convertToUnifiedIdentifier(idTag, additionalData)
 
-      expect(result.value).toBe(idTag)
-      expect(result.parentId).toBe('PARENT_TAG')
-      expect(result.additionalInfo?.customField).toBe('customValue')
+      assert.strictEqual(result.value, idTag)
+      assert.strictEqual(result.parentId, 'PARENT_TAG')
+      assert.strictEqual(result.additionalInfo?.customField, 'customValue')
     })
   })
 
@@ -92,7 +92,7 @@ await describe('OCPP16AuthAdapter', async () => {
       const identifier = createMockIdentifier(OCPPVersion.VERSION_16, 'TEST_ID_TAG')
 
       const result = adapter.convertFromUnifiedIdentifier(identifier)
-      expect(result).toBe('TEST_ID_TAG')
+      assert.strictEqual(result, 'TEST_ID_TAG')
     })
   })
 
@@ -100,13 +100,13 @@ await describe('OCPP16AuthAdapter', async () => {
     await it('should validate correct OCPP 1.6 identifier', () => {
       const identifier = createMockIdentifier(OCPPVersion.VERSION_16, 'VALID_TAG')
 
-      expect(adapter.isValidIdentifier(identifier)).toBe(true)
+      assert.strictEqual(adapter.isValidIdentifier(identifier), true)
     })
 
     await it('should reject identifier with empty value', () => {
       const identifier = createMockIdentifier(OCPPVersion.VERSION_16, '')
 
-      expect(adapter.isValidIdentifier(identifier)).toBe(false)
+      assert.strictEqual(adapter.isValidIdentifier(identifier), false)
     })
 
     await it('should reject identifier exceeding max length (20 chars)', () => {
@@ -115,7 +115,7 @@ await describe('OCPP16AuthAdapter', async () => {
         'THIS_TAG_IS_TOO_LONG_FOR_OCPP16'
       )
 
-      expect(adapter.isValidIdentifier(identifier)).toBe(false)
+      assert.strictEqual(adapter.isValidIdentifier(identifier), false)
     })
 
     await it('should reject non-ID_TAG types', () => {
@@ -125,7 +125,7 @@ await describe('OCPP16AuthAdapter', async () => {
         IdentifierType.CENTRAL
       )
 
-      expect(adapter.isValidIdentifier(identifier)).toBe(false)
+      assert.strictEqual(adapter.isValidIdentifier(identifier), false)
     })
   })
 
@@ -133,26 +133,26 @@ await describe('OCPP16AuthAdapter', async () => {
     await it('should create auth request for transaction start', () => {
       const request = adapter.createAuthRequest('TEST_TAG', 1, 123, 'start')
 
-      expect(request.identifier.value).toBe('TEST_TAG')
-      expect(request.identifier.type).toBe(IdentifierType.ID_TAG)
-      expect(request.connectorId).toBe(1)
-      expect(request.transactionId).toBe('123')
-      expect(request.context).toBe(AuthContext.TRANSACTION_START)
-      expect(request.metadata?.ocppVersion).toBe(OCPPVersion.VERSION_16)
+      assert.strictEqual(request.identifier.value, 'TEST_TAG')
+      assert.strictEqual(request.identifier.type, IdentifierType.ID_TAG)
+      assert.strictEqual(request.connectorId, 1)
+      assert.strictEqual(request.transactionId, '123')
+      assert.strictEqual(request.context, AuthContext.TRANSACTION_START)
+      assert.strictEqual(request.metadata?.ocppVersion, OCPPVersion.VERSION_16)
     })
 
     await it('should map context strings to AuthContext enum', () => {
       const remoteStartReq = adapter.createAuthRequest('TAG1', 1, undefined, 'remote_start')
-      expect(remoteStartReq.context).toBe(AuthContext.REMOTE_START)
+      assert.strictEqual(remoteStartReq.context, AuthContext.REMOTE_START)
 
       const remoteStopReq = adapter.createAuthRequest('TAG2', 2, undefined, 'remote_stop')
-      expect(remoteStopReq.context).toBe(AuthContext.REMOTE_STOP)
+      assert.strictEqual(remoteStopReq.context, AuthContext.REMOTE_STOP)
 
       const stopReq = adapter.createAuthRequest('TAG3', 3, undefined, 'stop')
-      expect(stopReq.context).toBe(AuthContext.TRANSACTION_STOP)
+      assert.strictEqual(stopReq.context, AuthContext.TRANSACTION_STOP)
 
       const defaultReq = adapter.createAuthRequest('TAG4', 4, undefined, 'unknown')
-      expect(defaultReq.context).toBe(AuthContext.TRANSACTION_START)
+      assert.strictEqual(defaultReq.context, AuthContext.TRANSACTION_START)
     })
   })
 
@@ -162,10 +162,10 @@ await describe('OCPP16AuthAdapter', async () => {
 
       const result = await adapter.authorizeRemote(identifier, 1, 123)
 
-      expect(result.status).toBe(AuthorizationStatus.ACCEPTED)
-      expect(result.method).toBeDefined()
-      expect(result.isOffline).toBe(false)
-      expect(result.timestamp).toBeInstanceOf(Date)
+      assert.strictEqual(result.status, AuthorizationStatus.ACCEPTED)
+      assert.notStrictEqual(result.method, undefined)
+      assert.strictEqual(result.isOffline, false)
+      assert.ok(result.timestamp instanceof Date)
     })
 
     await it('should handle authorization failure gracefully', async () => {
@@ -179,22 +179,22 @@ await describe('OCPP16AuthAdapter', async () => {
 
       const result = await adapter.authorizeRemote(identifier, 1)
 
-      expect(result.status).toBe(AuthorizationStatus.INVALID)
-      expect(result.additionalInfo?.error).toBeDefined()
+      assert.strictEqual(result.status, AuthorizationStatus.INVALID)
+      assert.notStrictEqual(result.additionalInfo?.error, undefined)
     })
   })
 
   await describe('isRemoteAvailable', async () => {
     await it('should return true when remote authorization is enabled and online', () => {
       const isAvailable = adapter.isRemoteAvailable()
-      expect(isAvailable).toBe(true)
+      assert.strictEqual(isAvailable, true)
     })
 
     await it('should return false when station is offline', () => {
       mockStation.inAcceptedState = () => false
 
       const isAvailable = adapter.isRemoteAvailable()
-      expect(isAvailable).toBe(false)
+      assert.strictEqual(isAvailable, false)
     })
 
     await it('should return false when remote authorization is disabled', () => {
@@ -203,7 +203,7 @@ await describe('OCPP16AuthAdapter', async () => {
       }
 
       const isAvailable = adapter.isRemoteAvailable()
-      expect(isAvailable).toBe(false)
+      assert.strictEqual(isAvailable, false)
     })
   })
 
@@ -221,7 +221,7 @@ await describe('OCPP16AuthAdapter', async () => {
       }
 
       const isValid = adapter.validateConfiguration(config)
-      expect(isValid).toBe(true)
+      assert.strictEqual(isValid, true)
     })
 
     await it('should reject configuration with no auth methods', () => {
@@ -237,7 +237,7 @@ await describe('OCPP16AuthAdapter', async () => {
       }
 
       const isValid = adapter.validateConfiguration(config)
-      expect(isValid).toBe(false)
+      assert.strictEqual(isValid, false)
     })
 
     await it('should reject configuration with invalid timeout', () => {
@@ -253,7 +253,7 @@ await describe('OCPP16AuthAdapter', async () => {
       }
 
       const isValid = adapter.validateConfiguration(config)
-      expect(isValid).toBe(false)
+      assert.strictEqual(isValid, false)
     })
   })
 
@@ -261,11 +261,11 @@ await describe('OCPP16AuthAdapter', async () => {
     await it('should return adapter status information', () => {
       const status = adapter.getStatus()
 
-      expect(status.ocppVersion).toBe(OCPPVersion.VERSION_16)
-      expect(status.isOnline).toBe(true)
-      expect(status.localAuthEnabled).toBe(true)
-      expect(status.remoteAuthEnabled).toBe(true)
-      expect(status.stationId).toBe('TEST-001')
+      assert.strictEqual(status.ocppVersion, OCPPVersion.VERSION_16)
+      assert.strictEqual(status.isOnline, true)
+      assert.strictEqual(status.localAuthEnabled, true)
+      assert.strictEqual(status.remoteAuthEnabled, true)
+      assert.strictEqual(status.stationId, 'TEST-001')
     })
   })
 
@@ -273,14 +273,14 @@ await describe('OCPP16AuthAdapter', async () => {
     await it('should return OCPP 1.6 configuration schema', () => {
       const schema = adapter.getConfigurationSchema()
 
-      expect(schema.type).toBe('object')
-      expect(schema.properties).toBeDefined()
+      assert.strictEqual(schema.type, 'object')
+      assert.notStrictEqual(schema.properties, undefined)
       const properties = schema.properties as Record<string, unknown>
-      expect(properties.localAuthListEnabled).toBeDefined()
-      expect(properties.remoteAuthorization).toBeDefined()
+      assert.notStrictEqual(properties.localAuthListEnabled, undefined)
+      assert.notStrictEqual(properties.remoteAuthorization, undefined)
       const required = schema.required as string[]
-      expect(required).toContain('localAuthListEnabled')
-      expect(required).toContain('remoteAuthorization')
+      assert.ok(required.includes('localAuthListEnabled'))
+      assert.ok(required.includes('remoteAuthorization'))
     })
   })
 
@@ -295,9 +295,9 @@ await describe('OCPP16AuthAdapter', async () => {
 
       const response = adapter.convertToOCPP16Response(result)
 
-      expect(response.idTagInfo.status).toBe(OCPP16AuthorizationStatus.ACCEPTED)
-      expect(response.idTagInfo.parentIdTag).toBe('PARENT_TAG')
-      expect(response.idTagInfo.expiryDate).toBe(expiryDate)
+      assert.strictEqual(response.idTagInfo.status, OCPP16AuthorizationStatus.ACCEPTED)
+      assert.strictEqual(response.idTagInfo.parentIdTag, 'PARENT_TAG')
+      assert.strictEqual(response.idTagInfo.expiryDate, expiryDate)
     })
   })
 })

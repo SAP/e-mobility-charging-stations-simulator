@@ -3,7 +3,7 @@
  * @description Unit tests for OCPP 2.0 certificate management and validation
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { rm } from 'node:fs/promises'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
@@ -27,9 +27,9 @@ const TEST_CERT_TYPE = InstallCertificateUseEnumType.CSMSRootCertificate
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- kept for future assertions
 const _EXPECTED_HASH_DATA = {
   hashAlgorithm: HashAlgorithmEnumType.SHA256,
-  issuerKeyHash: expect.stringMatching(/^[a-fA-F0-9]+$/),
-  issuerNameHash: expect.stringMatching(/^[a-fA-F0-9]+$/),
-  serialNumber: expect.any(String),
+  issuerKeyHash: /^[a-fA-F0-9]+$/,
+  issuerNameHash: /^[a-fA-F0-9]+$/,
+  serialNumber: '<any-string>',
 }
 
 await describe('I02-I04 - ISO15118 Certificate Management', async () => {
@@ -63,11 +63,12 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
         VALID_PEM_CERTIFICATE_EXTENDED
       )
 
-      expect(result).toBeDefined()
-      expect(result.success).toBe(true)
-      expect(result.filePath).toContain(TEST_STATION_HASH_ID)
-      expect(result.filePath).toContain('certs')
-      expect(result.filePath).toMatch(/\.pem$/)
+      assert.notStrictEqual(result, undefined)
+      assert.strictEqual(result.success, true)
+      if (result.filePath == null) { assert.fail('Expected filePath to be defined') }
+      assert.ok(result.filePath.includes(TEST_STATION_HASH_ID))
+      assert.ok(result.filePath.includes('certs'))
+      assert.match(result.filePath, /\.pem$/)
     })
 
     await it('should reject invalid PEM certificate without BEGIN/END markers', async () => {
@@ -77,9 +78,10 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
         INVALID_PEM_CERTIFICATE_MISSING_MARKERS
       )
 
-      expect(result).toBeDefined()
-      expect(result.success).toBe(false)
-      expect(result.error).toContain('Invalid PEM format')
+      assert.notStrictEqual(result, undefined)
+      assert.strictEqual(result.success, false)
+      if (result.error == null) { assert.fail('Expected error to be defined') }
+      assert.ok(result.error.includes('Invalid PEM format'))
     })
 
     await it('should reject empty certificate data', async () => {
@@ -89,9 +91,9 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
         EMPTY_PEM_CERTIFICATE
       )
 
-      expect(result).toBeDefined()
-      expect(result.success).toBe(false)
-      expect(result.error).toBeDefined()
+      assert.notStrictEqual(result, undefined)
+      assert.strictEqual(result.success, false)
+      assert.notStrictEqual(result.error, undefined)
     })
 
     await it('should create certificate directory structure if not exists', async () => {
@@ -101,9 +103,10 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
         VALID_PEM_CERTIFICATE_EXTENDED
       )
 
-      expect(result).toBeDefined()
-      expect(result.success).toBe(true)
-      expect(result.filePath).toContain('V2GRootCertificate')
+      assert.notStrictEqual(result, undefined)
+      assert.strictEqual(result.success, true)
+      if (result.filePath == null) { assert.fail('Expected filePath to be defined') }
+      assert.ok(result.filePath.includes('V2GRootCertificate'))
     })
   })
 
@@ -123,9 +126,9 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
 
       const result = await manager.deleteCertificate(TEST_STATION_HASH_ID, hashData)
 
-      expect(result).toBeDefined()
-      expect(result.status).toBeDefined()
-      expect(['Accepted', 'NotFound', 'Failed']).toContain(result.status)
+      assert.notStrictEqual(result, undefined)
+      assert.notStrictEqual(result.status, undefined)
+      assert.ok(['Accepted', 'Failed', 'NotFound'].includes(result.status))
     })
 
     await it('should return NotFound for non-existent certificate', async () => {
@@ -138,8 +141,8 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
 
       const result = await manager.deleteCertificate(TEST_STATION_HASH_ID, hashData)
 
-      expect(result).toBeDefined()
-      expect(result.status).toBe('NotFound')
+      assert.notStrictEqual(result, undefined)
+      assert.strictEqual(result.status, 'NotFound')
     })
 
     await it('should handle filesystem errors gracefully', async () => {
@@ -152,8 +155,8 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
 
       const result = await manager.deleteCertificate('invalid-station-id', hashData)
 
-      expect(result).toBeDefined()
-      expect(['NotFound', 'Failed']).toContain(result.status)
+      assert.notStrictEqual(result, undefined)
+      assert.ok(['Failed', 'NotFound'].includes(result.status))
     })
   })
 
@@ -166,23 +169,23 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
     await it('should return list of installed certificates for station', async () => {
       const result = await manager.getInstalledCertificates(TEST_STATION_HASH_ID)
 
-      expect(result).toBeDefined()
-      expect(Array.isArray(result.certificateHashDataChain)).toBe(true)
+      assert.notStrictEqual(result, undefined)
+      assert.ok(Array.isArray(result.certificateHashDataChain))
     })
 
     await it('should filter certificates by type when filter provided', async () => {
       const filterTypes = [InstallCertificateUseEnumType.CSMSRootCertificate]
       const result = await manager.getInstalledCertificates(TEST_STATION_HASH_ID, filterTypes)
 
-      expect(result).toBeDefined()
-      expect(Array.isArray(result.certificateHashDataChain)).toBe(true)
+      assert.notStrictEqual(result, undefined)
+      assert.ok(Array.isArray(result.certificateHashDataChain))
     })
 
     await it('should return empty list when no certificates installed', async () => {
       const result = await manager.getInstalledCertificates('empty-station-hash-id')
 
-      expect(result).toBeDefined()
-      expect(result.certificateHashDataChain).toHaveLength(0)
+      assert.notStrictEqual(result, undefined)
+      assert.strictEqual(result.certificateHashDataChain.length, 0)
     })
 
     await it('should support multiple certificate type filters', async () => {
@@ -193,8 +196,8 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
       ]
       const result = await manager.getInstalledCertificates(TEST_STATION_HASH_ID, filterTypes)
 
-      expect(result).toBeDefined()
-      expect(Array.isArray(result.certificateHashDataChain)).toBe(true)
+      assert.notStrictEqual(result, undefined)
+      assert.ok(Array.isArray(result.certificateHashDataChain))
     })
   })
 
@@ -207,34 +210,34 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
     await it('should compute hash data for valid PEM certificate', () => {
       const hashData = manager.computeCertificateHash(VALID_PEM_CERTIFICATE_EXTENDED)
 
-      expect(hashData).toBeDefined()
-      expect(hashData.hashAlgorithm).toBe(HashAlgorithmEnumType.SHA256)
-      expect(hashData.issuerNameHash).toBeDefined()
-      expect(typeof hashData.issuerNameHash).toBe('string')
-      expect(hashData.issuerKeyHash).toBeDefined()
-      expect(typeof hashData.issuerKeyHash).toBe('string')
-      expect(hashData.serialNumber).toBeDefined()
-      expect(typeof hashData.serialNumber).toBe('string')
+      assert.notStrictEqual(hashData, undefined)
+      assert.strictEqual(hashData.hashAlgorithm, HashAlgorithmEnumType.SHA256)
+      assert.notStrictEqual(hashData.issuerNameHash, undefined)
+      assert.strictEqual(typeof hashData.issuerNameHash, 'string')
+      assert.notStrictEqual(hashData.issuerKeyHash, undefined)
+      assert.strictEqual(typeof hashData.issuerKeyHash, 'string')
+      assert.notStrictEqual(hashData.serialNumber, undefined)
+      assert.strictEqual(typeof hashData.serialNumber, 'string')
     })
 
     await it('should return hex-encoded hash values', () => {
       const hashData = manager.computeCertificateHash(VALID_PEM_CERTIFICATE_EXTENDED)
 
       const hexPattern = /^[a-fA-F0-9]+$/
-      expect(hashData.issuerNameHash).toMatch(hexPattern)
-      expect(hashData.issuerKeyHash).toMatch(hexPattern)
+      assert.match(hashData.issuerNameHash, hexPattern)
+      assert.match(hashData.issuerKeyHash, hexPattern)
     })
 
     await it('should throw error for invalid PEM certificate', () => {
-      expect(() => {
+      assert.throws(() => {
         manager.computeCertificateHash(INVALID_PEM_CERTIFICATE_MISSING_MARKERS)
-      }).toThrow()
+      })
     })
 
     await it('should throw error for empty certificate', () => {
-      expect(() => {
+      assert.throws(() => {
         manager.computeCertificateHash(EMPTY_PEM_CERTIFICATE)
-      }).toThrow()
+      })
     })
 
     await it('should support SHA384 hash algorithm', () => {
@@ -243,8 +246,8 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
         HashAlgorithmEnumType.SHA384
       )
 
-      expect(hashData).toBeDefined()
-      expect(hashData.hashAlgorithm).toBe(HashAlgorithmEnumType.SHA384)
+      assert.notStrictEqual(hashData, undefined)
+      assert.strictEqual(hashData.hashAlgorithm, HashAlgorithmEnumType.SHA384)
     })
 
     await it('should support SHA512 hash algorithm', () => {
@@ -253,8 +256,8 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
         HashAlgorithmEnumType.SHA512
       )
 
-      expect(hashData).toBeDefined()
-      expect(hashData.hashAlgorithm).toBe(HashAlgorithmEnumType.SHA512)
+      assert.notStrictEqual(hashData, undefined)
+      assert.strictEqual(hashData.hashAlgorithm, HashAlgorithmEnumType.SHA512)
     })
   })
 
@@ -267,32 +270,32 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
     await it('should return true for valid PEM certificate', () => {
       const isValid = manager.validateCertificateFormat(VALID_PEM_CERTIFICATE_EXTENDED)
 
-      expect(isValid).toBe(true)
+      assert.strictEqual(isValid, true)
     })
 
     await it('should return false for certificate without BEGIN marker', () => {
       const isValid = manager.validateCertificateFormat(INVALID_PEM_CERTIFICATE_MISSING_MARKERS)
 
-      expect(isValid).toBe(false)
+      assert.strictEqual(isValid, false)
     })
 
     await it('should return false for certificate with wrong markers', () => {
       const isValid = manager.validateCertificateFormat(INVALID_PEM_WRONG_MARKERS)
 
-      expect(isValid).toBe(false)
+      assert.strictEqual(isValid, false)
     })
 
     await it('should return false for empty string', () => {
       const isValid = manager.validateCertificateFormat(EMPTY_PEM_CERTIFICATE)
 
-      expect(isValid).toBe(false)
+      assert.strictEqual(isValid, false)
     })
 
     await it('should return false for null/undefined input', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- testing invalid null input
-      expect(manager.validateCertificateFormat(null as any)).toBe(false)
+      assert.strictEqual(manager.validateCertificateFormat(null as any), false)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- testing invalid undefined input
-      expect(manager.validateCertificateFormat(undefined as any)).toBe(false)
+      assert.strictEqual(manager.validateCertificateFormat(undefined as any), false)
     })
 
     await it('should return true for certificate with extra whitespace', () => {
@@ -306,7 +309,7 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
 
       const isValid = manager.validateCertificateFormat(pemWithWhitespace)
 
-      expect(isValid).toBe(true)
+      assert.strictEqual(isValid, true)
     })
   })
 
@@ -319,12 +322,12 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
     await it('should return correct file path for certificate', () => {
       const path = manager.getCertificatePath(TEST_STATION_HASH_ID, TEST_CERT_TYPE, 'SERIAL-12345')
 
-      expect(path).toBeDefined()
-      expect(path).toContain(TEST_STATION_HASH_ID)
-      expect(path).toContain('certs')
-      expect(path).toContain('CSMSRootCertificate')
-      expect(path).toContain('SERIAL-12345')
-      expect(path).toMatch(/\.pem$/)
+      assert.notStrictEqual(path, undefined)
+      assert.ok(path.includes(TEST_STATION_HASH_ID))
+      assert.ok(path.includes('certs'))
+      assert.ok(path.includes('CSMSRootCertificate'))
+      assert.ok(path.includes('SERIAL-12345'))
+      assert.match(path, /\.pem$/)
     })
 
     await it('should handle special characters in serial number', () => {
@@ -334,10 +337,11 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
         'SERIAL:ABC/123'
       )
 
-      expect(path).toBeDefined()
+      assert.notStrictEqual(path, undefined)
       const filename = path.split('/').pop()
-      expect(filename).not.toContain(':')
-      expect(filename).not.toContain('/')
+      if (filename == null) { assert.fail('Expected filename to be defined') }
+      assert.ok(!(filename).includes(':'))
+      assert.ok(!(filename).includes('/'))
     })
 
     await it('should return different paths for different certificate types', () => {
@@ -353,17 +357,17 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
         'SERIAL-001'
       )
 
-      expect(csmsPath).not.toBe(v2gPath)
-      expect(csmsPath).toContain('CSMSRootCertificate')
-      expect(v2gPath).toContain('V2GRootCertificate')
+      assert.notStrictEqual(csmsPath, v2gPath)
+      assert.ok(csmsPath.includes('CSMSRootCertificate'))
+      assert.ok(v2gPath.includes('V2GRootCertificate'))
     })
 
     await it('should return path following project convention', () => {
       const path = manager.getCertificatePath(TEST_STATION_HASH_ID, TEST_CERT_TYPE, 'SERIAL-12345')
 
-      expect(path).toMatch(/configurations/)
-      expect(path).toMatch(/certs/)
-      expect(path).toMatch(/\.pem$/)
+      assert.match(path, /configurations/)
+      assert.match(path, /certs/)
+      assert.match(path, /\.pem$/)
     })
   })
 
@@ -388,9 +392,9 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
         manager.getInstalledCertificates(TEST_STATION_HASH_ID),
       ])
 
-      expect(results).toHaveLength(3)
+      assert.strictEqual(results.length, 3)
       results.forEach(result => {
-        expect(result).toBeDefined()
+        assert.notStrictEqual(result, undefined)
       })
     })
 
@@ -399,7 +403,7 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
 
       const result = await manager.storeCertificate(TEST_STATION_HASH_ID, TEST_CERT_TYPE, longChain)
 
-      expect(result).toBeDefined()
+      assert.notStrictEqual(result, undefined)
     })
 
     await it('should sanitize station hash ID for filesystem safety', () => {
@@ -407,7 +411,7 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
 
       const path = manager.getCertificatePath(maliciousHashId, TEST_CERT_TYPE, 'SERIAL-001')
 
-      expect(path).not.toContain('..')
+      assert.ok(!(path).includes('..'))
     })
   })
 })

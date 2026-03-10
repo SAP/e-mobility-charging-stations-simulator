@@ -4,7 +4,7 @@
  *   buildConnectorsStatus, buildEvsesStatus, buildChargingStationAutomaticTransactionGeneratorConfiguration,
  *   and the OutputFormat enum.
  */
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
@@ -50,8 +50,8 @@ await describe('ChargingStationConfigurationUtils', async () => {
 
   await describe('OutputFormat', async () => {
     await it('should have correct enum values', () => {
-      expect(OutputFormat.configuration).toBe('configuration')
-      expect(OutputFormat.worker).toBe('worker')
+      assert.strictEqual(OutputFormat.configuration, 'configuration')
+      assert.strictEqual(OutputFormat.worker, 'worker')
     })
   })
 
@@ -80,13 +80,13 @@ await describe('ChargingStationConfigurationUtils', async () => {
         const station = createMockStationForConfigUtils({ connectors })
         const result = buildConnectorsStatus(station)
 
-        expect(result.length).toBe(2)
+        assert.strictEqual(result.length, 2)
         for (const connector of result) {
-          expect('transactionSetInterval' in connector).toBe(false)
-          expect('transactionEventQueue' in connector).toBe(false)
-          expect('transactionTxUpdatedSetInterval' in connector).toBe(false)
+          assert.ok(!('transactionSetInterval' in connector))
+          assert.ok(!('transactionEventQueue' in connector))
+          assert.ok(!('transactionTxUpdatedSetInterval' in connector))
         }
-        expect(result[1].availability).toBe(AvailabilityType.Operative)
+        assert.strictEqual(result[1].availability, AvailabilityType.Operative)
       } finally {
         clearInterval(interval1)
         clearInterval(interval2)
@@ -96,7 +96,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
     await it('should handle empty connectors map', () => {
       const station = createMockStationForConfigUtils({ connectors: new Map() })
       const result = buildConnectorsStatus(station)
-      expect(result.length).toBe(0)
+      assert.strictEqual(result.length, 0)
     })
 
     await it('should preserve non-internal fields', () => {
@@ -115,10 +115,10 @@ await describe('ChargingStationConfigurationUtils', async () => {
       const station = createMockStationForConfigUtils({ connectors })
       const result = buildConnectorsStatus(station)
 
-      expect(result.length).toBe(1)
-      expect(result[0].availability).toBe(AvailabilityType.Operative)
-      expect(result[0].transactionId).toBe(42)
-      expect(result[0].transactionStarted).toBe(true)
+      assert.strictEqual(result.length, 1)
+      assert.strictEqual(result[0].availability, AvailabilityType.Operative)
+      assert.strictEqual(result[0].transactionId, 42)
+      assert.strictEqual(result[0].transactionStarted, true)
     })
   })
 
@@ -146,10 +146,10 @@ await describe('ChargingStationConfigurationUtils', async () => {
       const station = createMockStationForConfigUtils({ evses })
       const result = buildEvsesStatus(station, OutputFormat.configuration)
 
-      expect(result.length).toBe(2)
+      assert.strictEqual(result.length, 2)
       const evse1 = result[1] as Record<string, unknown>
-      expect('connectorsStatus' in evse1).toBe(true)
-      expect('connectors' in evse1).toBe(false)
+      assert.ok('connectorsStatus' in evse1)
+      assert.ok(!('connectors' in evse1))
     })
 
     await it('should strip internal fields from evse connectors in configuration format', () => {
@@ -173,10 +173,10 @@ await describe('ChargingStationConfigurationUtils', async () => {
       const evse1 = result[0] as Record<string, unknown>
       const connectorsStatus = evse1.connectorsStatus as ConnectorStatus[]
 
-      expect(connectorsStatus.length).toBe(1)
-      expect('transactionSetInterval' in connectorsStatus[0]).toBe(false)
-      expect('transactionEventQueue' in connectorsStatus[0]).toBe(false)
-      expect('transactionTxUpdatedSetInterval' in connectorsStatus[0]).toBe(false)
+      assert.strictEqual(connectorsStatus.length, 1)
+      assert.ok(!('transactionSetInterval' in connectorsStatus[0]))
+      assert.ok(!('transactionEventQueue' in connectorsStatus[0]))
+      assert.ok(!('transactionTxUpdatedSetInterval' in connectorsStatus[0]))
     })
 
     await it('should return worker format with connectors array', () => {
@@ -202,10 +202,10 @@ await describe('ChargingStationConfigurationUtils', async () => {
       const station = createMockStationForConfigUtils({ evses })
       const result = buildEvsesStatus(station, OutputFormat.worker)
 
-      expect(result.length).toBe(2)
+      assert.strictEqual(result.length, 2)
       const evse1 = result[1] as Record<string, unknown>
-      expect('connectors' in evse1).toBe(true)
-      expect(Array.isArray(evse1.connectors)).toBe(true)
+      assert.ok('connectors' in evse1)
+      assert.ok(Array.isArray(evse1.connectors))
     })
 
     await it('should default to configuration format when no format specified', () => {
@@ -218,16 +218,16 @@ await describe('ChargingStationConfigurationUtils', async () => {
       const station = createMockStationForConfigUtils({ evses })
       const result = buildEvsesStatus(station)
 
-      expect(result.length).toBe(1)
+      assert.strictEqual(result.length, 1)
       const evse = result[0] as Record<string, unknown>
-      expect('connectorsStatus' in evse).toBe(true)
-      expect('connectors' in evse).toBe(false)
+      assert.ok('connectorsStatus' in evse)
+      assert.ok(!('connectors' in evse))
     })
 
     await it('should handle empty evses map', () => {
       const station = createMockStationForConfigUtils({ evses: new Map() })
       const result = buildEvsesStatus(station, OutputFormat.configuration)
-      expect(result.length).toBe(0)
+      assert.strictEqual(result.length, 0)
     })
 
     await it('should throw RangeError for unknown output format', () => {
@@ -238,9 +238,9 @@ await describe('ChargingStationConfigurationUtils', async () => {
       })
       const station = createMockStationForConfigUtils({ evses })
 
-      expect(() => {
+      assert.throws(() => {
         buildEvsesStatus(station, 'unknown' as OutputFormat)
-      }).toThrow(RangeError)
+      }, RangeError)
     })
   })
 
@@ -255,10 +255,10 @@ await describe('ChargingStationConfigurationUtils', async () => {
       })
       const result = buildChargingStationAutomaticTransactionGeneratorConfiguration(station)
 
-      expect(result.automaticTransactionGenerator).toStrictEqual(atgConfig)
-      expect(result.automaticTransactionGeneratorStatuses).toBeDefined()
-      expect(Array.isArray(result.automaticTransactionGeneratorStatuses)).toBe(true)
-      expect(result.automaticTransactionGeneratorStatuses?.length).toBe(1)
+      assert.deepStrictEqual(result.automaticTransactionGenerator, atgConfig)
+      assert.notStrictEqual(result.automaticTransactionGeneratorStatuses, undefined)
+      assert.ok(Array.isArray(result.automaticTransactionGeneratorStatuses))
+      assert.strictEqual(result.automaticTransactionGeneratorStatuses.length, 1)
     })
 
     await it('should return ATG configuration without statuses when no ATG instance', () => {
@@ -269,8 +269,8 @@ await describe('ChargingStationConfigurationUtils', async () => {
       })
       const result = buildChargingStationAutomaticTransactionGeneratorConfiguration(station)
 
-      expect(result.automaticTransactionGenerator).toStrictEqual(atgConfig)
-      expect(result.automaticTransactionGeneratorStatuses).toBeUndefined()
+      assert.deepStrictEqual(result.automaticTransactionGenerator, atgConfig)
+      assert.strictEqual(result.automaticTransactionGeneratorStatuses, undefined)
     })
 
     await it('should return undefined ATG config when not configured', () => {
@@ -280,8 +280,8 @@ await describe('ChargingStationConfigurationUtils', async () => {
       })
       const result = buildChargingStationAutomaticTransactionGeneratorConfiguration(station)
 
-      expect(result.automaticTransactionGenerator).toBeUndefined()
-      expect(result.automaticTransactionGeneratorStatuses).toBeUndefined()
+      assert.strictEqual(result.automaticTransactionGenerator, undefined)
+      assert.strictEqual(result.automaticTransactionGeneratorStatuses, undefined)
     })
 
     await it('should return ATG configuration without statuses when connectorsStatus is null', () => {
@@ -294,8 +294,8 @@ await describe('ChargingStationConfigurationUtils', async () => {
       })
       const result = buildChargingStationAutomaticTransactionGeneratorConfiguration(station)
 
-      expect(result.automaticTransactionGenerator).toStrictEqual(atgConfig)
-      expect(result.automaticTransactionGeneratorStatuses).toBeUndefined()
+      assert.deepStrictEqual(result.automaticTransactionGenerator, atgConfig)
+      assert.strictEqual(result.automaticTransactionGeneratorStatuses, undefined)
     })
   })
 })

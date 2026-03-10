@@ -3,8 +3,8 @@
  * @description Unit tests for OCPP 2.0 variable management and device model
  */
 
-import { expect } from '@std/expect'
 import { millisecondsToSeconds } from 'date-fns'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
@@ -108,8 +108,8 @@ await describe('B05 - OCPP20VariableManager', async () => {
     const manager1 = OCPP20VariableManager.getInstance()
     const manager2 = OCPP20VariableManager.getInstance()
 
-    expect(manager1).toBeDefined()
-    expect(manager1).toBe(manager2) // Same instance (singleton)
+    assert.notStrictEqual(manager1, undefined)
+    assert.strictEqual(manager1, manager2) // Same instance (singleton)
   })
 
   await describe('getVariables method tests', async () => {
@@ -134,24 +134,24 @@ await describe('B05 - OCPP20VariableManager', async () => {
 
       const result = manager.getVariables(station, request)
 
-      expect(Array.isArray(result)).toBe(true)
-      expect(result).toHaveLength(2)
+      assert.ok(Array.isArray(result))
+      assert.strictEqual(result.length, 2)
       // First variable: HeartbeatInterval
-      expect(result[0].attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(result[0].attributeType).toBe(AttributeEnumType.Actual)
-      expect(result[0].attributeValue).toBe(
+      assert.strictEqual(result[0].attributeStatus, GetVariableStatusEnumType.Accepted)
+      assert.strictEqual(result[0].attributeType, AttributeEnumType.Actual)
+      assert.strictEqual(result[0].attributeValue,
         millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL).toString()
       )
-      expect(result[0].component.name).toBe(OCPP20ComponentName.OCPPCommCtrlr)
-      expect(result[0].variable.name).toBe(OCPP20OptionalVariableName.HeartbeatInterval)
-      expect(result[0].attributeStatusInfo).toBeUndefined()
+      assert.strictEqual(result[0].component.name, OCPP20ComponentName.OCPPCommCtrlr)
+      assert.strictEqual(result[0].variable.name, OCPP20OptionalVariableName.HeartbeatInterval)
+      assert.strictEqual(result[0].attributeStatusInfo, undefined)
       // Second variable: EVConnectionTimeOut
-      expect(result[1].attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(result[1].attributeType).toBe(AttributeEnumType.Actual)
-      expect(result[1].attributeValue).toBe(Constants.DEFAULT_EV_CONNECTION_TIMEOUT.toString())
-      expect(result[1].component.name).toBe(OCPP20ComponentName.TxCtrlr)
-      expect(result[1].variable.name).toBe(OCPP20RequiredVariableName.EVConnectionTimeOut)
-      expect(result[1].attributeStatusInfo).toBeUndefined()
+      assert.strictEqual(result[1].attributeStatus, GetVariableStatusEnumType.Accepted)
+      assert.strictEqual(result[1].attributeType, AttributeEnumType.Actual)
+      assert.strictEqual(result[1].attributeValue, Constants.DEFAULT_EV_CONNECTION_TIMEOUT.toString())
+      assert.strictEqual(result[1].component.name, OCPP20ComponentName.TxCtrlr)
+      assert.strictEqual(result[1].variable.name, OCPP20RequiredVariableName.EVConnectionTimeOut)
+      assert.strictEqual(result[1].attributeStatusInfo, undefined)
     })
 
     await it('should accept default true value for AuthorizeRemoteStart (AuthCtrlr)', () => {
@@ -163,10 +163,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
         },
       ]
       const result = manager.getVariables(station, request)
-      expect(result).toHaveLength(1)
-      expect(result[0].attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(result[0].attributeValue).toBe('true')
-      expect(result[0].component.name).toBe(OCPP20ComponentName.AuthCtrlr)
+      assert.strictEqual(result.length, 1)
+      assert.strictEqual(result[0].attributeStatus, GetVariableStatusEnumType.Accepted)
+      assert.strictEqual(result[0].attributeValue, 'true')
+      assert.strictEqual(result[0].component.name, OCPP20ComponentName.AuthCtrlr)
     })
 
     await it('should accept setting and getting AuthorizeRemoteStart = true (AuthCtrlr)', () => {
@@ -177,15 +177,15 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20RequiredVariableName.AuthorizeRemoteStart },
         },
       ])[0]
-      expect(setRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      assert.strictEqual(setRes.attributeStatus, SetVariableStatusEnumType.Accepted)
       const getRes = manager.getVariables(station, [
         {
           component: { name: OCPP20ComponentName.AuthCtrlr },
           variable: { name: OCPP20RequiredVariableName.AuthorizeRemoteStart },
         },
       ])[0]
-      expect(getRes.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(getRes.attributeValue).toBe('true')
+      assert.strictEqual(getRes.attributeStatus, GetVariableStatusEnumType.Accepted)
+      assert.strictEqual(getRes.attributeValue, 'true')
     })
 
     await it('should reject invalid values for AuthorizeRemoteStart (AuthCtrlr)', () => {
@@ -198,8 +198,8 @@ await describe('B05 - OCPP20VariableManager', async () => {
             variable: { name: OCPP20RequiredVariableName.AuthorizeRemoteStart },
           },
         ])[0]
-        expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-        expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
+        assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Rejected)
+        assert.strictEqual(res.attributeStatusInfo?.reasonCode, ReasonCodeEnumType.InvalidValue)
       }
     })
 
@@ -213,17 +213,18 @@ await describe('B05 - OCPP20VariableManager', async () => {
 
       const result = manager.getVariables(station, request)
 
-      expect(Array.isArray(result)).toBe(true)
-      expect(result).toHaveLength(1)
+      assert.ok(Array.isArray(result))
+      assert.strictEqual(result.length, 1)
       // Behavior: invalid component is rejected before variable support check
-      expect(result[0].attributeStatus).toBe(GetVariableStatusEnumType.UnknownComponent)
-      expect(result[0].attributeType).toBe(AttributeEnumType.Actual)
-      expect(result[0].attributeValue).toBeUndefined()
-      expect(result[0].component.name).toBe('InvalidComponent')
-      expect(result[0].variable.name).toBe('SomeVariable')
-      expect(result[0].attributeStatusInfo).toBeDefined()
-      expect(result[0].attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.NotFound)
-      expect(result[0].attributeStatusInfo?.additionalInfo).toContain('Component InvalidComponent')
+      assert.strictEqual(result[0].attributeStatus, GetVariableStatusEnumType.UnknownComponent)
+      assert.strictEqual(result[0].attributeType, AttributeEnumType.Actual)
+      assert.strictEqual(result[0].attributeValue, undefined)
+      assert.strictEqual(result[0].component.name, 'InvalidComponent')
+      assert.strictEqual(result[0].variable.name, 'SomeVariable')
+      if (result[0].attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
+      if (result[0].attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.strictEqual(result[0].attributeStatusInfo.reasonCode, ReasonCodeEnumType.NotFound)
+      assert.ok(result[0].attributeStatusInfo.additionalInfo.includes('Component InvalidComponent'))
     })
 
     await it('should handle unsupported attribute type gracefully', () => {
@@ -237,18 +238,19 @@ await describe('B05 - OCPP20VariableManager', async () => {
 
       const result = manager.getVariables(station, request)
 
-      expect(Array.isArray(result)).toBe(true)
-      expect(result).toHaveLength(1)
-      expect(result[0].attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
-      expect(result[0].attributeType).toBe(AttributeEnumType.Target)
-      expect(result[0].attributeValue).toBeUndefined()
-      expect(result[0].component.name).toBe(OCPP20ComponentName.OCPPCommCtrlr)
-      expect(result[0].variable.name).toBe(OCPP20OptionalVariableName.HeartbeatInterval)
-      expect(result[0].attributeStatusInfo).toBeDefined()
-      expect(result[0].attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
-      expect(result[0].attributeStatusInfo?.additionalInfo).toContain(
+      assert.ok(Array.isArray(result))
+      assert.strictEqual(result.length, 1)
+      assert.strictEqual(result[0].attributeStatus, GetVariableStatusEnumType.NotSupportedAttributeType)
+      assert.strictEqual(result[0].attributeType, AttributeEnumType.Target)
+      assert.strictEqual(result[0].attributeValue, undefined)
+      assert.strictEqual(result[0].component.name, OCPP20ComponentName.OCPPCommCtrlr)
+      assert.strictEqual(result[0].variable.name, OCPP20OptionalVariableName.HeartbeatInterval)
+      if (result[0].attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
+      if (result[0].attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.strictEqual(result[0].attributeStatusInfo.reasonCode, ReasonCodeEnumType.UnsupportedParam)
+      assert.ok(result[0].attributeStatusInfo.additionalInfo.includes(
         'Attribute type Target is not supported'
-      )
+      ))
     })
 
     await it('should reject Target attribute for WebSocketPingInterval', () => {
@@ -260,9 +262,9 @@ await describe('B05 - OCPP20VariableManager', async () => {
         },
       ]
       const result = manager.getVariables(station, request)
-      expect(result).toHaveLength(1)
-      expect(result[0].attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
-      expect(result[0].variable.name).toBe(OCPP20OptionalVariableName.WebSocketPingInterval)
+      assert.strictEqual(result.length, 1)
+      assert.strictEqual(result[0].attributeStatus, GetVariableStatusEnumType.NotSupportedAttributeType)
+      assert.strictEqual(result[0].variable.name, OCPP20OptionalVariableName.WebSocketPingInterval)
     })
 
     await it('should handle non-existent connector instance', () => {
@@ -278,19 +280,20 @@ await describe('B05 - OCPP20VariableManager', async () => {
 
       const result = manager.getVariables(station, request)
 
-      expect(Array.isArray(result)).toBe(true)
-      expect(result).toHaveLength(1)
-      expect(result[0].attributeStatus).toBe(GetVariableStatusEnumType.UnknownComponent)
-      expect(result[0].attributeType).toBe(AttributeEnumType.Actual)
-      expect(result[0].attributeValue).toBeUndefined()
-      expect(result[0].component.name).toBe(OCPP20ComponentName.Connector)
-      expect(result[0].component.instance).toBe('999')
-      expect(result[0].variable.name).toBe(OCPP20RequiredVariableName.AuthorizeRemoteStart)
-      expect(result[0].attributeStatusInfo).toBeDefined()
-      expect(result[0].attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.NotFound)
-      expect(result[0].attributeStatusInfo?.additionalInfo).toContain(
+      assert.ok(Array.isArray(result))
+      assert.strictEqual(result.length, 1)
+      assert.strictEqual(result[0].attributeStatus, GetVariableStatusEnumType.UnknownComponent)
+      assert.strictEqual(result[0].attributeType, AttributeEnumType.Actual)
+      assert.strictEqual(result[0].attributeValue, undefined)
+      assert.strictEqual(result[0].component.name, OCPP20ComponentName.Connector)
+      assert.strictEqual(result[0].component.instance, '999')
+      assert.strictEqual(result[0].variable.name, OCPP20RequiredVariableName.AuthorizeRemoteStart)
+      if (result[0].attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
+      if (result[0].attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.strictEqual(result[0].attributeStatusInfo.reasonCode, ReasonCodeEnumType.NotFound)
+      assert.ok(result[0].attributeStatusInfo.additionalInfo.includes(
         'Component Connector is not supported'
-      )
+      ))
     })
 
     await it('should handle multiple variables in single request', () => {
@@ -312,32 +315,32 @@ await describe('B05 - OCPP20VariableManager', async () => {
 
       const result = manager.getVariables(station, request)
 
-      expect(Array.isArray(result)).toBe(true)
-      expect(result).toHaveLength(3)
+      assert.ok(Array.isArray(result))
+      assert.strictEqual(result.length, 3)
       // First variable: HeartbeatInterval
-      expect(result[0].attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(result[0].attributeType).toBe(AttributeEnumType.Actual)
-      expect(result[0].attributeValue).toBe(
+      assert.strictEqual(result[0].attributeStatus, GetVariableStatusEnumType.Accepted)
+      assert.strictEqual(result[0].attributeType, AttributeEnumType.Actual)
+      assert.strictEqual(result[0].attributeValue,
         millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL).toString()
       )
-      expect(result[0].component.name).toBe(OCPP20ComponentName.OCPPCommCtrlr)
-      expect(result[0].variable.name).toBe(OCPP20OptionalVariableName.HeartbeatInterval)
-      expect(result[0].attributeStatusInfo).toBeUndefined()
+      assert.strictEqual(result[0].component.name, OCPP20ComponentName.OCPPCommCtrlr)
+      assert.strictEqual(result[0].variable.name, OCPP20OptionalVariableName.HeartbeatInterval)
+      assert.strictEqual(result[0].attributeStatusInfo, undefined)
       // Second variable: WebSocketPingInterval
-      expect(result[1].attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(result[1].attributeType).toBe(AttributeEnumType.Actual)
-      expect(result[1].attributeValue).toBe(Constants.DEFAULT_WEBSOCKET_PING_INTERVAL.toString())
-      expect(result[1].component.name).toBe(OCPP20ComponentName.ChargingStation)
-      expect(result[1].variable.name).toBe(OCPP20OptionalVariableName.WebSocketPingInterval)
-      expect(result[1].attributeStatusInfo).toBeUndefined()
+      assert.strictEqual(result[1].attributeStatus, GetVariableStatusEnumType.Accepted)
+      assert.strictEqual(result[1].attributeType, AttributeEnumType.Actual)
+      assert.strictEqual(result[1].attributeValue, Constants.DEFAULT_WEBSOCKET_PING_INTERVAL.toString())
+      assert.strictEqual(result[1].component.name, OCPP20ComponentName.ChargingStation)
+      assert.strictEqual(result[1].variable.name, OCPP20OptionalVariableName.WebSocketPingInterval)
+      assert.strictEqual(result[1].attributeStatusInfo, undefined)
       // Third variable: MessageTimeout
-      expect(result[2].attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(result[2].attributeType).toBe(AttributeEnumType.Actual)
-      expect(result[2].attributeValue).toBe(Constants.DEFAULT_CONNECTION_TIMEOUT.toString())
-      expect(result[2].component.name).toBe(OCPP20ComponentName.OCPPCommCtrlr)
-      expect(result[2].component.instance).toBe('Default')
-      expect(result[2].variable.name).toBe(OCPP20RequiredVariableName.MessageTimeout)
-      expect(result[2].attributeStatusInfo).toBeUndefined()
+      assert.strictEqual(result[2].attributeStatus, GetVariableStatusEnumType.Accepted)
+      assert.strictEqual(result[2].attributeType, AttributeEnumType.Actual)
+      assert.strictEqual(result[2].attributeValue, Constants.DEFAULT_CONNECTION_TIMEOUT.toString())
+      assert.strictEqual(result[2].component.name, OCPP20ComponentName.OCPPCommCtrlr)
+      assert.strictEqual(result[2].component.instance, 'Default')
+      assert.strictEqual(result[2].variable.name, OCPP20RequiredVariableName.MessageTimeout)
+      assert.strictEqual(result[2].attributeStatusInfo, undefined)
     })
 
     await it('should reject unknown variable on EVSE component', () => {
@@ -353,16 +356,16 @@ await describe('B05 - OCPP20VariableManager', async () => {
 
       const result = manager.getVariables(station, request)
 
-      expect(Array.isArray(result)).toBe(true)
-      expect(result).toHaveLength(1)
-      expect(result[0].attributeStatus).toBe(GetVariableStatusEnumType.UnknownVariable)
-      expect(result[0].attributeType).toBe(AttributeEnumType.Actual)
-      expect(result[0].attributeValue).toBeUndefined()
-      expect(result[0].component.name).toBe(OCPP20ComponentName.EVSE)
-      expect(result[0].component.instance).toBe('1')
-      expect(result[0].variable.name).toBe(OCPP20RequiredVariableName.AuthorizeRemoteStart)
-      expect(result[0].attributeStatusInfo).toBeDefined()
-      expect(result[0].attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.NotFound)
+      assert.ok(Array.isArray(result))
+      assert.strictEqual(result.length, 1)
+      assert.strictEqual(result[0].attributeStatus, GetVariableStatusEnumType.UnknownVariable)
+      assert.strictEqual(result[0].attributeType, AttributeEnumType.Actual)
+      assert.strictEqual(result[0].attributeValue, undefined)
+      assert.strictEqual(result[0].component.name, OCPP20ComponentName.EVSE)
+      assert.strictEqual(result[0].component.instance, '1')
+      assert.strictEqual(result[0].variable.name, OCPP20RequiredVariableName.AuthorizeRemoteStart)
+      assert.notStrictEqual(result[0].attributeStatusInfo, undefined)
+      assert.strictEqual(result[0].attributeStatusInfo?.reasonCode, ReasonCodeEnumType.NotFound)
     })
   })
 
@@ -381,7 +384,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
 
       // Access private method through any casting for testing
       const isValid = testable.isComponentValid(station, component)
-      expect(isValid).toBe(true)
+      assert.strictEqual(isValid, true)
     })
 
     // Behavior: Connector component validation returns false (unsupported).
@@ -390,14 +393,14 @@ await describe('B05 - OCPP20VariableManager', async () => {
       const component: ComponentType = { instance: '1', name: OCPP20ComponentName.Connector }
 
       const isValid = testable.isComponentValid(station, component)
-      expect(isValid).toBe(false)
+      assert.strictEqual(isValid, false)
     })
 
     await it('should reject invalid connector instance', () => {
       const component: ComponentType = { instance: '999', name: OCPP20ComponentName.Connector }
 
       const isValid = testable.isComponentValid(station, component)
-      expect(isValid).toBe(false)
+      assert.strictEqual(isValid, false)
     })
   })
 
@@ -414,7 +417,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
       const variable: VariableType = { name: OCPP20OptionalVariableName.HeartbeatInterval }
 
       const isSupported = testable.isVariableSupported(component, variable)
-      expect(isSupported).toBe(true)
+      assert.strictEqual(isSupported, true)
     })
 
     await it('should support known OCPP variables', () => {
@@ -422,7 +425,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
       const variable: VariableType = { name: OCPP20OptionalVariableName.WebSocketPingInterval }
 
       const isSupported = testable.isVariableSupported(component, variable)
-      expect(isSupported).toBe(true)
+      assert.strictEqual(isSupported, true)
     })
 
     await it('should reject unknown variables', () => {
@@ -432,7 +435,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
       }
 
       const isSupported = testable.isVariableSupported(component, variable)
-      expect(isSupported).toBe(false)
+      assert.strictEqual(isSupported, false)
     })
   })
 
@@ -461,13 +464,13 @@ await describe('B05 - OCPP20VariableManager', async () => {
 
       const result = manager.setVariables(station, request)
 
-      expect(result).toHaveLength(2)
-      expect(result[0].attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
-      expect(result[0].attributeType).toBe(AttributeEnumType.Actual)
-      expect(result[0].attributeStatusInfo).toBeUndefined()
-      expect(result[1].attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
-      expect(result[1].attributeType).toBe(AttributeEnumType.Actual)
-      expect(result[1].attributeStatusInfo).toBeUndefined()
+      assert.strictEqual(result.length, 2)
+      assert.strictEqual(result[0].attributeStatus, SetVariableStatusEnumType.Accepted)
+      assert.strictEqual(result[0].attributeType, AttributeEnumType.Actual)
+      assert.strictEqual(result[0].attributeStatusInfo, undefined)
+      assert.strictEqual(result[1].attributeStatus, SetVariableStatusEnumType.Accepted)
+      assert.strictEqual(result[1].attributeType, AttributeEnumType.Actual)
+      assert.strictEqual(result[1].attributeStatusInfo, undefined)
     })
 
     await it('should reject setting variable on unknown component', () => {
@@ -481,9 +484,9 @@ await describe('B05 - OCPP20VariableManager', async () => {
 
       const result = manager.setVariables(station, request)
 
-      expect(result).toHaveLength(1)
-      expect(result[0].attributeStatus).toBe(SetVariableStatusEnumType.UnknownComponent)
-      expect(result[0].attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.NotFound)
+      assert.strictEqual(result.length, 1)
+      assert.strictEqual(result[0].attributeStatus, SetVariableStatusEnumType.UnknownComponent)
+      assert.strictEqual(result[0].attributeStatusInfo?.reasonCode, ReasonCodeEnumType.NotFound)
     })
 
     await it('should reject setting unknown variable', () => {
@@ -497,9 +500,9 @@ await describe('B05 - OCPP20VariableManager', async () => {
 
       const result = manager.setVariables(station, request)
 
-      expect(result).toHaveLength(1)
-      expect(result[0].attributeStatus).toBe(SetVariableStatusEnumType.UnknownVariable)
-      expect(result[0].attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.NotFound)
+      assert.strictEqual(result.length, 1)
+      assert.strictEqual(result[0].attributeStatus, SetVariableStatusEnumType.UnknownVariable)
+      assert.strictEqual(result[0].attributeStatusInfo?.reasonCode, ReasonCodeEnumType.NotFound)
     })
 
     await it('should reject unsupported attribute type', () => {
@@ -514,9 +517,9 @@ await describe('B05 - OCPP20VariableManager', async () => {
 
       const result = manager.setVariables(station, request)
 
-      expect(result).toHaveLength(1)
-      expect(result[0].attributeStatus).toBe(SetVariableStatusEnumType.NotSupportedAttributeType)
-      expect(result[0].attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
+      assert.strictEqual(result.length, 1)
+      assert.strictEqual(result[0].attributeStatus, SetVariableStatusEnumType.NotSupportedAttributeType)
+      assert.strictEqual(result[0].attributeStatusInfo?.reasonCode, ReasonCodeEnumType.UnsupportedParam)
     })
 
     await it('should reject value exceeding max length', () => {
@@ -531,12 +534,14 @@ await describe('B05 - OCPP20VariableManager', async () => {
 
       const result = manager.setVariables(station, request)
 
-      expect(result).toHaveLength(1)
-      expect(result[0].attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(result[0].attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
-      expect(result[0].attributeStatusInfo?.additionalInfo).toContain(
+      assert.strictEqual(result.length, 1)
+      assert.strictEqual(result[0].attributeStatus, SetVariableStatusEnumType.Rejected)
+      if (result[0].attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
+      if (result[0].attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.strictEqual(result[0].attributeStatusInfo.reasonCode, ReasonCodeEnumType.TooLargeElement)
+      assert.ok(result[0].attributeStatusInfo.additionalInfo.includes(
         'exceeds effective size limit'
-      )
+      ))
     })
 
     await it('should handle multiple mixed SetVariables in one call', () => {
@@ -559,8 +564,8 @@ await describe('B05 - OCPP20VariableManager', async () => {
         },
       ]
       const result = manager.setVariables(station, request)
-      expect(result[0].attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
-      expect(result[0].attributeStatusInfo).toBeUndefined()
+      assert.strictEqual(result[0].attributeStatus, SetVariableStatusEnumType.Accepted)
+      assert.strictEqual(result[0].attributeStatusInfo, undefined)
     })
 
     await it('should reject TxUpdatedInterval zero and negative and non-integer', () => {
@@ -588,15 +593,21 @@ await describe('B05 - OCPP20VariableManager', async () => {
       const zeroRes = manager.setVariables(station, zeroReq)[0]
       const negRes = manager.setVariables(station, negReq)[0]
       const nonIntRes = manager.setVariables(station, nonIntReq)[0]
-      expect(zeroRes.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(zeroRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValuePositiveOnly)
-      expect(zeroRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer > 0 required')
-      expect(negRes.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(negRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValuePositiveOnly)
-      expect(negRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer > 0 required')
-      expect(nonIntRes.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(nonIntRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
-      expect(nonIntRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer')
+      assert.strictEqual(zeroRes.attributeStatus, SetVariableStatusEnumType.Rejected)
+      if (zeroRes.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
+      if (zeroRes.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.strictEqual(zeroRes.attributeStatusInfo.reasonCode, ReasonCodeEnumType.ValuePositiveOnly)
+      assert.ok(zeroRes.attributeStatusInfo.additionalInfo.includes('Positive integer > 0 required'))
+      assert.strictEqual(negRes.attributeStatus, SetVariableStatusEnumType.Rejected)
+      if (negRes.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
+      if (negRes.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.strictEqual(negRes.attributeStatusInfo.reasonCode, ReasonCodeEnumType.ValuePositiveOnly)
+      assert.ok(negRes.attributeStatusInfo.additionalInfo.includes('Positive integer > 0 required'))
+      assert.strictEqual(nonIntRes.attributeStatus, SetVariableStatusEnumType.Rejected)
+      if (nonIntRes.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
+      if (nonIntRes.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.strictEqual(nonIntRes.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidValue)
+      assert.ok(nonIntRes.attributeStatusInfo.additionalInfo.includes('Positive integer'))
     })
 
     await it('should accept setting ConnectionUrl with valid ws URL', () => {
@@ -608,8 +619,8 @@ await describe('B05 - OCPP20VariableManager', async () => {
         },
       ]
       const res = manager.setVariables(station, req)[0]
-      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
-      expect(res.attributeStatusInfo).toBeUndefined()
+      assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Accepted)
+      assert.strictEqual(res.attributeStatusInfo, undefined)
     })
 
     await it('should accept ConnectionUrl with ftp scheme (no scheme restriction)', () => {
@@ -621,8 +632,8 @@ await describe('B05 - OCPP20VariableManager', async () => {
         },
       ]
       const res = manager.setVariables(station, req)[0]
-      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
-      expect(res.attributeStatusInfo).toBeUndefined()
+      assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Accepted)
+      assert.strictEqual(res.attributeStatusInfo, undefined)
     })
 
     await it('should accept ConnectionUrl with custom mqtt scheme', () => {
@@ -634,8 +645,8 @@ await describe('B05 - OCPP20VariableManager', async () => {
         },
       ]
       const res = manager.setVariables(station, req)[0]
-      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
-      expect(res.attributeStatusInfo).toBeUndefined()
+      assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Accepted)
+      assert.strictEqual(res.attributeStatusInfo, undefined)
     })
 
     await it('should allow ConnectionUrl retrieval after set', () => {
@@ -654,9 +665,9 @@ await describe('B05 - OCPP20VariableManager', async () => {
         },
       ]
       const getResult = manager.getVariables(station, getData)[0]
-      expect(getResult.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(getResult.attributeValue).toBe('wss://example.com/ocpp')
-      expect(getResult.attributeStatusInfo).toBeUndefined()
+      assert.strictEqual(getResult.attributeStatus, GetVariableStatusEnumType.Accepted)
+      assert.strictEqual(getResult.attributeValue, 'wss://example.com/ocpp')
+      assert.strictEqual(getResult.attributeStatusInfo, undefined)
     })
 
     await it('should revert non-persistent TxUpdatedInterval after simulated restart', () => {
@@ -673,7 +684,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20RequiredVariableName.TxUpdatedInterval },
         },
       ])[0]
-      expect(beforeReset.attributeValue).toBe('99')
+      assert.strictEqual(beforeReset.attributeValue, '99')
       manager.resetRuntimeOverrides()
       const afterReset = manager.getVariables(station, [
         {
@@ -681,7 +692,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20RequiredVariableName.TxUpdatedInterval },
         },
       ])[0]
-      expect(afterReset.attributeValue).toBe('30')
+      assert.strictEqual(afterReset.attributeValue, '30')
     })
 
     await it('should keep persistent ConnectionUrl after simulated restart', () => {
@@ -699,9 +710,9 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20VendorVariableName.ConnectionUrl },
         },
       ])[0]
-      expect(getResult.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(getResult.attributeValue).toBe('https://central.example.com/ocpp')
-      expect(getResult.attributeStatusInfo).toBeUndefined()
+      assert.strictEqual(getResult.attributeStatus, GetVariableStatusEnumType.Accepted)
+      assert.strictEqual(getResult.attributeValue, 'https://central.example.com/ocpp')
+      assert.strictEqual(getResult.attributeStatusInfo, undefined)
     })
 
     await it('should reject Target attribute for WebSocketPingInterval', () => {
@@ -714,9 +725,9 @@ await describe('B05 - OCPP20VariableManager', async () => {
         },
       ]
       const result = manager.setVariables(station, request)
-      expect(result).toHaveLength(1)
-      expect(result[0].attributeStatus).toBe(SetVariableStatusEnumType.NotSupportedAttributeType)
-      expect(result[0].attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
+      assert.strictEqual(result.length, 1)
+      assert.strictEqual(result[0].attributeStatus, SetVariableStatusEnumType.NotSupportedAttributeType)
+      assert.strictEqual(result[0].attributeStatusInfo?.reasonCode, ReasonCodeEnumType.UnsupportedParam)
     })
 
     await it('should validate HeartbeatInterval positive integer >0', () => {
@@ -730,8 +741,8 @@ await describe('B05 - OCPP20VariableManager', async () => {
         },
       ]
       const res = manager.setVariables(station, req)[0]
-      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
-      expect(res.attributeStatusInfo).toBeUndefined()
+      assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Accepted)
+      assert.strictEqual(res.attributeStatusInfo, undefined)
     })
 
     await it('should reject HeartbeatInterval zero, negative, non-integer', () => {
@@ -756,12 +767,18 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ])[0]
-      expect(zeroRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValuePositiveOnly)
-      expect(zeroRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer > 0 required')
-      expect(negRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValuePositiveOnly)
-      expect(negRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer > 0 required')
-      expect(nonIntRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
-      expect(nonIntRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer')
+      if (zeroRes.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
+      if (zeroRes.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.strictEqual(zeroRes.attributeStatusInfo.reasonCode, ReasonCodeEnumType.ValuePositiveOnly)
+      assert.ok(zeroRes.attributeStatusInfo.additionalInfo.includes('Positive integer > 0 required'))
+      if (negRes.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
+      if (negRes.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.strictEqual(negRes.attributeStatusInfo.reasonCode, ReasonCodeEnumType.ValuePositiveOnly)
+      assert.ok(negRes.attributeStatusInfo.additionalInfo.includes('Positive integer > 0 required'))
+      if (nonIntRes.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
+      if (nonIntRes.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.strictEqual(nonIntRes.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidValue)
+      assert.ok(nonIntRes.attributeStatusInfo.additionalInfo.includes('Positive integer'))
     })
 
     await it('should accept WebSocketPingInterval zero (disable) and positive', () => {
@@ -779,10 +796,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20OptionalVariableName.WebSocketPingInterval },
         },
       ])[0]
-      expect(zeroRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
-      expect(zeroRes.attributeStatusInfo).toBeUndefined()
-      expect(posRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
-      expect(posRes.attributeStatusInfo).toBeUndefined()
+      assert.strictEqual(zeroRes.attributeStatus, SetVariableStatusEnumType.Accepted)
+      assert.strictEqual(zeroRes.attributeStatusInfo, undefined)
+      assert.strictEqual(posRes.attributeStatus, SetVariableStatusEnumType.Accepted)
+      assert.strictEqual(posRes.attributeStatusInfo, undefined)
     })
 
     await it('should reject WebSocketPingInterval negative and non-integer', () => {
@@ -800,10 +817,14 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20OptionalVariableName.WebSocketPingInterval },
         },
       ])[0]
-      expect(negRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValueZeroNotAllowed)
-      expect(negRes.attributeStatusInfo?.additionalInfo).toContain('Integer >= 0 required')
-      expect(nonIntRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValueZeroNotAllowed)
-      expect(nonIntRes.attributeStatusInfo?.additionalInfo).toContain('Integer >= 0 required')
+      if (negRes.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
+      if (negRes.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.strictEqual(negRes.attributeStatusInfo.reasonCode, ReasonCodeEnumType.ValueZeroNotAllowed)
+      assert.ok(negRes.attributeStatusInfo.additionalInfo.includes('Integer >= 0 required'))
+      if (nonIntRes.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
+      if (nonIntRes.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.strictEqual(nonIntRes.attributeStatusInfo.reasonCode, ReasonCodeEnumType.ValueZeroNotAllowed)
+      assert.ok(nonIntRes.attributeStatusInfo.additionalInfo.includes('Integer >= 0 required'))
     })
 
     await it('should validate EVConnectionTimeOut positive integer >0 and reject invalid', () => {
@@ -814,8 +835,8 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20RequiredVariableName.EVConnectionTimeOut },
         },
       ])[0]
-      expect(okRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
-      expect(okRes.attributeStatusInfo).toBeUndefined()
+      assert.strictEqual(okRes.attributeStatus, SetVariableStatusEnumType.Accepted)
+      assert.strictEqual(okRes.attributeStatusInfo, undefined)
       const zeroRes = manager.setVariables(station, [
         {
           attributeValue: '0',
@@ -837,12 +858,18 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20RequiredVariableName.EVConnectionTimeOut },
         },
       ])[0]
-      expect(zeroRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValuePositiveOnly)
-      expect(zeroRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer > 0 required')
-      expect(negRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValuePositiveOnly)
-      expect(negRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer > 0 required')
-      expect(nonIntRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
-      expect(nonIntRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer')
+      if (zeroRes.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
+      if (zeroRes.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.strictEqual(zeroRes.attributeStatusInfo.reasonCode, ReasonCodeEnumType.ValuePositiveOnly)
+      assert.ok(zeroRes.attributeStatusInfo.additionalInfo.includes('Positive integer > 0 required'))
+      if (negRes.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
+      if (negRes.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.strictEqual(negRes.attributeStatusInfo.reasonCode, ReasonCodeEnumType.ValuePositiveOnly)
+      assert.ok(negRes.attributeStatusInfo.additionalInfo.includes('Positive integer > 0 required'))
+      if (nonIntRes.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
+      if (nonIntRes.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.strictEqual(nonIntRes.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidValue)
+      assert.ok(nonIntRes.attributeStatusInfo.additionalInfo.includes('Positive integer'))
     })
 
     await it('should validate MessageTimeout positive integer >0 and reject invalid', () => {
@@ -853,8 +880,8 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20RequiredVariableName.MessageTimeout },
         },
       ])[0]
-      expect(okRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
-      expect(okRes.attributeStatusInfo).toBeUndefined()
+      assert.strictEqual(okRes.attributeStatus, SetVariableStatusEnumType.Accepted)
+      assert.strictEqual(okRes.attributeStatusInfo, undefined)
       const zeroRes = manager.setVariables(station, [
         {
           attributeValue: '0',
@@ -876,12 +903,18 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20RequiredVariableName.MessageTimeout },
         },
       ])[0]
-      expect(zeroRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValuePositiveOnly)
-      expect(zeroRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer > 0 required')
-      expect(negRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValuePositiveOnly)
-      expect(negRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer > 0 required')
-      expect(nonIntRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
-      expect(nonIntRes.attributeStatusInfo?.additionalInfo).toContain('Positive integer')
+      if (zeroRes.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
+      if (zeroRes.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.strictEqual(zeroRes.attributeStatusInfo.reasonCode, ReasonCodeEnumType.ValuePositiveOnly)
+      assert.ok(zeroRes.attributeStatusInfo.additionalInfo.includes('Positive integer > 0 required'))
+      if (negRes.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
+      if (negRes.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.strictEqual(negRes.attributeStatusInfo.reasonCode, ReasonCodeEnumType.ValuePositiveOnly)
+      assert.ok(negRes.attributeStatusInfo.additionalInfo.includes('Positive integer > 0 required'))
+      if (nonIntRes.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
+      if (nonIntRes.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.strictEqual(nonIntRes.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidValue)
+      assert.ok(nonIntRes.attributeStatusInfo.additionalInfo.includes('Positive integer'))
     })
 
     await it('should avoid duplicate persistence operations when value unchanged', () => {
@@ -889,7 +922,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
         station,
         OCPP20OptionalVariableName.HeartbeatInterval as unknown as VariableType['name']
       )
-      expect(keyBefore).toBeDefined()
+      assert.notStrictEqual(keyBefore, undefined)
       const originalValue = keyBefore?.value
       const first = manager.setVariables(station, [
         {
@@ -898,7 +931,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ])[0]
-      expect(first.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      assert.strictEqual(first.attributeStatus, SetVariableStatusEnumType.Accepted)
       const changed = manager.setVariables(station, [
         {
           attributeValue: (parseInt(originalValue ?? '30', 10) + 5).toString(),
@@ -906,12 +939,12 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ])[0]
-      expect(changed.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      assert.strictEqual(changed.attributeStatus, SetVariableStatusEnumType.Accepted)
       const keyAfterChange = getConfigurationKey(
         station,
         OCPP20OptionalVariableName.HeartbeatInterval as unknown as VariableType['name']
       )
-      expect(keyAfterChange?.value).not.toBe(originalValue)
+      assert.notStrictEqual(keyAfterChange?.value, originalValue)
       const reverted = manager.setVariables(station, [
         {
           attributeValue: originalValue ?? '30',
@@ -919,12 +952,12 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ])[0]
-      expect(reverted.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      assert.strictEqual(reverted.attributeStatus, SetVariableStatusEnumType.Accepted)
       const keyAfterRevert = getConfigurationKey(
         station,
         OCPP20OptionalVariableName.HeartbeatInterval as unknown as VariableType['name']
       )
-      expect(keyAfterRevert?.value).toBe(originalValue)
+      assert.strictEqual(keyAfterRevert?.value, originalValue)
     })
 
     await it('should add missing configuration key with default during self-check', () => {
@@ -937,21 +970,21 @@ await describe('B05 - OCPP20VariableManager', async () => {
         station,
         OCPP20RequiredVariableName.EVConnectionTimeOut as unknown as VariableType['name']
       )
-      expect(before).toBeUndefined()
+      assert.strictEqual(before, undefined)
       const res = manager.getVariables(station, [
         {
           component: { name: OCPP20ComponentName.TxCtrlr },
           variable: { name: OCPP20RequiredVariableName.EVConnectionTimeOut },
         },
       ])[0]
-      expect(res.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(res.attributeStatusInfo).toBeUndefined()
-      expect(res.attributeValue).toBe(Constants.DEFAULT_EV_CONNECTION_TIMEOUT.toString())
+      assert.strictEqual(res.attributeStatus, GetVariableStatusEnumType.Accepted)
+      assert.strictEqual(res.attributeStatusInfo, undefined)
+      assert.strictEqual(res.attributeValue, Constants.DEFAULT_EV_CONNECTION_TIMEOUT.toString())
       const after = getConfigurationKey(
         station,
         OCPP20RequiredVariableName.EVConnectionTimeOut as unknown as VariableType['name']
       )
-      expect(after).toBeDefined()
+      assert.notStrictEqual(after, undefined)
     })
 
     await it('should clear runtime overrides via resetRuntimeOverrides()', () => {
@@ -968,7 +1001,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20RequiredVariableName.TxUpdatedInterval },
         },
       ])[0]
-      expect(beforeReset.attributeValue).toBe('123')
+      assert.strictEqual(beforeReset.attributeValue, '123')
       manager.resetRuntimeOverrides()
       const afterReset = manager.getVariables(station, [
         {
@@ -976,8 +1009,8 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20RequiredVariableName.TxUpdatedInterval },
         },
       ])[0]
-      expect(afterReset.attributeValue).not.toBe('123')
-      expect(afterReset.attributeValue).toBe('30')
+      assert.notStrictEqual(afterReset.attributeValue, '123')
+      assert.strictEqual(afterReset.attributeValue, '30')
     })
 
     await it('should reject HeartbeatInterval with leading whitespace', () => {
@@ -988,11 +1021,13 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ])[0]
-      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
-      expect(res.attributeStatusInfo?.additionalInfo).toContain(
+      assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Rejected)
+      if (res.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
+      if (res.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.strictEqual(res.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidValue)
+      assert.ok(res.attributeStatusInfo.additionalInfo.includes(
         'Non-empty digits only string required'
-      )
+      ))
     })
 
     await it('should reject HeartbeatInterval with trailing whitespace', () => {
@@ -1003,11 +1038,13 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ])[0]
-      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
-      expect(res.attributeStatusInfo?.additionalInfo).toContain(
+      assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Rejected)
+      if (res.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
+      if (res.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.strictEqual(res.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidValue)
+      assert.ok(res.attributeStatusInfo.additionalInfo.includes(
         'Non-empty digits only string required'
-      )
+      ))
     })
 
     await it('should reject HeartbeatInterval with plus sign prefix', () => {
@@ -1018,11 +1055,13 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ])[0]
-      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
-      expect(res.attributeStatusInfo?.additionalInfo).toContain(
+      assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Rejected)
+      if (res.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
+      if (res.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.strictEqual(res.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidValue)
+      assert.ok(res.attributeStatusInfo.additionalInfo.includes(
         'Non-empty digits only string required'
-      )
+      ))
     })
 
     await it('should accept HeartbeatInterval with leading zeros', () => {
@@ -1033,8 +1072,8 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ])[0]
-      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
-      expect(res.attributeStatusInfo).toBeUndefined()
+      assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Accepted)
+      assert.strictEqual(res.attributeStatusInfo, undefined)
     })
 
     await it('should reject HeartbeatInterval blank string', () => {
@@ -1045,11 +1084,13 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ])[0]
-      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
-      expect(res.attributeStatusInfo?.additionalInfo).toContain(
+      assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Rejected)
+      if (res.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
+      if (res.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.strictEqual(res.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidValue)
+      assert.ok(res.attributeStatusInfo.additionalInfo.includes(
         'Non-empty digits only string required'
-      )
+      ))
     })
 
     await it('should reject HeartbeatInterval with internal space', () => {
@@ -1060,11 +1101,13 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ])[0]
-      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
-      expect(res.attributeStatusInfo?.additionalInfo).toContain(
+      assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Rejected)
+      if (res.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
+      if (res.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.strictEqual(res.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidValue)
+      assert.ok(res.attributeStatusInfo.additionalInfo.includes(
         'Non-empty digits only string required'
-      )
+      ))
     })
 
     await it('should reject ConnectionUrl missing scheme', () => {
@@ -1075,9 +1118,11 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20VendorVariableName.ConnectionUrl },
         },
       ])[0]
-      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidURL)
-      expect(res.attributeStatusInfo?.additionalInfo).toContain('Invalid URL format')
+      assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Rejected)
+      if (res.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
+      if (res.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.strictEqual(res.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidURL)
+      assert.ok(res.attributeStatusInfo.additionalInfo.includes('Invalid URL format'))
     })
 
     await it('should reject ConnectionUrl exceeding max length', () => {
@@ -1089,11 +1134,13 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20VendorVariableName.ConnectionUrl },
         },
       ])[0]
-      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
-      expect(res.attributeStatusInfo?.additionalInfo).toContain(
+      assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Rejected)
+      if (res.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
+      if (res.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.strictEqual(res.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidValue)
+      assert.ok(res.attributeStatusInfo.additionalInfo.includes(
         `exceeds maximum length (${CONNECTION_URL_MAX_LENGTH.toString()})`
-      )
+      ))
     })
 
     await it('should reject HeartbeatInterval exceeding max length', () => {
@@ -1104,15 +1151,17 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
         },
       ])[0]
-      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
+      assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Rejected)
+      if (res.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
+      if (res.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.strictEqual(res.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidValue)
       const HEARTBEAT_INTERVAL_MAX_LENGTH =
         VARIABLE_REGISTRY[
           `${OCPP20ComponentName.OCPPCommCtrlr}::${OCPP20OptionalVariableName.HeartbeatInterval}`
         ].maxLength ?? 10
-      expect(res.attributeStatusInfo?.additionalInfo).toContain(
+      assert.ok(res.attributeStatusInfo.additionalInfo.includes(
         `exceeds maximum length (${HEARTBEAT_INTERVAL_MAX_LENGTH.toString()})`
-      )
+      ))
     })
 
     // Effective value size limit tests combining ConfigurationValueSize and ValueSize
@@ -1132,7 +1181,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20VendorVariableName.ConnectionUrl },
         },
       ])[0]
-      expect(okRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      assert.strictEqual(okRes.attributeStatus, SetVariableStatusEnumType.Accepted)
       const tooLongRes = manager.setVariables(station, [
         {
           attributeValue: buildWsExampleUrl(51, 'x'),
@@ -1140,8 +1189,8 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20VendorVariableName.ConnectionUrl },
         },
       ])[0]
-      expect(tooLongRes.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(tooLongRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
+      assert.strictEqual(tooLongRes.attributeStatus, SetVariableStatusEnumType.Rejected)
+      assert.strictEqual(tooLongRes.attributeStatusInfo?.reasonCode, ReasonCodeEnumType.TooLargeElement)
     })
 
     await it('should enforce ValueSize when ConfigurationValueSize unset', () => {
@@ -1159,7 +1208,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20VendorVariableName.ConnectionUrl },
         },
       ])[0]
-      expect(okRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      assert.strictEqual(okRes.attributeStatus, SetVariableStatusEnumType.Accepted)
       const tooLongRes = manager.setVariables(station, [
         {
           attributeValue: buildWsExampleUrl(41, 'y'),
@@ -1167,8 +1216,8 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20VendorVariableName.ConnectionUrl },
         },
       ])[0]
-      expect(tooLongRes.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(tooLongRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
+      assert.strictEqual(tooLongRes.attributeStatus, SetVariableStatusEnumType.Rejected)
+      assert.strictEqual(tooLongRes.attributeStatusInfo?.reasonCode, ReasonCodeEnumType.TooLargeElement)
     })
 
     await it('should use smaller of ConfigurationValueSize and ValueSize (ValueSize smaller)', () => {
@@ -1182,7 +1231,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20VendorVariableName.ConnectionUrl },
         },
       ])[0]
-      expect(okRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      assert.strictEqual(okRes.attributeStatus, SetVariableStatusEnumType.Accepted)
       const tooLongRes = manager.setVariables(station, [
         {
           attributeValue: buildWsExampleUrl(56, 'z'),
@@ -1190,8 +1239,8 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20VendorVariableName.ConnectionUrl },
         },
       ])[0]
-      expect(tooLongRes.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(tooLongRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
+      assert.strictEqual(tooLongRes.attributeStatus, SetVariableStatusEnumType.Rejected)
+      assert.strictEqual(tooLongRes.attributeStatusInfo?.reasonCode, ReasonCodeEnumType.TooLargeElement)
     })
 
     await it('should use smaller of ConfigurationValueSize and ValueSize (ConfigurationValueSize smaller)', () => {
@@ -1205,7 +1254,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20VendorVariableName.ConnectionUrl },
         },
       ])[0]
-      expect(okRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      assert.strictEqual(okRes.attributeStatus, SetVariableStatusEnumType.Accepted)
       const tooLongRes = manager.setVariables(station, [
         {
           attributeValue: buildWsExampleUrl(31, 'w'),
@@ -1213,8 +1262,8 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20VendorVariableName.ConnectionUrl },
         },
       ])[0]
-      expect(tooLongRes.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(tooLongRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
+      assert.strictEqual(tooLongRes.attributeStatus, SetVariableStatusEnumType.Rejected)
+      assert.strictEqual(tooLongRes.attributeStatusInfo?.reasonCode, ReasonCodeEnumType.TooLargeElement)
     })
 
     await it('should fallback to default limit when both invalid/non-positive', () => {
@@ -1229,7 +1278,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20VendorVariableName.ConnectionUrl },
         },
       ])[0]
-      expect(okRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      assert.strictEqual(okRes.attributeStatus, SetVariableStatusEnumType.Accepted)
     })
   })
 
@@ -1276,10 +1325,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
       ]
       const results = manager.setVariables(station, updateAttempts)
       // First (FileTransferProtocols) should be rejected (ReadOnly); others accepted
-      expect(results[0].attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(results[0].attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ReadOnly)
+      assert.strictEqual(results[0].attributeStatus, SetVariableStatusEnumType.Rejected)
+      assert.strictEqual(results[0].attributeStatusInfo?.reasonCode, ReasonCodeEnumType.ReadOnly)
       for (const r of results.slice(1)) {
-        expect(r.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+        assert.strictEqual(r.attributeStatus, SetVariableStatusEnumType.Accepted)
       }
     })
 
@@ -1290,8 +1339,8 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20RequiredVariableName.FileTransferProtocols },
         },
       ])[0]
-      expect(getRes.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(getRes.attributeValue).toBe('HTTPS,FTPS,SFTP')
+      assert.strictEqual(getRes.attributeStatus, GetVariableStatusEnumType.Accepted)
+      assert.strictEqual(getRes.attributeValue, 'HTTPS,FTPS,SFTP')
     })
 
     await it('should keep FileTransferProtocols value unchanged after rejected update attempt', () => {
@@ -1303,14 +1352,14 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20RequiredVariableName.FileTransferProtocols },
         },
       ])[0]
-      expect(initGet.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(initGet.attributeValue).toBe('HTTPS,FTPS,SFTP')
+      assert.strictEqual(initGet.attributeStatus, GetVariableStatusEnumType.Accepted)
+      assert.strictEqual(initGet.attributeValue, 'HTTPS,FTPS,SFTP')
 
       const beforeCfg = getConfigurationKey(
         station,
         OCPP20RequiredVariableName.FileTransferProtocols as unknown as VariableType['name']
       )
-      expect(beforeCfg?.value).toBe('HTTPS,FTPS,SFTP')
+      assert.strictEqual(beforeCfg?.value, 'HTTPS,FTPS,SFTP')
       const rejected = manager.setVariables(station, [
         {
           attributeValue: 'HTTP,HTTPS',
@@ -1318,21 +1367,21 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20RequiredVariableName.FileTransferProtocols },
         },
       ])[0]
-      expect(rejected.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(rejected.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ReadOnly)
+      assert.strictEqual(rejected.attributeStatus, SetVariableStatusEnumType.Rejected)
+      assert.strictEqual(rejected.attributeStatusInfo?.reasonCode, ReasonCodeEnumType.ReadOnly)
       const afterGet = manager.getVariables(station, [
         {
           component: { name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20RequiredVariableName.FileTransferProtocols },
         },
       ])[0]
-      expect(afterGet.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(afterGet.attributeValue).toBe('HTTPS,FTPS,SFTP')
+      assert.strictEqual(afterGet.attributeStatus, GetVariableStatusEnumType.Accepted)
+      assert.strictEqual(afterGet.attributeValue, 'HTTPS,FTPS,SFTP')
       const afterCfg = getConfigurationKey(
         station,
         OCPP20RequiredVariableName.FileTransferProtocols as unknown as VariableType['name']
       )
-      expect(afterCfg?.value).toBe(beforeCfg?.value)
+      assert.strictEqual(afterCfg?.value, beforeCfg.value)
     })
 
     await it('should reject removed TimeSource members RTC and Manual', () => {
@@ -1343,9 +1392,11 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20RequiredVariableName.TimeSource },
         },
       ])[0]
-      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
-      expect(res.attributeStatusInfo?.additionalInfo).toContain('Member not in enumeration')
+      assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Rejected)
+      if (res.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
+      if (res.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.strictEqual(res.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidValue)
+      assert.ok(res.attributeStatusInfo.additionalInfo.includes('Member not in enumeration'))
     })
 
     await it('should accept extended TimeSource including RealTimeClock and MobileNetwork', () => {
@@ -1356,7 +1407,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20RequiredVariableName.TimeSource },
         },
       ])[0]
-      expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Accepted)
     })
 
     await it('should reject invalid list formats and members', () => {
@@ -1395,24 +1446,26 @@ await describe('B05 - OCPP20VariableManager', async () => {
               variable: { name: lv.name },
             },
           ])[0]
-          expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
+          assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Rejected)
+          if (res.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
           if (lv.name === OCPP20RequiredVariableName.FileTransferProtocols) {
-            expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ReadOnly)
+            assert.strictEqual(res.attributeStatusInfo.reasonCode, ReasonCodeEnumType.ReadOnly)
           } else {
-            expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
+            assert.strictEqual(res.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidValue)
           }
           if (lv.name === OCPP20RequiredVariableName.FileTransferProtocols) {
             // Read-only variable: additionalInfo reflects read-only status, skip format/member detail assertions
             continue
           }
+          if (res.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
           if (pattern === '') {
-            expect(res.attributeStatusInfo?.additionalInfo).toContain('List cannot be empty')
+            assert.ok(res.attributeStatusInfo.additionalInfo.includes('List cannot be empty'))
           } else if (pattern.startsWith(',') || pattern.endsWith(',')) {
-            expect(res.attributeStatusInfo?.additionalInfo).toContain('No leading/trailing comma')
+            assert.ok(res.attributeStatusInfo.additionalInfo.includes('No leading/trailing comma'))
           } else if (pattern.includes(',,')) {
-            expect(res.attributeStatusInfo?.additionalInfo).toContain('Empty list member')
+            assert.ok(res.attributeStatusInfo.additionalInfo.includes('Empty list member'))
           } else if (pattern === 'HTTP,HTTP') {
-            expect(res.attributeStatusInfo?.additionalInfo).toContain('Duplicate list member')
+            assert.ok(res.attributeStatusInfo.additionalInfo.includes('Duplicate list member'))
           }
         }
       }
@@ -1428,9 +1481,11 @@ await describe('B05 - OCPP20VariableManager', async () => {
         variable: { name: OCPP20RequiredVariableName.TxStopPoint },
       },
     ])[0]
-    expect(res.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-    expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.InvalidValue)
-    expect(res.attributeStatusInfo?.additionalInfo).toContain('Member not in enumeration')
+    assert.strictEqual(res.attributeStatus, SetVariableStatusEnumType.Rejected)
+    if (res.attributeStatusInfo == null) { assert.fail('Expected attributeStatusInfo to be defined') }
+    if (res.attributeStatusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+    assert.strictEqual(res.attributeStatusInfo.reasonCode, ReasonCodeEnumType.InvalidValue)
+    assert.ok(res.attributeStatusInfo.additionalInfo.includes('Member not in enumeration'))
   })
 
   await describe('Unsupported MinSet/MaxSet attribute tests', async () => {
@@ -1452,8 +1507,8 @@ await describe('B05 - OCPP20VariableManager', async () => {
       const res = manager.getVariables(station, [
         { attributeType: AttributeEnumType.MinSet, component, variable },
       ])[0]
-      expect(res.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
-      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
+      assert.strictEqual(res.attributeStatus, GetVariableStatusEnumType.NotSupportedAttributeType)
+      assert.strictEqual(res.attributeStatusInfo?.reasonCode, ReasonCodeEnumType.UnsupportedParam)
     })
 
     await it('should return NotSupportedAttributeType for MaxSet WebSocketPingInterval', () => {
@@ -1462,8 +1517,8 @@ await describe('B05 - OCPP20VariableManager', async () => {
       const res = manager.getVariables(station, [
         { attributeType: AttributeEnumType.MaxSet, component, variable },
       ])[0]
-      expect(res.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
-      expect(res.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedParam)
+      assert.strictEqual(res.attributeStatus, GetVariableStatusEnumType.NotSupportedAttributeType)
+      assert.strictEqual(res.attributeStatusInfo?.reasonCode, ReasonCodeEnumType.UnsupportedParam)
     })
   })
 
@@ -1488,7 +1543,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20VendorVariableName.ConnectionUrl },
         },
       ])[0]
-      expect(setRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      assert.strictEqual(setRes.attributeStatus, SetVariableStatusEnumType.Accepted)
       // Now reduce ValueSize to 50 to force truncation at get-time
       setValueSize(station, 50)
       const getRes = manager.getVariables(station, [
@@ -1497,10 +1552,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20VendorVariableName.ConnectionUrl },
         },
       ])[0]
-      expect(getRes.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(getRes.attributeValue?.length).toBe(50)
+      assert.strictEqual(getRes.attributeStatus, GetVariableStatusEnumType.Accepted)
+      assert.strictEqual(getRes.attributeValue?.length, 50)
       // First 50 chars should match original long value prefix
-      expect(longUrl.startsWith(getRes.attributeValue ?? '')).toBe(true)
+      assert.ok(longUrl.startsWith(getRes.attributeValue ?? ''))
       resetValueSizeLimits(station)
     })
 
@@ -1517,7 +1572,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20VendorVariableName.ConnectionUrl },
         },
       ])[0]
-      expect(setRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      assert.strictEqual(setRes.attributeStatus, SetVariableStatusEnumType.Accepted)
       // Reduce ValueSize below ReportingValueSize to 200 so first truncation occurs at 200, then second at 150
       setValueSize(station, 200)
       setReportingValueSize(station, 150)
@@ -1527,9 +1582,9 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20VendorVariableName.ConnectionUrl },
         },
       ])[0]
-      expect(getRes.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(getRes.attributeValue?.length).toBe(150)
-      expect(longUrl.startsWith(getRes.attributeValue ?? '')).toBe(true)
+      assert.strictEqual(getRes.attributeStatus, GetVariableStatusEnumType.Accepted)
+      assert.strictEqual(getRes.attributeValue?.length, 150)
+      assert.ok(longUrl.startsWith(getRes.attributeValue ?? ''))
       resetValueSizeLimits(station)
       resetReportingValueSize(station)
     })
@@ -1553,9 +1608,9 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20VendorVariableName.ConnectionUrl },
         },
       ])[0]
-      expect(getRes.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(getRes.attributeValue?.length).toBe(1400)
-      expect(overLongValue.startsWith(getRes.attributeValue ?? '')).toBe(true)
+      assert.strictEqual(getRes.attributeStatus, GetVariableStatusEnumType.Accepted)
+      assert.strictEqual(getRes.attributeValue?.length, 1400)
+      assert.ok(overLongValue.startsWith(getRes.attributeValue ?? ''))
       resetValueSizeLimits(station)
       resetReportingValueSize(station)
     })
@@ -1576,7 +1631,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20VendorVariableName.ConnectionUrl },
         },
       ])[0]
-      expect(setRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      assert.strictEqual(setRes.attributeStatus, SetVariableStatusEnumType.Accepted)
       // Set larger limits that would allow a bigger value if not for variable-level maxLength
       setValueSize(station, 3000)
       setReportingValueSize(station, 2800)
@@ -1586,9 +1641,9 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20VendorVariableName.ConnectionUrl },
         },
       ])[0]
-      expect(getRes.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(getRes.attributeValue?.length).toBe(connectionUrlMaxLength)
-      expect(getRes.attributeValue).toBe(maxLenValue)
+      assert.strictEqual(getRes.attributeStatus, GetVariableStatusEnumType.Accepted)
+      assert.strictEqual(getRes.attributeValue?.length, connectionUrlMaxLength)
+      assert.strictEqual(getRes.attributeValue, maxLenValue)
       resetValueSizeLimits(station)
       resetReportingValueSize(station)
     })
@@ -1607,21 +1662,21 @@ await describe('B05 - OCPP20VariableManager', async () => {
         station,
         OCPP20RequiredVariableName.OrganizationName as unknown as VariableType['name']
       )
-      expect(before).toBeUndefined()
+      assert.strictEqual(before, undefined)
       const res = manager.getVariables(station, [
         {
           component: { name: OCPP20ComponentName.SecurityCtrlr },
           variable: { name: OCPP20RequiredVariableName.OrganizationName },
         },
       ])[0]
-      expect(res.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(res.attributeValue).toBe('Example Charging Services Ltd')
+      assert.strictEqual(res.attributeStatus, GetVariableStatusEnumType.Accepted)
+      assert.strictEqual(res.attributeValue, 'Example Charging Services Ltd')
       const after = getConfigurationKey(
         station,
         OCPP20RequiredVariableName.OrganizationName as unknown as VariableType['name']
       )
-      expect(after).toBeDefined()
-      expect(after?.value).toBe('Example Charging Services Ltd')
+      assert.notStrictEqual(after, undefined)
+      assert.strictEqual(after?.value, 'Example Charging Services Ltd')
     })
 
     await it('should accept setting OrganizationName and require reboot per OCPP 2.0.1 specification', () => {
@@ -1633,14 +1688,14 @@ await describe('B05 - OCPP20VariableManager', async () => {
         },
       ])[0]
       // OCPP 2.0.1 compliant behavior: OrganizationName changes require reboot
-      expect(setRes.attributeStatus).toBe(SetVariableStatusEnumType.RebootRequired)
+      assert.strictEqual(setRes.attributeStatus, SetVariableStatusEnumType.RebootRequired)
       const getRes = manager.getVariables(station, [
         {
           component: { name: OCPP20ComponentName.SecurityCtrlr },
           variable: { name: OCPP20RequiredVariableName.OrganizationName },
         },
       ])[0]
-      expect(getRes.attributeValue).toBe('NewOrgName')
+      assert.strictEqual(getRes.attributeValue, 'NewOrgName')
     })
 
     await it('should preserve OrganizationName value after resetRuntimeOverrides()', () => {
@@ -1660,9 +1715,9 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20RequiredVariableName.OrganizationName },
         },
       ])[0]
-      expect(res.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
+      assert.strictEqual(res.attributeStatus, GetVariableStatusEnumType.Accepted)
       // Value should persist as 'PersistenceTestOrgName' after resetRuntimeOverrides (OCPP 2.0.1 compliant persistence)
-      expect(res.attributeValue).toBe('PersistenceTestOrgName')
+      assert.strictEqual(res.attributeValue, 'PersistenceTestOrgName')
     })
 
     await it('should create configuration key for instance-scoped MessageAttemptInterval and persist Actual value (Actual-only, no MinSet/MaxSet)', () => {
@@ -1671,15 +1726,15 @@ await describe('B05 - OCPP20VariableManager', async () => {
         station,
         OCPP20RequiredVariableName.MessageAttemptInterval as unknown as VariableType['name']
       )
-      expect(cfgBefore).toBeUndefined()
+      assert.strictEqual(cfgBefore, undefined)
       const initialGet = manager.getVariables(station, [
         {
           component: { instance: 'TransactionEvent', name: OCPP20ComponentName.OCPPCommCtrlr },
           variable: { name: OCPP20RequiredVariableName.MessageAttemptInterval },
         },
       ])[0]
-      expect(initialGet.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(initialGet.attributeValue).toBe('5')
+      assert.strictEqual(initialGet.attributeStatus, GetVariableStatusEnumType.Accepted)
+      assert.strictEqual(initialGet.attributeValue, '5')
 
       // Negative: MinSet not supported
       const minSetRes = manager.setVariables(station, [
@@ -1690,7 +1745,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20RequiredVariableName.MessageAttemptInterval },
         },
       ])[0]
-      expect(minSetRes.attributeStatus).toBe(SetVariableStatusEnumType.NotSupportedAttributeType)
+      assert.strictEqual(minSetRes.attributeStatus, SetVariableStatusEnumType.NotSupportedAttributeType)
       const getMin = manager.getVariables(station, [
         {
           attributeType: AttributeEnumType.MinSet,
@@ -1698,7 +1753,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20RequiredVariableName.MessageAttemptInterval },
         },
       ])[0]
-      expect(getMin.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
+      assert.strictEqual(getMin.attributeStatus, GetVariableStatusEnumType.NotSupportedAttributeType)
 
       // Negative: MaxSet not supported
       const maxSetRes = manager.setVariables(station, [
@@ -1709,7 +1764,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20RequiredVariableName.MessageAttemptInterval },
         },
       ])[0]
-      expect(maxSetRes.attributeStatus).toBe(SetVariableStatusEnumType.NotSupportedAttributeType)
+      assert.strictEqual(maxSetRes.attributeStatus, SetVariableStatusEnumType.NotSupportedAttributeType)
       const getMax = manager.getVariables(station, [
         {
           attributeType: AttributeEnumType.MaxSet,
@@ -1717,7 +1772,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20RequiredVariableName.MessageAttemptInterval },
         },
       ])[0]
-      expect(getMax.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
+      assert.strictEqual(getMax.attributeStatus, GetVariableStatusEnumType.NotSupportedAttributeType)
 
       // Attempt Actual value below registry min (min=1) -> reject
       const belowMinRes = manager.setVariables(station, [
@@ -1727,8 +1782,8 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20RequiredVariableName.MessageAttemptInterval },
         },
       ])[0]
-      expect(belowMinRes.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(belowMinRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValuePositiveOnly)
+      assert.strictEqual(belowMinRes.attributeStatus, SetVariableStatusEnumType.Rejected)
+      assert.strictEqual(belowMinRes.attributeStatusInfo?.reasonCode, ReasonCodeEnumType.ValuePositiveOnly)
 
       // Attempt Actual value above registry max (max=3600) -> reject
       const aboveMaxRes = manager.setVariables(station, [
@@ -1738,8 +1793,8 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20RequiredVariableName.MessageAttemptInterval },
         },
       ])[0]
-      expect(aboveMaxRes.attributeStatus).toBe(SetVariableStatusEnumType.Rejected)
-      expect(aboveMaxRes.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.ValueTooHigh)
+      assert.strictEqual(aboveMaxRes.attributeStatus, SetVariableStatusEnumType.Rejected)
+      assert.strictEqual(aboveMaxRes.attributeStatusInfo?.reasonCode, ReasonCodeEnumType.ValueTooHigh)
 
       // Accept Actual value within metadata bounds
       const withinRes = manager.setVariables(station, [
@@ -1749,7 +1804,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20RequiredVariableName.MessageAttemptInterval },
         },
       ])[0]
-      expect(withinRes.attributeStatus).toBe(SetVariableStatusEnumType.Accepted)
+      assert.strictEqual(withinRes.attributeStatus, SetVariableStatusEnumType.Accepted)
 
       // Retrieval now returns persisted value '7'
       const afterSetGet = manager.getVariables(station, [
@@ -1758,15 +1813,15 @@ await describe('B05 - OCPP20VariableManager', async () => {
           variable: { name: OCPP20RequiredVariableName.MessageAttemptInterval },
         },
       ])[0]
-      expect(afterSetGet.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-      expect(afterSetGet.attributeValue).toBe('7')
+      assert.strictEqual(afterSetGet.attributeStatus, GetVariableStatusEnumType.Accepted)
+      assert.strictEqual(afterSetGet.attributeValue, '7')
 
       const cfgAfter = getConfigurationKey(
         station,
         OCPP20RequiredVariableName.MessageAttemptInterval as unknown as VariableType['name']
       )
-      expect(cfgAfter).toBeDefined()
-      expect(cfgAfter?.value).toBe('7')
+      assert.notStrictEqual(cfgAfter, undefined)
+      assert.strictEqual(cfgAfter?.value, '7')
     })
   })
 })

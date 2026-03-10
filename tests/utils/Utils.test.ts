@@ -1,10 +1,10 @@
+import { hoursToMilliseconds, hoursToSeconds } from 'date-fns'
+import { CircularBuffer } from 'mnemonist'
 /**
  * @file Tests for Utils
  * @description Unit tests for general utility functions
  */
-import { expect } from '@std/expect'
-import { hoursToMilliseconds, hoursToSeconds } from 'date-fns'
-import { CircularBuffer } from 'mnemonist'
+import assert from 'node:assert/strict'
 import { randomInt } from 'node:crypto'
 import process from 'node:process'
 import { version } from 'node:process'
@@ -61,38 +61,38 @@ await describe('Utils', async () => {
   })
   await it('should generate valid UUIDs and validate them correctly', () => {
     const uuid = generateUUID()
-    expect(uuid).toBeDefined()
-    expect(uuid.length).toBe(36)
-    expect(validateUUID(uuid)).toBe(true)
-    expect(validateUUID('abcdef00-0000-4000-9000-000000000000')).toBe(true)
-    expect(validateUUID('abcdef00-0000-4000-a000-000000000000')).toBe(true)
-    expect(validateUUID('abcdef00-0000-4000-0000-000000000000')).toBe(false)
-    expect(validateUUID('')).toBe(false)
+    assert.notStrictEqual(uuid, undefined)
+    assert.strictEqual(uuid.length, 36)
+    assert.strictEqual(validateUUID(uuid), true)
+    assert.strictEqual(validateUUID('abcdef00-0000-4000-9000-000000000000'), true)
+    assert.strictEqual(validateUUID('abcdef00-0000-4000-a000-000000000000'), true)
+    assert.strictEqual(validateUUID('abcdef00-0000-4000-0000-000000000000'), false)
+    assert.strictEqual(validateUUID(''), false)
     // Shall invalidate Nil UUID
-    expect(validateUUID('00000000-0000-0000-0000-000000000000')).toBe(false)
-    expect(validateUUID('987FBC9-4BED-3078-CF07A-9141BA07C9F3')).toBe(false)
+    assert.strictEqual(validateUUID('00000000-0000-0000-0000-000000000000'), false)
+    assert.strictEqual(validateUUID('987FBC9-4BED-3078-CF07A-9141BA07C9F3'), false)
     // Shall invalidate non-string inputs
-    expect(validateUUID(123)).toBe(false)
-    expect(validateUUID(null)).toBe(false)
-    expect(validateUUID(undefined)).toBe(false)
-    expect(validateUUID({})).toBe(false)
-    expect(validateUUID([])).toBe(false)
-    expect(validateUUID(true)).toBe(false)
+    assert.strictEqual(validateUUID(123), false)
+    assert.strictEqual(validateUUID(null), false)
+    assert.strictEqual(validateUUID(undefined), false)
+    assert.strictEqual(validateUUID({}), false)
+    assert.strictEqual(validateUUID([]), false)
+    assert.strictEqual(validateUUID(true), false)
   })
 
   await it('should validate identifier strings within length constraints', () => {
-    expect(validateIdentifierString('550e8400-e29b-41d4-a716-446655440000', 36)).toBe(true)
-    expect(validateIdentifierString('CSMS-TXN-12345', 36)).toBe(true)
-    expect(validateIdentifierString('a', 36)).toBe(true)
-    expect(validateIdentifierString('abc123', 36)).toBe(true)
-    expect(validateIdentifierString('valid-identifier', 36)).toBe(true)
-    expect(validateIdentifierString('a'.repeat(36), 36)).toBe(true)
-    expect(validateIdentifierString('', 36)).toBe(false)
-    expect(validateIdentifierString('a'.repeat(37), 36)).toBe(false)
-    expect(validateIdentifierString('a'.repeat(100), 36)).toBe(false)
-    expect(validateIdentifierString('  ', 36)).toBe(false)
-    expect(validateIdentifierString('\t\n', 36)).toBe(false)
-    expect(validateIdentifierString('valid', 4)).toBe(false)
+    assert.strictEqual(validateIdentifierString('550e8400-e29b-41d4-a716-446655440000', 36), true)
+    assert.strictEqual(validateIdentifierString('CSMS-TXN-12345', 36), true)
+    assert.strictEqual(validateIdentifierString('a', 36), true)
+    assert.strictEqual(validateIdentifierString('abc123', 36), true)
+    assert.strictEqual(validateIdentifierString('valid-identifier', 36), true)
+    assert.strictEqual(validateIdentifierString('a'.repeat(36), 36), true)
+    assert.strictEqual(validateIdentifierString('', 36), false)
+    assert.strictEqual(validateIdentifierString('a'.repeat(37), 36), false)
+    assert.strictEqual(validateIdentifierString('a'.repeat(100), 36), false)
+    assert.strictEqual(validateIdentifierString('  ', 36), false)
+    assert.strictEqual(validateIdentifierString('\t\n', 36), false)
+    assert.strictEqual(validateIdentifierString('valid', 4), false)
   })
 
   await it('should sleep for specified milliseconds using timer mock', async t => {
@@ -101,154 +101,153 @@ await describe('Utils', async () => {
       const sleepPromise = sleep(delay)
       t.mock.timers.tick(delay)
       const timeout = await sleepPromise
-      expect(timeout).toBeDefined()
-      expect(typeof timeout).toBe('object')
+      assert.notStrictEqual(timeout, undefined)
+      assert.strictEqual(typeof timeout, 'object')
       clearTimeout(timeout)
     })
   })
 
   await it('should format milliseconds duration into human readable string', () => {
-    expect(formatDurationMilliSeconds(0)).toBe('0 seconds')
-    expect(formatDurationMilliSeconds(900)).toBe('0 seconds')
-    expect(formatDurationMilliSeconds(1000)).toBe('1 second')
-    expect(formatDurationMilliSeconds(hoursToMilliseconds(4380))).toBe('182 days 12 hours')
+    assert.strictEqual(formatDurationMilliSeconds(0), '0 seconds')
+    assert.strictEqual(formatDurationMilliSeconds(900), '0 seconds')
+    assert.strictEqual(formatDurationMilliSeconds(1000), '1 second')
+    assert.strictEqual(formatDurationMilliSeconds(hoursToMilliseconds(4380)), '182 days 12 hours')
   })
 
   await it('should format seconds duration into human readable string', () => {
-    expect(formatDurationSeconds(0)).toBe('0 seconds')
-    expect(formatDurationSeconds(0.9)).toBe('0 seconds')
-    expect(formatDurationSeconds(1)).toBe('1 second')
-    expect(formatDurationSeconds(hoursToSeconds(4380))).toBe('182 days 12 hours')
+    assert.strictEqual(formatDurationSeconds(0), '0 seconds')
+    assert.strictEqual(formatDurationSeconds(0.9), '0 seconds')
+    assert.strictEqual(formatDurationSeconds(1), '1 second')
+    assert.strictEqual(formatDurationSeconds(hoursToSeconds(4380)), '182 days 12 hours')
   })
 
   await it('should validate date objects and timestamps correctly', () => {
-    expect(isValidDate(undefined)).toBe(false)
-    expect(isValidDate(-1)).toBe(true)
-    expect(isValidDate(0)).toBe(true)
-    expect(isValidDate(1)).toBe(true)
-    expect(isValidDate(-0.5)).toBe(true)
-    expect(isValidDate(0.5)).toBe(true)
-    expect(isValidDate(new Date())).toBe(true)
+    assert.strictEqual(isValidDate(undefined), false)
+    assert.strictEqual(isValidDate(-1), true)
+    assert.strictEqual(isValidDate(0), true)
+    assert.strictEqual(isValidDate(1), true)
+    assert.strictEqual(isValidDate(-0.5), true)
+    assert.strictEqual(isValidDate(0.5), true)
+    assert.strictEqual(isValidDate(new Date()), true)
   })
 
   await it('should convert various input types to Date objects', () => {
-    expect(convertToDate(undefined)).toBe(undefined)
-    expect(convertToDate(null)).toBe(undefined)
-    expect(() => convertToDate('')).toThrow(new Error("Cannot convert to date: ''"))
-    expect(() => convertToDate('00:70:61')).toThrow(new Error("Cannot convert to date: '00:70:61'"))
-    expect(convertToDate(0)).toStrictEqual(new Date('1970-01-01T00:00:00.000Z'))
-    expect(convertToDate(-1)).toStrictEqual(new Date('1969-12-31T23:59:59.999Z'))
+    assert.strictEqual(convertToDate(undefined), undefined)
+    assert.strictEqual(convertToDate(null), undefined)
+    assert.throws(() => { convertToDate('') }, { message: /Cannot convert to date: ''/ })
+    assert.throws(() => { convertToDate('00:70:61') }, { message: /Cannot convert to date: '00:70:61'/ })
+    assert.deepStrictEqual(convertToDate(0), new Date('1970-01-01T00:00:00.000Z'))
+    assert.deepStrictEqual(convertToDate(-1), new Date('1969-12-31T23:59:59.999Z'))
     const dateStr = '2020-01-01T00:00:00.000Z'
     let date = convertToDate(dateStr)
-    expect(date).toBeInstanceOf(Date)
-    expect(date).toStrictEqual(new Date(dateStr))
+    assert.ok(date instanceof Date)
+    assert.deepStrictEqual(date, new Date(dateStr))
     date = convertToDate(new Date(dateStr))
-    expect(date).toBeInstanceOf(Date)
-    expect(date).toStrictEqual(new Date(dateStr))
+    assert.ok(date instanceof Date)
+    assert.deepStrictEqual(date, new Date(dateStr))
   })
 
   await it('should convert various input types to integers', () => {
-    expect(convertToInt(undefined)).toBe(0)
-    expect(convertToInt(null)).toBe(0)
-    expect(convertToInt(0)).toBe(0)
+    assert.strictEqual(convertToInt(undefined), 0)
+    assert.strictEqual(convertToInt(null), 0)
+    assert.strictEqual(convertToInt(0), 0)
     const randomInteger = randomInt(Constants.MAX_RANDOM_INTEGER)
-    expect(convertToInt(randomInteger)).toBe(randomInteger)
-    expect(convertToInt('-1')).toBe(-1)
-    expect(convertToInt('1')).toBe(1)
-    expect(convertToInt('1.1')).toBe(1)
-    expect(convertToInt('1.9')).toBe(1)
-    expect(convertToInt('1.999')).toBe(1)
-    expect(convertToInt(-1)).toBe(-1)
-    expect(convertToInt(1)).toBe(1)
-    expect(convertToInt(1.1)).toBe(1)
-    expect(convertToInt(1.9)).toBe(1)
-    expect(convertToInt(1.999)).toBe(1)
-    expect(() => {
+    assert.strictEqual(convertToInt(randomInteger), randomInteger)
+    assert.strictEqual(convertToInt('-1'), -1)
+    assert.strictEqual(convertToInt('1'), 1)
+    assert.strictEqual(convertToInt('1.1'), 1)
+    assert.strictEqual(convertToInt('1.9'), 1)
+    assert.strictEqual(convertToInt('1.999'), 1)
+    assert.strictEqual(convertToInt(-1), -1)
+    assert.strictEqual(convertToInt(1), 1)
+    assert.strictEqual(convertToInt(1.1), 1)
+    assert.strictEqual(convertToInt(1.9), 1)
+    assert.strictEqual(convertToInt(1.999), 1)
+    assert.throws(() => {
       convertToInt('NaN')
-    }).toThrow("Cannot convert to integer: 'NaN'")
+    }, { message: /Cannot convert to integer: 'NaN'/ })
   })
 
   await it('should convert various input types to floats', () => {
-    expect(convertToFloat(undefined)).toBe(0)
-    expect(convertToFloat(null)).toBe(0)
-    expect(convertToFloat(0)).toBe(0)
+    assert.strictEqual(convertToFloat(undefined), 0)
+    assert.strictEqual(convertToFloat(null), 0)
+    assert.strictEqual(convertToFloat(0), 0)
     const randomFloat = getRandomFloat()
-    expect(convertToFloat(randomFloat)).toBe(randomFloat)
-    expect(convertToFloat('-1')).toBe(-1)
-    expect(convertToFloat('1')).toBe(1)
-    expect(convertToFloat('1.1')).toBe(1.1)
-    expect(convertToFloat('1.9')).toBe(1.9)
-    expect(convertToFloat('1.999')).toBe(1.999)
-    expect(convertToFloat(-1)).toBe(-1)
-    expect(convertToFloat(1)).toBe(1)
-    expect(convertToFloat(1.1)).toBe(1.1)
-    expect(convertToFloat(1.9)).toBe(1.9)
-    expect(convertToFloat(1.999)).toBe(1.999)
-    expect(() => {
+    assert.strictEqual(convertToFloat(randomFloat), randomFloat)
+    assert.strictEqual(convertToFloat('-1'), -1)
+    assert.strictEqual(convertToFloat('1'), 1)
+    assert.strictEqual(convertToFloat('1.1'), 1.1)
+    assert.strictEqual(convertToFloat('1.9'), 1.9)
+    assert.strictEqual(convertToFloat('1.999'), 1.999)
+    assert.strictEqual(convertToFloat(-1), -1)
+    assert.strictEqual(convertToFloat(1), 1)
+    assert.strictEqual(convertToFloat(1.1), 1.1)
+    assert.strictEqual(convertToFloat(1.9), 1.9)
+    assert.strictEqual(convertToFloat(1.999), 1.999)
+    assert.throws(() => {
       convertToFloat('NaN')
-    }).toThrow("Cannot convert to float: 'NaN'")
+    }, { message: /Cannot convert to float: 'NaN'/ })
   })
 
   await it('should convert various input types to booleans', () => {
-    expect(convertToBoolean(undefined)).toBe(false)
-    expect(convertToBoolean(null)).toBe(false)
-    expect(convertToBoolean('true')).toBe(true)
-    expect(convertToBoolean('false')).toBe(false)
-    expect(convertToBoolean('TRUE')).toBe(true)
-    expect(convertToBoolean('FALSE')).toBe(false)
-    expect(convertToBoolean('1')).toBe(true)
-    expect(convertToBoolean('0')).toBe(false)
-    expect(convertToBoolean(1)).toBe(true)
-    expect(convertToBoolean(0)).toBe(false)
-    expect(convertToBoolean(true)).toBe(true)
-    expect(convertToBoolean(false)).toBe(false)
-    expect(convertToBoolean('')).toBe(false)
-    expect(convertToBoolean('NoNBoolean')).toBe(false)
+    assert.strictEqual(convertToBoolean(undefined), false)
+    assert.strictEqual(convertToBoolean(null), false)
+    assert.strictEqual(convertToBoolean('true'), true)
+    assert.strictEqual(convertToBoolean('false'), false)
+    assert.strictEqual(convertToBoolean('TRUE'), true)
+    assert.strictEqual(convertToBoolean('FALSE'), false)
+    assert.strictEqual(convertToBoolean('1'), true)
+    assert.strictEqual(convertToBoolean('0'), false)
+    assert.strictEqual(convertToBoolean(1), true)
+    assert.strictEqual(convertToBoolean(0), false)
+    assert.strictEqual(convertToBoolean(true), true)
+    assert.strictEqual(convertToBoolean(false), false)
+    assert.strictEqual(convertToBoolean(''), false)
+    assert.strictEqual(convertToBoolean('NoNBoolean'), false)
   })
 
   await it('should generate cryptographically secure random numbers between 0 and 1', () => {
     const random = secureRandom()
-    expect(typeof random === 'number').toBe(true)
-    expect(random).toBeGreaterThanOrEqual(0)
-    expect(random).toBeLessThan(1)
+    assert.ok(typeof random === 'number')
+    assert.ok(random >= 0)
+    assert.ok(random < 1)
   })
 
   await it('should round numbers to specified decimal places correctly', () => {
-    expect(roundTo(0, 2)).toBe(0)
-    expect(roundTo(0.5, 0)).toBe(1)
-    expect(roundTo(0.5, 2)).toBe(0.5)
-    expect(roundTo(-0.5, 0)).toBe(-1)
-    expect(roundTo(-0.5, 2)).toBe(-0.5)
-    expect(roundTo(1.005, 0)).toBe(1)
-    expect(roundTo(1.005, 2)).toBe(1.01)
-    expect(roundTo(2.175, 2)).toBe(2.18)
-    expect(roundTo(5.015, 2)).toBe(5.02)
-    expect(roundTo(-1.005, 2)).toBe(-1.01)
-    expect(roundTo(-2.175, 2)).toBe(-2.18)
-    expect(roundTo(-5.015, 2)).toBe(-5.02)
+    assert.strictEqual(roundTo(0, 2), 0)
+    assert.strictEqual(roundTo(0.5, 0), 1)
+    assert.strictEqual(roundTo(0.5, 2), 0.5)
+    assert.strictEqual(roundTo(-0.5, 0), -1)
+    assert.strictEqual(roundTo(-0.5, 2), -0.5)
+    assert.strictEqual(roundTo(1.005, 0), 1)
+    assert.strictEqual(roundTo(1.005, 2), 1.01)
+    assert.strictEqual(roundTo(2.175, 2), 2.18)
+    assert.strictEqual(roundTo(5.015, 2), 5.02)
+    assert.strictEqual(roundTo(-1.005, 2), -1.01)
+    assert.strictEqual(roundTo(-2.175, 2), -2.18)
+    assert.strictEqual(roundTo(-5.015, 2), -5.02)
   })
 
   await it('should generate random floats within specified range', () => {
     let randomFloat = getRandomFloat()
-    expect(typeof randomFloat === 'number').toBe(true)
-    expect(randomFloat).toBeGreaterThanOrEqual(0)
-    expect(randomFloat).toBeLessThanOrEqual(Number.MAX_VALUE)
-    expect(randomFloat).not.toStrictEqual(getRandomFloat())
-    expect(() => getRandomFloat(0, 1)).toThrow(new RangeError('Invalid interval'))
-    expect(() => getRandomFloat(Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY)).toThrow(
-      new RangeError('Invalid interval')
-    )
+    assert.ok(typeof randomFloat === 'number')
+    assert.ok(randomFloat >= 0)
+    assert.ok(randomFloat <= Number.MAX_VALUE)
+    assert.notDeepStrictEqual(randomFloat, getRandomFloat())
+    assert.throws(() => { getRandomFloat(0, 1) }, { message: /Invalid interval/ })
+    assert.throws(() => { getRandomFloat(Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY) }, { message: /Invalid interval/ })
     randomFloat = getRandomFloat(0, -Number.MAX_VALUE)
-    expect(randomFloat).toBeGreaterThanOrEqual(-Number.MAX_VALUE)
-    expect(randomFloat).toBeLessThanOrEqual(0)
+    assert.ok(randomFloat >= -Number.MAX_VALUE)
+    assert.ok(randomFloat <= 0)
   })
 
   await it('should extract numeric values from timestamped circular buffer', () => {
-    expect(
+    assert.deepStrictEqual(
       extractTimeSeriesValues(
         new CircularBuffer<TimestampedData>(Array, Constants.DEFAULT_CIRCULAR_BUFFER_CAPACITY)
-      )
-    ).toStrictEqual([])
+      ),
+      []
+    )
     const circularBuffer = new CircularBuffer<TimestampedData>(
       Array,
       Constants.DEFAULT_CIRCULAR_BUFFER_CAPACITY
@@ -256,7 +255,7 @@ await describe('Utils', async () => {
     circularBuffer.push({ timestamp: Date.now(), value: 1.1 })
     circularBuffer.push({ timestamp: Date.now(), value: 2.2 })
     circularBuffer.push({ timestamp: Date.now(), value: 3.3 })
-    expect(extractTimeSeriesValues(circularBuffer)).toStrictEqual([1.1, 2.2, 3.3])
+    assert.deepStrictEqual(extractTimeSeriesValues(circularBuffer), [1.1, 2.2, 3.3])
   })
 
   await it('should correctly identify async functions from other types', () => {
@@ -300,12 +299,12 @@ await describe('Utils', async () => {
       function named () {},
     ]
     for (const value of nonAsyncValues) {
-      expect(isAsyncFunction(value)).toBe(false)
+      assert.strictEqual(isAsyncFunction(value), false)
     }
 
     const asyncValues: unknown[] = [async () => {}, async function () {}, async function named () {}]
     for (const value of asyncValues) {
-      expect(isAsyncFunction(value)).toBe(true)
+      assert.strictEqual(isAsyncFunction(value), true)
     }
     /* eslint-enable @typescript-eslint/no-empty-function */
 
@@ -321,45 +320,45 @@ await describe('Utils', async () => {
     }
     const testClass = new TestClass()
     /* eslint-disable @typescript-eslint/unbound-method -- Testing unbound method detection for async/sync determination */
-    expect(isAsyncFunction(testClass.testSync)).toBe(false)
-    expect(isAsyncFunction(testClass.testAsync)).toBe(true)
-    expect(isAsyncFunction(testClass.testArrowSync)).toBe(false)
-    expect(isAsyncFunction(testClass.testArrowAsync)).toBe(true)
-    expect(isAsyncFunction(TestClass.testStaticSync)).toBe(false)
-    expect(isAsyncFunction(TestClass.testStaticAsync)).toBe(true)
+    assert.strictEqual(isAsyncFunction(testClass.testSync), false)
+    assert.strictEqual(isAsyncFunction(testClass.testAsync), true)
+    assert.strictEqual(isAsyncFunction(testClass.testArrowSync), false)
+    assert.strictEqual(isAsyncFunction(testClass.testArrowAsync), true)
+    assert.strictEqual(isAsyncFunction(TestClass.testStaticSync), false)
+    assert.strictEqual(isAsyncFunction(TestClass.testStaticAsync), true)
     /* eslint-enable @typescript-eslint/unbound-method */
   })
 
   await it('should deep clone objects, arrays, dates, maps and sets', () => {
     const obj = { 1: 1 }
-    expect(clone(obj)).toStrictEqual(obj)
-    expect(clone(obj) === obj).toBe(false)
+    assert.deepStrictEqual(clone(obj), obj)
+    assert.ok(!(clone(obj) === obj))
     const nestedObj = { 1: obj, 2: obj }
-    expect(clone(nestedObj)).toStrictEqual(nestedObj)
-    expect(clone(nestedObj) === nestedObj).toBe(false)
+    assert.deepStrictEqual(clone(nestedObj), nestedObj)
+    assert.ok(!(clone(nestedObj) === nestedObj))
     const array = [1, 2]
-    expect(clone(array)).toStrictEqual(array)
-    expect(clone(array) === array).toBe(false)
+    assert.deepStrictEqual(clone(array), array)
+    assert.ok(!(clone(array) === array))
     const objArray = [obj, obj]
-    expect(clone(objArray)).toStrictEqual(objArray)
-    expect(clone(objArray) === objArray).toBe(false)
+    assert.deepStrictEqual(clone(objArray), objArray)
+    assert.ok(!(clone(objArray) === objArray))
     const date = new Date()
-    expect(clone(date)).toStrictEqual(date)
-    expect(clone(date) === date).toBe(false)
+    assert.deepStrictEqual(clone(date), date)
+    assert.ok(!(clone(date) === date))
     if (runtime === JSRuntime.node && satisfies(version, '>=22.0.0')) {
       const url = new URL('https://domain.tld')
-      expect(() => clone(url)).toThrow(new Error('Cannot clone object of unsupported type.'))
+      assert.throws(() => { clone(url) }, { message: /Cannot clone object of unsupported type./ })
     }
     const map = new Map([['1', '2']])
-    expect(clone(map)).toStrictEqual(map)
-    expect(clone(map) === map).toBe(false)
+    assert.deepStrictEqual(clone(map), map)
+    assert.ok(!(clone(map) === map))
     const set = new Set(['1'])
-    expect(clone(set)).toStrictEqual(set)
-    expect(clone(set) === set).toBe(false)
+    assert.deepStrictEqual(clone(set), set)
+    assert.ok(!(clone(set) === set))
     const weakMap = new WeakMap([[{ 1: 1 }, { 2: 2 }]])
-    expect(() => clone(weakMap)).toThrow(new Error('#<WeakMap> could not be cloned.'))
+    assert.throws(() => { clone(weakMap) }, { message: /#<WeakMap> could not be cloned./ })
     const weakSet = new WeakSet([{ 1: 1 }, { 2: 2 }])
-    expect(() => clone(weakSet)).toThrow(new Error('#<WeakSet> could not be cloned.'))
+    assert.throws(() => { clone(weakSet) }, { message: /#<WeakSet> could not be cloned./ })
   })
 
   await it('should execute function only once regardless of call count', () => {
@@ -367,124 +366,124 @@ await describe('Utils', async () => {
     const fn = (): number => ++called
     const onceFn = once(fn)
     const result1 = onceFn()
-    expect(called).toBe(1)
-    expect(result1).toBe(1)
+    assert.strictEqual(called, 1)
+    assert.strictEqual(result1, 1)
     const result2 = onceFn()
-    expect(called).toBe(1)
-    expect(result2).toBe(1)
+    assert.strictEqual(called, 1)
+    assert.strictEqual(result2, 1)
     const result3 = onceFn()
-    expect(called).toBe(1)
-    expect(result3).toBe(1)
+    assert.strictEqual(called, 1)
+    assert.strictEqual(result3, 1)
   })
 
   await it('should check if property exists in object using has()', () => {
-    expect(has('', 'test')).toBe(false)
-    expect(has('test', '')).toBe(false)
-    expect(has('test', 'test')).toBe(false)
-    expect(has('', undefined)).toBe(false)
-    expect(has('', null)).toBe(false)
-    expect(has('', [])).toBe(false)
-    expect(has('', {})).toBe(false)
-    expect(has(1, { 1: 1 })).toBe(true)
-    expect(has('1', { 1: 1 })).toBe(true)
-    expect(has(2, { 1: 1 })).toBe(false)
-    expect(has('2', { 1: 1 })).toBe(false)
-    expect(has('1', { 1: '1' })).toBe(true)
-    expect(has(1, { 1: '1' })).toBe(true)
-    expect(has('2', { 1: '1' })).toBe(false)
-    expect(has(2, { 1: '1' })).toBe(false)
+    assert.strictEqual(has('', 'test'), false)
+    assert.strictEqual(has('test', ''), false)
+    assert.strictEqual(has('test', 'test'), false)
+    assert.strictEqual(has('', undefined), false)
+    assert.strictEqual(has('', null), false)
+    assert.strictEqual(has('', []), false)
+    assert.strictEqual(has('', {}), false)
+    assert.strictEqual(has(1, { 1: 1 }), true)
+    assert.strictEqual(has('1', { 1: 1 }), true)
+    assert.strictEqual(has(2, { 1: 1 }), false)
+    assert.strictEqual(has('2', { 1: 1 }), false)
+    assert.strictEqual(has('1', { 1: '1' }), true)
+    assert.strictEqual(has(1, { 1: '1' }), true)
+    assert.strictEqual(has('2', { 1: '1' }), false)
+    assert.strictEqual(has(2, { 1: '1' }), false)
   })
 
   await it('should detect empty strings, objects, arrays, maps and sets', () => {
-    expect(isEmpty('')).toBe(true)
-    expect(isEmpty(' ')).toBe(true)
-    expect(isEmpty('     ')).toBe(true)
-    expect(isEmpty('test')).toBe(false)
-    expect(isEmpty(' test')).toBe(false)
-    expect(isEmpty('test ')).toBe(false)
-    expect(isEmpty(undefined)).toBe(false)
-    expect(isEmpty(null)).toBe(false)
-    expect(isEmpty(0)).toBe(false)
-    expect(isEmpty({})).toBe(true)
-    expect(isEmpty([])).toBe(true)
-    expect(isEmpty(new Map())).toBe(true)
-    expect(isEmpty(new Set())).toBe(true)
-    expect(isEmpty(new WeakMap())).toBe(false)
-    expect(isEmpty(new WeakSet())).toBe(false)
+    assert.strictEqual(isEmpty(''), true)
+    assert.strictEqual(isEmpty(' '), true)
+    assert.strictEqual(isEmpty('     '), true)
+    assert.strictEqual(isEmpty('test'), false)
+    assert.strictEqual(isEmpty(' test'), false)
+    assert.strictEqual(isEmpty('test '), false)
+    assert.strictEqual(isEmpty(undefined), false)
+    assert.strictEqual(isEmpty(null), false)
+    assert.strictEqual(isEmpty(0), false)
+    assert.strictEqual(isEmpty({}), true)
+    assert.strictEqual(isEmpty([]), true)
+    assert.strictEqual(isEmpty(new Map()), true)
+    assert.strictEqual(isEmpty(new Set()), true)
+    assert.strictEqual(isEmpty(new WeakMap()), false)
+    assert.strictEqual(isEmpty(new WeakSet()), false)
   })
 
   await it('should detect non-empty strings correctly', () => {
-    expect(isNotEmptyString('')).toBe(false)
-    expect(isNotEmptyString(' ')).toBe(false)
-    expect(isNotEmptyString('     ')).toBe(false)
-    expect(isNotEmptyString('test')).toBe(true)
-    expect(isNotEmptyString(' test')).toBe(true)
-    expect(isNotEmptyString('test ')).toBe(true)
-    expect(isNotEmptyString(undefined)).toBe(false)
-    expect(isNotEmptyString(null)).toBe(false)
-    expect(isNotEmptyString(0)).toBe(false)
-    expect(isNotEmptyString({})).toBe(false)
-    expect(isNotEmptyString([])).toBe(false)
-    expect(isNotEmptyString(new Map())).toBe(false)
-    expect(isNotEmptyString(new Set())).toBe(false)
-    expect(isNotEmptyString(new WeakMap())).toBe(false)
-    expect(isNotEmptyString(new WeakSet())).toBe(false)
+    assert.strictEqual(isNotEmptyString(''), false)
+    assert.strictEqual(isNotEmptyString(' '), false)
+    assert.strictEqual(isNotEmptyString('     '), false)
+    assert.strictEqual(isNotEmptyString('test'), true)
+    assert.strictEqual(isNotEmptyString(' test'), true)
+    assert.strictEqual(isNotEmptyString('test '), true)
+    assert.strictEqual(isNotEmptyString(undefined), false)
+    assert.strictEqual(isNotEmptyString(null), false)
+    assert.strictEqual(isNotEmptyString(0), false)
+    assert.strictEqual(isNotEmptyString({}), false)
+    assert.strictEqual(isNotEmptyString([]), false)
+    assert.strictEqual(isNotEmptyString(new Map()), false)
+    assert.strictEqual(isNotEmptyString(new Set()), false)
+    assert.strictEqual(isNotEmptyString(new WeakMap()), false)
+    assert.strictEqual(isNotEmptyString(new WeakSet()), false)
   })
 
   await it('should detect non-empty arrays correctly', () => {
-    expect(isNotEmptyArray([])).toBe(false)
-    expect(isNotEmptyArray([1, 2])).toBe(true)
-    expect(isNotEmptyArray(['1', '2'])).toBe(true)
-    expect(isNotEmptyArray(undefined)).toBe(false)
-    expect(isNotEmptyArray(null)).toBe(false)
-    expect(isNotEmptyArray('')).toBe(false)
-    expect(isNotEmptyArray('test')).toBe(false)
-    expect(isNotEmptyArray(0)).toBe(false)
-    expect(isNotEmptyArray({})).toBe(false)
-    expect(isNotEmptyArray(new Map())).toBe(false)
-    expect(isNotEmptyArray(new Set())).toBe(false)
-    expect(isNotEmptyArray(new WeakMap())).toBe(false)
-    expect(isNotEmptyArray(new WeakSet())).toBe(false)
+    assert.strictEqual(isNotEmptyArray([]), false)
+    assert.strictEqual(isNotEmptyArray([1, 2]), true)
+    assert.strictEqual(isNotEmptyArray(['1', '2']), true)
+    assert.strictEqual(isNotEmptyArray(undefined), false)
+    assert.strictEqual(isNotEmptyArray(null), false)
+    assert.strictEqual(isNotEmptyArray(''), false)
+    assert.strictEqual(isNotEmptyArray('test'), false)
+    assert.strictEqual(isNotEmptyArray(0), false)
+    assert.strictEqual(isNotEmptyArray({}), false)
+    assert.strictEqual(isNotEmptyArray(new Map()), false)
+    assert.strictEqual(isNotEmptyArray(new Set()), false)
+    assert.strictEqual(isNotEmptyArray(new WeakMap()), false)
+    assert.strictEqual(isNotEmptyArray(new WeakSet()), false)
   })
 
   await it('should insert substring at specified index position', () => {
-    expect(insertAt('test', 'ing', 'test'.length)).toBe('testing')
+    assert.strictEqual(insertAt('test', 'ing', 'test'.length), 'testing')
     /* eslint-disable @cspell/spellchecker -- Testing string insertion with intentional misspelling 'ing' at position 2 */
-    expect(insertAt('test', 'ing', 2)).toBe('teingst')
+    assert.strictEqual(insertAt('test', 'ing', 2), 'teingst')
     /* eslint-enable @cspell/spellchecker */
   })
 
   await it('should convert to integer or return NaN for invalid input', () => {
-    expect(convertToIntOrNaN(undefined)).toBe(0)
-    expect(convertToIntOrNaN(null)).toBe(0)
-    expect(convertToIntOrNaN('0')).toBe(0)
-    expect(convertToIntOrNaN('42')).toBe(42)
-    expect(convertToIntOrNaN('-7')).toBe(-7)
-    expect(convertToIntOrNaN('10.9')).toBe(10)
-    expect(Number.isNaN(convertToIntOrNaN('NaN'))).toBe(true)
-    expect(Number.isNaN(convertToIntOrNaN('abc'))).toBe(true)
+    assert.strictEqual(convertToIntOrNaN(undefined), 0)
+    assert.strictEqual(convertToIntOrNaN(null), 0)
+    assert.strictEqual(convertToIntOrNaN('0'), 0)
+    assert.strictEqual(convertToIntOrNaN('42'), 42)
+    assert.strictEqual(convertToIntOrNaN('-7'), -7)
+    assert.strictEqual(convertToIntOrNaN('10.9'), 10)
+    assert.ok(Number.isNaN(convertToIntOrNaN('NaN')))
+    assert.ok(Number.isNaN(convertToIntOrNaN('abc')))
   })
 
   await it('should check if array is sorted according to comparator', () => {
-    expect(isArraySorted<number>([], (a, b) => a - b)).toBe(true)
-    expect(isArraySorted<number>([1], (a, b) => a - b)).toBe(true)
-    expect(isArraySorted<number>([1, 2, 3, 4, 5], (a, b) => a - b)).toBe(true)
-    expect(isArraySorted<number>([1, 2, 3, 5, 4], (a, b) => a - b)).toBe(false)
-    expect(isArraySorted<number>([2, 1, 3, 4, 5], (a, b) => a - b)).toBe(false)
+    assert.strictEqual(isArraySorted<number>([], (a, b) => a - b), true)
+    assert.strictEqual(isArraySorted<number>([1], (a, b) => a - b), true)
+    assert.strictEqual(isArraySorted<number>([1, 2, 3, 4, 5], (a, b) => a - b), true)
+    assert.strictEqual(isArraySorted<number>([1, 2, 3, 5, 4], (a, b) => a - b), false)
+    assert.strictEqual(isArraySorted<number>([2, 1, 3, 4, 5], (a, b) => a - b), false)
   })
 
   await it('should clamp values to safe timer range (0 to MAX_SETINTERVAL_DELAY)', () => {
-    expect(clampToSafeTimerValue(0)).toBe(0)
-    expect(clampToSafeTimerValue(1000)).toBe(1000)
-    expect(clampToSafeTimerValue(Constants.MAX_SETINTERVAL_DELAY)).toBe(
+    assert.strictEqual(clampToSafeTimerValue(0), 0)
+    assert.strictEqual(clampToSafeTimerValue(1000), 1000)
+    assert.strictEqual(clampToSafeTimerValue(Constants.MAX_SETINTERVAL_DELAY),
       Constants.MAX_SETINTERVAL_DELAY
     )
-    expect(clampToSafeTimerValue(Constants.MAX_SETINTERVAL_DELAY + 1)).toBe(
+    assert.strictEqual(clampToSafeTimerValue(Constants.MAX_SETINTERVAL_DELAY + 1),
       Constants.MAX_SETINTERVAL_DELAY
     )
-    expect(clampToSafeTimerValue(Number.MAX_SAFE_INTEGER)).toBe(Constants.MAX_SETINTERVAL_DELAY)
-    expect(clampToSafeTimerValue(-1)).toBe(0)
-    expect(clampToSafeTimerValue(-1000)).toBe(0)
+    assert.strictEqual(clampToSafeTimerValue(Number.MAX_SAFE_INTEGER), Constants.MAX_SETINTERVAL_DELAY)
+    assert.strictEqual(clampToSafeTimerValue(-1), 0)
+    assert.strictEqual(clampToSafeTimerValue(-1000), 0)
   })
 
   // -------------------------------------------------------------------------
@@ -497,39 +496,39 @@ await describe('Utils', async () => {
 
     // retryNumber = 0: 2^0 * 100 = 100ms base
     const delay0 = exponentialDelay(0)
-    expect(delay0).toBeGreaterThanOrEqual(100)
-    expect(delay0).toBeLessThanOrEqual(120) // 100 + 20% max jitter
+    assert.ok(delay0 >= 100)
+    assert.ok(delay0 <= 120) // 100 + 20% max jitter
 
     // retryNumber = 1: 2^1 * 100 = 200ms base
     const delay1 = exponentialDelay(1)
-    expect(delay1).toBeGreaterThanOrEqual(200)
-    expect(delay1).toBeLessThanOrEqual(240) // 200 + 20% max jitter
+    assert.ok(delay1 >= 200)
+    assert.ok(delay1 <= 240) // 200 + 20% max jitter
 
     // retryNumber = 2: 2^2 * 100 = 400ms base
     const delay2 = exponentialDelay(2)
-    expect(delay2).toBeGreaterThanOrEqual(400)
-    expect(delay2).toBeLessThanOrEqual(480) // 400 + 20% max jitter
+    assert.ok(delay2 >= 400)
+    assert.ok(delay2 <= 480) // 400 + 20% max jitter
 
     // retryNumber = 3: 2^3 * 100 = 800ms base
     const delay3 = exponentialDelay(3)
-    expect(delay3).toBeGreaterThanOrEqual(800)
-    expect(delay3).toBeLessThanOrEqual(960) // 800 + 20% max jitter
+    assert.ok(delay3 >= 800)
+    assert.ok(delay3 <= 960) // 800 + 20% max jitter
   })
 
   await it('should calculate exponential delay with custom delay factor', () => {
     // Custom delayFactor = 50ms
     const delay0 = exponentialDelay(0, 50)
-    expect(delay0).toBeGreaterThanOrEqual(50)
-    expect(delay0).toBeLessThanOrEqual(60) // 50 + 20% max jitter
+    assert.ok(delay0 >= 50)
+    assert.ok(delay0 <= 60) // 50 + 20% max jitter
 
     const delay1 = exponentialDelay(1, 50)
-    expect(delay1).toBeGreaterThanOrEqual(100)
-    expect(delay1).toBeLessThanOrEqual(120)
+    assert.ok(delay1 >= 100)
+    assert.ok(delay1 <= 120)
 
     // Custom delayFactor = 200ms
     const delay2 = exponentialDelay(2, 200)
-    expect(delay2).toBeGreaterThanOrEqual(800) // 2^2 * 200 = 800
-    expect(delay2).toBeLessThanOrEqual(960)
+    assert.ok(delay2 >= 800) // 2^2 * 200 = 800
+    assert.ok(delay2 <= 960)
   })
 
   await it('should follow 2^n exponential growth pattern', () => {
@@ -547,8 +546,8 @@ await describe('Utils', async () => {
     for (let i = 1; i < delays.length; i++) {
       const ratio = delays[i] / delays[i - 1]
       // Allow for jitter variance - ratio should be roughly 2x
-      expect(ratio).toBeGreaterThan(1.5)
-      expect(ratio).toBeLessThan(2.5)
+      assert.ok(ratio > 1.5)
+      assert.ok(ratio < 2.5)
     }
   })
 
@@ -566,7 +565,7 @@ await describe('Utils', async () => {
 
     // With jitter, we expect at least some variation
     // (unlikely to get 10 identical values with secure random)
-    expect(delays.size).toBeGreaterThan(1)
+    assert.ok(delays.size > 1)
   })
 
   await it('should keep jitter within 0-20% range of base delay', () => {
@@ -581,27 +580,27 @@ await describe('Utils', async () => {
       const jitter = delay - baseDelay
 
       // Jitter should be non-negative and at most 20% of base delay
-      expect(jitter).toBeGreaterThanOrEqual(0)
-      expect(jitter).toBeLessThanOrEqual(baseDelay * 0.2)
+      assert.ok(jitter >= 0)
+      assert.ok(jitter <= baseDelay * 0.2)
     }
   })
 
   await it('should handle edge cases (default retry, large retry, small factor)', () => {
     // Default retryNumber (0)
     const defaultRetry = exponentialDelay()
-    expect(defaultRetry).toBeGreaterThanOrEqual(100) // 2^0 * 100
-    expect(defaultRetry).toBeLessThanOrEqual(120)
+    assert.ok(defaultRetry >= 100) // 2^0 * 100
+    assert.ok(defaultRetry <= 120)
 
     // Large retry number (verify no overflow issues)
     const largeRetry = exponentialDelay(10, 100)
     // 2^10 * 100 = 102400ms base
-    expect(largeRetry).toBeGreaterThanOrEqual(102400)
-    expect(largeRetry).toBeLessThanOrEqual(122880) // 102400 + 20%
+    assert.ok(largeRetry >= 102400)
+    assert.ok(largeRetry <= 122880) // 102400 + 20%
 
     // Very small delay factor
     const smallFactor = exponentialDelay(2, 1)
-    expect(smallFactor).toBeGreaterThanOrEqual(4) // 2^2 * 1
-    expect(smallFactor).toBeLessThan(5) // 4 + 20%
+    assert.ok(smallFactor >= 4) // 2^2 * 1
+    assert.ok(smallFactor < 5) // 4 + 20%
   })
 
   await it('should calculate appropriate delays for WebSocket reconnection scenarios', () => {
@@ -610,122 +609,122 @@ await describe('Utils', async () => {
 
     // First reconnect attempt (retry 1)
     const firstDelay = exponentialDelay(1, delayFactor)
-    expect(firstDelay).toBeGreaterThanOrEqual(200) // 2^1 * 100
-    expect(firstDelay).toBeLessThanOrEqual(240)
+    assert.ok(firstDelay >= 200) // 2^1 * 100
+    assert.ok(firstDelay <= 240)
 
     // After several failures (retry 5)
     const fifthDelay = exponentialDelay(5, delayFactor)
-    expect(fifthDelay).toBeGreaterThanOrEqual(3200) // 2^5 * 100
-    expect(fifthDelay).toBeLessThanOrEqual(3840)
+    assert.ok(fifthDelay >= 3200) // 2^5 * 100
+    assert.ok(fifthDelay <= 3840)
 
     // Maximum practical retry (retry 10 = ~102 seconds)
     const maxDelay = exponentialDelay(10, delayFactor)
-    expect(maxDelay).toBeGreaterThanOrEqual(102400) // ~102 seconds
-    expect(maxDelay).toBeLessThanOrEqual(122880)
+    assert.ok(maxDelay >= 102400) // ~102 seconds
+    assert.ok(maxDelay <= 122880)
   })
 
   await it('should return timestamped log prefix with optional string', () => {
     const result = logPrefix()
-    expect(typeof result).toBe('string')
-    expect(result.length).toBeGreaterThan(0)
+    assert.strictEqual(typeof result, 'string')
+    assert.ok(result.length > 0)
     const withPrefix = logPrefix(' Test |')
-    expect(withPrefix).toContain(' Test |')
+    assert.ok(withPrefix.includes(' Test |'))
   })
 
   await it('should deep merge objects with source overriding target', () => {
     // Simple merge
-    expect(mergeDeepRight({ a: 1 }, { b: 2 })).toStrictEqual({ a: 1, b: 2 })
+    assert.deepStrictEqual(mergeDeepRight({ a: 1 }, { b: 2 }), { a: 1, b: 2 })
     // Source overrides target
-    expect(mergeDeepRight({ a: 1 }, { a: 2 })).toStrictEqual({ a: 2 })
+    assert.deepStrictEqual(mergeDeepRight({ a: 1 }, { a: 2 }), { a: 2 })
     // Nested merge
-    expect(mergeDeepRight({ a: { b: 1, c: 2 } }, { a: { c: 3, d: 4 } })).toStrictEqual({
+    assert.deepStrictEqual(mergeDeepRight({ a: { b: 1, c: 2 } }, { a: { c: 3, d: 4 } }), {
       a: { b: 1, c: 3, d: 4 },
     })
     // Deeply nested
-    expect(mergeDeepRight({ a: { b: { c: 1 } } }, { a: { b: { d: 2 } } })).toStrictEqual({
+    assert.deepStrictEqual(mergeDeepRight({ a: { b: { c: 1 } } }, { a: { b: { d: 2 } } }), {
       a: { b: { c: 1, d: 2 } },
     })
     // Non-object source value replaces target object
-    expect(mergeDeepRight({ a: { b: 1 } }, { a: 'string' })).toStrictEqual({ a: 'string' })
+    assert.deepStrictEqual(mergeDeepRight({ a: { b: 1 } }, { a: 'string' }), { a: 'string' })
     // Empty objects
-    expect(mergeDeepRight({}, { a: 1 })).toStrictEqual({ a: 1 })
-    expect(mergeDeepRight({ a: 1 }, {})).toStrictEqual({ a: 1 })
+    assert.deepStrictEqual(mergeDeepRight({}, { a: 1 }), { a: 1 })
+    assert.deepStrictEqual(mergeDeepRight({ a: 1 }, {}), { a: 1 })
   })
 
   await it('should stringify objects with Map and Set support', () => {
     // Basic object
-    expect(JSONStringify({ a: 1 })).toBe('{"a":1}')
+    assert.strictEqual(JSONStringify({ a: 1 }), '{"a":1}')
     // Map as array (default)
     const map = new Map([['key', { value: 1 }]])
-    expect(JSONStringify(map)).toBe('[["key",{"value":1}]]')
+    assert.strictEqual(JSONStringify(map), '[["key",{"value":1}]]')
     // Map as object
-    expect(JSONStringify(map, undefined, MapStringifyFormat.object)).toBe('{"key":{"value":1}}')
+    assert.strictEqual(JSONStringify(map, undefined, MapStringifyFormat.object), '{"key":{"value":1}}')
     // Set
     const set = new Set([{ a: 1 }])
-    expect(JSONStringify(set)).toBe('[{"a":1}]')
+    assert.strictEqual(JSONStringify(set), '[{"a":1}]')
     // With space formatting
-    expect(JSONStringify({ a: 1 }, 2)).toBe('{\n  "a": 1\n}')
+    assert.strictEqual(JSONStringify({ a: 1 }, 2), '{\n  "a": 1\n}')
   })
 
   await it('should return human readable string for websocket close codes', () => {
     // Known codes
-    expect(getWebSocketCloseEventStatusString(1000)).toBe('Normal Closure')
-    expect(getWebSocketCloseEventStatusString(1001)).toBe('Going Away')
-    expect(getWebSocketCloseEventStatusString(1006)).toBe('Abnormal Closure')
-    expect(getWebSocketCloseEventStatusString(1011)).toBe('Server Internal Error')
+    assert.strictEqual(getWebSocketCloseEventStatusString(1000), 'Normal Closure')
+    assert.strictEqual(getWebSocketCloseEventStatusString(1001), 'Going Away')
+    assert.strictEqual(getWebSocketCloseEventStatusString(1006), 'Abnormal Closure')
+    assert.strictEqual(getWebSocketCloseEventStatusString(1011), 'Server Internal Error')
     // Ranges
-    expect(getWebSocketCloseEventStatusString(0)).toBe('(Unused)')
-    expect(getWebSocketCloseEventStatusString(999)).toBe('(Unused)')
-    expect(getWebSocketCloseEventStatusString(1016)).toBe('(For WebSocket standard)')
-    expect(getWebSocketCloseEventStatusString(1999)).toBe('(For WebSocket standard)')
-    expect(getWebSocketCloseEventStatusString(2000)).toBe('(For WebSocket extensions)')
-    expect(getWebSocketCloseEventStatusString(2999)).toBe('(For WebSocket extensions)')
-    expect(getWebSocketCloseEventStatusString(3000)).toBe('(For libraries and frameworks)')
-    expect(getWebSocketCloseEventStatusString(3999)).toBe('(For libraries and frameworks)')
-    expect(getWebSocketCloseEventStatusString(4000)).toBe('(For applications)')
-    expect(getWebSocketCloseEventStatusString(4999)).toBe('(For applications)')
+    assert.strictEqual(getWebSocketCloseEventStatusString(0), '(Unused)')
+    assert.strictEqual(getWebSocketCloseEventStatusString(999), '(Unused)')
+    assert.strictEqual(getWebSocketCloseEventStatusString(1016), '(For WebSocket standard)')
+    assert.strictEqual(getWebSocketCloseEventStatusString(1999), '(For WebSocket standard)')
+    assert.strictEqual(getWebSocketCloseEventStatusString(2000), '(For WebSocket extensions)')
+    assert.strictEqual(getWebSocketCloseEventStatusString(2999), '(For WebSocket extensions)')
+    assert.strictEqual(getWebSocketCloseEventStatusString(3000), '(For libraries and frameworks)')
+    assert.strictEqual(getWebSocketCloseEventStatusString(3999), '(For libraries and frameworks)')
+    assert.strictEqual(getWebSocketCloseEventStatusString(4000), '(For applications)')
+    assert.strictEqual(getWebSocketCloseEventStatusString(4999), '(For applications)')
     // Unknown
-    expect(getWebSocketCloseEventStatusString(5000)).toBe('(Unknown)')
+    assert.strictEqual(getWebSocketCloseEventStatusString(5000), '(Unknown)')
   })
 
   await it('should generate random float rounded to specified scale', () => {
     const result = getRandomFloatRounded(10, 0, 2)
-    expect(result).toBeGreaterThanOrEqual(0)
-    expect(result).toBeLessThanOrEqual(10)
+    assert.ok(result >= 0)
+    assert.ok(result <= 10)
     // Check rounding to 2 decimal places
     const decimalStr = result.toString()
     if (decimalStr.includes('.')) {
-      expect(decimalStr.split('.')[1].length).toBeLessThanOrEqual(2)
+      assert.ok(decimalStr.split('.')[1].length <= 2)
     }
     // Default scale
     const defaultScale = getRandomFloatRounded(10, 0)
-    expect(defaultScale).toBeGreaterThanOrEqual(0)
-    expect(defaultScale).toBeLessThanOrEqual(10)
+    assert.ok(defaultScale >= 0)
+    assert.ok(defaultScale <= 10)
   })
 
   await it('should generate fluctuated random float within percentage range', () => {
     // 0% fluctuation returns static value rounded
-    expect(getRandomFloatFluctuatedRounded(100, 0)).toBe(100)
+    assert.strictEqual(getRandomFloatFluctuatedRounded(100, 0), 100)
     // 10% fluctuation: 100 ± 10
     const result = getRandomFloatFluctuatedRounded(100, 10)
-    expect(result).toBeGreaterThanOrEqual(90)
-    expect(result).toBeLessThanOrEqual(110)
+    assert.ok(result >= 90)
+    assert.ok(result <= 110)
     // Invalid fluctuation percent
-    expect(() => getRandomFloatFluctuatedRounded(100, -1)).toThrow(RangeError)
-    expect(() => getRandomFloatFluctuatedRounded(100, 101)).toThrow(RangeError)
+    assert.throws(() => { getRandomFloatFluctuatedRounded(100, -1) }, RangeError)
+    assert.throws(() => { getRandomFloatFluctuatedRounded(100, 101) }, RangeError)
     // Negative static value with fluctuation
     const negResult = getRandomFloatFluctuatedRounded(-100, 10)
-    expect(negResult).toBeGreaterThanOrEqual(-110)
-    expect(negResult).toBeLessThanOrEqual(-90)
+    assert.ok(negResult >= -110)
+    assert.ok(negResult <= -90)
   })
 
   await it('should detect Cloud Foundry environment from VCAP_APPLICATION', () => {
     const originalVcap = process.env.VCAP_APPLICATION
     try {
       delete process.env.VCAP_APPLICATION
-      expect(isCFEnvironment()).toBe(false)
+      assert.strictEqual(isCFEnvironment(), false)
       process.env.VCAP_APPLICATION = '{}'
-      expect(isCFEnvironment()).toBe(true)
+      assert.strictEqual(isCFEnvironment(), true)
     } finally {
       if (originalVcap != null) {
         process.env.VCAP_APPLICATION = originalVcap
@@ -740,10 +739,10 @@ await describe('Utils', async () => {
     // eslint-disable-next-line @typescript-eslint/no-empty-function -- Mock queueMicrotask with no-op to prevent actual throw
     const mockFn = t.mock.method(globalThis, 'queueMicrotask', () => {})
     queueMicrotaskErrorThrowing(error)
-    expect(mockFn.mock.callCount()).toBe(1)
+    assert.strictEqual(mockFn.mock.callCount(), 1)
     const callback = mockFn.mock.calls[0].arguments[0] as () => void
-    expect(() => {
+    assert.throws(() => {
       callback()
-    }).toThrow(error)
+    }, error)
   })
 })

@@ -2,7 +2,7 @@
  * @file Tests for AuthHelpers
  * @description Unit tests for authentication helper utilities
  */
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
 import {
@@ -24,29 +24,29 @@ await describe('AuthHelpers', async () => {
   await describe('calculateTTL', async () => {
     await it('should return undefined for undefined expiry date', () => {
       const result = AuthHelpers.calculateTTL(undefined)
-      expect(result).toBeUndefined()
+      assert.strictEqual(result, undefined)
     })
 
     await it('should return undefined for expired date', () => {
       const expiredDate = new Date(Date.now() - 1000)
       const result = AuthHelpers.calculateTTL(expiredDate)
-      expect(result).toBeUndefined()
+      assert.strictEqual(result, undefined)
     })
 
     await it('should calculate correct TTL in seconds for future date', () => {
       const futureDate = new Date(Date.now() + 5000)
       const result = AuthHelpers.calculateTTL(futureDate)
-      expect(result).toBeDefined()
+      assert.notStrictEqual(result, undefined)
       if (result !== undefined) {
-        expect(result).toBeGreaterThanOrEqual(4)
-        expect(result).toBeLessThanOrEqual(5)
+        assert.ok(result >= 4)
+        assert.ok(result <= 5)
       }
     })
 
     await it('should round down TTL to nearest second', () => {
       const futureDate = new Date(Date.now() + 5500)
       const result = AuthHelpers.calculateTTL(futureDate)
-      expect(result).toBe(5)
+      assert.strictEqual(result, 5)
     })
   })
 
@@ -61,12 +61,12 @@ await describe('AuthHelpers', async () => {
 
       const request = AuthHelpers.createAuthRequest(identifier, context)
 
-      expect(request.identifier).toBe(identifier)
-      expect(request.context).toBe(context)
-      expect(request.allowOffline).toBe(true)
-      expect(request.timestamp).toBeInstanceOf(Date)
-      expect(request.connectorId).toBeUndefined()
-      expect(request.metadata).toBeUndefined()
+      assert.strictEqual(request.identifier, identifier)
+      assert.strictEqual(request.context, context)
+      assert.strictEqual(request.allowOffline, true)
+      assert.ok(request.timestamp instanceof Date)
+      assert.strictEqual(request.connectorId, undefined)
+      assert.strictEqual(request.metadata, undefined)
     })
 
     await it('should create auth request with connector ID', () => {
@@ -80,7 +80,7 @@ await describe('AuthHelpers', async () => {
 
       const request = AuthHelpers.createAuthRequest(identifier, context, connectorId)
 
-      expect(request.connectorId).toBe(1)
+      assert.strictEqual(request.connectorId, 1)
     })
 
     await it('should create auth request with metadata', () => {
@@ -94,7 +94,7 @@ await describe('AuthHelpers', async () => {
 
       const request = AuthHelpers.createAuthRequest(identifier, context, undefined, metadata)
 
-      expect(request.metadata).toStrictEqual({ source: 'test' })
+      assert.deepStrictEqual(request.metadata, { source: 'test' })
     })
   })
 
@@ -105,11 +105,11 @@ await describe('AuthHelpers', async () => {
         AuthenticationMethod.LOCAL_LIST
       )
 
-      expect(result.status).toBe(AuthorizationStatus.BLOCKED)
-      expect(result.method).toBe(AuthenticationMethod.LOCAL_LIST)
-      expect(result.isOffline).toBe(false)
-      expect(result.timestamp).toBeInstanceOf(Date)
-      expect(result.additionalInfo).toBeUndefined()
+      assert.strictEqual(result.status, AuthorizationStatus.BLOCKED)
+      assert.strictEqual(result.method, AuthenticationMethod.LOCAL_LIST)
+      assert.strictEqual(result.isOffline, false)
+      assert.ok(result.timestamp instanceof Date)
+      assert.strictEqual(result.additionalInfo, undefined)
     })
 
     await it('should create rejected result with reason', () => {
@@ -119,9 +119,9 @@ await describe('AuthHelpers', async () => {
         'Token expired on 2024-01-01'
       )
 
-      expect(result.status).toBe(AuthorizationStatus.EXPIRED)
-      expect(result.method).toBe(AuthenticationMethod.REMOTE_AUTHORIZATION)
-      expect(result.additionalInfo).toStrictEqual({ reason: 'Token expired on 2024-01-01' })
+      assert.strictEqual(result.status, AuthorizationStatus.EXPIRED)
+      assert.strictEqual(result.method, AuthenticationMethod.REMOTE_AUTHORIZATION)
+      assert.deepStrictEqual(result.additionalInfo, { reason: 'Token expired on 2024-01-01' })
     })
   })
 
@@ -136,9 +136,9 @@ await describe('AuthHelpers', async () => {
 
       const message = AuthHelpers.formatAuthError(error, identifier)
 
-      expect(message).toContain('VERY_LON...')
-      expect(message).toContain('IdTag')
-      expect(message).toContain('Connection timeout')
+      assert.ok(message.includes('VERY_LON...'))
+      assert.ok(message.includes('IdTag'))
+      assert.ok(message.includes('Connection timeout'))
     })
 
     await it('should handle short identifiers correctly', () => {
@@ -151,68 +151,68 @@ await describe('AuthHelpers', async () => {
 
       const message = AuthHelpers.formatAuthError(error, identifier)
 
-      expect(message).toContain('SHORT...')
-      expect(message).toContain('Local')
-      expect(message).toContain('Invalid format')
+      assert.ok(message.includes('SHORT...'))
+      assert.ok(message.includes('Local'))
+      assert.ok(message.includes('Invalid format'))
     })
   })
 
   await describe('getStatusMessage', async () => {
     await it('should return message for ACCEPTED status', () => {
-      expect(AuthHelpers.getStatusMessage(AuthorizationStatus.ACCEPTED)).toBe(
+      assert.strictEqual(AuthHelpers.getStatusMessage(AuthorizationStatus.ACCEPTED),
         'Authorization accepted'
       )
     })
 
     await it('should return message for BLOCKED status', () => {
-      expect(AuthHelpers.getStatusMessage(AuthorizationStatus.BLOCKED)).toBe(
+      assert.strictEqual(AuthHelpers.getStatusMessage(AuthorizationStatus.BLOCKED),
         'Identifier is blocked'
       )
     })
 
     await it('should return message for EXPIRED status', () => {
-      expect(AuthHelpers.getStatusMessage(AuthorizationStatus.EXPIRED)).toBe(
+      assert.strictEqual(AuthHelpers.getStatusMessage(AuthorizationStatus.EXPIRED),
         'Authorization has expired'
       )
     })
 
     await it('should return message for INVALID status', () => {
-      expect(AuthHelpers.getStatusMessage(AuthorizationStatus.INVALID)).toBe('Invalid identifier')
+      assert.strictEqual(AuthHelpers.getStatusMessage(AuthorizationStatus.INVALID), 'Invalid identifier')
     })
 
     await it('should return message for CONCURRENT_TX status', () => {
-      expect(AuthHelpers.getStatusMessage(AuthorizationStatus.CONCURRENT_TX)).toBe(
+      assert.strictEqual(AuthHelpers.getStatusMessage(AuthorizationStatus.CONCURRENT_TX),
         'Concurrent transaction in progress'
       )
     })
 
     await it('should return message for NOT_AT_THIS_LOCATION status', () => {
-      expect(AuthHelpers.getStatusMessage(AuthorizationStatus.NOT_AT_THIS_LOCATION)).toBe(
+      assert.strictEqual(AuthHelpers.getStatusMessage(AuthorizationStatus.NOT_AT_THIS_LOCATION),
         'Not authorized at this location'
       )
     })
 
     await it('should return message for NOT_AT_THIS_TIME status', () => {
-      expect(AuthHelpers.getStatusMessage(AuthorizationStatus.NOT_AT_THIS_TIME)).toBe(
+      assert.strictEqual(AuthHelpers.getStatusMessage(AuthorizationStatus.NOT_AT_THIS_TIME),
         'Not authorized at this time'
       )
     })
 
     await it('should return message for PENDING status', () => {
-      expect(AuthHelpers.getStatusMessage(AuthorizationStatus.PENDING)).toBe(
+      assert.strictEqual(AuthHelpers.getStatusMessage(AuthorizationStatus.PENDING),
         'Authorization pending'
       )
     })
 
     await it('should return message for UNKNOWN status', () => {
-      expect(AuthHelpers.getStatusMessage(AuthorizationStatus.UNKNOWN)).toBe(
+      assert.strictEqual(AuthHelpers.getStatusMessage(AuthorizationStatus.UNKNOWN),
         'Unknown authorization status'
       )
     })
 
     await it('should return generic message for unknown status', () => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any -- testing invalid status value
-      expect(AuthHelpers.getStatusMessage('INVALID_STATUS' as any)).toBe('Authorization failed')
+      assert.strictEqual(AuthHelpers.getStatusMessage('INVALID_STATUS' as any), 'Authorization failed')
     })
   })
 
@@ -225,7 +225,7 @@ await describe('AuthHelpers', async () => {
         timestamp: new Date(),
       }
 
-      expect(AuthHelpers.isPermanentFailure(result)).toBe(true)
+      assert.strictEqual(AuthHelpers.isPermanentFailure(result), true)
     })
 
     await it('should return true for EXPIRED status', () => {
@@ -236,7 +236,7 @@ await describe('AuthHelpers', async () => {
         timestamp: new Date(),
       }
 
-      expect(AuthHelpers.isPermanentFailure(result)).toBe(true)
+      assert.strictEqual(AuthHelpers.isPermanentFailure(result), true)
     })
 
     await it('should return true for INVALID status', () => {
@@ -247,7 +247,7 @@ await describe('AuthHelpers', async () => {
         timestamp: new Date(),
       }
 
-      expect(AuthHelpers.isPermanentFailure(result)).toBe(true)
+      assert.strictEqual(AuthHelpers.isPermanentFailure(result), true)
     })
 
     await it('should return false for ACCEPTED status', () => {
@@ -258,7 +258,7 @@ await describe('AuthHelpers', async () => {
         timestamp: new Date(),
       }
 
-      expect(AuthHelpers.isPermanentFailure(result)).toBe(false)
+      assert.strictEqual(AuthHelpers.isPermanentFailure(result), false)
     })
 
     await it('should return false for PENDING status', () => {
@@ -269,7 +269,7 @@ await describe('AuthHelpers', async () => {
         timestamp: new Date(),
       }
 
-      expect(AuthHelpers.isPermanentFailure(result)).toBe(false)
+      assert.strictEqual(AuthHelpers.isPermanentFailure(result), false)
     })
   })
 
@@ -282,7 +282,7 @@ await describe('AuthHelpers', async () => {
         timestamp: new Date(),
       }
 
-      expect(AuthHelpers.isResultValid(result)).toBe(false)
+      assert.strictEqual(AuthHelpers.isResultValid(result), false)
     })
 
     await it('should return true for ACCEPTED without expiry date', () => {
@@ -293,7 +293,7 @@ await describe('AuthHelpers', async () => {
         timestamp: new Date(),
       }
 
-      expect(AuthHelpers.isResultValid(result)).toBe(true)
+      assert.strictEqual(AuthHelpers.isResultValid(result), true)
     })
 
     await it('should return false for expired ACCEPTED result', () => {
@@ -305,7 +305,7 @@ await describe('AuthHelpers', async () => {
         timestamp: new Date(),
       }
 
-      expect(AuthHelpers.isResultValid(result)).toBe(false)
+      assert.strictEqual(AuthHelpers.isResultValid(result), false)
     })
 
     await it('should return true for non-expired ACCEPTED result', () => {
@@ -317,7 +317,7 @@ await describe('AuthHelpers', async () => {
         timestamp: new Date(),
       }
 
-      expect(AuthHelpers.isResultValid(result)).toBe(true)
+      assert.strictEqual(AuthHelpers.isResultValid(result), true)
     })
   })
 
@@ -330,7 +330,7 @@ await describe('AuthHelpers', async () => {
         timestamp: new Date(),
       }
 
-      expect(AuthHelpers.isTemporaryFailure(result)).toBe(true)
+      assert.strictEqual(AuthHelpers.isTemporaryFailure(result), true)
     })
 
     await it('should return true for UNKNOWN status', () => {
@@ -341,7 +341,7 @@ await describe('AuthHelpers', async () => {
         timestamp: new Date(),
       }
 
-      expect(AuthHelpers.isTemporaryFailure(result)).toBe(true)
+      assert.strictEqual(AuthHelpers.isTemporaryFailure(result), true)
     })
 
     await it('should return false for BLOCKED status', () => {
@@ -352,7 +352,7 @@ await describe('AuthHelpers', async () => {
         timestamp: new Date(),
       }
 
-      expect(AuthHelpers.isTemporaryFailure(result)).toBe(false)
+      assert.strictEqual(AuthHelpers.isTemporaryFailure(result), false)
     })
 
     await it('should return false for ACCEPTED status', () => {
@@ -363,14 +363,14 @@ await describe('AuthHelpers', async () => {
         timestamp: new Date(),
       }
 
-      expect(AuthHelpers.isTemporaryFailure(result)).toBe(false)
+      assert.strictEqual(AuthHelpers.isTemporaryFailure(result), false)
     })
   })
 
   await describe('mergeAuthResults', async () => {
     await it('should return undefined for empty array', () => {
       const result = AuthHelpers.mergeAuthResults([])
-      expect(result).toBeUndefined()
+      assert.strictEqual(result, undefined)
     })
 
     await it('should return first ACCEPTED result', () => {
@@ -396,8 +396,8 @@ await describe('AuthHelpers', async () => {
       ]
 
       const merged = AuthHelpers.mergeAuthResults(results)
-      expect(merged?.status).toBe(AuthorizationStatus.ACCEPTED)
-      expect(merged?.method).toBe(AuthenticationMethod.REMOTE_AUTHORIZATION)
+      assert.strictEqual(merged?.status, AuthorizationStatus.ACCEPTED)
+      assert.strictEqual(merged.method, AuthenticationMethod.REMOTE_AUTHORIZATION)
     })
 
     await it('should merge information when all results are rejections', () => {
@@ -417,10 +417,10 @@ await describe('AuthHelpers', async () => {
       ]
 
       const merged = AuthHelpers.mergeAuthResults(results)
-      expect(merged?.status).toBe(AuthorizationStatus.BLOCKED)
-      expect(merged?.method).toBe(AuthenticationMethod.LOCAL_LIST)
-      expect(merged?.isOffline).toBe(true)
-      expect(merged?.additionalInfo).toStrictEqual({
+      assert.strictEqual(merged?.status, AuthorizationStatus.BLOCKED)
+      assert.strictEqual(merged.method, AuthenticationMethod.LOCAL_LIST)
+      assert.strictEqual(merged.isOffline, true)
+      assert.deepStrictEqual(merged.additionalInfo, {
         attemptedMethods: 'LocalList, RemoteAuthorization',
         totalAttempts: 2,
       })
@@ -444,7 +444,7 @@ await describe('AuthHelpers', async () => {
 
       const sanitized = AuthHelpers.sanitizeForLogging(result)
 
-      expect(sanitized).toStrictEqual({
+      assert.deepStrictEqual(sanitized, {
         hasExpiryDate: true,
         hasGroupId: true,
         hasPersonalMessage: true,
@@ -465,7 +465,7 @@ await describe('AuthHelpers', async () => {
 
       const sanitized = AuthHelpers.sanitizeForLogging(result)
 
-      expect(sanitized).toStrictEqual({
+      assert.deepStrictEqual(sanitized, {
         hasExpiryDate: false,
         hasGroupId: false,
         hasPersonalMessage: false,

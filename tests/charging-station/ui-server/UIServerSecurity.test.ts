@@ -3,7 +3,7 @@
  * @description Unit tests for UI server security utilities (rate limiting, validation)
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
 import {
@@ -21,20 +21,20 @@ await describe('UIServerSecurity', async () => {
   })
   await describe('IsValidCredential', async () => {
     await it('should return true for matching credentials', () => {
-      expect(isValidCredential('myPassword123', 'myPassword123')).toBe(true)
+      assert.strictEqual(isValidCredential('myPassword123', 'myPassword123'), true)
     })
 
     await it('should return false for non-matching credentials', () => {
-      expect(isValidCredential('password1', 'password2')).toBe(false)
+      assert.strictEqual(isValidCredential('password1', 'password2'), false)
     })
 
     await it('should return true for empty string credentials', () => {
-      expect(isValidCredential('', '')).toBe(true)
+      assert.strictEqual(isValidCredential('', ''), true)
     })
 
     await it('should return false for different length credentials', () => {
       // cspell:disable-next-line
-      expect(isValidCredential('short', 'verylongpassword')).toBe(false)
+      assert.strictEqual(isValidCredential('short', 'verylongpassword'), false)
     })
   })
 
@@ -44,19 +44,19 @@ await describe('UIServerSecurity', async () => {
     await it('should return true when bytes under limit', () => {
       limiter = createBodySizeLimiter(1000)
 
-      expect(limiter(500)).toBe(true)
+      assert.strictEqual(limiter(500), true)
     })
 
     await it('should return false when accumulated bytes exceed limit', () => {
       limiter = createBodySizeLimiter(1000)
       limiter(600)
-      expect(limiter(500)).toBe(false)
+      assert.strictEqual(limiter(500), false)
     })
 
     await it('should return true at exact limit boundary', () => {
       limiter = createBodySizeLimiter(1000)
 
-      expect(limiter(1000)).toBe(true)
+      assert.strictEqual(limiter(1000), true)
     })
   })
 
@@ -67,7 +67,7 @@ await describe('UIServerSecurity', async () => {
       limiter = createRateLimiter(5, 1000)
 
       for (let i = 0; i < 5; i++) {
-        expect(limiter('192.168.1.1')).toBe(true)
+        assert.strictEqual(limiter('192.168.1.1'), true)
       }
     })
 
@@ -76,7 +76,7 @@ await describe('UIServerSecurity', async () => {
       limiter('192.168.1.1')
       limiter('192.168.1.1')
       limiter('192.168.1.1')
-      expect(limiter('192.168.1.1')).toBe(false)
+      assert.strictEqual(limiter('192.168.1.1'), false)
     })
 
     await it('should reset window after time expires', async t => {
@@ -84,60 +84,60 @@ await describe('UIServerSecurity', async () => {
         limiter = createRateLimiter(2, 100)
         limiter('10.0.0.1')
         limiter('10.0.0.1')
-        expect(limiter('10.0.0.1')).toBe(false)
+        assert.strictEqual(limiter('10.0.0.1'), false)
         t.mock.timers.tick(101)
-        expect(limiter('10.0.0.1')).toBe(true)
+        assert.strictEqual(limiter('10.0.0.1'), true)
       })
     })
 
     await it('should reject new IPs when at max tracked capacity', () => {
       limiter = createRateLimiter(10, 60000, 3)
 
-      expect(limiter('192.168.1.1')).toBe(true)
-      expect(limiter('192.168.1.2')).toBe(true)
-      expect(limiter('192.168.1.3')).toBe(true)
-      expect(limiter('192.168.1.4')).toBe(false)
+      assert.strictEqual(limiter('192.168.1.1'), true)
+      assert.strictEqual(limiter('192.168.1.2'), true)
+      assert.strictEqual(limiter('192.168.1.3'), true)
+      assert.strictEqual(limiter('192.168.1.4'), false)
     })
 
     await it('should allow existing IPs when at max capacity', () => {
       limiter = createRateLimiter(10, 60000, 2)
 
-      expect(limiter('192.168.1.1')).toBe(true)
-      expect(limiter('192.168.1.2')).toBe(true)
-      expect(limiter('192.168.1.1')).toBe(true)
-      expect(limiter('192.168.1.2')).toBe(true)
+      assert.strictEqual(limiter('192.168.1.1'), true)
+      assert.strictEqual(limiter('192.168.1.2'), true)
+      assert.strictEqual(limiter('192.168.1.1'), true)
+      assert.strictEqual(limiter('192.168.1.2'), true)
     })
 
     await it('should cleanup expired entries when at capacity', async t => {
       await withMockTimers(t, ['Date', 'setTimeout'], () => {
         limiter = createRateLimiter(10, 50, 2)
-        expect(limiter('192.168.1.1')).toBe(true)
-        expect(limiter('192.168.1.2')).toBe(true)
+        assert.strictEqual(limiter('192.168.1.1'), true)
+        assert.strictEqual(limiter('192.168.1.2'), true)
         t.mock.timers.tick(51)
-        expect(limiter('192.168.1.3')).toBe(true)
+        assert.strictEqual(limiter('192.168.1.3'), true)
       })
     })
   })
 
   await describe('IsValidNumberOfStations', async () => {
     await it('should return true for valid number within limit', () => {
-      expect(isValidNumberOfStations(50, DEFAULT_MAX_STATIONS)).toBe(true)
+      assert.strictEqual(isValidNumberOfStations(50, DEFAULT_MAX_STATIONS), true)
     })
 
     await it('should return false when exceeding max stations', () => {
-      expect(isValidNumberOfStations(150, DEFAULT_MAX_STATIONS)).toBe(false)
+      assert.strictEqual(isValidNumberOfStations(150, DEFAULT_MAX_STATIONS), false)
     })
 
     await it('should return false for zero stations', () => {
-      expect(isValidNumberOfStations(0, DEFAULT_MAX_STATIONS)).toBe(false)
+      assert.strictEqual(isValidNumberOfStations(0, DEFAULT_MAX_STATIONS), false)
     })
 
     await it('should return false for negative stations', () => {
-      expect(isValidNumberOfStations(-5, DEFAULT_MAX_STATIONS)).toBe(false)
+      assert.strictEqual(isValidNumberOfStations(-5, DEFAULT_MAX_STATIONS), false)
     })
 
     await it('should return true at exact max stations boundary', () => {
-      expect(isValidNumberOfStations(DEFAULT_MAX_STATIONS, DEFAULT_MAX_STATIONS)).toBe(true)
+      assert.strictEqual(isValidNumberOfStations(DEFAULT_MAX_STATIONS, DEFAULT_MAX_STATIONS), true)
     })
   })
 })

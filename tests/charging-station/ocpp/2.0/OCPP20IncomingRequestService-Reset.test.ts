@@ -3,7 +3,7 @@
  * @description Unit tests for OCPP 2.0 Reset command handling (B11/B12)
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type {
@@ -60,15 +60,15 @@ await describe('B11 & B12 - Reset', async () => {
         resetRequest
       )
 
-      expect(response).toBeDefined()
-      expect(typeof response).toBe('object')
-      expect(response.status).toBeDefined()
-      expect(typeof response.status).toBe('string')
-      expect([
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(typeof response, 'object')
+      assert.notStrictEqual(response.status, undefined)
+      assert.strictEqual(typeof response.status, 'string')
+      assert.ok([
         ResetStatusEnumType.Accepted,
         ResetStatusEnumType.Rejected,
         ResetStatusEnumType.Scheduled,
-      ]).toContain(response.status)
+      ].includes(response.status))
     })
 
     await it('should handle Reset request with OnIdle type when no transactions', async () => {
@@ -81,13 +81,13 @@ await describe('B11 & B12 - Reset', async () => {
         resetRequest
       )
 
-      expect(response).toBeDefined()
-      expect(response.status).toBeDefined()
-      expect([
+      assert.notStrictEqual(response, undefined)
+      assert.notStrictEqual(response.status, undefined)
+      assert.ok([
         ResetStatusEnumType.Accepted,
         ResetStatusEnumType.Rejected,
         ResetStatusEnumType.Scheduled,
-      ]).toContain(response.status)
+      ].includes(response.status))
     })
 
     // FR: B11.FR.03
@@ -102,13 +102,13 @@ await describe('B11 & B12 - Reset', async () => {
         resetRequest
       )
 
-      expect(response).toBeDefined()
-      expect(response.status).toBeDefined()
-      expect([
+      assert.notStrictEqual(response, undefined)
+      assert.notStrictEqual(response.status, undefined)
+      assert.ok([
         ResetStatusEnumType.Accepted,
         ResetStatusEnumType.Rejected,
         ResetStatusEnumType.Scheduled,
-      ]).toContain(response.status)
+      ].includes(response.status))
     })
 
     await it('should reject reset for non-existent EVSE when no transactions', async () => {
@@ -122,11 +122,12 @@ await describe('B11 & B12 - Reset', async () => {
         resetRequest
       )
 
-      expect(response).toBeDefined()
-      expect(response.status).toBe(ResetStatusEnumType.Rejected)
-      expect(response.statusInfo).toBeDefined()
-      expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnknownEvse)
-      expect(response.statusInfo?.additionalInfo).toContain('EVSE 999')
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, ResetStatusEnumType.Rejected)
+      if (response.statusInfo == null) { assert.fail('Expected statusInfo to be defined') }
+      assert.strictEqual(response.statusInfo.reasonCode, ReasonCodeEnumType.UnknownEvse)
+      if (response.statusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.ok(response.statusInfo.additionalInfo.includes('EVSE 999'))
     })
 
     await it('should return proper response structure for immediate reset without transactions', async () => {
@@ -139,13 +140,13 @@ await describe('B11 & B12 - Reset', async () => {
         resetRequest
       )
 
-      expect(response).toBeDefined()
-      expect(response.status).toBeDefined()
-      expect(typeof response.status).toBe('string')
+      assert.notStrictEqual(response, undefined)
+      assert.notStrictEqual(response.status, undefined)
+      assert.strictEqual(typeof response.status, 'string')
 
       // B11.FR.02: Immediate reset without transactions returns Accepted
       if (mockStation.getNumberOfRunningTransactions() === 0) {
-        expect(response.status).toBe(ResetStatusEnumType.Accepted)
+        assert.strictEqual(response.status, ResetStatusEnumType.Accepted)
       }
     })
 
@@ -159,8 +160,8 @@ await describe('B11 & B12 - Reset', async () => {
         resetRequest
       )
 
-      expect(response).toBeDefined()
-      expect(response.status).toBe(ResetStatusEnumType.Accepted)
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, ResetStatusEnumType.Accepted)
     })
 
     await it('should reject EVSE-specific reset when EVSEs not supported (non-EVSE mode)', async () => {
@@ -181,13 +182,14 @@ await describe('B11 & B12 - Reset', async () => {
         resetRequest
       )
 
-      expect(response).toBeDefined()
-      expect(response.status).toBe(ResetStatusEnumType.Rejected)
-      expect(response.statusInfo).toBeDefined()
-      expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedRequest)
-      expect(response.statusInfo?.additionalInfo).toContain(
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, ResetStatusEnumType.Rejected)
+      if (response.statusInfo == null) { assert.fail('Expected statusInfo to be defined') }
+      assert.strictEqual(response.statusInfo.reasonCode, ReasonCodeEnumType.UnsupportedRequest)
+      if (response.statusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.ok(response.statusInfo.additionalInfo.includes(
         'does not support resetting individual EVSE'
-      )
+      ))
 
       // Restore EVSE support
       Object.defineProperty(mockStation, 'hasEvses', {
@@ -208,9 +210,9 @@ await describe('B11 & B12 - Reset', async () => {
         resetRequest
       )
 
-      expect(response).toBeDefined()
-      expect(response.status).toBe(ResetStatusEnumType.Accepted)
-      expect(response.statusInfo).toBeUndefined()
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, ResetStatusEnumType.Accepted)
+      assert.strictEqual(response.statusInfo, undefined)
     })
   })
 
@@ -236,9 +238,9 @@ await describe('B11 & B12 - Reset', async () => {
         resetRequest
       )
 
-      expect(response).toBeDefined()
-      expect(response.status).toBe(ResetStatusEnumType.Accepted) // Should accept immediate reset
-      expect(response.statusInfo).toBeUndefined()
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, ResetStatusEnumType.Accepted) // Should accept immediate reset
+      assert.strictEqual(response.statusInfo, undefined)
     })
     // FR: B12.FR.01
     await it('should handle OnIdle reset with active transactions', async () => {
@@ -254,9 +256,9 @@ await describe('B11 & B12 - Reset', async () => {
         resetRequest
       )
 
-      expect(response).toBeDefined()
-      expect(response.status).toBe(ResetStatusEnumType.Scheduled) // Should schedule OnIdle reset
-      expect(response.statusInfo).toBeUndefined()
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, ResetStatusEnumType.Scheduled) // Should schedule OnIdle reset
+      assert.strictEqual(response.statusInfo, undefined)
     })
 
     // FR: B12.FR.03
@@ -274,11 +276,11 @@ await describe('B11 & B12 - Reset', async () => {
         resetRequest
       )
 
-      expect(response).toBeDefined()
-      expect(response.status).toBeDefined()
-      expect([ResetStatusEnumType.Accepted, ResetStatusEnumType.Scheduled]).toContain(
+      assert.notStrictEqual(response, undefined)
+      assert.notStrictEqual(response.status, undefined)
+      assert.ok([ResetStatusEnumType.Accepted, ResetStatusEnumType.Scheduled].includes(
         response.status
-      )
+      ))
     })
 
     await it('should reject EVSE reset when not supported with active transactions', async () => {
@@ -300,13 +302,14 @@ await describe('B11 & B12 - Reset', async () => {
         resetRequest
       )
 
-      expect(response).toBeDefined()
-      expect(response.status).toBe(ResetStatusEnumType.Rejected)
-      expect(response.statusInfo).toBeDefined()
-      expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedRequest)
-      expect(response.statusInfo?.additionalInfo).toContain(
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, ResetStatusEnumType.Rejected)
+      if (response.statusInfo == null) { assert.fail('Expected statusInfo to be defined') }
+      assert.strictEqual(response.statusInfo.reasonCode, ReasonCodeEnumType.UnsupportedRequest)
+      if (response.statusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.ok(response.statusInfo.additionalInfo.includes(
         'does not support resetting individual EVSE'
-      )
+      ))
 
       // Restore EVSE support
       Object.defineProperty(mockStation, 'hasEvses', {
@@ -343,9 +346,9 @@ await describe('B11 & B12 - Reset', async () => {
             resetRequest
           )
 
-          expect(response).toBeDefined()
-          expect(response.status).toBe(ResetStatusEnumType.Rejected)
-          expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.FwUpdateInProgress)
+          assert.notStrictEqual(response, undefined)
+          assert.strictEqual(response.status, ResetStatusEnumType.Rejected)
+          assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.FwUpdateInProgress)
         })
 
         await it('should return Rejected/FwUpdateInProgress when firmware is Downloaded', async () => {
@@ -365,9 +368,9 @@ await describe('B11 & B12 - Reset', async () => {
             resetRequest
           )
 
-          expect(response).toBeDefined()
-          expect(response.status).toBe(ResetStatusEnumType.Rejected)
-          expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.FwUpdateInProgress)
+          assert.notStrictEqual(response, undefined)
+          assert.strictEqual(response.status, ResetStatusEnumType.Rejected)
+          assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.FwUpdateInProgress)
         })
 
         await it('should return Rejected/FwUpdateInProgress when firmware is Installing', async () => {
@@ -387,9 +390,9 @@ await describe('B11 & B12 - Reset', async () => {
             resetRequest
           )
 
-          expect(response).toBeDefined()
-          expect(response.status).toBe(ResetStatusEnumType.Rejected)
-          expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.FwUpdateInProgress)
+          assert.notStrictEqual(response, undefined)
+          assert.strictEqual(response.status, ResetStatusEnumType.Rejected)
+          assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.FwUpdateInProgress)
         })
 
         await it('should return Accepted when firmware is Installed (complete)', async () => {
@@ -409,8 +412,8 @@ await describe('B11 & B12 - Reset', async () => {
             resetRequest
           )
 
-          expect(response).toBeDefined()
-          expect(response.status).toBe(ResetStatusEnumType.Accepted)
+          assert.notStrictEqual(response, undefined)
+          assert.strictEqual(response.status, ResetStatusEnumType.Accepted)
         })
 
         await it('should return Accepted when firmware status is Idle', async () => {
@@ -430,8 +433,8 @@ await describe('B11 & B12 - Reset', async () => {
             resetRequest
           )
 
-          expect(response).toBeDefined()
-          expect(response.status).toBe(ResetStatusEnumType.Accepted)
+          assert.notStrictEqual(response, undefined)
+          assert.strictEqual(response.status, ResetStatusEnumType.Accepted)
         })
       })
 
@@ -467,8 +470,8 @@ await describe('B11 & B12 - Reset', async () => {
             resetRequest
           )
 
-          expect(response).toBeDefined()
-          expect(response.status).toBe(ResetStatusEnumType.Scheduled)
+          assert.notStrictEqual(response, undefined)
+          assert.strictEqual(response.status, ResetStatusEnumType.Scheduled)
         })
 
         await it('should return Accepted when reservation is expired', async () => {
@@ -500,9 +503,9 @@ await describe('B11 & B12 - Reset', async () => {
             resetRequest
           )
 
-          expect(response).toBeDefined()
+          assert.notStrictEqual(response, undefined)
           // Expired reservation does not block idle state
-          expect(response.status).toBe(ResetStatusEnumType.Accepted)
+          assert.strictEqual(response.status, ResetStatusEnumType.Accepted)
         })
 
         await it('should return Accepted when no reservations exist', async () => {
@@ -518,8 +521,8 @@ await describe('B11 & B12 - Reset', async () => {
             resetRequest
           )
 
-          expect(response).toBeDefined()
-          expect(response.status).toBe(ResetStatusEnumType.Accepted)
+          assert.notStrictEqual(response, undefined)
+          assert.strictEqual(response.status, ResetStatusEnumType.Accepted)
         })
       })
 
@@ -546,8 +549,8 @@ await describe('B11 & B12 - Reset', async () => {
             resetRequest
           )
 
-          expect(response).toBeDefined()
-          expect(response.status).toBe(ResetStatusEnumType.Accepted)
+          assert.notStrictEqual(response, undefined)
+          assert.strictEqual(response.status, ResetStatusEnumType.Accepted)
         })
 
         await it('should return Scheduled when multiple blocking conditions exist', async () => {
@@ -579,8 +582,8 @@ await describe('B11 & B12 - Reset', async () => {
             resetRequest
           )
 
-          expect(response).toBeDefined()
-          expect(response.status).toBe(ResetStatusEnumType.Scheduled)
+          assert.notStrictEqual(response, undefined)
+          assert.strictEqual(response.status, ResetStatusEnumType.Scheduled)
         })
       })
     })
@@ -603,8 +606,8 @@ await describe('B11 & B12 - Reset', async () => {
       VARIABLE_REGISTRY[ALLOW_RESET_KEY].defaultValue = 'false'
       const request: OCPP20ResetRequest = { type: ResetEnumType.Immediate }
       const response = await testableService.handleRequestReset(station, request)
-      expect(response.status).toBe(ResetStatusEnumType.Rejected)
-      expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.NotEnabled)
+      assert.strictEqual(response.status, ResetStatusEnumType.Rejected)
+      assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.NotEnabled)
     })
 
     await it('should proceed normally when AllowReset is true', async () => {
@@ -612,7 +615,7 @@ await describe('B11 & B12 - Reset', async () => {
       VARIABLE_REGISTRY[ALLOW_RESET_KEY].defaultValue = 'true'
       const request: OCPP20ResetRequest = { type: ResetEnumType.Immediate }
       const response = await testableService.handleRequestReset(station, request)
-      expect(response.status).toBe(ResetStatusEnumType.Accepted)
+      assert.strictEqual(response.status, ResetStatusEnumType.Accepted)
     })
 
     await it('should proceed normally when AllowReset defaultValue is undefined', async () => {
@@ -620,7 +623,7 @@ await describe('B11 & B12 - Reset', async () => {
       VARIABLE_REGISTRY[ALLOW_RESET_KEY].defaultValue = undefined
       const request: OCPP20ResetRequest = { type: ResetEnumType.Immediate }
       const response = await testableService.handleRequestReset(station, request)
-      expect(response.status).toBe(ResetStatusEnumType.Accepted)
+      assert.strictEqual(response.status, ResetStatusEnumType.Accepted)
     })
   })
 })

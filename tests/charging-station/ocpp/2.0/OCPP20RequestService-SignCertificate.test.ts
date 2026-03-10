@@ -3,7 +3,7 @@
  * @description Unit tests for OCPP 2.0 SignCertificate request building
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
@@ -67,15 +67,15 @@ await describe('I02 - SignCertificate Request', async () => {
         CertificateSigningUseEnumType.ChargingStationCertificate
       )
 
-      expect(response).toBeDefined()
-      expect(response.status).toBe(GenericStatus.Accepted)
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, GenericStatus.Accepted)
 
-      expect(sendMessageMock.mock.calls.length).toBeGreaterThan(0)
+      assert.ok(sendMessageMock.mock.calls.length > 0)
 
       const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
-      expect(sentPayload.csr).toBeDefined()
-      expect(sentPayload.csr).toContain('-----BEGIN CERTIFICATE REQUEST-----')
-      expect(sentPayload.csr).toContain('-----END CERTIFICATE REQUEST-----')
+      assert.notStrictEqual(sentPayload.csr, undefined)
+      assert.ok(sentPayload.csr.includes('-----BEGIN CERTIFICATE REQUEST-----'))
+      assert.ok(sentPayload.csr.includes('-----END CERTIFICATE REQUEST-----'))
     })
 
     await it('should include OrganizationName from SecurityCtrlr config in CSR', async () => {
@@ -92,16 +92,16 @@ await describe('I02 - SignCertificate Request', async () => {
       )
 
       const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
-      expect(sentPayload.csr).toBeDefined()
-      expect(sentPayload.csr).toContain('-----BEGIN CERTIFICATE REQUEST-----')
+      assert.notStrictEqual(sentPayload.csr, undefined)
+      assert.ok(sentPayload.csr.includes('-----BEGIN CERTIFICATE REQUEST-----'))
 
       const csrRegex =
         /-----BEGIN CERTIFICATE REQUEST-----\n(.+?)\n-----END CERTIFICATE REQUEST-----/
       const csrExecResult = csrRegex.exec(sentPayload.csr)
-      expect(csrExecResult).toBeDefined()
+      assert.notStrictEqual(csrExecResult, undefined)
       const csrData = csrExecResult?.[1]
       const decodedCsr = Buffer.from(csrData ?? '', 'base64').toString('utf-8')
-      expect(decodedCsr).toContain('O=Test Organization Inc.')
+      assert.ok(decodedCsr.includes('O=Test Organization Inc.'))
     })
   })
 
@@ -121,7 +121,7 @@ await describe('I02 - SignCertificate Request', async () => {
 
       const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
 
-      expect(sentPayload.certificateType).toBe(
+      assert.strictEqual(sentPayload.certificateType,
         CertificateSigningUseEnumType.ChargingStationCertificate
       )
     })
@@ -140,7 +140,7 @@ await describe('I02 - SignCertificate Request', async () => {
 
       const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
 
-      expect(sentPayload.certificateType).toBe(CertificateSigningUseEnumType.V2GCertificate)
+      assert.strictEqual(sentPayload.certificateType, CertificateSigningUseEnumType.V2GCertificate)
     })
   })
 
@@ -157,8 +157,8 @@ await describe('I02 - SignCertificate Request', async () => {
         CertificateSigningUseEnumType.ChargingStationCertificate
       )
 
-      expect(response).toBeDefined()
-      expect(response.status).toBe(GenericStatus.Accepted)
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, GenericStatus.Accepted)
     })
 
     await it('should return Rejected response from CSMS', async () => {
@@ -176,10 +176,10 @@ await describe('I02 - SignCertificate Request', async () => {
         CertificateSigningUseEnumType.ChargingStationCertificate
       )
 
-      expect(response).toBeDefined()
-      expect(response.status).toBe(GenericStatus.Rejected)
-      expect(response.statusInfo).toBeDefined()
-      expect(response.statusInfo?.reasonCode).toBe('InvalidCSR')
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, GenericStatus.Rejected)
+      assert.notStrictEqual(response.statusInfo, undefined)
+      assert.strictEqual(response.statusInfo?.reasonCode, 'InvalidCSR')
     })
   })
 
@@ -196,9 +196,9 @@ await describe('I02 - SignCertificate Request', async () => {
 
       const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
 
-      expect(sentPayload.csr).toBeDefined()
+      assert.notStrictEqual(sentPayload.csr, undefined)
       // certificateType should be undefined when not specified
-      expect(sentPayload.certificateType).toBeUndefined()
+      assert.strictEqual(sentPayload.certificateType, undefined)
     })
   })
 
@@ -216,16 +216,16 @@ await describe('I02 - SignCertificate Request', async () => {
         CertificateSigningUseEnumType.ChargingStationCertificate
       )
 
-      expect(sendMessageMock.mock.calls.length).toBe(1)
+      assert.strictEqual(sendMessageMock.mock.calls.length, 1)
 
       const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
 
       // Validate payload structure
-      expect(typeof sentPayload).toBe('object')
-      expect(sentPayload.csr).toBeDefined()
-      expect(typeof sentPayload.csr).toBe('string')
-      expect(sentPayload.csr.length).toBeGreaterThan(0)
-      expect(sentPayload.csr.length).toBeLessThanOrEqual(5500) // Max length per schema
+      assert.strictEqual(typeof sentPayload, 'object')
+      assert.notStrictEqual(sentPayload.csr, undefined)
+      assert.strictEqual(typeof sentPayload.csr, 'string')
+      assert.ok(sentPayload.csr.length > 0)
+      assert.ok(sentPayload.csr.length <= 5500) // Max length per schema
     })
 
     await it('should send SIGN_CERTIFICATE command name', async () => {
@@ -243,7 +243,7 @@ await describe('I02 - SignCertificate Request', async () => {
 
       const commandName = sendMessageMock.mock.calls[0].arguments[3]
 
-      expect(commandName).toBe(OCPP20RequestCommand.SIGN_CERTIFICATE)
+      assert.strictEqual(commandName, OCPP20RequestCommand.SIGN_CERTIFICATE)
     })
   })
 
@@ -279,12 +279,12 @@ await describe('I02 - SignCertificate Request', async () => {
         CertificateSigningUseEnumType.ChargingStationCertificate
       )
 
-      expect(response).toBeDefined()
-      expect(response.status).toBe(GenericStatus.Accepted)
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, GenericStatus.Accepted)
 
       const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
-      expect(sentPayload.csr).toBeDefined()
-      expect(sentPayload.csr).toContain('-----BEGIN CERTIFICATE REQUEST-----')
+      assert.notStrictEqual(sentPayload.csr, undefined)
+      assert.ok(sentPayload.csr.includes('-----BEGIN CERTIFICATE REQUEST-----'))
     })
   })
 })

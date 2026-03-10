@@ -2,7 +2,7 @@
  * @file Tests for AsyncLock
  * @description Unit tests for asynchronous lock utilities
  */
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
 import { AsyncLock, AsyncLockType } from '../../src/utils/AsyncLock.js'
@@ -25,7 +25,7 @@ await describe('AsyncLock', async () => {
       promises.push(AsyncLock.runExclusive(AsyncLockType.configuration, fn))
     }
     await Promise.all(promises)
-    expect(executed).toStrictEqual(new Array(runs).fill(0).map((_, i) => ++i))
+    assert.deepStrictEqual(executed, new Array(runs).fill(0).map((_, i) => ++i))
   })
 
   await it('should run asynchronous functions exclusively in sequence', async () => {
@@ -45,29 +45,31 @@ await describe('AsyncLock', async () => {
       promises.push(AsyncLock.runExclusive(AsyncLockType.configuration, asyncFn))
     }
     await Promise.all(promises)
-    expect(executed).toStrictEqual(new Array(runs).fill(0).map((_, i) => ++i))
+    assert.deepStrictEqual(executed, new Array(runs).fill(0).map((_, i) => ++i))
   })
 
   await it('should propagate error thrown in exclusive function', async () => {
-    await expect(
+    await assert.rejects(
       AsyncLock.runExclusive(AsyncLockType.configuration, () => {
         throw new Error('test error')
-      })
-    ).rejects.toThrow('test error')
+      }),
+      { message: /test error/ }
+    )
   })
 
   await it('should release lock after error and allow subsequent runs', async () => {
-    await expect(
+    await assert.rejects(
       AsyncLock.runExclusive(AsyncLockType.configuration, () => {
         throw new Error('first fails')
-      })
-    ).rejects.toThrow('first fails')
+      }),
+      { message: /first fails/ }
+    )
 
     let recovered = false
     await AsyncLock.runExclusive(AsyncLockType.configuration, () => {
       recovered = true
     })
-    expect(recovered).toBe(true)
+    assert.strictEqual(recovered, true)
   })
 
   await it('should isolate locks across different lock types', async () => {
@@ -85,12 +87,12 @@ await describe('AsyncLock', async () => {
     await perfPromise
     resolveConfig()
     await configPromise
-    expect(order[0]).toBe('performance')
-    expect(order[1]).toBe('configuration')
+    assert.strictEqual(order[0], 'performance')
+    assert.strictEqual(order[1], 'configuration')
   })
 
   await it('should return value from exclusive function', async () => {
     const result = await AsyncLock.runExclusive(AsyncLockType.configuration, () => 42)
-    expect(result).toBe(42)
+    assert.strictEqual(result, 42)
   })
 })

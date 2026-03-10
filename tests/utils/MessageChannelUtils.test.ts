@@ -1,9 +1,9 @@
+import { CircularBuffer } from 'mnemonist'
 /**
  * @file Tests for MessageChannelUtils
  * @description Unit tests for charging station worker message builders and performance statistics conversion
  */
-import { expect } from '@std/expect'
-import { CircularBuffer } from 'mnemonist'
+import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
@@ -73,62 +73,62 @@ await describe('MessageChannelUtils', async () => {
     const station = createMockStationForMessages()
     const message = buildAddedMessage(station)
 
-    expect(message.event).toBe(ChargingStationWorkerMessageEvents.added)
-    expect(message.data).toBeDefined()
-    expect(message.data.started).toBe(true)
-    expect(message.data.stationInfo.chargingStationId).toBe('CS-TEST-00001')
-    expect(message.data.supervisionUrl).toBe('ws://localhost:8080/CS-TEST-00001')
-    expect(typeof message.data.timestamp).toBe('number')
+    assert.strictEqual(message.event, ChargingStationWorkerMessageEvents.added)
+    assert.notStrictEqual(message.data, undefined)
+    assert.strictEqual(message.data.started, true)
+    assert.strictEqual(message.data.stationInfo.chargingStationId, 'CS-TEST-00001')
+    assert.strictEqual(message.data.supervisionUrl, 'ws://localhost:8080/CS-TEST-00001')
+    assert.strictEqual(typeof message.data.timestamp, 'number')
   })
 
   await it('should build deleted message with correct event', () => {
     const station = createMockStationForMessages()
     const message = buildDeletedMessage(station)
 
-    expect(message.event).toBe(ChargingStationWorkerMessageEvents.deleted)
-    expect(message.data).toBeDefined()
-    expect(message.data.stationInfo.chargingStationId).toBe('CS-TEST-00001')
+    assert.strictEqual(message.event, ChargingStationWorkerMessageEvents.deleted)
+    assert.notStrictEqual(message.data, undefined)
+    assert.strictEqual(message.data.stationInfo.chargingStationId, 'CS-TEST-00001')
   })
 
   await it('should build started message with correct event', () => {
     const station = createMockStationForMessages()
     const message = buildStartedMessage(station)
 
-    expect(message.event).toBe(ChargingStationWorkerMessageEvents.started)
-    expect(message.data.started).toBe(true)
+    assert.strictEqual(message.event, ChargingStationWorkerMessageEvents.started)
+    assert.strictEqual(message.data.started, true)
   })
 
   await it('should build stopped message with correct event', () => {
     const station = createMockStationForMessages()
     const message = buildStoppedMessage(station)
 
-    expect(message.event).toBe(ChargingStationWorkerMessageEvents.stopped)
-    expect(message.data).toBeDefined()
-    expect(message.data.supervisionUrl).toBe('ws://localhost:8080/CS-TEST-00001')
+    assert.strictEqual(message.event, ChargingStationWorkerMessageEvents.stopped)
+    assert.notStrictEqual(message.data, undefined)
+    assert.strictEqual(message.data.supervisionUrl, 'ws://localhost:8080/CS-TEST-00001')
   })
 
   await it('should build updated message with correct event', () => {
     const station = createMockStationForMessages()
     const message = buildUpdatedMessage(station)
 
-    expect(message.event).toBe(ChargingStationWorkerMessageEvents.updated)
-    expect(message.data).toBeDefined()
-    expect(message.data.stationInfo.chargingStationId).toBe('CS-TEST-00001')
+    assert.strictEqual(message.event, ChargingStationWorkerMessageEvents.updated)
+    assert.notStrictEqual(message.data, undefined)
+    assert.strictEqual(message.data.stationInfo.chargingStationId, 'CS-TEST-00001')
   })
 
   await it('should include ws state in station messages', () => {
     const station = createMockStationForMessages()
     const message = buildAddedMessage(station)
 
-    expect(message.data.wsState).toBe(1)
+    assert.strictEqual(message.data.wsState, 1)
   })
 
   await it('should include connectors status in station messages', () => {
     const station = createMockStationForMessages()
     const message = buildAddedMessage(station)
 
-    expect(Array.isArray(message.data.connectors)).toBe(true)
-    expect(message.data.connectors.length).toBe(2)
+    assert.ok(Array.isArray(message.data.connectors))
+    assert.strictEqual(message.data.connectors.length, 2)
   })
 
   await it('should convert CircularBuffer to array in statistics data', () => {
@@ -155,17 +155,17 @@ await describe('MessageChannelUtils', async () => {
 
     const message = buildPerformanceStatisticsMessage(statistics)
 
-    expect(message.event).toBe(ChargingStationWorkerMessageEvents.performanceStatistics)
-    expect(message.data.id).toBe('test-station-id')
-    expect(message.data.name).toBe('test-station')
+    assert.strictEqual(message.event, ChargingStationWorkerMessageEvents.performanceStatistics)
+    assert.strictEqual(message.data.id, 'test-station-id')
+    assert.strictEqual(message.data.name, 'test-station')
 
     const heartbeatStats = message.data.statisticsData.get('Heartbeat')
-    expect(heartbeatStats).toBeDefined()
-    expect(Array.isArray(heartbeatStats?.measurementTimeSeries)).toBe(true)
-    const timeSeries = heartbeatStats?.measurementTimeSeries as TimestampedData[]
-    expect(timeSeries.length).toBe(2)
-    expect(timeSeries[0].value).toBe(42)
-    expect(timeSeries[1].value).toBe(84)
+    assert.notStrictEqual(heartbeatStats, undefined)
+    assert.ok(Array.isArray(heartbeatStats?.measurementTimeSeries))
+    const timeSeries = heartbeatStats.measurementTimeSeries
+    assert.strictEqual(timeSeries.length, 2)
+    assert.strictEqual(timeSeries[0].value, 42)
+    assert.strictEqual(timeSeries[1].value, 84)
   })
 
   await it('should preserve non-CircularBuffer measurement time series', () => {
@@ -187,7 +187,7 @@ await describe('MessageChannelUtils', async () => {
 
     const message = buildPerformanceStatisticsMessage(statistics)
     const heartbeat = message.data.statisticsData.get('Heartbeat')
-    expect(Array.isArray(heartbeat?.measurementTimeSeries)).toBe(true)
+    assert.ok(Array.isArray(heartbeat?.measurementTimeSeries))
   })
 
   await it('should preserve statistics metadata in performance message', () => {
@@ -205,8 +205,8 @@ await describe('MessageChannelUtils', async () => {
 
     const message = buildPerformanceStatisticsMessage(statistics)
 
-    expect(message.data.createdAt).toBe(createdAt)
-    expect(message.data.updatedAt).toBe(updatedAt)
-    expect(message.data.uri).toBe('ws://localhost:8080')
+    assert.strictEqual(message.data.createdAt, createdAt)
+    assert.strictEqual(message.data.updatedAt, updatedAt)
+    assert.strictEqual(message.data.uri, 'ws://localhost:8080')
   })
 })

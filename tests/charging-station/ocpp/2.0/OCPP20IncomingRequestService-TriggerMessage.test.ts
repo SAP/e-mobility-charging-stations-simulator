@@ -3,7 +3,7 @@
  * @description Unit tests for OCPP 2.0 TriggerMessage command handling (F06)
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type {
@@ -88,8 +88,8 @@ await describe('F06 - TriggerMessage', async () => {
         request
       )
 
-      expect(response.status).toBe(TriggerMessageStatusEnumType.Accepted)
-      expect(response.statusInfo).toBeUndefined()
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.Accepted)
+      assert.strictEqual(response.statusInfo, undefined)
     })
 
     await it('should return Accepted for Heartbeat trigger', () => {
@@ -102,8 +102,8 @@ await describe('F06 - TriggerMessage', async () => {
         request
       )
 
-      expect(response.status).toBe(TriggerMessageStatusEnumType.Accepted)
-      expect(response.statusInfo).toBeUndefined()
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.Accepted)
+      assert.strictEqual(response.statusInfo, undefined)
     })
 
     await it('should return Accepted for StatusNotification trigger without EVSE', () => {
@@ -116,8 +116,8 @@ await describe('F06 - TriggerMessage', async () => {
         request
       )
 
-      expect(response.status).toBe(TriggerMessageStatusEnumType.Accepted)
-      expect(response.statusInfo).toBeUndefined()
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.Accepted)
+      assert.strictEqual(response.statusInfo, undefined)
     })
 
     await it('should return Accepted for StatusNotification trigger with valid EVSE and connector', () => {
@@ -131,8 +131,8 @@ await describe('F06 - TriggerMessage', async () => {
         request
       )
 
-      expect(response.status).toBe(TriggerMessageStatusEnumType.Accepted)
-      expect(response.statusInfo).toBeUndefined()
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.Accepted)
+      assert.strictEqual(response.statusInfo, undefined)
     })
 
     await it('should not validate EVSE when evse.id is 0', () => {
@@ -147,7 +147,7 @@ await describe('F06 - TriggerMessage', async () => {
         request
       )
 
-      expect(response.status).toBe(TriggerMessageStatusEnumType.Accepted)
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.Accepted)
     })
   })
 
@@ -168,10 +168,11 @@ await describe('F06 - TriggerMessage', async () => {
         request
       )
 
-      expect(response.status).toBe(TriggerMessageStatusEnumType.NotImplemented)
-      expect(response.statusInfo).toBeDefined()
-      expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedRequest)
-      expect(response.statusInfo?.additionalInfo).toContain('MeterValues')
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.NotImplemented)
+      if (response.statusInfo == null) { assert.fail('Expected statusInfo to be defined') }
+      assert.strictEqual(response.statusInfo.reasonCode, ReasonCodeEnumType.UnsupportedRequest)
+      if (response.statusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.ok(response.statusInfo.additionalInfo.includes('MeterValues'))
     })
 
     await it('should return NotImplemented for TransactionEvent trigger', () => {
@@ -184,9 +185,9 @@ await describe('F06 - TriggerMessage', async () => {
         request
       )
 
-      expect(response.status).toBe(TriggerMessageStatusEnumType.NotImplemented)
-      expect(response.statusInfo).toBeDefined()
-      expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedRequest)
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.NotImplemented)
+      assert.notStrictEqual(response.statusInfo, undefined)
+      assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.UnsupportedRequest)
     })
 
     await it('should return NotImplemented for LogStatusNotification trigger', () => {
@@ -199,9 +200,9 @@ await describe('F06 - TriggerMessage', async () => {
         request
       )
 
-      expect(response.status).toBe(TriggerMessageStatusEnumType.NotImplemented)
-      expect(response.statusInfo).toBeDefined()
-      expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedRequest)
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.NotImplemented)
+      assert.notStrictEqual(response.statusInfo, undefined)
+      assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.UnsupportedRequest)
     })
 
     await it('should return NotImplemented for FirmwareStatusNotification trigger', () => {
@@ -214,9 +215,9 @@ await describe('F06 - TriggerMessage', async () => {
         request
       )
 
-      expect(response.status).toBe(TriggerMessageStatusEnumType.NotImplemented)
-      expect(response.statusInfo).toBeDefined()
-      expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedRequest)
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.NotImplemented)
+      assert.notStrictEqual(response.statusInfo, undefined)
+      assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.UnsupportedRequest)
     })
   })
 
@@ -244,10 +245,11 @@ await describe('F06 - TriggerMessage', async () => {
         request
       )
 
-      expect(response.status).toBe(TriggerMessageStatusEnumType.Rejected)
-      expect(response.statusInfo).toBeDefined()
-      expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedRequest)
-      expect(response.statusInfo?.additionalInfo).toContain('does not support EVSEs')
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.Rejected)
+      if (response.statusInfo == null) { assert.fail('Expected statusInfo to be defined') }
+      assert.strictEqual(response.statusInfo.reasonCode, ReasonCodeEnumType.UnsupportedRequest)
+      if (response.statusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.ok(response.statusInfo.additionalInfo.includes('does not support EVSEs'))
     })
 
     await it('should return Rejected with UnknownEvse for non-existent EVSE id', () => {
@@ -261,10 +263,11 @@ await describe('F06 - TriggerMessage', async () => {
         request
       )
 
-      expect(response.status).toBe(TriggerMessageStatusEnumType.Rejected)
-      expect(response.statusInfo).toBeDefined()
-      expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnknownEvse)
-      expect(response.statusInfo?.additionalInfo).toContain('999')
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.Rejected)
+      if (response.statusInfo == null) { assert.fail('Expected statusInfo to be defined') }
+      assert.strictEqual(response.statusInfo.reasonCode, ReasonCodeEnumType.UnknownEvse)
+      if (response.statusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.ok(response.statusInfo.additionalInfo.includes('999'))
     })
 
     await it('should accept trigger when evse is undefined', () => {
@@ -277,7 +280,7 @@ await describe('F06 - TriggerMessage', async () => {
         request
       )
 
-      expect(response.status).toBe(TriggerMessageStatusEnumType.Accepted)
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.Accepted)
     })
   })
 
@@ -302,10 +305,11 @@ await describe('F06 - TriggerMessage', async () => {
         request
       )
 
-      expect(response.status).toBe(TriggerMessageStatusEnumType.Rejected)
-      expect(response.statusInfo).toBeDefined()
-      expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.NotEnabled)
-      expect(response.statusInfo?.additionalInfo).toContain('F06.FR.17')
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.Rejected)
+      if (response.statusInfo == null) { assert.fail('Expected statusInfo to be defined') }
+      assert.strictEqual(response.statusInfo.reasonCode, ReasonCodeEnumType.NotEnabled)
+      if (response.statusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.ok(response.statusInfo.additionalInfo.includes('F06.FR.17'))
     })
 
     await it('should return Accepted for BootNotification when boot was Rejected', () => {
@@ -322,7 +326,7 @@ await describe('F06 - TriggerMessage', async () => {
         request
       )
 
-      expect(response.status).toBe(TriggerMessageStatusEnumType.Accepted)
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.Accepted)
     })
   })
 
@@ -340,9 +344,9 @@ await describe('F06 - TriggerMessage', async () => {
 
       const response = testableService.handleRequestTriggerMessage(mockStation, request)
 
-      expect(response).toBeDefined()
-      expect(typeof response).toBe('object')
-      expect(typeof response.status).toBe('string')
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(typeof response, 'object')
+      assert.strictEqual(typeof response.status, 'string')
     })
 
     await it('should not return a Promise from synchronous handler', () => {
@@ -353,7 +357,7 @@ await describe('F06 - TriggerMessage', async () => {
       const result = testableService.handleRequestTriggerMessage(mockStation, request)
 
       // A Promise would have a `then` property that is a function
-      expect(typeof (result as unknown as Promise<unknown>).then).not.toBe('function')
+      assert.notStrictEqual(typeof (result as unknown as Promise<unknown>).then, 'function')
     })
   })
 })

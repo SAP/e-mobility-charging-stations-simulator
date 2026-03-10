@@ -3,7 +3,7 @@
  * @description Unit tests for OCPP 2.0 DeleteCertificate command handling
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
@@ -88,12 +88,12 @@ await describe('I04 - DeleteCertificate', async () => {
       const response: OCPP20DeleteCertificateResponse =
         await testableService.handleRequestDeleteCertificate(station, request)
 
-      expect(response).toBeDefined()
-      expect(typeof response).toBe('object')
-      expect(response.status).toBeDefined()
-      expect(typeof response.status).toBe('string')
-      expect(response.status).toBe(DeleteCertificateStatusEnumType.Accepted)
-      expect(response.statusInfo).toBeUndefined()
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(typeof response, 'object')
+      assert.notStrictEqual(response.status, undefined)
+      assert.strictEqual(typeof response.status, 'string')
+      assert.strictEqual(response.status, DeleteCertificateStatusEnumType.Accepted)
+      assert.strictEqual(response.statusInfo, undefined)
     })
 
     await it('should accept deletion with SHA384 hash algorithm', async () => {
@@ -111,9 +111,9 @@ await describe('I04 - DeleteCertificate', async () => {
       const response: OCPP20DeleteCertificateResponse =
         await testableService.handleRequestDeleteCertificate(station, request)
 
-      expect(response).toBeDefined()
-      expect(response.status).toBe(DeleteCertificateStatusEnumType.Accepted)
-      expect(response.statusInfo).toBeUndefined()
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, DeleteCertificateStatusEnumType.Accepted)
+      assert.strictEqual(response.statusInfo, undefined)
     })
 
     await it('should accept deletion with SHA512 hash algorithm', async () => {
@@ -131,9 +131,9 @@ await describe('I04 - DeleteCertificate', async () => {
       const response: OCPP20DeleteCertificateResponse =
         await testableService.handleRequestDeleteCertificate(station, request)
 
-      expect(response).toBeDefined()
-      expect(response.status).toBe(DeleteCertificateStatusEnumType.Accepted)
-      expect(response.statusInfo).toBeUndefined()
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, DeleteCertificateStatusEnumType.Accepted)
+      assert.strictEqual(response.statusInfo, undefined)
     })
   })
 
@@ -150,8 +150,8 @@ await describe('I04 - DeleteCertificate', async () => {
       const response: OCPP20DeleteCertificateResponse =
         await testableService.handleRequestDeleteCertificate(station, request)
 
-      expect(response).toBeDefined()
-      expect(response.status).toBe(DeleteCertificateStatusEnumType.NotFound)
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, DeleteCertificateStatusEnumType.NotFound)
     })
   })
 
@@ -168,10 +168,10 @@ await describe('I04 - DeleteCertificate', async () => {
       const response: OCPP20DeleteCertificateResponse =
         await testableService.handleRequestDeleteCertificate(station, request)
 
-      expect(response).toBeDefined()
-      expect(response.status).toBe(DeleteCertificateStatusEnumType.Failed)
-      expect(response.statusInfo).toBeDefined()
-      expect(response.statusInfo?.reasonCode).toBeDefined()
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, DeleteCertificateStatusEnumType.Failed)
+      assert.notStrictEqual(response.statusInfo, undefined)
+      assert.notStrictEqual(response.statusInfo?.reasonCode, undefined)
     })
 
     await it('should return Failed with InternalError when certificateManager is missing', async () => {
@@ -199,10 +199,10 @@ await describe('I04 - DeleteCertificate', async () => {
       const response: OCPP20DeleteCertificateResponse =
         await testableService.handleRequestDeleteCertificate(stationWithoutCertManager, request)
 
-      expect(response).toBeDefined()
-      expect(response.status).toBe(DeleteCertificateStatusEnumType.Failed)
-      expect(response.statusInfo).toBeDefined()
-      expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.InternalError)
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, DeleteCertificateStatusEnumType.Failed)
+      assert.notStrictEqual(response.statusInfo, undefined)
+      assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.InternalError)
     })
   })
 
@@ -219,27 +219,27 @@ await describe('I04 - DeleteCertificate', async () => {
       const response: OCPP20DeleteCertificateResponse =
         await testableService.handleRequestDeleteCertificate(station, request)
 
-      expect(response).toBeDefined()
-      expect(typeof response).toBe('object')
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(typeof response, 'object')
 
-      expect(response.status).toBeDefined()
-      expect([
+      assert.notStrictEqual(response.status, undefined)
+      assert.ok([
         DeleteCertificateStatusEnumType.Accepted,
-        DeleteCertificateStatusEnumType.NotFound,
         DeleteCertificateStatusEnumType.Failed,
-      ]).toContain(response.status)
+        DeleteCertificateStatusEnumType.NotFound,
+      ].includes(response.status))
 
       if (response.statusInfo != null) {
-        expect(response.statusInfo.reasonCode).toBeDefined()
-        expect(typeof response.statusInfo.reasonCode).toBe('string')
+        assert.notStrictEqual(response.statusInfo.reasonCode, undefined)
+        assert.strictEqual(typeof response.statusInfo.reasonCode, 'string')
         if (response.statusInfo.additionalInfo != null) {
-          expect(typeof response.statusInfo.additionalInfo).toBe('string')
+          assert.strictEqual(typeof response.statusInfo.additionalInfo, 'string')
         }
       }
 
       if (response.customData != null) {
-        expect(response.customData.vendorId).toBeDefined()
-        expect(typeof response.customData.vendorId).toBe('string')
+        assert.notStrictEqual(response.customData.vendorId, undefined)
+        assert.strictEqual(typeof response.customData.vendorId, 'string')
       }
     })
 
@@ -255,12 +255,11 @@ await describe('I04 - DeleteCertificate', async () => {
       const response: OCPP20DeleteCertificateResponse =
         await testableService.handleRequestDeleteCertificate(station, request)
 
-      expect(response.status).toBe(DeleteCertificateStatusEnumType.Failed)
-      expect(response.statusInfo).toBeDefined()
-      expect(response.statusInfo?.reasonCode).toBeDefined()
-      expect(typeof response.statusInfo?.reasonCode).toBe('string')
-      expect(response.statusInfo?.reasonCode.length).toBeGreaterThan(0)
-      expect(response.statusInfo?.reasonCode.length).toBeLessThanOrEqual(20)
+      assert.strictEqual(response.status, DeleteCertificateStatusEnumType.Failed)
+      if (response.statusInfo == null) { assert.fail('Expected statusInfo to be defined') }
+      assert.strictEqual(typeof response.statusInfo.reasonCode, 'string')
+      assert.ok(response.statusInfo.reasonCode.length > 0)
+      assert.ok(response.statusInfo.reasonCode.length <= 20)
     })
   })
 })

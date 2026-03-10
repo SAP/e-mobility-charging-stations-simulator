@@ -13,7 +13,7 @@
  * - All fields together
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { MockChargingStation } from '../../ChargingStationTestUtils.js'
@@ -83,17 +83,17 @@ await describe('E01-E04 - TransactionEventResponse handler', async () => {
 
   await it('should handle empty TransactionEvent response without throwing', async () => {
     const payload: OCPP20TransactionEventResponse = {}
-    await expect(dispatch(payload)).resolves.toBeUndefined()
+    await assert.doesNotReject(dispatch(payload))
   })
 
   await it('should handle totalCost field without throwing', async () => {
     const payload: OCPP20TransactionEventResponse = { totalCost: 12.5 }
-    await expect(dispatch(payload)).resolves.toBeUndefined()
+    await assert.doesNotReject(dispatch(payload))
   })
 
   await it('should handle chargingPriority field without throwing', async () => {
     const payload: OCPP20TransactionEventResponse = { chargingPriority: 1 }
-    await expect(dispatch(payload)).resolves.toBeUndefined()
+    await assert.doesNotReject(dispatch(payload))
   })
 
   await it('should handle idTokenInfo with Accepted status without throwing', async () => {
@@ -102,7 +102,7 @@ await describe('E01-E04 - TransactionEventResponse handler', async () => {
         status: OCPP20AuthorizationStatusEnumType.Accepted,
       },
     }
-    await expect(dispatch(payload)).resolves.toBeUndefined()
+    await assert.doesNotReject(dispatch(payload))
   })
 
   await it('should handle idTokenInfo with Invalid status without throwing', async () => {
@@ -111,7 +111,7 @@ await describe('E01-E04 - TransactionEventResponse handler', async () => {
         status: OCPP20AuthorizationStatusEnumType.Invalid,
       },
     }
-    await expect(dispatch(payload)).resolves.toBeUndefined()
+    await assert.doesNotReject(dispatch(payload))
   })
 
   await it('should handle updatedPersonalMessage field without throwing', async () => {
@@ -120,7 +120,7 @@ await describe('E01-E04 - TransactionEventResponse handler', async () => {
       format: OCPP20MessageFormatEnumType.UTF8,
     }
     const payload: OCPP20TransactionEventResponse = { updatedPersonalMessage: message }
-    await expect(dispatch(payload)).resolves.toBeUndefined()
+    await assert.doesNotReject(dispatch(payload))
   })
 
   await it('should handle all optional fields present simultaneously without throwing', async () => {
@@ -137,6 +137,6 @@ await describe('E01-E04 - TransactionEventResponse handler', async () => {
       totalCost: 9.99,
       updatedPersonalMessage: message,
     }
-    await expect(dispatch(payload)).resolves.toBeUndefined()
+    await assert.doesNotReject(dispatch(payload))
   })
 })

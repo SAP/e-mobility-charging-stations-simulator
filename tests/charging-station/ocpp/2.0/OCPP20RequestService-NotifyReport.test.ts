@@ -3,8 +3,7 @@
  * @description Unit tests for OCPP 2.0 NotifyReport request building (B07/B08)
  */
 
-import { expect } from '@std/expect'
-import assert from 'node:assert'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
@@ -79,12 +78,12 @@ await describe('B07/B08 - NotifyReport', async () => {
       requestParams
     ) as OCPP20NotifyReportRequest
 
-    expect(payload).toBeDefined()
-    expect(payload.generatedAt).toBeInstanceOf(Date)
-    expect(payload.requestId).toBe(123)
-    expect(payload.seqNo).toBe(0)
-    expect(payload.tbc).toBeUndefined()
-    expect(payload.reportData).toBeUndefined()
+    assert.notStrictEqual(payload, undefined)
+    assert.ok(payload.generatedAt instanceof Date)
+    assert.strictEqual(payload.requestId, 123)
+    assert.strictEqual(payload.seqNo, 0)
+    assert.strictEqual(payload.tbc, undefined)
+    assert.strictEqual(payload.reportData, undefined)
   })
 
   await it('should build NotifyReport request payload correctly with reportData', () => {
@@ -123,14 +122,14 @@ await describe('B07/B08 - NotifyReport', async () => {
       requestParams
     ) as OCPP20NotifyReportRequest
 
-    expect(payload).toBeDefined()
-    expect(payload.generatedAt).toBeInstanceOf(Date)
-    expect(payload.requestId).toBe(456)
-    expect(payload.seqNo).toBe(1)
-    expect(payload.tbc).toBe(false)
-    expect(payload.reportData).toStrictEqual(reportData)
-    expect(Array.isArray(payload.reportData)).toBe(true)
-    expect(payload.reportData).toHaveLength(1)
+    assert.notStrictEqual(payload, undefined)
+    assert.ok(payload.generatedAt instanceof Date)
+    assert.strictEqual(payload.requestId, 456)
+    assert.strictEqual(payload.seqNo, 1)
+    assert.strictEqual(payload.tbc, false)
+    assert.deepStrictEqual(payload.reportData, reportData)
+    assert.ok(Array.isArray(payload.reportData))
+    assert.strictEqual(payload.reportData.length, 1)
   })
 
   await it('should build NotifyReport request payload correctly with multiple reportData items', () => {
@@ -205,14 +204,14 @@ await describe('B07/B08 - NotifyReport', async () => {
       requestParams
     ) as OCPP20NotifyReportRequest
 
-    expect(payload).toBeDefined()
-    expect(payload.generatedAt).toBeInstanceOf(Date)
-    expect(payload.requestId).toBe(789)
-    expect(payload.seqNo).toBe(2)
-    expect(payload.tbc).toBe(true)
-    expect(payload.reportData).toStrictEqual(reportData)
-    expect(Array.isArray(payload.reportData)).toBe(true)
-    expect(payload.reportData).toHaveLength(3)
+    assert.notStrictEqual(payload, undefined)
+    assert.ok(payload.generatedAt instanceof Date)
+    assert.strictEqual(payload.requestId, 789)
+    assert.strictEqual(payload.seqNo, 2)
+    assert.strictEqual(payload.tbc, true)
+    assert.deepStrictEqual(payload.reportData, reportData)
+    assert.ok(Array.isArray(payload.reportData))
+    assert.strictEqual(payload.reportData.length, 3)
   })
 
   await it('should build NotifyReport request payload correctly with fragmented report (tbc=true)', () => {
@@ -251,14 +250,14 @@ await describe('B07/B08 - NotifyReport', async () => {
       requestParams
     ) as OCPP20NotifyReportRequest
 
-    expect(payload).toBeDefined()
-    expect(payload.generatedAt).toBeInstanceOf(Date)
-    expect(payload.requestId).toBe(999)
-    expect(payload.seqNo).toBe(0)
-    expect(payload.tbc).toBe(true)
-    expect(payload.reportData).toStrictEqual(reportData)
-    expect(Array.isArray(payload.reportData)).toBe(true)
-    expect(payload.reportData).toHaveLength(1)
+    assert.notStrictEqual(payload, undefined)
+    assert.ok(payload.generatedAt instanceof Date)
+    assert.strictEqual(payload.requestId, 999)
+    assert.strictEqual(payload.seqNo, 0)
+    assert.strictEqual(payload.tbc, true)
+    assert.deepStrictEqual(payload.reportData, reportData)
+    assert.ok(Array.isArray(payload.reportData))
+    assert.strictEqual(payload.reportData.length, 1)
   })
 
   await it('should build NotifyReport request payload correctly with empty reportData array', () => {
@@ -276,14 +275,14 @@ await describe('B07/B08 - NotifyReport', async () => {
       requestParams
     ) as OCPP20NotifyReportRequest
 
-    expect(payload).toBeDefined()
-    expect(payload.generatedAt).toBeInstanceOf(Date)
-    expect(payload.requestId).toBe(100)
-    expect(payload.seqNo).toBe(0)
-    expect(payload.tbc).toBe(false)
-    expect(payload.reportData).toStrictEqual([])
-    expect(Array.isArray(payload.reportData)).toBe(true)
-    expect(payload.reportData).toHaveLength(0)
+    assert.notStrictEqual(payload, undefined)
+    assert.ok(payload.generatedAt instanceof Date)
+    assert.strictEqual(payload.requestId, 100)
+    assert.strictEqual(payload.seqNo, 0)
+    assert.strictEqual(payload.tbc, false)
+    assert.deepStrictEqual(payload.reportData, [])
+    assert.ok(Array.isArray(payload.reportData))
+    assert.strictEqual(payload.reportData.length, 0)
   })
 
   await it('should handle different AttributeEnumType values correctly', () => {
@@ -325,12 +324,12 @@ await describe('B07/B08 - NotifyReport', async () => {
         requestParams
       ) as OCPP20NotifyReportRequest
 
-      expect(payload).toBeDefined()
+      assert.notStrictEqual(payload, undefined)
       assert(payload.reportData != null)
       const firstReport = payload.reportData[0]
       assert(firstReport.variableAttribute != null)
-      expect(firstReport.variableAttribute[0].type).toBe(attributeType)
-      expect(firstReport.variableAttribute[0].value).toBe(`Test Value ${index.toString()}`)
+      assert.strictEqual(firstReport.variableAttribute[0].type, attributeType)
+      assert.strictEqual(firstReport.variableAttribute[0].value, `Test Value ${index.toString()}`)
     })
   })
 
@@ -379,13 +378,13 @@ await describe('B07/B08 - NotifyReport', async () => {
         requestParams
       ) as OCPP20NotifyReportRequest
 
-      expect(payload).toBeDefined()
+      assert.notStrictEqual(payload, undefined)
       assert(payload.reportData != null)
       const firstReport = payload.reportData[0]
       assert(firstReport.variableCharacteristics != null)
       assert(firstReport.variableAttribute != null)
-      expect(firstReport.variableCharacteristics.dataType).toBe(testCase.dataType)
-      expect(firstReport.variableAttribute[0].value).toBe(testCase.value)
+      assert.strictEqual(firstReport.variableCharacteristics.dataType, testCase.dataType)
+      assert.strictEqual(firstReport.variableAttribute[0].value, testCase.value)
     })
   })
 
@@ -426,31 +425,31 @@ await describe('B07/B08 - NotifyReport', async () => {
     ) as OCPP20NotifyReportRequest
 
     // Validate that the payload has the exact structure of OCPP20NotifyReportRequest
-    expect(typeof payload).toBe('object')
-    expect(payload).toHaveProperty('generatedAt')
-    expect(payload).toHaveProperty('requestId')
-    expect(payload).toHaveProperty('seqNo')
-    expect(payload).toHaveProperty('reportData')
-    expect(payload).toHaveProperty('tbc')
+    assert.strictEqual(typeof payload, 'object')
+    assert.notStrictEqual(payload.generatedAt, undefined)
+    assert.notStrictEqual(payload.requestId, undefined)
+    assert.notStrictEqual(payload.seqNo, undefined)
+    assert.notStrictEqual(payload.reportData, undefined)
+    assert.notStrictEqual(payload.tbc, undefined)
 
     // Validate required fields
-    expect(payload.generatedAt).toBeInstanceOf(Date)
-    expect(typeof payload.requestId).toBe('number')
-    expect(typeof payload.seqNo).toBe('number')
+    assert.ok(payload.generatedAt instanceof Date)
+    assert.strictEqual(typeof payload.requestId, 'number')
+    assert.strictEqual(typeof payload.seqNo, 'number')
 
     // Validate optional fields
     if (payload.reportData !== undefined) {
-      expect(Array.isArray(payload.reportData)).toBe(true)
+      assert.ok(Array.isArray(payload.reportData))
       if (payload.reportData.length > 0) {
-        expect(typeof payload.reportData[0]).toBe('object')
-        expect(payload.reportData[0]).toHaveProperty('component')
-        expect(payload.reportData[0]).toHaveProperty('variable')
-        expect(payload.reportData[0]).toHaveProperty('variableAttribute')
+        assert.strictEqual(typeof payload.reportData[0], 'object')
+        assert.notStrictEqual(payload.reportData[0].component, undefined)
+        assert.notStrictEqual(payload.reportData[0].variable, undefined)
+        assert.notStrictEqual(payload.reportData[0].variableAttribute, undefined)
       }
     }
 
     if (payload.tbc !== undefined) {
-      expect(typeof payload.tbc).toBe('boolean')
+      assert.strictEqual(typeof payload.tbc, 'boolean')
     }
   })
 
@@ -490,12 +489,12 @@ await describe('B07/B08 - NotifyReport', async () => {
       requestParams
     ) as OCPP20NotifyReportRequest
 
-    expect(payload).toBeDefined()
+    assert.notStrictEqual(payload, undefined)
     assert(payload.reportData != null)
     const firstReport = payload.reportData[0]
     assert(firstReport.variableAttribute != null)
-    expect(firstReport.variableAttribute).toHaveLength(1)
-    expect(firstReport.variableAttribute[0].type).toBe(AttributeEnumType.Actual)
+    assert.strictEqual(firstReport.variableAttribute.length, 1)
+    assert.strictEqual(firstReport.variableAttribute[0].type, AttributeEnumType.Actual)
   })
 
   await it('should preserve all payload properties correctly', () => {
@@ -532,16 +531,16 @@ await describe('B07/B08 - NotifyReport', async () => {
     ) as OCPP20NotifyReportRequest
 
     // Verify all input properties are preserved exactly
-    expect(payload.generatedAt).toBe(testDate)
-    expect(payload.requestId).toBe(3001)
-    expect(payload.seqNo).toBe(15)
-    expect(payload.tbc).toBe(true)
-    expect(payload.reportData).toBe(reportData)
+    assert.strictEqual(payload.generatedAt, testDate)
+    assert.strictEqual(payload.requestId, 3001)
+    assert.strictEqual(payload.seqNo, 15)
+    assert.strictEqual(payload.tbc, true)
+    assert.strictEqual(payload.reportData, reportData)
 
     // Verify no additional properties are added
     const expectedKeys = ['generatedAt', 'reportData', 'requestId', 'seqNo', 'tbc']
     const actualKeys = Object.keys(payload as object).sort()
     expectedKeys.sort()
-    expect(actualKeys).toStrictEqual(expectedKeys)
+    assert.deepStrictEqual(actualKeys, expectedKeys)
   })
 })

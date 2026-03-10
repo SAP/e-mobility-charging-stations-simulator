@@ -2,7 +2,7 @@
  * @file Tests for RemoteAuthStrategy
  * @description Unit tests for remote (CSMS) authorization strategy
  */
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type {
@@ -57,32 +57,32 @@ await describe('RemoteAuthStrategy', async () => {
 
   await describe('constructor', async () => {
     await it('should initialize with correct name and priority', () => {
-      expect(strategy.name).toBe('RemoteAuthStrategy')
-      expect(strategy.priority).toBe(2)
+      assert.strictEqual(strategy.name, 'RemoteAuthStrategy')
+      assert.strictEqual(strategy.priority, 2)
     })
 
     await it('should initialize without dependencies', () => {
       const strategyNoDeps = new RemoteAuthStrategy()
-      expect(strategyNoDeps.name).toBe('RemoteAuthStrategy')
-      expect(strategyNoDeps.priority).toBe(2)
+      assert.strictEqual(strategyNoDeps.name, 'RemoteAuthStrategy')
+      assert.strictEqual(strategyNoDeps.priority, 2)
     })
   })
 
   await describe('initialize', async () => {
     await it('should initialize successfully with adapters', () => {
       const config = createTestAuthConfig({ authorizationCacheEnabled: true })
-      expect(() => {
+      assert.doesNotThrow(() => {
         strategy.initialize(config)
-      }).not.toThrow()
+      })
     })
 
     await it('should validate adapter configurations', () => {
       mockOCPP16Adapter.validateConfiguration = () => true
       mockOCPP20Adapter.validateConfiguration = () => true
       const config = createTestAuthConfig()
-      expect(() => {
+      assert.doesNotThrow(() => {
         strategy.initialize(config)
-      }).not.toThrow()
+      })
     })
   })
 
@@ -96,7 +96,7 @@ await describe('RemoteAuthStrategy', async () => {
           IdentifierType.ID_TAG
         ),
       })
-      expect(strategy.canHandle(request, config)).toBe(true)
+      assert.strictEqual(strategy.canHandle(request, config), true)
     })
 
     await it('should return false when remote authorization is explicitly disabled', () => {
@@ -110,7 +110,7 @@ await describe('RemoteAuthStrategy', async () => {
           IdentifierType.ID_TAG
         ),
       })
-      expect(strategy.canHandle(request, config)).toBe(false)
+      assert.strictEqual(strategy.canHandle(request, config), false)
     })
 
     await it('should return false when no adapter available', () => {
@@ -123,7 +123,7 @@ await describe('RemoteAuthStrategy', async () => {
           IdentifierType.ID_TAG
         ),
       })
-      expect(strategyNoAdapters.canHandle(request, config)).toBe(false)
+      assert.strictEqual(strategyNoAdapters.canHandle(request, config), false)
     })
   })
 
@@ -145,9 +145,9 @@ await describe('RemoteAuthStrategy', async () => {
 
       const result = await strategy.authenticate(request, config)
 
-      expect(result).toBeDefined()
-      expect(result?.status).toBe(AuthorizationStatus.ACCEPTED)
-      expect(result?.method).toBe(AuthenticationMethod.REMOTE_AUTHORIZATION)
+      assert.notStrictEqual(result, undefined)
+      assert.strictEqual(result?.status, AuthorizationStatus.ACCEPTED)
+      assert.strictEqual(result.method, AuthenticationMethod.REMOTE_AUTHORIZATION)
     })
 
     await it('should authenticate using OCPP 2.0 adapter', async () => {
@@ -162,9 +162,9 @@ await describe('RemoteAuthStrategy', async () => {
 
       const result = await strategy.authenticate(request, config)
 
-      expect(result).toBeDefined()
-      expect(result?.status).toBe(AuthorizationStatus.ACCEPTED)
-      expect(result?.method).toBe(AuthenticationMethod.REMOTE_AUTHORIZATION)
+      assert.notStrictEqual(result, undefined)
+      assert.strictEqual(result?.status, AuthorizationStatus.ACCEPTED)
+      assert.strictEqual(result.method, AuthenticationMethod.REMOTE_AUTHORIZATION)
     })
 
     await it('should cache successful authorization results', async () => {
@@ -186,7 +186,7 @@ await describe('RemoteAuthStrategy', async () => {
       })
 
       await strategy.authenticate(request, config)
-      expect(cachedKey).toBe('CACHE_TAG')
+      assert.strictEqual(cachedKey, 'CACHE_TAG')
     })
 
     await it('G03.FR.01.T4.01 - should cache BLOCKED authorization status', async () => {
@@ -217,7 +217,7 @@ await describe('RemoteAuthStrategy', async () => {
       })
 
       await strategy.authenticate(request, config)
-      expect(cachedKey).toBe('BLOCKED_TAG')
+      assert.strictEqual(cachedKey, 'BLOCKED_TAG')
     })
 
     await it('G03.FR.01.T4.02 - should cache EXPIRED authorization status', async () => {
@@ -248,7 +248,7 @@ await describe('RemoteAuthStrategy', async () => {
       })
 
       await strategy.authenticate(request, config)
-      expect(cachedKey).toBe('EXPIRED_TAG')
+      assert.strictEqual(cachedKey, 'EXPIRED_TAG')
     })
 
     await it('G03.FR.01.T4.03 - should cache INVALID authorization status', async () => {
@@ -279,7 +279,7 @@ await describe('RemoteAuthStrategy', async () => {
       })
 
       await strategy.authenticate(request, config)
-      expect(cachedKey).toBe('INVALID_TAG')
+      assert.strictEqual(cachedKey, 'INVALID_TAG')
     })
 
     await it('G03.FR.01.T4.04 - should still cache ACCEPTED authorization status (regression)', async () => {
@@ -301,7 +301,7 @@ await describe('RemoteAuthStrategy', async () => {
       })
 
       await strategy.authenticate(request, config)
-      expect(cachedKey).toBe('ACCEPTED_TAG')
+      assert.strictEqual(cachedKey, 'ACCEPTED_TAG')
     })
 
     await it('should return undefined when remote is unavailable', async () => {
@@ -317,7 +317,7 @@ await describe('RemoteAuthStrategy', async () => {
       })
 
       const result = await strategy.authenticate(request, config)
-      expect(result).toBeUndefined()
+      assert.strictEqual(result, undefined)
     })
 
     await it('should return undefined when no adapter available', async () => {
@@ -331,7 +331,7 @@ await describe('RemoteAuthStrategy', async () => {
       })
 
       const result = await strategy.authenticate(request, config)
-      expect(result).toBeUndefined()
+      assert.strictEqual(result, undefined)
     })
 
     await it('should handle remote authorization errors gracefully', async () => {
@@ -349,7 +349,7 @@ await describe('RemoteAuthStrategy', async () => {
       })
 
       const result = await strategy.authenticate(request, config)
-      expect(result).toBeUndefined()
+      assert.strictEqual(result, undefined)
     })
 
     await it('G03.FR.01.T8.01 - should not cache identifier that is in local auth list', async () => {
@@ -384,7 +384,7 @@ await describe('RemoteAuthStrategy', async () => {
       })
 
       await strategy.authenticate(request, config)
-      expect(cachedKey).toBeUndefined()
+      assert.strictEqual(cachedKey, undefined)
     })
 
     await it('G03.FR.01.T8.02 - should cache identifier that is not in local auth list', async () => {
@@ -412,7 +412,7 @@ await describe('RemoteAuthStrategy', async () => {
       })
 
       await strategy.authenticate(request, config)
-      expect(cachedKey).toBe('REMOTE_AUTH_TAG')
+      assert.strictEqual(cachedKey, 'REMOTE_AUTH_TAG')
     })
   })
 
@@ -426,7 +426,7 @@ await describe('RemoteAuthStrategy', async () => {
         identifier: createMockIdentifier(OCPPVersion.VERSION_16, 'TEST', IdentifierType.ID_TAG),
       })
 
-      expect(newStrategy.canHandle(request, config)).toBe(true)
+      assert.strictEqual(newStrategy.canHandle(request, config), true)
     })
 
     await it('should remove adapter', () => {
@@ -437,7 +437,7 @@ await describe('RemoteAuthStrategy', async () => {
         identifier: createMockIdentifier(OCPPVersion.VERSION_16, 'TEST', IdentifierType.ID_TAG),
       })
 
-      expect(strategy.canHandle(request, config)).toBe(false)
+      assert.strictEqual(strategy.canHandle(request, config), false)
     })
   })
 
@@ -445,13 +445,13 @@ await describe('RemoteAuthStrategy', async () => {
     await it('should test connectivity successfully', async () => {
       strategy.initialize(createTestAuthConfig())
       const result = await strategy.testConnectivity()
-      expect(result).toBe(true)
+      assert.strictEqual(result, true)
     })
 
     await it('should return false when not initialized', async () => {
       const newStrategy = new RemoteAuthStrategy()
       const result = await newStrategy.testConnectivity()
-      expect(result).toBe(false)
+      assert.strictEqual(result, false)
     })
 
     await it('should return false when all adapters unavailable', async () => {
@@ -460,26 +460,25 @@ await describe('RemoteAuthStrategy', async () => {
 
       strategy.initialize(createTestAuthConfig())
       const result = await strategy.testConnectivity()
-      expect(result).toBe(false)
+      assert.strictEqual(result, false)
     })
   })
 
   await describe('getStats', async () => {
-    await it('should return strategy statistics', () => {
-      void expect(strategy.getStats()).resolves.toMatchObject({
-        adapterCount: 2,
-        failedRemoteAuth: 0,
-        hasAuthCache: true,
-        isInitialized: false,
-        successfulRemoteAuth: 0,
-        totalRequests: 0,
-      })
+    await it('should return strategy statistics', async () => {
+      const stats = await strategy.getStats()
+      assert.strictEqual(stats.adapterCount, 2)
+      assert.strictEqual(stats.failedRemoteAuth, 0)
+      assert.strictEqual(stats.hasAuthCache, true)
+      assert.strictEqual(stats.isInitialized, false)
+      assert.strictEqual(stats.successfulRemoteAuth, 0)
+      assert.strictEqual(stats.totalRequests, 0)
     })
 
     await it('should include adapter statistics', async () => {
       strategy.initialize(createTestAuthConfig())
       const stats = await strategy.getStats()
-      expect(stats.adapterStats).toBeDefined()
+      assert.notStrictEqual(stats.adapterStats, undefined)
     })
   })
 
@@ -487,8 +486,8 @@ await describe('RemoteAuthStrategy', async () => {
     await it('should reset strategy state', async () => {
       strategy.cleanup()
       const stats = await strategy.getStats()
-      expect(stats.isInitialized).toBe(false)
-      expect(stats.totalRequests).toBe(0)
+      assert.strictEqual(stats.isInitialized, false)
+      assert.strictEqual(stats.totalRequests, 0)
     })
   })
 })

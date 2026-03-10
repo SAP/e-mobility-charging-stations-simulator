@@ -9,7 +9,7 @@
  * - OCPPServiceUtils.isMessageTriggerSupported
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../src/charging-station/ChargingStation.js'
@@ -57,7 +57,7 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
         OCPP16IncomingRequestCommand.RESET as IncomingRequestCommand
       )
 
-      expect(result).toBe(true)
+      assert.strictEqual(result, true)
     })
 
     await it('should return false when command is explicitly disabled', () => {
@@ -74,7 +74,7 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
         OCPP16IncomingRequestCommand.RESET as IncomingRequestCommand
       )
 
-      expect(result).toBe(false)
+      assert.strictEqual(result, false)
     })
 
     await it('should return true when commandsSupport is undefined', () => {
@@ -85,7 +85,7 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
         OCPP16IncomingRequestCommand.RESET as IncomingRequestCommand
       )
 
-      expect(result).toBe(true)
+      assert.strictEqual(result, true)
     })
 
     await it('should return true when incomingCommands is empty', () => {
@@ -98,7 +98,7 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
         OCPP16IncomingRequestCommand.RESET as IncomingRequestCommand
       )
 
-      expect(result).toBe(true)
+      assert.strictEqual(result, true)
     })
   })
 
@@ -117,7 +117,7 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
         OCPP16RequestCommand.HEARTBEAT as RequestCommand
       )
 
-      expect(result).toBe(true)
+      assert.strictEqual(result, true)
     })
 
     await it('should return false when command is explicitly disabled', () => {
@@ -134,7 +134,7 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
         OCPP16RequestCommand.HEARTBEAT as RequestCommand
       )
 
-      expect(result).toBe(false)
+      assert.strictEqual(result, false)
     })
 
     await it('should return true when commandsSupport is undefined', () => {
@@ -145,7 +145,7 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
         OCPP16RequestCommand.HEARTBEAT as RequestCommand
       )
 
-      expect(result).toBe(true)
+      assert.strictEqual(result, true)
     })
 
     await it('should return true when outgoingCommands is empty', () => {
@@ -158,7 +158,7 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
         OCPP16RequestCommand.HEARTBEAT as RequestCommand
       )
 
-      expect(result).toBe(true)
+      assert.strictEqual(result, true)
     })
   })
 
@@ -175,7 +175,7 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
         OCPP16MessageTrigger.Heartbeat as MessageTrigger
       )
 
-      expect(result).toBe(true)
+      assert.strictEqual(result, true)
     })
 
     await it('should return false when trigger is explicitly disabled', () => {
@@ -190,7 +190,7 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
         OCPP16MessageTrigger.Heartbeat as MessageTrigger
       )
 
-      expect(result).toBe(false)
+      assert.strictEqual(result, false)
     })
 
     await it('should return true when messageTriggerSupport is undefined', () => {
@@ -201,7 +201,7 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
         OCPP16MessageTrigger.Heartbeat as MessageTrigger
       )
 
-      expect(result).toBe(true)
+      assert.strictEqual(result, true)
     })
 
     await it('should return true when messageTriggerSupport is null', () => {
@@ -214,7 +214,7 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
         OCPP16MessageTrigger.Heartbeat as MessageTrigger
       )
 
-      expect(result).toBe(true)
+      assert.strictEqual(result, true)
     })
   })
 })

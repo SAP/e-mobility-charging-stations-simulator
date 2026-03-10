@@ -9,7 +9,7 @@
  * - Cache clear
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type {
@@ -88,7 +88,7 @@ await describe('SharedLRUCache', async () => {
       const instance1 = SharedLRUCache.getInstance()
       const instance2 = SharedLRUCache.getInstance()
 
-      expect(instance1).toBe(instance2)
+      assert.strictEqual(instance1, instance2)
     })
 
     await it('should create new instance after reset', () => {
@@ -96,7 +96,7 @@ await describe('SharedLRUCache', async () => {
       resetSharedLRUCache()
       const instance2 = SharedLRUCache.getInstance()
 
-      expect(instance1).not.toBe(instance2)
+      assert.notStrictEqual(instance1, instance2)
     })
   })
 
@@ -108,7 +108,7 @@ await describe('SharedLRUCache', async () => {
       cache.setChargingStationTemplate(template)
       const retrieved = cache.getChargingStationTemplate('template-hash-1')
 
-      expect(retrieved).toStrictEqual(template)
+      assert.deepStrictEqual(retrieved, template)
     })
 
     await it('should return undefined for non-existent template', () => {
@@ -116,7 +116,7 @@ await describe('SharedLRUCache', async () => {
 
       const result = cache.getChargingStationTemplate('unknown-hash')
 
-      expect(result).toBeUndefined()
+      assert.strictEqual(result, undefined)
     })
 
     await it('should report has correctly for templates', () => {
@@ -125,8 +125,8 @@ await describe('SharedLRUCache', async () => {
 
       cache.setChargingStationTemplate(template)
 
-      expect(cache.hasChargingStationTemplate('template-hash-2')).toBe(true)
-      expect(cache.hasChargingStationTemplate('unknown-hash')).toBe(false)
+      assert.strictEqual(cache.hasChargingStationTemplate('template-hash-2'), true)
+      assert.strictEqual(cache.hasChargingStationTemplate('unknown-hash'), false)
     })
 
     await it('should delete a charging station template', () => {
@@ -136,7 +136,7 @@ await describe('SharedLRUCache', async () => {
       cache.setChargingStationTemplate(template)
       cache.deleteChargingStationTemplate('template-hash-3')
 
-      expect(cache.hasChargingStationTemplate('template-hash-3')).toBe(false)
+      assert.strictEqual(cache.hasChargingStationTemplate('template-hash-3'), false)
     })
   })
 
@@ -148,7 +148,7 @@ await describe('SharedLRUCache', async () => {
       cache.setChargingStationConfiguration(config)
       const retrieved = cache.getChargingStationConfiguration('config-hash-1')
 
-      expect(retrieved).toStrictEqual(config)
+      assert.deepStrictEqual(retrieved, config)
     })
 
     await it('should not cache configuration with empty configurationKey', () => {
@@ -158,7 +158,7 @@ await describe('SharedLRUCache', async () => {
 
       cache.setChargingStationConfiguration(config)
 
-      expect(cache.hasChargingStationConfiguration('config-hash-empty-key')).toBe(false)
+      assert.strictEqual(cache.hasChargingStationConfiguration('config-hash-empty-key'), false)
     })
 
     await it('should not cache configuration with null stationInfo', () => {
@@ -168,7 +168,7 @@ await describe('SharedLRUCache', async () => {
 
       cache.setChargingStationConfiguration(config)
 
-      expect(cache.hasChargingStationConfiguration('config-hash-no-info')).toBe(false)
+      assert.strictEqual(cache.hasChargingStationConfiguration('config-hash-no-info'), false)
     })
 
     await it('should not cache configuration with empty configurationHash', () => {
@@ -177,7 +177,7 @@ await describe('SharedLRUCache', async () => {
 
       cache.setChargingStationConfiguration(config)
 
-      expect(cache.hasChargingStationConfiguration('')).toBe(false)
+      assert.strictEqual(cache.hasChargingStationConfiguration(''), false)
     })
 
     await it('should delete a charging station configuration', () => {
@@ -187,7 +187,7 @@ await describe('SharedLRUCache', async () => {
       cache.setChargingStationConfiguration(config)
       cache.deleteChargingStationConfiguration('config-hash-del')
 
-      expect(cache.hasChargingStationConfiguration('config-hash-del')).toBe(false)
+      assert.strictEqual(cache.hasChargingStationConfiguration('config-hash-del'), false)
     })
   })
 
@@ -201,8 +201,8 @@ await describe('SharedLRUCache', async () => {
       cache.setChargingStationConfiguration(config)
       cache.clear()
 
-      expect(cache.hasChargingStationTemplate('template-clear')).toBe(false)
-      expect(cache.hasChargingStationConfiguration('config-clear')).toBe(false)
+      assert.strictEqual(cache.hasChargingStationTemplate('template-clear'), false)
+      assert.strictEqual(cache.hasChargingStationConfiguration('config-clear'), false)
     })
   })
 })

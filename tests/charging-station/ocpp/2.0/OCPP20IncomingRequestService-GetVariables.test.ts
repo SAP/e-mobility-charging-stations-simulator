@@ -1,9 +1,9 @@
+import { millisecondsToSeconds } from 'date-fns'
 /**
  * @file Tests for OCPP20IncomingRequestService GetVariables
  * @description Unit tests for OCPP 2.0 GetVariables command handling (B06)
  */
-import { expect } from '@std/expect'
-import { millisecondsToSeconds } from 'date-fns'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
@@ -79,30 +79,30 @@ await describe('B06 - Get Variables', async () => {
 
     const response = incomingRequestService.handleRequestGetVariables(station, request)
 
-    expect(response).toBeDefined()
-    expect(response.getVariableResult).toBeDefined()
-    expect(Array.isArray(response.getVariableResult)).toBe(true)
-    expect(response.getVariableResult).toHaveLength(2)
+    assert.notStrictEqual(response, undefined)
+    assert.notStrictEqual(response.getVariableResult, undefined)
+    assert.ok(Array.isArray(response.getVariableResult))
+    assert.strictEqual(response.getVariableResult.length, 2)
 
     // Check first variable (HeartbeatInterval)
     const firstResult = response.getVariableResult[0]
-    expect(firstResult.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-    expect(firstResult.attributeType).toBe(AttributeEnumType.Actual)
-    expect(firstResult.attributeValue).toBe(
+    assert.strictEqual(firstResult.attributeStatus, GetVariableStatusEnumType.Accepted)
+    assert.strictEqual(firstResult.attributeType, AttributeEnumType.Actual)
+    assert.strictEqual(firstResult.attributeValue,
       millisecondsToSeconds(Constants.DEFAULT_HEARTBEAT_INTERVAL).toString()
     )
-    expect(firstResult.component.name).toBe(OCPP20ComponentName.OCPPCommCtrlr)
-    expect(firstResult.variable.name).toBe(OCPP20OptionalVariableName.HeartbeatInterval)
-    expect(firstResult.attributeStatusInfo).toBeUndefined()
+    assert.strictEqual(firstResult.component.name, OCPP20ComponentName.OCPPCommCtrlr)
+    assert.strictEqual(firstResult.variable.name, OCPP20OptionalVariableName.HeartbeatInterval)
+    assert.strictEqual(firstResult.attributeStatusInfo, undefined)
 
     // Check second variable (WebSocketPingInterval)
     const secondResult = response.getVariableResult[1]
-    expect(secondResult.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-    expect(secondResult.attributeType).toBe(AttributeEnumType.Actual)
-    expect(secondResult.attributeValue).toBe(Constants.DEFAULT_WEBSOCKET_PING_INTERVAL.toString())
-    expect(secondResult.component.name).toBe(OCPP20ComponentName.ChargingStation)
-    expect(secondResult.variable.name).toBe(OCPP20OptionalVariableName.WebSocketPingInterval)
-    expect(secondResult.attributeStatusInfo).toBeUndefined()
+    assert.strictEqual(secondResult.attributeStatus, GetVariableStatusEnumType.Accepted)
+    assert.strictEqual(secondResult.attributeType, AttributeEnumType.Actual)
+    assert.strictEqual(secondResult.attributeValue, Constants.DEFAULT_WEBSOCKET_PING_INTERVAL.toString())
+    assert.strictEqual(secondResult.component.name, OCPP20ComponentName.ChargingStation)
+    assert.strictEqual(secondResult.variable.name, OCPP20OptionalVariableName.WebSocketPingInterval)
+    assert.strictEqual(secondResult.attributeStatusInfo, undefined)
   })
 
   // FR: B06.FR.02
@@ -122,30 +122,30 @@ await describe('B06 - Get Variables', async () => {
 
     const response = incomingRequestService.handleRequestGetVariables(station, request)
 
-    expect(response).toBeDefined()
-    expect(response.getVariableResult).toBeDefined()
-    expect(Array.isArray(response.getVariableResult)).toBe(true)
-    expect(response.getVariableResult).toHaveLength(2)
+    assert.notStrictEqual(response, undefined)
+    assert.notStrictEqual(response.getVariableResult, undefined)
+    assert.ok(Array.isArray(response.getVariableResult))
+    assert.strictEqual(response.getVariableResult.length, 2)
 
     // Check first variable (should be UnknownVariable)
     const firstResult = response.getVariableResult[0]
-    expect(firstResult.attributeStatus).toBe(GetVariableStatusEnumType.UnknownVariable)
+    assert.strictEqual(firstResult.attributeStatus, GetVariableStatusEnumType.UnknownVariable)
     // Defaulted attributeType now Actual, not undefined
-    expect(firstResult.attributeType).toBe(AttributeEnumType.Actual)
-    expect(firstResult.attributeValue).toBeUndefined()
-    expect(firstResult.component.name).toBe(OCPP20ComponentName.ChargingStation)
-    expect(firstResult.variable.name).toBe('InvalidVariable')
-    expect(firstResult.attributeStatusInfo).toBeDefined()
+    assert.strictEqual(firstResult.attributeType, AttributeEnumType.Actual)
+    assert.strictEqual(firstResult.attributeValue, undefined)
+    assert.strictEqual(firstResult.component.name, OCPP20ComponentName.ChargingStation)
+    assert.strictEqual(firstResult.variable.name, 'InvalidVariable')
+    assert.notStrictEqual(firstResult.attributeStatusInfo, undefined)
 
     // Check second variable (should be UnknownComponent)
     const secondResult = response.getVariableResult[1]
-    expect(secondResult.attributeStatus).toBe(GetVariableStatusEnumType.UnknownComponent)
+    assert.strictEqual(secondResult.attributeStatus, GetVariableStatusEnumType.UnknownComponent)
     // Defaulted attributeType now Actual, not undefined
-    expect(secondResult.attributeType).toBe(AttributeEnumType.Actual)
-    expect(secondResult.attributeValue).toBeUndefined()
-    expect(secondResult.component.name).toBe('InvalidComponent')
-    expect(secondResult.variable.name).toBe(OCPP20OptionalVariableName.HeartbeatInterval)
-    expect(secondResult.attributeStatusInfo).toBeDefined()
+    assert.strictEqual(secondResult.attributeType, AttributeEnumType.Actual)
+    assert.strictEqual(secondResult.attributeValue, undefined)
+    assert.strictEqual(secondResult.component.name, 'InvalidComponent')
+    assert.strictEqual(secondResult.variable.name, OCPP20OptionalVariableName.HeartbeatInterval)
+    assert.notStrictEqual(secondResult.attributeStatusInfo, undefined)
   })
 
   // FR: B06.FR.03
@@ -162,13 +162,13 @@ await describe('B06 - Get Variables', async () => {
 
     const response = incomingRequestService.handleRequestGetVariables(station, request)
 
-    expect(response).toBeDefined()
-    expect(response.getVariableResult).toBeDefined()
-    expect(Array.isArray(response.getVariableResult)).toBe(true)
-    expect(response.getVariableResult).toHaveLength(1)
+    assert.notStrictEqual(response, undefined)
+    assert.notStrictEqual(response.getVariableResult, undefined)
+    assert.ok(Array.isArray(response.getVariableResult))
+    assert.strictEqual(response.getVariableResult.length, 1)
 
     const result = response.getVariableResult[0]
-    expect(result.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
+    assert.strictEqual(result.attributeStatus, GetVariableStatusEnumType.NotSupportedAttributeType)
   })
 
   // FR: B06.FR.04
@@ -187,9 +187,9 @@ await describe('B06 - Get Variables', async () => {
       ],
     }
     const response = incomingRequestService.handleRequestGetVariables(station, request)
-    expect(response.getVariableResult).toHaveLength(1)
+    assert.strictEqual(response.getVariableResult.length, 1)
     const result = response.getVariableResult[0]
-    expect(result.attributeStatus).toBe(GetVariableStatusEnumType.UnknownComponent)
+    assert.strictEqual(result.attributeStatus, GetVariableStatusEnumType.UnknownComponent)
   })
 
   // FR: B06.FR.05
@@ -204,9 +204,9 @@ await describe('B06 - Get Variables', async () => {
       ],
     }
     const response = incomingRequestService.handleRequestGetVariables(station, request)
-    expect(response.getVariableResult).toHaveLength(1)
+    assert.strictEqual(response.getVariableResult.length, 1)
     const result = response.getVariableResult[0]
-    expect(result.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
+    assert.strictEqual(result.attributeStatus, GetVariableStatusEnumType.NotSupportedAttributeType)
   })
 
   await it('should truncate variable value based on ReportingValueSize', () => {
@@ -222,8 +222,8 @@ await describe('B06 - Get Variables', async () => {
     }
     const response = incomingRequestService.handleRequestGetVariables(station, request)
     const result = response.getVariableResult[0]
-    expect(result.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-    expect(result.attributeValue?.length).toBe(2)
+    assert.strictEqual(result.attributeStatus, GetVariableStatusEnumType.Accepted)
+    assert.strictEqual(result.attributeValue?.length, 2)
     resetReportingValueSize(station)
   })
 
@@ -238,8 +238,8 @@ await describe('B06 - Get Variables', async () => {
     }
     const response = incomingRequestService.handleRequestGetVariables(station, request)
     const result = response.getVariableResult[0]
-    expect(result.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-    expect(result.attributeValue).toBeDefined()
+    assert.strictEqual(result.attributeStatus, GetVariableStatusEnumType.Accepted)
+    assert.notStrictEqual(result.attributeValue, undefined)
   })
 
   await it('should enforce ItemsPerMessage limit', () => {
@@ -257,10 +257,10 @@ await describe('B06 - Get Variables', async () => {
       ],
     }
     const response = incomingRequestService.handleRequestGetVariables(station, request)
-    expect(response.getVariableResult.length).toBe(2)
+    assert.strictEqual(response.getVariableResult.length, 2)
     for (const r of response.getVariableResult) {
-      expect(r.attributeStatus).toBe(GetVariableStatusEnumType.Rejected)
-      expect(r.attributeStatusInfo?.reasonCode).toBeDefined()
+      assert.strictEqual(r.attributeStatus, GetVariableStatusEnumType.Rejected)
+      assert.notStrictEqual(r.attributeStatusInfo?.reasonCode, undefined)
     }
     resetLimits(station)
   })
@@ -280,10 +280,10 @@ await describe('B06 - Get Variables', async () => {
       ],
     }
     const response = incomingRequestService.handleRequestGetVariables(station, request)
-    expect(response.getVariableResult.length).toBe(2)
+    assert.strictEqual(response.getVariableResult.length, 2)
     response.getVariableResult.forEach(r => {
-      expect(r.attributeStatus).toBe(GetVariableStatusEnumType.Rejected)
-      expect(r.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
+      assert.strictEqual(r.attributeStatus, GetVariableStatusEnumType.Rejected)
+      assert.strictEqual(r.attributeStatusInfo?.reasonCode, ReasonCodeEnumType.TooLargeElement)
     })
     resetLimits(station)
   })
@@ -322,11 +322,11 @@ await describe('B06 - Get Variables', async () => {
     setStrictLimits(station, 100, limit)
     const response = incomingRequestService.handleRequestGetVariables(station, request)
     const actualSize = Buffer.byteLength(JSON.stringify(response.getVariableResult), 'utf8')
-    expect(actualSize).toBeGreaterThan(limit)
-    expect(response.getVariableResult).toHaveLength(request.getVariableData.length)
+    assert.ok(actualSize > limit)
+    assert.strictEqual(response.getVariableResult.length, request.getVariableData.length)
     response.getVariableResult.forEach(r => {
-      expect(r.attributeStatus).toBe(GetVariableStatusEnumType.Rejected)
-      expect(r.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.TooLargeElement)
+      assert.strictEqual(r.attributeStatus, GetVariableStatusEnumType.Rejected)
+      assert.strictEqual(r.attributeStatusInfo?.reasonCode, ReasonCodeEnumType.TooLargeElement)
     })
     resetLimits(station)
   })
@@ -343,12 +343,12 @@ await describe('B06 - Get Variables', async () => {
       ],
     }
     const response = incomingRequestService.handleRequestGetVariables(station, request)
-    expect(response.getVariableResult).toHaveLength(1)
+    assert.strictEqual(response.getVariableResult.length, 1)
     const result = response.getVariableResult[0]
-    expect(result.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-    expect(result.component.name).toBe(OCPP20ComponentName.ClockCtrlr)
-    expect(result.variable.name).toBe(OCPP20RequiredVariableName.DateTime)
-    expect(result.attributeValue).toBeDefined()
+    assert.strictEqual(result.attributeStatus, GetVariableStatusEnumType.Accepted)
+    assert.strictEqual(result.component.name, OCPP20ComponentName.ClockCtrlr)
+    assert.strictEqual(result.variable.name, OCPP20RequiredVariableName.DateTime)
+    assert.notStrictEqual(result.attributeValue, undefined)
   })
 
   await it('should retrieve MessageTimeout from OCPPCommCtrlr', () => {
@@ -362,13 +362,13 @@ await describe('B06 - Get Variables', async () => {
       ],
     }
     const response = incomingRequestService.handleRequestGetVariables(station, request)
-    expect(response.getVariableResult).toHaveLength(1)
+    assert.strictEqual(response.getVariableResult.length, 1)
     const result = response.getVariableResult[0]
-    expect(result.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-    expect(result.component.name).toBe(OCPP20ComponentName.OCPPCommCtrlr)
-    expect(result.component.instance).toBe('Default')
-    expect(result.variable.name).toBe(OCPP20RequiredVariableName.MessageTimeout)
-    expect(result.attributeValue).toBeDefined()
+    assert.strictEqual(result.attributeStatus, GetVariableStatusEnumType.Accepted)
+    assert.strictEqual(result.component.name, OCPP20ComponentName.OCPPCommCtrlr)
+    assert.strictEqual(result.component.instance, 'Default')
+    assert.strictEqual(result.variable.name, OCPP20RequiredVariableName.MessageTimeout)
+    assert.notStrictEqual(result.attributeValue, undefined)
   })
 
   await it('should retrieve TxUpdatedInterval from SampledDataCtrlr and show default value', () => {
@@ -382,12 +382,12 @@ await describe('B06 - Get Variables', async () => {
       ],
     }
     const response = incomingRequestService.handleRequestGetVariables(station, request)
-    expect(response.getVariableResult).toHaveLength(1)
+    assert.strictEqual(response.getVariableResult.length, 1)
     const result = response.getVariableResult[0]
-    expect(result.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-    expect(result.component.name).toBe(OCPP20ComponentName.SampledDataCtrlr)
-    expect(result.variable.name).toBe(OCPP20RequiredVariableName.TxUpdatedInterval)
-    expect(result.attributeValue).toBe('30')
+    assert.strictEqual(result.attributeStatus, GetVariableStatusEnumType.Accepted)
+    assert.strictEqual(result.component.name, OCPP20ComponentName.SampledDataCtrlr)
+    assert.strictEqual(result.variable.name, OCPP20RequiredVariableName.TxUpdatedInterval)
+    assert.strictEqual(result.attributeValue, '30')
   })
 
   await it('should retrieve list/sequence defaults for FileTransferProtocols, TimeSource, NetworkConfigurationPriority', () => {
@@ -408,16 +408,16 @@ await describe('B06 - Get Variables', async () => {
       ],
     }
     const response = incomingRequestService.handleRequestGetVariables(station, request)
-    expect(response.getVariableResult).toHaveLength(3)
+    assert.strictEqual(response.getVariableResult.length, 3)
     const fileTransfer = response.getVariableResult[0]
-    expect(fileTransfer.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-    expect(fileTransfer.attributeValue).toBe('HTTPS,FTPS,SFTP')
+    assert.strictEqual(fileTransfer.attributeStatus, GetVariableStatusEnumType.Accepted)
+    assert.strictEqual(fileTransfer.attributeValue, 'HTTPS,FTPS,SFTP')
     const timeSource = response.getVariableResult[1]
-    expect(timeSource.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-    expect(timeSource.attributeValue).toBe('NTP,GPS,RealTimeClock,Heartbeat')
+    assert.strictEqual(timeSource.attributeStatus, GetVariableStatusEnumType.Accepted)
+    assert.strictEqual(timeSource.attributeValue, 'NTP,GPS,RealTimeClock,Heartbeat')
     const netConfigPriority = response.getVariableResult[2]
-    expect(netConfigPriority.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-    expect(netConfigPriority.attributeValue).toBe('1,2,3')
+    assert.strictEqual(netConfigPriority.attributeStatus, GetVariableStatusEnumType.Accepted)
+    assert.strictEqual(netConfigPriority.attributeValue, '1,2,3')
   })
 
   await it('should retrieve list defaults for TxStartedMeasurands, TxEndedMeasurands, TxUpdatedMeasurands', () => {
@@ -438,20 +438,20 @@ await describe('B06 - Get Variables', async () => {
       ],
     }
     const response = incomingRequestService.handleRequestGetVariables(station, request)
-    expect(response.getVariableResult).toHaveLength(3)
+    assert.strictEqual(response.getVariableResult.length, 3)
     const txStarted = response.getVariableResult[0]
-    expect(txStarted.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-    expect(txStarted.attributeValue).toBe(
+    assert.strictEqual(txStarted.attributeStatus, GetVariableStatusEnumType.Accepted)
+    assert.strictEqual(txStarted.attributeValue,
       `${OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER},${OCPP20MeasurandEnumType.POWER_ACTIVE_IMPORT},${OCPP20MeasurandEnumType.VOLTAGE}`
     )
     const txEnded = response.getVariableResult[1]
-    expect(txEnded.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-    expect(txEnded.attributeValue).toBe(
+    assert.strictEqual(txEnded.attributeStatus, GetVariableStatusEnumType.Accepted)
+    assert.strictEqual(txEnded.attributeValue,
       `${OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER},${OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_INTERVAL},${OCPP20MeasurandEnumType.VOLTAGE}`
     )
     const txUpdated = response.getVariableResult[2]
-    expect(txUpdated.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-    expect(txUpdated.attributeValue).toBe(
+    assert.strictEqual(txUpdated.attributeStatus, GetVariableStatusEnumType.Accepted)
+    assert.strictEqual(txUpdated.attributeValue,
       `${OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER},${OCPP20MeasurandEnumType.CURRENT_IMPORT},${OCPP20MeasurandEnumType.VOLTAGE}`
     )
   })
@@ -468,11 +468,11 @@ await describe('B06 - Get Variables', async () => {
       ],
     }
     const response = incomingRequestService.handleRequestGetVariables(station, request)
-    expect(response.getVariableResult).toHaveLength(1)
+    assert.strictEqual(response.getVariableResult.length, 1)
     const result = response.getVariableResult[0]
-    expect(result.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
-    expect(result.attributeType).toBe(AttributeEnumType.Target)
-    expect(result.attributeValue).toBeUndefined()
+    assert.strictEqual(result.attributeStatus, GetVariableStatusEnumType.NotSupportedAttributeType)
+    assert.strictEqual(result.attributeType, AttributeEnumType.Target)
+    assert.strictEqual(result.attributeValue, undefined)
   })
 
   // FR: B06.FR.15
@@ -487,10 +487,10 @@ await describe('B06 - Get Variables', async () => {
       ],
     }
     const response = incomingRequestService.handleRequestGetVariables(station, request)
-    expect(response.getVariableResult).toHaveLength(1)
+    assert.strictEqual(response.getVariableResult.length, 1)
     const result = response.getVariableResult[0]
-    expect(result.attributeStatus).toBe(GetVariableStatusEnumType.UnknownVariable)
-    expect(result.attributeValue).toBeUndefined()
+    assert.strictEqual(result.attributeStatus, GetVariableStatusEnumType.UnknownVariable)
+    assert.strictEqual(result.attributeValue, undefined)
   })
 
   // FR: B06.FR.09
@@ -505,10 +505,10 @@ await describe('B06 - Get Variables', async () => {
       ],
     }
     const response = incomingRequestService.handleRequestGetVariables(station, request)
-    expect(response.getVariableResult).toHaveLength(1)
+    assert.strictEqual(response.getVariableResult.length, 1)
     const result = response.getVariableResult[0]
-    expect(result.attributeStatus).toBe(GetVariableStatusEnumType.Rejected)
-    expect(result.attributeStatusInfo?.reasonCode).toBe(ReasonCodeEnumType.WriteOnly)
+    assert.strictEqual(result.attributeStatus, GetVariableStatusEnumType.Rejected)
+    assert.strictEqual(result.attributeStatusInfo?.reasonCode, ReasonCodeEnumType.WriteOnly)
   })
 
   await it('should reject MinSet and MaxSet for WebSocketPingInterval', () => {
@@ -527,15 +527,15 @@ await describe('B06 - Get Variables', async () => {
       ],
     }
     const response = incomingRequestService.handleRequestGetVariables(station, request)
-    expect(response.getVariableResult).toHaveLength(2)
+    assert.strictEqual(response.getVariableResult.length, 2)
     const minSet = response.getVariableResult[0]
     const maxSet = response.getVariableResult[1]
-    expect(minSet.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
-    expect(minSet.attributeType).toBe(AttributeEnumType.MinSet)
-    expect(minSet.attributeValue).toBeUndefined()
-    expect(maxSet.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
-    expect(maxSet.attributeType).toBe(AttributeEnumType.MaxSet)
-    expect(maxSet.attributeValue).toBeUndefined()
+    assert.strictEqual(minSet.attributeStatus, GetVariableStatusEnumType.NotSupportedAttributeType)
+    assert.strictEqual(minSet.attributeType, AttributeEnumType.MinSet)
+    assert.strictEqual(minSet.attributeValue, undefined)
+    assert.strictEqual(maxSet.attributeStatus, GetVariableStatusEnumType.NotSupportedAttributeType)
+    assert.strictEqual(maxSet.attributeType, AttributeEnumType.MaxSet)
+    assert.strictEqual(maxSet.attributeValue, undefined)
   })
 
   await it('should reject MinSet for MemberList variable TxStartPoint', () => {
@@ -549,9 +549,9 @@ await describe('B06 - Get Variables', async () => {
       ],
     }
     const response = incomingRequestService.handleRequestGetVariables(station, request)
-    expect(response.getVariableResult).toHaveLength(1)
+    assert.strictEqual(response.getVariableResult.length, 1)
     const result = response.getVariableResult[0]
-    expect(result.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
+    assert.strictEqual(result.attributeStatus, GetVariableStatusEnumType.NotSupportedAttributeType)
   })
 
   await it('should reject MaxSet for variable SecurityProfile (Actual only)', () => {
@@ -565,9 +565,9 @@ await describe('B06 - Get Variables', async () => {
       ],
     }
     const response = incomingRequestService.handleRequestGetVariables(station, request)
-    expect(response.getVariableResult).toHaveLength(1)
+    assert.strictEqual(response.getVariableResult.length, 1)
     const result = response.getVariableResult[0]
-    expect(result.attributeStatus).toBe(GetVariableStatusEnumType.NotSupportedAttributeType)
+    assert.strictEqual(result.attributeStatus, GetVariableStatusEnumType.NotSupportedAttributeType)
   })
 
   await it('should apply ValueSize then ReportingValueSize sequential truncation', () => {
@@ -584,9 +584,10 @@ await describe('B06 - Get Variables', async () => {
     }
     const response = incomingRequestService.handleRequestGetVariables(station, request)
     const result = response.getVariableResult[0]
-    expect(result.attributeStatus).toBe(GetVariableStatusEnumType.Accepted)
-    expect(result.attributeValue).toBeDefined()
-    expect(result.attributeValue?.length).toBeLessThanOrEqual(3)
+    assert.strictEqual(result.attributeStatus, GetVariableStatusEnumType.Accepted)
+    assert.notStrictEqual(result.attributeValue, undefined)
+    if (result.attributeValue == null) { assert.fail('Expected attributeValue to be defined') }
+    assert.ok(result.attributeValue.length <= 3)
     resetReportingValueSize(station)
   })
 })

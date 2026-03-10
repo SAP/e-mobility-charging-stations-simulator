@@ -3,7 +3,7 @@
  * @description Integration tests for OCPP authentication flows across service, adapters, cache, and strategies
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
@@ -79,11 +79,11 @@ await describe('OCPP Authentication', async () => {
 
       const result = await authService16.authenticate(request)
 
-      expect(result).toBeDefined()
-      expect(result.timestamp).toBeInstanceOf(Date)
-      expect(typeof result.isOffline).toBe('boolean')
+      assert.notStrictEqual(result, undefined)
+      assert.ok(result.timestamp instanceof Date)
+      assert.strictEqual(typeof result.isOffline, 'boolean')
       // Status should be one of the valid authorization statuses
-      expect(Object.values(AuthorizationStatus)).toContain(result.status)
+      assert.ok(Object.values(AuthorizationStatus).includes(result.status))
     })
 
     await it('should handle multiple auth contexts', async () => {
@@ -102,8 +102,8 @@ await describe('OCPP Authentication', async () => {
         })
 
         const result = await authService16.authenticate(request)
-        expect(result).toBeDefined()
-        expect(result.timestamp).toBeInstanceOf(Date)
+        assert.notStrictEqual(result, undefined)
+        assert.ok(result.timestamp instanceof Date)
       }
     })
 
@@ -114,8 +114,8 @@ await describe('OCPP Authentication', async () => {
       })
 
       const result = await authService16.authorize(request)
-      expect(result).toBeDefined()
-      expect(result.timestamp).toBeInstanceOf(Date)
+      assert.notStrictEqual(result, undefined)
+      assert.ok(result.timestamp instanceof Date)
     })
   })
 
@@ -135,10 +135,10 @@ await describe('OCPP Authentication', async () => {
 
       const result = await authService20.authenticate(request)
 
-      expect(result).toBeDefined()
-      expect(result.timestamp).toBeInstanceOf(Date)
-      expect(typeof result.isOffline).toBe('boolean')
-      expect(Object.values(AuthorizationStatus)).toContain(result.status)
+      assert.notStrictEqual(result, undefined)
+      assert.ok(result.timestamp instanceof Date)
+      assert.strictEqual(typeof result.isOffline, 'boolean')
+      assert.ok(Object.values(AuthorizationStatus).includes(result.status))
     })
 
     await it('should handle all auth contexts', async () => {
@@ -157,8 +157,8 @@ await describe('OCPP Authentication', async () => {
         })
 
         const result = await authService20.authenticate(request)
-        expect(result).toBeDefined()
-        expect(result.timestamp).toBeInstanceOf(Date)
+        assert.notStrictEqual(result, undefined)
+        assert.ok(result.timestamp instanceof Date)
       }
     })
   })
@@ -184,8 +184,8 @@ await describe('OCPP Authentication', async () => {
       const result = await authServiceError.authenticate(request)
 
       // Should return a result (not throw) with non-ACCEPTED status
-      expect(result).toBeDefined()
-      expect(result.status).not.toBe(AuthorizationStatus.ACCEPTED)
+      assert.notStrictEqual(result, undefined)
+      assert.notStrictEqual(result.status, AuthorizationStatus.ACCEPTED)
     })
   })
 
@@ -212,10 +212,10 @@ await describe('OCPP Authentication', async () => {
       const results = await Promise.all(promises)
 
       // All requests should complete successfully
-      expect(results.length).toBe(requestCount)
+      assert.strictEqual(results.length, requestCount)
       for (const result of results) {
-        expect(result).toBeDefined()
-        expect(result.timestamp).toBeInstanceOf(Date)
+        assert.notStrictEqual(result, undefined)
+        assert.ok(result.timestamp instanceof Date)
       }
     })
   })
@@ -236,10 +236,10 @@ await describe('OCPP Authentication', async () => {
       await service.initialize()
 
       const localStrategy = service.getStrategy('local') as LocalAuthStrategy | undefined
-      expect(localStrategy).toBeDefined()
+      assert.notStrictEqual(localStrategy, undefined)
 
       const authCache = localStrategy?.getAuthCache()
-      expect(authCache).toBeDefined()
+      assert.notStrictEqual(authCache, undefined)
     })
 
     // G04.INT.02 - All-status caching (T4)
@@ -253,8 +253,8 @@ await describe('OCPP Authentication', async () => {
         cache.set('BLOCKED-ID', blockedResult)
         const retrieved = cache.get('BLOCKED-ID')
 
-        expect(retrieved).toBeDefined()
-        expect(retrieved?.status).toBe(AuthorizationStatus.BLOCKED)
+        assert.notStrictEqual(retrieved, undefined)
+        assert.strictEqual(retrieved?.status, AuthorizationStatus.BLOCKED)
       } finally {
         cache.dispose()
       }
@@ -279,12 +279,12 @@ await describe('OCPP Authentication', async () => {
         )
 
         const stats = cache.getStats()
-        expect(stats.totalEntries).toBe(3)
+        assert.strictEqual(stats.totalEntries, 3)
 
         // BLOCKED entry must still exist
         const blocked = cache.get('BLOCKED-ENTRY')
-        expect(blocked).toBeDefined()
-        expect(blocked?.status).toBe(AuthorizationStatus.BLOCKED)
+        assert.notStrictEqual(blocked, undefined)
+        assert.strictEqual(blocked?.status, AuthorizationStatus.BLOCKED)
       } finally {
         cache.dispose()
       }
@@ -302,16 +302,16 @@ await describe('OCPP Authentication', async () => {
         // Wait 500ms, then access to reset TTL
         await sleep(500)
         const midResult = cache.get('SLIDING-ID')
-        expect(midResult).toBeDefined()
-        expect(midResult?.status).toBe(AuthorizationStatus.ACCEPTED)
+        assert.notStrictEqual(midResult, undefined)
+        assert.strictEqual(midResult?.status, AuthorizationStatus.ACCEPTED)
 
         // Wait another 700ms (total 1200ms from initial set, but only 700ms from last access)
         await sleep(700)
         const lateResult = cache.get('SLIDING-ID')
 
         // Entry should still be valid because TTL was reset at the 500ms access
-        expect(lateResult).toBeDefined()
-        expect(lateResult?.status).toBe(AuthorizationStatus.ACCEPTED)
+        assert.notStrictEqual(lateResult, undefined)
+        assert.strictEqual(lateResult?.status, AuthorizationStatus.ACCEPTED)
       } finally {
         cache.dispose()
       }
@@ -330,8 +330,8 @@ await describe('OCPP Authentication', async () => {
         await sleep(1100)
         const result = cache.get('EXPIRE-ID')
 
-        expect(result).toBeDefined()
-        expect(result?.status).toBe(AuthorizationStatus.EXPIRED)
+        assert.notStrictEqual(result, undefined)
+        assert.strictEqual(result?.status, AuthorizationStatus.EXPIRED)
       } finally {
         cache.dispose()
       }
@@ -361,12 +361,12 @@ await describe('OCPP Authentication', async () => {
         const result = await strategy.authenticate(request, config)
 
         // Should be authorized from local list
-        expect(result).toBeDefined()
-        expect(result?.method).toBe(AuthenticationMethod.LOCAL_LIST)
+        assert.notStrictEqual(result, undefined)
+        assert.strictEqual(result?.method, AuthenticationMethod.LOCAL_LIST)
 
         // Verify cache does NOT contain the identifier (R17)
         const cached = cache.get('LIST-ID')
-        expect(cached).toBeUndefined()
+        assert.strictEqual(cached, undefined)
       } finally {
         cache.dispose()
       }
@@ -385,22 +385,22 @@ await describe('OCPP Authentication', async () => {
         cache.get('NONEXISTENT')
 
         const statsBefore = cache.getStats()
-        expect(statsBefore.hits).toBeGreaterThan(0)
-        expect(statsBefore.misses).toBeGreaterThan(0)
+        assert.ok(statsBefore.hits > 0)
+        assert.ok(statsBefore.misses > 0)
 
         // Clear entries — stats should be preserved
         cache.clear()
         const statsAfterClear = cache.getStats()
-        expect(statsAfterClear.totalEntries).toBe(0)
-        expect(statsAfterClear.hits).toBe(statsBefore.hits)
-        expect(statsAfterClear.misses).toBe(statsBefore.misses)
+        assert.strictEqual(statsAfterClear.totalEntries, 0)
+        assert.strictEqual(statsAfterClear.hits, statsBefore.hits)
+        assert.strictEqual(statsAfterClear.misses, statsBefore.misses)
 
         // Reset stats — counters should be zeroed
         cache.resetStats()
         const statsAfterReset = cache.getStats()
-        expect(statsAfterReset.hits).toBe(0)
-        expect(statsAfterReset.misses).toBe(0)
-        expect(statsAfterReset.evictions).toBe(0)
+        assert.strictEqual(statsAfterReset.hits, 0)
+        assert.strictEqual(statsAfterReset.misses, 0)
+        assert.strictEqual(statsAfterReset.evictions, 0)
       } finally {
         cache.dispose()
       }

@@ -203,7 +203,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       )
 
       // Different array instances
-      assert.strictEqual(result1 !== result2, true)
+      assert.notStrictEqual(result1, result2)
     })
   })
 
@@ -465,7 +465,7 @@ await describe('OCPP16ServiceUtils — pure functions', async () => {
       assert.strictEqual(result.chargingSchedulePeriod.length, 2)
       // Should be sorted by startPeriod
       const periods = result.chargingSchedulePeriod
-      assert.strictEqual(periods[0].startPeriod <= periods[1].startPeriod, true)
+      assert.ok(periods[0].startPeriod <= periods[1].startPeriod)
     })
   })
 

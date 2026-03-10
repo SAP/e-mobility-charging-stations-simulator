@@ -10,7 +10,7 @@
  * - getSupervisionUrlDistribution — returns distribution strategy
  * - workerPoolInUse / workerDynamicPoolInUse — pool type checks
  */
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
 import type {
@@ -62,86 +62,87 @@ await describe('Configuration', async () => {
 
   await it('should return configuration data', () => {
     const data = Configuration.getConfigurationData()
-    expect(data).toBeDefined()
-    expect(Array.isArray(data?.stationTemplateUrls)).toBe(true)
+    assert.notStrictEqual(data, undefined)
+    assert.ok(Array.isArray(data?.stationTemplateUrls))
   })
 
   await it('should return the same data on subsequent calls', () => {
     const first = Configuration.getConfigurationData()
     const second = Configuration.getConfigurationData()
-    expect(first).toBe(second)
+    assert.strictEqual(first, second)
   })
 
   await it('should return log configuration with defaults', () => {
     const log = Configuration.getConfigurationSection<LogConfiguration>(ConfigurationSection.log)
-    expect(log).toBeDefined()
-    expect(typeof log.enabled).toBe('boolean')
-    expect(typeof log.file).toBe('string')
-    expect(typeof log.level).toBe('string')
-    expect(typeof log.format).toBe('string')
+    assert.notStrictEqual(log, undefined)
+    assert.strictEqual(typeof log.enabled, 'boolean')
+    assert.strictEqual(typeof log.file, 'string')
+    assert.strictEqual(typeof log.level, 'string')
+    assert.strictEqual(typeof log.format, 'string')
   })
 
   await it('should include default log values', () => {
     const log = Configuration.getConfigurationSection<LogConfiguration>(ConfigurationSection.log)
-    expect(log.level).toBe('info')
-    expect(log.format).toBe('simple')
-    expect(log.rotate).toBe(true)
-    expect(log.enabled).toBe(true)
+    assert.strictEqual(log.level, 'info')
+    assert.strictEqual(log.format, 'simple')
+    assert.strictEqual(log.rotate, true)
+    assert.strictEqual(log.enabled, true)
   })
 
   await it('should return worker configuration with defaults', () => {
     const worker = Configuration.getConfigurationSection<WorkerConfiguration>(
       ConfigurationSection.worker
     )
-    expect(worker).toBeDefined()
-    expect(worker.processType).toBe(WorkerProcessType.workerSet)
-    expect(worker.startDelay).toBe(500)
-    expect(typeof worker.poolMinSize).toBe('number')
-    expect(typeof worker.poolMaxSize).toBe('number')
-    expect(worker.elementsPerWorker).toBe('auto')
+    assert.notStrictEqual(worker, undefined)
+    assert.strictEqual(worker.processType, WorkerProcessType.workerSet)
+    assert.strictEqual(worker.startDelay, 500)
+    assert.strictEqual(typeof worker.poolMinSize, 'number')
+    assert.strictEqual(typeof worker.poolMaxSize, 'number')
+    assert.strictEqual(worker.elementsPerWorker, 'auto')
   })
 
   await it('should include default worker process type', () => {
     const worker = Configuration.getConfigurationSection<WorkerConfiguration>(
       ConfigurationSection.worker
     )
-    expect(worker.processType).toBe(WorkerProcessType.workerSet)
+    assert.strictEqual(worker.processType, WorkerProcessType.workerSet)
   })
 
   await it('should return UI server configuration with defaults', () => {
     const uiServer = Configuration.getConfigurationSection<UIServerConfiguration>(
       ConfigurationSection.uiServer
     )
-    expect(uiServer).toBeDefined()
-    expect(uiServer.enabled).toBe(false)
-    expect(uiServer.type).toBe(ApplicationProtocol.WS)
-    expect(uiServer.version).toBe(ApplicationProtocolVersion.VERSION_11)
-    expect(uiServer.options).toBeDefined()
-    expect(typeof uiServer.options?.host).toBe('string')
-    expect(typeof uiServer.options?.port).toBe('number')
+    assert.notStrictEqual(uiServer, undefined)
+    assert.strictEqual(uiServer.enabled, false)
+    assert.strictEqual(uiServer.type, ApplicationProtocol.WS)
+    assert.strictEqual(uiServer.version, ApplicationProtocolVersion.VERSION_11)
+    assert.notStrictEqual(uiServer.options, undefined)
+    assert.strictEqual(typeof uiServer.options?.host, 'string')
+    assert.strictEqual(typeof uiServer.options?.port, 'number')
   })
 
   await it('should return performance storage configuration', () => {
     const storage = Configuration.getConfigurationSection<StorageConfiguration>(
       ConfigurationSection.performanceStorage
     )
-    expect(storage).toBeDefined()
-    expect(storage.enabled).toBe(true)
-    expect(storage.type).toBe(StorageType.NONE)
+    assert.notStrictEqual(storage, undefined)
+    assert.strictEqual(storage.enabled, true)
+    assert.strictEqual(storage.type, StorageType.NONE)
   })
 
   await it('should return station template URLs', () => {
     const urls = Configuration.getStationTemplateUrls()
-    expect(urls).toBeDefined()
-    expect(Array.isArray(urls)).toBe(true)
+    assert.notStrictEqual(urls, undefined)
+    assert.ok(Array.isArray(urls))
   })
 
   await it('should return supervision URL distribution', () => {
     const distribution = Configuration.getSupervisionUrlDistribution()
-    expect(distribution).toBeDefined()
-    expect(
-      distribution != null && Object.values(SupervisionUrlDistribution).includes(distribution)
-    ).toBe(true)
+    assert.notStrictEqual(distribution, undefined)
+    assert.strictEqual(
+      distribution != null && Object.values(SupervisionUrlDistribution).includes(distribution),
+      true
+    )
   })
 
   await it('should default to ROUND_ROBIN when not configured', () => {
@@ -153,7 +154,7 @@ await describe('Configuration', async () => {
 
     try {
       const distribution = Configuration.getSupervisionUrlDistribution()
-      expect(distribution).toBe(SupervisionUrlDistribution.ROUND_ROBIN)
+      assert.strictEqual(distribution, SupervisionUrlDistribution.ROUND_ROBIN)
     } finally {
       internals.configurationData = originalData
       resetSectionCache()
@@ -161,21 +162,21 @@ await describe('Configuration', async () => {
   })
 
   await it('should return false for workerPoolInUse with default workerSet config', () => {
-    expect(Configuration.workerPoolInUse()).toBe(false)
+    assert.strictEqual(Configuration.workerPoolInUse(), false)
   })
 
   await it('should return false for workerDynamicPoolInUse with default workerSet config', () => {
-    expect(Configuration.workerDynamicPoolInUse()).toBe(false)
+    assert.strictEqual(Configuration.workerDynamicPoolInUse(), false)
   })
 
   await it('should return supervision URLs from configuration', () => {
     const urls = Configuration.getSupervisionUrls()
-    expect(urls == null || typeof urls === 'string' || Array.isArray(urls)).toBe(true)
+    assert.ok(urls == null || typeof urls === 'string' || Array.isArray(urls))
   })
 
   await it('should throw for unknown configuration section', () => {
-    expect(() => {
+    assert.throws(() => {
       Configuration.getConfigurationSection('unknown' as ConfigurationSection)
-    }).toThrow(Error)
+    }, Error)
   })
 })

@@ -3,7 +3,7 @@
  * @description Unit tests for WebSocket-based UI server and response handling
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
 import type { UUIDv4 } from '../../../src/types/index.js'
@@ -29,12 +29,12 @@ await describe('UIWebSocketServer', async () => {
     const ws = createMockUIWebSocket()
 
     server.addResponseHandler(TEST_UUID, ws)
-    expect(server.hasResponseHandler(TEST_UUID)).toBe(true)
+    assert.strictEqual(server.hasResponseHandler(TEST_UUID), true)
 
     server.sendResponse([TEST_UUID, { status: ResponseStatus.SUCCESS }])
 
-    expect(server.hasResponseHandler(TEST_UUID)).toBe(false)
-    expect(ws.sentMessages.length).toBe(1)
+    assert.strictEqual(server.hasResponseHandler(TEST_UUID), false)
+    assert.strictEqual(ws.sentMessages.length, 1)
   })
 
   await it('should log error when response handler not found', () => {
@@ -43,7 +43,7 @@ await describe('UIWebSocketServer', async () => {
 
     server.sendResponse([TEST_UUID, { status: ResponseStatus.SUCCESS }])
 
-    expect(server.hasResponseHandler(TEST_UUID)).toBe(false)
+    assert.strictEqual(server.hasResponseHandler(TEST_UUID), false)
   })
 
   await it('should delete handler when WebSocket not in OPEN state', () => {
@@ -55,8 +55,8 @@ await describe('UIWebSocketServer', async () => {
     server.addResponseHandler(TEST_UUID, ws)
     server.sendResponse([TEST_UUID, { status: ResponseStatus.SUCCESS }])
 
-    expect(server.hasResponseHandler(TEST_UUID)).toBe(false)
-    expect(ws.sentMessages.length).toBe(0)
+    assert.strictEqual(server.hasResponseHandler(TEST_UUID), false)
+    assert.strictEqual(ws.sentMessages.length, 0)
   })
 
   await it('should handle send errors gracefully without throwing', () => {
@@ -71,7 +71,7 @@ await describe('UIWebSocketServer', async () => {
     server.addResponseHandler(TEST_UUID, ws)
     server.sendResponse([TEST_UUID, { status: ResponseStatus.SUCCESS }])
 
-    expect(server.hasResponseHandler(TEST_UUID)).toBe(false)
+    assert.strictEqual(server.hasResponseHandler(TEST_UUID), false)
   })
 
   await it('should preserve broadcast handler until explicit deletion (issue #1642)', async () => {
@@ -90,10 +90,10 @@ await describe('UIWebSocketServer', async () => {
       return undefined
     })
 
-    expect(server.hasResponseHandler(TEST_UUID)).toBe(true)
+    assert.strictEqual(server.hasResponseHandler(TEST_UUID), true)
 
     server.sendResponse([TEST_UUID, { status: ResponseStatus.SUCCESS }])
-    expect(server.hasResponseHandler(TEST_UUID)).toBe(false)
+    assert.strictEqual(server.hasResponseHandler(TEST_UUID), false)
   })
 
   await it('should delete non-broadcast handler immediately after response', async () => {
@@ -114,7 +114,7 @@ await describe('UIWebSocketServer', async () => {
       server.sendResponse(response)
     }
 
-    expect(server.hasResponseHandler(TEST_UUID)).toBe(false)
+    assert.strictEqual(server.hasResponseHandler(TEST_UUID), false)
   })
 
   await it('should preserve handler when service throws error', async () => {
@@ -132,7 +132,7 @@ await describe('UIWebSocketServer', async () => {
       // Expected error
     }
 
-    expect(server.getResponseHandlersSize()).toBe(1)
+    assert.strictEqual(server.getResponseHandlersSize(), 1)
   })
 
   await it('should clean up response handlers after each response', () => {
@@ -144,13 +144,13 @@ await describe('UIWebSocketServer', async () => {
     server.addResponseHandler('uuid-1' as UUIDv4, ws1)
     server.addResponseHandler('uuid-2' as UUIDv4, ws2)
 
-    expect(server.getResponseHandlersSize()).toBe(2)
+    assert.strictEqual(server.getResponseHandlersSize(), 2)
 
     server.sendResponse(['uuid-1' as UUIDv4, { status: ResponseStatus.SUCCESS }])
-    expect(server.getResponseHandlersSize()).toBe(1)
+    assert.strictEqual(server.getResponseHandlersSize(), 1)
 
     server.sendResponse(['uuid-2' as UUIDv4, { status: ResponseStatus.SUCCESS }])
-    expect(server.getResponseHandlersSize()).toBe(0)
+    assert.strictEqual(server.getResponseHandlersSize(), 0)
   })
 
   await it('should clear all handlers on server stop', () => {
@@ -159,18 +159,18 @@ await describe('UIWebSocketServer', async () => {
     const ws = createMockUIWebSocket()
 
     server.addResponseHandler(TEST_UUID, ws)
-    expect(server.getResponseHandlersSize()).toBe(1)
+    assert.strictEqual(server.getResponseHandlersSize(), 1)
 
     server.stop()
 
-    expect(server.getResponseHandlersSize()).toBe(0)
+    assert.strictEqual(server.getResponseHandlersSize(), 0)
   })
 
   await it('should create server with valid WebSocket configuration', () => {
     const config = createMockUIServerConfiguration()
     const server = new TestableUIWebSocketServer(config)
 
-    expect(server).toBeDefined()
+    assert.notStrictEqual(server, undefined)
   })
 
   await it('should create server with custom host and port', () => {
@@ -182,6 +182,6 @@ await describe('UIWebSocketServer', async () => {
     })
 
     const server = new TestableUIWebSocketServer(config)
-    expect(server).toBeDefined()
+    assert.notStrictEqual(server, undefined)
   })
 })

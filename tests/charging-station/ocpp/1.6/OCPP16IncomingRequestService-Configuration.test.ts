@@ -145,7 +145,7 @@ await describe('OCPP16IncomingRequestService — Configuration', async () => {
     // Assert
     assert.notStrictEqual(response.configurationKey, undefined)
     assert.notStrictEqual(response.unknownKey, undefined)
-    assert.strictEqual(response.configurationKey.length >= 2, true)
+    assert.ok(response.configurationKey.length >= 2)
     const heartbeatKey = response.configurationKey.find(
       k => k.key === (OCPP16StandardParametersKey.HeartbeatInterval as string)
     )

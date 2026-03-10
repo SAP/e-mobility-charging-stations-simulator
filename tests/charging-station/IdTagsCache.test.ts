@@ -9,7 +9,7 @@
  * - deleteIdTags — cache and index cleanup
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -77,7 +77,7 @@ await describe('IdTagsCache', async () => {
       const instance1 = IdTagsCache.getInstance()
       const instance2 = IdTagsCache.getInstance()
 
-      expect(instance1).toBe(instance2)
+      assert.strictEqual(instance1, instance2)
     })
 
     await it('should create new instance after reset', () => {
@@ -85,7 +85,7 @@ await describe('IdTagsCache', async () => {
       resetIdTagsCache()
       const instance2 = IdTagsCache.getInstance()
 
-      expect(instance1).not.toBe(instance2)
+      assert.notStrictEqual(instance1, instance2)
     })
   })
 
@@ -97,7 +97,7 @@ await describe('IdTagsCache', async () => {
 
       const result = cache.getIdTags(file)
 
-      expect(result).toStrictEqual(TEST_ID_TAGS)
+      assert.deepStrictEqual(result, TEST_ID_TAGS)
     })
 
     await it('should load id tags from file when cache is empty', () => {
@@ -109,7 +109,7 @@ await describe('IdTagsCache', async () => {
         const cache = IdTagsCache.getInstance()
         const result = cache.getIdTags(idTagsFile)
 
-        expect(result).toStrictEqual(TEST_ID_TAGS)
+        assert.deepStrictEqual(result, TEST_ID_TAGS)
         cache.deleteIdTags(idTagsFile)
       } finally {
         rmSync(tmpDir, { force: true, recursive: true })
@@ -121,7 +121,7 @@ await describe('IdTagsCache', async () => {
 
       const result = cache.getIdTags('')
 
-      expect(result).toStrictEqual([])
+      assert.deepStrictEqual(result, [])
       cache.deleteIdTags('')
     })
   })
@@ -139,9 +139,9 @@ await describe('IdTagsCache', async () => {
       const tag2 = cache.getIdTag(IdTagDistribution.ROUND_ROBIN, station, 1)
       const tag3 = cache.getIdTag(IdTagDistribution.ROUND_ROBIN, station, 1)
 
-      expect(tag1).toBe('TAG-001')
-      expect(tag2).toBe('TAG-002')
-      expect(tag3).toBe('TAG-003')
+      assert.strictEqual(tag1, 'TAG-001')
+      assert.strictEqual(tag2, 'TAG-002')
+      assert.strictEqual(tag3, 'TAG-003')
     })
 
     await it('should wrap around when reaching end of tags', () => {
@@ -158,7 +158,7 @@ await describe('IdTagsCache', async () => {
 
       const tag4 = cache.getIdTag(IdTagDistribution.ROUND_ROBIN, station, 1)
 
-      expect(tag4).toBe('TAG-001')
+      assert.strictEqual(tag4, 'TAG-001')
     })
   })
 
@@ -177,7 +177,7 @@ await describe('IdTagsCache', async () => {
       }
 
       for (const tag of results) {
-        expect(TEST_ID_TAGS.includes(tag)).toBe(true)
+        assert.ok(TEST_ID_TAGS.includes(tag))
       }
     })
   })
@@ -195,7 +195,7 @@ await describe('IdTagsCache', async () => {
       // index=1, connectorId=1: (1-1 + (1-1)) % 3 = 0 → TAG-001
       const tag = cache.getIdTag(IdTagDistribution.CONNECTOR_AFFINITY, station, 1)
 
-      expect(tag).toBe('TAG-001')
+      assert.strictEqual(tag, 'TAG-001')
     })
 
     await it('should return different tags for different connectors', () => {
@@ -212,8 +212,8 @@ await describe('IdTagsCache', async () => {
       // index=1, connectorId=2: (1-1 + (2-1)) % 3 = 1 → TAG-002
       const tag2 = cache.getIdTag(IdTagDistribution.CONNECTOR_AFFINITY, station, 2)
 
-      expect(tag1).toBe('TAG-001')
-      expect(tag2).toBe('TAG-002')
+      assert.strictEqual(tag1, 'TAG-001')
+      assert.strictEqual(tag2, 'TAG-002')
     })
   })
 
@@ -225,9 +225,9 @@ await describe('IdTagsCache', async () => {
 
       const result = cache.deleteIdTags(file)
 
-      expect(result).toBe(true)
+      assert.strictEqual(result, true)
       const internal = cache as unknown as IdTagsCacheInternal
-      expect(internal.idTagsCaches.has(file)).toBe(false)
+      assert.strictEqual(internal.idTagsCaches.has(file), false)
     })
 
     await it('should remove addressable indexes on delete', () => {
@@ -244,14 +244,14 @@ await describe('IdTagsCache', async () => {
       const indexKeysBefore = [...internal.idTagsCachesAddressableIndexes.keys()].filter(key =>
         key.startsWith(file)
       )
-      expect(indexKeysBefore.length).toBe(1)
+      assert.strictEqual(indexKeysBefore.length, 1)
 
       cache.deleteIdTags(file)
 
       const indexKeysAfter = [...internal.idTagsCachesAddressableIndexes.keys()].filter(key =>
         key.startsWith(file)
       )
-      expect(indexKeysAfter.length).toBe(0)
+      assert.strictEqual(indexKeysAfter.length, 0)
     })
   })
 })

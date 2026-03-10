@@ -3,7 +3,7 @@
  * @description Unit tests for OCPP 2.0 ClearCache command handling (C11)
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
@@ -47,21 +47,21 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
   await it('should handle ClearCache request successfully', async () => {
     const response = await testableService.handleRequestClearCache(station)
 
-    expect(response).toBeDefined()
-    expect(typeof response).toBe('object')
-    expect(response.status).toBeDefined()
-    expect(typeof response.status).toBe('string')
-    expect([GenericStatus.Accepted, GenericStatus.Rejected]).toContain(response.status)
+    assert.notStrictEqual(response, undefined)
+    assert.strictEqual(typeof response, 'object')
+    assert.notStrictEqual(response.status, undefined)
+    assert.strictEqual(typeof response.status, 'string')
+    assert.ok([GenericStatus.Accepted, GenericStatus.Rejected].includes(response.status))
   })
 
   // FR: C11.FR.02 - Return correct status based on cache clearing result
   await it('should return correct status based on cache clearing result', async () => {
     const response = await testableService.handleRequestClearCache(station)
 
-    expect(response).toBeDefined()
-    expect(response.status).toBeDefined()
+    assert.notStrictEqual(response, undefined)
+    assert.notStrictEqual(response.status, undefined)
     // Should be either Accepted or Rejected based on cache state
-    expect([GenericStatus.Accepted, GenericStatus.Rejected]).toContain(response.status)
+    assert.ok([GenericStatus.Accepted, GenericStatus.Rejected].includes(response.status))
   })
 
   // CLR-001: Verify Authorization Cache is cleared (not IdTagsCache)
@@ -87,8 +87,8 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
       try {
         const response = await testableService.handleRequestClearCache(station)
 
-        expect(clearCacheCalled).toBe(true)
-        expect(response.status).toBe(GenericStatus.Accepted)
+        assert.strictEqual(clearCacheCalled, true)
+        assert.strictEqual(response.status, GenericStatus.Accepted)
       } finally {
         // Restore original factory method
         Object.assign(OCPPAuthServiceFactory, { getInstance: originalGetInstance })
@@ -108,7 +108,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
 
       try {
         await testableService.handleRequestClearCache(station)
-        expect(deleteIdTagsCalled).toBe(false)
+        assert.strictEqual(deleteIdTagsCalled, false)
       } finally {
         // Restore original method
         Object.assign(station.idTagsCache, { deleteIdTags: originalDeleteIdTags })
@@ -138,7 +138,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
       try {
         const response = await testableService.handleRequestClearCache(station)
 
-        expect(response.status).toBe(GenericStatus.Rejected)
+        assert.strictEqual(response.status, GenericStatus.Rejected)
       } finally {
         // Restore original factory method
         Object.assign(OCPPAuthServiceFactory, { getInstance: originalGetInstance })
@@ -165,7 +165,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
       try {
         const response = await testableService.handleRequestClearCache(station)
 
-        expect(response.status).toBe(GenericStatus.Accepted)
+        assert.strictEqual(response.status, GenericStatus.Accepted)
       } finally {
         // Restore original factory method
         Object.assign(OCPPAuthServiceFactory, { getInstance: originalGetInstance })
@@ -192,7 +192,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
       try {
         const response = await testableService.handleRequestClearCache(station)
 
-        expect(response.status).toBe(GenericStatus.Rejected)
+        assert.strictEqual(response.status, GenericStatus.Rejected)
       } finally {
         // Restore original factory method
         Object.assign(OCPPAuthServiceFactory, { getInstance: originalGetInstance })
@@ -220,7 +220,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
         await testableService.handleRequestClearCache(station)
 
         // clearCache should NOT be called when cache is disabled
-        expect(clearCacheAttempted).toBe(false)
+        assert.strictEqual(clearCacheAttempted, false)
       } finally {
         // Restore original factory method
         Object.assign(OCPPAuthServiceFactory, { getInstance: originalGetInstance })
@@ -242,7 +242,7 @@ await describe('C11 - Clear Authorization Data in Authorization Cache', async ()
         const response = await testableService.handleRequestClearCache(station)
 
         // Per C11.FR.05: SHALL return Rejected if CS does not support Authorization Cache
-        expect(response.status).toBe(GenericStatus.Rejected)
+        assert.strictEqual(response.status, GenericStatus.Rejected)
       } finally {
         // Restore original factory method
         Object.assign(OCPPAuthServiceFactory, { getInstance: originalGetInstance })

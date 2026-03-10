@@ -2,7 +2,7 @@
  * @file Tests for BaseError
  * @description Unit tests for base error class functionality
  */
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
 import { BaseError } from '../../src/exception/BaseError.js'
@@ -14,45 +14,45 @@ await describe('BaseError', async () => {
   })
   await it('should create instance with default values', () => {
     const baseError = new BaseError()
-    expect(baseError).toBeInstanceOf(BaseError)
-    expect(baseError.name).toBe('BaseError')
-    expect(baseError.message).toBe('')
-    expect(typeof baseError.stack === 'string').toBe(true)
-    expect(baseError.stack).not.toBe('')
-    expect(baseError.cause).toBeUndefined()
-    expect(baseError.date).toBeInstanceOf(Date)
+    assert.ok(baseError instanceof BaseError)
+    assert.strictEqual(baseError.name, 'BaseError')
+    assert.strictEqual(baseError.message, '')
+    assert.ok(typeof baseError.stack === 'string')
+    assert.notStrictEqual(baseError.stack, '')
+    assert.strictEqual(baseError.cause, undefined)
+    assert.ok(baseError.date instanceof Date)
   })
 
   await it('should create instance with custom message', () => {
     const baseError = new BaseError('Test message')
-    expect(baseError).toBeInstanceOf(BaseError)
-    expect(baseError.message).toBe('Test message')
+    assert.ok(baseError instanceof BaseError)
+    assert.strictEqual(baseError.message, 'Test message')
   })
 
   await it('should be an instance of Error', () => {
     const baseError = new BaseError()
-    expect(baseError instanceof Error).toBe(true)
+    assert.ok(baseError instanceof Error)
   })
 
   await it('should contain stack trace with class name', () => {
     const baseError = new BaseError()
-    expect(baseError.stack?.includes('BaseError')).toBe(true)
+    assert.ok(baseError.stack?.includes('BaseError'))
   })
 
   await it('should set date close to current time', () => {
     const beforeNow = Date.now()
     const baseError = new BaseError()
     const afterNow = Date.now()
-    expect(baseError.date.getTime() >= beforeNow - 1000).toBe(true)
-    expect(baseError.date.getTime() <= afterNow + 1000).toBe(true)
+    assert.ok(baseError.date.getTime() >= beforeNow - 1000)
+    assert.ok(baseError.date.getTime() <= afterNow + 1000)
   })
 
   await it('should set name to subclass name when extended', () => {
     class TestSubError extends BaseError {}
 
     const testSubError = new TestSubError()
-    expect(testSubError.name).toBe('TestSubError')
-    expect(testSubError).toBeInstanceOf(BaseError)
-    expect(testSubError).toBeInstanceOf(Error)
+    assert.strictEqual(testSubError.name, 'TestSubError')
+    assert.ok(testSubError instanceof BaseError)
+    assert.ok(testSubError instanceof Error)
   })
 })

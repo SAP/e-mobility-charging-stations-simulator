@@ -2,7 +2,7 @@
  * @file Tests for LocalAuthStrategy
  * @description Unit tests for local authorization strategy (cache and local list)
  */
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type {
@@ -46,13 +46,13 @@ await describe('LocalAuthStrategy', async () => {
 
   await describe('constructor', async () => {
     await it('should initialize with correct name and priority', () => {
-      expect(strategy.name).toBe('LocalAuthStrategy')
-      expect(strategy.priority).toBe(1)
+      assert.strictEqual(strategy.name, 'LocalAuthStrategy')
+      assert.strictEqual(strategy.priority, 1)
     })
 
     await it('should initialize without dependencies', () => {
       const strategyNoDeps = new LocalAuthStrategy()
-      expect(strategyNoDeps.name).toBe('LocalAuthStrategy')
+      assert.strictEqual(strategyNoDeps.name, 'LocalAuthStrategy')
     })
   })
 
@@ -62,9 +62,9 @@ await describe('LocalAuthStrategy', async () => {
         authorizationCacheEnabled: true,
         localAuthListEnabled: true,
       })
-      expect(() => {
+      assert.doesNotThrow(() => {
         strategy.initialize(config)
-      }).not.toThrow()
+      })
     })
   })
 
@@ -74,7 +74,7 @@ await describe('LocalAuthStrategy', async () => {
       const request = createMockAuthRequest({
         identifier: createMockIdentifier(OCPPVersion.VERSION_16, 'TEST_TAG', IdentifierType.ID_TAG),
       })
-      expect(strategy.canHandle(request, config)).toBe(true)
+      assert.strictEqual(strategy.canHandle(request, config), true)
     })
 
     await it('should return true when cache is enabled', () => {
@@ -82,7 +82,7 @@ await describe('LocalAuthStrategy', async () => {
       const request = createMockAuthRequest({
         identifier: createMockIdentifier(OCPPVersion.VERSION_16, 'TEST_TAG', IdentifierType.ID_TAG),
       })
-      expect(strategy.canHandle(request, config)).toBe(true)
+      assert.strictEqual(strategy.canHandle(request, config), true)
     })
 
     await it('should return false when nothing is enabled', () => {
@@ -90,7 +90,7 @@ await describe('LocalAuthStrategy', async () => {
       const request = createMockAuthRequest({
         identifier: createMockIdentifier(OCPPVersion.VERSION_16, 'TEST_TAG', IdentifierType.ID_TAG),
       })
-      expect(strategy.canHandle(request, config)).toBe(false)
+      assert.strictEqual(strategy.canHandle(request, config), false)
     })
   })
 
@@ -129,9 +129,9 @@ await describe('LocalAuthStrategy', async () => {
 
       const result = await strategy.authenticate(request, config)
 
-      expect(result).toBeDefined()
-      expect(result?.status).toBe(AuthorizationStatus.ACCEPTED)
-      expect(result?.method).toBe(AuthenticationMethod.LOCAL_LIST)
+      assert.notStrictEqual(result, undefined)
+      assert.strictEqual(result?.status, AuthorizationStatus.ACCEPTED)
+      assert.strictEqual(result.method, AuthenticationMethod.LOCAL_LIST)
     })
 
     await it('should authenticate using cache', async () => {
@@ -153,9 +153,9 @@ await describe('LocalAuthStrategy', async () => {
 
       const result = await strategy.authenticate(request, config)
 
-      expect(result).toBeDefined()
-      expect(result?.status).toBe(AuthorizationStatus.ACCEPTED)
-      expect(result?.method).toBe(AuthenticationMethod.CACHE)
+      assert.notStrictEqual(result, undefined)
+      assert.strictEqual(result?.status, AuthorizationStatus.ACCEPTED)
+      assert.strictEqual(result.method, AuthenticationMethod.CACHE)
     })
 
     await it('should use offline fallback for transaction stop', async () => {
@@ -172,10 +172,10 @@ await describe('LocalAuthStrategy', async () => {
 
       const result = await strategy.authenticate(request, config)
 
-      expect(result).toBeDefined()
-      expect(result?.status).toBe(AuthorizationStatus.ACCEPTED)
-      expect(result?.method).toBe(AuthenticationMethod.OFFLINE_FALLBACK)
-      expect(result?.isOffline).toBe(true)
+      assert.notStrictEqual(result, undefined)
+      assert.strictEqual(result?.status, AuthorizationStatus.ACCEPTED)
+      assert.strictEqual(result.method, AuthenticationMethod.OFFLINE_FALLBACK)
+      assert.strictEqual(result.isOffline, true)
     })
 
     await it('should return undefined when no local auth available', async () => {
@@ -189,7 +189,7 @@ await describe('LocalAuthStrategy', async () => {
       })
 
       const result = await strategy.authenticate(request, config)
-      expect(result).toBeUndefined()
+      assert.strictEqual(result, undefined)
     })
   })
 
@@ -205,7 +205,7 @@ await describe('LocalAuthStrategy', async () => {
       })
 
       strategy.cacheResult('TEST_TAG', result, 300)
-      expect(cachedValue).toBeDefined()
+      assert.notStrictEqual(cachedValue, undefined)
     })
 
     await it('should handle cache errors gracefully', () => {
@@ -217,9 +217,9 @@ await describe('LocalAuthStrategy', async () => {
         method: AuthenticationMethod.REMOTE_AUTHORIZATION,
       })
 
-      expect(() => {
+      assert.doesNotThrow(() => {
         strategy.cacheResult('TEST_TAG', result)
-      }).not.toThrow()
+      })
     })
   })
 
@@ -231,7 +231,7 @@ await describe('LocalAuthStrategy', async () => {
       }
 
       strategy.invalidateCache('TEST_TAG')
-      expect(removedKey).toBe('TEST_TAG')
+      assert.strictEqual(removedKey, 'TEST_TAG')
     })
   })
 
@@ -245,7 +245,7 @@ await describe('LocalAuthStrategy', async () => {
           })
         })
 
-      await expect(strategy.isInLocalList('LOCAL_TAG')).resolves.toBe(true)
+      assert.strictEqual(await strategy.isInLocalList('LOCAL_TAG'), true)
     })
 
     await it('should return false when identifier is not in local list', async () => {
@@ -254,7 +254,7 @@ await describe('LocalAuthStrategy', async () => {
           resolve(undefined)
         })
 
-      await expect(strategy.isInLocalList('UNKNOWN_TAG')).resolves.toBe(false)
+      assert.strictEqual(await strategy.isInLocalList('UNKNOWN_TAG'), false)
     })
   })
 
@@ -262,12 +262,12 @@ await describe('LocalAuthStrategy', async () => {
     await it('should return strategy statistics', () => {
       const stats = strategy.getStats()
 
-      expect(stats.totalRequests).toBe(0)
-      expect(stats.cacheHits).toBe(0)
-      expect(stats.localListHits).toBe(0)
-      expect(stats.isInitialized).toBe(false)
-      expect(stats.hasAuthCache).toBe(true)
-      expect(stats.hasLocalAuthListManager).toBe(true)
+      assert.strictEqual(stats.totalRequests, 0)
+      assert.strictEqual(stats.cacheHits, 0)
+      assert.strictEqual(stats.localListHits, 0)
+      assert.strictEqual(stats.isInitialized, false)
+      assert.strictEqual(stats.hasAuthCache, true)
+      assert.strictEqual(stats.hasLocalAuthListManager, true)
     })
   })
 
@@ -275,7 +275,7 @@ await describe('LocalAuthStrategy', async () => {
     await it('should reset strategy state', () => {
       strategy.cleanup()
       const stats = strategy.getStats()
-      expect(stats.isInitialized).toBe(false)
+      assert.strictEqual(stats.isInitialized, false)
     })
   })
 })

@@ -2,7 +2,7 @@
  * @file Tests for OCPPError
  * @description Unit tests for OCPP-specific error class
  */
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
 import { BaseError } from '../../src/exception/BaseError.js'
@@ -18,37 +18,37 @@ await describe('OCPPError', async () => {
 
   await it('should create instance with error code and default values', () => {
     const ocppError = new OCPPError(ErrorType.GENERIC_ERROR, '')
-    expect(ocppError).toBeInstanceOf(OCPPError)
-    expect(ocppError.name).toBe('OCPPError')
-    expect(ocppError.message).toBe('')
-    expect(ocppError.code).toBe(ErrorType.GENERIC_ERROR)
-    expect(ocppError.command).toBe(Constants.UNKNOWN_OCPP_COMMAND)
-    expect(ocppError.details).toBeUndefined()
-    expect(typeof ocppError.stack === 'string').toBe(true)
-    expect(ocppError.stack).not.toBe('')
-    expect(ocppError.cause).toBeUndefined()
-    expect(ocppError.date).toBeInstanceOf(Date)
+    assert.ok(ocppError instanceof OCPPError)
+    assert.strictEqual(ocppError.name, 'OCPPError')
+    assert.strictEqual(ocppError.message, '')
+    assert.strictEqual(ocppError.code, ErrorType.GENERIC_ERROR)
+    assert.strictEqual(ocppError.command, Constants.UNKNOWN_OCPP_COMMAND)
+    assert.strictEqual(ocppError.details, undefined)
+    assert.ok(typeof ocppError.stack === 'string')
+    assert.notStrictEqual(ocppError.stack, '')
+    assert.strictEqual(ocppError.cause, undefined)
+    assert.ok(ocppError.date instanceof Date)
   })
 
   await it('should be an instance of BaseError and Error', () => {
     const ocppError = new OCPPError(ErrorType.GENERIC_ERROR, 'test')
-    expect(ocppError).toBeInstanceOf(BaseError)
-    expect(ocppError).toBeInstanceOf(Error)
+    assert.ok(ocppError instanceof BaseError)
+    assert.ok(ocppError instanceof Error)
   })
 
   await it('should create instance with custom command', () => {
     const ocppError = new OCPPError(ErrorType.GENERIC_ERROR, 'test', RequestCommand.HEARTBEAT)
-    expect(ocppError.command).toBe(RequestCommand.HEARTBEAT)
+    assert.strictEqual(ocppError.command, RequestCommand.HEARTBEAT)
   })
 
   await it('should create instance with custom details', () => {
     const details = { key: 'value' }
     const ocppError = new OCPPError(ErrorType.GENERIC_ERROR, 'test', undefined, details)
-    expect(ocppError.details).toStrictEqual({ key: 'value' })
+    assert.deepStrictEqual(ocppError.details, { key: 'value' })
   })
 
   await it('should handle different error types', () => {
     const ocppError = new OCPPError(ErrorType.NOT_IMPLEMENTED, 'test')
-    expect(ocppError.code).toBe(ErrorType.NOT_IMPLEMENTED)
+    assert.strictEqual(ocppError.code, ErrorType.NOT_IMPLEMENTED)
   })
 })

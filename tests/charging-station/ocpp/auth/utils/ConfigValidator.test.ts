@@ -3,7 +3,7 @@
  * @description Unit tests for authentication configuration validation
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
 import {
@@ -35,9 +35,9 @@ await describe('AuthConfigValidator', async () => {
         unknownIdAuthorization: AuthorizationStatus.INVALID,
       }
 
-      expect(() => {
+      assert.doesNotThrow(() => {
         AuthConfigValidator.validate(config)
-      }).not.toThrow()
+      })
     })
 
     await it('should reject negative authorizationCacheLifetime', () => {
@@ -56,9 +56,9 @@ await describe('AuthConfigValidator', async () => {
         unknownIdAuthorization: AuthorizationStatus.INVALID,
       }
 
-      expect(() => {
+      assert.throws(() => {
         AuthConfigValidator.validate(config)
-      }).toThrow(AuthenticationError)
+      }, AuthenticationError)
     })
 
     await it('should reject zero authorizationCacheLifetime', () => {
@@ -77,9 +77,9 @@ await describe('AuthConfigValidator', async () => {
         unknownIdAuthorization: AuthorizationStatus.INVALID,
       }
 
-      expect(() => {
+      assert.throws(() => {
         AuthConfigValidator.validate(config)
-      }).toThrow(AuthenticationError)
+      }, AuthenticationError)
     })
 
     await it('should reject non-integer authorizationCacheLifetime', () => {
@@ -98,9 +98,9 @@ await describe('AuthConfigValidator', async () => {
         unknownIdAuthorization: AuthorizationStatus.INVALID,
       }
 
-      expect(() => {
+      assert.throws(() => {
         AuthConfigValidator.validate(config)
-      }).toThrow(AuthenticationError)
+      }, AuthenticationError)
     })
 
     await it('should reject negative maxCacheEntries', () => {
@@ -119,9 +119,9 @@ await describe('AuthConfigValidator', async () => {
         unknownIdAuthorization: AuthorizationStatus.INVALID,
       }
 
-      expect(() => {
+      assert.throws(() => {
         AuthConfigValidator.validate(config)
-      }).toThrow(AuthenticationError)
+      }, AuthenticationError)
     })
 
     await it('should reject zero maxCacheEntries', () => {
@@ -140,9 +140,9 @@ await describe('AuthConfigValidator', async () => {
         unknownIdAuthorization: AuthorizationStatus.INVALID,
       }
 
-      expect(() => {
+      assert.throws(() => {
         AuthConfigValidator.validate(config)
-      }).toThrow(AuthenticationError)
+      }, AuthenticationError)
     })
 
     await it('should reject non-integer maxCacheEntries', () => {
@@ -161,9 +161,9 @@ await describe('AuthConfigValidator', async () => {
         unknownIdAuthorization: AuthorizationStatus.INVALID,
       }
 
-      expect(() => {
+      assert.throws(() => {
         AuthConfigValidator.validate(config)
-      }).toThrow(AuthenticationError)
+      }, AuthenticationError)
     })
 
     await it('should reject negative authorizationTimeout', () => {
@@ -182,9 +182,9 @@ await describe('AuthConfigValidator', async () => {
         unknownIdAuthorization: AuthorizationStatus.INVALID,
       }
 
-      expect(() => {
+      assert.throws(() => {
         AuthConfigValidator.validate(config)
-      }).toThrow(AuthenticationError)
+      }, AuthenticationError)
     })
 
     await it('should reject zero authorizationTimeout', () => {
@@ -203,9 +203,9 @@ await describe('AuthConfigValidator', async () => {
         unknownIdAuthorization: AuthorizationStatus.INVALID,
       }
 
-      expect(() => {
+      assert.throws(() => {
         AuthConfigValidator.validate(config)
-      }).toThrow(AuthenticationError)
+      }, AuthenticationError)
     })
 
     await it('should reject non-integer authorizationTimeout', () => {
@@ -224,9 +224,9 @@ await describe('AuthConfigValidator', async () => {
         unknownIdAuthorization: AuthorizationStatus.INVALID,
       }
 
-      expect(() => {
+      assert.throws(() => {
         AuthConfigValidator.validate(config)
-      }).toThrow(AuthenticationError)
+      }, AuthenticationError)
     })
 
     await it('should accept configuration with cache disabled', () => {
@@ -245,9 +245,9 @@ await describe('AuthConfigValidator', async () => {
         unknownIdAuthorization: AuthorizationStatus.INVALID,
       }
 
-      expect(() => {
+      assert.doesNotThrow(() => {
         AuthConfigValidator.validate(config)
-      }).not.toThrow()
+      })
     })
 
     await it('should accept minimal valid values', () => {
@@ -266,9 +266,9 @@ await describe('AuthConfigValidator', async () => {
         unknownIdAuthorization: AuthorizationStatus.INVALID,
       }
 
-      expect(() => {
+      assert.doesNotThrow(() => {
         AuthConfigValidator.validate(config)
-      }).not.toThrow()
+      })
     })
 
     await it('should accept large valid values', () => {
@@ -287,9 +287,9 @@ await describe('AuthConfigValidator', async () => {
         unknownIdAuthorization: AuthorizationStatus.INVALID,
       }
 
-      expect(() => {
+      assert.doesNotThrow(() => {
         AuthConfigValidator.validate(config)
-      }).not.toThrow()
+      })
     })
   })
 })

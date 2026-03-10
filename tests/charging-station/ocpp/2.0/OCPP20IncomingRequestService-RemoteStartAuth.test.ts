@@ -3,8 +3,7 @@
  * @description Unit tests for OCPP 2.0 remote start pre-authorization (G03.FR.03)
  */
 
-import { expect } from '@std/expect'
-import assert from 'node:assert'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
@@ -82,10 +81,10 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
       }
 
       // Then: Request structure should be valid
-      expect(request.idToken.idToken).toBe('VALID_TOKEN_001')
-      expect(request.idToken.type).toBe(OCPP20IdTokenEnumType.ISO14443)
-      expect(request.evseId).toBe(1)
-      expect(request.remoteStartId).toBe(12345)
+      assert.strictEqual(request.idToken.idToken, 'VALID_TOKEN_001')
+      assert.strictEqual(request.idToken.type, OCPP20IdTokenEnumType.ISO14443)
+      assert.strictEqual(request.evseId, 1)
+      assert.strictEqual(request.remoteStartId, 12345)
     })
 
     await it('should include remoteStartId in request', () => {
@@ -100,9 +99,9 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
       }
 
       // Then: remoteStartId should be present
-      expect(request.remoteStartId).toBeDefined()
-      expect(typeof request.remoteStartId).toBe('number')
-      expect(request.remoteStartId).toBe(12346)
+      assert.notStrictEqual(request.remoteStartId, undefined)
+      assert.strictEqual(typeof request.remoteStartId, 'number')
+      assert.strictEqual(request.remoteStartId, 12346)
     })
 
     await it('should specify valid EVSE ID', () => {
@@ -117,8 +116,8 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
       }
 
       // Then: EVSE ID should be specified
-      expect(request.evseId).toBeDefined()
-      expect(request.evseId).toBe(1)
+      assert.notStrictEqual(request.evseId, undefined)
+      assert.strictEqual(request.evseId, 1)
     })
   })
 
@@ -137,8 +136,8 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
       }
 
       // Then: Request structure should be valid
-      expect(request.idToken.idToken).toBe('BLOCKED_TOKEN_001')
-      expect(request.idToken.type).toBe(OCPP20IdTokenEnumType.ISO14443)
+      assert.strictEqual(request.idToken.idToken, 'BLOCKED_TOKEN_001')
+      assert.strictEqual(request.idToken.type, OCPP20IdTokenEnumType.ISO14443)
     })
 
     await it('should not modify connector status before authorization', () => {
@@ -146,8 +145,9 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
       // Given: Connector in initial state
       // Then: Connector status should remain unchanged before processing
       const connectorStatus = mockStation.getConnectorStatus(1)
-      expect(connectorStatus?.transactionStarted).toBe(false)
-      expect(connectorStatus?.status).toBe(ConnectorStatusEnum.Available)
+      if (connectorStatus == null) { assert.fail('Expected connectorStatus to be defined') }
+      assert.strictEqual(connectorStatus.transactionStarted, false)
+      assert.strictEqual(connectorStatus.status, ConnectorStatusEnum.Available)
     })
   })
 
@@ -168,11 +168,11 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
       }
 
       // Then: Both tokens should be present
-      expect(request.idToken).toBeDefined()
-      expect(request.groupIdToken).toBeDefined()
-      expect(request.idToken.idToken).toBe('USER_TOKEN_001')
+      assert.notStrictEqual(request.idToken, undefined)
+      assert.notStrictEqual(request.groupIdToken, undefined)
+      assert.strictEqual(request.idToken.idToken, 'USER_TOKEN_001')
       if (request.groupIdToken) {
-        expect(request.groupIdToken.idToken).toBe('GROUP_TOKEN_001')
+        assert.strictEqual(request.groupIdToken.idToken, 'GROUP_TOKEN_001')
       }
     })
 
@@ -192,8 +192,8 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
       }
 
       // Then: Different token types should be supported
-      expect(request.groupIdToken?.type).toBe(OCPP20IdTokenEnumType.Central)
-      expect(request.idToken.type).toBe(OCPP20IdTokenEnumType.ISO14443)
+      assert.strictEqual(request.groupIdToken?.type, OCPP20IdTokenEnumType.Central)
+      assert.strictEqual(request.idToken.type, OCPP20IdTokenEnumType.ISO14443)
     })
   })
 
@@ -212,7 +212,7 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
       }
 
       // Then: evseId should be null (will be rejected by handler)
-      expect(request.evseId).toBeNull()
+      assert.strictEqual(request.evseId, null)
     })
 
     await it('should handle request with undefined evseId', () => {
@@ -229,7 +229,7 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
       }
 
       // Then: evseId should be undefined (will be rejected by handler)
-      expect(request.evseId).toBeUndefined()
+      assert.strictEqual(request.evseId, undefined)
     })
   })
 
@@ -249,10 +249,11 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
 
       // Then: Connector should have active transaction
       const connectorStatus = mockStation.getConnectorStatus(1)
-      expect(connectorStatus?.transactionStarted).toBe(true)
-      expect(connectorStatus?.status).toBe(ConnectorStatusEnum.Occupied)
-      expect(connectorStatus?.transactionId).toBe('existing-tx-123')
-      expect(RequestStartStopStatusEnumType.Rejected).toBeDefined()
+      if (connectorStatus == null) { assert.fail('Expected connectorStatus to be defined') }
+      assert.strictEqual(connectorStatus.transactionStarted, true)
+      assert.strictEqual(connectorStatus.status, ConnectorStatusEnum.Occupied)
+      assert.strictEqual(connectorStatus.transactionId, 'existing-tx-123')
+      assert.notStrictEqual(RequestStartStopStatusEnumType.Rejected, undefined)
     })
 
     await it('should preserve existing transaction details', () => {
@@ -272,8 +273,9 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
 
       // Then: Existing transaction should be preserved
       const connectorStatus = mockStation.getConnectorStatus(1)
-      expect(connectorStatus?.transactionId).toBe(existingTransactionId)
-      expect(connectorStatus?.transactionIdTag).toBe(existingTokenTag)
+      if (connectorStatus == null) { assert.fail('Expected connectorStatus to be defined') }
+      assert.strictEqual(connectorStatus.transactionId, existingTransactionId)
+      assert.strictEqual(connectorStatus.transactionIdTag, existingTokenTag)
     })
   })
 
@@ -297,15 +299,16 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
       }
 
       // Then: Charging profile should be present with correct structure
-      expect(request.chargingProfile).toBeDefined()
-      expect(request.chargingProfile?.id).toBe(1)
-      expect(request.chargingProfile?.chargingProfileKind).toBe(
+      assert.notStrictEqual(request.chargingProfile, undefined)
+      if (request.chargingProfile == null) { assert.fail('Expected chargingProfile to be defined') }
+      assert.strictEqual(request.chargingProfile.id, 1)
+      assert.strictEqual(request.chargingProfile.chargingProfileKind,
         OCPP20ChargingProfileKindEnumType.Absolute
       )
-      expect(request.chargingProfile?.chargingProfilePurpose).toBe(
+      assert.strictEqual(request.chargingProfile.chargingProfilePurpose,
         OCPP20ChargingProfilePurposeEnumType.TxProfile
       )
-      expect(request.chargingProfile?.stackLevel).toBe(0)
+      assert.strictEqual(request.chargingProfile.stackLevel, 0)
     })
 
     await it('should support different charging profile kinds', () => {
@@ -327,10 +330,11 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
       }
 
       // Then: Recurring profile should be supported
-      expect(request.chargingProfile?.chargingProfileKind).toBe(
+      if (request.chargingProfile == null) { assert.fail('Expected chargingProfile to be defined') }
+      assert.strictEqual(request.chargingProfile.chargingProfileKind,
         OCPP20ChargingProfileKindEnumType.Recurring
       )
-      expect(request.chargingProfile?.stackLevel).toBe(1)
+      assert.strictEqual(request.chargingProfile.stackLevel, 1)
     })
 
     await it('should support optional charging profile', () => {
@@ -345,21 +349,21 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
       }
 
       // Then: Charging profile should be optional
-      expect(request.chargingProfile).toBeUndefined()
+      assert.strictEqual(request.chargingProfile, undefined)
     })
   })
 
   await describe('G03.FR.03.007 - Request validation checks', async () => {
     await it('should validate response status enum values', () => {
       // Then: Response status enum should have required values
-      expect(RequestStartStopStatusEnumType.Accepted).toBeDefined()
-      expect(RequestStartStopStatusEnumType.Rejected).toBeDefined()
+      assert.notStrictEqual(RequestStartStopStatusEnumType.Accepted, undefined)
+      assert.notStrictEqual(RequestStartStopStatusEnumType.Rejected, undefined)
     })
 
     await it('should support OCPP 2.0.1 version', () => {
       assert(mockStation != null)
       // Given: Station with OCPP 2.0.1
-      expect(mockStation.stationInfo?.ocppVersion).toBe(OCPPVersion.VERSION_201)
+      assert.strictEqual(mockStation.stationInfo?.ocppVersion, OCPPVersion.VERSION_201)
     })
 
     await it('should support idToken with additional info', () => {
@@ -380,9 +384,10 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
       }
 
       // Then: Should accept idToken with additionalInfo
-      expect(request.idToken.additionalInfo).toBeDefined()
-      expect(request.idToken.additionalInfo?.length).toBe(1)
-      expect(request.idToken.additionalInfo?.[0].additionalIdToken).toBe('ADDITIONAL_001')
+      assert.notStrictEqual(request.idToken.additionalInfo, undefined)
+      if (request.idToken.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.strictEqual(request.idToken.additionalInfo.length, 1)
+      assert.strictEqual(request.idToken.additionalInfo[0].additionalIdToken, 'ADDITIONAL_001')
     })
 
     await it('should support various idToken types', () => {
@@ -397,7 +402,7 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
 
       // Then: All token types should be defined
       tokenTypes.forEach(tokenType => {
-        expect(tokenType).toBeDefined()
+        assert.notStrictEqual(tokenType, undefined)
       })
     })
   })
@@ -405,17 +410,17 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
   await describe('G03.FR.03.008 - Service initialization', async () => {
     await it('should initialize OCPP20IncomingRequestService', () => {
       // Then: Service should be initialized
-      expect(service).toBeDefined()
-      expect(service).toBeInstanceOf(OCPP20IncomingRequestService)
+      assert.notStrictEqual(service, undefined)
+      assert.ok(service instanceof OCPP20IncomingRequestService)
     })
 
     await it('should have valid charging station configuration', () => {
       assert(mockStation != null)
       // Then: Charging station should have required configuration
-      expect(mockStation).toBeDefined()
-      expect(mockStation.evses).toBeDefined()
-      expect(mockStation.evses.size).toBeGreaterThan(0)
-      expect(mockStation.stationInfo?.ocppVersion).toBe(OCPPVersion.VERSION_201)
+      assert.notStrictEqual(mockStation, undefined)
+      assert.notStrictEqual(mockStation.evses, undefined)
+      assert.ok(mockStation.evses.size > 0)
+      assert.strictEqual(mockStation.stationInfo?.ocppVersion, OCPPVersion.VERSION_201)
     })
   })
 })

@@ -2,7 +2,7 @@
  * @file Tests for ChargingStation Transaction Management
  * @description Unit tests for transaction queries, energy meters, and concurrent transaction handling
  */
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
@@ -35,7 +35,7 @@ await describe('ChargingStation Transaction Management', async () => {
       const connectorId = station.getConnectorIdByTransactionId(12345)
 
       // Assert
-      expect(connectorId).toBeUndefined()
+      assert.strictEqual(connectorId, undefined)
     })
 
     await it('should return connector id for getConnectorIdByTransactionId with active transaction', () => {
@@ -53,7 +53,7 @@ await describe('ChargingStation Transaction Management', async () => {
       const connectorId = station.getConnectorIdByTransactionId(100)
 
       // Assert
-      expect(connectorId).toBe(1)
+      assert.strictEqual(connectorId, 1)
     })
 
     await it('should return undefined for getConnectorIdByTransactionId with undefined transactionId', () => {
@@ -65,7 +65,7 @@ await describe('ChargingStation Transaction Management', async () => {
       const connectorId = station.getConnectorIdByTransactionId(undefined)
 
       // Assert
-      expect(connectorId).toBeUndefined()
+      assert.strictEqual(connectorId, undefined)
     })
 
     await it('should return undefined for getEvseIdByTransactionId in non-EVSE mode', () => {
@@ -85,7 +85,7 @@ await describe('ChargingStation Transaction Management', async () => {
       const evseId = station.getEvseIdByTransactionId(100)
 
       // Assert
-      expect(evseId).toBeUndefined()
+      assert.strictEqual(evseId, undefined)
     })
 
     await it('should return EVSE id for getEvseIdByTransactionId in EVSE mode with active transaction', () => {
@@ -107,7 +107,7 @@ await describe('ChargingStation Transaction Management', async () => {
       const evseId = station.getEvseIdByTransactionId(200)
 
       // Assert
-      expect(evseId).toBe(1)
+      assert.strictEqual(evseId, 1)
     })
 
     await it('should return idTag for getTransactionIdTag with active transaction', () => {
@@ -125,7 +125,7 @@ await describe('ChargingStation Transaction Management', async () => {
       const idTag = station.getTransactionIdTag(300)
 
       // Assert
-      expect(idTag).toBe('MY-TAG-123')
+      assert.strictEqual(idTag, 'MY-TAG-123')
     })
 
     await it('should return undefined for getTransactionIdTag with no matching transaction', () => {
@@ -137,7 +137,7 @@ await describe('ChargingStation Transaction Management', async () => {
       const idTag = station.getTransactionIdTag(999)
 
       // Assert
-      expect(idTag).toBeUndefined()
+      assert.strictEqual(idTag, undefined)
     })
 
     await it('should return zero for getNumberOfRunningTransactions with no transactions', () => {
@@ -149,7 +149,7 @@ await describe('ChargingStation Transaction Management', async () => {
       const count = station.getNumberOfRunningTransactions()
 
       // Assert
-      expect(count).toBe(0)
+      assert.strictEqual(count, 0)
     })
 
     await it('should return correct count for getNumberOfRunningTransactions with active transactions', () => {
@@ -172,7 +172,7 @@ await describe('ChargingStation Transaction Management', async () => {
       const count = station.getNumberOfRunningTransactions()
 
       // Assert
-      expect(count).toBe(2)
+      assert.strictEqual(count, 2)
     })
   })
 
@@ -198,7 +198,7 @@ await describe('ChargingStation Transaction Management', async () => {
       const energy = station.getEnergyActiveImportRegisterByConnectorId(1)
 
       // Assert
-      expect(energy).toBe(0)
+      assert.strictEqual(energy, 0)
     })
 
     await it('should return energy value for getEnergyActiveImportRegisterByConnectorId with active transaction', () => {
@@ -216,7 +216,7 @@ await describe('ChargingStation Transaction Management', async () => {
       const energy = station.getEnergyActiveImportRegisterByConnectorId(1)
 
       // Assert
-      expect(energy).toBe(12500)
+      assert.strictEqual(energy, 12500)
     })
 
     await it('should return rounded energy value when rounded=true', () => {
@@ -234,7 +234,7 @@ await describe('ChargingStation Transaction Management', async () => {
       const energy = station.getEnergyActiveImportRegisterByConnectorId(1, true)
 
       // Assert
-      expect(energy).toBe(12346)
+      assert.strictEqual(energy, 12346)
     })
 
     await it('should return 0 for getEnergyActiveImportRegisterByConnectorId with invalid connector', () => {
@@ -246,7 +246,7 @@ await describe('ChargingStation Transaction Management', async () => {
       const energy = station.getEnergyActiveImportRegisterByConnectorId(99)
 
       // Assert
-      expect(energy).toBe(0)
+      assert.strictEqual(energy, 0)
     })
 
     await it('should return 0 for getEnergyActiveImportRegisterByTransactionId with no matching transaction', () => {
@@ -258,7 +258,7 @@ await describe('ChargingStation Transaction Management', async () => {
       const energy = station.getEnergyActiveImportRegisterByTransactionId(999)
 
       // Assert
-      expect(energy).toBe(0)
+      assert.strictEqual(energy, 0)
     })
 
     await it('should return energy for getEnergyActiveImportRegisterByTransactionId with active transaction', () => {
@@ -276,7 +276,7 @@ await describe('ChargingStation Transaction Management', async () => {
       const energy = station.getEnergyActiveImportRegisterByTransactionId(400)
 
       // Assert
-      expect(energy).toBe(25000)
+      assert.strictEqual(energy, 25000)
     })
   })
 
@@ -323,22 +323,22 @@ await describe('ChargingStation Transaction Management', async () => {
       }
 
       // Act & Assert - Running transactions count
-      expect(station.getNumberOfRunningTransactions()).toBe(3)
+      assert.strictEqual(station.getNumberOfRunningTransactions(), 3)
 
       // Act & Assert - Transaction queries
-      expect(station.getConnectorIdByTransactionId(100)).toBe(1)
-      expect(station.getConnectorIdByTransactionId(101)).toBe(2)
-      expect(station.getConnectorIdByTransactionId(102)).toBe(3)
+      assert.strictEqual(station.getConnectorIdByTransactionId(100), 1)
+      assert.strictEqual(station.getConnectorIdByTransactionId(101), 2)
+      assert.strictEqual(station.getConnectorIdByTransactionId(102), 3)
 
       // Act & Assert - Energy meters
-      expect(station.getEnergyActiveImportRegisterByTransactionId(100)).toBe(10000)
-      expect(station.getEnergyActiveImportRegisterByTransactionId(101)).toBe(20000)
-      expect(station.getEnergyActiveImportRegisterByTransactionId(102)).toBe(30000)
+      assert.strictEqual(station.getEnergyActiveImportRegisterByTransactionId(100), 10000)
+      assert.strictEqual(station.getEnergyActiveImportRegisterByTransactionId(101), 20000)
+      assert.strictEqual(station.getEnergyActiveImportRegisterByTransactionId(102), 30000)
 
       // Act & Assert - Id tags
-      expect(station.getTransactionIdTag(100)).toBe('TAG-A')
-      expect(station.getTransactionIdTag(101)).toBe('TAG-B')
-      expect(station.getTransactionIdTag(102)).toBe('TAG-C')
+      assert.strictEqual(station.getTransactionIdTag(100), 'TAG-A')
+      assert.strictEqual(station.getTransactionIdTag(101), 'TAG-B')
+      assert.strictEqual(station.getTransactionIdTag(102), 'TAG-C')
     })
 
     await it('should handle transactions across multiple EVSEs', () => {
@@ -367,19 +367,19 @@ await describe('ChargingStation Transaction Management', async () => {
       }
 
       // Act & Assert - Running transactions count
-      expect(station.getNumberOfRunningTransactions()).toBe(2)
+      assert.strictEqual(station.getNumberOfRunningTransactions(), 2)
 
       // Act & Assert - EVSE queries
-      expect(station.getEvseIdByTransactionId(500)).toBe(1)
-      expect(station.getEvseIdByTransactionId(501)).toBe(2)
+      assert.strictEqual(station.getEvseIdByTransactionId(500), 1)
+      assert.strictEqual(station.getEvseIdByTransactionId(501), 2)
 
       // Act & Assert - Connector queries
-      expect(station.getConnectorIdByTransactionId(500)).toBe(1)
-      expect(station.getConnectorIdByTransactionId(501)).toBe(3)
+      assert.strictEqual(station.getConnectorIdByTransactionId(500), 1)
+      assert.strictEqual(station.getConnectorIdByTransactionId(501), 3)
 
       // Act & Assert - Energy meters
-      expect(station.getEnergyActiveImportRegisterByTransactionId(500)).toBe(15000)
-      expect(station.getEnergyActiveImportRegisterByTransactionId(501)).toBe(18000)
+      assert.strictEqual(station.getEnergyActiveImportRegisterByTransactionId(500), 15000)
+      assert.strictEqual(station.getEnergyActiveImportRegisterByTransactionId(501), 18000)
     })
 
     await it('should correctly count transactions only on connectors > 0', () => {
@@ -405,7 +405,7 @@ await describe('ChargingStation Transaction Management', async () => {
       const count = station.getNumberOfRunningTransactions()
 
       // Assert - Only connector 1 should count
-      expect(count).toBe(1)
+      assert.strictEqual(count, 1)
     })
 
     await it('should return idTag in EVSE mode for getTransactionIdTag', () => {
@@ -427,7 +427,7 @@ await describe('ChargingStation Transaction Management', async () => {
       const idTag = station.getTransactionIdTag(600)
 
       // Assert
-      expect(idTag).toBe('EVSE-MODE-TAG')
+      assert.strictEqual(idTag, 'EVSE-MODE-TAG')
     })
 
     await it('should handle rounded energy values for getEnergyActiveImportRegisterByTransactionId', () => {
@@ -446,8 +446,8 @@ await describe('ChargingStation Transaction Management', async () => {
       const rounded = station.getEnergyActiveImportRegisterByTransactionId(700, true)
 
       // Assert
-      expect(unrounded).toBe(12345.5)
-      expect(rounded).toBe(12346)
+      assert.strictEqual(unrounded, 12345.5)
+      assert.strictEqual(rounded, 12346)
     })
   })
 
@@ -477,8 +477,8 @@ await describe('ChargingStation Transaction Management', async () => {
         station.startHeartbeat()
 
         // Assert - heartbeat interval should be created
-        expect(station.heartbeatSetInterval).toBeDefined()
-        expect(typeof station.heartbeatSetInterval).toBe('object')
+        assert.notStrictEqual(station.heartbeatSetInterval, undefined)
+        assert.strictEqual(typeof station.heartbeatSetInterval, 'object')
       })
     })
 
@@ -498,9 +498,9 @@ await describe('ChargingStation Transaction Management', async () => {
         const secondInterval = station.heartbeatSetInterval
 
         // Assert - interval should be different (old cleared, new created)
-        expect(secondInterval).toBeDefined()
-        expect(typeof secondInterval).toBe('object')
-        expect(firstInterval !== secondInterval).toBe(true)
+        assert.notStrictEqual(secondInterval, undefined)
+        assert.strictEqual(typeof secondInterval, 'object')
+        assert.ok(firstInterval !== secondInterval)
       })
     })
 
@@ -520,7 +520,7 @@ await describe('ChargingStation Transaction Management', async () => {
         const secondInterval = station.heartbeatSetInterval
 
         // Assert - interval should be same (not restarted)
-        expect(firstInterval).toBe(secondInterval)
+        assert.strictEqual(firstInterval, secondInterval)
       })
     })
 
@@ -540,8 +540,8 @@ await describe('ChargingStation Transaction Management', async () => {
 
         // Assert - meter values interval should be created
         if (connector1 != null) {
-          expect(connector1.transactionSetInterval).toBeDefined()
-          expect(typeof connector1.transactionSetInterval).toBe('object')
+          assert.notStrictEqual(connector1.transactionSetInterval, undefined)
+          assert.strictEqual(typeof connector1.transactionSetInterval, 'object')
         }
       })
     })
@@ -564,9 +564,9 @@ await describe('ChargingStation Transaction Management', async () => {
         const secondInterval = connector1?.transactionSetInterval
 
         // Assert - interval should be different
-        expect(secondInterval).toBeDefined()
-        expect(typeof secondInterval).toBe('object')
-        expect(firstInterval !== secondInterval).toBe(true)
+        assert.notStrictEqual(secondInterval, undefined)
+        assert.strictEqual(typeof secondInterval, 'object')
+        assert.ok(firstInterval !== secondInterval)
       })
     })
 
@@ -586,7 +586,7 @@ await describe('ChargingStation Transaction Management', async () => {
         station.stopMeterValues(1)
 
         // Assert - interval should be cleared
-        expect(connector1?.transactionSetInterval).toBeUndefined()
+        assert.strictEqual(connector1?.transactionSetInterval, undefined)
       })
     })
 
@@ -609,8 +609,8 @@ await describe('ChargingStation Transaction Management', async () => {
 
         // Assert - transaction updated interval should be created
         if (connector1 != null) {
-          expect(connector1.transactionTxUpdatedSetInterval).toBeDefined()
-          expect(typeof connector1.transactionTxUpdatedSetInterval).toBe('object')
+          assert.notStrictEqual(connector1.transactionTxUpdatedSetInterval, undefined)
+          assert.strictEqual(typeof connector1.transactionTxUpdatedSetInterval, 'object')
         }
       })
     })
@@ -634,7 +634,7 @@ await describe('ChargingStation Transaction Management', async () => {
         station.stopTxUpdatedInterval(1)
 
         // Assert - interval should be cleared
-        expect(connector1?.transactionTxUpdatedSetInterval).toBeUndefined()
+        assert.strictEqual(connector1?.transactionTxUpdatedSetInterval, undefined)
       })
     })
   })

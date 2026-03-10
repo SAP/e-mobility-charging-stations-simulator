@@ -3,7 +3,7 @@
  * @description Verifies certificate install, list, and delete operations end-to-end
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
@@ -80,8 +80,8 @@ await describe('OCPP 2.0 Integration — Certificate install and delete lifecycl
       installRequest
     )
 
-    expect(installResponse.status).toBeDefined()
-    expect(Object.values(InstallCertificateStatusEnumType)).toContain(installResponse.status)
+    assert.notStrictEqual(installResponse.status, undefined)
+    assert.ok(Object.values(InstallCertificateStatusEnumType).includes(installResponse.status))
   })
 
   await it('should respond to GetInstalledCertificateIds without throwing', async () => {
@@ -94,12 +94,13 @@ await describe('OCPP 2.0 Integration — Certificate install and delete lifecycl
       getRequest
     )
 
-    expect(getResponse).toBeDefined()
-    expect(getResponse.status).toBeDefined()
-    expect(
+    assert.notStrictEqual(getResponse, undefined)
+    assert.notStrictEqual(getResponse.status, undefined)
+    assert.strictEqual(
       getResponse.certificateHashDataChain === undefined ||
-        Array.isArray(getResponse.certificateHashDataChain)
-    ).toBe(true)
+        Array.isArray(getResponse.certificateHashDataChain),
+      true
+    )
   })
 
   await it('should handle DeleteCertificate request without throwing even for unknown cert hash', async () => {
@@ -117,6 +118,6 @@ await describe('OCPP 2.0 Integration — Certificate install and delete lifecycl
       deleteRequest
     )
 
-    expect(deleteResponse.status).toBeDefined()
+    assert.notStrictEqual(deleteResponse.status, undefined)
   })
 })

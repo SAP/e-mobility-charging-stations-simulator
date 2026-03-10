@@ -2,7 +2,7 @@
  * @file Tests for OCPP20RequestService HeartBeat
  * @description Unit tests for OCPP 2.0 Heartbeat request building (G02)
  */
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
@@ -57,9 +57,9 @@ await describe('G02 - Heartbeat', async () => {
       requestParams
     )
 
-    expect(payload).toBeDefined()
-    expect(typeof payload).toBe('object')
-    expect(Object.keys(payload as object)).toHaveLength(0)
+    assert.notStrictEqual(payload, undefined)
+    assert.strictEqual(typeof payload, 'object')
+    assert.strictEqual(Object.keys(payload as object).length, 0)
   })
 
   // FR: G02.FR.02
@@ -70,9 +70,9 @@ await describe('G02 - Heartbeat', async () => {
       OCPP20RequestCommand.HEARTBEAT
     )
 
-    expect(payload).toBeDefined()
-    expect(typeof payload).toBe('object')
-    expect(Object.keys(payload as object)).toHaveLength(0)
+    assert.notStrictEqual(payload, undefined)
+    assert.strictEqual(typeof payload, 'object')
+    assert.strictEqual(Object.keys(payload as object).length, 0)
   })
 
   // FR: G02.FR.03
@@ -86,11 +86,11 @@ await describe('G02 - Heartbeat', async () => {
     )
 
     // Validate that the payload is an empty object as required by OCPP 2.0 spec
-    expect(typeof payload).toBe('object')
-    expect(payload).not.toBeNull()
-    expect(Array.isArray(payload)).toBe(false)
-    expect(Object.keys(payload as object)).toHaveLength(0)
-    expect(JSON.stringify(payload)).toBe('{}')
+    assert.strictEqual(typeof payload, 'object')
+    assert.notStrictEqual(payload, null)
+    assert.ok(!Array.isArray(payload))
+    assert.strictEqual(Object.keys(payload as object).length, 0)
+    assert.strictEqual(JSON.stringify(payload), '{}')
   })
 
   // FR: G02.FR.04
@@ -116,11 +116,11 @@ await describe('G02 - Heartbeat', async () => {
     )
 
     // All payloads should be identical empty objects
-    expect(payload1).toStrictEqual(payload2)
-    expect(payload2).toStrictEqual(payload3)
-    expect(JSON.stringify(payload1)).toBe('{}')
-    expect(JSON.stringify(payload2)).toBe('{}')
-    expect(JSON.stringify(payload3)).toBe('{}')
+    assert.deepStrictEqual(payload1, payload2)
+    assert.deepStrictEqual(payload2, payload3)
+    assert.strictEqual(JSON.stringify(payload1), '{}')
+    assert.strictEqual(JSON.stringify(payload2), '{}')
+    assert.strictEqual(JSON.stringify(payload3), '{}')
   })
 
   // FR: G02.FR.05
@@ -150,10 +150,10 @@ await describe('G02 - Heartbeat', async () => {
     )
 
     // HeartBeat payload should remain empty regardless of charging station configuration
-    expect(payload).toBeDefined()
-    expect(typeof payload).toBe('object')
-    expect(Object.keys(payload as object)).toHaveLength(0)
-    expect(JSON.stringify(payload)).toBe('{}')
+    assert.notStrictEqual(payload, undefined)
+    assert.strictEqual(typeof payload, 'object')
+    assert.strictEqual(Object.keys(payload as object).length, 0)
+    assert.strictEqual(JSON.stringify(payload), '{}')
   })
 
   // FR: G02.FR.06
@@ -168,11 +168,11 @@ await describe('G02 - Heartbeat', async () => {
 
     // According to OCPP 2.0 specification, HeartBeat request should be an empty object
     // This validates compliance with the official OCPP 2.0 standard
-    expect(payload).toBeDefined()
-    expect(payload).toStrictEqual({})
-    expect(has('constructor', payload)).toBe(false)
+    assert.notStrictEqual(payload, undefined)
+    assert.deepStrictEqual(payload, {})
+    assert.strictEqual(has('constructor', payload), false)
 
     // Ensure it's a plain object and not an instance of another type
-    expect(Object.getPrototypeOf(payload)).toBe(Object.prototype)
+    assert.strictEqual(Object.getPrototypeOf(payload), Object.prototype)
   })
 })

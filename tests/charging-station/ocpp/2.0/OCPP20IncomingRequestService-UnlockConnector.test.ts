@@ -3,7 +3,7 @@
  * @description Unit tests for OCPP 2.0 UnlockConnector command handling (F05)
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type {
@@ -79,10 +79,11 @@ await describe('F05 - UnlockConnector', async () => {
       const response: OCPP20UnlockConnectorResponse =
         await testableService.handleRequestUnlockConnector(mockStation, request)
 
-      expect(response.status).toBe(UnlockStatusEnumType.UnknownConnector)
-      expect(response.statusInfo).toBeDefined()
-      expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnsupportedRequest)
-      expect(response.statusInfo?.additionalInfo).toContain('does not support EVSEs')
+      assert.strictEqual(response.status, UnlockStatusEnumType.UnknownConnector)
+      if (response.statusInfo == null) { assert.fail('Expected statusInfo to be defined') }
+      assert.strictEqual(response.statusInfo.reasonCode, ReasonCodeEnumType.UnsupportedRequest)
+      if (response.statusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.ok(response.statusInfo.additionalInfo.includes('does not support EVSEs'))
     })
   })
 
@@ -94,10 +95,11 @@ await describe('F05 - UnlockConnector', async () => {
       const response: OCPP20UnlockConnectorResponse =
         await testableService.handleRequestUnlockConnector(mockStation, request)
 
-      expect(response.status).toBe(UnlockStatusEnumType.UnknownConnector)
-      expect(response.statusInfo).toBeDefined()
-      expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnknownEvse)
-      expect(response.statusInfo?.additionalInfo).toContain('999')
+      assert.strictEqual(response.status, UnlockStatusEnumType.UnknownConnector)
+      if (response.statusInfo == null) { assert.fail('Expected statusInfo to be defined') }
+      assert.strictEqual(response.statusInfo.reasonCode, ReasonCodeEnumType.UnknownEvse)
+      if (response.statusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.ok(response.statusInfo.additionalInfo.includes('999'))
     })
   })
 
@@ -110,11 +112,12 @@ await describe('F05 - UnlockConnector', async () => {
       const response: OCPP20UnlockConnectorResponse =
         await testableService.handleRequestUnlockConnector(mockStation, request)
 
-      expect(response.status).toBe(UnlockStatusEnumType.UnknownConnector)
-      expect(response.statusInfo).toBeDefined()
-      expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.UnknownConnectorId)
-      expect(response.statusInfo?.additionalInfo).toContain('99')
-      expect(response.statusInfo?.additionalInfo).toContain('1')
+      assert.strictEqual(response.status, UnlockStatusEnumType.UnknownConnector)
+      if (response.statusInfo == null) { assert.fail('Expected statusInfo to be defined') }
+      assert.strictEqual(response.statusInfo.reasonCode, ReasonCodeEnumType.UnknownConnectorId)
+      if (response.statusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.ok(response.statusInfo.additionalInfo.includes('99'))
+      assert.ok(response.statusInfo.additionalInfo.includes('1'))
     })
   })
 
@@ -132,10 +135,11 @@ await describe('F05 - UnlockConnector', async () => {
       const response: OCPP20UnlockConnectorResponse =
         await testableService.handleRequestUnlockConnector(mockStation, request)
 
-      expect(response.status).toBe(UnlockStatusEnumType.OngoingAuthorizedTransaction)
-      expect(response.statusInfo).toBeDefined()
-      expect(response.statusInfo?.reasonCode).toBe(ReasonCodeEnumType.TxInProgress)
-      expect(response.statusInfo?.additionalInfo).toContain('1')
+      assert.strictEqual(response.status, UnlockStatusEnumType.OngoingAuthorizedTransaction)
+      if (response.statusInfo == null) { assert.fail('Expected statusInfo to be defined') }
+      assert.strictEqual(response.statusInfo.reasonCode, ReasonCodeEnumType.TxInProgress)
+      if (response.statusInfo.additionalInfo == null) { assert.fail('Expected additionalInfo to be defined') }
+      assert.ok(response.statusInfo.additionalInfo.includes('1'))
     })
 
     await it('should return Unlocked when a different connector on the same EVSE has a transaction (F05.FR.02)', async () => {
@@ -165,7 +169,7 @@ await describe('F05 - UnlockConnector', async () => {
       const response: OCPP20UnlockConnectorResponse =
         await testableService.handleRequestUnlockConnector(multiConnectorStation, request)
 
-      expect(response.status).toBe(UnlockStatusEnumType.Unlocked)
+      assert.strictEqual(response.status, UnlockStatusEnumType.Unlocked)
     })
   })
 
@@ -177,8 +181,8 @@ await describe('F05 - UnlockConnector', async () => {
       const response: OCPP20UnlockConnectorResponse =
         await testableService.handleRequestUnlockConnector(mockStation, request)
 
-      expect(response.status).toBe(UnlockStatusEnumType.Unlocked)
-      expect(response.statusInfo).toBeUndefined()
+      assert.strictEqual(response.status, UnlockStatusEnumType.Unlocked)
+      assert.strictEqual(response.statusInfo, undefined)
     })
 
     await it('should call requestHandler (StatusNotification) to set connector status Available after unlock', async () => {
@@ -188,7 +192,7 @@ await describe('F05 - UnlockConnector', async () => {
       await testableService.handleRequestUnlockConnector(mockStation, request)
 
       // sendAndSetConnectorStatus calls requestHandler internally for StatusNotification
-      expect(requestHandlerMock.mock.calls.length).toBeGreaterThan(0)
+      assert.ok(requestHandlerMock.mock.calls.length > 0)
     })
 
     await it('should return a Promise from async handler', async () => {
@@ -198,7 +202,7 @@ await describe('F05 - UnlockConnector', async () => {
 
       const result = testableService.handleRequestUnlockConnector(mockStation, request)
 
-      expect(typeof (result as unknown as Promise<unknown>).then).toBe('function')
+      assert.strictEqual(typeof (result as unknown as Promise<unknown>).then, 'function')
       await result
     })
   })
@@ -210,9 +214,9 @@ await describe('F05 - UnlockConnector', async () => {
       const request: OCPP20UnlockConnectorRequest = { connectorId: 1, evseId: 1 }
       const response = await testableService.handleRequestUnlockConnector(mockStation, request)
 
-      expect(response).toBeDefined()
-      expect(typeof response).toBe('object')
-      expect(typeof response.status).toBe('string')
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(typeof response, 'object')
+      assert.strictEqual(typeof response.status, 'string')
     })
 
     await it('should not include statusInfo on successful unlock', async () => {
@@ -221,8 +225,8 @@ await describe('F05 - UnlockConnector', async () => {
       const request: OCPP20UnlockConnectorRequest = { connectorId: 1, evseId: 1 }
       const response = await testableService.handleRequestUnlockConnector(mockStation, request)
 
-      expect(response.status).toBe(UnlockStatusEnumType.Unlocked)
-      expect(response.statusInfo).toBeUndefined()
+      assert.strictEqual(response.status, UnlockStatusEnumType.Unlocked)
+      assert.strictEqual(response.statusInfo, undefined)
     })
   })
 })

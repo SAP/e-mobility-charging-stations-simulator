@@ -3,7 +3,7 @@
  * @description Unit tests for abstract UI service base class functionality
  */
 
-import { expect } from '@std/expect'
+import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
 import { ProcedureName, ProtocolVersion, ResponseStatus } from '../../../../src/types/index.js'
@@ -27,13 +27,13 @@ await describe('AbstractUIService', async () => {
     server.testRegisterProtocolVersionUIService(ProtocolVersion['0.0.1'])
     const service = server.getUIService(ProtocolVersion['0.0.1'])
 
-    expect(service).toBeDefined()
+    assert.notStrictEqual(service, undefined)
     if (service != null) {
       service.sendResponse(TEST_UUID, { status: ResponseStatus.SUCCESS })
       service.stop()
     }
 
-    expect(server.hasResponseHandler(TEST_UUID)).toBe(false)
+    assert.strictEqual(server.hasResponseHandler(TEST_UUID), false)
   })
 
   await it('should return charging stations list for LIST_CHARGING_STATIONS', async () => {
@@ -48,16 +48,16 @@ await describe('AbstractUIService', async () => {
 
     const request = createProtocolRequest(TEST_UUID, ProcedureName.LIST_CHARGING_STATIONS, {})
 
-    expect(service).toBeDefined()
+    assert.notStrictEqual(service, undefined)
     if (service != null) {
       const response = await service.requestHandler(request)
 
-      expect(response).toBeDefined()
+      assert.notStrictEqual(response, undefined)
       if (response != null) {
-        expect(response[0]).toBe(TEST_UUID)
-        expect(response[1].status).toBe(ResponseStatus.SUCCESS)
-        expect(response[1].chargingStations).toBeDefined()
-        expect(Array.isArray(response[1].chargingStations)).toBe(true)
+        assert.strictEqual(response[0], TEST_UUID)
+        assert.strictEqual(response[1].status, ResponseStatus.SUCCESS)
+        assert.notStrictEqual(response[1].chargingStations, undefined)
+        assert.ok(Array.isArray(response[1].chargingStations))
       }
       service.stop()
     }
@@ -75,18 +75,20 @@ await describe('AbstractUIService', async () => {
 
     const request = createProtocolRequest(TEST_UUID, ProcedureName.LIST_TEMPLATES, {})
 
-    expect(service).toBeDefined()
+    assert.notStrictEqual(service, undefined)
     if (service != null) {
       const response = await service.requestHandler(request)
 
-      expect(response).toBeDefined()
+      assert.notStrictEqual(response, undefined)
       if (response != null) {
-        expect(response[0]).toBe(TEST_UUID)
-        expect(response[1].status).toBe(ResponseStatus.SUCCESS)
-        expect(response[1].templates).toBeDefined()
-        expect(Array.isArray(response[1].templates)).toBe(true)
-        expect(response[1].templates).toContain('template1.json')
-        expect(response[1].templates).toContain('template2.json')
+        assert.strictEqual(response[0], TEST_UUID)
+        assert.strictEqual(response[1].status, ResponseStatus.SUCCESS)
+        const templates = response[1].templates
+        if (!Array.isArray(templates)) {
+          assert.fail('Expected templates to be an array')
+        }
+        assert.ok(templates.includes('template1.json'))
+        assert.ok(templates.includes('template2.json'))
       }
       service.stop()
     }
@@ -102,15 +104,15 @@ await describe('AbstractUIService', async () => {
 
     const request = createProtocolRequest(TEST_UUID, 'UnknownProcedure' as ProcedureName, {})
 
-    expect(service).toBeDefined()
+    assert.notStrictEqual(service, undefined)
     if (service != null) {
       const response = await service.requestHandler(request)
 
-      expect(response).toBeDefined()
+      assert.notStrictEqual(response, undefined)
       if (response != null) {
-        expect(response[0]).toBe(TEST_UUID)
-        expect(response[1].status).toBe(ResponseStatus.FAILURE)
-        expect(response[1].errorMessage).toBeDefined()
+        assert.strictEqual(response[0], TEST_UUID)
+        assert.strictEqual(response[1].status, ResponseStatus.FAILURE)
+        assert.notStrictEqual(response[1].errorMessage, undefined)
       }
       service.stop()
     }
@@ -124,9 +126,9 @@ await describe('AbstractUIService', async () => {
 
     const service = server.getUIService(ProtocolVersion['0.0.1'])
 
-    expect(service).toBeDefined()
+    assert.notStrictEqual(service, undefined)
     if (service != null) {
-      expect(service.getBroadcastChannelExpectedResponses(TEST_UUID)).toBe(0)
+      assert.strictEqual(service.getBroadcastChannelExpectedResponses(TEST_UUID), 0)
       service.stop()
     }
   })
@@ -139,10 +141,10 @@ await describe('AbstractUIService', async () => {
 
     const service = server.getUIService(ProtocolVersion['0.0.1'])
 
-    expect(service).toBeDefined()
+    assert.notStrictEqual(service, undefined)
     if (service != null) {
       service.stop()
-      expect(service.getBroadcastChannelExpectedResponses(TEST_UUID)).toBe(0)
+      assert.strictEqual(service.getBroadcastChannelExpectedResponses(TEST_UUID), 0)
     }
   })
 
@@ -156,14 +158,14 @@ await describe('AbstractUIService', async () => {
 
     const request = createProtocolRequest(TEST_UUID, ProcedureName.ADD_CHARGING_STATIONS, {})
 
-    expect(service).toBeDefined()
+    assert.notStrictEqual(service, undefined)
     if (service != null) {
       const response = await service.requestHandler(request)
 
-      expect(response).toBeDefined()
+      assert.notStrictEqual(response, undefined)
       if (response != null) {
-        expect(response[0]).toBe(TEST_UUID)
-        expect(response[1].status).toBe(ResponseStatus.FAILURE)
+        assert.strictEqual(response[0], TEST_UUID)
+        assert.strictEqual(response[1].status, ResponseStatus.FAILURE)
       }
       service.stop()
     }
@@ -177,7 +179,7 @@ await describe('AbstractUIService', async () => {
 
     const service = server.getUIService(ProtocolVersion['0.0.1'])
 
-    expect(service).toBeDefined()
+    assert.notStrictEqual(service, undefined)
     if (service != null) {
       service.stop()
     }
@@ -192,7 +194,7 @@ await describe('AbstractUIService', async () => {
 
     const uiServicesMap = Reflect.get(server, 'uiServices') as Map<unknown, unknown>
 
-    expect(uiServicesMap.size).toBe(1)
+    assert.strictEqual(uiServicesMap.size, 1)
 
     const service = server.getUIService(ProtocolVersion['0.0.1'])
     if (service != null) {
