@@ -91,9 +91,6 @@ importers:
       '@mikro-orm/cli':
         specifier: ^6.6.9
         version: 6.6.9(better-sqlite3@11.10.0)(mariadb@3.4.5)
-      '@std/expect':
-        specifier: jsr:@std/expect@^1.0.18
-        version: '@jsr/std__expect@1.0.18'
       '@types/node':
         specifier: ^24.12.0
         version: 24.12.0
@@ -1012,18 +1009,6 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.9':
     resolution: {integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==}
-
-  '@jsr/std__assert@1.0.19':
-    resolution: {integrity: sha512-pEj6RPkGbqlgRmyKwATp4cUs6+ijxtdrv3bq8v1d2I2CEcMEyPaO8cVKro61wGRDH4cNg8Zx6haztvK/9m7gkA==, tarball: https://npm.jsr.io/~/11/@jsr/std__assert/1.0.19.tgz}
-
-  '@jsr/std__expect@1.0.18':
-    resolution: {integrity: sha512-Ct+xcCSlfA7X0zhKjCAAIdQYDFVuQq+62RxbCCDUr4A417x4BTdYB2vIcu+sXqbkXdBIddAq0QZiVrgp5xsNaw==, tarball: https://npm.jsr.io/~/11/@jsr/std__expect/1.0.18.tgz}
-
-  '@jsr/std__internal@1.0.12':
-    resolution: {integrity: sha512-6xReMW9p+paJgqoFRpOE2nogJFvzPfaLHLIlyADYjKMUcwDyjKZxryIbgcU+gxiTygn8yCjld1HoI0ET4/iZeA==, tarball: https://npm.jsr.io/~/11/@jsr/std__internal/1.0.12.tgz}
-
-  '@jsr/std__path@1.1.4':
-    resolution: {integrity: sha512-SK4u9H6NVTfolhPdlvdYXfNFefy1W04AEHWJydryYbk+xqzNiVmr5o7TLJLJFqwHXuwMRhwrn+mcYeUfS0YFaA==, tarball: https://npm.jsr.io/~/11/@jsr/std__path/1.1.4.tgz}
 
   '@keyv/serialize@1.1.1':
     resolution: {integrity: sha512-dXn3FZhPv0US+7dtJsIi2R+c7qWYiReoEh5zUntWCf4oSpMNib8FDhSoed6m3QyZdx5hK7iLFkYk3rNxwt8vTA==}
@@ -6874,22 +6859,6 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
-
-  '@jsr/std__assert@1.0.19':
-    dependencies:
-      '@jsr/std__internal': 1.0.12
-
-  '@jsr/std__expect@1.0.18':
-    dependencies:
-      '@jsr/std__assert': 1.0.19
-      '@jsr/std__internal': 1.0.12
-      '@jsr/std__path': 1.1.4
-
-  '@jsr/std__internal@1.0.12': {}
-
-  '@jsr/std__path@1.1.4':
-    dependencies:
-      '@jsr/std__internal': 1.0.12
 
   '@keyv/serialize@1.1.1': {}
 
