@@ -28,6 +28,7 @@ import type {
   OCPP20Get15118EVCertificateResponse,
   OCPP20GetCertificateStatusResponse,
   OCPP20RequestCommand,
+  OCPP20SecurityEventNotificationResponse,
   OCPP20SignCertificateResponse,
   OCSPRequestDataType,
   RequestParams,
@@ -94,6 +95,16 @@ export interface TestableOCPP20RequestService {
     chargingStation: ChargingStation,
     ocspRequestData: OCSPRequestDataType
   ) => Promise<OCPP20GetCertificateStatusResponse>
+  /**
+   * Send a SecurityEventNotification to the CSMS.
+   * Notifies the CSMS about a security event at the charging station (A04).
+   */
+  requestSecurityEventNotification: (
+    chargingStation: ChargingStation,
+    type: string,
+    timestamp: Date,
+    techInfo?: string
+  ) => Promise<OCPP20SecurityEventNotificationResponse>
   /**
    * Request certificate signing from the CSMS.
    * Generates a CSR and sends it to CSMS for signing.

@@ -13,6 +13,7 @@ import {
   type OCPP20NotifyReportResponse,
   OCPP20OptionalVariableName,
   OCPP20RequestCommand,
+  type OCPP20SecurityEventNotificationResponse,
   type OCPP20StatusNotificationResponse,
   type OCPP20TransactionEventResponse,
   OCPPVersion,
@@ -91,6 +92,10 @@ export class OCPP20ResponseService extends OCPPResponseService {
       [
         OCPP20RequestCommand.NOTIFY_REPORT,
         this.handleResponseNotifyReport.bind(this) as ResponseHandler,
+      ],
+      [
+        OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION,
+        this.handleResponseSecurityEventNotification.bind(this) as ResponseHandler,
       ],
       [
         OCPP20RequestCommand.STATUS_NOTIFICATION,
@@ -262,6 +267,15 @@ export class OCPP20ResponseService extends OCPPResponseService {
   ): void {
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.handleResponseNotifyReport: NotifyReport response received successfully`
+    )
+  }
+
+  private handleResponseSecurityEventNotification (
+    chargingStation: ChargingStation,
+    payload: OCPP20SecurityEventNotificationResponse
+  ): void {
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.handleResponseSecurityEventNotification: SecurityEventNotification response received successfully`
     )
   }
 

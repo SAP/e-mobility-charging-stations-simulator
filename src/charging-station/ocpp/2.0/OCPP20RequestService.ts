@@ -19,6 +19,8 @@ import {
   type OCPP20NotifyCustomerInformationRequest,
   type OCPP20NotifyCustomerInformationResponse,
   OCPP20RequestCommand,
+  type OCPP20SecurityEventNotificationRequest,
+  type OCPP20SecurityEventNotificationResponse,
   type OCPP20SignCertificateRequest,
   type OCPP20SignCertificateResponse,
   OCPPVersion,
@@ -292,6 +294,54 @@ export class OCPP20RequestService extends OCPPRequestService {
 
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.requestNotifyCustomerInformation: Received response`
+    )
+
+    return response
+  }
+
+  /**
+   * Send a SecurityEventNotification to the CSMS.
+   *
+   * Notifies the CSMS about a security event that occurred at the charging station.
+   * Per OCPP 2.0.1 use case A04, the CS sends security events (e.g., tamper detection,
+   * firmware validation failure, invalid certificate) to keep the CSMS informed.
+   * The response is an empty object — the CSMS acknowledges receipt without data.
+   * @param chargingStation - The charging station reporting the security event
+   * @param type - Type of the security event (from the Security events list, max 50 chars)
+   * @param timestamp - Date and time at which the event occurred
+   * @param techInfo - Optional additional technical information about the event (max 255 chars)
+   * @returns Promise resolving to the empty CSMS acknowledgement response
+   */
+  public async requestSecurityEventNotification (
+    chargingStation: ChargingStation,
+    type: string,
+    timestamp: Date,
+    techInfo?: string
+  ): Promise<OCPP20SecurityEventNotificationResponse> {
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestSecurityEventNotification: Sending SecurityEventNotification`
+    )
+
+    const requestPayload: OCPP20SecurityEventNotificationRequest = {
+      timestamp,
+      type,
+      ...(techInfo !== undefined && { techInfo }),
+    }
+
+    const messageId = generateUUID()
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestSecurityEventNotification: Sending SecurityEventNotification request with message ID '${messageId}'`
+    )
+
+    const response = (await this.sendMessage(
+      chargingStation,
+      messageId,
+      requestPayload,
+      OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION
+    )) as OCPP20SecurityEventNotificationResponse
+
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestSecurityEventNotification: Received response`
     )
 
     return response
