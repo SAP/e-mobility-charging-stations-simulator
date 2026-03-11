@@ -18,6 +18,8 @@
 import type {
   OCPP20CertificateSignedRequest,
   OCPP20CertificateSignedResponse,
+  OCPP20ChangeAvailabilityRequest,
+  OCPP20ChangeAvailabilityResponse,
   OCPP20ClearCacheResponse,
   OCPP20CustomerInformationRequest,
   OCPP20CustomerInformationResponse,
@@ -70,13 +72,22 @@ export interface TestableOCPP20IncomingRequestService {
   ) => ReportDataType[]
 
   /**
-   * Handles OCPP 2.0 CertificateSigned request from central system.
+   * Handles OCPP 2.0.1 CertificateSigned request from central system.
    * Receives signed certificate chain from CSMS and stores it in the charging station.
    */
   handleRequestCertificateSigned: (
     chargingStation: ChargingStation,
     commandPayload: OCPP20CertificateSignedRequest
   ) => Promise<OCPP20CertificateSignedResponse>
+
+  /**
+   * Handles OCPP 2.0.1 ChangeAvailability request from central system.
+   * Changes operational status of the entire charging station or a specific EVSE.
+   */
+  handleRequestChangeAvailability: (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20ChangeAvailabilityRequest
+  ) => OCPP20ChangeAvailabilityResponse
 
   /**
    * Handles OCPP 2.0.1 ClearCache request by clearing the Authorization Cache.
@@ -237,6 +248,7 @@ export function createTestableIncomingRequestService (
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
     buildReportData: (serviceImpl as any).buildReportData.bind(service),
     handleRequestCertificateSigned: serviceImpl.handleRequestCertificateSigned.bind(service),
+    handleRequestChangeAvailability: serviceImpl.handleRequestChangeAvailability.bind(service),
     handleRequestClearCache: serviceImpl.handleRequestClearCache.bind(service),
     handleRequestCustomerInformation: serviceImpl.handleRequestCustomerInformation.bind(service),
     handleRequestDataTransfer: serviceImpl.handleRequestDataTransfer.bind(service),

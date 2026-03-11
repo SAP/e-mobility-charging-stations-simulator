@@ -15,6 +15,7 @@ import { OCPPError } from '../../../exception/index.js'
 import {
   AttributeEnumType,
   CertificateSigningUseEnumType,
+  ChangeAvailabilityStatusEnumType,
   ConnectorEnumType,
   ConnectorStatusEnum,
   CustomerInformationStatusEnumType,
@@ -38,6 +39,8 @@ import {
   type OCPP20BootNotificationResponse,
   type OCPP20CertificateSignedRequest,
   type OCPP20CertificateSignedResponse,
+  type OCPP20ChangeAvailabilityRequest,
+  type OCPP20ChangeAvailabilityResponse,
   type OCPP20ClearCacheResponse,
   OCPP20ComponentName,
   OCPP20ConnectorStatusEnumType,
@@ -84,6 +87,7 @@ import {
   type OCPP20UnlockConnectorRequest,
   type OCPP20UnlockConnectorResponse,
   OCPPVersion,
+  OperationalStatusEnumType,
   ReasonCodeEnumType,
   RegistrationStatusEnumType,
   ReportBaseEnumType,
@@ -148,6 +152,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       [
         OCPP20IncomingRequestCommand.CERTIFICATE_SIGNED,
         this.toHandler(this.handleRequestCertificateSigned.bind(this)),
+      ],
+      [
+        OCPP20IncomingRequestCommand.CHANGE_AVAILABILITY,
+        this.toHandler(this.handleRequestChangeAvailability.bind(this)),
       ],
       [
         OCPP20IncomingRequestCommand.CLEAR_CACHE,
@@ -979,6 +987,105 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           reasonCode: ReasonCodeEnumType.OutOfStorage,
         },
       }
+    }
+  }
+
+  /**
+   * Handles OCPP 2.0.1 ChangeAvailability request from central system (F03, F04).
+   * Changes the operational status of the entire charging station or a specific EVSE.
+   * Per G03.FR.01: EVSE level without ongoing transaction → Accepted
+   * Per G03.FR.02: CS level without ongoing transaction → Accepted
+   * Per G03.FR.03: EVSE level with ongoing transaction and Inoperative → Scheduled
+   * Per G03.FR.04: CS level with some EVSEs having transactions and Inoperative → Scheduled
+   * @param chargingStation - The charging station instance processing the request
+   * @param commandPayload - ChangeAvailability request payload with operationalStatus and optional evse
+   * @returns ChangeAvailabilityResponse with Accepted, Rejected, or Scheduled
+   */
+  private handleRequestChangeAvailability (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20ChangeAvailabilityRequest
+  ): OCPP20ChangeAvailabilityResponse {
+    const { evse, operationalStatus } = commandPayload
+
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: Received ChangeAvailability request with operationalStatus=${operationalStatus}${evse?.id !== undefined ? ` for EVSE ${evse.id.toString()}` : ''}`
+    )
+
+    const newConnectorStatus =
+      operationalStatus === OperationalStatusEnumType.Inoperative
+        ? OCPP20ConnectorStatusEnumType.Unavailable
+        : OCPP20ConnectorStatusEnumType.Available
+
+    // EVSE-level change
+    if (evse?.id !== undefined && evse.id > 0) {
+      if (!chargingStation.evses.has(evse.id)) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: EVSE ${evse.id.toString()} not found, rejecting`
+        )
+        return {
+          status: ChangeAvailabilityStatusEnumType.Rejected,
+          statusInfo: {
+            additionalInfo: `EVSE ${evse.id.toString()} does not exist on charging station`,
+            reasonCode: ReasonCodeEnumType.UnknownEvse,
+          },
+        }
+      }
+
+      const evseStatus = chargingStation.getEvseStatus(evse.id)
+      if (
+        evseStatus != null &&
+        operationalStatus === OperationalStatusEnumType.Inoperative &&
+        this.hasEvseActiveTransactions(evseStatus)
+      ) {
+        logger.info(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: EVSE ${evse.id.toString()} has active transaction, scheduling availability change`
+        )
+        return {
+          status: ChangeAvailabilityStatusEnumType.Scheduled,
+        }
+      }
+
+      // Apply availability change
+      if (evseStatus != null) {
+        evseStatus.availability = operationalStatus
+      }
+      this.sendEvseStatusNotifications(chargingStation, evse.id, newConnectorStatus)
+
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: EVSE ${evse.id.toString()} set to ${operationalStatus}`
+      )
+      return {
+        status: ChangeAvailabilityStatusEnumType.Accepted,
+      }
+    }
+
+    // CS-level change (no evse or evse.id === 0)
+    if (operationalStatus === OperationalStatusEnumType.Inoperative) {
+      for (const [evseId, evseStatus] of chargingStation.evses) {
+        if (evseId > 0 && this.hasEvseActiveTransactions(evseStatus)) {
+          logger.info(
+            `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: EVSE ${evseId.toString()} has active transaction, scheduling CS-level availability change`
+          )
+          return {
+            status: ChangeAvailabilityStatusEnumType.Scheduled,
+          }
+        }
+      }
+    }
+
+    // Apply availability change to all EVSEs
+    for (const [evseId, evseStatus] of chargingStation.evses) {
+      if (evseId > 0) {
+        evseStatus.availability = operationalStatus
+      }
+    }
+    this.sendAllConnectorsStatusNotifications(chargingStation, newConnectorStatus)
+
+    logger.info(
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: Charging station set to ${operationalStatus}`
+    )
+    return {
+      status: ChangeAvailabilityStatusEnumType.Accepted,
     }
   }
 
