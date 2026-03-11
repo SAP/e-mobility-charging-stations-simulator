@@ -215,8 +215,20 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       OCPP20ServiceUtils.PayloadValidatorConfig('CertificateSignedRequest.json'),
     ],
     [
+      OCPP20IncomingRequestCommand.CHANGE_AVAILABILITY,
+      OCPP20ServiceUtils.PayloadValidatorConfig('ChangeAvailabilityRequest.json'),
+    ],
+    [
       OCPP20IncomingRequestCommand.CLEAR_CACHE,
       OCPP20ServiceUtils.PayloadValidatorConfig('ClearCacheRequest.json'),
+    ],
+    [
+      OCPP20IncomingRequestCommand.CUSTOMER_INFORMATION,
+      OCPP20ServiceUtils.PayloadValidatorConfig('CustomerInformationRequest.json'),
+    ],
+    [
+      OCPP20IncomingRequestCommand.DATA_TRANSFER,
+      OCPP20ServiceUtils.PayloadValidatorConfig('DataTransferRequest.json'),
     ],
     [
       OCPP20IncomingRequestCommand.DELETE_CERTIFICATE,
@@ -229,6 +241,14 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     [
       OCPP20IncomingRequestCommand.GET_INSTALLED_CERTIFICATE_IDS,
       OCPP20ServiceUtils.PayloadValidatorConfig('GetInstalledCertificateIdsRequest.json'),
+    ],
+    [
+      OCPP20IncomingRequestCommand.GET_LOG,
+      OCPP20ServiceUtils.PayloadValidatorConfig('GetLogRequest.json'),
+    ],
+    [
+      OCPP20IncomingRequestCommand.GET_TRANSACTION_STATUS,
+      OCPP20ServiceUtils.PayloadValidatorConfig('GetTransactionStatusRequest.json'),
     ],
     [
       OCPP20IncomingRequestCommand.GET_VARIABLES,
@@ -251,6 +271,10 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       OCPP20ServiceUtils.PayloadValidatorConfig('ResetRequest.json'),
     ],
     [
+      OCPP20IncomingRequestCommand.SET_NETWORK_PROFILE,
+      OCPP20ServiceUtils.PayloadValidatorConfig('SetNetworkProfileRequest.json'),
+    ],
+    [
       OCPP20IncomingRequestCommand.SET_VARIABLES,
       OCPP20ServiceUtils.PayloadValidatorConfig('SetVariablesRequest.json'),
     ],
@@ -261,6 +285,10 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     [
       OCPP20IncomingRequestCommand.UNLOCK_CONNECTOR,
       OCPP20ServiceUtils.PayloadValidatorConfig('UnlockConnectorRequest.json'),
+    ],
+    [
+      OCPP20IncomingRequestCommand.UPDATE_FIRMWARE,
+      OCPP20ServiceUtils.PayloadValidatorConfig('UpdateFirmwareRequest.json'),
     ],
   ]
 
@@ -291,8 +319,20 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       OCPP20ServiceUtils.PayloadValidatorConfig('CertificateSignedResponse.json'),
     ],
     [
+      OCPP20IncomingRequestCommand.CHANGE_AVAILABILITY,
+      OCPP20ServiceUtils.PayloadValidatorConfig('ChangeAvailabilityResponse.json'),
+    ],
+    [
       OCPP20IncomingRequestCommand.CLEAR_CACHE,
       OCPP20ServiceUtils.PayloadValidatorConfig('ClearCacheResponse.json'),
+    ],
+    [
+      OCPP20IncomingRequestCommand.CUSTOMER_INFORMATION,
+      OCPP20ServiceUtils.PayloadValidatorConfig('CustomerInformationResponse.json'),
+    ],
+    [
+      OCPP20IncomingRequestCommand.DATA_TRANSFER,
+      OCPP20ServiceUtils.PayloadValidatorConfig('DataTransferResponse.json'),
     ],
     [
       OCPP20IncomingRequestCommand.DELETE_CERTIFICATE,
@@ -305,6 +345,14 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     [
       OCPP20IncomingRequestCommand.GET_INSTALLED_CERTIFICATE_IDS,
       OCPP20ServiceUtils.PayloadValidatorConfig('GetInstalledCertificateIdsResponse.json'),
+    ],
+    [
+      OCPP20IncomingRequestCommand.GET_LOG,
+      OCPP20ServiceUtils.PayloadValidatorConfig('GetLogResponse.json'),
+    ],
+    [
+      OCPP20IncomingRequestCommand.GET_TRANSACTION_STATUS,
+      OCPP20ServiceUtils.PayloadValidatorConfig('GetTransactionStatusResponse.json'),
     ],
     [
       OCPP20IncomingRequestCommand.GET_VARIABLES,
@@ -327,6 +375,10 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       OCPP20ServiceUtils.PayloadValidatorConfig('ResetResponse.json'),
     ],
     [
+      OCPP20IncomingRequestCommand.SET_NETWORK_PROFILE,
+      OCPP20ServiceUtils.PayloadValidatorConfig('SetNetworkProfileResponse.json'),
+    ],
+    [
       OCPP20IncomingRequestCommand.SET_VARIABLES,
       OCPP20ServiceUtils.PayloadValidatorConfig('SetVariablesResponse.json'),
     ],
@@ -337,6 +389,10 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     [
       OCPP20IncomingRequestCommand.UNLOCK_CONNECTOR,
       OCPP20ServiceUtils.PayloadValidatorConfig('UnlockConnectorResponse.json'),
+    ],
+    [
+      OCPP20IncomingRequestCommand.UPDATE_FIRMWARE,
+      OCPP20ServiceUtils.PayloadValidatorConfig('UpdateFirmwareResponse.json'),
     ],
   ]
 
@@ -370,12 +426,32 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       OCPP20ServiceUtils.PayloadValidatorConfig('BootNotificationRequest.json'),
     ],
     [
+      OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
+      OCPP20ServiceUtils.PayloadValidatorConfig('FirmwareStatusNotificationRequest.json'),
+    ],
+    [
       OCPP20RequestCommand.HEARTBEAT,
       OCPP20ServiceUtils.PayloadValidatorConfig('HeartbeatRequest.json'),
     ],
     [
+      OCPP20RequestCommand.LOG_STATUS_NOTIFICATION,
+      OCPP20ServiceUtils.PayloadValidatorConfig('LogStatusNotificationRequest.json'),
+    ],
+    [
+      OCPP20RequestCommand.METER_VALUES,
+      OCPP20ServiceUtils.PayloadValidatorConfig('MeterValuesRequest.json'),
+    ],
+    [
+      OCPP20RequestCommand.NOTIFY_CUSTOMER_INFORMATION,
+      OCPP20ServiceUtils.PayloadValidatorConfig('NotifyCustomerInformationRequest.json'),
+    ],
+    [
       OCPP20RequestCommand.NOTIFY_REPORT,
       OCPP20ServiceUtils.PayloadValidatorConfig('NotifyReportRequest.json'),
+    ],
+    [
+      OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION,
+      OCPP20ServiceUtils.PayloadValidatorConfig('SecurityEventNotificationRequest.json'),
     ],
     [
       OCPP20RequestCommand.STATUS_NOTIFICATION,
@@ -414,12 +490,32 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       OCPP20ServiceUtils.PayloadValidatorConfig('BootNotificationResponse.json'),
     ],
     [
+      OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
+      OCPP20ServiceUtils.PayloadValidatorConfig('FirmwareStatusNotificationResponse.json'),
+    ],
+    [
       OCPP20RequestCommand.HEARTBEAT,
       OCPP20ServiceUtils.PayloadValidatorConfig('HeartbeatResponse.json'),
     ],
     [
+      OCPP20RequestCommand.LOG_STATUS_NOTIFICATION,
+      OCPP20ServiceUtils.PayloadValidatorConfig('LogStatusNotificationResponse.json'),
+    ],
+    [
+      OCPP20RequestCommand.METER_VALUES,
+      OCPP20ServiceUtils.PayloadValidatorConfig('MeterValuesResponse.json'),
+    ],
+    [
+      OCPP20RequestCommand.NOTIFY_CUSTOMER_INFORMATION,
+      OCPP20ServiceUtils.PayloadValidatorConfig('NotifyCustomerInformationResponse.json'),
+    ],
+    [
       OCPP20RequestCommand.NOTIFY_REPORT,
       OCPP20ServiceUtils.PayloadValidatorConfig('NotifyReportResponse.json'),
+    ],
+    [
+      OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION,
+      OCPP20ServiceUtils.PayloadValidatorConfig('SecurityEventNotificationResponse.json'),
     ],
     [
       OCPP20RequestCommand.STATUS_NOTIFICATION,

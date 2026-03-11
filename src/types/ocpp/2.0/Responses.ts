@@ -5,7 +5,10 @@ import type { RegistrationStatusEnumType } from '../Common.js'
 import type {
   CertificateHashDataChainType,
   CertificateSignedStatusEnumType,
+  ChangeAvailabilityStatusEnumType,
   CustomDataType,
+  CustomerInformationStatusEnumType,
+  DataTransferStatusEnumType,
   DeleteCertificateStatusEnumType,
   GenericDeviceModelStatusEnumType,
   GenericStatusEnumType,
@@ -13,10 +16,13 @@ import type {
   GetInstalledCertificateStatusEnumType,
   InstallCertificateStatusEnumType,
   Iso15118EVCertificateStatusEnumType,
+  LogStatusEnumType,
   ResetStatusEnumType,
+  SetNetworkProfileStatusEnumType,
   StatusInfoType,
   TriggerMessageStatusEnumType,
   UnlockStatusEnumType,
+  UpdateFirmwareStatusEnumType,
 } from './Common.js'
 import type { RequestStartStopStatusEnumType } from './Transaction.js'
 import type { OCPP20GetVariableResultType, OCPP20SetVariableResultType } from './Variables.js'
@@ -35,9 +41,28 @@ export interface OCPP20CertificateSignedResponse extends JsonObject {
   statusInfo?: StatusInfoType
 }
 
+export interface OCPP20ChangeAvailabilityResponse extends JsonObject {
+  customData?: CustomDataType
+  status: ChangeAvailabilityStatusEnumType
+  statusInfo?: StatusInfoType
+}
+
 export interface OCPP20ClearCacheResponse extends JsonObject {
   customData?: CustomDataType
   status: GenericStatusEnumType
+  statusInfo?: StatusInfoType
+}
+
+export interface OCPP20CustomerInformationResponse extends JsonObject {
+  customData?: CustomDataType
+  status: CustomerInformationStatusEnumType
+  statusInfo?: StatusInfoType
+}
+
+export interface OCPP20DataTransferResponse extends JsonObject {
+  customData?: CustomDataType
+  data?: JsonObject
+  status: DataTransferStatusEnumType
   statusInfo?: StatusInfoType
 }
 
@@ -46,6 +71,8 @@ export interface OCPP20DeleteCertificateResponse extends JsonObject {
   status: DeleteCertificateStatusEnumType
   statusInfo?: StatusInfoType
 }
+
+export type OCPP20FirmwareStatusNotificationResponse = EmptyObject
 
 export interface OCPP20Get15118EVCertificateResponse extends JsonObject {
   customData?: CustomDataType
@@ -74,6 +101,19 @@ export interface OCPP20GetInstalledCertificateIdsResponse extends JsonObject {
   statusInfo?: StatusInfoType
 }
 
+export interface OCPP20GetLogResponse extends JsonObject {
+  customData?: CustomDataType
+  filename?: string
+  status: LogStatusEnumType
+  statusInfo?: StatusInfoType
+}
+
+export interface OCPP20GetTransactionStatusResponse extends JsonObject {
+  customData?: CustomDataType
+  messagesInQueue: boolean
+  ongoingIndicator?: boolean
+}
+
 export interface OCPP20GetVariablesResponse extends JsonObject {
   customData?: CustomDataType
   getVariableResult: OCPP20GetVariableResultType[]
@@ -89,6 +129,10 @@ export interface OCPP20InstallCertificateResponse extends JsonObject {
   status: InstallCertificateStatusEnumType
   statusInfo?: StatusInfoType
 }
+
+export type OCPP20LogStatusNotificationResponse = EmptyObject
+
+export type OCPP20NotifyCustomerInformationResponse = EmptyObject
 
 export type OCPP20NotifyReportResponse = EmptyObject
 
@@ -108,6 +152,14 @@ export interface OCPP20RequestStopTransactionResponse extends JsonObject {
 export interface OCPP20ResetResponse extends JsonObject {
   customData?: CustomDataType
   status: ResetStatusEnumType
+  statusInfo?: StatusInfoType
+}
+
+export type OCPP20SecurityEventNotificationResponse = EmptyObject
+
+export interface OCPP20SetNetworkProfileResponse extends JsonObject {
+  customData?: CustomDataType
+  status: SetNetworkProfileStatusEnumType
   statusInfo?: StatusInfoType
 }
 
@@ -135,5 +187,11 @@ export interface OCPP20TriggerMessageResponse extends JsonObject {
 export interface OCPP20UnlockConnectorResponse extends JsonObject {
   customData?: CustomDataType
   status: UnlockStatusEnumType
+  statusInfo?: StatusInfoType
+}
+
+export interface OCPP20UpdateFirmwareResponse extends JsonObject {
+  customData?: CustomDataType
+  status: UpdateFirmwareStatusEnumType
   statusInfo?: StatusInfoType
 }
