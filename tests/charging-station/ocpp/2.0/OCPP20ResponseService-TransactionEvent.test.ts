@@ -8,7 +8,11 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
-import type { OCPP20TransactionEventResponse } from '../../../../src/types/index.js'
+import type {
+  OCPP20TransactionEventRequest,
+  OCPP20TransactionEventResponse,
+} from '../../../../src/types/index.js'
+import type { UUIDv4 } from '../../../../src/types/UUID.js'
 
 import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
@@ -16,6 +20,8 @@ import { OCPPVersion } from '../../../../src/types/index.js'
 import {
   OCPP20AuthorizationStatusEnumType,
   OCPP20MessageFormatEnumType,
+  OCPP20TransactionEventEnumType,
+  OCPP20TriggerReasonEnumType,
 } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants } from '../../../../src/utils/index.js'
 import {
@@ -25,11 +31,33 @@ import {
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 
+/** UUID used as transactionId in all tests — must match connector.transactionId */
+const TEST_TRANSACTION_ID: UUIDv4 = '00000000-0000-0000-0000-000000000001'
+
 interface TestableOCPP20ResponseService {
   handleResponseTransactionEvent: (
     chargingStation: ChargingStation,
-    payload: OCPP20TransactionEventResponse
+    payload: OCPP20TransactionEventResponse,
+    requestPayload: OCPP20TransactionEventRequest
   ) => void
+}
+
+/**
+ * Builds a minimal OCPP20TransactionEventRequest for use as requestPayload in tests.
+ * @param transactionId - The transaction UUID to embed in transactionInfo
+ * @returns A minimal OCPP20TransactionEventRequest
+ */
+function buildTransactionEventRequest (transactionId: UUIDv4): OCPP20TransactionEventRequest {
+  return {
+    eventType: OCPP20TransactionEventEnumType.Updated,
+    meterValue: [],
+    seqNo: 0,
+    timestamp: new Date(),
+    transactionInfo: {
+      transactionId,
+    },
+    triggerReason: OCPP20TriggerReasonEnumType.Authorized,
+  }
 }
 
 /**
@@ -63,6 +91,13 @@ await describe('TransactionEvent Response - idTokenInfo status handling', async 
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
     station = mockStation
+    // Set connector transactionId to the UUID string used in request payloads
+    setupConnectorWithTransaction(station, 1, { transactionId: 100 })
+    // Override with UUID string so getConnectorIdByTransactionId can find it
+    const connector = station.getConnectorStatus(1)
+    if (connector != null) {
+      connector.transactionId = TEST_TRANSACTION_ID
+    }
     const responseService = new OCPP20ResponseService()
     testable = createTestableResponseService(responseService)
   })
@@ -73,7 +108,6 @@ await describe('TransactionEvent Response - idTokenInfo status handling', async 
 
   await it('should not stop transaction when idTokenInfo status is Accepted', () => {
     // Arrange
-    setupConnectorWithTransaction(station, 1, { transactionId: 100 })
     const mockStopTransaction = mock.method(OCPP20ServiceUtils, 'requestStopTransaction', () =>
       Promise.resolve({ status: 'Accepted' })
     )
@@ -82,17 +116,17 @@ await describe('TransactionEvent Response - idTokenInfo status handling', async 
         status: OCPP20AuthorizationStatusEnumType.Accepted,
       },
     }
+    const requestPayload = buildTransactionEventRequest(TEST_TRANSACTION_ID)
 
     // Act
-    testable.handleResponseTransactionEvent(station, payload)
+    testable.handleResponseTransactionEvent(station, payload, requestPayload)
 
     // Assert
     assert.strictEqual(mockStopTransaction.mock.calls.length, 0)
   })
 
-  await it('should stop transaction when idTokenInfo status is Invalid', () => {
+  await it('should stop only the specific transaction when idTokenInfo status is Invalid', () => {
     // Arrange
-    setupConnectorWithTransaction(station, 1, { transactionId: 100 })
     const mockStopTransaction = mock.method(OCPP20ServiceUtils, 'requestStopTransaction', () =>
       Promise.resolve({ status: 'Accepted' })
     )
@@ -101,20 +135,20 @@ await describe('TransactionEvent Response - idTokenInfo status handling', async 
         status: OCPP20AuthorizationStatusEnumType.Invalid,
       },
     }
+    const requestPayload = buildTransactionEventRequest(TEST_TRANSACTION_ID)
 
     // Act
-    testable.handleResponseTransactionEvent(station, payload)
+    testable.handleResponseTransactionEvent(station, payload, requestPayload)
 
-    // Assert
+    // Assert — only the specific connector (1) on EVSE (1) is stopped
     assert.strictEqual(mockStopTransaction.mock.calls.length, 1)
     assert.strictEqual(mockStopTransaction.mock.calls[0].arguments[0], station)
     assert.strictEqual(mockStopTransaction.mock.calls[0].arguments[1], 1)
     assert.strictEqual(mockStopTransaction.mock.calls[0].arguments[2], 1)
   })
 
-  await it('should stop transaction when idTokenInfo status is Blocked', () => {
+  await it('should stop only the specific transaction when idTokenInfo status is Blocked', () => {
     // Arrange
-    setupConnectorWithTransaction(station, 1, { transactionId: 100 })
     const mockStopTransaction = mock.method(OCPP20ServiceUtils, 'requestStopTransaction', () =>
       Promise.resolve({ status: 'Accepted' })
     )
@@ -123,9 +157,10 @@ await describe('TransactionEvent Response - idTokenInfo status handling', async 
         status: OCPP20AuthorizationStatusEnumType.Blocked,
       },
     }
+    const requestPayload = buildTransactionEventRequest(TEST_TRANSACTION_ID)
 
     // Act
-    testable.handleResponseTransactionEvent(station, payload)
+    testable.handleResponseTransactionEvent(station, payload, requestPayload)
 
     // Assert
     assert.strictEqual(mockStopTransaction.mock.calls.length, 1)
@@ -134,16 +169,16 @@ await describe('TransactionEvent Response - idTokenInfo status handling', async 
 
   await it('should not stop transaction when only chargingPriority is present', () => {
     // Arrange
-    setupConnectorWithTransaction(station, 1, { transactionId: 100 })
     const mockStopTransaction = mock.method(OCPP20ServiceUtils, 'requestStopTransaction', () =>
       Promise.resolve({ status: 'Accepted' })
     )
     const payload: OCPP20TransactionEventResponse = {
       chargingPriority: 5,
     }
+    const requestPayload = buildTransactionEventRequest(TEST_TRANSACTION_ID)
 
     // Act
-    testable.handleResponseTransactionEvent(station, payload)
+    testable.handleResponseTransactionEvent(station, payload, requestPayload)
 
     // Assert
     assert.strictEqual(mockStopTransaction.mock.calls.length, 0)
@@ -151,22 +186,21 @@ await describe('TransactionEvent Response - idTokenInfo status handling', async 
 
   await it('should handle empty response without stopping transaction', () => {
     // Arrange
-    setupConnectorWithTransaction(station, 1, { transactionId: 100 })
     const mockStopTransaction = mock.method(OCPP20ServiceUtils, 'requestStopTransaction', () =>
       Promise.resolve({ status: 'Accepted' })
     )
     const payload: OCPP20TransactionEventResponse = {}
+    const requestPayload = buildTransactionEventRequest(TEST_TRANSACTION_ID)
 
     // Act
-    testable.handleResponseTransactionEvent(station, payload)
+    testable.handleResponseTransactionEvent(station, payload, requestPayload)
 
     // Assert
     assert.strictEqual(mockStopTransaction.mock.calls.length, 0)
   })
 
-  await it('should stop transaction when idTokenInfo status is Expired', () => {
+  await it('should stop only the specific transaction when idTokenInfo status is Expired', () => {
     // Arrange
-    setupConnectorWithTransaction(station, 1, { transactionId: 100 })
     const mockStopTransaction = mock.method(OCPP20ServiceUtils, 'requestStopTransaction', () =>
       Promise.resolve({ status: 'Accepted' })
     )
@@ -175,17 +209,17 @@ await describe('TransactionEvent Response - idTokenInfo status handling', async 
         status: OCPP20AuthorizationStatusEnumType.Expired,
       },
     }
+    const requestPayload = buildTransactionEventRequest(TEST_TRANSACTION_ID)
 
     // Act
-    testable.handleResponseTransactionEvent(station, payload)
+    testable.handleResponseTransactionEvent(station, payload, requestPayload)
 
     // Assert
     assert.strictEqual(mockStopTransaction.mock.calls.length, 1)
   })
 
-  await it('should stop transaction when idTokenInfo status is NoCredit', () => {
+  await it('should stop only the specific transaction when idTokenInfo status is NoCredit', () => {
     // Arrange
-    setupConnectorWithTransaction(station, 1, { transactionId: 100 })
     const mockStopTransaction = mock.method(OCPP20ServiceUtils, 'requestStopTransaction', () =>
       Promise.resolve({ status: 'Accepted' })
     )
@@ -194,9 +228,10 @@ await describe('TransactionEvent Response - idTokenInfo status handling', async 
         status: OCPP20AuthorizationStatusEnumType.NoCredit,
       },
     }
+    const requestPayload = buildTransactionEventRequest(TEST_TRANSACTION_ID)
 
     // Act
-    testable.handleResponseTransactionEvent(station, payload)
+    testable.handleResponseTransactionEvent(station, payload, requestPayload)
 
     // Assert
     assert.strictEqual(mockStopTransaction.mock.calls.length, 1)
@@ -204,7 +239,6 @@ await describe('TransactionEvent Response - idTokenInfo status handling', async 
 
   await it('should not stop transaction when response has totalCost and updatedPersonalMessage', () => {
     // Arrange
-    setupConnectorWithTransaction(station, 1, { transactionId: 100 })
     const mockStopTransaction = mock.method(OCPP20ServiceUtils, 'requestStopTransaction', () =>
       Promise.resolve({ status: 'Accepted' })
     )
@@ -215,9 +249,10 @@ await describe('TransactionEvent Response - idTokenInfo status handling', async 
         format: OCPP20MessageFormatEnumType.UTF8,
       },
     }
+    const requestPayload = buildTransactionEventRequest(TEST_TRANSACTION_ID)
 
     // Act
-    testable.handleResponseTransactionEvent(station, payload)
+    testable.handleResponseTransactionEvent(station, payload, requestPayload)
 
     // Assert
     assert.strictEqual(mockStopTransaction.mock.calls.length, 0)

@@ -82,7 +82,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
   protected payloadValidatorFunctions: Map<OCPP20RequestCommand, ValidateFunction<JsonType>>
   private readonly responseHandlers: Map<OCPP20RequestCommand, ResponseHandler>
 
-  public constructor() {
+  public constructor () {
     super(OCPPVersion.VERSION_201)
     this.responseHandlers = new Map<OCPP20RequestCommand, ResponseHandler>([
       [
@@ -210,7 +210,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
     }
   }
 
-  private handleResponseBootNotification(
+  private handleResponseBootNotification (
     chargingStation: ChargingStation,
     payload: OCPP20BootNotificationResponse
   ): void {
@@ -260,7 +260,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
     }
   }
 
-  private handleResponseFirmwareStatusNotification(
+  private handleResponseFirmwareStatusNotification (
     chargingStation: ChargingStation,
     payload: OCPP20FirmwareStatusNotificationResponse
   ): void {
@@ -269,7 +269,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
     )
   }
 
-  private handleResponseHeartbeat(
+  private handleResponseHeartbeat (
     chargingStation: ChargingStation,
     payload: OCPP20HeartbeatResponse
   ): void {
@@ -278,7 +278,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
     )
   }
 
-  private handleResponseLogStatusNotification(
+  private handleResponseLogStatusNotification (
     chargingStation: ChargingStation,
     payload: OCPP20LogStatusNotificationResponse
   ): void {
@@ -287,7 +287,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
     )
   }
 
-  private handleResponseMeterValues(
+  private handleResponseMeterValues (
     chargingStation: ChargingStation,
     payload: OCPP20MeterValuesResponse
   ): void {
@@ -296,7 +296,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
     )
   }
 
-  private handleResponseNotifyCustomerInformation(
+  private handleResponseNotifyCustomerInformation (
     chargingStation: ChargingStation,
     payload: OCPP20NotifyCustomerInformationResponse
   ): void {
@@ -305,7 +305,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
     )
   }
 
-  private handleResponseNotifyReport(
+  private handleResponseNotifyReport (
     chargingStation: ChargingStation,
     payload: OCPP20NotifyReportResponse
   ): void {
@@ -314,7 +314,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
     )
   }
 
-  private handleResponseSecurityEventNotification(
+  private handleResponseSecurityEventNotification (
     chargingStation: ChargingStation,
     payload: OCPP20SecurityEventNotificationResponse
   ): void {
@@ -323,7 +323,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
     )
   }
 
-  private handleResponseStatusNotification(
+  private handleResponseStatusNotification (
     chargingStation: ChargingStation,
     payload: OCPP20StatusNotificationResponse
   ): void {
@@ -342,7 +342,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
    * @param payload - The TransactionEvent response payload from CSMS
    * @param requestPayload - The original TransactionEvent request payload
    */
-  private handleResponseTransactionEvent(
+  private handleResponseTransactionEvent (
     chargingStation: ChargingStation,
     payload: OCPP20TransactionEventResponse,
     requestPayload: OCPP20TransactionEventRequest
@@ -415,7 +415,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
    * @param payload - JSON response payload to validate
    * @returns True if payload validation succeeds, false otherwise
    */
-  private validatePayload(
+  private validatePayload (
     chargingStation: ChargingStation,
     commandName: OCPP20RequestCommand,
     payload: JsonType

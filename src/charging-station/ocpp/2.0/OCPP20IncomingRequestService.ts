@@ -1082,19 +1082,37 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     // CS-level change (no evse or evse.id === 0)
     if (operationalStatus === OperationalStatusEnumType.Inoperative) {
+      let hasActiveTransactions = false
       for (const [evseId, evseStatus] of chargingStation.evses) {
-        if (evseId > 0 && this.hasEvseActiveTransactions(evseStatus)) {
+        if (evseId === 0) {
+          continue
+        }
+        if (this.hasEvseActiveTransactions(evseStatus)) {
+          // G03.FR.04: EVSEs with active transactions will be set Inoperative when transaction ends
+          hasActiveTransactions = true
           logger.info(
-            `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: EVSE ${evseId.toString()} has active transaction, scheduling CS-level availability change`
+            `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: EVSE ${evseId.toString()} has active transaction, will be set Inoperative when transaction ends`
           )
-          return {
-            status: ChangeAvailabilityStatusEnumType.Scheduled,
-          }
+        } else {
+          // G03.FR.04: Idle EVSEs must be set Inoperative immediately
+          evseStatus.availability = operationalStatus
+          this.sendEvseStatusNotifications(chargingStation, evseId, newConnectorStatus)
+          logger.info(
+            `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: EVSE ${evseId.toString()} set to ${operationalStatus} immediately (idle)`
+          )
+        }
+      }
+      if (hasActiveTransactions) {
+        logger.info(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: Charging station partially set to ${operationalStatus}, some EVSEs scheduled`
+        )
+        return {
+          status: ChangeAvailabilityStatusEnumType.Scheduled,
         }
       }
     }
 
-    // Apply availability change to all EVSEs
+    // Apply availability change to all EVSEs (for Operative, or Inoperative with no active transactions)
     for (const [evseId, evseStatus] of chargingStation.evses) {
       if (evseId > 0) {
         evseStatus.availability = operationalStatus
