@@ -16,6 +16,9 @@ import {
   type OCPP20Get15118EVCertificateResponse,
   type OCPP20GetCertificateStatusRequest,
   type OCPP20GetCertificateStatusResponse,
+  type OCPP20MeterValue,
+  type OCPP20MeterValuesRequest,
+  type OCPP20MeterValuesResponse,
   type OCPP20NotifyCustomerInformationRequest,
   type OCPP20NotifyCustomerInformationResponse,
   OCPP20RequestCommand,
@@ -244,6 +247,52 @@ export class OCPP20RequestService extends OCPPRequestService {
     const errorMsg = `Unsupported OCPP command ${commandName}`
     logger.error(`${chargingStation.logPrefix()} ${moduleName}.requestHandler: ${errorMsg}`)
     throw new OCPPError(ErrorType.NOT_SUPPORTED, errorMsg, commandName, commandParams)
+  }
+
+  /**
+   * Send MeterValues to the CSMS.
+   *
+   * Reports meter values for a specific EVSE to the CSMS outside of a transaction context.
+   * Per OCPP 2.0.1, the charging station may send sampled meter values (e.g., energy, power,
+   * voltage, current) at configured intervals or upon trigger. Each meter value contains
+   * one or more sampled values all taken at the same point in time.
+   * The response is an empty object — the CSMS acknowledges receipt without data.
+   * @param chargingStation - The charging station reporting the meter values
+   * @param evseId - The EVSE identifier (0 for main power meter, >0 for specific EVSE)
+   * @param meterValue - Array of meter value objects, each containing timestamped sampled values
+   * @returns Promise resolving to the empty CSMS acknowledgement response
+   */
+  public async requestMeterValues (
+    chargingStation: ChargingStation,
+    evseId: number,
+    meterValue: OCPP20MeterValue[]
+  ): Promise<OCPP20MeterValuesResponse> {
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestMeterValues: Sending MeterValues for EVSE ${evseId.toString()}`
+    )
+
+    const requestPayload: OCPP20MeterValuesRequest = {
+      evseId,
+      meterValue,
+    }
+
+    const messageId = generateUUID()
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestMeterValues: Sending MeterValues request with message ID '${messageId}'`
+    )
+
+    const response = (await this.sendMessage(
+      chargingStation,
+      messageId,
+      requestPayload,
+      OCPP20RequestCommand.METER_VALUES
+    )) as OCPP20MeterValuesResponse
+
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestMeterValues: Received response`
+    )
+
+    return response
   }
 
   /**

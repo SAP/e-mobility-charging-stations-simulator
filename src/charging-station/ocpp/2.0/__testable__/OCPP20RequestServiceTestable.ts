@@ -27,6 +27,8 @@ import type {
   JsonType,
   OCPP20Get15118EVCertificateResponse,
   OCPP20GetCertificateStatusResponse,
+  OCPP20MeterValue,
+  OCPP20MeterValuesResponse,
   OCPP20RequestCommand,
   OCPP20SecurityEventNotificationResponse,
   OCPP20SignCertificateResponse,
@@ -95,6 +97,15 @@ export interface TestableOCPP20RequestService {
     chargingStation: ChargingStation,
     ocspRequestData: OCSPRequestDataType
   ) => Promise<OCPP20GetCertificateStatusResponse>
+  /**
+   * Send MeterValues to the CSMS.
+   * Reports meter values for a specific EVSE outside of a transaction context.
+   */
+  requestMeterValues: (
+    chargingStation: ChargingStation,
+    evseId: number,
+    meterValue: OCPP20MeterValue[]
+  ) => Promise<OCPP20MeterValuesResponse>
   /**
    * Send a SecurityEventNotification to the CSMS.
    * Notifies the CSMS about a security event at the charging station (A04).

@@ -9,6 +9,7 @@ import {
   type OCPP20BootNotificationResponse,
   type OCPP20HeartbeatResponse,
   OCPP20IncomingRequestCommand,
+  type OCPP20MeterValuesResponse,
   type OCPP20NotifyCustomerInformationResponse,
   type OCPP20NotifyReportResponse,
   OCPP20OptionalVariableName,
@@ -86,6 +87,10 @@ export class OCPP20ResponseService extends OCPPResponseService {
         this.handleResponseBootNotification.bind(this) as ResponseHandler,
       ],
       [OCPP20RequestCommand.HEARTBEAT, this.handleResponseHeartbeat.bind(this) as ResponseHandler],
+      [
+        OCPP20RequestCommand.METER_VALUES,
+        this.handleResponseMeterValues.bind(this) as ResponseHandler,
+      ],
       [
         OCPP20RequestCommand.NOTIFY_CUSTOMER_INFORMATION,
         this.handleResponseNotifyCustomerInformation.bind(this) as ResponseHandler,
@@ -250,6 +255,15 @@ export class OCPP20ResponseService extends OCPPResponseService {
   ): void {
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.handleResponseHeartbeat: Heartbeat response received at ${payload.currentTime.toISOString()}`
+    )
+  }
+
+  private handleResponseMeterValues (
+    chargingStation: ChargingStation,
+    payload: OCPP20MeterValuesResponse
+  ): void {
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.handleResponseMeterValues: MeterValues response received successfully`
     )
   }
 
