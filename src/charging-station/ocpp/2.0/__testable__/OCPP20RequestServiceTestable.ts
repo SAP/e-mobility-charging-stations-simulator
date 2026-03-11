@@ -112,6 +112,10 @@ export interface TestableOCPP20RequestService {
     ocspRequestData: OCSPRequestDataType
   ) => Promise<OCPP20GetCertificateStatusResponse>
 
+  /**
+   * Send a LogStatusNotification to the CSMS.
+   * Reports the status of a log upload initiated by a GetLog request.
+   */
   requestLogStatusNotification: (
     chargingStation: ChargingStation,
     status: UploadLogStatusEnumType,

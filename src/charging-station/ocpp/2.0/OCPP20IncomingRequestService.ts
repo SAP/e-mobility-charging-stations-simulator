@@ -1137,10 +1137,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param commandPayload - CustomerInformation request payload with clear/report flags
    * @returns CustomerInformationResponse with status
    */
-  private readonly handleRequestCustomerInformation = (
+  private handleRequestCustomerInformation (
     chargingStation: ChargingStation,
     commandPayload: OCPP20CustomerInformationRequest
-  ): OCPP20CustomerInformationResponse => {
+  ): OCPP20CustomerInformationResponse {
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestCustomerInformation: Received CustomerInformation request with clear=${commandPayload.clear.toString()}, report=${commandPayload.report.toString()}`
     )
@@ -1189,10 +1189,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param commandPayload - The DataTransfer request payload
    * @returns DataTransferResponse with UnknownVendorId status
    */
-  private readonly handleRequestDataTransfer = (
+  private handleRequestDataTransfer (
     chargingStation: ChargingStation,
     commandPayload: OCPP20DataTransferRequest
-  ): OCPP20DataTransferResponse => {
+  ): OCPP20DataTransferResponse {
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestDataTransfer: Received DataTransfer request with vendorId '${commandPayload.vendorId}'`
     )
@@ -1422,10 +1422,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param commandPayload - GetTransactionStatus request payload with optional transactionId
    * @returns GetTransactionStatusResponse with ongoingIndicator and messagesInQueue
    */
-  private readonly handleRequestGetTransactionStatus = (
+  private handleRequestGetTransactionStatus (
     chargingStation: ChargingStation,
     commandPayload: OCPP20GetTransactionStatusRequest
-  ): OCPP20GetTransactionStatusResponse => {
+  ): OCPP20GetTransactionStatusResponse {
     const { transactionId } = commandPayload
 
     logger.debug(
@@ -1766,10 +1766,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param commandPayload - The SetNetworkProfile request payload
    * @returns SetNetworkProfileResponse with Rejected status
    */
-  private readonly handleRequestSetNetworkProfile = (
+  private handleRequestSetNetworkProfile (
     chargingStation: ChargingStation,
     commandPayload: OCPP20SetNetworkProfileRequest
-  ): OCPP20SetNetworkProfileResponse => {
+  ): OCPP20SetNetworkProfileResponse {
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestSetNetworkProfile: Received SetNetworkProfile request`
     )
@@ -2882,6 +2882,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     )
 
     if (signature != null) {
+      await delay(500)
       await this.sendFirmwareStatusNotification(
         chargingStation,
         FirmwareStatusEnumType.SignatureVerified,
