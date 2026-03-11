@@ -19,6 +19,8 @@ import {
   type OCPP20Get15118EVCertificateResponse,
   type OCPP20GetCertificateStatusRequest,
   type OCPP20GetCertificateStatusResponse,
+  type OCPP20LogStatusNotificationRequest,
+  type OCPP20LogStatusNotificationResponse,
   type OCPP20MeterValue,
   type OCPP20MeterValuesRequest,
   type OCPP20MeterValuesResponse,
@@ -32,6 +34,7 @@ import {
   OCPPVersion,
   type OCSPRequestDataType,
   type RequestParams,
+  type UploadLogStatusEnumType,
 } from '../../../types/index.js'
 import { generateUUID, logger } from '../../../utils/index.js'
 import { OCPPRequestService } from '../OCPPRequestService.js'
@@ -295,6 +298,51 @@ export class OCPP20RequestService extends OCPPRequestService {
     const errorMsg = `Unsupported OCPP command ${commandName}`
     logger.error(`${chargingStation.logPrefix()} ${moduleName}.requestHandler: ${errorMsg}`)
     throw new OCPPError(ErrorType.NOT_SUPPORTED, errorMsg, commandName, commandParams)
+  }
+
+  /**
+   * Send a LogStatusNotification to the CSMS.
+   *
+   * Notifies the CSMS about the progress of a log upload on the charging station.
+   * Per OCPP 2.0.1 use case M04, the CS sends log upload status updates during
+   * the upload process. The response is an empty object — the CSMS acknowledges
+   * receipt without data.
+   * @param chargingStation - The charging station reporting the log upload status
+   * @param status - Current log upload status (e.g., Uploading, Uploaded)
+   * @param requestId - The request ID from the original GetLog request
+   * @returns Promise resolving to the empty CSMS acknowledgement response
+   */
+  public async requestLogStatusNotification (
+    chargingStation: ChargingStation,
+    status: UploadLogStatusEnumType,
+    requestId?: number
+  ): Promise<OCPP20LogStatusNotificationResponse> {
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestLogStatusNotification: Sending LogStatusNotification with status '${status}'`
+    )
+
+    const requestPayload: OCPP20LogStatusNotificationRequest = {
+      status,
+      ...(requestId !== undefined && { requestId }),
+    }
+
+    const messageId = generateUUID()
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestLogStatusNotification: Sending LogStatusNotification request with message ID '${messageId}'`
+    )
+
+    const response = (await this.sendMessage(
+      chargingStation,
+      messageId,
+      requestPayload,
+      OCPP20RequestCommand.LOG_STATUS_NOTIFICATION
+    )) as OCPP20LogStatusNotificationResponse
+
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestLogStatusNotification: Received response`
+    )
+
+    return response
   }
 
   /**

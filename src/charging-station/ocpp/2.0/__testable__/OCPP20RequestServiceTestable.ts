@@ -29,6 +29,7 @@ import type {
   OCPP20FirmwareStatusNotificationResponse,
   OCPP20Get15118EVCertificateResponse,
   OCPP20GetCertificateStatusResponse,
+  OCPP20LogStatusNotificationResponse,
   OCPP20MeterValue,
   OCPP20MeterValuesResponse,
   OCPP20RequestCommand,
@@ -36,6 +37,7 @@ import type {
   OCPP20SignCertificateResponse,
   OCSPRequestDataType,
   RequestParams,
+  UploadLogStatusEnumType,
 } from '../../../../types/index.js'
 import type { ChargingStation } from '../../../index.js'
 
@@ -109,6 +111,13 @@ export interface TestableOCPP20RequestService {
     chargingStation: ChargingStation,
     ocspRequestData: OCSPRequestDataType
   ) => Promise<OCPP20GetCertificateStatusResponse>
+
+  requestLogStatusNotification: (
+    chargingStation: ChargingStation,
+    status: UploadLogStatusEnumType,
+    requestId?: number
+  ) => Promise<OCPP20LogStatusNotificationResponse>
+
   /**
    * Send MeterValues to the CSMS.
    * Reports meter values for a specific EVSE outside of a transaction context.

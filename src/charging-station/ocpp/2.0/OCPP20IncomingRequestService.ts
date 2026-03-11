@@ -35,6 +35,7 @@ import {
   InstallCertificateStatusEnumType,
   InstallCertificateUseEnumType,
   type JsonType,
+  LogStatusEnumType,
   MessageTriggerEnumType,
   type OCPP20BootNotificationRequest,
   type OCPP20BootNotificationResponse,
@@ -58,6 +59,8 @@ import {
   type OCPP20GetBaseReportResponse,
   type OCPP20GetInstalledCertificateIdsRequest,
   type OCPP20GetInstalledCertificateIdsResponse,
+  type OCPP20GetLogRequest,
+  type OCPP20GetLogResponse,
   type OCPP20GetTransactionStatusRequest,
   type OCPP20GetTransactionStatusResponse,
   type OCPP20GetVariablesRequest,
@@ -67,6 +70,8 @@ import {
   OCPP20IncomingRequestCommand,
   type OCPP20InstallCertificateRequest,
   type OCPP20InstallCertificateResponse,
+  type OCPP20LogStatusNotificationRequest,
+  type OCPP20LogStatusNotificationResponse,
   type OCPP20NotifyCustomerInformationRequest,
   type OCPP20NotifyCustomerInformationResponse,
   type OCPP20NotifyReportRequest,
@@ -106,6 +111,7 @@ import {
   TriggerMessageStatusEnumType,
   UnlockStatusEnumType,
   UpdateFirmwareStatusEnumType,
+  UploadLogStatusEnumType,
 } from '../../../types/index.js'
 import {
   OCPP20ChargingProfileKindEnumType,
@@ -187,6 +193,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         OCPP20IncomingRequestCommand.GET_INSTALLED_CERTIFICATE_IDS,
         this.toHandler(this.handleRequestGetInstalledCertificateIds.bind(this)),
       ],
+      [OCPP20IncomingRequestCommand.GET_LOG, this.toHandler(this.handleRequestGetLog.bind(this))],
       [
         OCPP20IncomingRequestCommand.GET_TRANSACTION_STATUS,
         this.toHandler(this.handleRequestGetTransactionStatus.bind(this)),
@@ -1348,6 +1355,41 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           reasonCode: ReasonCodeEnumType.InternalError,
         },
       }
+    }
+  }
+
+  /**
+   * Handles OCPP 2.0.1 GetLog request from central system.
+   * Accepts the log upload request and simulates the log upload lifecycle
+   * by sending LogStatusNotification messages through a state machine:
+   * Uploading → Uploaded
+   * @param chargingStation - The charging station instance processing the request
+   * @param commandPayload - GetLog request payload with log type, requestId, and log parameters
+   * @returns GetLogResponse with Accepted status and simulated filename
+   */
+  private handleRequestGetLog (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20GetLogRequest
+  ): OCPP20GetLogResponse {
+    const { logType, requestId } = commandPayload
+
+    logger.info(
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetLog: Received GetLog request with requestId ${requestId.toString()} for logType '${logType}'`
+    )
+
+    // Fire-and-forget log upload state machine after response is returned
+    setImmediate(() => {
+      this.simulateLogUploadLifecycle(chargingStation, requestId).catch((error: unknown) => {
+        logger.error(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetLog: Error during log upload simulation:`,
+          error
+        )
+      })
+    })
+
+    return {
+      filename: 'simulator-log.txt',
+      status: LogStatusEnumType.Accepted,
     }
   }
 
@@ -2629,6 +2671,20 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     })
   }
 
+  private sendLogStatusNotification (
+    chargingStation: ChargingStation,
+    status: UploadLogStatusEnumType,
+    requestId: number
+  ): Promise<OCPP20LogStatusNotificationResponse> {
+    return chargingStation.ocppRequestService.requestHandler<
+      OCPP20LogStatusNotificationRequest,
+      OCPP20LogStatusNotificationResponse
+    >(chargingStation, OCPP20RequestCommand.LOG_STATUS_NOTIFICATION, {
+      requestId,
+      status,
+    })
+  }
+
   private async sendNotifyCustomerInformation (
     chargingStation: ChargingStation,
     requestId: number
@@ -2753,6 +2809,39 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     logger.info(
       `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Firmware update simulation completed for requestId ${requestId.toString()}`
+    )
+  }
+
+  /**
+   * Simulates a log upload lifecycle through status progression using chained setTimeout calls.
+   * Sequence: Uploading → Uploaded
+   * @param chargingStation - The charging station instance
+   * @param requestId - The request ID from the GetLog request
+   */
+  private async simulateLogUploadLifecycle (
+    chargingStation: ChargingStation,
+    requestId: number
+  ): Promise<void> {
+    const delay = (ms: number): Promise<void> =>
+      new Promise(resolve => {
+        setTimeout(resolve, ms)
+      })
+
+    await this.sendLogStatusNotification(
+      chargingStation,
+      UploadLogStatusEnumType.Uploading,
+      requestId
+    )
+
+    await delay(1000)
+    await this.sendLogStatusNotification(
+      chargingStation,
+      UploadLogStatusEnumType.Uploaded,
+      requestId
+    )
+
+    logger.info(
+      `${chargingStation.logPrefix()} ${moduleName}.simulateLogUploadLifecycle: Log upload simulation completed for requestId ${requestId.toString()}`
     )
   }
 

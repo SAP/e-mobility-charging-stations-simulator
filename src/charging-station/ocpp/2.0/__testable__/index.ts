@@ -31,6 +31,8 @@ import type {
   OCPP20GetBaseReportResponse,
   OCPP20GetInstalledCertificateIdsRequest,
   OCPP20GetInstalledCertificateIdsResponse,
+  OCPP20GetLogRequest,
+  OCPP20GetLogResponse,
   OCPP20GetTransactionStatusRequest,
   OCPP20GetTransactionStatusResponse,
   OCPP20GetVariablesRequest,
@@ -141,6 +143,15 @@ export interface TestableOCPP20IncomingRequestService {
     chargingStation: ChargingStation,
     commandPayload: OCPP20GetInstalledCertificateIdsRequest
   ) => Promise<OCPP20GetInstalledCertificateIdsResponse>
+
+  /**
+   * Handles OCPP 2.0.1 GetLog request from central system.
+   * Accepts log upload and simulates upload lifecycle.
+   */
+  handleRequestGetLog: (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20GetLogRequest
+  ) => OCPP20GetLogResponse
 
   /**
    * Handles OCPP 2.0.1 GetTransactionStatus request from central system.
@@ -263,6 +274,7 @@ export function createTestableIncomingRequestService (
     handleRequestGetBaseReport: serviceImpl.handleRequestGetBaseReport.bind(service),
     handleRequestGetInstalledCertificateIds:
       serviceImpl.handleRequestGetInstalledCertificateIds.bind(service),
+    handleRequestGetLog: serviceImpl.handleRequestGetLog.bind(service),
     handleRequestGetTransactionStatus: serviceImpl.handleRequestGetTransactionStatus.bind(service),
     handleRequestGetVariables: serviceImpl.handleRequestGetVariables.bind(service),
     handleRequestInstallCertificate: serviceImpl.handleRequestInstallCertificate.bind(service),

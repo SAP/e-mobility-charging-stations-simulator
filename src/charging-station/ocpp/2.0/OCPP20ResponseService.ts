@@ -10,6 +10,7 @@ import {
   type OCPP20FirmwareStatusNotificationResponse,
   type OCPP20HeartbeatResponse,
   OCPP20IncomingRequestCommand,
+  type OCPP20LogStatusNotificationResponse,
   type OCPP20MeterValuesResponse,
   type OCPP20NotifyCustomerInformationResponse,
   type OCPP20NotifyReportResponse,
@@ -92,6 +93,10 @@ export class OCPP20ResponseService extends OCPPResponseService {
         this.handleResponseFirmwareStatusNotification.bind(this) as ResponseHandler,
       ],
       [OCPP20RequestCommand.HEARTBEAT, this.handleResponseHeartbeat.bind(this) as ResponseHandler],
+      [
+        OCPP20RequestCommand.LOG_STATUS_NOTIFICATION,
+        this.handleResponseLogStatusNotification.bind(this) as ResponseHandler,
+      ],
       [
         OCPP20RequestCommand.METER_VALUES,
         this.handleResponseMeterValues.bind(this) as ResponseHandler,
@@ -269,6 +274,15 @@ export class OCPP20ResponseService extends OCPPResponseService {
   ): void {
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.handleResponseHeartbeat: Heartbeat response received at ${payload.currentTime.toISOString()}`
+    )
+  }
+
+  private handleResponseLogStatusNotification (
+    chargingStation: ChargingStation,
+    payload: OCPP20LogStatusNotificationResponse
+  ): void {
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.handleResponseLogStatusNotification: LogStatusNotification response received successfully`
     )
   }
 
