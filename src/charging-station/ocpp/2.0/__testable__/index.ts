@@ -37,6 +37,8 @@ import type {
   OCPP20RequestStopTransactionResponse,
   OCPP20ResetRequest,
   OCPP20ResetResponse,
+  OCPP20SetNetworkProfileRequest,
+  OCPP20SetNetworkProfileResponse,
   OCPP20SetVariablesRequest,
   OCPP20SetVariablesResponse,
   OCPP20TriggerMessageRequest,
@@ -142,6 +144,15 @@ export interface TestableOCPP20IncomingRequestService {
   ) => Promise<OCPP20ResetResponse>
 
   /**
+   * Handles OCPP 2.0.1 SetNetworkProfile request from central system.
+   * Per TC_B_43_CS: CS must respond to SetNetworkProfile at minimum with Rejected.
+   */
+  handleRequestSetNetworkProfile: (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20SetNetworkProfileRequest
+  ) => OCPP20SetNetworkProfileResponse
+
+  /**
    * Handles OCPP 2.0 SetVariables request.
    * Sets values for requested variables in the device model.
    */
@@ -213,6 +224,7 @@ export function createTestableIncomingRequestService (
     handleRequestGetVariables: serviceImpl.handleRequestGetVariables.bind(service),
     handleRequestInstallCertificate: serviceImpl.handleRequestInstallCertificate.bind(service),
     handleRequestReset: serviceImpl.handleRequestReset.bind(service),
+    handleRequestSetNetworkProfile: serviceImpl.handleRequestSetNetworkProfile.bind(service),
     handleRequestSetVariables: serviceImpl.handleRequestSetVariables.bind(service),
     handleRequestStartTransaction: serviceImpl.handleRequestStartTransaction.bind(service),
     handleRequestStopTransaction: serviceImpl.handleRequestStopTransaction.bind(service),

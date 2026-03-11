@@ -66,6 +66,8 @@ import {
   OCPP20RequiredVariableName,
   type OCPP20ResetRequest,
   type OCPP20ResetResponse,
+  type OCPP20SetNetworkProfileRequest,
+  type OCPP20SetNetworkProfileResponse,
   type OCPP20SetVariablesRequest,
   type OCPP20SetVariablesResponse,
   type OCPP20StatusNotificationRequest,
@@ -82,6 +84,7 @@ import {
   RequestStartStopStatusEnumType,
   ResetEnumType,
   ResetStatusEnumType,
+  SetNetworkProfileStatusEnumType,
   SetVariableStatusEnumType,
   StopTransactionReason,
   TriggerMessageStatusEnumType,
@@ -176,6 +179,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         this.toHandler(this.handleRequestStopTransaction.bind(this)),
       ],
       [OCPP20IncomingRequestCommand.RESET, this.toHandler(this.handleRequestReset.bind(this))],
+      [
+        OCPP20IncomingRequestCommand.SET_NETWORK_PROFILE,
+        this.toHandler(this.handleRequestSetNetworkProfile.bind(this)),
+      ],
       [
         OCPP20IncomingRequestCommand.SET_VARIABLES,
         this.toHandler(this.handleRequestSetVariables.bind(this)),
@@ -1454,6 +1461,30 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           reasonCode: ReasonCodeEnumType.InternalError,
         },
       }
+    }
+  }
+
+  /**
+   * Handles OCPP 2.0.1 SetNetworkProfile request from central system
+   * Per TC_B_43_CS: CS must respond to SetNetworkProfile at minimum with Rejected
+   * The simulator does not support network profile switching
+   * @param chargingStation - The charging station instance
+   * @param commandPayload - The SetNetworkProfile request payload
+   * @returns SetNetworkProfileResponse with Rejected status
+   */
+  private readonly handleRequestSetNetworkProfile = (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20SetNetworkProfileRequest
+  ): OCPP20SetNetworkProfileResponse => {
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestSetNetworkProfile: Received SetNetworkProfile request`
+    )
+    // Per TC_B_43_CS: CS must respond to SetNetworkProfile at minimum with Rejected
+    return {
+      status: SetNetworkProfileStatusEnumType.Rejected,
+      statusInfo: {
+        reasonCode: ReasonCodeEnumType.UnsupportedRequest,
+      },
     }
   }
 
