@@ -16,6 +16,8 @@ import {
   type OCPP20Get15118EVCertificateResponse,
   type OCPP20GetCertificateStatusRequest,
   type OCPP20GetCertificateStatusResponse,
+  type OCPP20NotifyCustomerInformationRequest,
+  type OCPP20NotifyCustomerInformationResponse,
   OCPP20RequestCommand,
   type OCPP20SignCertificateRequest,
   type OCPP20SignCertificateResponse,
@@ -240,6 +242,59 @@ export class OCPP20RequestService extends OCPPRequestService {
     const errorMsg = `Unsupported OCPP command ${commandName}`
     logger.error(`${chargingStation.logPrefix()} ${moduleName}.requestHandler: ${errorMsg}`)
     throw new OCPPError(ErrorType.NOT_SUPPORTED, errorMsg, commandName, commandParams)
+  }
+
+  /**
+   * Send NotifyCustomerInformation to the CSMS.
+   *
+   * Notifies the CSMS about customer information availability.
+   * For the simulator, this sends empty customer data as no real customer
+   * information is stored (GDPR compliance).
+   * @param chargingStation - The charging station sending the notification
+   * @param requestId - The request ID from the original CustomerInformation request
+   * @param data - Customer information data (empty string for simulator)
+   * @param seqNo - Sequence number for the notification
+   * @param generatedAt - Timestamp when the data was generated
+   * @param tbc - To be continued flag (false for simulator)
+   * @returns Promise resolving when the notification is sent
+   */
+  public async requestNotifyCustomerInformation (
+    chargingStation: ChargingStation,
+    requestId: number,
+    data: string,
+    seqNo: number,
+    generatedAt: Date,
+    tbc: boolean
+  ): Promise<OCPP20NotifyCustomerInformationResponse> {
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestNotifyCustomerInformation: Sending NotifyCustomerInformation`
+    )
+
+    const requestPayload: OCPP20NotifyCustomerInformationRequest = {
+      data,
+      generatedAt,
+      requestId,
+      seqNo,
+      tbc,
+    }
+
+    const messageId = generateUUID()
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestNotifyCustomerInformation: Sending NotifyCustomerInformation request with message ID '${messageId}'`
+    )
+
+    const response = (await this.sendMessage(
+      chargingStation,
+      messageId,
+      requestPayload,
+      OCPP20RequestCommand.NOTIFY_CUSTOMER_INFORMATION
+    )) as OCPP20NotifyCustomerInformationResponse
+
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestNotifyCustomerInformation: Received response`
+    )
+
+    return response
   }
 
   /**

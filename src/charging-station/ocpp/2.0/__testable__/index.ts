@@ -19,6 +19,8 @@ import type {
   OCPP20CertificateSignedRequest,
   OCPP20CertificateSignedResponse,
   OCPP20ClearCacheResponse,
+  OCPP20CustomerInformationRequest,
+  OCPP20CustomerInformationResponse,
   OCPP20DataTransferRequest,
   OCPP20DataTransferResponse,
   OCPP20DeleteCertificateRequest,
@@ -81,6 +83,15 @@ export interface TestableOCPP20IncomingRequestService {
    * Per C11.FR.04: Returns Rejected if AuthCacheEnabled is false.
    */
   handleRequestClearCache: (chargingStation: ChargingStation) => Promise<OCPP20ClearCacheResponse>
+
+  /**
+   * Handles OCPP 2.0.1 CustomerInformation request from central system.
+   * Per TC_N_32_CS: CS must respond to CustomerInformation with Accepted for clear requests.
+   */
+  handleRequestCustomerInformation: (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20CustomerInformationRequest
+  ) => OCPP20CustomerInformationResponse
 
   /**
    * Handles OCPP 2.0.1 DataTransfer request.
@@ -227,6 +238,7 @@ export function createTestableIncomingRequestService (
     buildReportData: (serviceImpl as any).buildReportData.bind(service),
     handleRequestCertificateSigned: serviceImpl.handleRequestCertificateSigned.bind(service),
     handleRequestClearCache: serviceImpl.handleRequestClearCache.bind(service),
+    handleRequestCustomerInformation: serviceImpl.handleRequestCustomerInformation.bind(service),
     handleRequestDataTransfer: serviceImpl.handleRequestDataTransfer.bind(service),
     handleRequestDeleteCertificate: serviceImpl.handleRequestDeleteCertificate.bind(service),
     handleRequestGetBaseReport: serviceImpl.handleRequestGetBaseReport.bind(service),

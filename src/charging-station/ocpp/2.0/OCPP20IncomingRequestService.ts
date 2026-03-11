@@ -17,6 +17,7 @@ import {
   CertificateSigningUseEnumType,
   ConnectorEnumType,
   ConnectorStatusEnum,
+  CustomerInformationStatusEnumType,
   DataEnumType,
   DataTransferStatusEnumType,
   DeleteCertificateStatusEnumType,
@@ -40,6 +41,8 @@ import {
   type OCPP20ClearCacheResponse,
   OCPP20ComponentName,
   OCPP20ConnectorStatusEnumType,
+  type OCPP20CustomerInformationRequest,
+  type OCPP20CustomerInformationResponse,
   type OCPP20DataTransferRequest,
   type OCPP20DataTransferResponse,
   type OCPP20DeleteCertificateRequest,
@@ -58,6 +61,8 @@ import {
   OCPP20IncomingRequestCommand,
   type OCPP20InstallCertificateRequest,
   type OCPP20InstallCertificateResponse,
+  type OCPP20NotifyCustomerInformationRequest,
+  type OCPP20NotifyCustomerInformationResponse,
   type OCPP20NotifyReportRequest,
   type OCPP20NotifyReportResponse,
   OCPP20RequestCommand,
@@ -147,6 +152,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       [
         OCPP20IncomingRequestCommand.CLEAR_CACHE,
         this.toHandler(this.handleRequestClearCache.bind(this)),
+      ],
+      [
+        OCPP20IncomingRequestCommand.CUSTOMER_INFORMATION,
+        this.toHandler(this.handleRequestCustomerInformation.bind(this)),
       ],
       [
         OCPP20IncomingRequestCommand.DATA_TRANSFER,
@@ -970,6 +979,60 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           reasonCode: ReasonCodeEnumType.OutOfStorage,
         },
       }
+    }
+  }
+
+  /**
+   * Handles OCPP 2.0.1 CustomerInformation request from central system.
+   * Per TC_N_32_CS: CS must respond to CustomerInformation with Accepted for clear requests.
+   * Simulator has no persistent customer data, so clear is accepted but no-op.
+   * For report requests, sends empty NotifyCustomerInformation (simulator has no real data).
+   * @param chargingStation - The charging station instance processing the request
+   * @param commandPayload - CustomerInformation request payload with clear/report flags
+   * @returns CustomerInformationResponse with status
+   */
+  private readonly handleRequestCustomerInformation = (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20CustomerInformationRequest
+  ): OCPP20CustomerInformationResponse => {
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestCustomerInformation: Received CustomerInformation request with clear=${commandPayload.clear.toString()}, report=${commandPayload.report.toString()}`
+    )
+
+    if (commandPayload.clear) {
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestCustomerInformation: Clear request accepted (simulator has no persistent customer data)`
+      )
+      return {
+        status: CustomerInformationStatusEnumType.Accepted,
+      }
+    }
+
+    if (commandPayload.report) {
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestCustomerInformation: Report request accepted, sending empty NotifyCustomerInformation`
+      )
+      // Fire-and-forget NotifyCustomerInformation with empty data
+      setImmediate(() => {
+        this.sendNotifyCustomerInformation(chargingStation, commandPayload.requestId).catch(
+          (error: unknown) => {
+            logger.error(
+              `${chargingStation.logPrefix()} ${moduleName}.handleRequestCustomerInformation: Error sending NotifyCustomerInformation:`,
+              error
+            )
+          }
+        )
+      })
+      return {
+        status: CustomerInformationStatusEnumType.Accepted,
+      }
+    }
+
+    logger.warn(
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestCustomerInformation: Neither clear nor report flag set, rejecting`
+    )
+    return {
+      status: CustomerInformationStatusEnumType.Rejected,
     }
   }
 
@@ -2397,6 +2460,27 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         })
       }
     }
+  }
+
+  private async sendNotifyCustomerInformation (
+    chargingStation: ChargingStation,
+    requestId: number
+  ): Promise<void> {
+    const notifyCustomerInformationRequest: OCPP20NotifyCustomerInformationRequest = {
+      data: '',
+      generatedAt: new Date(),
+      requestId,
+      seqNo: 1,
+      tbc: false,
+    }
+    await chargingStation.ocppRequestService.requestHandler<
+      OCPP20NotifyCustomerInformationRequest,
+      OCPP20NotifyCustomerInformationResponse
+    >(
+      chargingStation,
+      OCPP20RequestCommand.NOTIFY_CUSTOMER_INFORMATION,
+      notifyCustomerInformationRequest
+    )
   }
 
   private async sendNotifyReportRequest (
