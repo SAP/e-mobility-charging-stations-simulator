@@ -18,6 +18,7 @@ import {
   ConnectorEnumType,
   ConnectorStatusEnum,
   DataEnumType,
+  DataTransferStatusEnumType,
   DeleteCertificateStatusEnumType,
   ErrorType,
   type EvseStatus,
@@ -39,6 +40,8 @@ import {
   type OCPP20ClearCacheResponse,
   OCPP20ComponentName,
   OCPP20ConnectorStatusEnumType,
+  type OCPP20DataTransferRequest,
+  type OCPP20DataTransferResponse,
   type OCPP20DeleteCertificateRequest,
   type OCPP20DeleteCertificateResponse,
   OCPP20DeviceInfoVariableName,
@@ -139,6 +142,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       [
         OCPP20IncomingRequestCommand.CLEAR_CACHE,
         this.toHandler(this.handleRequestClearCache.bind(this)),
+      ],
+      [
+        OCPP20IncomingRequestCommand.DATA_TRANSFER,
+        this.toHandler(this.handleRequestDataTransfer.bind(this)),
       ],
       [
         OCPP20IncomingRequestCommand.DELETE_CERTIFICATE,
@@ -950,6 +957,26 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           reasonCode: ReasonCodeEnumType.OutOfStorage,
         },
       }
+    }
+  }
+
+  /**
+   * Handles OCPP 2.0.1 DataTransfer request
+   * Per TC_P_01_CS: CS with no vendor extensions must respond UnknownVendorId
+   * @param chargingStation - The charging station instance
+   * @param commandPayload - The DataTransfer request payload
+   * @returns DataTransferResponse with UnknownVendorId status
+   */
+  private readonly handleRequestDataTransfer = (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20DataTransferRequest
+  ): OCPP20DataTransferResponse => {
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestDataTransfer: Received DataTransfer request with vendorId '${commandPayload.vendorId}'`
+    )
+    // Per TC_P_01_CS: CS with no vendor extensions must respond UnknownVendorId
+    return {
+      status: DataTransferStatusEnumType.UnknownVendorId,
     }
   }
 
