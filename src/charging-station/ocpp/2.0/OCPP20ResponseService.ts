@@ -20,6 +20,7 @@ import {
   RegistrationStatusEnumType,
   type ResponseHandler,
 } from '../../../types/index.js'
+import { OCPP20AuthorizationStatusEnumType } from '../../../types/ocpp/2.0/Transaction.js'
 import { isAsyncFunction, logger } from '../../../utils/index.js'
 import { OCPPResponseService } from '../OCPPResponseService.js'
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
@@ -288,8 +289,15 @@ export class OCPP20ResponseService extends OCPPResponseService {
     )
   }
 
-  // TODO: currently log-only — future work should act on idTokenInfo.status (Invalid/Blocked → stop transaction)
-  // and chargingPriority (update charging profile priority) per OCPP 2.0.1 spec
+  /**
+   * Handles TransactionEvent response from CSMS.
+   *
+   * Per OCPP 2.0.1 spec (D01, D05): If the Charging Station started a transaction based on
+   * local authorization, but receives an Invalid, Blocked, Expired, or NoCredit status in the
+   * TransactionEventResponse idTokenInfo, the Charging Station SHALL stop the transaction.
+   * @param chargingStation - The charging station instance
+   * @param payload - The TransactionEvent response payload from CSMS
+   */
   private handleResponseTransactionEvent (
     chargingStation: ChargingStation,
     payload: OCPP20TransactionEventResponse
@@ -311,6 +319,38 @@ export class OCPP20ResponseService extends OCPPResponseService {
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: IdToken info status: ${payload.idTokenInfo.status}`
       )
+      // D01/D05: Stop transaction when idToken authorization is rejected by CSMS
+      const rejectedStatuses = new Set<OCPP20AuthorizationStatusEnumType>([
+        OCPP20AuthorizationStatusEnumType.Blocked,
+        OCPP20AuthorizationStatusEnumType.Expired,
+        OCPP20AuthorizationStatusEnumType.Invalid,
+        OCPP20AuthorizationStatusEnumType.NoCredit,
+      ])
+      if (rejectedStatuses.has(payload.idTokenInfo.status)) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: IdToken authorization rejected with status '${payload.idTokenInfo.status}', stopping active transaction per OCPP 2.0.1 spec (D01/D05)`
+        )
+        for (const [evseId, evseStatus] of chargingStation.evses) {
+          if (evseId === 0) {
+            continue
+          }
+          for (const [connectorId, connectorStatus] of evseStatus.connectors) {
+            if (connectorStatus.transactionStarted === true) {
+              logger.info(
+                `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Stopping transaction on EVSE ${evseId.toString()}, connector ${connectorId.toString()} due to rejected idToken`
+              )
+              OCPP20ServiceUtils.requestStopTransaction(chargingStation, connectorId, evseId).catch(
+                (error: unknown) => {
+                  logger.error(
+                    `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Error stopping transaction on connector ${connectorId.toString()}:`,
+                    error
+                  )
+                }
+              )
+            }
+          }
+        }
+      }
     }
     if (payload.updatedPersonalMessage != null) {
       logger.info(
