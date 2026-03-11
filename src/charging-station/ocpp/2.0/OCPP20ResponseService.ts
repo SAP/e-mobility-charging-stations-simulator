@@ -18,6 +18,7 @@ import {
   OCPP20RequestCommand,
   type OCPP20SecurityEventNotificationResponse,
   type OCPP20StatusNotificationResponse,
+  type OCPP20TransactionEventRequest,
   type OCPP20TransactionEventResponse,
   OCPPVersion,
   RegistrationStatusEnumType,
@@ -81,7 +82,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
   protected payloadValidatorFunctions: Map<OCPP20RequestCommand, ValidateFunction<JsonType>>
   private readonly responseHandlers: Map<OCPP20RequestCommand, ResponseHandler>
 
-  public constructor () {
+  public constructor() {
     super(OCPPVersion.VERSION_201)
     this.responseHandlers = new Map<OCPP20RequestCommand, ResponseHandler>([
       [
@@ -209,7 +210,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
     }
   }
 
-  private handleResponseBootNotification (
+  private handleResponseBootNotification(
     chargingStation: ChargingStation,
     payload: OCPP20BootNotificationResponse
   ): void {
@@ -259,7 +260,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
     }
   }
 
-  private handleResponseFirmwareStatusNotification (
+  private handleResponseFirmwareStatusNotification(
     chargingStation: ChargingStation,
     payload: OCPP20FirmwareStatusNotificationResponse
   ): void {
@@ -268,7 +269,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
     )
   }
 
-  private handleResponseHeartbeat (
+  private handleResponseHeartbeat(
     chargingStation: ChargingStation,
     payload: OCPP20HeartbeatResponse
   ): void {
@@ -277,7 +278,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
     )
   }
 
-  private handleResponseLogStatusNotification (
+  private handleResponseLogStatusNotification(
     chargingStation: ChargingStation,
     payload: OCPP20LogStatusNotificationResponse
   ): void {
@@ -286,7 +287,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
     )
   }
 
-  private handleResponseMeterValues (
+  private handleResponseMeterValues(
     chargingStation: ChargingStation,
     payload: OCPP20MeterValuesResponse
   ): void {
@@ -295,7 +296,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
     )
   }
 
-  private handleResponseNotifyCustomerInformation (
+  private handleResponseNotifyCustomerInformation(
     chargingStation: ChargingStation,
     payload: OCPP20NotifyCustomerInformationResponse
   ): void {
@@ -304,7 +305,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
     )
   }
 
-  private handleResponseNotifyReport (
+  private handleResponseNotifyReport(
     chargingStation: ChargingStation,
     payload: OCPP20NotifyReportResponse
   ): void {
@@ -313,7 +314,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
     )
   }
 
-  private handleResponseSecurityEventNotification (
+  private handleResponseSecurityEventNotification(
     chargingStation: ChargingStation,
     payload: OCPP20SecurityEventNotificationResponse
   ): void {
@@ -322,7 +323,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
     )
   }
 
-  private handleResponseStatusNotification (
+  private handleResponseStatusNotification(
     chargingStation: ChargingStation,
     payload: OCPP20StatusNotificationResponse
   ): void {
@@ -339,10 +340,12 @@ export class OCPP20ResponseService extends OCPPResponseService {
    * TransactionEventResponse idTokenInfo, the Charging Station SHALL stop the transaction.
    * @param chargingStation - The charging station instance
    * @param payload - The TransactionEvent response payload from CSMS
+   * @param requestPayload - The original TransactionEvent request payload
    */
-  private handleResponseTransactionEvent (
+  private handleResponseTransactionEvent(
     chargingStation: ChargingStation,
-    payload: OCPP20TransactionEventResponse
+    payload: OCPP20TransactionEventResponse,
+    requestPayload: OCPP20TransactionEventRequest
   ): void {
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: TransactionEvent response received`
@@ -372,25 +375,29 @@ export class OCPP20ResponseService extends OCPPResponseService {
         logger.warn(
           `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: IdToken authorization rejected with status '${payload.idTokenInfo.status}', stopping active transaction per OCPP 2.0.1 spec (D01/D05)`
         )
-        for (const [evseId, evseStatus] of chargingStation.evses) {
-          if (evseId === 0) {
-            continue
-          }
-          for (const [connectorId, connectorStatus] of evseStatus.connectors) {
-            if (connectorStatus.transactionStarted === true) {
-              logger.info(
-                `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Stopping transaction on EVSE ${evseId.toString()}, connector ${connectorId.toString()} due to rejected idToken`
-              )
-              OCPP20ServiceUtils.requestStopTransaction(chargingStation, connectorId, evseId).catch(
-                (error: unknown) => {
-                  logger.error(
-                    `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Error stopping transaction on connector ${connectorId.toString()}:`,
-                    error
-                  )
-                }
+        // Find the specific connector for this transaction
+        const connectorId = chargingStation.getConnectorIdByTransactionId(
+          requestPayload.transactionInfo.transactionId
+        )
+        const evseId = chargingStation.getEvseIdByTransactionId(
+          requestPayload.transactionInfo.transactionId
+        )
+        if (connectorId != null && evseId != null) {
+          logger.info(
+            `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Stopping transaction ${requestPayload.transactionInfo.transactionId} on EVSE ${evseId.toString()}, connector ${connectorId.toString()} due to rejected idToken`
+          )
+          OCPP20ServiceUtils.requestStopTransaction(chargingStation, connectorId, evseId).catch(
+            (error: unknown) => {
+              logger.error(
+                `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Error stopping transaction ${requestPayload.transactionInfo.transactionId} on connector ${connectorId.toString()}:`,
+                error
               )
             }
-          }
+          )
+        } else {
+          logger.warn(
+            `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Could not find connector for transaction ${requestPayload.transactionInfo.transactionId}, cannot stop transaction`
+          )
         }
       }
     }
@@ -408,7 +415,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
    * @param payload - JSON response payload to validate
    * @returns True if payload validation succeeds, false otherwise
    */
-  private validatePayload (
+  private validatePayload(
     chargingStation: ChargingStation,
     commandName: OCPP20RequestCommand,
     payload: JsonType
