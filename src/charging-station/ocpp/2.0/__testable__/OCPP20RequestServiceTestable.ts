@@ -24,7 +24,9 @@ import { mock } from 'node:test'
 import type {
   CertificateActionEnumType,
   CertificateSigningUseEnumType,
+  FirmwareStatusEnumType,
   JsonType,
+  OCPP20FirmwareStatusNotificationResponse,
   OCPP20Get15118EVCertificateResponse,
   OCPP20GetCertificateStatusResponse,
   OCPP20MeterValue,
@@ -77,6 +79,16 @@ export interface TestableOCPP20RequestService {
     commandName: OCPP20RequestCommand,
     commandParams?: JsonType
   ) => JsonType
+
+  /**
+   * Send a FirmwareStatusNotification to the CSMS.
+   * Reports firmware update progress to the CSMS.
+   */
+  requestFirmwareStatusNotification: (
+    chargingStation: ChargingStation,
+    status: FirmwareStatusEnumType,
+    requestId?: number
+  ) => Promise<OCPP20FirmwareStatusNotificationResponse>
 
   /**
    * Request an ISO 15118 EV certificate from the CSMS.

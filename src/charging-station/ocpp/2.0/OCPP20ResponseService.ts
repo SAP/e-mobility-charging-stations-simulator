@@ -7,6 +7,7 @@ import {
   ErrorType,
   type JsonType,
   type OCPP20BootNotificationResponse,
+  type OCPP20FirmwareStatusNotificationResponse,
   type OCPP20HeartbeatResponse,
   OCPP20IncomingRequestCommand,
   type OCPP20MeterValuesResponse,
@@ -85,6 +86,10 @@ export class OCPP20ResponseService extends OCPPResponseService {
       [
         OCPP20RequestCommand.BOOT_NOTIFICATION,
         this.handleResponseBootNotification.bind(this) as ResponseHandler,
+      ],
+      [
+        OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
+        this.handleResponseFirmwareStatusNotification.bind(this) as ResponseHandler,
       ],
       [OCPP20RequestCommand.HEARTBEAT, this.handleResponseHeartbeat.bind(this) as ResponseHandler],
       [
@@ -247,6 +252,15 @@ export class OCPP20ResponseService extends OCPPResponseService {
         payload
       )
     }
+  }
+
+  private handleResponseFirmwareStatusNotification (
+    chargingStation: ChargingStation,
+    payload: OCPP20FirmwareStatusNotificationResponse
+  ): void {
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.handleResponseFirmwareStatusNotification: FirmwareStatusNotification response received successfully`
+    )
   }
 
   private handleResponseHeartbeat (

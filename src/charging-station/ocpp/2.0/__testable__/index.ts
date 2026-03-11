@@ -51,6 +51,8 @@ import type {
   OCPP20TriggerMessageResponse,
   OCPP20UnlockConnectorRequest,
   OCPP20UnlockConnectorResponse,
+  OCPP20UpdateFirmwareRequest,
+  OCPP20UpdateFirmwareResponse,
   ReportBaseEnumType,
   ReportDataType,
 } from '../../../../types/index.js'
@@ -221,6 +223,11 @@ export interface TestableOCPP20IncomingRequestService {
     chargingStation: ChargingStation,
     commandPayload: OCPP20UnlockConnectorRequest
   ) => Promise<OCPP20UnlockConnectorResponse>
+
+  handleRequestUpdateFirmware: (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20UpdateFirmwareRequest
+  ) => OCPP20UpdateFirmwareResponse
 }
 
 /**
@@ -266,6 +273,7 @@ export function createTestableIncomingRequestService (
     handleRequestStopTransaction: serviceImpl.handleRequestStopTransaction.bind(service),
     handleRequestTriggerMessage: serviceImpl.handleRequestTriggerMessage.bind(service),
     handleRequestUnlockConnector: serviceImpl.handleRequestUnlockConnector.bind(service),
+    handleRequestUpdateFirmware: serviceImpl.handleRequestUpdateFirmware.bind(service),
   }
 }
 

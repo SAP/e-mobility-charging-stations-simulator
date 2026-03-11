@@ -10,8 +10,11 @@ import {
   type CertificateActionEnumType,
   type CertificateSigningUseEnumType,
   ErrorType,
+  type FirmwareStatusEnumType,
   type JsonObject,
   type JsonType,
+  type OCPP20FirmwareStatusNotificationRequest,
+  type OCPP20FirmwareStatusNotificationResponse,
   type OCPP20Get15118EVCertificateRequest,
   type OCPP20Get15118EVCertificateResponse,
   type OCPP20GetCertificateStatusRequest,
@@ -78,6 +81,51 @@ export class OCPP20RequestService extends OCPPRequestService {
       this.ajv
     )
     this.buildRequestPayload = this.buildRequestPayload.bind(this)
+  }
+
+  /**
+   * Send a FirmwareStatusNotification to the CSMS.
+   *
+   * Notifies the CSMS about the progress of a firmware update on the charging station.
+   * Per OCPP 2.0.1 use case J01, the CS sends firmware status updates during the
+   * download, verification, and installation phases of a firmware update.
+   * The response is an empty object — the CSMS acknowledges receipt without data.
+   * @param chargingStation - The charging station reporting the firmware status
+   * @param status - Current firmware update status (e.g., Downloading, Installed)
+   * @param requestId - The request ID from the original UpdateFirmware request
+   * @returns Promise resolving to the empty CSMS acknowledgement response
+   */
+  public async requestFirmwareStatusNotification (
+    chargingStation: ChargingStation,
+    status: FirmwareStatusEnumType,
+    requestId?: number
+  ): Promise<OCPP20FirmwareStatusNotificationResponse> {
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestFirmwareStatusNotification: Sending FirmwareStatusNotification with status '${status}'`
+    )
+
+    const requestPayload: OCPP20FirmwareStatusNotificationRequest = {
+      status,
+      ...(requestId !== undefined && { requestId }),
+    }
+
+    const messageId = generateUUID()
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestFirmwareStatusNotification: Sending FirmwareStatusNotification request with message ID '${messageId}'`
+    )
+
+    const response = (await this.sendMessage(
+      chargingStation,
+      messageId,
+      requestPayload,
+      OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION
+    )) as OCPP20FirmwareStatusNotificationResponse
+
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.requestFirmwareStatusNotification: Received response`
+    )
+
+    return response
   }
 
   /**

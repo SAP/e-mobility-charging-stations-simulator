@@ -25,6 +25,7 @@ import {
   ErrorType,
   type EvseStatus,
   FirmwareStatus,
+  FirmwareStatusEnumType,
   GenericDeviceModelStatusEnumType,
   GenericStatus,
   GetCertificateIdUseEnumType,
@@ -51,6 +52,8 @@ import {
   type OCPP20DeleteCertificateRequest,
   type OCPP20DeleteCertificateResponse,
   OCPP20DeviceInfoVariableName,
+  type OCPP20FirmwareStatusNotificationRequest,
+  type OCPP20FirmwareStatusNotificationResponse,
   type OCPP20GetBaseReportRequest,
   type OCPP20GetBaseReportResponse,
   type OCPP20GetInstalledCertificateIdsRequest,
@@ -86,6 +89,8 @@ import {
   type OCPP20TriggerMessageResponse,
   type OCPP20UnlockConnectorRequest,
   type OCPP20UnlockConnectorResponse,
+  type OCPP20UpdateFirmwareRequest,
+  type OCPP20UpdateFirmwareResponse,
   OCPPVersion,
   OperationalStatusEnumType,
   ReasonCodeEnumType,
@@ -100,6 +105,7 @@ import {
   StopTransactionReason,
   TriggerMessageStatusEnumType,
   UnlockStatusEnumType,
+  UpdateFirmwareStatusEnumType,
 } from '../../../types/index.js'
 import {
   OCPP20ChargingProfileKindEnumType,
@@ -217,6 +223,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       [
         OCPP20IncomingRequestCommand.UNLOCK_CONNECTOR,
         this.toHandler(this.handleRequestUnlockConnector.bind(this)),
+      ],
+      [
+        OCPP20IncomingRequestCommand.UPDATE_FIRMWARE,
+        this.toHandler(this.handleRequestUpdateFirmware.bind(this)),
       ],
     ])
     this.payloadValidatorFunctions = OCPP20ServiceUtils.createPayloadValidatorMap(
@@ -2251,6 +2261,42 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   /**
+   * Handles OCPP 2.0.1 UpdateFirmware request from central system.
+   * Accepts the firmware update request and simulates the firmware update lifecycle
+   * by sending FirmwareStatusNotification messages through a state machine:
+   * Downloading → Downloaded → [SignatureVerified] → Installing → Installed
+   * @param chargingStation - The charging station instance processing the request
+   * @param commandPayload - UpdateFirmware request payload with firmware details and requestId
+   * @returns UpdateFirmwareResponse with Accepted status
+   */
+  private handleRequestUpdateFirmware (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20UpdateFirmwareRequest
+  ): OCPP20UpdateFirmwareResponse {
+    const { firmware, requestId } = commandPayload
+
+    logger.info(
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Received UpdateFirmware request with requestId ${requestId.toString()} for location '${firmware.location}'`
+    )
+
+    // Fire-and-forget firmware update state machine after response is returned
+    setImmediate(() => {
+      this.simulateFirmwareUpdateLifecycle(chargingStation, requestId, firmware.signature).catch(
+        (error: unknown) => {
+          logger.error(
+            `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Error during firmware update simulation:`,
+            error
+          )
+        }
+      )
+    })
+
+    return {
+      status: UpdateFirmwareStatusEnumType.Accepted,
+    }
+  }
+
+  /**
    * Checks if a specific EVSE has any active transactions.
    * @param evse - The EVSE to check
    * @returns true if any connector on the EVSE has an active transaction
@@ -2569,6 +2615,20 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
+  private sendFirmwareStatusNotification (
+    chargingStation: ChargingStation,
+    status: FirmwareStatusEnumType,
+    requestId: number
+  ): Promise<OCPP20FirmwareStatusNotificationResponse> {
+    return chargingStation.ocppRequestService.requestHandler<
+      OCPP20FirmwareStatusNotificationRequest,
+      OCPP20FirmwareStatusNotificationResponse
+    >(chargingStation, OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION, {
+      requestId,
+      status,
+    })
+  }
+
   private async sendNotifyCustomerInformation (
     chargingStation: ChargingStation,
     requestId: number
@@ -2637,6 +2697,63 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       `${chargingStation.logPrefix()} ${moduleName}.sendNotifyReportRequest: Completed NotifyReport for requestId ${requestId} with ${reportData.length} total items in ${chunks.length} message(s)`
     )
     this.reportDataCache.delete(requestId)
+  }
+
+  /**
+   * Simulates a firmware update lifecycle through status progression using chained setTimeout calls.
+   * Sequence: Downloading → Downloaded → [SignatureVerified if signature present] → Installing → Installed
+   * @param chargingStation - The charging station instance
+   * @param requestId - The request ID from the UpdateFirmware request
+   * @param signature - Optional firmware signature; triggers SignatureVerified step if present
+   */
+  private async simulateFirmwareUpdateLifecycle (
+    chargingStation: ChargingStation,
+    requestId: number,
+    signature?: string
+  ): Promise<void> {
+    const delay = (ms: number): Promise<void> =>
+      new Promise(resolve => {
+        setTimeout(resolve, ms)
+      })
+
+    await this.sendFirmwareStatusNotification(
+      chargingStation,
+      FirmwareStatusEnumType.Downloading,
+      requestId
+    )
+
+    await delay(1000)
+    await this.sendFirmwareStatusNotification(
+      chargingStation,
+      FirmwareStatusEnumType.Downloaded,
+      requestId
+    )
+
+    if (signature != null) {
+      await this.sendFirmwareStatusNotification(
+        chargingStation,
+        FirmwareStatusEnumType.SignatureVerified,
+        requestId
+      )
+    }
+
+    await delay(1000)
+    await this.sendFirmwareStatusNotification(
+      chargingStation,
+      FirmwareStatusEnumType.Installing,
+      requestId
+    )
+
+    await delay(1000)
+    await this.sendFirmwareStatusNotification(
+      chargingStation,
+      FirmwareStatusEnumType.Installed,
+      requestId
+    )
+
+    logger.info(
+      `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Firmware update simulation completed for requestId ${requestId.toString()}`
+    )
   }
 
   /**
