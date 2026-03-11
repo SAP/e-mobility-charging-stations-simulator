@@ -592,6 +592,12 @@ export class OCPP20RequestService extends OCPPRequestService {
     switch (commandName) {
       case OCPP20RequestCommand.BOOT_NOTIFICATION:
         return commandParams as unknown as Request
+      case OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION:
+      case OCPP20RequestCommand.LOG_STATUS_NOTIFICATION:
+      case OCPP20RequestCommand.METER_VALUES:
+      case OCPP20RequestCommand.NOTIFY_CUSTOMER_INFORMATION:
+      case OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION:
+        return commandParams as unknown as Request
       case OCPP20RequestCommand.HEARTBEAT:
         return OCPP20Constants.OCPP_RESPONSE_EMPTY as unknown as Request
       case OCPP20RequestCommand.NOTIFY_REPORT:
