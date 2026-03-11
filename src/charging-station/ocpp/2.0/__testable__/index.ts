@@ -27,6 +27,8 @@ import type {
   OCPP20GetBaseReportResponse,
   OCPP20GetInstalledCertificateIdsRequest,
   OCPP20GetInstalledCertificateIdsResponse,
+  OCPP20GetTransactionStatusRequest,
+  OCPP20GetTransactionStatusResponse,
   OCPP20GetVariablesRequest,
   OCPP20GetVariablesResponse,
   OCPP20InstallCertificateRequest,
@@ -115,6 +117,15 @@ export interface TestableOCPP20IncomingRequestService {
     chargingStation: ChargingStation,
     commandPayload: OCPP20GetInstalledCertificateIdsRequest
   ) => Promise<OCPP20GetInstalledCertificateIdsResponse>
+
+  /**
+   * Handles OCPP 2.0.1 GetTransactionStatus request from central system.
+   * Returns transaction status with ongoingIndicator and messagesInQueue.
+   */
+  handleRequestGetTransactionStatus: (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20GetTransactionStatusRequest
+  ) => OCPP20GetTransactionStatusResponse
 
   /**
    * Handles OCPP 2.0 GetVariables request.
@@ -221,6 +232,7 @@ export function createTestableIncomingRequestService (
     handleRequestGetBaseReport: serviceImpl.handleRequestGetBaseReport.bind(service),
     handleRequestGetInstalledCertificateIds:
       serviceImpl.handleRequestGetInstalledCertificateIds.bind(service),
+    handleRequestGetTransactionStatus: serviceImpl.handleRequestGetTransactionStatus.bind(service),
     handleRequestGetVariables: serviceImpl.handleRequestGetVariables.bind(service),
     handleRequestInstallCertificate: serviceImpl.handleRequestInstallCertificate.bind(service),
     handleRequestReset: serviceImpl.handleRequestReset.bind(service),

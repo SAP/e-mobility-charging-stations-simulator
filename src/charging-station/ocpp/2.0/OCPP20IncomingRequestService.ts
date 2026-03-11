@@ -49,6 +49,8 @@ import {
   type OCPP20GetBaseReportResponse,
   type OCPP20GetInstalledCertificateIdsRequest,
   type OCPP20GetInstalledCertificateIdsResponse,
+  type OCPP20GetTransactionStatusRequest,
+  type OCPP20GetTransactionStatusResponse,
   type OCPP20GetVariablesRequest,
   type OCPP20GetVariablesResponse,
   type OCPP20HeartbeatRequest,
@@ -161,6 +163,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       [
         OCPP20IncomingRequestCommand.GET_INSTALLED_CERTIFICATE_IDS,
         this.toHandler(this.handleRequestGetInstalledCertificateIds.bind(this)),
+      ],
+      [
+        OCPP20IncomingRequestCommand.GET_TRANSACTION_STATUS,
+        this.toHandler(this.handleRequestGetTransactionStatus.bind(this)),
       ],
       [
         OCPP20IncomingRequestCommand.GET_VARIABLES,
@@ -1162,6 +1168,50 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           reasonCode: ReasonCodeEnumType.InternalError,
         },
       }
+    }
+  }
+
+  /**
+   * Handles OCPP 2.0.1 GetTransactionStatus request from central system.
+   * Per D14, E28-E34: Returns transaction status with ongoingIndicator and messagesInQueue.
+   * @param chargingStation - The charging station instance processing the request
+   * @param commandPayload - GetTransactionStatus request payload with optional transactionId
+   * @returns GetTransactionStatusResponse with ongoingIndicator and messagesInQueue
+   */
+  private readonly handleRequestGetTransactionStatus = (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20GetTransactionStatusRequest
+  ): OCPP20GetTransactionStatusResponse => {
+    const { transactionId } = commandPayload
+
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetTransactionStatus: Received GetTransactionStatus request${transactionId !== undefined ? ` for transaction ID ${transactionId}` : ''}`
+    )
+
+    let ongoingIndicator = false
+
+    if (transactionId !== undefined) {
+      // Check if the specific transaction ID exists and is active
+      const evseId = chargingStation.getEvseIdByTransactionId(transactionId)
+      ongoingIndicator = evseId !== undefined
+    } else {
+      // Check if any EVSE has an active transaction
+      for (const evseStatus of chargingStation.evses.values()) {
+        for (const connectorStatus of evseStatus.connectors.values()) {
+          if (connectorStatus.transactionStarted === true) {
+            ongoingIndicator = true
+            break
+          }
+        }
+        if (ongoingIndicator) {
+          break
+        }
+      }
+    }
+
+    return {
+      messagesInQueue: false,
+      ongoingIndicator,
     }
   }
 
