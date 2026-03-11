@@ -2771,7 +2771,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       data: '',
       generatedAt: new Date(),
       requestId,
-      seqNo: 1,
+      seqNo: 0,
       tbc: false,
     }
     await chargingStation.ocppRequestService.requestHandler<
