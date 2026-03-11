@@ -31,7 +31,7 @@ import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
  * Uses a mock requestHandler to avoid network calls from fire-and-forget paths.
  * @returns The mock station and its request handler spy
  */
-function createTriggerMessageStation(): {
+function createTriggerMessageStation (): {
   mockStation: MockChargingStation
   requestHandlerMock: ReturnType<typeof mock.fn>
 } {
