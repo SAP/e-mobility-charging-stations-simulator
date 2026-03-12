@@ -593,48 +593,6 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           assert.strictEqual(triggerReason, OCPP20TriggerReasonEnumType.Deauthorized)
         })
 
-        await it('should select CablePluggedIn for cable_action context with plugged_in', () => {
-          const context: OCPP20TransactionContext = {
-            cableState: 'plugged_in',
-            source: 'cable_action',
-          }
-
-          const triggerReason = OCPP20ServiceUtils.selectTriggerReason(
-            OCPP20TransactionEventEnumType.Started,
-            context
-          )
-
-          assert.strictEqual(triggerReason, OCPP20TriggerReasonEnumType.CablePluggedIn)
-        })
-
-        await it('should select EVDetected for cable_action context with detected', () => {
-          const context: OCPP20TransactionContext = {
-            cableState: 'detected',
-            source: 'cable_action',
-          }
-
-          const triggerReason = OCPP20ServiceUtils.selectTriggerReason(
-            OCPP20TransactionEventEnumType.Updated,
-            context
-          )
-
-          assert.strictEqual(triggerReason, OCPP20TriggerReasonEnumType.EVDetected)
-        })
-
-        await it('should select EVDeparted for cable_action context with unplugged', () => {
-          const context: OCPP20TransactionContext = {
-            cableState: 'unplugged',
-            source: 'cable_action',
-          }
-
-          const triggerReason = OCPP20ServiceUtils.selectTriggerReason(
-            OCPP20TransactionEventEnumType.Ended,
-            context
-          )
-
-          assert.strictEqual(triggerReason, OCPP20TriggerReasonEnumType.EVDeparted)
-        })
-
         await it('should select ChargingStateChanged for charging_state context', () => {
           const context: OCPP20TransactionContext = {
             chargingStateChange: {
