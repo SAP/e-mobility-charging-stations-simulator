@@ -49,7 +49,6 @@ await describe('B11 & B12 - Reset', async () => {
       mockStation = ResetTestFixtures.createStandardStation()
     })
 
-    // FR: B11.FR.01
     // FR: B11.FR.03
     await it('should handle EVSE-specific reset request when no transactions', async () => {
       const resetRequest: OCPP20ResetRequest = {
@@ -96,6 +95,7 @@ await describe('B11 & B12 - Reset', async () => {
       assert.ok(response.statusInfo.additionalInfo.includes('EVSE 999'))
     })
 
+    // FR: B11.FR.01
     await it('should return proper response structure for immediate reset without transactions', async () => {
       const resetRequest: OCPP20ResetRequest = {
         type: ResetEnumType.Immediate,
