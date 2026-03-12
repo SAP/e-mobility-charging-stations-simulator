@@ -313,10 +313,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         request: OCPP20CustomerInformationRequest,
         response: OCPP20CustomerInformationResponse
       ) => {
-        if (
-          response.status === CustomerInformationStatusEnumType.Accepted &&
-          request.report
-        ) {
+        if (response.status === CustomerInformationStatusEnumType.Accepted && request.report) {
           this.sendNotifyCustomerInformation(chargingStation, request.requestId).catch(
             (error: unknown) => {
               logger.error(
@@ -348,12 +345,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         switch (requestedMessage) {
           case MessageTriggerEnumType.BootNotification:
             chargingStation.ocppRequestService
-              .requestHandler<OCPP20BootNotificationRequest, OCPP20BootNotificationResponse>(
-                chargingStation,
-                OCPP20RequestCommand.BOOT_NOTIFICATION,
-                chargingStation.bootNotificationRequest as OCPP20BootNotificationRequest,
-                { skipBufferingOnError: true, triggerMessage: true }
-              )
+              .requestHandler<
+                OCPP20BootNotificationRequest,
+                OCPP20BootNotificationResponse
+              >(chargingStation, OCPP20RequestCommand.BOOT_NOTIFICATION, chargingStation.bootNotificationRequest as OCPP20BootNotificationRequest, { skipBufferingOnError: true, triggerMessage: true })
               .catch(errorHandler)
             break
           case MessageTriggerEnumType.FirmwareStatusNotification:
@@ -361,22 +356,15 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               .requestHandler<
                 OCPP20FirmwareStatusNotificationRequest,
                 OCPP20FirmwareStatusNotificationResponse
-              >(
-                chargingStation,
-                OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
-                { status: FirmwareStatusEnumType.Idle },
-                { skipBufferingOnError: true, triggerMessage: true }
-              )
+              >(chargingStation, OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION, { status: FirmwareStatusEnumType.Idle }, { skipBufferingOnError: true, triggerMessage: true })
               .catch(errorHandler)
             break
           case MessageTriggerEnumType.Heartbeat:
             chargingStation.ocppRequestService
-              .requestHandler<OCPP20HeartbeatRequest, OCPP20HeartbeatResponse>(
-                chargingStation,
-                OCPP20RequestCommand.HEARTBEAT,
-                {},
-                { skipBufferingOnError: true, triggerMessage: true }
-              )
+              .requestHandler<
+                OCPP20HeartbeatRequest,
+                OCPP20HeartbeatResponse
+              >(chargingStation, OCPP20RequestCommand.HEARTBEAT, {}, { skipBufferingOnError: true, triggerMessage: true })
               .catch(errorHandler)
             break
           case MessageTriggerEnumType.LogStatusNotification:
@@ -384,12 +372,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               .requestHandler<
                 OCPP20LogStatusNotificationRequest,
                 OCPP20LogStatusNotificationResponse
-              >(
-                chargingStation,
-                OCPP20RequestCommand.LOG_STATUS_NOTIFICATION,
-                { status: UploadLogStatusEnumType.Idle },
-                { skipBufferingOnError: true, triggerMessage: true }
-              )
+              >(chargingStation, OCPP20RequestCommand.LOG_STATUS_NOTIFICATION, { status: UploadLogStatusEnumType.Idle }, { skipBufferingOnError: true, triggerMessage: true })
               .catch(errorHandler)
             break
           case MessageTriggerEnumType.MeterValues: {
@@ -427,10 +410,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
                   ? (connectorStatus.status as unknown as OCPP20ConnectorStatusEnumType)
                   : OCPP20ConnectorStatusEnumType.Available
               chargingStation.ocppRequestService
-                .requestHandler<
-                  OCPP20StatusNotificationRequest,
-                  OCPP20StatusNotificationResponse
-                >(
+                .requestHandler<OCPP20StatusNotificationRequest, OCPP20StatusNotificationResponse>(
                   chargingStation,
                   OCPP20RequestCommand.STATUS_NOTIFICATION,
                   {
