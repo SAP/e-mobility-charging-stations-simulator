@@ -402,54 +402,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
             break
           }
           case MessageTriggerEnumType.StatusNotification:
-            if (evse?.id !== undefined && evse.id > 0 && evse.connectorId !== undefined) {
-              const evseStatus = chargingStation.evses.get(evse.id)
-              const connectorStatus = evseStatus?.connectors.get(evse.connectorId)
-              const resolvedStatus =
-                connectorStatus?.status != null
-                  ? (connectorStatus.status as unknown as OCPP20ConnectorStatusEnumType)
-                  : OCPP20ConnectorStatusEnumType.Available
-              chargingStation.ocppRequestService
-                .requestHandler<OCPP20StatusNotificationRequest, OCPP20StatusNotificationResponse>(
-                  chargingStation,
-                  OCPP20RequestCommand.STATUS_NOTIFICATION,
-                  {
-                    connectorId: evse.connectorId,
-                    connectorStatus: resolvedStatus,
-                    evseId: evse.id,
-                    timestamp: new Date(),
-                  },
-                  { skipBufferingOnError: true, triggerMessage: true }
-                )
-                .catch(errorHandler)
-            } else if (chargingStation.hasEvses) {
-              for (const [evseId, evseStatus] of chargingStation.evses) {
-                if (evseId > 0) {
-                  for (const [connectorId, connectorStatus] of evseStatus.connectors) {
-                    const resolvedConnectorStatus =
-                      connectorStatus.status != null
-                        ? (connectorStatus.status as unknown as OCPP20ConnectorStatusEnumType)
-                        : OCPP20ConnectorStatusEnumType.Available
-                    chargingStation.ocppRequestService
-                      .requestHandler<
-                        OCPP20StatusNotificationRequest,
-                        OCPP20StatusNotificationResponse
-                      >(
-                        chargingStation,
-                        OCPP20RequestCommand.STATUS_NOTIFICATION,
-                        {
-                          connectorId,
-                          connectorStatus: resolvedConnectorStatus,
-                          evseId,
-                          timestamp: new Date(),
-                        },
-                        { skipBufferingOnError: true, triggerMessage: true }
-                      )
-                      .catch(errorHandler)
-                  }
-                }
-              }
-            }
+            this.triggerStatusNotification(chargingStation, evse, errorHandler)
             break
         }
       }
@@ -3055,6 +3008,68 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     handler: (chargingStation: ChargingStation, commandPayload: any) => JsonType | Promise<JsonType>
   ): IncomingRequestHandler {
     return handler as IncomingRequestHandler
+  }
+
+  private triggerAllEvseStatusNotifications (
+    chargingStation: ChargingStation,
+    errorHandler: (error: unknown) => void
+  ): void {
+    for (const [evseId, evseStatus] of chargingStation.evses) {
+      if (evseId > 0) {
+        for (const [connectorId, connectorStatus] of evseStatus.connectors) {
+          const resolvedConnectorStatus =
+            connectorStatus.status != null
+              ? (connectorStatus.status as unknown as OCPP20ConnectorStatusEnumType)
+              : OCPP20ConnectorStatusEnumType.Available
+          chargingStation.ocppRequestService
+            .requestHandler<
+              OCPP20StatusNotificationRequest,
+              OCPP20StatusNotificationResponse
+            >(
+              chargingStation,
+              OCPP20RequestCommand.STATUS_NOTIFICATION,
+              {
+                connectorId,
+                connectorStatus: resolvedConnectorStatus,
+                evseId,
+                timestamp: new Date(),
+              },
+              { skipBufferingOnError: true, triggerMessage: true }
+            )
+            .catch(errorHandler)
+        }
+      }
+    }
+  }
+
+  private triggerStatusNotification (
+    chargingStation: ChargingStation,
+    evse: OCPP20TriggerMessageRequest['evse'],
+    errorHandler: (error: unknown) => void
+  ): void {
+    if (evse?.id !== undefined && evse.id > 0 && evse.connectorId !== undefined) {
+      const evseStatus = chargingStation.evses.get(evse.id)
+      const connectorStatus = evseStatus?.connectors.get(evse.connectorId)
+      const resolvedStatus =
+        connectorStatus?.status != null
+          ? (connectorStatus.status as unknown as OCPP20ConnectorStatusEnumType)
+          : OCPP20ConnectorStatusEnumType.Available
+      chargingStation.ocppRequestService
+        .requestHandler<OCPP20StatusNotificationRequest, OCPP20StatusNotificationResponse>(
+          chargingStation,
+          OCPP20RequestCommand.STATUS_NOTIFICATION,
+          {
+            connectorId: evse.connectorId,
+            connectorStatus: resolvedStatus,
+            evseId: evse.id,
+            timestamp: new Date(),
+          },
+          { skipBufferingOnError: true, triggerMessage: true }
+        )
+        .catch(errorHandler)
+    } else if (chargingStation.hasEvses) {
+      this.triggerAllEvseStatusNotifications(chargingStation, errorHandler)
+    }
   }
 
   private validateChargingProfile (
