@@ -17,6 +17,7 @@ import { OCPP20IncomingRequestService } from '../../../../src/charging-station/o
 import {
   MessageTriggerEnumType,
   OCPP20IncomingRequestCommand,
+  OCPP20RequestCommand,
   OCPPVersion,
   ReasonCodeEnumType,
   RegistrationStatusEnumType,
@@ -528,7 +529,7 @@ await describe('F06 - TriggerMessage', async () => {
       assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
     })
 
-    await it('should fire StatusNotification requestHandler on Accepted', () => {
+    await it('should broadcast StatusNotification for all EVSEs on Accepted without specific EVSE', () => {
       const request: OCPP20TriggerMessageRequest = {
         requestedMessage: MessageTriggerEnumType.StatusNotification,
       }
@@ -543,7 +544,22 @@ await describe('F06 - TriggerMessage', async () => {
         response
       )
 
-      assert.ok(requestHandlerMock.mock.callCount() >= 1)
+      // 3 EVSEs (1, 2, 3) × 1 connector each = 3 StatusNotification calls
+      const callCount = requestHandlerMock.mock.callCount()
+      assert.strictEqual(callCount, 3)
+      for (const call of requestHandlerMock.mock.calls) {
+        const args = call.arguments as [unknown, string, Record<string, unknown>, Record<string, unknown>]
+        const [, command, payload, options] = args
+        assert.strictEqual(command, OCPP20RequestCommand.STATUS_NOTIFICATION)
+        assert.notStrictEqual(payload, undefined)
+        assert.ok('evseId' in payload, 'Expected payload to include evseId')
+        assert.ok('connectorId' in payload, 'Expected payload to include connectorId')
+        assert.ok('connectorStatus' in payload, 'Expected payload to include connectorStatus')
+        assert.ok('timestamp' in payload, 'Expected payload to include timestamp')
+        assert.ok((payload.evseId as number) > 0, 'Expected evseId > 0 (EVSE 0 excluded)')
+        assert.strictEqual(options.skipBufferingOnError, true)
+        assert.strictEqual(options.triggerMessage, true)
+      }
     })
 
     await it('should fire StatusNotification for specific EVSE and connector via listener', () => {
@@ -563,6 +579,15 @@ await describe('F06 - TriggerMessage', async () => {
       )
 
       assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
+      const args = requestHandlerMock.mock.calls[0].arguments as [unknown, string, Record<string, unknown>, Record<string, unknown>]
+      const [, command, payload, options] = args
+      assert.strictEqual(command, OCPP20RequestCommand.STATUS_NOTIFICATION)
+      assert.strictEqual(payload.evseId, 1)
+      assert.strictEqual(payload.connectorId, 1)
+      assert.ok('connectorStatus' in payload)
+      assert.ok(payload.timestamp instanceof Date)
+      assert.strictEqual(options.skipBufferingOnError, true)
+      assert.strictEqual(options.triggerMessage, true)
     })
 
     await it('should handle requestHandler rejection gracefully via errorHandler', async () => {
