@@ -65,12 +65,15 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
   private static readonly outgoingRequestSchemaNames: readonly [OCPP20RequestCommand, string][] = [
     [OCPP20RequestCommand.BOOT_NOTIFICATION, 'BootNotification'],
     [OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION, 'FirmwareStatusNotification'],
+    [OCPP20RequestCommand.GET_15118_EV_CERTIFICATE, 'Get15118EVCertificate'],
+    [OCPP20RequestCommand.GET_CERTIFICATE_STATUS, 'GetCertificateStatus'],
     [OCPP20RequestCommand.HEARTBEAT, 'Heartbeat'],
     [OCPP20RequestCommand.LOG_STATUS_NOTIFICATION, 'LogStatusNotification'],
     [OCPP20RequestCommand.METER_VALUES, 'MeterValues'],
     [OCPP20RequestCommand.NOTIFY_CUSTOMER_INFORMATION, 'NotifyCustomerInformation'],
     [OCPP20RequestCommand.NOTIFY_REPORT, 'NotifyReport'],
     [OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION, 'SecurityEventNotification'],
+    [OCPP20RequestCommand.SIGN_CERTIFICATE, 'SignCertificate'],
     [OCPP20RequestCommand.STATUS_NOTIFICATION, 'StatusNotification'],
     [OCPP20RequestCommand.TRANSACTION_EVENT, 'TransactionEvent'],
   ]
