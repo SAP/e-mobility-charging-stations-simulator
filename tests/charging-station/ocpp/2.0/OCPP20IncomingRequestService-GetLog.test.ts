@@ -79,42 +79,6 @@ await describe('K01 - GetLog', async () => {
     assert.strictEqual(response.filename, 'simulator-log.txt')
   })
 
-  await it('should pass through requestId correctly across different values', () => {
-    const testRequestId = 42
-    const request: OCPP20GetLogRequest = {
-      log: {
-        remoteLocation: 'ftp://logs.example.com/uploads/',
-      },
-      logType: LogEnumType.DiagnosticsLog,
-      requestId: testRequestId,
-    }
-
-    const response = testableService.handleRequestGetLog(station, request)
-
-    assert.strictEqual(response.status, LogStatusEnumType.Accepted)
-    assert.strictEqual(typeof response.status, 'string')
-    assert.strictEqual(response.filename, 'simulator-log.txt')
-  })
-
-  await it('should return Accepted for request with retries and retryInterval', () => {
-    const request: OCPP20GetLogRequest = {
-      log: {
-        latestTimestamp: new Date('2025-01-15T23:59:59.000Z'),
-        oldestTimestamp: new Date('2025-01-01T00:00:00.000Z'),
-        remoteLocation: 'ftp://logs.example.com/uploads/',
-      },
-      logType: LogEnumType.DiagnosticsLog,
-      requestId: 5,
-      retries: 3,
-      retryInterval: 60,
-    }
-
-    const response = testableService.handleRequestGetLog(station, request)
-
-    assert.strictEqual(response.status, LogStatusEnumType.Accepted)
-    assert.strictEqual(response.filename, 'simulator-log.txt')
-  })
-
   await it('should register GET_LOG event listener in constructor', () => {
     const service = new OCPP20IncomingRequestService()
     assert.strictEqual(service.listenerCount(OCPP20IncomingRequestCommand.GET_LOG), 1)

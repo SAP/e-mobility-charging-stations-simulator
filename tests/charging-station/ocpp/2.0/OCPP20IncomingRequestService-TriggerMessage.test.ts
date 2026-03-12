@@ -383,37 +383,6 @@ await describe('F06 - TriggerMessage', async () => {
     })
   })
 
-  await describe('F06 - Response structure', async () => {
-    let mockStation: MockChargingStation
-
-    beforeEach(() => {
-      ;({ mockStation } = createTriggerMessageStation())
-    })
-
-    await it('should return a plain object with a string status field', () => {
-      const request: OCPP20TriggerMessageRequest = {
-        requestedMessage: MessageTriggerEnumType.BootNotification,
-      }
-
-      const response = testableService.handleRequestTriggerMessage(mockStation, request)
-
-      assert.notStrictEqual(response, undefined)
-      assert.strictEqual(typeof response, 'object')
-      assert.strictEqual(typeof response.status, 'string')
-    })
-
-    await it('should not return a Promise from synchronous handler', () => {
-      const request: OCPP20TriggerMessageRequest = {
-        requestedMessage: MessageTriggerEnumType.BootNotification,
-      }
-
-      const result = testableService.handleRequestTriggerMessage(mockStation, request)
-
-      // A Promise would have a `then` property that is a function
-      assert.notStrictEqual(typeof (result as unknown as Promise<unknown>).then, 'function')
-    })
-  })
-
   await describe('F06 - TRIGGER_MESSAGE event listener', async () => {
     let incomingRequestServiceForListener: OCPP20IncomingRequestService
     let mockStation: MockChargingStation

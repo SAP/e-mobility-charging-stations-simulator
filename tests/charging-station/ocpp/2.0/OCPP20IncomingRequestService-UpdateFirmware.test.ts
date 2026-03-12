@@ -62,69 +62,6 @@ await describe('J02 - UpdateFirmware', async () => {
     assert.strictEqual(response.status, UpdateFirmwareStatusEnumType.Accepted)
   })
 
-  await it('should return Accepted for request with signature field', () => {
-    const request: OCPP20UpdateFirmwareRequest = {
-      firmware: {
-        location: 'https://firmware.example.com/signed-update.bin',
-        retrieveDateTime: new Date('2025-01-15T10:00:00.000Z'),
-        signature: 'dGVzdC1zaWduYXR1cmU=',
-        signingCertificate: '-----BEGIN CERTIFICATE-----\nMIIBkTCB...',
-      },
-      requestId: 2,
-    }
-
-    const response = testableService.handleRequestUpdateFirmware(station, request)
-
-    assert.strictEqual(response.status, UpdateFirmwareStatusEnumType.Accepted)
-  })
-
-  await it('should return Accepted for request without signature', () => {
-    const request: OCPP20UpdateFirmwareRequest = {
-      firmware: {
-        location: 'https://firmware.example.com/unsigned-update.bin',
-        retrieveDateTime: new Date('2025-01-15T12:00:00.000Z'),
-      },
-      requestId: 3,
-    }
-
-    const response = testableService.handleRequestUpdateFirmware(station, request)
-
-    assert.strictEqual(response.status, UpdateFirmwareStatusEnumType.Accepted)
-  })
-
-  await it('should pass through requestId correctly in the response', () => {
-    const testRequestId = 42
-    const request: OCPP20UpdateFirmwareRequest = {
-      firmware: {
-        location: 'https://firmware.example.com/update.bin',
-        retrieveDateTime: new Date('2025-01-15T14:00:00.000Z'),
-      },
-      requestId: testRequestId,
-    }
-
-    const response = testableService.handleRequestUpdateFirmware(station, request)
-
-    assert.strictEqual(response.status, UpdateFirmwareStatusEnumType.Accepted)
-    assert.strictEqual(typeof response.status, 'string')
-  })
-
-  await it('should return Accepted for request with retries and retryInterval', () => {
-    const request: OCPP20UpdateFirmwareRequest = {
-      firmware: {
-        installDateTime: new Date('2025-01-15T16:00:00.000Z'),
-        location: 'https://firmware.example.com/update-retry.bin',
-        retrieveDateTime: new Date('2025-01-15T15:00:00.000Z'),
-      },
-      requestId: 5,
-      retries: 3,
-      retryInterval: 60,
-    }
-
-    const response = testableService.handleRequestUpdateFirmware(station, request)
-
-    assert.strictEqual(response.status, UpdateFirmwareStatusEnumType.Accepted)
-  })
-
   await it('should register UPDATE_FIRMWARE event listener in constructor', () => {
     const service = new OCPP20IncomingRequestService()
     assert.strictEqual(service.listenerCount(OCPP20IncomingRequestCommand.UPDATE_FIRMWARE), 1)

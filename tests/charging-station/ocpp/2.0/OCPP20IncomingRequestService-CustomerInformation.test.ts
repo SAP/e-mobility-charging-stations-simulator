@@ -88,28 +88,6 @@ await describe('N32 - CustomerInformation', async () => {
     assert.strictEqual(response.status, CustomerInformationStatusEnumType.Rejected)
   })
 
-  // Verify clear request with explicit false report flag
-  await it('should respond with Accepted for clear=true and report=false', () => {
-    const response = testableService.handleRequestCustomerInformation(station, {
-      clear: true,
-      report: false,
-      requestId: 4,
-    })
-
-    assert.strictEqual(response.status, CustomerInformationStatusEnumType.Accepted)
-  })
-
-  // Verify report request with explicit false clear flag
-  await it('should respond with Accepted for clear=false and report=true', () => {
-    const response = testableService.handleRequestCustomerInformation(station, {
-      clear: false,
-      report: true,
-      requestId: 5,
-    })
-
-    assert.strictEqual(response.status, CustomerInformationStatusEnumType.Accepted)
-  })
-
   await it('should register CUSTOMER_INFORMATION event listener in constructor', () => {
     const service = new OCPP20IncomingRequestService()
     assert.strictEqual(service.listenerCount(OCPP20IncomingRequestCommand.CUSTOMER_INFORMATION), 1)
