@@ -287,6 +287,25 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         }
       }
     )
+    this.on(
+      OCPP20IncomingRequestCommand.GET_LOG,
+      (
+        chargingStation: ChargingStation,
+        request: OCPP20GetLogRequest,
+        response: OCPP20GetLogResponse
+      ) => {
+        if (response.status === LogStatusEnumType.Accepted) {
+          this.simulateLogUploadLifecycle(chargingStation, request.requestId).catch(
+            (error: unknown) => {
+              logger.error(
+                `${chargingStation.logPrefix()} ${moduleName}.constructor: GetLog lifecycle error:`,
+                error
+              )
+            }
+          )
+        }
+      }
+    )
     this.validatePayload = this.validatePayload.bind(this)
   }
 
@@ -1452,16 +1471,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     logger.info(
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetLog: Received GetLog request with requestId ${requestId.toString()} for logType '${logType}'`
     )
-
-    // Fire-and-forget log upload state machine after response is returned
-    setImmediate(() => {
-      this.simulateLogUploadLifecycle(chargingStation, requestId).catch((error: unknown) => {
-        logger.error(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetLog: Error during log upload simulation:`,
-          error
-        )
-      })
-    })
 
     return {
       filename: 'simulator-log.txt',
