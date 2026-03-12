@@ -1,3 +1,8 @@
+/**
+ * @file Tests for OCPP20IncomingRequestService UpdateFirmware
+ * @description Unit tests for OCPP 2.0.1 UpdateFirmware command handling (J02)
+ */
+
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
@@ -15,9 +20,8 @@ import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 
-await describe('UpdateFirmware - Incoming Request Handler', async () => {
+await describe('J02 - UpdateFirmware', async () => {
   let station: ChargingStation
-  let incomingRequestService: OCPP20IncomingRequestService
   let testableService: ReturnType<typeof createTestableIncomingRequestService>
 
   beforeEach(() => {
@@ -33,8 +37,7 @@ await describe('UpdateFirmware - Incoming Request Handler', async () => {
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
     station = mockStation
-    incomingRequestService = new OCPP20IncomingRequestService()
-    testableService = createTestableIncomingRequestService(incomingRequestService)
+    testableService = createTestableIncomingRequestService(new OCPP20IncomingRequestService())
   })
 
   afterEach(() => {

@@ -1,3 +1,8 @@
+/**
+ * @file Tests for OCPP20IncomingRequestService ChangeAvailability
+ * @description Unit tests for OCPP 2.0.1 ChangeAvailability command handling (G03)
+ */
+
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
@@ -18,11 +23,7 @@ import {
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 
-await describe('ChangeAvailability - Handler', async () => {
-  afterEach(() => {
-    standardCleanup()
-  })
-
+await describe('G03 - ChangeAvailability', async () => {
   let station: ChargingStation
   let testableService: ReturnType<typeof createTestableIncomingRequestService>
 
@@ -46,7 +47,12 @@ await describe('ChangeAvailability - Handler', async () => {
     testableService = createTestableIncomingRequestService(incomingRequestService)
   })
 
-  await it('G03.FR.01: EVSE level, no ongoing transaction, set Inoperative → Accepted', () => {
+  afterEach(() => {
+    standardCleanup()
+  })
+
+  // FR: G03.FR.01
+  await it('should accept EVSE-level Inoperative when no ongoing transaction', () => {
     const response = testableService.handleRequestChangeAvailability(station, {
       evse: { id: 1 },
       operationalStatus: OperationalStatusEnumType.Inoperative,
@@ -57,7 +63,8 @@ await describe('ChangeAvailability - Handler', async () => {
     assert.strictEqual(evseStatus?.availability, OperationalStatusEnumType.Inoperative)
   })
 
-  await it('G03.FR.02: CS level, no ongoing transaction, set Inoperative → Accepted', () => {
+  // FR: G03.FR.02
+  await it('should accept CS-level Inoperative when no ongoing transaction', () => {
     const response = testableService.handleRequestChangeAvailability(station, {
       operationalStatus: OperationalStatusEnumType.Inoperative,
     })
@@ -74,7 +81,8 @@ await describe('ChangeAvailability - Handler', async () => {
     }
   })
 
-  await it('G03.FR.03: EVSE level, ongoing transaction, set Inoperative → Scheduled', () => {
+  // FR: G03.FR.03
+  await it('should schedule EVSE-level Inoperative when ongoing transaction exists', () => {
     setupConnectorWithTransaction(station, 1, {
       transactionId: 100,
     })
@@ -87,7 +95,8 @@ await describe('ChangeAvailability - Handler', async () => {
     assert.strictEqual(response.status, ChangeAvailabilityStatusEnumType.Scheduled)
   })
 
-  await it('G03.FR.04: CS level, some EVSEs with transactions, set Inoperative → Scheduled', () => {
+  // FR: G03.FR.04
+  await it('should schedule CS-level Inoperative when some EVSEs have transactions', () => {
     setupConnectorWithTransaction(station, 2, {
       transactionId: 200,
     })

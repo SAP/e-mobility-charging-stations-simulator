@@ -1,3 +1,8 @@
+/**
+ * @file Tests for OCPP20RequestService MeterValues
+ * @description Unit tests for OCPP 2.0.1 MeterValues outgoing command (G01)
+ */
+
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
@@ -19,7 +24,7 @@ import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 
-await describe('MeterValues outgoing command', async () => {
+await describe('G01 - MeterValues', async () => {
   let station: ChargingStation
   let sendMessageMock: SendMessageMock
   let service: TestableOCPP20RequestService

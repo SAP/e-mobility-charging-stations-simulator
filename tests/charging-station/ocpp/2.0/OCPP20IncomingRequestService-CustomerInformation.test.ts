@@ -16,13 +16,8 @@ import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 
-await describe('CustomerInformation - Clear and Report Handler', async () => {
-  afterEach(() => {
-    standardCleanup()
-  })
-
+await describe('N32 - CustomerInformation', async () => {
   let station: ChargingStation
-  let incomingRequestService: OCPP20IncomingRequestService
   let testableService: ReturnType<typeof createTestableIncomingRequestService>
 
   beforeEach(() => {
@@ -38,8 +33,11 @@ await describe('CustomerInformation - Clear and Report Handler', async () => {
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
     station = mockStation
-    incomingRequestService = new OCPP20IncomingRequestService()
-    testableService = createTestableIncomingRequestService(incomingRequestService)
+    testableService = createTestableIncomingRequestService(new OCPP20IncomingRequestService())
+  })
+
+  afterEach(() => {
+    standardCleanup()
   })
 
   // TC_N_32_CS: CS must respond to CustomerInformation with Accepted for clear requests

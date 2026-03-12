@@ -25,13 +25,8 @@ import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 
-await describe('SetNetworkProfile - Reject Handler', async () => {
-  afterEach(() => {
-    standardCleanup()
-  })
-
+await describe('B43 - SetNetworkProfile', async () => {
   let station: ChargingStation
-  let incomingRequestService: OCPP20IncomingRequestService
   let testableService: ReturnType<typeof createTestableIncomingRequestService>
 
   beforeEach(() => {
@@ -47,8 +42,11 @@ await describe('SetNetworkProfile - Reject Handler', async () => {
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
     station = mockStation
-    incomingRequestService = new OCPP20IncomingRequestService()
-    testableService = createTestableIncomingRequestService(incomingRequestService)
+    testableService = createTestableIncomingRequestService(new OCPP20IncomingRequestService())
+  })
+
+  afterEach(() => {
+    standardCleanup()
   })
 
   // TC_B_43_CS: CS must respond to SetNetworkProfile at minimum with Rejected

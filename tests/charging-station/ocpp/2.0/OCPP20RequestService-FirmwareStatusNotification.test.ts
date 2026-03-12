@@ -1,3 +1,8 @@
+/**
+ * @file Tests for OCPP20RequestService FirmwareStatusNotification
+ * @description Unit tests for OCPP 2.0.1 FirmwareStatusNotification outgoing command (J01)
+ */
+
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 

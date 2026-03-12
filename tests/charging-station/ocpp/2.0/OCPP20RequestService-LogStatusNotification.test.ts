@@ -1,3 +1,8 @@
+/**
+ * @file Tests for OCPP20RequestService LogStatusNotification
+ * @description Unit tests for OCPP 2.0.1 LogStatusNotification outgoing command (M04)
+ */
+
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 

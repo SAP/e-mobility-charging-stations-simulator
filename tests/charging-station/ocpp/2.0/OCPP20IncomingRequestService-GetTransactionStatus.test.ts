@@ -19,13 +19,8 @@ import {
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 
-await describe('GetTransactionStatus - Handler', async () => {
-  afterEach(() => {
-    standardCleanup()
-  })
-
+await describe('D14 - GetTransactionStatus', async () => {
   let station: ChargingStation
-  let incomingRequestService: OCPP20IncomingRequestService
   let testableService: ReturnType<typeof createTestableIncomingRequestService>
 
   beforeEach(() => {
@@ -41,8 +36,11 @@ await describe('GetTransactionStatus - Handler', async () => {
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
     station = mockStation
-    incomingRequestService = new OCPP20IncomingRequestService()
-    testableService = createTestableIncomingRequestService(incomingRequestService)
+    testableService = createTestableIncomingRequestService(new OCPP20IncomingRequestService())
+  })
+
+  afterEach(() => {
+    standardCleanup()
   })
 
   // Per D14: No active transaction, no transactionId → ongoingIndicator: false

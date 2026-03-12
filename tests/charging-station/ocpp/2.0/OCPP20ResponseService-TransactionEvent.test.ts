@@ -74,7 +74,7 @@ function createTestableResponseService (
   }
 }
 
-await describe('TransactionEvent Response - idTokenInfo status handling', async () => {
+await describe('D01 - TransactionEvent Response', async () => {
   let station: ChargingStation
   let testable: TestableOCPP20ResponseService
 
