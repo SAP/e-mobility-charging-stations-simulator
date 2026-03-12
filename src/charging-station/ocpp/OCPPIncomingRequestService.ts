@@ -69,18 +69,24 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
       return true
     }
     const validate = this.payloadValidatorFunctions.get(commandName)
-    if (validate?.(payload) === true) {
+    if (validate == null) {
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.validateIncomingRequestPayload: No JSON schema validation function found for command '${commandName}' PDU validation`
+      )
+      return false
+    }
+    if (validate(payload)) {
       return true
     }
     logger.error(
       `${chargingStation.logPrefix()} ${moduleName}.validateIncomingRequestPayload: Command '${commandName}' incoming request PDU is invalid: %j`,
-      validate?.errors
+      validate.errors
     )
     throw new OCPPError(
-      ajvErrorsToErrorType(validate?.errors),
+      ajvErrorsToErrorType(validate.errors),
       'Incoming request PDU is invalid',
       commandName,
-      JSON.stringify(validate?.errors, undefined, 2)
+      JSON.stringify(validate.errors, undefined, 2)
     )
   }
 }

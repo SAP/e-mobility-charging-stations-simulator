@@ -1984,7 +1984,8 @@ const getMeasurandDefaultUnit = (
  * response services) to perform common operations and validation. It acts as a shared
  * utility layer that prevents code duplication across OCPP version-specific implementations.
  * @see {@link parseJsonSchemaFile} Core JSON schema parsing functionality
- * @see {@link validatePayload} Payload validation methods in service classes
+ * @see {@link validateIncomingRequestPayload} Payload validation methods in service classes
+ * @see {@link validateResponsePayload} Payload validation methods in service classes
  */
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
@@ -2145,12 +2146,13 @@ export class OCPPServiceUtils {
 
   /**
    * Parses and loads a JSON schema file for OCPP payload validation.
-   * Handles file reading, JSON parsing, and error recovery for schema validation.
+   * Handles file reading and JSON parsing for schema validation.
    * @param relativePath Path to the schema file relative to the OCPP utils directory
    * @param ocppVersion The OCPP version for error logging context
    * @param moduleName Optional module name for error logging
    * @param methodName Optional method name for error logging
-   * @returns Parsed JSON schema object or empty object if parsing fails
+   * @returns Parsed JSON schema object
+   * @throws {NodeJS.ErrnoException} If the schema file cannot be read or parsed
    */
   protected static parseJsonSchemaFile<T extends JsonType>(
     relativePath: string,
@@ -2158,18 +2160,26 @@ export class OCPPServiceUtils {
     moduleName?: string,
     methodName?: string
   ): JSONSchemaType<T> {
-    const filePath = join(dirname(fileURLToPath(import.meta.url)), relativePath)
+    const baseDir = dirname(fileURLToPath(import.meta.url))
+    // Primary: resolve from file directory (production esbuild bundle)
+    const primaryPath = join(baseDir, relativePath)
     try {
-      return JSON.parse(readFileSync(filePath, 'utf8')) as JSONSchemaType<T>
-    } catch (error) {
-      handleFileException(
-        filePath,
-        FileType.JsonSchema,
-        error as NodeJS.ErrnoException,
-        OCPPServiceUtils.logPrefix(ocppVersion, moduleName, methodName),
-        { throwError: false }
-      )
-      return {} as JSONSchemaType<T>
+      return JSON.parse(readFileSync(primaryPath, 'utf8')) as JSONSchemaType<T>
+    } catch (primaryError) {
+      // Fallback: resolve from source root (development/test with tsx)
+      const fallbackPath = join(baseDir, '..', '..', relativePath)
+      try {
+        return JSON.parse(readFileSync(fallbackPath, 'utf8')) as JSONSchemaType<T>
+      } catch {
+        handleFileException(
+          primaryPath,
+          FileType.JsonSchema,
+          primaryError as NodeJS.ErrnoException,
+          OCPPServiceUtils.logPrefix(ocppVersion, moduleName, methodName)
+        )
+        // handleFileException throws by default; this satisfies the compiler
+        throw primaryError
+      }
     }
   }
 

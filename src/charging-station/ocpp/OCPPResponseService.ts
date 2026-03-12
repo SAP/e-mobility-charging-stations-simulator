@@ -79,18 +79,24 @@ export abstract class OCPPResponseService {
       return true
     }
     const validate = this.payloadValidatorFunctions.get(commandName)
-    if (validate?.(payload) === true) {
+    if (validate == null) {
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.validateResponsePayload: No JSON schema validation function found for command '${commandName}' PDU validation`
+      )
+      return false
+    }
+    if (validate(payload)) {
       return true
     }
     logger.error(
       `${chargingStation.logPrefix()} ${moduleName}.validateResponsePayload: Command '${commandName}' response PDU is invalid: %j`,
-      validate?.errors
+      validate.errors
     )
     throw new OCPPError(
-      ajvErrorsToErrorType(validate?.errors),
+      ajvErrorsToErrorType(validate.errors),
       'Response PDU is invalid',
       commandName,
-      JSON.stringify(validate?.errors, undefined, 2)
+      JSON.stringify(validate.errors, undefined, 2)
     )
   }
 }

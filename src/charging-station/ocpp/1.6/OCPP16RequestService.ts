@@ -55,7 +55,7 @@ export class OCPP16RequestService extends OCPPRequestService {
     super(OCPPVersion.VERSION_16, ocppResponseService)
     this.payloadValidatorFunctions = OCPP16ServiceUtils.createPayloadValidatorMap(
       OCPP16ServiceUtils.createRequestPayloadConfigs(),
-      OCPP16ServiceUtils.createRequestPayloadOptions(moduleName, 'constructor'),
+      OCPP16ServiceUtils.createPayloadOptions(moduleName, 'constructor'),
       this.ajv
     )
     this.buildRequestPayload = this.buildRequestPayload.bind(this)

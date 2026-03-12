@@ -80,7 +80,7 @@ export class OCPP20RequestService extends OCPPRequestService {
     super(OCPPVersion.VERSION_201, ocppResponseService)
     this.payloadValidatorFunctions = OCPP20ServiceUtils.createPayloadValidatorMap(
       OCPP20ServiceUtils.createRequestPayloadConfigs(),
-      OCPP20ServiceUtils.createRequestPayloadOptions(moduleName, 'constructor'),
+      OCPP20ServiceUtils.createPayloadOptions(moduleName, 'constructor'),
       this.ajv
     )
     this.buildRequestPayload = this.buildRequestPayload.bind(this)

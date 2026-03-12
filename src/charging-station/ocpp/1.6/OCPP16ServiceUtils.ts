@@ -44,6 +44,42 @@ import { OCPP16Constants } from './OCPP16Constants.js'
 const moduleName = 'OCPP16ServiceUtils'
 
 export class OCPP16ServiceUtils extends OCPPServiceUtils {
+  private static readonly incomingRequestSchemaNames: readonly [
+    OCPP16IncomingRequestCommand,
+    string
+  ][] = [
+      [OCPP16IncomingRequestCommand.CANCEL_RESERVATION, 'CancelReservation'],
+      [OCPP16IncomingRequestCommand.CHANGE_AVAILABILITY, 'ChangeAvailability'],
+      [OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION, 'ChangeConfiguration'],
+      [OCPP16IncomingRequestCommand.CLEAR_CACHE, 'ClearCache'],
+      [OCPP16IncomingRequestCommand.CLEAR_CHARGING_PROFILE, 'ClearChargingProfile'],
+      [OCPP16IncomingRequestCommand.DATA_TRANSFER, 'DataTransfer'],
+      [OCPP16IncomingRequestCommand.GET_COMPOSITE_SCHEDULE, 'GetCompositeSchedule'],
+      [OCPP16IncomingRequestCommand.GET_CONFIGURATION, 'GetConfiguration'],
+      [OCPP16IncomingRequestCommand.GET_DIAGNOSTICS, 'GetDiagnostics'],
+      [OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION, 'RemoteStartTransaction'],
+      [OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION, 'RemoteStopTransaction'],
+      [OCPP16IncomingRequestCommand.RESERVE_NOW, 'ReserveNow'],
+      [OCPP16IncomingRequestCommand.RESET, 'Reset'],
+      [OCPP16IncomingRequestCommand.SET_CHARGING_PROFILE, 'SetChargingProfile'],
+      [OCPP16IncomingRequestCommand.TRIGGER_MESSAGE, 'TriggerMessage'],
+      [OCPP16IncomingRequestCommand.UNLOCK_CONNECTOR, 'UnlockConnector'],
+      [OCPP16IncomingRequestCommand.UPDATE_FIRMWARE, 'UpdateFirmware'],
+    ]
+
+  private static readonly outgoingRequestSchemaNames: readonly [OCPP16RequestCommand, string][] = [
+    [OCPP16RequestCommand.AUTHORIZE, 'Authorize'],
+    [OCPP16RequestCommand.BOOT_NOTIFICATION, 'BootNotification'],
+    [OCPP16RequestCommand.DATA_TRANSFER, 'DataTransfer'],
+    [OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION, 'DiagnosticsStatusNotification'],
+    [OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION, 'FirmwareStatusNotification'],
+    [OCPP16RequestCommand.HEARTBEAT, 'Heartbeat'],
+    [OCPP16RequestCommand.METER_VALUES, 'MeterValues'],
+    [OCPP16RequestCommand.START_TRANSACTION, 'StartTransaction'],
+    [OCPP16RequestCommand.STATUS_NOTIFICATION, 'StatusNotification'],
+    [OCPP16RequestCommand.STOP_TRANSACTION, 'StopTransaction'],
+  ]
+
   public static buildTransactionBeginMeterValue (
     chargingStation: ChargingStation,
     connectorId: number,
@@ -386,87 +422,11 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
   public static createIncomingRequestPayloadConfigs = (): [
     OCPP16IncomingRequestCommand,
     { schemaPath: string }
-  ][] => [
-    [
-      OCPP16IncomingRequestCommand.CANCEL_RESERVATION,
-      OCPP16ServiceUtils.PayloadValidatorConfig('CancelReservation.json'),
-    ],
-    [
-      OCPP16IncomingRequestCommand.CHANGE_AVAILABILITY,
-      OCPP16ServiceUtils.PayloadValidatorConfig('ChangeAvailability.json'),
-    ],
-    [
-      OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION,
-      OCPP16ServiceUtils.PayloadValidatorConfig('ChangeConfiguration.json'),
-    ],
-    [
-      OCPP16IncomingRequestCommand.CLEAR_CACHE,
-      OCPP16ServiceUtils.PayloadValidatorConfig('ClearCache.json'),
-    ],
-    [
-      OCPP16IncomingRequestCommand.CLEAR_CHARGING_PROFILE,
-      OCPP16ServiceUtils.PayloadValidatorConfig('ClearChargingProfile.json'),
-    ],
-    [
-      OCPP16IncomingRequestCommand.DATA_TRANSFER,
-      OCPP16ServiceUtils.PayloadValidatorConfig('DataTransfer.json'),
-    ],
-    [
-      OCPP16IncomingRequestCommand.GET_COMPOSITE_SCHEDULE,
-      OCPP16ServiceUtils.PayloadValidatorConfig('GetCompositeSchedule.json'),
-    ],
-    [
-      OCPP16IncomingRequestCommand.GET_CONFIGURATION,
-      OCPP16ServiceUtils.PayloadValidatorConfig('GetConfiguration.json'),
-    ],
-    [
-      OCPP16IncomingRequestCommand.GET_DIAGNOSTICS,
-      OCPP16ServiceUtils.PayloadValidatorConfig('GetDiagnostics.json'),
-    ],
-    [
-      OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
-      OCPP16ServiceUtils.PayloadValidatorConfig('RemoteStartTransaction.json'),
-    ],
-    [
-      OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION,
-      OCPP16ServiceUtils.PayloadValidatorConfig('RemoteStopTransaction.json'),
-    ],
-    [
-      OCPP16IncomingRequestCommand.RESERVE_NOW,
-      OCPP16ServiceUtils.PayloadValidatorConfig('ReserveNow.json'),
-    ],
-    [OCPP16IncomingRequestCommand.RESET, OCPP16ServiceUtils.PayloadValidatorConfig('Reset.json')],
-    [
-      OCPP16IncomingRequestCommand.SET_CHARGING_PROFILE,
-      OCPP16ServiceUtils.PayloadValidatorConfig('SetChargingProfile.json'),
-    ],
-    [
-      OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
-      OCPP16ServiceUtils.PayloadValidatorConfig('TriggerMessage.json'),
-    ],
-    [
-      OCPP16IncomingRequestCommand.UNLOCK_CONNECTOR,
-      OCPP16ServiceUtils.PayloadValidatorConfig('UnlockConnector.json'),
-    ],
-    [
-      OCPP16IncomingRequestCommand.UPDATE_FIRMWARE,
-      OCPP16ServiceUtils.PayloadValidatorConfig('UpdateFirmware.json'),
-    ],
-  ]
-
-  /**
-   * Factory options for OCPP 1.6 Incoming Request Service
-   * @param moduleName - Name of the OCPP module
-   * @param methodName - Name of the method/command
-   * @returns Factory options object for OCPP 1.6 incoming request validators
-   */
-  public static createIncomingRequestPayloadOptions = (moduleName: string, methodName: string) =>
-    OCPP16ServiceUtils.PayloadValidatorOptions(
-      OCPPVersion.VERSION_16,
-      'assets/json-schemas/ocpp/1.6',
-      moduleName,
-      methodName
-    )
+  ][] =>
+    OCPP16ServiceUtils.incomingRequestSchemaNames.map(([command, schemaBase]) => [
+      command,
+      OCPP16ServiceUtils.PayloadValidatorConfig(`${schemaBase}.json`),
+    ])
 
   /**
    * OCPP 1.6 Incoming Request Response Service validator configurations
@@ -475,87 +435,19 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
   public static createIncomingRequestResponsePayloadConfigs = (): [
     OCPP16IncomingRequestCommand,
     { schemaPath: string }
-  ][] => [
-    [
-      OCPP16IncomingRequestCommand.CANCEL_RESERVATION,
-      OCPP16ServiceUtils.PayloadValidatorConfig('CancelReservationResponse.json'),
-    ],
-    [
-      OCPP16IncomingRequestCommand.CHANGE_AVAILABILITY,
-      OCPP16ServiceUtils.PayloadValidatorConfig('ChangeAvailabilityResponse.json'),
-    ],
-    [
-      OCPP16IncomingRequestCommand.CHANGE_CONFIGURATION,
-      OCPP16ServiceUtils.PayloadValidatorConfig('ChangeConfigurationResponse.json'),
-    ],
-    [
-      OCPP16IncomingRequestCommand.CLEAR_CACHE,
-      OCPP16ServiceUtils.PayloadValidatorConfig('ClearCacheResponse.json'),
-    ],
-    [
-      OCPP16IncomingRequestCommand.CLEAR_CHARGING_PROFILE,
-      OCPP16ServiceUtils.PayloadValidatorConfig('ClearChargingProfileResponse.json'),
-    ],
-    [
-      OCPP16IncomingRequestCommand.DATA_TRANSFER,
-      OCPP16ServiceUtils.PayloadValidatorConfig('DataTransferResponse.json'),
-    ],
-    [
-      OCPP16IncomingRequestCommand.GET_COMPOSITE_SCHEDULE,
-      OCPP16ServiceUtils.PayloadValidatorConfig('GetCompositeScheduleResponse.json'),
-    ],
-    [
-      OCPP16IncomingRequestCommand.GET_CONFIGURATION,
-      OCPP16ServiceUtils.PayloadValidatorConfig('GetConfigurationResponse.json'),
-    ],
-    [
-      OCPP16IncomingRequestCommand.GET_DIAGNOSTICS,
-      OCPP16ServiceUtils.PayloadValidatorConfig('GetDiagnosticsResponse.json'),
-    ],
-    [
-      OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
-      OCPP16ServiceUtils.PayloadValidatorConfig('RemoteStartTransactionResponse.json'),
-    ],
-    [
-      OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION,
-      OCPP16ServiceUtils.PayloadValidatorConfig('RemoteStopTransactionResponse.json'),
-    ],
-    [
-      OCPP16IncomingRequestCommand.RESERVE_NOW,
-      OCPP16ServiceUtils.PayloadValidatorConfig('ReserveNowResponse.json'),
-    ],
-    [
-      OCPP16IncomingRequestCommand.RESET,
-      OCPP16ServiceUtils.PayloadValidatorConfig('ResetResponse.json'),
-    ],
-    [
-      OCPP16IncomingRequestCommand.SET_CHARGING_PROFILE,
-      OCPP16ServiceUtils.PayloadValidatorConfig('SetChargingProfileResponse.json'),
-    ],
-    [
-      OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
-      OCPP16ServiceUtils.PayloadValidatorConfig('TriggerMessageResponse.json'),
-    ],
-    [
-      OCPP16IncomingRequestCommand.UNLOCK_CONNECTOR,
-      OCPP16ServiceUtils.PayloadValidatorConfig('UnlockConnectorResponse.json'),
-    ],
-    [
-      OCPP16IncomingRequestCommand.UPDATE_FIRMWARE,
-      OCPP16ServiceUtils.PayloadValidatorConfig('UpdateFirmwareResponse.json'),
-    ],
-  ]
+  ][] =>
+    OCPP16ServiceUtils.incomingRequestSchemaNames.map(([command, schemaBase]) => [
+      command,
+      OCPP16ServiceUtils.PayloadValidatorConfig(`${schemaBase}Response.json`),
+    ])
 
   /**
-   * Factory options for OCPP 1.6 Incoming Request Response Service
+   * Factory options for OCPP 1.6 payload validators
    * @param moduleName - Name of the OCPP module
    * @param methodName - Name of the method/command
-   * @returns Factory options object for OCPP 1.6 incoming request response validators
+   * @returns Factory options object for OCPP 1.6 validators
    */
-  public static createIncomingRequestResponsePayloadOptions = (
-    moduleName: string,
-    methodName: string
-  ) =>
+  public static createPayloadOptions = (moduleName: string, methodName: string) =>
     OCPP16ServiceUtils.PayloadValidatorOptions(
       OCPPVersion.VERSION_16,
       'assets/json-schemas/ocpp/1.6',
@@ -570,56 +462,11 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
   public static createRequestPayloadConfigs = (): [
     OCPP16RequestCommand,
     { schemaPath: string }
-  ][] => [
-    [OCPP16RequestCommand.AUTHORIZE, OCPP16ServiceUtils.PayloadValidatorConfig('Authorize.json')],
-    [
-      OCPP16RequestCommand.BOOT_NOTIFICATION,
-      OCPP16ServiceUtils.PayloadValidatorConfig('BootNotification.json'),
-    ],
-    [
-      OCPP16RequestCommand.DATA_TRANSFER,
-      OCPP16ServiceUtils.PayloadValidatorConfig('DataTransfer.json'),
-    ],
-    [
-      OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
-      OCPP16ServiceUtils.PayloadValidatorConfig('DiagnosticsStatusNotification.json'),
-    ],
-    [
-      OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
-      OCPP16ServiceUtils.PayloadValidatorConfig('FirmwareStatusNotification.json'),
-    ],
-    [OCPP16RequestCommand.HEARTBEAT, OCPP16ServiceUtils.PayloadValidatorConfig('Heartbeat.json')],
-    [
-      OCPP16RequestCommand.METER_VALUES,
-      OCPP16ServiceUtils.PayloadValidatorConfig('MeterValues.json'),
-    ],
-    [
-      OCPP16RequestCommand.START_TRANSACTION,
-      OCPP16ServiceUtils.PayloadValidatorConfig('StartTransaction.json'),
-    ],
-    [
-      OCPP16RequestCommand.STATUS_NOTIFICATION,
-      OCPP16ServiceUtils.PayloadValidatorConfig('StatusNotification.json'),
-    ],
-    [
-      OCPP16RequestCommand.STOP_TRANSACTION,
-      OCPP16ServiceUtils.PayloadValidatorConfig('StopTransaction.json'),
-    ],
-  ]
-
-  /**
-   * Factory options for OCPP 1.6 Request Service
-   * @param moduleName - Name of the OCPP module
-   * @param methodName - Name of the method/command
-   * @returns Factory options object for OCPP 1.6 validators
-   */
-  public static createRequestPayloadOptions = (moduleName: string, methodName: string) =>
-    OCPP16ServiceUtils.PayloadValidatorOptions(
-      OCPPVersion.VERSION_16,
-      'assets/json-schemas/ocpp/1.6',
-      moduleName,
-      methodName
-    )
+  ][] =>
+    OCPP16ServiceUtils.outgoingRequestSchemaNames.map(([command, schemaBase]) => [
+      command,
+      OCPP16ServiceUtils.PayloadValidatorConfig(`${schemaBase}.json`),
+    ])
 
   /**
    * OCPP 1.6 Response Service validator configurations
@@ -628,62 +475,11 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
   public static createResponsePayloadConfigs = (): [
     OCPP16RequestCommand,
     { schemaPath: string }
-  ][] => [
-    [
-      OCPP16RequestCommand.AUTHORIZE,
-      OCPP16ServiceUtils.PayloadValidatorConfig('AuthorizeResponse.json'),
-    ],
-    [
-      OCPP16RequestCommand.BOOT_NOTIFICATION,
-      OCPP16ServiceUtils.PayloadValidatorConfig('BootNotificationResponse.json'),
-    ],
-    [
-      OCPP16RequestCommand.DATA_TRANSFER,
-      OCPP16ServiceUtils.PayloadValidatorConfig('DataTransferResponse.json'),
-    ],
-    [
-      OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
-      OCPP16ServiceUtils.PayloadValidatorConfig('DiagnosticsStatusNotificationResponse.json'),
-    ],
-    [
-      OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
-      OCPP16ServiceUtils.PayloadValidatorConfig('FirmwareStatusNotificationResponse.json'),
-    ],
-    [
-      OCPP16RequestCommand.HEARTBEAT,
-      OCPP16ServiceUtils.PayloadValidatorConfig('HeartbeatResponse.json'),
-    ],
-    [
-      OCPP16RequestCommand.METER_VALUES,
-      OCPP16ServiceUtils.PayloadValidatorConfig('MeterValuesResponse.json'),
-    ],
-    [
-      OCPP16RequestCommand.START_TRANSACTION,
-      OCPP16ServiceUtils.PayloadValidatorConfig('StartTransactionResponse.json'),
-    ],
-    [
-      OCPP16RequestCommand.STATUS_NOTIFICATION,
-      OCPP16ServiceUtils.PayloadValidatorConfig('StatusNotificationResponse.json'),
-    ],
-    [
-      OCPP16RequestCommand.STOP_TRANSACTION,
-      OCPP16ServiceUtils.PayloadValidatorConfig('StopTransactionResponse.json'),
-    ],
-  ]
-
-  /**
-   * Factory options for OCPP 1.6 Response Service
-   * @param moduleName - Name of the OCPP module
-   * @param methodName - Name of the method/command
-   * @returns Factory options object for OCPP 1.6 response validators
-   */
-  public static createResponsePayloadOptions = (moduleName: string, methodName: string) =>
-    OCPP16ServiceUtils.PayloadValidatorOptions(
-      OCPPVersion.VERSION_16,
-      'assets/json-schemas/ocpp/1.6',
-      moduleName,
-      methodName
-    )
+  ][] =>
+    OCPP16ServiceUtils.outgoingRequestSchemaNames.map(([command, schemaBase]) => [
+      command,
+      OCPP16ServiceUtils.PayloadValidatorConfig(`${schemaBase}Response.json`),
+    ])
 
   public static hasReservation = (
     chargingStation: ChargingStation,

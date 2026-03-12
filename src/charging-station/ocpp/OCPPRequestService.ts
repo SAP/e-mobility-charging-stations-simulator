@@ -448,34 +448,30 @@ export abstract class OCPPRequestService {
     if (chargingStation.stationInfo?.ocppStrictCompliance === false) {
       return true
     }
-    if (
-      !this.ocppResponseService.incomingRequestResponsePayloadValidateFunctions.has(
-        commandName as IncomingRequestCommand
-      )
-    ) {
+    const validate = this.ocppResponseService.incomingRequestResponsePayloadValidateFunctions.get(
+      commandName as IncomingRequestCommand
+    )
+    if (validate == null) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.validateIncomingRequestResponsePayload: No JSON schema validation function found for command '${commandName}' PDU validation`
       )
       return true
     }
-    const validate = this.ocppResponseService.incomingRequestResponsePayloadValidateFunctions.get(
-      commandName as IncomingRequestCommand
-    )
     payload = clone<T>(payload)
     convertDateToISOString<T>(payload)
-    if (validate?.(payload) === true) {
+    if (validate(payload)) {
       return true
     }
     logger.error(
       `${chargingStation.logPrefix()} ${moduleName}.validateIncomingRequestResponsePayload: Command '${commandName}' incoming request response PDU is invalid: %j`,
-      validate?.errors
+      validate.errors
     )
     // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
     throw new OCPPError(
-      ajvErrorsToErrorType(validate?.errors),
+      ajvErrorsToErrorType(validate.errors),
       'Incoming request response PDU is invalid',
       commandName,
-      JSON.stringify(validate?.errors, undefined, 2)
+      JSON.stringify(validate.errors, undefined, 2)
     )
   }
 
@@ -495,28 +491,28 @@ export abstract class OCPPRequestService {
     if (chargingStation.stationInfo?.ocppStrictCompliance === false) {
       return true
     }
-    if (!this.payloadValidatorFunctions.has(commandName as RequestCommand)) {
+    const validate = this.payloadValidatorFunctions.get(commandName as RequestCommand)
+    if (validate == null) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.validateRequestPayload: No JSON schema validation function found for command '${commandName}' PDU validation`
       )
       return true
     }
-    const validate = this.payloadValidatorFunctions.get(commandName as RequestCommand)
     payload = clone<T>(payload)
     convertDateToISOString<T>(payload)
-    if (validate?.(payload) === true) {
+    if (validate(payload)) {
       return true
     }
     logger.error(
       `${chargingStation.logPrefix()} ${moduleName}.validateRequestPayload: Command '${commandName}' request PDU is invalid: %j`,
-      validate?.errors
+      validate.errors
     )
     // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
     throw new OCPPError(
-      ajvErrorsToErrorType(validate?.errors),
+      ajvErrorsToErrorType(validate.errors),
       'Request PDU is invalid',
       commandName,
-      JSON.stringify(validate?.errors, undefined, 2)
+      JSON.stringify(validate.errors, undefined, 2)
     )
   }
 }

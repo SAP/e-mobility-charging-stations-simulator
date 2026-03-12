@@ -243,7 +243,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     ])
     this.payloadValidatorFunctions = OCPP20ServiceUtils.createPayloadValidatorMap(
       OCPP20ServiceUtils.createIncomingRequestPayloadConfigs(),
-      OCPP20ServiceUtils.createIncomingRequestPayloadOptions(moduleName, 'constructor'),
+      OCPP20ServiceUtils.createPayloadOptions(moduleName, 'constructor'),
       this.ajv
     )
     // Handle incoming request events
@@ -407,7 +407,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         }
       }
     )
-    this.validatePayload = this.validatePayload.bind(this)
   }
 
   public handleRequestGetVariables (
@@ -586,7 +585,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         OCPP20ServiceUtils.isIncomingRequestCommandSupported(chargingStation, commandName)
       ) {
         try {
-          this.validatePayload(chargingStation, commandName, commandPayload)
+          this.validateIncomingRequestPayload(chargingStation, commandName, commandPayload)
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const incomingRequestHandler = this.incomingRequestHandlers.get(commandName)!
           if (isAsyncFunction(incomingRequestHandler)) {
@@ -3374,27 +3373,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     )
     return true
   }
-
-  /**
-   * Validates incoming OCPP 2.0 request payload against JSON schema
-   * @param chargingStation - The charging station instance processing the request
-   * @param commandName - OCPP 2.0 command name to validate against
-   * @param commandPayload - JSON payload to validate
-   * @returns True if payload validation succeeds, false otherwise
-   */
-  private validatePayload (
-    chargingStation: ChargingStation,
-    commandName: OCPP20IncomingRequestCommand,
-    commandPayload: JsonType
-  ): boolean {
-    if (this.payloadValidatorFunctions.has(commandName)) {
-      return this.validateIncomingRequestPayload(chargingStation, commandName, commandPayload)
-    }
-    logger.warn(
-      `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema validation function found for command '${commandName}' PDU validation`
-    )
-    return false
-  }
 }
 
 /**
@@ -3436,7 +3414,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
  * 3. Request routed to appropriate handler method
  * 4. Business logic executed with variable model integration
  * 5. Response payload validated and sent back to CSMS
- * @see {@link validatePayload} Request payload validation method
+ * @see {@link validateIncomingRequestPayload} Request payload validation method
  * @see {@link handleRequestStartTransaction} Example OCPP 2.0+ request handler
  * @see {@link OCPP20VariableManager} Variable management integration
  */

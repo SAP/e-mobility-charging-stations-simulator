@@ -149,7 +149,7 @@ const moduleName = 'OCPP16IncomingRequestService'
  * 3. Request routed to appropriate handler method
  * 4. Business logic executed with charging station state management
  * 5. Response payload validated and sent back to Central System
- * @see {@link validatePayload} Request payload validation method
+ * @see {@link validateIncomingRequestPayload} Request payload validation method
  * @see {@link handleRequestRemoteStartTransaction} Example request handler
  */
 
@@ -235,7 +235,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     ])
     this.payloadValidatorFunctions = OCPP16ServiceUtils.createPayloadValidatorMap(
       OCPP16ServiceUtils.createIncomingRequestPayloadConfigs(),
-      OCPP16ServiceUtils.createIncomingRequestPayloadOptions(moduleName, 'constructor'),
+      OCPP16ServiceUtils.createPayloadOptions(moduleName, 'constructor'),
       this.ajv
     )
     // Handle incoming request events
@@ -429,7 +429,6 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         }
       }
     )
-    this.validatePayload = this.validatePayload.bind(this)
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
@@ -468,7 +467,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         OCPP16ServiceUtils.isIncomingRequestCommandSupported(chargingStation, commandName)
       ) {
         try {
-          this.validatePayload(chargingStation, commandName, commandPayload)
+          this.validateIncomingRequestPayload(chargingStation, commandName, commandPayload)
           // Call the method to build the response
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const incomingRequestHandler = this.incomingRequestHandlers.get(commandName)!
@@ -1659,26 +1658,5 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       await sleep(secondsToMilliseconds(randomInt(minDelay, maxDelay + 1)))
       await chargingStation.reset(OCPP16StopTransactionReason.REBOOT)
     }
-  }
-
-  /**
-   * Validates incoming OCPP 1.6 request payload against JSON schema
-   * @param chargingStation - The charging station instance processing the request
-   * @param commandName - OCPP 1.6 command name to validate against
-   * @param commandPayload - JSON payload to validate
-   * @returns True if payload validation succeeds, false otherwise
-   */
-  private validatePayload (
-    chargingStation: ChargingStation,
-    commandName: OCPP16IncomingRequestCommand,
-    commandPayload: JsonType
-  ): boolean {
-    if (this.payloadValidatorFunctions.has(commandName)) {
-      return this.validateIncomingRequestPayload(chargingStation, commandName, commandPayload)
-    }
-    logger.warn(
-      `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema validation function found for command '${commandName}' PDU validation`
-    )
-    return false
   }
 }

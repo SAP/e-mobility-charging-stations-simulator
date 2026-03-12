@@ -68,7 +68,7 @@ const moduleName = 'OCPP20ResponseService'
  * 3. Response routed to appropriate handler based on original request type
  * 4. Charging station state and variable model updated based on response content
  * 5. Enhanced follow-up actions triggered based on OCPP 2.0+ capabilities
- * @see {@link validatePayload} Response payload validation method
+ * @see {@link validateResponsePayload} Response payload validation method
  * @see {@link handleResponse} Response processing methods
  * @see {@link OCPP20VariableManager} Variable management integration
  */
@@ -125,16 +125,15 @@ export class OCPP20ResponseService extends OCPPResponseService {
     ])
     this.payloadValidatorFunctions = OCPP20ServiceUtils.createPayloadValidatorMap(
       OCPP20ServiceUtils.createResponsePayloadConfigs(),
-      OCPP20ServiceUtils.createResponsePayloadOptions(moduleName, 'constructor'),
+      OCPP20ServiceUtils.createPayloadOptions(moduleName, 'constructor'),
       this.ajv
     )
     this.incomingRequestResponsePayloadValidateFunctions =
       OCPP20ServiceUtils.createPayloadValidatorMap(
         OCPP20ServiceUtils.createIncomingRequestResponsePayloadConfigs(),
-        OCPP20ServiceUtils.createIncomingRequestResponsePayloadOptions(moduleName, 'constructor'),
+        OCPP20ServiceUtils.createPayloadOptions(moduleName, 'constructor'),
         this.ajvIncomingRequest
       )
-    this.validatePayload = this.validatePayload.bind(this)
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
@@ -156,7 +155,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
         OCPP20ServiceUtils.isRequestCommandSupported(chargingStation, commandName)
       ) {
         try {
-          this.validatePayload(chargingStation, commandName, payload)
+          this.validateResponsePayload(chargingStation, commandName, payload)
           logger.debug(
             `${chargingStation.logPrefix()} ${moduleName}.responseHandler: Handling '${commandName}' response`
           )
@@ -406,39 +405,5 @@ export class OCPP20ResponseService extends OCPPResponseService {
         `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Updated personal message format: ${payload.updatedPersonalMessage.format}, content: ${payload.updatedPersonalMessage.content}`
       )
     }
-  }
-
-  /**
-   * Validates incoming OCPP 2.0 response payload against JSON schema
-   * @param chargingStation - The charging station instance receiving the response
-   * @param commandName - OCPP 2.0 command name to validate against
-   * @param payload - JSON response payload to validate
-   * @returns True if payload validation succeeds, false otherwise
-   */
-  private validatePayload (
-    chargingStation: ChargingStation,
-    commandName: OCPP20RequestCommand,
-    payload: JsonType
-  ): boolean {
-    if (this.payloadValidatorFunctions.has(commandName)) {
-      logger.debug(
-        `${chargingStation.logPrefix()} ${moduleName}.validatePayload: Validating '${commandName}' response payload`
-      )
-      const isValid = this.validateResponsePayload(chargingStation, commandName, payload)
-      if (!isValid) {
-        logger.warn(
-          `${chargingStation.logPrefix()} ${moduleName}.validatePayload: '${commandName}' response payload validation failed`
-        )
-      } else {
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.validatePayload: '${commandName}' response payload validation successful`
-        )
-      }
-      return isValid
-    }
-    logger.warn(
-      `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema validation function found for command '${commandName}' PDU validation`
-    )
-    return false
   }
 }

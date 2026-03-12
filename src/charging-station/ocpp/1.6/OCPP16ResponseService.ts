@@ -70,7 +70,7 @@ const moduleName = 'OCPP16ResponseService'
  * 3. Response routed to appropriate handler based on original request type
  * 4. Charging station state updated based on response content
  * 5. Any follow-up actions triggered (transactions, status changes, etc.)
- * @see {@link validatePayload} Response payload validation method
+ * @see {@link validateResponsePayload} Response payload validation method
  * @see {@link handleResponse} Response processing methods
  */
 
@@ -114,16 +114,15 @@ export class OCPP16ResponseService extends OCPPResponseService {
     ])
     this.payloadValidatorFunctions = OCPP16ServiceUtils.createPayloadValidatorMap(
       OCPP16ServiceUtils.createResponsePayloadConfigs(),
-      OCPP16ServiceUtils.createResponsePayloadOptions(moduleName, 'constructor'),
+      OCPP16ServiceUtils.createPayloadOptions(moduleName, 'constructor'),
       this.ajv
     )
     this.incomingRequestResponsePayloadValidateFunctions =
       OCPP16ServiceUtils.createPayloadValidatorMap(
         OCPP16ServiceUtils.createIncomingRequestResponsePayloadConfigs(),
-        OCPP16ServiceUtils.createIncomingRequestResponsePayloadOptions(moduleName, 'constructor'),
+        OCPP16ServiceUtils.createPayloadOptions(moduleName, 'constructor'),
         this.ajvIncomingRequest
       )
-    this.validatePayload = this.validatePayload.bind(this)
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
@@ -145,7 +144,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         OCPP16ServiceUtils.isRequestCommandSupported(chargingStation, commandName)
       ) {
         try {
-          this.validatePayload(chargingStation, commandName, payload)
+          this.validateResponsePayload(chargingStation, commandName, payload)
           logger.debug(
             `${chargingStation.logPrefix()} ${moduleName}.responseHandler: Handling '${commandName}' response`
           )
@@ -601,39 +600,5 @@ export class OCPP16ResponseService extends OCPPResponseService {
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
     resetConnectorStatus(connectorStatus)
     await OCPP16ServiceUtils.restoreConnectorStatus(chargingStation, connectorId, connectorStatus)
-  }
-
-  /**
-   * Validates incoming OCPP 1.6 response payload against JSON schema
-   * @param chargingStation - The charging station instance receiving the response
-   * @param commandName - OCPP 1.6 command name to validate against
-   * @param payload - JSON response payload to validate
-   * @returns True if payload validation succeeds, false otherwise
-   */
-  private validatePayload (
-    chargingStation: ChargingStation,
-    commandName: OCPP16RequestCommand,
-    payload: JsonType
-  ): boolean {
-    if (this.payloadValidatorFunctions.has(commandName)) {
-      logger.debug(
-        `${chargingStation.logPrefix()} ${moduleName}.validatePayload: Validating '${commandName}' response payload`
-      )
-      const isValid = this.validateResponsePayload(chargingStation, commandName, payload)
-      if (!isValid) {
-        logger.warn(
-          `${chargingStation.logPrefix()} ${moduleName}.validatePayload: '${commandName}' response payload validation failed`
-        )
-      } else {
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.validatePayload: '${commandName}' response payload validation successful`
-        )
-      }
-      return isValid
-    }
-    logger.warn(
-      `${chargingStation.logPrefix()} ${moduleName}.validatePayload: No JSON schema validation function found for command '${commandName}' PDU validation`
-    )
-    return false
   }
 }
