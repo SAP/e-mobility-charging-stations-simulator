@@ -16,6 +16,8 @@ import { createTestableIncomingRequestService } from '../../../../src/charging-s
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import {
   MessageTriggerEnumType,
+  OCPP20IncomingRequestCommand,
+  OCPP20RequestCommand,
   OCPPVersion,
   ReasonCodeEnumType,
   RegistrationStatusEnumType,
@@ -382,34 +384,256 @@ await describe('F06 - TriggerMessage', async () => {
     })
   })
 
-  await describe('F06 - Response structure', async () => {
+  await describe('F06 - TRIGGER_MESSAGE event listener', async () => {
+    let incomingRequestServiceForListener: OCPP20IncomingRequestService
     let mockStation: MockChargingStation
+    let requestHandlerMock: ReturnType<typeof mock.fn>
 
     beforeEach(() => {
-      ;({ mockStation } = createTriggerMessageStation())
+      ;({ mockStation, requestHandlerMock } = createTriggerMessageStation())
+      incomingRequestServiceForListener = new OCPP20IncomingRequestService()
     })
 
-    await it('should return a plain object with a string status field', () => {
+    await it('should register TRIGGER_MESSAGE event listener in constructor', () => {
+      assert.strictEqual(
+        incomingRequestServiceForListener.listenerCount(
+          OCPP20IncomingRequestCommand.TRIGGER_MESSAGE
+        ),
+        1
+      )
+    })
+
+    await it('should NOT fire requestHandler when response status is Rejected', () => {
+      const request: OCPP20TriggerMessageRequest = {
+        requestedMessage: MessageTriggerEnumType.Heartbeat,
+      }
+      const response: OCPP20TriggerMessageResponse = {
+        status: TriggerMessageStatusEnumType.Rejected,
+      }
+
+      incomingRequestServiceForListener.emit(
+        OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+        mockStation,
+        request,
+        response
+      )
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
+    })
+
+    await it('should NOT fire requestHandler when response status is NotImplemented', () => {
+      const request: OCPP20TriggerMessageRequest = {
+        requestedMessage: MessageTriggerEnumType.Heartbeat,
+      }
+      const response: OCPP20TriggerMessageResponse = {
+        status: TriggerMessageStatusEnumType.NotImplemented,
+      }
+
+      incomingRequestServiceForListener.emit(
+        OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+        mockStation,
+        request,
+        response
+      )
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
+    })
+
+    await it('should fire BootNotification requestHandler on Accepted', () => {
       const request: OCPP20TriggerMessageRequest = {
         requestedMessage: MessageTriggerEnumType.BootNotification,
       }
-
-      const response = testableService.handleRequestTriggerMessage(mockStation, request)
-
-      assert.notStrictEqual(response, undefined)
-      assert.strictEqual(typeof response, 'object')
-      assert.strictEqual(typeof response.status, 'string')
-    })
-
-    await it('should not return a Promise from synchronous handler', () => {
-      const request: OCPP20TriggerMessageRequest = {
-        requestedMessage: MessageTriggerEnumType.BootNotification,
+      const response: OCPP20TriggerMessageResponse = {
+        status: TriggerMessageStatusEnumType.Accepted,
       }
 
-      const result = testableService.handleRequestTriggerMessage(mockStation, request)
+      incomingRequestServiceForListener.emit(
+        OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+        mockStation,
+        request,
+        response
+      )
 
-      // A Promise would have a `then` property that is a function
-      assert.notStrictEqual(typeof (result as unknown as Promise<unknown>).then, 'function')
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
+    })
+
+    await it('should fire Heartbeat requestHandler on Accepted', () => {
+      const request: OCPP20TriggerMessageRequest = {
+        requestedMessage: MessageTriggerEnumType.Heartbeat,
+      }
+      const response: OCPP20TriggerMessageResponse = {
+        status: TriggerMessageStatusEnumType.Accepted,
+      }
+
+      incomingRequestServiceForListener.emit(
+        OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+        mockStation,
+        request,
+        response
+      )
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
+    })
+
+    await it('should fire FirmwareStatusNotification requestHandler on Accepted', () => {
+      const request: OCPP20TriggerMessageRequest = {
+        requestedMessage: MessageTriggerEnumType.FirmwareStatusNotification,
+      }
+      const response: OCPP20TriggerMessageResponse = {
+        status: TriggerMessageStatusEnumType.Accepted,
+      }
+
+      incomingRequestServiceForListener.emit(
+        OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+        mockStation,
+        request,
+        response
+      )
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
+    })
+
+    await it('should fire LogStatusNotification requestHandler on Accepted', () => {
+      const request: OCPP20TriggerMessageRequest = {
+        requestedMessage: MessageTriggerEnumType.LogStatusNotification,
+      }
+      const response: OCPP20TriggerMessageResponse = {
+        status: TriggerMessageStatusEnumType.Accepted,
+      }
+
+      incomingRequestServiceForListener.emit(
+        OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+        mockStation,
+        request,
+        response
+      )
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
+    })
+
+    await it('should fire MeterValues requestHandler on Accepted', () => {
+      const request: OCPP20TriggerMessageRequest = {
+        requestedMessage: MessageTriggerEnumType.MeterValues,
+      }
+      const response: OCPP20TriggerMessageResponse = {
+        status: TriggerMessageStatusEnumType.Accepted,
+      }
+
+      incomingRequestServiceForListener.emit(
+        OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+        mockStation,
+        request,
+        response
+      )
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
+    })
+
+    await it('should broadcast StatusNotification for all EVSEs on Accepted without specific EVSE', () => {
+      const request: OCPP20TriggerMessageRequest = {
+        requestedMessage: MessageTriggerEnumType.StatusNotification,
+      }
+      const response: OCPP20TriggerMessageResponse = {
+        status: TriggerMessageStatusEnumType.Accepted,
+      }
+
+      incomingRequestServiceForListener.emit(
+        OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+        mockStation,
+        request,
+        response
+      )
+
+      // 3 EVSEs (1, 2, 3) × 1 connector each = 3 StatusNotification calls
+      const callCount = requestHandlerMock.mock.callCount()
+      assert.strictEqual(callCount, 3)
+      for (const call of requestHandlerMock.mock.calls) {
+        const args = call.arguments as [
+          unknown,
+          string,
+          Record<string, unknown>,
+          Record<string, unknown>
+        ]
+        const [, command, payload, options] = args
+        assert.strictEqual(command, OCPP20RequestCommand.STATUS_NOTIFICATION)
+        assert.notStrictEqual(payload, undefined)
+        assert.ok('evseId' in payload, 'Expected payload to include evseId')
+        assert.ok('connectorId' in payload, 'Expected payload to include connectorId')
+        assert.ok('connectorStatus' in payload, 'Expected payload to include connectorStatus')
+        assert.ok('timestamp' in payload, 'Expected payload to include timestamp')
+        assert.ok((payload.evseId as number) > 0, 'Expected evseId > 0 (EVSE 0 excluded)')
+        assert.strictEqual(options.skipBufferingOnError, true)
+        assert.strictEqual(options.triggerMessage, true)
+      }
+    })
+
+    await it('should fire StatusNotification for specific EVSE and connector via listener', () => {
+      const request: OCPP20TriggerMessageRequest = {
+        evse: { connectorId: 1, id: 1 },
+        requestedMessage: MessageTriggerEnumType.StatusNotification,
+      }
+      const response: OCPP20TriggerMessageResponse = {
+        status: TriggerMessageStatusEnumType.Accepted,
+      }
+
+      incomingRequestServiceForListener.emit(
+        OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+        mockStation,
+        request,
+        response
+      )
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
+      const args = requestHandlerMock.mock.calls[0].arguments as [
+        unknown,
+        string,
+        Record<string, unknown>,
+        Record<string, unknown>
+      ]
+      const [, command, payload, options] = args
+      assert.strictEqual(command, OCPP20RequestCommand.STATUS_NOTIFICATION)
+      assert.strictEqual(payload.evseId, 1)
+      assert.strictEqual(payload.connectorId, 1)
+      assert.ok('connectorStatus' in payload)
+      assert.ok(payload.timestamp instanceof Date)
+      assert.strictEqual(options.skipBufferingOnError, true)
+      assert.strictEqual(options.triggerMessage, true)
+    })
+
+    await it('should handle requestHandler rejection gracefully via errorHandler', async () => {
+      const rejectingMock = mock.fn(async () => Promise.reject(new Error('test error')))
+      const { station: rejectStation } = createMockChargingStation({
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
+        connectorsCount: 3,
+        evseConfiguration: { evsesCount: 3 },
+        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+        ocppRequestService: {
+          requestHandler: rejectingMock,
+        },
+        stationInfo: {
+          ocppVersion: OCPPVersion.VERSION_201,
+        },
+        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      })
+
+      const request: OCPP20TriggerMessageRequest = {
+        requestedMessage: MessageTriggerEnumType.Heartbeat,
+      }
+      const response: OCPP20TriggerMessageResponse = {
+        status: TriggerMessageStatusEnumType.Accepted,
+      }
+
+      incomingRequestServiceForListener.emit(
+        OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+        rejectStation,
+        request,
+        response
+      )
+
+      // Flush microtask queue so .catch(errorHandler) executes
+      await Promise.resolve()
+
+      assert.strictEqual(rejectingMock.mock.callCount(), 1)
     })
   })
 })

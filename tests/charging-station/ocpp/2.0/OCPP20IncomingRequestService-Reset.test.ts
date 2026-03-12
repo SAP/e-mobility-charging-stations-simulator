@@ -49,51 +49,6 @@ await describe('B11 & B12 - Reset', async () => {
       mockStation = ResetTestFixtures.createStandardStation()
     })
 
-    // FR: B11.FR.01
-    await it('should handle Reset request with Immediate type when no transactions', async () => {
-      const resetRequest: OCPP20ResetRequest = {
-        type: ResetEnumType.Immediate,
-      }
-
-      const response: OCPP20ResetResponse = await testableService.handleRequestReset(
-        mockStation,
-        resetRequest
-      )
-
-      assert.notStrictEqual(response, undefined)
-      assert.strictEqual(typeof response, 'object')
-      assert.notStrictEqual(response.status, undefined)
-      assert.strictEqual(typeof response.status, 'string')
-      assert.ok(
-        [
-          ResetStatusEnumType.Accepted,
-          ResetStatusEnumType.Rejected,
-          ResetStatusEnumType.Scheduled,
-        ].includes(response.status)
-      )
-    })
-
-    await it('should handle Reset request with OnIdle type when no transactions', async () => {
-      const resetRequest: OCPP20ResetRequest = {
-        type: ResetEnumType.OnIdle,
-      }
-
-      const response: OCPP20ResetResponse = await testableService.handleRequestReset(
-        mockStation,
-        resetRequest
-      )
-
-      assert.notStrictEqual(response, undefined)
-      assert.notStrictEqual(response.status, undefined)
-      assert.ok(
-        [
-          ResetStatusEnumType.Accepted,
-          ResetStatusEnumType.Rejected,
-          ResetStatusEnumType.Scheduled,
-        ].includes(response.status)
-      )
-    })
-
     // FR: B11.FR.03
     await it('should handle EVSE-specific reset request when no transactions', async () => {
       const resetRequest: OCPP20ResetRequest = {
@@ -140,6 +95,7 @@ await describe('B11 & B12 - Reset', async () => {
       assert.ok(response.statusInfo.additionalInfo.includes('EVSE 999'))
     })
 
+    // FR: B11.FR.01
     await it('should return proper response structure for immediate reset without transactions', async () => {
       const resetRequest: OCPP20ResetRequest = {
         type: ResetEnumType.Immediate,

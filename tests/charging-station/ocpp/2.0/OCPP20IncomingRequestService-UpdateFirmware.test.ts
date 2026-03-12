@@ -4,14 +4,16 @@
  */
 
 import assert from 'node:assert/strict'
-import { afterEach, beforeEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import {
+  OCPP20IncomingRequestCommand,
   type OCPP20UpdateFirmwareRequest,
+  type OCPP20UpdateFirmwareResponse,
   OCPPVersion,
   UpdateFirmwareStatusEnumType,
 } from '../../../../src/types/index.js'
@@ -60,66 +62,101 @@ await describe('J02 - UpdateFirmware', async () => {
     assert.strictEqual(response.status, UpdateFirmwareStatusEnumType.Accepted)
   })
 
-  await it('should return Accepted for request with signature field', () => {
-    const request: OCPP20UpdateFirmwareRequest = {
-      firmware: {
-        location: 'https://firmware.example.com/signed-update.bin',
-        retrieveDateTime: new Date('2025-01-15T10:00:00.000Z'),
-        signature: 'dGVzdC1zaWduYXR1cmU=',
-        signingCertificate: '-----BEGIN CERTIFICATE-----\nMIIBkTCB...',
-      },
-      requestId: 2,
-    }
-
-    const response = testableService.handleRequestUpdateFirmware(station, request)
-
-    assert.strictEqual(response.status, UpdateFirmwareStatusEnumType.Accepted)
+  await it('should register UPDATE_FIRMWARE event listener in constructor', () => {
+    const service = new OCPP20IncomingRequestService()
+    assert.strictEqual(service.listenerCount(OCPP20IncomingRequestCommand.UPDATE_FIRMWARE), 1)
   })
 
-  await it('should return Accepted for request without signature', () => {
-    const request: OCPP20UpdateFirmwareRequest = {
-      firmware: {
-        location: 'https://firmware.example.com/unsigned-update.bin',
-        retrieveDateTime: new Date('2025-01-15T12:00:00.000Z'),
+  await it('should call simulateFirmwareUpdateLifecycle when UPDATE_FIRMWARE event emitted with Accepted response', () => {
+    const service = new OCPP20IncomingRequestService()
+    const simulateMock = mock.method(
+      service as unknown as {
+        simulateFirmwareUpdateLifecycle: (
+          chargingStation: ChargingStation,
+          requestId: number,
+          signature?: string
+        ) => Promise<void>
       },
-      requestId: 3,
-    }
+      'simulateFirmwareUpdateLifecycle',
+      () => Promise.resolve()
+    )
 
-    const response = testableService.handleRequestUpdateFirmware(station, request)
-
-    assert.strictEqual(response.status, UpdateFirmwareStatusEnumType.Accepted)
-  })
-
-  await it('should pass through requestId correctly in the response', () => {
-    const testRequestId = 42
     const request: OCPP20UpdateFirmwareRequest = {
       firmware: {
         location: 'https://firmware.example.com/update.bin',
-        retrieveDateTime: new Date('2025-01-15T14:00:00.000Z'),
+        retrieveDateTime: new Date('2025-01-15T10:00:00.000Z'),
+        signature: 'dGVzdA==',
       },
-      requestId: testRequestId,
+      requestId: 42,
+    }
+    const response: OCPP20UpdateFirmwareResponse = {
+      status: UpdateFirmwareStatusEnumType.Accepted,
     }
 
-    const response = testableService.handleRequestUpdateFirmware(station, request)
+    service.emit(OCPP20IncomingRequestCommand.UPDATE_FIRMWARE, station, request, response)
 
-    assert.strictEqual(response.status, UpdateFirmwareStatusEnumType.Accepted)
-    assert.strictEqual(typeof response.status, 'string')
+    assert.strictEqual(simulateMock.mock.callCount(), 1)
+    assert.strictEqual(simulateMock.mock.calls[0].arguments[1], 42)
+    assert.strictEqual(simulateMock.mock.calls[0].arguments[2], 'dGVzdA==')
   })
 
-  await it('should return Accepted for request with retries and retryInterval', () => {
+  await it('should NOT call simulateFirmwareUpdateLifecycle when UPDATE_FIRMWARE event emitted with Rejected response', () => {
+    const service = new OCPP20IncomingRequestService()
+    const simulateMock = mock.method(
+      service as unknown as {
+        simulateFirmwareUpdateLifecycle: (
+          chargingStation: ChargingStation,
+          requestId: number,
+          signature?: string
+        ) => Promise<void>
+      },
+      'simulateFirmwareUpdateLifecycle',
+      () => Promise.resolve()
+    )
+
     const request: OCPP20UpdateFirmwareRequest = {
       firmware: {
-        installDateTime: new Date('2025-01-15T16:00:00.000Z'),
-        location: 'https://firmware.example.com/update-retry.bin',
-        retrieveDateTime: new Date('2025-01-15T15:00:00.000Z'),
+        location: 'https://firmware.example.com/update.bin',
+        retrieveDateTime: new Date(),
       },
-      requestId: 5,
-      retries: 3,
-      retryInterval: 60,
+      requestId: 43,
+    }
+    const response: OCPP20UpdateFirmwareResponse = {
+      status: UpdateFirmwareStatusEnumType.Rejected,
     }
 
-    const response = testableService.handleRequestUpdateFirmware(station, request)
+    service.emit(OCPP20IncomingRequestCommand.UPDATE_FIRMWARE, station, request, response)
 
-    assert.strictEqual(response.status, UpdateFirmwareStatusEnumType.Accepted)
+    assert.strictEqual(simulateMock.mock.callCount(), 0)
+  })
+
+  await it('should handle simulateFirmwareUpdateLifecycle rejection gracefully', async () => {
+    const service = new OCPP20IncomingRequestService()
+    mock.method(
+      service as unknown as {
+        simulateFirmwareUpdateLifecycle: (
+          chargingStation: ChargingStation,
+          requestId: number,
+          signature?: string
+        ) => Promise<void>
+      },
+      'simulateFirmwareUpdateLifecycle',
+      () => Promise.reject(new Error('firmware lifecycle error'))
+    )
+
+    const request: OCPP20UpdateFirmwareRequest = {
+      firmware: {
+        location: 'https://firmware.example.com/update.bin',
+        retrieveDateTime: new Date('2025-01-15T10:00:00.000Z'),
+      },
+      requestId: 99,
+    }
+    const response: OCPP20UpdateFirmwareResponse = {
+      status: UpdateFirmwareStatusEnumType.Accepted,
+    }
+
+    service.emit(OCPP20IncomingRequestCommand.UPDATE_FIRMWARE, station, request, response)
+
+    await Promise.resolve()
   })
 })
