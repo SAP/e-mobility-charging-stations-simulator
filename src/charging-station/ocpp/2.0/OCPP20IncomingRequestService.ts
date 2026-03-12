@@ -266,6 +266,27 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         }
       }
     )
+    this.on(
+      OCPP20IncomingRequestCommand.UPDATE_FIRMWARE,
+      (
+        chargingStation: ChargingStation,
+        request: OCPP20UpdateFirmwareRequest,
+        response: OCPP20UpdateFirmwareResponse
+      ) => {
+        if (response.status === UpdateFirmwareStatusEnumType.Accepted) {
+          this.simulateFirmwareUpdateLifecycle(
+            chargingStation,
+            request.requestId,
+            request.firmware.signature
+          ).catch((error: unknown) => {
+            logger.error(
+              `${chargingStation.logPrefix()} ${moduleName}.constructor: UpdateFirmware lifecycle error:`,
+              error
+            )
+          })
+        }
+      }
+    )
     this.validatePayload = this.validatePayload.bind(this)
   }
 
@@ -2441,18 +2462,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     logger.info(
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Received UpdateFirmware request with requestId ${requestId.toString()} for location '${firmware.location}'`
     )
-
-    // Fire-and-forget firmware update state machine after response is returned
-    setImmediate(() => {
-      this.simulateFirmwareUpdateLifecycle(chargingStation, requestId, firmware.signature).catch(
-        (error: unknown) => {
-          logger.error(
-            `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Error during firmware update simulation:`,
-            error
-          )
-        }
-      )
-    })
 
     return {
       status: UpdateFirmwareStatusEnumType.Accepted,
