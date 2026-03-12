@@ -328,6 +328,152 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         }
       }
     )
+    this.on(
+      OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+      (
+        chargingStation: ChargingStation,
+        request: OCPP20TriggerMessageRequest,
+        response: OCPP20TriggerMessageResponse
+      ) => {
+        if (response.status !== TriggerMessageStatusEnumType.Accepted) {
+          return
+        }
+        const { evse, requestedMessage } = request
+        const errorHandler = (error: unknown): void => {
+          logger.error(
+            `${chargingStation.logPrefix()} ${moduleName}.constructor: Trigger ${requestedMessage} error:`,
+            error
+          )
+        }
+        switch (requestedMessage) {
+          case MessageTriggerEnumType.BootNotification:
+            chargingStation.ocppRequestService
+              .requestHandler<OCPP20BootNotificationRequest, OCPP20BootNotificationResponse>(
+                chargingStation,
+                OCPP20RequestCommand.BOOT_NOTIFICATION,
+                chargingStation.bootNotificationRequest as OCPP20BootNotificationRequest,
+                { skipBufferingOnError: true, triggerMessage: true }
+              )
+              .catch(errorHandler)
+            break
+          case MessageTriggerEnumType.FirmwareStatusNotification:
+            chargingStation.ocppRequestService
+              .requestHandler<
+                OCPP20FirmwareStatusNotificationRequest,
+                OCPP20FirmwareStatusNotificationResponse
+              >(
+                chargingStation,
+                OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
+                { status: FirmwareStatusEnumType.Idle },
+                { skipBufferingOnError: true, triggerMessage: true }
+              )
+              .catch(errorHandler)
+            break
+          case MessageTriggerEnumType.Heartbeat:
+            chargingStation.ocppRequestService
+              .requestHandler<OCPP20HeartbeatRequest, OCPP20HeartbeatResponse>(
+                chargingStation,
+                OCPP20RequestCommand.HEARTBEAT,
+                {},
+                { skipBufferingOnError: true, triggerMessage: true }
+              )
+              .catch(errorHandler)
+            break
+          case MessageTriggerEnumType.LogStatusNotification:
+            chargingStation.ocppRequestService
+              .requestHandler<
+                OCPP20LogStatusNotificationRequest,
+                OCPP20LogStatusNotificationResponse
+              >(
+                chargingStation,
+                OCPP20RequestCommand.LOG_STATUS_NOTIFICATION,
+                { status: UploadLogStatusEnumType.Idle },
+                { skipBufferingOnError: true, triggerMessage: true }
+              )
+              .catch(errorHandler)
+            break
+          case MessageTriggerEnumType.MeterValues: {
+            const evseId = evse?.id ?? 0
+            chargingStation.ocppRequestService
+              .requestHandler<OCPP20MeterValuesRequest, OCPP20MeterValuesResponse>(
+                chargingStation,
+                OCPP20RequestCommand.METER_VALUES,
+                {
+                  evseId,
+                  meterValue: [
+                    {
+                      sampledValue: [
+                        {
+                          context: OCPP20ReadingContextEnumType.TRIGGER,
+                          measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
+                          value: 0,
+                        },
+                      ],
+                      timestamp: new Date(),
+                    },
+                  ],
+                },
+                { skipBufferingOnError: true, triggerMessage: true }
+              )
+              .catch(errorHandler)
+            break
+          }
+          case MessageTriggerEnumType.StatusNotification:
+            if (evse?.id !== undefined && evse.id > 0 && evse.connectorId !== undefined) {
+              const evseStatus = chargingStation.evses.get(evse.id)
+              const connectorStatus = evseStatus?.connectors.get(evse.connectorId)
+              const resolvedStatus =
+                connectorStatus?.status != null
+                  ? (connectorStatus.status as unknown as OCPP20ConnectorStatusEnumType)
+                  : OCPP20ConnectorStatusEnumType.Available
+              chargingStation.ocppRequestService
+                .requestHandler<
+                  OCPP20StatusNotificationRequest,
+                  OCPP20StatusNotificationResponse
+                >(
+                  chargingStation,
+                  OCPP20RequestCommand.STATUS_NOTIFICATION,
+                  {
+                    connectorId: evse.connectorId,
+                    connectorStatus: resolvedStatus,
+                    evseId: evse.id,
+                    timestamp: new Date(),
+                  },
+                  { skipBufferingOnError: true, triggerMessage: true }
+                )
+                .catch(errorHandler)
+            } else if (chargingStation.hasEvses) {
+              for (const [evseId, evseStatus] of chargingStation.evses) {
+                if (evseId > 0) {
+                  for (const [connectorId, connectorStatus] of evseStatus.connectors) {
+                    const resolvedConnectorStatus =
+                      connectorStatus.status != null
+                        ? (connectorStatus.status as unknown as OCPP20ConnectorStatusEnumType)
+                        : OCPP20ConnectorStatusEnumType.Available
+                    chargingStation.ocppRequestService
+                      .requestHandler<
+                        OCPP20StatusNotificationRequest,
+                        OCPP20StatusNotificationResponse
+                      >(
+                        chargingStation,
+                        OCPP20RequestCommand.STATUS_NOTIFICATION,
+                        {
+                          connectorId,
+                          connectorStatus: resolvedConnectorStatus,
+                          evseId,
+                          timestamp: new Date(),
+                        },
+                        { skipBufferingOnError: true, triggerMessage: true }
+                      )
+                      .catch(errorHandler)
+                  }
+                }
+              }
+            }
+            break
+        }
+      }
+    )
     this.validatePayload = this.validatePayload.bind(this)
   }
 
@@ -2187,168 +2333,21 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               },
             }
           }
-          chargingStation.ocppRequestService
-            .requestHandler<
-              OCPP20BootNotificationRequest,
-              OCPP20BootNotificationResponse
-            >(chargingStation, OCPP20RequestCommand.BOOT_NOTIFICATION, chargingStation.bootNotificationRequest as OCPP20BootNotificationRequest, { skipBufferingOnError: true, triggerMessage: true })
-            .catch((error: unknown) => {
-              logger.error(
-                `${chargingStation.logPrefix()} ${moduleName}.handleRequestTriggerMessage: Error sending BootNotification:`,
-                error
-              )
-            })
           return { status: TriggerMessageStatusEnumType.Accepted }
 
         case MessageTriggerEnumType.FirmwareStatusNotification:
-          chargingStation.ocppRequestService
-            .requestHandler<
-              OCPP20FirmwareStatusNotificationRequest,
-              OCPP20FirmwareStatusNotificationResponse
-            >(
-              chargingStation,
-              OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
-              {
-                status: FirmwareStatusEnumType.Idle,
-              },
-              { skipBufferingOnError: true, triggerMessage: true }
-            )
-            .catch((error: unknown) => {
-              logger.error(
-                `${chargingStation.logPrefix()} ${moduleName}.handleRequestTriggerMessage: Error sending FirmwareStatusNotification:`,
-                error
-              )
-            })
           return { status: TriggerMessageStatusEnumType.Accepted }
 
         case MessageTriggerEnumType.Heartbeat:
-          chargingStation.ocppRequestService
-            .requestHandler<
-              OCPP20HeartbeatRequest,
-              OCPP20HeartbeatResponse
-            >(chargingStation, OCPP20RequestCommand.HEARTBEAT, {}, { skipBufferingOnError: true, triggerMessage: true })
-            .catch((error: unknown) => {
-              logger.error(
-                `${chargingStation.logPrefix()} ${moduleName}.handleRequestTriggerMessage: Error sending Heartbeat:`,
-                error
-              )
-            })
           return { status: TriggerMessageStatusEnumType.Accepted }
 
         case MessageTriggerEnumType.LogStatusNotification:
-          chargingStation.ocppRequestService
-            .requestHandler<
-              OCPP20LogStatusNotificationRequest,
-              OCPP20LogStatusNotificationResponse
-            >(
-              chargingStation,
-              OCPP20RequestCommand.LOG_STATUS_NOTIFICATION,
-              {
-                status: UploadLogStatusEnumType.Idle,
-              },
-              { skipBufferingOnError: true, triggerMessage: true }
-            )
-            .catch((error: unknown) => {
-              logger.error(
-                `${chargingStation.logPrefix()} ${moduleName}.handleRequestTriggerMessage: Error sending LogStatusNotification:`,
-                error
-              )
-            })
           return { status: TriggerMessageStatusEnumType.Accepted }
 
-        case MessageTriggerEnumType.MeterValues: {
-          const evseId = evse?.id ?? 0
-          chargingStation.ocppRequestService
-            .requestHandler<OCPP20MeterValuesRequest, OCPP20MeterValuesResponse>(
-              chargingStation,
-              OCPP20RequestCommand.METER_VALUES,
-              {
-                evseId,
-                meterValue: [
-                  {
-                    sampledValue: [
-                      {
-                        context: OCPP20ReadingContextEnumType.TRIGGER,
-                        measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
-                        value: 0,
-                      },
-                    ],
-                    timestamp: new Date(),
-                  },
-                ],
-              },
-              { skipBufferingOnError: true, triggerMessage: true }
-            )
-            .catch((error: unknown) => {
-              logger.error(
-                `${chargingStation.logPrefix()} ${moduleName}.handleRequestTriggerMessage: Error sending MeterValues:`,
-                error
-              )
-            })
+        case MessageTriggerEnumType.MeterValues:
           return { status: TriggerMessageStatusEnumType.Accepted }
-        }
 
         case MessageTriggerEnumType.StatusNotification:
-          if (evse?.id !== undefined && evse.id > 0 && evse.connectorId !== undefined) {
-            const evseStatus = chargingStation.evses.get(evse.id)
-            const connectorStatus = evseStatus?.connectors.get(evse.connectorId)
-            const resolvedStatus =
-              connectorStatus?.status != null
-                ? (connectorStatus.status as unknown as OCPP20ConnectorStatusEnumType)
-                : OCPP20ConnectorStatusEnumType.Available
-            chargingStation.ocppRequestService
-              .requestHandler<OCPP20StatusNotificationRequest, OCPP20StatusNotificationResponse>(
-                chargingStation,
-                OCPP20RequestCommand.STATUS_NOTIFICATION,
-                {
-                  connectorId: evse.connectorId,
-                  connectorStatus: resolvedStatus,
-                  evseId: evse.id,
-                  timestamp: new Date(),
-                },
-                { skipBufferingOnError: true, triggerMessage: true }
-              )
-              .catch((error: unknown) => {
-                logger.error(
-                  `${chargingStation.logPrefix()} ${moduleName}.handleRequestTriggerMessage: Error sending StatusNotification:`,
-                  error
-                )
-              })
-          } else {
-            if (chargingStation.hasEvses) {
-              for (const [evseId, evseStatus] of chargingStation.evses) {
-                if (evseId > 0) {
-                  for (const [connectorId, connectorStatus] of evseStatus.connectors) {
-                    const resolvedConnectorStatus =
-                      connectorStatus.status != null
-                        ? (connectorStatus.status as unknown as OCPP20ConnectorStatusEnumType)
-                        : OCPP20ConnectorStatusEnumType.Available
-                    chargingStation.ocppRequestService
-                      .requestHandler<
-                        OCPP20StatusNotificationRequest,
-                        OCPP20StatusNotificationResponse
-                      >(
-                        chargingStation,
-                        OCPP20RequestCommand.STATUS_NOTIFICATION,
-                        {
-                          connectorId,
-                          connectorStatus: resolvedConnectorStatus,
-                          evseId,
-                          timestamp: new Date(),
-                        },
-                        { skipBufferingOnError: true, triggerMessage: true }
-                      )
-                      .catch((error: unknown) => {
-                        logger.error(
-                          `${chargingStation.logPrefix()} ${moduleName}.handleRequestTriggerMessage: Error sending StatusNotification:`,
-                          error
-                        )
-                      })
-                  }
-                }
-              }
-            }
-          }
           return { status: TriggerMessageStatusEnumType.Accepted }
 
         default:

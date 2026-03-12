@@ -16,6 +16,7 @@ import { createTestableIncomingRequestService } from '../../../../src/charging-s
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import {
   MessageTriggerEnumType,
+  OCPP20IncomingRequestCommand,
   OCPPVersion,
   ReasonCodeEnumType,
   RegistrationStatusEnumType,
@@ -410,6 +411,170 @@ await describe('F06 - TriggerMessage', async () => {
 
       // A Promise would have a `then` property that is a function
       assert.notStrictEqual(typeof (result as unknown as Promise<unknown>).then, 'function')
+    })
+  })
+
+  await describe('F06 - TRIGGER_MESSAGE event listener', async () => {
+    let incomingRequestServiceForListener: OCPP20IncomingRequestService
+    let mockStation: MockChargingStation
+    let requestHandlerMock: ReturnType<typeof mock.fn>
+
+    beforeEach(() => {
+      ;({ mockStation, requestHandlerMock } = createTriggerMessageStation())
+      incomingRequestServiceForListener = new OCPP20IncomingRequestService()
+    })
+
+    await it('should register TRIGGER_MESSAGE event listener in constructor', () => {
+      assert.strictEqual(
+        incomingRequestServiceForListener.listenerCount(
+          OCPP20IncomingRequestCommand.TRIGGER_MESSAGE
+        ),
+        1
+      )
+    })
+
+    await it('should NOT fire requestHandler when response status is Rejected', () => {
+      const request: OCPP20TriggerMessageRequest = {
+        requestedMessage: MessageTriggerEnumType.Heartbeat,
+      }
+      const response: OCPP20TriggerMessageResponse = {
+        status: TriggerMessageStatusEnumType.Rejected,
+      }
+
+      incomingRequestServiceForListener.emit(
+        OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+        mockStation,
+        request,
+        response
+      )
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
+    })
+
+    await it('should NOT fire requestHandler when response status is NotImplemented', () => {
+      const request: OCPP20TriggerMessageRequest = {
+        requestedMessage: MessageTriggerEnumType.Heartbeat,
+      }
+      const response: OCPP20TriggerMessageResponse = {
+        status: TriggerMessageStatusEnumType.NotImplemented,
+      }
+
+      incomingRequestServiceForListener.emit(
+        OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+        mockStation,
+        request,
+        response
+      )
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
+    })
+
+    await it('should fire BootNotification requestHandler on Accepted', () => {
+      const request: OCPP20TriggerMessageRequest = {
+        requestedMessage: MessageTriggerEnumType.BootNotification,
+      }
+      const response: OCPP20TriggerMessageResponse = {
+        status: TriggerMessageStatusEnumType.Accepted,
+      }
+
+      incomingRequestServiceForListener.emit(
+        OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+        mockStation,
+        request,
+        response
+      )
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
+    })
+
+    await it('should fire Heartbeat requestHandler on Accepted', () => {
+      const request: OCPP20TriggerMessageRequest = {
+        requestedMessage: MessageTriggerEnumType.Heartbeat,
+      }
+      const response: OCPP20TriggerMessageResponse = {
+        status: TriggerMessageStatusEnumType.Accepted,
+      }
+
+      incomingRequestServiceForListener.emit(
+        OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+        mockStation,
+        request,
+        response
+      )
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
+    })
+
+    await it('should fire FirmwareStatusNotification requestHandler on Accepted', () => {
+      const request: OCPP20TriggerMessageRequest = {
+        requestedMessage: MessageTriggerEnumType.FirmwareStatusNotification,
+      }
+      const response: OCPP20TriggerMessageResponse = {
+        status: TriggerMessageStatusEnumType.Accepted,
+      }
+
+      incomingRequestServiceForListener.emit(
+        OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+        mockStation,
+        request,
+        response
+      )
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
+    })
+
+    await it('should fire LogStatusNotification requestHandler on Accepted', () => {
+      const request: OCPP20TriggerMessageRequest = {
+        requestedMessage: MessageTriggerEnumType.LogStatusNotification,
+      }
+      const response: OCPP20TriggerMessageResponse = {
+        status: TriggerMessageStatusEnumType.Accepted,
+      }
+
+      incomingRequestServiceForListener.emit(
+        OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+        mockStation,
+        request,
+        response
+      )
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
+    })
+
+    await it('should fire MeterValues requestHandler on Accepted', () => {
+      const request: OCPP20TriggerMessageRequest = {
+        requestedMessage: MessageTriggerEnumType.MeterValues,
+      }
+      const response: OCPP20TriggerMessageResponse = {
+        status: TriggerMessageStatusEnumType.Accepted,
+      }
+
+      incomingRequestServiceForListener.emit(
+        OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+        mockStation,
+        request,
+        response
+      )
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
+    })
+
+    await it('should fire StatusNotification requestHandler on Accepted', () => {
+      const request: OCPP20TriggerMessageRequest = {
+        requestedMessage: MessageTriggerEnumType.StatusNotification,
+      }
+      const response: OCPP20TriggerMessageResponse = {
+        status: TriggerMessageStatusEnumType.Accepted,
+      }
+
+      incomingRequestServiceForListener.emit(
+        OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+        mockStation,
+        request,
+        response
+      )
+
+      assert.ok(requestHandlerMock.mock.callCount() >= 1)
     })
   })
 })
