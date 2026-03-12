@@ -43,18 +43,18 @@ await describe('D14 - GetTransactionStatus', async () => {
     standardCleanup()
   })
 
-  // Per D14: No active transaction, no transactionId → ongoingIndicator: false
-  await it('should return ongoingIndicator false when no active transaction and no transactionId', () => {
+  // E14.FR.06: When no transactionId provided, ongoingIndicator SHALL NOT be set
+  await it('should not include ongoingIndicator when no transactionId provided (E14.FR.06)', () => {
     const response = testableService.handleRequestGetTransactionStatus(station, {})
 
     assert.notStrictEqual(response, undefined)
     assert.strictEqual(typeof response, 'object')
-    assert.strictEqual(response.ongoingIndicator, false)
+    assert.strictEqual(response.ongoingIndicator, undefined)
     assert.strictEqual(response.messagesInQueue, false)
   })
 
-  // Per E28-E34: With active transaction on EVSE, no transactionId → ongoingIndicator: true
-  await it('should return ongoingIndicator true when active transaction exists and no transactionId', () => {
+  // E14.FR.06: Even with active transactions, no transactionId → ongoingIndicator not set
+  await it('should not include ongoingIndicator when active transaction exists but no transactionId (E14.FR.06)', () => {
     const transactionId = 'txn-12345'
     setupConnectorWithTransaction(station, 1, {
       transactionId: transactionId as unknown as number,
@@ -63,11 +63,11 @@ await describe('D14 - GetTransactionStatus', async () => {
     const response = testableService.handleRequestGetTransactionStatus(station, {})
 
     assert.notStrictEqual(response, undefined)
-    assert.strictEqual(response.ongoingIndicator, true)
+    assert.strictEqual(response.ongoingIndicator, undefined)
     assert.strictEqual(response.messagesInQueue, false)
   })
 
-  // Per D14: With specific transactionId that doesn't exist → ongoingIndicator: false
+  // E14.FR.01: Unknown transactionId → ongoingIndicator: false
   await it('should return ongoingIndicator false when specific transactionId does not exist', () => {
     const response = testableService.handleRequestGetTransactionStatus(station, {
       transactionId: 'nonexistent-txn-id',
@@ -78,7 +78,7 @@ await describe('D14 - GetTransactionStatus', async () => {
     assert.strictEqual(response.messagesInQueue, false)
   })
 
-  // Per E28-E34: With specific transactionId that exists → ongoingIndicator: true
+  // E14.FR.02: Active transaction with transactionId → ongoingIndicator: true
   await it('should return ongoingIndicator true when specific transactionId exists', () => {
     const transactionId = 'txn-67890'
     setupConnectorWithTransaction(station, 2, {

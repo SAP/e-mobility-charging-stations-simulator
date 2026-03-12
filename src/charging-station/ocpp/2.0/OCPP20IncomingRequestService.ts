@@ -1466,19 +1466,20 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetTransactionStatus: Received GetTransactionStatus request${transactionLabel}`
     )
 
-    let ongoingIndicator = false
-
+    // E14.FR.06: When transactionId is omitted, ongoingIndicator SHALL NOT be set
     if (transactionId == null) {
-      ongoingIndicator = this.hasAnyActiveTransaction(chargingStation)
-    } else {
-      const evseId = chargingStation.getEvseIdByTransactionId(transactionId)
-      ongoingIndicator = evseId != null
+      return {
+        // Simulator has no persistent offline message buffer
+        messagesInQueue: false,
+      }
     }
+
+    const evseId = chargingStation.getEvseIdByTransactionId(transactionId)
 
     return {
       // Simulator has no persistent offline message buffer
       messagesInQueue: false,
-      ongoingIndicator,
+      ongoingIndicator: evseId != null,
     }
   }
 
@@ -1800,6 +1801,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     return {
       status: SetNetworkProfileStatusEnumType.Rejected,
       statusInfo: {
+        additionalInfo: 'Simulator does not support network profile configuration',
         reasonCode: ReasonCodeEnumType.UnsupportedRequest,
       },
     }
@@ -2455,17 +2457,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     return {
       status: UpdateFirmwareStatusEnumType.Accepted,
     }
-  }
-
-  private hasAnyActiveTransaction (chargingStation: ChargingStation): boolean {
-    for (const evseStatus of chargingStation.evses.values()) {
-      for (const connectorStatus of evseStatus.connectors.values()) {
-        if (connectorStatus.transactionStarted === true) {
-          return true
-        }
-      }
-    }
-    return false
   }
 
   /**
