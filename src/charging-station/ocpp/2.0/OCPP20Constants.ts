@@ -1,5 +1,6 @@
 import {
   type ConnectorStatusTransition,
+  MessageTriggerEnumType,
   OCPP20ConnectorStatusEnumType,
   OCPP20TriggerReasonEnumType,
 } from '../../../types/index.js'
@@ -142,6 +143,19 @@ export class OCPP20Constants extends OCPPConstants {
    * (e.g., certificate file I/O). Prevents handlers from hanging indefinitely.
    */
   static readonly HANDLER_TIMEOUT_MS = 30_000
+
+  /**
+   * Set of MessageTriggerEnumType values that the charging station supports
+   * in the TriggerMessage handler. Used for validation and capability reporting.
+   */
+  static readonly SupportedTriggerMessages: ReadonlySet<MessageTriggerEnumType> = new Set([
+    MessageTriggerEnumType.BootNotification,
+    MessageTriggerEnumType.FirmwareStatusNotification,
+    MessageTriggerEnumType.Heartbeat,
+    MessageTriggerEnumType.LogStatusNotification,
+    MessageTriggerEnumType.MeterValues,
+    MessageTriggerEnumType.StatusNotification,
+  ])
 
   static readonly TriggerReasonMapping: readonly TriggerReasonMap[] = Object.freeze([
     // Priority 1: Remote Commands (highest priority)

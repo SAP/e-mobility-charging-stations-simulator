@@ -89,6 +89,8 @@ export default defineConfig([
               'CALLERROR',
               'CALLRESULTERROR',
               'reservability',
+              // VPN protocol acronyms
+              'PPTP',
             ],
           },
         },

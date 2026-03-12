@@ -18,13 +18,23 @@
 import type {
   OCPP20CertificateSignedRequest,
   OCPP20CertificateSignedResponse,
+  OCPP20ChangeAvailabilityRequest,
+  OCPP20ChangeAvailabilityResponse,
   OCPP20ClearCacheResponse,
+  OCPP20CustomerInformationRequest,
+  OCPP20CustomerInformationResponse,
+  OCPP20DataTransferRequest,
+  OCPP20DataTransferResponse,
   OCPP20DeleteCertificateRequest,
   OCPP20DeleteCertificateResponse,
   OCPP20GetBaseReportRequest,
   OCPP20GetBaseReportResponse,
   OCPP20GetInstalledCertificateIdsRequest,
   OCPP20GetInstalledCertificateIdsResponse,
+  OCPP20GetLogRequest,
+  OCPP20GetLogResponse,
+  OCPP20GetTransactionStatusRequest,
+  OCPP20GetTransactionStatusResponse,
   OCPP20GetVariablesRequest,
   OCPP20GetVariablesResponse,
   OCPP20InstallCertificateRequest,
@@ -35,12 +45,16 @@ import type {
   OCPP20RequestStopTransactionResponse,
   OCPP20ResetRequest,
   OCPP20ResetResponse,
+  OCPP20SetNetworkProfileRequest,
+  OCPP20SetNetworkProfileResponse,
   OCPP20SetVariablesRequest,
   OCPP20SetVariablesResponse,
   OCPP20TriggerMessageRequest,
   OCPP20TriggerMessageResponse,
   OCPP20UnlockConnectorRequest,
   OCPP20UnlockConnectorResponse,
+  OCPP20UpdateFirmwareRequest,
+  OCPP20UpdateFirmwareResponse,
   ReportBaseEnumType,
   ReportDataType,
 } from '../../../../types/index.js'
@@ -62,7 +76,7 @@ export interface TestableOCPP20IncomingRequestService {
   ) => ReportDataType[]
 
   /**
-   * Handles OCPP 2.0 CertificateSigned request from central system.
+   * Handles OCPP 2.0.1 CertificateSigned request from central system.
    * Receives signed certificate chain from CSMS and stores it in the charging station.
    */
   handleRequestCertificateSigned: (
@@ -71,10 +85,37 @@ export interface TestableOCPP20IncomingRequestService {
   ) => Promise<OCPP20CertificateSignedResponse>
 
   /**
+   * Handles OCPP 2.0.1 ChangeAvailability request from central system.
+   * Changes operational status of the entire charging station or a specific EVSE.
+   */
+  handleRequestChangeAvailability: (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20ChangeAvailabilityRequest
+  ) => OCPP20ChangeAvailabilityResponse
+
+  /**
    * Handles OCPP 2.0.1 ClearCache request by clearing the Authorization Cache.
    * Per C11.FR.04: Returns Rejected if AuthCacheEnabled is false.
    */
   handleRequestClearCache: (chargingStation: ChargingStation) => Promise<OCPP20ClearCacheResponse>
+
+  /**
+   * Handles OCPP 2.0.1 CustomerInformation request from central system.
+   * Per TC_N_32_CS: CS must respond to CustomerInformation with Accepted for clear requests.
+   */
+  handleRequestCustomerInformation: (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20CustomerInformationRequest
+  ) => OCPP20CustomerInformationResponse
+
+  /**
+   * Handles OCPP 2.0.1 DataTransfer request.
+   * Per TC_P_01_CS: CS with no vendor extensions must respond UnknownVendorId.
+   */
+  handleRequestDataTransfer: (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20DataTransferRequest
+  ) => OCPP20DataTransferResponse
 
   /**
    * Handles OCPP 2.0 DeleteCertificate request from central system.
@@ -104,6 +145,24 @@ export interface TestableOCPP20IncomingRequestService {
   ) => Promise<OCPP20GetInstalledCertificateIdsResponse>
 
   /**
+   * Handles OCPP 2.0.1 GetLog request from central system.
+   * Accepts log upload and simulates upload lifecycle.
+   */
+  handleRequestGetLog: (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20GetLogRequest
+  ) => OCPP20GetLogResponse
+
+  /**
+   * Handles OCPP 2.0.1 GetTransactionStatus request from central system.
+   * Returns transaction status with ongoingIndicator and messagesInQueue.
+   */
+  handleRequestGetTransactionStatus: (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20GetTransactionStatusRequest
+  ) => OCPP20GetTransactionStatusResponse
+
+  /**
    * Handles OCPP 2.0 GetVariables request.
    * Returns values for requested variables from the device model.
    */
@@ -129,6 +188,15 @@ export interface TestableOCPP20IncomingRequestService {
     chargingStation: ChargingStation,
     commandPayload: OCPP20ResetRequest
   ) => Promise<OCPP20ResetResponse>
+
+  /**
+   * Handles OCPP 2.0.1 SetNetworkProfile request from central system.
+   * Per TC_B_43_CS: CS must respond to SetNetworkProfile at minimum with Rejected.
+   */
+  handleRequestSetNetworkProfile: (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20SetNetworkProfileRequest
+  ) => OCPP20SetNetworkProfileResponse
 
   /**
    * Handles OCPP 2.0 SetVariables request.
@@ -166,6 +234,11 @@ export interface TestableOCPP20IncomingRequestService {
     chargingStation: ChargingStation,
     commandPayload: OCPP20UnlockConnectorRequest
   ) => Promise<OCPP20UnlockConnectorResponse>
+
+  handleRequestUpdateFirmware: (
+    chargingStation: ChargingStation,
+    commandPayload: OCPP20UpdateFirmwareRequest
+  ) => OCPP20UpdateFirmwareResponse
 }
 
 /**
@@ -193,19 +266,26 @@ export function createTestableIncomingRequestService (
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
     buildReportData: (serviceImpl as any).buildReportData.bind(service),
     handleRequestCertificateSigned: serviceImpl.handleRequestCertificateSigned.bind(service),
+    handleRequestChangeAvailability: serviceImpl.handleRequestChangeAvailability.bind(service),
     handleRequestClearCache: serviceImpl.handleRequestClearCache.bind(service),
+    handleRequestCustomerInformation: serviceImpl.handleRequestCustomerInformation.bind(service),
+    handleRequestDataTransfer: serviceImpl.handleRequestDataTransfer.bind(service),
     handleRequestDeleteCertificate: serviceImpl.handleRequestDeleteCertificate.bind(service),
     handleRequestGetBaseReport: serviceImpl.handleRequestGetBaseReport.bind(service),
     handleRequestGetInstalledCertificateIds:
       serviceImpl.handleRequestGetInstalledCertificateIds.bind(service),
+    handleRequestGetLog: serviceImpl.handleRequestGetLog.bind(service),
+    handleRequestGetTransactionStatus: serviceImpl.handleRequestGetTransactionStatus.bind(service),
     handleRequestGetVariables: serviceImpl.handleRequestGetVariables.bind(service),
     handleRequestInstallCertificate: serviceImpl.handleRequestInstallCertificate.bind(service),
     handleRequestReset: serviceImpl.handleRequestReset.bind(service),
+    handleRequestSetNetworkProfile: serviceImpl.handleRequestSetNetworkProfile.bind(service),
     handleRequestSetVariables: serviceImpl.handleRequestSetVariables.bind(service),
     handleRequestStartTransaction: serviceImpl.handleRequestStartTransaction.bind(service),
     handleRequestStopTransaction: serviceImpl.handleRequestStopTransaction.bind(service),
     handleRequestTriggerMessage: serviceImpl.handleRequestTriggerMessage.bind(service),
     handleRequestUnlockConnector: serviceImpl.handleRequestUnlockConnector.bind(service),
+    handleRequestUpdateFirmware: serviceImpl.handleRequestUpdateFirmware.bind(service),
   }
 }
 

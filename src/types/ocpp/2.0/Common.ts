@@ -1,6 +1,13 @@
 import type { JsonObject } from '../../JsonType.js'
 import type { GenericStatus } from '../Common.js'
 
+export enum APNAuthenticationEnumType {
+  AUTO = 'AUTO',
+  CHAP = 'CHAP',
+  NONE = 'NONE',
+  PAP = 'PAP',
+}
+
 export enum BootReasonEnumType {
   ApplicationReset = 'ApplicationReset',
   FirmwareUpdate = 'FirmwareUpdate',
@@ -23,6 +30,18 @@ export enum CertificateSigningUseEnumType {
   V2GCertificate = 'V2GCertificate',
 }
 
+export enum ChangeAvailabilityStatusEnumType {
+  Accepted = 'Accepted',
+  Rejected = 'Rejected',
+  Scheduled = 'Scheduled',
+}
+
+export enum CustomerInformationStatusEnumType {
+  Accepted = 'Accepted',
+  Invalid = 'Invalid',
+  Rejected = 'Rejected',
+}
+
 export enum DataEnumType {
   boolean = 'boolean',
   dateTime = 'dateTime',
@@ -34,10 +53,34 @@ export enum DataEnumType {
   string = 'string',
 }
 
+export enum DataTransferStatusEnumType {
+  Accepted = 'Accepted',
+  Rejected = 'Rejected',
+  UnknownMessageId = 'UnknownMessageId',
+  UnknownVendorId = 'UnknownVendorId',
+}
+
 export enum DeleteCertificateStatusEnumType {
   Accepted = 'Accepted',
   Failed = 'Failed',
   NotFound = 'NotFound',
+}
+
+export enum FirmwareStatusEnumType {
+  Downloaded = 'Downloaded',
+  DownloadFailed = 'DownloadFailed',
+  Downloading = 'Downloading',
+  DownloadPaused = 'DownloadPaused',
+  DownloadScheduled = 'DownloadScheduled',
+  Idle = 'Idle',
+  InstallationFailed = 'InstallationFailed',
+  Installed = 'Installed',
+  Installing = 'Installing',
+  InstallRebooting = 'InstallRebooting',
+  InstallScheduled = 'InstallScheduled',
+  InstallVerificationFailed = 'InstallVerificationFailed',
+  InvalidSignature = 'InvalidSignature',
+  SignatureVerified = 'SignatureVerified',
 }
 
 export enum GenericDeviceModelStatusEnumType {
@@ -87,6 +130,17 @@ export enum InstallCertificateUseEnumType {
 export enum Iso15118EVCertificateStatusEnumType {
   Accepted = 'Accepted',
   Failed = 'Failed',
+}
+
+export enum LogEnumType {
+  DiagnosticsLog = 'DiagnosticsLog',
+  SecurityLog = 'SecurityLog',
+}
+
+export enum LogStatusEnumType {
+  Accepted = 'Accepted',
+  AcceptedCanceled = 'AcceptedCanceled',
+  Rejected = 'Rejected',
 }
 
 export enum MessageTriggerEnumType {
@@ -218,6 +272,29 @@ export enum OCPP20UnitEnumType {
   WATT_HOUR = 'Wh',
 }
 
+export enum OCPPInterfaceEnumType {
+  Wired0 = 'Wired0',
+  Wired1 = 'Wired1',
+  Wired2 = 'Wired2',
+  Wired3 = 'Wired3',
+  Wireless0 = 'Wireless0',
+  Wireless1 = 'Wireless1',
+  Wireless2 = 'Wireless2',
+  Wireless3 = 'Wireless3',
+}
+
+export enum OCPPTransportEnumType {
+  JSON = 'JSON',
+  SOAP = 'SOAP',
+}
+
+export enum OCPPVersionEnumType {
+  OCPP12 = 'OCPP12',
+  OCPP15 = 'OCPP15',
+  OCPP16 = 'OCPP16',
+  OCPP20 = 'OCPP20',
+}
+
 export enum OperationalStatusEnumType {
   Inoperative = 'Inoperative',
   Operative = 'Operative',
@@ -286,6 +363,12 @@ export enum ResetStatusEnumType {
   Scheduled = 'Scheduled',
 }
 
+export enum SetNetworkProfileStatusEnumType {
+  Accepted = 'Accepted',
+  Failed = 'Failed',
+  Rejected = 'Rejected',
+}
+
 export enum TriggerMessageStatusEnumType {
   Accepted = 'Accepted',
   NotImplemented = 'NotImplemented',
@@ -297,6 +380,43 @@ export enum UnlockStatusEnumType {
   UnknownConnector = 'UnknownConnector',
   Unlocked = 'Unlocked',
   UnlockFailed = 'UnlockFailed',
+}
+
+export enum UpdateFirmwareStatusEnumType {
+  Accepted = 'Accepted',
+  AcceptedCanceled = 'AcceptedCanceled',
+  InvalidCertificate = 'InvalidCertificate',
+  Rejected = 'Rejected',
+  RevokedCertificate = 'RevokedCertificate',
+}
+
+export enum UploadLogStatusEnumType {
+  AcceptedCanceled = 'AcceptedCanceled',
+  BadMessage = 'BadMessage',
+  Idle = 'Idle',
+  NotSupportedOperation = 'NotSupportedOperation',
+  PermissionDenied = 'PermissionDenied',
+  Uploaded = 'Uploaded',
+  UploadFailure = 'UploadFailure',
+  Uploading = 'Uploading',
+}
+
+export enum VPNEnumType {
+  IKEv2 = 'IKEv2',
+  IPSec = 'IPSec',
+  L2TP = 'L2TP',
+  PPTP = 'PPTP',
+}
+
+export interface APNType extends JsonObject {
+  apn: string
+  apnAuthentication: APNAuthenticationEnumType
+  apnPassword?: string
+  apnUserName?: string
+  customData?: CustomDataType
+  preferredNetwork?: string
+  simPin?: number
+  useOnlyPreferredNetwork?: boolean
 }
 
 export interface CertificateHashDataChainType extends JsonObject {
@@ -327,12 +447,40 @@ export interface CustomDataType extends JsonObject {
   vendorId: string
 }
 
+export interface FirmwareType extends JsonObject {
+  customData?: CustomDataType
+  installDateTime?: Date
+  location: string
+  retrieveDateTime: Date
+  signature?: string
+  signingCertificate?: string
+}
+
 export type GenericStatusEnumType = GenericStatus
+
+export interface LogParametersType extends JsonObject {
+  customData?: CustomDataType
+  latestTimestamp?: Date
+  oldestTimestamp?: Date
+  remoteLocation: string
+}
 
 export interface ModemType extends JsonObject {
   customData?: CustomDataType
   iccid?: string
   imsi?: string
+}
+
+export interface NetworkConnectionProfileType extends JsonObject {
+  apn?: APNType
+  customData?: CustomDataType
+  messageTimeout: number
+  ocppCsmsUrl: string
+  ocppInterface: OCPPInterfaceEnumType
+  ocppTransport: OCPPTransportEnumType
+  ocppVersion: OCPPVersionEnumType
+  securityProfile: number
+  vpn?: VPNType
 }
 
 export interface OCSPRequestDataType extends JsonObject {
@@ -347,4 +495,14 @@ export interface StatusInfoType extends JsonObject {
   additionalInfo?: string
   customData?: CustomDataType
   reasonCode: ReasonCodeEnumType
+}
+
+export interface VPNType extends JsonObject {
+  customData?: CustomDataType
+  group?: string
+  key: string
+  password: string
+  server: string
+  type: VPNEnumType
+  user: string
 }

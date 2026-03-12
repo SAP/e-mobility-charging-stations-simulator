@@ -492,7 +492,11 @@ make SUBMODULES_INIT=true
 
 ### Version 2.0.x
 
-> **Note**: OCPP 2.0.x implementation is **partial** and under active development.
+> **Note**: OCPP 2.0.x Core profile mandatory commands are now implemented.
+
+#### A. Security
+
+- :white_check_mark: SecurityEventNotification
 
 #### B. Provisioning
 
@@ -500,6 +504,7 @@ make SUBMODULES_INIT=true
 - :white_check_mark: GetBaseReport
 - :white_check_mark: GetVariables
 - :white_check_mark: NotifyReport
+- :white_check_mark: SetNetworkProfile
 - :white_check_mark: SetVariables
 
 #### C. Authorization
@@ -513,6 +518,7 @@ make SUBMODULES_INIT=true
 
 #### E. Transactions
 
+- :white_check_mark: GetTransactionStatus
 - :white_check_mark: RequestStartTransaction
 - :white_check_mark: RequestStopTransaction
 - :white_check_mark: TransactionEvent
@@ -525,13 +531,20 @@ make SUBMODULES_INIT=true
 
 #### G. Availability
 
+- :white_check_mark: ChangeAvailability
 - :white_check_mark: Heartbeat
+- :white_check_mark: MeterValues
 - :white_check_mark: StatusNotification
+
+#### J. Diagnostics
+
+- :white_check_mark: GetLog
+- :white_check_mark: LogStatusNotification
 
 #### L. FirmwareManagement
 
-- :x: UpdateFirmware
-- :x: FirmwareStatusNotification
+- :white_check_mark: FirmwareStatusNotification
+- :white_check_mark: UpdateFirmware
 
 #### M. ISO 15118 CertificateManagement
 
@@ -548,9 +561,13 @@ make SUBMODULES_INIT=true
 > - **Mock CSR generation**: The `SignCertificate` command generates a mock Certificate Signing Request (CSR) for simulation purposes. In production, this should be replaced with actual cryptographic CSR generation.
 > - **OCSP stub**: Online Certificate Status Protocol (OCSP) validation is stubbed and returns `Failed` status. Full OCSP integration requires external OCSP responder configuration.
 
+#### N. CustomerInformation
+
+- :white_check_mark: CustomerInformation
+
 #### P. DataTransfer
 
-- :x: DataTransfer
+- :white_check_mark: DataTransfer
 
 ## OCPP-J standard parameters supported
 

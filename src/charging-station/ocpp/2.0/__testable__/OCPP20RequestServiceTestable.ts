@@ -24,13 +24,20 @@ import { mock } from 'node:test'
 import type {
   CertificateActionEnumType,
   CertificateSigningUseEnumType,
+  FirmwareStatusEnumType,
   JsonType,
+  OCPP20FirmwareStatusNotificationResponse,
   OCPP20Get15118EVCertificateResponse,
   OCPP20GetCertificateStatusResponse,
+  OCPP20LogStatusNotificationResponse,
+  OCPP20MeterValue,
+  OCPP20MeterValuesResponse,
   OCPP20RequestCommand,
+  OCPP20SecurityEventNotificationResponse,
   OCPP20SignCertificateResponse,
   OCSPRequestDataType,
   RequestParams,
+  UploadLogStatusEnumType,
 } from '../../../../types/index.js'
 import type { ChargingStation } from '../../../index.js'
 
@@ -76,6 +83,16 @@ export interface TestableOCPP20RequestService {
   ) => JsonType
 
   /**
+   * Send a FirmwareStatusNotification to the CSMS.
+   * Reports firmware update progress to the CSMS.
+   */
+  requestFirmwareStatusNotification: (
+    chargingStation: ChargingStation,
+    status: FirmwareStatusEnumType,
+    requestId?: number
+  ) => Promise<OCPP20FirmwareStatusNotificationResponse>
+
+  /**
    * Request an ISO 15118 EV certificate from the CSMS.
    * Forwards EXI-encoded certificate request from EV to CSMS.
    */
@@ -94,6 +111,36 @@ export interface TestableOCPP20RequestService {
     chargingStation: ChargingStation,
     ocspRequestData: OCSPRequestDataType
   ) => Promise<OCPP20GetCertificateStatusResponse>
+
+  /**
+   * Send a LogStatusNotification to the CSMS.
+   * Reports the status of a log upload initiated by a GetLog request.
+   */
+  requestLogStatusNotification: (
+    chargingStation: ChargingStation,
+    status: UploadLogStatusEnumType,
+    requestId?: number
+  ) => Promise<OCPP20LogStatusNotificationResponse>
+
+  /**
+   * Send MeterValues to the CSMS.
+   * Reports meter values for a specific EVSE outside of a transaction context.
+   */
+  requestMeterValues: (
+    chargingStation: ChargingStation,
+    evseId: number,
+    meterValue: OCPP20MeterValue[]
+  ) => Promise<OCPP20MeterValuesResponse>
+  /**
+   * Send a SecurityEventNotification to the CSMS.
+   * Notifies the CSMS about a security event at the charging station (A04).
+   */
+  requestSecurityEventNotification: (
+    chargingStation: ChargingStation,
+    type: string,
+    timestamp: Date,
+    techInfo?: string
+  ) => Promise<OCPP20SecurityEventNotificationResponse>
   /**
    * Request certificate signing from the CSMS.
    * Generates a CSR and sends it to CSMS for signing.

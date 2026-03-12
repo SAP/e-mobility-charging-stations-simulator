@@ -149,16 +149,8 @@ await describe('F06 - TriggerMessage', async () => {
 
       assert.strictEqual(response.status, TriggerMessageStatusEnumType.Accepted)
     })
-  })
 
-  await describe('F06 - NotImplemented triggers', async () => {
-    let mockStation: MockChargingStation
-
-    beforeEach(() => {
-      ;({ mockStation } = createTriggerMessageStation())
-    })
-
-    await it('should return NotImplemented for MeterValues trigger', () => {
+    await it('should return Accepted for MeterValues trigger', () => {
       const request: OCPP20TriggerMessageRequest = {
         requestedMessage: MessageTriggerEnumType.MeterValues,
       }
@@ -168,15 +160,59 @@ await describe('F06 - TriggerMessage', async () => {
         request
       )
 
-      assert.strictEqual(response.status, TriggerMessageStatusEnumType.NotImplemented)
-      if (response.statusInfo == null) {
-        assert.fail('Expected statusInfo to be defined')
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.Accepted)
+      assert.strictEqual(response.statusInfo, undefined)
+    })
+
+    await it('should return Accepted for MeterValues trigger with specific EVSE', () => {
+      const request: OCPP20TriggerMessageRequest = {
+        evse: { id: 1 },
+        requestedMessage: MessageTriggerEnumType.MeterValues,
       }
-      assert.strictEqual(response.statusInfo.reasonCode, ReasonCodeEnumType.UnsupportedRequest)
-      if (response.statusInfo.additionalInfo == null) {
-        assert.fail('Expected additionalInfo to be defined')
+
+      const response: OCPP20TriggerMessageResponse = testableService.handleRequestTriggerMessage(
+        mockStation,
+        request
+      )
+
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.Accepted)
+      assert.strictEqual(response.statusInfo, undefined)
+    })
+
+    await it('should return Accepted for FirmwareStatusNotification trigger', () => {
+      const request: OCPP20TriggerMessageRequest = {
+        requestedMessage: MessageTriggerEnumType.FirmwareStatusNotification,
       }
-      assert.ok(response.statusInfo.additionalInfo.includes('MeterValues'))
+
+      const response: OCPP20TriggerMessageResponse = testableService.handleRequestTriggerMessage(
+        mockStation,
+        request
+      )
+
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.Accepted)
+      assert.strictEqual(response.statusInfo, undefined)
+    })
+
+    await it('should return Accepted for LogStatusNotification trigger', () => {
+      const request: OCPP20TriggerMessageRequest = {
+        requestedMessage: MessageTriggerEnumType.LogStatusNotification,
+      }
+
+      const response: OCPP20TriggerMessageResponse = testableService.handleRequestTriggerMessage(
+        mockStation,
+        request
+      )
+
+      assert.strictEqual(response.status, TriggerMessageStatusEnumType.Accepted)
+      assert.strictEqual(response.statusInfo, undefined)
+    })
+  })
+
+  await describe('F06 - NotImplemented triggers', async () => {
+    let mockStation: MockChargingStation
+
+    beforeEach(() => {
+      ;({ mockStation } = createTriggerMessageStation())
     })
 
     await it('should return NotImplemented for TransactionEvent trigger', () => {
@@ -194,9 +230,9 @@ await describe('F06 - TriggerMessage', async () => {
       assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.UnsupportedRequest)
     })
 
-    await it('should return NotImplemented for LogStatusNotification trigger', () => {
+    await it('should return NotImplemented for PublishFirmwareStatusNotification trigger', () => {
       const request: OCPP20TriggerMessageRequest = {
-        requestedMessage: MessageTriggerEnumType.LogStatusNotification,
+        requestedMessage: MessageTriggerEnumType.PublishFirmwareStatusNotification,
       }
 
       const response: OCPP20TriggerMessageResponse = testableService.handleRequestTriggerMessage(
@@ -209,9 +245,9 @@ await describe('F06 - TriggerMessage', async () => {
       assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.UnsupportedRequest)
     })
 
-    await it('should return NotImplemented for FirmwareStatusNotification trigger', () => {
+    await it('should return NotImplemented for SignChargingStationCertificate trigger', () => {
       const request: OCPP20TriggerMessageRequest = {
-        requestedMessage: MessageTriggerEnumType.FirmwareStatusNotification,
+        requestedMessage: MessageTriggerEnumType.SignChargingStationCertificate,
       }
 
       const response: OCPP20TriggerMessageResponse = testableService.handleRequestTriggerMessage(
