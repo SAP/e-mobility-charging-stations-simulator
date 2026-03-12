@@ -3022,10 +3022,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               ? (connectorStatus.status as unknown as OCPP20ConnectorStatusEnumType)
               : OCPP20ConnectorStatusEnumType.Available
           chargingStation.ocppRequestService
-            .requestHandler<
-              OCPP20StatusNotificationRequest,
-              OCPP20StatusNotificationResponse
-            >(
+            .requestHandler<OCPP20StatusNotificationRequest, OCPP20StatusNotificationResponse>(
               chargingStation,
               OCPP20RequestCommand.STATUS_NOTIFICATION,
               {
