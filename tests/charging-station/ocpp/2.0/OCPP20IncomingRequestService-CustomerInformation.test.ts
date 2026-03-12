@@ -4,13 +4,19 @@
  */
 
 import assert from 'node:assert/strict'
-import { afterEach, beforeEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
-import { CustomerInformationStatusEnumType, OCPPVersion } from '../../../../src/types/index.js'
+import {
+  CustomerInformationStatusEnumType,
+  type OCPP20CustomerInformationRequest,
+  type OCPP20CustomerInformationResponse,
+  OCPP20IncomingRequestCommand,
+  OCPPVersion,
+} from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
@@ -102,5 +108,93 @@ await describe('N32 - CustomerInformation', async () => {
     })
 
     assert.strictEqual(response.status, CustomerInformationStatusEnumType.Accepted)
+  })
+
+  await it('should register CUSTOMER_INFORMATION event listener in constructor', () => {
+    const service = new OCPP20IncomingRequestService()
+    assert.strictEqual(service.listenerCount(OCPP20IncomingRequestCommand.CUSTOMER_INFORMATION), 1)
+  })
+
+  await it('should call sendNotifyCustomerInformation when CUSTOMER_INFORMATION event emitted with Accepted + report=true', () => {
+    const service = new OCPP20IncomingRequestService()
+    const notifyMock = mock.method(
+      service as unknown as {
+        sendNotifyCustomerInformation: (
+          chargingStation: ChargingStation,
+          requestId: number
+        ) => Promise<void>
+      },
+      'sendNotifyCustomerInformation',
+      () => Promise.resolve()
+    )
+
+    const request: OCPP20CustomerInformationRequest = {
+      clear: false,
+      report: true,
+      requestId: 20,
+    }
+    const response: OCPP20CustomerInformationResponse = {
+      status: CustomerInformationStatusEnumType.Accepted,
+    }
+
+    service.emit(OCPP20IncomingRequestCommand.CUSTOMER_INFORMATION, station, request, response)
+
+    assert.strictEqual(notifyMock.mock.callCount(), 1)
+    assert.strictEqual(notifyMock.mock.calls[0].arguments[1], 20)
+  })
+
+  await it('should NOT call sendNotifyCustomerInformation when CUSTOMER_INFORMATION event emitted with Accepted + clear=true only', () => {
+    // CRITICAL: clear=true also returns Accepted — listener must NOT fire notification
+    const service = new OCPP20IncomingRequestService()
+    const notifyMock = mock.method(
+      service as unknown as {
+        sendNotifyCustomerInformation: (
+          chargingStation: ChargingStation,
+          requestId: number
+        ) => Promise<void>
+      },
+      'sendNotifyCustomerInformation',
+      () => Promise.resolve()
+    )
+
+    const request: OCPP20CustomerInformationRequest = {
+      clear: true,
+      report: false,
+      requestId: 21,
+    }
+    const response: OCPP20CustomerInformationResponse = {
+      status: CustomerInformationStatusEnumType.Accepted,
+    }
+
+    service.emit(OCPP20IncomingRequestCommand.CUSTOMER_INFORMATION, station, request, response)
+
+    assert.strictEqual(notifyMock.mock.callCount(), 0)
+  })
+
+  await it('should NOT call sendNotifyCustomerInformation when CUSTOMER_INFORMATION event emitted with Rejected', () => {
+    const service = new OCPP20IncomingRequestService()
+    const notifyMock = mock.method(
+      service as unknown as {
+        sendNotifyCustomerInformation: (
+          chargingStation: ChargingStation,
+          requestId: number
+        ) => Promise<void>
+      },
+      'sendNotifyCustomerInformation',
+      () => Promise.resolve()
+    )
+
+    const request: OCPP20CustomerInformationRequest = {
+      clear: false,
+      report: false,
+      requestId: 22,
+    }
+    const response: OCPP20CustomerInformationResponse = {
+      status: CustomerInformationStatusEnumType.Rejected,
+    }
+
+    service.emit(OCPP20IncomingRequestCommand.CUSTOMER_INFORMATION, station, request, response)
+
+    assert.strictEqual(notifyMock.mock.callCount(), 0)
   })
 })

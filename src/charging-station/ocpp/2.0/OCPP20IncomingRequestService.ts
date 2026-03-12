@@ -306,6 +306,28 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         }
       }
     )
+    this.on(
+      OCPP20IncomingRequestCommand.CUSTOMER_INFORMATION,
+      (
+        chargingStation: ChargingStation,
+        request: OCPP20CustomerInformationRequest,
+        response: OCPP20CustomerInformationResponse
+      ) => {
+        if (
+          response.status === CustomerInformationStatusEnumType.Accepted &&
+          request.report
+        ) {
+          this.sendNotifyCustomerInformation(chargingStation, request.requestId).catch(
+            (error: unknown) => {
+              logger.error(
+                `${chargingStation.logPrefix()} ${moduleName}.constructor: CustomerInformation notification error:`,
+                error
+              )
+            }
+          )
+        }
+      }
+    )
     this.validatePayload = this.validatePayload.bind(this)
   }
 
@@ -1231,17 +1253,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestCustomerInformation: Report request accepted, sending empty NotifyCustomerInformation`
       )
-      // Fire-and-forget NotifyCustomerInformation with empty data
-      setImmediate(() => {
-        this.sendNotifyCustomerInformation(chargingStation, commandPayload.requestId).catch(
-          (error: unknown) => {
-            logger.error(
-              `${chargingStation.logPrefix()} ${moduleName}.handleRequestCustomerInformation: Error sending NotifyCustomerInformation:`,
-              error
-            )
-          }
-        )
-      })
       return {
         status: CustomerInformationStatusEnumType.Accepted,
       }
