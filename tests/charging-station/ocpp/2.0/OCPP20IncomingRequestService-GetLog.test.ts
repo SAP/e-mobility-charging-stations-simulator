@@ -179,4 +179,34 @@ await describe('K01 - GetLog', async () => {
 
     assert.strictEqual(simulateMock.mock.callCount(), 0)
   })
+
+  await it('should handle simulateLogUploadLifecycle rejection gracefully', async () => {
+    const service = new OCPP20IncomingRequestService()
+    mock.method(
+      service as unknown as {
+        simulateLogUploadLifecycle: (
+          chargingStation: ChargingStation,
+          requestId: number
+        ) => Promise<void>
+      },
+      'simulateLogUploadLifecycle',
+      () => Promise.reject(new Error('log upload error'))
+    )
+
+    const request: OCPP20GetLogRequest = {
+      log: {
+        remoteLocation: 'https://csms.example.com/logs',
+      },
+      logType: LogEnumType.DiagnosticsLog,
+      requestId: 99,
+    }
+    const response: OCPP20GetLogResponse = {
+      filename: 'simulator-log.txt',
+      status: LogStatusEnumType.Accepted,
+    }
+
+    service.emit(OCPP20IncomingRequestCommand.GET_LOG, station, request, response)
+
+    await Promise.resolve()
+  })
 })

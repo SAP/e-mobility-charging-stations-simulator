@@ -197,4 +197,31 @@ await describe('N32 - CustomerInformation', async () => {
 
     assert.strictEqual(notifyMock.mock.callCount(), 0)
   })
+
+  await it('should handle sendNotifyCustomerInformation rejection gracefully', async () => {
+    const service = new OCPP20IncomingRequestService()
+    mock.method(
+      service as unknown as {
+        sendNotifyCustomerInformation: (
+          chargingStation: ChargingStation,
+          requestId: number
+        ) => Promise<void>
+      },
+      'sendNotifyCustomerInformation',
+      () => Promise.reject(new Error('notification error'))
+    )
+
+    const request: OCPP20CustomerInformationRequest = {
+      clear: false,
+      report: true,
+      requestId: 99,
+    }
+    const response: OCPP20CustomerInformationResponse = {
+      status: CustomerInformationStatusEnumType.Accepted,
+    }
+
+    service.emit(OCPP20IncomingRequestCommand.CUSTOMER_INFORMATION, station, request, response)
+
+    await Promise.resolve()
+  })
 })

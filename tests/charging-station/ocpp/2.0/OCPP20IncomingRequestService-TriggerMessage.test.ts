@@ -576,5 +576,60 @@ await describe('F06 - TriggerMessage', async () => {
 
       assert.ok(requestHandlerMock.mock.callCount() >= 1)
     })
+
+    await it('should fire StatusNotification for specific EVSE and connector via listener', () => {
+      const request: OCPP20TriggerMessageRequest = {
+        evse: { connectorId: 1, id: 1 },
+        requestedMessage: MessageTriggerEnumType.StatusNotification,
+      }
+      const response: OCPP20TriggerMessageResponse = {
+        status: TriggerMessageStatusEnumType.Accepted,
+      }
+
+      incomingRequestServiceForListener.emit(
+        OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+        mockStation,
+        request,
+        response
+      )
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
+    })
+
+    await it('should handle requestHandler rejection gracefully via errorHandler', async () => {
+      const rejectingMock = mock.fn(async () => Promise.reject(new Error('test error')))
+      const { station: rejectStation } = createMockChargingStation({
+        baseName: TEST_CHARGING_STATION_BASE_NAME,
+        connectorsCount: 3,
+        evseConfiguration: { evsesCount: 3 },
+        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+        ocppRequestService: {
+          requestHandler: rejectingMock,
+        },
+        stationInfo: {
+          ocppVersion: OCPPVersion.VERSION_201,
+        },
+        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      })
+
+      const request: OCPP20TriggerMessageRequest = {
+        requestedMessage: MessageTriggerEnumType.Heartbeat,
+      }
+      const response: OCPP20TriggerMessageResponse = {
+        status: TriggerMessageStatusEnumType.Accepted,
+      }
+
+      incomingRequestServiceForListener.emit(
+        OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
+        rejectStation,
+        request,
+        response
+      )
+
+      // Flush microtask queue so .catch(errorHandler) executes
+      await Promise.resolve()
+
+      assert.strictEqual(rejectingMock.mock.callCount(), 1)
+    })
   })
 })

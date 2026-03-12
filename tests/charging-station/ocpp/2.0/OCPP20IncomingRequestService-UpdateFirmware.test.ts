@@ -192,4 +192,34 @@ await describe('J02 - UpdateFirmware', async () => {
 
     assert.strictEqual(simulateMock.mock.callCount(), 0)
   })
+
+  await it('should handle simulateFirmwareUpdateLifecycle rejection gracefully', async () => {
+    const service = new OCPP20IncomingRequestService()
+    mock.method(
+      service as unknown as {
+        simulateFirmwareUpdateLifecycle: (
+          chargingStation: ChargingStation,
+          requestId: number,
+          signature?: string
+        ) => Promise<void>
+      },
+      'simulateFirmwareUpdateLifecycle',
+      () => Promise.reject(new Error('firmware lifecycle error'))
+    )
+
+    const request: OCPP20UpdateFirmwareRequest = {
+      firmware: {
+        location: 'https://firmware.example.com/update.bin',
+        retrieveDateTime: new Date('2025-01-15T10:00:00.000Z'),
+      },
+      requestId: 99,
+    }
+    const response: OCPP20UpdateFirmwareResponse = {
+      status: UpdateFirmwareStatusEnumType.Accepted,
+    }
+
+    service.emit(OCPP20IncomingRequestCommand.UPDATE_FIRMWARE, station, request, response)
+
+    await Promise.resolve()
+  })
 })
