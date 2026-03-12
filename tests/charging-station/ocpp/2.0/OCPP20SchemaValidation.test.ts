@@ -12,11 +12,13 @@
 import _Ajv, { type ValidateFunction } from 'ajv'
 import _ajvFormats from 'ajv-formats'
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterEach, describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
+import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
+import { OCPP20IncomingRequestCommand, OCPP20RequestCommand } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 
 const AjvConstructor = _Ajv.default
@@ -203,5 +205,54 @@ await describe('OCPP 2.0 schema validation — negative tests', async () => {
     const validate = makeValidator('TriggerMessageRequest.json')
     assert.strictEqual(validate({ requestedMessage: 'Heartbeat' }), true)
     assert.strictEqual(validate({ requestedMessage: 'BootNotification' }), true)
+  })
+
+  await describe('schema registration coverage', async () => {
+    await it('should register an incoming request schema for every OCPP20IncomingRequestCommand', () => {
+      const configs = OCPP20ServiceUtils.createIncomingRequestPayloadConfigs()
+      const registered = new Set(configs.map(([cmd]) => cmd))
+      for (const command of Object.values(OCPP20IncomingRequestCommand)) {
+        assert.ok(registered.has(command), `missing incoming request schema for: ${command}`)
+      }
+    })
+
+    await it('should register an incoming response schema for every OCPP20IncomingRequestCommand', () => {
+      const configs = OCPP20ServiceUtils.createIncomingRequestResponsePayloadConfigs()
+      const registered = new Set(configs.map(([cmd]) => cmd))
+      for (const command of Object.values(OCPP20IncomingRequestCommand)) {
+        assert.ok(registered.has(command), `missing incoming response schema for: ${command}`)
+      }
+    })
+
+    await it('should register an outgoing request schema for every OCPP20RequestCommand', () => {
+      const configs = OCPP20ServiceUtils.createRequestPayloadConfigs()
+      const registered = new Set(configs.map(([cmd]) => cmd))
+      for (const command of Object.values(OCPP20RequestCommand)) {
+        assert.ok(registered.has(command), `missing outgoing request schema for: ${command}`)
+      }
+    })
+
+    await it('should register an outgoing response schema for every OCPP20RequestCommand', () => {
+      const configs = OCPP20ServiceUtils.createResponsePayloadConfigs()
+      const registered = new Set(configs.map(([cmd]) => cmd))
+      for (const command of Object.values(OCPP20RequestCommand)) {
+        assert.ok(registered.has(command), `missing outgoing response schema for: ${command}`)
+      }
+    })
+
+    await it('should reference existing schema files for all registered schemas', () => {
+      const allConfigs = [
+        ...OCPP20ServiceUtils.createIncomingRequestPayloadConfigs(),
+        ...OCPP20ServiceUtils.createIncomingRequestResponsePayloadConfigs(),
+        ...OCPP20ServiceUtils.createRequestPayloadConfigs(),
+        ...OCPP20ServiceUtils.createResponsePayloadConfigs(),
+      ]
+      for (const [command, { schemaPath }] of allConfigs) {
+        assert.ok(
+          existsSync(join(SCHEMA_DIR, schemaPath)),
+          `schema file missing for ${command}: ${schemaPath}`
+        )
+      }
+    })
   })
 })
