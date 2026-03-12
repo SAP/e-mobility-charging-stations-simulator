@@ -1,5 +1,3 @@
-import type { JSONSchemaType } from 'ajv'
-
 import {
   addSeconds,
   areIntervalsOverlapping,
@@ -18,7 +16,6 @@ import {
 import {
   type ConfigurationKey,
   type GenericResponse,
-  type JsonType,
   OCPP16AuthorizationStatus,
   type OCPP16AvailabilityType,
   type OCPP16ChangeAvailabilityResponse,
@@ -513,19 +510,6 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       return true
     }
     return key.visible
-  }
-
-  public static override parseJsonSchemaFile<T extends JsonType>(
-    relativePath: string,
-    moduleName?: string,
-    methodName?: string
-  ): JSONSchemaType<T> {
-    return super.parseJsonSchemaFile<T>(
-      relativePath,
-      OCPPVersion.VERSION_16,
-      moduleName,
-      methodName
-    )
   }
 
   public static remoteStopTransaction = async (

@@ -1,14 +1,11 @@
 /* eslint-disable @typescript-eslint/unified-signatures */
 
-import type { JSONSchemaType } from 'ajv'
-
 import { type ChargingStation, resetConnectorStatus } from '../../../charging-station/index.js'
 import { OCPPError } from '../../../exception/index.js'
 import {
   ConnectorStatusEnum,
   ErrorType,
   type GenericResponse,
-  type JsonType,
   OCPP20IncomingRequestCommand,
   OCPP20RequestCommand,
   OCPP20TransactionEventEnumType,
@@ -384,19 +381,6 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       }
     }
     return currentResults
-  }
-
-  public static override parseJsonSchemaFile<T extends JsonType>(
-    relativePath: string,
-    moduleName?: string,
-    methodName?: string
-  ): JSONSchemaType<T> {
-    return super.parseJsonSchemaFile<T>(
-      relativePath,
-      OCPPVersion.VERSION_201,
-      moduleName,
-      methodName
-    )
   }
 
   /**
