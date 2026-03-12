@@ -1108,7 +1108,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     commandPayload: OCPP20ChangeAvailabilityRequest
   ): OCPP20ChangeAvailabilityResponse {
     const { evse, operationalStatus } = commandPayload
-    const evseIdLabel = evse?.id != null ? ` for EVSE ${evse.id.toString()}` : ''
+    const evseIdLabel = evse?.id == null ? '' : ` for EVSE ${evse.id.toString()}`
 
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: Received ChangeAvailability request with operationalStatus=${operationalStatus}${evseIdLabel}`
@@ -1456,7 +1456,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     commandPayload: OCPP20GetTransactionStatusRequest
   ): OCPP20GetTransactionStatusResponse {
     const { transactionId } = commandPayload
-    const transactionLabel = transactionId != null ? ` for transaction ID ${transactionId}` : ''
+    const transactionLabel = transactionId == null ? '' : ` for transaction ID ${transactionId}`
 
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetTransactionStatus: Received GetTransactionStatus request${transactionLabel}`

@@ -39,6 +39,45 @@ import { OCPP20Constants } from './OCPP20Constants.js'
 const moduleName = 'OCPP20ServiceUtils'
 
 export class OCPP20ServiceUtils extends OCPPServiceUtils {
+  private static readonly incomingRequestSchemaNames: readonly [
+    OCPP20IncomingRequestCommand,
+    string
+  ][] = [
+      [OCPP20IncomingRequestCommand.CERTIFICATE_SIGNED, 'CertificateSigned'],
+      [OCPP20IncomingRequestCommand.CHANGE_AVAILABILITY, 'ChangeAvailability'],
+      [OCPP20IncomingRequestCommand.CLEAR_CACHE, 'ClearCache'],
+      [OCPP20IncomingRequestCommand.CUSTOMER_INFORMATION, 'CustomerInformation'],
+      [OCPP20IncomingRequestCommand.DATA_TRANSFER, 'DataTransfer'],
+      [OCPP20IncomingRequestCommand.DELETE_CERTIFICATE, 'DeleteCertificate'],
+      [OCPP20IncomingRequestCommand.GET_BASE_REPORT, 'GetBaseReport'],
+      [OCPP20IncomingRequestCommand.GET_INSTALLED_CERTIFICATE_IDS, 'GetInstalledCertificateIds'],
+      [OCPP20IncomingRequestCommand.GET_LOG, 'GetLog'],
+      [OCPP20IncomingRequestCommand.GET_TRANSACTION_STATUS, 'GetTransactionStatus'],
+      [OCPP20IncomingRequestCommand.GET_VARIABLES, 'GetVariables'],
+      [OCPP20IncomingRequestCommand.INSTALL_CERTIFICATE, 'InstallCertificate'],
+      [OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION, 'RequestStartTransaction'],
+      [OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION, 'RequestStopTransaction'],
+      [OCPP20IncomingRequestCommand.RESET, 'Reset'],
+      [OCPP20IncomingRequestCommand.SET_NETWORK_PROFILE, 'SetNetworkProfile'],
+      [OCPP20IncomingRequestCommand.SET_VARIABLES, 'SetVariables'],
+      [OCPP20IncomingRequestCommand.TRIGGER_MESSAGE, 'TriggerMessage'],
+      [OCPP20IncomingRequestCommand.UNLOCK_CONNECTOR, 'UnlockConnector'],
+      [OCPP20IncomingRequestCommand.UPDATE_FIRMWARE, 'UpdateFirmware'],
+    ]
+
+  private static readonly outgoingRequestSchemaNames: readonly [OCPP20RequestCommand, string][] = [
+    [OCPP20RequestCommand.BOOT_NOTIFICATION, 'BootNotification'],
+    [OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION, 'FirmwareStatusNotification'],
+    [OCPP20RequestCommand.HEARTBEAT, 'Heartbeat'],
+    [OCPP20RequestCommand.LOG_STATUS_NOTIFICATION, 'LogStatusNotification'],
+    [OCPP20RequestCommand.METER_VALUES, 'MeterValues'],
+    [OCPP20RequestCommand.NOTIFY_CUSTOMER_INFORMATION, 'NotifyCustomerInformation'],
+    [OCPP20RequestCommand.NOTIFY_REPORT, 'NotifyReport'],
+    [OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION, 'SecurityEventNotification'],
+    [OCPP20RequestCommand.STATUS_NOTIFICATION, 'StatusNotification'],
+    [OCPP20RequestCommand.TRANSACTION_EVENT, 'TransactionEvent'],
+  ]
+
   /**
    * Build a TransactionEvent request according to OCPP 2.0.1 specification
    *
@@ -209,88 +248,11 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
   public static createIncomingRequestPayloadConfigs = (): [
     OCPP20IncomingRequestCommand,
     { schemaPath: string }
-  ][] => [
-    [
-      OCPP20IncomingRequestCommand.CERTIFICATE_SIGNED,
-      OCPP20ServiceUtils.PayloadValidatorConfig('CertificateSignedRequest.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.CHANGE_AVAILABILITY,
-      OCPP20ServiceUtils.PayloadValidatorConfig('ChangeAvailabilityRequest.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.CLEAR_CACHE,
-      OCPP20ServiceUtils.PayloadValidatorConfig('ClearCacheRequest.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.CUSTOMER_INFORMATION,
-      OCPP20ServiceUtils.PayloadValidatorConfig('CustomerInformationRequest.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.DATA_TRANSFER,
-      OCPP20ServiceUtils.PayloadValidatorConfig('DataTransferRequest.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.DELETE_CERTIFICATE,
-      OCPP20ServiceUtils.PayloadValidatorConfig('DeleteCertificateRequest.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.GET_BASE_REPORT,
-      OCPP20ServiceUtils.PayloadValidatorConfig('GetBaseReportRequest.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.GET_INSTALLED_CERTIFICATE_IDS,
-      OCPP20ServiceUtils.PayloadValidatorConfig('GetInstalledCertificateIdsRequest.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.GET_LOG,
-      OCPP20ServiceUtils.PayloadValidatorConfig('GetLogRequest.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.GET_TRANSACTION_STATUS,
-      OCPP20ServiceUtils.PayloadValidatorConfig('GetTransactionStatusRequest.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.GET_VARIABLES,
-      OCPP20ServiceUtils.PayloadValidatorConfig('GetVariablesRequest.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.INSTALL_CERTIFICATE,
-      OCPP20ServiceUtils.PayloadValidatorConfig('InstallCertificateRequest.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
-      OCPP20ServiceUtils.PayloadValidatorConfig('RequestStartTransactionRequest.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION,
-      OCPP20ServiceUtils.PayloadValidatorConfig('RequestStopTransactionRequest.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.RESET,
-      OCPP20ServiceUtils.PayloadValidatorConfig('ResetRequest.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.SET_NETWORK_PROFILE,
-      OCPP20ServiceUtils.PayloadValidatorConfig('SetNetworkProfileRequest.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.SET_VARIABLES,
-      OCPP20ServiceUtils.PayloadValidatorConfig('SetVariablesRequest.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
-      OCPP20ServiceUtils.PayloadValidatorConfig('TriggerMessageRequest.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.UNLOCK_CONNECTOR,
-      OCPP20ServiceUtils.PayloadValidatorConfig('UnlockConnectorRequest.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.UPDATE_FIRMWARE,
-      OCPP20ServiceUtils.PayloadValidatorConfig('UpdateFirmwareRequest.json'),
-    ],
-  ]
+  ][] =>
+    OCPP20ServiceUtils.incomingRequestSchemaNames.map(([command, schemaBase]) => [
+      command,
+      OCPP20ServiceUtils.PayloadValidatorConfig(`${schemaBase}Request.json`),
+    ])
 
   /**
    * Factory options for OCPP 2.0 Incoming Request Service
@@ -313,88 +275,11 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
   public static createIncomingRequestResponsePayloadConfigs = (): [
     OCPP20IncomingRequestCommand,
     { schemaPath: string }
-  ][] => [
-    [
-      OCPP20IncomingRequestCommand.CERTIFICATE_SIGNED,
-      OCPP20ServiceUtils.PayloadValidatorConfig('CertificateSignedResponse.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.CHANGE_AVAILABILITY,
-      OCPP20ServiceUtils.PayloadValidatorConfig('ChangeAvailabilityResponse.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.CLEAR_CACHE,
-      OCPP20ServiceUtils.PayloadValidatorConfig('ClearCacheResponse.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.CUSTOMER_INFORMATION,
-      OCPP20ServiceUtils.PayloadValidatorConfig('CustomerInformationResponse.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.DATA_TRANSFER,
-      OCPP20ServiceUtils.PayloadValidatorConfig('DataTransferResponse.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.DELETE_CERTIFICATE,
-      OCPP20ServiceUtils.PayloadValidatorConfig('DeleteCertificateResponse.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.GET_BASE_REPORT,
-      OCPP20ServiceUtils.PayloadValidatorConfig('GetBaseReportResponse.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.GET_INSTALLED_CERTIFICATE_IDS,
-      OCPP20ServiceUtils.PayloadValidatorConfig('GetInstalledCertificateIdsResponse.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.GET_LOG,
-      OCPP20ServiceUtils.PayloadValidatorConfig('GetLogResponse.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.GET_TRANSACTION_STATUS,
-      OCPP20ServiceUtils.PayloadValidatorConfig('GetTransactionStatusResponse.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.GET_VARIABLES,
-      OCPP20ServiceUtils.PayloadValidatorConfig('GetVariablesResponse.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.INSTALL_CERTIFICATE,
-      OCPP20ServiceUtils.PayloadValidatorConfig('InstallCertificateResponse.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
-      OCPP20ServiceUtils.PayloadValidatorConfig('RequestStartTransactionResponse.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION,
-      OCPP20ServiceUtils.PayloadValidatorConfig('RequestStopTransactionResponse.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.RESET,
-      OCPP20ServiceUtils.PayloadValidatorConfig('ResetResponse.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.SET_NETWORK_PROFILE,
-      OCPP20ServiceUtils.PayloadValidatorConfig('SetNetworkProfileResponse.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.SET_VARIABLES,
-      OCPP20ServiceUtils.PayloadValidatorConfig('SetVariablesResponse.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
-      OCPP20ServiceUtils.PayloadValidatorConfig('TriggerMessageResponse.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.UNLOCK_CONNECTOR,
-      OCPP20ServiceUtils.PayloadValidatorConfig('UnlockConnectorResponse.json'),
-    ],
-    [
-      OCPP20IncomingRequestCommand.UPDATE_FIRMWARE,
-      OCPP20ServiceUtils.PayloadValidatorConfig('UpdateFirmwareResponse.json'),
-    ],
-  ]
+  ][] =>
+    OCPP20ServiceUtils.incomingRequestSchemaNames.map(([command, schemaBase]) => [
+      command,
+      OCPP20ServiceUtils.PayloadValidatorConfig(`${schemaBase}Response.json`),
+    ])
 
   /**
    * Factory options for OCPP 2.0 Incoming Request Response Service
@@ -420,48 +305,11 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
   public static createRequestPayloadConfigs = (): [
     OCPP20RequestCommand,
     { schemaPath: string }
-  ][] => [
-    [
-      OCPP20RequestCommand.BOOT_NOTIFICATION,
-      OCPP20ServiceUtils.PayloadValidatorConfig('BootNotificationRequest.json'),
-    ],
-    [
-      OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
-      OCPP20ServiceUtils.PayloadValidatorConfig('FirmwareStatusNotificationRequest.json'),
-    ],
-    [
-      OCPP20RequestCommand.HEARTBEAT,
-      OCPP20ServiceUtils.PayloadValidatorConfig('HeartbeatRequest.json'),
-    ],
-    [
-      OCPP20RequestCommand.LOG_STATUS_NOTIFICATION,
-      OCPP20ServiceUtils.PayloadValidatorConfig('LogStatusNotificationRequest.json'),
-    ],
-    [
-      OCPP20RequestCommand.METER_VALUES,
-      OCPP20ServiceUtils.PayloadValidatorConfig('MeterValuesRequest.json'),
-    ],
-    [
-      OCPP20RequestCommand.NOTIFY_CUSTOMER_INFORMATION,
-      OCPP20ServiceUtils.PayloadValidatorConfig('NotifyCustomerInformationRequest.json'),
-    ],
-    [
-      OCPP20RequestCommand.NOTIFY_REPORT,
-      OCPP20ServiceUtils.PayloadValidatorConfig('NotifyReportRequest.json'),
-    ],
-    [
-      OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION,
-      OCPP20ServiceUtils.PayloadValidatorConfig('SecurityEventNotificationRequest.json'),
-    ],
-    [
-      OCPP20RequestCommand.STATUS_NOTIFICATION,
-      OCPP20ServiceUtils.PayloadValidatorConfig('StatusNotificationRequest.json'),
-    ],
-    [
-      OCPP20RequestCommand.TRANSACTION_EVENT,
-      OCPP20ServiceUtils.PayloadValidatorConfig('TransactionEventRequest.json'),
-    ],
-  ]
+  ][] =>
+    OCPP20ServiceUtils.outgoingRequestSchemaNames.map(([command, schemaBase]) => [
+      command,
+      OCPP20ServiceUtils.PayloadValidatorConfig(`${schemaBase}Request.json`),
+    ])
 
   /**
    * Factory options for OCPP 2.0 Request Service
@@ -484,48 +332,11 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
   public static createResponsePayloadConfigs = (): [
     OCPP20RequestCommand,
     { schemaPath: string }
-  ][] => [
-    [
-      OCPP20RequestCommand.BOOT_NOTIFICATION,
-      OCPP20ServiceUtils.PayloadValidatorConfig('BootNotificationResponse.json'),
-    ],
-    [
-      OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
-      OCPP20ServiceUtils.PayloadValidatorConfig('FirmwareStatusNotificationResponse.json'),
-    ],
-    [
-      OCPP20RequestCommand.HEARTBEAT,
-      OCPP20ServiceUtils.PayloadValidatorConfig('HeartbeatResponse.json'),
-    ],
-    [
-      OCPP20RequestCommand.LOG_STATUS_NOTIFICATION,
-      OCPP20ServiceUtils.PayloadValidatorConfig('LogStatusNotificationResponse.json'),
-    ],
-    [
-      OCPP20RequestCommand.METER_VALUES,
-      OCPP20ServiceUtils.PayloadValidatorConfig('MeterValuesResponse.json'),
-    ],
-    [
-      OCPP20RequestCommand.NOTIFY_CUSTOMER_INFORMATION,
-      OCPP20ServiceUtils.PayloadValidatorConfig('NotifyCustomerInformationResponse.json'),
-    ],
-    [
-      OCPP20RequestCommand.NOTIFY_REPORT,
-      OCPP20ServiceUtils.PayloadValidatorConfig('NotifyReportResponse.json'),
-    ],
-    [
-      OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION,
-      OCPP20ServiceUtils.PayloadValidatorConfig('SecurityEventNotificationResponse.json'),
-    ],
-    [
-      OCPP20RequestCommand.STATUS_NOTIFICATION,
-      OCPP20ServiceUtils.PayloadValidatorConfig('StatusNotificationResponse.json'),
-    ],
-    [
-      OCPP20RequestCommand.TRANSACTION_EVENT,
-      OCPP20ServiceUtils.PayloadValidatorConfig('TransactionEventResponse.json'),
-    ],
-  ]
+  ][] =>
+    OCPP20ServiceUtils.outgoingRequestSchemaNames.map(([command, schemaBase]) => [
+      command,
+      OCPP20ServiceUtils.PayloadValidatorConfig(`${schemaBase}Response.json`),
+    ])
 
   /**
    * Factory options for OCPP 2.0 Response Service
