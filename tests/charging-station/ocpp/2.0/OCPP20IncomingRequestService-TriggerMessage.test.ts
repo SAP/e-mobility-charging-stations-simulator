@@ -548,7 +548,12 @@ await describe('F06 - TriggerMessage', async () => {
       const callCount = requestHandlerMock.mock.callCount()
       assert.strictEqual(callCount, 3)
       for (const call of requestHandlerMock.mock.calls) {
-        const args = call.arguments as [unknown, string, Record<string, unknown>, Record<string, unknown>]
+        const args = call.arguments as [
+          unknown,
+          string,
+          Record<string, unknown>,
+          Record<string, unknown>
+        ]
         const [, command, payload, options] = args
         assert.strictEqual(command, OCPP20RequestCommand.STATUS_NOTIFICATION)
         assert.notStrictEqual(payload, undefined)
@@ -579,7 +584,12 @@ await describe('F06 - TriggerMessage', async () => {
       )
 
       assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
-      const args = requestHandlerMock.mock.calls[0].arguments as [unknown, string, Record<string, unknown>, Record<string, unknown>]
+      const args = requestHandlerMock.mock.calls[0].arguments as [
+        unknown,
+        string,
+        Record<string, unknown>,
+        Record<string, unknown>
+      ]
       const [, command, payload, options] = args
       assert.strictEqual(command, OCPP20RequestCommand.STATUS_NOTIFICATION)
       assert.strictEqual(payload.evseId, 1)
