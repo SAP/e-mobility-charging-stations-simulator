@@ -935,13 +935,17 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         )
       } else {
         evseStatus.availability = operationalStatus
-        this.sendEvseStatusNotifications(chargingStation, evseId, newConnectorStatus)
         logger.info(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: EVSE ${evseId.toString()} set to ${operationalStatus} immediately (idle)`
         )
       }
     }
     if (hasActiveTransactions) {
+      for (const [evseId, evseStatus] of chargingStation.evses) {
+        if (evseId > 0 && !this.hasEvseActiveTransactions(evseStatus)) {
+          this.sendEvseStatusNotifications(chargingStation, evseId, newConnectorStatus)
+        }
+      }
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: Charging station partially set to ${operationalStatus}, some EVSEs scheduled`
       )
@@ -1472,6 +1476,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
 
     return {
+      // Simulator has no persistent offline message buffer
       messagesInQueue: false,
       ongoingIndicator,
     }
