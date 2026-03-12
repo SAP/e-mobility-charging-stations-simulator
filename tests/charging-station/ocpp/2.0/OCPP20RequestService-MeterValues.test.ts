@@ -104,14 +104,13 @@ await describe('MeterValues outgoing command', async () => {
     ]
 
     // evseId 0 = main power meter
-    await service.requestMeterValues(station, 0, meterValue)
+    const response = await service.requestMeterValues(station, 0, meterValue)
 
     assert.strictEqual(sendMessageMock.mock.calls.length, 1)
 
     const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20MeterValuesRequest
     assert.strictEqual(sentPayload.evseId, 0)
 
-    const response = await service.requestMeterValues(station, 0, meterValue)
     assert.notStrictEqual(response, undefined)
     assert.strictEqual(typeof response, 'object')
   })

@@ -257,4 +257,53 @@ await describe('TransactionEvent Response - idTokenInfo status handling', async 
     // Assert
     assert.strictEqual(mockStopTransaction.mock.calls.length, 0)
   })
+
+  await it('should stop only the targeted transaction on multi-EVSE station', () => {
+    // Set up a 2-EVSE station with active transactions on both EVSEs
+    const txn1: UUIDv4 = '00000000-0000-0000-0000-000000000010'
+    const txn2: UUIDv4 = '00000000-0000-0000-0000-000000000020'
+    const { station: multiStation } = createMockChargingStation({
+      baseName: TEST_CHARGING_STATION_BASE_NAME,
+      connectorsCount: 2,
+      evseConfiguration: { evsesCount: 2 },
+      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+      stationInfo: {
+        ocppStrictCompliance: false,
+        ocppVersion: OCPPVersion.VERSION_201,
+      },
+      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+    })
+    setupConnectorWithTransaction(multiStation, 1, { transactionId: 10 })
+    const connector1 = multiStation.getConnectorStatus(1)
+    if (connector1 != null) {
+      connector1.transactionId = txn1
+    }
+    setupConnectorWithTransaction(multiStation, 2, { transactionId: 20 })
+    const connector2 = multiStation.getConnectorStatus(2)
+    if (connector2 != null) {
+      connector2.transactionId = txn2
+    }
+
+    const mockStopTransaction = mock.method(OCPP20ServiceUtils, 'requestStopTransaction', () =>
+      Promise.resolve({ status: 'Accepted' })
+    )
+    const payload: OCPP20TransactionEventResponse = {
+      idTokenInfo: {
+        status: OCPP20AuthorizationStatusEnumType.Invalid,
+      },
+    }
+    const multiTestable = createTestableResponseService(new OCPP20ResponseService())
+
+    // Act — reject EVSE 1's transaction only
+    multiTestable.handleResponseTransactionEvent(
+      multiStation,
+      payload,
+      buildTransactionEventRequest(txn1)
+    )
+
+    // Assert — only 1 stop call targeting connector 1, EVSE 2 untouched
+    assert.strictEqual(mockStopTransaction.mock.calls.length, 1)
+    assert.strictEqual(mockStopTransaction.mock.calls[0].arguments[0], multiStation)
+    assert.strictEqual(mockStopTransaction.mock.calls[0].arguments[1], 1)
+  })
 })
