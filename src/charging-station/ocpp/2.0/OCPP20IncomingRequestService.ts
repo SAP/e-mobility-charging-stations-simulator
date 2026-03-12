@@ -128,6 +128,7 @@ import {
   generateUUID,
   isAsyncFunction,
   logger,
+  sleep,
   validateUUID,
 } from '../../../utils/index.js'
 import {
@@ -917,6 +918,86 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     return secondsToMilliseconds(Constants.DEFAULT_TX_UPDATED_INTERVAL)
   }
 
+  private handleCsLevelInoperative (
+    chargingStation: ChargingStation,
+    operationalStatus: OperationalStatusEnumType,
+    newConnectorStatus: OCPP20ConnectorStatusEnumType
+  ): OCPP20ChangeAvailabilityResponse | undefined {
+    let hasActiveTransactions = false
+    for (const [evseId, evseStatus] of chargingStation.evses) {
+      if (evseId === 0) {
+        continue
+      }
+      if (this.hasEvseActiveTransactions(evseStatus)) {
+        hasActiveTransactions = true
+        logger.info(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: EVSE ${evseId.toString()} has active transaction, will be set Inoperative when transaction ends`
+        )
+      } else {
+        evseStatus.availability = operationalStatus
+        this.sendEvseStatusNotifications(chargingStation, evseId, newConnectorStatus)
+        logger.info(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: EVSE ${evseId.toString()} set to ${operationalStatus} immediately (idle)`
+        )
+      }
+    }
+    if (hasActiveTransactions) {
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: Charging station partially set to ${operationalStatus}, some EVSEs scheduled`
+      )
+      return {
+        status: ChangeAvailabilityStatusEnumType.Scheduled,
+      }
+    }
+    return undefined
+  }
+
+  private handleEvseChangeAvailability (
+    chargingStation: ChargingStation,
+    evseId: number,
+    operationalStatus: OperationalStatusEnumType,
+    newConnectorStatus: OCPP20ConnectorStatusEnumType
+  ): OCPP20ChangeAvailabilityResponse {
+    if (!chargingStation.evses.has(evseId)) {
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: EVSE ${evseId.toString()} not found, rejecting`
+      )
+      return {
+        status: ChangeAvailabilityStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: `EVSE ${evseId.toString()} does not exist on charging station`,
+          reasonCode: ReasonCodeEnumType.UnknownEvse,
+        },
+      }
+    }
+
+    const evseStatus = chargingStation.getEvseStatus(evseId)
+    if (
+      evseStatus != null &&
+      operationalStatus === OperationalStatusEnumType.Inoperative &&
+      this.hasEvseActiveTransactions(evseStatus)
+    ) {
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: EVSE ${evseId.toString()} has active transaction, scheduling availability change`
+      )
+      return {
+        status: ChangeAvailabilityStatusEnumType.Scheduled,
+      }
+    }
+
+    if (evseStatus != null) {
+      evseStatus.availability = operationalStatus
+    }
+    this.sendEvseStatusNotifications(chargingStation, evseId, newConnectorStatus)
+
+    logger.info(
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: EVSE ${evseId.toString()} set to ${operationalStatus}`
+    )
+    return {
+      status: ChangeAvailabilityStatusEnumType.Accepted,
+    }
+  }
+
   /**
    * Handles OCPP 2.0 CertificateSigned request from central system
    * Receives signed certificate chain from CSMS and stores it in the charging station
@@ -1027,9 +1108,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     commandPayload: OCPP20ChangeAvailabilityRequest
   ): OCPP20ChangeAvailabilityResponse {
     const { evse, operationalStatus } = commandPayload
+    const evseIdLabel = evse?.id != null ? ` for EVSE ${evse.id.toString()}` : ''
 
     logger.debug(
-      `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: Received ChangeAvailability request with operationalStatus=${operationalStatus}${evse?.id !== undefined ? ` for EVSE ${evse.id.toString()}` : ''}`
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: Received ChangeAvailability request with operationalStatus=${operationalStatus}${evseIdLabel}`
     )
 
     const newConnectorStatus =
@@ -1038,77 +1120,24 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         : OCPP20ConnectorStatusEnumType.Available
 
     // EVSE-level change
-    if (evse?.id !== undefined && evse.id > 0) {
-      if (!chargingStation.evses.has(evse.id)) {
-        logger.warn(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: EVSE ${evse.id.toString()} not found, rejecting`
-        )
-        return {
-          status: ChangeAvailabilityStatusEnumType.Rejected,
-          statusInfo: {
-            additionalInfo: `EVSE ${evse.id.toString()} does not exist on charging station`,
-            reasonCode: ReasonCodeEnumType.UnknownEvse,
-          },
-        }
-      }
-
-      const evseStatus = chargingStation.getEvseStatus(evse.id)
-      if (
-        evseStatus != null &&
-        operationalStatus === OperationalStatusEnumType.Inoperative &&
-        this.hasEvseActiveTransactions(evseStatus)
-      ) {
-        logger.info(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: EVSE ${evse.id.toString()} has active transaction, scheduling availability change`
-        )
-        return {
-          status: ChangeAvailabilityStatusEnumType.Scheduled,
-        }
-      }
-
-      // Apply availability change
-      if (evseStatus != null) {
-        evseStatus.availability = operationalStatus
-      }
-      this.sendEvseStatusNotifications(chargingStation, evse.id, newConnectorStatus)
-
-      logger.info(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: EVSE ${evse.id.toString()} set to ${operationalStatus}`
+    if (evse?.id != null && evse.id > 0) {
+      return this.handleEvseChangeAvailability(
+        chargingStation,
+        evse.id,
+        operationalStatus,
+        newConnectorStatus
       )
-      return {
-        status: ChangeAvailabilityStatusEnumType.Accepted,
-      }
     }
 
     // CS-level change (no evse or evse.id === 0)
     if (operationalStatus === OperationalStatusEnumType.Inoperative) {
-      let hasActiveTransactions = false
-      for (const [evseId, evseStatus] of chargingStation.evses) {
-        if (evseId === 0) {
-          continue
-        }
-        if (this.hasEvseActiveTransactions(evseStatus)) {
-          // G03.FR.04: EVSEs with active transactions will be set Inoperative when transaction ends
-          hasActiveTransactions = true
-          logger.info(
-            `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: EVSE ${evseId.toString()} has active transaction, will be set Inoperative when transaction ends`
-          )
-        } else {
-          // G03.FR.04: Idle EVSEs must be set Inoperative immediately
-          evseStatus.availability = operationalStatus
-          this.sendEvseStatusNotifications(chargingStation, evseId, newConnectorStatus)
-          logger.info(
-            `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: EVSE ${evseId.toString()} set to ${operationalStatus} immediately (idle)`
-          )
-        }
-      }
-      if (hasActiveTransactions) {
-        logger.info(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: Charging station partially set to ${operationalStatus}, some EVSEs scheduled`
-        )
-        return {
-          status: ChangeAvailabilityStatusEnumType.Scheduled,
-        }
+      const result = this.handleCsLevelInoperative(
+        chargingStation,
+        operationalStatus,
+        newConnectorStatus
+      )
+      if (result != null) {
+        return result
       }
     }
 
@@ -1427,30 +1456,19 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     commandPayload: OCPP20GetTransactionStatusRequest
   ): OCPP20GetTransactionStatusResponse {
     const { transactionId } = commandPayload
+    const transactionLabel = transactionId != null ? ` for transaction ID ${transactionId}` : ''
 
     logger.debug(
-      `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetTransactionStatus: Received GetTransactionStatus request${transactionId !== undefined ? ` for transaction ID ${transactionId}` : ''}`
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetTransactionStatus: Received GetTransactionStatus request${transactionLabel}`
     )
 
     let ongoingIndicator = false
 
-    if (transactionId !== undefined) {
-      // Check if the specific transaction ID exists and is active
-      const evseId = chargingStation.getEvseIdByTransactionId(transactionId)
-      ongoingIndicator = evseId !== undefined
+    if (transactionId == null) {
+      ongoingIndicator = this.hasAnyActiveTransaction(chargingStation)
     } else {
-      // Check if any EVSE has an active transaction
-      for (const evseStatus of chargingStation.evses.values()) {
-        for (const connectorStatus of evseStatus.connectors.values()) {
-          if (connectorStatus.transactionStarted === true) {
-            ongoingIndicator = true
-            break
-          }
-        }
-        if (ongoingIndicator) {
-          break
-        }
-      }
+      const evseId = chargingStation.getEvseIdByTransactionId(transactionId)
+      ongoingIndicator = evseId != null
     }
 
     return {
@@ -2434,6 +2452,17 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
+  private hasAnyActiveTransaction (chargingStation: ChargingStation): boolean {
+    for (const evseStatus of chargingStation.evses.values()) {
+      for (const connectorStatus of evseStatus.connectors.values()) {
+        if (connectorStatus.transactionStarted === true) {
+          return true
+        }
+      }
+    }
+    return false
+  }
+
   /**
    * Checks if a specific EVSE has any active transactions.
    * @param evse - The EVSE to check
@@ -2863,18 +2892,13 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     requestId: number,
     signature?: string
   ): Promise<void> {
-    const delay = (ms: number): Promise<void> =>
-      new Promise(resolve => {
-        setTimeout(resolve, ms)
-      })
-
     await this.sendFirmwareStatusNotification(
       chargingStation,
       FirmwareStatusEnumType.Downloading,
       requestId
     )
 
-    await delay(1000)
+    await sleep(1000)
     await this.sendFirmwareStatusNotification(
       chargingStation,
       FirmwareStatusEnumType.Downloaded,
@@ -2882,7 +2906,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     )
 
     if (signature != null) {
-      await delay(500)
+      await sleep(500)
       await this.sendFirmwareStatusNotification(
         chargingStation,
         FirmwareStatusEnumType.SignatureVerified,
@@ -2890,14 +2914,14 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
     }
 
-    await delay(1000)
+    await sleep(1000)
     await this.sendFirmwareStatusNotification(
       chargingStation,
       FirmwareStatusEnumType.Installing,
       requestId
     )
 
-    await delay(1000)
+    await sleep(1000)
     await this.sendFirmwareStatusNotification(
       chargingStation,
       FirmwareStatusEnumType.Installed,
@@ -2919,18 +2943,13 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     chargingStation: ChargingStation,
     requestId: number
   ): Promise<void> {
-    const delay = (ms: number): Promise<void> =>
-      new Promise(resolve => {
-        setTimeout(resolve, ms)
-      })
-
     await this.sendLogStatusNotification(
       chargingStation,
       UploadLogStatusEnumType.Uploading,
       requestId
     )
 
-    await delay(1000)
+    await sleep(1000)
     await this.sendLogStatusNotification(
       chargingStation,
       UploadLogStatusEnumType.Uploaded,
