@@ -2,7 +2,7 @@
  * @file Tests for ChargingStationWorkerBroadcastChannel
  * @description Verifies OCPP 2.0.1 UIService pipeline integration: enums, mappings,
  * response status logic, payload building, and handler routing for the 8 new broadcast
- * channel procedures. 45 tests across 6 groups.
+ * channel procedures. 53 tests across 6 groups.
  */
 
 import assert from 'node:assert/strict'
@@ -16,13 +16,13 @@ import {
   GenericStatus,
   GetCertificateStatusEnumType,
   Iso15118EVCertificateStatusEnumType,
+  OCPP20AuthorizationStatusEnumType,
   OCPP20RequestCommand,
   OCPPVersion,
   ProcedureName,
   RequestCommand,
   ResponseStatus,
 } from '../../../src/types/index.js'
-import { OCPP20AuthorizationStatusEnumType } from '../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants } from '../../../src/utils/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from '../ChargingStationTestUtils.js'
@@ -257,7 +257,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
   })
 
   // ==========================================================================
-  // Group 4: commandResponseToResponseStatus — 4 new command response cases (10 tests)
+  // Group 4: commandResponseToResponseStatus — 4 new command response cases (18 tests)
   // ==========================================================================
 
   await describe('commandResponseToResponseStatus OCPP 2.0.1 commands', async () => {
@@ -316,7 +316,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
 
       const status = testable.commandResponseToResponseStatus(
         BroadcastChannelProcedureName.GET_15118_EV_CERTIFICATE,
-        { exiResponse: 'base64data', status: Iso15118EVCertificateStatusEnumType.Accepted }
+        { exiResponse: 'base64Data', status: Iso15118EVCertificateStatusEnumType.Accepted }
       )
 
       assert.strictEqual(status, ResponseStatus.SUCCESS)
@@ -335,7 +335,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
 
       const status = testable.commandResponseToResponseStatus(
         BroadcastChannelProcedureName.GET_15118_EV_CERTIFICATE,
-        { exiResponse: 'base64data', status: Iso15118EVCertificateStatusEnumType.Failed }
+        { exiResponse: 'base64Data', status: Iso15118EVCertificateStatusEnumType.Failed }
       )
 
       assert.strictEqual(status, ResponseStatus.FAILURE)
@@ -376,6 +376,160 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
       const status = testable.commandResponseToResponseStatus(
         BroadcastChannelProcedureName.GET_CERTIFICATE_STATUS,
         { status: GetCertificateStatusEnumType.Failed }
+      )
+
+      assert.strictEqual(status, ResponseStatus.FAILURE)
+    })
+
+    // -- Fire-and-forget commands (empty response = SUCCESS) --
+
+    await it('should return SUCCESS for LOG_STATUS_NOTIFICATION with empty response', () => {
+      const { station } = createMockChargingStation({
+        connectorsCount: 1,
+        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+        stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      })
+
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+
+      const status = testable.commandResponseToResponseStatus(
+        BroadcastChannelProcedureName.LOG_STATUS_NOTIFICATION,
+        {}
+      )
+
+      assert.strictEqual(status, ResponseStatus.SUCCESS)
+    })
+
+    await it('should return FAILURE for LOG_STATUS_NOTIFICATION with non-empty response', () => {
+      const { station } = createMockChargingStation({
+        connectorsCount: 1,
+        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+        stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      })
+
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+
+      const status = testable.commandResponseToResponseStatus(
+        BroadcastChannelProcedureName.LOG_STATUS_NOTIFICATION,
+        { unexpected: 'field' }
+      )
+
+      assert.strictEqual(status, ResponseStatus.FAILURE)
+    })
+
+    await it('should return SUCCESS for NOTIFY_CUSTOMER_INFORMATION with empty response', () => {
+      const { station } = createMockChargingStation({
+        connectorsCount: 1,
+        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+        stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      })
+
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+
+      const status = testable.commandResponseToResponseStatus(
+        BroadcastChannelProcedureName.NOTIFY_CUSTOMER_INFORMATION,
+        {}
+      )
+
+      assert.strictEqual(status, ResponseStatus.SUCCESS)
+    })
+
+    await it('should return FAILURE for NOTIFY_CUSTOMER_INFORMATION with non-empty response', () => {
+      const { station } = createMockChargingStation({
+        connectorsCount: 1,
+        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+        stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      })
+
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+
+      const status = testable.commandResponseToResponseStatus(
+        BroadcastChannelProcedureName.NOTIFY_CUSTOMER_INFORMATION,
+        { unexpected: 'field' }
+      )
+
+      assert.strictEqual(status, ResponseStatus.FAILURE)
+    })
+
+    await it('should return SUCCESS for NOTIFY_REPORT with empty response', () => {
+      const { station } = createMockChargingStation({
+        connectorsCount: 1,
+        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+        stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      })
+
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+
+      const status = testable.commandResponseToResponseStatus(
+        BroadcastChannelProcedureName.NOTIFY_REPORT,
+        {}
+      )
+
+      assert.strictEqual(status, ResponseStatus.SUCCESS)
+    })
+
+    await it('should return FAILURE for NOTIFY_REPORT with non-empty response', () => {
+      const { station } = createMockChargingStation({
+        connectorsCount: 1,
+        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+        stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      })
+
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+
+      const status = testable.commandResponseToResponseStatus(
+        BroadcastChannelProcedureName.NOTIFY_REPORT,
+        { unexpected: 'field' }
+      )
+
+      assert.strictEqual(status, ResponseStatus.FAILURE)
+    })
+
+    await it('should return SUCCESS for SECURITY_EVENT_NOTIFICATION with empty response', () => {
+      const { station } = createMockChargingStation({
+        connectorsCount: 1,
+        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+        stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      })
+
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+
+      const status = testable.commandResponseToResponseStatus(
+        BroadcastChannelProcedureName.SECURITY_EVENT_NOTIFICATION,
+        {}
+      )
+
+      assert.strictEqual(status, ResponseStatus.SUCCESS)
+    })
+
+    await it('should return FAILURE for SECURITY_EVENT_NOTIFICATION with non-empty response', () => {
+      const { station } = createMockChargingStation({
+        connectorsCount: 1,
+        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+        stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
+        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      })
+
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+
+      const status = testable.commandResponseToResponseStatus(
+        BroadcastChannelProcedureName.SECURITY_EVENT_NOTIFICATION,
+        { unexpected: 'field' }
       )
 
       assert.strictEqual(status, ResponseStatus.FAILURE)
@@ -471,7 +625,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
       const { station, testableRequestService } = createOCPP20RequestTestContext()
       const commandParams = {
         action: 'Install',
-        exiRequest: 'base64encodeddata',
+        exiRequest: 'base64EncodedData',
         iso15118SchemaVersion: 'urn:iso:15118:2:2013:MsgDef',
       }
 
@@ -508,7 +662,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
     await it('should build SIGN_CERTIFICATE payload as passthrough', () => {
       const { station, testableRequestService } = createOCPP20RequestTestContext()
       const commandParams = {
-        csr: '-----BEGIN CERTIFICATE REQUEST-----\nMIIBkTCB+wIBADBSMQ...\n-----END CERTIFICATE REQUEST-----',
+        csr: '-----BEGIN CERTIFICATE REQUEST-----\nMIIBkTCB...\n-----END CERTIFICATE REQUEST-----',
       }
 
       const payload = testableRequestService.buildRequestPayload(

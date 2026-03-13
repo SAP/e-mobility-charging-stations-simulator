@@ -264,6 +264,7 @@ export type {
 } from './ocpp/2.0/Responses.js'
 export {
   type ComponentType,
+  OCPP20AuthorizationStatusEnumType,
   OCPP20ChargingProfileKindEnumType,
   OCPP20ChargingProfilePurposeEnumType,
   type OCPP20ChargingProfileType,

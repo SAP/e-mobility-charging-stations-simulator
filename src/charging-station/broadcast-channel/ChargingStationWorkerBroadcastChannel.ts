@@ -29,6 +29,7 @@ import {
   type MessageEvent,
   type MeterValuesRequest,
   type MeterValuesResponse,
+  OCPP20AuthorizationStatusEnumType,
   type OCPP20Get15118EVCertificateRequest,
   type OCPP20Get15118EVCertificateResponse,
   type OCPP20GetCertificateStatusRequest,
@@ -60,7 +61,6 @@ import {
   type StopTransactionRequest,
   type StopTransactionResponse,
 } from '../../types/index.js'
-import { OCPP20AuthorizationStatusEnumType } from '../../types/ocpp/2.0/Transaction.js'
 import { Constants, convertToInt, isAsyncFunction, isEmpty, logger } from '../../utils/index.js'
 import { getConfigurationKey } from '../ConfigurationKeyUtils.js'
 import { buildMeterValue } from '../ocpp/index.js'
@@ -540,7 +540,11 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
           return ResponseStatus.SUCCESS
         }
         return ResponseStatus.FAILURE
+      case BroadcastChannelProcedureName.LOG_STATUS_NOTIFICATION:
       case BroadcastChannelProcedureName.METER_VALUES:
+      case BroadcastChannelProcedureName.NOTIFY_CUSTOMER_INFORMATION:
+      case BroadcastChannelProcedureName.NOTIFY_REPORT:
+      case BroadcastChannelProcedureName.SECURITY_EVENT_NOTIFICATION:
       case BroadcastChannelProcedureName.STATUS_NOTIFICATION:
         if (isEmpty(commandResponse)) {
           return ResponseStatus.SUCCESS

@@ -1,4 +1,4 @@
-import type { JsonObject } from './JsonType.js'
+import type { OCPP20IdTokenType, OCPP20TransactionType } from './ocpp/2.0/Transaction.js'
 import type { RequestPayload, ResponsePayload } from './UIProtocol.js'
 import type { UUIDv4 } from './UUID.js'
 
@@ -41,9 +41,9 @@ export interface BroadcastChannelRequestPayload extends RequestPayload {
   connectorId?: number
   eventType?: string
   evseId?: number
-  idToken?: JsonObject
-  transactionData?: JsonObject
+  idToken?: OCPP20IdTokenType
   transactionId?: number
+  transactionInfo?: OCPP20TransactionType
 }
 
 export type BroadcastChannelResponse = [UUIDv4, BroadcastChannelResponsePayload]
