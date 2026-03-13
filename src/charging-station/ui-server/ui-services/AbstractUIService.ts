@@ -54,10 +54,23 @@ export abstract class AbstractUIService {
       ProcedureName.FIRMWARE_STATUS_NOTIFICATION,
       BroadcastChannelProcedureName.FIRMWARE_STATUS_NOTIFICATION,
     ],
+    [ProcedureName.GET_15118_EV_CERTIFICATE, BroadcastChannelProcedureName.GET_15118_EV_CERTIFICATE],
+    [ProcedureName.GET_CERTIFICATE_STATUS, BroadcastChannelProcedureName.GET_CERTIFICATE_STATUS],
     [ProcedureName.HEARTBEAT, BroadcastChannelProcedureName.HEARTBEAT],
+    [ProcedureName.LOG_STATUS_NOTIFICATION, BroadcastChannelProcedureName.LOG_STATUS_NOTIFICATION],
     [ProcedureName.METER_VALUES, BroadcastChannelProcedureName.METER_VALUES],
+    [
+      ProcedureName.NOTIFY_CUSTOMER_INFORMATION,
+      BroadcastChannelProcedureName.NOTIFY_CUSTOMER_INFORMATION,
+    ],
+    [ProcedureName.NOTIFY_REPORT, BroadcastChannelProcedureName.NOTIFY_REPORT],
     [ProcedureName.OPEN_CONNECTION, BroadcastChannelProcedureName.OPEN_CONNECTION],
+    [
+      ProcedureName.SECURITY_EVENT_NOTIFICATION,
+      BroadcastChannelProcedureName.SECURITY_EVENT_NOTIFICATION,
+    ],
     [ProcedureName.SET_SUPERVISION_URL, BroadcastChannelProcedureName.SET_SUPERVISION_URL],
+    [ProcedureName.SIGN_CERTIFICATE, BroadcastChannelProcedureName.SIGN_CERTIFICATE],
     [
       ProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR,
       BroadcastChannelProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR,
@@ -71,6 +84,7 @@ export abstract class AbstractUIService {
     ],
     [ProcedureName.STOP_CHARGING_STATION, BroadcastChannelProcedureName.STOP_CHARGING_STATION],
     [ProcedureName.STOP_TRANSACTION, BroadcastChannelProcedureName.STOP_TRANSACTION],
+    [ProcedureName.TRANSACTION_EVENT, BroadcastChannelProcedureName.TRANSACTION_EVENT],
   ])
 
   protected readonly requestHandlers: Map<ProcedureName, ProtocolRequestHandler>
