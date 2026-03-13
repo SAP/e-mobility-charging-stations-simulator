@@ -943,6 +943,7 @@ class TestOnConnect:
         with patch("server.ChargePoint") as MockCP:
             mock_cp = AsyncMock()
             mock_cp.start = AsyncMock(side_effect=exc)
+            mock_cp.handle_connection_closed = MagicMock()
             MockCP.return_value = mock_cp
             await on_connect(mock_ws, config=config)
             mock_cp.handle_connection_closed.assert_called_once()
