@@ -15,14 +15,20 @@ import {
   GenericStatus,
   GetCertificateStatusEnumType,
   Iso15118EVCertificateStatusEnumType,
+  OCPP20RequestCommand,
   OCPPVersion,
   ProcedureName,
+  RequestCommand,
   ResponseStatus,
 } from '../../../src/types/index.js'
 import { OCPP20AuthorizationStatusEnumType } from '../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants } from '../../../src/utils/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from '../ChargingStationTestUtils.js'
+import {
+  createMockStationWithRequestTracking,
+  createOCPP20RequestTestContext,
+} from '../ocpp/2.0/OCPP20TestUtils.js'
 
 // ============================================================================
 // Testable Interfaces
@@ -30,6 +36,8 @@ import { createMockChargingStation } from '../ChargingStationTestUtils.js'
 // Type-safe access to private/protected members for testing, following the
 // pattern from OCPP20TestUtils.ts to avoid `as any` casts.
 // ============================================================================
+
+type CommandHandler = (requestPayload?: BroadcastChannelRequestPayload) => Promise<unknown> | undefined
 
 /**
  * Interface exposing protected static members of AbstractUIService for testing.
@@ -41,11 +49,8 @@ interface TestableAbstractUIService {
   >
 }
 
-/**
- * Interface exposing private members of ChargingStationWorkerBroadcastChannel for testing.
- */
 interface TestableWorkerBroadcastChannel {
-  commandHandlers: Map<BroadcastChannelProcedureName, unknown>
+  commandHandlers: Map<BroadcastChannelProcedureName, CommandHandler>
   commandResponseToResponseStatus: (
     command: BroadcastChannelProcedureName,
     commandResponse: unknown
@@ -613,6 +618,199 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
       const testable = createTestableWorkerBroadcastChannel(instance)
 
       assert.ok(testable.commandHandlers.has(BroadcastChannelProcedureName.TRANSACTION_EVENT))
+    })
+  })
+
+  // ==========================================================================
+  // Group 7: buildRequestPayload — OCPP 2.0.1 certificate passthrough
+  // ==========================================================================
+
+  await describe('buildRequestPayload OCPP 2.0.1 certificate passthrough', async () => {
+    await it('should build GET_15118_EV_CERTIFICATE payload as passthrough', () => {
+      const { station, testableRequestService } = createOCPP20RequestTestContext()
+      const commandParams = {
+        action: 'Install',
+        exiRequest: 'base64encodeddata',
+        iso15118SchemaVersion: 'urn:iso:15118:2:2013:MsgDef',
+      }
+
+      const payload = testableRequestService.buildRequestPayload(
+        station,
+        OCPP20RequestCommand.GET_15118_EV_CERTIFICATE,
+        commandParams
+      )
+
+      assert.deepStrictEqual(payload, commandParams)
+    })
+
+    await it('should build GET_CERTIFICATE_STATUS payload as passthrough', () => {
+      const { station, testableRequestService } = createOCPP20RequestTestContext()
+      const commandParams = {
+        ocspRequestData: {
+          hashAlgorithm: 'SHA256',
+          issuerKeyHash: 'abc123def456issuerkeyhash',
+          issuerNameHash: 'abc123def456issuernamehash',
+          responderURL: 'http://ocsp.example.com',
+          serialNumber: '1234567890',
+        },
+      }
+
+      const payload = testableRequestService.buildRequestPayload(
+        station,
+        OCPP20RequestCommand.GET_CERTIFICATE_STATUS,
+        commandParams
+      )
+
+      assert.deepStrictEqual(payload, commandParams)
+    })
+
+    await it('should build SIGN_CERTIFICATE payload as passthrough', () => {
+      const { station, testableRequestService } = createOCPP20RequestTestContext()
+      const commandParams = {
+        csr: '-----BEGIN CERTIFICATE REQUEST-----\nMIIBkTCB+wIBADBSMQ...\n-----END CERTIFICATE REQUEST-----',
+      }
+
+      const payload = testableRequestService.buildRequestPayload(
+        station,
+        OCPP20RequestCommand.SIGN_CERTIFICATE,
+        commandParams
+      )
+
+      assert.deepStrictEqual(payload, commandParams)
+    })
+  })
+
+  // ==========================================================================
+  // Group 8: commandHandlers behavioral — verify requestHandler invocation
+  // ==========================================================================
+
+  await describe('commandHandlers OCPP 2.0.1 behavioral', async () => {
+    await it('should invoke requestHandler with GET_15118_EV_CERTIFICATE command', async () => {
+      const { sentRequests, station } = createMockStationWithRequestTracking()
+
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+
+      const handler = testable.commandHandlers.get(
+        BroadcastChannelProcedureName.GET_15118_EV_CERTIFICATE
+      )
+      assert.ok(handler != null)
+      await handler({})
+
+      assert.strictEqual(sentRequests.length, 1)
+      assert.strictEqual(sentRequests[0].command, RequestCommand.GET_15118_EV_CERTIFICATE)
+    })
+
+    await it('should invoke requestHandler with GET_CERTIFICATE_STATUS command', async () => {
+      const { sentRequests, station } = createMockStationWithRequestTracking()
+
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+
+      const handler = testable.commandHandlers.get(
+        BroadcastChannelProcedureName.GET_CERTIFICATE_STATUS
+      )
+      assert.ok(handler != null)
+      await handler({})
+
+      assert.strictEqual(sentRequests.length, 1)
+      assert.strictEqual(sentRequests[0].command, RequestCommand.GET_CERTIFICATE_STATUS)
+    })
+
+    await it('should invoke requestHandler with LOG_STATUS_NOTIFICATION command', async () => {
+      const { sentRequests, station } = createMockStationWithRequestTracking()
+
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+
+      const handler = testable.commandHandlers.get(
+        BroadcastChannelProcedureName.LOG_STATUS_NOTIFICATION
+      )
+      assert.ok(handler != null)
+      await handler({})
+
+      assert.strictEqual(sentRequests.length, 1)
+      assert.strictEqual(sentRequests[0].command, RequestCommand.LOG_STATUS_NOTIFICATION)
+    })
+
+    await it('should invoke requestHandler with NOTIFY_CUSTOMER_INFORMATION command', async () => {
+      const { sentRequests, station } = createMockStationWithRequestTracking()
+
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+
+      const handler = testable.commandHandlers.get(
+        BroadcastChannelProcedureName.NOTIFY_CUSTOMER_INFORMATION
+      )
+      assert.ok(handler != null)
+      await handler({})
+
+      assert.strictEqual(sentRequests.length, 1)
+      assert.strictEqual(sentRequests[0].command, RequestCommand.NOTIFY_CUSTOMER_INFORMATION)
+    })
+
+    await it('should invoke requestHandler with NOTIFY_REPORT command', async () => {
+      const { sentRequests, station } = createMockStationWithRequestTracking()
+
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+
+      const handler = testable.commandHandlers.get(
+        BroadcastChannelProcedureName.NOTIFY_REPORT
+      )
+      assert.ok(handler != null)
+      await handler({})
+
+      assert.strictEqual(sentRequests.length, 1)
+      assert.strictEqual(sentRequests[0].command, RequestCommand.NOTIFY_REPORT)
+    })
+
+    await it('should invoke requestHandler with SECURITY_EVENT_NOTIFICATION command', async () => {
+      const { sentRequests, station } = createMockStationWithRequestTracking()
+
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+
+      const handler = testable.commandHandlers.get(
+        BroadcastChannelProcedureName.SECURITY_EVENT_NOTIFICATION
+      )
+      assert.ok(handler != null)
+      await handler({})
+
+      assert.strictEqual(sentRequests.length, 1)
+      assert.strictEqual(sentRequests[0].command, RequestCommand.SECURITY_EVENT_NOTIFICATION)
+    })
+
+    await it('should invoke requestHandler with SIGN_CERTIFICATE command', async () => {
+      const { sentRequests, station } = createMockStationWithRequestTracking()
+
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+
+      const handler = testable.commandHandlers.get(
+        BroadcastChannelProcedureName.SIGN_CERTIFICATE
+      )
+      assert.ok(handler != null)
+      await handler({})
+
+      assert.strictEqual(sentRequests.length, 1)
+      assert.strictEqual(sentRequests[0].command, RequestCommand.SIGN_CERTIFICATE)
+    })
+
+    await it('should invoke requestHandler with TRANSACTION_EVENT command', async () => {
+      const { sentRequests, station } = createMockStationWithRequestTracking()
+
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+
+      const handler = testable.commandHandlers.get(
+        BroadcastChannelProcedureName.TRANSACTION_EVENT
+      )
+      assert.ok(handler != null)
+      await handler({})
+
+      assert.strictEqual(sentRequests.length, 1)
+      assert.strictEqual(sentRequests[0].command, RequestCommand.TRANSACTION_EVENT)
     })
   })
 })
