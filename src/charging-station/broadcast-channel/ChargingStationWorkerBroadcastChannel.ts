@@ -21,11 +21,33 @@ import {
   type EmptyObject,
   type FirmwareStatusNotificationRequest,
   type FirmwareStatusNotificationResponse,
+  GenericStatus,
+  GetCertificateStatusEnumType,
   type HeartbeatRequest,
   type HeartbeatResponse,
+  Iso15118EVCertificateStatusEnumType,
   type MessageEvent,
   type MeterValuesRequest,
   type MeterValuesResponse,
+  type OCPP20Get15118EVCertificateRequest,
+  type OCPP20Get15118EVCertificateResponse,
+  type OCPP20GetCertificateStatusRequest,
+  type OCPP20GetCertificateStatusResponse,
+  type OCPP20LogStatusNotificationRequest,
+  type OCPP20LogStatusNotificationResponse,
+  type OCPP20MeterValuesRequest,
+  type OCPP20MeterValuesResponse,
+  type OCPP20NotifyCustomerInformationRequest,
+  type OCPP20NotifyCustomerInformationResponse,
+  type OCPP20NotifyReportRequest,
+  type OCPP20NotifyReportResponse,
+  type OCPP20SecurityEventNotificationRequest,
+  type OCPP20SecurityEventNotificationResponse,
+  type OCPP20SignCertificateRequest,
+  type OCPP20SignCertificateResponse,
+  type OCPP20TransactionEventRequest,
+  type OCPP20TransactionEventResponse,
+  OCPPVersion,
   RegistrationStatusEnumType,
   RequestCommand,
   type RequestParams,
@@ -38,6 +60,7 @@ import {
   type StopTransactionRequest,
   type StopTransactionResponse,
 } from '../../types/index.js'
+import { OCPP20AuthorizationStatusEnumType } from '../../types/ocpp/2.0/Transaction.js'
 import { Constants, convertToInt, isAsyncFunction, isEmpty, logger } from '../../utils/index.js'
 import { getConfigurationKey } from '../ConfigurationKeyUtils.js'
 import { buildMeterValue } from '../ocpp/index.js'
@@ -56,6 +79,10 @@ type CommandResponse =
   | DataTransferResponse
   | EmptyObject
   | HeartbeatResponse
+  | OCPP20Get15118EVCertificateResponse
+  | OCPP20GetCertificateStatusResponse
+  | OCPP20SignCertificateResponse
+  | OCPP20TransactionEventResponse
   | StartTransactionResponse
   | StopTransactionResponse
 
@@ -169,6 +196,17 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       [
         BroadcastChannelProcedureName.METER_VALUES,
         async (requestPayload?: BroadcastChannelRequestPayload) => {
+          if (this.chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_201) {
+            return await this.chargingStation.ocppRequestService.requestHandler<
+              OCPP20MeterValuesRequest,
+              OCPP20MeterValuesResponse
+            >(
+              this.chargingStation,
+              RequestCommand.METER_VALUES,
+              requestPayload as OCPP20MeterValuesRequest,
+              requestParams
+            )
+          }
           const configuredMeterValueSampleInterval = getConfigurationKey(
             chargingStation,
             StandardParametersKey.MeterValueSampleInterval
@@ -287,6 +325,110 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
             requestParams
           ),
       ],
+      [
+        BroadcastChannelProcedureName.GET_15118_EV_CERTIFICATE,
+        async (requestPayload?: BroadcastChannelRequestPayload) =>
+          await this.chargingStation.ocppRequestService.requestHandler<
+            OCPP20Get15118EVCertificateRequest,
+            OCPP20Get15118EVCertificateResponse
+          >(
+            this.chargingStation,
+            RequestCommand.GET_15118_EV_CERTIFICATE,
+            requestPayload as OCPP20Get15118EVCertificateRequest,
+            requestParams
+          ),
+      ],
+      [
+        BroadcastChannelProcedureName.GET_CERTIFICATE_STATUS,
+        async (requestPayload?: BroadcastChannelRequestPayload) =>
+          await this.chargingStation.ocppRequestService.requestHandler<
+            OCPP20GetCertificateStatusRequest,
+            OCPP20GetCertificateStatusResponse
+          >(
+            this.chargingStation,
+            RequestCommand.GET_CERTIFICATE_STATUS,
+            requestPayload as OCPP20GetCertificateStatusRequest,
+            requestParams
+          ),
+      ],
+      [
+        BroadcastChannelProcedureName.LOG_STATUS_NOTIFICATION,
+        async (requestPayload?: BroadcastChannelRequestPayload) =>
+          await this.chargingStation.ocppRequestService.requestHandler<
+            OCPP20LogStatusNotificationRequest,
+            OCPP20LogStatusNotificationResponse
+          >(
+            this.chargingStation,
+            RequestCommand.LOG_STATUS_NOTIFICATION,
+            requestPayload as OCPP20LogStatusNotificationRequest,
+            requestParams
+          ),
+      ],
+      [
+        BroadcastChannelProcedureName.NOTIFY_CUSTOMER_INFORMATION,
+        async (requestPayload?: BroadcastChannelRequestPayload) =>
+          await this.chargingStation.ocppRequestService.requestHandler<
+            OCPP20NotifyCustomerInformationRequest,
+            OCPP20NotifyCustomerInformationResponse
+          >(
+            this.chargingStation,
+            RequestCommand.NOTIFY_CUSTOMER_INFORMATION,
+            requestPayload as OCPP20NotifyCustomerInformationRequest,
+            requestParams
+          ),
+      ],
+      [
+        BroadcastChannelProcedureName.NOTIFY_REPORT,
+        async (requestPayload?: BroadcastChannelRequestPayload) =>
+          await this.chargingStation.ocppRequestService.requestHandler<
+            OCPP20NotifyReportRequest,
+            OCPP20NotifyReportResponse
+          >(
+            this.chargingStation,
+            RequestCommand.NOTIFY_REPORT,
+            requestPayload as OCPP20NotifyReportRequest,
+            requestParams
+          ),
+      ],
+      [
+        BroadcastChannelProcedureName.SECURITY_EVENT_NOTIFICATION,
+        async (requestPayload?: BroadcastChannelRequestPayload) =>
+          await this.chargingStation.ocppRequestService.requestHandler<
+            OCPP20SecurityEventNotificationRequest,
+            OCPP20SecurityEventNotificationResponse
+          >(
+            this.chargingStation,
+            RequestCommand.SECURITY_EVENT_NOTIFICATION,
+            requestPayload as OCPP20SecurityEventNotificationRequest,
+            requestParams
+          ),
+      ],
+      [
+        BroadcastChannelProcedureName.SIGN_CERTIFICATE,
+        async (requestPayload?: BroadcastChannelRequestPayload) =>
+          await this.chargingStation.ocppRequestService.requestHandler<
+            OCPP20SignCertificateRequest,
+            OCPP20SignCertificateResponse
+          >(
+            this.chargingStation,
+            RequestCommand.SIGN_CERTIFICATE,
+            requestPayload as OCPP20SignCertificateRequest,
+            requestParams
+          ),
+      ],
+      [
+        BroadcastChannelProcedureName.TRANSACTION_EVENT,
+        async (requestPayload?: BroadcastChannelRequestPayload) =>
+          await this.chargingStation.ocppRequestService.requestHandler<
+            OCPP20TransactionEventRequest,
+            OCPP20TransactionEventResponse
+          >(
+            this.chargingStation,
+            RequestCommand.TRANSACTION_EVENT,
+            requestPayload as OCPP20TransactionEventRequest,
+            requestParams
+          ),
+      ],
     ])
     this.chargingStation = chargingStation
     this.onmessage = this.requestHandler.bind(this) as (message: unknown) => void
@@ -385,6 +527,39 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       case BroadcastChannelProcedureName.METER_VALUES:
       case BroadcastChannelProcedureName.STATUS_NOTIFICATION:
         if (isEmpty(commandResponse)) {
+          return ResponseStatus.SUCCESS
+        }
+        return ResponseStatus.FAILURE
+      case BroadcastChannelProcedureName.GET_15118_EV_CERTIFICATE:
+        if (
+          (commandResponse as OCPP20Get15118EVCertificateResponse).status ===
+          Iso15118EVCertificateStatusEnumType.Accepted
+        ) {
+          return ResponseStatus.SUCCESS
+        }
+        return ResponseStatus.FAILURE
+      case BroadcastChannelProcedureName.GET_CERTIFICATE_STATUS:
+        if (
+          (commandResponse as OCPP20GetCertificateStatusResponse).status ===
+          GetCertificateStatusEnumType.Accepted
+        ) {
+          return ResponseStatus.SUCCESS
+        }
+        return ResponseStatus.FAILURE
+      case BroadcastChannelProcedureName.SIGN_CERTIFICATE:
+        if (
+          (commandResponse as OCPP20SignCertificateResponse).status === GenericStatus.Accepted
+        ) {
+          return ResponseStatus.SUCCESS
+        }
+        return ResponseStatus.FAILURE
+      case BroadcastChannelProcedureName.TRANSACTION_EVENT:
+        if (
+          isEmpty(commandResponse) ||
+          (commandResponse as OCPP20TransactionEventResponse).idTokenInfo == null ||
+          (commandResponse as OCPP20TransactionEventResponse).idTokenInfo?.status ===
+            OCPP20AuthorizationStatusEnumType.Accepted
+        ) {
           return ResponseStatus.SUCCESS
         }
         return ResponseStatus.FAILURE
