@@ -40,7 +40,9 @@ from server import (
     AuthConfig,
     AuthMode,
     ChargePoint,
+    ServerConfig,
     check_positive_number,
+    on_connect,
 )
 
 # --- Test constants ---
@@ -867,3 +869,164 @@ class TestOutgoingCommands:
         )
         await command_charge_point._send_get_installed_certificate_ids()
         assert "failed" in caplog.text.lower()
+
+
+class TestOnConnect:
+    """Tests for the on_connect WebSocket connection handler."""
+
+    @staticmethod
+    def _make_config(**overrides):
+        """Create a minimal ServerConfig for testing."""
+        defaults = {
+            "command_name": None,
+            "delay": None,
+            "period": None,
+            "auth_config": AuthConfig(
+                mode=AuthMode.normal,
+                whitelist=(),
+                blacklist=(),
+                offline=False,
+                default_status=AuthorizationStatusEnumType.accepted,
+            ),
+            "boot_status": RegistrationStatusEnumType.accepted,
+            "total_cost": 0.0,
+        }
+        defaults.update(overrides)
+        return ServerConfig(**defaults)
+
+    async def test_missing_subprotocol_header_closes_connection(self):
+        mock_ws = MagicMock()
+        mock_ws.request_headers = {}
+        mock_ws.close = AsyncMock()
+        config = self._make_config()
+
+        await on_connect(mock_ws, config=config)
+        mock_ws.close.assert_called_once()
+
+    async def test_protocol_mismatch_closes_connection(self):
+        mock_ws = MagicMock()
+        mock_ws.request_headers = {"Sec-WebSocket-Protocol": "ocpp1.6"}
+        mock_ws.subprotocol = None
+        mock_ws.close = AsyncMock()
+        config = self._make_config()
+
+        await on_connect(mock_ws, config=config)
+        mock_ws.close.assert_called_once()
+
+    async def test_successful_connection_creates_charge_point(self):
+        mock_ws = MagicMock()
+        mock_ws.request_headers = {"Sec-WebSocket-Protocol": "ocpp2.0.1"}
+        mock_ws.subprotocol = "ocpp2.0.1"
+        mock_ws.path = "/TestCP"
+        mock_ws.close = AsyncMock()
+        config = self._make_config()
+
+        with patch("server.ChargePoint") as MockCP:
+            mock_cp = AsyncMock()
+            MockCP.return_value = mock_cp
+            await on_connect(mock_ws, config=config)
+            mock_cp.start.assert_called_once()
+
+    async def test_connection_closed_during_start_triggers_cleanup(self):
+        from websockets.exceptions import ConnectionClosedOK
+        from websockets.frames import Close
+
+        mock_ws = MagicMock()
+        mock_ws.request_headers = {"Sec-WebSocket-Protocol": "ocpp2.0.1"}
+        mock_ws.subprotocol = "ocpp2.0.1"
+        mock_ws.path = "/TestCP"
+        mock_ws.close = AsyncMock()
+        config = self._make_config()
+
+        exc = ConnectionClosedOK(Close(1000, ""), Close(1000, ""), rcvd_then_sent=True)
+
+        with patch("server.ChargePoint") as MockCP:
+            mock_cp = AsyncMock()
+            mock_cp.start = AsyncMock(side_effect=exc)
+            MockCP.return_value = mock_cp
+            await on_connect(mock_ws, config=config)
+            mock_cp.handle_connection_closed.assert_called_once()
+
+    async def test_command_sent_on_connect_when_specified(self):
+        from ocpp.v201.enums import Action
+
+        mock_ws = MagicMock()
+        mock_ws.request_headers = {"Sec-WebSocket-Protocol": "ocpp2.0.1"}
+        mock_ws.subprotocol = "ocpp2.0.1"
+        mock_ws.path = "/TestCP"
+        mock_ws.close = AsyncMock()
+        config = self._make_config(
+            command_name=Action.clear_cache, delay=1.0, period=None
+        )
+
+        with patch("server.ChargePoint") as MockCP:
+            mock_cp = AsyncMock()
+            MockCP.return_value = mock_cp
+            await on_connect(mock_ws, config=config)
+            mock_cp.send_command.assert_called_once_with(Action.clear_cache, 1.0, None)
+
+
+class TestHandleConnectionClosed:
+    """Tests for the handle_connection_closed cleanup method."""
+
+    def test_timer_cancelled_on_close(self, charge_point):
+        mock_timer = MagicMock()
+        charge_point._command_timer = mock_timer
+        charge_point.handle_connection_closed()
+        mock_timer.cancel.assert_called_once()
+
+    def test_timer_none_no_error(self, charge_point):
+        charge_point._command_timer = None
+        charge_point.handle_connection_closed()
+
+    def test_charge_point_removed_from_set(self, charge_point):
+        assert charge_point in charge_point._charge_points
+        charge_point.handle_connection_closed()
+        assert charge_point not in charge_point._charge_points
+
+    def test_charge_point_not_in_set_no_error(self, charge_point):
+        charge_point._charge_points = set()
+        charge_point.handle_connection_closed()
+
+
+class TestSendCommand:
+    """Tests for Timer creation logic in send_command."""
+
+    async def test_delay_creates_one_shot_timer(self, charge_point):
+        from ocpp.v201.enums import Action
+
+        with patch("server.Timer") as MockTimer:
+            mock_timer = MagicMock()
+            MockTimer.return_value = mock_timer
+            await charge_point.send_command(Action.clear_cache, delay=1.0, period=None)
+            MockTimer.assert_called_once()
+            args = MockTimer.call_args[0]
+            assert args[0] == 1.0
+            assert args[1] is False
+
+    async def test_period_creates_repeating_timer(self, charge_point):
+        from ocpp.v201.enums import Action
+
+        with patch("server.Timer") as MockTimer:
+            mock_timer = MagicMock()
+            MockTimer.return_value = mock_timer
+            await charge_point.send_command(Action.clear_cache, delay=None, period=1.0)
+            MockTimer.assert_called_once()
+            args = MockTimer.call_args[0]
+            assert args[0] == 1.0
+            assert args[1] is True
+
+    async def test_no_timer_when_both_none(self, charge_point):
+        from ocpp.v201.enums import Action
+
+        with patch("server.Timer") as MockTimer:
+            await charge_point.send_command(Action.clear_cache, delay=None, period=None)
+            MockTimer.assert_not_called()
+
+    async def test_second_call_no_op_when_timer_exists(self, charge_point):
+        from ocpp.v201.enums import Action
+
+        charge_point._command_timer = MagicMock()
+        with patch("server.Timer") as MockTimer:
+            await charge_point.send_command(Action.clear_cache, delay=1.0, period=None)
+            MockTimer.assert_not_called()
