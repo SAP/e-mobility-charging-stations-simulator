@@ -36,37 +36,82 @@ poetry run python server.py
 
 The server will start listening for connections on `127.0.0.1:9000` by default.
 
-### Server Configuration
+## Configuration
+
+### Server
 
 ```shell
 poetry run python server.py --host <HOST> --port <PORT>
 ```
 
-**Options:**
-
 - `--host <HOST>`: Server bind address (default: `127.0.0.1`)
 - `--port <PORT>`: Server port (default: `9000`)
 
-## Running the server with OCPP command sending
-
-### Command Line Interface
+### Charging Station Behavior
 
 ```shell
-poetry run task server --command <COMMAND_NAME> --period <SECONDS>
+poetry run python server.py --boot-status <STATUS> --total-cost <COST>
 ```
 
-**Options:**
+- `--boot-status <STATUS>`: BootNotification response status (`accepted`, `pending`, `rejected`; default: `accepted`)
+- `--total-cost <COST>`: Total cost returned in TransactionEvent.Updated responses (default: `10.0`)
 
-- `--command <COMMAND_NAME>`: The OCPP command to send (see available commands below)
-- `--period <SECONDS>`: Interval in seconds between command sends
+**Examples:**
+
+```shell
+poetry run python server.py --boot-status rejected
+poetry run python server.py --total-cost 25.50
+```
+
+### Authorization Modes
+
+The server supports configurable authorization behavior for testing OCPP 2.0.1 authentication scenarios:
+
+```shell
+poetry run python server.py --auth-mode <MODE> [--whitelist TOKEN1 TOKEN2 ...] [--blacklist TOKEN1 TOKEN2 ...] [--offline]
+```
+
+- `--auth-mode <MODE>`: Authorization mode (default: `normal`)
+  - `normal` - Accept all authorization requests (default)
+  - `whitelist` - Only accept tokens in the whitelist
+  - `blacklist` - Block tokens in the blacklist, accept all others
+  - `rate_limit` - Reject all requests with `NotAtThisTime` (simulates rate limiting)
+  - `offline` - Not used directly (use `--offline` flag instead)
+- `--whitelist TOKEN1 TOKEN2 ...`: Space-separated list of authorized tokens (default: `valid_token test_token authorized_user`)
+- `--blacklist TOKEN1 TOKEN2 ...`: Space-separated list of blocked tokens (default: `blocked_token invalid_user`)
+- `--offline`: Simulate network failure (raises InternalError on Authorize requests)
+
+**Examples:**
+
+```shell
+poetry run python server.py --auth-mode whitelist --whitelist valid_token test_token
+poetry run python server.py --auth-mode blacklist --blacklist blocked_token invalid_user
+poetry run python server.py --offline
+poetry run python server.py --auth-mode rate_limit
+```
+
+### OCPP Command Sending
+
+The server can periodically send outgoing OCPP commands to connected charging stations:
+
+```shell
+poetry run python server.py --command <COMMAND_NAME> --period <SECONDS>
+poetry run python server.py --command <COMMAND_NAME> --delay <SECONDS>
+```
+
+- `--command <COMMAND_NAME>`: The OCPP command to send (see supported commands below)
+- `--period <SECONDS>`: Interval in seconds between repeated command sends (mutually exclusive with `--delay`)
+- `--delay <SECONDS>`: One-shot delay in seconds before sending the command (mutually exclusive with `--period`)
 
 **Example:**
 
 ```shell
-poetry run task server --command GetBaseReport --period 5
+poetry run python server.py --command GetBaseReport --period 5
 ```
 
-### Available Outgoing Commands
+## Supported OCPP Messages
+
+### Outgoing Commands (CSMS → CS)
 
 - `CertificateSigned` - Send a signed certificate to the charging station
 - `ChangeAvailability` - Change connector availability
@@ -89,7 +134,7 @@ poetry run task server --command GetBaseReport --period 5
 - `UnlockConnector` - Unlock a specific connector
 - `UpdateFirmware` - Request firmware update on the charging station
 
-### Handled Incoming Messages
+### Incoming Handlers (CS → CSMS)
 
 - `Authorize` - Handle authorization requests (with configurable auth modes)
 - `BootNotification` - Handle boot notification from charging station
@@ -107,87 +152,11 @@ poetry run task server --command GetBaseReport --period 5
 - `StatusNotification` - Handle status notifications
 - `TransactionEvent` - Handle transaction events (Started/Updated/Ended)
 
-## Charging Behavior Configuration
-
-```shell
-poetry run python server.py --boot-status <STATUS> --total-cost <COST>
-```
-
-**Options:**
-
-- `--boot-status <STATUS>`: BootNotification response status (`accepted`, `pending`, `rejected`; default: `accepted`)
-- `--total-cost <COST>`: Total cost returned in TransactionEvent.Updated responses (default: `10.0`)
-
-**Examples:**
-
-```shell
-poetry run python server.py --boot-status rejected
-poetry run python server.py --total-cost 25.50
-```
-
-## Authorization Testing Modes
-
-The server supports configurable authorization behavior for testing OCPP 2.0 authentication scenarios:
-
-### Command Line Options
-
-```shell
-poetry run python server.py --auth-mode <MODE> [--whitelist TOKEN1 TOKEN2 ...] [--blacklist TOKEN1 TOKEN2 ...] [--offline]
-```
-
-**Auth Options:**
-
-- `--auth-mode <MODE>`: Authorization mode (default: `normal`)
-  - `normal` - Accept all authorization requests (default)
-  - `whitelist` - Only accept tokens in the whitelist
-  - `blacklist` - Block tokens in the blacklist, accept all others
-  - `rate_limit` - Reject all requests with `NotAtThisTime` (simulates rate limiting)
-  - `offline` - Not used directly (use `--offline` flag instead)
-- `--whitelist TOKEN1 TOKEN2 ...`: Space-separated list of authorized tokens (default: `valid_token test_token authorized_user`)
-- `--blacklist TOKEN1 TOKEN2 ...`: Space-separated list of blocked tokens (default: `blocked_token invalid_user`)
-- `--offline`: Simulate network failure (raises ConnectionError on Authorize requests)
-
-### Examples
-
-**Whitelist mode** (only accept specific tokens):
-
-```shell
-poetry run python server.py --auth-mode whitelist --whitelist valid_token test_token
-```
-
-**Blacklist mode** (block specific tokens):
-
-```shell
-poetry run python server.py --auth-mode blacklist --blacklist blocked_token invalid_user
-```
-
-**Offline mode** (simulate network failure):
-
-```shell
-poetry run python server.py --offline
-```
-
-**Rate limit simulation**:
-
-```shell
-poetry run python server.py --auth-mode rate_limit
-```
-
-### Testing the Server
-
-To run the test suite and validate all implemented commands:
+## Testing
 
 ```shell
 poetry run task test
 ```
-
-## Overview of the Server Scripts
-
-### Server.py
-
-The server script waits for connections from clients. When a client connects, the server creates a new instance of the `ChargePoint` class. This class includes methods for handling various OCPP messages, most of which return a dummy response.
-
-The server script uses the `websockets` and `ocpp` libraries to facilitate the implementation.
 
 ## Development
 
@@ -203,9 +172,6 @@ poetry run task format
 poetry run task lint
 ```
 
-## Note
+## Reference
 
-Primarily, this software is intended for testing applications. The server script don't adhere to the full OCPP specifications and it is advised not to use them in a production environment without additional development.
-
-For reference:
-https://github.com/mobilityhouse/ocpp
+- [mobilityhouse/ocpp](https://github.com/mobilityhouse/ocpp) - Python OCPP library
