@@ -1,3 +1,4 @@
+import type { JsonObject } from './JsonType.js'
 import type { RequestPayload, ResponsePayload } from './UIProtocol.js'
 import type { UUIDv4 } from './UUID.js'
 
@@ -9,10 +10,17 @@ export enum BroadcastChannelProcedureName {
   DELETE_CHARGING_STATIONS = 'deleteChargingStations',
   DIAGNOSTICS_STATUS_NOTIFICATION = 'diagnosticsStatusNotification',
   FIRMWARE_STATUS_NOTIFICATION = 'firmwareStatusNotification',
+  GET_15118_EV_CERTIFICATE = 'get15118EVCertificate',
+  GET_CERTIFICATE_STATUS = 'getCertificateStatus',
   HEARTBEAT = 'heartbeat',
+  LOG_STATUS_NOTIFICATION = 'logStatusNotification',
   METER_VALUES = 'meterValues',
+  NOTIFY_CUSTOMER_INFORMATION = 'notifyCustomerInformation',
+  NOTIFY_REPORT = 'notifyReport',
   OPEN_CONNECTION = 'openConnection',
+  SECURITY_EVENT_NOTIFICATION = 'securityEventNotification',
   SET_SUPERVISION_URL = 'setSupervisionUrl',
+  SIGN_CERTIFICATE = 'signCertificate',
   START_AUTOMATIC_TRANSACTION_GENERATOR = 'startAutomaticTransactionGenerator',
   START_CHARGING_STATION = 'startChargingStation',
   START_TRANSACTION = 'startTransaction',
@@ -20,6 +28,7 @@ export enum BroadcastChannelProcedureName {
   STOP_AUTOMATIC_TRANSACTION_GENERATOR = 'stopAutomaticTransactionGenerator',
   STOP_CHARGING_STATION = 'stopChargingStation',
   STOP_TRANSACTION = 'stopTransaction',
+  TRANSACTION_EVENT = 'transactionEvent',
 }
 
 export type BroadcastChannelRequest = [
@@ -30,6 +39,10 @@ export type BroadcastChannelRequest = [
 
 export interface BroadcastChannelRequestPayload extends RequestPayload {
   connectorId?: number
+  eventType?: string
+  evseId?: number
+  idToken?: JsonObject
+  transactionData?: JsonObject
   transactionId?: number
 }
 

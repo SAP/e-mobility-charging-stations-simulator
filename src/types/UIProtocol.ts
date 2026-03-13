@@ -21,13 +21,20 @@ export enum ProcedureName {
   DELETE_CHARGING_STATIONS = 'deleteChargingStations',
   DIAGNOSTICS_STATUS_NOTIFICATION = 'diagnosticsStatusNotification',
   FIRMWARE_STATUS_NOTIFICATION = 'firmwareStatusNotification',
+  GET_15118_EV_CERTIFICATE = 'get15118EVCertificate',
+  GET_CERTIFICATE_STATUS = 'getCertificateStatus',
   HEARTBEAT = 'heartbeat',
   LIST_CHARGING_STATIONS = 'listChargingStations',
   LIST_TEMPLATES = 'listTemplates',
+  LOG_STATUS_NOTIFICATION = 'logStatusNotification',
   METER_VALUES = 'meterValues',
+  NOTIFY_CUSTOMER_INFORMATION = 'notifyCustomerInformation',
+  NOTIFY_REPORT = 'notifyReport',
   OPEN_CONNECTION = 'openConnection',
   PERFORMANCE_STATISTICS = 'performanceStatistics',
+  SECURITY_EVENT_NOTIFICATION = 'securityEventNotification',
   SET_SUPERVISION_URL = 'setSupervisionUrl',
+  SIGN_CERTIFICATE = 'signCertificate',
   SIMULATOR_STATE = 'simulatorState',
   START_AUTOMATIC_TRANSACTION_GENERATOR = 'startAutomaticTransactionGenerator',
   START_CHARGING_STATION = 'startChargingStation',
@@ -38,6 +45,7 @@ export enum ProcedureName {
   STOP_CHARGING_STATION = 'stopChargingStation',
   STOP_SIMULATOR = 'stopSimulator',
   STOP_TRANSACTION = 'stopTransaction',
+  TRANSACTION_EVENT = 'transactionEvent',
 }
 
 export enum Protocol {
