@@ -970,9 +970,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
       const { station } = createMockChargingStation()
       instance = new ChargingStationWorkerBroadcastChannel(station)
       const testable = createTestableWorkerBroadcastChannel(instance)
-      const missing = [...allBroadcastNames].filter(
-        name => !testable.commandHandlers.has(name)
-      )
+      const missing = [...allBroadcastNames].filter(name => !testable.commandHandlers.has(name))
       assert.deepStrictEqual(missing, [])
     })
   })
