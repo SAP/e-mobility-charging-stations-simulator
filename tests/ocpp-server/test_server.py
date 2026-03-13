@@ -1,19 +1,37 @@
 """Tests for the OCPP 2.0.1 mock server."""
 
 import argparse
+import logging
 from typing import ClassVar
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import ocpp.v201.call
 import ocpp.v201.call_result
 import pytest
 from ocpp.v201.enums import (
     AuthorizationStatusEnumType,
+    CertificateSignedStatusEnumType,
+    ChangeAvailabilityStatusEnumType,
+    ClearCacheStatusEnumType,
+    CustomerInformationStatusEnumType,
     DataTransferStatusEnumType,
+    DeleteCertificateStatusEnumType,
+    GenericDeviceModelStatusEnumType,
     GenericStatusEnumType,
     GetCertificateStatusEnumType,
+    GetInstalledCertificateStatusEnumType,
+    InstallCertificateStatusEnumType,
     Iso15118EVCertificateStatusEnumType,
+    LogStatusEnumType,
     RegistrationStatusEnumType,
+    RequestStartStopStatusEnumType,
+    ResetEnumType,
+    ResetStatusEnumType,
+    SetNetworkProfileStatusEnumType,
     TransactionEventEnumType,
+    TriggerMessageStatusEnumType,
+    UnlockStatusEnumType,
+    UpdateFirmwareStatusEnumType,
 )
 
 from server import (
@@ -97,6 +115,14 @@ def offline_charge_point(mock_connection):
             "default_status": AuthorizationStatusEnumType.accepted,
         },
     )
+
+
+@pytest.fixture
+def command_charge_point(mock_connection):
+    """Create a ChargePoint with self.call mocked as AsyncMock."""
+    cp = ChargePoint(mock_connection)
+    cp.call = AsyncMock()
+    return cp
 
 
 class TestCheckPositiveNumber:
@@ -564,3 +590,280 @@ class TestSendCommandErrorHandling:
     async def test_unsupported_command_logs_warning(self, charge_point):
         unsupported = MagicMock(value="Unsupported")
         await charge_point._send_command(command_name=unsupported)
+
+
+class TestOutgoingCommands:
+    """Behavioral tests for all 20 _send_* outgoing command methods."""
+
+    # --- Success path tests ---
+
+    async def test_send_clear_cache(self, command_charge_point):
+        command_charge_point.call.return_value = ocpp.v201.call_result.ClearCache(
+            status=ClearCacheStatusEnumType.accepted
+        )
+        await command_charge_point._send_clear_cache()
+        command_charge_point.call.assert_called_once()
+        request = command_charge_point.call.call_args[0][0]
+        assert isinstance(request, ocpp.v201.call.ClearCache)
+
+    async def test_send_get_base_report(self, command_charge_point):
+        command_charge_point.call.return_value = ocpp.v201.call_result.GetBaseReport(
+            status=GenericDeviceModelStatusEnumType.accepted
+        )
+        await command_charge_point._send_get_base_report()
+        command_charge_point.call.assert_called_once()
+        request = command_charge_point.call.call_args[0][0]
+        assert isinstance(request, ocpp.v201.call.GetBaseReport)
+        assert request.request_id > 0
+        assert request.report_base is not None
+
+    async def test_send_get_variables(self, command_charge_point):
+        command_charge_point.call.return_value = ocpp.v201.call_result.GetVariables(
+            get_variable_result=[]
+        )
+        await command_charge_point._send_get_variables()
+        command_charge_point.call.assert_called_once()
+        request = command_charge_point.call.call_args[0][0]
+        assert isinstance(request, ocpp.v201.call.GetVariables)
+        assert isinstance(request.get_variable_data, list)
+        assert len(request.get_variable_data) > 0
+
+    async def test_send_set_variables(self, command_charge_point):
+        command_charge_point.call.return_value = ocpp.v201.call_result.SetVariables(
+            set_variable_result=[]
+        )
+        await command_charge_point._send_set_variables()
+        command_charge_point.call.assert_called_once()
+        request = command_charge_point.call.call_args[0][0]
+        assert isinstance(request, ocpp.v201.call.SetVariables)
+        assert isinstance(request.set_variable_data, list)
+        assert len(request.set_variable_data) > 0
+
+    async def test_send_request_start_transaction(self, command_charge_point):
+        command_charge_point.call.return_value = (
+            ocpp.v201.call_result.RequestStartTransaction(
+                status=RequestStartStopStatusEnumType.accepted
+            )
+        )
+        await command_charge_point._send_request_start_transaction()
+        command_charge_point.call.assert_called_once()
+        request = command_charge_point.call.call_args[0][0]
+        assert isinstance(request, ocpp.v201.call.RequestStartTransaction)
+        assert request.id_token is not None
+        assert request.evse_id == TEST_EVSE_ID
+        assert request.remote_start_id > 0
+
+    async def test_send_request_stop_transaction(self, command_charge_point):
+        command_charge_point.call.return_value = (
+            ocpp.v201.call_result.RequestStopTransaction(
+                status=RequestStartStopStatusEnumType.accepted
+            )
+        )
+        await command_charge_point._send_request_stop_transaction()
+        command_charge_point.call.assert_called_once()
+        request = command_charge_point.call.call_args[0][0]
+        assert isinstance(request, ocpp.v201.call.RequestStopTransaction)
+        assert request.transaction_id == "test_transaction_123"
+
+    async def test_send_reset(self, command_charge_point):
+        command_charge_point.call.return_value = ocpp.v201.call_result.Reset(
+            status=ResetStatusEnumType.accepted
+        )
+        await command_charge_point._send_reset()
+        command_charge_point.call.assert_called_once()
+        request = command_charge_point.call.call_args[0][0]
+        assert isinstance(request, ocpp.v201.call.Reset)
+        assert request.type == ResetEnumType.immediate
+
+    async def test_send_unlock_connector(self, command_charge_point):
+        command_charge_point.call.return_value = ocpp.v201.call_result.UnlockConnector(
+            status=UnlockStatusEnumType.unlocked
+        )
+        await command_charge_point._send_unlock_connector()
+        command_charge_point.call.assert_called_once()
+        request = command_charge_point.call.call_args[0][0]
+        assert isinstance(request, ocpp.v201.call.UnlockConnector)
+        assert request.evse_id == TEST_EVSE_ID
+        assert request.connector_id == TEST_CONNECTOR_ID
+
+    async def test_send_change_availability(self, command_charge_point):
+        command_charge_point.call.return_value = (
+            ocpp.v201.call_result.ChangeAvailability(
+                status=ChangeAvailabilityStatusEnumType.accepted
+            )
+        )
+        await command_charge_point._send_change_availability()
+        command_charge_point.call.assert_called_once()
+        request = command_charge_point.call.call_args[0][0]
+        assert isinstance(request, ocpp.v201.call.ChangeAvailability)
+        assert request.operational_status is not None
+
+    async def test_send_trigger_message(self, command_charge_point):
+        command_charge_point.call.return_value = ocpp.v201.call_result.TriggerMessage(
+            status=TriggerMessageStatusEnumType.accepted
+        )
+        await command_charge_point._send_trigger_message()
+        command_charge_point.call.assert_called_once()
+        request = command_charge_point.call.call_args[0][0]
+        assert isinstance(request, ocpp.v201.call.TriggerMessage)
+        assert request.requested_message is not None
+
+    async def test_send_data_transfer(self, command_charge_point):
+        command_charge_point.call.return_value = ocpp.v201.call_result.DataTransfer(
+            status=DataTransferStatusEnumType.accepted
+        )
+        await command_charge_point._send_data_transfer()
+        command_charge_point.call.assert_called_once()
+        request = command_charge_point.call.call_args[0][0]
+        assert isinstance(request, ocpp.v201.call.DataTransfer)
+        assert request.vendor_id == TEST_VENDOR_ID
+        assert request.message_id == "TestMessage"
+        assert request.data == "test_data"
+
+    async def test_send_certificate_signed(self, command_charge_point):
+        command_charge_point.call.return_value = (
+            ocpp.v201.call_result.CertificateSigned(
+                status=CertificateSignedStatusEnumType.accepted
+            )
+        )
+        await command_charge_point._send_certificate_signed()
+        command_charge_point.call.assert_called_once()
+        request = command_charge_point.call.call_args[0][0]
+        assert isinstance(request, ocpp.v201.call.CertificateSigned)
+        assert "CERTIFICATE" in request.certificate_chain
+
+    async def test_send_customer_information(self, command_charge_point):
+        command_charge_point.call.return_value = (
+            ocpp.v201.call_result.CustomerInformation(
+                status=CustomerInformationStatusEnumType.accepted
+            )
+        )
+        await command_charge_point._send_customer_information()
+        command_charge_point.call.assert_called_once()
+        request = command_charge_point.call.call_args[0][0]
+        assert isinstance(request, ocpp.v201.call.CustomerInformation)
+        assert request.request_id > 0
+        assert request.report is True
+        assert request.clear is False
+
+    async def test_send_delete_certificate(self, command_charge_point):
+        command_charge_point.call.return_value = (
+            ocpp.v201.call_result.DeleteCertificate(
+                status=DeleteCertificateStatusEnumType.accepted
+            )
+        )
+        await command_charge_point._send_delete_certificate()
+        command_charge_point.call.assert_called_once()
+        request = command_charge_point.call.call_args[0][0]
+        assert isinstance(request, ocpp.v201.call.DeleteCertificate)
+        assert "hash_algorithm" in request.certificate_hash_data
+        assert "serial_number" in request.certificate_hash_data
+
+    async def test_send_get_installed_certificate_ids(self, command_charge_point):
+        command_charge_point.call.return_value = (
+            ocpp.v201.call_result.GetInstalledCertificateIds(
+                status=GetInstalledCertificateStatusEnumType.accepted
+            )
+        )
+        await command_charge_point._send_get_installed_certificate_ids()
+        command_charge_point.call.assert_called_once()
+        request = command_charge_point.call.call_args[0][0]
+        assert isinstance(request, ocpp.v201.call.GetInstalledCertificateIds)
+        assert isinstance(request.certificate_type, list)
+
+    async def test_send_get_log(self, command_charge_point):
+        command_charge_point.call.return_value = ocpp.v201.call_result.GetLog(
+            status=LogStatusEnumType.accepted
+        )
+        await command_charge_point._send_get_log()
+        command_charge_point.call.assert_called_once()
+        request = command_charge_point.call.call_args[0][0]
+        assert isinstance(request, ocpp.v201.call.GetLog)
+        assert request.request_id > 0
+        assert request.log is not None
+        assert request.log_type is not None
+
+    async def test_send_get_transaction_status(self, command_charge_point):
+        command_charge_point.call.return_value = (
+            ocpp.v201.call_result.GetTransactionStatus(messages_in_queue=False)
+        )
+        await command_charge_point._send_get_transaction_status()
+        command_charge_point.call.assert_called_once()
+        request = command_charge_point.call.call_args[0][0]
+        assert isinstance(request, ocpp.v201.call.GetTransactionStatus)
+        assert request.transaction_id == "test_transaction_123"
+
+    async def test_send_install_certificate(self, command_charge_point):
+        command_charge_point.call.return_value = (
+            ocpp.v201.call_result.InstallCertificate(
+                status=InstallCertificateStatusEnumType.accepted
+            )
+        )
+        await command_charge_point._send_install_certificate()
+        command_charge_point.call.assert_called_once()
+        request = command_charge_point.call.call_args[0][0]
+        assert isinstance(request, ocpp.v201.call.InstallCertificate)
+        assert "CERTIFICATE" in request.certificate
+        assert request.certificate_type is not None
+
+    async def test_send_set_network_profile(self, command_charge_point):
+        command_charge_point.call.return_value = (
+            ocpp.v201.call_result.SetNetworkProfile(
+                status=SetNetworkProfileStatusEnumType.accepted
+            )
+        )
+        await command_charge_point._send_set_network_profile()
+        command_charge_point.call.assert_called_once()
+        request = command_charge_point.call.call_args[0][0]
+        assert isinstance(request, ocpp.v201.call.SetNetworkProfile)
+        assert request.configuration_slot == 1
+        assert request.connection_data is not None
+
+    async def test_send_update_firmware(self, command_charge_point):
+        command_charge_point.call.return_value = ocpp.v201.call_result.UpdateFirmware(
+            status=UpdateFirmwareStatusEnumType.accepted
+        )
+        await command_charge_point._send_update_firmware()
+        command_charge_point.call.assert_called_once()
+        request = command_charge_point.call.call_args[0][0]
+        assert isinstance(request, ocpp.v201.call.UpdateFirmware)
+        assert request.request_id > 0
+        assert request.firmware is not None
+
+    # --- Failure path tests (rejected/failed status → correct logging) ---
+
+    async def test_send_clear_cache_failure_logs(self, command_charge_point, caplog):
+        caplog.set_level(logging.INFO)
+        command_charge_point.call.return_value = ocpp.v201.call_result.ClearCache(
+            status=ClearCacheStatusEnumType.rejected
+        )
+        await command_charge_point._send_clear_cache()
+        assert "failed" in caplog.text.lower()
+
+    async def test_send_reset_failure_logs(self, command_charge_point, caplog):
+        caplog.set_level(logging.INFO)
+        command_charge_point.call.return_value = ocpp.v201.call_result.Reset(
+            status=ResetStatusEnumType.rejected
+        )
+        await command_charge_point._send_reset()
+        assert "failed" in caplog.text.lower()
+
+    async def test_send_data_transfer_failure_logs(self, command_charge_point, caplog):
+        caplog.set_level(logging.INFO)
+        command_charge_point.call.return_value = ocpp.v201.call_result.DataTransfer(
+            status=DataTransferStatusEnumType.rejected
+        )
+        await command_charge_point._send_data_transfer()
+        assert "failed" in caplog.text.lower()
+
+    async def test_send_get_installed_certificate_ids_failure_logs(
+        self, command_charge_point, caplog
+    ):
+        caplog.set_level(logging.INFO)
+        command_charge_point.call.return_value = (
+            ocpp.v201.call_result.GetInstalledCertificateIds(
+                status=GetInstalledCertificateStatusEnumType.notFound
+            )
+        )
+        await command_charge_point._send_get_installed_certificate_ids()
+        assert "failed" in caplog.text.lower()
