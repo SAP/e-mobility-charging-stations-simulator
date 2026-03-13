@@ -4,6 +4,7 @@ import argparse
 from typing import ClassVar
 from unittest.mock import MagicMock, patch
 
+import ocpp.v201.call_result
 import pytest
 from ocpp.v201.enums import (
     AuthorizationStatusEnumType,
@@ -18,16 +19,32 @@ from ocpp.v201.enums import (
 from server import (
     DEFAULT_HEARTBEAT_INTERVAL,
     DEFAULT_TOTAL_COST,
+    AuthConfig,
+    AuthMode,
     ChargePoint,
     check_positive_number,
 )
+
+# --- Test constants ---
+TEST_CHARGE_POINT_PATH = "/TestChargePoint"
+TEST_VALID_TOKEN = "valid_token"  # noqa: S105
+TEST_TOKEN = "test_token"  # noqa: S105
+TEST_BLOCKED_TOKEN = "blocked_token"  # noqa: S105
+TEST_TIMESTAMP = "2026-01-01T00:00:00Z"
+TEST_TRANSACTION_ID = "txn-001"
+TEST_EVSE_ID = 1
+TEST_CONNECTOR_ID = 1
+TEST_VENDOR_ID = "TestVendor"
+TEST_VENDOR_NAME = "TestVendor"
+TEST_MODEL = "Test"
+TEST_CUSTOM_COST = 42.50
 
 
 @pytest.fixture
 def mock_connection():
     """Create a mock WebSocket connection for ChargePoint instantiation."""
     conn = MagicMock()
-    conn.path = "/TestChargePoint"
+    conn.path = TEST_CHARGE_POINT_PATH
     return conn
 
 
@@ -44,7 +61,7 @@ def whitelist_charge_point(mock_connection):
         mock_connection,
         auth_config={
             "mode": "whitelist",
-            "whitelist": ["valid_token", "test_token"],
+            "whitelist": [TEST_VALID_TOKEN, TEST_TOKEN],
             "blacklist": [],
             "offline": False,
             "default_status": AuthorizationStatusEnumType.accepted,
@@ -60,7 +77,7 @@ def blacklist_charge_point(mock_connection):
         auth_config={
             "mode": "blacklist",
             "whitelist": [],
-            "blacklist": ["blocked_token"],
+            "blacklist": [TEST_BLOCKED_TOKEN],
             "offline": False,
             "default_status": AuthorizationStatusEnumType.accepted,
         },
@@ -116,7 +133,7 @@ class TestResolveAuthStatus:
         assert status == AuthorizationStatusEnumType.accepted
 
     def test_whitelist_mode_accepts_valid_token(self, whitelist_charge_point):
-        status = whitelist_charge_point._resolve_auth_status("valid_token")
+        status = whitelist_charge_point._resolve_auth_status(TEST_VALID_TOKEN)
         assert status == AuthorizationStatusEnumType.accepted
 
     def test_whitelist_mode_blocks_unknown_token(self, whitelist_charge_point):
@@ -124,7 +141,7 @@ class TestResolveAuthStatus:
         assert status == AuthorizationStatusEnumType.blocked
 
     def test_blacklist_mode_blocks_blacklisted_token(self, blacklist_charge_point):
-        status = blacklist_charge_point._resolve_auth_status("blocked_token")
+        status = blacklist_charge_point._resolve_auth_status(TEST_BLOCKED_TOKEN)
         assert status == AuthorizationStatusEnumType.blocked
 
     def test_blacklist_mode_accepts_valid_token(self, blacklist_charge_point):
@@ -204,22 +221,6 @@ class TestChargePointHandlerCoverage:
         )
         assert callable(getattr(ChargePoint, method_name))
 
-    def test_incoming_handler_count(self):
-        handler_count = sum(
-            1
-            for name in dir(ChargePoint)
-            if name.startswith("on_") and callable(getattr(ChargePoint, name))
-        )
-        assert handler_count >= len(self.EXPECTED_INCOMING_HANDLERS)
-
-    def test_outgoing_command_count(self):
-        command_count = sum(
-            1
-            for name in dir(ChargePoint)
-            if name.startswith("_send_") and callable(getattr(ChargePoint, name))
-        )
-        assert command_count >= len(self.EXPECTED_OUTGOING_COMMANDS)
-
 
 class TestChargePointDefaultConfig:
     """Tests for ChargePoint default configuration."""
@@ -227,8 +228,8 @@ class TestChargePointDefaultConfig:
     def test_default_auth_config(self, charge_point):
         assert charge_point._auth_config["mode"] == "normal"
         assert charge_point._auth_config["offline"] is False
-        assert "valid_token" in charge_point._auth_config["whitelist"]
-        assert "blocked_token" in charge_point._auth_config["blacklist"]
+        assert TEST_VALID_TOKEN in charge_point._auth_config["whitelist"]
+        assert TEST_BLOCKED_TOKEN in charge_point._auth_config["blacklist"]
 
     def test_custom_auth_config(self, mock_connection):
         config = {"mode": "whitelist", "whitelist": ["token1"]}
@@ -264,7 +265,7 @@ class TestBootNotificationHandler:
 
     async def test_returns_accepted_by_default(self, charge_point):
         response = await charge_point.on_boot_notification(
-            charging_station={"model": "Test", "vendor_name": "TestVendor"},
+            charging_station={"model": TEST_MODEL, "vendor_name": TEST_VENDOR_NAME},
             reason="PowerUp",
         )
         assert response.status == RegistrationStatusEnumType.accepted
@@ -276,7 +277,7 @@ class TestBootNotificationHandler:
             mock_connection, boot_status=RegistrationStatusEnumType.rejected
         )
         response = await cp.on_boot_notification(
-            charging_station={"model": "Test", "vendor_name": "TestVendor"},
+            charging_station={"model": TEST_MODEL, "vendor_name": TEST_VENDOR_NAME},
             reason="PowerUp",
         )
         assert response.status == RegistrationStatusEnumType.rejected
@@ -286,7 +287,7 @@ class TestBootNotificationHandler:
             mock_connection, boot_status=RegistrationStatusEnumType.pending
         )
         response = await cp.on_boot_notification(
-            charging_station={"model": "Test", "vendor_name": "TestVendor"},
+            charging_station={"model": TEST_MODEL, "vendor_name": TEST_VENDOR_NAME},
             reason="PowerUp",
         )
         assert response.status == RegistrationStatusEnumType.pending
@@ -299,6 +300,7 @@ class TestHeartbeatHandler:
         response = await charge_point.on_heartbeat()
         assert response.current_time is not None
         assert len(response.current_time) > 0
+        assert "T" in response.current_time
 
 
 class TestStatusNotificationHandler:
@@ -306,12 +308,12 @@ class TestStatusNotificationHandler:
 
     async def test_returns_empty_response(self, charge_point):
         response = await charge_point.on_status_notification(
-            timestamp="2026-01-01T00:00:00Z",
-            evse_id=1,
-            connector_id=1,
+            timestamp=TEST_TIMESTAMP,
+            evse_id=TEST_EVSE_ID,
+            connector_id=TEST_CONNECTOR_ID,
             connector_status="Available",
         )
-        assert response is not None
+        assert isinstance(response, ocpp.v201.call_result.StatusNotification)
 
 
 class TestAuthorizeHandler:
@@ -325,7 +327,7 @@ class TestAuthorizeHandler:
 
     async def test_whitelist_accepts_valid(self, whitelist_charge_point):
         response = await whitelist_charge_point.on_authorize(
-            id_token={"id_token": "valid_token", "type": "ISO14443"}
+            id_token={"id_token": TEST_VALID_TOKEN, "type": "ISO14443"}
         )
         assert response.id_token_info["status"] == AuthorizationStatusEnumType.accepted
 
@@ -343,6 +345,51 @@ class TestAuthorizeHandler:
                 id_token={"id_token": "any", "type": "ISO14443"}
             )
 
+    async def test_blacklist_blocks_blacklisted(self, mock_connection):
+        auth_config = AuthConfig(
+            mode=AuthMode.blacklist,
+            whitelist=(),
+            blacklist=(TEST_BLOCKED_TOKEN,),
+            offline=False,
+            default_status=AuthorizationStatusEnumType.accepted,
+        )
+        cp = ChargePoint(mock_connection, auth_config=auth_config)
+        response = await cp.on_authorize(
+            id_token={"id_token": TEST_BLOCKED_TOKEN, "type": "ISO14443"}
+        )
+        assert response.id_token_info["status"] == AuthorizationStatusEnumType.blocked
+
+    async def test_blacklist_accepts_unlisted(self, mock_connection):
+        auth_config = AuthConfig(
+            mode=AuthMode.blacklist,
+            whitelist=(),
+            blacklist=(TEST_BLOCKED_TOKEN,),
+            offline=False,
+            default_status=AuthorizationStatusEnumType.accepted,
+        )
+        cp = ChargePoint(mock_connection, auth_config=auth_config)
+        response = await cp.on_authorize(
+            id_token={"id_token": "unlisted_token", "type": "ISO14443"}
+        )
+        assert response.id_token_info["status"] == AuthorizationStatusEnumType.accepted
+
+    async def test_rate_limit_rejects(self, mock_connection):
+        auth_config = AuthConfig(
+            mode=AuthMode.rate_limit,
+            whitelist=(),
+            blacklist=(),
+            offline=False,
+            default_status=AuthorizationStatusEnumType.accepted,
+        )
+        cp = ChargePoint(mock_connection, auth_config=auth_config)
+        response = await cp.on_authorize(
+            id_token={"id_token": "any_token", "type": "ISO14443"}
+        )
+        assert (
+            response.id_token_info["status"]
+            == AuthorizationStatusEnumType.not_at_this_time
+        )
+
 
 class TestTransactionEventHandler:
     """Tests for the TransactionEvent incoming handler."""
@@ -350,51 +397,52 @@ class TestTransactionEventHandler:
     async def test_started_returns_auth_status(self, charge_point):
         response = await charge_point.on_transaction_event(
             event_type=TransactionEventEnumType.started,
-            timestamp="2026-01-01T00:00:00Z",
+            timestamp=TEST_TIMESTAMP,
             trigger_reason="Authorized",
             seq_no=0,
-            transaction_info={"transaction_id": "txn-001"},
-            id_token={"id_token": "test_token", "type": "ISO14443"},
+            transaction_info={"transaction_id": TEST_TRANSACTION_ID},
+            id_token={"id_token": TEST_TOKEN, "type": "ISO14443"},
         )
         assert response.id_token_info["status"] == AuthorizationStatusEnumType.accepted
 
     async def test_updated_returns_total_cost(self, charge_point):
         response = await charge_point.on_transaction_event(
             event_type=TransactionEventEnumType.updated,
-            timestamp="2026-01-01T00:00:00Z",
+            timestamp=TEST_TIMESTAMP,
             trigger_reason="MeterValuePeriodic",
             seq_no=1,
-            transaction_info={"transaction_id": "txn-001"},
+            transaction_info={"transaction_id": TEST_TRANSACTION_ID},
         )
         assert response.total_cost == DEFAULT_TOTAL_COST
 
     async def test_updated_uses_custom_total_cost(self, mock_connection):
-        cp = ChargePoint(mock_connection, total_cost=42.50)
+        cp = ChargePoint(mock_connection, total_cost=TEST_CUSTOM_COST)
         response = await cp.on_transaction_event(
             event_type=TransactionEventEnumType.updated,
-            timestamp="2026-01-01T00:00:00Z",
+            timestamp=TEST_TIMESTAMP,
             trigger_reason="MeterValuePeriodic",
             seq_no=1,
-            transaction_info={"transaction_id": "txn-001"},
+            transaction_info={"transaction_id": TEST_TRANSACTION_ID},
         )
-        assert response.total_cost == 42.50
+        assert response.total_cost == TEST_CUSTOM_COST
 
     async def test_ended_returns_empty(self, charge_point):
         response = await charge_point.on_transaction_event(
             event_type=TransactionEventEnumType.ended,
-            timestamp="2026-01-01T00:00:00Z",
+            timestamp=TEST_TIMESTAMP,
             trigger_reason="StopAuthorized",
             seq_no=2,
-            transaction_info={"transaction_id": "txn-001"},
+            transaction_info={"transaction_id": TEST_TRANSACTION_ID},
         )
-        assert response is not None
+        assert response.total_cost is None
+        assert response.id_token_info is None
 
 
 class TestDataTransferHandler:
     """Tests for the DataTransfer incoming handler."""
 
     async def test_returns_accepted(self, charge_point):
-        response = await charge_point.on_data_transfer(vendor_id="TestVendor")
+        response = await charge_point.on_data_transfer(vendor_id=TEST_VENDOR_ID)
         assert response.status == DataTransferStatusEnumType.accepted
 
 
@@ -432,44 +480,45 @@ class TestNotificationHandlers:
 
     async def test_meter_values(self, charge_point):
         response = await charge_point.on_meter_values(
-            evse_id=1, meter_value=[{"timestamp": "2026-01-01T00:00:00Z"}]
+            evse_id=TEST_EVSE_ID,
+            meter_value=[{"timestamp": TEST_TIMESTAMP}],
         )
-        assert response is not None
+        assert isinstance(response, ocpp.v201.call_result.MeterValues)
 
     async def test_notify_report(self, charge_point):
         response = await charge_point.on_notify_report(
             request_id=1,
-            generated_at="2026-01-01T00:00:00Z",
+            generated_at=TEST_TIMESTAMP,
             seq_no=0,
         )
-        assert response is not None
+        assert isinstance(response, ocpp.v201.call_result.NotifyReport)
 
     async def test_firmware_status_notification(self, charge_point):
         response = await charge_point.on_firmware_status_notification(
             status="Installed"
         )
-        assert response is not None
+        assert isinstance(response, ocpp.v201.call_result.FirmwareStatusNotification)
 
     async def test_log_status_notification(self, charge_point):
         response = await charge_point.on_log_status_notification(
             status="Uploaded", request_id=1
         )
-        assert response is not None
+        assert isinstance(response, ocpp.v201.call_result.LogStatusNotification)
 
     async def test_security_event_notification(self, charge_point):
         response = await charge_point.on_security_event_notification(
-            event_type="FirmwareUpdated", timestamp="2026-01-01T00:00:00Z"
+            event_type="FirmwareUpdated", timestamp=TEST_TIMESTAMP
         )
-        assert response is not None
+        assert isinstance(response, ocpp.v201.call_result.SecurityEventNotification)
 
     async def test_notify_customer_information(self, charge_point):
         response = await charge_point.on_notify_customer_information(
             data="customer_data",
             seq_no=0,
-            generated_at="2026-01-01T00:00:00Z",
+            generated_at=TEST_TIMESTAMP,
             request_id=1,
         )
-        assert response is not None
+        assert isinstance(response, ocpp.v201.call_result.NotifyCustomerInformation)
 
 
 class TestSendCommandErrorHandling:
