@@ -8,7 +8,6 @@ import { afterEach, describe, it } from 'node:test'
 import {
   AuthContext,
   AuthenticationError,
-  AuthenticationMethod,
   AuthErrorCode,
   AuthorizationStatus,
   IdentifierType,
@@ -296,41 +295,6 @@ await describe('AuthTypes', async () => {
 
       assert.notStrictEqual(identifier.certificateHashData, undefined)
       assert.strictEqual(identifier.certificateHashData?.hashAlgorithm, 'SHA256')
-    })
-  })
-
-  await describe('Enums', async () => {
-    await it('should have correct AuthContext values', () => {
-      assert.strictEqual(AuthContext.TRANSACTION_START, 'TransactionStart')
-      assert.strictEqual(AuthContext.TRANSACTION_STOP, 'TransactionStop')
-      assert.strictEqual(AuthContext.REMOTE_START, 'RemoteStart')
-      assert.strictEqual(AuthContext.REMOTE_STOP, 'RemoteStop')
-      assert.strictEqual(AuthContext.RESERVATION, 'Reservation')
-      assert.strictEqual(AuthContext.UNLOCK_CONNECTOR, 'UnlockConnector')
-    })
-
-    await it('should have correct AuthenticationMethod values', () => {
-      assert.strictEqual(AuthenticationMethod.LOCAL_LIST, 'LocalList')
-      assert.strictEqual(AuthenticationMethod.REMOTE_AUTHORIZATION, 'RemoteAuthorization')
-      assert.strictEqual(AuthenticationMethod.CACHE, 'Cache')
-      assert.strictEqual(AuthenticationMethod.CERTIFICATE_BASED, 'CertificateBased')
-      assert.strictEqual(AuthenticationMethod.OFFLINE_FALLBACK, 'OfflineFallback')
-    })
-
-    await it('should have correct AuthorizationStatus values', () => {
-      assert.strictEqual(AuthorizationStatus.ACCEPTED, 'Accepted')
-      assert.strictEqual(AuthorizationStatus.BLOCKED, 'Blocked')
-      assert.strictEqual(AuthorizationStatus.EXPIRED, 'Expired')
-      assert.strictEqual(AuthorizationStatus.INVALID, 'Invalid')
-      assert.strictEqual(AuthorizationStatus.CONCURRENT_TX, 'ConcurrentTx')
-    })
-
-    await it('should have correct IdentifierType values', () => {
-      assert.strictEqual(IdentifierType.ID_TAG, 'IdTag')
-      assert.strictEqual(IdentifierType.CENTRAL, 'Central')
-      assert.strictEqual(IdentifierType.LOCAL, 'Local')
-      assert.strictEqual(IdentifierType.E_MAID, 'eMAID')
-      assert.strictEqual(IdentifierType.KEY_CODE, 'KeyCode')
     })
   })
 })

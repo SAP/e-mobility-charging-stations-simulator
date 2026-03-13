@@ -58,8 +58,7 @@ await describe('OCPPAuthServiceFactory', async () => {
 
       try {
         await OCPPAuthServiceFactory.getInstance(mockStation)
-        // If we get here, the test should fail
-        assert.strictEqual(true, false) // Force failure
+        assert.fail('Expected getInstance to throw for station without stationInfo')
       } catch (error) {
         assert.ok(error instanceof Error)
         assert.ok(error.message.includes('OCPP version not found in charging station'))

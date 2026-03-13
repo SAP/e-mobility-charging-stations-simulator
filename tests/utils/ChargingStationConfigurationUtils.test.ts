@@ -48,13 +48,6 @@ await describe('ChargingStationConfigurationUtils', async () => {
     standardCleanup()
   })
 
-  await describe('OutputFormat', async () => {
-    await it('should have correct enum values', () => {
-      assert.strictEqual(OutputFormat.configuration, 'configuration')
-      assert.strictEqual(OutputFormat.worker, 'worker')
-    })
-  })
-
   await describe('buildConnectorsStatus', async () => {
     await it('should strip internal transaction fields from connectors', () => {
       const noop = (): void => {

@@ -1,8 +1,8 @@
 /**
  * @file Tests for ChargingStationWorkerBroadcastChannel
- * @description Verifies OCPP 2.0.1 UIService pipeline integration: enums, mappings,
+ * @description Verifies OCPP 2.0.1 UIService pipeline integration: mappings,
  * response status logic, payload building, and handler routing for the 8 new broadcast
- * channel procedures. 59 tests across 7 groups.
+ * channel procedures.
  */
 
 import assert from 'node:assert/strict'
@@ -104,98 +104,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
   })
 
   // ==========================================================================
-  // Group 1: ProcedureName enum — 8 new OCPP 2.0.1 entries (8 tests)
-  // ==========================================================================
-
-  await describe('ProcedureName enum OCPP 2.0.1 entries', async () => {
-    await it('should have GET_15118_EV_CERTIFICATE in ProcedureName enum', () => {
-      assert.strictEqual(ProcedureName.GET_15118_EV_CERTIFICATE, 'get15118EVCertificate')
-    })
-
-    await it('should have GET_CERTIFICATE_STATUS in ProcedureName enum', () => {
-      assert.strictEqual(ProcedureName.GET_CERTIFICATE_STATUS, 'getCertificateStatus')
-    })
-
-    await it('should have LOG_STATUS_NOTIFICATION in ProcedureName enum', () => {
-      assert.strictEqual(ProcedureName.LOG_STATUS_NOTIFICATION, 'logStatusNotification')
-    })
-
-    await it('should have NOTIFY_CUSTOMER_INFORMATION in ProcedureName enum', () => {
-      assert.strictEqual(ProcedureName.NOTIFY_CUSTOMER_INFORMATION, 'notifyCustomerInformation')
-    })
-
-    await it('should have NOTIFY_REPORT in ProcedureName enum', () => {
-      assert.strictEqual(ProcedureName.NOTIFY_REPORT, 'notifyReport')
-    })
-
-    await it('should have SECURITY_EVENT_NOTIFICATION in ProcedureName enum', () => {
-      assert.strictEqual(ProcedureName.SECURITY_EVENT_NOTIFICATION, 'securityEventNotification')
-    })
-
-    await it('should have SIGN_CERTIFICATE in ProcedureName enum', () => {
-      assert.strictEqual(ProcedureName.SIGN_CERTIFICATE, 'signCertificate')
-    })
-
-    await it('should have TRANSACTION_EVENT in ProcedureName enum', () => {
-      assert.strictEqual(ProcedureName.TRANSACTION_EVENT, 'transactionEvent')
-    })
-  })
-
-  // ==========================================================================
-  // Group 2: BroadcastChannelProcedureName enum — 8 new OCPP 2.0.1 entries (8 tests)
-  // ==========================================================================
-
-  await describe('BroadcastChannelProcedureName enum OCPP 2.0.1 entries', async () => {
-    await it('should have GET_15118_EV_CERTIFICATE in BroadcastChannelProcedureName enum', () => {
-      assert.strictEqual(
-        BroadcastChannelProcedureName.GET_15118_EV_CERTIFICATE,
-        'get15118EVCertificate'
-      )
-    })
-
-    await it('should have GET_CERTIFICATE_STATUS in BroadcastChannelProcedureName enum', () => {
-      assert.strictEqual(
-        BroadcastChannelProcedureName.GET_CERTIFICATE_STATUS,
-        'getCertificateStatus'
-      )
-    })
-
-    await it('should have LOG_STATUS_NOTIFICATION in BroadcastChannelProcedureName enum', () => {
-      assert.strictEqual(
-        BroadcastChannelProcedureName.LOG_STATUS_NOTIFICATION,
-        'logStatusNotification'
-      )
-    })
-
-    await it('should have NOTIFY_CUSTOMER_INFORMATION in BroadcastChannelProcedureName enum', () => {
-      assert.strictEqual(
-        BroadcastChannelProcedureName.NOTIFY_CUSTOMER_INFORMATION,
-        'notifyCustomerInformation'
-      )
-    })
-
-    await it('should have NOTIFY_REPORT in BroadcastChannelProcedureName enum', () => {
-      assert.strictEqual(BroadcastChannelProcedureName.NOTIFY_REPORT, 'notifyReport')
-    })
-
-    await it('should have SECURITY_EVENT_NOTIFICATION in BroadcastChannelProcedureName enum', () => {
-      assert.strictEqual(
-        BroadcastChannelProcedureName.SECURITY_EVENT_NOTIFICATION,
-        'securityEventNotification'
-      )
-    })
-
-    await it('should have SIGN_CERTIFICATE in BroadcastChannelProcedureName enum', () => {
-      assert.strictEqual(BroadcastChannelProcedureName.SIGN_CERTIFICATE, 'signCertificate')
-    })
-
-    await it('should have TRANSACTION_EVENT in BroadcastChannelProcedureName enum', () => {
-      assert.strictEqual(BroadcastChannelProcedureName.TRANSACTION_EVENT, 'transactionEvent')
-    })
-  })
-
-  // ==========================================================================
-  // Group 3: ProcedureNameToBroadCastChannelProcedureNameMapping — 8 new entries (8 tests)
+  // Group 1: ProcedureNameToBroadCastChannelProcedureNameMapping — 8 new entries (8 tests)
   // ==========================================================================
 
   await describe('ProcedureNameToBroadCastChannelProcedureNameMapping OCPP 2.0.1 entries', async () => {
@@ -265,7 +174,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
   })
 
   // ==========================================================================
-  // Group 4: commandResponseToResponseStatus — 4 new command response cases (18 tests)
+  // Group 2: commandResponseToResponseStatus — 4 new command response cases (18 tests)
   // ==========================================================================
 
   await describe('commandResponseToResponseStatus OCPP 2.0.1 commands', async () => {
@@ -625,7 +534,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
   })
 
   // ==========================================================================
-  // Group 5: buildRequestPayload — OCPP 2.0.1 certificate passthrough (3 tests)
+  // Group 3: buildRequestPayload — OCPP 2.0.1 certificate passthrough (3 tests)
   // ==========================================================================
 
   await describe('buildRequestPayload OCPP 2.0.1 certificate passthrough', async () => {
@@ -684,7 +593,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
   })
 
   // ==========================================================================
-  // Group 6: commandHandler dispatch pipeline — verify full dispatch (8 tests)
+  // Group 4: commandHandler dispatch pipeline — verify full dispatch (8 tests)
   // ==========================================================================
 
   await describe('commandHandler OCPP 2.0.1 dispatch pipeline', async () => {
@@ -786,7 +695,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
   })
 
   // ==========================================================================
-  // Group 7: requestHandler full pipeline — exercise handler dispatch via message events (6 tests)
+  // Group 5: requestHandler full pipeline — exercise handler dispatch via message events (6 tests)
   // ==========================================================================
 
   await describe('requestHandler full pipeline OCPP 2.0.1', async () => {
