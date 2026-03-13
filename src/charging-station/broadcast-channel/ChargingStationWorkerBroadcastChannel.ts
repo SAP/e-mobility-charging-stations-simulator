@@ -181,6 +181,32 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
           ),
       ],
       [
+        BroadcastChannelProcedureName.GET_15118_EV_CERTIFICATE,
+        async (requestPayload?: BroadcastChannelRequestPayload) =>
+          await this.chargingStation.ocppRequestService.requestHandler<
+            OCPP20Get15118EVCertificateRequest,
+            OCPP20Get15118EVCertificateResponse
+          >(
+            this.chargingStation,
+            RequestCommand.GET_15118_EV_CERTIFICATE,
+            requestPayload as OCPP20Get15118EVCertificateRequest,
+            requestParams
+          ),
+      ],
+      [
+        BroadcastChannelProcedureName.GET_CERTIFICATE_STATUS,
+        async (requestPayload?: BroadcastChannelRequestPayload) =>
+          await this.chargingStation.ocppRequestService.requestHandler<
+            OCPP20GetCertificateStatusRequest,
+            OCPP20GetCertificateStatusResponse
+          >(
+            this.chargingStation,
+            RequestCommand.GET_CERTIFICATE_STATUS,
+            requestPayload as OCPP20GetCertificateStatusRequest,
+            requestParams
+          ),
+      ],
+      [
         BroadcastChannelProcedureName.HEARTBEAT,
         async (requestPayload?: BroadcastChannelRequestPayload) =>
           await this.chargingStation.ocppRequestService.requestHandler<
@@ -190,6 +216,19 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
             this.chargingStation,
             RequestCommand.HEARTBEAT,
             requestPayload as HeartbeatRequest,
+            requestParams
+          ),
+      ],
+      [
+        BroadcastChannelProcedureName.LOG_STATUS_NOTIFICATION,
+        async (requestPayload?: BroadcastChannelRequestPayload) =>
+          await this.chargingStation.ocppRequestService.requestHandler<
+            OCPP20LogStatusNotificationRequest,
+            OCPP20LogStatusNotificationResponse
+          >(
+            this.chargingStation,
+            RequestCommand.LOG_STATUS_NOTIFICATION,
+            requestPayload as OCPP20LogStatusNotificationRequest,
             requestParams
           ),
       ],
@@ -239,10 +278,49 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         },
       ],
       [
+        BroadcastChannelProcedureName.NOTIFY_CUSTOMER_INFORMATION,
+        async (requestPayload?: BroadcastChannelRequestPayload) =>
+          await this.chargingStation.ocppRequestService.requestHandler<
+            OCPP20NotifyCustomerInformationRequest,
+            OCPP20NotifyCustomerInformationResponse
+          >(
+            this.chargingStation,
+            RequestCommand.NOTIFY_CUSTOMER_INFORMATION,
+            requestPayload as OCPP20NotifyCustomerInformationRequest,
+            requestParams
+          ),
+      ],
+      [
+        BroadcastChannelProcedureName.NOTIFY_REPORT,
+        async (requestPayload?: BroadcastChannelRequestPayload) =>
+          await this.chargingStation.ocppRequestService.requestHandler<
+            OCPP20NotifyReportRequest,
+            OCPP20NotifyReportResponse
+          >(
+            this.chargingStation,
+            RequestCommand.NOTIFY_REPORT,
+            requestPayload as OCPP20NotifyReportRequest,
+            requestParams
+          ),
+      ],
+      [
         BroadcastChannelProcedureName.OPEN_CONNECTION,
         () => {
           this.chargingStation.openWSConnection()
         },
+      ],
+      [
+        BroadcastChannelProcedureName.SECURITY_EVENT_NOTIFICATION,
+        async (requestPayload?: BroadcastChannelRequestPayload) =>
+          await this.chargingStation.ocppRequestService.requestHandler<
+            OCPP20SecurityEventNotificationRequest,
+            OCPP20SecurityEventNotificationResponse
+          >(
+            this.chargingStation,
+            RequestCommand.SECURITY_EVENT_NOTIFICATION,
+            requestPayload as OCPP20SecurityEventNotificationRequest,
+            requestParams
+          ),
       ],
       [
         BroadcastChannelProcedureName.SET_SUPERVISION_URL,
@@ -255,6 +333,19 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
           }
           this.chargingStation.setSupervisionUrl(url)
         },
+      ],
+      [
+        BroadcastChannelProcedureName.SIGN_CERTIFICATE,
+        async (requestPayload?: BroadcastChannelRequestPayload) =>
+          await this.chargingStation.ocppRequestService.requestHandler<
+            OCPP20SignCertificateRequest,
+            OCPP20SignCertificateResponse
+          >(
+            this.chargingStation,
+            RequestCommand.SIGN_CERTIFICATE,
+            requestPayload as OCPP20SignCertificateRequest,
+            requestParams
+          ),
       ],
       [
         BroadcastChannelProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR,
@@ -322,97 +413,6 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
               ),
               ...requestPayload,
             } as StopTransactionRequest,
-            requestParams
-          ),
-      ],
-      [
-        BroadcastChannelProcedureName.GET_15118_EV_CERTIFICATE,
-        async (requestPayload?: BroadcastChannelRequestPayload) =>
-          await this.chargingStation.ocppRequestService.requestHandler<
-            OCPP20Get15118EVCertificateRequest,
-            OCPP20Get15118EVCertificateResponse
-          >(
-            this.chargingStation,
-            RequestCommand.GET_15118_EV_CERTIFICATE,
-            requestPayload as OCPP20Get15118EVCertificateRequest,
-            requestParams
-          ),
-      ],
-      [
-        BroadcastChannelProcedureName.GET_CERTIFICATE_STATUS,
-        async (requestPayload?: BroadcastChannelRequestPayload) =>
-          await this.chargingStation.ocppRequestService.requestHandler<
-            OCPP20GetCertificateStatusRequest,
-            OCPP20GetCertificateStatusResponse
-          >(
-            this.chargingStation,
-            RequestCommand.GET_CERTIFICATE_STATUS,
-            requestPayload as OCPP20GetCertificateStatusRequest,
-            requestParams
-          ),
-      ],
-      [
-        BroadcastChannelProcedureName.LOG_STATUS_NOTIFICATION,
-        async (requestPayload?: BroadcastChannelRequestPayload) =>
-          await this.chargingStation.ocppRequestService.requestHandler<
-            OCPP20LogStatusNotificationRequest,
-            OCPP20LogStatusNotificationResponse
-          >(
-            this.chargingStation,
-            RequestCommand.LOG_STATUS_NOTIFICATION,
-            requestPayload as OCPP20LogStatusNotificationRequest,
-            requestParams
-          ),
-      ],
-      [
-        BroadcastChannelProcedureName.NOTIFY_CUSTOMER_INFORMATION,
-        async (requestPayload?: BroadcastChannelRequestPayload) =>
-          await this.chargingStation.ocppRequestService.requestHandler<
-            OCPP20NotifyCustomerInformationRequest,
-            OCPP20NotifyCustomerInformationResponse
-          >(
-            this.chargingStation,
-            RequestCommand.NOTIFY_CUSTOMER_INFORMATION,
-            requestPayload as OCPP20NotifyCustomerInformationRequest,
-            requestParams
-          ),
-      ],
-      [
-        BroadcastChannelProcedureName.NOTIFY_REPORT,
-        async (requestPayload?: BroadcastChannelRequestPayload) =>
-          await this.chargingStation.ocppRequestService.requestHandler<
-            OCPP20NotifyReportRequest,
-            OCPP20NotifyReportResponse
-          >(
-            this.chargingStation,
-            RequestCommand.NOTIFY_REPORT,
-            requestPayload as OCPP20NotifyReportRequest,
-            requestParams
-          ),
-      ],
-      [
-        BroadcastChannelProcedureName.SECURITY_EVENT_NOTIFICATION,
-        async (requestPayload?: BroadcastChannelRequestPayload) =>
-          await this.chargingStation.ocppRequestService.requestHandler<
-            OCPP20SecurityEventNotificationRequest,
-            OCPP20SecurityEventNotificationResponse
-          >(
-            this.chargingStation,
-            RequestCommand.SECURITY_EVENT_NOTIFICATION,
-            requestPayload as OCPP20SecurityEventNotificationRequest,
-            requestParams
-          ),
-      ],
-      [
-        BroadcastChannelProcedureName.SIGN_CERTIFICATE,
-        async (requestPayload?: BroadcastChannelRequestPayload) =>
-          await this.chargingStation.ocppRequestService.requestHandler<
-            OCPP20SignCertificateRequest,
-            OCPP20SignCertificateResponse
-          >(
-            this.chargingStation,
-            RequestCommand.SIGN_CERTIFICATE,
-            requestPayload as OCPP20SignCertificateRequest,
             requestParams
           ),
       ],
@@ -519,17 +519,6 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
           return ResponseStatus.SUCCESS
         }
         return ResponseStatus.FAILURE
-      case BroadcastChannelProcedureName.HEARTBEAT:
-        if ('currentTime' in commandResponse) {
-          return ResponseStatus.SUCCESS
-        }
-        return ResponseStatus.FAILURE
-      case BroadcastChannelProcedureName.METER_VALUES:
-      case BroadcastChannelProcedureName.STATUS_NOTIFICATION:
-        if (isEmpty(commandResponse)) {
-          return ResponseStatus.SUCCESS
-        }
-        return ResponseStatus.FAILURE
       case BroadcastChannelProcedureName.GET_15118_EV_CERTIFICATE:
         if (
           (commandResponse as OCPP20Get15118EVCertificateResponse).status ===
@@ -543,6 +532,17 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
           (commandResponse as OCPP20GetCertificateStatusResponse).status ===
           GetCertificateStatusEnumType.Accepted
         ) {
+          return ResponseStatus.SUCCESS
+        }
+        return ResponseStatus.FAILURE
+      case BroadcastChannelProcedureName.HEARTBEAT:
+        if ('currentTime' in commandResponse) {
+          return ResponseStatus.SUCCESS
+        }
+        return ResponseStatus.FAILURE
+      case BroadcastChannelProcedureName.METER_VALUES:
+      case BroadcastChannelProcedureName.STATUS_NOTIFICATION:
+        if (isEmpty(commandResponse)) {
           return ResponseStatus.SUCCESS
         }
         return ResponseStatus.FAILURE

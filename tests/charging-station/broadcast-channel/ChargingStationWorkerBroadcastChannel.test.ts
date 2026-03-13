@@ -32,6 +32,16 @@ import { createMockChargingStation } from '../ChargingStationTestUtils.js'
 // ============================================================================
 
 /**
+ * Interface exposing protected static members of AbstractUIService for testing.
+ */
+interface TestableAbstractUIService {
+  ProcedureNameToBroadCastChannelProcedureNameMapping: Map<
+    ProcedureName,
+    BroadcastChannelProcedureName
+  >
+}
+
+/**
  * Interface exposing private members of ChargingStationWorkerBroadcastChannel for testing.
  */
 interface TestableWorkerBroadcastChannel {
@@ -40,16 +50,6 @@ interface TestableWorkerBroadcastChannel {
     command: BroadcastChannelProcedureName,
     commandResponse: unknown
   ) => ResponseStatus
-}
-
-/**
- * Interface exposing protected static members of AbstractUIService for testing.
- */
-interface TestableAbstractUIService {
-  ProcedureNameToBroadCastChannelProcedureNameMapping: Map<
-    ProcedureName,
-    BroadcastChannelProcedureName
-  >
 }
 
 /**
