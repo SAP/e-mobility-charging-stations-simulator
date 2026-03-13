@@ -922,4 +922,58 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
       assert.strictEqual(sentRequests[0].command, RequestCommand.METER_VALUES)
     })
   })
+
+  await describe('mapping completeness', async () => {
+    const allProcedureNames = new Set(Object.values(ProcedureName))
+    const allBroadcastNames = new Set(Object.values(BroadcastChannelProcedureName))
+    const UI_ONLY_PROCEDURE_NAMES = new Set<string>([
+      ProcedureName.ADD_CHARGING_STATIONS,
+      ProcedureName.LIST_CHARGING_STATIONS,
+      ProcedureName.LIST_TEMPLATES,
+      ProcedureName.PERFORMANCE_STATISTICS,
+      ProcedureName.SIMULATOR_STATE,
+      ProcedureName.START_SIMULATOR,
+      ProcedureName.STOP_SIMULATOR,
+    ])
+
+    await it('should have a matching ProcedureName for every BroadcastChannelProcedureName', () => {
+      const missing = [...allBroadcastNames].filter(
+        name => !allProcedureNames.has(name as unknown as ProcedureName)
+      )
+      assert.deepStrictEqual(missing, [])
+    })
+
+    await it('should have a matching BroadcastChannelProcedureName for every non-UI-only ProcedureName', () => {
+      const missing = [...allProcedureNames].filter(
+        name =>
+          !UI_ONLY_PROCEDURE_NAMES.has(name) &&
+          !allBroadcastNames.has(name as unknown as BroadcastChannelProcedureName)
+      )
+      assert.deepStrictEqual(missing, [])
+    })
+
+    await it('should not have any ProcedureName classified as both UI-only and broadcast-capable', () => {
+      const overlap = [...UI_ONLY_PROCEDURE_NAMES].filter(name =>
+        allBroadcastNames.has(name as unknown as BroadcastChannelProcedureName)
+      )
+      assert.deepStrictEqual(overlap, [])
+    })
+
+    await it('should have a ProcedureNameToBroadCastChannelProcedureNameMapping entry for every BroadcastChannelProcedureName', () => {
+      const mapping = getProcedureNameMapping()
+      const mappedBroadcastNames = new Set(mapping.values())
+      const missing = [...allBroadcastNames].filter(name => !mappedBroadcastNames.has(name))
+      assert.deepStrictEqual(missing, [])
+    })
+
+    await it('should have a commandHandler for every BroadcastChannelProcedureName', () => {
+      const { station } = createMockChargingStation()
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+      const missing = [...allBroadcastNames].filter(
+        name => !testable.commandHandlers.has(name)
+      )
+      assert.deepStrictEqual(missing, [])
+    })
+  })
 })
