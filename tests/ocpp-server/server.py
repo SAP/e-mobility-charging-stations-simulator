@@ -97,9 +97,6 @@ class ServerConfig:
     total_cost: float
 
 
-ChargePoints: set["ChargePoint"] = set()
-
-
 class ChargePoint(ocpp.v201.ChargePoint):
     """OCPP 2.0.1 charge point handler with configurable behavior for testing."""
 
@@ -107,6 +104,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
     _auth_config: AuthConfig
     _boot_status: RegistrationStatusEnumType
     _total_cost: float
+    _charge_points: set["ChargePoint"]
 
     def __init__(
         self,
@@ -114,11 +112,18 @@ class ChargePoint(ocpp.v201.ChargePoint):
         auth_config: AuthConfig | None = None,
         boot_status: RegistrationStatusEnumType = RegistrationStatusEnumType.accepted,
         total_cost: float = DEFAULT_TOTAL_COST,
+        charge_points: set["ChargePoint"] | None = None,
     ):
-        super().__init__(connection.path.strip("/"), connection)
+        # Extract CP ID from last URL segment (OCPP 2.0.1 Part 4)
+        cp_id = connection.path.strip("/").split("/")[-1]
+        if cp_id == "":
+            logging.warning("Empty CP ID extracted from path: %s", connection.path)
+        super().__init__(cp_id, connection)
+        self._charge_points = charge_points if charge_points is not None else set()
         self._command_timer = None
         self._boot_status = boot_status
         self._total_cost = total_cost
+        self._charge_points.add(self)
         if auth_config is None:
             self._auth_config = AuthConfig(
                 mode=AuthMode.normal,
@@ -635,8 +640,8 @@ class ChargePoint(ocpp.v201.ChargePoint):
         logging.info("ChargePoint %s closed connection", self.id)
         if self._command_timer:
             self._command_timer.cancel()
-        ChargePoints.discard(self)
-        logging.debug("Connected ChargePoint(s): %d", len(ChargePoints))
+        self._charge_points.discard(self)
+        logging.debug("Connected ChargePoint(s): %d", len(self._charge_points))
 
 
 async def on_connect(
@@ -661,16 +666,16 @@ async def on_connect(
         )
         return await websocket.close()
 
+    charge_points: set[ChargePoint] = set()
     cp = ChargePoint(
         websocket,
         auth_config=config.auth_config,
         boot_status=config.boot_status,
         total_cost=config.total_cost,
+        charge_points=charge_points,
     )
     if config.command_name:
         await cp.send_command(config.command_name, config.delay, config.period)
-
-    ChargePoints.add(cp)
 
     try:
         await cp.start()
