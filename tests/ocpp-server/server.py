@@ -79,11 +79,6 @@ class AuthConfig:
     offline: bool
     default_status: AuthorizationStatusEnumType
 
-    def __getitem__(self, key: str):
-        """Support dict-style access for backwards compatibility."""
-        value = getattr(self, key)
-        return list(value) if isinstance(value, tuple) else value
-
 
 @dataclass(frozen=True)
 class ServerConfig:
@@ -95,6 +90,7 @@ class ServerConfig:
     auth_config: AuthConfig
     boot_status: RegistrationStatusEnumType
     total_cost: float
+    charge_points: set["ChargePoint"]
 
 
 class ChargePoint(ocpp.v201.ChargePoint):
@@ -131,16 +127,6 @@ class ChargePoint(ocpp.v201.ChargePoint):
                 blacklist=("blocked_token", "invalid_user"),
                 offline=False,
                 default_status=AuthorizationStatusEnumType.accepted,
-            )
-        elif isinstance(auth_config, dict):
-            self._auth_config = AuthConfig(
-                mode=AuthMode(auth_config.get("mode", "normal")),
-                whitelist=tuple(auth_config.get("whitelist", ())),
-                blacklist=tuple(auth_config.get("blacklist", ())),
-                offline=auth_config.get("offline", False),
-                default_status=auth_config.get(
-                    "default_status", AuthorizationStatusEnumType.accepted
-                ),
             )
         else:
             self._auth_config = auth_config
@@ -666,7 +652,7 @@ async def on_connect(
         )
         return await websocket.close()
 
-    charge_points: set[ChargePoint] = set()
+    charge_points: set[ChargePoint] = config.charge_points
     cp = ChargePoint(
         websocket,
         auth_config=config.auth_config,
@@ -786,6 +772,7 @@ async def main():
         auth_config=auth_config,
         boot_status=args.boot_status,
         total_cost=args.total_cost,
+        charge_points=set(),
     )
 
     logging.info(

@@ -9,6 +9,7 @@ import ocpp.v201.call
 import ocpp.v201.call_result
 import pytest
 from ocpp.v201.enums import (
+    Action,
     AuthorizationStatusEnumType,
     CertificateSignedStatusEnumType,
     ChangeAvailabilityStatusEnumType,
@@ -21,9 +22,14 @@ from ocpp.v201.enums import (
     GetCertificateStatusEnumType,
     GetInstalledCertificateStatusEnumType,
     InstallCertificateStatusEnumType,
+    InstallCertificateUseEnumType,
     Iso15118EVCertificateStatusEnumType,
+    LogEnumType,
     LogStatusEnumType,
+    MessageTriggerEnumType,
+    OperationalStatusEnumType,
     RegistrationStatusEnumType,
+    ReportBaseEnumType,
     RequestStartStopStatusEnumType,
     ResetEnumType,
     ResetStatusEnumType,
@@ -79,13 +85,13 @@ def whitelist_charge_point(mock_connection):
     """Create a ChargePoint with whitelist auth mode."""
     return ChargePoint(
         mock_connection,
-        auth_config={
-            "mode": "whitelist",
-            "whitelist": [TEST_VALID_TOKEN, TEST_TOKEN],
-            "blacklist": [],
-            "offline": False,
-            "default_status": AuthorizationStatusEnumType.accepted,
-        },
+        auth_config=AuthConfig(
+            mode=AuthMode.whitelist,
+            whitelist=(TEST_VALID_TOKEN, TEST_TOKEN),
+            blacklist=(),
+            offline=False,
+            default_status=AuthorizationStatusEnumType.accepted,
+        ),
     )
 
 
@@ -94,13 +100,13 @@ def blacklist_charge_point(mock_connection):
     """Create a ChargePoint with blacklist auth mode."""
     return ChargePoint(
         mock_connection,
-        auth_config={
-            "mode": "blacklist",
-            "whitelist": [],
-            "blacklist": [TEST_BLOCKED_TOKEN],
-            "offline": False,
-            "default_status": AuthorizationStatusEnumType.accepted,
-        },
+        auth_config=AuthConfig(
+            mode=AuthMode.blacklist,
+            whitelist=(),
+            blacklist=(TEST_BLOCKED_TOKEN,),
+            offline=False,
+            default_status=AuthorizationStatusEnumType.accepted,
+        ),
     )
 
 
@@ -109,13 +115,13 @@ def offline_charge_point(mock_connection):
     """Create a ChargePoint with offline mode enabled."""
     return ChargePoint(
         mock_connection,
-        auth_config={
-            "mode": "normal",
-            "whitelist": [],
-            "blacklist": [],
-            "offline": True,
-            "default_status": AuthorizationStatusEnumType.accepted,
-        },
+        auth_config=AuthConfig(
+            mode=AuthMode.normal,
+            whitelist=(),
+            blacklist=(),
+            offline=True,
+            default_status=AuthorizationStatusEnumType.accepted,
+        ),
     )
 
 
@@ -179,13 +185,13 @@ class TestResolveAuthStatus:
     def test_rate_limit_mode(self, mock_connection):
         cp = ChargePoint(
             mock_connection,
-            auth_config={
-                "mode": "rate_limit",
-                "whitelist": [],
-                "blacklist": [],
-                "offline": False,
-                "default_status": AuthorizationStatusEnumType.accepted,
-            },
+            auth_config=AuthConfig(
+                mode=AuthMode.rate_limit,
+                whitelist=(),
+                blacklist=(),
+                offline=False,
+                default_status=AuthorizationStatusEnumType.accepted,
+            ),
         )
         status = cp._resolve_auth_status("any_token")
         assert status == AuthorizationStatusEnumType.not_at_this_time
@@ -254,16 +260,22 @@ class TestChargePointDefaultConfig:
     """Tests for ChargePoint default configuration."""
 
     def test_default_auth_config(self, charge_point):
-        assert charge_point._auth_config["mode"] == "normal"
-        assert charge_point._auth_config["offline"] is False
-        assert TEST_VALID_TOKEN in charge_point._auth_config["whitelist"]
-        assert TEST_BLOCKED_TOKEN in charge_point._auth_config["blacklist"]
+        assert charge_point._auth_config.mode == AuthMode.normal
+        assert charge_point._auth_config.offline is False
+        assert TEST_VALID_TOKEN in charge_point._auth_config.whitelist
+        assert TEST_BLOCKED_TOKEN in charge_point._auth_config.blacklist
 
     def test_custom_auth_config(self, mock_connection):
-        config = {"mode": "whitelist", "whitelist": ["token1"]}
+        config = AuthConfig(
+            mode=AuthMode.whitelist,
+            whitelist=("token1",),
+            blacklist=(),
+            offline=False,
+            default_status=AuthorizationStatusEnumType.accepted,
+        )
         cp = ChargePoint(mock_connection, auth_config=config)
-        assert cp._auth_config["mode"] == "whitelist"
-        assert cp._auth_config["whitelist"] == ["token1"]
+        assert cp._auth_config.mode == AuthMode.whitelist
+        assert cp._auth_config.whitelist == ("token1",)
 
     def test_command_timer_initially_none(self, charge_point):
         assert charge_point._command_timer is None
@@ -298,7 +310,8 @@ class TestBootNotificationHandler:
         )
         assert response.status == RegistrationStatusEnumType.accepted
         assert response.interval == DEFAULT_HEARTBEAT_INTERVAL
-        assert response.current_time is not None
+        assert isinstance(response.current_time, str)
+        assert "T" in response.current_time
 
     async def test_configurable_boot_status(self, mock_connection):
         cp = ChargePoint(
@@ -326,8 +339,7 @@ class TestHeartbeatHandler:
 
     async def test_returns_current_time(self, charge_point):
         response = await charge_point.on_heartbeat()
-        assert response.current_time is not None
-        assert len(response.current_time) > 0
+        assert isinstance(response.current_time, str)
         assert "T" in response.current_time
 
 
@@ -553,8 +565,6 @@ class TestSendCommandErrorHandling:
     """Tests for error handling in the command dispatch layer."""
 
     async def test_timeout_is_caught(self, charge_point):
-        from ocpp.v201.enums import Action
-
         with patch.object(
             charge_point, "_send_clear_cache", side_effect=TimeoutError("timed out")
         ):
@@ -562,7 +572,6 @@ class TestSendCommandErrorHandling:
 
     async def test_ocpp_error_is_caught(self, charge_point):
         from ocpp.exceptions import InternalError as OCPPInternalError
-        from ocpp.v201.enums import Action
 
         with patch.object(
             charge_point,
@@ -572,7 +581,6 @@ class TestSendCommandErrorHandling:
             await charge_point._send_command(command_name=Action.clear_cache)
 
     async def test_connection_closed_is_caught(self, charge_point):
-        from ocpp.v201.enums import Action
         from websockets.exceptions import ConnectionClosedOK
         from websockets.frames import Close
 
@@ -617,7 +625,7 @@ class TestOutgoingCommands:
         request = command_charge_point.call.call_args[0][0]
         assert isinstance(request, ocpp.v201.call.GetBaseReport)
         assert request.request_id > 0
-        assert request.report_base is not None
+        assert request.report_base == ReportBaseEnumType.full_inventory
 
     async def test_send_get_variables(self, command_charge_point):
         command_charge_point.call.return_value = ocpp.v201.call_result.GetVariables(
@@ -651,7 +659,7 @@ class TestOutgoingCommands:
         command_charge_point.call.assert_called_once()
         request = command_charge_point.call.call_args[0][0]
         assert isinstance(request, ocpp.v201.call.RequestStartTransaction)
-        assert request.id_token is not None
+        assert isinstance(request.id_token, dict)
         assert request.evse_id == TEST_EVSE_ID
         assert request.remote_start_id > 0
 
@@ -698,7 +706,7 @@ class TestOutgoingCommands:
         command_charge_point.call.assert_called_once()
         request = command_charge_point.call.call_args[0][0]
         assert isinstance(request, ocpp.v201.call.ChangeAvailability)
-        assert request.operational_status is not None
+        assert request.operational_status == OperationalStatusEnumType.operative
 
     async def test_send_trigger_message(self, command_charge_point):
         command_charge_point.call.return_value = ocpp.v201.call_result.TriggerMessage(
@@ -708,7 +716,7 @@ class TestOutgoingCommands:
         command_charge_point.call.assert_called_once()
         request = command_charge_point.call.call_args[0][0]
         assert isinstance(request, ocpp.v201.call.TriggerMessage)
-        assert request.requested_message is not None
+        assert request.requested_message == MessageTriggerEnumType.status_notification
 
     async def test_send_data_transfer(self, command_charge_point):
         command_charge_point.call.return_value = ocpp.v201.call_result.DataTransfer(
@@ -782,8 +790,8 @@ class TestOutgoingCommands:
         request = command_charge_point.call.call_args[0][0]
         assert isinstance(request, ocpp.v201.call.GetLog)
         assert request.request_id > 0
-        assert request.log is not None
-        assert request.log_type is not None
+        assert isinstance(request.log, dict)
+        assert request.log_type == LogEnumType.diagnostics_log
 
     async def test_send_get_transaction_status(self, command_charge_point):
         command_charge_point.call.return_value = (
@@ -806,7 +814,10 @@ class TestOutgoingCommands:
         request = command_charge_point.call.call_args[0][0]
         assert isinstance(request, ocpp.v201.call.InstallCertificate)
         assert "CERTIFICATE" in request.certificate
-        assert request.certificate_type is not None
+        assert (
+            request.certificate_type
+            == InstallCertificateUseEnumType.csms_root_certificate
+        )
 
     async def test_send_set_network_profile(self, command_charge_point):
         command_charge_point.call.return_value = (
@@ -819,7 +830,7 @@ class TestOutgoingCommands:
         request = command_charge_point.call.call_args[0][0]
         assert isinstance(request, ocpp.v201.call.SetNetworkProfile)
         assert request.configuration_slot == 1
-        assert request.connection_data is not None
+        assert isinstance(request.connection_data, dict)
 
     async def test_send_update_firmware(self, command_charge_point):
         command_charge_point.call.return_value = ocpp.v201.call_result.UpdateFirmware(
@@ -830,7 +841,7 @@ class TestOutgoingCommands:
         request = command_charge_point.call.call_args[0][0]
         assert isinstance(request, ocpp.v201.call.UpdateFirmware)
         assert request.request_id > 0
-        assert request.firmware is not None
+        assert isinstance(request.firmware, dict)
 
     # --- Failure path tests (rejected/failed status → correct logging) ---
 
@@ -890,6 +901,7 @@ class TestOnConnect:
             ),
             "boot_status": RegistrationStatusEnumType.accepted,
             "total_cost": 0.0,
+            "charge_points": set(),
         }
         defaults.update(overrides)
         return ServerConfig(**defaults)
@@ -949,8 +961,6 @@ class TestOnConnect:
             mock_cp.handle_connection_closed.assert_called_once()
 
     async def test_command_sent_on_connect_when_specified(self):
-        from ocpp.v201.enums import Action
-
         mock_ws = MagicMock()
         mock_ws.request_headers = {"Sec-WebSocket-Protocol": "ocpp2.0.1"}
         mock_ws.subprotocol = "ocpp2.0.1"
@@ -994,8 +1004,6 @@ class TestSendCommand:
     """Tests for Timer creation logic in send_command."""
 
     async def test_delay_creates_one_shot_timer(self, charge_point):
-        from ocpp.v201.enums import Action
-
         with patch("server.Timer") as MockTimer:
             mock_timer = MagicMock()
             MockTimer.return_value = mock_timer
@@ -1006,8 +1014,6 @@ class TestSendCommand:
             assert args[1] is False
 
     async def test_period_creates_repeating_timer(self, charge_point):
-        from ocpp.v201.enums import Action
-
         with patch("server.Timer") as MockTimer:
             mock_timer = MagicMock()
             MockTimer.return_value = mock_timer
@@ -1018,15 +1024,11 @@ class TestSendCommand:
             assert args[1] is True
 
     async def test_no_timer_when_both_none(self, charge_point):
-        from ocpp.v201.enums import Action
-
         with patch("server.Timer") as MockTimer:
             await charge_point.send_command(Action.clear_cache, delay=None, period=None)
             MockTimer.assert_not_called()
 
     async def test_second_call_no_op_when_timer_exists(self, charge_point):
-        from ocpp.v201.enums import Action
-
         charge_point._command_timer = MagicMock()
         with patch("server.Timer") as MockTimer:
             await charge_point.send_command(Action.clear_cache, delay=1.0, period=None)
