@@ -2,10 +2,11 @@
  * @file Tests for ChargingStationWorkerBroadcastChannel
  * @description Verifies OCPP 2.0.1 UIService pipeline integration: enums, mappings,
  * response status logic, payload building, and handler routing for the 8 new broadcast
- * channel procedures. 53 tests across 6 groups.
+ * channel procedures. 59 tests across 7 groups.
  */
 
 import assert from 'node:assert/strict'
+import { randomUUID } from 'node:crypto'
 import { afterEach, describe, it } from 'node:test'
 
 import { ChargingStationWorkerBroadcastChannel } from '../../../src/charging-station/broadcast-channel/ChargingStationWorkerBroadcastChannel.js'
@@ -53,11 +54,16 @@ interface TestableAbstractUIService {
 }
 
 interface TestableWorkerBroadcastChannel {
+  commandHandler: (
+    command: BroadcastChannelProcedureName,
+    requestPayload: BroadcastChannelRequestPayload
+  ) => Promise<unknown>
   commandHandlers: Map<BroadcastChannelProcedureName, CommandHandler>
   commandResponseToResponseStatus: (
     command: BroadcastChannelProcedureName,
     commandResponse: unknown
   ) => ResponseStatus
+  requestHandler: (messageEvent: { data: unknown }) => void
 }
 
 /**
@@ -70,8 +76,10 @@ function createTestableWorkerBroadcastChannel (
 ): TestableWorkerBroadcastChannel {
   const testable = instance as unknown as TestableWorkerBroadcastChannel
   return {
+    commandHandler: testable.commandHandler.bind(instance),
     commandHandlers: testable.commandHandlers,
     commandResponseToResponseStatus: testable.commandResponseToResponseStatus.bind(instance),
+    requestHandler: testable.requestHandler.bind(instance),
   }
 }
 
@@ -676,130 +684,242 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
   })
 
   // ==========================================================================
-  // Group 6: commandHandlers behavioral — verify requestHandler invocation (8 tests)
+  // Group 6: commandHandler dispatch pipeline — verify full dispatch (8 tests)
   // ==========================================================================
 
-  await describe('commandHandlers OCPP 2.0.1 behavioral', async () => {
-    await it('should invoke requestHandler with GET_15118_EV_CERTIFICATE command', async () => {
+  await describe('commandHandler OCPP 2.0.1 dispatch pipeline', async () => {
+    await it('should dispatch GET_15118_EV_CERTIFICATE through commandHandler', async () => {
       const { sentRequests, station } = createMockStationWithRequestTracking()
 
       instance = new ChargingStationWorkerBroadcastChannel(station)
       const testable = createTestableWorkerBroadcastChannel(instance)
 
-      const handler = testable.commandHandlers.get(
-        BroadcastChannelProcedureName.GET_15118_EV_CERTIFICATE
-      )
-      assert.ok(handler != null)
-      await handler({})
+      await testable.commandHandler(BroadcastChannelProcedureName.GET_15118_EV_CERTIFICATE, {})
 
       assert.strictEqual(sentRequests.length, 1)
       assert.strictEqual(sentRequests[0].command, RequestCommand.GET_15118_EV_CERTIFICATE)
     })
 
-    await it('should invoke requestHandler with GET_CERTIFICATE_STATUS command', async () => {
+    await it('should dispatch GET_CERTIFICATE_STATUS through commandHandler', async () => {
       const { sentRequests, station } = createMockStationWithRequestTracking()
 
       instance = new ChargingStationWorkerBroadcastChannel(station)
       const testable = createTestableWorkerBroadcastChannel(instance)
 
-      const handler = testable.commandHandlers.get(
-        BroadcastChannelProcedureName.GET_CERTIFICATE_STATUS
-      )
-      assert.ok(handler != null)
-      await handler({})
+      await testable.commandHandler(BroadcastChannelProcedureName.GET_CERTIFICATE_STATUS, {})
 
       assert.strictEqual(sentRequests.length, 1)
       assert.strictEqual(sentRequests[0].command, RequestCommand.GET_CERTIFICATE_STATUS)
     })
 
-    await it('should invoke requestHandler with LOG_STATUS_NOTIFICATION command', async () => {
+    await it('should dispatch LOG_STATUS_NOTIFICATION through commandHandler', async () => {
       const { sentRequests, station } = createMockStationWithRequestTracking()
 
       instance = new ChargingStationWorkerBroadcastChannel(station)
       const testable = createTestableWorkerBroadcastChannel(instance)
 
-      const handler = testable.commandHandlers.get(
-        BroadcastChannelProcedureName.LOG_STATUS_NOTIFICATION
-      )
-      assert.ok(handler != null)
-      await handler({})
+      await testable.commandHandler(BroadcastChannelProcedureName.LOG_STATUS_NOTIFICATION, {})
 
       assert.strictEqual(sentRequests.length, 1)
       assert.strictEqual(sentRequests[0].command, RequestCommand.LOG_STATUS_NOTIFICATION)
     })
 
-    await it('should invoke requestHandler with NOTIFY_CUSTOMER_INFORMATION command', async () => {
+    await it('should dispatch NOTIFY_CUSTOMER_INFORMATION through commandHandler', async () => {
       const { sentRequests, station } = createMockStationWithRequestTracking()
 
       instance = new ChargingStationWorkerBroadcastChannel(station)
       const testable = createTestableWorkerBroadcastChannel(instance)
 
-      const handler = testable.commandHandlers.get(
-        BroadcastChannelProcedureName.NOTIFY_CUSTOMER_INFORMATION
-      )
-      assert.ok(handler != null)
-      await handler({})
+      await testable.commandHandler(BroadcastChannelProcedureName.NOTIFY_CUSTOMER_INFORMATION, {})
 
       assert.strictEqual(sentRequests.length, 1)
       assert.strictEqual(sentRequests[0].command, RequestCommand.NOTIFY_CUSTOMER_INFORMATION)
     })
 
-    await it('should invoke requestHandler with NOTIFY_REPORT command', async () => {
+    await it('should dispatch NOTIFY_REPORT through commandHandler', async () => {
       const { sentRequests, station } = createMockStationWithRequestTracking()
 
       instance = new ChargingStationWorkerBroadcastChannel(station)
       const testable = createTestableWorkerBroadcastChannel(instance)
 
-      const handler = testable.commandHandlers.get(BroadcastChannelProcedureName.NOTIFY_REPORT)
-      assert.ok(handler != null)
-      await handler({})
+      await testable.commandHandler(BroadcastChannelProcedureName.NOTIFY_REPORT, {})
 
       assert.strictEqual(sentRequests.length, 1)
       assert.strictEqual(sentRequests[0].command, RequestCommand.NOTIFY_REPORT)
     })
 
-    await it('should invoke requestHandler with SECURITY_EVENT_NOTIFICATION command', async () => {
+    await it('should dispatch SECURITY_EVENT_NOTIFICATION through commandHandler', async () => {
       const { sentRequests, station } = createMockStationWithRequestTracking()
 
       instance = new ChargingStationWorkerBroadcastChannel(station)
       const testable = createTestableWorkerBroadcastChannel(instance)
 
-      const handler = testable.commandHandlers.get(
-        BroadcastChannelProcedureName.SECURITY_EVENT_NOTIFICATION
-      )
-      assert.ok(handler != null)
-      await handler({})
+      await testable.commandHandler(BroadcastChannelProcedureName.SECURITY_EVENT_NOTIFICATION, {})
 
       assert.strictEqual(sentRequests.length, 1)
       assert.strictEqual(sentRequests[0].command, RequestCommand.SECURITY_EVENT_NOTIFICATION)
     })
 
-    await it('should invoke requestHandler with SIGN_CERTIFICATE command', async () => {
+    await it('should dispatch SIGN_CERTIFICATE through commandHandler', async () => {
       const { sentRequests, station } = createMockStationWithRequestTracking()
 
       instance = new ChargingStationWorkerBroadcastChannel(station)
       const testable = createTestableWorkerBroadcastChannel(instance)
 
-      const handler = testable.commandHandlers.get(BroadcastChannelProcedureName.SIGN_CERTIFICATE)
-      assert.ok(handler != null)
-      await handler({})
+      await testable.commandHandler(BroadcastChannelProcedureName.SIGN_CERTIFICATE, {})
 
       assert.strictEqual(sentRequests.length, 1)
       assert.strictEqual(sentRequests[0].command, RequestCommand.SIGN_CERTIFICATE)
     })
 
-    await it('should invoke requestHandler with TRANSACTION_EVENT command', async () => {
+    await it('should dispatch TRANSACTION_EVENT through commandHandler', async () => {
       const { sentRequests, station } = createMockStationWithRequestTracking()
 
       instance = new ChargingStationWorkerBroadcastChannel(station)
       const testable = createTestableWorkerBroadcastChannel(instance)
 
-      const handler = testable.commandHandlers.get(BroadcastChannelProcedureName.TRANSACTION_EVENT)
-      assert.ok(handler != null)
-      await handler({})
+      await testable.commandHandler(BroadcastChannelProcedureName.TRANSACTION_EVENT, {})
 
       assert.strictEqual(sentRequests.length, 1)
       assert.strictEqual(sentRequests[0].command, RequestCommand.TRANSACTION_EVENT)
+    })
+  })
+
+  // ==========================================================================
+  // Group 7: requestHandler full pipeline — exercise handler dispatch via message events (6 tests)
+  // ==========================================================================
+
+  await describe('requestHandler full pipeline OCPP 2.0.1', async () => {
+    await it('should dispatch GET_15118_EV_CERTIFICATE via requestHandler', async () => {
+      const { sentRequests, station } = createMockStationWithRequestTracking()
+
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+
+      testable.requestHandler({
+        data: [
+          randomUUID(),
+          BroadcastChannelProcedureName.GET_15118_EV_CERTIFICATE,
+          { hashIds: [station.stationInfo?.hashId] },
+        ],
+      })
+
+      await new Promise(resolve => {
+        setTimeout(resolve, 50)
+      })
+
+      assert.strictEqual(sentRequests.length, 1)
+      assert.strictEqual(sentRequests[0].command, RequestCommand.GET_15118_EV_CERTIFICATE)
+    })
+
+    await it('should dispatch LOG_STATUS_NOTIFICATION via requestHandler', async () => {
+      const { sentRequests, station } = createMockStationWithRequestTracking()
+
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+
+      testable.requestHandler({
+        data: [
+          randomUUID(),
+          BroadcastChannelProcedureName.LOG_STATUS_NOTIFICATION,
+          { hashIds: [station.stationInfo?.hashId] },
+        ],
+      })
+
+      await new Promise(resolve => {
+        setTimeout(resolve, 50)
+      })
+
+      assert.strictEqual(sentRequests.length, 1)
+      assert.strictEqual(sentRequests[0].command, RequestCommand.LOG_STATUS_NOTIFICATION)
+    })
+
+    await it('should dispatch NOTIFY_CUSTOMER_INFORMATION via requestHandler', async () => {
+      const { sentRequests, station } = createMockStationWithRequestTracking()
+
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+
+      testable.requestHandler({
+        data: [
+          randomUUID(),
+          BroadcastChannelProcedureName.NOTIFY_CUSTOMER_INFORMATION,
+          { hashIds: [station.stationInfo?.hashId] },
+        ],
+      })
+
+      await new Promise(resolve => {
+        setTimeout(resolve, 50)
+      })
+
+      assert.strictEqual(sentRequests.length, 1)
+      assert.strictEqual(sentRequests[0].command, RequestCommand.NOTIFY_CUSTOMER_INFORMATION)
+    })
+
+    await it('should dispatch NOTIFY_REPORT via requestHandler', async () => {
+      const { sentRequests, station } = createMockStationWithRequestTracking()
+
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+
+      testable.requestHandler({
+        data: [
+          randomUUID(),
+          BroadcastChannelProcedureName.NOTIFY_REPORT,
+          { hashIds: [station.stationInfo?.hashId] },
+        ],
+      })
+
+      await new Promise(resolve => {
+        setTimeout(resolve, 50)
+      })
+
+      assert.strictEqual(sentRequests.length, 1)
+      assert.strictEqual(sentRequests[0].command, RequestCommand.NOTIFY_REPORT)
+    })
+
+    await it('should dispatch SECURITY_EVENT_NOTIFICATION via requestHandler', async () => {
+      const { sentRequests, station } = createMockStationWithRequestTracking()
+
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+
+      testable.requestHandler({
+        data: [
+          randomUUID(),
+          BroadcastChannelProcedureName.SECURITY_EVENT_NOTIFICATION,
+          { hashIds: [station.stationInfo?.hashId] },
+        ],
+      })
+
+      await new Promise(resolve => {
+        setTimeout(resolve, 50)
+      })
+
+      assert.strictEqual(sentRequests.length, 1)
+      assert.strictEqual(sentRequests[0].command, RequestCommand.SECURITY_EVENT_NOTIFICATION)
+    })
+
+    await it('should dispatch METER_VALUES for OCPP 2.0.1 via requestHandler', async () => {
+      const { sentRequests, station } = createMockStationWithRequestTracking()
+
+      instance = new ChargingStationWorkerBroadcastChannel(station)
+      const testable = createTestableWorkerBroadcastChannel(instance)
+
+      testable.requestHandler({
+        data: [
+          randomUUID(),
+          BroadcastChannelProcedureName.METER_VALUES,
+          { hashIds: [station.stationInfo?.hashId] },
+        ],
+      })
+
+      await new Promise(resolve => {
+        setTimeout(resolve, 50)
+      })
+
+      assert.strictEqual(sentRequests.length, 1)
+      assert.strictEqual(sentRequests[0].command, RequestCommand.METER_VALUES)
     })
   })
 })
