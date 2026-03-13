@@ -1,7 +1,8 @@
 /**
  * @file Tests for ChargingStationWorkerBroadcastChannel
  * @description Verifies OCPP 2.0.1 UIService pipeline integration: enums, mappings,
- * command handlers, and response status logic for the 8 new broadcast channel procedures.
+ * response status logic, payload building, and handler routing for the 8 new broadcast
+ * channel procedures. 45 tests across 6 groups.
  */
 
 import assert from 'node:assert/strict'
@@ -95,7 +96,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
   })
 
   // ==========================================================================
-  // Group 1: ProcedureName enum — 8 new OCPP 2.0.1 entries
+  // Group 1: ProcedureName enum — 8 new OCPP 2.0.1 entries (8 tests)
   // ==========================================================================
 
   await describe('ProcedureName enum OCPP 2.0.1 entries', async () => {
@@ -133,7 +134,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
   })
 
   // ==========================================================================
-  // Group 2: BroadcastChannelProcedureName enum — 8 new OCPP 2.0.1 entries
+  // Group 2: BroadcastChannelProcedureName enum — 8 new OCPP 2.0.1 entries (8 tests)
   // ==========================================================================
 
   await describe('BroadcastChannelProcedureName enum OCPP 2.0.1 entries', async () => {
@@ -186,7 +187,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
   })
 
   // ==========================================================================
-  // Group 3: ProcedureNameToBroadCastChannelProcedureNameMapping — 8 new entries
+  // Group 3: ProcedureNameToBroadCastChannelProcedureNameMapping — 8 new entries (8 tests)
   // ==========================================================================
 
   await describe('ProcedureNameToBroadCastChannelProcedureNameMapping OCPP 2.0.1 entries', async () => {
@@ -256,45 +257,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
   })
 
   // ==========================================================================
-  // Group 4: BroadcastChannelRequestPayload — OCPP 2.0.1 optional fields
-  // ==========================================================================
-
-  await describe('BroadcastChannelRequestPayload OCPP 2.0.1 fields', async () => {
-    await it('should accept optional OCPP 2.0.1 fields in BroadcastChannelRequestPayload', () => {
-      // Type-level test: verify the interface accepts OCPP 2.0.1 fields
-      const payload: BroadcastChannelRequestPayload = {
-        eventType: 'Started',
-        evseId: 1,
-        idToken: { idToken: 'test', type: 'Central' },
-        transactionData: { transactionId: 'uuid-123' },
-      }
-
-      assert.strictEqual(payload.evseId, 1)
-      assert.strictEqual(payload.eventType, 'Started')
-    })
-
-    await it('should accept BroadcastChannelRequestPayload with only evseId', () => {
-      const payload: BroadcastChannelRequestPayload = {
-        evseId: 2,
-      }
-
-      assert.strictEqual(payload.evseId, 2)
-    })
-
-    await it('should accept BroadcastChannelRequestPayload with idToken object', () => {
-      const payload: BroadcastChannelRequestPayload = {
-        idToken: { idToken: 'RFID_TOKEN_001', type: 'ISO14443' },
-      }
-
-      assert.deepStrictEqual(payload.idToken, {
-        idToken: 'RFID_TOKEN_001',
-        type: 'ISO14443',
-      })
-    })
-  })
-
-  // ==========================================================================
-  // Group 5: commandResponseToResponseStatus — 4 new command response cases
+  // Group 4: commandResponseToResponseStatus — 4 new command response cases (10 tests)
   // ==========================================================================
 
   await describe('commandResponseToResponseStatus OCPP 2.0.1 commands', async () => {
@@ -500,131 +463,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
   })
 
   // ==========================================================================
-  // Group 6: commandHandlers Map — 8 new entries registered
-  // ==========================================================================
-
-  await describe('commandHandlers OCPP 2.0.1 entries', async () => {
-    await it('should have GET_15118_EV_CERTIFICATE command handler registered', () => {
-      const { station } = createMockChargingStation({
-        connectorsCount: 1,
-        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-        stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
-      })
-
-      instance = new ChargingStationWorkerBroadcastChannel(station)
-      const testable = createTestableWorkerBroadcastChannel(instance)
-
-      assert.ok(
-        testable.commandHandlers.has(BroadcastChannelProcedureName.GET_15118_EV_CERTIFICATE)
-      )
-    })
-
-    await it('should have GET_CERTIFICATE_STATUS command handler registered', () => {
-      const { station } = createMockChargingStation({
-        connectorsCount: 1,
-        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-        stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
-      })
-
-      instance = new ChargingStationWorkerBroadcastChannel(station)
-      const testable = createTestableWorkerBroadcastChannel(instance)
-
-      assert.ok(testable.commandHandlers.has(BroadcastChannelProcedureName.GET_CERTIFICATE_STATUS))
-    })
-
-    await it('should have LOG_STATUS_NOTIFICATION command handler registered', () => {
-      const { station } = createMockChargingStation({
-        connectorsCount: 1,
-        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-        stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
-      })
-
-      instance = new ChargingStationWorkerBroadcastChannel(station)
-      const testable = createTestableWorkerBroadcastChannel(instance)
-
-      assert.ok(testable.commandHandlers.has(BroadcastChannelProcedureName.LOG_STATUS_NOTIFICATION))
-    })
-
-    await it('should have NOTIFY_CUSTOMER_INFORMATION command handler registered', () => {
-      const { station } = createMockChargingStation({
-        connectorsCount: 1,
-        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-        stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
-      })
-
-      instance = new ChargingStationWorkerBroadcastChannel(station)
-      const testable = createTestableWorkerBroadcastChannel(instance)
-
-      assert.ok(
-        testable.commandHandlers.has(BroadcastChannelProcedureName.NOTIFY_CUSTOMER_INFORMATION)
-      )
-    })
-
-    await it('should have NOTIFY_REPORT command handler registered', () => {
-      const { station } = createMockChargingStation({
-        connectorsCount: 1,
-        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-        stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
-      })
-
-      instance = new ChargingStationWorkerBroadcastChannel(station)
-      const testable = createTestableWorkerBroadcastChannel(instance)
-
-      assert.ok(testable.commandHandlers.has(BroadcastChannelProcedureName.NOTIFY_REPORT))
-    })
-
-    await it('should have SECURITY_EVENT_NOTIFICATION command handler registered', () => {
-      const { station } = createMockChargingStation({
-        connectorsCount: 1,
-        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-        stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
-      })
-
-      instance = new ChargingStationWorkerBroadcastChannel(station)
-      const testable = createTestableWorkerBroadcastChannel(instance)
-
-      assert.ok(
-        testable.commandHandlers.has(BroadcastChannelProcedureName.SECURITY_EVENT_NOTIFICATION)
-      )
-    })
-
-    await it('should have SIGN_CERTIFICATE command handler registered', () => {
-      const { station } = createMockChargingStation({
-        connectorsCount: 1,
-        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-        stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
-      })
-
-      instance = new ChargingStationWorkerBroadcastChannel(station)
-      const testable = createTestableWorkerBroadcastChannel(instance)
-
-      assert.ok(testable.commandHandlers.has(BroadcastChannelProcedureName.SIGN_CERTIFICATE))
-    })
-
-    await it('should have TRANSACTION_EVENT command handler registered', () => {
-      const { station } = createMockChargingStation({
-        connectorsCount: 1,
-        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-        stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
-        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
-      })
-
-      instance = new ChargingStationWorkerBroadcastChannel(station)
-      const testable = createTestableWorkerBroadcastChannel(instance)
-
-      assert.ok(testable.commandHandlers.has(BroadcastChannelProcedureName.TRANSACTION_EVENT))
-    })
-  })
-
-  // ==========================================================================
-  // Group 7: buildRequestPayload — OCPP 2.0.1 certificate passthrough
+  // Group 5: buildRequestPayload — OCPP 2.0.1 certificate passthrough (3 tests)
   // ==========================================================================
 
   await describe('buildRequestPayload OCPP 2.0.1 certificate passthrough', async () => {
@@ -683,7 +522,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
   })
 
   // ==========================================================================
-  // Group 8: commandHandlers behavioral — verify requestHandler invocation
+  // Group 6: commandHandlers behavioral — verify requestHandler invocation (8 tests)
   // ==========================================================================
 
   await describe('commandHandlers OCPP 2.0.1 behavioral', async () => {
