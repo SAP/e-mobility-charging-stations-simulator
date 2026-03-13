@@ -253,7 +253,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
 
     async def _send_clear_cache(self):
         request = ocpp.v201.call.ClearCache()
-        response = await self.call(request)
+        response = await self.call(request, suppress=False)
 
         if response.status == ClearCacheStatusEnumType.accepted:
             logging.info("%s successful", Action.clear_cache)
@@ -262,10 +262,10 @@ class ChargePoint(ocpp.v201.ChargePoint):
 
     async def _send_get_base_report(self):
         request = ocpp.v201.call.GetBaseReport(
-            request_id=randint(1, 100),  # noqa: S311
+            request_id=randint(1, 2**31 - 1),  # noqa: S311
             report_base=ReportBaseEnumType.full_inventory,
         )
-        response = await self.call(request)
+        response = await self.call(request, suppress=False)
 
         if response.status == GenericDeviceModelStatusEnumType.accepted:
             logging.info("%s successful", Action.get_base_report)
@@ -281,7 +281,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
                 }
             ]
         )
-        await self.call(request)
+        await self.call(request, suppress=False)
         logging.info("%s response received", Action.get_variables)
 
     async def _send_set_variables(self):
@@ -294,28 +294,28 @@ class ChargePoint(ocpp.v201.ChargePoint):
                 }
             ]
         )
-        await self.call(request)
+        await self.call(request, suppress=False)
         logging.info("%s response received", Action.set_variables)
 
     async def _send_request_start_transaction(self):
         request = ocpp.v201.call.RequestStartTransaction(
             id_token={"id_token": "test_token", "type": "ISO14443"},
             evse_id=1,
-            remote_start_id=randint(1, 1000),  # noqa: S311
+            remote_start_id=randint(1, 2**31 - 1),  # noqa: S311
         )
-        await self.call(request)
+        await self.call(request, suppress=False)
         logging.info("%s response received", Action.request_start_transaction)
 
     async def _send_request_stop_transaction(self):
         request = ocpp.v201.call.RequestStopTransaction(
             transaction_id="test_transaction_123"
         )
-        await self.call(request)
+        await self.call(request, suppress=False)
         logging.info("%s response received", Action.request_stop_transaction)
 
     async def _send_reset(self):
         request = ocpp.v201.call.Reset(type=ResetEnumType.immediate)
-        response = await self.call(request)
+        response = await self.call(request, suppress=False)
 
         if response.status == ResetStatusEnumType.accepted:
             logging.info("%s successful", Action.reset)
@@ -324,7 +324,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
 
     async def _send_unlock_connector(self):
         request = ocpp.v201.call.UnlockConnector(evse_id=1, connector_id=1)
-        response = await self.call(request)
+        response = await self.call(request, suppress=False)
 
         if response.status == UnlockStatusEnumType.unlocked:
             logging.info("%s successful", Action.unlock_connector)
@@ -335,7 +335,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
         request = ocpp.v201.call.ChangeAvailability(
             operational_status=OperationalStatusEnumType.operative
         )
-        response = await self.call(request)
+        response = await self.call(request, suppress=False)
 
         if response.status == ChangeAvailabilityStatusEnumType.accepted:
             logging.info("%s successful", Action.change_availability)
@@ -346,7 +346,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
         request = ocpp.v201.call.TriggerMessage(
             requested_message=MessageTriggerEnumType.status_notification
         )
-        response = await self.call(request)
+        response = await self.call(request, suppress=False)
 
         if response.status == TriggerMessageStatusEnumType.accepted:
             logging.info("%s successful", Action.trigger_message)
@@ -357,7 +357,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
         request = ocpp.v201.call.DataTransfer(
             vendor_id="TestVendor", message_id="TestMessage", data="test_data"
         )
-        response = await self.call(request)
+        response = await self.call(request, suppress=False)
 
         if response.status == DataTransferStatusEnumType.accepted:
             logging.info("%s successful", Action.data_transfer)
@@ -373,7 +373,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
             ),
             certificate_type=CertificateSigningUseEnumType.charging_station_certificate,
         )
-        response = await self.call(request)
+        response = await self.call(request, suppress=False)
 
         if response.status == CertificateSignedStatusEnumType.accepted:
             logging.info("%s successful", Action.certificate_signed)
@@ -382,11 +382,11 @@ class ChargePoint(ocpp.v201.ChargePoint):
 
     async def _send_customer_information(self):
         request = ocpp.v201.call.CustomerInformation(
-            request_id=randint(1, 100),  # noqa: S311
+            request_id=randint(1, 2**31 - 1),  # noqa: S311
             report=True,
             clear=False,
         )
-        response = await self.call(request)
+        response = await self.call(request, suppress=False)
 
         if response.status == CustomerInformationStatusEnumType.accepted:
             logging.info("%s successful", Action.customer_information)
@@ -402,7 +402,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
                 "serial_number": "mock_serial_number",
             }
         )
-        response = await self.call(request)
+        response = await self.call(request, suppress=False)
 
         if response.status == DeleteCertificateStatusEnumType.accepted:
             logging.info("%s successful", Action.delete_certificate)
@@ -413,7 +413,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
         request = ocpp.v201.call.GetInstalledCertificateIds(
             certificate_type=[GetCertificateIdUseEnumType.csms_root_certificate],
         )
-        response = await self.call(request)
+        response = await self.call(request, suppress=False)
 
         if response.status == GetInstalledCertificateStatusEnumType.accepted:
             logging.info("%s successful", Action.get_installed_certificate_ids)
@@ -424,9 +424,9 @@ class ChargePoint(ocpp.v201.ChargePoint):
         request = ocpp.v201.call.GetLog(
             log={"remote_location": "https://example.com/logs"},
             log_type=LogEnumType.diagnostics_log,
-            request_id=randint(1, 100),  # noqa: S311
+            request_id=randint(1, 2**31 - 1),  # noqa: S311
         )
-        response = await self.call(request)
+        response = await self.call(request, suppress=False)
 
         if response.status == LogStatusEnumType.accepted:
             logging.info("%s successful", Action.get_log)
@@ -437,7 +437,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
         request = ocpp.v201.call.GetTransactionStatus(
             transaction_id="test_transaction_123",
         )
-        response = await self.call(request)
+        response = await self.call(request, suppress=False)
         logging.info(
             "%s response received: messages_in_queue=%s",
             Action.get_transaction_status,
@@ -453,7 +453,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
                 "-----END CERTIFICATE-----"
             ),
         )
-        response = await self.call(request)
+        response = await self.call(request, suppress=False)
 
         if response.status == InstallCertificateStatusEnumType.accepted:
             logging.info("%s successful", Action.install_certificate)
@@ -472,7 +472,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
                 "ocpp_interface": "Wired0",
             },
         )
-        response = await self.call(request)
+        response = await self.call(request, suppress=False)
 
         if response.status == SetNetworkProfileStatusEnumType.accepted:
             logging.info("%s successful", Action.set_network_profile)
@@ -481,13 +481,13 @@ class ChargePoint(ocpp.v201.ChargePoint):
 
     async def _send_update_firmware(self):
         request = ocpp.v201.call.UpdateFirmware(
-            request_id=randint(1, 100),  # noqa: S311
+            request_id=randint(1, 2**31 - 1),  # noqa: S311
             firmware={
                 "location": "https://example.com/firmware/v2.0.bin",
                 "retrieve_date_time": datetime.now(timezone.utc).isoformat(),
             },
         )
-        response = await self.call(request)
+        response = await self.call(request, suppress=False)
 
         if response.status == UpdateFirmwareStatusEnumType.accepted:
             logging.info("%s successful", Action.update_firmware)
