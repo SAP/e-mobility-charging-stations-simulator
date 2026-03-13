@@ -175,10 +175,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         },
       ],
       [BroadcastChannelProcedureName.START_TRANSACTION, this.handleStartTransaction.bind(this)],
-      [
-        BroadcastChannelProcedureName.STATUS_NOTIFICATION,
-        this.handleStatusNotification.bind(this),
-      ],
+      [BroadcastChannelProcedureName.STATUS_NOTIFICATION, this.handleStatusNotification.bind(this)],
       [
         BroadcastChannelProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR,
         (requestPayload?: BroadcastChannelRequestPayload) => {
