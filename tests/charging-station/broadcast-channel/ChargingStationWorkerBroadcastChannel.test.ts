@@ -37,7 +37,9 @@ import {
 // pattern from OCPP20TestUtils.ts to avoid `as any` casts.
 // ============================================================================
 
-type CommandHandler = (requestPayload?: BroadcastChannelRequestPayload) => Promise<unknown> | undefined
+type CommandHandler = (
+  requestPayload?: BroadcastChannelRequestPayload
+) => Promise<unknown> | undefined
 
 /**
  * Interface exposing protected static members of AbstractUIService for testing.
@@ -755,9 +757,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
       instance = new ChargingStationWorkerBroadcastChannel(station)
       const testable = createTestableWorkerBroadcastChannel(instance)
 
-      const handler = testable.commandHandlers.get(
-        BroadcastChannelProcedureName.NOTIFY_REPORT
-      )
+      const handler = testable.commandHandlers.get(BroadcastChannelProcedureName.NOTIFY_REPORT)
       assert.ok(handler != null)
       await handler({})
 
@@ -787,9 +787,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
       instance = new ChargingStationWorkerBroadcastChannel(station)
       const testable = createTestableWorkerBroadcastChannel(instance)
 
-      const handler = testable.commandHandlers.get(
-        BroadcastChannelProcedureName.SIGN_CERTIFICATE
-      )
+      const handler = testable.commandHandlers.get(BroadcastChannelProcedureName.SIGN_CERTIFICATE)
       assert.ok(handler != null)
       await handler({})
 
@@ -803,9 +801,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
       instance = new ChargingStationWorkerBroadcastChannel(station)
       const testable = createTestableWorkerBroadcastChannel(instance)
 
-      const handler = testable.commandHandlers.get(
-        BroadcastChannelProcedureName.TRANSACTION_EVENT
-      )
+      const handler = testable.commandHandlers.get(BroadcastChannelProcedureName.TRANSACTION_EVENT)
       assert.ok(handler != null)
       await handler({})
 
