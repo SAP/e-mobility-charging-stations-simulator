@@ -105,10 +105,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
     })
 
     await it('should have NOTIFY_CUSTOMER_INFORMATION in ProcedureName enum', () => {
-      assert.strictEqual(
-        ProcedureName.NOTIFY_CUSTOMER_INFORMATION,
-        'notifyCustomerInformation'
-      )
+      assert.strictEqual(ProcedureName.NOTIFY_CUSTOMER_INFORMATION, 'notifyCustomerInformation')
     })
 
     await it('should have NOTIFY_REPORT in ProcedureName enum', () => {
@@ -116,10 +113,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
     })
 
     await it('should have SECURITY_EVENT_NOTIFICATION in ProcedureName enum', () => {
-      assert.strictEqual(
-        ProcedureName.SECURITY_EVENT_NOTIFICATION,
-        'securityEventNotification'
-      )
+      assert.strictEqual(ProcedureName.SECURITY_EVENT_NOTIFICATION, 'securityEventNotification')
     })
 
     await it('should have SIGN_CERTIFICATE in ProcedureName enum', () => {
@@ -180,10 +174,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
     })
 
     await it('should have TRANSACTION_EVENT in BroadcastChannelProcedureName enum', () => {
-      assert.strictEqual(
-        BroadcastChannelProcedureName.TRANSACTION_EVENT,
-        'transactionEvent'
-      )
+      assert.strictEqual(BroadcastChannelProcedureName.TRANSACTION_EVENT, 'transactionEvent')
     })
   })
 
@@ -517,7 +508,9 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
       instance = new ChargingStationWorkerBroadcastChannel(station)
       const testable = createTestableWorkerBroadcastChannel(instance)
 
-      assert.ok(testable.commandHandlers.has(BroadcastChannelProcedureName.GET_15118_EV_CERTIFICATE))
+      assert.ok(
+        testable.commandHandlers.has(BroadcastChannelProcedureName.GET_15118_EV_CERTIFICATE)
+      )
     })
 
     await it('should have GET_CERTIFICATE_STATUS command handler registered', () => {
@@ -545,9 +538,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
       instance = new ChargingStationWorkerBroadcastChannel(station)
       const testable = createTestableWorkerBroadcastChannel(instance)
 
-      assert.ok(
-        testable.commandHandlers.has(BroadcastChannelProcedureName.LOG_STATUS_NOTIFICATION)
-      )
+      assert.ok(testable.commandHandlers.has(BroadcastChannelProcedureName.LOG_STATUS_NOTIFICATION))
     })
 
     await it('should have NOTIFY_CUSTOMER_INFORMATION command handler registered', () => {

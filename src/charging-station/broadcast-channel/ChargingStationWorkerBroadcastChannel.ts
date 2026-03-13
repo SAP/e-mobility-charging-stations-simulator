@@ -547,9 +547,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         }
         return ResponseStatus.FAILURE
       case BroadcastChannelProcedureName.SIGN_CERTIFICATE:
-        if (
-          (commandResponse as OCPP20SignCertificateResponse).status === GenericStatus.Accepted
-        ) {
+        if ((commandResponse as OCPP20SignCertificateResponse).status === GenericStatus.Accepted) {
           return ResponseStatus.SUCCESS
         }
         return ResponseStatus.FAILURE

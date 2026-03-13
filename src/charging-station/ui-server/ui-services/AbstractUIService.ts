@@ -54,7 +54,10 @@ export abstract class AbstractUIService {
       ProcedureName.FIRMWARE_STATUS_NOTIFICATION,
       BroadcastChannelProcedureName.FIRMWARE_STATUS_NOTIFICATION,
     ],
-    [ProcedureName.GET_15118_EV_CERTIFICATE, BroadcastChannelProcedureName.GET_15118_EV_CERTIFICATE],
+    [
+      ProcedureName.GET_15118_EV_CERTIFICATE,
+      BroadcastChannelProcedureName.GET_15118_EV_CERTIFICATE,
+    ],
     [ProcedureName.GET_CERTIFICATE_STATUS, BroadcastChannelProcedureName.GET_CERTIFICATE_STATUS],
     [ProcedureName.HEARTBEAT, BroadcastChannelProcedureName.HEARTBEAT],
     [ProcedureName.LOG_STATUS_NOTIFICATION, BroadcastChannelProcedureName.LOG_STATUS_NOTIFICATION],
