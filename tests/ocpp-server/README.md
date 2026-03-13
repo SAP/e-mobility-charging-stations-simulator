@@ -34,7 +34,18 @@ Or
 poetry run python server.py
 ```
 
-The server will start listening for connections on port 9000.
+The server will start listening for connections on `127.0.0.1:9000` by default.
+
+### Server Configuration
+
+```shell
+poetry run python server.py --host <HOST> --port <PORT>
+```
+
+**Options:**
+
+- `--host <HOST>`: Server bind address (default: `127.0.0.1`)
+- `--port <PORT>`: Server port (default: `9000`)
 
 ## Running the server with OCPP command sending
 
@@ -95,6 +106,24 @@ poetry run task server --command GetBaseReport --period 5
 - `SignCertificate` - Handle CSR signing requests
 - `StatusNotification` - Handle status notifications
 - `TransactionEvent` - Handle transaction events (Started/Updated/Ended)
+
+## Charging Behavior Configuration
+
+```shell
+poetry run python server.py --boot-status <STATUS> --total-cost <COST>
+```
+
+**Options:**
+
+- `--boot-status <STATUS>`: BootNotification response status (`accepted`, `pending`, `rejected`; default: `accepted`)
+- `--total-cost <COST>`: Total cost returned in TransactionEvent.Updated responses (default: `10.0`)
+
+**Examples:**
+
+```shell
+poetry run python server.py --boot-status rejected
+poetry run python server.py --total-cost 25.50
+```
 
 ## Authorization Testing Modes
 

@@ -1,3 +1,5 @@
+"""OCPP 2.0.1 mock server for e-mobility charging station simulator testing."""
+
 import argparse
 import asyncio
 import logging
@@ -7,7 +9,7 @@ from random import randint
 
 import ocpp.v201
 import websockets
-from ocpp.exceptions import InternalError
+from ocpp.exceptions import InternalError, OCPPError
 from ocpp.routing import on
 from ocpp.v201.enums import (
     Action,
@@ -45,25 +47,42 @@ from websockets import ConnectionClosed
 
 from timer import Timer
 
-# Setting up the logging configuration to display debug level messages.
 logging.basicConfig(level=logging.DEBUG)
 
-ChargePoints = set()
+# Server defaults
+DEFAULT_HOST = "127.0.0.1"
+DEFAULT_PORT = 9000
+DEFAULT_HEARTBEAT_INTERVAL = 60
+DEFAULT_TOTAL_COST = 10.0
+SUBPROTOCOLS = ["ocpp2.0", "ocpp2.0.1"]
+
+ChargePoints: set["ChargePoint"] = set()
 
 
 class ChargePoint(ocpp.v201.ChargePoint):
+    """OCPP 2.0.1 charge point handler with configurable behavior for testing."""
+
     _command_timer: Timer | None
     _auth_config: dict
+    _boot_status: RegistrationStatusEnumType
+    _total_cost: float
 
-    def __init__(self, connection, auth_config: dict | None = None):
+    def __init__(
+        self,
+        connection,
+        auth_config: dict | None = None,
+        boot_status: RegistrationStatusEnumType = RegistrationStatusEnumType.accepted,
+        total_cost: float = DEFAULT_TOTAL_COST,
+    ):
         super().__init__(connection.path.strip("/"), connection)
         self._command_timer = None
-        # Auth configuration for testing different scenarios
+        self._boot_status = boot_status
+        self._total_cost = total_cost
         self._auth_config = auth_config or {
-            "mode": "normal",  # normal, offline, whitelist, blacklist, rate_limit
+            "mode": "normal",
             "whitelist": ["valid_token", "test_token", "authorized_user"],
             "blacklist": ["blocked_token", "invalid_user"],
-            "offline": False,  # Simulate network failure
+            "offline": False,
             "default_status": AuthorizationStatusEnumType.accepted,
         }
 
@@ -84,21 +103,19 @@ class ChargePoint(ocpp.v201.ChargePoint):
             )
         if mode == "rate_limit":
             return AuthorizationStatusEnumType.not_at_this_time
-        # normal mode
         return self._auth_config.get(
             "default_status", AuthorizationStatusEnumType.accepted
         )
 
-    # Message handlers to receive OCPP messages.
+    # --- Incoming message handlers (CS → CSMS) ---
+
     @on(Action.boot_notification)
     async def on_boot_notification(self, charging_station, reason, **kwargs):
         logging.info("Received %s", Action.boot_notification)
-        # Create and return a BootNotification response with the current time,
-        # an interval of 60 seconds, and an accepted status.
         return ocpp.v201.call_result.BootNotification(
             current_time=datetime.now(timezone.utc).isoformat(),
-            interval=60,
-            status=RegistrationStatusEnumType.accepted,
+            interval=DEFAULT_HEARTBEAT_INTERVAL,
+            status=self._boot_status,
         )
 
     @on(Action.heartbeat)
@@ -121,7 +138,6 @@ class ChargePoint(ocpp.v201.ChargePoint):
             "Received %s for token: %s", Action.authorize, id_token.get("id_token")
         )
 
-        # Simulate offline mode (network failure)
         if self._auth_config.get("offline", False):
             logging.warning("Offline mode - simulating network failure")
             raise InternalError(description="Simulated network failure")
@@ -158,7 +174,9 @@ class ChargePoint(ocpp.v201.ChargePoint):
                 )
             case TransactionEventEnumType.updated:
                 logging.info("Received %s Updated", Action.transaction_event)
-                return ocpp.v201.call_result.TransactionEvent(total_cost=10)
+                return ocpp.v201.call_result.TransactionEvent(
+                    total_cost=self._total_cost
+                )
             case TransactionEventEnumType.ended:
                 logging.info("Received %s Ended", Action.transaction_event)
                 return ocpp.v201.call_result.TransactionEvent()
@@ -231,7 +249,8 @@ class ChargePoint(ocpp.v201.ChargePoint):
         logging.info("Received %s", Action.notify_customer_information)
         return ocpp.v201.call_result.NotifyCustomerInformation()
 
-    # Request handlers to emit OCPP messages.
+    # --- Outgoing commands (CSMS → CS) ---
+
     async def _send_clear_cache(self):
         request = ocpp.v201.call.ClearCache()
         response = await self.call(request)
@@ -475,51 +494,68 @@ class ChargePoint(ocpp.v201.ChargePoint):
         else:
             logging.info("%s failed", Action.update_firmware)
 
+    # --- Command dispatch ---
+
     async def _send_command(self, command_name: Action):
         logging.debug("Sending OCPP command %s", command_name)
-        match command_name:
-            case Action.clear_cache:
-                await self._send_clear_cache()
-            case Action.get_base_report:
-                await self._send_get_base_report()
-            case Action.get_variables:
-                await self._send_get_variables()
-            case Action.set_variables:
-                await self._send_set_variables()
-            case Action.request_start_transaction:
-                await self._send_request_start_transaction()
-            case Action.request_stop_transaction:
-                await self._send_request_stop_transaction()
-            case Action.reset:
-                await self._send_reset()
-            case Action.unlock_connector:
-                await self._send_unlock_connector()
-            case Action.change_availability:
-                await self._send_change_availability()
-            case Action.trigger_message:
-                await self._send_trigger_message()
-            case Action.data_transfer:
-                await self._send_data_transfer()
-            case Action.certificate_signed:
-                await self._send_certificate_signed()
-            case Action.customer_information:
-                await self._send_customer_information()
-            case Action.delete_certificate:
-                await self._send_delete_certificate()
-            case Action.get_installed_certificate_ids:
-                await self._send_get_installed_certificate_ids()
-            case Action.get_log:
-                await self._send_get_log()
-            case Action.get_transaction_status:
-                await self._send_get_transaction_status()
-            case Action.install_certificate:
-                await self._send_install_certificate()
-            case Action.set_network_profile:
-                await self._send_set_network_profile()
-            case Action.update_firmware:
-                await self._send_update_firmware()
-            case _:
-                logging.warning("Not supported command %s", command_name)
+        try:
+            match command_name:
+                case Action.clear_cache:
+                    await self._send_clear_cache()
+                case Action.get_base_report:
+                    await self._send_get_base_report()
+                case Action.get_variables:
+                    await self._send_get_variables()
+                case Action.set_variables:
+                    await self._send_set_variables()
+                case Action.request_start_transaction:
+                    await self._send_request_start_transaction()
+                case Action.request_stop_transaction:
+                    await self._send_request_stop_transaction()
+                case Action.reset:
+                    await self._send_reset()
+                case Action.unlock_connector:
+                    await self._send_unlock_connector()
+                case Action.change_availability:
+                    await self._send_change_availability()
+                case Action.trigger_message:
+                    await self._send_trigger_message()
+                case Action.data_transfer:
+                    await self._send_data_transfer()
+                case Action.certificate_signed:
+                    await self._send_certificate_signed()
+                case Action.customer_information:
+                    await self._send_customer_information()
+                case Action.delete_certificate:
+                    await self._send_delete_certificate()
+                case Action.get_installed_certificate_ids:
+                    await self._send_get_installed_certificate_ids()
+                case Action.get_log:
+                    await self._send_get_log()
+                case Action.get_transaction_status:
+                    await self._send_get_transaction_status()
+                case Action.install_certificate:
+                    await self._send_install_certificate()
+                case Action.set_network_profile:
+                    await self._send_set_network_profile()
+                case Action.update_firmware:
+                    await self._send_update_firmware()
+                case _:
+                    logging.warning("Not supported command %s", command_name)
+        except TimeoutError:
+            logging.error("Timeout waiting for %s response", command_name)
+        except OCPPError as e:
+            logging.error(
+                "OCPP error sending %s: [%s] %s",
+                command_name,
+                type(e).__name__,
+                e.description,
+            )
+        except ConnectionClosed:
+            logging.warning("Connection closed while sending %s", command_name)
+            self.handle_connection_closed()
+        except Exception:
+            logging.exception("Unexpected error sending %s", command_name)
 
     async def send_command(
         self, command_name: Action, delay: float | None, period: float | None
@@ -530,14 +566,14 @@ class ChargePoint(ocpp.v201.ChargePoint):
                     delay,
                     False,
                     self._send_command,
-                    [command_name],
+                    (command_name,),
                 )
             if period and not self._command_timer:
                 self._command_timer = Timer(
                     period,
                     True,
                     self._send_command,
-                    [command_name],
+                    (command_name,),
                 )
         except ConnectionClosed:
             self.handle_connection_closed()
@@ -550,17 +586,16 @@ class ChargePoint(ocpp.v201.ChargePoint):
         logging.debug("Connected ChargePoint(s): %d", len(ChargePoints))
 
 
-# Function to handle new WebSocket connections.
 async def on_connect(
     websocket,
     command_name: Action | None,
     delay: float | None,
     period: float | None,
     auth_config: dict | None,
+    boot_status: RegistrationStatusEnumType,
+    total_cost: float,
 ):
-    """For every new charge point that connects, create a ChargePoint instance and start
-    listening for messages.
-    """
+    """Handle new WebSocket connections from charge points."""
     try:
         requested_protocols = websocket.request_headers["Sec-WebSocket-Protocol"]
     except KeyError:
@@ -578,7 +613,12 @@ async def on_connect(
         )
         return await websocket.close()
 
-    cp = ChargePoint(websocket, auth_config)
+    cp = ChargePoint(
+        websocket,
+        auth_config=auth_config,
+        boot_status=boot_status,
+        total_cost=total_cost,
+    )
     if command_name:
         await cp.send_command(command_name, delay, period)
 
@@ -600,7 +640,6 @@ def check_positive_number(value):
     return value
 
 
-# Main function to start the WebSocket server.
 async def main():
     parser = argparse.ArgumentParser(description="OCPP2 Server")
     parser.add_argument("-c", "--command", type=Action, help="command name")
@@ -618,7 +657,35 @@ async def main():
         help="period in seconds",
     )
 
-    # Auth configuration arguments
+    # Server configuration
+    parser.add_argument(
+        "--host",
+        type=str,
+        default=DEFAULT_HOST,
+        help=f"server host (default: {DEFAULT_HOST})",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=DEFAULT_PORT,
+        help=f"server port (default: {DEFAULT_PORT})",
+    )
+
+    # Charging configuration
+    parser.add_argument(
+        "--boot-status",
+        type=RegistrationStatusEnumType,
+        default=RegistrationStatusEnumType.accepted,
+        help="boot notification response status (default: accepted)",
+    )
+    parser.add_argument(
+        "--total-cost",
+        type=float,
+        default=DEFAULT_TOTAL_COST,
+        help=f"TransactionEvent.Updated total cost (default: {DEFAULT_TOTAL_COST})",
+    )
+
+    # Auth configuration
     parser.add_argument(
         "--auth-mode",
         type=str,
@@ -646,14 +713,11 @@ async def main():
         help="Simulate offline/network failure mode",
     )
 
-    # Parse args to check if group.required should be set
     args, _ = parser.parse_known_args()
     group.required = args.command is not None
 
-    # Re-parse with full validation
     args = parser.parse_args()
 
-    # Build auth configuration from CLI args
     auth_config = {
         "mode": args.auth_mode,
         "whitelist": args.whitelist,
@@ -666,7 +730,6 @@ async def main():
         "Auth configuration: mode=%s, offline=%s", args.auth_mode, args.offline
     )
 
-    # Create the WebSocket server and specify the handler for new connections.
     server = await websockets.serve(
         partial(
             on_connect,
@@ -674,18 +737,17 @@ async def main():
             delay=args.delay,
             period=args.period,
             auth_config=auth_config,
+            boot_status=args.boot_status,
+            total_cost=args.total_cost,
         ),
-        "127.0.0.1",  # Listen on loopback.
-        9000,  # Port number.
-        subprotocols=["ocpp2.0", "ocpp2.0.1"],  # Specify OCPP 2.0.1 subprotocols.
+        args.host,
+        args.port,
+        subprotocols=SUBPROTOCOLS,
     )
-    logging.info("WebSocket Server Started")
+    logging.info("WebSocket Server Started on %s:%d", args.host, args.port)
 
-    # Wait for the server to close (runs indefinitely).
     await server.wait_closed()
 
 
-# Entry point of the script.
 if __name__ == "__main__":
-    # Run the main function to start the server.
     asyncio.run(main())
