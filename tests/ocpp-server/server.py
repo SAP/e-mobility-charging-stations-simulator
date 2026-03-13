@@ -4,27 +4,42 @@ import logging
 from datetime import datetime, timezone
 from functools import partial
 from random import randint
-from typing import Optional
 
 import ocpp.v201
 import websockets
+from ocpp.exceptions import InternalError
 from ocpp.routing import on
 from ocpp.v201.enums import (
     Action,
     AuthorizationStatusEnumType,
+    CertificateSignedStatusEnumType,
+    CertificateSigningUseEnumType,
     ChangeAvailabilityStatusEnumType,
     ClearCacheStatusEnumType,
+    CustomerInformationStatusEnumType,
     DataTransferStatusEnumType,
+    DeleteCertificateStatusEnumType,
     GenericDeviceModelStatusEnumType,
+    GenericStatusEnumType,
+    GetCertificateIdUseEnumType,
+    GetCertificateStatusEnumType,
+    GetInstalledCertificateStatusEnumType,
+    InstallCertificateStatusEnumType,
+    InstallCertificateUseEnumType,
+    Iso15118EVCertificateStatusEnumType,
+    LogEnumType,
+    LogStatusEnumType,
     MessageTriggerEnumType,
     OperationalStatusEnumType,
     RegistrationStatusEnumType,
     ReportBaseEnumType,
     ResetEnumType,
     ResetStatusEnumType,
+    SetNetworkProfileStatusEnumType,
     TransactionEventEnumType,
     TriggerMessageStatusEnumType,
     UnlockStatusEnumType,
+    UpdateFirmwareStatusEnumType,
 )
 from websockets import ConnectionClosed
 
@@ -37,10 +52,10 @@ ChargePoints = set()
 
 
 class ChargePoint(ocpp.v201.ChargePoint):
-    _command_timer: Optional[Timer]
+    _command_timer: Timer | None
     _auth_config: dict
 
-    def __init__(self, connection, auth_config: Optional[dict] = None):
+    def __init__(self, connection, auth_config: dict | None = None):
         super().__init__(connection.path.strip("/"), connection)
         self._command_timer = None
         # Auth configuration for testing different scenarios
@@ -51,6 +66,28 @@ class ChargePoint(ocpp.v201.ChargePoint):
             "offline": False,  # Simulate network failure
             "default_status": AuthorizationStatusEnumType.accepted,
         }
+
+    def _resolve_auth_status(self, token_id: str) -> AuthorizationStatusEnumType:
+        """Resolve authorization status based on auth mode and token."""
+        mode = self._auth_config.get("mode", "normal")
+        if mode == "whitelist":
+            return (
+                AuthorizationStatusEnumType.accepted
+                if token_id in self._auth_config.get("whitelist", [])
+                else AuthorizationStatusEnumType.blocked
+            )
+        if mode == "blacklist":
+            return (
+                AuthorizationStatusEnumType.blocked
+                if token_id in self._auth_config.get("blacklist", [])
+                else AuthorizationStatusEnumType.accepted
+            )
+        if mode == "rate_limit":
+            return AuthorizationStatusEnumType.not_at_this_time
+        # normal mode
+        return self._auth_config.get(
+            "default_status", AuthorizationStatusEnumType.accepted
+        )
 
     # Message handlers to receive OCPP messages.
     @on(Action.boot_notification)
@@ -81,37 +118,16 @@ class ChargePoint(ocpp.v201.ChargePoint):
     @on(Action.authorize)
     async def on_authorize(self, id_token, **kwargs):
         logging.info(
-            "Received %s for token: %s", Action.authorize, id_token.get("idToken")
+            "Received %s for token: %s", Action.authorize, id_token.get("id_token")
         )
 
         # Simulate offline mode (network failure)
         if self._auth_config.get("offline", False):
             logging.warning("Offline mode - simulating network failure")
-            raise ConnectionError("Simulated network failure")
+            raise InternalError(description="Simulated network failure")
 
-        token_id = id_token.get("idToken", "")
-        mode = self._auth_config.get("mode", "normal")
-
-        # Determine authorization status based on mode
-        if mode == "whitelist":
-            status = (
-                AuthorizationStatusEnumType.accepted
-                if token_id in self._auth_config.get("whitelist", [])
-                else AuthorizationStatusEnumType.blocked
-            )
-        elif mode == "blacklist":
-            status = (
-                AuthorizationStatusEnumType.blocked
-                if token_id in self._auth_config.get("blacklist", [])
-                else AuthorizationStatusEnumType.accepted
-            )
-        elif mode == "rate_limit":
-            # Simulate rate limiting by rejecting with NotAtThisTime
-            status = AuthorizationStatusEnumType.not_at_this_time
-        else:  # normal mode
-            status = self._auth_config.get(
-                "default_status", AuthorizationStatusEnumType.accepted
-            )
+        token_id = id_token.get("id_token", "")
+        status = self._resolve_auth_status(token_id)
 
         logging.info("Authorization status for %s: %s", token_id, status)
         return ocpp.v201.call_result.Authorize(id_token_info={"status": status})
@@ -130,28 +146,9 @@ class ChargePoint(ocpp.v201.ChargePoint):
             case TransactionEventEnumType.started:
                 logging.info("Received %s Started", Action.transaction_event)
 
-                # Pre-authorization validation for remote start transactions
                 id_token = kwargs.get("id_token", {})
-                token_id = id_token.get("idToken", "")
-                mode = self._auth_config.get("mode", "normal")
-
-                # Apply whitelist/blacklist logic for transaction start
-                if mode == "whitelist":
-                    status = (
-                        AuthorizationStatusEnumType.accepted
-                        if token_id in self._auth_config.get("whitelist", [])
-                        else AuthorizationStatusEnumType.blocked
-                    )
-                elif mode == "blacklist":
-                    status = (
-                        AuthorizationStatusEnumType.blocked
-                        if token_id in self._auth_config.get("blacklist", [])
-                        else AuthorizationStatusEnumType.accepted
-                    )
-                else:
-                    status = self._auth_config.get(
-                        "default_status", AuthorizationStatusEnumType.accepted
-                    )
+                token_id = id_token.get("id_token", "")
+                status = self._resolve_auth_status(token_id)
 
                 logging.info(
                     "Transaction start auth status for %s: %s", token_id, status
@@ -164,6 +161,9 @@ class ChargePoint(ocpp.v201.ChargePoint):
                 return ocpp.v201.call_result.TransactionEvent(total_cost=10)
             case TransactionEventEnumType.ended:
                 logging.info("Received %s Ended", Action.transaction_event)
+                return ocpp.v201.call_result.TransactionEvent()
+            case _:
+                logging.warning("Unknown transaction event type: %s", event_type)
                 return ocpp.v201.call_result.TransactionEvent()
 
     @on(Action.meter_values)
@@ -199,6 +199,37 @@ class ChargePoint(ocpp.v201.ChargePoint):
     async def on_security_event_notification(self, event_type, timestamp, **kwargs):
         logging.info("Received %s", Action.security_event_notification)
         return ocpp.v201.call_result.SecurityEventNotification()
+
+    @on(Action.get_15118_ev_certificate)
+    async def on_get_15118_ev_certificate(
+        self, iso15118_schema_version, action, exi_request, **kwargs
+    ):
+        logging.info("Received %s", Action.get_15118_ev_certificate)
+        return ocpp.v201.call_result.Get15118EVCertificate(
+            status=Iso15118EVCertificateStatusEnumType.accepted,
+            exi_response="mock_exi_response_data",
+        )
+
+    @on(Action.get_certificate_status)
+    async def on_get_certificate_status(self, ocsp_request_data, **kwargs):
+        logging.info("Received %s", Action.get_certificate_status)
+        return ocpp.v201.call_result.GetCertificateStatus(
+            status=GetCertificateStatusEnumType.accepted,
+        )
+
+    @on(Action.sign_certificate)
+    async def on_sign_certificate(self, csr, **kwargs):
+        logging.info("Received %s", Action.sign_certificate)
+        return ocpp.v201.call_result.SignCertificate(
+            status=GenericStatusEnumType.accepted,
+        )
+
+    @on(Action.notify_customer_information)
+    async def on_notify_customer_information(
+        self, data, seq_no: int, generated_at, request_id: int, **kwargs
+    ):
+        logging.info("Received %s", Action.notify_customer_information)
+        return ocpp.v201.call_result.NotifyCustomerInformation()
 
     # Request handlers to emit OCPP messages.
     async def _send_clear_cache(self):
@@ -267,10 +298,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
         request = ocpp.v201.call.Reset(type=ResetEnumType.immediate)
         response = await self.call(request)
 
-        if (
-            hasattr(response, "status")
-            and response.status == ResetStatusEnumType.accepted
-        ):
+        if response.status == ResetStatusEnumType.accepted:
             logging.info("%s successful", Action.reset)
         else:
             logging.info("%s failed", Action.reset)
@@ -290,10 +318,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
         )
         response = await self.call(request)
 
-        if (
-            hasattr(response, "status")
-            and response.status == ChangeAvailabilityStatusEnumType.accepted
-        ):
+        if response.status == ChangeAvailabilityStatusEnumType.accepted:
             logging.info("%s successful", Action.change_availability)
         else:
             logging.info("%s failed", Action.change_availability)
@@ -304,10 +329,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
         )
         response = await self.call(request)
 
-        if (
-            hasattr(response, "status")
-            and response.status == TriggerMessageStatusEnumType.accepted
-        ):
+        if response.status == TriggerMessageStatusEnumType.accepted:
             logging.info("%s successful", Action.trigger_message)
         else:
             logging.info("%s failed", Action.trigger_message)
@@ -322,6 +344,136 @@ class ChargePoint(ocpp.v201.ChargePoint):
             logging.info("%s successful", Action.data_transfer)
         else:
             logging.info("%s failed", Action.data_transfer)
+
+    async def _send_certificate_signed(self):
+        request = ocpp.v201.call.CertificateSigned(
+            certificate_chain=(
+                "-----BEGIN CERTIFICATE-----\n"
+                "MIIBkTCB+wIUMockCertificateForTesting=\n"
+                "-----END CERTIFICATE-----"
+            ),
+            certificate_type=CertificateSigningUseEnumType.charging_station_certificate,
+        )
+        response = await self.call(request)
+
+        if response.status == CertificateSignedStatusEnumType.accepted:
+            logging.info("%s successful", Action.certificate_signed)
+        else:
+            logging.info("%s failed", Action.certificate_signed)
+
+    async def _send_customer_information(self):
+        request = ocpp.v201.call.CustomerInformation(
+            request_id=randint(1, 100),  # noqa: S311
+            report=True,
+            clear=False,
+        )
+        response = await self.call(request)
+
+        if response.status == CustomerInformationStatusEnumType.accepted:
+            logging.info("%s successful", Action.customer_information)
+        else:
+            logging.info("%s failed", Action.customer_information)
+
+    async def _send_delete_certificate(self):
+        request = ocpp.v201.call.DeleteCertificate(
+            certificate_hash_data={
+                "hash_algorithm": "SHA256",
+                "issuer_name_hash": "mock_issuer_name_hash",
+                "issuer_key_hash": "mock_issuer_key_hash",
+                "serial_number": "mock_serial_number",
+            }
+        )
+        response = await self.call(request)
+
+        if response.status == DeleteCertificateStatusEnumType.accepted:
+            logging.info("%s successful", Action.delete_certificate)
+        else:
+            logging.info("%s failed", Action.delete_certificate)
+
+    async def _send_get_installed_certificate_ids(self):
+        request = ocpp.v201.call.GetInstalledCertificateIds(
+            certificate_type=[GetCertificateIdUseEnumType.csms_root_certificate],
+        )
+        response = await self.call(request)
+
+        if response.status == GetInstalledCertificateStatusEnumType.accepted:
+            logging.info("%s successful", Action.get_installed_certificate_ids)
+        else:
+            logging.info("%s failed", Action.get_installed_certificate_ids)
+
+    async def _send_get_log(self):
+        request = ocpp.v201.call.GetLog(
+            log={"remote_location": "https://example.com/logs"},
+            log_type=LogEnumType.diagnostics_log,
+            request_id=randint(1, 100),  # noqa: S311
+        )
+        response = await self.call(request)
+
+        if response.status == LogStatusEnumType.accepted:
+            logging.info("%s successful", Action.get_log)
+        else:
+            logging.info("%s failed", Action.get_log)
+
+    async def _send_get_transaction_status(self):
+        request = ocpp.v201.call.GetTransactionStatus(
+            transaction_id="test_transaction_123",
+        )
+        response = await self.call(request)
+        logging.info(
+            "%s response received: messages_in_queue=%s",
+            Action.get_transaction_status,
+            response.messages_in_queue,
+        )
+
+    async def _send_install_certificate(self):
+        request = ocpp.v201.call.InstallCertificate(
+            certificate_type=InstallCertificateUseEnumType.csms_root_certificate,
+            certificate=(
+                "-----BEGIN CERTIFICATE-----\n"
+                "MIIBkTCB+wIUMockRootCertificate=\n"
+                "-----END CERTIFICATE-----"
+            ),
+        )
+        response = await self.call(request)
+
+        if response.status == InstallCertificateStatusEnumType.accepted:
+            logging.info("%s successful", Action.install_certificate)
+        else:
+            logging.info("%s failed", Action.install_certificate)
+
+    async def _send_set_network_profile(self):
+        request = ocpp.v201.call.SetNetworkProfile(
+            configuration_slot=1,
+            connection_data={
+                "ocpp_version": "OCPP20",
+                "ocpp_transport": "JSON",
+                "ocpp_csms_url": "ws://127.0.0.1:9000",
+                "message_timeout": 30,
+                "security_profile": 0,
+                "ocpp_interface": "Wired0",
+            },
+        )
+        response = await self.call(request)
+
+        if response.status == SetNetworkProfileStatusEnumType.accepted:
+            logging.info("%s successful", Action.set_network_profile)
+        else:
+            logging.info("%s failed", Action.set_network_profile)
+
+    async def _send_update_firmware(self):
+        request = ocpp.v201.call.UpdateFirmware(
+            request_id=randint(1, 100),  # noqa: S311
+            firmware={
+                "location": "https://example.com/firmware/v2.0.bin",
+                "retrieve_date_time": datetime.now(timezone.utc).isoformat(),
+            },
+        )
+        response = await self.call(request)
+
+        if response.status == UpdateFirmwareStatusEnumType.accepted:
+            logging.info("%s successful", Action.update_firmware)
+        else:
+            logging.info("%s failed", Action.update_firmware)
 
     async def _send_command(self, command_name: Action):
         logging.debug("Sending OCPP command %s", command_name)
@@ -348,11 +500,29 @@ class ChargePoint(ocpp.v201.ChargePoint):
                 await self._send_trigger_message()
             case Action.data_transfer:
                 await self._send_data_transfer()
+            case Action.certificate_signed:
+                await self._send_certificate_signed()
+            case Action.customer_information:
+                await self._send_customer_information()
+            case Action.delete_certificate:
+                await self._send_delete_certificate()
+            case Action.get_installed_certificate_ids:
+                await self._send_get_installed_certificate_ids()
+            case Action.get_log:
+                await self._send_get_log()
+            case Action.get_transaction_status:
+                await self._send_get_transaction_status()
+            case Action.install_certificate:
+                await self._send_install_certificate()
+            case Action.set_network_profile:
+                await self._send_set_network_profile()
+            case Action.update_firmware:
+                await self._send_update_firmware()
             case _:
-                logging.info(f"Not supported command {command_name}")
+                logging.warning("Not supported command %s", command_name)
 
     async def send_command(
-        self, command_name: Action, delay: Optional[float], period: Optional[float]
+        self, command_name: Action, delay: float | None, period: float | None
     ):
         try:
             if delay and not self._command_timer:
@@ -376,17 +546,17 @@ class ChargePoint(ocpp.v201.ChargePoint):
         logging.info("ChargePoint %s closed connection", self.id)
         if self._command_timer:
             self._command_timer.cancel()
-        ChargePoints.remove(self)
+        ChargePoints.discard(self)
         logging.debug("Connected ChargePoint(s): %d", len(ChargePoints))
 
 
 # Function to handle new WebSocket connections.
 async def on_connect(
     websocket,
-    command_name: Optional[Action],
-    delay: Optional[float],
-    period: Optional[float],
-    auth_config: Optional[dict],
+    command_name: Action | None,
+    delay: float | None,
+    period: float | None,
+    auth_config: dict | None,
 ):
     """For every new charge point that connects, create a ChargePoint instance and start
     listening for messages.
@@ -420,7 +590,7 @@ async def on_connect(
         cp.handle_connection_closed()
 
 
-def check_positive_number(value: Optional[float]):
+def check_positive_number(value):
     try:
         value = float(value)
     except ValueError:

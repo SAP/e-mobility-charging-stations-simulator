@@ -12,16 +12,20 @@ ocpp = "^2.1.0"
 
 [tool.poetry.group.dev.dependencies]
 taskipy = "^1"
-ruff = "^0.14"
+ruff = "^0.15"
+pytest = "^8"
 
 [tool.taskipy.tasks]
 server = "poetry run python server.py"
-test = "poetry run python test_server.py"
+test = "poetry run pytest test_server.py -v"
 format = "ruff check --fix . && ruff format ."
 lint = "ruff check --diff . && ruff format --check --diff ."
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "ASYNC", "S", "B", "A", "Q", "RUF", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+"test_*.py" = ["S101"]
 
 
 [build-system]

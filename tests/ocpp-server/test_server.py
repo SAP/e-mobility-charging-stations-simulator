@@ -1,23 +1,145 @@
-#!/usr/bin/env python3
-"""
-Test script to verify OCPP 2.0 commands supported by the mock server
-"""
+"""Tests for the OCPP 2.0.1 mock server."""
 
-import logging
+import argparse
+from typing import ClassVar
+from unittest.mock import MagicMock
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+import pytest
+from ocpp.v201.enums import AuthorizationStatusEnumType
+
+from server import ChargePoint, check_positive_number
 
 
-def test_outgoing_commands():
-    """Test the presence of outgoing command methods"""
-    try:
-        from server import ChargePoint
-    except ImportError as e:
-        logging.error(f"Failed to import ChargePoint: {e}")
-        return [("import_error", "❌ FAIL: Cannot import server module")]
+@pytest.fixture
+def mock_connection():
+    """Create a mock WebSocket connection for ChargePoint instantiation."""
+    conn = MagicMock()
+    conn.path = "/TestChargePoint"
+    return conn
 
-    expected_methods = [
+
+@pytest.fixture
+def charge_point(mock_connection):
+    """Create a ChargePoint instance with default auth config."""
+    return ChargePoint(mock_connection)
+
+
+@pytest.fixture
+def whitelist_charge_point(mock_connection):
+    """Create a ChargePoint with whitelist auth mode."""
+    return ChargePoint(
+        mock_connection,
+        auth_config={
+            "mode": "whitelist",
+            "whitelist": ["valid_token", "test_token"],
+            "blacklist": [],
+            "offline": False,
+            "default_status": AuthorizationStatusEnumType.accepted,
+        },
+    )
+
+
+@pytest.fixture
+def blacklist_charge_point(mock_connection):
+    """Create a ChargePoint with blacklist auth mode."""
+    return ChargePoint(
+        mock_connection,
+        auth_config={
+            "mode": "blacklist",
+            "whitelist": [],
+            "blacklist": ["blocked_token"],
+            "offline": False,
+            "default_status": AuthorizationStatusEnumType.accepted,
+        },
+    )
+
+
+class TestCheckPositiveNumber:
+    """Tests for the check_positive_number argument validator."""
+
+    def test_positive_integer(self):
+        assert check_positive_number("5") == 5.0
+
+    def test_positive_float(self):
+        assert check_positive_number("3.14") == 3.14
+
+    def test_zero_raises(self):
+        with pytest.raises(
+            argparse.ArgumentTypeError, match="must be a positive number"
+        ):
+            check_positive_number("0")
+
+    def test_negative_raises(self):
+        with pytest.raises(
+            argparse.ArgumentTypeError, match="must be a positive number"
+        ):
+            check_positive_number("-1")
+
+    def test_non_numeric_raises(self):
+        with pytest.raises(argparse.ArgumentTypeError, match="must be a number"):
+            check_positive_number("abc")
+
+
+class TestResolveAuthStatus:
+    """Tests for the _resolve_auth_status method."""
+
+    def test_normal_mode_accepts(self, charge_point):
+        status = charge_point._resolve_auth_status("any_token")
+        assert status == AuthorizationStatusEnumType.accepted
+
+    def test_whitelist_mode_accepts_valid_token(self, whitelist_charge_point):
+        status = whitelist_charge_point._resolve_auth_status("valid_token")
+        assert status == AuthorizationStatusEnumType.accepted
+
+    def test_whitelist_mode_blocks_unknown_token(self, whitelist_charge_point):
+        status = whitelist_charge_point._resolve_auth_status("unknown_token")
+        assert status == AuthorizationStatusEnumType.blocked
+
+    def test_blacklist_mode_blocks_blacklisted_token(self, blacklist_charge_point):
+        status = blacklist_charge_point._resolve_auth_status("blocked_token")
+        assert status == AuthorizationStatusEnumType.blocked
+
+    def test_blacklist_mode_accepts_valid_token(self, blacklist_charge_point):
+        status = blacklist_charge_point._resolve_auth_status("good_token")
+        assert status == AuthorizationStatusEnumType.accepted
+
+    def test_rate_limit_mode(self, mock_connection):
+        cp = ChargePoint(
+            mock_connection,
+            auth_config={
+                "mode": "rate_limit",
+                "whitelist": [],
+                "blacklist": [],
+                "offline": False,
+                "default_status": AuthorizationStatusEnumType.accepted,
+            },
+        )
+        status = cp._resolve_auth_status("any_token")
+        assert status == AuthorizationStatusEnumType.not_at_this_time
+
+
+class TestChargePointHandlerCoverage:
+    """Tests verifying all expected OCPP 2.0.1 handlers and commands are implemented."""
+
+    EXPECTED_INCOMING_HANDLERS: ClassVar[list[str]] = [
+        "on_boot_notification",
+        "on_heartbeat",
+        "on_status_notification",
+        "on_authorize",
+        "on_transaction_event",
+        "on_meter_values",
+        "on_notify_report",
+        "on_data_transfer",
+        "on_firmware_status_notification",
+        "on_log_status_notification",
+        "on_security_event_notification",
+        "on_get_15118_ev_certificate",
+        "on_get_certificate_status",
+        "on_sign_certificate",
+        "on_notify_customer_information",
+    ]
+
+    EXPECTED_OUTGOING_COMMANDS: ClassVar[list[str]] = [
         "_send_clear_cache",
         "_send_get_base_report",
         "_send_get_variables",
@@ -29,100 +151,64 @@ def test_outgoing_commands():
         "_send_change_availability",
         "_send_trigger_message",
         "_send_data_transfer",
+        "_send_certificate_signed",
+        "_send_customer_information",
+        "_send_delete_certificate",
+        "_send_get_installed_certificate_ids",
+        "_send_get_log",
+        "_send_get_transaction_status",
+        "_send_install_certificate",
+        "_send_set_network_profile",
+        "_send_update_firmware",
     ]
 
-    results = []
+    @pytest.mark.parametrize("handler_name", EXPECTED_INCOMING_HANDLERS)
+    def test_incoming_handler_exists(self, handler_name):
+        assert hasattr(ChargePoint, handler_name), (
+            f"Missing incoming handler: {handler_name}"
+        )
+        assert callable(getattr(ChargePoint, handler_name))
 
-    for method_name in expected_methods:
-        command_name = method_name.replace("_send_", "")
-        if hasattr(ChargePoint, method_name):
-            results.append((command_name, "✅ PASS"))
-            logging.info(f"Method {method_name}: PASS")
-        else:
-            results.append((command_name, "❌ FAIL: Missing method"))
-            logging.error(f"Method {method_name}: FAIL - Missing method")
+    @pytest.mark.parametrize("method_name", EXPECTED_OUTGOING_COMMANDS)
+    def test_outgoing_command_exists(self, method_name):
+        assert hasattr(ChargePoint, method_name), (
+            f"Missing outgoing command method: {method_name}"
+        )
+        assert callable(getattr(ChargePoint, method_name))
 
-    return results
+    def test_incoming_handler_count(self):
+        """Verify no handlers were accidentally removed."""
+        handler_count = sum(
+            1
+            for name in dir(ChargePoint)
+            if name.startswith("on_") and callable(getattr(ChargePoint, name))
+        )
+        assert handler_count >= len(self.EXPECTED_INCOMING_HANDLERS)
 
-
-def check_incoming_handlers():
-    """Verify that all incoming handlers are present"""
-    try:
-        from server import ChargePoint
-    except ImportError as e:
-        logging.error(f"Failed to import ChargePoint: {e}")
-        return [("import_error", "❌ FAIL: Cannot import server module")]
-
-    expected_handlers = [
-        "boot_notification",
-        "heartbeat",
-        "status_notification",
-        "authorize",
-        "transaction_event",
-        "meter_values",
-        "notify_report",
-        "data_transfer",
-        "firmware_status_notification",
-        "log_status_notification",
-        "security_event_notification",
-    ]
-
-    results = []
-
-    for action_name in expected_handlers:
-        handler_name = f"on_{action_name}"
-        if hasattr(ChargePoint, handler_name):
-            results.append((action_name, "✅ PASS"))
-            logging.info(f"Handler {handler_name}: PASS")
-        else:
-            results.append((action_name, "❌ FAIL: Missing handler"))
-            logging.error(f"Handler {handler_name}: FAIL - Missing handler")
-
-    return results
+    def test_outgoing_command_count(self):
+        """Verify no outgoing commands were accidentally removed."""
+        command_count = sum(
+            1
+            for name in dir(ChargePoint)
+            if name.startswith("_send_") and callable(getattr(ChargePoint, name))
+        )
+        assert command_count >= len(self.EXPECTED_OUTGOING_COMMANDS)
 
 
-def main():
-    """Main test function"""
-    print("=" * 60)
-    print("OCPP 2.0 Mock Server Test")
-    print("=" * 60)
+class TestChargePointDefaultConfig:
+    """Tests for ChargePoint default configuration."""
 
-    print("\n🔄 Testing outgoing commands...")
-    outgoing_results = test_outgoing_commands()
+    def test_default_auth_config(self, charge_point):
+        assert charge_point._auth_config["mode"] == "normal"
+        assert charge_point._auth_config["offline"] is False
+        assert "valid_token" in charge_point._auth_config["whitelist"]
+        assert "blocked_token" in charge_point._auth_config["blacklist"]
 
-    print("\n🔄 Testing incoming handlers...")
-    incoming_results = check_incoming_handlers()
+    def test_custom_auth_config(self, mock_connection):
+        config = {"mode": "whitelist", "whitelist": ["token1"]}
+        cp = ChargePoint(mock_connection, auth_config=config)
+        assert cp._auth_config["mode"] == "whitelist"
+        assert cp._auth_config["whitelist"] == ["token1"]
 
-    print("\n📊 Test results:")
-    print("\n--- Outgoing commands ---")
-    for command, status in outgoing_results:
-        print(f"{status} {command}")
-
-    print("\n--- Incoming handlers ---")
-    for handler, status in incoming_results:
-        print(f"{status} {handler}")
-
-    # Statistics
-    outgoing_pass = len([r for r in outgoing_results if "PASS" in r[1]])
-    incoming_pass = len([r for r in incoming_results if "PASS" in r[1]])
-    total_pass = outgoing_pass + incoming_pass
-    total_tests = len(outgoing_results) + len(incoming_results)
-
-    print("\n📈 Statistics:")
-    print(f"   Outgoing commands: {outgoing_pass}/{len(outgoing_results)}")
-    print(f"   Incoming handlers: {incoming_pass}/{len(incoming_results)}")
-    print(
-        f"   Total: {total_pass}/{total_tests} ({total_pass / total_tests * 100:.1f}%)"
-    )
-
-    if total_pass == total_tests:
-        print("\n🎉 All tests passed!")
-        return 0
-    else:
-        print(f"\n⚠️  {total_tests - total_pass} test(s) failed")
-        return 1
-
-
-if __name__ == "__main__":
-    exit_code = main()
-    exit(exit_code)
+    def test_command_timer_initially_none(self, charge_point):
+        assert charge_point._command_timer is None

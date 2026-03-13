@@ -57,17 +57,44 @@ poetry run task server --command GetBaseReport --period 5
 
 ### Available Outgoing Commands
 
+- `CertificateSigned` - Send a signed certificate to the charging station
+- `ChangeAvailability` - Change connector availability
 - `ClearCache` - Clear the charging station cache
+- `CustomerInformation` - Request customer information from the charging station
+- `DataTransfer` - Send custom data
+- `DeleteCertificate` - Delete a certificate on the charging station
 - `GetBaseReport` - Request a base configuration report
+- `GetInstalledCertificateIds` - Get installed certificate IDs from the charging station
+- `GetLog` - Request log upload from the charging station
+- `GetTransactionStatus` - Get the status of a transaction
 - `GetVariables` - Get variable values from the charging station
-- `SetVariables` - Set variable values on the charging station
+- `InstallCertificate` - Install a certificate on the charging station
 - `RequestStartTransaction` - Request to start a transaction
 - `RequestStopTransaction` - Request to stop a transaction
 - `Reset` - Reset the charging station
-- `UnlockConnector` - Unlock a specific connector
-- `ChangeAvailability` - Change connector availability
+- `SetNetworkProfile` - Set the network connection profile
+- `SetVariables` - Set variable values on the charging station
 - `TriggerMessage` - Trigger a specific message
-- `DataTransfer` - Send custom data
+- `UnlockConnector` - Unlock a specific connector
+- `UpdateFirmware` - Request firmware update on the charging station
+
+### Handled Incoming Messages
+
+- `Authorize` - Handle authorization requests (with configurable auth modes)
+- `BootNotification` - Handle boot notification from charging station
+- `DataTransfer` - Handle vendor-specific data transfer
+- `FirmwareStatusNotification` - Handle firmware update status
+- `Get15118EVCertificate` - Handle ISO 15118 EV certificate requests
+- `GetCertificateStatus` - Handle OCSP certificate status requests
+- `Heartbeat` - Handle heartbeat messages
+- `LogStatusNotification` - Handle log upload status
+- `MeterValues` - Handle meter value reports
+- `NotifyCustomerInformation` - Handle customer information reports
+- `NotifyReport` - Handle device model report notifications
+- `SecurityEventNotification` - Handle security events
+- `SignCertificate` - Handle CSR signing requests
+- `StatusNotification` - Handle status notifications
+- `TransactionEvent` - Handle transaction events (Started/Updated/Ended)
 
 ## Authorization Testing Modes
 
