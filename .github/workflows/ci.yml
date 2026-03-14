@@ -45,6 +45,15 @@ jobs:
       - name: Lint
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.python == '3.13' }}
         run: poetry run task lint
+      - name: Typecheck
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.python == '3.13' }}
+        run: poetry run task typecheck
+      - name: Test
+        if: ${{ !(github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.python == '3.13') }}
+        run: poetry run task test
+      - name: Test with coverage
+        if: ${{ github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.python == '3.13' }}
+        run: poetry run task test_coverage
   build-simulator:
     needs: [check-secrets]
     strategy:

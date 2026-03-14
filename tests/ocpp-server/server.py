@@ -56,7 +56,10 @@ DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 9000
 DEFAULT_HEARTBEAT_INTERVAL = 60
 DEFAULT_TOTAL_COST = 10.0
-SUBPROTOCOLS = ["ocpp2.0", "ocpp2.0.1"]
+SUBPROTOCOLS: list[websockets.Subprotocol] = [
+    websockets.Subprotocol("ocpp2.0"),
+    websockets.Subprotocol("ocpp2.0.1"),
+]
 
 
 class AuthMode(StrEnum):
