@@ -4,34 +4,38 @@
 
 </div>
 
-The Web UI code and configuration is in the repository directory [ui/web](./../../ui/web/). Commands execution is relative to that directory.
+Vue.js dashboard for monitoring and controlling the e-mobility charging stations simulator via WebSocket.
+
+![Web UI](./src/assets/webui.png)
+
+1. The top bar lets you switch between UI servers, start/stop the simulator, add charging stations, and refresh the view.
+2. Each charging station is a table row with actions: start, stop, open/close connection, start/stop transaction, and more.
 
 ## Table of contents
 
-- [Project setup](#project-setup)
-  - [Configuration](#configuration)
-    - [Simulator UI Server Configuration](#simulator-ui-server-configuration)
-    - [Web UI configuration](#web-ui-configuration)
-      - [Unique UI server](#unique-ui-server)
-      - [Multiple UI servers](#multiple-ui-servers)
-  - [Run](#run)
-    - [Compiles and run for production](#compiles-and-run-for-production)
-    - [Preview locally](#preview-locally)
-    - [Docker](#docker)
+- [Configuration](#configuration)
+  - [Simulator UI server](#simulator-ui-server)
+  - [Web UI](#web-ui-1)
+    - [Single server](#single-server)
+    - [Multiple servers](#multiple-servers)
+  - [Configuration reference](#configuration-reference)
+- [Getting started](#getting-started)
+  - [Install dependencies](#install-dependencies)
   - [Development](#development)
-    - [Compiles and run for development](#compiles-and-run-for-development)
-    - [Formats files](#formats-files)
-    - [Lints and fixes files](#lints-and-fixes-files)
+  - [Production](#production)
+    - [Local preview](#local-preview)
+    - [Node.js server](#nodejs-server)
+    - [Docker](#docker)
+- [Available scripts](#available-scripts)
 
-## Project setup
+## Configuration
 
-### Configuration
+### Simulator UI server
 
-#### Simulator UI Server Configuration
-
-The simulator UI server must be enabled, use WebSocket transport type, and be configured consistently with your Web UI authentication. The simulator main configuration file should have a `uiServer` section like this:
+The simulator must have its UI server enabled with WebSocket transport. Add a `uiServer` section to the simulator configuration file:
 
 ```json
+{
   "uiServer": {
     "enabled": true,
     "type": "ws",
@@ -41,16 +45,23 @@ The simulator UI server must be enabled, use WebSocket transport type, and be co
       "username": "admin",
       "password": "admin"
     }
-  },
+  }
+}
 ```
 
-See [here](./../../README.md#charging-stations-simulator-configuration) for more details.
+See the [simulator configuration documentation](./../../README.md#charging-stations-simulator-configuration) for details.
 
-#### Web UI configuration
+### Web UI
 
-Copy the configuration template [src/assets/config-template.json](./src/assets/config-template.json) to `public/config.json`.
+Copy the configuration template to the public directory:
 
-##### Unique UI server
+```shell
+cp src/assets/config-template.json public/config.json
+```
+
+Edit `public/config.json` to point to your simulator UI server(s).
+
+#### Single server
 
 ```json
 {
@@ -69,7 +80,9 @@ Copy the configuration template [src/assets/config-template.json](./src/assets/c
 }
 ```
 
-##### Multiple UI servers
+#### Multiple servers
+
+The `uiServer` field accepts an array to connect to multiple simulator instances:
 
 ```json
 {
@@ -86,9 +99,8 @@ Copy the configuration template [src/assets/config-template.json](./src/assets/c
         "password": "admin"
       }
     },
-    ...
     {
-      "host": "serverN.domain.tld",
+      "host": "server2.domain.tld",
       "port": 8080,
       "protocol": "ui",
       "version": "0.0.1",
@@ -103,53 +115,75 @@ Copy the configuration template [src/assets/config-template.json](./src/assets/c
 }
 ```
 
-### Run
+### Configuration reference
 
-#### Install dependencies
+| Field                     | Type                    | Required | Description                       |
+| ------------------------- | ----------------------- | -------- | --------------------------------- |
+| `host`                    | `string`                | Yes      | Simulator UI server hostname      |
+| `port`                    | `number`                | Yes      | Simulator UI server port          |
+| `protocol`                | `"ui"`                  | Yes      | WebSocket subprotocol             |
+| `version`                 | `"0.0.1"`               | Yes      | Protocol version                  |
+| `name`                    | `string`                | No       | Display name for server selection |
+| `secure`                  | `boolean`               | No       | Use `wss://` instead of `ws://`   |
+| `authentication.enabled`  | `boolean`               | No       | Enable authentication             |
+| `authentication.type`     | `"protocol-basic-auth"` | No       | Authentication method             |
+| `authentication.username` | `string`                | No       | Basic auth username               |
+| `authentication.password` | `string`                | No       | Basic auth password               |
+
+## Getting started
+
+### Install dependencies
 
 ```shell
 pnpm install
 ```
 
-#### Compiles and run for production
-
-```shell
-pnpm preview
-```
-
-#### Preview locally
-
-You can now follow the link displayed in the terminal. The Web UI looks like the following:
-
-![webui](./src/assets/webui.png)
-
-1. With the buttons on the top you can change UI server, start/stop the simulator, add new charging stations, and refresh the content.
-2. Each charging station is a row in the table with specific 'Actions' to execute on. Try 'Stop Charging Station' and refresh with the large blue button and see the status 'Started' turns from 'Yes' into 'No'.
-
-#### Docker
-
-In the [docker](./docker) folder:
-
-```shell
-make
-```
-
 ### Development
 
-#### Compiles and run for development
+Start the Vite development server with hot-reload:
 
 ```shell
 pnpm dev
 ```
 
-#### Formats, lints and fixes files
+### Production
+
+#### Local preview
+
+Build and preview the production bundle locally with Vite:
 
 ```shell
-pnpm format
+pnpm preview
 ```
 
-#### Lints and fixes files
+#### Node.js server
+
+Build and serve the production bundle with a static Node.js HTTP server on port 3030:
 
 ```shell
-pnpm lint:fix
+pnpm start
 ```
+
+#### Docker
+
+From the [`docker`](./docker) directory:
+
+```shell
+make
+```
+
+This builds the image and runs the container, exposing the Web UI on port 3030. The Docker build uses `docker/config.json` as the default configuration.
+
+## Available scripts
+
+| Script               | Description                                         |
+| -------------------- | --------------------------------------------------- |
+| `pnpm dev`           | Start Vite development server with hot-reload       |
+| `pnpm build`         | Build the production bundle to `dist/`              |
+| `pnpm preview`       | Build and preview the production bundle locally     |
+| `pnpm start`         | Build and serve via Node.js HTTP server (port 3030) |
+| `pnpm lint`          | Run ESLint                                          |
+| `pnpm lint:fix`      | Run ESLint with auto-fix                            |
+| `pnpm format`        | Run Prettier and ESLint auto-fix                    |
+| `pnpm test`          | Run unit tests with Vitest                          |
+| `pnpm test:coverage` | Run unit tests with V8 coverage report              |
