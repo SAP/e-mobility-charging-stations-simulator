@@ -1480,9 +1480,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     try {
       // M04.FR.06: Check if the certificate to delete is a ChargingStationCertificate
       // If so, reject the deletion request
-      // Get all installed certificates without type filter to include ChargingStationCertificate
+      // Get all installed certificates using the request's hashAlgorithm for consistent comparison
       const installedCerts = chargingStation.certificateManager.getInstalledCertificates(
-        chargingStation.stationInfo?.hashId ?? ''
+        chargingStation.stationInfo?.hashId ?? '',
+        undefined,
+        certificateHashData.hashAlgorithm
       )
 
       const installedCertsResult =

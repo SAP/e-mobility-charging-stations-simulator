@@ -48,7 +48,8 @@ export interface OCPP20CertificateManagerInterface {
   ): DeleteCertificateResult | Promise<DeleteCertificateResult>
   getInstalledCertificates(
     stationHashId: string,
-    filterTypes?: InstallCertificateUseEnumType[]
+    filterTypes?: InstallCertificateUseEnumType[],
+    hashAlgorithm?: HashAlgorithmEnumType
   ): GetInstalledCertificatesResult | Promise<GetInstalledCertificatesResult>
   storeCertificate(
     stationHashId: string,
@@ -256,7 +257,8 @@ export class OCPP20CertificateManager {
    */
   public async getInstalledCertificates (
     stationHashId: string,
-    filterTypes?: InstallCertificateUseEnumType[]
+    filterTypes?: InstallCertificateUseEnumType[],
+    hashAlgorithm?: HashAlgorithmEnumType
   ): Promise<GetInstalledCertificatesResult> {
     const certificateHashDataChain: CertificateHashDataChainType[] = []
 
@@ -288,7 +290,7 @@ export class OCPP20CertificateManager {
           this.validateCertificatePath(filePath, OCPP20CertificateManager.BASE_CERT_PATH)
           try {
             const pemData = await readFile(filePath, 'utf8')
-            const hashData = this.computeCertificateHash(pemData)
+            const hashData = this.computeCertificateHash(pemData, hashAlgorithm)
 
             certificateHashDataChain.push({
               certificateHashData: hashData,
