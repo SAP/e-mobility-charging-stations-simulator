@@ -141,7 +141,7 @@ export class Configuration {
         handleFileException(
           Configuration.configurationFile,
           FileType.Configuration,
-          error as NodeJS.ErrnoException,
+          error instanceof Error ? error : new Error(String(error)),
           logPrefix(),
           { consoleOut: true }
         )
@@ -560,7 +560,7 @@ export class Configuration {
       handleFileException(
         Configuration.configurationFile,
         FileType.Configuration,
-        error as NodeJS.ErrnoException,
+        error instanceof Error ? error : new Error(String(error)),
         logPrefix(),
         { consoleOut: true }
       )

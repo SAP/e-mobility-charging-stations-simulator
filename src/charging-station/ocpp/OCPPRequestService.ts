@@ -116,7 +116,7 @@ export abstract class OCPPRequestService {
         chargingStation,
         commandName,
         MessageType.CALL_ERROR_MESSAGE,
-        error as Error
+        error instanceof Error ? error : new Error(String(error))
       )
       return null
     }
@@ -142,7 +142,7 @@ export abstract class OCPPRequestService {
         chargingStation,
         commandName,
         MessageType.CALL_RESULT_MESSAGE,
-        error as Error,
+        error instanceof Error ? error : new Error(String(error)),
         {
           throwError: true,
         }
@@ -176,7 +176,7 @@ export abstract class OCPPRequestService {
         chargingStation,
         commandName,
         MessageType.CALL_MESSAGE,
-        error as Error,
+        error instanceof Error ? error : new Error(String(error)),
         {
           throwError: params.throwError,
         }

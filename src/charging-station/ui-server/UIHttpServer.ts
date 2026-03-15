@@ -202,8 +202,8 @@ export class UIHttpServer extends AbstractUIServer {
             } catch (error) {
               this.sendResponse(
                 this.buildProtocolResponse(uuid, {
-                  errorMessage: (error as Error).message,
-                  errorStack: (error as Error).stack,
+                  errorMessage: error instanceof Error ? error.message : String(error),
+                  errorStack: error instanceof Error ? error.stack : undefined,
                   status: ResponseStatus.FAILURE,
                 })
               )

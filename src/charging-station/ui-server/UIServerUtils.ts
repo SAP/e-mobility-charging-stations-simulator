@@ -23,7 +23,11 @@ export const getUsernameAndPasswordFromAuthorizationToken = (
     }
     return [username, password]
   } catch (error) {
-    next(new BaseError(`Invalid basic authentication token format: ${(error as Error).message}`))
+    next(
+      new BaseError(
+        `Invalid basic authentication token format: ${error instanceof Error ? error.message : String(error)}`
+      )
+    )
     return undefined
   }
 }

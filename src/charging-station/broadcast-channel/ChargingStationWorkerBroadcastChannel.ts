@@ -2,7 +2,7 @@ import { secondsToMilliseconds } from 'date-fns'
 
 import type { ChargingStation } from '../ChargingStation.js'
 
-import { BaseError, type OCPPError } from '../../exception/index.js'
+import { BaseError, OCPPError } from '../../exception/index.js'
 import {
   AuthorizationStatus,
   type AuthorizeRequest,
@@ -679,9 +679,9 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         )
         responsePayload = {
           command,
-          errorDetails: (error as OCPPError).details,
-          errorMessage: (error as OCPPError).message,
-          errorStack: (error as OCPPError).stack,
+          errorDetails: error instanceof OCPPError ? error.details : undefined,
+          errorMessage: error instanceof Error ? error.message : String(error),
+          errorStack: error instanceof Error ? error.stack : undefined,
           hashId: this.chargingStation.stationInfo?.hashId,
           requestPayload,
           status: ResponseStatus.FAILURE,

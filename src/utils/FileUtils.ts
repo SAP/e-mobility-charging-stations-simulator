@@ -16,9 +16,15 @@ export const watchJsonFile = (
     try {
       return watch(file, listener)
     } catch (error) {
-      handleFileException(file, fileType, error as NodeJS.ErrnoException, logPrefix, {
-        throwError: false,
-      })
+      handleFileException(
+        file,
+        fileType,
+        error instanceof Error ? error : new Error(String(error)),
+        logPrefix,
+        {
+          throwError: false,
+        }
+      )
     }
   } else {
     logger.info(`${logPrefix} No ${fileType} file to watch given. Not monitoring its changes`)

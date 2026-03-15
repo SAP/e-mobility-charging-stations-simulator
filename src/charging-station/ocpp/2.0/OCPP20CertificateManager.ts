@@ -421,7 +421,7 @@ export class OCPP20CertificateManager {
       }
     } catch (error) {
       return {
-        error: `Failed to store certificate: ${(error as Error).message}`,
+        error: `Failed to store certificate: ${error instanceof Error ? error.message : String(error)}`,
         success: false,
       }
     }

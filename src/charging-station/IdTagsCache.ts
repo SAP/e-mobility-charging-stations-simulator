@@ -128,7 +128,7 @@ export class IdTagsCache {
         handleFileException(
           file,
           FileType.Authorization,
-          error as NodeJS.ErrnoException,
+          error instanceof Error ? error : new Error(String(error)),
           this.logPrefix(file)
         )
       }
@@ -187,7 +187,7 @@ export class IdTagsCache {
               handleFileException(
                 file,
                 FileType.Authorization,
-                error as NodeJS.ErrnoException,
+                error instanceof Error ? error : new Error(String(error)),
                 this.logPrefix(file),
                 {
                   throwError: false,

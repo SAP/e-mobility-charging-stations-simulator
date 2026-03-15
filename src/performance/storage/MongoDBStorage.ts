@@ -26,7 +26,10 @@ export class MongoDBStorage extends Storage {
         this.opened = false
       }
     } catch (error) {
-      this.handleDBStorageError(StorageType.MONGO_DB, error as Error)
+      this.handleDBStorageError(
+        StorageType.MONGO_DB,
+        error instanceof Error ? error : new Error(String(error))
+      )
     }
   }
 
@@ -37,7 +40,10 @@ export class MongoDBStorage extends Storage {
         this.opened = true
       }
     } catch (error) {
-      this.handleDBStorageError(StorageType.MONGO_DB, error as Error)
+      this.handleDBStorageError(
+        StorageType.MONGO_DB,
+        error instanceof Error ? error : new Error(String(error))
+      )
     }
   }
 
@@ -56,7 +62,7 @@ export class MongoDBStorage extends Storage {
     } catch (error) {
       this.handleDBStorageError(
         StorageType.MONGO_DB,
-        error as Error,
+        error instanceof Error ? error : new Error(String(error)),
         Constants.PERFORMANCE_RECORDS_TABLE
       )
     }

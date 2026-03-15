@@ -26,7 +26,7 @@ export class JsonFileStorage extends Storage {
       handleFileException(
         this.dbName,
         FileType.PerformanceRecords,
-        error as NodeJS.ErrnoException,
+        error instanceof Error ? error : new Error(String(error)),
         this.logPrefix
       )
     }
@@ -42,7 +42,7 @@ export class JsonFileStorage extends Storage {
       handleFileException(
         this.dbName,
         FileType.PerformanceRecords,
-        error as NodeJS.ErrnoException,
+        error instanceof Error ? error : new Error(String(error)),
         this.logPrefix
       )
     }
@@ -62,7 +62,7 @@ export class JsonFileStorage extends Storage {
       handleFileException(
         this.dbName,
         FileType.PerformanceRecords,
-        error as NodeJS.ErrnoException,
+        error instanceof Error ? error : new Error(String(error)),
         this.logPrefix
       )
     })

@@ -1356,7 +1356,7 @@ export class ChargingStation extends EventEmitter {
         handleFileException(
           this.configurationFile,
           FileType.ChargingStationConfiguration,
-          error as NodeJS.ErrnoException,
+          error instanceof Error ? error : new Error(String(error)),
           this.logPrefix()
         )
         if (
@@ -1628,7 +1628,7 @@ export class ChargingStation extends EventEmitter {
       handleFileException(
         this.templateFile,
         FileType.ChargingStationTemplate,
-        error as NodeJS.ErrnoException,
+        error instanceof Error ? error : new Error(String(error)),
         this.logPrefix()
       )
     }
@@ -2211,6 +2211,13 @@ export class ChargingStation extends EventEmitter {
       let requestCommandName: IncomingRequestCommand | RequestCommand | undefined
       let errorCallback: ErrorCallback
       const [, messageId] = request
+      const ocppError =
+        error instanceof OCPPError
+          ? error
+          : new OCPPError(
+            ErrorType.INTERNAL_ERROR,
+            error instanceof Error ? error.message : String(error)
+          )
       switch (messageType) {
         case MessageType.CALL_ERROR_MESSAGE:
         case MessageType.CALL_RESULT_MESSAGE:
@@ -2218,7 +2225,7 @@ export class ChargingStation extends EventEmitter {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             ;[, errorCallback, requestCommandName] = this.getCachedRequest(messageType, messageId)!
             // Reject the deferred promise in case of error at response handling (rejecting an already fulfilled promise is a no-op)
-            errorCallback(error as OCPPError, false)
+            errorCallback(ocppError, false)
           } else {
             // Remove the request from the cache in case of error at response handling
             this.requests.delete(messageId)
@@ -2227,7 +2234,7 @@ export class ChargingStation extends EventEmitter {
         case MessageType.CALL_MESSAGE:
           ;[, , commandName] = request as IncomingRequest
           // Send error
-          await this.ocppRequestService.sendError(this, messageId, error as OCPPError, commandName)
+          await this.ocppRequestService.sendError(this, messageId, ocppError, commandName)
           break
       }
       if (!(error instanceof OCPPError)) {
@@ -2444,7 +2451,7 @@ export class ChargingStation extends EventEmitter {
             handleFileException(
               this.configurationFile,
               FileType.ChargingStationConfiguration,
-              error as NodeJS.ErrnoException,
+              error instanceof Error ? error : new Error(String(error)),
               this.logPrefix()
             )
           })
@@ -2459,7 +2466,7 @@ export class ChargingStation extends EventEmitter {
         handleFileException(
           this.configurationFile,
           FileType.ChargingStationConfiguration,
-          error as NodeJS.ErrnoException,
+          error instanceof Error ? error : new Error(String(error)),
           this.logPrefix()
         )
       }

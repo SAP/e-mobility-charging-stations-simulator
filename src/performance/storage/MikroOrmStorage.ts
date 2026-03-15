@@ -26,7 +26,10 @@ export class MikroOrmStorage extends Storage {
         delete this.orm
       }
     } catch (error) {
-      this.handleDBStorageError(this.storageType, error as Error)
+      this.handleDBStorageError(
+        this.storageType,
+        error instanceof Error ? error : new Error(String(error))
+      )
     }
   }
 
@@ -55,7 +58,10 @@ export class MikroOrmStorage extends Storage {
         }
       }
     } catch (error) {
-      this.handleDBStorageError(this.storageType, error as Error)
+      this.handleDBStorageError(
+        this.storageType,
+        error instanceof Error ? error : new Error(String(error))
+      )
     }
   }
 
@@ -71,7 +77,7 @@ export class MikroOrmStorage extends Storage {
     } catch (error) {
       this.handleDBStorageError(
         this.storageType,
-        error as Error,
+        error instanceof Error ? error : new Error(String(error)),
         Constants.PERFORMANCE_RECORDS_TABLE
       )
     }

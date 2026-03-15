@@ -144,13 +144,13 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
           timestamp: result.timestamp,
         }
       } catch (error) {
-        lastError = error as Error
+        lastError = error instanceof Error ? error : new Error(String(error))
         logger.debug(
-          `${this.chargingStation.logPrefix()} Strategy '${strategyName}' failed: ${(error as Error).message}`
+          `${this.chargingStation.logPrefix()} Strategy '${strategyName}' failed: ${error instanceof Error ? error.message : String(error)}`
         )
 
         // Continue to next strategy unless it's a critical error
-        if (this.isCriticalError(error as Error)) {
+        if (this.isCriticalError(error instanceof Error ? error : new Error(String(error)))) {
           break
         }
       }
@@ -258,7 +258,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     } catch (error) {
       const duration = Date.now() - startTime
       logger.error(
-        `${this.chargingStation.logPrefix()} Direct authentication with ${strategyName} failed (${String(duration)}ms): ${(error as Error).message}`
+        `${this.chargingStation.logPrefix()} Direct authentication with ${strategyName} failed (${String(duration)}ms): ${error instanceof Error ? error.message : String(error)}`
       )
       throw error
     }
@@ -461,7 +461,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
         }
       } catch (error) {
         logger.debug(
-          `${this.chargingStation.logPrefix()} Local authorization check failed: ${(error as Error).message}`
+          `${this.chargingStation.logPrefix()} Local authorization check failed: ${error instanceof Error ? error.message : String(error)}`
         )
       }
     }

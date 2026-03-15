@@ -64,9 +64,9 @@ if (Configuration.workerPoolInUse()) {
               parentPort?.postMessage({
                 data: {
                   event,
-                  message: (error as Error).message,
-                  name: (error as Error).name,
-                  stack: (error as Error).stack,
+                  message: error instanceof Error ? error.message : String(error),
+                  name: error instanceof Error ? error.name : 'UnknownError',
+                  stack: error instanceof Error ? error.stack : undefined,
                 },
                 event: WorkerMessageEvents.workerElementError,
                 uuid,
