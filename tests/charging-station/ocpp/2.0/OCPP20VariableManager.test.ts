@@ -2069,7 +2069,11 @@ await describe('B05 - OCPP20VariableManager', async () => {
     assert.strictEqual(result1[0].attributeStatus, GetVariableStatusEnumType.Accepted)
     assert.strictEqual(result2[0].attributeStatus, GetVariableStatusEnumType.Accepted)
     assert.strictEqual(result1[0].attributeValue, result2[0].attributeValue)
-    assert.strictEqual(validateSpy.mock.callCount(), 2, 'validatePersistentMappings should be called twice (once per getVariables)')
+    assert.strictEqual(
+      validateSpy.mock.callCount(),
+      2,
+      'validatePersistentMappings should be called twice (once per getVariables)'
+    )
     // The second call should be a no-op (early return) because the station is already validated.
     // Verify by invalidating and calling again — the third call should re-validate.
     manager.invalidateMappingsCache()

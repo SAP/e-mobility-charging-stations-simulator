@@ -22,7 +22,11 @@ import {
   UpdateFirmwareStatusEnumType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { flushMicrotasks, standardCleanup, withMockTimers } from '../../../helpers/TestLifecycleHelpers.js'
+import {
+  flushMicrotasks,
+  standardCleanup,
+  withMockTimers,
+} from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import {
