@@ -13,12 +13,16 @@ ocpp = "^2.1.0"
 [tool.poetry.group.dev.dependencies]
 taskipy = "^1"
 ruff = "^0.15"
-pytest = "^8"
+mypy = "^1"
+pytest = "^9.0.0"
 pytest-asyncio = ">=1.3.0"
+pytest-cov = "^7.0.0"
 
 [tool.taskipy.tasks]
 server = "poetry run python server.py"
-test = "poetry run pytest test_server.py -v"
+test = "poetry run pytest -v"
+test_coverage = "poetry run pytest -v --cov --cov-report=term-missing"
+typecheck = "poetry run mypy server.py timer.py test_server.py test_timer.py"
 format = "ruff check --fix . && ruff format ."
 lint = "ruff check --diff . && ruff format --check --diff ."
 
@@ -30,6 +34,34 @@ select = ["E", "W", "F", "ASYNC", "S", "B", "A", "Q", "RUF", "I"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+check_untyped_defs = true
+explicit_package_bases = true
+
+[[tool.mypy.overrides]]
+module = ["ocpp.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["test_server", "test_timer"]
+disallow_untyped_defs = false
+
+[tool.coverage.run]
+branch = true
+source = ["server", "timer"]
+
+[tool.coverage.report]
+show_missing = true
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+]
 
 
 [build-system]
