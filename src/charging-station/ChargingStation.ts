@@ -330,7 +330,11 @@ export class ChargingStation extends EventEmitter {
 
   public async delete (deleteConfiguration = true): Promise<void> {
     if (this.started) {
-      await this.stop()
+      try {
+        await this.stop()
+      } catch (error) {
+        logger.error(`${this.logPrefix()} Error stopping station during delete:`, error)
+      }
     }
     AutomaticTransactionGenerator.deleteInstance(this)
     PerformanceStatistics.deleteInstance(this.stationInfo?.hashId)
@@ -865,7 +869,12 @@ export class ChargingStation extends EventEmitter {
   }
 
   public async reset (reason?: StopTransactionReason, graceful = true): Promise<void> {
-    await this.stop(reason, graceful ? this.stationInfo?.stopTransactionsOnStopped : false)
+    try {
+      await this.stop(reason, graceful ? this.stationInfo?.stopTransactionsOnStopped : false)
+    } catch (error) {
+      logger.error(`${this.logPrefix()} Error during reset stop phase:`, error)
+      return
+    }
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     await sleep(this.stationInfo!.resetTime!)
     this.initialize()
@@ -915,59 +924,62 @@ export class ChargingStation extends EventEmitter {
     if (!this.started) {
       if (!this.starting) {
         this.starting = true
-        if (this.stationInfo?.enableStatistics === true) {
-          this.performanceStatistics?.start()
-        }
-        this.openWSConnection()
-        // Monitor charging station template file
-        this.templateFileWatcher = watchJsonFile(
-          this.templateFile,
-          FileType.ChargingStationTemplate,
-          this.logPrefix(),
-          (event, filename): void => {
-            if (isNotEmptyString(filename) && event === 'change') {
-              try {
-                logger.debug(
-                  `${this.logPrefix()} ${FileType.ChargingStationTemplate} ${
-                    this.templateFile
-                  } file have changed, reload`
-                )
-                this.sharedLRUCache.deleteChargingStationTemplate(this.templateFileHash)
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                this.idTagsCache.deleteIdTags(getIdTagsFile(this.stationInfo!)!)
-                // Initialize
-                this.initialize()
-                // Restart the ATG
-                const ATGStarted = this.automaticTransactionGenerator?.started
-                if (ATGStarted === true) {
-                  this.stopAutomaticTransactionGenerator()
+        try {
+          if (this.stationInfo?.enableStatistics === true) {
+            this.performanceStatistics?.start()
+          }
+          this.openWSConnection()
+          // Monitor charging station template file
+          this.templateFileWatcher = watchJsonFile(
+            this.templateFile,
+            FileType.ChargingStationTemplate,
+            this.logPrefix(),
+            (event, filename): void => {
+              if (isNotEmptyString(filename) && event === 'change') {
+                try {
+                  logger.debug(
+                    `${this.logPrefix()} ${FileType.ChargingStationTemplate} ${
+                      this.templateFile
+                    } file have changed, reload`
+                  )
+                  this.sharedLRUCache.deleteChargingStationTemplate(this.templateFileHash)
+                  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                  this.idTagsCache.deleteIdTags(getIdTagsFile(this.stationInfo!)!)
+                  // Initialize
+                  this.initialize()
+                  // Restart the ATG
+                  const ATGStarted = this.automaticTransactionGenerator?.started
+                  if (ATGStarted === true) {
+                    this.stopAutomaticTransactionGenerator()
+                  }
+                  delete this.automaticTransactionGeneratorConfiguration
+                  if (
+                    this.getAutomaticTransactionGeneratorConfiguration()?.enable === true &&
+                    ATGStarted === true
+                  ) {
+                    this.startAutomaticTransactionGenerator(undefined, true)
+                  }
+                  if (this.stationInfo?.enableStatistics === true) {
+                    this.performanceStatistics?.restart()
+                  } else {
+                    this.performanceStatistics?.stop()
+                  }
+                  this.restartHeartbeat()
+                  this.restartWebSocketPing()
+                } catch (error) {
+                  logger.error(
+                    `${this.logPrefix()} ${FileType.ChargingStationTemplate} file monitoring error:`,
+                    error
+                  )
                 }
-                delete this.automaticTransactionGeneratorConfiguration
-                if (
-                  this.getAutomaticTransactionGeneratorConfiguration()?.enable === true &&
-                  ATGStarted === true
-                ) {
-                  this.startAutomaticTransactionGenerator(undefined, true)
-                }
-                if (this.stationInfo?.enableStatistics === true) {
-                  this.performanceStatistics?.restart()
-                } else {
-                  this.performanceStatistics?.stop()
-                }
-                this.restartHeartbeat()
-                this.restartWebSocketPing()
-              } catch (error) {
-                logger.error(
-                  `${this.logPrefix()} ${FileType.ChargingStationTemplate} file monitoring error:`,
-                  error
-                )
               }
             }
-          }
-        )
-        this.started = true
-        this.emitChargingStationEvent(ChargingStationEvents.started)
-        this.starting = false
+          )
+          this.started = true
+          this.emitChargingStationEvent(ChargingStationEvents.started)
+        } finally {
+          this.starting = false
+        }
       } else {
         logger.warn(`${this.logPrefix()} Charging station is already starting...`)
       }
@@ -1130,19 +1142,22 @@ export class ChargingStation extends EventEmitter {
     if (this.started) {
       if (!this.stopping) {
         this.stopping = true
-        await this.stopMessageSequence(reason, stopTransactions)
-        this.ocppIncomingRequestService.stop(this)
-        this.closeWSConnection()
-        if (this.stationInfo?.enableStatistics === true) {
-          this.performanceStatistics?.stop()
+        try {
+          await this.stopMessageSequence(reason, stopTransactions)
+          this.ocppIncomingRequestService.stop(this)
+          this.closeWSConnection()
+          if (this.stationInfo?.enableStatistics === true) {
+            this.performanceStatistics?.stop()
+          }
+          this.templateFileWatcher?.close()
+          delete this.bootNotificationResponse
+          this.started = false
+          this.saveConfiguration()
+          this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash)
+          this.emitChargingStationEvent(ChargingStationEvents.stopped)
+        } finally {
+          this.stopping = false
         }
-        this.templateFileWatcher?.close()
-        delete this.bootNotificationResponse
-        this.started = false
-        this.saveConfiguration()
-        this.sharedLRUCache.deleteChargingStationConfiguration(this.configurationFileHash)
-        this.emitChargingStationEvent(ChargingStationEvents.stopped)
-        this.stopping = false
       } else {
         logger.warn(`${this.logPrefix()} Charging station is already stopping...`)
       }
