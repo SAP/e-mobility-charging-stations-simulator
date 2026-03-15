@@ -270,7 +270,7 @@ await describe('I04 - DeleteCertificate', async () => {
   await describe('M04.FR.06 - ChargingStationCertificate Protection', async () => {
     await it('should reject deletion of ChargingStationCertificate', async () => {
       const chargingStationCertHash = createMockCertificateHashDataChain(
-        GetCertificateIdUseEnumType.CSMSRootCertificate,
+        GetCertificateIdUseEnumType.V2GCertificateChain,
         'CHARGING_STATION_CERT_SERIAL'
       )
 

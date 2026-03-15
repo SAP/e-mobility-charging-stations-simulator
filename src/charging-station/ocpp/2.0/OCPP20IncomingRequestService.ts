@@ -1611,6 +1611,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       for (const certChain of installedCertsResult.certificateHashDataChain) {
         const certHash = certChain.certificateHashData
         if (
+          certChain.certificateType === GetCertificateIdUseEnumType.V2GCertificateChain &&
           certHash.serialNumber === certificateHashData.serialNumber &&
           certHash.issuerNameHash === certificateHashData.issuerNameHash &&
           certHash.issuerKeyHash === certificateHashData.issuerKeyHash
@@ -2201,15 +2202,29 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     const currentSecurityProfile = Number(currentSecurityProfileResults[0]?.attributeValue ?? '0')
     const newSecurityProfile = commandPayload.connectionData.securityProfile
     if (newSecurityProfile < currentSecurityProfile) {
-      logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestSetNetworkProfile: Rejected security profile downgrade: ${newSecurityProfile.toString()} < ${currentSecurityProfile.toString()}`
-      )
-      return {
-        status: SetNetworkProfileStatusEnumType.Rejected,
-        statusInfo: {
-          additionalInfo: `Security profile downgrade not allowed: current=${currentSecurityProfile.toString()}, requested=${newSecurityProfile.toString()}`,
-          reasonCode: ReasonCodeEnumType.NoSecurityDowngrade,
+      // B09.FR.04 (errata 2025-09): Check AllowSecurityProfileDowngrade before rejecting
+      const allowDowngradeResults = variableManager.getVariables(chargingStation, [
+        {
+          attributeType: AttributeEnumType.Actual,
+          component: { name: OCPP20ComponentName.SecurityCtrlr },
+          variable: { name: 'AllowSecurityProfileDowngrade' },
         },
+      ])
+      const allowDowngrade = allowDowngradeResults[0]?.attributeValue?.toLowerCase() === 'true'
+
+      // B09.FR.31 (errata 2025-09 §2.12): Allow downgrade when AllowSecurityProfileDowngrade=true
+      // but NEVER allow downgrade to profile 1
+      if (!allowDowngrade || newSecurityProfile <= 1) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestSetNetworkProfile: Rejected security profile downgrade: ${newSecurityProfile.toString()} < ${currentSecurityProfile.toString()}`
+        )
+        return {
+          status: SetNetworkProfileStatusEnumType.Rejected,
+          statusInfo: {
+            additionalInfo: `Security profile downgrade not allowed: current=${currentSecurityProfile.toString()}, requested=${newSecurityProfile.toString()}`,
+            reasonCode: ReasonCodeEnumType.NoSecurityDowngrade,
+          },
+        }
       }
     }
 
@@ -2231,7 +2246,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           status: SetNetworkProfileStatusEnumType.Rejected,
           statusInfo: {
             additionalInfo: `Configuration slot ${commandPayload.configurationSlot.toString()} is not in NetworkConfigurationPriority list`,
-            reasonCode: ReasonCodeEnumType.InvalidNetworkConf,
+            reasonCode: ReasonCodeEnumType.InvalidConfSlot,
           },
         }
       }
@@ -3479,6 +3494,20 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         if (checkAborted()) return
       }
     }
+
+    // L01.FR.06: Wait for active transactions to end before installing
+    while (
+      !checkAborted() &&
+      [...chargingStation.evses].some(
+        ([evseId, evse]) => evseId > 0 && this.hasEvseActiveTransactions(evse)
+      )
+    ) {
+      logger.debug(
+        `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Waiting for active transactions to end before installing (L01.FR.06)`
+      )
+      await sleep(5000)
+    }
+    if (checkAborted()) return
 
     await this.sendFirmwareStatusNotification(
       chargingStation,
