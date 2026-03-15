@@ -1,5 +1,41 @@
 # Changelog
 
+## [3.1.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ocpp-server@v3.0.0...ocpp-server@v3.1.0) (2026-03-15)
+
+
+### 🚀 Features
+
+* **ocpp-server:** add error handling, configurable params, async tests, and Python 3.14+ compat ([87dd8a8](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/87dd8a85cf076059df34f0fc7e56a4dff9a56004))
+* **ocpp-server:** overhaul OCPP 2.0.1 mock server with full command coverage ([00fd54b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/00fd54b4fd02b00a2bb65ab782b49b58ce144a34))
+
+
+### 🐞 Bug Fixes
+
+* **ocpp-server:** add suppress=False to all call() invocations and widen randint range ([2eacf4c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/2eacf4c804a6b3bae9a7bd540c6f7940c40fc443))
+* **ocpp-server:** extract CP ID from last URL segment and scope ChargePoints to instance ([bd42284](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/bd42284738659d575ac2a423c4f9af57e4580a6b))
+* **ocpp-server:** share charge_points set across connections and harden test quality ([f2143a6](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f2143a66e95692dbd659077be5cfa4a66dce3fe6))
+* **ocpp-server:** use MagicMock for sync method in test to fix RuntimeWarning ([db3170b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/db3170b4a315252247ccf978e2a6ea3e9e54a829))
+
+
+### ✨ Polish
+
+* **ocpp-server:** deduplicate outgoing commands, harden timer, expand test coverage ([e4336e0](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e4336e067d893f86026d7faa1bf574e31ab10efe))
+* **ocpp-server:** introduce AuthMode, AuthConfig and ServerConfig typed dataclasses ([a4393c7](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/a4393c7879f03bba75a386f428cf02cbe9521187))
+* **ocpp-server:** parametrize failure-path tests to eliminate duplication ([4ce2ca8](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/4ce2ca8670779be6062091ffb61b7513073f938a))
+
+
+### 🧪 Tests
+
+* **ocpp-server:** add behavioral tests for all outgoing commands ([737e11a](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/737e11ab71105e46bb7cba7e6e454d3f6baa4674))
+* **ocpp-server:** add connection lifecycle and command scheduling tests ([ce44bb8](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ce44bb8914bc734b230b0855344d4f5b9a2bd2a5))
+* **ocpp-server:** add Timer class test coverage ([d3f6b7b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/d3f6b7bb1dbd87768b1843e6166634bb63afdf77))
+* **ocpp-server:** centralize constants, strengthen assertions, add auth modes, trim meta-tests ([593fa76](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/593fa76522675b80bbb5cf7505864927ede2a377))
+
+
+### 📚 Documentation
+
+* **ocpp-server:** restructure README with logical section hierarchy ([2287dc0](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/2287dc087ffb396b487c2cdecb011938c4506d52))
+
 ## [3.0.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ocpp-server@v2.4.0...ocpp-server@v3.0.0) (2026-03-06)
 
 ### 🧹 Chores

@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.1.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v3.0.0...webui@v3.1.0) (2026-03-15)
+
+
+### 🐞 Bug Fixes
+
+* **deps:** update all non-major dependencies ([#1706](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1706)) ([dff65e2](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/dff65e23b59a5ae72aa7853be04d3e65523197f7))
+* migrate JSR dependency from legacy npm:@jsr/ to native jsr: protocol ([e7941db](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e7941dbe34445151a82ad68a4465f02bcbc96337))
+
+
+### 📚 Documentation
+
+* **ui-web:** rewrite README with coherent structure and code-verified content ([26ce089](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/26ce089b9b11b806471815484ffd1ba738c21e59))
+
 ## [3.0.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v2.4.0...webui@v3.0.0) (2026-03-06)
 
 ### 🐞 Bug Fixes
