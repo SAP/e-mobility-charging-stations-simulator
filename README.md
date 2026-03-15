@@ -511,6 +511,8 @@ make SUBMODULES_INIT=true
 - :white_check_mark: SetNetworkProfile
 - :white_check_mark: SetVariables
 
+> **Note**: `SetNetworkProfile` validates `configurationSlot` and returns `Accepted` for valid requests per B09.FR.01. The simulator does not perform actual network profile switching. SecurityProfile downgrade detection (B09.FR.04) and slot-in-priority cross-check (B09.FR.05) are not implemented.
+
 #### C. Authorization
 
 - :white_check_mark: ClearCache
@@ -545,10 +547,21 @@ make SUBMODULES_INIT=true
 - :white_check_mark: GetLog
 - :white_check_mark: LogStatusNotification
 
+> **Note**: `GetLog` triggers a simulated async lifecycle (`Uploading` → `Uploaded`) with `LogStatusNotification` updates.
+
 #### L. FirmwareManagement
 
 - :white_check_mark: FirmwareStatusNotification
 - :white_check_mark: UpdateFirmware
+
+> **Note**: `UpdateFirmware` implements a full simulated lifecycle (`DownloadScheduled` → `Downloading` → `Downloaded` → `SignatureVerified` → `InstallScheduled` → `Installing` → `Installed`) with `FirmwareStatusNotification` at each stage. Additional behaviors:
+>
+> - Firmware signing certificate PEM validation with `SecurityEventNotification` on failure
+> - Active transactions block firmware update (`TxInProgress`)
+> - `retrieveDateTime`/`installDateTime` scheduling support
+> - Invalid firmware location URL detection (`DownloadFailed`)
+> - Duplicate update cancellation via `AcceptedCanceled` status
+> - `SecurityEventNotification` (`FirmwareUpdated`) on completion
 
 #### M. ISO 15118 CertificateManagement
 
@@ -560,15 +573,20 @@ make SUBMODULES_INIT=true
 - :white_check_mark: InstallCertificate
 - :white_check_mark: SignCertificate
 
-> **Note**: Certificate management implementation limitations:
+> **Note**: Certificate management implementation details:
 >
-> - **Mock CSR generation**: The `SignCertificate` command generates a mock Certificate Signing Request (CSR) for simulation purposes. In production, this should be replaced with actual cryptographic CSR generation.
-> - **OCSP stub**: Online Certificate Status Protocol (OCSP) validation is stubbed and returns `Failed` status. Full OCSP integration requires external OCSP responder configuration.
+> - **Real PKCS#10 CSR generation**: `SignCertificate` generates a real Certificate Signing Request (RFC 2986) using RSA 2048-bit keys and SHA-256 signature via `node:crypto`
+> - **X.509 certificate validation**: `CertificateSigned` and `InstallCertificate` validate certificate validity period (`notBefore`/`notAfter`) and issuer presence per A02.FR.06. Full chain-of-trust hierarchy verification is not implemented
+> - **MaxCertificateChainSize enforcement**: `CertificateSigned` rejects certificate chains exceeding the configured `MaxCertificateChainSize` with `SecurityEventNotification` per A02.FR.16
+> - **ChargingStationCertificate protection**: `DeleteCertificate` prevents deletion of the Charging Station Certificate per M04.FR.06
+> - **OCSP stub**: `GetCertificateStatus` forwards the OCSP request data to the CSMS but does not contact an external OCSP responder. Full OCSP integration would require external responder configuration and network access
 
 #### N. CustomerInformation
 
 - :white_check_mark: CustomerInformation
 - :white_check_mark: NotifyCustomerInformation
+
+> **Note**: `CustomerInformation` validates N09.FR.09 (exactly one customer identifier required when `report=true`). Report responses are sent via `NotifyCustomerInformation` with `seqNo`/`tbc` pagination.
 
 #### P. DataTransfer
 
