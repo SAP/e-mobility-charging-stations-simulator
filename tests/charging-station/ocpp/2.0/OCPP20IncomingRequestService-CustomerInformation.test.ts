@@ -12,11 +12,13 @@ import { createTestableIncomingRequestService } from '../../../../src/charging-s
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import {
   CustomerInformationStatusEnumType,
+  HashAlgorithmEnumType,
   type OCPP20CustomerInformationRequest,
   type OCPP20CustomerInformationResponse,
   OCPP20IncomingRequestCommand,
   OCPPVersion,
 } from '../../../../src/types/index.js'
+import { OCPP20IdTokenEnumType } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
@@ -60,10 +62,11 @@ await describe('N32 - CustomerInformation', async () => {
     assert.strictEqual(response.status, CustomerInformationStatusEnumType.Accepted)
   })
 
-  // TC_N_32_CS: CS must respond to CustomerInformation with Accepted for report requests
-  await it('should respond with Accepted status for report request', () => {
+  // TC_N_32_CS: CS must respond to CustomerInformation with Accepted for report requests with valid identifier
+  await it('should respond with Accepted status for report request with exactly one identifier', () => {
     const response = testableService.handleRequestCustomerInformation(station, {
       clear: false,
+      idToken: { idToken: 'TOKEN_001', type: OCPP20IdTokenEnumType.Central },
       report: true,
       requestId: 2,
     })
@@ -92,6 +95,72 @@ await describe('N32 - CustomerInformation', async () => {
     assert.notStrictEqual(response.statusInfo?.additionalInfo, undefined)
   })
 
+  await describe('N09.FR.09 - Customer identifier validation', async () => {
+    await it('should respond with Invalid when report=true and no identifier provided', () => {
+      const response = testableService.handleRequestCustomerInformation(station, {
+        clear: false,
+        report: true,
+        requestId: 10,
+      })
+
+      assert.strictEqual(response.status, CustomerInformationStatusEnumType.Invalid)
+      assert.notStrictEqual(response.statusInfo, undefined)
+      assert.strictEqual(response.statusInfo?.reasonCode, 'InvalidValue')
+      assert.notStrictEqual(response.statusInfo?.additionalInfo, undefined)
+    })
+
+    await it('should respond with Invalid when report=true and two identifiers provided', () => {
+      const response = testableService.handleRequestCustomerInformation(station, {
+        clear: false,
+        customerIdentifier: 'CUST_001',
+        idToken: { idToken: 'TOKEN_001', type: OCPP20IdTokenEnumType.Central },
+        report: true,
+        requestId: 11,
+      })
+
+      assert.strictEqual(response.status, CustomerInformationStatusEnumType.Invalid)
+      assert.notStrictEqual(response.statusInfo, undefined)
+      assert.strictEqual(response.statusInfo?.reasonCode, 'InvalidValue')
+    })
+
+    await it('should respond with Accepted when report=true and exactly one identifier (customerIdentifier)', () => {
+      const response = testableService.handleRequestCustomerInformation(station, {
+        clear: false,
+        customerIdentifier: 'CUST_001',
+        report: true,
+        requestId: 12,
+      })
+
+      assert.strictEqual(response.status, CustomerInformationStatusEnumType.Accepted)
+    })
+
+    await it('should respond with Accepted when report=true and exactly one identifier (customerCertificate)', () => {
+      const response = testableService.handleRequestCustomerInformation(station, {
+        clear: false,
+        customerCertificate: {
+          hashAlgorithm: HashAlgorithmEnumType.SHA256,
+          issuerKeyHash: 'abc123',
+          issuerNameHash: 'def456',
+          serialNumber: '789',
+        },
+        report: true,
+        requestId: 13,
+      })
+
+      assert.strictEqual(response.status, CustomerInformationStatusEnumType.Accepted)
+    })
+
+    await it('should respond with Accepted when clear=true without identifier', () => {
+      const response = testableService.handleRequestCustomerInformation(station, {
+        clear: true,
+        report: false,
+        requestId: 14,
+      })
+
+      assert.strictEqual(response.status, CustomerInformationStatusEnumType.Accepted)
+    })
+  })
+
   await it('should register CUSTOMER_INFORMATION event listener in constructor', () => {
     const service = new OCPP20IncomingRequestService()
     assert.strictEqual(service.listenerCount(OCPP20IncomingRequestCommand.CUSTOMER_INFORMATION), 1)
@@ -112,6 +181,7 @@ await describe('N32 - CustomerInformation', async () => {
 
     const request: OCPP20CustomerInformationRequest = {
       clear: false,
+      idToken: { idToken: 'TOKEN_001', type: OCPP20IdTokenEnumType.Central },
       report: true,
       requestId: 20,
     }
@@ -195,6 +265,7 @@ await describe('N32 - CustomerInformation', async () => {
 
     const request: OCPP20CustomerInformationRequest = {
       clear: false,
+      idToken: { idToken: 'TOKEN_001', type: OCPP20IdTokenEnumType.Central },
       report: true,
       requestId: 99,
     }
