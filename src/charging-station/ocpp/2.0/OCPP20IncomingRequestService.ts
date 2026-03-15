@@ -89,6 +89,8 @@ import {
   OCPP20RequiredVariableName,
   type OCPP20ResetRequest,
   type OCPP20ResetResponse,
+  type OCPP20SecurityEventNotificationRequest,
+  type OCPP20SecurityEventNotificationResponse,
   type OCPP20SetNetworkProfileRequest,
   type OCPP20SetNetworkProfileResponse,
   type OCPP20SetVariablesRequest,
@@ -155,6 +157,10 @@ const moduleName = 'OCPP20IncomingRequestService'
 
 export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   protected payloadValidatorFunctions: Map<OCPP20IncomingRequestCommand, ValidateFunction<JsonType>>
+
+  private activeFirmwareUpdateAbortController: AbortController | undefined
+
+  private activeFirmwareUpdateRequestId: number | undefined
 
   private readonly incomingRequestHandlers: Map<
     OCPP20IncomingRequestCommand,
@@ -2588,6 +2594,69 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Received UpdateFirmware request with requestId ${requestId.toString()} for location '${firmware.location}'`
     )
 
+    // C10: Validate signing certificate PEM format if present
+    if (firmware.signingCertificate != null && firmware.signingCertificate.trim() !== '') {
+      if (
+        !hasCertificateManager(chargingStation) ||
+        !chargingStation.certificateManager.validateCertificateFormat(firmware.signingCertificate)
+      ) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Invalid PEM format for signing certificate`
+        )
+        this.sendSecurityEventNotification(
+          chargingStation,
+          'InvalidFirmwareSigningCertificate',
+          `Invalid signing certificate PEM for requestId ${requestId.toString()}`
+        ).catch((error: unknown) => {
+          logger.error(
+            `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: SecurityEventNotification error:`,
+            error
+          )
+        })
+        return {
+          status: UpdateFirmwareStatusEnumType.InvalidCertificate,
+        }
+      }
+    }
+
+    // C11: Reject if any EVSE has active transactions
+    for (const [evseId, evseStatus] of chargingStation.evses) {
+      if (evseId > 0 && this.hasEvseActiveTransactions(evseStatus)) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Rejected - EVSE ${evseId.toString()} has active transactions`
+        )
+        return {
+          status: UpdateFirmwareStatusEnumType.Rejected,
+          statusInfo: {
+            additionalInfo: 'Active transactions must complete before firmware update',
+            reasonCode: ReasonCodeEnumType.TxInProgress,
+          },
+        }
+      }
+    }
+
+    // H10: Cancel any in-progress firmware update
+    if (this.activeFirmwareUpdateAbortController != null) {
+      const previousRequestId = this.activeFirmwareUpdateRequestId
+      this.activeFirmwareUpdateAbortController.abort()
+      this.activeFirmwareUpdateAbortController = undefined
+      this.activeFirmwareUpdateRequestId = undefined
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Canceled previous firmware update requestId ${String(previousRequestId)}`
+      )
+      // Send AcceptedCanceled notification for the old firmware update
+      this.sendFirmwareStatusNotification(
+        chargingStation,
+        FirmwareStatusEnumType.DownloadFailed,
+        previousRequestId ?? 0
+      ).catch((error: unknown) => {
+        logger.error(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: AcceptedCanceled notification error:`,
+          error
+        )
+      })
+    }
+
     return {
       status: UpdateFirmwareStatusEnumType.Accepted,
     }
@@ -2940,6 +3009,21 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     })
   }
 
+  private sendSecurityEventNotification (
+    chargingStation: ChargingStation,
+    type: string,
+    techInfo?: string
+  ): Promise<OCPP20SecurityEventNotificationResponse> {
+    return chargingStation.ocppRequestService.requestHandler<
+      OCPP20SecurityEventNotificationRequest,
+      OCPP20SecurityEventNotificationResponse
+    >(chargingStation, OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION, {
+      timestamp: new Date(),
+      type,
+      ...(techInfo !== undefined && { techInfo }),
+    })
+  }
+
   private async sendNotifyCustomerInformation (
     chargingStation: ChargingStation,
     requestId: number
@@ -3042,6 +3126,13 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   ): Promise<void> {
     const { installDateTime, location, retrieveDateTime, signature } = firmware
 
+    // H10: Set up abort controller for cancellation support
+    const abortController = new AbortController()
+    this.activeFirmwareUpdateAbortController = abortController
+    this.activeFirmwareUpdateRequestId = requestId
+
+    const checkAborted = (): boolean => abortController.signal.aborted
+
     // C12: If retrieveDateTime is in the future, send DownloadScheduled and wait
     const now = Date.now()
     const retrieveTime = new Date(retrieveDateTime).getTime()
@@ -3052,6 +3143,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         requestId
       )
       await sleep(retrieveTime - now)
+      if (checkAborted()) return
     }
 
     await this.sendFirmwareStatusNotification(
@@ -3061,6 +3153,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     )
 
     await sleep(2000)
+    if (checkAborted()) return
 
     // H9: If firmware location is empty or malformed, send DownloadFailed and stop
     if (location.trim() === '' || !this.isValidFirmwareLocation(location)) {
@@ -3072,6 +3165,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Download failed for requestId ${requestId.toString()} - invalid location '${location}'`
       )
+      this.clearActiveFirmwareUpdate(requestId)
       return
     }
 
@@ -3083,6 +3177,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     if (signature != null) {
       await sleep(500)
+      if (checkAborted()) return
       await this.sendFirmwareStatusNotification(
         chargingStation,
         FirmwareStatusEnumType.SignatureVerified,
@@ -3101,6 +3196,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           requestId
         )
         await sleep(installTime - currentTime)
+        if (checkAborted()) return
       }
     }
 
@@ -3111,15 +3207,31 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     )
 
     await sleep(1000)
+    if (checkAborted()) return
     await this.sendFirmwareStatusNotification(
       chargingStation,
       FirmwareStatusEnumType.Installed,
       requestId
     )
 
+    // H11: Send SecurityEventNotification for successful firmware update
+    await this.sendSecurityEventNotification(
+      chargingStation,
+      'FirmwareUpdated',
+      `Firmware update completed for requestId ${requestId.toString()}`
+    )
+
+    this.clearActiveFirmwareUpdate(requestId)
     logger.info(
       `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Firmware update simulation completed for requestId ${requestId.toString()}`
     )
+  }
+
+  private clearActiveFirmwareUpdate (requestId: number): void {
+    if (this.activeFirmwareUpdateRequestId === requestId) {
+      this.activeFirmwareUpdateAbortController = undefined
+      this.activeFirmwareUpdateRequestId = undefined
+    }
   }
 
   private isValidFirmwareLocation (location: string): boolean {
