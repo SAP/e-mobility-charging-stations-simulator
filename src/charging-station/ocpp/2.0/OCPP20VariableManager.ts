@@ -59,11 +59,11 @@ export class OCPP20VariableManager {
     Object.keys(VARIABLE_REGISTRY).map(k => k.split('::')[0])
   )
 
-  private readonly invalidVariablesPerStation = new Map<string, Set<string>>()
-  private readonly maxSetOverrides = new Map<string, string>() // composite key (lower case)
-  private readonly minSetOverrides = new Map<string, string>() // composite key (lower case)
-  private readonly runtimeOverrides = new Map<string, string>() // composite key (lower case)
-  private readonly validatedStations = new Set<string>()
+  private readonly invalidVariables = new Map<string, Set<string>>() // stationId → composite keys (lower case)
+  private readonly maxSetOverrides = new Map<string, string>() // composite key (lower case) → value
+  private readonly minSetOverrides = new Map<string, string>() // composite key (lower case) → value
+  private readonly runtimeOverrides = new Map<string, string>() // composite key (lower case) → value
+  private readonly validatedStations = new Set<string>() // stationId
 
   private constructor () {
     /* This is intentional */
@@ -107,10 +107,10 @@ export class OCPP20VariableManager {
   public invalidateMappingsCache (stationId?: string): void {
     if (stationId != null) {
       this.validatedStations.delete(stationId)
-      this.invalidVariablesPerStation.delete(stationId)
+      this.invalidVariables.delete(stationId)
     } else {
       this.validatedStations.clear()
-      this.invalidVariablesPerStation.clear()
+      this.invalidVariables.clear()
     }
   }
 
@@ -294,10 +294,10 @@ export class OCPP20VariableManager {
   }
 
   private getInvalidVariables (stationId: string): Set<string> {
-    let set = this.invalidVariablesPerStation.get(stationId)
+    let set = this.invalidVariables.get(stationId)
     if (set == null) {
       set = new Set<string>()
-      this.invalidVariablesPerStation.set(stationId, set)
+      this.invalidVariables.set(stationId, set)
     }
     return set
   }
