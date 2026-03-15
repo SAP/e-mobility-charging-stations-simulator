@@ -1424,7 +1424,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     return {
       status: CustomerInformationStatusEnumType.Rejected,
       statusInfo: {
-        additionalInfo: 'Neither clear nor report flag set',
+        additionalInfo: 'Neither clear nor report flag is set in CustomerInformation request',
         reasonCode: ReasonCodeEnumType.InvalidValue,
       },
     }
@@ -2065,7 +2065,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return {
         status: SetNetworkProfileStatusEnumType.Rejected,
         statusInfo: {
-          additionalInfo: 'configurationSlot must be a positive integer',
+          additionalInfo: 'ConfigurationSlot must be a positive integer',
           reasonCode: ReasonCodeEnumType.InvalidNetworkConf,
         },
       }
