@@ -1318,6 +1318,29 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestCustomerInformation: Received CustomerInformation request with clear=${commandPayload.clear.toString()}, report=${commandPayload.report.toString()}`
     )
 
+    // N09.FR.09: Exactly one of {idToken, customerCertificate, customerIdentifier} must be provided when report=true
+    if (commandPayload.report) {
+      const identifierCount = [
+        commandPayload.idToken,
+        commandPayload.customerCertificate,
+        commandPayload.customerIdentifier,
+      ].filter(id => id != null).length
+
+      if (identifierCount !== 1) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestCustomerInformation: N09.FR.09 violation - expected exactly 1 customer identifier when report=true, got ${identifierCount.toString()}`
+        )
+        return {
+          status: CustomerInformationStatusEnumType.Invalid,
+          statusInfo: {
+            additionalInfo:
+              'Exactly one customer identifier must be provided when report=true',
+            reasonCode: ReasonCodeEnumType.InvalidValue,
+          },
+        }
+      }
+    }
+
     if (commandPayload.clear) {
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestCustomerInformation: Clear request accepted (simulator has no persistent customer data)`
@@ -1371,6 +1394,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   /**
    * Handles OCPP 2.0 DeleteCertificate request from central system
    * Deletes a certificate matching the provided hash data from the charging station
+   * Per M04.FR.06: ChargingStationCertificate cannot be deleted via DeleteCertificateRequest
    * @param chargingStation - The charging station instance processing the request
    * @param commandPayload - DeleteCertificate request payload with certificate hash data
    * @returns Promise resolving to DeleteCertificateResponse with status
@@ -1395,6 +1419,35 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
 
     try {
+      // M04.FR.06: Check if the certificate to delete is a ChargingStationCertificate
+      // If so, reject the deletion request
+      const installedCerts = chargingStation.certificateManager.getInstalledCertificates(
+        chargingStation.stationInfo?.hashId ?? '',
+        [CertificateSigningUseEnumType.ChargingStationCertificate as unknown as InstallCertificateUseEnumType]
+      )
+
+      const installedCertsResult = installedCerts instanceof Promise ? await installedCerts : installedCerts
+
+      for (const certChain of installedCertsResult.certificateHashDataChain) {
+        const certHash = certChain.certificateHashData
+        if (
+          certHash.serialNumber === certificateHashData.serialNumber &&
+          certHash.issuerNameHash === certificateHashData.issuerNameHash &&
+          certHash.issuerKeyHash === certificateHashData.issuerKeyHash
+        ) {
+          logger.warn(
+            `${chargingStation.logPrefix()} ${moduleName}.handleRequestDeleteCertificate: Attempted to delete ChargingStationCertificate (M04.FR.06)`
+          )
+          return {
+            status: DeleteCertificateStatusEnumType.Failed,
+            statusInfo: {
+              additionalInfo: 'ChargingStationCertificate cannot be deleted per M04.FR.06',
+              reasonCode: ReasonCodeEnumType.InternalError,
+            },
+          }
+        }
+      }
+
       const result = chargingStation.certificateManager.deleteCertificate(
         chargingStation.stationInfo?.hashId ?? '',
         certificateHashData
@@ -1906,13 +1959,13 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   /**
-   * Handles OCPP 2.0.1 SetNetworkProfile request from central system
-   * Per TC_B_43_CS: CS must respond to SetNetworkProfile at minimum with Rejected
-   * The simulator does not support network profile switching
-   * @param chargingStation - The charging station instance
-   * @param commandPayload - The SetNetworkProfile request payload
-   * @returns SetNetworkProfileResponse with Rejected status
-   */
+    * Handles OCPP 2.0.1 SetNetworkProfile request from central system
+    * Per B09.FR.01: Validates configurationSlot and connectionData, returns Accepted for valid requests
+    * The simulator accepts the request but does not perform actual network profile switching
+    * @param chargingStation - The charging station instance
+    * @param commandPayload - The SetNetworkProfile request payload
+    * @returns SetNetworkProfileResponse with Accepted or Rejected status
+    */
   private handleRequestSetNetworkProfile (
     chargingStation: ChargingStation,
     commandPayload: OCPP20SetNetworkProfileRequest
@@ -1920,13 +1973,41 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestSetNetworkProfile: Received SetNetworkProfile request`
     )
-    // Per TC_B_43_CS: CS must respond to SetNetworkProfile at minimum with Rejected
+    
+    // Validate configurationSlot is a positive integer (B09.FR.02)
+    if (!Number.isInteger(commandPayload.configurationSlot) || commandPayload.configurationSlot <= 0) {
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestSetNetworkProfile: Invalid configurationSlot: ${commandPayload.configurationSlot}`
+      )
+      return {
+        status: SetNetworkProfileStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: 'configurationSlot must be a positive integer',
+          reasonCode: ReasonCodeEnumType.InvalidValue,
+        },
+      }
+    }
+    
+    // Validate connectionData is present
+    if (!commandPayload.connectionData) {
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestSetNetworkProfile: Missing connectionData`
+      )
+      return {
+        status: SetNetworkProfileStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: 'connectionData is required',
+          reasonCode: ReasonCodeEnumType.InvalidValue,
+        },
+      }
+    }
+    
+    // Valid request - return Accepted (simulator accepts but does not switch networks)
+    logger.info(
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestSetNetworkProfile: Accepting SetNetworkProfile request for slot ${commandPayload.configurationSlot}`
+    )
     return {
-      status: SetNetworkProfileStatusEnumType.Rejected,
-      statusInfo: {
-        additionalInfo: 'Simulator does not support network profile configuration',
-        reasonCode: ReasonCodeEnumType.UnsupportedRequest,
-      },
+      status: SetNetworkProfileStatusEnumType.Accepted,
     }
   }
 
@@ -2834,20 +2915,37 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     chargingStation: ChargingStation,
     requestId: number
   ): Promise<void> {
-    const notifyCustomerInformationRequest: OCPP20NotifyCustomerInformationRequest = {
-      data: '',
-      generatedAt: new Date(),
-      requestId,
-      seqNo: 0,
-      tbc: false,
+    // Simulator has no persistent customer data, so send empty data.
+    // Uses pagination pattern (seqNo/tbc) consistent with sendNotifyReportRequest.
+    const dataChunks = ['']
+
+    for (let seqNo = 0; seqNo < dataChunks.length; seqNo++) {
+      const isLastChunk = seqNo === dataChunks.length - 1
+
+      const notifyCustomerInformationRequest: OCPP20NotifyCustomerInformationRequest = {
+        data: dataChunks[seqNo],
+        generatedAt: new Date(),
+        requestId,
+        seqNo,
+        tbc: !isLastChunk,
+      }
+
+      await chargingStation.ocppRequestService.requestHandler<
+        OCPP20NotifyCustomerInformationRequest,
+        OCPP20NotifyCustomerInformationResponse
+      >(
+        chargingStation,
+        OCPP20RequestCommand.NOTIFY_CUSTOMER_INFORMATION,
+        notifyCustomerInformationRequest
+      )
+
+      logger.debug(
+        `${chargingStation.logPrefix()} ${moduleName}.sendNotifyCustomerInformation: NotifyCustomerInformation sent seqNo=${seqNo} for requestId ${requestId} (tbc=${(!isLastChunk).toString()})`
+      )
     }
-    await chargingStation.ocppRequestService.requestHandler<
-      OCPP20NotifyCustomerInformationRequest,
-      OCPP20NotifyCustomerInformationResponse
-    >(
-      chargingStation,
-      OCPP20RequestCommand.NOTIFY_CUSTOMER_INFORMATION,
-      notifyCustomerInformationRequest
+
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.sendNotifyCustomerInformation: Completed NotifyCustomerInformation for requestId ${requestId} in ${dataChunks.length.toString()} message(s)`
     )
   }
 

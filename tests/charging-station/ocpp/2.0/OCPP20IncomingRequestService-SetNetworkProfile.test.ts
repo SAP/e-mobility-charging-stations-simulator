@@ -49,9 +49,9 @@ await describe('B43 - SetNetworkProfile', async () => {
     standardCleanup()
   })
 
-  // TC_B_43_CS: CS must respond to SetNetworkProfile at minimum with Rejected
-  await it('should respond with Rejected status', () => {
-    const response = testableService.handleRequestSetNetworkProfile(station, {
+  await it('should respond with Accepted status for valid request', () => {
+    // Arrange
+    const validPayload = {
       configurationSlot: 1,
       connectionData: {
         messageTimeout: 30,
@@ -61,31 +61,104 @@ await describe('B43 - SetNetworkProfile', async () => {
         ocppVersion: OCPPVersionEnumType.OCPP20,
         securityProfile: 3,
       },
-    })
+    }
 
+    // Act
+    const response = testableService.handleRequestSetNetworkProfile(station, validPayload)
+
+    // Assert
     assert.notStrictEqual(response, undefined)
     assert.strictEqual(typeof response, 'object')
-    assert.notStrictEqual(response.status, undefined)
+    assert.strictEqual(response.status, SetNetworkProfileStatusEnumType.Accepted)
+    assert.strictEqual(response.statusInfo, undefined)
+  })
+
+  // TC_B_43_CS: CS must respond to SetNetworkProfile at minimum with Rejected
+  await it('should respond with Rejected status for invalid configurationSlot', () => {
+    // Arrange
+    const invalidPayload = {
+      configurationSlot: 0,
+      connectionData: {
+        messageTimeout: 30,
+        ocppCsmsUrl: 'wss://example.com/ocpp',
+        ocppInterface: OCPPInterfaceEnumType.Wired0,
+        ocppTransport: OCPPTransportEnumType.JSON,
+        ocppVersion: OCPPVersionEnumType.OCPP20,
+        securityProfile: 3,
+      },
+    }
+
+    // Act
+    const response = testableService.handleRequestSetNetworkProfile(station, invalidPayload)
+
+    // Assert
     assert.strictEqual(response.status, SetNetworkProfileStatusEnumType.Rejected)
+    assert.notStrictEqual(response.statusInfo, undefined)
+    assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.InvalidValue)
+  })
+
+  await it('should respond with Rejected status for negative configurationSlot', () => {
+    // Arrange
+    const invalidPayload = {
+      configurationSlot: -1,
+      connectionData: {
+        messageTimeout: 30,
+        ocppCsmsUrl: 'wss://example.com/ocpp',
+        ocppInterface: OCPPInterfaceEnumType.Wired0,
+        ocppTransport: OCPPTransportEnumType.JSON,
+        ocppVersion: OCPPVersionEnumType.OCPP20,
+        securityProfile: 3,
+      },
+    }
+
+    // Act
+    const response = testableService.handleRequestSetNetworkProfile(station, invalidPayload)
+
+    // Assert
+    assert.strictEqual(response.status, SetNetworkProfileStatusEnumType.Rejected)
+    assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.InvalidValue)
+  })
+
+  await it('should respond with Rejected status for non-integer configurationSlot', () => {
+    // Arrange
+    const invalidPayload = {
+      configurationSlot: 1.5,
+      connectionData: {
+        messageTimeout: 30,
+        ocppCsmsUrl: 'wss://example.com/ocpp',
+        ocppInterface: OCPPInterfaceEnumType.Wired0,
+        ocppTransport: OCPPTransportEnumType.JSON,
+        ocppVersion: OCPPVersionEnumType.OCPP20,
+        securityProfile: 3,
+      },
+    }
+
+    // Act
+    const response = testableService.handleRequestSetNetworkProfile(station, invalidPayload)
+
+    // Assert
+    assert.strictEqual(response.status, SetNetworkProfileStatusEnumType.Rejected)
+    assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.InvalidValue)
   })
 
   // TC_B_43_CS: Verify response includes statusInfo with reasonCode
-  await it('should include statusInfo with UnsupportedRequest reasonCode', () => {
-    const response = testableService.handleRequestSetNetworkProfile(station, {
+  await it('should include statusInfo with InvalidValue reasonCode for missing connectionData', () => {
+    // Arrange
+    const invalidPayload = {
       configurationSlot: 1,
-      connectionData: {
-        messageTimeout: 30,
-        ocppCsmsUrl: 'wss://example.com/ocpp',
-        ocppInterface: OCPPInterfaceEnumType.Wired0,
-        ocppTransport: OCPPTransportEnumType.JSON,
-        ocppVersion: OCPPVersionEnumType.OCPP20,
-        securityProfile: 3,
-      },
-    })
+      connectionData: undefined,
+    }
 
+    // Act
+    const response = testableService.handleRequestSetNetworkProfile(
+      station,
+      invalidPayload as any
+    )
+
+    // Assert
     assert.notStrictEqual(response, undefined)
     assert.strictEqual(response.status, SetNetworkProfileStatusEnumType.Rejected)
     assert.notStrictEqual(response.statusInfo, undefined)
-    assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.UnsupportedRequest)
+    assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.InvalidValue)
   })
 })
