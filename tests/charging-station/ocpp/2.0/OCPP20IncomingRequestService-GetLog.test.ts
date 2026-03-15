@@ -1,6 +1,7 @@
 /**
  * @file Tests for OCPP20IncomingRequestService GetLog
- * @description Unit tests for OCPP 2.0.1 GetLog command handling (K01)
+ * @description Unit tests for OCPP 2.0.1 GetLog command handling (K01) and
+ *   LogStatusNotification lifecycle simulation per N01
  */
 
 import assert from 'node:assert/strict'
@@ -17,11 +18,17 @@ import {
   type OCPP20GetLogResponse,
   OCPP20IncomingRequestCommand,
   OCPPVersion,
+  UploadLogStatusEnumType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
+import {
+  flushMicrotasks,
+  standardCleanup,
+  withMockTimers,
+} from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
+import { createMockStationWithRequestTracking } from './OCPP20TestUtils.js'
 
 await describe('K01 - GetLog', async () => {
   let station: ChargingStation
@@ -172,5 +179,112 @@ await describe('K01 - GetLog', async () => {
     service.emit(OCPP20IncomingRequestCommand.GET_LOG, station, request, response)
 
     await Promise.resolve()
+  })
+
+  await describe('N01 - LogStatusNotification lifecycle', async () => {
+    afterEach(() => {
+      standardCleanup()
+    })
+
+    await it('should send Uploading notification with correct requestId', async t => {
+      await withMockTimers(t, ['setTimeout'], async () => {
+        // Arrange
+        const { sentRequests, station: trackingStation } = createMockStationWithRequestTracking()
+        const service = new OCPP20IncomingRequestService()
+        const request: OCPP20GetLogRequest = {
+          log: { remoteLocation: 'ftp://logs.example.com/' },
+          logType: LogEnumType.DiagnosticsLog,
+          requestId: 42,
+        }
+        const response: OCPP20GetLogResponse = {
+          filename: 'simulator-log.txt',
+          status: LogStatusEnumType.Accepted,
+        }
+
+        // Act
+        service.emit(OCPP20IncomingRequestCommand.GET_LOG, trackingStation, request, response)
+        await flushMicrotasks()
+
+        // Assert
+        assert.ok(sentRequests.length >= 1, 'Expected at least one notification')
+        assert.deepStrictEqual(sentRequests[0].payload, {
+          requestId: 42,
+          status: UploadLogStatusEnumType.Uploading,
+        })
+      })
+    })
+
+    await it('should send Uploaded notification with correct requestId after delay', async t => {
+      await withMockTimers(t, ['setTimeout'], async () => {
+        // Arrange
+        const { sentRequests, station: trackingStation } = createMockStationWithRequestTracking()
+        const service = new OCPP20IncomingRequestService()
+        const request: OCPP20GetLogRequest = {
+          log: { remoteLocation: 'ftp://logs.example.com/' },
+          logType: LogEnumType.DiagnosticsLog,
+          requestId: 42,
+        }
+        const response: OCPP20GetLogResponse = {
+          filename: 'simulator-log.txt',
+          status: LogStatusEnumType.Accepted,
+        }
+
+        // Act
+        service.emit(OCPP20IncomingRequestCommand.GET_LOG, trackingStation, request, response)
+        await flushMicrotasks()
+
+        // Only Uploading should be sent before the timer fires
+        assert.strictEqual(sentRequests.length, 1)
+
+        // Advance past the simulated upload delay
+        t.mock.timers.tick(1000)
+        await flushMicrotasks()
+
+        // Assert
+        assert.strictEqual(sentRequests.length, 2)
+        assert.deepStrictEqual(sentRequests[1].payload, {
+          requestId: 42,
+          status: UploadLogStatusEnumType.Uploaded,
+        })
+      })
+    })
+
+    await it('should send Uploading before Uploaded in correct sequence', async t => {
+      await withMockTimers(t, ['setTimeout'], async () => {
+        // Arrange
+        const { sentRequests, station: trackingStation } = createMockStationWithRequestTracking()
+        const service = new OCPP20IncomingRequestService()
+        const request: OCPP20GetLogRequest = {
+          log: { remoteLocation: 'ftp://logs.example.com/' },
+          logType: LogEnumType.DiagnosticsLog,
+          requestId: 7,
+        }
+        const response: OCPP20GetLogResponse = {
+          filename: 'simulator-log.txt',
+          status: LogStatusEnumType.Accepted,
+        }
+
+        // Act - complete the full lifecycle
+        service.emit(OCPP20IncomingRequestCommand.GET_LOG, trackingStation, request, response)
+        await flushMicrotasks()
+        t.mock.timers.tick(1000)
+        await flushMicrotasks()
+
+        // Assert - verify sequence and requestId propagation
+        assert.strictEqual(sentRequests.length, 2)
+        assert.strictEqual(
+          sentRequests[0].payload.status,
+          UploadLogStatusEnumType.Uploading,
+          'First notification should be Uploading'
+        )
+        assert.strictEqual(
+          sentRequests[1].payload.status,
+          UploadLogStatusEnumType.Uploaded,
+          'Second notification should be Uploaded'
+        )
+        assert.strictEqual(sentRequests[0].payload.requestId, 7)
+        assert.strictEqual(sentRequests[1].payload.requestId, 7)
+      })
+    })
   })
 })

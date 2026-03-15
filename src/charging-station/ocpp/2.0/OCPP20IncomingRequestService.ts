@@ -26,6 +26,7 @@ import {
   type EvseStatus,
   FirmwareStatus,
   FirmwareStatusEnumType,
+  type FirmwareType,
   GenericDeviceModelStatusEnumType,
   GenericStatus,
   GetCertificateIdUseEnumType,
@@ -88,6 +89,8 @@ import {
   OCPP20RequiredVariableName,
   type OCPP20ResetRequest,
   type OCPP20ResetResponse,
+  type OCPP20SecurityEventNotificationRequest,
+  type OCPP20SecurityEventNotificationResponse,
   type OCPP20SetNetworkProfileRequest,
   type OCPP20SetNetworkProfileResponse,
   type OCPP20SetVariablesRequest,
@@ -131,6 +134,7 @@ import {
   sleep,
   validateUUID,
 } from '../../../utils/index.js'
+import { getConfigurationKey } from '../../ConfigurationKeyUtils.js'
 import {
   getIdTagsFile,
   hasPendingReservation,
@@ -154,6 +158,10 @@ const moduleName = 'OCPP20IncomingRequestService'
 
 export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   protected payloadValidatorFunctions: Map<OCPP20IncomingRequestCommand, ValidateFunction<JsonType>>
+
+  private activeFirmwareUpdateAbortController: AbortController | undefined
+
+  private activeFirmwareUpdateRequestId: number | undefined
 
   private readonly incomingRequestHandlers: Map<
     OCPP20IncomingRequestCommand,
@@ -277,7 +285,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           this.simulateFirmwareUpdateLifecycle(
             chargingStation,
             request.requestId,
-            request.firmware.signature
+            request.firmware
           ).catch((error: unknown) => {
             logger.error(
               `${chargingStation.logPrefix()} ${moduleName}.constructor: UpdateFirmware lifecycle error:`,
@@ -1041,6 +1049,13 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     return reportData
   }
 
+  private clearActiveFirmwareUpdate (requestId: number): void {
+    if (this.activeFirmwareUpdateRequestId === requestId) {
+      this.activeFirmwareUpdateAbortController = undefined
+      this.activeFirmwareUpdateRequestId = undefined
+    }
+  }
+
   private getTxUpdatedInterval (chargingStation: ChargingStation): number {
     const variableManager = OCPP20VariableManager.getInstance()
     const results = variableManager.getVariables(chargingStation, [
@@ -1182,6 +1197,51 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
+    // A02.FR.16: Enforce MaxCertificateChainSize — reject if chain exceeds configured limit
+    const maxChainSizeKey = getConfigurationKey(chargingStation, 'MaxCertificateChainSize')
+    if (maxChainSizeKey?.value != null) {
+      const maxChainSize = parseInt(maxChainSizeKey.value, 10)
+      if (!isNaN(maxChainSize) && maxChainSize > 0) {
+        const chainByteSize = Buffer.byteLength(certificateChain, 'utf8')
+        if (chainByteSize > maxChainSize) {
+          logger.warn(
+            `${chargingStation.logPrefix()} ${moduleName}.handleRequestCertificateSigned: Certificate chain size ${chainByteSize.toString()} bytes exceeds MaxCertificateChainSize ${maxChainSize.toString()} bytes`
+          )
+          return {
+            status: GenericStatus.Rejected,
+            statusInfo: {
+              additionalInfo: `Certificate chain size (${chainByteSize.toString()} bytes) exceeds MaxCertificateChainSize (${maxChainSize.toString()} bytes)`,
+              reasonCode: ReasonCodeEnumType.InvalidCertificate,
+            },
+          }
+        }
+      }
+    }
+
+    const x509Result = chargingStation.certificateManager.validateCertificateX509(certificateChain)
+    if (!x509Result.valid) {
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestCertificateSigned: X.509 validation failed: ${x509Result.reason ?? 'Unknown'}`
+      )
+      this.sendSecurityEventNotification(
+        chargingStation,
+        'InvalidChargingStationCertificate',
+        `X.509 validation failed: ${x509Result.reason ?? 'Unknown'}`
+      ).catch((error: unknown) => {
+        logger.error(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestCertificateSigned: SecurityEventNotification failed:`,
+          error
+        )
+      })
+      return {
+        status: GenericStatus.Rejected,
+        statusInfo: {
+          additionalInfo: x509Result.reason ?? 'Certificate X.509 validation failed',
+          reasonCode: ReasonCodeEnumType.InvalidCertificate,
+        },
+      }
+    }
+
     try {
       const result = chargingStation.certificateManager.storeCertificate(
         chargingStation.stationInfo?.hashId ?? '',
@@ -1318,6 +1378,28 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestCustomerInformation: Received CustomerInformation request with clear=${commandPayload.clear.toString()}, report=${commandPayload.report.toString()}`
     )
 
+    // N09.FR.09: Exactly one of {idToken, customerCertificate, customerIdentifier} must be provided when report=true
+    if (commandPayload.report) {
+      const identifierCount = [
+        commandPayload.idToken,
+        commandPayload.customerCertificate,
+        commandPayload.customerIdentifier,
+      ].filter(id => id != null).length
+
+      if (identifierCount !== 1) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestCustomerInformation: N09.FR.09 violation - expected exactly 1 customer identifier when report=true, got ${identifierCount.toString()}`
+        )
+        return {
+          status: CustomerInformationStatusEnumType.Invalid,
+          statusInfo: {
+            additionalInfo: 'Exactly one customer identifier must be provided when report=true',
+            reasonCode: ReasonCodeEnumType.InvalidValue,
+          },
+        }
+      }
+    }
+
     if (commandPayload.clear) {
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestCustomerInformation: Clear request accepted (simulator has no persistent customer data)`
@@ -1341,6 +1423,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     )
     return {
       status: CustomerInformationStatusEnumType.Rejected,
+      statusInfo: {
+        additionalInfo: 'Neither clear nor report flag is set in CustomerInformation request',
+        reasonCode: ReasonCodeEnumType.InvalidValue,
+      },
     }
   }
 
@@ -1367,6 +1453,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   /**
    * Handles OCPP 2.0 DeleteCertificate request from central system
    * Deletes a certificate matching the provided hash data from the charging station
+   * Per M04.FR.06: ChargingStationCertificate cannot be deleted via DeleteCertificateRequest
    * @param chargingStation - The charging station instance processing the request
    * @param commandPayload - DeleteCertificate request payload with certificate hash data
    * @returns Promise resolving to DeleteCertificateResponse with status
@@ -1391,6 +1478,38 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
 
     try {
+      // M04.FR.06: Check if the certificate to delete is a ChargingStationCertificate
+      // If so, reject the deletion request
+      // Get all installed certificates using the request's hashAlgorithm for consistent comparison
+      const installedCerts = chargingStation.certificateManager.getInstalledCertificates(
+        chargingStation.stationInfo?.hashId ?? '',
+        undefined,
+        certificateHashData.hashAlgorithm
+      )
+
+      const installedCertsResult =
+        installedCerts instanceof Promise ? await installedCerts : installedCerts
+
+      for (const certChain of installedCertsResult.certificateHashDataChain) {
+        const certHash = certChain.certificateHashData
+        if (
+          certHash.serialNumber === certificateHashData.serialNumber &&
+          certHash.issuerNameHash === certificateHashData.issuerNameHash &&
+          certHash.issuerKeyHash === certificateHashData.issuerKeyHash
+        ) {
+          logger.warn(
+            `${chargingStation.logPrefix()} ${moduleName}.handleRequestDeleteCertificate: Attempted to delete ChargingStationCertificate (M04.FR.06)`
+          )
+          return {
+            status: DeleteCertificateStatusEnumType.Failed,
+            statusInfo: {
+              additionalInfo: 'ChargingStationCertificate cannot be deleted (M04.FR.06)',
+              reasonCode: ReasonCodeEnumType.NotSupported,
+            },
+          }
+        }
+      }
+
       const result = chargingStation.certificateManager.deleteCertificate(
         chargingStation.stationInfo?.hashId ?? '',
         certificateHashData
@@ -1629,6 +1748,20 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         status: InstallCertificateStatusEnumType.Rejected,
         statusInfo: {
           additionalInfo: 'Certificate PEM format is invalid or malformed',
+          reasonCode: ReasonCodeEnumType.InvalidCertificate,
+        },
+      }
+    }
+
+    const x509Result = chargingStation.certificateManager.validateCertificateX509(certificate)
+    if (!x509Result.valid) {
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestInstallCertificate: X.509 validation failed for type ${certificateType}: ${x509Result.reason ?? 'Unknown'}`
+      )
+      return {
+        status: InstallCertificateStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: x509Result.reason ?? 'Certificate X.509 validation failed',
           reasonCode: ReasonCodeEnumType.InvalidCertificate,
         },
       }
@@ -1902,12 +2035,16 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   /**
-   * Handles OCPP 2.0.1 SetNetworkProfile request from central system
-   * Per TC_B_43_CS: CS must respond to SetNetworkProfile at minimum with Rejected
-   * The simulator does not support network profile switching
+   * Handles OCPP 2.0.1 SetNetworkProfile request from central system.
+   * Per B09.FR.01: Validates configurationSlot and connectionData, returns Accepted for valid requests.
+   * The simulator accepts the request but does not perform actual network profile switching.
+   *
+   * **Simulator limitations** (documented, not implemented):
+   * - B09.FR.04: securityProfile downgrade detection requires persistent SecurityProfile state
+   * - B09.FR.05: configurationSlot vs NetworkConfigurationPriority cross-check requires device model query
    * @param chargingStation - The charging station instance
    * @param commandPayload - The SetNetworkProfile request payload
-   * @returns SetNetworkProfileResponse with Rejected status
+   * @returns SetNetworkProfileResponse with Accepted or Rejected status
    */
   private handleRequestSetNetworkProfile (
     chargingStation: ChargingStation,
@@ -1916,13 +2053,31 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestSetNetworkProfile: Received SetNetworkProfile request`
     )
-    // Per TC_B_43_CS: CS must respond to SetNetworkProfile at minimum with Rejected
+
+    // Validate configurationSlot is a positive integer (B09.FR.02)
+    if (
+      !Number.isInteger(commandPayload.configurationSlot) ||
+      commandPayload.configurationSlot <= 0
+    ) {
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestSetNetworkProfile: Invalid configurationSlot: ${commandPayload.configurationSlot.toString()}`
+      )
+      return {
+        status: SetNetworkProfileStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: 'ConfigurationSlot must be a positive integer',
+          reasonCode: ReasonCodeEnumType.InvalidNetworkConf,
+        },
+      }
+    }
+
+    // B09.FR.04/FR.05: securityProfile downgrade and slot-in-priority checks not implemented
+    // (simulator limitation — would require persistent device model state)
+    logger.info(
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestSetNetworkProfile: Accepting SetNetworkProfile request for slot ${commandPayload.configurationSlot.toString()}`
+    )
     return {
-      status: SetNetworkProfileStatusEnumType.Rejected,
-      statusInfo: {
-        additionalInfo: 'Simulator does not support network profile configuration',
-        reasonCode: ReasonCodeEnumType.UnsupportedRequest,
-      },
+      status: SetNetworkProfileStatusEnumType.Accepted,
     }
   }
 
@@ -1991,6 +2146,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
       return {
         status: RequestStartStopStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: `Connector ${connectorId.toString()} already has an active transaction`,
+          reasonCode: ReasonCodeEnumType.TxInProgress,
+        },
         transactionId: generateUUID(),
       }
     }
@@ -2005,6 +2164,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
       return {
         status: RequestStartStopStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: 'Authorization error occurred',
+          reasonCode: ReasonCodeEnumType.InternalError,
+        },
         transactionId: generateUUID(),
       }
     }
@@ -2015,6 +2178,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
       return {
         status: RequestStartStopStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: `IdToken ${idToken.idToken} is not authorized`,
+          reasonCode: ReasonCodeEnumType.InvalidIdToken,
+        },
         transactionId: generateUUID(),
       }
     }
@@ -2030,6 +2197,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         )
         return {
           status: RequestStartStopStatusEnumType.Rejected,
+          statusInfo: {
+            additionalInfo: 'Group authorization error occurred',
+            reasonCode: ReasonCodeEnumType.InternalError,
+          },
           transactionId: generateUUID(),
         }
       }
@@ -2040,6 +2211,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         )
         return {
           status: RequestStartStopStatusEnumType.Rejected,
+          statusInfo: {
+            additionalInfo: `GroupIdToken ${groupIdToken.idToken} is not authorized`,
+            reasonCode: ReasonCodeEnumType.InvalidIdToken,
+          },
           transactionId: generateUUID(),
         }
       }
@@ -2055,6 +2230,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         )
         return {
           status: RequestStartStopStatusEnumType.Rejected,
+          statusInfo: {
+            additionalInfo: 'ChargingProfile must have purpose TxProfile',
+            reasonCode: ReasonCodeEnumType.InvalidProfile,
+          },
           transactionId: generateUUID(),
         }
       }
@@ -2066,6 +2245,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         )
         return {
           status: RequestStartStopStatusEnumType.Rejected,
+          statusInfo: {
+            additionalInfo: 'ChargingProfile transactionId must not be set',
+            reasonCode: ReasonCodeEnumType.InvalidValue,
+          },
           transactionId: generateUUID(),
         }
       }
@@ -2079,6 +2262,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         )
         return {
           status: RequestStartStopStatusEnumType.Rejected,
+          statusInfo: {
+            additionalInfo: 'Charging profile validation error',
+            reasonCode: ReasonCodeEnumType.InternalError,
+          },
           transactionId: generateUUID(),
         }
       }
@@ -2088,6 +2275,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         )
         return {
           status: RequestStartStopStatusEnumType.Rejected,
+          statusInfo: {
+            additionalInfo: 'Invalid charging profile',
+            reasonCode: ReasonCodeEnumType.InvalidProfile,
+          },
           transactionId: generateUUID(),
         }
       }
@@ -2143,6 +2334,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
       return {
         status: RequestStartStopStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: 'Error starting transaction',
+          reasonCode: ReasonCodeEnumType.InternalError,
+        },
         transactionId: generateUUID(),
       }
     }
@@ -2163,6 +2358,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
       return {
         status: RequestStartStopStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: 'Invalid transaction ID format',
+          reasonCode: ReasonCodeEnumType.InvalidValue,
+        },
       }
     }
 
@@ -2173,6 +2372,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
       return {
         status: RequestStartStopStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: `Transaction ID ${transactionId as string} does not exist`,
+          reasonCode: ReasonCodeEnumType.TxNotFound,
+        },
       }
     }
 
@@ -2183,6 +2386,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
       return {
         status: RequestStartStopStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: `Transaction ID ${transactionId as string} does not exist on any connector`,
+          reasonCode: ReasonCodeEnumType.TxNotFound,
+        },
       }
     }
 
@@ -2207,6 +2414,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
       return {
         status: RequestStartStopStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: 'Remote stop transaction rejected',
+          reasonCode: ReasonCodeEnumType.Unspecified,
+        },
       }
     } catch (error) {
       logger.error(
@@ -2215,6 +2426,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
       return {
         status: RequestStartStopStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: 'Error occurred during remote stop transaction',
+          reasonCode: ReasonCodeEnumType.InternalError,
+        },
       }
     }
   }
@@ -2414,6 +2629,69 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Received UpdateFirmware request with requestId ${requestId.toString()} for location '${firmware.location}'`
     )
 
+    // C10: Validate signing certificate PEM format if present
+    if (firmware.signingCertificate != null && firmware.signingCertificate.trim() !== '') {
+      if (
+        !hasCertificateManager(chargingStation) ||
+        !chargingStation.certificateManager.validateCertificateFormat(firmware.signingCertificate)
+      ) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Invalid PEM format for signing certificate`
+        )
+        this.sendSecurityEventNotification(
+          chargingStation,
+          'InvalidFirmwareSigningCertificate',
+          `Invalid signing certificate PEM for requestId ${requestId.toString()}`
+        ).catch((error: unknown) => {
+          logger.error(
+            `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: SecurityEventNotification error:`,
+            error
+          )
+        })
+        return {
+          status: UpdateFirmwareStatusEnumType.InvalidCertificate,
+        }
+      }
+    }
+
+    // C11: Reject if any EVSE has active transactions
+    for (const [evseId, evseStatus] of chargingStation.evses) {
+      if (evseId > 0 && this.hasEvseActiveTransactions(evseStatus)) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Rejected - EVSE ${evseId.toString()} has active transactions`
+        )
+        return {
+          status: UpdateFirmwareStatusEnumType.Rejected,
+          statusInfo: {
+            additionalInfo: 'Active transactions must complete before firmware update',
+            reasonCode: ReasonCodeEnumType.TxInProgress,
+          },
+        }
+      }
+    }
+
+    // H10: Cancel any in-progress firmware update
+    if (this.activeFirmwareUpdateAbortController != null) {
+      const previousRequestId = this.activeFirmwareUpdateRequestId
+      this.activeFirmwareUpdateAbortController.abort()
+      this.activeFirmwareUpdateAbortController = undefined
+      this.activeFirmwareUpdateRequestId = undefined
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Canceled previous firmware update requestId ${String(previousRequestId)}`
+      )
+      // Send AcceptedCanceled notification for the old firmware update
+      this.sendFirmwareStatusNotification(
+        chargingStation,
+        FirmwareStatusEnumType.AcceptedCanceled,
+        previousRequestId ?? 0
+      ).catch((error: unknown) => {
+        logger.error(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: AcceptedCanceled notification error:`,
+          error
+        )
+      })
+    }
+
     return {
       status: UpdateFirmwareStatusEnumType.Accepted,
     }
@@ -2578,6 +2856,15 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         `${chargingStation.logPrefix()} ${moduleName}.isIdTokenLocalAuthorized: Error checking local authorization for ${idTokenString}:`,
         error
       )
+      return false
+    }
+  }
+
+  private isValidFirmwareLocation (location: string): boolean {
+    try {
+      const url = new URL(location)
+      return url.protocol === 'http:' || url.protocol === 'https:' || url.protocol === 'ftp:'
+    } catch {
       return false
     }
   }
@@ -2770,20 +3057,37 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     chargingStation: ChargingStation,
     requestId: number
   ): Promise<void> {
-    const notifyCustomerInformationRequest: OCPP20NotifyCustomerInformationRequest = {
-      data: '',
-      generatedAt: new Date(),
-      requestId,
-      seqNo: 0,
-      tbc: false,
+    // Simulator has no persistent customer data, so send empty data.
+    // Uses pagination pattern (seqNo/tbc) consistent with sendNotifyReportRequest.
+    const dataChunks = ['']
+
+    for (let seqNo = 0; seqNo < dataChunks.length; seqNo++) {
+      const isLastChunk = seqNo === dataChunks.length - 1
+
+      const notifyCustomerInformationRequest: OCPP20NotifyCustomerInformationRequest = {
+        data: dataChunks[seqNo],
+        generatedAt: new Date(),
+        requestId,
+        seqNo,
+        tbc: !isLastChunk,
+      }
+
+      await chargingStation.ocppRequestService.requestHandler<
+        OCPP20NotifyCustomerInformationRequest,
+        OCPP20NotifyCustomerInformationResponse
+      >(
+        chargingStation,
+        OCPP20RequestCommand.NOTIFY_CUSTOMER_INFORMATION,
+        notifyCustomerInformationRequest
+      )
+
+      logger.debug(
+        `${chargingStation.logPrefix()} ${moduleName}.sendNotifyCustomerInformation: NotifyCustomerInformation sent seqNo=${seqNo.toString()} for requestId ${requestId.toString()} (tbc=${(!isLastChunk).toString()})`
+      )
     }
-    await chargingStation.ocppRequestService.requestHandler<
-      OCPP20NotifyCustomerInformationRequest,
-      OCPP20NotifyCustomerInformationResponse
-    >(
-      chargingStation,
-      OCPP20RequestCommand.NOTIFY_CUSTOMER_INFORMATION,
-      notifyCustomerInformationRequest
+
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.sendNotifyCustomerInformation: Completed NotifyCustomerInformation for requestId ${requestId.toString()} in ${dataChunks.length.toString()} message(s)`
     )
   }
 
@@ -2836,25 +3140,79 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     this.reportDataCache.delete(requestId)
   }
 
+  private sendSecurityEventNotification (
+    chargingStation: ChargingStation,
+    type: string,
+    techInfo?: string
+  ): Promise<OCPP20SecurityEventNotificationResponse> {
+    return chargingStation.ocppRequestService.requestHandler<
+      OCPP20SecurityEventNotificationRequest,
+      OCPP20SecurityEventNotificationResponse
+    >(chargingStation, OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION, {
+      timestamp: new Date(),
+      type,
+      ...(techInfo !== undefined && { techInfo }),
+    })
+  }
+
   /**
-   * Simulates a firmware update lifecycle through status progression using chained setTimeout calls.
-   * Sequence: Downloading → Downloaded → [SignatureVerified if signature present] → Installing → Installed
+   * Simulates a firmware update lifecycle through status progression per OCPP 2.0.1 L01/L02.
+   * Sequence: [DownloadScheduled] → Downloading → Downloaded/DownloadFailed →
+   *           [SignatureVerified] → [InstallScheduled] → Installing → Installed
    * @param chargingStation - The charging station instance
    * @param requestId - The request ID from the UpdateFirmware request
-   * @param signature - Optional firmware signature; triggers SignatureVerified step if present
+   * @param firmware - The firmware details including location, dates, and optional signature
    */
   private async simulateFirmwareUpdateLifecycle (
     chargingStation: ChargingStation,
     requestId: number,
-    signature?: string
+    firmware: FirmwareType
   ): Promise<void> {
+    const { installDateTime, location, retrieveDateTime, signature } = firmware
+
+    // H10: Set up abort controller for cancellation support
+    const abortController = new AbortController()
+    this.activeFirmwareUpdateAbortController = abortController
+    this.activeFirmwareUpdateRequestId = requestId
+
+    const checkAborted = (): boolean => abortController.signal.aborted
+
+    // C12: If retrieveDateTime is in the future, send DownloadScheduled and wait
+    const now = Date.now()
+    const retrieveTime = new Date(retrieveDateTime).getTime()
+    if (retrieveTime > now) {
+      await this.sendFirmwareStatusNotification(
+        chargingStation,
+        FirmwareStatusEnumType.DownloadScheduled,
+        requestId
+      )
+      await sleep(retrieveTime - now)
+      if (checkAborted()) return
+    }
+
     await this.sendFirmwareStatusNotification(
       chargingStation,
       FirmwareStatusEnumType.Downloading,
       requestId
     )
 
-    await sleep(1000)
+    await sleep(2000)
+    if (checkAborted()) return
+
+    // H9: If firmware location is empty or malformed, send DownloadFailed and stop
+    if (location.trim() === '' || !this.isValidFirmwareLocation(location)) {
+      await this.sendFirmwareStatusNotification(
+        chargingStation,
+        FirmwareStatusEnumType.DownloadFailed,
+        requestId
+      )
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Download failed for requestId ${requestId.toString()} - invalid location '${location}'`
+      )
+      this.clearActiveFirmwareUpdate(requestId)
+      return
+    }
+
     await this.sendFirmwareStatusNotification(
       chargingStation,
       FirmwareStatusEnumType.Downloaded,
@@ -2863,6 +3221,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     if (signature != null) {
       await sleep(500)
+      if (checkAborted()) return
       await this.sendFirmwareStatusNotification(
         chargingStation,
         FirmwareStatusEnumType.SignatureVerified,
@@ -2870,7 +3229,21 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
     }
 
-    await sleep(1000)
+    // C12: If installDateTime is in the future, send InstallScheduled and wait
+    if (installDateTime != null) {
+      const installTime = new Date(installDateTime).getTime()
+      const currentTime = Date.now()
+      if (installTime > currentTime) {
+        await this.sendFirmwareStatusNotification(
+          chargingStation,
+          FirmwareStatusEnumType.InstallScheduled,
+          requestId
+        )
+        await sleep(installTime - currentTime)
+        if (checkAborted()) return
+      }
+    }
+
     await this.sendFirmwareStatusNotification(
       chargingStation,
       FirmwareStatusEnumType.Installing,
@@ -2878,12 +3251,21 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     )
 
     await sleep(1000)
+    if (checkAborted()) return
     await this.sendFirmwareStatusNotification(
       chargingStation,
       FirmwareStatusEnumType.Installed,
       requestId
     )
 
+    // H11: Send SecurityEventNotification for successful firmware update
+    await this.sendSecurityEventNotification(
+      chargingStation,
+      'FirmwareUpdated',
+      `Firmware update completed for requestId ${requestId.toString()}`
+    )
+
+    this.clearActiveFirmwareUpdate(requestId)
     logger.info(
       `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Firmware update simulation completed for requestId ${requestId.toString()}`
     )

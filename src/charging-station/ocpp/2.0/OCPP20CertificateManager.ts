@@ -48,7 +48,8 @@ export interface OCPP20CertificateManagerInterface {
   ): DeleteCertificateResult | Promise<DeleteCertificateResult>
   getInstalledCertificates(
     stationHashId: string,
-    filterTypes?: InstallCertificateUseEnumType[]
+    filterTypes?: InstallCertificateUseEnumType[],
+    hashAlgorithm?: HashAlgorithmEnumType
   ): GetInstalledCertificatesResult | Promise<GetInstalledCertificatesResult>
   storeCertificate(
     stationHashId: string,
@@ -56,6 +57,7 @@ export interface OCPP20CertificateManagerInterface {
     pemData: string
   ): Promise<StoreCertificateResult> | StoreCertificateResult
   validateCertificateFormat(pemData: unknown): boolean
+  validateCertificateX509(pem: string): ValidateCertificateX509Result
 }
 
 /**
@@ -65,6 +67,14 @@ export interface StoreCertificateResult {
   error?: string
   filePath?: string
   success: boolean
+}
+
+/**
+ * Result type for X.509 certificate validation
+ */
+export interface ValidateCertificateX509Result {
+  reason?: string
+  valid: boolean
 }
 
 /**
@@ -243,11 +253,13 @@ export class OCPP20CertificateManager {
    * Gets installed certificates for a charging station
    * @param stationHashId - Charging station unique identifier
    * @param filterTypes - Optional array of certificate types to filter
+   * @param hashAlgorithm
    * @returns List of installed certificate hash data chains
    */
   public async getInstalledCertificates (
     stationHashId: string,
-    filterTypes?: InstallCertificateUseEnumType[]
+    filterTypes?: InstallCertificateUseEnumType[],
+    hashAlgorithm?: HashAlgorithmEnumType
   ): Promise<GetInstalledCertificatesResult> {
     const certificateHashDataChain: CertificateHashDataChainType[] = []
 
@@ -279,7 +291,7 @@ export class OCPP20CertificateManager {
           this.validateCertificatePath(filePath, OCPP20CertificateManager.BASE_CERT_PATH)
           try {
             const pemData = await readFile(filePath, 'utf8')
-            const hashData = this.computeCertificateHash(pemData)
+            const hashData = this.computeCertificateHash(pemData, hashAlgorithm)
 
             certificateHashDataChain.push({
               certificateHashData: hashData,
@@ -374,6 +386,45 @@ export class OCPP20CertificateManager {
       trimmed.includes(OCPP20CertificateManager.PEM_BEGIN_MARKER) &&
       trimmed.includes(OCPP20CertificateManager.PEM_END_MARKER)
     )
+  }
+
+  /**
+   * Validates a PEM certificate using X.509 structural parsing.
+   * Checks validity period (notBefore/notAfter) and issuer presence per A02.FR.06.
+   *
+   * **Design choice**: Only the first certificate in a PEM chain is validated.
+   * Full chain-of-trust verification (A02.FR.06 hierarchy check) is not implemented —
+   * the simulator performs structural validation only, consistent with the medium-depth
+   * X.509 scope defined in the audit remediation plan.
+   * @param pem - PEM-encoded certificate data (may contain a chain; only first cert is validated)
+   * @returns Validation result with reason on failure
+   */
+  public validateCertificateX509 (pem: string): ValidateCertificateX509Result {
+    try {
+      const firstCertMatch = /-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/.exec(
+        pem
+      )
+      if (firstCertMatch == null) {
+        return { reason: 'No PEM certificate found', valid: false }
+      }
+      const cert = new X509Certificate(firstCertMatch[0])
+      const now = new Date()
+      if (now < new Date(cert.validFrom)) {
+        return { reason: 'Certificate is not yet valid', valid: false }
+      }
+      if (now > new Date(cert.validTo)) {
+        return { reason: 'Certificate has expired', valid: false }
+      }
+      if (!cert.issuer.trim()) {
+        return { reason: 'Certificate has no issuer', valid: false }
+      }
+      return { valid: true }
+    } catch (error) {
+      return {
+        reason: `Certificate parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        valid: false,
+      }
+    }
   }
 
   /**

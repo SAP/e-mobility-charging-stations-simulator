@@ -67,6 +67,7 @@ export enum DeleteCertificateStatusEnumType {
 }
 
 export enum FirmwareStatusEnumType {
+  AcceptedCanceled = 'AcceptedCanceled',
   Downloaded = 'Downloaded',
   DownloadFailed = 'DownloadFailed',
   Downloading = 'Downloading',
@@ -308,9 +309,11 @@ export enum ReasonCodeEnumType {
   FwUpdateInProgress = 'FwUpdateInProgress',
   InternalError = 'InternalError',
   InvalidCertificate = 'InvalidCertificate',
+  InvalidConfSlot = 'InvalidConfSlot',
   InvalidCSR = 'InvalidCSR',
   InvalidIdToken = 'InvalidIdToken',
   InvalidMessageSeq = 'InvalidMessageSeq',
+  InvalidNetworkConf = 'InvalidNetworkConf',
   InvalidProfile = 'InvalidProfile',
   InvalidSchedule = 'InvalidSchedule',
   InvalidStackLevel = 'InvalidStackLevel',
@@ -320,8 +323,10 @@ export enum ReasonCodeEnumType {
   MissingParam = 'MissingParam',
   NoCable = 'NoCable',
   NoError = 'NoError',
+  NoSecurityDowngrade = 'NoSecurityDowngrade',
   NotEnabled = 'NotEnabled',
   NotFound = 'NotFound',
+  NotSupported = 'NotSupported',
   OutOfMemory = 'OutOfMemory',
   OutOfStorage = 'OutOfStorage',
   ReadOnly = 'ReadOnly',

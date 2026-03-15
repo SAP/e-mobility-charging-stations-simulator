@@ -1,7 +1,5 @@
 import type { ValidateFunction } from 'ajv'
 
-import { generateKeyPairSync } from 'node:crypto'
-
 import type { ChargingStation } from '../../../charging-station/index.js'
 import type { OCPPResponseService } from '../OCPPResponseService.js'
 
@@ -38,6 +36,7 @@ import {
 } from '../../../types/index.js'
 import { generateUUID, logger } from '../../../utils/index.js'
 import { OCPPRequestService } from '../OCPPRequestService.js'
+import { generatePkcs10Csr } from './Asn1DerUtils.js'
 import { OCPP20Constants } from './OCPP20Constants.js'
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 
@@ -191,8 +190,11 @@ export class OCPP20RequestService extends OCPPRequestService {
    * This is used to validate certificates during ISO 15118 communication
    * before accepting them for charging authorization.
    *
-   * Note: This is a stub implementation for simulator testing. No real OCSP
-   * network calls are made - the CSMS provides the response.
+   * **Simulator limitation**: This is a stub implementation — no real OCSP network calls are
+   * made. The method forwards the OCSP request data to the CSMS, which provides the certificate
+   * revocation status in its response. In a production charging station, the CS or CSMS would
+   * contact an external OCSP responder to verify certificate validity in real time. Full OCSP
+   * integration would require external OCSP responder configuration and network access.
    * @param chargingStation - The charging station requesting the status
    * @param ocspRequestData - OCSP request data including certificate hash and responder URL
    * @returns Promise resolving to the CSMS response with OCSP result
@@ -495,18 +497,13 @@ export class OCPP20RequestService extends OCPPRequestService {
   /**
    * Request certificate signing from the CSMS.
    *
-   * Generates a Certificate Signing Request (CSR) using the charging station's
-   * certificate manager and sends it to the CSMS for signing. Supports both
-   * ChargingStationCertificate and V2GCertificate types.
-   *
-   * IMPORTANT: This implementation generates a MOCK CSR for simulator testing purposes.
-   * It is NOT a cryptographically valid PKCS#10 CSR and MUST NOT be used in production.
-   * The generated CSR structure is simplified (JSON-based) for OCPP message testing only.
-   * Real CSMS expecting valid PKCS#10 CSR will reject this format.
+   * Generates a PKCS#10 Certificate Signing Request (RFC 2986) with a real RSA 2048-bit
+   * key pair and SHA-256 signature, then sends it to the CSMS for signing per A02.FR.02.
+   * Supports both ChargingStationCertificate and V2GCertificate types.
    * @param chargingStation - The charging station requesting the certificate
    * @param certificateType - Optional certificate type (ChargingStationCertificate or V2GCertificate)
    * @returns Promise resolving to the CSMS response with Accepted or Rejected status
-   * @throws {OCPPError} When certificate manager is unavailable or CSR generation fails
+   * @throws {OCPPError} When CSR generation fails
    */
   public async requestSignCertificate (
     chargingStation: ChargingStation,
@@ -518,32 +515,13 @@ export class OCPP20RequestService extends OCPPRequestService {
 
     let csr: string
     try {
-      const { publicKey } = generateKeyPairSync('rsa', {
-        modulusLength: 2048,
-        privateKeyEncoding: { format: 'pem', type: 'pkcs8' },
-        publicKeyEncoding: { format: 'pem', type: 'spki' },
-      })
-
       const configKey = chargingStation.ocppConfiguration?.configurationKey?.find(
         key => key.key === 'SecurityCtrlr.OrganizationName'
       )
       const orgName = configKey?.value ?? 'Unknown'
       const stationId = chargingStation.stationInfo?.chargingStationId ?? 'Unknown'
-      const subject = `CN=${stationId},O=${orgName}`
 
-      // Generate simplified mock CSR for simulator testing
-      // WARNING: This is NOT a cryptographically valid PKCS#10 CSR
-      // Structure: JSON with subject, publicKey, timestamp (NOT ASN.1 DER)
-      const mockCsrData = {
-        algorithm: 'RSA-SHA256',
-        keySize: 2048,
-        publicKey: publicKey.replace(/-----BEGIN PUBLIC KEY-----|-----END PUBLIC KEY-----|\n/g, ''),
-        subject,
-        timestamp: new Date().toISOString(),
-      }
-
-      const csrBase64 = Buffer.from(JSON.stringify(mockCsrData)).toString('base64')
-      csr = `-----BEGIN CERTIFICATE REQUEST-----\n${csrBase64}\n-----END CERTIFICATE REQUEST-----`
+      csr = generatePkcs10Csr(stationId, orgName)
     } catch (error) {
       const errorMsg = `Failed to generate CSR: ${error instanceof Error ? error.message : 'Unknown error'}`
       logger.error(
