@@ -156,27 +156,26 @@ import { getVariableMetadata, VARIABLE_REGISTRY } from './OCPP20VariableRegistry
 
 const moduleName = 'OCPP20IncomingRequestService'
 
+interface OCPP20PerStationState {
+  activeFirmwareUpdateAbortController?: AbortController
+  activeFirmwareUpdateRequestId?: number
+  lastFirmwareStatus?: FirmwareStatusEnumType
+  preInoperativeConnectorStatuses: Map<number, OCPP20ConnectorStatusEnumType>
+  reportDataCache: Map<number, ReportDataType[]>
+}
+
 export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   protected payloadValidatorFunctions: Map<OCPP20IncomingRequestCommand, ValidateFunction<JsonType>>
-
-  private activeFirmwareUpdateAbortController: AbortController | undefined
-
-  private activeFirmwareUpdateRequestId: number | undefined
 
   private readonly incomingRequestHandlers: Map<
     OCPP20IncomingRequestCommand,
     IncomingRequestHandler
   >
 
-  private lastFirmwareStatus?: FirmwareStatusEnumType
-
-  private readonly preInoperativeConnectorStatus = new Map<number, OCPP20ConnectorStatusEnumType>()
-
-  private readonly reportDataCache: Map<number, ReportDataType[]>
+  private readonly stationStates = new WeakMap<ChargingStation, OCPP20PerStationState>()
 
   public constructor () {
     super(OCPPVersion.VERSION_201)
-    this.reportDataCache = new Map<number, ReportDataType[]>()
     this.incomingRequestHandlers = new Map<OCPP20IncomingRequestCommand, IncomingRequestHandler>([
       [
         OCPP20IncomingRequestCommand.CERTIFICATE_SIGNED,
@@ -367,16 +366,17 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               .catch(errorHandler)
             break
           case MessageTriggerEnumType.FirmwareStatusNotification: {
+            const ss = this.getStationState(chargingStation)
             const firmwareStatus =
-              this.lastFirmwareStatus == null ||
-              this.lastFirmwareStatus === FirmwareStatusEnumType.Installed
+              ss.lastFirmwareStatus == null ||
+              ss.lastFirmwareStatus === FirmwareStatusEnumType.Installed
                 ? FirmwareStatusEnumType.Idle
-                : this.lastFirmwareStatus
+                : ss.lastFirmwareStatus
             chargingStation.ocppRequestService
               .requestHandler<
                 OCPP20FirmwareStatusNotificationRequest,
                 OCPP20FirmwareStatusNotificationResponse
-              >(chargingStation, OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION, { requestId: this.activeFirmwareUpdateRequestId, status: firmwareStatus }, { skipBufferingOnError: true, triggerMessage: true })
+              >(chargingStation, OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION, { requestId: ss.activeFirmwareUpdateRequestId, status: firmwareStatus }, { skipBufferingOnError: true, triggerMessage: true })
               .catch(errorHandler)
             break
           }
@@ -661,6 +661,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   public override stop (chargingStation: ChargingStation): void {
+    const ss = this.stationStates.get(chargingStation)
+    if (ss != null) {
+      ss.activeFirmwareUpdateAbortController?.abort()
+      this.stationStates.delete(chargingStation)
+    }
     try {
       OCPP20VariableManager.getInstance().resetRuntimeOverrides()
       logger.debug(`${chargingStation.logPrefix()} ${moduleName}.stop: Runtime overrides cleared`)
@@ -1058,20 +1063,37 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     return reportData
   }
 
-  private clearActiveFirmwareUpdate (requestId: number): void {
-    if (this.activeFirmwareUpdateRequestId === requestId) {
-      this.activeFirmwareUpdateAbortController = undefined
-      this.activeFirmwareUpdateRequestId = undefined
+  private clearActiveFirmwareUpdate (chargingStation: ChargingStation, requestId: number): void {
+    const ss = this.getStationState(chargingStation)
+    if (ss.activeFirmwareUpdateRequestId === requestId) {
+      ss.activeFirmwareUpdateAbortController = undefined
+      ss.activeFirmwareUpdateRequestId = undefined
     }
   }
 
-  private getRestoredConnectorStatus (connectorId: number): OCPP20ConnectorStatusEnumType {
-    const saved = this.preInoperativeConnectorStatus.get(connectorId)
+  private getRestoredConnectorStatus (
+    chargingStation: ChargingStation,
+    connectorId: number
+  ): OCPP20ConnectorStatusEnumType {
+    const ss = this.getStationState(chargingStation)
+    const saved = ss.preInoperativeConnectorStatuses.get(connectorId)
     if (saved != null) {
-      this.preInoperativeConnectorStatus.delete(connectorId)
+      ss.preInoperativeConnectorStatuses.delete(connectorId)
       return saved
     }
     return OCPP20ConnectorStatusEnumType.Available
+  }
+
+  private getStationState (chargingStation: ChargingStation): OCPP20PerStationState {
+    let state = this.stationStates.get(chargingStation)
+    if (state == null) {
+      state = {
+        preInoperativeConnectorStatuses: new Map(),
+        reportDataCache: new Map(),
+      }
+      this.stationStates.set(chargingStation, state)
+    }
+    return state
   }
 
   private getTxUpdatedInterval (chargingStation: ChargingStation): number {
@@ -1121,7 +1143,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     const resolvedStatus =
       operationalStatus === OperationalStatusEnumType.Operative
-        ? this.getRestoredConnectorStatus(connectorId)
+        ? this.getRestoredConnectorStatus(chargingStation, connectorId)
         : newConnectorStatus
 
     sendAndSetConnectorStatus(
@@ -1668,10 +1690,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
-    const cached = this.reportDataCache.get(commandPayload.requestId)
+    const ss = this.getStationState(chargingStation)
+    const cached = ss.reportDataCache.get(commandPayload.requestId)
     const reportData = cached ?? this.buildReportData(chargingStation, commandPayload.reportBase)
     if (!cached && reportData.length > 0) {
-      this.reportDataCache.set(commandPayload.requestId, reportData)
+      ss.reportDataCache.set(commandPayload.requestId, reportData)
     }
     if (reportData.length === 0) {
       logger.info(
@@ -2807,11 +2830,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
 
     // H10: Cancel any in-progress firmware update
-    if (this.activeFirmwareUpdateAbortController != null) {
-      const previousRequestId = this.activeFirmwareUpdateRequestId
-      this.activeFirmwareUpdateAbortController.abort()
-      this.activeFirmwareUpdateAbortController = undefined
-      this.activeFirmwareUpdateRequestId = undefined
+    const ss = this.getStationState(chargingStation)
+    if (ss.activeFirmwareUpdateAbortController != null) {
+      const previousRequestId = ss.activeFirmwareUpdateRequestId
+      ss.activeFirmwareUpdateAbortController.abort()
+      ss.activeFirmwareUpdateAbortController = undefined
+      ss.activeFirmwareUpdateRequestId = undefined
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Canceled previous firmware update (requestId ${String(previousRequestId)})`
       )
@@ -3020,6 +3044,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param evseId - Optional EVSE ID to scope the save; if omitted, saves all EVSEs
    */
   private savePreInoperativeStatuses (chargingStation: ChargingStation, evseId?: number): void {
+    const ss = this.getStationState(chargingStation)
     const evseIds =
       evseId != null && evseId > 0
         ? [evseId]
@@ -3028,8 +3053,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       const evseStatus = chargingStation.getEvseStatus(id)
       if (evseStatus != null) {
         for (const [connectorId, connector] of evseStatus.connectors) {
-          if (connector.status != null && !this.preInoperativeConnectorStatus.has(connectorId)) {
-            this.preInoperativeConnectorStatus.set(
+          if (connector.status != null && !ss.preInoperativeConnectorStatuses.has(connectorId)) {
+            ss.preInoperativeConnectorStatuses.set(
               connectorId,
               connector.status as unknown as OCPP20ConnectorStatusEnumType
             )
@@ -3193,7 +3218,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     status: FirmwareStatusEnumType,
     requestId: number
   ): Promise<OCPP20FirmwareStatusNotificationResponse> {
-    this.lastFirmwareStatus = status
+    this.getStationState(chargingStation).lastFirmwareStatus = status
     return chargingStation.ocppRequestService.requestHandler<
       OCPP20FirmwareStatusNotificationRequest,
       OCPP20FirmwareStatusNotificationResponse
@@ -3261,7 +3286,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     response: OCPP20GetBaseReportResponse
   ): Promise<void> {
     const { reportBase, requestId } = request
-    const cached = this.reportDataCache.get(requestId)
+    const ss = this.getStationState(chargingStation)
+    const cached = ss.reportDataCache.get(requestId)
     const reportData = cached ?? this.buildReportData(chargingStation, reportBase)
 
     const maxItemsPerMessage = 100
@@ -3301,14 +3327,14 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       `${chargingStation.logPrefix()} ${moduleName}.sendNotifyReportRequest: Completed NotifyReport for requestId ${requestId} with ${reportData.length} total items in ${chunks.length} message(s)`
     )
-    this.reportDataCache.delete(requestId)
+    ss.reportDataCache.delete(requestId)
   }
 
   private sendRestoredAllConnectorsStatusNotifications (chargingStation: ChargingStation): void {
     for (const [evseId, evseStatus] of chargingStation.evses) {
       if (evseId > 0) {
         for (const [connectorId] of evseStatus.connectors) {
-          const restoredStatus = this.getRestoredConnectorStatus(connectorId)
+          const restoredStatus = this.getRestoredConnectorStatus(chargingStation, connectorId)
           sendAndSetConnectorStatus(
             chargingStation,
             connectorId,
@@ -3331,7 +3357,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     const evse = chargingStation.getEvseStatus(evseId)
     if (evse) {
       for (const [connectorId] of evse.connectors) {
-        const restoredStatus = this.getRestoredConnectorStatus(connectorId)
+        const restoredStatus = this.getRestoredConnectorStatus(chargingStation, connectorId)
         sendAndSetConnectorStatus(
           chargingStation,
           connectorId,
@@ -3378,8 +3404,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     // H10: Set up abort controller for cancellation support
     const abortController = new AbortController()
-    this.activeFirmwareUpdateAbortController = abortController
-    this.activeFirmwareUpdateRequestId = requestId
+    const ss = this.getStationState(chargingStation)
+    ss.activeFirmwareUpdateAbortController = abortController
+    ss.activeFirmwareUpdateRequestId = requestId
 
     const checkAborted = (): boolean => abortController.signal.aborted
 
@@ -3415,7 +3442,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Download failed for requestId ${requestId.toString()} - invalid location '${location}'`
       )
-      this.clearActiveFirmwareUpdate(requestId)
+      this.clearActiveFirmwareUpdate(chargingStation, requestId)
       return
     }
 
@@ -3471,7 +3498,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       `Firmware update completed for requestId ${requestId.toString()}`
     )
 
-    this.clearActiveFirmwareUpdate(requestId)
+    this.clearActiveFirmwareUpdate(chargingStation, requestId)
     logger.info(
       `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Firmware update simulation completed for requestId ${requestId.toString()}`
     )
