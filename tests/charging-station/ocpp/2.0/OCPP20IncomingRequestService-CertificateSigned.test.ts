@@ -38,7 +38,6 @@ import {
 await describe('I04 - CertificateSigned', async () => {
   let station: ChargingStation
   let stationWithCertManager: ChargingStationWithCertificateManager
-  let incomingRequestService: OCPP20IncomingRequestService
   let testableService: ReturnType<typeof createTestableIncomingRequestService>
 
   beforeEach(() => {
@@ -59,8 +58,7 @@ await describe('I04 - CertificateSigned', async () => {
       createMockCertificateManager()
     )
     station.closeWSConnection = mock.fn()
-    incomingRequestService = new OCPP20IncomingRequestService()
-    testableService = createTestableIncomingRequestService(incomingRequestService)
+    testableService = createTestableIncomingRequestService(new OCPP20IncomingRequestService())
   })
 
   afterEach(() => {

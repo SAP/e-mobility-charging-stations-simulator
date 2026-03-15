@@ -51,7 +51,6 @@ await describe('I04 - DeleteCertificate', async () => {
 
   let station: ChargingStation
   let stationWithCertManager: ChargingStationWithCertificateManager
-  let incomingRequestService: OCPP20IncomingRequestService
   let testableService: ReturnType<typeof createTestableIncomingRequestService>
 
   beforeEach(() => {
@@ -73,8 +72,7 @@ await describe('I04 - DeleteCertificate', async () => {
       createMockCertificateManager()
     )
 
-    incomingRequestService = new OCPP20IncomingRequestService()
-    testableService = createTestableIncomingRequestService(incomingRequestService)
+    testableService = createTestableIncomingRequestService(new OCPP20IncomingRequestService())
   })
 
   await describe('Valid Certificate Deletion', async () => {

@@ -1,3 +1,8 @@
+/**
+ * @file Tests for Asn1DerUtils
+ * @description Unit tests for ASN.1 DER encoding primitives and PKCS#10 CSR generation
+ */
+
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 

@@ -26,14 +26,6 @@ import {
 const TEST_STATION_HASH_ID = 'test-station-hash-12345'
 const TEST_CERT_TYPE = InstallCertificateUseEnumType.CSMSRootCertificate
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- kept for future assertions
-const _EXPECTED_HASH_DATA = {
-  hashAlgorithm: HashAlgorithmEnumType.SHA256,
-  issuerKeyHash: /^[a-fA-F0-9]+$/,
-  issuerNameHash: /^[a-fA-F0-9]+$/,
-  serialNumber: '<any-string>',
-}
-
 await describe('I02-I04 - ISO15118 Certificate Management', async () => {
   afterEach(async () => {
     await rm(`dist/assets/configurations/${TEST_STATION_HASH_ID}`, {

@@ -308,6 +308,17 @@ export function standardCleanup (): void {
 }
 
 /**
+ * Flush all pending microtasks by yielding to the event loop.
+ * setImmediate fires after all microtasks in the current event loop iteration are drained.
+ * Use this in tests that need to await async side effects triggered by synchronous calls
+ * (e.g. event emitters that fire async handlers).
+ */
+export const flushMicrotasks = (): Promise<void> =>
+  new Promise<void>(resolve => {
+    setImmediate(resolve)
+  })
+
+/**
  * Suspends execution for the specified number of milliseconds.
  * @param ms - Duration to sleep in milliseconds.
  * @returns A promise that resolves after the specified delay.

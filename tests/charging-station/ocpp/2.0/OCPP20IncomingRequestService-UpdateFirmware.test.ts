@@ -22,19 +22,14 @@ import {
   UpdateFirmwareStatusEnumType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { standardCleanup, withMockTimers } from '../../../helpers/TestLifecycleHelpers.js'
+import { flushMicrotasks, standardCleanup, withMockTimers } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import {
   createMockCertificateManager,
   createMockStationWithRequestTracking,
+  createStationWithCertificateManager,
 } from './OCPP20TestUtils.js'
-
-const flushMicrotasks = async (): Promise<void> => {
-  for (let i = 0; i < 20; i++) {
-    await Promise.resolve()
-  }
-}
 
 await describe('L01/L02 - UpdateFirmware', async () => {
   let station: ChargingStation
@@ -192,8 +187,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
         },
         websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
       })
-      ;(stationWithCert as unknown as { certificateManager: unknown }).certificateManager =
-        certManager
+      createStationWithCertificateManager(stationWithCert, certManager)
 
       const request: OCPP20UpdateFirmwareRequest = {
         firmware: {
@@ -225,8 +219,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
         },
         websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
       })
-      ;(stationWithCert as unknown as { certificateManager: unknown }).certificateManager =
-        certManager
+      createStationWithCertificateManager(stationWithCert, certManager)
 
       const request: OCPP20UpdateFirmwareRequest = {
         firmware: {

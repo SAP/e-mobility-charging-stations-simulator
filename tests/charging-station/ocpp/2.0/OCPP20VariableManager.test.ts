@@ -2050,9 +2050,10 @@ await describe('B05 - OCPP20VariableManager', async () => {
     })
   })
 
-  await it('should cache validatePersistentMappings and not re-run on second getVariables call', () => {
+  await it('should cache validatePersistentMappings and not re-run on second getVariables call', t => {
     // Arrange
     const manager = OCPP20VariableManager.getInstance()
+    const validateSpy = t.mock.method(manager, 'validatePersistentMappings')
     const request: OCPP20GetVariableDataType[] = [
       {
         component: { name: OCPP20ComponentName.OCPPCommCtrlr },
@@ -2068,10 +2069,14 @@ await describe('B05 - OCPP20VariableManager', async () => {
     assert.strictEqual(result1[0].attributeStatus, GetVariableStatusEnumType.Accepted)
     assert.strictEqual(result2[0].attributeStatus, GetVariableStatusEnumType.Accepted)
     assert.strictEqual(result1[0].attributeValue, result2[0].attributeValue)
+    assert.strictEqual(validateSpy.mock.callCount(), 2, 'validatePersistentMappings should be called twice (once per getVariables)')
+    // The second call should be a no-op (early return) because the station is already validated.
+    // Verify by invalidating and calling again — the third call should re-validate.
     manager.invalidateMappingsCache()
     const result3 = manager.getVariables(station, request)
     assert.strictEqual(result3[0].attributeStatus, GetVariableStatusEnumType.Accepted)
     assert.strictEqual(result3[0].attributeValue, result1[0].attributeValue)
+    assert.strictEqual(validateSpy.mock.callCount(), 3)
   })
 
   await describe('MinSet/MaxSet atomicity tests', async () => {

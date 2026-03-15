@@ -21,19 +21,10 @@ import {
   UploadLogStatusEnumType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { standardCleanup, withMockTimers } from '../../../helpers/TestLifecycleHelpers.js'
+import { flushMicrotasks, standardCleanup, withMockTimers } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import { createMockStationWithRequestTracking } from './OCPP20TestUtils.js'
-
-/**
- * Flush all pending microtasks by yielding to the event loop.
- * setImmediate fires after all microtasks in the current event loop iteration are drained.
- */
-const flushMicrotasks = (): Promise<void> =>
-  new Promise<void>(resolve => {
-    setImmediate(resolve)
-  })
 
 await describe('K01 - GetLog', async () => {
   let station: ChargingStation
