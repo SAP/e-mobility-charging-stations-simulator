@@ -33,6 +33,7 @@ import {
   type ChangeConfigurationResponse,
   type ClearCacheResponse,
   ConfigurationSection,
+  type ConnectorStatus,
   ErrorType,
   type GenericResponse,
   GenericStatus,
@@ -364,7 +365,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                 chargingStation,
                 OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
                 {
-                  status: OCPP16DiagnosticsStatus.Idle,
+                  status:
+                    chargingStation.stationInfo?.diagnosticsStatus ?? OCPP16DiagnosticsStatus.Idle,
                 },
                 {
                   triggerMessage: true,
@@ -618,6 +620,74 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
 
   public override stop (chargingStation: ChargingStation): void {
     /* no-op for OCPP 1.6 */
+  }
+
+  private composeCompositeSchedule (
+    chargingStation: ChargingStation,
+    chargingProfiles: OCPP16ChargingProfile[],
+    duration: number,
+    connectorStatus: ConnectorStatus | undefined
+  ): OCPP16ChargingSchedule | undefined {
+    const currentDate = new Date()
+    const compositeScheduleInterval: Interval = {
+      end: addSeconds(currentDate, duration),
+      start: currentDate,
+    }
+    let previousCompositeSchedule: OCPP16ChargingSchedule | undefined
+    let compositeSchedule: OCPP16ChargingSchedule | undefined
+    for (const chargingProfile of chargingProfiles) {
+      if (chargingProfile.chargingSchedule.startSchedule == null) {
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.composeCompositeSchedule: Charging profile id ${chargingProfile.chargingProfileId.toString()} has no startSchedule defined. Trying to set it to the ${connectorStatus != null ? 'connector current transaction start date' : 'current date'}`
+        )
+        chargingProfile.chargingSchedule.startSchedule =
+          connectorStatus != null ? connectorStatus.transactionStart : currentDate
+      }
+      if (!isDate(chargingProfile.chargingSchedule.startSchedule)) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.composeCompositeSchedule: Charging profile id ${chargingProfile.chargingProfileId.toString()} startSchedule property is not a Date instance. Trying to convert it to a Date instance`
+        )
+        chargingProfile.chargingSchedule.startSchedule = convertToDate(
+          chargingProfile.chargingSchedule.startSchedule
+        )
+      }
+      if (chargingProfile.chargingSchedule.duration == null) {
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.composeCompositeSchedule: Charging profile id ${chargingProfile.chargingProfileId.toString()} has no duration defined and will be set to the maximum time allowed`
+        )
+        chargingProfile.chargingSchedule.duration = differenceInSeconds(
+          maxTime,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          chargingProfile.chargingSchedule.startSchedule!
+        )
+      }
+      if (
+        !prepareChargingProfileKind(
+          connectorStatus,
+          chargingProfile,
+          compositeScheduleInterval.start,
+          chargingStation.logPrefix()
+        )
+      ) {
+        continue
+      }
+      if (
+        !canProceedChargingProfile(
+          chargingProfile,
+          compositeScheduleInterval.start,
+          chargingStation.logPrefix()
+        )
+      ) {
+        continue
+      }
+      compositeSchedule = OCPP16ServiceUtils.composeChargingSchedules(
+        previousCompositeSchedule,
+        chargingProfile.chargingSchedule,
+        compositeScheduleInterval
+      )
+      previousCompositeSchedule = compositeSchedule
+    }
+    return compositeSchedule
   }
 
   private async handleRequestCancelReservation (
@@ -956,64 +1026,12 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       if (allChargingProfiles.length === 0) {
         return OCPP16Constants.OCPP_RESPONSE_REJECTED
       }
-      const currentDate = new Date()
-      const compositeScheduleInterval: Interval = {
-        end: addSeconds(currentDate, duration),
-        start: currentDate,
-      }
-      let previousCompositeSchedule: OCPP16ChargingSchedule | undefined
-      let compositeSchedule: OCPP16ChargingSchedule | undefined
-      for (const chargingProfile of allChargingProfiles) {
-        if (chargingProfile.chargingSchedule.startSchedule == null) {
-          logger.debug(
-            `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCompositeSchedule: Charging profile id ${chargingProfile.chargingProfileId.toString()} has no startSchedule defined. Trying to set it to the current date`
-          )
-          chargingProfile.chargingSchedule.startSchedule = currentDate
-        }
-        if (!isDate(chargingProfile.chargingSchedule.startSchedule)) {
-          logger.warn(
-            `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCompositeSchedule: Charging profile id ${chargingProfile.chargingProfileId.toString()} startSchedule property is not a Date instance. Trying to convert it to a Date instance`
-          )
-          chargingProfile.chargingSchedule.startSchedule = convertToDate(
-            chargingProfile.chargingSchedule.startSchedule
-          )
-        }
-        if (chargingProfile.chargingSchedule.duration == null) {
-          logger.debug(
-            `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCompositeSchedule: Charging profile id ${chargingProfile.chargingProfileId.toString()} has no duration defined and will be set to the maximum time allowed`
-          )
-          chargingProfile.chargingSchedule.duration = differenceInSeconds(
-            maxTime,
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            chargingProfile.chargingSchedule.startSchedule!
-          )
-        }
-        if (
-          !prepareChargingProfileKind(
-            undefined,
-            chargingProfile,
-            compositeScheduleInterval.start,
-            chargingStation.logPrefix()
-          )
-        ) {
-          continue
-        }
-        if (
-          !canProceedChargingProfile(
-            chargingProfile,
-            compositeScheduleInterval.start,
-            chargingStation.logPrefix()
-          )
-        ) {
-          continue
-        }
-        compositeSchedule = OCPP16ServiceUtils.composeChargingSchedules(
-          previousCompositeSchedule,
-          chargingProfile.chargingSchedule,
-          compositeScheduleInterval
-        )
-        previousCompositeSchedule = compositeSchedule
-      }
+      const compositeSchedule = this.composeCompositeSchedule(
+        chargingStation,
+        allChargingProfiles,
+        duration,
+        undefined
+      )
       if (compositeSchedule != null) {
         return {
           chargingSchedule: compositeSchedule,
@@ -1036,70 +1054,16 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     ) {
       return OCPP16Constants.OCPP_RESPONSE_REJECTED
     }
-    const currentDate = new Date()
-    const compositeScheduleInterval: Interval = {
-      end: addSeconds(currentDate, duration),
-      start: currentDate,
-    }
     const chargingProfiles = getConnectorChargingProfiles(
       chargingStation,
       connectorId
     ) as OCPP16ChargingProfile[]
-    let previousCompositeSchedule: OCPP16ChargingSchedule | undefined
-    let compositeSchedule: OCPP16ChargingSchedule | undefined
-    for (const chargingProfile of chargingProfiles) {
-      if (chargingProfile.chargingSchedule.startSchedule == null) {
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCompositeSchedule: Charging profile id ${chargingProfile.chargingProfileId.toString()} has no startSchedule defined. Trying to set it to the connector current transaction start date`
-        )
-        // OCPP specifies that if startSchedule is not defined, it should be relative to start of the connector transaction
-        chargingProfile.chargingSchedule.startSchedule = connectorStatus?.transactionStart
-      }
-      if (!isDate(chargingProfile.chargingSchedule.startSchedule)) {
-        logger.warn(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCompositeSchedule: Charging profile id ${chargingProfile.chargingProfileId.toString()} startSchedule property is not a Date instance. Trying to convert it to a Date instance`
-        )
-        chargingProfile.chargingSchedule.startSchedule = convertToDate(
-          chargingProfile.chargingSchedule.startSchedule
-        )
-      }
-      if (chargingProfile.chargingSchedule.duration == null) {
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCompositeSchedule: Charging profile id ${chargingProfile.chargingProfileId.toString()} has no duration defined and will be set to the maximum time allowed`
-        )
-        // OCPP specifies that if duration is not defined, it should be infinite
-        chargingProfile.chargingSchedule.duration = differenceInSeconds(
-          maxTime,
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          chargingProfile.chargingSchedule.startSchedule!
-        )
-      }
-      if (
-        !prepareChargingProfileKind(
-          connectorStatus,
-          chargingProfile,
-          compositeScheduleInterval.start,
-          chargingStation.logPrefix()
-        )
-      ) {
-        continue
-      }
-      if (
-        !canProceedChargingProfile(
-          chargingProfile,
-          compositeScheduleInterval.start,
-          chargingStation.logPrefix()
-        )
-      ) {
-        continue
-      }
-      compositeSchedule = OCPP16ServiceUtils.composeChargingSchedules(
-        previousCompositeSchedule,
-        chargingProfile.chargingSchedule,
-        compositeScheduleInterval
-      )
-      previousCompositeSchedule = compositeSchedule
-    }
+    const compositeSchedule = this.composeCompositeSchedule(
+      chargingStation,
+      chargingProfiles,
+      duration,
+      connectorStatus
+    )
     if (compositeSchedule != null) {
       return {
         chargingSchedule: compositeSchedule,
@@ -1203,6 +1167,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                 info.bytes / 1024
               ).toString()} bytes transferred from diagnostics archive ${info.name}`
             )
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            chargingStation.stationInfo!.diagnosticsStatus = OCPP16DiagnosticsStatus.Uploading
             chargingStation.ocppRequestService
               .requestHandler<
                 OCPP16DiagnosticsStatusNotificationRequest,
@@ -1230,6 +1196,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
             >(chargingStation, OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION, {
               status: OCPP16DiagnosticsStatus.Uploaded,
             })
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            chargingStation.stationInfo!.diagnosticsStatus = OCPP16DiagnosticsStatus.Uploaded
             ftpClient.close()
             return { fileName: diagnosticsArchive }
           }
@@ -1252,6 +1220,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         >(chargingStation, OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION, {
           status: OCPP16DiagnosticsStatus.UploadFailed,
         })
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        chargingStation.stationInfo!.diagnosticsStatus = OCPP16DiagnosticsStatus.UploadFailed
         ftpClient?.close()
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         return handleIncomingRequestError<GetDiagnosticsResponse>(
@@ -1273,6 +1243,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       >(chargingStation, OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION, {
         status: OCPP16DiagnosticsStatus.UploadFailed,
       })
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      chargingStation.stationInfo!.diagnosticsStatus = OCPP16DiagnosticsStatus.UploadFailed
       return OCPP16Constants.OCPP_RESPONSE_EMPTY
     }
   }

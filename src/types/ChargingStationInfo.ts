@@ -1,5 +1,5 @@
 import type { ChargingStationTemplate } from './ChargingStationTemplate.js'
-import type { FirmwareStatus } from './ocpp/Requests.js'
+import type { DiagnosticsStatus, FirmwareStatus } from './ocpp/Requests.js'
 
 export type ChargingStationInfo = Omit<
   ChargingStationTemplate,
@@ -17,6 +17,7 @@ export type ChargingStationInfo = Omit<
   chargeBoxSerialNumber?: string
   chargePointSerialNumber?: string
   chargingStationId?: string
+  diagnosticsStatus?: DiagnosticsStatus
   firmwareStatus?: FirmwareStatus
   hashId: string
   /** @deprecated Use `hashId` instead. */
