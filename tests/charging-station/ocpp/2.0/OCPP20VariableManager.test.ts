@@ -2129,4 +2129,69 @@ await describe('B05 - OCPP20VariableManager', async () => {
       assert.strictEqual(results[1].attributeType, AttributeEnumType.MaxSet)
     })
   })
+
+  await it('should maintain independent invalidVariables per station', () => {
+    const manager = OCPP20VariableManager.getInstance()
+    const registryKey = `${OCPP20ComponentName.TxCtrlr as string}::${OCPP20RequiredVariableName.EVConnectionTimeOut as string}`
+    const originalDefault = VARIABLE_REGISTRY[registryKey].defaultValue
+
+    const { station: stationA } = createMockChargingStation({
+      baseName: 'StationA',
+      connectorsCount: 3,
+      evseConfiguration: { evsesCount: 3 },
+      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+      stationInfo: {
+        hashId: 'station-a-hash',
+        ocppVersion: OCPPVersion.VERSION_201,
+      },
+      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+    })
+    const { station: stationB } = createMockChargingStation({
+      baseName: 'StationB',
+      connectorsCount: 3,
+      evseConfiguration: { evsesCount: 3 },
+      heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+      stationInfo: {
+        hashId: 'station-b-hash',
+        ocppVersion: OCPPVersion.VERSION_201,
+      },
+      websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+    })
+
+    try {
+      deleteConfigurationKey(
+        stationA,
+        OCPP20RequiredVariableName.EVConnectionTimeOut as unknown as VariableType['name'],
+        { save: false }
+      )
+      VARIABLE_REGISTRY[registryKey].defaultValue = undefined
+
+      manager.validatePersistentMappings(stationA)
+
+      VARIABLE_REGISTRY[registryKey].defaultValue = originalDefault
+
+      manager.validatePersistentMappings(stationB)
+
+      const resultA = manager.getVariables(stationA, [
+        {
+          component: { name: OCPP20ComponentName.TxCtrlr },
+          variable: { name: OCPP20RequiredVariableName.EVConnectionTimeOut },
+        },
+      ])[0]
+      assert.strictEqual(resultA.attributeStatus, GetVariableStatusEnumType.Rejected)
+      assert.strictEqual(resultA.attributeStatusInfo?.reasonCode, ReasonCodeEnumType.InternalError)
+
+      const resultB = manager.getVariables(stationB, [
+        {
+          component: { name: OCPP20ComponentName.TxCtrlr },
+          variable: { name: OCPP20RequiredVariableName.EVConnectionTimeOut },
+        },
+      ])[0]
+      assert.strictEqual(resultB.attributeStatus, GetVariableStatusEnumType.Accepted)
+      assert.strictEqual(resultB.attributeValue, Constants.DEFAULT_EV_CONNECTION_TIMEOUT.toString())
+    } finally {
+      VARIABLE_REGISTRY[registryKey].defaultValue = originalDefault
+      manager.invalidateMappingsCache()
+    }
+  })
 })

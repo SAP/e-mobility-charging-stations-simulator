@@ -59,7 +59,7 @@ export class OCPP20VariableManager {
     Object.keys(VARIABLE_REGISTRY).map(k => k.split('::')[0])
   )
 
-  private readonly invalidVariables = new Set<string>() // composite key (lower case)
+  private readonly invalidVariablesPerStation = new Map<string, Set<string>>()
   private readonly maxSetOverrides = new Map<string, string>() // composite key (lower case)
   private readonly minSetOverrides = new Map<string, string>() // composite key (lower case)
   private readonly runtimeOverrides = new Map<string, string>() // composite key (lower case)
@@ -107,8 +107,10 @@ export class OCPP20VariableManager {
   public invalidateMappingsCache (stationId?: string): void {
     if (stationId != null) {
       this.validatedStations.delete(stationId)
+      this.invalidVariablesPerStation.delete(stationId)
     } else {
       this.validatedStations.clear()
+      this.invalidVariablesPerStation.clear()
     }
   }
 
@@ -238,7 +240,8 @@ export class OCPP20VariableManager {
   public validatePersistentMappings (chargingStation: ChargingStation): void {
     const stationId = chargingStation.stationInfo?.hashId ?? ''
     if (this.validatedStations.has(stationId)) return
-    this.invalidVariables.clear()
+    const invalidVariables = this.getInvalidVariables(stationId)
+    invalidVariables.clear()
     for (const metaKey of Object.keys(VARIABLE_REGISTRY)) {
       const variableMetadata = VARIABLE_REGISTRY[metaKey]
       // Enforce persistent non-write-only variables across components
@@ -280,7 +283,7 @@ export class OCPP20VariableManager {
             `${chargingStation.logPrefix()} Added missing configuration key for variable '${configurationKeyName}' with default '${defaultValue}'`
           )
         } else {
-          this.invalidVariables.add(variableKey)
+          invalidVariables.add(variableKey)
           logger.error(
             `${chargingStation.logPrefix()} Missing configuration key mapping and no default for variable '${configurationKeyName}'`
           )
@@ -290,6 +293,15 @@ export class OCPP20VariableManager {
     this.validatedStations.add(stationId)
   }
 
+  private getInvalidVariables (stationId: string): Set<string> {
+    let set = this.invalidVariablesPerStation.get(stationId)
+    if (set == null) {
+      set = new Set<string>()
+      this.invalidVariablesPerStation.set(stationId, set)
+    }
+    return set
+  }
+
   private getVariable (
     chargingStation: ChargingStation,
     variableData: OCPP20GetVariableDataType
@@ -297,6 +309,8 @@ export class OCPP20VariableManager {
     const { attributeType, component, variable } = variableData
     const requestedAttributeType = attributeType
     const resolvedAttributeType = requestedAttributeType ?? AttributeEnumType.Actual
+    const stationId = chargingStation.stationInfo?.hashId ?? ''
+    const invalidVariables = this.getInvalidVariables(stationId)
 
     if (!this.isComponentValid(chargingStation, component)) {
       return this.rejectGet(
@@ -354,7 +368,7 @@ export class OCPP20VariableManager {
       component.instance,
       variable.name
     )
-    if (this.invalidVariables.has(variableKey)) {
+    if (invalidVariables.has(variableKey)) {
       return this.rejectGet(
         variable,
         component,
@@ -450,10 +464,10 @@ export class OCPP20VariableManager {
     )
     let valueSize: string | undefined
     let reportingValueSize: string | undefined
-    if (!this.invalidVariables.has(valueSizeKey)) {
+    if (!invalidVariables.has(valueSizeKey)) {
       valueSize = getConfigurationKey(chargingStation, OCPP20RequiredVariableName.ValueSize)?.value
     }
-    if (!this.invalidVariables.has(reportingValueSizeKey)) {
+    if (!invalidVariables.has(reportingValueSizeKey)) {
       reportingValueSize = getConfigurationKey(
         chargingStation,
         OCPP20RequiredVariableName.ReportingValueSize
@@ -617,6 +631,8 @@ export class OCPP20VariableManager {
   ): OCPP20SetVariableResultType {
     const { attributeType, attributeValue, component, variable } = variableData
     const resolvedAttributeType = attributeType ?? AttributeEnumType.Actual
+    const stationId = chargingStation.stationInfo?.hashId ?? ''
+    const invalidVariables = this.getInvalidVariables(stationId)
 
     if (!this.isComponentValid(chargingStation, component)) {
       return this.rejectSet(
@@ -661,7 +677,7 @@ export class OCPP20VariableManager {
       variable.name
     )
     if (
-      this.invalidVariables.has(variableKey) &&
+      invalidVariables.has(variableKey) &&
       resolvedAttributeType === AttributeEnumType.Actual
     ) {
       if (variableMetadata.mutability !== MutabilityEnumType.WriteOnly) {
@@ -674,7 +690,7 @@ export class OCPP20VariableManager {
           'Variable mapping invalid (startup self-check failed)'
         )
       } else {
-        this.invalidVariables.delete(variableKey)
+        invalidVariables.delete(variableKey)
       }
     }
 
@@ -816,13 +832,13 @@ export class OCPP20VariableManager {
       )
       let configurationValueSizeRaw: string | undefined
       let valueSizeRaw: string | undefined
-      if (!this.invalidVariables.has(configurationValueSizeKey)) {
+      if (!invalidVariables.has(configurationValueSizeKey)) {
         configurationValueSizeRaw = getConfigurationKey(
           chargingStation,
           OCPP20RequiredVariableName.ConfigurationValueSize
         )?.value
       }
-      if (!this.invalidVariables.has(valueSizeKey)) {
+      if (!invalidVariables.has(valueSizeKey)) {
         valueSizeRaw = getConfigurationKey(
           chargingStation,
           OCPP20RequiredVariableName.ValueSize
