@@ -676,10 +676,7 @@ export class OCPP20VariableManager {
       component.instance,
       variable.name
     )
-    if (
-      invalidVariables.has(variableKey) &&
-      resolvedAttributeType === AttributeEnumType.Actual
-    ) {
+    if (invalidVariables.has(variableKey) && resolvedAttributeType === AttributeEnumType.Actual) {
       if (variableMetadata.mutability !== MutabilityEnumType.WriteOnly) {
         return this.rejectSet(
           variable,
