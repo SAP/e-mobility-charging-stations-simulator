@@ -2,8 +2,11 @@
 
 import asyncio
 import inspect
+import logging
 from collections.abc import Callable
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 class Timer:
@@ -33,6 +36,8 @@ class Timer:
             Keyword arguments passed to the callback.
 
         """
+        if timeout < 0:
+            raise ValueError("timeout must be non-negative")
         self._timeout = timeout
         self._repeat = repeat
         self._callback = callback
@@ -44,10 +49,16 @@ class Timer:
         if self._repeat:
             while not self._task.cancelled():
                 await asyncio.sleep(self._timeout)
-                await self._call_callback()
+                try:
+                    await self._call_callback()
+                except Exception:
+                    logger.exception("Error in repeating timer callback")
         else:
             await asyncio.sleep(self._timeout)
-            await self._call_callback()
+            try:
+                await self._call_callback()
+            except Exception:
+                logger.exception("Error in one-shot timer callback")
 
     async def _call_callback(self) -> None:
         if inspect.iscoroutinefunction(self._callback):

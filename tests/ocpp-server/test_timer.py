@@ -2,6 +2,8 @@
 
 import asyncio
 
+import pytest
+
 from timer import Timer
 
 
@@ -180,3 +182,46 @@ class TestTimerEdgeCases:
         await asyncio.wait_for(event.wait(), timeout=2.0)
         await asyncio.sleep(0.03)
         assert event.is_set()
+
+    def test_negative_timeout_raises(self):
+        """Negative timeout raises ValueError."""
+        with pytest.raises(ValueError, match="timeout must be non-negative"):
+            Timer(-1, False, lambda: None)
+
+
+class TestCallbackExceptionHandling:
+    """Tests for exception handling in timer callbacks."""
+
+    async def test_one_shot_callback_exception_is_logged(self, caplog):
+        """One-shot timer logs exception from callback without propagating."""
+        event = asyncio.Event()
+
+        def failing_cb():
+            event.set()
+            raise RuntimeError("one-shot boom")
+
+        timer = Timer(0.01, False, failing_cb)
+        await asyncio.wait_for(event.wait(), timeout=2.0)
+        # Give time for the exception handler to run
+        await asyncio.sleep(0.05)
+        assert timer._task.done()
+        assert "one-shot boom" in caplog.text
+
+    async def test_repeating_callback_exception_continues(self, caplog):
+        """Repeating timer continues firing after a callback exception."""
+        call_count = 0
+        recovered = asyncio.Event()
+
+        def sometimes_failing_cb():
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                raise RuntimeError("repeating boom")
+            if call_count >= 3:
+                recovered.set()
+
+        timer = Timer(0.01, True, sometimes_failing_cb)
+        await asyncio.wait_for(recovered.wait(), timeout=2.0)
+        timer.cancel()
+        assert call_count >= 3
+        assert "repeating boom" in caplog.text
