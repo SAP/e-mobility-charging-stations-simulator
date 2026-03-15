@@ -2,15 +2,17 @@ import _Ajv, { type ValidateFunction } from 'ajv'
 import _ajvFormats from 'ajv-formats'
 
 import type { ChargingStation } from '../../charging-station/index.js'
-import type {
-  IncomingRequestCommand,
-  JsonType,
-  OCPPVersion,
-  RequestCommand,
-} from '../../types/index.js'
 
 import { OCPPError } from '../../exception/index.js'
-import { Constants, logger } from '../../utils/index.js'
+import {
+  ErrorType,
+  type IncomingRequestCommand,
+  type JsonType,
+  type OCPPVersion,
+  type RequestCommand,
+  type ResponseHandler,
+} from '../../types/index.js'
+import { Constants, isAsyncFunction, logger } from '../../utils/index.js'
 import { ajvErrorsToErrorType } from './OCPPServiceUtils.js'
 
 type Ajv = _Ajv.default
@@ -29,8 +31,11 @@ export abstract class OCPPResponseService {
 
   protected readonly ajv: Ajv
   protected readonly ajvIncomingRequest: Ajv
+  protected abstract readonly bootNotificationRequestCommand: RequestCommand
+  protected abstract readonly csmsName: string
   protected emptyResponseHandler = Constants.EMPTY_FUNCTION
   protected abstract payloadValidatorFunctions: Map<RequestCommand, ValidateFunction<JsonType>>
+  protected abstract readonly responseHandlers: Map<RequestCommand, ResponseHandler>
   private readonly version: OCPPVersion
 
   protected constructor (version: OCPPVersion) {
@@ -57,12 +62,82 @@ export abstract class OCPPResponseService {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
-  public abstract responseHandler<ReqType extends JsonType, ResType extends JsonType>(
+  public async responseHandler<ReqType extends JsonType, ResType extends JsonType>(
     chargingStation: ChargingStation,
     commandName: RequestCommand,
     payload: ResType,
     requestPayload: ReqType
-  ): Promise<void>
+  ): Promise<void> {
+    if (
+      chargingStation.inAcceptedState() ||
+      ((chargingStation.inUnknownState() || chargingStation.inPendingState()) &&
+        commandName === this.bootNotificationRequestCommand) ||
+      (chargingStation.stationInfo?.ocppStrictCompliance === false &&
+        (chargingStation.inUnknownState() || chargingStation.inPendingState()))
+    ) {
+      if (
+        this.responseHandlers.has(commandName) &&
+        this.isRequestCommandSupported(chargingStation, commandName)
+      ) {
+        try {
+          this.validateResponsePayload(chargingStation, commandName, payload)
+          logger.debug(
+            `${chargingStation.logPrefix()} ${this.constructor.name}.responseHandler: Handling '${commandName}' response`
+          )
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          const responseHandler = this.responseHandlers.get(commandName)!
+          if (isAsyncFunction(responseHandler)) {
+            await responseHandler(chargingStation, payload, requestPayload)
+          } else {
+            ;(
+              responseHandler as (
+                chargingStation: ChargingStation,
+                payload: JsonType,
+                requestPayload?: JsonType
+              ) => void
+            )(chargingStation, payload, requestPayload)
+          }
+          logger.debug(
+            `${chargingStation.logPrefix()} ${this.constructor.name}.responseHandler: '${commandName}' response processed successfully`
+          )
+        } catch (error) {
+          logger.error(
+            `${chargingStation.logPrefix()} ${this.constructor.name}.responseHandler: Handle '${commandName}' response error:`,
+            error
+          )
+          throw error
+        }
+      } else {
+        // Throw exception
+        throw new OCPPError(
+          ErrorType.NOT_IMPLEMENTED,
+          `${commandName} is not implemented to handle response PDU ${JSON.stringify(
+            payload,
+            undefined,
+            2
+          )}`,
+          commandName,
+          payload
+        )
+      }
+    } else {
+      throw new OCPPError(
+        ErrorType.SECURITY_ERROR,
+        `${commandName} cannot be issued to handle response PDU ${JSON.stringify(
+          payload,
+          undefined,
+          2
+        )} while the charging station is not registered on the ${this.csmsName}`,
+        commandName,
+        payload
+      )
+    }
+  }
+
+  protected abstract isRequestCommandSupported (
+    chargingStation: ChargingStation,
+    commandName: RequestCommand
+  ): boolean
 
   /**
    * Validates incoming response payload against JSON schema

@@ -41,6 +41,7 @@ import {
   type GetConfigurationResponse,
   type GetDiagnosticsRequest,
   type GetDiagnosticsResponse,
+  type IncomingRequestCommand,
   type IncomingRequestHandler,
   type JsonType,
   type LogConfiguration,
@@ -107,7 +108,6 @@ import {
   convertToInt,
   formatDurationMilliSeconds,
   handleIncomingRequestError,
-  isAsyncFunction,
   isEmpty,
   isNotEmptyArray,
   isNotEmptyString,
@@ -157,16 +157,20 @@ const moduleName = 'OCPP16IncomingRequestService'
  */
 
 export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
+  protected readonly csmsName = 'central system'
+
+  protected readonly incomingRequestHandlers: Map<IncomingRequestCommand, IncomingRequestHandler>
+
   protected payloadValidatorFunctions: Map<OCPP16IncomingRequestCommand, ValidateFunction<JsonType>>
 
-  private readonly incomingRequestHandlers: Map<
-    OCPP16IncomingRequestCommand,
-    IncomingRequestHandler
-  >
+  protected readonly pendingStateBlockedCommands: IncomingRequestCommand[] = [
+    OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
+    OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION,
+  ]
 
   public constructor () {
     super(OCPPVersion.VERSION_16)
-    this.incomingRequestHandlers = new Map<OCPP16IncomingRequestCommand, IncomingRequestHandler>([
+    this.incomingRequestHandlers = new Map<IncomingRequestCommand, IncomingRequestHandler>([
       [
         OCPP16IncomingRequestCommand.CANCEL_RESERVATION,
         this.handleRequestCancelReservation.bind(this) as unknown as IncomingRequestHandler,
@@ -527,99 +531,18 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     )
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
-  public async incomingRequestHandler<ReqType extends JsonType, ResType extends JsonType>(
-    chargingStation: ChargingStation,
-    messageId: string,
-    commandName: OCPP16IncomingRequestCommand,
-    commandPayload: ReqType
-  ): Promise<void> {
-    let response: ResType
-    if (
-      chargingStation.stationInfo?.ocppStrictCompliance === true &&
-      chargingStation.inPendingState() &&
-      (commandName === OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION ||
-        commandName === OCPP16IncomingRequestCommand.REMOTE_STOP_TRANSACTION)
-    ) {
-      throw new OCPPError(
-        ErrorType.SECURITY_ERROR,
-        `${commandName} cannot be issued to handle request PDU ${JSON.stringify(
-          commandPayload,
-          undefined,
-          2
-        )} while the charging station is in pending state on the central system`,
-        commandName,
-        commandPayload
-      )
-    }
-    if (
-      chargingStation.inAcceptedState() ||
-      chargingStation.inPendingState() ||
-      (chargingStation.stationInfo?.ocppStrictCompliance === false &&
-        chargingStation.inUnknownState())
-    ) {
-      if (
-        this.incomingRequestHandlers.has(commandName) &&
-        OCPP16ServiceUtils.isIncomingRequestCommandSupported(chargingStation, commandName)
-      ) {
-        try {
-          this.validateIncomingRequestPayload(chargingStation, commandName, commandPayload)
-          // Call the method to build the response
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          const incomingRequestHandler = this.incomingRequestHandlers.get(commandName)!
-          if (isAsyncFunction(incomingRequestHandler)) {
-            response = (await incomingRequestHandler(chargingStation, commandPayload)) as ResType
-          } else {
-            response = incomingRequestHandler(chargingStation, commandPayload) as ResType
-          }
-        } catch (error) {
-          // Log
-          logger.error(
-            `${chargingStation.logPrefix()} ${moduleName}.incomingRequestHandler: Handle incoming request error:`,
-            error
-          )
-          throw error
-        }
-      } else {
-        // Throw exception
-        throw new OCPPError(
-          ErrorType.NOT_IMPLEMENTED,
-          `${commandName} is not implemented to handle request PDU ${JSON.stringify(
-            commandPayload,
-            undefined,
-            2
-          )}`,
-          commandName,
-          commandPayload
-        )
-      }
-    } else {
-      throw new OCPPError(
-        ErrorType.SECURITY_ERROR,
-        `${commandName} cannot be issued to handle request PDU ${JSON.stringify(
-          commandPayload,
-          undefined,
-          2
-        )} while the charging station is not registered on the central system`,
-        commandName,
-        commandPayload
-      )
-    }
-    // Send the built response
-    await chargingStation.ocppRequestService.sendResponse(
-      chargingStation,
-      messageId,
-      response,
-      commandName
-    )
-    // Emit command name event to allow delayed handling only if there are listeners
-    if (this.listenerCount(commandName) > 0) {
-      this.emit(commandName, chargingStation, commandPayload, response)
-    }
-  }
-
   public override stop (chargingStation: ChargingStation): void {
     /* no-op for OCPP 1.6 */
+  }
+
+  protected isIncomingRequestCommandSupported (
+    chargingStation: ChargingStation,
+    commandName: IncomingRequestCommand
+  ): boolean {
+    return OCPP16ServiceUtils.isIncomingRequestCommandSupported(
+      chargingStation,
+      commandName as OCPP16IncomingRequestCommand
+    )
   }
 
   private composeCompositeSchedule (

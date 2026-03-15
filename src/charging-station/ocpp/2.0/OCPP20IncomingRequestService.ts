@@ -32,6 +32,7 @@ import {
   GetCertificateIdUseEnumType,
   GetInstalledCertificateStatusEnumType,
   GetVariableStatusEnumType,
+  type IncomingRequestCommand,
   type IncomingRequestHandler,
   InstallCertificateStatusEnumType,
   InstallCertificateUseEnumType,
@@ -126,14 +127,7 @@ import {
   OCPP20ChargingRateUnitEnumType,
   OCPP20ReasonEnumType,
 } from '../../../types/ocpp/2.0/Transaction.js'
-import {
-  Constants,
-  generateUUID,
-  isAsyncFunction,
-  logger,
-  sleep,
-  validateUUID,
-} from '../../../utils/index.js'
+import { Constants, generateUUID, logger, sleep, validateUUID } from '../../../utils/index.js'
 import { getConfigurationKey } from '../../ConfigurationKeyUtils.js'
 import {
   getIdTagsFile,
@@ -165,18 +159,22 @@ interface OCPP20PerStationState {
 }
 
 export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
+  protected readonly csmsName = 'CSMS'
+
+  protected readonly incomingRequestHandlers: Map<IncomingRequestCommand, IncomingRequestHandler>
+
   protected payloadValidatorFunctions: Map<OCPP20IncomingRequestCommand, ValidateFunction<JsonType>>
 
-  private readonly incomingRequestHandlers: Map<
-    OCPP20IncomingRequestCommand,
-    IncomingRequestHandler
-  >
+  protected readonly pendingStateBlockedCommands: IncomingRequestCommand[] = [
+    OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
+    OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION,
+  ]
 
   private readonly stationStates = new WeakMap<ChargingStation, OCPP20PerStationState>()
 
   public constructor () {
     super(OCPPVersion.VERSION_201)
-    this.incomingRequestHandlers = new Map<OCPP20IncomingRequestCommand, IncomingRequestHandler>([
+    this.incomingRequestHandlers = new Map<IncomingRequestCommand, IncomingRequestHandler>([
       [
         OCPP20IncomingRequestCommand.CERTIFICATE_SIGNED,
         this.toHandler(this.handleRequestCertificateSigned.bind(this)),
@@ -570,96 +568,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     return setVariablesResponse
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
-  public async incomingRequestHandler<ReqType extends JsonType, ResType extends JsonType>(
-    chargingStation: ChargingStation,
-    messageId: string,
-    commandName: OCPP20IncomingRequestCommand,
-    commandPayload: ReqType
-  ): Promise<void> {
-    let response: ResType
-    if (
-      chargingStation.stationInfo?.ocppStrictCompliance === true &&
-      chargingStation.inPendingState() &&
-      (commandName === OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION ||
-        commandName === OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION)
-    ) {
-      throw new OCPPError(
-        ErrorType.SECURITY_ERROR,
-        `${commandName} cannot be issued to handle request PDU ${JSON.stringify(
-          commandPayload,
-          undefined,
-          2
-        )} while the charging station is in pending state on the CSMS`,
-        commandName,
-        commandPayload
-      )
-    }
-    if (
-      chargingStation.inAcceptedState() ||
-      chargingStation.inPendingState() ||
-      (chargingStation.stationInfo?.ocppStrictCompliance === false &&
-        chargingStation.inUnknownState())
-    ) {
-      if (
-        this.incomingRequestHandlers.has(commandName) &&
-        OCPP20ServiceUtils.isIncomingRequestCommandSupported(chargingStation, commandName)
-      ) {
-        try {
-          this.validateIncomingRequestPayload(chargingStation, commandName, commandPayload)
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          const incomingRequestHandler = this.incomingRequestHandlers.get(commandName)!
-          if (isAsyncFunction(incomingRequestHandler)) {
-            response = (await incomingRequestHandler(chargingStation, commandPayload)) as ResType
-          } else {
-            response = incomingRequestHandler(chargingStation, commandPayload) as ResType
-          }
-        } catch (error) {
-          // Log
-          logger.error(
-            `${chargingStation.logPrefix()} ${moduleName}.incomingRequestHandler: Handle incoming request error:`,
-            error
-          )
-          throw error
-        }
-      } else {
-        // Throw exception
-        throw new OCPPError(
-          ErrorType.NOT_IMPLEMENTED,
-          `${commandName} is not implemented to handle request PDU ${JSON.stringify(
-            commandPayload,
-            undefined,
-            2
-          )}`,
-          commandName,
-          commandPayload
-        )
-      }
-    } else {
-      throw new OCPPError(
-        ErrorType.SECURITY_ERROR,
-        `${commandName} cannot be issued to handle request PDU ${JSON.stringify(
-          commandPayload,
-          undefined,
-          2
-        )} while the charging station is not registered on the CSMS`,
-        commandName,
-        commandPayload
-      )
-    }
-    // Send the built response
-    await chargingStation.ocppRequestService.sendResponse(
-      chargingStation,
-      messageId,
-      response,
-      commandName
-    )
-    // Emit command name event to allow delayed handling only if there are listeners
-    if (this.listenerCount(commandName) > 0) {
-      this.emit(commandName, chargingStation, commandPayload, response)
-    }
-  }
-
   public override stop (chargingStation: ChargingStation): void {
     const ss = this.stationStates.get(chargingStation)
     if (ss != null) {
@@ -712,6 +620,16 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
       return OCPP20Constants.OCPP_RESPONSE_REJECTED
     }
+  }
+
+  protected isIncomingRequestCommandSupported (
+    chargingStation: ChargingStation,
+    commandName: IncomingRequestCommand
+  ): boolean {
+    return OCPP20ServiceUtils.isIncomingRequestCommandSupported(
+      chargingStation,
+      commandName as OCPP20IncomingRequestCommand
+    )
   }
 
   private buildReportData (

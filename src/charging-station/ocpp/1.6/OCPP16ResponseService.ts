@@ -9,10 +9,8 @@ import {
   hasReservationExpired,
   resetConnectorStatus,
 } from '../../../charging-station/index.js'
-import { OCPPError } from '../../../exception/index.js'
 import {
   ChargingStationEvents,
-  ErrorType,
   type JsonType,
   OCPP16AuthorizationStatus,
   type OCPP16AuthorizeRequest,
@@ -31,10 +29,11 @@ import {
   type OCPP16StopTransactionResponse,
   OCPPVersion,
   RegistrationStatusEnumType,
+  type RequestCommand,
   ReservationTerminationReason,
   type ResponseHandler,
 } from '../../../types/index.js'
-import { Constants, convertToInt, isAsyncFunction, logger } from '../../../utils/index.js'
+import { Constants, convertToInt, logger } from '../../../utils/index.js'
 import { OCPPResponseService } from '../OCPPResponseService.js'
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js'
 
@@ -80,12 +79,16 @@ export class OCPP16ResponseService extends OCPPResponseService {
     ValidateFunction<JsonType>
   >
 
+  protected readonly bootNotificationRequestCommand = OCPP16RequestCommand.BOOT_NOTIFICATION
+  protected readonly csmsName = 'central system'
+
   protected payloadValidatorFunctions: Map<OCPP16RequestCommand, ValidateFunction<JsonType>>
-  private readonly responseHandlers: Map<OCPP16RequestCommand, ResponseHandler>
+
+  protected readonly responseHandlers: Map<RequestCommand, ResponseHandler>
 
   public constructor () {
     super(OCPPVersion.VERSION_16)
-    this.responseHandlers = new Map<OCPP16RequestCommand, ResponseHandler>([
+    this.responseHandlers = new Map<RequestCommand, ResponseHandler>([
       [OCPP16RequestCommand.AUTHORIZE, this.handleResponseAuthorize.bind(this) as ResponseHandler],
       [
         OCPP16RequestCommand.BOOT_NOTIFICATION,
@@ -125,77 +128,14 @@ export class OCPP16ResponseService extends OCPPResponseService {
       )
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
-  public async responseHandler<ReqType extends JsonType, ResType extends JsonType>(
+  protected isRequestCommandSupported (
     chargingStation: ChargingStation,
-    commandName: OCPP16RequestCommand,
-    payload: ResType,
-    requestPayload: ReqType
-  ): Promise<void> {
-    if (
-      chargingStation.inAcceptedState() ||
-      ((chargingStation.inUnknownState() || chargingStation.inPendingState()) &&
-        commandName === OCPP16RequestCommand.BOOT_NOTIFICATION) ||
-      (chargingStation.stationInfo?.ocppStrictCompliance === false &&
-        (chargingStation.inUnknownState() || chargingStation.inPendingState()))
-    ) {
-      if (
-        this.responseHandlers.has(commandName) &&
-        OCPP16ServiceUtils.isRequestCommandSupported(chargingStation, commandName)
-      ) {
-        try {
-          this.validateResponsePayload(chargingStation, commandName, payload)
-          logger.debug(
-            `${chargingStation.logPrefix()} ${moduleName}.responseHandler: Handling '${commandName}' response`
-          )
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          const responseHandler = this.responseHandlers.get(commandName)!
-          if (isAsyncFunction(responseHandler)) {
-            await responseHandler(chargingStation, payload, requestPayload)
-          } else {
-            ;(
-              responseHandler as (
-                chargingStation: ChargingStation,
-                payload: JsonType,
-                requestPayload?: JsonType
-              ) => void
-            )(chargingStation, payload, requestPayload)
-          }
-          logger.debug(
-            `${chargingStation.logPrefix()} ${moduleName}.responseHandler: '${commandName}' response processed successfully`
-          )
-        } catch (error) {
-          logger.error(
-            `${chargingStation.logPrefix()} ${moduleName}.responseHandler: Handle '${commandName}' response error:`,
-            error
-          )
-          throw error
-        }
-      } else {
-        // Throw exception
-        throw new OCPPError(
-          ErrorType.NOT_IMPLEMENTED,
-          `${commandName} is not implemented to handle response PDU ${JSON.stringify(
-            payload,
-            undefined,
-            2
-          )}`,
-          commandName,
-          payload
-        )
-      }
-    } else {
-      throw new OCPPError(
-        ErrorType.SECURITY_ERROR,
-        `${commandName} cannot be issued to handle response PDU ${JSON.stringify(
-          payload,
-          undefined,
-          2
-        )} while the charging station is not registered on the central system`,
-        commandName,
-        payload
-      )
-    }
+    commandName: RequestCommand
+  ): boolean {
+    return OCPP16ServiceUtils.isRequestCommandSupported(
+      chargingStation,
+      commandName as OCPP16RequestCommand
+    )
   }
 
   private handleResponseAuthorize (
