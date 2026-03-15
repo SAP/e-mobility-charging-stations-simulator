@@ -369,8 +369,12 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                 chargingStation,
                 OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
                 {
+                  // §4.4 + §7.24: Idle when not busy uploading diagnostics
                   status:
-                    chargingStation.stationInfo?.diagnosticsStatus ?? OCPP16DiagnosticsStatus.Idle,
+                    chargingStation.stationInfo?.diagnosticsStatus ===
+                    OCPP16DiagnosticsStatus.Uploading
+                      ? OCPP16DiagnosticsStatus.Uploading
+                      : OCPP16DiagnosticsStatus.Idle,
                 },
                 {
                   triggerMessage: true,
@@ -387,7 +391,15 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                 chargingStation,
                 OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
                 {
-                  status: chargingStation.stationInfo?.firmwareStatus ?? OCPP16FirmwareStatus.Idle,
+                  // §4.5 + §7.25: Idle when not busy downloading/installing firmware
+                  status:
+                    chargingStation.stationInfo?.firmwareStatus ===
+                      OCPP16FirmwareStatus.Downloading ||
+                    chargingStation.stationInfo?.firmwareStatus ===
+                      OCPP16FirmwareStatus.Downloaded ||
+                    chargingStation.stationInfo?.firmwareStatus === OCPP16FirmwareStatus.Installing
+                      ? chargingStation.stationInfo.firmwareStatus
+                      : OCPP16FirmwareStatus.Idle,
                 },
                 {
                   triggerMessage: true,
@@ -1554,8 +1566,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     commandPayload.retrieveDate = convertToDate(commandPayload.retrieveDate)!
     const { retrieveDate } = commandPayload
     if (
-      chargingStation.stationInfo?.firmwareStatus != null &&
-      chargingStation.stationInfo.firmwareStatus !== OCPP16FirmwareStatus.Installed
+      chargingStation.stationInfo?.firmwareStatus === OCPP16FirmwareStatus.Downloading ||
+      chargingStation.stationInfo?.firmwareStatus === OCPP16FirmwareStatus.Downloaded ||
+      chargingStation.stationInfo?.firmwareStatus === OCPP16FirmwareStatus.Installing
     ) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Cannot simulate firmware update: firmware update is already in progress`
