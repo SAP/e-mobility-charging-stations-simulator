@@ -104,6 +104,10 @@ export class OCPP20VariableManager {
     return results
   }
 
+  public invalidateMappingsCache (): void {
+    this.validated = false
+  }
+
   public resetRuntimeOverrides (): void {
     this.runtimeOverrides.clear()
   }
@@ -222,10 +226,6 @@ export class OCPP20VariableManager {
     }
 
     return results
-  }
-
-  public invalidateMappingsCache (): void {
-    this.validated = false
   }
 
   public validatePersistentMappings (chargingStation: ChargingStation): void {

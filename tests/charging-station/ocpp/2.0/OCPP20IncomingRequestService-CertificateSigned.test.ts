@@ -9,8 +9,8 @@ import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type { ChargingStationWithCertificateManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20CertificateManager.js'
 
-import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { addConfigurationKey } from '../../../../src/charging-station/ConfigurationKeyUtils.js'
+import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import {
   CertificateSigningUseEnumType,
@@ -322,7 +322,7 @@ await describe('I04 - CertificateSigned', async () => {
       assert.strictEqual(response.status, GenericStatus.Rejected)
       assert.notStrictEqual(response.statusInfo, undefined)
       assert.strictEqual(response.statusInfo?.reasonCode, 'InvalidCertificate')
-      assert.ok(response.statusInfo?.additionalInfo?.includes('MaxCertificateChainSize'))
+      assert.ok(response.statusInfo.additionalInfo?.includes('MaxCertificateChainSize'))
     })
 
     await it('should accept certificate chain within MaxCertificateChainSize', async () => {
@@ -350,11 +350,11 @@ await describe('I04 - CertificateSigned', async () => {
   await describe('SecurityEventNotification on X.509 Failure', async () => {
     await it('should send SecurityEventNotification when X.509 validation fails', async () => {
       // Arrange
-      const { station: trackingStation, sentRequests } = createMockStationWithRequestTracking()
+      const { sentRequests, station: trackingStation } = createMockStationWithRequestTracking()
       createStationWithCertificateManager(
         trackingStation,
         createMockCertificateManager({
-          validateCertificateX509Result: { valid: false, reason: 'Certificate expired' },
+          validateCertificateX509Result: { reason: 'Certificate expired', valid: false },
         })
       )
 
@@ -371,7 +371,7 @@ await describe('I04 - CertificateSigned', async () => {
       assert.strictEqual(response.status, GenericStatus.Rejected)
 
       const securityEvents = sentRequests.filter(
-        r => r.command === OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION
+        r => (r.command as OCPP20RequestCommand) === OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION
       )
       assert.strictEqual(securityEvents.length, 1)
       assert.strictEqual(securityEvents[0].payload.type, 'InvalidChargingStationCertificate')

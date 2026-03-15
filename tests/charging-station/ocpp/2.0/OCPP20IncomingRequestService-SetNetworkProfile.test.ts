@@ -11,6 +11,7 @@ import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import {
+  type OCPP20SetNetworkProfileRequest,
   OCPPVersion,
   ReasonCodeEnumType,
   SetNetworkProfileStatusEnumType,
@@ -142,17 +143,16 @@ await describe('B43 - SetNetworkProfile', async () => {
   })
 
   // TC_B_43_CS: Verify response includes statusInfo with reasonCode
-  await it('should include statusInfo with InvalidValue reasonCode for missing connectionData', () => {
+  await it('should include statusInfo with InvalidValue reasonCode for invalid configurationSlot', () => {
     // Arrange
     const invalidPayload = {
-      configurationSlot: 1,
-      connectionData: undefined,
-    }
+      configurationSlot: 0,
+    } as unknown as OCPP20SetNetworkProfileRequest
 
     // Act
     const response = testableService.handleRequestSetNetworkProfile(
       station,
-      invalidPayload as any
+      invalidPayload
     )
 
     // Assert

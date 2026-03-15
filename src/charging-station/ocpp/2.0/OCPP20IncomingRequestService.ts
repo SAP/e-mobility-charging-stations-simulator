@@ -134,13 +134,13 @@ import {
   sleep,
   validateUUID,
 } from '../../../utils/index.js'
+import { getConfigurationKey } from '../../ConfigurationKeyUtils.js'
 import {
   getIdTagsFile,
   hasPendingReservation,
   hasPendingReservations,
   resetConnectorStatus,
 } from '../../Helpers.js'
-import { getConfigurationKey } from '../../ConfigurationKeyUtils.js'
 import { OCPPAuthServiceFactory } from '../auth/services/OCPPAuthServiceFactory.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
 import { restoreConnectorStatus, sendAndSetConnectorStatus } from '../OCPPServiceUtils.js'
@@ -1049,6 +1049,13 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     return reportData
   }
 
+  private clearActiveFirmwareUpdate (requestId: number): void {
+    if (this.activeFirmwareUpdateRequestId === requestId) {
+      this.activeFirmwareUpdateAbortController = undefined
+      this.activeFirmwareUpdateRequestId = undefined
+    }
+  }
+
   private getTxUpdatedInterval (chargingStation: ChargingStation): number {
     const variableManager = OCPP20VariableManager.getInstance()
     const results = variableManager.getVariables(chargingStation, [
@@ -1220,7 +1227,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         chargingStation,
         'InvalidChargingStationCertificate',
         `X.509 validation failed: ${x509Result.reason ?? 'Unknown'}`
-      ).catch(() => {})
+      ).catch(() => { /* intentional no-op */ })
       return {
         status: GenericStatus.Rejected,
         statusInfo: {
@@ -2021,13 +2028,13 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   /**
-    * Handles OCPP 2.0.1 SetNetworkProfile request from central system
-    * Per B09.FR.01: Validates configurationSlot and connectionData, returns Accepted for valid requests
-    * The simulator accepts the request but does not perform actual network profile switching
-    * @param chargingStation - The charging station instance
-    * @param commandPayload - The SetNetworkProfile request payload
-    * @returns SetNetworkProfileResponse with Accepted or Rejected status
-    */
+   * Handles OCPP 2.0.1 SetNetworkProfile request from central system
+   * Per B09.FR.01: Validates configurationSlot and connectionData, returns Accepted for valid requests
+   * The simulator accepts the request but does not perform actual network profile switching
+   * @param chargingStation - The charging station instance
+   * @param commandPayload - The SetNetworkProfile request payload
+   * @returns SetNetworkProfileResponse with Accepted or Rejected status
+   */
   private handleRequestSetNetworkProfile (
     chargingStation: ChargingStation,
     commandPayload: OCPP20SetNetworkProfileRequest
@@ -2035,11 +2042,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestSetNetworkProfile: Received SetNetworkProfile request`
     )
-    
+
     // Validate configurationSlot is a positive integer (B09.FR.02)
     if (!Number.isInteger(commandPayload.configurationSlot) || commandPayload.configurationSlot <= 0) {
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestSetNetworkProfile: Invalid configurationSlot: ${commandPayload.configurationSlot}`
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestSetNetworkProfile: Invalid configurationSlot: ${commandPayload.configurationSlot.toString()}`
       )
       return {
         status: SetNetworkProfileStatusEnumType.Rejected,
@@ -2049,24 +2056,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         },
       }
     }
-    
-    // Validate connectionData is present
-    if (!commandPayload.connectionData) {
-      logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestSetNetworkProfile: Missing connectionData`
-      )
-      return {
-        status: SetNetworkProfileStatusEnumType.Rejected,
-        statusInfo: {
-          additionalInfo: 'connectionData is required',
-          reasonCode: ReasonCodeEnumType.InvalidValue,
-        },
-      }
-    }
-    
+
     // Valid request - return Accepted (simulator accepts but does not switch networks)
     logger.info(
-      `${chargingStation.logPrefix()} ${moduleName}.handleRequestSetNetworkProfile: Accepting SetNetworkProfile request for slot ${commandPayload.configurationSlot}`
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestSetNetworkProfile: Accepting SetNetworkProfile request for slot ${commandPayload.configurationSlot.toString()}`
     )
     return {
       status: SetNetworkProfileStatusEnumType.Accepted,
@@ -2852,6 +2845,15 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
+  private isValidFirmwareLocation (location: string): boolean {
+    try {
+      const url = new URL(location)
+      return url.protocol === 'http:' || url.protocol === 'https:' || url.protocol === 'ftp:'
+    } catch {
+      return false
+    }
+  }
+
   /**
    * Reset connector status on start transaction error
    * @param chargingStation - The charging station instance
@@ -3036,21 +3038,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     })
   }
 
-  private sendSecurityEventNotification (
-    chargingStation: ChargingStation,
-    type: string,
-    techInfo?: string
-  ): Promise<OCPP20SecurityEventNotificationResponse> {
-    return chargingStation.ocppRequestService.requestHandler<
-      OCPP20SecurityEventNotificationRequest,
-      OCPP20SecurityEventNotificationResponse
-    >(chargingStation, OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION, {
-      timestamp: new Date(),
-      type,
-      ...(techInfo !== undefined && { techInfo }),
-    })
-  }
-
   private async sendNotifyCustomerInformation (
     chargingStation: ChargingStation,
     requestId: number
@@ -3080,12 +3067,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
 
       logger.debug(
-        `${chargingStation.logPrefix()} ${moduleName}.sendNotifyCustomerInformation: NotifyCustomerInformation sent seqNo=${seqNo} for requestId ${requestId} (tbc=${(!isLastChunk).toString()})`
+        `${chargingStation.logPrefix()} ${moduleName}.sendNotifyCustomerInformation: NotifyCustomerInformation sent seqNo=${seqNo.toString()} for requestId ${requestId.toString()} (tbc=${(!isLastChunk).toString()})`
       )
     }
 
     logger.debug(
-      `${chargingStation.logPrefix()} ${moduleName}.sendNotifyCustomerInformation: Completed NotifyCustomerInformation for requestId ${requestId} in ${dataChunks.length.toString()} message(s)`
+      `${chargingStation.logPrefix()} ${moduleName}.sendNotifyCustomerInformation: Completed NotifyCustomerInformation for requestId ${requestId.toString()} in ${dataChunks.length.toString()} message(s)`
     )
   }
 
@@ -3136,6 +3123,21 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       `${chargingStation.logPrefix()} ${moduleName}.sendNotifyReportRequest: Completed NotifyReport for requestId ${requestId} with ${reportData.length} total items in ${chunks.length} message(s)`
     )
     this.reportDataCache.delete(requestId)
+  }
+
+  private sendSecurityEventNotification (
+    chargingStation: ChargingStation,
+    type: string,
+    techInfo?: string
+  ): Promise<OCPP20SecurityEventNotificationResponse> {
+    return chargingStation.ocppRequestService.requestHandler<
+      OCPP20SecurityEventNotificationRequest,
+      OCPP20SecurityEventNotificationResponse
+    >(chargingStation, OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION, {
+      timestamp: new Date(),
+      type,
+      ...(techInfo !== undefined && { techInfo }),
+    })
   }
 
   /**
@@ -3252,22 +3254,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     logger.info(
       `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Firmware update simulation completed for requestId ${requestId.toString()}`
     )
-  }
-
-  private clearActiveFirmwareUpdate (requestId: number): void {
-    if (this.activeFirmwareUpdateRequestId === requestId) {
-      this.activeFirmwareUpdateAbortController = undefined
-      this.activeFirmwareUpdateRequestId = undefined
-    }
-  }
-
-  private isValidFirmwareLocation (location: string): boolean {
-    try {
-      const url = new URL(location)
-      return url.protocol === 'http:' || url.protocol === 'https:' || url.protocol === 'ftp:'
-    } catch {
-      return false
-    }
   }
 
   /**

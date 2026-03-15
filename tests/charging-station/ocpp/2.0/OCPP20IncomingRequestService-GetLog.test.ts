@@ -194,7 +194,7 @@ await describe('K01 - GetLog', async () => {
     await it('should send Uploading notification with correct requestId', async t => {
       await withMockTimers(t, ['setTimeout'], async () => {
         // Arrange
-        const { station: trackingStation, sentRequests } = createMockStationWithRequestTracking()
+        const { sentRequests, station: trackingStation } = createMockStationWithRequestTracking()
         const service = new OCPP20IncomingRequestService()
         const request: OCPP20GetLogRequest = {
           log: { remoteLocation: 'ftp://logs.example.com/' },
@@ -222,7 +222,7 @@ await describe('K01 - GetLog', async () => {
     await it('should send Uploaded notification with correct requestId after delay', async t => {
       await withMockTimers(t, ['setTimeout'], async () => {
         // Arrange
-        const { station: trackingStation, sentRequests } = createMockStationWithRequestTracking()
+        const { sentRequests, station: trackingStation } = createMockStationWithRequestTracking()
         const service = new OCPP20IncomingRequestService()
         const request: OCPP20GetLogRequest = {
           log: { remoteLocation: 'ftp://logs.example.com/' },
@@ -257,7 +257,7 @@ await describe('K01 - GetLog', async () => {
     await it('should send Uploading before Uploaded in correct sequence', async t => {
       await withMockTimers(t, ['setTimeout'], async () => {
         // Arrange
-        const { station: trackingStation, sentRequests } = createMockStationWithRequestTracking()
+        const { sentRequests, station: trackingStation } = createMockStationWithRequestTracking()
         const service = new OCPP20IncomingRequestService()
         const request: OCPP20GetLogRequest = {
           log: { remoteLocation: 'ftp://logs.example.com/' },

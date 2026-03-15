@@ -233,7 +233,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
           location: 'https://firmware.example.com/update.bin',
           retrieveDateTime: new Date('2025-01-15T10:00:00.000Z'),
           signingCertificate:
-            '-----BEGIN CERTIFICATE-----\nMIIBkTCB+wIJAK...\n-----END CERTIFICATE-----',
+            '-----BEGIN CERTIFICATE-----\nMIIBkTCB0123...\n-----END CERTIFICATE-----',
         },
         requestId: 11,
       }
@@ -277,9 +277,9 @@ await describe('L01/L02 - UpdateFirmware', async () => {
       // Set an active transaction on EVSE 1's connector
       const evse1 = evseStation.evses.get(1)
       if (evse1 != null) {
-        for (const connector of evse1.connectors.values()) {
-          connector.transactionId = 'tx-active-001'
-          break
+        const firstConnector = evse1.connectors.values().next().value
+        if (firstConnector != null) {
+          firstConnector.transactionId = 'tx-active-001'
         }
       }
 
@@ -375,9 +375,9 @@ await describe('L01/L02 - UpdateFirmware', async () => {
 
         const cancelNotification = sentRequests.find(
           r =>
-            r.command === OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION &&
+            (r.command as OCPP20RequestCommand) === OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION &&
             r.payload.requestId === 100 &&
-            r.payload.status === FirmwareStatusEnumType.DownloadFailed
+            (r.payload.status as FirmwareStatusEnumType) === FirmwareStatusEnumType.DownloadFailed
         )
         assert.notStrictEqual(cancelNotification, undefined)
       })
@@ -533,7 +533,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
         await flushMicrotasks()
 
         const firmwareNotifications = sentRequests.filter(
-          r => r.command === OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION
+          r => (r.command as OCPP20RequestCommand) === OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION
         )
         assert.strictEqual(firmwareNotifications.length, 4)
         for (const req of firmwareNotifications) {

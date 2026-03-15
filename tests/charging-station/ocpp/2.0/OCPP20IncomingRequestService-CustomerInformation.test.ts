@@ -106,13 +106,13 @@ await describe('N32 - CustomerInformation', async () => {
       assert.strictEqual(response.status, CustomerInformationStatusEnumType.Invalid)
       assert.notStrictEqual(response.statusInfo, undefined)
       assert.strictEqual(response.statusInfo?.reasonCode, 'InvalidValue')
-      assert.notStrictEqual(response.statusInfo?.additionalInfo, undefined)
+      assert.notStrictEqual(response.statusInfo.additionalInfo, undefined)
     })
 
     await it('should respond with Invalid when report=true and two identifiers provided', () => {
       const response = testableService.handleRequestCustomerInformation(station, {
         clear: false,
-        customerIdentifier: 'CUST_001',
+        customerIdentifier: 'CUSTOMER_001',
         idToken: { idToken: 'TOKEN_001', type: OCPP20IdTokenEnumType.Central },
         report: true,
         requestId: 11,
@@ -126,7 +126,7 @@ await describe('N32 - CustomerInformation', async () => {
     await it('should respond with Accepted when report=true and exactly one identifier (customerIdentifier)', () => {
       const response = testableService.handleRequestCustomerInformation(station, {
         clear: false,
-        customerIdentifier: 'CUST_001',
+        customerIdentifier: 'CUSTOMER_001',
         report: true,
         requestId: 12,
       })

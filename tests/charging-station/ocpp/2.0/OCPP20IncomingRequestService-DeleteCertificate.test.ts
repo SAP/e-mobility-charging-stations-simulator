@@ -12,7 +12,6 @@ import type { ChargingStationWithCertificateManager } from '../../../../src/char
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import {
-  CertificateSigningUseEnumType,
   DeleteCertificateStatusEnumType,
   GetCertificateIdUseEnumType,
   HashAlgorithmEnumType,
@@ -292,13 +291,13 @@ await describe('I04 - DeleteCertificate', async () => {
       assert.strictEqual(response.status, DeleteCertificateStatusEnumType.Failed)
       assert.notStrictEqual(response.statusInfo, undefined)
       assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.InternalError)
-      assert.ok(response.statusInfo?.additionalInfo?.includes('M04.FR.06'))
+      assert.ok(response.statusInfo.additionalInfo?.includes('M04.FR.06'))
     })
 
     await it('should allow deletion of non-ChargingStationCertificate when no ChargingStationCertificate exists', async () => {
       stationWithCertManager.certificateManager = createMockCertificateManager({
-        getInstalledCertificatesResult: [],
         deleteCertificateResult: { status: DeleteCertificateStatusEnumType.Accepted },
+        getInstalledCertificatesResult: [],
       })
 
       const request: OCPP20DeleteCertificateRequest = {

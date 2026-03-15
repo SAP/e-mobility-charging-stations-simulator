@@ -60,20 +60,20 @@ export interface OCPP20CertificateManagerInterface {
 }
 
 /**
- * Result type for X.509 certificate validation
- */
-export interface ValidateCertificateX509Result {
-  reason?: string
-  valid: boolean
-}
-
-/**
  * Result type for certificate storage operations
  */
 export interface StoreCertificateResult {
   error?: string
   filePath?: string
   success: boolean
+}
+
+/**
+ * Result type for X.509 certificate validation
+ */
+export interface ValidateCertificateX509Result {
+  reason?: string
+  valid: boolean
 }
 
 /**
@@ -401,7 +401,7 @@ export class OCPP20CertificateManager {
       if (now > new Date(cert.validTo)) {
         return { reason: 'Certificate has expired', valid: false }
       }
-      if (!cert.issuer?.trim()) {
+      if (!cert.issuer.trim()) {
         return { reason: 'Certificate has no issuer', valid: false }
       }
       return { valid: true }
