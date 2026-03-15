@@ -667,7 +667,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       this.stationStates.delete(chargingStation)
     }
     try {
-      OCPP20VariableManager.getInstance().resetRuntimeOverrides()
+      OCPP20VariableManager.getInstance().resetRuntimeOverrides(chargingStation.stationInfo?.hashId)
       logger.debug(`${chargingStation.logPrefix()} ${moduleName}.stop: Runtime overrides cleared`)
     } catch (error) {
       logger.error(

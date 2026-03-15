@@ -60,9 +60,9 @@ export class OCPP20VariableManager {
   )
 
   private readonly invalidVariables = new Map<string, Set<string>>() // stationId → composite keys (lower case)
-  private readonly maxSetOverrides = new Map<string, string>() // composite key (lower case) → value
-  private readonly minSetOverrides = new Map<string, string>() // composite key (lower case) → value
-  private readonly runtimeOverrides = new Map<string, string>() // composite key (lower case) → value
+  private readonly maxSetOverrides = new Map<string, Map<string, string>>() // stationId → composite key → value
+  private readonly minSetOverrides = new Map<string, Map<string, string>>() // stationId → composite key → value
+  private readonly runtimeOverrides = new Map<string, Map<string, string>>() // stationId → composite key → value
   private readonly validatedStations = new Set<string>() // stationId
 
   private constructor () {
@@ -114,8 +114,16 @@ export class OCPP20VariableManager {
     }
   }
 
-  public resetRuntimeOverrides (): void {
-    this.runtimeOverrides.clear()
+  public resetRuntimeOverrides (stationId?: string): void {
+    if (stationId != null) {
+      this.runtimeOverrides.delete(stationId)
+      this.minSetOverrides.delete(stationId)
+      this.maxSetOverrides.delete(stationId)
+    } else {
+      this.runtimeOverrides.clear()
+      this.minSetOverrides.clear()
+      this.maxSetOverrides.clear()
+    }
   }
 
   public setVariables (
@@ -123,6 +131,7 @@ export class OCPP20VariableManager {
     setVariableData: OCPP20SetVariableDataType[]
   ): OCPP20SetVariableResultType[] {
     this.validatePersistentMappings(chargingStation)
+    const stationId = this.getStationId(chargingStation)
 
     // Collect paired MinSet/MaxSet entries for atomic cross-validation
     const pairedBounds = new Map<string, { maxValue?: string; minValue?: string }>()
@@ -156,11 +165,11 @@ export class OCPP20VariableManager {
       const newMax = convertToIntOrNaN(pair.maxValue)
       if (Number.isNaN(newMin) || Number.isNaN(newMax) || newMin > newMax) continue
       savedOverrides.set(varKey, {
-        prevMax: this.maxSetOverrides.get(varKey),
-        prevMin: this.minSetOverrides.get(varKey),
+        prevMax: this.getMaxSetOverrides(stationId).get(varKey),
+        prevMin: this.getMinSetOverrides(stationId).get(varKey),
       })
-      this.minSetOverrides.set(varKey, pair.minValue)
-      this.maxSetOverrides.set(varKey, pair.maxValue)
+      this.getMinSetOverrides(stationId).set(varKey, pair.minValue)
+      this.getMaxSetOverrides(stationId).set(varKey, pair.maxValue)
     }
 
     const results: OCPP20SetVariableResultType[] = []
@@ -220,16 +229,16 @@ export class OCPP20VariableManager {
       }
       if (minRejected) {
         if (saved.prevMin != null) {
-          this.minSetOverrides.set(varKey, saved.prevMin)
+          this.getMinSetOverrides(stationId).set(varKey, saved.prevMin)
         } else {
-          this.minSetOverrides.delete(varKey)
+          this.getMinSetOverrides(stationId).delete(varKey)
         }
       }
       if (maxRejected) {
         if (saved.prevMax != null) {
-          this.maxSetOverrides.set(varKey, saved.prevMax)
+          this.getMaxSetOverrides(stationId).set(varKey, saved.prevMax)
         } else {
-          this.maxSetOverrides.delete(varKey)
+          this.getMaxSetOverrides(stationId).delete(varKey)
         }
       }
     }
@@ -300,6 +309,33 @@ export class OCPP20VariableManager {
       this.invalidVariables.set(stationId, set)
     }
     return set
+  }
+
+  private getMaxSetOverrides (stationId: string): Map<string, string> {
+    let map = this.maxSetOverrides.get(stationId)
+    if (map == null) {
+      map = new Map<string, string>()
+      this.maxSetOverrides.set(stationId, map)
+    }
+    return map
+  }
+
+  private getMinSetOverrides (stationId: string): Map<string, string> {
+    let map = this.minSetOverrides.get(stationId)
+    if (map == null) {
+      map = new Map<string, string>()
+      this.minSetOverrides.set(stationId, map)
+    }
+    return map
+  }
+
+  private getRuntimeOverrides (stationId: string): Map<string, string> {
+    let map = this.runtimeOverrides.get(stationId)
+    if (map == null) {
+      map = new Map<string, string>()
+      this.runtimeOverrides.set(stationId, map)
+    }
+    return map
   }
 
   private getStationId (chargingStation: ChargingStation): string {
@@ -388,7 +424,10 @@ export class OCPP20VariableManager {
     }
 
     if (resolvedAttributeType === AttributeEnumType.MinSet) {
-      if (variableMetadata.min === undefined && this.minSetOverrides.get(variableKey) == null) {
+      if (
+        variableMetadata.min === undefined &&
+        this.getMinSetOverrides(stationId).get(variableKey) == null
+      ) {
         return this.rejectGet(
           variable,
           component,
@@ -399,7 +438,7 @@ export class OCPP20VariableManager {
         )
       }
       const minValue =
-        this.minSetOverrides.get(variableKey) ??
+        this.getMinSetOverrides(stationId).get(variableKey) ??
         (variableMetadata.min !== undefined ? variableMetadata.min.toString() : '')
       return {
         attributeStatus: GetVariableStatusEnumType.Accepted,
@@ -410,7 +449,10 @@ export class OCPP20VariableManager {
       }
     }
     if (resolvedAttributeType === AttributeEnumType.MaxSet) {
-      if (variableMetadata.max === undefined && this.maxSetOverrides.get(variableKey) == null) {
+      if (
+        variableMetadata.max === undefined &&
+        this.getMaxSetOverrides(stationId).get(variableKey) == null
+      ) {
         return this.rejectGet(
           variable,
           component,
@@ -421,7 +463,7 @@ export class OCPP20VariableManager {
         )
       }
       const maxValue =
-        this.maxSetOverrides.get(variableKey) ??
+        this.getMaxSetOverrides(stationId).get(variableKey) ??
         (variableMetadata.max !== undefined ? variableMetadata.max.toString() : '')
       return {
         attributeStatus: GetVariableStatusEnumType.Accepted,
@@ -604,7 +646,8 @@ export class OCPP20VariableManager {
       variableMetadata.persistence === PersistenceEnumType.Volatile &&
       variableMetadata.mutability !== MutabilityEnumType.ReadOnly
     ) {
-      const override = this.runtimeOverrides.get(compositeKey)
+      const stationId = this.getStationId(chargingStation)
+      const override = this.getRuntimeOverrides(stationId).get(compositeKey)
       if (override != null) {
         value = override
       }
@@ -768,7 +811,7 @@ export class OCPP20VariableManager {
       }
       if (resolvedAttributeType === AttributeEnumType.MinSet) {
         const currentMax =
-          this.maxSetOverrides.get(variableKey) ??
+          this.getMaxSetOverrides(stationId).get(variableKey) ??
           (variableMetadata.max !== undefined ? variableMetadata.max.toString() : undefined)
         if (currentMax != null && intValue > convertToIntOrNaN(currentMax)) {
           return this.rejectSet(
@@ -780,10 +823,10 @@ export class OCPP20VariableManager {
             'MinSet higher than MaxSet'
           )
         }
-        this.minSetOverrides.set(variableKey, attributeValue)
+        this.getMinSetOverrides(stationId).set(variableKey, attributeValue)
       } else {
         const currentMin =
-          this.minSetOverrides.get(variableKey) ??
+          this.getMinSetOverrides(stationId).get(variableKey) ??
           (variableMetadata.min !== undefined ? variableMetadata.min.toString() : undefined)
         if (currentMin != null && intValue < convertToIntOrNaN(currentMin)) {
           return this.rejectSet(
@@ -795,7 +838,7 @@ export class OCPP20VariableManager {
             'MaxSet lower than MinSet'
           )
         }
-        this.maxSetOverrides.set(variableKey, attributeValue)
+        this.getMaxSetOverrides(stationId).set(variableKey, attributeValue)
       }
       return {
         attributeStatus: SetVariableStatusEnumType.Accepted,
@@ -909,8 +952,8 @@ export class OCPP20VariableManager {
       if (variableMetadata.dataType === DataEnumType.integer) {
         const num = convertToIntOrNaN(attributeValue)
         if (!Number.isNaN(num)) {
-          const overrideMinRaw = this.minSetOverrides.get(variableKey)
-          const overrideMaxRaw = this.maxSetOverrides.get(variableKey)
+          const overrideMinRaw = this.getMinSetOverrides(stationId).get(variableKey)
+          const overrideMaxRaw = this.getMaxSetOverrides(stationId).get(variableKey)
           if (overrideMinRaw != null) {
             const overrideMin = convertToIntOrNaN(overrideMinRaw)
             if (!Number.isNaN(overrideMin) && num < overrideMin) {
@@ -979,7 +1022,7 @@ export class OCPP20VariableManager {
     }
     // Apply volatile runtime override generically (single location)
     if (variableMetadata.persistence === PersistenceEnumType.Volatile) {
-      this.runtimeOverrides.set(variableKey, attributeValue)
+      this.getRuntimeOverrides(stationId).set(variableKey, attributeValue)
     }
 
     if (rebootRequired) {
