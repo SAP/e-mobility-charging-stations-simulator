@@ -304,16 +304,22 @@ export class OCPP20RequestService extends OCPPRequestService {
    * This is used to validate certificates during ISO 15118 communication
    * before accepting them for charging authorization.
    *
-   * Note: This is a stub implementation for simulator testing. No real OCSP
-   * network calls are made - the CSMS provides the response.
-   * @param chargingStation - The charging station requesting the status
-   * @param ocspRequestData - OCSP request data including certificate hash and responder URL
-   * @returns Promise resolving to the CSMS response with OCSP result
-   */
+    * **Simulator limitation**: This is a stub implementation — no real OCSP network calls are
+    * made. The method forwards the OCSP request data to the CSMS, which provides the certificate
+    * revocation status in its response. In a production charging station, the CS or CSMS would
+    * contact an external OCSP responder to verify certificate validity in real time. Full OCSP
+    * integration would require external OCSP responder configuration and network access.
+    * @param chargingStation - The charging station requesting the status
+    * @param ocspRequestData - OCSP request data including certificate hash and responder URL
+    * @returns Promise resolving to the CSMS response with OCSP result
+    */
   public async requestGetCertificateStatus (
     chargingStation: ChargingStation,
     ocspRequestData: OCSPRequestDataType
   ): Promise<OCPP20GetCertificateStatusResponse> {
+    logger.warn(
+      `${chargingStation.logPrefix()} ${moduleName}.requestGetCertificateStatus: OCSP stub — no real OCSP network calls are made; certificate revocation status is provided by the CSMS response only`
+    )
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.requestGetCertificateStatus: Requesting certificate status`
     )

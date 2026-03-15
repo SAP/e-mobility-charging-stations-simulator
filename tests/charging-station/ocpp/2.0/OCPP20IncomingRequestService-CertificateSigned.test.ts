@@ -10,12 +10,14 @@ import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type { ChargingStationWithCertificateManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20CertificateManager.js'
 
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
+import { addConfigurationKey } from '../../../../src/charging-station/ConfigurationKeyUtils.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import {
   CertificateSigningUseEnumType,
   GenericStatus,
   type OCPP20CertificateSignedRequest,
   type OCPP20CertificateSignedResponse,
+  OCPP20RequestCommand,
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
@@ -29,6 +31,7 @@ import {
 } from './OCPP20CertificateTestData.js'
 import {
   createMockCertificateManager,
+  createMockStationWithRequestTracking,
   createStationWithCertificateManager,
 } from './OCPP20TestUtils.js'
 
@@ -294,6 +297,87 @@ await describe('I04 - CertificateSigned', async () => {
       assert.strictEqual(typeof response.statusInfo.reasonCode, 'string')
       assert.ok(response.statusInfo.reasonCode.length > 0)
       assert.ok(response.statusInfo.reasonCode.length <= 20)
+    })
+  })
+
+  await describe('MaxCertificateChainSize Enforcement', async () => {
+    await it('should reject certificate chain exceeding MaxCertificateChainSize', async () => {
+      // Arrange
+      stationWithCertManager.certificateManager = createMockCertificateManager({
+        storeCertificateResult: true,
+      })
+
+      addConfigurationKey(station, 'MaxCertificateChainSize', '10')
+
+      const request: OCPP20CertificateSignedRequest = {
+        certificateChain: VALID_PEM_CERTIFICATE,
+        certificateType: CertificateSigningUseEnumType.ChargingStationCertificate,
+      }
+
+      // Act
+      const response: OCPP20CertificateSignedResponse =
+        await testableService.handleRequestCertificateSigned(station, request)
+
+      // Assert
+      assert.strictEqual(response.status, GenericStatus.Rejected)
+      assert.notStrictEqual(response.statusInfo, undefined)
+      assert.strictEqual(response.statusInfo?.reasonCode, 'InvalidCertificate')
+      assert.ok(response.statusInfo?.additionalInfo?.includes('MaxCertificateChainSize'))
+    })
+
+    await it('should accept certificate chain within MaxCertificateChainSize', async () => {
+      // Arrange
+      stationWithCertManager.certificateManager = createMockCertificateManager({
+        storeCertificateResult: true,
+      })
+
+      addConfigurationKey(station, 'MaxCertificateChainSize', '100000')
+
+      const request: OCPP20CertificateSignedRequest = {
+        certificateChain: VALID_PEM_CERTIFICATE,
+        certificateType: CertificateSigningUseEnumType.ChargingStationCertificate,
+      }
+
+      // Act
+      const response: OCPP20CertificateSignedResponse =
+        await testableService.handleRequestCertificateSigned(station, request)
+
+      // Assert
+      assert.strictEqual(response.status, GenericStatus.Accepted)
+    })
+  })
+
+  await describe('SecurityEventNotification on X.509 Failure', async () => {
+    await it('should send SecurityEventNotification when X.509 validation fails', async () => {
+      // Arrange
+      const { station: trackingStation, sentRequests } = createMockStationWithRequestTracking()
+      createStationWithCertificateManager(
+        trackingStation,
+        createMockCertificateManager({
+          validateCertificateX509Result: { valid: false, reason: 'Certificate expired' },
+        })
+      )
+
+      const request: OCPP20CertificateSignedRequest = {
+        certificateChain: VALID_PEM_CERTIFICATE,
+        certificateType: CertificateSigningUseEnumType.ChargingStationCertificate,
+      }
+
+      // Act
+      const response: OCPP20CertificateSignedResponse =
+        await testableService.handleRequestCertificateSigned(trackingStation, request)
+
+      // Assert
+      assert.strictEqual(response.status, GenericStatus.Rejected)
+
+      const securityEvents = sentRequests.filter(
+        r => r.command === OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION
+      )
+      assert.strictEqual(securityEvents.length, 1)
+      assert.strictEqual(securityEvents[0].payload.type, 'InvalidChargingStationCertificate')
+      assert.ok(
+        (securityEvents[0].payload.techInfo as string).includes('Certificate expired')
+      )
     })
   })
 })

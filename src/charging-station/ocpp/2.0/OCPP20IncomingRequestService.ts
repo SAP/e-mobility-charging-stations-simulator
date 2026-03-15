@@ -140,6 +140,7 @@ import {
   hasPendingReservations,
   resetConnectorStatus,
 } from '../../Helpers.js'
+import { getConfigurationKey } from '../../ConfigurationKeyUtils.js'
 import { OCPPAuthServiceFactory } from '../auth/services/OCPPAuthServiceFactory.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
 import { restoreConnectorStatus, sendAndSetConnectorStatus } from '../OCPPServiceUtils.js'
@@ -1189,11 +1190,37 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
+    // A02.FR.16: Enforce MaxCertificateChainSize — reject if chain exceeds configured limit
+    const maxChainSizeKey = getConfigurationKey(chargingStation, 'MaxCertificateChainSize')
+    if (maxChainSizeKey?.value != null) {
+      const maxChainSize = parseInt(maxChainSizeKey.value, 10)
+      if (!isNaN(maxChainSize) && maxChainSize > 0) {
+        const chainByteSize = Buffer.byteLength(certificateChain, 'utf8')
+        if (chainByteSize > maxChainSize) {
+          logger.warn(
+            `${chargingStation.logPrefix()} ${moduleName}.handleRequestCertificateSigned: Certificate chain size ${chainByteSize.toString()} bytes exceeds MaxCertificateChainSize ${maxChainSize.toString()} bytes`
+          )
+          return {
+            status: GenericStatus.Rejected,
+            statusInfo: {
+              additionalInfo: `Certificate chain size (${chainByteSize.toString()} bytes) exceeds MaxCertificateChainSize (${maxChainSize.toString()} bytes)`,
+              reasonCode: ReasonCodeEnumType.InvalidCertificate,
+            },
+          }
+        }
+      }
+    }
+
     const x509Result = chargingStation.certificateManager.validateCertificateX509(certificateChain)
     if (!x509Result.valid) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestCertificateSigned: X.509 validation failed: ${x509Result.reason ?? 'Unknown'}`
       )
+      this.sendSecurityEventNotification(
+        chargingStation,
+        'InvalidChargingStationCertificate',
+        `X.509 validation failed: ${x509Result.reason ?? 'Unknown'}`
+      ).catch(() => {})
       return {
         status: GenericStatus.Rejected,
         statusInfo: {
