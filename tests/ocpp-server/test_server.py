@@ -871,160 +871,95 @@ class TestOutgoingCommands:
 
     # --- Failure path tests (rejected/failed status → correct logging) ---
 
-    async def test_send_clear_cache_failure_logs(self, command_charge_point, caplog):
-        caplog.set_level(logging.INFO)
-        command_charge_point.call.return_value = ocpp.v201.call_result.ClearCache(
-            status=ClearCacheStatusEnumType.rejected
-        )
-        await command_charge_point._send_clear_cache()
-        assert "failed" in caplog.text.lower()
+    FAILURE_PATH_CASES: ClassVar[list[tuple[str, type, object]]] = [
+        (
+            "_send_clear_cache",
+            ocpp.v201.call_result.ClearCache,
+            ClearCacheStatusEnumType.rejected,
+        ),
+        (
+            "_send_reset",
+            ocpp.v201.call_result.Reset,
+            ResetStatusEnumType.rejected,
+        ),
+        (
+            "_send_data_transfer",
+            ocpp.v201.call_result.DataTransfer,
+            DataTransferStatusEnumType.rejected,
+        ),
+        (
+            "_send_get_installed_certificate_ids",
+            ocpp.v201.call_result.GetInstalledCertificateIds,
+            GetInstalledCertificateStatusEnumType.notFound,
+        ),
+        (
+            "_send_get_base_report",
+            ocpp.v201.call_result.GetBaseReport,
+            GenericDeviceModelStatusEnumType.rejected,
+        ),
+        (
+            "_send_unlock_connector",
+            ocpp.v201.call_result.UnlockConnector,
+            UnlockStatusEnumType.unlock_failed,
+        ),
+        (
+            "_send_change_availability",
+            ocpp.v201.call_result.ChangeAvailability,
+            ChangeAvailabilityStatusEnumType.rejected,
+        ),
+        (
+            "_send_trigger_message",
+            ocpp.v201.call_result.TriggerMessage,
+            TriggerMessageStatusEnumType.rejected,
+        ),
+        (
+            "_send_certificate_signed",
+            ocpp.v201.call_result.CertificateSigned,
+            CertificateSignedStatusEnumType.rejected,
+        ),
+        (
+            "_send_customer_information",
+            ocpp.v201.call_result.CustomerInformation,
+            CustomerInformationStatusEnumType.rejected,
+        ),
+        (
+            "_send_delete_certificate",
+            ocpp.v201.call_result.DeleteCertificate,
+            DeleteCertificateStatusEnumType.failed,
+        ),
+        (
+            "_send_get_log",
+            ocpp.v201.call_result.GetLog,
+            LogStatusEnumType.rejected,
+        ),
+        (
+            "_send_install_certificate",
+            ocpp.v201.call_result.InstallCertificate,
+            InstallCertificateStatusEnumType.rejected,
+        ),
+        (
+            "_send_set_network_profile",
+            ocpp.v201.call_result.SetNetworkProfile,
+            SetNetworkProfileStatusEnumType.rejected,
+        ),
+        (
+            "_send_update_firmware",
+            ocpp.v201.call_result.UpdateFirmware,
+            UpdateFirmwareStatusEnumType.rejected,
+        ),
+    ]
 
-    async def test_send_reset_failure_logs(self, command_charge_point, caplog):
-        caplog.set_level(logging.INFO)
-        command_charge_point.call.return_value = ocpp.v201.call_result.Reset(
-            status=ResetStatusEnumType.rejected
-        )
-        await command_charge_point._send_reset()
-        assert "failed" in caplog.text.lower()
-
-    async def test_send_data_transfer_failure_logs(self, command_charge_point, caplog):
-        caplog.set_level(logging.INFO)
-        command_charge_point.call.return_value = ocpp.v201.call_result.DataTransfer(
-            status=DataTransferStatusEnumType.rejected
-        )
-        await command_charge_point._send_data_transfer()
-        assert "failed" in caplog.text.lower()
-
-    async def test_send_get_installed_certificate_ids_failure_logs(
-        self, command_charge_point, caplog
+    @pytest.mark.parametrize(
+        ("method_name", "result_cls", "failed_status"),
+        FAILURE_PATH_CASES,
+        ids=[c[0] for c in FAILURE_PATH_CASES],
+    )
+    async def test_send_command_failure_logs(
+        self, command_charge_point, caplog, method_name, result_cls, failed_status
     ):
         caplog.set_level(logging.INFO)
-        command_charge_point.call.return_value = (
-            ocpp.v201.call_result.GetInstalledCertificateIds(
-                status=GetInstalledCertificateStatusEnumType.notFound
-            )
-        )
-        await command_charge_point._send_get_installed_certificate_ids()
-        assert "failed" in caplog.text.lower()
-
-    async def test_send_get_base_report_failure_logs(
-        self, command_charge_point, caplog
-    ):
-        caplog.set_level(logging.INFO)
-        command_charge_point.call.return_value = ocpp.v201.call_result.GetBaseReport(
-            status=GenericDeviceModelStatusEnumType.rejected
-        )
-        await command_charge_point._send_get_base_report()
-        assert "failed" in caplog.text.lower()
-
-    async def test_send_unlock_connector_failure_logs(
-        self, command_charge_point, caplog
-    ):
-        caplog.set_level(logging.INFO)
-        command_charge_point.call.return_value = ocpp.v201.call_result.UnlockConnector(
-            status=UnlockStatusEnumType.unlock_failed
-        )
-        await command_charge_point._send_unlock_connector()
-        assert "failed" in caplog.text.lower()
-
-    async def test_send_change_availability_failure_logs(
-        self, command_charge_point, caplog
-    ):
-        caplog.set_level(logging.INFO)
-        command_charge_point.call.return_value = (
-            ocpp.v201.call_result.ChangeAvailability(
-                status=ChangeAvailabilityStatusEnumType.rejected
-            )
-        )
-        await command_charge_point._send_change_availability()
-        assert "failed" in caplog.text.lower()
-
-    async def test_send_trigger_message_failure_logs(
-        self, command_charge_point, caplog
-    ):
-        caplog.set_level(logging.INFO)
-        command_charge_point.call.return_value = ocpp.v201.call_result.TriggerMessage(
-            status=TriggerMessageStatusEnumType.rejected
-        )
-        await command_charge_point._send_trigger_message()
-        assert "failed" in caplog.text.lower()
-
-    async def test_send_certificate_signed_failure_logs(
-        self, command_charge_point, caplog
-    ):
-        caplog.set_level(logging.INFO)
-        command_charge_point.call.return_value = (
-            ocpp.v201.call_result.CertificateSigned(
-                status=CertificateSignedStatusEnumType.rejected
-            )
-        )
-        await command_charge_point._send_certificate_signed()
-        assert "failed" in caplog.text.lower()
-
-    async def test_send_customer_information_failure_logs(
-        self, command_charge_point, caplog
-    ):
-        caplog.set_level(logging.INFO)
-        command_charge_point.call.return_value = (
-            ocpp.v201.call_result.CustomerInformation(
-                status=CustomerInformationStatusEnumType.rejected
-            )
-        )
-        await command_charge_point._send_customer_information()
-        assert "failed" in caplog.text.lower()
-
-    async def test_send_delete_certificate_failure_logs(
-        self, command_charge_point, caplog
-    ):
-        caplog.set_level(logging.INFO)
-        command_charge_point.call.return_value = (
-            ocpp.v201.call_result.DeleteCertificate(
-                status=DeleteCertificateStatusEnumType.failed
-            )
-        )
-        await command_charge_point._send_delete_certificate()
-        assert "failed" in caplog.text.lower()
-
-    async def test_send_get_log_failure_logs(self, command_charge_point, caplog):
-        caplog.set_level(logging.INFO)
-        command_charge_point.call.return_value = ocpp.v201.call_result.GetLog(
-            status=LogStatusEnumType.rejected
-        )
-        await command_charge_point._send_get_log()
-        assert "failed" in caplog.text.lower()
-
-    async def test_send_install_certificate_failure_logs(
-        self, command_charge_point, caplog
-    ):
-        caplog.set_level(logging.INFO)
-        command_charge_point.call.return_value = (
-            ocpp.v201.call_result.InstallCertificate(
-                status=InstallCertificateStatusEnumType.rejected
-            )
-        )
-        await command_charge_point._send_install_certificate()
-        assert "failed" in caplog.text.lower()
-
-    async def test_send_set_network_profile_failure_logs(
-        self, command_charge_point, caplog
-    ):
-        caplog.set_level(logging.INFO)
-        command_charge_point.call.return_value = (
-            ocpp.v201.call_result.SetNetworkProfile(
-                status=SetNetworkProfileStatusEnumType.rejected
-            )
-        )
-        await command_charge_point._send_set_network_profile()
-        assert "failed" in caplog.text.lower()
-
-    async def test_send_update_firmware_failure_logs(
-        self, command_charge_point, caplog
-    ):
-        caplog.set_level(logging.INFO)
-        command_charge_point.call.return_value = ocpp.v201.call_result.UpdateFirmware(
-            status=UpdateFirmwareStatusEnumType.rejected
-        )
-        await command_charge_point._send_update_firmware()
+        command_charge_point.call.return_value = result_cls(status=failed_status)
+        await getattr(command_charge_point, method_name)()
         assert "failed" in caplog.text.lower()
 
 
