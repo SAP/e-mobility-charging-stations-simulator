@@ -1228,7 +1228,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         'InvalidChargingStationCertificate',
         `X.509 validation failed: ${x509Result.reason ?? 'Unknown'}`
       ).catch((error: unknown) => {
-        logger.warn(
+        logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestCertificateSigned: SecurityEventNotification failed:`,
           error
         )
