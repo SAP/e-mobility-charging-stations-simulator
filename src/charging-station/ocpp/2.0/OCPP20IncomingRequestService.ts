@@ -2064,7 +2064,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         status: SetNetworkProfileStatusEnumType.Rejected,
         statusInfo: {
           additionalInfo: 'configurationSlot must be a positive integer',
-          reasonCode: ReasonCodeEnumType.InvalidValue,
+          reasonCode: ReasonCodeEnumType.InvalidNetworkConf,
         },
       }
     }

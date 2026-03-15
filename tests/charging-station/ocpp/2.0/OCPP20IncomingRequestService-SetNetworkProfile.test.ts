@@ -95,7 +95,7 @@ await describe('B43 - SetNetworkProfile', async () => {
     // Assert
     assert.strictEqual(response.status, SetNetworkProfileStatusEnumType.Rejected)
     assert.notStrictEqual(response.statusInfo, undefined)
-    assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.InvalidValue)
+    assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.InvalidNetworkConf)
   })
 
   await it('should respond with Rejected status for negative configurationSlot', () => {
@@ -117,7 +117,7 @@ await describe('B43 - SetNetworkProfile', async () => {
 
     // Assert
     assert.strictEqual(response.status, SetNetworkProfileStatusEnumType.Rejected)
-    assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.InvalidValue)
+    assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.InvalidNetworkConf)
   })
 
   await it('should respond with Rejected status for non-integer configurationSlot', () => {
@@ -139,7 +139,7 @@ await describe('B43 - SetNetworkProfile', async () => {
 
     // Assert
     assert.strictEqual(response.status, SetNetworkProfileStatusEnumType.Rejected)
-    assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.InvalidValue)
+    assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.InvalidNetworkConf)
   })
 
   // TC_B_43_CS: Verify response includes statusInfo with reasonCode
@@ -156,6 +156,6 @@ await describe('B43 - SetNetworkProfile', async () => {
     assert.notStrictEqual(response, undefined)
     assert.strictEqual(response.status, SetNetworkProfileStatusEnumType.Rejected)
     assert.notStrictEqual(response.statusInfo, undefined)
-    assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.InvalidValue)
+    assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.InvalidNetworkConf)
   })
 })
