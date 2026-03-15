@@ -667,11 +667,14 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       this.stationStates.delete(chargingStation)
     }
     try {
-      OCPP20VariableManager.getInstance().resetRuntimeOverrides(chargingStation.stationInfo?.hashId)
-      logger.debug(`${chargingStation.logPrefix()} ${moduleName}.stop: Runtime overrides cleared`)
+      const variableManager = OCPP20VariableManager.getInstance()
+      const stationId = chargingStation.stationInfo?.hashId
+      variableManager.resetRuntimeOverrides(stationId)
+      variableManager.invalidateMappingsCache(stationId)
+      logger.debug(`${chargingStation.logPrefix()} ${moduleName}.stop: Per-station state cleared`)
     } catch (error) {
       logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.stop: Error clearing runtime overrides:`,
+        `${chargingStation.logPrefix()} ${moduleName}.stop: Error clearing per-station state:`,
         error
       )
     }
