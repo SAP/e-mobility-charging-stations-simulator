@@ -290,7 +290,7 @@ await describe('I04 - DeleteCertificate', async () => {
       assert.notStrictEqual(response, undefined)
       assert.strictEqual(response.status, DeleteCertificateStatusEnumType.Failed)
       assert.notStrictEqual(response.statusInfo, undefined)
-      assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.InternalError)
+      assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.NotSupported)
       assert.ok(response.statusInfo.additionalInfo?.includes('M04.FR.06'))
     })
 

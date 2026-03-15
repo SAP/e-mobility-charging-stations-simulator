@@ -375,7 +375,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
             (r.command as OCPP20RequestCommand) ===
               OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION &&
             r.payload.requestId === 100 &&
-            (r.payload.status as FirmwareStatusEnumType) === FirmwareStatusEnumType.DownloadFailed
+            (r.payload.status as FirmwareStatusEnumType) === FirmwareStatusEnumType.AcceptedCanceled
         )
         assert.notStrictEqual(cancelNotification, undefined)
       })

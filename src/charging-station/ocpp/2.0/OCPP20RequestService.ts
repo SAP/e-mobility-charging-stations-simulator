@@ -85,6 +85,9 @@ function derContextTag (tagNumber: number, content: Buffer): Buffer {
  * @returns DER-encoded INTEGER
  */
 function derInteger (value: number): Buffer {
+  if (value < 0 || value > 127) {
+    throw new RangeError(`derInteger: value ${String(value)} out of supported range [0, 127]`)
+  }
   return Buffer.from([0x02, 0x01, value])
 }
 

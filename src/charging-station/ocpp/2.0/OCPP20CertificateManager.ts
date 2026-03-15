@@ -393,7 +393,11 @@ export class OCPP20CertificateManager {
    */
   public validateCertificateX509 (pem: string): ValidateCertificateX509Result {
     try {
-      const cert = new X509Certificate(pem)
+      const firstCertMatch = /-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/.exec(pem)
+      if (firstCertMatch == null) {
+        return { reason: 'No PEM certificate found', valid: false }
+      }
+      const cert = new X509Certificate(firstCertMatch[0])
       const now = new Date()
       if (now < new Date(cert.validFrom)) {
         return { reason: 'Certificate is not yet valid', valid: false }

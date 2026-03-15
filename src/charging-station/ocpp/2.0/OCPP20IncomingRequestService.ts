@@ -1227,8 +1227,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         chargingStation,
         'InvalidChargingStationCertificate',
         `X.509 validation failed: ${x509Result.reason ?? 'Unknown'}`
-      ).catch(() => {
-        /* intentional no-op */
+      ).catch((error: unknown) => {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestCertificateSigned: SecurityEventNotification failed:`,
+          error
+        )
       })
       return {
         status: GenericStatus.Rejected,
@@ -1477,11 +1480,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     try {
       // M04.FR.06: Check if the certificate to delete is a ChargingStationCertificate
       // If so, reject the deletion request
+      // Get all installed certificates without type filter to include ChargingStationCertificate
       const installedCerts = chargingStation.certificateManager.getInstalledCertificates(
-        chargingStation.stationInfo?.hashId ?? '',
-        [
-          CertificateSigningUseEnumType.ChargingStationCertificate as unknown as InstallCertificateUseEnumType,
-        ]
+        chargingStation.stationInfo?.hashId ?? ''
       )
 
       const installedCertsResult =
@@ -1501,7 +1502,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
             status: DeleteCertificateStatusEnumType.Failed,
             statusInfo: {
               additionalInfo: 'ChargingStationCertificate cannot be deleted per M04.FR.06',
-              reasonCode: ReasonCodeEnumType.InternalError,
+              reasonCode: ReasonCodeEnumType.NotSupported,
             },
           }
         }
@@ -2674,7 +2675,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       // Send AcceptedCanceled notification for the old firmware update
       this.sendFirmwareStatusNotification(
         chargingStation,
-        FirmwareStatusEnumType.DownloadFailed,
+        FirmwareStatusEnumType.AcceptedCanceled,
         previousRequestId ?? 0
       ).catch((error: unknown) => {
         logger.error(

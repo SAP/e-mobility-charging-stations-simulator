@@ -63,7 +63,7 @@ export class OCPP20VariableManager {
   private readonly maxSetOverrides = new Map<string, string>() // composite key (lower case)
   private readonly minSetOverrides = new Map<string, string>() // composite key (lower case)
   private readonly runtimeOverrides = new Map<string, string>() // composite key (lower case)
-  private validated = false
+  private readonly validatedStations = new Set<string>()
 
   private constructor () {
     /* This is intentional */
@@ -104,8 +104,12 @@ export class OCPP20VariableManager {
     return results
   }
 
-  public invalidateMappingsCache (): void {
-    this.validated = false
+  public invalidateMappingsCache (stationId?: string): void {
+    if (stationId != null) {
+      this.validatedStations.delete(stationId)
+    } else {
+      this.validatedStations.clear()
+    }
   }
 
   public resetRuntimeOverrides (): void {
@@ -232,7 +236,8 @@ export class OCPP20VariableManager {
   }
 
   public validatePersistentMappings (chargingStation: ChargingStation): void {
-    if (this.validated) return
+    const stationId = chargingStation.stationInfo?.hashId ?? ''
+    if (this.validatedStations.has(stationId)) return
     this.invalidVariables.clear()
     for (const metaKey of Object.keys(VARIABLE_REGISTRY)) {
       const variableMetadata = VARIABLE_REGISTRY[metaKey]
@@ -282,7 +287,7 @@ export class OCPP20VariableManager {
         }
       }
     }
-    this.validated = true
+    this.validatedStations.add(stationId)
   }
 
   private getVariable (

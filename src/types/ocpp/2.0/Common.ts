@@ -67,6 +67,7 @@ export enum DeleteCertificateStatusEnumType {
 }
 
 export enum FirmwareStatusEnumType {
+  AcceptedCanceled = 'AcceptedCanceled',
   Downloaded = 'Downloaded',
   DownloadFailed = 'DownloadFailed',
   Downloading = 'Downloading',
@@ -322,6 +323,7 @@ export enum ReasonCodeEnumType {
   NoError = 'NoError',
   NotEnabled = 'NotEnabled',
   NotFound = 'NotFound',
+  NotSupported = 'NotSupported',
   OutOfMemory = 'OutOfMemory',
   OutOfStorage = 'OutOfStorage',
   ReadOnly = 'ReadOnly',

@@ -447,12 +447,12 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
       assert.ok(result.reason?.includes('expired'))
     })
 
-    await it('should return invalid with parsing error for non-X.509 data', () => {
+    await it('should return invalid with reason for non-PEM data', () => {
       const result = manager.validateCertificateX509('not-a-certificate')
 
       assert.strictEqual(result.valid, false)
       assert.strictEqual(typeof result.reason, 'string')
-      assert.ok(result.reason?.includes('parsing failed'))
+      assert.ok(result.reason?.includes('No PEM certificate found'))
     })
   })
 })
