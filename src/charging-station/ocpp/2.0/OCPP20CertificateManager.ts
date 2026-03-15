@@ -253,6 +253,7 @@ export class OCPP20CertificateManager {
    * Gets installed certificates for a charging station
    * @param stationHashId - Charging station unique identifier
    * @param filterTypes - Optional array of certificate types to filter
+   * @param hashAlgorithm
    * @returns List of installed certificate hash data chains
    */
   public async getInstalledCertificates (
