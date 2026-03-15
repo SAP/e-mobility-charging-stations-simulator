@@ -2199,8 +2199,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       ])
       const allowDowngrade = allowDowngradeResults[0]?.attributeValue?.toLowerCase() === 'true'
 
-      // B09.FR.31 (errata 2025-09 §2.12): Allow downgrade when AllowSecurityProfileDowngrade=true
-      // but NEVER allow downgrade to profile 1
+      // B09.FR.31 (errata 2025-09 §2.12): Allow downgrade except to profile 1 when enabled
       if (!allowDowngrade || newSecurityProfile <= 1) {
         logger.warn(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestSetNetworkProfile: Rejected security profile downgrade: ${newSecurityProfile.toString()} < ${currentSecurityProfile.toString()}`
