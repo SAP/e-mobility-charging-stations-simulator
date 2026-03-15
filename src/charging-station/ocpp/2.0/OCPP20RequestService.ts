@@ -1,6 +1,6 @@
 import type { ValidateFunction } from 'ajv'
 
-import { generateKeyPairSync } from 'node:crypto'
+import { createSign, generateKeyPairSync } from 'node:crypto'
 
 import type { ChargingStation } from '../../../charging-station/index.js'
 import type { OCPPResponseService } from '../OCPPResponseService.js'
@@ -42,6 +42,119 @@ import { OCPP20Constants } from './OCPP20Constants.js'
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 
 const moduleName = 'OCPP20RequestService'
+
+// ASN.1 DER encoding helpers for PKCS#10 CSR generation (RFC 2986)
+
+/** Encode DER length in short or long form. */
+function derLength (length: number): Buffer {
+  if (length < 0x80) {
+    return Buffer.from([length])
+  }
+  if (length < 0x100) {
+    return Buffer.from([0x81, length])
+  }
+  return Buffer.from([0x82, (length >> 8) & 0xff, length & 0xff])
+}
+
+/** Wrap content in a DER SEQUENCE (tag 0x30). */
+function derSequence (...items: Buffer[]): Buffer {
+  const content = Buffer.concat(items)
+  return Buffer.concat([Buffer.from([0x30]), derLength(content.length), content])
+}
+
+/** Wrap content in a DER SET (tag 0x31). */
+function derSet (...items: Buffer[]): Buffer {
+  const content = Buffer.concat(items)
+  return Buffer.concat([Buffer.from([0x31]), derLength(content.length), content])
+}
+
+/** Encode a small non-negative integer in DER. */
+function derInteger (value: number): Buffer {
+  return Buffer.from([0x02, 0x01, value])
+}
+
+/** Encode a DER BIT STRING with zero unused bits. */
+function derBitString (data: Buffer): Buffer {
+  const content = Buffer.concat([Buffer.from([0x00]), data])
+  return Buffer.concat([Buffer.from([0x03]), derLength(content.length), content])
+}
+
+/** Encode a DER OBJECT IDENTIFIER from pre-encoded bytes. */
+function derOid (oidBytes: number[]): Buffer {
+  return Buffer.concat([Buffer.from([0x06, oidBytes.length]), Buffer.from(oidBytes)])
+}
+
+/** Encode a DER UTF8String. */
+function derUtf8String (str: string): Buffer {
+  const strBuf = Buffer.from(str, 'utf-8')
+  return Buffer.concat([Buffer.from([0x0c]), derLength(strBuf.length), strBuf])
+}
+
+/** Encode a DER context-specific constructed tag [tagNumber]. */
+function derContextTag (tagNumber: number, content: Buffer): Buffer {
+  const tag = 0xa0 | tagNumber
+  return Buffer.concat([Buffer.from([tag]), derLength(content.length), content])
+}
+
+// Well-known OID encodings
+// 1.2.840.113549.1.1.11 — sha256WithRSAEncryption
+const OID_SHA256_WITH_RSA = [0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x0b]
+// 2.5.4.3 — commonName
+const OID_COMMON_NAME = [0x55, 0x04, 0x03]
+// 2.5.4.10 — organizationName
+const OID_ORGANIZATION = [0x55, 0x04, 0x0a]
+
+/**
+ * Build an X.501 Name (Subject DN) with CN and O attributes.
+ * Structure: SEQUENCE { SET { SEQUENCE { OID, UTF8String } }, ... }
+ */
+function buildSubjectDn (cn: string, org: string): Buffer {
+  const cnRdn = derSet(derSequence(derOid(OID_COMMON_NAME), derUtf8String(cn)))
+  const orgRdn = derSet(derSequence(derOid(OID_ORGANIZATION), derUtf8String(org)))
+  return derSequence(cnRdn, orgRdn)
+}
+
+/**
+ * Generate a PKCS#10 Certificate Signing Request (RFC 2986) using node:crypto.
+ *
+ * Builds a proper ASN.1 DER-encoded CSR with:
+ * - RSA 2048-bit key pair
+ * - SHA-256 with RSA signature
+ * - Subject DN containing CN={stationId} and O={orgName}
+ * @param cn - Common Name (charging station identifier)
+ * @param org - Organization name
+ * @returns PEM-encoded CSR string with BEGIN/END CERTIFICATE REQUEST markers
+ */
+function generatePkcs10Csr (cn: string, org: string): string {
+  const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 })
+
+  const publicKeyDer = publicKey.export({ format: 'der', type: 'spki' })
+
+  // CertificationRequestInfo ::= SEQUENCE { version, subject, subjectPKInfo, attributes }
+  const version = derInteger(0) // v1(0)
+  const subject = buildSubjectDn(cn, org)
+  const attributes = derContextTag(0, Buffer.alloc(0)) // empty attributes [0] IMPLICIT
+  const certificationRequestInfo = derSequence(version, subject, publicKeyDer, attributes)
+
+  // Sign the CertificationRequestInfo with SHA-256
+  const signer = createSign('SHA256')
+  signer.update(certificationRequestInfo)
+  const signature = signer.sign(privateKey)
+
+  // AlgorithmIdentifier ::= SEQUENCE { algorithm OID, parameters NULL }
+  const signatureAlgorithm = derSequence(
+    derOid(OID_SHA256_WITH_RSA),
+    Buffer.from([0x05, 0x00]) // NULL
+  )
+
+  // CertificationRequest ::= SEQUENCE { info, algorithm, signature }
+  const csr = derSequence(certificationRequestInfo, signatureAlgorithm, derBitString(signature))
+
+  // PEM-encode with 64-character line wrapping
+  const base64 = csr.toString('base64')
+  const lines = base64.match(/.{1,64}/g) ?? []
+  return `-----BEGIN CERTIFICATE REQUEST-----\n${lines.join('\n')}\n-----END CERTIFICATE REQUEST-----`
+}
 
 /**
  * OCPP 2.0.1 Request Service
@@ -495,18 +608,13 @@ export class OCPP20RequestService extends OCPPRequestService {
   /**
    * Request certificate signing from the CSMS.
    *
-   * Generates a Certificate Signing Request (CSR) using the charging station's
-   * certificate manager and sends it to the CSMS for signing. Supports both
-   * ChargingStationCertificate and V2GCertificate types.
-   *
-   * IMPORTANT: This implementation generates a MOCK CSR for simulator testing purposes.
-   * It is NOT a cryptographically valid PKCS#10 CSR and MUST NOT be used in production.
-   * The generated CSR structure is simplified (JSON-based) for OCPP message testing only.
-   * Real CSMS expecting valid PKCS#10 CSR will reject this format.
+   * Generates a PKCS#10 Certificate Signing Request (RFC 2986) with a real RSA 2048-bit
+   * key pair and SHA-256 signature, then sends it to the CSMS for signing per A02.FR.02.
+   * Supports both ChargingStationCertificate and V2GCertificate types.
    * @param chargingStation - The charging station requesting the certificate
    * @param certificateType - Optional certificate type (ChargingStationCertificate or V2GCertificate)
    * @returns Promise resolving to the CSMS response with Accepted or Rejected status
-   * @throws {OCPPError} When certificate manager is unavailable or CSR generation fails
+   * @throws {OCPPError} When CSR generation fails
    */
   public async requestSignCertificate (
     chargingStation: ChargingStation,
@@ -518,32 +626,13 @@ export class OCPP20RequestService extends OCPPRequestService {
 
     let csr: string
     try {
-      const { publicKey } = generateKeyPairSync('rsa', {
-        modulusLength: 2048,
-        privateKeyEncoding: { format: 'pem', type: 'pkcs8' },
-        publicKeyEncoding: { format: 'pem', type: 'spki' },
-      })
-
       const configKey = chargingStation.ocppConfiguration?.configurationKey?.find(
         key => key.key === 'SecurityCtrlr.OrganizationName'
       )
       const orgName = configKey?.value ?? 'Unknown'
       const stationId = chargingStation.stationInfo?.chargingStationId ?? 'Unknown'
-      const subject = `CN=${stationId},O=${orgName}`
 
-      // Generate simplified mock CSR for simulator testing
-      // WARNING: This is NOT a cryptographically valid PKCS#10 CSR
-      // Structure: JSON with subject, publicKey, timestamp (NOT ASN.1 DER)
-      const mockCsrData = {
-        algorithm: 'RSA-SHA256',
-        keySize: 2048,
-        publicKey: publicKey.replace(/-----BEGIN PUBLIC KEY-----|-----END PUBLIC KEY-----|\n/g, ''),
-        subject,
-        timestamp: new Date().toISOString(),
-      }
-
-      const csrBase64 = Buffer.from(JSON.stringify(mockCsrData)).toString('base64')
-      csr = `-----BEGIN CERTIFICATE REQUEST-----\n${csrBase64}\n-----END CERTIFICATE REQUEST-----`
+      csr = generatePkcs10Csr(stationId, orgName)
     } catch (error) {
       const errorMsg = `Failed to generate CSR: ${error instanceof Error ? error.message : 'Unknown error'}`
       logger.error(

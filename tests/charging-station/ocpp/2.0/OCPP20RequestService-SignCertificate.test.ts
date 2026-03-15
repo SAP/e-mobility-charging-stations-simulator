@@ -74,11 +74,11 @@ await describe('I02 - SignCertificate Request', async () => {
 
       const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
       assert.notStrictEqual(sentPayload.csr, undefined)
-      assert.ok(sentPayload.csr.includes('-----BEGIN CERTIFICATE REQUEST-----'))
-      assert.ok(sentPayload.csr.includes('-----END CERTIFICATE REQUEST-----'))
+      assert.ok(sentPayload.csr.startsWith('-----BEGIN CERTIFICATE REQUEST-----'))
+      assert.ok(sentPayload.csr.endsWith('-----END CERTIFICATE REQUEST-----'))
     })
 
-    await it('should include OrganizationName from SecurityCtrlr config in CSR', async () => {
+    await it('should generate CSR starting with BEGIN CERTIFICATE REQUEST marker', async () => {
       const { sendMessageMock, service } =
         createTestableRequestService<OCPP20SignCertificateResponse>({
           sendMessageResponse: {
@@ -92,16 +92,110 @@ await describe('I02 - SignCertificate Request', async () => {
       )
 
       const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
-      assert.notStrictEqual(sentPayload.csr, undefined)
-      assert.ok(sentPayload.csr.includes('-----BEGIN CERTIFICATE REQUEST-----'))
+      assert.ok(sentPayload.csr.startsWith('-----BEGIN CERTIFICATE REQUEST-----\n'))
+    })
 
-      const csrRegex =
-        /-----BEGIN CERTIFICATE REQUEST-----\n(.+?)\n-----END CERTIFICATE REQUEST-----/
-      const csrExecResult = csrRegex.exec(sentPayload.csr)
-      assert.notStrictEqual(csrExecResult, undefined)
-      const csrData = csrExecResult?.[1]
-      const decodedCsr = Buffer.from(csrData ?? '', 'base64').toString('utf-8')
-      assert.ok(decodedCsr.includes('O=Test Organization Inc.'))
+    await it('should generate CSR ending with END CERTIFICATE REQUEST marker', async () => {
+      const { sendMessageMock, service } =
+        createTestableRequestService<OCPP20SignCertificateResponse>({
+          sendMessageResponse: {
+            status: GenericStatus.Accepted,
+          },
+        })
+
+      await service.requestSignCertificate(
+        station,
+        CertificateSigningUseEnumType.ChargingStationCertificate
+      )
+
+      const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
+      assert.ok(sentPayload.csr.endsWith('\n-----END CERTIFICATE REQUEST-----'))
+    })
+
+    await it('should generate CSR body with valid Base64 encoding', async () => {
+      const { sendMessageMock, service } =
+        createTestableRequestService<OCPP20SignCertificateResponse>({
+          sendMessageResponse: {
+            status: GenericStatus.Accepted,
+          },
+        })
+
+      await service.requestSignCertificate(
+        station,
+        CertificateSigningUseEnumType.ChargingStationCertificate
+      )
+
+      const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
+      const csrLines = sentPayload.csr.split('\n')
+      const base64Body = csrLines.slice(1, -1).join('')
+      assert.ok(/^[A-Za-z0-9+/]+=*$/.test(base64Body), 'CSR body must be valid Base64')
+      const decoded = Buffer.from(base64Body, 'base64')
+      assert.ok(decoded.length > 0, 'Decoded CSR must not be empty')
+    })
+
+    await it('should include station ID in CSR subject DN', async () => {
+      const { sendMessageMock, service } =
+        createTestableRequestService<OCPP20SignCertificateResponse>({
+          sendMessageResponse: {
+            status: GenericStatus.Accepted,
+          },
+        })
+
+      await service.requestSignCertificate(
+        station,
+        CertificateSigningUseEnumType.ChargingStationCertificate
+      )
+
+      const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
+      const csrLines = sentPayload.csr.split('\n')
+      const base64Body = csrLines.slice(1, -1).join('')
+      const derBytes = Buffer.from(base64Body, 'base64')
+      const stationId = station.stationInfo?.chargingStationId ?? ''
+      assert.ok(stationId.length > 0, 'Station ID must not be empty')
+      assert.ok(derBytes.includes(Buffer.from(stationId, 'utf-8')), 'CSR DER must contain station ID')
+    })
+
+    await it('should include OrganizationName in CSR subject DN', async () => {
+      const { sendMessageMock, service } =
+        createTestableRequestService<OCPP20SignCertificateResponse>({
+          sendMessageResponse: {
+            status: GenericStatus.Accepted,
+          },
+        })
+
+      await service.requestSignCertificate(
+        station,
+        CertificateSigningUseEnumType.ChargingStationCertificate
+      )
+
+      const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
+      const csrLines = sentPayload.csr.split('\n')
+      const base64Body = csrLines.slice(1, -1).join('')
+      const derBytes = Buffer.from(base64Body, 'base64')
+      assert.ok(
+        derBytes.includes(Buffer.from(MOCK_ORGANIZATION_NAME, 'utf-8')),
+        'CSR DER must contain organization name'
+      )
+    })
+
+    await it('should generate valid ASN.1 DER structure starting with SEQUENCE tag', async () => {
+      const { sendMessageMock, service } =
+        createTestableRequestService<OCPP20SignCertificateResponse>({
+          sendMessageResponse: {
+            status: GenericStatus.Accepted,
+          },
+        })
+
+      await service.requestSignCertificate(
+        station,
+        CertificateSigningUseEnumType.ChargingStationCertificate
+      )
+
+      const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
+      const csrLines = sentPayload.csr.split('\n')
+      const base64Body = csrLines.slice(1, -1).join('')
+      const derBytes = Buffer.from(base64Body, 'base64')
+      assert.strictEqual(derBytes[0], 0x30, 'CSR DER must start with SEQUENCE tag (0x30)')
     })
   })
 
