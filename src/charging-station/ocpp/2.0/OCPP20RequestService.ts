@@ -203,9 +203,6 @@ export class OCPP20RequestService extends OCPPRequestService {
     chargingStation: ChargingStation,
     ocspRequestData: OCSPRequestDataType
   ): Promise<OCPP20GetCertificateStatusResponse> {
-    logger.warn(
-      `${chargingStation.logPrefix()} ${moduleName}.requestGetCertificateStatus: OCSP stub — no real OCSP network calls are made; certificate revocation status is provided by the CSMS response only`
-    )
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.requestGetCertificateStatus: Requesting certificate status`
     )
