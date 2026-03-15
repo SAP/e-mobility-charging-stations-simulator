@@ -51,6 +51,11 @@ export interface OCPP20CertificateManagerInterface {
     filterTypes?: InstallCertificateUseEnumType[],
     hashAlgorithm?: HashAlgorithmEnumType
   ): GetInstalledCertificatesResult | Promise<GetInstalledCertificatesResult>
+  isChargingStationCertificateHash(
+    stationHashId: string,
+    certificateHashData: CertificateHashDataType,
+    hashAlgorithm?: HashAlgorithmEnumType
+  ): boolean | Promise<boolean>
   storeCertificate(
     stationHashId: string,
     certType: CertificateSigningUseEnumType | InstallCertificateUseEnumType,
@@ -309,6 +314,62 @@ export class OCPP20CertificateManager {
       // Ignore directory listing errors - return empty result
     }
     return { certificateHashDataChain }
+  }
+
+  /**
+   * Checks whether the given certificate hash data matches a ChargingStationCertificate
+   * stored on disk for the specified station.
+   * @param stationHashId - Charging station unique identifier
+   * @param certificateHashData - Certificate hash data to check against stored CS certificates
+   * @param hashAlgorithm - Optional hash algorithm override (defaults to certificateHashData.hashAlgorithm)
+   * @returns true if the hash matches a stored ChargingStationCertificate, false otherwise
+   */
+  public async isChargingStationCertificateHash (
+    stationHashId: string,
+    certificateHashData: CertificateHashDataType,
+    hashAlgorithm?: HashAlgorithmEnumType
+  ): Promise<boolean> {
+    try {
+      const certFilePath = this.getCertificatePath(
+        stationHashId,
+        CertificateSigningUseEnumType.ChargingStationCertificate,
+        ''
+      )
+      // getCertificatePath returns basePath/ChargingStationCertificate/.pem
+      // We need the directory: basePath/ChargingStationCertificate
+      const dirPath = resolve(certFilePath, '..')
+
+      if (!(await this.pathExists(dirPath))) {
+        return false
+      }
+
+      const allFiles = await readdir(dirPath)
+      const pemFiles = allFiles.filter(f => f.endsWith('.pem'))
+
+      for (const file of pemFiles) {
+        const filePath = join(dirPath, file)
+        this.validateCertificatePath(filePath, OCPP20CertificateManager.BASE_CERT_PATH)
+        try {
+          const pemData = await readFile(filePath, 'utf8')
+          const hashData = this.computeCertificateHash(
+            pemData,
+            hashAlgorithm ?? certificateHashData.hashAlgorithm
+          )
+          if (
+            hashData.serialNumber === certificateHashData.serialNumber &&
+            hashData.issuerNameHash === certificateHashData.issuerNameHash &&
+            hashData.issuerKeyHash === certificateHashData.issuerKeyHash
+          ) {
+            return true
+          }
+        } catch {
+          continue
+        }
+      }
+    } catch {
+      // Ignore errors — treat as "not a CS cert"
+    }
+    return false
   }
 
   /**

@@ -13,7 +13,6 @@ import { createTestableIncomingRequestService } from '../../../../src/charging-s
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import {
   DeleteCertificateStatusEnumType,
-  GetCertificateIdUseEnumType,
   HashAlgorithmEnumType,
   type OCPP20DeleteCertificateRequest,
   type OCPP20DeleteCertificateResponse,
@@ -25,7 +24,6 @@ import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import {
-  createMockCertificateHashDataChain,
   createMockCertificateManager,
   createStationWithCertificateManager,
 } from './OCPP20TestUtils.js'
@@ -269,17 +267,12 @@ await describe('I04 - DeleteCertificate', async () => {
 
   await describe('M04.FR.06 - ChargingStationCertificate Protection', async () => {
     await it('should reject deletion of ChargingStationCertificate', async () => {
-      const chargingStationCertHash = createMockCertificateHashDataChain(
-        GetCertificateIdUseEnumType.V2GCertificateChain,
-        'CHARGING_STATION_CERT_SERIAL'
-      )
-
       stationWithCertManager.certificateManager = createMockCertificateManager({
-        getInstalledCertificatesResult: [chargingStationCertHash],
+        isChargingStationCertificateHashResult: true,
       })
 
       const request: OCPP20DeleteCertificateRequest = {
-        certificateHashData: chargingStationCertHash.certificateHashData,
+        certificateHashData: VALID_CERTIFICATE_HASH_DATA,
       }
 
       const response: OCPP20DeleteCertificateResponse =
@@ -295,7 +288,7 @@ await describe('I04 - DeleteCertificate', async () => {
     await it('should allow deletion of non-ChargingStationCertificate when no ChargingStationCertificate exists', async () => {
       stationWithCertManager.certificateManager = createMockCertificateManager({
         deleteCertificateResult: { status: DeleteCertificateStatusEnumType.Accepted },
-        getInstalledCertificatesResult: [],
+        isChargingStationCertificateHashResult: false,
       })
 
       const request: OCPP20DeleteCertificateRequest = {

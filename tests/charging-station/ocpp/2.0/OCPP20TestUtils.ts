@@ -745,6 +745,8 @@ export interface MockCertificateManagerOptions {
   getInstalledCertificatesError?: Error
   /** Result to return from getInstalledCertificates (default: []) */
   getInstalledCertificatesResult?: CertificateHashDataChainType[]
+  /** Result to return from isChargingStationCertificateHash (default: false) */
+  isChargingStationCertificateHashResult?: boolean
   /** Error to throw when storeCertificate is called */
   storeCertificateError?: Error
   /** Result to return from storeCertificate (default: { success: true }) */
@@ -834,6 +836,9 @@ export function createMockCertificateManager (options: MockCertificateManagerOpt
       return {
         certificateHashDataChain: options.getInstalledCertificatesResult ?? [],
       }
+    }),
+    isChargingStationCertificateHash: mock.fn(() => {
+      return options.isChargingStationCertificateHashResult ?? false
     }),
     storeCertificate: mock.fn(() => {
       if (options.storeCertificateError != null) {

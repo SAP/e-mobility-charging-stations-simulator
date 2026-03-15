@@ -1597,35 +1597,22 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     try {
       // M04.FR.06: Check if the certificate to delete is a ChargingStationCertificate
-      // If so, reject the deletion request
-      // Get all installed certificates using the request's hashAlgorithm for consistent comparison
-      const installedCerts = chargingStation.certificateManager.getInstalledCertificates(
+      const isCSCertResult = chargingStation.certificateManager.isChargingStationCertificateHash(
         chargingStation.stationInfo?.hashId ?? '',
-        undefined,
-        certificateHashData.hashAlgorithm
+        certificateHashData
       )
+      const isCSCert = isCSCertResult instanceof Promise ? await isCSCertResult : isCSCertResult
 
-      const installedCertsResult =
-        installedCerts instanceof Promise ? await installedCerts : installedCerts
-
-      for (const certChain of installedCertsResult.certificateHashDataChain) {
-        const certHash = certChain.certificateHashData
-        if (
-          certChain.certificateType === GetCertificateIdUseEnumType.V2GCertificateChain &&
-          certHash.serialNumber === certificateHashData.serialNumber &&
-          certHash.issuerNameHash === certificateHashData.issuerNameHash &&
-          certHash.issuerKeyHash === certificateHashData.issuerKeyHash
-        ) {
-          logger.warn(
-            `${chargingStation.logPrefix()} ${moduleName}.handleRequestDeleteCertificate: Attempted to delete ChargingStationCertificate (M04.FR.06)`
-          )
-          return {
-            status: DeleteCertificateStatusEnumType.Failed,
-            statusInfo: {
-              additionalInfo: 'ChargingStationCertificate cannot be deleted (M04.FR.06)',
-              reasonCode: ReasonCodeEnumType.NotSupported,
-            },
-          }
+      if (isCSCert) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestDeleteCertificate: Attempted to delete ChargingStationCertificate (M04.FR.06)`
+        )
+        return {
+          status: DeleteCertificateStatusEnumType.Failed,
+          statusInfo: {
+            additionalInfo: 'ChargingStationCertificate cannot be deleted (M04.FR.06)',
+            reasonCode: ReasonCodeEnumType.NotSupported,
+          },
         }
       }
 
