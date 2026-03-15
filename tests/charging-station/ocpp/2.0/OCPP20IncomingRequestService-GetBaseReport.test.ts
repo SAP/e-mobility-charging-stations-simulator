@@ -123,9 +123,9 @@ await describe('B07 - Get Base Report', async () => {
     )
     assert.notStrictEqual(heartbeatEntry, undefined)
     if (heartbeatEntry) {
-      const types =
-        heartbeatEntry.variableAttribute?.map((a: { type?: string; value?: string }) => a.type) ??
-        []
+      const types = heartbeatEntry.variableAttribute.map(
+        (a: { type?: string; value?: string }) => a.type
+      )
       assert.deepStrictEqual(types, [AttributeEnumType.Actual])
     }
     // Boolean variable (AuthorizeRemoteStart) should only include Actual
@@ -136,10 +136,9 @@ await describe('B07 - Get Base Report', async () => {
     )
     assert.notStrictEqual(authorizeRemoteStartEntry, undefined)
     if (authorizeRemoteStartEntry) {
-      const types =
-        authorizeRemoteStartEntry.variableAttribute?.map(
-          (a: { type?: string; value?: string }) => a.type
-        ) ?? []
+      const types = authorizeRemoteStartEntry.variableAttribute.map(
+        (a: { type?: string; value?: string }) => a.type
+      )
       assert.deepStrictEqual(types, [AttributeEnumType.Actual])
     }
   })
@@ -235,7 +234,7 @@ await describe('B07 - Get Base Report', async () => {
     )
     assert.notStrictEqual(modelVariable, undefined)
     if (modelVariable) {
-      assert.strictEqual(modelVariable.variableAttribute?.[0]?.value, TEST_CHARGE_POINT_MODEL)
+      assert.strictEqual(modelVariable.variableAttribute[0]?.value, TEST_CHARGE_POINT_MODEL)
     }
 
     const vendorVariable = reportData.find(
@@ -245,7 +244,7 @@ await describe('B07 - Get Base Report', async () => {
     )
     assert.notStrictEqual(vendorVariable, undefined)
     if (vendorVariable) {
-      assert.strictEqual(vendorVariable.variableAttribute?.[0]?.value, TEST_CHARGE_POINT_VENDOR)
+      assert.strictEqual(vendorVariable.variableAttribute[0]?.value, TEST_CHARGE_POINT_VENDOR)
     }
   })
 
@@ -302,7 +301,7 @@ await describe('B07 - Get Base Report', async () => {
     )
     assert.notStrictEqual(timeSourceEntry, undefined)
     if (timeSourceEntry) {
-      const reportedAttr = timeSourceEntry.variableAttribute?.find(
+      const reportedAttr = timeSourceEntry.variableAttribute.find(
         (a: { type?: string; value?: string }) => a.type === AttributeEnumType.Actual
       )
       assert.notStrictEqual(reportedAttr, undefined)

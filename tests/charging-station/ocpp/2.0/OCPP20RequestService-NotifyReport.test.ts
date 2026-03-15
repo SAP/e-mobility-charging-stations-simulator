@@ -327,7 +327,6 @@ await describe('B07/B08 - NotifyReport', async () => {
       assert.notStrictEqual(payload, undefined)
       assert(payload.reportData != null)
       const firstReport = payload.reportData[0]
-      assert(firstReport.variableAttribute != null)
       assert.strictEqual(firstReport.variableAttribute[0].type, attributeType)
       assert.strictEqual(firstReport.variableAttribute[0].value, `Test Value ${index.toString()}`)
     })
@@ -382,7 +381,6 @@ await describe('B07/B08 - NotifyReport', async () => {
       assert(payload.reportData != null)
       const firstReport = payload.reportData[0]
       assert(firstReport.variableCharacteristics != null)
-      assert(firstReport.variableAttribute != null)
       assert.strictEqual(firstReport.variableCharacteristics.dataType, testCase.dataType)
       assert.strictEqual(firstReport.variableAttribute[0].value, testCase.value)
     })
@@ -492,7 +490,6 @@ await describe('B07/B08 - NotifyReport', async () => {
     assert.notStrictEqual(payload, undefined)
     assert(payload.reportData != null)
     const firstReport = payload.reportData[0]
-    assert(firstReport.variableAttribute != null)
     assert.strictEqual(firstReport.variableAttribute.length, 1)
     assert.strictEqual(firstReport.variableAttribute[0].type, AttributeEnumType.Actual)
   })
