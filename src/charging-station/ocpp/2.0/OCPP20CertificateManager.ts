@@ -388,7 +388,12 @@ export class OCPP20CertificateManager {
   /**
    * Validates a PEM certificate using X.509 structural parsing.
    * Checks validity period (notBefore/notAfter) and issuer presence per A02.FR.06.
-   * @param pem - PEM-encoded certificate data
+   *
+   * **Design choice**: Only the first certificate in a PEM chain is validated.
+   * Full chain-of-trust verification (A02.FR.06 hierarchy check) is not implemented —
+   * the simulator performs structural validation only, consistent with the medium-depth
+   * X.509 scope defined in the audit remediation plan.
+   * @param pem - PEM-encoded certificate data (may contain a chain; only first cert is validated)
    * @returns Validation result with reason on failure
    */
   public validateCertificateX509 (pem: string): ValidateCertificateX509Result {

@@ -2033,9 +2033,13 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   /**
-   * Handles OCPP 2.0.1 SetNetworkProfile request from central system
-   * Per B09.FR.01: Validates configurationSlot and connectionData, returns Accepted for valid requests
-   * The simulator accepts the request but does not perform actual network profile switching
+   * Handles OCPP 2.0.1 SetNetworkProfile request from central system.
+   * Per B09.FR.01: Validates configurationSlot and connectionData, returns Accepted for valid requests.
+   * The simulator accepts the request but does not perform actual network profile switching.
+   *
+   * **Simulator limitations** (documented, not implemented):
+   * - B09.FR.04: securityProfile downgrade detection requires persistent SecurityProfile state
+   * - B09.FR.05: configurationSlot vs NetworkConfigurationPriority cross-check requires device model query
    * @param chargingStation - The charging station instance
    * @param commandPayload - The SetNetworkProfile request payload
    * @returns SetNetworkProfileResponse with Accepted or Rejected status
@@ -2065,7 +2069,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
-    // Valid request - return Accepted (simulator accepts but does not switch networks)
+    // B09.FR.04/FR.05: securityProfile downgrade and slot-in-priority checks not implemented
+    // (simulator limitation — would require persistent device model state)
     logger.info(
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestSetNetworkProfile: Accepting SetNetworkProfile request for slot ${commandPayload.configurationSlot.toString()}`
     )
