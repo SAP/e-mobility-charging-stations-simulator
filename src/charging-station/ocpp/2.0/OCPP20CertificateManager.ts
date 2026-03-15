@@ -393,7 +393,9 @@ export class OCPP20CertificateManager {
    */
   public validateCertificateX509 (pem: string): ValidateCertificateX509Result {
     try {
-      const firstCertMatch = /-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/.exec(pem)
+      const firstCertMatch = /-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/.exec(
+        pem
+      )
       if (firstCertMatch == null) {
         return { reason: 'No PEM certificate found', valid: false }
       }
