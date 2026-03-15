@@ -1501,7 +1501,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           return {
             status: DeleteCertificateStatusEnumType.Failed,
             statusInfo: {
-              additionalInfo: 'ChargingStationCertificate cannot be deleted per M04.FR.06',
+              additionalInfo: 'ChargingStationCertificate cannot be deleted (M04.FR.06)',
               reasonCode: ReasonCodeEnumType.NotSupported,
             },
           }
