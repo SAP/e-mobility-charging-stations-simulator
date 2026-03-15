@@ -537,14 +537,14 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     cp: OCPP16ChargingProfile
   ): void {
     if (chargingStation.getConnectorStatus(connectorId)?.chargingProfiles == null) {
-      logger.error(
+      logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.setChargingProfile: Trying to set a charging profile on connector id ${connectorId.toString()} with an uninitialized charging profiles array attribute, applying deferred initialization`
       )
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       chargingStation.getConnectorStatus(connectorId)!.chargingProfiles = []
     }
     if (!Array.isArray(chargingStation.getConnectorStatus(connectorId)?.chargingProfiles)) {
-      logger.error(
+      logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.setChargingProfile: Trying to set a charging profile on connector id ${connectorId.toString()} with an improper attribute type for the charging profiles array, applying proper type deferred initialization`
       )
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
