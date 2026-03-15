@@ -1,5 +1,56 @@
 # Changelog
 
+## [3.1.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v3.0.0...simulator@v3.1.0) (2026-03-15)
+
+### 🚀 Features
+
+- **ocpp2:** integrate all 8 missing OCPP 2.0.1 outgoing commands into UIService/BroadcastChannel pipeline ([#1718](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1718)) ([f1aba94](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f1aba941898b9a55cf4f90f86072abcf11cf1ec9))
+- **ocpp2:** OCPP 2.0.1 Core certification readiness ([#1712](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1712)) ([efa6368](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/efa6368be0d7d89e50917ec489a8c5e4f467e359))
+
+### 🐞 Bug Fixes
+
+- **charging-station:** add try/finally guards to lifecycle methods ([b3827b5](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b3827b5bdfa3d2de0520f6489bea4d733933d5a5))
+- clear OCPPAuthServiceFactory cached instance on station delete ([6956e43](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6956e437a497d70f6283c22b1eb53358e352c1ef))
+- **deps:** update all non-major dependencies ([#1706](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1706)) ([dff65e2](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/dff65e23b59a5ae72aa7853be04d3e65523197f7))
+- migrate JSR dependency from legacy npm:@jsr/ to native jsr: protocol ([e7941db](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e7941dbe34445151a82ad68a4465f02bcbc96337))
+- **ocpp16:** fix StopTransaction unit schema and ChargingSchedule field name ([1ca41bf](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/1ca41bfe1c955d773b0b0721b43193afc6bea222))
+- **ocpp16:** harmonize error logging — log silent catches, demote business violations to warn ([93e17b3](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/93e17b3e7697d2dcd718709dd98956dbf4944183))
+- **ocpp16:** ocpp 1.6 conformance audit — 8 findings remediated ([d35e48b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/d35e48b1696d8a12da314489e293181c21c79865))
+- **ocpp20:** add missing JSDoc [@param](https://github.com/param) description for hashAlgorithm in getInstalledCertificates ([e2751d8](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e2751d88be05ab260ac8b8d16922c8db0c1df69e))
+- **ocpp20:** clean up VariableManager mappings cache on station stop ([7f1aee5](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7f1aee53bbb2987f21a679d46961fbac8637d4bb))
+- **ocpp20:** implement proper M04.FR.06 guard via isChargingStationCertificateHash ([47ced3b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/47ced3bb98adf9723227ab83beaa720440b131a2))
+- **ocpp20:** isolate VariableManager overrides per station ([77bd1a0](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/77bd1a0315b3a3b75a47ed6f08d4c4eb5d35feed))
+- **ocpp20:** ocpp 2.0.1 conformance audit — 17 findings remediated ([429cdbe](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/429cdbe360277bd7cea63c5c0f15380a1aed0435))
+- **ocpp20:** remediate 4 conformance findings from cross-audit ([4266b93](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/4266b93a48795234d27f2a980cc3cde0b80977ed))
+- **ocpp20:** remediate all OCPP 2.0.1 audit findings ([#1726](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1726)) ([3a6e89f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3a6e89f6347a4b7771dfd2323b43ff89a2711325))
+- **ocpp2:** add missing outgoing schema entries for certificate commands ([56b925b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/56b925b4968df16ae93d03ea5f9dba979a740627))
+- **ocpp:** use per-subclass singleton map to prevent version collision ([3de193f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3de193f999a0750fac951e09682e860c68d88c5a))
+- **renovate:** enable Poetry dependency detection for OCPP2 mock server ([525e1df](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/525e1dfa3f1f3650f329d1de7b3db886ab45b3d0))
+- **tests:** remove stale optional chaining on now-required variableAttribute ([3d00af1](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3d00af1582eb04b27c1e7ace50c1cc895b61d193))
+
+### ✨ Polish
+
+- **ocpp16:** track diagnosticsStatus and extract composite schedule helper ([4d2ca3a](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/4d2ca3abb934fd73439aadb02a820ab249222519))
+- **ocpp20:** extract named constants for hardcoded sleep/timeout values ([adfe8d4](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/adfe8d486791632d1e03b9ff58be02ba4fa4c9da))
+- **ocpp20:** isolate per-station state with WeakMap instead of singleton properties ([47cdf2b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/47cdf2bbee7d500ae063beed7d68344298b1057f))
+- **ocpp2:** convert incoming request fire-and-forget patterns to event listeners ([#1715](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1715)) ([12018fd](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/12018fd396db8ad3a03b1e84bf4a56c9c9768e4e))
+- **ocpp:** extract responseHandler and incomingRequestHandler into base classes ([ef86be6](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ef86be68d6b8ed032921d85b37315629ad6cf0f2))
+- **ocpp:** harmonize JSON schema payload validation across OCPP stacks ([0c8357f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/0c8357f86de845c860f6ff1cb30e1cfaa8e5643a))
+- **ocpp:** remove dead parseJsonSchemaFile overrides and standardize validation ([dbf3c82](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/dbf3c82ca36c7e06e47d5f4c81f492817bfdae82))
+- replace 54 unsafe error casts with instanceof guards ([2bcd07d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/2bcd07d72f3b715792897782d43750db25ee0103))
+
+### 🧪 Tests
+
+- **ocpp16:** add comprehensive OCPP 1.6 unit and integration tests ([#1710](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1710)) ([9acc5a0](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/9acc5a0aec9833fa506ef2ced4e265cb15a2d696))
+- **ocpp:** add schema registration coverage tests for OCPP 1.6 and 2.0 ([293588f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/293588f1f28cb59d67ce3ea1aff16a91ae92ed0a))
+- remove 24 tautological enum value assertion tests ([ba22a74](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ba22a74942941bb9f113fd31836d5cc2bab7576d))
+
+### 📚 Documentation
+
+- fix README OCPP 2.0.x notes with spec-verified FR references ([91cfffa](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/91cfffa6f24609bf6f061952c94ae42c6233c9db))
+- fix root README coherence with codebase ([b4e2577](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b4e2577a8894dcb3e636fe43cbdecab88ec2de48))
+- update README OCPP 2.0.x section with post-audit implementation details ([0f66c54](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/0f66c54bf04650e9204d21a730578cedce143de0))
+
 ## [3.0.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v2.4.0...simulator@v3.0.0) (2026-03-06)
 
 ### ⚠ BREAKING CHANGES
