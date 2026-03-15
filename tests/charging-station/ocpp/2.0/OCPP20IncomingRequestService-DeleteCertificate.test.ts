@@ -12,7 +12,9 @@ import type { ChargingStationWithCertificateManager } from '../../../../src/char
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import {
+  CertificateSigningUseEnumType,
   DeleteCertificateStatusEnumType,
+  GetCertificateIdUseEnumType,
   HashAlgorithmEnumType,
   type OCPP20DeleteCertificateRequest,
   type OCPP20DeleteCertificateResponse,
@@ -24,6 +26,7 @@ import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import {
+  createMockCertificateHashDataChain,
   createMockCertificateManager,
   createStationWithCertificateManager,
 } from './OCPP20TestUtils.js'
@@ -264,6 +267,50 @@ await describe('I04 - DeleteCertificate', async () => {
       assert.strictEqual(typeof response.statusInfo.reasonCode, 'string')
       assert.ok(response.statusInfo.reasonCode.length > 0)
       assert.ok(response.statusInfo.reasonCode.length <= 20)
+    })
+  })
+
+  await describe('M04.FR.06 - ChargingStationCertificate Protection', async () => {
+    await it('should reject deletion of ChargingStationCertificate', async () => {
+      const chargingStationCertHash = createMockCertificateHashDataChain(
+        GetCertificateIdUseEnumType.CSMSRootCertificate,
+        'CHARGING_STATION_CERT_SERIAL'
+      )
+
+      stationWithCertManager.certificateManager = createMockCertificateManager({
+        getInstalledCertificatesResult: [chargingStationCertHash],
+      })
+
+      const request: OCPP20DeleteCertificateRequest = {
+        certificateHashData: chargingStationCertHash.certificateHashData,
+      }
+
+      const response: OCPP20DeleteCertificateResponse =
+        await testableService.handleRequestDeleteCertificate(stationWithCertManager, request)
+
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, DeleteCertificateStatusEnumType.Failed)
+      assert.notStrictEqual(response.statusInfo, undefined)
+      assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.InternalError)
+      assert.ok(response.statusInfo?.additionalInfo?.includes('M04.FR.06'))
+    })
+
+    await it('should allow deletion of non-ChargingStationCertificate when no ChargingStationCertificate exists', async () => {
+      stationWithCertManager.certificateManager = createMockCertificateManager({
+        getInstalledCertificatesResult: [],
+        deleteCertificateResult: { status: DeleteCertificateStatusEnumType.Accepted },
+      })
+
+      const request: OCPP20DeleteCertificateRequest = {
+        certificateHashData: VALID_CERTIFICATE_HASH_DATA,
+      }
+
+      const response: OCPP20DeleteCertificateResponse =
+        await testableService.handleRequestDeleteCertificate(stationWithCertManager, request)
+
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, DeleteCertificateStatusEnumType.Accepted)
+      assert.strictEqual(response.statusInfo, undefined)
     })
   })
 })
