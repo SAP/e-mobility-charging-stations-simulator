@@ -84,7 +84,7 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
   })
 
   await describe('MeterValues trigger', async () => {
-    await it('should return NotImplemented for MeterValues trigger', () => {
+    await it('should return Accepted for MeterValues trigger', () => {
       // Arrange
       const { station, testableService } = context
 
@@ -95,12 +95,12 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
       })
 
       // Assert
-      assert.strictEqual(response.status, OCPP16TriggerMessageStatus.NOT_IMPLEMENTED)
+      assert.strictEqual(response.status, OCPP16TriggerMessageStatus.ACCEPTED)
     })
   })
 
   await describe('DiagnosticsStatusNotification trigger', async () => {
-    await it('should return NotImplemented for DiagnosticsStatusNotification trigger', () => {
+    await it('should return Accepted for DiagnosticsStatusNotification trigger', () => {
       // Arrange
       const { station, testableService } = context
 
@@ -110,12 +110,12 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
       })
 
       // Assert
-      assert.strictEqual(response.status, OCPP16TriggerMessageStatus.NOT_IMPLEMENTED)
+      assert.strictEqual(response.status, OCPP16TriggerMessageStatus.ACCEPTED)
     })
   })
 
   await describe('FirmwareStatusNotification trigger', async () => {
-    await it('should return NotImplemented for FirmwareStatusNotification trigger', () => {
+    await it('should return Accepted for FirmwareStatusNotification trigger', () => {
       // Arrange
       const { station, testableService } = context
 
@@ -125,7 +125,7 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
       })
 
       // Assert
-      assert.strictEqual(response.status, OCPP16TriggerMessageStatus.NOT_IMPLEMENTED)
+      assert.strictEqual(response.status, OCPP16TriggerMessageStatus.ACCEPTED)
     })
   })
 

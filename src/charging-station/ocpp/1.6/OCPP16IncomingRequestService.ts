@@ -71,6 +71,9 @@ import {
   type OCPP16HeartbeatResponse,
   OCPP16IncomingRequestCommand,
   OCPP16MessageTrigger,
+  type OCPP16MeterValue,
+  type OCPP16MeterValuesRequest,
+  type OCPP16MeterValuesResponse,
   OCPP16RequestCommand,
   type OCPP16ReserveNowRequest,
   type OCPP16ReserveNowResponse,
@@ -112,7 +115,7 @@ import {
 } from '../../../utils/index.js'
 import { OCPPConstants } from '../OCPPConstants.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
-import { OCPPServiceUtils } from '../OCPPServiceUtils.js'
+import { buildMeterValue, OCPPServiceUtils } from '../OCPPServiceUtils.js'
 import { OCPP16Constants } from './OCPP16Constants.js'
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js'
 
@@ -352,6 +355,40 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
               >(chargingStation, OCPP16RequestCommand.BOOT_NOTIFICATION, chargingStation.bootNotificationRequest as OCPP16BootNotificationRequest, { skipBufferingOnError: true, triggerMessage: true })
               .catch(errorHandler)
             break
+          case OCPP16MessageTrigger.DiagnosticsStatusNotification:
+            chargingStation.ocppRequestService
+              .requestHandler<
+                OCPP16DiagnosticsStatusNotificationRequest,
+                OCPP16DiagnosticsStatusNotificationResponse
+              >(
+                chargingStation,
+                OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
+                {
+                  status: OCPP16DiagnosticsStatus.Idle,
+                },
+                {
+                  triggerMessage: true,
+                }
+              )
+              .catch(errorHandler)
+            break
+          case OCPP16MessageTrigger.FirmwareStatusNotification:
+            chargingStation.ocppRequestService
+              .requestHandler<
+                OCPP16FirmwareStatusNotificationRequest,
+                OCPP16FirmwareStatusNotificationResponse
+              >(
+                chargingStation,
+                OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
+                {
+                  status: chargingStation.stationInfo?.firmwareStatus ?? OCPP16FirmwareStatus.Idle,
+                },
+                {
+                  triggerMessage: true,
+                }
+              )
+              .catch(errorHandler)
+            break
           case OCPP16MessageTrigger.Heartbeat:
             chargingStation.ocppRequestService
               .requestHandler<OCPP16HeartbeatRequest, OCPP16HeartbeatResponse>(
@@ -363,6 +400,64 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                 }
               )
               .catch(errorHandler)
+            break
+          case OCPP16MessageTrigger.MeterValues:
+            if (connectorId != null) {
+              const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+              if (
+                connectorStatus?.transactionStarted === true &&
+                connectorStatus.transactionId != null
+              ) {
+                chargingStation.ocppRequestService
+                  .requestHandler<OCPP16MeterValuesRequest, OCPP16MeterValuesResponse>(
+                    chargingStation,
+                    OCPP16RequestCommand.METER_VALUES,
+                    {
+                      connectorId,
+                      meterValue: [
+                        buildMeterValue(
+                          chargingStation,
+                          connectorId,
+                          convertToInt(connectorStatus.transactionId),
+                          0
+                        ) as OCPP16MeterValue,
+                      ],
+                      transactionId: convertToInt(connectorStatus.transactionId),
+                    },
+                    {
+                      triggerMessage: true,
+                    }
+                  )
+                  .catch(errorHandler)
+              }
+            } else {
+              for (let id = 1; id <= chargingStation.getNumberOfConnectors(); id++) {
+                const cs = chargingStation.getConnectorStatus(id)
+                if (cs?.transactionStarted === true && cs.transactionId != null) {
+                  chargingStation.ocppRequestService
+                    .requestHandler<OCPP16MeterValuesRequest, OCPP16MeterValuesResponse>(
+                      chargingStation,
+                      OCPP16RequestCommand.METER_VALUES,
+                      {
+                        connectorId: id,
+                        meterValue: [
+                          buildMeterValue(
+                            chargingStation,
+                            id,
+                            convertToInt(cs.transactionId),
+                            0
+                          ) as OCPP16MeterValue,
+                        ],
+                        transactionId: convertToInt(cs.transactionId),
+                      },
+                      {
+                        triggerMessage: true,
+                      }
+                    )
+                    .catch(errorHandler)
+                }
+              }
+            }
             break
           case OCPP16MessageTrigger.StatusNotification:
             if (connectorId != null) {
@@ -633,6 +728,21 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     if (keyToChange?.readonly === true) {
       return OCPP16Constants.OCPP_CONFIGURATION_RESPONSE_REJECTED
     } else if (keyToChange?.readonly === false) {
+      const integerKeys = new Set([
+        OCPP16StandardParametersKey.ConnectionTimeOut,
+        OCPP16StandardParametersKey.HeartBeatInterval,
+        OCPP16StandardParametersKey.HeartbeatInterval,
+        OCPP16StandardParametersKey.MeterValueSampleInterval,
+        OCPP16StandardParametersKey.TransactionMessageAttempts,
+        OCPP16StandardParametersKey.TransactionMessageRetryInterval,
+        OCPP16StandardParametersKey.WebSocketPingInterval,
+      ])
+      if (integerKeys.has(keyToChange.key as OCPP16StandardParametersKey)) {
+        const numValue = convertToInt(value)
+        if (isNaN(numValue) || numValue < 0) {
+          return OCPP16Constants.OCPP_CONFIGURATION_RESPONSE_REJECTED
+        }
+      }
       let valueChanged = false
       if (keyToChange.value !== value) {
         setConfigurationKeyValue(chargingStation, key, value, true)
@@ -731,11 +841,25 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       }
       const connectorStatus = chargingStation.getConnectorStatus(connectorId)
       if (isNotEmptyArray(connectorStatus?.chargingProfiles)) {
-        connectorStatus.chargingProfiles = []
-        logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestClearChargingProfile: Charging profile(s) cleared on connector id ${connectorId.toString()}`
+        const { chargingProfilePurpose, id, stackLevel } = commandPayload
+        if (id == null && chargingProfilePurpose == null && stackLevel == null) {
+          connectorStatus.chargingProfiles = []
+          logger.debug(
+            `${chargingStation.logPrefix()} ${moduleName}.handleRequestClearChargingProfile: All charging profile(s) cleared on connector id ${connectorId.toString()}`
+          )
+          return OCPP16Constants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_ACCEPTED
+        }
+        const clearedCP = OCPP16ServiceUtils.clearChargingProfiles(
+          chargingStation,
+          commandPayload,
+          connectorStatus.chargingProfiles as OCPP16ChargingProfile[]
         )
-        return OCPP16Constants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_ACCEPTED
+        if (clearedCP) {
+          logger.debug(
+            `${chargingStation.logPrefix()} ${moduleName}.handleRequestClearChargingProfile: Matching charging profile(s) cleared on connector id ${connectorId.toString()}`
+          )
+          return OCPP16Constants.OCPP_CLEAR_CHARGING_PROFILE_RESPONSE_ACCEPTED
+        }
       }
     } else {
       let clearedCP = false
@@ -775,12 +899,15 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     chargingStation: ChargingStation,
     commandPayload: OCPP16DataTransferRequest
   ): OCPP16DataTransferResponse {
-    const { vendorId } = commandPayload
+    const { messageId, vendorId } = commandPayload
     try {
-      if (vendorId === chargingStation.stationInfo?.chargePointVendor) {
-        return OCPP16Constants.OCPP_DATA_TRANSFER_RESPONSE_ACCEPTED
+      if (vendorId !== chargingStation.stationInfo?.chargePointVendor) {
+        return OCPP16Constants.OCPP_DATA_TRANSFER_RESPONSE_UNKNOWN_VENDOR_ID
       }
-      return OCPP16Constants.OCPP_DATA_TRANSFER_RESPONSE_UNKNOWN_VENDOR_ID
+      if (messageId != null) {
+        return OCPP16Constants.OCPP_DATA_TRANSFER_RESPONSE_UNKNOWN_MESSAGE_ID
+      }
+      return OCPP16Constants.OCPP_DATA_TRANSFER_RESPONSE_ACCEPTED
     } catch (error) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       return handleIncomingRequestError<OCPP16DataTransferResponse>(
@@ -813,9 +940,88 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       return OCPP16Constants.OCPP_RESPONSE_REJECTED
     }
     if (connectorId === 0) {
-      logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCompositeSchedule: Get composite schedule on connector id ${connectorId.toString()} is not yet supported`
-      )
+      if (chargingRateUnit != null) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCompositeSchedule: Get composite schedule with a specified rate unit is not yet supported, no conversion will be done`
+        )
+      }
+      const allChargingProfiles: OCPP16ChargingProfile[] = []
+      for (let id = 0; id <= chargingStation.getNumberOfConnectors(); id++) {
+        if (chargingStation.hasConnector(id)) {
+          allChargingProfiles.push(
+            ...(getConnectorChargingProfiles(chargingStation, id) as OCPP16ChargingProfile[])
+          )
+        }
+      }
+      if (allChargingProfiles.length === 0) {
+        return OCPP16Constants.OCPP_RESPONSE_REJECTED
+      }
+      const currentDate = new Date()
+      const compositeScheduleInterval: Interval = {
+        end: addSeconds(currentDate, duration),
+        start: currentDate,
+      }
+      let previousCompositeSchedule: OCPP16ChargingSchedule | undefined
+      let compositeSchedule: OCPP16ChargingSchedule | undefined
+      for (const chargingProfile of allChargingProfiles) {
+        if (chargingProfile.chargingSchedule.startSchedule == null) {
+          logger.debug(
+            `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCompositeSchedule: Charging profile id ${chargingProfile.chargingProfileId.toString()} has no startSchedule defined. Trying to set it to the current date`
+          )
+          chargingProfile.chargingSchedule.startSchedule = currentDate
+        }
+        if (!isDate(chargingProfile.chargingSchedule.startSchedule)) {
+          logger.warn(
+            `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCompositeSchedule: Charging profile id ${chargingProfile.chargingProfileId.toString()} startSchedule property is not a Date instance. Trying to convert it to a Date instance`
+          )
+          chargingProfile.chargingSchedule.startSchedule = convertToDate(
+            chargingProfile.chargingSchedule.startSchedule
+          )
+        }
+        if (chargingProfile.chargingSchedule.duration == null) {
+          logger.debug(
+            `${chargingStation.logPrefix()} ${moduleName}.handleRequestGetCompositeSchedule: Charging profile id ${chargingProfile.chargingProfileId.toString()} has no duration defined and will be set to the maximum time allowed`
+          )
+          chargingProfile.chargingSchedule.duration = differenceInSeconds(
+            maxTime,
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            chargingProfile.chargingSchedule.startSchedule!
+          )
+        }
+        if (
+          !prepareChargingProfileKind(
+            undefined,
+            chargingProfile,
+            compositeScheduleInterval.start,
+            chargingStation.logPrefix()
+          )
+        ) {
+          continue
+        }
+        if (
+          !canProceedChargingProfile(
+            chargingProfile,
+            compositeScheduleInterval.start,
+            chargingStation.logPrefix()
+          )
+        ) {
+          continue
+        }
+        compositeSchedule = OCPP16ServiceUtils.composeChargingSchedules(
+          previousCompositeSchedule,
+          chargingProfile.chargingSchedule,
+          compositeScheduleInterval
+        )
+        previousCompositeSchedule = compositeSchedule
+      }
+      if (compositeSchedule != null) {
+        return {
+          chargingSchedule: compositeSchedule,
+          connectorId: 0,
+          scheduleStart: compositeSchedule.startSchedule,
+          status: GenericStatus.Accepted,
+        }
+      }
       return OCPP16Constants.OCPP_RESPONSE_REJECTED
     }
     if (chargingRateUnit != null) {
@@ -1273,7 +1479,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     commandPayload: ResetRequest
   ): GenericResponse {
     const { type } = commandPayload
-    chargingStation.reset(`${type}Reset` as OCPP16StopTransactionReason).catch((error: unknown) => {
+    const reason = `${type}Reset` as OCPP16StopTransactionReason
+    const graceful = reason === OCPP16StopTransactionReason.SOFT_RESET
+    chargingStation.reset(reason, graceful).catch((error: unknown) => {
       logger.error(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: Reset error:`,
         error
@@ -1385,7 +1593,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     }
     switch (requestedMessage) {
       case OCPP16MessageTrigger.BootNotification:
+      case OCPP16MessageTrigger.DiagnosticsStatusNotification:
+      case OCPP16MessageTrigger.FirmwareStatusNotification:
       case OCPP16MessageTrigger.Heartbeat:
+      case OCPP16MessageTrigger.MeterValues:
       case OCPP16MessageTrigger.StatusNotification:
         return OCPP16Constants.OCPP_TRIGGER_MESSAGE_RESPONSE_ACCEPTED
       default:

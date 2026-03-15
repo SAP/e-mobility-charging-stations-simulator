@@ -68,6 +68,10 @@ export class OCPPConstants {
     status: DataTransferStatus.REJECTED,
   })
 
+  static readonly OCPP_DATA_TRANSFER_RESPONSE_UNKNOWN_MESSAGE_ID = Object.freeze({
+    status: DataTransferStatus.UNKNOWN_MESSAGE_ID,
+  })
+
   static readonly OCPP_DATA_TRANSFER_RESPONSE_UNKNOWN_VENDOR_ID = Object.freeze({
     status: DataTransferStatus.UNKNOWN_VENDOR_ID,
   })

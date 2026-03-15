@@ -60,7 +60,28 @@ await describe('OCPP16IncomingRequestService — SimpleHandlers', async () => {
       assert.strictEqual(typeof response.status, 'string')
     })
 
-    await it('should return Accepted status for matching vendor', () => {
+    await it('should return Accepted status for matching vendor without messageId', () => {
+      // Arrange
+      const { station, testableService } = context
+      const matchingVendor = 'test-vendor-match'
+      if (station.stationInfo != null) {
+        station.stationInfo.chargePointVendor = matchingVendor
+      }
+      const dataTransferRequest = {
+        data: 'test-data',
+        vendorId: matchingVendor,
+      }
+
+      // Act
+      const response = testableService.handleRequestDataTransfer(station, dataTransferRequest)
+
+      // Assert
+      assert.notStrictEqual(response, undefined)
+      assert.strictEqual(response.status, OCPP16DataTransferStatus.ACCEPTED)
+      assert.strictEqual(typeof response.status, 'string')
+    })
+
+    await it('should return UnknownMessageId for matching vendor with messageId', () => {
       // Arrange
       const { station, testableService } = context
       const matchingVendor = 'test-vendor-match'
@@ -78,7 +99,7 @@ await describe('OCPP16IncomingRequestService — SimpleHandlers', async () => {
 
       // Assert
       assert.notStrictEqual(response, undefined)
-      assert.strictEqual(response.status, 'Accepted')
+      assert.strictEqual(response.status, OCPP16DataTransferStatus.UNKNOWN_MESSAGE_ID)
       assert.strictEqual(typeof response.status, 'string')
     })
   })
