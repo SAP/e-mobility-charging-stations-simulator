@@ -16,9 +16,11 @@ import {
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import {
   EMPTY_PEM_CERTIFICATE,
+  EXPIRED_X509_PEM_CERTIFICATE,
   INVALID_PEM_CERTIFICATE_MISSING_MARKERS,
   INVALID_PEM_WRONG_MARKERS,
   VALID_PEM_CERTIFICATE_EXTENDED,
+  VALID_X509_PEM_CERTIFICATE,
 } from './OCPP20CertificateTestData.js'
 
 const TEST_STATION_HASH_ID = 'test-station-hash-12345'
@@ -420,6 +422,37 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
       const path = manager.getCertificatePath(maliciousHashId, TEST_CERT_TYPE, 'SERIAL-001')
 
       assert.ok(!path.includes('..'))
+    })
+  })
+
+  await describe('validateCertificateX509', async () => {
+    let manager: OCPP20CertificateManager
+
+    beforeEach(() => {
+      manager = new OCPP20CertificateManager()
+    })
+
+    await it('should return valid for a real X.509 certificate within validity period', () => {
+      const result = manager.validateCertificateX509(VALID_X509_PEM_CERTIFICATE)
+
+      assert.strictEqual(result.valid, true)
+      assert.strictEqual(result.reason, undefined)
+    })
+
+    await it('should return invalid with reason for an expired X.509 certificate', () => {
+      const result = manager.validateCertificateX509(EXPIRED_X509_PEM_CERTIFICATE)
+
+      assert.strictEqual(result.valid, false)
+      assert.strictEqual(typeof result.reason, 'string')
+      assert.ok(result.reason?.includes('expired'))
+    })
+
+    await it('should return invalid with parsing error for non-X.509 data', () => {
+      const result = manager.validateCertificateX509('not-a-certificate')
+
+      assert.strictEqual(result.valid, false)
+      assert.strictEqual(typeof result.reason, 'string')
+      assert.ok(result.reason?.includes('parsing failed'))
     })
   })
 })

@@ -26,6 +26,7 @@ import {
   type EvseStatus,
   FirmwareStatus,
   FirmwareStatusEnumType,
+  type FirmwareType,
   GenericDeviceModelStatusEnumType,
   GenericStatus,
   GetCertificateIdUseEnumType,
@@ -277,7 +278,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           this.simulateFirmwareUpdateLifecycle(
             chargingStation,
             request.requestId,
-            request.firmware.signature
+            request.firmware
           ).catch((error: unknown) => {
             logger.error(
               `${chargingStation.logPrefix()} ${moduleName}.constructor: UpdateFirmware lifecycle error:`,
@@ -1182,6 +1183,20 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
+    const x509Result = chargingStation.certificateManager.validateCertificateX509(certificateChain)
+    if (!x509Result.valid) {
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestCertificateSigned: X.509 validation failed: ${x509Result.reason ?? 'Unknown'}`
+      )
+      return {
+        status: GenericStatus.Rejected,
+        statusInfo: {
+          additionalInfo: x509Result.reason ?? 'Certificate X.509 validation failed',
+          reasonCode: ReasonCodeEnumType.InvalidCertificate,
+        },
+      }
+    }
+
     try {
       const result = chargingStation.certificateManager.storeCertificate(
         chargingStation.stationInfo?.hashId ?? '',
@@ -1686,6 +1701,20 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         status: InstallCertificateStatusEnumType.Rejected,
         statusInfo: {
           additionalInfo: 'Certificate PEM format is invalid or malformed',
+          reasonCode: ReasonCodeEnumType.InvalidCertificate,
+        },
+      }
+    }
+
+    const x509Result = chargingStation.certificateManager.validateCertificateX509(certificate)
+    if (!x509Result.valid) {
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestInstallCertificate: X.509 validation failed for type ${certificateType}: ${x509Result.reason ?? 'Unknown'}`
+      )
+      return {
+        status: InstallCertificateStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: x509Result.reason ?? 'Certificate X.509 validation failed',
           reasonCode: ReasonCodeEnumType.InvalidCertificate,
         },
       }
@@ -2999,24 +3028,53 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   /**
-   * Simulates a firmware update lifecycle through status progression using chained setTimeout calls.
-   * Sequence: Downloading → Downloaded → [SignatureVerified if signature present] → Installing → Installed
+   * Simulates a firmware update lifecycle through status progression per OCPP 2.0.1 L01/L02.
+   * Sequence: [DownloadScheduled] → Downloading → Downloaded/DownloadFailed →
+   *           [SignatureVerified] → [InstallScheduled] → Installing → Installed
    * @param chargingStation - The charging station instance
    * @param requestId - The request ID from the UpdateFirmware request
-   * @param signature - Optional firmware signature; triggers SignatureVerified step if present
+   * @param firmware - The firmware details including location, dates, and optional signature
    */
   private async simulateFirmwareUpdateLifecycle (
     chargingStation: ChargingStation,
     requestId: number,
-    signature?: string
+    firmware: FirmwareType
   ): Promise<void> {
+    const { installDateTime, location, retrieveDateTime, signature } = firmware
+
+    // C12: If retrieveDateTime is in the future, send DownloadScheduled and wait
+    const now = Date.now()
+    const retrieveTime = new Date(retrieveDateTime).getTime()
+    if (retrieveTime > now) {
+      await this.sendFirmwareStatusNotification(
+        chargingStation,
+        FirmwareStatusEnumType.DownloadScheduled,
+        requestId
+      )
+      await sleep(retrieveTime - now)
+    }
+
     await this.sendFirmwareStatusNotification(
       chargingStation,
       FirmwareStatusEnumType.Downloading,
       requestId
     )
 
-    await sleep(1000)
+    await sleep(2000)
+
+    // H9: If firmware location is empty or malformed, send DownloadFailed and stop
+    if (location.trim() === '' || !this.isValidFirmwareLocation(location)) {
+      await this.sendFirmwareStatusNotification(
+        chargingStation,
+        FirmwareStatusEnumType.DownloadFailed,
+        requestId
+      )
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Download failed for requestId ${requestId.toString()} - invalid location '${location}'`
+      )
+      return
+    }
+
     await this.sendFirmwareStatusNotification(
       chargingStation,
       FirmwareStatusEnumType.Downloaded,
@@ -3032,7 +3090,20 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
     }
 
-    await sleep(1000)
+    // C12: If installDateTime is in the future, send InstallScheduled and wait
+    if (installDateTime != null) {
+      const installTime = new Date(installDateTime).getTime()
+      const currentTime = Date.now()
+      if (installTime > currentTime) {
+        await this.sendFirmwareStatusNotification(
+          chargingStation,
+          FirmwareStatusEnumType.InstallScheduled,
+          requestId
+        )
+        await sleep(installTime - currentTime)
+      }
+    }
+
     await this.sendFirmwareStatusNotification(
       chargingStation,
       FirmwareStatusEnumType.Installing,
@@ -3049,6 +3120,15 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     logger.info(
       `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Firmware update simulation completed for requestId ${requestId.toString()}`
     )
+  }
+
+  private isValidFirmwareLocation (location: string): boolean {
+    try {
+      const url = new URL(location)
+      return url.protocol === 'http:' || url.protocol === 'https:' || url.protocol === 'ftp:'
+    } catch {
+      return false
+    }
   }
 
   /**

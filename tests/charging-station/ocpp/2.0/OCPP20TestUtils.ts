@@ -749,6 +749,8 @@ export interface MockCertificateManagerOptions {
   storeCertificateError?: Error
   /** Result to return from storeCertificate (default: { success: true }) */
   storeCertificateResult?: boolean
+  /** Result to return from validateCertificateX509 (default: { valid: true }) */
+  validateCertificateX509Result?: { reason?: string; valid: boolean }
 }
 
 // ============================================================================
@@ -843,6 +845,9 @@ export function createMockCertificateManager (options: MockCertificateManagerOpt
       return (
         cert.includes('-----BEGIN CERTIFICATE-----') && cert.includes('-----END CERTIFICATE-----')
       )
+    }),
+    validateCertificateX509: mock.fn(() => {
+      return options.validateCertificateX509Result ?? { valid: true }
     }),
   }
 }

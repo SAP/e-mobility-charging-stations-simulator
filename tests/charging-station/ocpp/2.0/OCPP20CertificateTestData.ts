@@ -96,3 +96,39 @@ SIb3DQEBCwUAA0EAexpired==
  * Empty PEM certificate for edge case testing.
  */
 export const EMPTY_PEM_CERTIFICATE = ''
+
+// ============================================================================
+// Real X.509 Certificates (parseable by node:crypto X509Certificate)
+// ============================================================================
+
+/**
+ * Valid self-signed X.509 certificate (EC P-256, CN=TestCA, valid 2026-2036).
+ * Parseable by node:crypto X509Certificate for X.509 structural validation tests.
+ */
+export const VALID_X509_PEM_CERTIFICATE = `-----BEGIN CERTIFICATE-----
+MIICBjCCAawCCQDuW/VTwcEHDTAKBggqhkjOPQQDAjARMQ8wDQYDVQQDDAZUZXN0
+Q0EwHhcNMjYwMzE1MTExNjQzWhcNMzYwMzEyMTExNjQzWjARMQ8wDQYDVQQDDAZU
+ZXN0Q0EwggFLMIIBAwYHKoZIzj0CATCB9wIBATAsBgcqhkjOPQEBAiEA/////wAA
+AAEAAAAAAAAAAAAAAAD///////////////8wWwQg/////wAAAAEAAAAAAAAAAAAA
+AAD///////////////wEIFrGNdiqOpPns+u9VXaYhrxlHQawzFOw9jvOPD4n0mBL
+AxUAxJ02CIbnBJNqZnjhE50mt4GffpAEQQRrF9Hy4SxCR/i85uVjpEDydwN9gS3r
+M6D0oTlF2JjClk/jQuL+Gn+bjufrSnwPnhYrzjNXazFezsu2QGg3v1H1AiEA////
+/wAAAAD//////////7zm+q2nF56E87nKwvxjJVECAQEDQgAEwcOlW27L1Aeb6kYl
+Swt1J0moUufzm1+KiBRQQqjIEQiDyuODUfsUk199Ecc/bwXCFnZn9JwdTsdjtGth
+uJXkljAKBggqhkjOPQQDAgNIADBFAiEApXdkBYZyW6gCZF9DofB0SJvxbi7aDybE
+IHCV6XLaqZACIHEFQs2oVgHqMTxx22E7ZffFpA5hNP021SFwJ9ujSYQj
+-----END CERTIFICATE-----`
+
+/**
+ * Expired self-signed X.509 certificate (EC P-256, CN=ExpiredTestCA, valid 2020-2021).
+ * Parseable by node:crypto X509Certificate; triggers expiration check.
+ */
+export const EXPIRED_X509_PEM_CERTIFICATE = `-----BEGIN CERTIFICATE-----
+MIIBLjCB1qADAgECAhRHkkXuRncB5xOMPnTt0pqA/uWOsTAKBggqhkjOPQQDAjAY
+MRYwFAYDVQQDDA1FeHBpcmVkVGVzdENBMB4XDTIwMDEwMTAwMDAwMFoXDTIxMDEw
+MTAwMDAwMFowGDEWMBQGA1UEAwwNRXhwaXJlZFRlc3RDQTBZMBMGByqGSM49AgEG
+CCqGSM49AwEHA0IABKuU0iAUoSQJrTDMZzdNZPLXgCNLmMS6PZkt0Ml8oBIRHTu0
+nR2Dm+OL4pHpa31dWSPRPeAZYUlsz8zER/rARNUwCgYIKoZIzj0EAwIDRwAwRAIg
+XvHyZ5eCRgOTBCMBDXvxxZXGaWFsrhq066F0MKd6D1ICICrQl8LxyYh72Bc0gWBG
+2LQtv+sPK1CmsMqp8G8DiFqY
+-----END CERTIFICATE-----`

@@ -56,6 +56,15 @@ export interface OCPP20CertificateManagerInterface {
     pemData: string
   ): Promise<StoreCertificateResult> | StoreCertificateResult
   validateCertificateFormat(pemData: unknown): boolean
+  validateCertificateX509(pem: string): ValidateCertificateX509Result
+}
+
+/**
+ * Result type for X.509 certificate validation
+ */
+export interface ValidateCertificateX509Result {
+  reason?: string
+  valid: boolean
 }
 
 /**
@@ -374,6 +383,34 @@ export class OCPP20CertificateManager {
       trimmed.includes(OCPP20CertificateManager.PEM_BEGIN_MARKER) &&
       trimmed.includes(OCPP20CertificateManager.PEM_END_MARKER)
     )
+  }
+
+  /**
+   * Validates a PEM certificate using X.509 structural parsing.
+   * Checks validity period (notBefore/notAfter) and issuer presence per A02.FR.06.
+   * @param pem - PEM-encoded certificate data
+   * @returns Validation result with reason on failure
+   */
+  public validateCertificateX509 (pem: string): ValidateCertificateX509Result {
+    try {
+      const cert = new X509Certificate(pem)
+      const now = new Date()
+      if (now < new Date(cert.validFrom)) {
+        return { reason: 'Certificate is not yet valid', valid: false }
+      }
+      if (now > new Date(cert.validTo)) {
+        return { reason: 'Certificate has expired', valid: false }
+      }
+      if (!cert.issuer?.trim()) {
+        return { reason: 'Certificate has no issuer', valid: false }
+      }
+      return { valid: true }
+    } catch (error) {
+      return {
+        reason: `Certificate parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        valid: false,
+      }
+    }
   }
 
   /**
