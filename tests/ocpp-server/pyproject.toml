@@ -1,14 +1,14 @@
-[tool.poetry]
+[project]
 name = "ocpp-server"
 version = "3.0.0"
 description = "OCPP2 mock server"
-authors = ["Jérôme Benoit <jerome.benoit@sap.com>"]
+authors = [{ name = "Jérôme Benoit", email = "jerome.benoit@sap.com" }]
 readme = "README.md"
-
-[tool.poetry.dependencies]
-python = "^3.12"
-websockets = "^15.0"
-ocpp = "^2.1.0"
+requires-python = ">=3.12,<4.0"
+dependencies = [
+    "websockets>=16.0,<17.0",
+    "ocpp>=2.1.0,<3.0.0",
+]
 
 [tool.poetry.group.dev.dependencies]
 taskipy = "^1"
@@ -62,7 +62,6 @@ exclude_also = [
     "if TYPE_CHECKING:",
     "if __name__ == .__main__.:",
 ]
-
 
 [build-system]
 requires = ["poetry-core"]
