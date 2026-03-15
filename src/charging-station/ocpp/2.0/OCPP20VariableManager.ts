@@ -63,6 +63,7 @@ export class OCPP20VariableManager {
   private readonly maxSetOverrides = new Map<string, string>() // composite key (lower case)
   private readonly minSetOverrides = new Map<string, string>() // composite key (lower case)
   private readonly runtimeOverrides = new Map<string, string>() // composite key (lower case)
+  private validated = false
 
   private constructor () {
     /* This is intentional */
@@ -112,6 +113,46 @@ export class OCPP20VariableManager {
     setVariableData: OCPP20SetVariableDataType[]
   ): OCPP20SetVariableResultType[] {
     this.validatePersistentMappings(chargingStation)
+
+    // Collect paired MinSet/MaxSet entries for atomic cross-validation
+    const pairedBounds = new Map<string, { maxValue?: string; minValue?: string }>()
+    for (const variableData of setVariableData) {
+      const resolvedAttr = variableData.attributeType ?? AttributeEnumType.Actual
+      if (resolvedAttr !== AttributeEnumType.MinSet && resolvedAttr !== AttributeEnumType.MaxSet) {
+        continue
+      }
+      const varKey = buildCaseInsensitiveCompositeKey(
+        variableData.component.name,
+        variableData.component.instance,
+        variableData.variable.name
+      )
+      const entry = pairedBounds.get(varKey) ?? {}
+      if (resolvedAttr === AttributeEnumType.MinSet) {
+        entry.minValue = variableData.attributeValue
+      } else {
+        entry.maxValue = variableData.attributeValue
+      }
+      pairedBounds.set(varKey, entry)
+    }
+
+    // Pre-apply coherent MinSet/MaxSet pairs so per-item cross-check sees paired values
+    const savedOverrides = new Map<
+      string,
+      { prevMax: string | undefined; prevMin: string | undefined }
+    >()
+    for (const [varKey, pair] of pairedBounds) {
+      if (pair.minValue == null || pair.maxValue == null) continue
+      const newMin = convertToIntOrNaN(pair.minValue)
+      const newMax = convertToIntOrNaN(pair.maxValue)
+      if (Number.isNaN(newMin) || Number.isNaN(newMax) || newMin > newMax) continue
+      savedOverrides.set(varKey, {
+        prevMax: this.maxSetOverrides.get(varKey),
+        prevMin: this.minSetOverrides.get(varKey),
+      })
+      this.minSetOverrides.set(varKey, pair.minValue)
+      this.maxSetOverrides.set(varKey, pair.maxValue)
+    }
+
     const results: OCPP20SetVariableResultType[] = []
     for (const variableData of setVariableData) {
       try {
@@ -134,10 +175,61 @@ export class OCPP20VariableManager {
         })
       }
     }
+
+    // Rollback pre-applied overrides for rejected items
+    for (const [varKey, saved] of savedOverrides) {
+      let minRejected = false
+      let maxRejected = false
+      for (let i = 0; i < setVariableData.length; i++) {
+        const data = setVariableData[i]
+        const resolvedAttr = data.attributeType ?? AttributeEnumType.Actual
+        if (resolvedAttr !== AttributeEnumType.MinSet && resolvedAttr !== AttributeEnumType.MaxSet) {
+          continue
+        }
+        const itemKey = buildCaseInsensitiveCompositeKey(
+          data.component.name,
+          data.component.instance,
+          data.variable.name
+        )
+        if (itemKey !== varKey) continue
+        if (
+          resolvedAttr === AttributeEnumType.MinSet &&
+          results[i].attributeStatus !== SetVariableStatusEnumType.Accepted
+        ) {
+          minRejected = true
+        }
+        if (
+          resolvedAttr === AttributeEnumType.MaxSet &&
+          results[i].attributeStatus !== SetVariableStatusEnumType.Accepted
+        ) {
+          maxRejected = true
+        }
+      }
+      if (minRejected) {
+        if (saved.prevMin != null) {
+          this.minSetOverrides.set(varKey, saved.prevMin)
+        } else {
+          this.minSetOverrides.delete(varKey)
+        }
+      }
+      if (maxRejected) {
+        if (saved.prevMax != null) {
+          this.maxSetOverrides.set(varKey, saved.prevMax)
+        } else {
+          this.maxSetOverrides.delete(varKey)
+        }
+      }
+    }
+
     return results
   }
 
+  public invalidateMappingsCache (): void {
+    this.validated = false
+  }
+
   public validatePersistentMappings (chargingStation: ChargingStation): void {
+    if (this.validated) return
     this.invalidVariables.clear()
     for (const metaKey of Object.keys(VARIABLE_REGISTRY)) {
       const variableMetadata = VARIABLE_REGISTRY[metaKey]
@@ -187,6 +279,7 @@ export class OCPP20VariableManager {
         }
       }
     }
+    this.validated = true
   }
 
   private getVariable (

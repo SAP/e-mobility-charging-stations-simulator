@@ -102,6 +102,7 @@ await describe('B05 - OCPP20VariableManager', async () => {
   afterEach(() => {
     standardCleanup()
     OCPP20VariableManager.getInstance().resetRuntimeOverrides()
+    OCPP20VariableManager.getInstance().invalidateMappingsCache()
   })
 
   await it('should return same instance when getInstance() called multiple times', () => {
@@ -2046,6 +2047,86 @@ await describe('B05 - OCPP20VariableManager', async () => {
       )
       assert.notStrictEqual(cfgAfter, undefined)
       assert.strictEqual(cfgAfter?.value, '7')
+    })
+  })
+
+  await it('should cache validatePersistentMappings and not re-run on second getVariables call', () => {
+    // Arrange
+    const manager = OCPP20VariableManager.getInstance()
+    const request: OCPP20GetVariableDataType[] = [
+      {
+        component: { name: OCPP20ComponentName.OCPPCommCtrlr },
+        variable: { name: OCPP20OptionalVariableName.HeartbeatInterval },
+      },
+    ]
+
+    // Act
+    const result1 = manager.getVariables(station, request)
+    const result2 = manager.getVariables(station, request)
+
+    // Assert
+    assert.strictEqual(result1[0].attributeStatus, GetVariableStatusEnumType.Accepted)
+    assert.strictEqual(result2[0].attributeStatus, GetVariableStatusEnumType.Accepted)
+    assert.strictEqual(result1[0].attributeValue, result2[0].attributeValue)
+    manager.invalidateMappingsCache()
+    const result3 = manager.getVariables(station, request)
+    assert.strictEqual(result3[0].attributeStatus, GetVariableStatusEnumType.Accepted)
+    assert.strictEqual(result3[0].attributeValue, result1[0].attributeValue)
+  })
+
+  await describe('MinSet/MaxSet atomicity tests', async () => {
+    let manager: OCPP20VariableManager
+    const registryKey = `${OCPP20ComponentName.TxCtrlr as string}::${OCPP20RequiredVariableName.EVConnectionTimeOut as string}`
+    let originalSupportedAttributes: AttributeEnumType[]
+
+    beforeEach(() => {
+      manager = OCPP20VariableManager.getInstance()
+      originalSupportedAttributes = [...VARIABLE_REGISTRY[registryKey].supportedAttributes]
+      VARIABLE_REGISTRY[registryKey].supportedAttributes = [
+        AttributeEnumType.Actual,
+        AttributeEnumType.MinSet,
+        AttributeEnumType.MaxSet,
+      ]
+    })
+
+    afterEach(() => {
+      VARIABLE_REGISTRY[registryKey].supportedAttributes = originalSupportedAttributes
+    })
+
+    await it('should accept paired MinSet and MaxSet in a single request when newMin <= newMax', () => {
+      // Arrange: establish a low MaxSet override that would cause individual MinSet=20 to fail
+      const setupResult = manager.setVariables(station, [
+        {
+          attributeType: AttributeEnumType.MaxSet,
+          attributeValue: '10',
+          component: { name: OCPP20ComponentName.TxCtrlr },
+          variable: { name: OCPP20RequiredVariableName.EVConnectionTimeOut },
+        },
+      ])
+      assert.strictEqual(setupResult[0].attributeStatus, SetVariableStatusEnumType.Accepted)
+
+      // Act: send paired MinSet=20 + MaxSet=30 in a single request
+      const results = manager.setVariables(station, [
+        {
+          attributeType: AttributeEnumType.MinSet,
+          attributeValue: '20',
+          component: { name: OCPP20ComponentName.TxCtrlr },
+          variable: { name: OCPP20RequiredVariableName.EVConnectionTimeOut },
+        },
+        {
+          attributeType: AttributeEnumType.MaxSet,
+          attributeValue: '30',
+          component: { name: OCPP20ComponentName.TxCtrlr },
+          variable: { name: OCPP20RequiredVariableName.EVConnectionTimeOut },
+        },
+      ])
+
+      // Assert: both attributes accepted as a coherent pair
+      assert.strictEqual(results.length, 2)
+      assert.strictEqual(results[0].attributeStatus, SetVariableStatusEnumType.Accepted)
+      assert.strictEqual(results[0].attributeType, AttributeEnumType.MinSet)
+      assert.strictEqual(results[1].attributeStatus, SetVariableStatusEnumType.Accepted)
+      assert.strictEqual(results[1].attributeType, AttributeEnumType.MaxSet)
     })
   })
 })
