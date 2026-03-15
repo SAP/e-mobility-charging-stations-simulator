@@ -8,3 +8,4 @@ package-lock.json
 performanceRecords.json
 *.clinic-*
 *-audit.json
+.mypy_cache
