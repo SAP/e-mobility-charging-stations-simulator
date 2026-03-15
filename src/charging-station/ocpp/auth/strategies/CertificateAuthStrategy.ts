@@ -11,6 +11,8 @@ import { OCPPVersion } from '../../../../types/index.js'
 import { isNotEmptyString, logger, sleep } from '../../../../utils/index.js'
 import { AuthenticationMethod, AuthorizationStatus, IdentifierType } from '../types/AuthTypes.js'
 
+const CERTIFICATE_VERIFY_DELAY_MS = 100
+
 /**
  * Certificate-based authentication strategy for OCPP 2.0+
  *
@@ -240,7 +242,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
     config: AuthConfiguration
   ): Promise<boolean> {
     // Simulate validation delay
-    await sleep(100)
+    await sleep(CERTIFICATE_VERIFY_DELAY_MS)
 
     // In a real implementation, this would:
     // 1. Load trusted CA certificates from configuration

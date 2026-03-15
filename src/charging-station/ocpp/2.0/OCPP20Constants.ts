@@ -138,11 +138,20 @@ export class OCPP20Constants extends OCPPConstants {
     // { from: OCPP20ConnectorStatusEnumType.Faulted, to: OCPP20ConnectorStatusEnumType.Faulted }
   ])
 
+  static readonly FIRMWARE_INSTALL_DELAY_MS = 5000
+  static readonly FIRMWARE_STATUS_DELAY_MS = 2000
+  static readonly FIRMWARE_VERIFY_DELAY_MS = 500
+
   /**
    * Default timeout in milliseconds for async OCPP 2.0 handler operations
    * (e.g., certificate file I/O). Prevents handlers from hanging indefinitely.
    */
   static readonly HANDLER_TIMEOUT_MS = 30_000
+
+  static readonly LOG_UPLOAD_STEP_DELAY_MS = 1000
+
+  static readonly RESET_DELAY_MS = 1000
+  static readonly RESET_IDLE_MONITOR_INTERVAL_MS = 5000
 
   /**
    * Set of MessageTriggerEnumType values that the charging station supports

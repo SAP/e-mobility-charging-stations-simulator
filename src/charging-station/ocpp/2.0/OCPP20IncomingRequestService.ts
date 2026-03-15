@@ -3107,7 +3107,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
             `${chargingStation.logPrefix()} ${moduleName}.scheduleEvseReset: EVSE ${evseId.toString()} reset completed`
           )
         }
-      }, 1000)
+      }, OCPP20Constants.RESET_DELAY_MS)
     })
   }
 
@@ -3130,7 +3130,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       } else {
         clearInterval(monitorInterval)
       }
-    }, 5000)
+    }, OCPP20Constants.RESET_IDLE_MONITOR_INTERVAL_MS)
   }
 
   /**
@@ -3151,7 +3151,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           )
         })
       }
-    }, 5000)
+    }, OCPP20Constants.RESET_IDLE_MONITOR_INTERVAL_MS)
   }
 
   private selectAvailableEvse (chargingStation: ChargingStation): number | undefined {
@@ -3433,7 +3433,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       requestId
     )
 
-    await sleep(2000)
+    await sleep(OCPP20Constants.FIRMWARE_STATUS_DELAY_MS)
     if (checkAborted()) return
 
     // H9: If firmware location is empty or malformed, send DownloadFailed and stop
@@ -3457,7 +3457,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     )
 
     if (signature != null) {
-      await sleep(500)
+      await sleep(OCPP20Constants.FIRMWARE_VERIFY_DELAY_MS)
       if (checkAborted()) return
       await this.sendFirmwareStatusNotification(
         chargingStation,
@@ -3491,7 +3491,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       logger.debug(
         `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Waiting for active transactions to end before installing (L01.FR.06)`
       )
-      await sleep(5000)
+      await sleep(OCPP20Constants.FIRMWARE_INSTALL_DELAY_MS)
     }
     if (checkAborted()) return
 
@@ -3501,7 +3501,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       requestId
     )
 
-    await sleep(1000)
+    await sleep(OCPP20Constants.RESET_DELAY_MS)
     if (checkAborted()) return
     await this.sendFirmwareStatusNotification(
       chargingStation,
@@ -3538,7 +3538,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       requestId
     )
 
-    await sleep(1000)
+    await sleep(OCPP20Constants.LOG_UPLOAD_STEP_DELAY_MS)
     await this.sendLogStatusNotification(
       chargingStation,
       UploadLogStatusEnumType.Uploaded,
