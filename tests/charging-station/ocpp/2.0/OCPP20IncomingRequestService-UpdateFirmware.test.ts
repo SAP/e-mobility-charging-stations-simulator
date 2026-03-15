@@ -365,17 +365,15 @@ await describe('L01/L02 - UpdateFirmware', async () => {
           requestId: 101,
         }
 
-        const secondResponse = testable.handleRequestUpdateFirmware(
-          trackingStation,
-          secondRequest
-        )
+        const secondResponse = testable.handleRequestUpdateFirmware(trackingStation, secondRequest)
         assert.strictEqual(secondResponse.status, UpdateFirmwareStatusEnumType.Accepted)
 
         await flushMicrotasks()
 
         const cancelNotification = sentRequests.find(
           r =>
-            (r.command as OCPP20RequestCommand) === OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION &&
+            (r.command as OCPP20RequestCommand) ===
+              OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION &&
             r.payload.requestId === 100 &&
             (r.payload.status as FirmwareStatusEnumType) === FirmwareStatusEnumType.DownloadFailed
         )
@@ -410,7 +408,10 @@ await describe('L01/L02 - UpdateFirmware', async () => {
 
         await flushMicrotasks()
         assert.strictEqual(sentRequests.length, 1)
-        assert.strictEqual(sentRequests[0].command, OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION)
+        assert.strictEqual(
+          sentRequests[0].command,
+          OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION
+        )
         assert.strictEqual(sentRequests[0].payload.status, FirmwareStatusEnumType.Downloading)
         assert.strictEqual(sentRequests[0].payload.requestId, 1)
 
@@ -533,7 +534,9 @@ await describe('L01/L02 - UpdateFirmware', async () => {
         await flushMicrotasks()
 
         const firmwareNotifications = sentRequests.filter(
-          r => (r.command as OCPP20RequestCommand) === OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION
+          r =>
+            (r.command as OCPP20RequestCommand) ===
+            OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION
         )
         assert.strictEqual(firmwareNotifications.length, 4)
         for (const req of firmwareNotifications) {

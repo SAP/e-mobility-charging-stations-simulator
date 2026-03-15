@@ -1227,7 +1227,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         chargingStation,
         'InvalidChargingStationCertificate',
         `X.509 validation failed: ${x509Result.reason ?? 'Unknown'}`
-      ).catch(() => { /* intentional no-op */ })
+      ).catch(() => {
+        /* intentional no-op */
+      })
       return {
         status: GenericStatus.Rejected,
         statusInfo: {
@@ -1388,8 +1390,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         return {
           status: CustomerInformationStatusEnumType.Invalid,
           statusInfo: {
-            additionalInfo:
-              'Exactly one customer identifier must be provided when report=true',
+            additionalInfo: 'Exactly one customer identifier must be provided when report=true',
             reasonCode: ReasonCodeEnumType.InvalidValue,
           },
         }
@@ -1478,10 +1479,13 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       // If so, reject the deletion request
       const installedCerts = chargingStation.certificateManager.getInstalledCertificates(
         chargingStation.stationInfo?.hashId ?? '',
-        [CertificateSigningUseEnumType.ChargingStationCertificate as unknown as InstallCertificateUseEnumType]
+        [
+          CertificateSigningUseEnumType.ChargingStationCertificate as unknown as InstallCertificateUseEnumType,
+        ]
       )
 
-      const installedCertsResult = installedCerts instanceof Promise ? await installedCerts : installedCerts
+      const installedCertsResult =
+        installedCerts instanceof Promise ? await installedCerts : installedCerts
 
       for (const certChain of installedCertsResult.certificateHashDataChain) {
         const certHash = certChain.certificateHashData
@@ -2044,7 +2048,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     )
 
     // Validate configurationSlot is a positive integer (B09.FR.02)
-    if (!Number.isInteger(commandPayload.configurationSlot) || commandPayload.configurationSlot <= 0) {
+    if (
+      !Number.isInteger(commandPayload.configurationSlot) ||
+      commandPayload.configurationSlot <= 0
+    ) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestSetNetworkProfile: Invalid configurationSlot: ${commandPayload.configurationSlot.toString()}`
       )

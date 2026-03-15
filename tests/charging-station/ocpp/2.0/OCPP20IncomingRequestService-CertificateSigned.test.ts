@@ -371,13 +371,12 @@ await describe('I04 - CertificateSigned', async () => {
       assert.strictEqual(response.status, GenericStatus.Rejected)
 
       const securityEvents = sentRequests.filter(
-        r => (r.command as OCPP20RequestCommand) === OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION
+        r =>
+          (r.command as OCPP20RequestCommand) === OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION
       )
       assert.strictEqual(securityEvents.length, 1)
       assert.strictEqual(securityEvents[0].payload.type, 'InvalidChargingStationCertificate')
-      assert.ok(
-        (securityEvents[0].payload.techInfo as string).includes('Certificate expired')
-      )
+      assert.ok((securityEvents[0].payload.techInfo as string).includes('Certificate expired'))
     })
   })
 })

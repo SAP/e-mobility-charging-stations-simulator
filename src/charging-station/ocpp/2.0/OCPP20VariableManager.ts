@@ -187,7 +187,10 @@ export class OCPP20VariableManager {
       for (let i = 0; i < setVariableData.length; i++) {
         const data = setVariableData[i]
         const resolvedAttr = data.attributeType ?? AttributeEnumType.Actual
-        if (resolvedAttr !== AttributeEnumType.MinSet && resolvedAttr !== AttributeEnumType.MaxSet) {
+        if (
+          resolvedAttr !== AttributeEnumType.MinSet &&
+          resolvedAttr !== AttributeEnumType.MaxSet
+        ) {
           continue
         }
         const itemKey = buildCaseInsensitiveCompositeKey(

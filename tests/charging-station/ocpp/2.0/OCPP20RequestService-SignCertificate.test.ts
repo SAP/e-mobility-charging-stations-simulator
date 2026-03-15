@@ -152,7 +152,10 @@ await describe('I02 - SignCertificate Request', async () => {
       const derBytes = Buffer.from(base64Body, 'base64')
       const stationId = station.stationInfo?.chargingStationId ?? ''
       assert.ok(stationId.length > 0, 'Station ID must not be empty')
-      assert.ok(derBytes.includes(Buffer.from(stationId, 'utf-8')), 'CSR DER must contain station ID')
+      assert.ok(
+        derBytes.includes(Buffer.from(stationId, 'utf-8')),
+        'CSR DER must contain station ID'
+      )
     })
 
     await it('should include OrganizationName in CSR subject DN', async () => {

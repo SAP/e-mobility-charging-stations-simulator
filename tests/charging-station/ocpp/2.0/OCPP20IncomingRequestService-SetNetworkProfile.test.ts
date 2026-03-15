@@ -150,10 +150,7 @@ await describe('B43 - SetNetworkProfile', async () => {
     } as unknown as OCPP20SetNetworkProfileRequest
 
     // Act
-    const response = testableService.handleRequestSetNetworkProfile(
-      station,
-      invalidPayload
-    )
+    const response = testableService.handleRequestSetNetworkProfile(station, invalidPayload)
 
     // Assert
     assert.notStrictEqual(response, undefined)
