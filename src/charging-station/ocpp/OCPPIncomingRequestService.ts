@@ -17,7 +17,11 @@ const ajvFormats = _ajvFormats.default
 const moduleName = 'OCPPIncomingRequestService'
 
 export abstract class OCPPIncomingRequestService extends EventEmitter {
-  private static instance: null | OCPPIncomingRequestService = null
+  private static readonly instances = new Map<
+    new () => OCPPIncomingRequestService,
+    OCPPIncomingRequestService
+  >()
+
   protected readonly ajv: Ajv
   protected abstract payloadValidatorFunctions: Map<
     IncomingRequestCommand,
@@ -39,8 +43,10 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
   }
 
   public static getInstance<T extends OCPPIncomingRequestService>(this: new () => T): T {
-    OCPPIncomingRequestService.instance ??= new this()
-    return OCPPIncomingRequestService.instance as T
+    if (!OCPPIncomingRequestService.instances.has(this)) {
+      OCPPIncomingRequestService.instances.set(this, new this())
+    }
+    return OCPPIncomingRequestService.instances.get(this) as T
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-unnecessary-type-parameters

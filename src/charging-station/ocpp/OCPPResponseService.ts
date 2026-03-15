@@ -21,7 +21,7 @@ const ajvFormats = _ajvFormats.default
 const moduleName = 'OCPPResponseService'
 
 export abstract class OCPPResponseService {
-  private static instance: null | OCPPResponseService = null
+  private static readonly instances = new Map<new () => OCPPResponseService, OCPPResponseService>()
   public abstract incomingRequestResponsePayloadValidateFunctions: Map<
     IncomingRequestCommand,
     ValidateFunction<JsonType>
@@ -50,8 +50,10 @@ export abstract class OCPPResponseService {
   }
 
   public static getInstance<T extends OCPPResponseService>(this: new () => T): T {
-    OCPPResponseService.instance ??= new this()
-    return OCPPResponseService.instance as T
+    if (!OCPPResponseService.instances.has(this)) {
+      OCPPResponseService.instances.set(this, new this())
+    }
+    return OCPPResponseService.instances.get(this) as T
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters

@@ -49,7 +49,11 @@ const defaultRequestParams: RequestParams = {
 }
 
 export abstract class OCPPRequestService {
-  private static instance: null | OCPPRequestService = null
+  private static readonly instances = new Map<
+    new (ocppResponseService: OCPPResponseService) => OCPPRequestService,
+    OCPPRequestService
+  >()
+
   protected readonly ajv: Ajv
   protected abstract payloadValidatorFunctions: Map<RequestCommand, ValidateFunction<JsonType>>
   private readonly ocppResponseService: OCPPResponseService
@@ -78,8 +82,10 @@ export abstract class OCPPRequestService {
     this: new (ocppResponseService: OCPPResponseService) => T,
     ocppResponseService: OCPPResponseService
   ): T {
-    OCPPRequestService.instance ??= new this(ocppResponseService)
-    return OCPPRequestService.instance as T
+    if (!OCPPRequestService.instances.has(this)) {
+      OCPPRequestService.instances.set(this, new this(ocppResponseService))
+    }
+    return OCPPRequestService.instances.get(this) as T
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
