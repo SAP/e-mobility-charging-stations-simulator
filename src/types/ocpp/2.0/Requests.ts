@@ -1,5 +1,5 @@
 import type { EmptyObject } from '../../EmptyObject.js'
-import type { JsonObject } from '../../JsonType.js'
+import type { JsonObject, JsonType } from '../../JsonType.js'
 import type { UUIDv4 } from '../../UUID.js'
 import type {
   BootReasonEnumType,
@@ -105,7 +105,7 @@ export interface OCPP20CustomerInformationRequest extends JsonObject {
 
 export interface OCPP20DataTransferRequest extends JsonObject {
   customData?: CustomDataType
-  data?: JsonObject
+  data?: JsonType
   messageId?: string
   vendorId: string
 }

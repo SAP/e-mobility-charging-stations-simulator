@@ -133,7 +133,7 @@ export interface ReportDataType extends JsonObject {
   component: ComponentType
   customData?: CustomDataType
   variable: VariableType
-  variableAttribute?: VariableAttributeType[]
+  variableAttribute: VariableAttributeType[]
   variableCharacteristics?: VariableCharacteristicsType
 }
 
@@ -151,7 +151,7 @@ export interface VariableType extends JsonObject {
 }
 
 interface VariableAttributeType extends JsonObject {
-  type?: string
+  type?: AttributeEnumType
   value?: string
 }
 

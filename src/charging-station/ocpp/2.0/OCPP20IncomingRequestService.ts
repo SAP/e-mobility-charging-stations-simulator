@@ -168,6 +168,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     IncomingRequestHandler
   >
 
+  private lastFirmwareStatus?: FirmwareStatusEnumType
+
+  private readonly preInoperativeConnectorStatus = new Map<number, OCPP20ConnectorStatusEnumType>()
+
   private readonly reportDataCache: Map<number, ReportDataType[]>
 
   public constructor () {
@@ -281,7 +285,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         request: OCPP20UpdateFirmwareRequest,
         response: OCPP20UpdateFirmwareResponse
       ) => {
-        if (response.status === UpdateFirmwareStatusEnumType.Accepted) {
+        if (
+          response.status === UpdateFirmwareStatusEnumType.Accepted ||
+          response.status === UpdateFirmwareStatusEnumType.AcceptedCanceled
+        ) {
           this.simulateFirmwareUpdateLifecycle(
             chargingStation,
             request.requestId,
@@ -359,14 +366,20 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               >(chargingStation, OCPP20RequestCommand.BOOT_NOTIFICATION, chargingStation.bootNotificationRequest as OCPP20BootNotificationRequest, { skipBufferingOnError: true, triggerMessage: true })
               .catch(errorHandler)
             break
-          case MessageTriggerEnumType.FirmwareStatusNotification:
+          case MessageTriggerEnumType.FirmwareStatusNotification: {
+            const firmwareStatus =
+              this.lastFirmwareStatus == null ||
+              this.lastFirmwareStatus === FirmwareStatusEnumType.Installed
+                ? FirmwareStatusEnumType.Idle
+                : this.lastFirmwareStatus
             chargingStation.ocppRequestService
               .requestHandler<
                 OCPP20FirmwareStatusNotificationRequest,
                 OCPP20FirmwareStatusNotificationResponse
-              >(chargingStation, OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION, { status: FirmwareStatusEnumType.Idle }, { skipBufferingOnError: true, triggerMessage: true })
+              >(chargingStation, OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION, { requestId: this.activeFirmwareUpdateRequestId, status: firmwareStatus }, { skipBufferingOnError: true, triggerMessage: true })
               .catch(errorHandler)
             break
+          }
           case MessageTriggerEnumType.Heartbeat:
             chargingStation.ocppRequestService
               .requestHandler<
@@ -719,7 +732,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               },
               variableAttribute: [
                 {
-                  type: AttributeEnumType.Actual as string,
+                  type: AttributeEnumType.Actual,
                   value: configKey.value,
                 },
               ],
@@ -740,7 +753,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               component: { name: OCPP20ComponentName.ChargingStation },
               variable: { name: OCPP20DeviceInfoVariableName.Model },
               variableAttribute: [
-                { type: AttributeEnumType.Actual as string, value: stationInfo.chargePointModel },
+                { type: AttributeEnumType.Actual, value: stationInfo.chargePointModel },
               ],
               variableCharacteristics: { dataType: DataEnumType.string, supportsMonitoring: false },
             })
@@ -750,7 +763,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               component: { name: OCPP20ComponentName.ChargingStation },
               variable: { name: OCPP20DeviceInfoVariableName.VendorName },
               variableAttribute: [
-                { type: AttributeEnumType.Actual as string, value: stationInfo.chargePointVendor },
+                { type: AttributeEnumType.Actual, value: stationInfo.chargePointVendor },
               ],
               variableCharacteristics: { dataType: DataEnumType.string, supportsMonitoring: false },
             })
@@ -761,7 +774,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               variable: { name: OCPP20DeviceInfoVariableName.SerialNumber },
               variableAttribute: [
                 {
-                  type: AttributeEnumType.Actual as string,
+                  type: AttributeEnumType.Actual,
                   value: stationInfo.chargePointSerialNumber,
                 },
               ],
@@ -773,7 +786,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               component: { name: OCPP20ComponentName.ChargingStation },
               variable: { name: OCPP20DeviceInfoVariableName.FirmwareVersion },
               variableAttribute: [
-                { type: AttributeEnumType.Actual as string, value: stationInfo.firmwareVersion },
+                { type: AttributeEnumType.Actual, value: stationInfo.firmwareVersion },
               ],
               variableCharacteristics: { dataType: DataEnumType.string, supportsMonitoring: false },
             })
@@ -784,7 +797,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           for (const configKey of chargingStation.ocppConfiguration.configurationKey) {
             const variableAttributes = []
             variableAttributes.push({
-              type: AttributeEnumType.Actual as string,
+              type: AttributeEnumType.Actual,
               value: configKey.value,
             })
 
@@ -834,7 +847,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           const grouped = new Map<
             string,
             {
-              attributes: { type: string; value?: string }[]
+              attributes: { type: AttributeEnumType; value?: string }[]
               component: ReportDataType['component']
               dataType: DataEnumType
               variable: ReportDataType['variable']
@@ -859,7 +872,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
             if (r.attributeStatus === GetVariableStatusEnumType.Accepted) {
               const entry = grouped.get(key)
               if (entry) {
-                entry.attributes.push({ type: r.attributeType as string, value: r.attributeValue })
+                entry.attributes.push({
+                  type: r.attributeType ?? AttributeEnumType.Actual,
+                  value: r.attributeValue,
+                })
               }
             }
           }
@@ -870,10 +886,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
                 AttributeEnumType.MinSet,
                 AttributeEnumType.MaxSet,
               ]
-              return (
-                order.indexOf(a.type as AttributeEnumType) -
-                order.indexOf(b.type as AttributeEnumType)
-              )
+              return order.indexOf(a.type) - order.indexOf(b.type)
             })
             if (entry.attributes.length > 0) {
               reportData.push({
@@ -899,9 +912,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
                 name: OCPP20ComponentName.EVSE,
               },
               variable: { name: OCPP20DeviceInfoVariableName.AvailabilityState },
-              variableAttribute: [
-                { type: AttributeEnumType.Actual as string, value: evse.availability },
-              ],
+              variableAttribute: [{ type: AttributeEnumType.Actual, value: evse.availability }],
               variableCharacteristics: { dataType: DataEnumType.string, supportsMonitoring: true },
             })
             if (evse.connectors.size > 0) {
@@ -914,7 +925,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
                   variable: { name: OCPP20DeviceInfoVariableName.ConnectorType },
                   variableAttribute: [
                     {
-                      type: AttributeEnumType.Actual as string,
+                      type: AttributeEnumType.Actual,
                       value: connector.type ?? ConnectorEnumType.Unknown,
                     },
                   ],
@@ -937,7 +948,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
                 variable: { name: OCPP20DeviceInfoVariableName.ConnectorType },
                 variableAttribute: [
                   {
-                    type: AttributeEnumType.Actual as string,
+                    type: AttributeEnumType.Actual,
                     value: connector.type ?? ConnectorEnumType.Unknown,
                   },
                 ],
@@ -959,7 +970,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               component: { name: OCPP20ComponentName.ChargingStation },
               variable: { name: OCPP20DeviceInfoVariableName.Model },
               variableAttribute: [
-                { type: AttributeEnumType.Actual as string, value: stationInfo.chargePointModel },
+                { type: AttributeEnumType.Actual, value: stationInfo.chargePointModel },
               ],
               variableCharacteristics: { dataType: DataEnumType.string, supportsMonitoring: false },
             })
@@ -969,7 +980,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               component: { name: OCPP20ComponentName.ChargingStation },
               variable: { name: OCPP20DeviceInfoVariableName.VendorName },
               variableAttribute: [
-                { type: AttributeEnumType.Actual as string, value: stationInfo.chargePointVendor },
+                { type: AttributeEnumType.Actual, value: stationInfo.chargePointVendor },
               ],
               variableCharacteristics: { dataType: DataEnumType.string, supportsMonitoring: false },
             })
@@ -979,7 +990,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               component: { name: OCPP20ComponentName.ChargingStation },
               variable: { name: OCPP20DeviceInfoVariableName.FirmwareVersion },
               variableAttribute: [
-                { type: AttributeEnumType.Actual as string, value: stationInfo.firmwareVersion },
+                { type: AttributeEnumType.Actual, value: stationInfo.firmwareVersion },
               ],
               variableCharacteristics: { dataType: DataEnumType.string, supportsMonitoring: false },
             })
@@ -991,7 +1002,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           variable: { name: OCPP20DeviceInfoVariableName.AvailabilityState },
           variableAttribute: [
             {
-              type: AttributeEnumType.Actual as string,
+              type: AttributeEnumType.Actual,
               value: chargingStation.inAcceptedState()
                 ? OCPP20ConnectorStatusEnumType.Available
                 : OCPP20ConnectorStatusEnumType.Unavailable,
@@ -1008,9 +1019,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
                 name: OCPP20ComponentName.EVSE,
               },
               variable: { name: OCPP20DeviceInfoVariableName.AvailabilityState },
-              variableAttribute: [
-                { type: AttributeEnumType.Actual as string, value: evse.availability },
-              ],
+              variableAttribute: [{ type: AttributeEnumType.Actual, value: evse.availability }],
               variableCharacteristics: { dataType: DataEnumType.string, supportsMonitoring: true },
             })
           }
@@ -1025,7 +1034,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
                 variable: { name: OCPP20DeviceInfoVariableName.AvailabilityState },
                 variableAttribute: [
                   {
-                    type: AttributeEnumType.Actual as string,
+                    type: AttributeEnumType.Actual,
                     value: connector.status ?? ConnectorStatusEnum.Unavailable,
                   },
                 ],
@@ -1056,6 +1065,15 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
+  private getRestoredConnectorStatus (connectorId: number): OCPP20ConnectorStatusEnumType {
+    const saved = this.preInoperativeConnectorStatus.get(connectorId)
+    if (saved != null) {
+      this.preInoperativeConnectorStatus.delete(connectorId)
+      return saved
+    }
+    return OCPP20ConnectorStatusEnumType.Available
+  }
+
   private getTxUpdatedInterval (chargingStation: ChargingStation): number {
     const variableManager = OCPP20VariableManager.getInstance()
     const results = variableManager.getVariables(chargingStation, [
@@ -1071,6 +1089,58 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
     return secondsToMilliseconds(Constants.DEFAULT_TX_UPDATED_INTERVAL)
+  }
+
+  private handleConnectorChangeAvailability (
+    chargingStation: ChargingStation,
+    evseId: number,
+    connectorId: number,
+    operationalStatus: OperationalStatusEnumType,
+    newConnectorStatus: OCPP20ConnectorStatusEnumType
+  ): OCPP20ChangeAvailabilityResponse {
+    if (!chargingStation.evses.has(evseId)) {
+      return {
+        status: ChangeAvailabilityStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: `EVSE ${evseId.toString()} does not exist`,
+          reasonCode: ReasonCodeEnumType.UnknownEvse,
+        },
+      }
+    }
+
+    const evseStatus = chargingStation.getEvseStatus(evseId)
+    if (!evseStatus?.connectors.has(connectorId)) {
+      return {
+        status: ChangeAvailabilityStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: `Connector ${connectorId.toString()} on EVSE ${evseId.toString()} does not exist`,
+          reasonCode: ReasonCodeEnumType.UnknownConnectorId,
+        },
+      }
+    }
+
+    const resolvedStatus =
+      operationalStatus === OperationalStatusEnumType.Operative
+        ? this.getRestoredConnectorStatus(connectorId)
+        : newConnectorStatus
+
+    sendAndSetConnectorStatus(
+      chargingStation,
+      connectorId,
+      resolvedStatus as ConnectorStatusEnum
+    ).catch((error: unknown) => {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.handleConnectorChangeAvailability: Error sending status notification for connector ${connectorId.toString()}:`,
+        error
+      )
+    })
+
+    logger.info(
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: Connector ${connectorId.toString()} on EVSE ${evseId.toString()} set to ${operationalStatus}`
+    )
+    return {
+      status: ChangeAvailabilityStatusEnumType.Accepted,
+    }
   }
 
   private handleCsLevelInoperative (
@@ -1147,7 +1217,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     if (evseStatus != null) {
       evseStatus.availability = operationalStatus
     }
-    this.sendEvseStatusNotifications(chargingStation, evseId, newConnectorStatus)
+    if (operationalStatus === OperationalStatusEnumType.Operative) {
+      this.sendRestoredEvseStatusNotifications(chargingStation, evseId)
+    } else {
+      this.sendEvseStatusNotifications(chargingStation, evseId, newConnectorStatus)
+    }
 
     logger.info(
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: EVSE ${evseId.toString()} set to ${operationalStatus}`
@@ -1318,6 +1392,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: Received ChangeAvailability request with operationalStatus=${operationalStatus}${evseIdLabel}`
     )
 
+    if (operationalStatus === OperationalStatusEnumType.Inoperative) {
+      // G03.FR.07: Save current connector statuses before setting Inoperative
+      this.savePreInoperativeStatuses(chargingStation, evse?.id)
+    }
+
     const newConnectorStatus =
       operationalStatus === OperationalStatusEnumType.Inoperative
         ? OCPP20ConnectorStatusEnumType.Unavailable
@@ -1325,6 +1404,16 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     // EVSE-level change
     if (evse?.id != null && evse.id > 0) {
+      if (evse.connectorId != null) {
+        // Connector-level targeting
+        return this.handleConnectorChangeAvailability(
+          chargingStation,
+          evse.id,
+          evse.connectorId,
+          operationalStatus,
+          newConnectorStatus
+        )
+      }
       return this.handleEvseChangeAvailability(
         chargingStation,
         evse.id,
@@ -1351,7 +1440,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         evseStatus.availability = operationalStatus
       }
     }
-    this.sendAllConnectorsStatusNotifications(chargingStation, newConnectorStatus)
+    if (operationalStatus === OperationalStatusEnumType.Operative) {
+      this.sendRestoredAllConnectorsStatusNotifications(chargingStation)
+    } else {
+      this.sendAllConnectorsStatusNotifications(chargingStation, newConnectorStatus)
+    }
 
     logger.info(
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: Charging station set to ${operationalStatus}`
@@ -2071,8 +2164,53 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
-    // B09.FR.04/FR.05: securityProfile downgrade and slot-in-priority checks not implemented
-    // (simulator limitation — would require persistent device model state)
+    const variableManager = OCPP20VariableManager.getInstance()
+    const currentSecurityProfileResults = variableManager.getVariables(chargingStation, [
+      {
+        attributeType: AttributeEnumType.Actual,
+        component: { name: OCPP20ComponentName.SecurityCtrlr },
+        variable: { name: OCPP20RequiredVariableName.SecurityProfile },
+      },
+    ])
+    const currentSecurityProfile = Number(currentSecurityProfileResults[0]?.attributeValue ?? '0')
+    const newSecurityProfile = commandPayload.connectionData.securityProfile
+    if (newSecurityProfile < currentSecurityProfile) {
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestSetNetworkProfile: Rejected security profile downgrade: ${newSecurityProfile.toString()} < ${currentSecurityProfile.toString()}`
+      )
+      return {
+        status: SetNetworkProfileStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: `Security profile downgrade not allowed: current=${currentSecurityProfile.toString()}, requested=${newSecurityProfile.toString()}`,
+          reasonCode: ReasonCodeEnumType.NoSecurityDowngrade,
+        },
+      }
+    }
+
+    const priorityResults = variableManager.getVariables(chargingStation, [
+      {
+        attributeType: AttributeEnumType.Actual,
+        component: { name: OCPP20ComponentName.OCPPCommCtrlr },
+        variable: { name: OCPP20RequiredVariableName.NetworkConfigurationPriority },
+      },
+    ])
+    const priorityValue = priorityResults[0]?.attributeValue ?? ''
+    if (priorityValue.length > 0) {
+      const priorities = priorityValue.split(',').map(Number)
+      if (!priorities.includes(commandPayload.configurationSlot)) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestSetNetworkProfile: Slot ${commandPayload.configurationSlot.toString()} not in NetworkConfigurationPriority`
+        )
+        return {
+          status: SetNetworkProfileStatusEnumType.Rejected,
+          statusInfo: {
+            additionalInfo: `Configuration slot ${commandPayload.configurationSlot.toString()} is not in NetworkConfigurationPriority list`,
+            reasonCode: ReasonCodeEnumType.InvalidNetworkConf,
+          },
+        }
+      }
+    }
+
     logger.info(
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestSetNetworkProfile: Accepting SetNetworkProfile request for slot ${commandPayload.configurationSlot.toString()}`
     )
@@ -2097,22 +2235,29 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Remote start transaction request received on EVSE ${evseId?.toString() ?? 'undefined'} with idToken ${idToken.idToken} and remoteStartId ${remoteStartId.toString()}`
     )
 
-    if (evseId == null) {
-      const errorMsg = 'EVSE ID is required for RequestStartTransaction'
-      logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: ${errorMsg}`
-      )
-      throw new OCPPError(
-        ErrorType.PROPERTY_CONSTRAINT_VIOLATION,
-        errorMsg,
-        OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
-        commandPayload
+    let resolvedEvseId = evseId
+    if (resolvedEvseId == null) {
+      resolvedEvseId = this.selectAvailableEvse(chargingStation)
+      if (resolvedEvseId == null) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: No available EVSE for remote start`
+        )
+        return {
+          status: RequestStartStopStatusEnumType.Rejected,
+          statusInfo: {
+            additionalInfo: 'No available EVSE found for remote start',
+            reasonCode: ReasonCodeEnumType.NotFound,
+          },
+        }
+      }
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Auto-selected EVSE ${resolvedEvseId.toString()}`
       )
     }
 
-    const evse = chargingStation.getEvseStatus(evseId)
+    const evse = chargingStation.getEvseStatus(resolvedEvseId)
     if (evse == null) {
-      const errorMsg = `EVSE ${evseId.toString()} does not exist on charging station`
+      const errorMsg = `EVSE ${resolvedEvseId.toString()} does not exist on charging station`
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: ${errorMsg}`
       )
@@ -2154,22 +2299,39 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
-    let isAuthorized = false
-    try {
-      isAuthorized = this.isIdTokenAuthorized(chargingStation, idToken)
-    } catch (error) {
-      logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Authorization error for ${idToken.idToken}:`,
-        error
-      )
-      return {
-        status: RequestStartStopStatusEnumType.Rejected,
-        statusInfo: {
-          additionalInfo: 'Authorization error occurred',
-          reasonCode: ReasonCodeEnumType.InternalError,
-        },
-        transactionId: generateUUID(),
+    const variableManager = OCPP20VariableManager.getInstance()
+    const authorizeRemoteStartResults = variableManager.getVariables(chargingStation, [
+      {
+        attributeType: AttributeEnumType.Actual,
+        component: { name: OCPP20ComponentName.AuthCtrlr },
+        variable: { name: OCPP20RequiredVariableName.AuthorizeRemoteStart },
+      },
+    ])
+    const shouldAuthorizeRemoteStart =
+      authorizeRemoteStartResults[0]?.attributeValue?.toLowerCase() !== 'false'
+
+    let isAuthorized = true
+    if (shouldAuthorizeRemoteStart) {
+      try {
+        isAuthorized = this.isIdTokenAuthorized(chargingStation, idToken)
+      } catch (error) {
+        logger.error(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Authorization error for ${idToken.idToken}:`,
+          error
+        )
+        return {
+          status: RequestStartStopStatusEnumType.Rejected,
+          statusInfo: {
+            additionalInfo: 'Authorization error occurred',
+            reasonCode: ReasonCodeEnumType.InternalError,
+          },
+          transactionId: generateUUID(),
+        }
       }
+    } else {
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: AuthorizeRemoteStart=false, skipping authorization`
+      )
     }
 
     if (!isAuthorized) {
@@ -2254,7 +2416,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
       let isValidProfile = false
       try {
-        isValidProfile = this.validateChargingProfile(chargingStation, chargingProfile, evseId)
+        isValidProfile = this.validateChargingProfile(
+          chargingStation,
+          chargingProfile,
+          resolvedEvseId
+        )
       } catch (error) {
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Charging profile validation error:`,
@@ -2327,7 +2493,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         transactionId,
       }
     } catch (error) {
-      await this.resetConnectorOnStartTransactionError(chargingStation, connectorId, evseId)
+      await this.resetConnectorOnStartTransactionError(chargingStation, connectorId, resolvedEvseId)
       logger.error(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Error starting transaction:`,
         error
@@ -2445,30 +2611,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestTriggerMessage: TriggerMessage received for '${requestedMessage}'${evse?.id !== undefined ? ` on EVSE ${evse.id.toString()}` : ''}`
       )
 
-      if (evse?.id !== undefined && evse.id > 0) {
-        if (!chargingStation.hasEvses) {
-          return {
-            status: TriggerMessageStatusEnumType.Rejected,
-            statusInfo: {
-              additionalInfo: 'Charging station does not support EVSEs',
-              reasonCode: ReasonCodeEnumType.UnsupportedRequest,
-            },
-          }
-        }
-        if (!chargingStation.evses.has(evse.id)) {
-          return {
-            status: TriggerMessageStatusEnumType.Rejected,
-            statusInfo: {
-              additionalInfo: `EVSE ${evse.id.toString()} does not exist`,
-              reasonCode: ReasonCodeEnumType.UnknownEvse,
-            },
-          }
-        }
-      }
-
       switch (requestedMessage) {
         case MessageTriggerEnumType.BootNotification:
-          // F06.FR.17: Reject BootNotification trigger if last boot was already Accepted
           if (
             chargingStation.bootNotificationResponse?.status === RegistrationStatusEnumType.ACCEPTED
           ) {
@@ -2483,19 +2627,18 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           return { status: TriggerMessageStatusEnumType.Accepted }
 
         case MessageTriggerEnumType.FirmwareStatusNotification:
-          return { status: TriggerMessageStatusEnumType.Accepted }
-
         case MessageTriggerEnumType.Heartbeat:
-          return { status: TriggerMessageStatusEnumType.Accepted }
-
         case MessageTriggerEnumType.LogStatusNotification:
           return { status: TriggerMessageStatusEnumType.Accepted }
 
         case MessageTriggerEnumType.MeterValues:
+        case MessageTriggerEnumType.StatusNotification: {
+          const evseValidation = this.validateTriggerMessageEvse(chargingStation, evse)
+          if (evseValidation != null) {
+            return evseValidation
+          }
           return { status: TriggerMessageStatusEnumType.Accepted }
-
-        case MessageTriggerEnumType.StatusNotification:
-          return { status: TriggerMessageStatusEnumType.Accepted }
+        }
 
         default:
           logger.warn(
@@ -2654,20 +2797,13 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
-    // C11: Reject if any EVSE has active transactions
-    for (const [evseId, evseStatus] of chargingStation.evses) {
-      if (evseId > 0 && this.hasEvseActiveTransactions(evseStatus)) {
-        logger.warn(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Rejected - EVSE ${evseId.toString()} has active transactions`
-        )
-        return {
-          status: UpdateFirmwareStatusEnumType.Rejected,
-          statusInfo: {
-            additionalInfo: 'Active transactions must complete before firmware update',
-            reasonCode: ReasonCodeEnumType.TxInProgress,
-          },
-        }
-      }
+    const hasActiveTransactions = [...chargingStation.evses].some(
+      ([evseId, evse]) => evseId > 0 && this.hasEvseActiveTransactions(evse)
+    )
+    if (hasActiveTransactions) {
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Active transactions detected — installation will be deferred until idle`
+      )
     }
 
     // H10: Cancel any in-progress firmware update
@@ -2677,19 +2813,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       this.activeFirmwareUpdateAbortController = undefined
       this.activeFirmwareUpdateRequestId = undefined
       logger.info(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Canceled previous firmware update requestId ${String(previousRequestId)}`
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Canceled previous firmware update (requestId ${String(previousRequestId)})`
       )
-      // Send AcceptedCanceled notification for the old firmware update
-      this.sendFirmwareStatusNotification(
-        chargingStation,
-        FirmwareStatusEnumType.AcceptedCanceled,
-        previousRequestId ?? 0
-      ).catch((error: unknown) => {
-        logger.error(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: AcceptedCanceled notification error:`,
-          error
-        )
-      })
+      return {
+        status: UpdateFirmwareStatusEnumType.AcceptedCanceled,
+      }
     }
 
     return {
@@ -2887,6 +3015,31 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   /**
+   * Saves current connector statuses before Inoperative is applied, for later restoration.
+   * @param chargingStation - The charging station instance
+   * @param evseId - Optional EVSE ID to scope the save; if omitted, saves all EVSEs
+   */
+  private savePreInoperativeStatuses (chargingStation: ChargingStation, evseId?: number): void {
+    const evseIds =
+      evseId != null && evseId > 0
+        ? [evseId]
+        : [...chargingStation.evses.keys()].filter(id => id > 0)
+    for (const id of evseIds) {
+      const evseStatus = chargingStation.getEvseStatus(id)
+      if (evseStatus != null) {
+        for (const [connectorId, connector] of evseStatus.connectors) {
+          if (connector.status != null && !this.preInoperativeConnectorStatus.has(connectorId)) {
+            this.preInoperativeConnectorStatus.set(
+              connectorId,
+              connector.status as unknown as OCPP20ConnectorStatusEnumType
+            )
+          }
+        }
+      }
+    }
+  }
+
+  /**
    * Schedules EVSE reset with optional transaction termination
    * @param chargingStation - The charging station instance
    * @param evseId - The EVSE identifier to reset
@@ -2972,11 +3125,21 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }, 5000)
   }
 
-  /**
-   * Sends status notifications for all connectors on the charging station
-   * @param chargingStation - The charging station instance
-   * @param status - The connector status to send
-   */
+  private selectAvailableEvse (chargingStation: ChargingStation): number | undefined {
+    for (const [evseId, evseStatus] of chargingStation.evses) {
+      if (evseId === 0) {
+        continue
+      }
+      if (
+        evseStatus.availability !== OperationalStatusEnumType.Inoperative &&
+        !this.hasEvseActiveTransactions(evseStatus)
+      ) {
+        return evseId
+      }
+    }
+    return undefined
+  }
+
   private sendAllConnectorsStatusNotifications (
     chargingStation: ChargingStation,
     status: OCPP20ConnectorStatusEnumType
@@ -3030,6 +3193,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     status: FirmwareStatusEnumType,
     requestId: number
   ): Promise<OCPP20FirmwareStatusNotificationResponse> {
+    this.lastFirmwareStatus = status
     return chargingStation.ocppRequestService.requestHandler<
       OCPP20FirmwareStatusNotificationRequest,
       OCPP20FirmwareStatusNotificationResponse
@@ -3138,6 +3302,48 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       `${chargingStation.logPrefix()} ${moduleName}.sendNotifyReportRequest: Completed NotifyReport for requestId ${requestId} with ${reportData.length} total items in ${chunks.length} message(s)`
     )
     this.reportDataCache.delete(requestId)
+  }
+
+  private sendRestoredAllConnectorsStatusNotifications (chargingStation: ChargingStation): void {
+    for (const [evseId, evseStatus] of chargingStation.evses) {
+      if (evseId > 0) {
+        for (const [connectorId] of evseStatus.connectors) {
+          const restoredStatus = this.getRestoredConnectorStatus(connectorId)
+          sendAndSetConnectorStatus(
+            chargingStation,
+            connectorId,
+            restoredStatus as ConnectorStatusEnum
+          ).catch((error: unknown) => {
+            logger.error(
+              `${chargingStation.logPrefix()} ${moduleName}.sendRestoredAllConnectorsStatusNotifications: Error sending status notification for connector ${connectorId.toString()}:`,
+              error
+            )
+          })
+        }
+      }
+    }
+  }
+
+  private sendRestoredEvseStatusNotifications (
+    chargingStation: ChargingStation,
+    evseId: number
+  ): void {
+    const evse = chargingStation.getEvseStatus(evseId)
+    if (evse) {
+      for (const [connectorId] of evse.connectors) {
+        const restoredStatus = this.getRestoredConnectorStatus(connectorId)
+        sendAndSetConnectorStatus(
+          chargingStation,
+          connectorId,
+          restoredStatus as ConnectorStatusEnum
+        ).catch((error: unknown) => {
+          logger.error(
+            `${chargingStation.logPrefix()} ${moduleName}.sendRestoredEvseStatusNotifications: Error sending status notification for connector ${connectorId.toString()}:`,
+            error
+          )
+        })
+      }
+    }
   }
 
   private sendSecurityEventNotification (
@@ -3754,6 +3960,34 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       `${chargingStation.logPrefix()} ${moduleName}.validateChargingSchedule: Schedule ${scheduleIndex.toString()} validation passed`
     )
     return true
+  }
+
+  private validateTriggerMessageEvse (
+    chargingStation: ChargingStation,
+    evse: OCPP20TriggerMessageRequest['evse']
+  ): OCPP20TriggerMessageResponse | undefined {
+    if (evse?.id === undefined || evse.id <= 0) {
+      return undefined
+    }
+    if (!chargingStation.hasEvses) {
+      return {
+        status: TriggerMessageStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: 'Charging station does not support EVSEs',
+          reasonCode: ReasonCodeEnumType.UnsupportedRequest,
+        },
+      }
+    }
+    if (!chargingStation.evses.has(evse.id)) {
+      return {
+        status: TriggerMessageStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: `EVSE ${evse.id.toString()} does not exist`,
+          reasonCode: ReasonCodeEnumType.UnknownEvse,
+        },
+      }
+    }
+    return undefined
   }
 }
 

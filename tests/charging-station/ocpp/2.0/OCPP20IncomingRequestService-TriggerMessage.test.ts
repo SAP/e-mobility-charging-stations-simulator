@@ -279,7 +279,7 @@ await describe('F06 - TriggerMessage', async () => {
 
       const request: OCPP20TriggerMessageRequest = {
         evse: { id: 1 },
-        requestedMessage: MessageTriggerEnumType.BootNotification,
+        requestedMessage: MessageTriggerEnumType.StatusNotification,
       }
 
       const response: OCPP20TriggerMessageResponse = testableService.handleRequestTriggerMessage(
@@ -301,7 +301,7 @@ await describe('F06 - TriggerMessage', async () => {
     await it('should return Rejected with UnknownEvse for non-existent EVSE id', () => {
       const request: OCPP20TriggerMessageRequest = {
         evse: { id: 999 },
-        requestedMessage: MessageTriggerEnumType.BootNotification,
+        requestedMessage: MessageTriggerEnumType.StatusNotification,
       }
 
       const response: OCPP20TriggerMessageResponse = testableService.handleRequestTriggerMessage(

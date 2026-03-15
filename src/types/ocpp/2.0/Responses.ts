@@ -1,5 +1,5 @@
 import type { EmptyObject } from '../../EmptyObject.js'
-import type { JsonObject } from '../../JsonType.js'
+import type { JsonObject, JsonType } from '../../JsonType.js'
 import type { UUIDv4 } from '../../UUID.js'
 import type { RegistrationStatusEnumType } from '../Common.js'
 import type {
@@ -61,7 +61,7 @@ export interface OCPP20CustomerInformationResponse extends JsonObject {
 
 export interface OCPP20DataTransferResponse extends JsonObject {
   customData?: CustomDataType
-  data?: JsonObject
+  data?: JsonType
   status: DataTransferStatusEnumType
   statusInfo?: StatusInfoType
 }

@@ -18,7 +18,6 @@ import {
   type OCPP20UpdateFirmwareRequest,
   type OCPP20UpdateFirmwareResponse,
   OCPPVersion,
-  ReasonCodeEnumType,
   UpdateFirmwareStatusEnumType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
@@ -257,7 +256,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
       assert.strictEqual(response.status, UpdateFirmwareStatusEnumType.InvalidCertificate)
     })
 
-    await it('should return Rejected with TxInProgress when EVSE has active transactions', () => {
+    await it('should return Accepted when EVSE has active transactions (L01.FR.06: defer installation)', () => {
       // Arrange
       const { station: evseStation } = createMockChargingStation({
         baseName: TEST_CHARGING_STATION_BASE_NAME,
@@ -292,9 +291,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
       const response = testableService.handleRequestUpdateFirmware(evseStation, request)
 
       // Assert
-      assert.strictEqual(response.status, UpdateFirmwareStatusEnumType.Rejected)
-      assert.notStrictEqual(response.statusInfo, undefined)
-      assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.TxInProgress)
+      assert.strictEqual(response.status, UpdateFirmwareStatusEnumType.Accepted)
     })
 
     await it('should return Accepted when no EVSE has active transactions', () => {
@@ -363,18 +360,9 @@ await describe('L01/L02 - UpdateFirmware', async () => {
         }
 
         const secondResponse = testable.handleRequestUpdateFirmware(trackingStation, secondRequest)
-        assert.strictEqual(secondResponse.status, UpdateFirmwareStatusEnumType.Accepted)
+        assert.strictEqual(secondResponse.status, UpdateFirmwareStatusEnumType.AcceptedCanceled)
 
         await flushMicrotasks()
-
-        const cancelNotification = sentRequests.find(
-          r =>
-            (r.command as OCPP20RequestCommand) ===
-              OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION &&
-            r.payload.requestId === 100 &&
-            (r.payload.status as FirmwareStatusEnumType) === FirmwareStatusEnumType.AcceptedCanceled
-        )
-        assert.notStrictEqual(cancelNotification, undefined)
       })
     })
   })

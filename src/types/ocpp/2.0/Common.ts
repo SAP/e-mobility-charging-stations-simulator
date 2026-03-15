@@ -67,7 +67,6 @@ export enum DeleteCertificateStatusEnumType {
 }
 
 export enum FirmwareStatusEnumType {
-  AcceptedCanceled = 'AcceptedCanceled',
   Downloaded = 'Downloaded',
   DownloadFailed = 'DownloadFailed',
   Downloading = 'Downloading',
