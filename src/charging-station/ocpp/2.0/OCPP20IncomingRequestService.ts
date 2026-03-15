@@ -1341,6 +1341,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     )
     return {
       status: CustomerInformationStatusEnumType.Rejected,
+      statusInfo: {
+        additionalInfo: 'Neither clear nor report flag set',
+        reasonCode: ReasonCodeEnumType.InvalidValue,
+      },
     }
   }
 
@@ -1991,6 +1995,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
       return {
         status: RequestStartStopStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: `Connector ${connectorId.toString()} already has an active transaction`,
+          reasonCode: ReasonCodeEnumType.TxInProgress,
+        },
         transactionId: generateUUID(),
       }
     }
@@ -2005,6 +2013,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
       return {
         status: RequestStartStopStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: 'Authorization error occurred',
+          reasonCode: ReasonCodeEnumType.InternalError,
+        },
         transactionId: generateUUID(),
       }
     }
@@ -2015,6 +2027,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
       return {
         status: RequestStartStopStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: `IdToken ${idToken.idToken} is not authorized`,
+          reasonCode: ReasonCodeEnumType.InvalidIdToken,
+        },
         transactionId: generateUUID(),
       }
     }
@@ -2030,6 +2046,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         )
         return {
           status: RequestStartStopStatusEnumType.Rejected,
+          statusInfo: {
+            additionalInfo: 'Group authorization error occurred',
+            reasonCode: ReasonCodeEnumType.InternalError,
+          },
           transactionId: generateUUID(),
         }
       }
@@ -2040,6 +2060,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         )
         return {
           status: RequestStartStopStatusEnumType.Rejected,
+          statusInfo: {
+            additionalInfo: `GroupIdToken ${groupIdToken.idToken} is not authorized`,
+            reasonCode: ReasonCodeEnumType.InvalidIdToken,
+          },
           transactionId: generateUUID(),
         }
       }
@@ -2055,6 +2079,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         )
         return {
           status: RequestStartStopStatusEnumType.Rejected,
+          statusInfo: {
+            additionalInfo: 'ChargingProfile must have purpose TxProfile',
+            reasonCode: ReasonCodeEnumType.InvalidProfile,
+          },
           transactionId: generateUUID(),
         }
       }
@@ -2066,6 +2094,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         )
         return {
           status: RequestStartStopStatusEnumType.Rejected,
+          statusInfo: {
+            additionalInfo: 'ChargingProfile transactionId must not be set',
+            reasonCode: ReasonCodeEnumType.InvalidValue,
+          },
           transactionId: generateUUID(),
         }
       }
@@ -2079,6 +2111,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         )
         return {
           status: RequestStartStopStatusEnumType.Rejected,
+          statusInfo: {
+            additionalInfo: 'Charging profile validation error',
+            reasonCode: ReasonCodeEnumType.InternalError,
+          },
           transactionId: generateUUID(),
         }
       }
@@ -2088,6 +2124,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         )
         return {
           status: RequestStartStopStatusEnumType.Rejected,
+          statusInfo: {
+            additionalInfo: 'Invalid charging profile',
+            reasonCode: ReasonCodeEnumType.InvalidProfile,
+          },
           transactionId: generateUUID(),
         }
       }
@@ -2143,6 +2183,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
       return {
         status: RequestStartStopStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: 'Error starting transaction',
+          reasonCode: ReasonCodeEnumType.InternalError,
+        },
         transactionId: generateUUID(),
       }
     }
@@ -2163,6 +2207,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
       return {
         status: RequestStartStopStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: 'Invalid transaction ID format',
+          reasonCode: ReasonCodeEnumType.InvalidValue,
+        },
       }
     }
 
@@ -2173,6 +2221,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
       return {
         status: RequestStartStopStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: `Transaction ID ${transactionId as string} does not exist`,
+          reasonCode: ReasonCodeEnumType.TxNotFound,
+        },
       }
     }
 
@@ -2183,6 +2235,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
       return {
         status: RequestStartStopStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: `Transaction ID ${transactionId as string} does not exist on any connector`,
+          reasonCode: ReasonCodeEnumType.TxNotFound,
+        },
       }
     }
 
@@ -2207,6 +2263,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
       return {
         status: RequestStartStopStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: 'Remote stop transaction rejected',
+          reasonCode: ReasonCodeEnumType.Unspecified,
+        },
       }
     } catch (error) {
       logger.error(
@@ -2215,6 +2275,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
       return {
         status: RequestStartStopStatusEnumType.Rejected,
+        statusInfo: {
+          additionalInfo: 'Error occurred during remote stop transaction',
+          reasonCode: ReasonCodeEnumType.InternalError,
+        },
       }
     }
   }

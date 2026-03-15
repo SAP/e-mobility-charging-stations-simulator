@@ -86,6 +86,10 @@ await describe('N32 - CustomerInformation', async () => {
     assert.strictEqual(typeof response, 'object')
     assert.notStrictEqual(response.status, undefined)
     assert.strictEqual(response.status, CustomerInformationStatusEnumType.Rejected)
+    assert.notStrictEqual(response.statusInfo, undefined)
+    assert.strictEqual(typeof response.statusInfo, 'object')
+    assert.notStrictEqual(response.statusInfo?.reasonCode, undefined)
+    assert.notStrictEqual(response.statusInfo?.additionalInfo, undefined)
   })
 
   await it('should register CUSTOMER_INFORMATION event listener in constructor', () => {
