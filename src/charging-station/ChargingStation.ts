@@ -142,6 +142,7 @@ import {
   warnTemplateKeysDeprecation,
 } from './Helpers.js'
 import { IdTagsCache } from './IdTagsCache.js'
+import { OCPPAuthServiceFactory } from './ocpp/auth/services/OCPPAuthServiceFactory.js'
 import {
   buildMeterValue,
   buildTransactionEndMeterValue,
@@ -333,6 +334,7 @@ export class ChargingStation extends EventEmitter {
     }
     AutomaticTransactionGenerator.deleteInstance(this)
     PerformanceStatistics.deleteInstance(this.stationInfo?.hashId)
+    OCPPAuthServiceFactory.clearInstance(this)
     if (this.stationInfo != null) {
       const idTagsFile = getIdTagsFile(this.stationInfo)
       if (idTagsFile != null) {
@@ -862,8 +864,8 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  public async reset (reason?: StopTransactionReason): Promise<void> {
-    await this.stop(reason)
+  public async reset (reason?: StopTransactionReason, graceful = true): Promise<void> {
+    await this.stop(reason, graceful ? this.stationInfo?.stopTransactionsOnStopped : false)
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     await sleep(this.stationInfo!.resetTime!)
     this.initialize()
