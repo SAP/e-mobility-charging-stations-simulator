@@ -238,7 +238,7 @@ export class OCPP20VariableManager {
   }
 
   public validatePersistentMappings (chargingStation: ChargingStation): void {
-    const stationId = chargingStation.stationInfo?.hashId ?? ''
+    const stationId = this.getStationId(chargingStation)
     if (this.validatedStations.has(stationId)) return
     const invalidVariables = this.getInvalidVariables(stationId)
     invalidVariables.clear()
@@ -302,6 +302,14 @@ export class OCPP20VariableManager {
     return set
   }
 
+  private getStationId (chargingStation: ChargingStation): string {
+    const stationId = chargingStation.stationInfo?.hashId
+    if (stationId == null) {
+      throw new Error('ChargingStation has no stationInfo.hashId — cannot identify station')
+    }
+    return stationId
+  }
+
   private getVariable (
     chargingStation: ChargingStation,
     variableData: OCPP20GetVariableDataType
@@ -309,7 +317,7 @@ export class OCPP20VariableManager {
     const { attributeType, component, variable } = variableData
     const requestedAttributeType = attributeType
     const resolvedAttributeType = requestedAttributeType ?? AttributeEnumType.Actual
-    const stationId = chargingStation.stationInfo?.hashId ?? ''
+    const stationId = this.getStationId(chargingStation)
     const invalidVariables = this.getInvalidVariables(stationId)
 
     if (!this.isComponentValid(chargingStation, component)) {
@@ -631,7 +639,7 @@ export class OCPP20VariableManager {
   ): OCPP20SetVariableResultType {
     const { attributeType, attributeValue, component, variable } = variableData
     const resolvedAttributeType = attributeType ?? AttributeEnumType.Actual
-    const stationId = chargingStation.stationInfo?.hashId ?? ''
+    const stationId = this.getStationId(chargingStation)
     const invalidVariables = this.getInvalidVariables(stationId)
 
     if (!this.isComponentValid(chargingStation, component)) {
