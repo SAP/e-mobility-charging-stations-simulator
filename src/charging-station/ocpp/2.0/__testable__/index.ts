@@ -218,12 +218,12 @@ export interface TestableOCPP20IncomingRequestService {
 
   /**
    * Handles OCPP 2.0 RequestStopTransaction request from central system.
-   * Stops an ongoing transaction on the charging station.
+   * Validates and returns Accepted/Rejected. Actual stop is performed by event listener.
    */
   handleRequestStopTransaction: (
     chargingStation: ChargingStation,
     commandPayload: OCPP20RequestStopTransactionRequest
-  ) => Promise<OCPP20RequestStopTransactionResponse>
+  ) => OCPP20RequestStopTransactionResponse
 
   handleRequestTriggerMessage: (
     chargingStation: ChargingStation,

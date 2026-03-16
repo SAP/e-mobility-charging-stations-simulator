@@ -10,6 +10,7 @@ import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type {
   OCPP20RequestStartTransactionRequest,
   OCPP20RequestStopTransactionRequest,
+  OCPP20RequestStopTransactionResponse,
   OCPP20TransactionEventRequest,
   UUIDv4,
 } from '../../../../src/types/index.js'
@@ -18,6 +19,7 @@ import { createTestableIncomingRequestService } from '../../../../src/charging-s
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'
 import {
+  OCPP20IncomingRequestCommand,
   OCPP20RequestCommand,
   OCPP20TransactionEventEnumType,
   OCPP20TriggerReasonEnumType,
@@ -121,6 +123,31 @@ await describe('F03 - Remote Stop Transaction', async () => {
     return startResponse.transactionId as string
   }
 
+  /**
+   * Emits the REQUEST_STOP_TRANSACTION event on the service (mimicking
+   * the base class `handleIncomingRequest` post-response flow) and waits
+   * for any async listeners to settle.
+   * @param station - The charging station instance
+   * @param request - The stop transaction request payload
+   * @param response - The stop transaction response from the handler
+   */
+  async function emitStopEvent (
+    station: ChargingStation,
+    request: OCPP20RequestStopTransactionRequest,
+    response: OCPP20RequestStopTransactionResponse
+  ): Promise<void> {
+    incomingRequestService.emit(
+      OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION,
+      station,
+      request,
+      response
+    )
+    // Allow the async event listener (.catch) to complete
+    await new Promise(resolve => {
+      setTimeout(resolve, 50)
+    })
+  }
+
   // FR: F03.FR.02, F03.FR.03, F03.FR.07, F03.FR.09
   await it('should successfully stop an active transaction', async () => {
     // Start a transaction first
@@ -134,14 +161,17 @@ await describe('F03 - Remote Stop Transaction', async () => {
       transactionId: transactionId as UUIDv4,
     }
 
-    // Execute stop transaction
-    const response = await testableService.handleRequestStopTransaction(mockStation, stopRequest)
+    // Execute stop transaction handler (validates and returns Accepted)
+    const response = testableService.handleRequestStopTransaction(mockStation, stopRequest)
 
     // Verify response
     assert.notStrictEqual(response, undefined)
     assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
 
-    // Verify TransactionEvent was sent
+    // Emit event to trigger the listener (mimics base class post-response flow)
+    await emitStopEvent(mockStation, stopRequest, response)
+
+    // Verify TransactionEvent was sent by the event listener
     assert.strictEqual(sentTransactionEvents.length, 1)
     const transactionEvent = sentTransactionEvents[0]
 
@@ -170,11 +200,14 @@ await describe('F03 - Remote Stop Transaction', async () => {
       transactionId: transactionId2 as UUIDv4,
     }
 
-    const response = await testableService.handleRequestStopTransaction(mockStation, stopRequest)
+    const response = testableService.handleRequestStopTransaction(mockStation, stopRequest)
 
     // Verify response
     assert.notStrictEqual(response, undefined)
     assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
+
+    // Emit event to trigger the listener
+    await emitStopEvent(mockStation, stopRequest, response)
 
     // Verify correct TransactionEvent was sent
     assert.strictEqual(sentTransactionEvents.length, 1)
@@ -189,7 +222,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
   })
 
   // FR: F03.FR.08
-  await it('should reject stop transaction for non-existent transaction ID', async () => {
+  await it('should reject stop transaction for non-existent transaction ID', () => {
     // Clear previous transaction events
     sentTransactionEvents = []
 
@@ -198,7 +231,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
       transactionId: nonExistentTransactionId as UUIDv4,
     }
 
-    const response = await testableService.handleRequestStopTransaction(mockStation, stopRequest)
+    const response = testableService.handleRequestStopTransaction(mockStation, stopRequest)
 
     // Verify rejection
     assert.notStrictEqual(response, undefined)
@@ -209,7 +242,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
   })
 
   // FR: F03.FR.08
-  await it('should reject stop transaction for invalid transaction ID format - empty string', async () => {
+  await it('should reject stop transaction for invalid transaction ID format - empty string', () => {
     // Clear previous transaction events
     sentTransactionEvents = []
 
@@ -217,7 +250,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
       transactionId: '' as UUIDv4,
     }
 
-    const response = await testableService.handleRequestStopTransaction(mockStation, invalidRequest)
+    const response = testableService.handleRequestStopTransaction(mockStation, invalidRequest)
 
     // Verify rejection
     assert.notStrictEqual(response, undefined)
@@ -228,7 +261,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
   })
 
   // FR: F03.FR.08
-  await it('should reject stop transaction for invalid transaction ID format - too long', async () => {
+  await it('should reject stop transaction for invalid transaction ID format - too long', () => {
     // Clear previous transaction events
     sentTransactionEvents = []
 
@@ -238,7 +271,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
       transactionId: tooLongTransactionId as UUIDv4,
     }
 
-    const response = await testableService.handleRequestStopTransaction(mockStation, invalidRequest)
+    const response = testableService.handleRequestStopTransaction(mockStation, invalidRequest)
 
     // Verify rejection
     assert.notStrictEqual(response, undefined)
@@ -277,11 +310,14 @@ await describe('F03 - Remote Stop Transaction', async () => {
       transactionId: testTransactionId as UUIDv4,
     }
 
-    const response = await testableService.handleRequestStopTransaction(mockStation, stopRequest)
+    const response = testableService.handleRequestStopTransaction(mockStation, stopRequest)
 
     // Verify acceptance (format is valid)
     assert.notStrictEqual(response, undefined)
     assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
+
+    // Emit event to trigger the listener
+    await emitStopEvent(mockStation, stopRequest, response)
 
     // Verify TransactionEvent was sent
     assert.strictEqual(sentTransactionEvents.length, 1)
@@ -338,14 +374,19 @@ await describe('F03 - Remote Stop Transaction', async () => {
       transactionId: transactionId as UUIDv4,
     }
 
-    const response = await testableService.handleRequestStopTransaction(
+    const response = testableService.handleRequestStopTransaction(
       failingChargingStation,
       stopRequest
     )
 
-    // Should be rejected due to TransactionEvent failure
+    // With event listener pattern, handler returns Accepted (validation passed).
+    // The TransactionEvent failure is handled asynchronously by the listener's .catch().
     assert.notStrictEqual(response, undefined)
-    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
+
+    // Emit event — the listener will attempt requestStopTransaction which throws,
+    // but the error is caught and logged (no unhandled rejection).
+    await emitStopEvent(failingChargingStation, stopRequest, response)
   })
 
   // FR: F04.FR.01
@@ -360,7 +401,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
       transactionId: transactionId as UUIDv4,
     }
 
-    const response = await testableService.handleRequestStopTransaction(mockStation, stopRequest)
+    const response = testableService.handleRequestStopTransaction(mockStation, stopRequest)
 
     // Verify response structure
     assert.notStrictEqual(response, undefined)
@@ -389,7 +430,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
       transactionId: transactionId as UUIDv4,
     }
 
-    const response = await testableService.handleRequestStopTransaction(
+    const response = testableService.handleRequestStopTransaction(
       mockStation,
       stopRequestWithCustomData
     )
@@ -397,6 +438,9 @@ await describe('F03 - Remote Stop Transaction', async () => {
     // Verify response
     assert.notStrictEqual(response, undefined)
     assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
+
+    // Emit event to trigger the listener
+    await emitStopEvent(mockStation, stopRequestWithCustomData, response)
 
     // Verify TransactionEvent was sent despite custom data
     assert.strictEqual(sentTransactionEvents.length, 1)
@@ -414,9 +458,12 @@ await describe('F03 - Remote Stop Transaction', async () => {
       transactionId: transactionId as UUIDv4,
     }
 
-    const response = await testableService.handleRequestStopTransaction(mockStation, stopRequest)
+    const response = testableService.handleRequestStopTransaction(mockStation, stopRequest)
 
     assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
+
+    // Emit event to trigger the listener
+    await emitStopEvent(mockStation, stopRequest, response)
 
     // Verify TransactionEvent structure and content
     assert.strictEqual(sentTransactionEvents.length, 1)
@@ -458,9 +505,12 @@ await describe('F03 - Remote Stop Transaction', async () => {
       transactionId: transactionId as UUIDv4,
     }
 
-    const response = await testableService.handleRequestStopTransaction(mockStation, stopRequest)
+    const response = testableService.handleRequestStopTransaction(mockStation, stopRequest)
 
     assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
+
+    // Emit event to trigger the listener
+    await emitStopEvent(mockStation, stopRequest, response)
 
     assert.strictEqual(sentTransactionEvents.length, 1)
     const transactionEvent = sentTransactionEvents[0]
