@@ -64,6 +64,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
   })
 
   /**
+   * Starts a transaction via RequestStartTransaction and returns its ID.
    * @param station - The charging station to start a transaction on
    * @param evseId - EVSE ID to use
    * @param remoteStartId - Remote start ID
