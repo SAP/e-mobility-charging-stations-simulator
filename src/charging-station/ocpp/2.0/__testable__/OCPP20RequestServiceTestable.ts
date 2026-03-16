@@ -24,8 +24,8 @@ import { mock } from 'node:test'
 import type {
   CertificateActionEnumType,
   CertificateSigningUseEnumType,
-  FirmwareStatusEnumType,
   JsonType,
+  OCPP20FirmwareStatusEnumType,
   OCPP20FirmwareStatusNotificationResponse,
   OCPP20Get15118EVCertificateResponse,
   OCPP20GetCertificateStatusResponse,
@@ -88,7 +88,7 @@ export interface TestableOCPP20RequestService {
    */
   requestFirmwareStatusNotification: (
     chargingStation: ChargingStation,
-    status: FirmwareStatusEnumType,
+    status: OCPP20FirmwareStatusEnumType,
     requestId?: number
   ) => Promise<OCPP20FirmwareStatusNotificationResponse>
 

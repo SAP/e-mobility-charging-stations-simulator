@@ -8,7 +8,6 @@ import type {
   CertificateSigningUseEnumType,
   ChargingStationType,
   CustomDataType,
-  FirmwareStatusEnumType,
   FirmwareType,
   GetCertificateIdUseEnumType,
   InstallCertificateUseEnumType,
@@ -16,6 +15,7 @@ import type {
   LogParametersType,
   MessageTriggerEnumType,
   NetworkConnectionProfileType,
+  OCPP20FirmwareStatusEnumType,
   OCSPRequestDataType,
   OperationalStatusEnumType,
   ReportBaseEnumType,
@@ -118,7 +118,7 @@ export interface OCPP20DeleteCertificateRequest extends JsonObject {
 export interface OCPP20FirmwareStatusNotificationRequest extends JsonObject {
   customData?: CustomDataType
   requestId?: number
-  status: FirmwareStatusEnumType
+  status: OCPP20FirmwareStatusEnumType
 }
 
 export interface OCPP20Get15118EVCertificateRequest extends JsonObject {

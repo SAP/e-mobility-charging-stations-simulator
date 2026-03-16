@@ -21,9 +21,10 @@ import {
   type OCPP16ReserveNowRequest,
   type OCPP16StatusNotificationRequest,
 } from './1.6/Requests.js'
-import { OperationalStatusEnumType } from './2.0/Common.js'
+import { OCPP20FirmwareStatusEnumType, OperationalStatusEnumType } from './2.0/Common.js'
 import {
   type OCPP20BootNotificationRequest,
+  type OCPP20FirmwareStatusNotificationRequest,
   OCPP20IncomingRequestCommand,
   OCPP20RequestCommand,
   type OCPP20StatusNotificationRequest,
@@ -44,7 +45,9 @@ export type DiagnosticsStatusNotificationRequest = OCPP16DiagnosticsStatusNotifi
 
 export type ErrorCallback = (ocppError: OCPPError, requestStatistic?: boolean) => void
 
-export type FirmwareStatusNotificationRequest = OCPP16FirmwareStatusNotificationRequest
+export type FirmwareStatusNotificationRequest =
+  | OCPP16FirmwareStatusNotificationRequest
+  | OCPP20FirmwareStatusNotificationRequest
 
 export type HeartbeatRequest = OCPP16HeartbeatRequest
 
@@ -108,9 +111,10 @@ export type DiagnosticsStatus = OCPP16DiagnosticsStatus
 
 export const FirmwareStatus = {
   ...OCPP16FirmwareStatus,
+  ...OCPP20FirmwareStatusEnumType,
 } as const
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type FirmwareStatus = OCPP16FirmwareStatus
+export type FirmwareStatus = OCPP16FirmwareStatus | OCPP20FirmwareStatusEnumType
 
 export type ReserveNowRequest = OCPP16ReserveNowRequest
 

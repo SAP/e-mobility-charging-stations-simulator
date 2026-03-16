@@ -14,7 +14,7 @@ import {
   type TestableOCPP20RequestService,
 } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import {
-  FirmwareStatusEnumType,
+  OCPP20FirmwareStatusEnumType,
   type OCPP20FirmwareStatusNotificationRequest,
   type OCPP20FirmwareStatusNotificationResponse,
   OCPP20RequestCommand,
@@ -56,13 +56,17 @@ await describe('J01 - FirmwareStatusNotification', async () => {
   })
 
   await it('should send FirmwareStatusNotification with Downloading status', async () => {
-    await service.requestFirmwareStatusNotification(station, FirmwareStatusEnumType.Downloading, 42)
+    await service.requestFirmwareStatusNotification(
+      station,
+      OCPP20FirmwareStatusEnumType.Downloading,
+      42
+    )
 
     assert.strictEqual(sendMessageMock.mock.calls.length, 1)
 
     const sentPayload = sendMessageMock.mock.calls[0]
       .arguments[2] as OCPP20FirmwareStatusNotificationRequest
-    assert.strictEqual(sentPayload.status, FirmwareStatusEnumType.Downloading)
+    assert.strictEqual(sentPayload.status, OCPP20FirmwareStatusEnumType.Downloading)
     assert.strictEqual(sentPayload.requestId, 42)
 
     const commandName = sendMessageMock.mock.calls[0].arguments[3]
@@ -74,7 +78,7 @@ await describe('J01 - FirmwareStatusNotification', async () => {
 
     await service.requestFirmwareStatusNotification(
       station,
-      FirmwareStatusEnumType.Installed,
+      OCPP20FirmwareStatusEnumType.Installed,
       testRequestId
     )
 
@@ -82,14 +86,14 @@ await describe('J01 - FirmwareStatusNotification', async () => {
 
     const sentPayload = sendMessageMock.mock.calls[0]
       .arguments[2] as OCPP20FirmwareStatusNotificationRequest
-    assert.strictEqual(sentPayload.status, FirmwareStatusEnumType.Installed)
+    assert.strictEqual(sentPayload.status, OCPP20FirmwareStatusEnumType.Installed)
     assert.strictEqual(sentPayload.requestId, testRequestId)
   })
 
   await it('should return empty response from CSMS', async () => {
     const response = await service.requestFirmwareStatusNotification(
       station,
-      FirmwareStatusEnumType.Downloaded,
+      OCPP20FirmwareStatusEnumType.Downloaded,
       1
     )
 

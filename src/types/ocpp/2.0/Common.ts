@@ -66,23 +66,6 @@ export enum DeleteCertificateStatusEnumType {
   NotFound = 'NotFound',
 }
 
-export enum FirmwareStatusEnumType {
-  Downloaded = 'Downloaded',
-  DownloadFailed = 'DownloadFailed',
-  Downloading = 'Downloading',
-  DownloadPaused = 'DownloadPaused',
-  DownloadScheduled = 'DownloadScheduled',
-  Idle = 'Idle',
-  InstallationFailed = 'InstallationFailed',
-  Installed = 'Installed',
-  Installing = 'Installing',
-  InstallRebooting = 'InstallRebooting',
-  InstallScheduled = 'InstallScheduled',
-  InstallVerificationFailed = 'InstallVerificationFailed',
-  InvalidSignature = 'InvalidSignature',
-  SignatureVerified = 'SignatureVerified',
-}
-
 export enum GenericDeviceModelStatusEnumType {
   Accepted = 'Accepted',
   EmptyResultSet = 'EmptyResultSet',
@@ -233,6 +216,23 @@ export enum OCPP20ComponentName {
   UIInput = 'UIInput',
   UpstreamProtectionTrigger = 'UpstreamProtectionTrigger',
   VehicleIdSensor = 'VehicleIdSensor',
+}
+
+export enum OCPP20FirmwareStatusEnumType {
+  Downloaded = 'Downloaded',
+  DownloadFailed = 'DownloadFailed',
+  Downloading = 'Downloading',
+  DownloadPaused = 'DownloadPaused',
+  DownloadScheduled = 'DownloadScheduled',
+  Idle = 'Idle',
+  InstallationFailed = 'InstallationFailed',
+  Installed = 'Installed',
+  Installing = 'Installing',
+  InstallRebooting = 'InstallRebooting',
+  InstallScheduled = 'InstallScheduled',
+  InstallVerificationFailed = 'InstallVerificationFailed',
+  InvalidSignature = 'InvalidSignature',
+  SignatureVerified = 'SignatureVerified',
 }
 
 export enum OCPP20UnitEnumType {

@@ -8,9 +8,9 @@ import {
   type CertificateActionEnumType,
   type CertificateSigningUseEnumType,
   ErrorType,
-  type FirmwareStatusEnumType,
   type JsonObject,
   type JsonType,
+  type OCPP20FirmwareStatusEnumType,
   type OCPP20FirmwareStatusNotificationRequest,
   type OCPP20FirmwareStatusNotificationResponse,
   type OCPP20Get15118EVCertificateRequest,
@@ -99,7 +99,7 @@ export class OCPP20RequestService extends OCPPRequestService {
    */
   public async requestFirmwareStatusNotification (
     chargingStation: ChargingStation,
-    status: FirmwareStatusEnumType,
+    status: OCPP20FirmwareStatusEnumType,
     requestId?: number
   ): Promise<OCPP20FirmwareStatusNotificationResponse> {
     logger.debug(

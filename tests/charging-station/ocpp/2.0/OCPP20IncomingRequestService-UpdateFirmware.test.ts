@@ -11,8 +11,8 @@ import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import {
-  FirmwareStatusEnumType,
   type FirmwareType,
+  OCPP20FirmwareStatusEnumType,
   OCPP20IncomingRequestCommand,
   OCPP20RequestCommand,
   type OCPP20UpdateFirmwareRequest,
@@ -349,7 +349,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
 
         await flushMicrotasks()
         assert.strictEqual(sentRequests.length, 1)
-        assert.strictEqual(sentRequests[0].payload.status, FirmwareStatusEnumType.Downloading)
+        assert.strictEqual(sentRequests[0].payload.status, OCPP20FirmwareStatusEnumType.Downloading)
 
         const secondRequest: OCPP20UpdateFirmwareRequest = {
           firmware: {
@@ -397,18 +397,18 @@ await describe('L01/L02 - UpdateFirmware', async () => {
           sentRequests[0].command,
           OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION
         )
-        assert.strictEqual(sentRequests[0].payload.status, FirmwareStatusEnumType.Downloading)
+        assert.strictEqual(sentRequests[0].payload.status, OCPP20FirmwareStatusEnumType.Downloading)
         assert.strictEqual(sentRequests[0].payload.requestId, 1)
 
         t.mock.timers.tick(2000)
         await flushMicrotasks()
         assert.strictEqual(sentRequests.length, 3)
-        assert.strictEqual(sentRequests[1].payload.status, FirmwareStatusEnumType.Downloaded)
-        assert.strictEqual(sentRequests[2].payload.status, FirmwareStatusEnumType.Installing)
+        assert.strictEqual(sentRequests[1].payload.status, OCPP20FirmwareStatusEnumType.Downloaded)
+        assert.strictEqual(sentRequests[2].payload.status, OCPP20FirmwareStatusEnumType.Installing)
 
         t.mock.timers.tick(1000)
         await flushMicrotasks()
-        assert.strictEqual(sentRequests[3].payload.status, FirmwareStatusEnumType.Installed)
+        assert.strictEqual(sentRequests[3].payload.status, OCPP20FirmwareStatusEnumType.Installed)
 
         // H11: SecurityEventNotification for FirmwareUpdated
         assert.strictEqual(sentRequests.length, 5)
@@ -445,12 +445,15 @@ await describe('L01/L02 - UpdateFirmware', async () => {
 
         await flushMicrotasks()
         assert.strictEqual(sentRequests.length, 1)
-        assert.strictEqual(sentRequests[0].payload.status, FirmwareStatusEnumType.Downloading)
+        assert.strictEqual(sentRequests[0].payload.status, OCPP20FirmwareStatusEnumType.Downloading)
 
         t.mock.timers.tick(2000)
         await flushMicrotasks()
         assert.strictEqual(sentRequests.length, 2)
-        assert.strictEqual(sentRequests[1].payload.status, FirmwareStatusEnumType.DownloadFailed)
+        assert.strictEqual(
+          sentRequests[1].payload.status,
+          OCPP20FirmwareStatusEnumType.DownloadFailed
+        )
         assert.strictEqual(sentRequests[1].payload.requestId, 7)
       })
     })
@@ -483,7 +486,10 @@ await describe('L01/L02 - UpdateFirmware', async () => {
         await flushMicrotasks()
 
         assert.strictEqual(sentRequests.length, 2)
-        assert.strictEqual(sentRequests[1].payload.status, FirmwareStatusEnumType.DownloadFailed)
+        assert.strictEqual(
+          sentRequests[1].payload.status,
+          OCPP20FirmwareStatusEnumType.DownloadFailed
+        )
         assert.strictEqual(sentRequests[1].payload.requestId, 8)
       })
     })
@@ -560,16 +566,19 @@ await describe('L01/L02 - UpdateFirmware', async () => {
         t.mock.timers.tick(2000)
         await flushMicrotasks()
         assert.strictEqual(sentRequests.length, 2)
-        assert.strictEqual(sentRequests[1].payload.status, FirmwareStatusEnumType.Downloaded)
+        assert.strictEqual(sentRequests[1].payload.status, OCPP20FirmwareStatusEnumType.Downloaded)
 
         t.mock.timers.tick(500)
         await flushMicrotasks()
-        assert.strictEqual(sentRequests[2].payload.status, FirmwareStatusEnumType.SignatureVerified)
-        assert.strictEqual(sentRequests[3].payload.status, FirmwareStatusEnumType.Installing)
+        assert.strictEqual(
+          sentRequests[2].payload.status,
+          OCPP20FirmwareStatusEnumType.SignatureVerified
+        )
+        assert.strictEqual(sentRequests[3].payload.status, OCPP20FirmwareStatusEnumType.Installing)
 
         t.mock.timers.tick(1000)
         await flushMicrotasks()
-        assert.strictEqual(sentRequests[4].payload.status, FirmwareStatusEnumType.Installed)
+        assert.strictEqual(sentRequests[4].payload.status, OCPP20FirmwareStatusEnumType.Installed)
 
         // H11: SecurityEventNotification after Installed
         assert.strictEqual(sentRequests.length, 6)

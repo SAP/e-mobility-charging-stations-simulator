@@ -24,8 +24,6 @@ import {
   DeleteCertificateStatusEnumType,
   ErrorType,
   type EvseStatus,
-  FirmwareStatus,
-  FirmwareStatusEnumType,
   type FirmwareType,
   GenericDeviceModelStatusEnumType,
   GenericStatus,
@@ -55,6 +53,7 @@ import {
   type OCPP20DeleteCertificateRequest,
   type OCPP20DeleteCertificateResponse,
   OCPP20DeviceInfoVariableName,
+  OCPP20FirmwareStatusEnumType,
   type OCPP20FirmwareStatusNotificationRequest,
   type OCPP20FirmwareStatusNotificationResponse,
   type OCPP20GetBaseReportRequest,
@@ -153,7 +152,7 @@ const moduleName = 'OCPP20IncomingRequestService'
 interface OCPP20PerStationState {
   activeFirmwareUpdateAbortController?: AbortController
   activeFirmwareUpdateRequestId?: number
-  lastFirmwareStatus?: FirmwareStatusEnumType
+  lastFirmwareStatus?: OCPP20FirmwareStatusEnumType
   preInoperativeConnectorStatuses: Map<number, OCPP20ConnectorStatusEnumType>
   reportDataCache: Map<number, ReportDataType[]>
 }
@@ -367,8 +366,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
             const ss = this.getStationState(chargingStation)
             const firmwareStatus =
               ss.lastFirmwareStatus == null ||
-              ss.lastFirmwareStatus === FirmwareStatusEnumType.Installed
-                ? FirmwareStatusEnumType.Idle
+              ss.lastFirmwareStatus === OCPP20FirmwareStatusEnumType.Installed
+                ? OCPP20FirmwareStatusEnumType.Idle
                 : ss.lastFirmwareStatus
             chargingStation.ocppRequestService
               .requestHandler<
@@ -2807,9 +2806,14 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   private hasFirmwareUpdateInProgress (chargingStation: ChargingStation): boolean {
     const firmwareStatus = chargingStation.stationInfo?.firmwareStatus
     return (
-      firmwareStatus === FirmwareStatus.Downloading ||
-      firmwareStatus === FirmwareStatus.Downloaded ||
-      firmwareStatus === FirmwareStatus.Installing
+      firmwareStatus === OCPP20FirmwareStatusEnumType.Downloading ||
+      firmwareStatus === OCPP20FirmwareStatusEnumType.Downloaded ||
+      firmwareStatus === OCPP20FirmwareStatusEnumType.Installing ||
+      firmwareStatus === OCPP20FirmwareStatusEnumType.DownloadScheduled ||
+      firmwareStatus === OCPP20FirmwareStatusEnumType.DownloadPaused ||
+      firmwareStatus === OCPP20FirmwareStatusEnumType.InstallScheduled ||
+      firmwareStatus === OCPP20FirmwareStatusEnumType.InstallRebooting ||
+      firmwareStatus === OCPP20FirmwareStatusEnumType.SignatureVerified
     )
   }
 
@@ -3137,10 +3141,13 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
   private sendFirmwareStatusNotification (
     chargingStation: ChargingStation,
-    status: FirmwareStatusEnumType,
+    status: OCPP20FirmwareStatusEnumType,
     requestId: number
   ): Promise<OCPP20FirmwareStatusNotificationResponse> {
     this.getStationState(chargingStation).lastFirmwareStatus = status
+    if (chargingStation.stationInfo != null) {
+      chargingStation.stationInfo.firmwareStatus = status
+    }
     return chargingStation.ocppRequestService.requestHandler<
       OCPP20FirmwareStatusNotificationRequest,
       OCPP20FirmwareStatusNotificationResponse
@@ -3338,7 +3345,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     if (retrieveTime > now) {
       await this.sendFirmwareStatusNotification(
         chargingStation,
-        FirmwareStatusEnumType.DownloadScheduled,
+        OCPP20FirmwareStatusEnumType.DownloadScheduled,
         requestId
       )
       await sleep(retrieveTime - now)
@@ -3347,7 +3354,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     await this.sendFirmwareStatusNotification(
       chargingStation,
-      FirmwareStatusEnumType.Downloading,
+      OCPP20FirmwareStatusEnumType.Downloading,
       requestId
     )
 
@@ -3358,7 +3365,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     if (location.trim() === '' || !this.isValidFirmwareLocation(location)) {
       await this.sendFirmwareStatusNotification(
         chargingStation,
-        FirmwareStatusEnumType.DownloadFailed,
+        OCPP20FirmwareStatusEnumType.DownloadFailed,
         requestId
       )
       logger.warn(
@@ -3370,7 +3377,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     await this.sendFirmwareStatusNotification(
       chargingStation,
-      FirmwareStatusEnumType.Downloaded,
+      OCPP20FirmwareStatusEnumType.Downloaded,
       requestId
     )
 
@@ -3379,7 +3386,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       if (checkAborted()) return
       await this.sendFirmwareStatusNotification(
         chargingStation,
-        FirmwareStatusEnumType.SignatureVerified,
+        OCPP20FirmwareStatusEnumType.SignatureVerified,
         requestId
       )
     }
@@ -3391,7 +3398,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       if (installTime > currentTime) {
         await this.sendFirmwareStatusNotification(
           chargingStation,
-          FirmwareStatusEnumType.InstallScheduled,
+          OCPP20FirmwareStatusEnumType.InstallScheduled,
           requestId
         )
         await sleep(installTime - currentTime)
@@ -3415,7 +3422,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     await this.sendFirmwareStatusNotification(
       chargingStation,
-      FirmwareStatusEnumType.Installing,
+      OCPP20FirmwareStatusEnumType.Installing,
       requestId
     )
 
@@ -3423,7 +3430,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     if (checkAborted()) return
     await this.sendFirmwareStatusNotification(
       chargingStation,
-      FirmwareStatusEnumType.Installed,
+      OCPP20FirmwareStatusEnumType.Installed,
       requestId
     )
 
