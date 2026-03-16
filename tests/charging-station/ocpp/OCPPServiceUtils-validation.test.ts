@@ -15,12 +15,7 @@ import { afterEach, describe, it } from 'node:test'
 import type { ChargingStation } from '../../../src/charging-station/ChargingStation.js'
 
 import { OCPPServiceUtils } from '../../../src/charging-station/ocpp/OCPPServiceUtils.js'
-import {
-  IncomingRequestCommand,
-  type MessageTrigger,
-  OCPP16MessageTrigger,
-  RequestCommand,
-} from '../../../src/types/index.js'
+import { IncomingRequestCommand, MessageTrigger, RequestCommand } from '../../../src/types/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 
 /**
@@ -152,14 +147,11 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
     await it('should return true when trigger is not explicitly disabled', () => {
       const station = makeStationMock({
         messageTriggerSupport: {
-          [OCPP16MessageTrigger.Heartbeat]: true,
+          [MessageTrigger.Heartbeat]: true,
         },
       })
 
-      const result = OCPPServiceUtils.isMessageTriggerSupported(
-        station,
-        OCPP16MessageTrigger.Heartbeat as MessageTrigger
-      )
+      const result = OCPPServiceUtils.isMessageTriggerSupported(station, MessageTrigger.Heartbeat)
 
       assert.strictEqual(result, true)
     })
@@ -167,14 +159,11 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
     await it('should return false when trigger is explicitly disabled', () => {
       const station = makeStationMock({
         messageTriggerSupport: {
-          [OCPP16MessageTrigger.Heartbeat]: false,
+          [MessageTrigger.Heartbeat]: false,
         },
       })
 
-      const result = OCPPServiceUtils.isMessageTriggerSupported(
-        station,
-        OCPP16MessageTrigger.Heartbeat as MessageTrigger
-      )
+      const result = OCPPServiceUtils.isMessageTriggerSupported(station, MessageTrigger.Heartbeat)
 
       assert.strictEqual(result, false)
     })
@@ -182,10 +171,7 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
     await it('should return true when messageTriggerSupport is undefined', () => {
       const station = makeStationMock({})
 
-      const result = OCPPServiceUtils.isMessageTriggerSupported(
-        station,
-        OCPP16MessageTrigger.Heartbeat as MessageTrigger
-      )
+      const result = OCPPServiceUtils.isMessageTriggerSupported(station, MessageTrigger.Heartbeat)
 
       assert.strictEqual(result, true)
     })
@@ -195,10 +181,7 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
         messageTriggerSupport: null,
       })
 
-      const result = OCPPServiceUtils.isMessageTriggerSupported(
-        station,
-        OCPP16MessageTrigger.Heartbeat as MessageTrigger
-      )
+      const result = OCPPServiceUtils.isMessageTriggerSupported(station, MessageTrigger.Heartbeat)
 
       assert.strictEqual(result, true)
     })
