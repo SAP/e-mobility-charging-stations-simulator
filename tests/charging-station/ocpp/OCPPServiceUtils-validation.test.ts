@@ -16,12 +16,10 @@ import type { ChargingStation } from '../../../src/charging-station/ChargingStat
 
 import { OCPPServiceUtils } from '../../../src/charging-station/ocpp/OCPPServiceUtils.js'
 import {
-  type IncomingRequestCommand,
+  IncomingRequestCommand,
   type MessageTrigger,
-  OCPP16IncomingRequestCommand,
   OCPP16MessageTrigger,
-  OCPP16RequestCommand,
-  type RequestCommand,
+  RequestCommand,
 } from '../../../src/types/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 
@@ -47,14 +45,14 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
       const station = makeStationMock({
         commandsSupport: {
           incomingCommands: {
-            [OCPP16IncomingRequestCommand.RESET]: true,
+            [IncomingRequestCommand.RESET]: true,
           },
         },
       })
 
       const result = OCPPServiceUtils.isIncomingRequestCommandSupported(
         station,
-        OCPP16IncomingRequestCommand.RESET as IncomingRequestCommand
+        IncomingRequestCommand.RESET
       )
 
       assert.strictEqual(result, true)
@@ -64,14 +62,14 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
       const station = makeStationMock({
         commandsSupport: {
           incomingCommands: {
-            [OCPP16IncomingRequestCommand.RESET]: false,
+            [IncomingRequestCommand.RESET]: false,
           },
         },
       })
 
       const result = OCPPServiceUtils.isIncomingRequestCommandSupported(
         station,
-        OCPP16IncomingRequestCommand.RESET as IncomingRequestCommand
+        IncomingRequestCommand.RESET
       )
 
       assert.strictEqual(result, false)
@@ -82,7 +80,7 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
 
       const result = OCPPServiceUtils.isIncomingRequestCommandSupported(
         station,
-        OCPP16IncomingRequestCommand.RESET as IncomingRequestCommand
+        IncomingRequestCommand.RESET
       )
 
       assert.strictEqual(result, true)
@@ -95,7 +93,7 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
 
       const result = OCPPServiceUtils.isIncomingRequestCommandSupported(
         station,
-        OCPP16IncomingRequestCommand.RESET as IncomingRequestCommand
+        IncomingRequestCommand.RESET
       )
 
       assert.strictEqual(result, true)
@@ -107,15 +105,12 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
       const station = makeStationMock({
         commandsSupport: {
           outgoingCommands: {
-            [OCPP16RequestCommand.HEARTBEAT]: true,
+            [RequestCommand.HEARTBEAT]: true,
           },
         },
       })
 
-      const result = OCPPServiceUtils.isRequestCommandSupported(
-        station,
-        OCPP16RequestCommand.HEARTBEAT as RequestCommand
-      )
+      const result = OCPPServiceUtils.isRequestCommandSupported(station, RequestCommand.HEARTBEAT)
 
       assert.strictEqual(result, true)
     })
@@ -124,15 +119,12 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
       const station = makeStationMock({
         commandsSupport: {
           outgoingCommands: {
-            [OCPP16RequestCommand.HEARTBEAT]: false,
+            [RequestCommand.HEARTBEAT]: false,
           },
         },
       })
 
-      const result = OCPPServiceUtils.isRequestCommandSupported(
-        station,
-        OCPP16RequestCommand.HEARTBEAT as RequestCommand
-      )
+      const result = OCPPServiceUtils.isRequestCommandSupported(station, RequestCommand.HEARTBEAT)
 
       assert.strictEqual(result, false)
     })
@@ -140,10 +132,7 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
     await it('should return true when commandsSupport is undefined', () => {
       const station = makeStationMock({})
 
-      const result = OCPPServiceUtils.isRequestCommandSupported(
-        station,
-        OCPP16RequestCommand.HEARTBEAT as RequestCommand
-      )
+      const result = OCPPServiceUtils.isRequestCommandSupported(station, RequestCommand.HEARTBEAT)
 
       assert.strictEqual(result, true)
     })
@@ -153,10 +142,7 @@ await describe('OCPPServiceUtils — command/trigger validation', async () => {
         commandsSupport: {},
       })
 
-      const result = OCPPServiceUtils.isRequestCommandSupported(
-        station,
-        OCPP16RequestCommand.HEARTBEAT as RequestCommand
-      )
+      const result = OCPPServiceUtils.isRequestCommandSupported(station, RequestCommand.HEARTBEAT)
 
       assert.strictEqual(result, true)
     })

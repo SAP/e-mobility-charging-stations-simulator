@@ -18,7 +18,6 @@ import {
   GetCertificateStatusEnumType,
   Iso15118EVCertificateStatusEnumType,
   OCPP20AuthorizationStatusEnumType,
-  OCPP20RequestCommand,
   OCPPVersion,
   ProcedureName,
   RequestCommand,
@@ -548,7 +547,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
 
       const payload = testableRequestService.buildRequestPayload(
         station,
-        OCPP20RequestCommand.GET_15118_EV_CERTIFICATE,
+        RequestCommand.GET_15118_EV_CERTIFICATE,
         commandParams
       )
 
@@ -569,7 +568,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
 
       const payload = testableRequestService.buildRequestPayload(
         station,
-        OCPP20RequestCommand.GET_CERTIFICATE_STATUS,
+        RequestCommand.GET_CERTIFICATE_STATUS,
         commandParams
       )
 
@@ -584,7 +583,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
 
       const payload = testableRequestService.buildRequestPayload(
         station,
-        OCPP20RequestCommand.SIGN_CERTIFICATE,
+        RequestCommand.SIGN_CERTIFICATE,
         commandParams
       )
 

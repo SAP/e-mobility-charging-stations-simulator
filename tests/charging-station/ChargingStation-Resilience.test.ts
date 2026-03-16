@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 
-import { OCPP16RequestCommand, RegistrationStatusEnumType } from '../../src/types/index.js'
+import { RegistrationStatusEnumType, RequestCommand } from '../../src/types/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import { TEST_HEARTBEAT_INTERVAL_MS } from './ChargingStationTestConstants.js'
 import { cleanupChargingStation, createMockChargingStation } from './ChargingStationTestUtils.js'
@@ -154,7 +154,7 @@ await describe('ChargingStation Resilience', async () => {
       station.requests.set(messageId, [
         responseCallback,
         errorCallback,
-        OCPP16RequestCommand.HEARTBEAT,
+        RequestCommand.HEARTBEAT,
         {},
       ])
 
@@ -293,10 +293,10 @@ await describe('ChargingStation Resilience', async () => {
       station.requests.set('req-1', [
         callback1,
         errorCallback1,
-        OCPP16RequestCommand.BOOT_NOTIFICATION,
+        RequestCommand.BOOT_NOTIFICATION,
         {},
       ])
-      station.requests.set('req-2', [callback2, errorCallback2, OCPP16RequestCommand.HEARTBEAT, {}])
+      station.requests.set('req-2', [callback2, errorCallback2, RequestCommand.HEARTBEAT, {}])
 
       // Act - Cleanup station
       cleanupChargingStation(station)
