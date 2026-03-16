@@ -152,7 +152,6 @@ const moduleName = 'OCPP20IncomingRequestService'
 interface OCPP20PerStationState {
   activeFirmwareUpdateAbortController?: AbortController
   activeFirmwareUpdateRequestId?: number
-  lastFirmwareStatus?: OCPP20FirmwareStatusEnumType
   preInoperativeConnectorStatuses: Map<number, OCPP20ConnectorStatusEnumType>
   reportDataCache: Map<number, ReportDataType[]>
 }
@@ -363,12 +362,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               .catch(errorHandler)
             break
           case MessageTriggerEnumType.FirmwareStatusNotification: {
+            const firmwareStatus = this.hasFirmwareUpdateInProgress(chargingStation)
+              ? (chargingStation.stationInfo?.firmwareStatus as OCPP20FirmwareStatusEnumType)
+              : OCPP20FirmwareStatusEnumType.Idle
             const ss = this.getStationState(chargingStation)
-            const firmwareStatus =
-              ss.lastFirmwareStatus == null ||
-              ss.lastFirmwareStatus === OCPP20FirmwareStatusEnumType.Installed
-                ? OCPP20FirmwareStatusEnumType.Idle
-                : ss.lastFirmwareStatus
             chargingStation.ocppRequestService
               .requestHandler<
                 OCPP20FirmwareStatusNotificationRequest,
@@ -3144,7 +3141,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     status: OCPP20FirmwareStatusEnumType,
     requestId: number
   ): Promise<OCPP20FirmwareStatusNotificationResponse> {
-    this.getStationState(chargingStation).lastFirmwareStatus = status
     if (chargingStation.stationInfo != null) {
       chargingStation.stationInfo.firmwareStatus = status
     }
