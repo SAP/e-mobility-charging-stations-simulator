@@ -383,7 +383,10 @@ await describe('COMMAND_NAME event listener', async () => {
 
   // 4. Error → handled gracefully
   await it('should handle X failure gracefully', async () => {
-    requestHandlerMock.mock.mockImplementation(() => Promise.reject(new Error('test')))
+    // Override mock to reject (mock.method for lifecycle, new factory for requestHandler)
+    mock.method(listenerService as unknown as Record<string, unknown>, 'privateMethod',
+      () => Promise.reject(new Error('test'))
+    )
     listenerService.emit(...)
     await flushMicrotasks()
     // No crash = pass
