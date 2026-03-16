@@ -22,7 +22,7 @@ import {
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
+import { flushMicrotasks, standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import {
@@ -345,7 +345,7 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
       )
 
       // Flush microtask queue so .catch(errorHandler) executes
-      await Promise.resolve()
+      await flushMicrotasks()
 
       assert.strictEqual(rejectingMock.mock.callCount(), 1)
     })

@@ -20,6 +20,7 @@ import { OCPP16UnlockStatus } from '../../../../src/types/ocpp/1.6/Responses.js'
 import { OCPP16AuthorizationStatus } from '../../../../src/types/ocpp/1.6/Transaction.js'
 import { GenericStatus } from '../../../../src/types/ocpp/Common.js'
 import {
+  flushMicrotasks,
   setupConnectorWithTransaction,
   standardCleanup,
 } from '../../../helpers/TestLifecycleHelpers.js'
@@ -212,7 +213,7 @@ await describe('OCPP16IncomingRequestService — RemoteStopTransaction and Unloc
       )
 
       // Flush microtask queue so the async .then() executes
-      await Promise.resolve()
+      await flushMicrotasks()
 
       // Assert
       assert.strictEqual(mockRemoteStop.mock.callCount(), 1)
@@ -261,7 +262,7 @@ await describe('OCPP16IncomingRequestService — RemoteStopTransaction and Unloc
       )
 
       // Flush microtask queue so .catch() executes
-      await Promise.resolve()
+      await flushMicrotasks()
 
       // Assert — no crash, test completes normally
     })

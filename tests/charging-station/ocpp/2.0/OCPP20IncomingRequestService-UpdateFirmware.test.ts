@@ -322,7 +322,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
 
       service.emit(OCPP20IncomingRequestCommand.UPDATE_FIRMWARE, station, request, response)
 
-      await Promise.resolve()
+      await flushMicrotasks()
     })
 
     await it('should cancel previous firmware update when new one arrives', async t => {

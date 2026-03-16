@@ -181,7 +181,7 @@ await describe('K01 - GetLog', async () => {
 
       service.emit(OCPP20IncomingRequestCommand.GET_LOG, station, request, response)
 
-      await Promise.resolve()
+      await flushMicrotasks()
     })
 
     await describe('N01 - LogStatusNotification lifecycle', async () => {

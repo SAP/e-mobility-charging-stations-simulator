@@ -15,7 +15,7 @@ import {
   OCPP16IncomingRequestCommand,
   OCPP16RequestCommand,
 } from '../../../../src/types/index.js'
-import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
+import { flushMicrotasks, standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import {
   createOCPP16IncomingRequestTestContext,
   createOCPP16ListenerStation,
@@ -210,7 +210,7 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
       )
 
       // Flush microtask queue so the async requestHandler call executes
-      await Promise.resolve()
+      await flushMicrotasks()
 
       // Assert
       assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
@@ -261,7 +261,7 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
       )
 
       // Flush microtask queue
-      await Promise.resolve()
+      await flushMicrotasks()
 
       // Assert
       assert.strictEqual(connectorStatus?.transactionRemoteStarted, true)
@@ -297,7 +297,7 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
       )
 
       // Flush microtask queue so .catch(errorHandler) executes
-      await Promise.resolve()
+      await flushMicrotasks()
 
       // Assert — handler was called and error was swallowed
       assert.strictEqual(startTransactionCallCount, 1)
