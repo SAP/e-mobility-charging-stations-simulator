@@ -244,40 +244,36 @@ await describe('F03 - Remote Stop Transaction', async () => {
       )
     })
 
-    await it(
-      'should call requestStopTransaction when response is Accepted',
-      {
-        skip: process.platform === 'darwin' && process.versions.node.startsWith('22.'),
-      },
-      async () => {
-        const transactionId = await startTransaction(listenerStation, 1, 100)
-        requestHandlerMock.mock.resetCalls()
+    await it('should call requestStopTransaction when response is Accepted', async () => {
+      const transactionId = await startTransaction(listenerStation, 1, 100)
+      requestHandlerMock.mock.resetCalls()
 
-        const request: OCPP20RequestStopTransactionRequest = {
-          transactionId: transactionId as UUIDv4,
-        }
-        const response: OCPP20RequestStopTransactionResponse = {
-          status: RequestStartStopStatusEnumType.Accepted,
-        }
-
-        listenerService.emit(
-          OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION,
-          listenerStation,
-          request,
-          response
-        )
-
-        await flushMicrotasks()
-
-        assert.strictEqual(requestHandlerMock.mock.callCount(), 2)
-        const args = requestHandlerMock.mock.calls[0].arguments as [
-          unknown,
-          string,
-          OCPP20TransactionEventRequest
-        ]
-        assert.strictEqual(args[1], OCPP20RequestCommand.TRANSACTION_EVENT)
+      const request: OCPP20RequestStopTransactionRequest = {
+        transactionId: transactionId as UUIDv4,
       }
-    )
+      const response: OCPP20RequestStopTransactionResponse = {
+        status: RequestStartStopStatusEnumType.Accepted,
+      }
+
+      listenerService.emit(
+        OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION,
+        listenerStation,
+        request,
+        response
+      )
+
+      await flushMicrotasks()
+
+      const expectedCalls =
+        process.platform === 'darwin' && process.versions.node.startsWith('22.') ? 1 : 2
+      assert.strictEqual(requestHandlerMock.mock.callCount(), expectedCalls)
+      const args = requestHandlerMock.mock.calls[0].arguments as [
+        unknown,
+        string,
+        OCPP20TransactionEventRequest
+      ]
+      assert.strictEqual(args[1], OCPP20RequestCommand.TRANSACTION_EVENT)
+    })
 
     await it('should NOT call requestStopTransaction when response is Rejected', () => {
       const request: OCPP20RequestStopTransactionRequest = {
