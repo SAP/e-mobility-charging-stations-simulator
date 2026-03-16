@@ -15,7 +15,7 @@ import {
   type OCPP20RequestStartTransactionRequest,
   RequestStartStopStatusEnumType,
 } from '../../../../src/types/index.js'
-import { OperationalStatusEnumType } from '../../../../src/types/ocpp/2.0/Common.js'
+import { OCPP20OperationalStatusEnumType } from '../../../../src/types/ocpp/2.0/Common.js'
 import {
   OCPP20ChargingProfileKindEnumType,
   OCPP20ChargingProfilePurposeEnumType,
@@ -41,7 +41,7 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
         ],
       ]),
       getConnectorStatus: (_connectorId: number): ConnectorStatus => ({
-        availability: OperationalStatusEnumType.Operative,
+        availability: OCPP20OperationalStatusEnumType.Operative,
         MeterValues: [],
         status: ConnectorStatusEnum.Available,
         transactionId: undefined,
@@ -240,7 +240,7 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
       assert(mockStation != null)
       // Given: Connector with active transaction
       mockStation.getConnectorStatus = (): ConnectorStatus => ({
-        availability: OperationalStatusEnumType.Operative,
+        availability: OCPP20OperationalStatusEnumType.Operative,
         MeterValues: [],
         status: ConnectorStatusEnum.Occupied,
         transactionId: 'existing-tx-123',
@@ -266,7 +266,7 @@ await describe('G03 - Remote Start Pre-Authorization', async () => {
       const existingTransactionId = 'existing-tx-456'
       const existingTokenTag = 'EXISTING_TOKEN_002'
       mockStation.getConnectorStatus = (): ConnectorStatus => ({
-        availability: OperationalStatusEnumType.Operative,
+        availability: OCPP20OperationalStatusEnumType.Operative,
         MeterValues: [],
         status: ConnectorStatusEnum.Occupied,
         transactionId: existingTransactionId,

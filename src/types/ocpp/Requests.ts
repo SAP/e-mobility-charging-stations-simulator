@@ -21,7 +21,7 @@ import {
   type OCPP16ReserveNowRequest,
   type OCPP16StatusNotificationRequest,
 } from './1.6/Requests.js'
-import { OCPP20FirmwareStatusEnumType, OperationalStatusEnumType } from './2.0/Common.js'
+import { OCPP20FirmwareStatusEnumType, OCPP20OperationalStatusEnumType } from './2.0/Common.js'
 import {
   type OCPP20BootNotificationRequest,
   type OCPP20FirmwareStatusNotificationRequest,
@@ -96,10 +96,10 @@ export type StatusNotificationRequest =
 
 export const AvailabilityType = {
   ...OCPP16AvailabilityType,
-  ...OperationalStatusEnumType,
+  ...OCPP20OperationalStatusEnumType,
 } as const
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type AvailabilityType = OCPP16AvailabilityType | OperationalStatusEnumType
+export type AvailabilityType = OCPP16AvailabilityType | OCPP20OperationalStatusEnumType
 
 export type CancelReservationRequest = OCPP16CancelReservationRequest
 

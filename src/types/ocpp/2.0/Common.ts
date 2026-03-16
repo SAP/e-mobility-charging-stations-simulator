@@ -235,6 +235,11 @@ export enum OCPP20FirmwareStatusEnumType {
   SignatureVerified = 'SignatureVerified',
 }
 
+export enum OCPP20OperationalStatusEnumType {
+  Inoperative = 'Inoperative',
+  Operative = 'Operative',
+}
+
 export enum OCPP20UnitEnumType {
   AMP = 'A',
   ARBITRARY_STRENGTH_UNIT = 'ASU',
@@ -293,11 +298,6 @@ export enum OCPPVersionEnumType {
   OCPP15 = 'OCPP15',
   OCPP16 = 'OCPP16',
   OCPP20 = 'OCPP20',
-}
-
-export enum OperationalStatusEnumType {
-  Inoperative = 'Inoperative',
-  Operative = 'Operative',
 }
 
 export enum ReasonCodeEnumType {

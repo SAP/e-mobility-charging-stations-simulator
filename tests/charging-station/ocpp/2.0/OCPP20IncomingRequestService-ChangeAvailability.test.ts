@@ -12,8 +12,8 @@ import { createTestableIncomingRequestService } from '../../../../src/charging-s
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import {
   ChangeAvailabilityStatusEnumType,
+  OCPP20OperationalStatusEnumType,
   OCPPVersion,
-  OperationalStatusEnumType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
 import {
@@ -55,18 +55,18 @@ await describe('G03 - ChangeAvailability', async () => {
   await it('should accept EVSE-level Inoperative when no ongoing transaction', () => {
     const response = testableService.handleRequestChangeAvailability(station, {
       evse: { id: 1 },
-      operationalStatus: OperationalStatusEnumType.Inoperative,
+      operationalStatus: OCPP20OperationalStatusEnumType.Inoperative,
     })
 
     assert.strictEqual(response.status, ChangeAvailabilityStatusEnumType.Accepted)
     const evseStatus = station.getEvseStatus(1)
-    assert.strictEqual(evseStatus?.availability, OperationalStatusEnumType.Inoperative)
+    assert.strictEqual(evseStatus?.availability, OCPP20OperationalStatusEnumType.Inoperative)
   })
 
   // FR: G03.FR.02
   await it('should accept CS-level Inoperative when no ongoing transaction', () => {
     const response = testableService.handleRequestChangeAvailability(station, {
-      operationalStatus: OperationalStatusEnumType.Inoperative,
+      operationalStatus: OCPP20OperationalStatusEnumType.Inoperative,
     })
 
     assert.strictEqual(response.status, ChangeAvailabilityStatusEnumType.Accepted)
@@ -74,7 +74,7 @@ await describe('G03 - ChangeAvailability', async () => {
       if (evseId > 0) {
         assert.strictEqual(
           evseStatus.availability,
-          OperationalStatusEnumType.Inoperative,
+          OCPP20OperationalStatusEnumType.Inoperative,
           `EVSE ${String(evseId)} should be Inoperative`
         )
       }
@@ -89,7 +89,7 @@ await describe('G03 - ChangeAvailability', async () => {
 
     const response = testableService.handleRequestChangeAvailability(station, {
       evse: { id: 1 },
-      operationalStatus: OperationalStatusEnumType.Inoperative,
+      operationalStatus: OCPP20OperationalStatusEnumType.Inoperative,
     })
 
     assert.strictEqual(response.status, ChangeAvailabilityStatusEnumType.Scheduled)
@@ -102,7 +102,7 @@ await describe('G03 - ChangeAvailability', async () => {
     })
 
     const response = testableService.handleRequestChangeAvailability(station, {
-      operationalStatus: OperationalStatusEnumType.Inoperative,
+      operationalStatus: OCPP20OperationalStatusEnumType.Inoperative,
     })
 
     assert.strictEqual(response.status, ChangeAvailabilityStatusEnumType.Scheduled)
@@ -111,7 +111,7 @@ await describe('G03 - ChangeAvailability', async () => {
   await it('should reject when EVSE does not exist', () => {
     const response = testableService.handleRequestChangeAvailability(station, {
       evse: { id: 999 },
-      operationalStatus: OperationalStatusEnumType.Inoperative,
+      operationalStatus: OCPP20OperationalStatusEnumType.Inoperative,
     })
 
     assert.strictEqual(response.status, ChangeAvailabilityStatusEnumType.Rejected)
@@ -122,43 +122,43 @@ await describe('G03 - ChangeAvailability', async () => {
   await it('should accept when already in requested state (idempotent)', () => {
     const evseStatus = station.getEvseStatus(1)
     if (evseStatus != null) {
-      evseStatus.availability = OperationalStatusEnumType.Operative
+      evseStatus.availability = OCPP20OperationalStatusEnumType.Operative
     }
 
     const response = testableService.handleRequestChangeAvailability(station, {
       evse: { id: 1 },
-      operationalStatus: OperationalStatusEnumType.Operative,
+      operationalStatus: OCPP20OperationalStatusEnumType.Operative,
     })
 
     assert.strictEqual(response.status, ChangeAvailabilityStatusEnumType.Accepted)
-    assert.strictEqual(evseStatus?.availability, OperationalStatusEnumType.Operative)
+    assert.strictEqual(evseStatus?.availability, OCPP20OperationalStatusEnumType.Operative)
   })
 
   await it('should set Operative after Inoperative, connectors return to Available', () => {
     const evseStatus = station.getEvseStatus(1)
     if (evseStatus != null) {
-      evseStatus.availability = OperationalStatusEnumType.Inoperative
+      evseStatus.availability = OCPP20OperationalStatusEnumType.Inoperative
     }
 
     const response = testableService.handleRequestChangeAvailability(station, {
       evse: { id: 1 },
-      operationalStatus: OperationalStatusEnumType.Operative,
+      operationalStatus: OCPP20OperationalStatusEnumType.Operative,
     })
 
     assert.strictEqual(response.status, ChangeAvailabilityStatusEnumType.Accepted)
-    assert.strictEqual(evseStatus?.availability, OperationalStatusEnumType.Operative)
+    assert.strictEqual(evseStatus?.availability, OCPP20OperationalStatusEnumType.Operative)
   })
 
   await it('should accept CS-level change with evse.id === 0', () => {
     const response = testableService.handleRequestChangeAvailability(station, {
       evse: { id: 0 },
-      operationalStatus: OperationalStatusEnumType.Inoperative,
+      operationalStatus: OCPP20OperationalStatusEnumType.Inoperative,
     })
 
     assert.strictEqual(response.status, ChangeAvailabilityStatusEnumType.Accepted)
     for (const [evseId, evseStatus] of station.evses) {
       if (evseId > 0) {
-        assert.strictEqual(evseStatus.availability, OperationalStatusEnumType.Inoperative)
+        assert.strictEqual(evseStatus.availability, OCPP20OperationalStatusEnumType.Inoperative)
       }
     }
   })

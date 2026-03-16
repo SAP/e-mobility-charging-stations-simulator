@@ -16,8 +16,8 @@ import type {
   MessageTriggerEnumType,
   NetworkConnectionProfileType,
   OCPP20FirmwareStatusEnumType,
+  OCPP20OperationalStatusEnumType,
   OCSPRequestDataType,
-  OperationalStatusEnumType,
   ReportBaseEnumType,
   ResetEnumType,
   UploadLogStatusEnumType,
@@ -88,7 +88,7 @@ export interface OCPP20CertificateSignedRequest extends JsonObject {
 export interface OCPP20ChangeAvailabilityRequest extends JsonObject {
   customData?: CustomDataType
   evse?: OCPP20EVSEType
-  operationalStatus: OperationalStatusEnumType
+  operationalStatus: OCPP20OperationalStatusEnumType
 }
 
 export type OCPP20ClearCacheRequest = EmptyObject

@@ -80,6 +80,7 @@ import {
   type OCPP20NotifyCustomerInformationResponse,
   type OCPP20NotifyReportRequest,
   type OCPP20NotifyReportResponse,
+  OCPP20OperationalStatusEnumType,
   OCPP20ReadingContextEnumType,
   OCPP20RequestCommand,
   type OCPP20RequestStartTransactionRequest,
@@ -104,7 +105,6 @@ import {
   type OCPP20UpdateFirmwareRequest,
   type OCPP20UpdateFirmwareResponse,
   OCPPVersion,
-  OperationalStatusEnumType,
   ReasonCodeEnumType,
   RegistrationStatusEnumType,
   ReportBaseEnumType,
@@ -1037,7 +1037,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     chargingStation: ChargingStation,
     evseId: number,
     connectorId: number,
-    operationalStatus: OperationalStatusEnumType,
+    operationalStatus: OCPP20OperationalStatusEnumType,
     newConnectorStatus: OCPP20ConnectorStatusEnumType
   ): OCPP20ChangeAvailabilityResponse {
     if (!chargingStation.evses.has(evseId)) {
@@ -1062,7 +1062,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
 
     const resolvedStatus =
-      operationalStatus === OperationalStatusEnumType.Operative
+      operationalStatus === OCPP20OperationalStatusEnumType.Operative
         ? this.getRestoredConnectorStatus(chargingStation, connectorId)
         : newConnectorStatus
 
@@ -1087,7 +1087,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
   private handleCsLevelInoperative (
     chargingStation: ChargingStation,
-    operationalStatus: OperationalStatusEnumType,
+    operationalStatus: OCPP20OperationalStatusEnumType,
     newConnectorStatus: OCPP20ConnectorStatusEnumType
   ): OCPP20ChangeAvailabilityResponse | undefined {
     let hasActiveTransactions = false
@@ -1126,7 +1126,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   private handleEvseChangeAvailability (
     chargingStation: ChargingStation,
     evseId: number,
-    operationalStatus: OperationalStatusEnumType,
+    operationalStatus: OCPP20OperationalStatusEnumType,
     newConnectorStatus: OCPP20ConnectorStatusEnumType
   ): OCPP20ChangeAvailabilityResponse {
     if (!chargingStation.evses.has(evseId)) {
@@ -1145,7 +1145,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     const evseStatus = chargingStation.getEvseStatus(evseId)
     if (
       evseStatus != null &&
-      operationalStatus === OperationalStatusEnumType.Inoperative &&
+      operationalStatus === OCPP20OperationalStatusEnumType.Inoperative &&
       this.hasEvseActiveTransactions(evseStatus)
     ) {
       logger.info(
@@ -1159,7 +1159,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     if (evseStatus != null) {
       evseStatus.availability = operationalStatus
     }
-    if (operationalStatus === OperationalStatusEnumType.Operative) {
+    if (operationalStatus === OCPP20OperationalStatusEnumType.Operative) {
       this.sendRestoredEvseStatusNotifications(chargingStation, evseId)
     } else {
       this.sendEvseStatusNotifications(chargingStation, evseId, newConnectorStatus)
@@ -1334,13 +1334,13 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestChangeAvailability: Received ChangeAvailability request with operationalStatus=${operationalStatus}${evseIdLabel}`
     )
 
-    if (operationalStatus === OperationalStatusEnumType.Inoperative) {
+    if (operationalStatus === OCPP20OperationalStatusEnumType.Inoperative) {
       // G03.FR.07: Save current connector statuses before setting Inoperative
       this.savePreInoperativeStatuses(chargingStation, evse?.id)
     }
 
     const newConnectorStatus =
-      operationalStatus === OperationalStatusEnumType.Inoperative
+      operationalStatus === OCPP20OperationalStatusEnumType.Inoperative
         ? OCPP20ConnectorStatusEnumType.Unavailable
         : OCPP20ConnectorStatusEnumType.Available
 
@@ -1365,7 +1365,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
 
     // CS-level change (no evse or evse.id === 0)
-    if (operationalStatus === OperationalStatusEnumType.Inoperative) {
+    if (operationalStatus === OCPP20OperationalStatusEnumType.Inoperative) {
       const result = this.handleCsLevelInoperative(
         chargingStation,
         operationalStatus,
@@ -1382,7 +1382,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         evseStatus.availability = operationalStatus
       }
     }
-    if (operationalStatus === OperationalStatusEnumType.Operative) {
+    if (operationalStatus === OCPP20OperationalStatusEnumType.Operative) {
       this.sendRestoredAllConnectorsStatusNotifications(chargingStation)
     } else {
       this.sendAllConnectorsStatusNotifications(chargingStation, newConnectorStatus)
@@ -3082,7 +3082,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         continue
       }
       if (
-        evseStatus.availability !== OperationalStatusEnumType.Inoperative &&
+        evseStatus.availability !== OCPP20OperationalStatusEnumType.Inoperative &&
         !this.hasEvseActiveTransactions(evseStatus)
       ) {
         return evseId
