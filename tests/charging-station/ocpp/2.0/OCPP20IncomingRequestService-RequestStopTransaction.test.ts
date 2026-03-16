@@ -42,7 +42,7 @@ import {
 } from './OCPP20TestUtils.js'
 
 /**
- * @param baseName
+ * @param baseName - Base name for the mock charging station
  * @returns The mock station and its request handler spy
  */
 function createListenerStation (baseName: string): {
@@ -89,10 +89,10 @@ await describe('F03 - Remote Stop Transaction', async () => {
   })
 
   /**
-   * @param station
-   * @param evseId
-   * @param remoteStartId
-   * @param skipReset
+   * @param station - The charging station to start a transaction on
+   * @param evseId - EVSE ID to use
+   * @param remoteStartId - Remote start ID
+   * @param skipReset - Whether to skip resetting mock call counts
    * @returns The transaction ID of the started transaction
    */
   async function startTransaction (

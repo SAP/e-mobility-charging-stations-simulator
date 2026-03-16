@@ -3,10 +3,14 @@
  * @description Unit tests for OCPP 2.0 RequestStartTransaction command handling (F01/F02)
  */
 import assert from 'node:assert/strict'
-import { afterEach, beforeEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
-import type { OCPP20RequestStartTransactionRequest } from '../../../../src/types/index.js'
+import type {
+  OCPP20RequestStartTransactionRequest,
+  OCPP20RequestStartTransactionResponse,
+  OCPP20TransactionEventRequest,
+} from '../../../../src/types/index.js'
 import type {
   OCPP20ChargingProfileType,
   OCPP20ChargingRateUnitEnumType,
@@ -15,7 +19,13 @@ import type {
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'
-import { OCPPVersion, RequestStartStopStatusEnumType } from '../../../../src/types/index.js'
+import {
+  OCPP20IncomingRequestCommand,
+  OCPP20RequestCommand,
+  OCPP20TriggerReasonEnumType,
+  OCPPVersion,
+  RequestStartStopStatusEnumType,
+} from '../../../../src/types/index.js'
 import {
   OCPP20ChargingProfileKindEnumType,
   OCPP20ChargingProfilePurposeEnumType,
@@ -31,6 +41,32 @@ import {
   resetLimits,
   resetReportingValueSize,
 } from './OCPP20TestUtils.js'
+
+/**
+ * @param baseName - Base name for the mock charging station
+ * @returns The mock station and its request handler spy
+ */
+function createListenerStation (baseName: string): {
+  requestHandlerMock: ReturnType<typeof mock.fn>
+  station: ChargingStation
+} {
+  const requestHandlerMock = mock.fn(async () => Promise.resolve({}))
+  const { station } = createMockChargingStation({
+    baseName,
+    connectorsCount: 3,
+    evseConfiguration: { evsesCount: 3 },
+    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+    ocppRequestService: {
+      requestHandler: requestHandlerMock,
+    },
+    stationInfo: {
+      ocppStrictCompliance: false,
+      ocppVersion: OCPPVersion.VERSION_201,
+    },
+    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+  })
+  return { requestHandlerMock, station }
+}
 
 await describe('F01 & F02 - Remote Start Transaction', async () => {
   let mockStation: ChargingStation
@@ -361,5 +397,214 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       assert.fail('Expected transactionId to be defined')
     }
     assert.ok(response.transactionId.length > 0)
+  })
+
+  await describe('REQUEST_START_TRANSACTION event listener', async () => {
+    let listenerService: OCPP20IncomingRequestService
+    let requestHandlerMock: ReturnType<typeof mock.fn>
+    let listenerStation: ChargingStation
+
+    beforeEach(() => {
+      ;({ requestHandlerMock, station: listenerStation } = createListenerStation(
+        TEST_CHARGING_STATION_BASE_NAME + '-LISTENER'
+      ))
+      listenerService = new OCPP20IncomingRequestService()
+      testableService = createTestableIncomingRequestService(listenerService)
+      const stationId = listenerStation.stationInfo?.chargingStationId ?? 'unknown'
+      OCPPAuthServiceFactory.setInstanceForTesting(stationId, createMockAuthService())
+      resetConnectorTransactionState(listenerStation)
+      resetLimits(listenerStation)
+      resetReportingValueSize(listenerStation)
+    })
+
+    afterEach(() => {
+      standardCleanup()
+      OCPPAuthServiceFactory.clearAllInstances()
+    })
+
+    await it('should register REQUEST_START_TRANSACTION event listener in constructor', () => {
+      assert.strictEqual(
+        listenerService.listenerCount(OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION),
+        1
+      )
+    })
+
+    await it('should call TransactionEvent(Started) when response is Accepted', async () => {
+      const startRequest: OCPP20RequestStartTransactionRequest = {
+        evseId: 1,
+        idToken: {
+          idToken: 'LISTENER_TOKEN_1',
+          type: OCPP20IdTokenEnumType.ISO14443,
+        },
+        remoteStartId: 1,
+      }
+      const startResponse = await testableService.handleRequestStartTransaction(
+        listenerStation,
+        startRequest
+      )
+      assert.strictEqual(startResponse.status, RequestStartStopStatusEnumType.Accepted)
+      requestHandlerMock.mock.resetCalls()
+
+      const request: OCPP20RequestStartTransactionRequest = {
+        evseId: 1,
+        idToken: {
+          idToken: 'LISTENER_TOKEN_1',
+          type: OCPP20IdTokenEnumType.ISO14443,
+        },
+        remoteStartId: 1,
+      }
+      const response: OCPP20RequestStartTransactionResponse = {
+        status: RequestStartStopStatusEnumType.Accepted,
+        transactionId: startResponse.transactionId,
+      }
+
+      listenerService.emit(
+        OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
+        listenerStation,
+        request,
+        response
+      )
+
+      await Promise.resolve()
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
+      const args = requestHandlerMock.mock.calls[0].arguments as [
+        unknown,
+        string,
+        OCPP20TransactionEventRequest
+      ]
+      assert.strictEqual(args[1], OCPP20RequestCommand.TRANSACTION_EVENT)
+    })
+
+    await it('should NOT call TransactionEvent when response is Rejected', () => {
+      const request: OCPP20RequestStartTransactionRequest = {
+        evseId: 1,
+        idToken: {
+          idToken: 'REJECTED_TOKEN',
+          type: OCPP20IdTokenEnumType.ISO14443,
+        },
+        remoteStartId: 2,
+      }
+      const response: OCPP20RequestStartTransactionResponse = {
+        status: RequestStartStopStatusEnumType.Rejected,
+      }
+
+      listenerService.emit(
+        OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
+        listenerStation,
+        request,
+        response
+      )
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
+    })
+
+    // E02.FR.01 — CS SHALL send TransactionEvent(Started) with RemoteStart trigger reason
+    await it('should send TransactionEvent(Started) with RemoteStart trigger reason', async () => {
+      const startRequest: OCPP20RequestStartTransactionRequest = {
+        evseId: 2,
+        idToken: {
+          idToken: 'TRIGGER_REASON_TOKEN',
+          type: OCPP20IdTokenEnumType.ISO14443,
+        },
+        remoteStartId: 3,
+      }
+      const startResponse = await testableService.handleRequestStartTransaction(
+        listenerStation,
+        startRequest
+      )
+      assert.strictEqual(startResponse.status, RequestStartStopStatusEnumType.Accepted)
+      requestHandlerMock.mock.resetCalls()
+
+      const request: OCPP20RequestStartTransactionRequest = {
+        evseId: 2,
+        idToken: {
+          idToken: 'TRIGGER_REASON_TOKEN',
+          type: OCPP20IdTokenEnumType.ISO14443,
+        },
+        remoteStartId: 3,
+      }
+      const response: OCPP20RequestStartTransactionResponse = {
+        status: RequestStartStopStatusEnumType.Accepted,
+        transactionId: startResponse.transactionId,
+      }
+
+      listenerService.emit(
+        OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
+        listenerStation,
+        request,
+        response
+      )
+
+      await Promise.resolve()
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
+      const args = requestHandlerMock.mock.calls[0].arguments as [
+        unknown,
+        string,
+        OCPP20TransactionEventRequest
+      ]
+      const transactionEvent = args[2]
+      assert.strictEqual(transactionEvent.triggerReason, OCPP20TriggerReasonEnumType.RemoteStart)
+    })
+
+    await it('should handle TransactionEvent failure gracefully', async () => {
+      let transactionEventCallCount = 0
+      const { station: failStation } = createMockChargingStation({
+        baseName: TEST_CHARGING_STATION_BASE_NAME + '-FAIL-START',
+        connectorsCount: 1,
+        evseConfiguration: { evsesCount: 1 },
+        heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+        ocppRequestService: {
+          requestHandler: async (_chargingStation: unknown, commandName: unknown) => {
+            if (commandName === OCPP20RequestCommand.TRANSACTION_EVENT) {
+              transactionEventCallCount++
+              throw new Error('TransactionEvent rejected by server')
+            }
+            return Promise.resolve({})
+          },
+        },
+        stationInfo: {
+          ocppStrictCompliance: false,
+          ocppVersion: OCPPVersion.VERSION_201,
+        },
+        websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+      })
+
+      const failStationId = failStation.stationInfo?.chargingStationId ?? 'unknown'
+      OCPPAuthServiceFactory.setInstanceForTesting(failStationId, createMockAuthService())
+
+      resetConnectorTransactionState(failStation)
+      const startResponse = await testableService.handleRequestStartTransaction(failStation, {
+        evseId: 1,
+        idToken: {
+          idToken: 'FAIL_START_TOKEN',
+          type: OCPP20IdTokenEnumType.ISO14443,
+        },
+        remoteStartId: 999,
+      })
+      assert.strictEqual(startResponse.status, RequestStartStopStatusEnumType.Accepted)
+
+      listenerService.emit(
+        OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
+        failStation,
+        {
+          evseId: 1,
+          idToken: {
+            idToken: 'FAIL_START_TOKEN',
+            type: OCPP20IdTokenEnumType.ISO14443,
+          },
+          remoteStartId: 999,
+        } satisfies OCPP20RequestStartTransactionRequest,
+        {
+          status: RequestStartStopStatusEnumType.Accepted,
+          transactionId: startResponse.transactionId,
+        } satisfies OCPP20RequestStartTransactionResponse
+      )
+
+      await Promise.resolve()
+
+      assert.strictEqual(transactionEventCallCount, 1)
+    })
   })
 })

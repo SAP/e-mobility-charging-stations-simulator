@@ -4,6 +4,8 @@
  *   and configuration key helpers for OCPP 1.6 unit and integration tests.
  */
 
+import { mock } from 'node:test'
+
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
 import type { ChargingStationInfo } from '../../../../src/types/ChargingStationInfo.js'
 import type { ConfigurationKey } from '../../../../src/types/ChargingStationOcppConfiguration.js'
@@ -146,6 +148,32 @@ export function createOCPP16IncomingRequestTestContext (
   })
 
   return { incomingRequestService, station, testableService }
+}
+
+/**
+ * Create a listener station with a mocked request handler for OCPP 1.6 tests.
+ * @param baseName - Base name for the charging station
+ * @returns Object containing the mock request handler and charging station
+ */
+export function createOCPP16ListenerStation (baseName: string): {
+  requestHandlerMock: ReturnType<typeof mock.fn>
+  station: ChargingStation
+} {
+  const requestHandlerMock = mock.fn(async () => Promise.resolve({}))
+  const { station } = createMockChargingStation({
+    baseName,
+    connectorsCount: 2,
+    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+    ocppRequestService: {
+      requestHandler: requestHandlerMock,
+    },
+    stationInfo: {
+      ocppStrictCompliance: false,
+      ocppVersion: OCPPVersion.VERSION_16,
+    },
+    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+  })
+  return { requestHandlerMock, station }
 }
 
 /**
