@@ -275,13 +275,20 @@ export abstract class OCPPRequestService {
       // Error Message
       case MessageType.CALL_ERROR_MESSAGE:
         // Build Error Message
+        if (!(messagePayload instanceof OCPPError)) {
+          throw new OCPPError(
+            ErrorType.INTERNAL_ERROR,
+            `Expected OCPPError instance for CALL_ERROR_MESSAGE, got ${typeof messagePayload}`,
+            commandName
+          )
+        }
         messageToSend = JSON.stringify([
           messageType,
           messageId,
-          (messagePayload as OCPPError).code,
-          (messagePayload as OCPPError).message,
-          (messagePayload as OCPPError).details ?? {
-            command: (messagePayload as OCPPError).command,
+          messagePayload.code,
+          messagePayload.message,
+          messagePayload.details ?? {
+            command: messagePayload.command,
           },
         ] satisfies ErrorResponse)
         break
@@ -441,7 +448,7 @@ export abstract class OCPPRequestService {
                   params.skipBufferingOnError === false ? '' : 'non '
                 }buffered message id '${messageId}' with content '${messageToSend}'`,
                 commandName,
-                (messagePayload as OCPPError).details
+                messagePayload instanceof OCPPError ? messagePayload.details : undefined
               )
             )
           }, OCPPConstants.OCPP_WEBSOCKET_TIMEOUT)
@@ -492,7 +499,7 @@ export abstract class OCPPRequestService {
                 params.skipBufferingOnError === false ? '' : 'non '
               }buffered message id '${messageId}' with content '${messageToSend}'`,
               commandName,
-              (messagePayload as OCPPError).details
+              messagePayload instanceof OCPPError ? messagePayload.details : undefined
             )
           )
         }
