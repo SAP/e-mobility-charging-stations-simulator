@@ -17,7 +17,7 @@ import {
   type UIServerConfiguration,
   type UUIDv4,
 } from '../../types/index.js'
-import { generateUUID, JSONStringify, logger } from '../../utils/index.js'
+import { generateUUID, getErrorMessage, JSONStringify, logger } from '../../utils/index.js'
 import { AbstractUIServer } from './AbstractUIServer.js'
 import {
   createBodySizeLimiter,
@@ -202,7 +202,7 @@ export class UIHttpServer extends AbstractUIServer {
             } catch (error) {
               this.sendResponse(
                 this.buildProtocolResponse(uuid, {
-                  errorMessage: error instanceof Error ? error.message : String(error),
+                  errorMessage: getErrorMessage(error),
                   errorStack: error instanceof Error ? error.stack : undefined,
                   status: ResponseStatus.FAILURE,
                 })

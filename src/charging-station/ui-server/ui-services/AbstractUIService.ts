@@ -20,7 +20,14 @@ import {
   type StorageConfiguration,
   type UUIDv4,
 } from '../../../types/index.js'
-import { Configuration, isAsyncFunction, isNotEmptyArray, logger } from '../../../utils/index.js'
+import {
+  Configuration,
+  ensureError,
+  getErrorMessage,
+  isAsyncFunction,
+  isNotEmptyArray,
+  logger,
+} from '../../../utils/index.js'
 import { Bootstrap } from '../../Bootstrap.js'
 import { UIServiceWorkerBroadcastChannel } from '../../broadcast-channel/UIServiceWorkerBroadcastChannel.js'
 import { DEFAULT_MAX_STATIONS, isValidNumberOfStations } from '../UIServerSecurity.js'
@@ -163,7 +170,7 @@ export abstract class AbstractUIService {
       responsePayload = {
         command,
         errorDetails: error instanceof OCPPError ? error.details : undefined,
-        errorMessage: error instanceof Error ? error.message : String(error),
+        errorMessage: getErrorMessage(error),
         errorStack: error instanceof Error ? error.stack : undefined,
         hashIds: requestPayload?.hashIds,
         requestPayload,
@@ -274,7 +281,7 @@ export abstract class AbstractUIService {
           succeededStationInfos.push(stationInfo)
         }
       } catch (error) {
-        err = error instanceof Error ? error : new Error(String(error))
+        err = ensureError(error)
         if (stationInfo != null) {
           failedStationInfos.push(stationInfo)
         }
@@ -326,7 +333,7 @@ export abstract class AbstractUIService {
       } satisfies ResponsePayload
     } catch (error) {
       return {
-        errorMessage: error instanceof Error ? error.message : String(error),
+        errorMessage: getErrorMessage(error),
         errorStack: error instanceof Error ? error.stack : undefined,
         status: ResponseStatus.FAILURE,
       } satisfies ResponsePayload
@@ -341,7 +348,7 @@ export abstract class AbstractUIService {
       } satisfies ResponsePayload
     } catch (error) {
       return {
-        errorMessage: error instanceof Error ? error.message : String(error),
+        errorMessage: getErrorMessage(error),
         errorStack: error instanceof Error ? error.stack : undefined,
         status: ResponseStatus.FAILURE,
       } satisfies ResponsePayload
@@ -354,7 +361,7 @@ export abstract class AbstractUIService {
       return { status: ResponseStatus.SUCCESS }
     } catch (error) {
       return {
-        errorMessage: error instanceof Error ? error.message : String(error),
+        errorMessage: getErrorMessage(error),
         errorStack: error instanceof Error ? error.stack : undefined,
         status: ResponseStatus.FAILURE,
       } satisfies ResponsePayload
@@ -367,7 +374,7 @@ export abstract class AbstractUIService {
       return { status: ResponseStatus.SUCCESS }
     } catch (error) {
       return {
-        errorMessage: error instanceof Error ? error.message : String(error),
+        errorMessage: getErrorMessage(error),
         errorStack: error instanceof Error ? error.stack : undefined,
         status: ResponseStatus.FAILURE,
       } satisfies ResponsePayload

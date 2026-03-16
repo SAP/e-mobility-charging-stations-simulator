@@ -24,6 +24,7 @@ import {
 } from '../../types/index.js'
 import {
   clone,
+  ensureError,
   formatDurationMilliSeconds,
   handleSendMessageError,
   logger,
@@ -116,7 +117,7 @@ export abstract class OCPPRequestService {
         chargingStation,
         commandName,
         MessageType.CALL_ERROR_MESSAGE,
-        error instanceof Error ? error : new Error(String(error))
+        ensureError(error)
       )
       return null
     }
@@ -142,7 +143,7 @@ export abstract class OCPPRequestService {
         chargingStation,
         commandName,
         MessageType.CALL_RESULT_MESSAGE,
-        error instanceof Error ? error : new Error(String(error)),
+        ensureError(error),
         {
           throwError: true,
         }
@@ -176,7 +177,7 @@ export abstract class OCPPRequestService {
         chargingStation,
         commandName,
         MessageType.CALL_MESSAGE,
-        error instanceof Error ? error : new Error(String(error)),
+        ensureError(error),
         {
           throwError: params.throwError,
         }

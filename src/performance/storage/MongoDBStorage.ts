@@ -4,7 +4,7 @@ import { MongoClient } from 'mongodb'
 
 import { BaseError } from '../../exception/index.js'
 import { type Statistics, StorageType } from '../../types/index.js'
-import { Constants } from '../../utils/index.js'
+import { Constants, ensureError } from '../../utils/index.js'
 import { Storage } from './Storage.js'
 
 export class MongoDBStorage extends Storage {
@@ -26,10 +26,7 @@ export class MongoDBStorage extends Storage {
         this.opened = false
       }
     } catch (error) {
-      this.handleDBStorageError(
-        StorageType.MONGO_DB,
-        error instanceof Error ? error : new Error(String(error))
-      )
+      this.handleDBStorageError(StorageType.MONGO_DB, ensureError(error))
     }
   }
 
@@ -40,10 +37,7 @@ export class MongoDBStorage extends Storage {
         this.opened = true
       }
     } catch (error) {
-      this.handleDBStorageError(
-        StorageType.MONGO_DB,
-        error instanceof Error ? error : new Error(String(error))
-      )
+      this.handleDBStorageError(StorageType.MONGO_DB, ensureError(error))
     }
   }
 
@@ -62,7 +56,7 @@ export class MongoDBStorage extends Storage {
     } catch (error) {
       this.handleDBStorageError(
         StorageType.MONGO_DB,
-        error instanceof Error ? error : new Error(String(error)),
+        ensureError(error),
         Constants.PERFORMANCE_RECORDS_TABLE
       )
     }

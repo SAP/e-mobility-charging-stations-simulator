@@ -4,7 +4,7 @@ import type { OCPP20AuthAdapter } from '../adapters/OCPP20AuthAdapter.js'
 import { OCPPError } from '../../../../exception/OCPPError.js'
 import { ErrorType } from '../../../../types/index.js'
 import { OCPPVersion } from '../../../../types/ocpp/OCPPVersion.js'
-import { logger } from '../../../../utils/index.js'
+import { ensureError, getErrorMessage, logger } from '../../../../utils/index.js'
 import { type ChargingStation } from '../../../ChargingStation.js'
 import { AuthComponentFactory } from '../factories/AuthComponentFactory.js'
 import {
@@ -144,13 +144,13 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
           timestamp: result.timestamp,
         }
       } catch (error) {
-        lastError = error instanceof Error ? error : new Error(String(error))
+        lastError = ensureError(error)
         logger.debug(
-          `${this.chargingStation.logPrefix()} Strategy '${strategyName}' failed: ${error instanceof Error ? error.message : String(error)}`
+          `${this.chargingStation.logPrefix()} Strategy '${strategyName}' failed: ${getErrorMessage(error)}`
         )
 
         // Continue to next strategy unless it's a critical error
-        if (this.isCriticalError(error instanceof Error ? error : new Error(String(error)))) {
+        if (this.isCriticalError(ensureError(error))) {
           break
         }
       }
@@ -258,7 +258,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     } catch (error) {
       const duration = Date.now() - startTime
       logger.error(
-        `${this.chargingStation.logPrefix()} Direct authentication with ${strategyName} failed (${String(duration)}ms): ${error instanceof Error ? error.message : String(error)}`
+        `${this.chargingStation.logPrefix()} Direct authentication with ${strategyName} failed (${String(duration)}ms): ${getErrorMessage(error)}`
       )
       throw error
     }
@@ -461,7 +461,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
         }
       } catch (error) {
         logger.debug(
-          `${this.chargingStation.logPrefix()} Local authorization check failed: ${error instanceof Error ? error.message : String(error)}`
+          `${this.chargingStation.logPrefix()} Local authorization check failed: ${getErrorMessage(error)}`
         )
       }
     }

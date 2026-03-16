@@ -2,7 +2,7 @@ import type { IncomingMessage } from 'node:http'
 
 import { BaseError } from '../../exception/index.js'
 import { Protocol, ProtocolVersion } from '../../types/index.js'
-import { isEmpty, logger, logPrefix } from '../../utils/index.js'
+import { getErrorMessage, isEmpty, logger, logPrefix } from '../../utils/index.js'
 
 export const getUsernameAndPasswordFromAuthorizationToken = (
   authorizationToken: string,
@@ -23,11 +23,7 @@ export const getUsernameAndPasswordFromAuthorizationToken = (
     }
     return [username, password]
   } catch (error) {
-    next(
-      new BaseError(
-        `Invalid basic authentication token format: ${error instanceof Error ? error.message : String(error)}`
-      )
-    )
+    next(new BaseError(`Invalid basic authentication token format: ${getErrorMessage(error)}`))
     return undefined
   }
 }

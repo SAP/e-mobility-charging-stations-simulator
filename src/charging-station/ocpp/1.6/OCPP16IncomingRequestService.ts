@@ -106,6 +106,7 @@ import {
   Configuration,
   convertToDate,
   convertToInt,
+  ensureError,
   formatDurationMilliSeconds,
   handleIncomingRequestError,
   isEmpty,
@@ -657,7 +658,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       return handleIncomingRequestError<GenericResponse>(
         chargingStation,
         OCPP16IncomingRequestCommand.CANCEL_RESERVATION,
-        error instanceof Error ? error : new Error(String(error)),
+        ensureError(error),
         {
           errorResponse: OCPP16Constants.OCPP_CANCEL_RESERVATION_RESPONSE_REJECTED,
         }
@@ -918,7 +919,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       return handleIncomingRequestError<OCPP16DataTransferResponse>(
         chargingStation,
         OCPP16IncomingRequestCommand.DATA_TRANSFER,
-        error instanceof Error ? error : new Error(String(error)),
+        ensureError(error),
         { errorResponse: OCPP16Constants.OCPP_DATA_TRANSFER_RESPONSE_REJECTED }
       )!
     }
@@ -1162,7 +1163,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         return handleIncomingRequestError<GetDiagnosticsResponse>(
           chargingStation,
           OCPP16IncomingRequestCommand.GET_DIAGNOSTICS,
-          error instanceof Error ? error : new Error(String(error)),
+          ensureError(error),
           { errorResponse: OCPP16Constants.OCPP_RESPONSE_EMPTY }
         )!
       }
@@ -1369,7 +1370,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       return handleIncomingRequestError<OCPP16ReserveNowResponse>(
         chargingStation,
         OCPP16IncomingRequestCommand.RESERVE_NOW,
-        error instanceof Error ? error : new Error(String(error)),
+        ensureError(error),
         { errorResponse: OCPP16Constants.OCPP_RESERVATION_RESPONSE_FAULTED }
       )!
     }

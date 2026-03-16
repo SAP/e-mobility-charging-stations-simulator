@@ -7,7 +7,7 @@ import type {
 import type { AuthConfiguration, AuthorizationResult, AuthRequest } from '../types/AuthTypes.js'
 
 import { OCPPVersion } from '../../../../types/ocpp/OCPPVersion.js'
-import { logger } from '../../../../utils/index.js'
+import { ensureError, getErrorMessage, logger } from '../../../../utils/index.js'
 import {
   AuthenticationError,
   AuthenticationMethod,
@@ -162,7 +162,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
         this.stats.networkErrors++
       }
 
-      const errorMessage = error instanceof Error ? error.message : String(error)
+      const errorMessage = getErrorMessage(error)
       logger.error(`RemoteAuthStrategy: Authentication error: ${errorMessage}`)
 
       // Don't rethrow - allow other strategies to handle
@@ -274,7 +274,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
             logger.debug(`RemoteAuthStrategy: OCPP ${version} adapter configured`)
           }
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : String(error)
+          const errorMessage = getErrorMessage(error)
           logger.error(
             `RemoteAuthStrategy: Configuration validation failed for OCPP ${version}: ${errorMessage}`
           )
@@ -288,12 +288,12 @@ export class RemoteAuthStrategy implements AuthStrategy {
       this.isInitialized = true
       logger.info('RemoteAuthStrategy: Initialized successfully')
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
+      const errorMessage = getErrorMessage(error)
       logger.error(`RemoteAuthStrategy: Initialization failed: ${errorMessage}`)
       throw new AuthenticationError(
         `Remote auth strategy initialization failed: ${errorMessage}`,
         AuthErrorCode.CONFIGURATION_ERROR,
-        { cause: error instanceof Error ? error : new Error(String(error)) }
+        { cause: ensureError(error) }
       )
     }
   }
@@ -386,7 +386,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
         `RemoteAuthStrategy: Cached result for ${identifier.substring(0, 8)}... (TTL: ${String(cacheTtl)}s)`
       )
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
+      const errorMessage = getErrorMessage(error)
       logger.error(`RemoteAuthStrategy: Failed to cache result: ${errorMessage}`)
       // Don't throw - caching is not critical for authentication
     }
@@ -418,7 +418,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
       clearTimeout(timeoutHandle)
       return result
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
+      const errorMessage = getErrorMessage(error)
       logger.debug(`RemoteAuthStrategy: Remote availability check failed: ${errorMessage}`)
       return false
     }
@@ -501,12 +501,12 @@ export class RemoteAuthStrategy implements AuthStrategy {
       }
 
       // Wrap other errors as network errors
-      const errorMessage = error instanceof Error ? error.message : String(error)
+      const errorMessage = getErrorMessage(error)
       throw new AuthenticationError(
         `Remote authorization failed: ${errorMessage}`,
         AuthErrorCode.NETWORK_ERROR,
         {
-          cause: error instanceof Error ? error : new Error(String(error)),
+          cause: ensureError(error),
           context: request.context,
           identifier: request.identifier.value,
         }

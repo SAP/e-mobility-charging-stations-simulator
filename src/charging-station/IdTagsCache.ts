@@ -4,6 +4,7 @@ import type { ChargingStation } from './ChargingStation.js'
 
 import { FileType, IdTagDistribution } from '../types/index.js'
 import {
+  ensureError,
   handleFileException,
   isNotEmptyString,
   logger,
@@ -125,12 +126,7 @@ export class IdTagsCache {
       try {
         return JSON.parse(readFileSync(file, 'utf8')) as string[]
       } catch (error) {
-        handleFileException(
-          file,
-          FileType.Authorization,
-          error instanceof Error ? error : new Error(String(error)),
-          this.logPrefix(file)
-        )
+        handleFileException(file, FileType.Authorization, ensureError(error), this.logPrefix(file))
       }
     }
     return []
@@ -187,7 +183,7 @@ export class IdTagsCache {
               handleFileException(
                 file,
                 FileType.Authorization,
-                error instanceof Error ? error : new Error(String(error)),
+                ensureError(error),
                 this.logPrefix(file),
                 {
                   throwError: false,

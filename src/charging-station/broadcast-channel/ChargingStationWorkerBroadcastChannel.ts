@@ -59,7 +59,14 @@ import {
   type StopTransactionRequest,
   type StopTransactionResponse,
 } from '../../types/index.js'
-import { Constants, convertToInt, isAsyncFunction, isEmpty, logger } from '../../utils/index.js'
+import {
+  Constants,
+  convertToInt,
+  getErrorMessage,
+  isAsyncFunction,
+  isEmpty,
+  logger,
+} from '../../utils/index.js'
 import { getConfigurationKey } from '../ConfigurationKeyUtils.js'
 import { buildMeterValue } from '../ocpp/index.js'
 import { WorkerBroadcastChannel } from './WorkerBroadcastChannel.js'
@@ -678,7 +685,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         responsePayload = {
           command,
           errorDetails: error instanceof OCPPError ? error.details : undefined,
-          errorMessage: error instanceof Error ? error.message : String(error),
+          errorMessage: getErrorMessage(error),
           errorStack: error instanceof Error ? error.stack : undefined,
           hashId: this.chargingStation.stationInfo?.hashId,
           requestPayload,

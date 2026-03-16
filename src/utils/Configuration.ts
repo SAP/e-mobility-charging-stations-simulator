@@ -33,7 +33,7 @@ import {
   logPrefix,
 } from './ConfigurationUtils.js'
 import { Constants } from './Constants.js'
-import { handleFileException } from './ErrorUtils.js'
+import { ensureError, handleFileException } from './ErrorUtils.js'
 import { has, isCFEnvironment, mergeDeepRight, once } from './Utils.js'
 
 type ConfigurationSectionType =
@@ -141,7 +141,7 @@ export class Configuration {
         handleFileException(
           Configuration.configurationFile,
           FileType.Configuration,
-          error instanceof Error ? error : new Error(String(error)),
+          ensureError(error),
           logPrefix(),
           { consoleOut: true }
         )
@@ -560,7 +560,7 @@ export class Configuration {
       handleFileException(
         Configuration.configurationFile,
         FileType.Configuration,
-        error instanceof Error ? error : new Error(String(error)),
+        ensureError(error),
         logPrefix(),
         { consoleOut: true }
       )

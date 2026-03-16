@@ -84,9 +84,11 @@ import {
   convertToDate,
   convertToInt,
   DCElectricUtils,
+  ensureError,
   exponentialDelay,
   formatDurationMilliSeconds,
   formatDurationSeconds,
+  getErrorMessage,
   getWebSocketCloseEventStatusString,
   handleFileException,
   isEmpty,
@@ -1356,7 +1358,7 @@ export class ChargingStation extends EventEmitter {
         handleFileException(
           this.configurationFile,
           FileType.ChargingStationConfiguration,
-          error instanceof Error ? error : new Error(String(error)),
+          ensureError(error),
           this.logPrefix()
         )
         if (
@@ -1628,7 +1630,7 @@ export class ChargingStation extends EventEmitter {
       handleFileException(
         this.templateFile,
         FileType.ChargingStationTemplate,
-        error instanceof Error ? error : new Error(String(error)),
+        ensureError(error),
         this.logPrefix()
       )
     }
@@ -2214,10 +2216,7 @@ export class ChargingStation extends EventEmitter {
       const ocppError =
         error instanceof OCPPError
           ? error
-          : new OCPPError(
-            ErrorType.INTERNAL_ERROR,
-            error instanceof Error ? error.message : String(error)
-          )
+          : new OCPPError(ErrorType.INTERNAL_ERROR, getErrorMessage(error))
       switch (messageType) {
         case MessageType.CALL_ERROR_MESSAGE:
         case MessageType.CALL_RESULT_MESSAGE:
@@ -2451,7 +2450,7 @@ export class ChargingStation extends EventEmitter {
             handleFileException(
               this.configurationFile,
               FileType.ChargingStationConfiguration,
-              error instanceof Error ? error : new Error(String(error)),
+              ensureError(error),
               this.logPrefix()
             )
           })
@@ -2466,7 +2465,7 @@ export class ChargingStation extends EventEmitter {
         handleFileException(
           this.configurationFile,
           FileType.ChargingStationConfiguration,
-          error instanceof Error ? error : new Error(String(error)),
+          ensureError(error),
           this.logPrefix()
         )
       }

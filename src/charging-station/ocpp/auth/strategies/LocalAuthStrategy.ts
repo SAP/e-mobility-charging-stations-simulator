@@ -5,7 +5,7 @@ import type {
 } from '../interfaces/OCPPAuthService.js'
 import type { AuthConfiguration, AuthorizationResult, AuthRequest } from '../types/AuthTypes.js'
 
-import { logger } from '../../../../utils/index.js'
+import { ensureError, getErrorMessage, logger } from '../../../../utils/index.js'
 import {
   AuthContext,
   AuthenticationError,
@@ -106,13 +106,13 @@ export class LocalAuthStrategy implements AuthStrategy {
       )
       return undefined
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
+      const errorMessage = getErrorMessage(error)
       logger.error(`LocalAuthStrategy: Authentication error: ${errorMessage}`)
       throw new AuthenticationError(
         `Local authentication failed: ${errorMessage}`,
         AuthErrorCode.STRATEGY_ERROR,
         {
-          cause: error instanceof Error ? error : new Error(String(error)),
+          cause: ensureError(error),
           context: request.context,
           identifier: request.identifier.value,
         }
@@ -137,7 +137,7 @@ export class LocalAuthStrategy implements AuthStrategy {
       this.authCache.set(identifier, result, ttl)
       logger.debug(`LocalAuthStrategy: Cached result for ${identifier}`)
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
+      const errorMessage = getErrorMessage(error)
       logger.error(`LocalAuthStrategy: Failed to cache result: ${errorMessage}`)
       // Don't throw - caching is not critical
     }
@@ -239,12 +239,12 @@ export class LocalAuthStrategy implements AuthStrategy {
       this.isInitialized = true
       logger.info('LocalAuthStrategy: Initialized successfully')
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
+      const errorMessage = getErrorMessage(error)
       logger.error(`LocalAuthStrategy: Initialization failed: ${errorMessage}`)
       throw new AuthenticationError(
         `Local auth strategy initialization failed: ${errorMessage}`,
         AuthErrorCode.CONFIGURATION_ERROR,
-        { cause: error instanceof Error ? error : new Error(String(error)) }
+        { cause: ensureError(error) }
       )
     }
   }
@@ -262,7 +262,7 @@ export class LocalAuthStrategy implements AuthStrategy {
       this.authCache.remove(identifier)
       logger.debug(`LocalAuthStrategy: Invalidated cache for ${identifier}`)
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
+      const errorMessage = getErrorMessage(error)
       logger.error(`LocalAuthStrategy: Failed to invalidate cache: ${errorMessage}`)
       // Don't throw - cache invalidation errors are not critical
     }
@@ -282,7 +282,7 @@ export class LocalAuthStrategy implements AuthStrategy {
       const entry = await this.localAuthListManager.getEntry(identifier)
       return !!entry
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
+      const errorMessage = getErrorMessage(error)
       logger.error(`LocalAuthStrategy: Error checking local list: ${errorMessage}`)
       return false
     }
@@ -327,13 +327,13 @@ export class LocalAuthStrategy implements AuthStrategy {
       logger.debug(`LocalAuthStrategy: Cache hit for ${request.identifier.value}`)
       return cachedResult
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
+      const errorMessage = getErrorMessage(error)
       logger.error(`LocalAuthStrategy: Cache check failed: ${errorMessage}`)
       throw new AuthenticationError(
         `Authorization cache check failed: ${errorMessage}`,
         AuthErrorCode.CACHE_ERROR,
         {
-          cause: error instanceof Error ? error : new Error(String(error)),
+          cause: ensureError(error),
           identifier: request.identifier.value,
         }
       )
@@ -385,13 +385,13 @@ export class LocalAuthStrategy implements AuthStrategy {
         timestamp: new Date(),
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
+      const errorMessage = getErrorMessage(error)
       logger.error(`LocalAuthStrategy: Local auth list check failed: ${errorMessage}`)
       throw new AuthenticationError(
         `Local auth list check failed: ${errorMessage}`,
         AuthErrorCode.LOCAL_LIST_ERROR,
         {
-          cause: error instanceof Error ? error : new Error(String(error)),
+          cause: ensureError(error),
           identifier: request.identifier.value,
         }
       )

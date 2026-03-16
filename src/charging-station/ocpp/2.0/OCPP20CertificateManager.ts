@@ -15,6 +15,7 @@ import {
   HashAlgorithmEnumType,
   InstallCertificateUseEnumType,
 } from '../../../types/ocpp/2.0/Common.js'
+import { getErrorMessage } from '../../../utils/index.js'
 
 /**
  * Interface for ChargingStation with certificate manager
@@ -421,7 +422,7 @@ export class OCPP20CertificateManager {
       }
     } catch (error) {
       return {
-        error: `Failed to store certificate: ${error instanceof Error ? error.message : String(error)}`,
+        error: `Failed to store certificate: ${getErrorMessage(error)}`,
         success: false,
       }
     }

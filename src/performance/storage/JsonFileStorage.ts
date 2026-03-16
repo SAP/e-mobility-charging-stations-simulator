@@ -4,7 +4,13 @@ import { closeSync, openSync, writeSync } from 'node:fs'
 
 import { BaseError } from '../../exception/index.js'
 import { FileType, MapStringifyFormat, type Statistics } from '../../types/index.js'
-import { AsyncLock, AsyncLockType, handleFileException, JSONStringify } from '../../utils/index.js'
+import {
+  AsyncLock,
+  AsyncLockType,
+  ensureError,
+  handleFileException,
+  JSONStringify,
+} from '../../utils/index.js'
 import { Storage } from './Storage.js'
 
 export class JsonFileStorage extends Storage {
@@ -26,7 +32,7 @@ export class JsonFileStorage extends Storage {
       handleFileException(
         this.dbName,
         FileType.PerformanceRecords,
-        error instanceof Error ? error : new Error(String(error)),
+        ensureError(error),
         this.logPrefix
       )
     }
@@ -42,7 +48,7 @@ export class JsonFileStorage extends Storage {
       handleFileException(
         this.dbName,
         FileType.PerformanceRecords,
-        error instanceof Error ? error : new Error(String(error)),
+        ensureError(error),
         this.logPrefix
       )
     }
@@ -62,7 +68,7 @@ export class JsonFileStorage extends Storage {
       handleFileException(
         this.dbName,
         FileType.PerformanceRecords,
-        error instanceof Error ? error : new Error(String(error)),
+        ensureError(error),
         this.logPrefix
       )
     })

@@ -9,6 +9,8 @@ export { Configuration } from './Configuration.js'
 export { Constants } from './Constants.js'
 export { ACElectricUtils, DCElectricUtils } from './ElectricUtils.js'
 export {
+  ensureError,
+  getErrorMessage,
   handleFileException,
   handleIncomingRequestError,
   handleSendMessageError,
