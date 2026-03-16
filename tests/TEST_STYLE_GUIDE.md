@@ -7,7 +7,7 @@ Conventions for writing maintainable, consistent tests in the e-mobility chargin
 - **Test behavior, not implementation**: Focus on what code does, not how
 - **Isolation is mandatory**: Each test runs independently with fresh state
 - **Determinism required**: Tests must produce identical results on every run
-- **Strict assertions**: Use `assert.strictEqual`, `assert.deepStrictEqual`, `assert.ok` — never loose equality
+- **Strict assertions**: Use `assert.strictEqual`, `assert.deepStrictEqual` — never loose equality. Use `assert.ok` only for boolean/existence checks
 - **Coverage target**: 80%+ on new code
 
 ---
@@ -181,7 +181,7 @@ it('should timeout', async () => {
 The test command uses `--test-force-exit` flag to prevent Windows CI hangs:
 
 ```json
-"test": "node --import tsx --test --test-force-exit tests/**/*.test.ts"
+"test": "node --import tsx --test --test-force-exit 'tests/**/*.test.ts'"
 ```
 
 **Why**: Windows Named Pipes for stdout/stderr remain "ref'd" (keep event loop alive) while Unix file descriptors are auto-unref'd. Without `--test-force-exit`, the Node.js process hangs indefinitely after tests complete on Windows.
@@ -310,15 +310,17 @@ assert.strictEqual(mocks.webSocket.sentMessages.length, 1)
 
 ### Lifecycle Helpers (`helpers/TestLifecycleHelpers.ts`)
 
-| Utility                | Purpose                                  |
-| ---------------------- | ---------------------------------------- |
-| `standardCleanup()`    | **MANDATORY** afterEach cleanup          |
-| `flushMicrotasks()`    | Drain async side-effects from `emit()`   |
-| `withMockTimers()`     | Execute test with timer mocking          |
-| `createTimerScope()`   | Manual timer control                     |
-| `sleep(ms)`            | Real-time delay (avoid in tests)         |
-| `createLoggerMocks()`  | Create logger spies (error, warn)        |
-| `createConsoleMocks()` | Create console spies (error, warn, info) |
+| Utility                           | Purpose                                  |
+| --------------------------------- | ---------------------------------------- |
+| `standardCleanup()`               | **MANDATORY** afterEach cleanup          |
+| `flushMicrotasks()`               | Drain async side-effects from `emit()`   |
+| `withMockTimers()`                | Execute test with timer mocking          |
+| `createTimerScope()`              | Manual timer control                     |
+| `sleep(ms)`                       | Real-time delay (avoid in tests)         |
+| `createLoggerMocks()`             | Create logger spies (error, warn)        |
+| `createConsoleMocks()`            | Create console spies (error, warn, info) |
+| `setupConnectorWithTransaction()` | Setup connector in transaction state     |
+| `clearConnectorTransaction()`     | Clear connector transaction state        |
 
 ### Mock Classes (`mocks/`)
 
