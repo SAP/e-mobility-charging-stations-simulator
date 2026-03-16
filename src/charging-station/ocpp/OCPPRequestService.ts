@@ -26,6 +26,7 @@ import {
   clone,
   ensureError,
   formatDurationMilliSeconds,
+  getErrorMessage,
   handleSendMessageError,
   logger,
 } from '../../utils/index.js'
@@ -274,25 +275,23 @@ export abstract class OCPPRequestService {
     // Type of message
     switch (messageType) {
       // Error Message
-      case MessageType.CALL_ERROR_MESSAGE:
-        // Build Error Message
-        if (!(messagePayload instanceof OCPPError)) {
-          throw new OCPPError(
-            ErrorType.INTERNAL_ERROR,
-            `Expected OCPPError instance for CALL_ERROR_MESSAGE, got ${typeof messagePayload}`,
-            commandName
-          )
-        }
+      case MessageType.CALL_ERROR_MESSAGE: {
+        // Build Error Message per OCPP-J §4.2.3: [4, messageId, errorCode, errorDescription, errorDetails]
+        const ocppError =
+          messagePayload instanceof OCPPError
+            ? messagePayload
+            : new OCPPError(ErrorType.INTERNAL_ERROR, getErrorMessage(messagePayload), commandName)
         messageToSend = JSON.stringify([
           messageType,
           messageId,
-          messagePayload.code,
-          messagePayload.message,
-          messagePayload.details ?? {
-            command: messagePayload.command,
+          ocppError.code,
+          ocppError.message,
+          ocppError.details ?? {
+            command: ocppError.command,
           },
         ] satisfies ErrorResponse)
         break
+      }
       // Request
       case MessageType.CALL_MESSAGE:
         // Build request
