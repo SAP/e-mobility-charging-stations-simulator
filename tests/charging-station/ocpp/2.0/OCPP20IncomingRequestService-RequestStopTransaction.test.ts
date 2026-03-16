@@ -232,6 +232,10 @@ await describe('F03 - Remote Stop Transaction', async () => {
       resetReportingValueSize(listenerStation)
     })
 
+    afterEach(() => {
+      standardCleanup()
+    })
+
     await it('should register REQUEST_STOP_TRANSACTION event listener in constructor', () => {
       assert.strictEqual(
         listenerService.listenerCount(OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION),

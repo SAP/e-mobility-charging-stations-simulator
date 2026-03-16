@@ -1,3 +1,7 @@
+/**
+ * @file OCPP 2.0 test utilities
+ * @description Shared helpers, mock factories, and fixtures for OCPP 2.0 test suites
+ */
 import { mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'

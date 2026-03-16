@@ -1,8 +1,8 @@
-import { millisecondsToSeconds } from 'date-fns'
 /**
  * @file Tests for OCPP20IncomingRequestService GetBaseReport
  * @description Unit tests for OCPP 2.0 GetBaseReport command handling (B07)
  */
+import { millisecondsToSeconds } from 'date-fns'
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
