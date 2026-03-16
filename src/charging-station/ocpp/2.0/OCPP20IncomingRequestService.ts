@@ -340,6 +340,36 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         }
       }
     )
+    // E02.FR.01: Send TransactionEvent(Started) after accepting remote start
+    this.on(
+      OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
+      (
+        chargingStation: ChargingStation,
+        request: OCPP20RequestStartTransactionRequest,
+        response: OCPP20RequestStartTransactionResponse
+      ) => {
+        if (response.status === RequestStartStopStatusEnumType.Accepted) {
+          const connectorId = chargingStation.getConnectorIdByTransactionId(response.transactionId)
+          if (connectorId != null) {
+            OCPP20ServiceUtils.sendTransactionEvent(
+              chargingStation,
+              OCPP20TransactionEventEnumType.Started,
+              OCPP20TriggerReasonEnumType.RemoteStart,
+              connectorId,
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              response.transactionId!
+            ).catch((error: unknown) => {
+              logger.error(
+                `${chargingStation.logPrefix()} ${moduleName}.constructor: TransactionEvent(Started) error:`,
+                error
+              )
+            })
+            const txUpdatedInterval = this.getTxUpdatedInterval(chargingStation)
+            chargingStation.startTxUpdatedInterval(connectorId, txUpdatedInterval)
+          }
+        }
+      }
+    )
     this.on(
       OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
       (
@@ -2460,18 +2490,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         ConnectorStatusEnum.Occupied,
         evseId
       )
-
-      // E02.FR.01: Send TransactionEvent(Started) to CSMS
-      await OCPP20ServiceUtils.sendTransactionEvent(
-        chargingStation,
-        OCPP20TransactionEventEnumType.Started,
-        OCPP20TriggerReasonEnumType.RemoteStart,
-        connectorId,
-        transactionId
-      )
-
-      const txUpdatedInterval = this.getTxUpdatedInterval(chargingStation)
-      chargingStation.startTxUpdatedInterval(connectorId, txUpdatedInterval)
 
       if (chargingProfile != null) {
         connectorStatus.chargingProfiles ??= []
