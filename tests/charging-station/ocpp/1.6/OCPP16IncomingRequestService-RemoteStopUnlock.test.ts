@@ -170,8 +170,6 @@ await describe('OCPP16IncomingRequestService — RemoteStopTransaction and Unloc
     })
   })
 
-  // ─── REMOTE_STOP_TRANSACTION event listener ───────────────────────────
-
   await describe('REMOTE_STOP_TRANSACTION event listener', async () => {
     let incomingRequestService: OCPP16IncomingRequestService
     let listenerStation: ChargingStation
