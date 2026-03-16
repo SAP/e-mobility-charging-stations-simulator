@@ -1,5 +1,46 @@
 # Changelog
 
+## [3.1.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v3.1.0...simulator@v3.1.1) (2026-03-16)
+
+
+### 🐞 Bug Fixes
+
+* **charging-station:** add try/finally guards to Bootstrap start/stop ([c939a38](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c939a384684f6817de8d44d63e21b3ab3a259e2f))
+* **ocpp16:** align BootNotification runtime schema maxLength with spec §6.3 ([a74b742](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/a74b74246cbfb008bb38e8065ee0d04a782902e1))
+* **ocpp16:** reject float values for integer configuration keys per spec §5.3 ([8dc905b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/8dc905b10509344362ee4a686653598a50662cba))
+* **ocpp16:** return Idle in TriggerMessage when not actively uploading/updating ([b9b505d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b9b505dd25c7d195abfbc125d5420c6babdf61b5))
+* **ocpp20:** send actual MeterValues on trigger and block sessions during firmware update ([9198720](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/9198720849db66481a48945b930ca4ed53ea99f5))
+* **ocpp20:** send TransactionEvent(Started) on RequestStartTransaction (E02.FR.01) ([5205429](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/52054291e5525a2ac7ba738e268a9a067f74b3ac))
+* **ocpp:** graceful OCPPError fallback instead of throw in buildMessageToSend ([927f891](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/927f8912a498d2f1b4259d6eb95029b0e5bcb628))
+* **ocpp:** replace unsafe messagePayload as OCPPError casts with instanceof ([d1cd3fd](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/d1cd3fd58a31c27b63a8215fa2b3147636e7bdf3))
+* **tests:** add second flushMicrotasks for RequestStopTransaction listener ([7cd726e](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7cd726e1cb5a37bee91f873b771c5a12231ad4b3))
+* **tests:** add second flushMicrotasks for RequestStopTransaction listener ([6635145](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/66351458ed4df9437189439031521e7314887b6f))
+* **tests:** remove unnecessary double flushMicrotasks in skipped test ([9653bc1](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/9653bc1e0d81648aee1ba2a2213d36c0de7c47b3))
+* **tests:** skip flaky RequestStopTransaction test on macOS + Node 22 ([ce6ebab](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ce6ebab99925fc738698899d6816a009b5382a4d))
+* **tests:** use conditional callCount expectation instead of skip for Node 22 ([37575de](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/37575de055b54160a55ff102de9fd86e9c59558c))
+
+
+### ✨ Polish
+
+* extract ensureError and getErrorMessage helpers ([207b589](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/207b589dd5273a7cea3127fcf19489ad9d51e286))
+* **ocpp20:** harmonize per-station state naming ([f1e33ea](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f1e33ea42b09ecc156085e2641090bbffe379efc))
+* **ocpp20:** move TransactionEvent(Started) to event listener pattern ([65f9d78](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/65f9d786bc46a274e1cb59edb9194bb87617ec65))
+* **ocpp20:** prefix FirmwareStatusEnumType, extend FirmwareStatus union ([fd51179](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/fd511796449af6b1903dd431476da8d4c9c7f613))
+* **ocpp20:** prefix OperationalStatusEnumType with OCPP20 ([0f05c92](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/0f05c92e8ac1f7420bea9c6dfb435269df1367fe))
+* **ocpp20:** remove redundant lastFirmwareStatus from per-station state ([07cee73](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/07cee73bb16e3a0a7096081b36fa780df62ece2b))
+* **ocpp:** harmonize post-response event listener pattern across stacks ([52d9bac](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/52d9baccce9c35eac81c91fd98a090a5a07ec10a))
+* **ocpp:** use union types in common code where possible ([ce77ea9](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ce77ea9710defa1c9783add2b0d37543f32b10c1))
+* **tests:** separate handler/listener tests and remove setTimeout hacks ([b50f9e5](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b50f9e5f547632af2187d1df351383d1a1222b8f))
+* **tests:** split RequestStopTransaction tests into handler and listener groups ([64b8f85](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/64b8f8583a21569d84a67b367ed07bc4972976c9))
+* **tests:** use union types instead of stack-specific types in common tests ([b994f09](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b994f09525f85f2d0d54f4b15c39bdd6990895d7))
+* use union types consistently in common code and tests ([19ab6a4](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/19ab6a48a0203485185f8bdfe1a11012d9a72160))
+
+
+### 🧪 Tests
+
+* harmonize event listener test pattern across OCPP command test files ([#1730](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1730)) ([8eb7710](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/8eb7710860a4cdb00e0a4ac86d6b633abf604488))
+* **ocpp20:** update RequestStopTransaction tests for event listener pattern ([19fe600](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/19fe6005b2e336cb02fb3d1f2d43846e2075ba60))
+
 ## [3.1.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v3.0.0...simulator@v3.1.0) (2026-03-15)
 
 ### 🚀 Features
