@@ -163,9 +163,20 @@ await describe('N32 - CustomerInformation', async () => {
 
   await describe('CUSTOMER_INFORMATION event listener', async () => {
     let incomingRequestService: OCPP20IncomingRequestService
+    let notifyMock: ReturnType<typeof mock.fn>
 
     beforeEach(() => {
       incomingRequestService = new OCPP20IncomingRequestService()
+      notifyMock = mock.method(
+        incomingRequestService as unknown as {
+          sendNotifyCustomerInformation: (
+            chargingStation: ChargingStation,
+            requestId: number
+          ) => Promise<void>
+        },
+        'sendNotifyCustomerInformation',
+        () => Promise.resolve()
+      )
     })
 
     afterEach(() => {
@@ -180,17 +191,6 @@ await describe('N32 - CustomerInformation', async () => {
     })
 
     await it('should call sendNotifyCustomerInformation when CUSTOMER_INFORMATION event emitted with Accepted + report=true', () => {
-      const notifyMock = mock.method(
-        incomingRequestService as unknown as {
-          sendNotifyCustomerInformation: (
-            chargingStation: ChargingStation,
-            requestId: number
-          ) => Promise<void>
-        },
-        'sendNotifyCustomerInformation',
-        () => Promise.resolve()
-      )
-
       const request: OCPP20CustomerInformationRequest = {
         clear: false,
         idToken: { idToken: 'TOKEN_001', type: OCPP20IdTokenEnumType.Central },
@@ -214,17 +214,6 @@ await describe('N32 - CustomerInformation', async () => {
 
     await it('should NOT call sendNotifyCustomerInformation when CUSTOMER_INFORMATION event emitted with Accepted + clear=true only', () => {
       // CRITICAL: clear=true also returns Accepted — listener must NOT fire notification
-      const notifyMock = mock.method(
-        incomingRequestService as unknown as {
-          sendNotifyCustomerInformation: (
-            chargingStation: ChargingStation,
-            requestId: number
-          ) => Promise<void>
-        },
-        'sendNotifyCustomerInformation',
-        () => Promise.resolve()
-      )
-
       const request: OCPP20CustomerInformationRequest = {
         clear: true,
         report: false,
@@ -245,17 +234,6 @@ await describe('N32 - CustomerInformation', async () => {
     })
 
     await it('should NOT call sendNotifyCustomerInformation when CUSTOMER_INFORMATION event emitted with Rejected', () => {
-      const notifyMock = mock.method(
-        incomingRequestService as unknown as {
-          sendNotifyCustomerInformation: (
-            chargingStation: ChargingStation,
-            requestId: number
-          ) => Promise<void>
-        },
-        'sendNotifyCustomerInformation',
-        () => Promise.resolve()
-      )
-
       const request: OCPP20CustomerInformationRequest = {
         clear: false,
         report: false,

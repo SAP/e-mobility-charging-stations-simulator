@@ -214,106 +214,62 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
       assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
     })
 
-    await it('should fire BootNotification requestHandler on Accepted', () => {
-      const request: OCPP16TriggerMessageRequest = {
-        requestedMessage: OCPP16MessageTrigger.BootNotification,
-      }
-      const response: OCPP16TriggerMessageResponse = {
-        status: OCPP16TriggerMessageStatus.ACCEPTED,
-      }
-
-      incomingRequestServiceForListener.emit(
-        OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
-        station,
-        request,
-        response
-      )
-
-      assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
-      const args = requestHandlerMock.mock.calls[0].arguments as [unknown, string, ...unknown[]]
-      assert.strictEqual(args[1], OCPP16RequestCommand.BOOT_NOTIFICATION)
-    })
-
-    await it('should fire Heartbeat requestHandler on Accepted', () => {
-      const request: OCPP16TriggerMessageRequest = {
-        requestedMessage: OCPP16MessageTrigger.Heartbeat,
-      }
-      const response: OCPP16TriggerMessageResponse = {
-        status: OCPP16TriggerMessageStatus.ACCEPTED,
-      }
-
-      incomingRequestServiceForListener.emit(
-        OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
-        station,
-        request,
-        response
-      )
-
-      assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
-      const args = requestHandlerMock.mock.calls[0].arguments as [unknown, string, ...unknown[]]
-      assert.strictEqual(args[1], OCPP16RequestCommand.HEARTBEAT)
-    })
-
-    await it('should fire StatusNotification for specific connector on Accepted', () => {
-      const request: OCPP16TriggerMessageRequest = {
+    const triggerCases: {
+      connectorId?: number
+      expectedCommand: OCPP16RequestCommand
+      name: string
+      trigger: OCPP16MessageTrigger
+    }[] = [
+      {
+        expectedCommand: OCPP16RequestCommand.BOOT_NOTIFICATION,
+        name: 'BootNotification',
+        trigger: OCPP16MessageTrigger.BootNotification,
+      },
+      {
+        expectedCommand: OCPP16RequestCommand.HEARTBEAT,
+        name: 'Heartbeat',
+        trigger: OCPP16MessageTrigger.Heartbeat,
+      },
+      {
         connectorId: 1,
-        requestedMessage: OCPP16MessageTrigger.StatusNotification,
-      }
-      const response: OCPP16TriggerMessageResponse = {
-        status: OCPP16TriggerMessageStatus.ACCEPTED,
-      }
+        expectedCommand: OCPP16RequestCommand.STATUS_NOTIFICATION,
+        name: 'StatusNotification',
+        trigger: OCPP16MessageTrigger.StatusNotification,
+      },
+      {
+        expectedCommand: OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
+        name: 'FirmwareStatusNotification',
+        trigger: OCPP16MessageTrigger.FirmwareStatusNotification,
+      },
+      {
+        expectedCommand: OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
+        name: 'DiagnosticsStatusNotification',
+        trigger: OCPP16MessageTrigger.DiagnosticsStatusNotification,
+      },
+    ]
 
-      incomingRequestServiceForListener.emit(
-        OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
-        station,
-        request,
-        response
-      )
+    for (const { connectorId, expectedCommand, name, trigger } of triggerCases) {
+      await it(`should fire ${name} requestHandler on Accepted`, () => {
+        const request: OCPP16TriggerMessageRequest = {
+          requestedMessage: trigger,
+          ...(connectorId != null && { connectorId }),
+        }
+        const response: OCPP16TriggerMessageResponse = {
+          status: OCPP16TriggerMessageStatus.ACCEPTED,
+        }
 
-      assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
-      const args = requestHandlerMock.mock.calls[0].arguments as [unknown, string, ...unknown[]]
-      assert.strictEqual(args[1], OCPP16RequestCommand.STATUS_NOTIFICATION)
-    })
+        incomingRequestServiceForListener.emit(
+          OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
+          station,
+          request,
+          response
+        )
 
-    await it('should fire FirmwareStatusNotification requestHandler on Accepted', () => {
-      const request: OCPP16TriggerMessageRequest = {
-        requestedMessage: OCPP16MessageTrigger.FirmwareStatusNotification,
-      }
-      const response: OCPP16TriggerMessageResponse = {
-        status: OCPP16TriggerMessageStatus.ACCEPTED,
-      }
-
-      incomingRequestServiceForListener.emit(
-        OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
-        station,
-        request,
-        response
-      )
-
-      assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
-      const args = requestHandlerMock.mock.calls[0].arguments as [unknown, string, ...unknown[]]
-      assert.strictEqual(args[1], OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION)
-    })
-
-    await it('should fire DiagnosticsStatusNotification requestHandler on Accepted', () => {
-      const request: OCPP16TriggerMessageRequest = {
-        requestedMessage: OCPP16MessageTrigger.DiagnosticsStatusNotification,
-      }
-      const response: OCPP16TriggerMessageResponse = {
-        status: OCPP16TriggerMessageStatus.ACCEPTED,
-      }
-
-      incomingRequestServiceForListener.emit(
-        OCPP16IncomingRequestCommand.TRIGGER_MESSAGE,
-        station,
-        request,
-        response
-      )
-
-      assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
-      const args = requestHandlerMock.mock.calls[0].arguments as [unknown, string, ...unknown[]]
-      assert.strictEqual(args[1], OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION)
-    })
+        assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
+        const args = requestHandlerMock.mock.calls[0].arguments as [unknown, string, ...unknown[]]
+        assert.strictEqual(args[1], expectedCommand)
+      })
+    }
 
     await it('should handle requestHandler rejection gracefully', async () => {
       const rejectingMock = mock.fn(async () => Promise.reject(new Error('test error')))

@@ -359,9 +359,21 @@ await describe('B07 - Get Base Report', async () => {
 
   await describe('GET_BASE_REPORT event listener', async () => {
     let listenerService: OCPP20IncomingRequestService
+    let sendNotifyMock: ReturnType<typeof mock.fn>
 
     beforeEach(() => {
       listenerService = new OCPP20IncomingRequestService()
+      sendNotifyMock = mock.method(
+        listenerService as unknown as {
+          sendNotifyReportRequest: (
+            chargingStation: ChargingStation,
+            request: OCPP20GetBaseReportRequest,
+            response: OCPP20GetBaseReportResponse
+          ) => Promise<void>
+        },
+        'sendNotifyReportRequest',
+        () => Promise.resolve()
+      )
     })
 
     afterEach(() => {
@@ -376,18 +388,6 @@ await describe('B07 - Get Base Report', async () => {
     })
 
     await it('should call sendNotifyReportRequest when response is Accepted', () => {
-      const sendNotifyMock = mock.method(
-        listenerService as unknown as {
-          sendNotifyReportRequest: (
-            chargingStation: ChargingStation,
-            request: OCPP20GetBaseReportRequest,
-            response: OCPP20GetBaseReportResponse
-          ) => Promise<void>
-        },
-        'sendNotifyReportRequest',
-        () => Promise.resolve()
-      )
-
       const request: OCPP20GetBaseReportRequest = {
         reportBase: ReportBaseEnumType.FullInventory,
         requestId: 1,
@@ -402,18 +402,6 @@ await describe('B07 - Get Base Report', async () => {
     })
 
     await it('should NOT call sendNotifyReportRequest when response is NotSupported', () => {
-      const sendNotifyMock = mock.method(
-        listenerService as unknown as {
-          sendNotifyReportRequest: (
-            chargingStation: ChargingStation,
-            request: OCPP20GetBaseReportRequest,
-            response: OCPP20GetBaseReportResponse
-          ) => Promise<void>
-        },
-        'sendNotifyReportRequest',
-        () => Promise.resolve()
-      )
-
       const request: OCPP20GetBaseReportRequest = {
         reportBase: ReportBaseEnumType.FullInventory,
         requestId: 2,

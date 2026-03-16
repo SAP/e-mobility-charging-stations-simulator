@@ -167,9 +167,17 @@ await describe('OCPP16IncomingRequestService — Firmware', async () => {
   // §6.4: UpdateFirmware event listener
   await describe('UPDATE_FIRMWARE event listener', async () => {
     let listenerService: OCPP16IncomingRequestService
+    let updateFirmwareMock: ReturnType<typeof mock.fn>
 
     beforeEach(() => {
       listenerService = new OCPP16IncomingRequestService()
+      updateFirmwareMock = mock.method(
+        listenerService as unknown as {
+          updateFirmwareSimulation: (chargingStation: unknown) => Promise<void>
+        },
+        'updateFirmwareSimulation',
+        mock.fn(() => Promise.resolve())
+      )
     })
 
     afterEach(() => {
@@ -186,13 +194,6 @@ await describe('OCPP16IncomingRequestService — Firmware', async () => {
     await it('should call updateFirmwareSimulation when retrieveDate is in the past', async () => {
       // Arrange
       const { station } = createOCPP16ListenerStation('listener-station-past')
-      const updateFirmwareMock = mock.method(
-        listenerService as unknown as {
-          updateFirmwareSimulation: (chargingStation: unknown) => Promise<void>
-        },
-        'updateFirmwareSimulation',
-        mock.fn(() => Promise.resolve())
-      )
 
       const request: OCPP16UpdateFirmwareRequest = {
         location: 'ftp://localhost/firmware.bin',
@@ -211,13 +212,6 @@ await describe('OCPP16IncomingRequestService — Firmware', async () => {
     await it('should schedule deferred updateFirmwareSimulation when retrieveDate is in the future', async t => {
       // Arrange
       const { station } = createOCPP16ListenerStation('listener-station-future')
-      const updateFirmwareMock = mock.method(
-        listenerService as unknown as {
-          updateFirmwareSimulation: (chargingStation: unknown) => Promise<void>
-        },
-        'updateFirmwareSimulation',
-        mock.fn(() => Promise.resolve())
-      )
 
       const futureMs = 5000
       const request: OCPP16UpdateFirmwareRequest = {
