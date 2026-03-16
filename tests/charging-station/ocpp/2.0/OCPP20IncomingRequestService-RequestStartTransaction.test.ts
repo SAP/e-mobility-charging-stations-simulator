@@ -22,6 +22,7 @@ import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/au
 import {
   OCPP20IncomingRequestCommand,
   OCPP20RequestCommand,
+  OCPP20TransactionEventEnumType,
   OCPP20TriggerReasonEnumType,
   OCPPVersion,
   RequestStartStopStatusEnumType,
@@ -32,7 +33,7 @@ import {
   OCPP20IdTokenEnumType,
 } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { flushMicrotasks, standardCleanup } from '../../../../tests/helpers/TestLifecycleHelpers.js'
+import { flushMicrotasks, standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import { createMockAuthService } from '../auth/helpers/MockFactories.js'
@@ -449,6 +450,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
         OCPP20TransactionEventRequest
       ]
       assert.strictEqual(args[1], OCPP20RequestCommand.TRANSACTION_EVENT)
+      assert.strictEqual(args[2].eventType, OCPP20TransactionEventEnumType.Started)
     })
 
     await it('should NOT call TransactionEvent when response is Rejected', () => {

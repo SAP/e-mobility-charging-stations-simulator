@@ -32,7 +32,7 @@ import {
   type OCPP20TransactionContext,
 } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants, generateUUID } from '../../../../src/utils/index.js'
-import { standardCleanup } from '../../../../tests/helpers/TestLifecycleHelpers.js'
+import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import {

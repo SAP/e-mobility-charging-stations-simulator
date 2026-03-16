@@ -21,7 +21,7 @@ import {
   ReasonCodeEnumType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { standardCleanup } from '../../../../tests/helpers/TestLifecycleHelpers.js'
+import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import {
   TEST_CHARGING_STATION_BASE_NAME,
   TEST_CONNECTOR_ID_VALID_INSTANCE,

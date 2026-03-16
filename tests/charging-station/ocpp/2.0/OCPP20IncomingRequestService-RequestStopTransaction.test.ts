@@ -31,7 +31,7 @@ import {
   OCPP20ReasonEnumType,
 } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { flushMicrotasks, standardCleanup } from '../../../../tests/helpers/TestLifecycleHelpers.js'
+import { flushMicrotasks, standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import { createMockAuthService } from '../auth/helpers/MockFactories.js'
@@ -261,7 +261,9 @@ await describe('F03 - Remote Stop Transaction', async () => {
         response
       )
 
-      assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
+      await flushMicrotasks()
+
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 2)
       const args = requestHandlerMock.mock.calls[0].arguments as [
         unknown,
         string,
