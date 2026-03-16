@@ -276,13 +276,20 @@ assert.strictEqual(AuthValidators.isValidIdentifierValue(123 as any), false)
 
 ### Choose the Right Factory
 
-| Factory                                  | Use Case                         | Location                             |
-| ---------------------------------------- | -------------------------------- | ------------------------------------ |
-| `createMockChargingStation()`            | Full OCPP protocol testing       | `ChargingStationTestUtils.ts`        |
-| `createMockAuthServiceTestStation()`     | Auth service tests (lightweight) | `ocpp/auth/helpers/MockFactories.ts` |
-| `createMockStationWithRequestTracking()` | Verify sent OCPP requests        | `ocpp/2.0/OCPP20TestUtils.ts`        |
-| `createOCPP16ListenerStation()`          | OCPP 1.6 event listener tests    | `ocpp/1.6/OCPP16TestUtils.ts`        |
-| `createOCPP20ListenerStation()`          | OCPP 2.0 event listener tests    | `ocpp/2.0/OCPP20TestUtils.ts`        |
+| Factory                                    | Use Case                        | Location                             |
+| ------------------------------------------ | ------------------------------- | ------------------------------------ |
+| `createMockChargingStation()`              | Full OCPP protocol testing      | `helpers/StationHelpers.ts`          |
+| `createStandardStation()`                  | Pre-configured OCPP 1.6 station | `ocpp/1.6/OCPP16TestUtils.ts`        |
+| `createOCPP16IncomingRequestTestContext()` | OCPP 1.6 handler test context   | `ocpp/1.6/OCPP16TestUtils.ts`        |
+| `createOCPP16ListenerStation()`            | OCPP 1.6 event listener tests   | `ocpp/1.6/OCPP16TestUtils.ts`        |
+| `createOCPP20ListenerStation()`            | OCPP 2.0 event listener tests   | `ocpp/2.0/OCPP20TestUtils.ts`        |
+| `createOCPP20RequestTestContext()`         | OCPP 2.0 request test context   | `ocpp/2.0/OCPP20TestUtils.ts`        |
+| `createMockStationWithRequestTracking()`   | Verify sent OCPP requests       | `ocpp/2.0/OCPP20TestUtils.ts`        |
+| `createStationWithCertificateManager()`    | Certificate operation tests     | `ocpp/2.0/OCPP20TestUtils.ts`        |
+| `createMockCertificateManager()`           | Certificate manager mock        | `ocpp/2.0/OCPP20TestUtils.ts`        |
+| `createMockAuthService()`                  | Auth service mock               | `ocpp/auth/helpers/MockFactories.ts` |
+| `createMockAuthServiceTestStation()`       | Auth service integration tests  | `ocpp/auth/helpers/MockFactories.ts` |
+| `createMockUIWebSocket()`                  | UI server WebSocket mock        | `ui-server/UIServerTestUtils.ts`     |
 
 ### Usage
 
@@ -339,7 +346,6 @@ assert.ok(mocks.webSocket.sentMessages.includes(expectedMessage))
 | `createMockIdentifier()`          | UnifiedIdentifier factory   |
 | `createMockAuthRequest()`         | AuthRequest factory         |
 | `createMockAuthorizationResult()` | AuthorizationResult factory |
-| `expectAcceptedAuthorization()`   | Assert accepted result      |
 
 ---
 
