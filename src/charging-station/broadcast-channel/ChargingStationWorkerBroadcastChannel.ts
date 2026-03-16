@@ -36,8 +36,6 @@ import {
   type OCPP20GetCertificateStatusResponse,
   type OCPP20LogStatusNotificationRequest,
   type OCPP20LogStatusNotificationResponse,
-  type OCPP20MeterValuesRequest,
-  type OCPP20MeterValuesResponse,
   type OCPP20NotifyCustomerInformationRequest,
   type OCPP20NotifyCustomerInformationResponse,
   type OCPP20NotifyReportRequest,
@@ -467,12 +465,12 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
   ): Promise<MeterValuesResponse> {
     if (this.chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_201) {
       return await this.chargingStation.ocppRequestService.requestHandler<
-        OCPP20MeterValuesRequest,
-        OCPP20MeterValuesResponse
+        MeterValuesRequest,
+        MeterValuesResponse
       >(
         this.chargingStation,
         RequestCommand.METER_VALUES,
-        requestPayload as OCPP20MeterValuesRequest,
+        requestPayload as MeterValuesRequest,
         this.requestParams
       )
     }

@@ -41,7 +41,6 @@ import {
   type OCPP20ConnectorStatusEnumType,
   type OCPP20MeterValue,
   type OCPP20SampledValue,
-  type OCPP20StatusNotificationRequest,
   OCPPVersion,
   RequestCommand,
   type SampledValue,
@@ -127,7 +126,7 @@ const buildStatusNotificationRequest = (
         connectorStatus: status as OCPP20ConnectorStatusEnumType,
         evseId: resolvedEvseId,
         timestamp: new Date(),
-      } satisfies OCPP20StatusNotificationRequest
+      } satisfies StatusNotificationRequest
     }
     default:
       throw new OCPPError(
@@ -526,7 +525,7 @@ const buildVoltageMeasurandValue = (
   }
 }
 
-const addMainVoltageToMeterValue = <TSampledValue extends OCPP16SampledValue | OCPP20SampledValue>(
+const addMainVoltageToMeterValue = <TSampledValue extends SampledValue>(
   chargingStation: ChargingStation,
   meterValue: { sampledValue: TSampledValue[] },
   voltageData: { template: SampledValueTemplate; value: number },
@@ -551,7 +550,7 @@ const addMainVoltageToMeterValue = <TSampledValue extends OCPP16SampledValue | O
   }
 }
 
-const addPhaseVoltageToMeterValue = <TSampledValue extends OCPP16SampledValue | OCPP20SampledValue>(
+const addPhaseVoltageToMeterValue = <TSampledValue extends SampledValue>(
   chargingStation: ChargingStation,
   connectorId: number,
   meterValue: { sampledValue: TSampledValue[] },
@@ -600,21 +599,19 @@ const addPhaseVoltageToMeterValue = <TSampledValue extends OCPP16SampledValue | 
   )
 }
 
-const addLineToLineVoltageToMeterValue = <
-  TSampledValue extends OCPP16SampledValue | OCPP20SampledValue
->(
-    chargingStation: ChargingStation,
-    connectorId: number,
-    meterValue: { sampledValue: TSampledValue[] },
-    mainVoltageData: { template: SampledValueTemplate; value: number },
-    phase: number,
-    buildVersionedSampledValue: (
-      sampledValueTemplate: SampledValueTemplate,
-      value: number,
-      context?: MeterValueContext,
-      phase?: MeterValuePhase
-    ) => TSampledValue
-  ): void => {
+const addLineToLineVoltageToMeterValue = <TSampledValue extends SampledValue>(
+  chargingStation: ChargingStation,
+  connectorId: number,
+  meterValue: { sampledValue: TSampledValue[] },
+  mainVoltageData: { template: SampledValueTemplate; value: number },
+  phase: number,
+  buildVersionedSampledValue: (
+    sampledValueTemplate: SampledValueTemplate,
+    value: number,
+    context?: MeterValueContext,
+    phase?: MeterValuePhase
+  ) => TSampledValue
+): void => {
   const stationInfo = chargingStation.stationInfo
   if (stationInfo?.phaseLineToLineVoltageMeterValues !== true) {
     return
