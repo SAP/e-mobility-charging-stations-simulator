@@ -8,11 +8,14 @@ import { EventEmitter } from 'node:events'
 
 import type {
   ChargingStationData,
+  ProcedureName,
   ProtocolRequest,
   ProtocolResponse,
+  ProtocolVersion,
   RequestPayload,
+
   UIServerConfiguration,
-  UUIDv4,
+  UUIDv4
 } from '../../../src/types/index.js'
 
 import { UIWebSocketServer } from '../../../src/charging-station/ui-server/UIWebSocketServer.js'
@@ -20,8 +23,6 @@ import {
   ApplicationProtocol,
   ApplicationProtocolVersion,
   AuthenticationType,
-  ProcedureName,
-  ProtocolVersion,
   ResponseStatus,
 } from '../../../src/types/index.js'
 import { MockWebSocket } from '../mocks/MockWebSocket.js'

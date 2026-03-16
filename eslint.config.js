@@ -138,6 +138,12 @@ export default defineConfig([
           tsconfigRootDir: import.meta.dirname,
         },
       },
+      rules: {
+        '@typescript-eslint/consistent-type-imports': [
+          'error',
+          { fixStyle: 'separate-type-imports', prefer: 'type-imports' },
+        ],
+      },
     },
     {
       files: ['**/*.js', '**/*.mjs', '**/*.cjs'],

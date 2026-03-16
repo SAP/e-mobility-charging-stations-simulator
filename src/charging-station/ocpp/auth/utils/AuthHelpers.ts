@@ -1,6 +1,6 @@
-import type { AuthorizationResult, AuthRequest, UnifiedIdentifier } from '../types/AuthTypes.js'
+import type { AuthContext, AuthenticationMethod, AuthorizationResult, AuthRequest, UnifiedIdentifier } from '../types/AuthTypes.js'
 
-import { AuthContext, AuthenticationMethod, AuthorizationStatus } from '../types/AuthTypes.js'
+import { AuthorizationStatus } from '../types/AuthTypes.js'
 
 /**
  * Compute remaining TTL in seconds from an expiry date.

@@ -1,5 +1,6 @@
 import type { OCPP16AuthAdapter } from '../adapters/OCPP16AuthAdapter.js'
 import type { OCPP20AuthAdapter } from '../adapters/OCPP20AuthAdapter.js'
+import type { LocalAuthStrategy } from '../strategies/LocalAuthStrategy.js'
 
 import { OCPPError } from '../../../../exception/OCPPError.js'
 import { ErrorType } from '../../../../types/index.js'
@@ -12,7 +13,6 @@ import {
   type AuthStrategy,
   type OCPPAuthService,
 } from '../interfaces/OCPPAuthService.js'
-import { LocalAuthStrategy } from '../strategies/LocalAuthStrategy.js'
 import {
   type AuthConfiguration,
   AuthContext,

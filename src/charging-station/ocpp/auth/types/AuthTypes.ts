@@ -1,11 +1,11 @@
 import type { JsonObject } from '../../../../types/JsonType.js'
+import type { OCPPVersion } from '../../../../types/ocpp/OCPPVersion.js'
 
 import { OCPP16AuthorizationStatus } from '../../../../types/ocpp/1.6/Transaction.js'
 import {
   OCPP20IdTokenEnumType,
   RequestStartStopStatusEnumType,
 } from '../../../../types/ocpp/2.0/Transaction.js'
-import { OCPPVersion } from '../../../../types/ocpp/OCPPVersion.js'
 
 /**
  * Authentication context for strategy selection

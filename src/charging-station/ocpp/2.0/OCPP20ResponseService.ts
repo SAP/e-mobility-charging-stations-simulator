@@ -1,5 +1,7 @@
 import type { ValidateFunction } from 'ajv'
 
+import type { OCPP20IncomingRequestCommand } from '../../../types/index.js'
+
 import { addConfigurationKey, type ChargingStation } from '../../../charging-station/index.js'
 import {
   ChargingStationEvents,
@@ -7,7 +9,6 @@ import {
   type OCPP20BootNotificationResponse,
   type OCPP20FirmwareStatusNotificationResponse,
   type OCPP20HeartbeatResponse,
-  OCPP20IncomingRequestCommand,
   type OCPP20LogStatusNotificationResponse,
   type OCPP20MeterValuesResponse,
   type OCPP20NotifyCustomerInformationResponse,

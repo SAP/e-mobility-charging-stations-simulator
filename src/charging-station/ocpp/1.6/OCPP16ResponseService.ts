@@ -2,6 +2,8 @@ import type { ValidateFunction } from 'ajv'
 
 import { secondsToMilliseconds } from 'date-fns'
 
+import type { OCPP16IncomingRequestCommand } from '../../../types/index.js'
+
 import {
   addConfigurationKey,
   type ChargingStation,
@@ -17,7 +19,6 @@ import {
   type OCPP16AuthorizeResponse,
   type OCPP16BootNotificationResponse,
   OCPP16ChargePointStatus,
-  OCPP16IncomingRequestCommand,
   type OCPP16MeterValue,
   type OCPP16MeterValuesRequest,
   type OCPP16MeterValuesResponse,

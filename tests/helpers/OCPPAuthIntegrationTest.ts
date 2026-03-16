@@ -1,3 +1,4 @@
+import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 import type {
   AuthConfiguration,
   AuthorizationResult,
@@ -5,7 +6,6 @@ import type {
   UnifiedIdentifier,
 } from '../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 
-import { ChargingStation } from '../../src/charging-station/ChargingStation.js'
 import { OCPPAuthServiceImpl } from '../../src/charging-station/ocpp/auth/services/OCPPAuthServiceImpl.js'
 import {
   AuthContext,

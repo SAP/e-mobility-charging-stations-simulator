@@ -1,3 +1,4 @@
+import type { RequestStartStopStatusEnumType } from '../../../../types/index.js'
 import type { ChargingStation } from '../../../index.js'
 import type { OCPPAuthAdapter } from '../interfaces/OCPPAuthService.js'
 import type {
@@ -9,11 +10,7 @@ import type {
 
 import { OCPP20ServiceUtils } from '../../2.0/OCPP20ServiceUtils.js'
 import { OCPP20VariableManager } from '../../2.0/OCPP20VariableManager.js'
-import {
-  GetVariableStatusEnumType,
-  type OCPP20IdTokenType,
-  RequestStartStopStatusEnumType,
-} from '../../../../types/index.js'
+import { GetVariableStatusEnumType, type OCPP20IdTokenType } from '../../../../types/index.js'
 import {
   type AdditionalInfoType,
   OCPP20AuthorizationStatusEnumType,

@@ -3,8 +3,10 @@
  * @description Unit tests for OCPP 2.0 RequestStopTransaction command handling (F03)
  */
 
+import type { mock } from 'node:test'
+
 import assert from 'node:assert/strict'
-import { afterEach, beforeEach, describe, it, mock } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type {

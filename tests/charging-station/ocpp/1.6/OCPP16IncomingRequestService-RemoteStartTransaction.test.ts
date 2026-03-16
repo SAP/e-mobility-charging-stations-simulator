@@ -3,9 +3,12 @@
  * @description Unit tests for OCPP 1.6 RemoteStartTransaction incoming request handler (§5.11)
  */
 
-import assert from 'node:assert/strict'
-import { afterEach, beforeEach, describe, it, mock } from 'node:test'
+import type { mock } from 'node:test'
 
+import assert from 'node:assert/strict'
+import { afterEach, beforeEach, describe, it } from 'node:test'
+
+import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
 import type { RemoteStartTransactionRequest } from '../../../../src/types/index.js'
 
 import { OCPP16IncomingRequestService } from '../../../../src/charging-station/ocpp/1.6/OCPP16IncomingRequestService.js'
@@ -170,7 +173,7 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
   await describe('REMOTE_START_TRANSACTION event listener', async () => {
     let incomingRequestService: OCPP16IncomingRequestService
     let requestHandlerMock: ReturnType<typeof mock.fn>
-    let listenerStation: import('../../../../src/charging-station/ChargingStation.js').ChargingStation
+    let listenerStation: ChargingStation
 
     beforeEach(() => {
       ;({ requestHandlerMock, station: listenerStation } = createOCPP16ListenerStation(

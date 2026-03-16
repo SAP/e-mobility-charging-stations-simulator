@@ -1,3 +1,4 @@
+import type { OCPPVersion } from '../../../../types/ocpp/OCPPVersion.js'
 import type {
   AuthCache,
   AuthStrategy,
@@ -6,7 +7,6 @@ import type {
 } from '../interfaces/OCPPAuthService.js'
 import type { AuthConfiguration, AuthorizationResult, AuthRequest } from '../types/AuthTypes.js'
 
-import { OCPPVersion } from '../../../../types/ocpp/OCPPVersion.js'
 import { ensureError, getErrorMessage, logger } from '../../../../utils/index.js'
 import {
   AuthenticationError,
