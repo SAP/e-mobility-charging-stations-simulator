@@ -73,7 +73,7 @@ import {
   type OCPP20InstallCertificateResponse,
   type OCPP20LogStatusNotificationRequest,
   type OCPP20LogStatusNotificationResponse,
-  OCPP20MeasurandEnumType,
+  type OCPP20MeterValue,
   type OCPP20MeterValuesRequest,
   type OCPP20MeterValuesResponse,
   type OCPP20NotifyCustomerInformationRequest,
@@ -81,7 +81,6 @@ import {
   type OCPP20NotifyReportRequest,
   type OCPP20NotifyReportResponse,
   OCPP20OperationalStatusEnumType,
-  OCPP20ReadingContextEnumType,
   OCPP20RequestCommand,
   type OCPP20RequestStartTransactionRequest,
   type OCPP20RequestStartTransactionResponse,
@@ -138,7 +137,11 @@ import {
 } from '../../Helpers.js'
 import { OCPPAuthServiceFactory } from '../auth/services/OCPPAuthServiceFactory.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
-import { restoreConnectorStatus, sendAndSetConnectorStatus } from '../OCPPServiceUtils.js'
+import {
+  buildMeterValue,
+  restoreConnectorStatus,
+  sendAndSetConnectorStatus,
+} from '../OCPPServiceUtils.js'
 import {
   type GetInstalledCertificatesResult,
   hasCertificateManager,
@@ -393,29 +396,68 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               .catch(errorHandler)
             break
           case MessageTriggerEnumType.MeterValues: {
-            const evseId = evse?.id ?? 0
-            chargingStation.ocppRequestService
-              .requestHandler<OCPP20MeterValuesRequest, OCPP20MeterValuesResponse>(
-                chargingStation,
-                OCPP20RequestCommand.METER_VALUES,
-                {
-                  evseId,
-                  meterValue: [
-                    {
-                      sampledValue: [
-                        {
-                          context: OCPP20ReadingContextEnumType.TRIGGER,
-                          measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
-                          value: 0,
-                        },
-                      ],
-                      timestamp: new Date(),
-                    },
-                  ],
-                },
-                { skipBufferingOnError: true, triggerMessage: true }
-              )
-              .catch(errorHandler)
+            const targetEvseIds: number[] = []
+            if (evse?.id != null && evse.id > 0) {
+              targetEvseIds.push(evse.id)
+            } else {
+              for (const [eId] of chargingStation.evses) {
+                if (eId > 0) {
+                  targetEvseIds.push(eId)
+                }
+              }
+            }
+            let hasSentTransactionEvent = false
+            for (const targetEvseId of targetEvseIds) {
+              const evseStatus = chargingStation.getEvseStatus(targetEvseId)
+              if (evseStatus == null) continue
+              for (const [cId, connector] of evseStatus.connectors) {
+                if (connector.transactionId == null) continue
+                hasSentTransactionEvent = true
+                const txUpdatedInterval = this.getTxUpdatedInterval(chargingStation)
+                const meterValue = buildMeterValue(
+                  chargingStation,
+                  cId,
+                  0,
+                  txUpdatedInterval
+                ) as OCPP20MeterValue
+                OCPP20ServiceUtils.sendTransactionEvent(
+                  chargingStation,
+                  OCPP20TransactionEventEnumType.Updated,
+                  OCPP20TriggerReasonEnumType.Trigger,
+                  cId,
+                  connector.transactionId as string,
+                  { meterValue: [meterValue] }
+                ).catch(errorHandler)
+              }
+            }
+            if (!hasSentTransactionEvent) {
+              const fallbackEvseId = evse?.id ?? 0
+              let meterValue: OCPP20MeterValue
+              try {
+                meterValue = buildMeterValue(
+                  chargingStation,
+                  fallbackEvseId > 0 ? fallbackEvseId : 1,
+                  0,
+                  this.getTxUpdatedInterval(chargingStation)
+                ) as OCPP20MeterValue
+              } catch {
+                meterValue = {
+                  sampledValue: [{ value: 0 }],
+                  timestamp: new Date(),
+                }
+              }
+              chargingStation.ocppRequestService
+                .requestHandler<OCPP20MeterValuesRequest, OCPP20MeterValuesResponse>(
+                  chargingStation,
+                  OCPP20RequestCommand.METER_VALUES,
+                  {
+                    evseId: fallbackEvseId,
+                    meterValue: [meterValue],
+                  },
+                  { skipBufferingOnError: true, triggerMessage: true }
+                )
+                .catch(errorHandler)
+            }
             break
           }
           case MessageTriggerEnumType.StatusNotification:
@@ -3420,16 +3462,42 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
 
     // L01.FR.06: Wait for active transactions to end before installing
-    while (
-      !checkAborted() &&
-      [...chargingStation.evses].some(
-        ([evseId, evse]) => evseId > 0 && this.hasEvseActiveTransactions(evse)
-      )
-    ) {
-      logger.debug(
-        `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Waiting for active transactions to end before installing (L01.FR.06)`
-      )
-      await sleep(OCPP20Constants.FIRMWARE_INSTALL_DELAY_MS)
+    // L01.FR.07: Set idle connectors to Unavailable when AllowNewSessionsPendingFirmwareUpdate is false/absent
+    const hasActiveTransactionsBeforeInstall = [...chargingStation.evses].some(
+      ([evseId, evse]) => evseId > 0 && this.hasEvseActiveTransactions(evse)
+    )
+    if (hasActiveTransactionsBeforeInstall) {
+      const variableManager = OCPP20VariableManager.getInstance()
+      const allowNewSessionsResults = variableManager.getVariables(chargingStation, [
+        {
+          attributeType: AttributeEnumType.Actual,
+          component: { name: OCPP20ComponentName.ChargingStation },
+          variable: { name: 'AllowNewSessionsPendingFirmwareUpdate' },
+        },
+      ])
+      const allowNewSessions = allowNewSessionsResults[0]?.attributeValue?.toLowerCase() === 'true'
+      if (!allowNewSessions) {
+        for (const [fwEvseId, fwEvseStatus] of chargingStation.evses) {
+          if (fwEvseId > 0 && !this.hasEvseActiveTransactions(fwEvseStatus)) {
+            this.sendEvseStatusNotifications(
+              chargingStation,
+              fwEvseId,
+              OCPP20ConnectorStatusEnumType.Unavailable
+            )
+          }
+        }
+      }
+      while (
+        !checkAborted() &&
+        [...chargingStation.evses].some(
+          ([evseId, evse]) => evseId > 0 && this.hasEvseActiveTransactions(evse)
+        )
+      ) {
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Waiting for active transactions to end before installing (L01.FR.06)`
+        )
+        await sleep(OCPP20Constants.FIRMWARE_INSTALL_DELAY_MS)
+      }
     }
     if (checkAborted()) return
 
