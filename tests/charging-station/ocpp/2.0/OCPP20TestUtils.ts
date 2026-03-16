@@ -1,3 +1,7 @@
+/**
+ * @file OCPP 2.0 test utilities
+ * @description Shared helpers, mock factories, and fixtures for OCPP 2.0 test suites
+ */
 import { mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
@@ -869,6 +873,33 @@ export function createMockOCSPRequestData (): OCSPRequestDataType {
     responderURL: 'http://ocsp.example.com',
     serialNumber: '1234567890',
   }
+}
+
+/**
+ * Create a mock OCPP 2.0 charging station with a spy requestHandler for listener tests.
+ * @param baseName - Base name for the mock charging station
+ * @returns The mock station and its request handler spy
+ */
+export function createOCPP20ListenerStation (baseName: string): {
+  requestHandlerMock: ReturnType<typeof mock.fn>
+  station: ChargingStation
+} {
+  const requestHandlerMock = mock.fn(async () => Promise.resolve({}))
+  const { station } = createMockChargingStation({
+    baseName,
+    connectorsCount: 3,
+    evseConfiguration: { evsesCount: 3 },
+    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+    ocppRequestService: {
+      requestHandler: requestHandlerMock,
+    },
+    stationInfo: {
+      ocppStrictCompliance: false,
+      ocppVersion: OCPPVersion.VERSION_201,
+    },
+    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+  })
+  return { requestHandlerMock, station }
 }
 
 /**

@@ -1,8 +1,9 @@
-import { millisecondsToSeconds } from 'date-fns'
 /**
  * @file Tests for OCPP20IncomingRequestService GetVariables
  * @description Unit tests for OCPP 2.0 GetVariables command handling (B06)
  */
+
+import { millisecondsToSeconds } from 'date-fns'
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
@@ -21,7 +22,7 @@ import {
   ReasonCodeEnumType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { standardCleanup } from '../../../../tests/helpers/TestLifecycleHelpers.js'
+import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import {
   TEST_CHARGING_STATION_BASE_NAME,
   TEST_CONNECTOR_ID_VALID_INSTANCE,

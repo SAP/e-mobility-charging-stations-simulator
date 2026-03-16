@@ -23,7 +23,7 @@ import {
   type OCPP20IdTokenType,
 } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { OCPPVersion } from '../../../../src/types/ocpp/OCPPVersion.js'
-import { standardCleanup } from '../../../../tests/helpers/TestLifecycleHelpers.js'
+import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 
 await describe('G03 - Remote Start Pre-Authorization', async () => {
   let service: OCPP20IncomingRequestService | undefined

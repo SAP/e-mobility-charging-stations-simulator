@@ -89,14 +89,12 @@ await describe('K01 - GetLog', async () => {
   })
 
   await describe('GET_LOG event listener', async () => {
-    await it('should register GET_LOG event listener in constructor', () => {
-      const service = new OCPP20IncomingRequestService()
-      assert.strictEqual(service.listenerCount(OCPP20IncomingRequestCommand.GET_LOG), 1)
-    })
+    let service: OCPP20IncomingRequestService
+    let simulateMock: ReturnType<typeof mock.fn>
 
-    await it('should call simulateLogUploadLifecycle when GET_LOG event emitted with Accepted response', () => {
-      const service = new OCPP20IncomingRequestService()
-      const simulateMock = mock.method(
+    beforeEach(() => {
+      service = new OCPP20IncomingRequestService()
+      simulateMock = mock.method(
         service as unknown as {
           simulateLogUploadLifecycle: (
             chargingStation: ChargingStation,
@@ -106,7 +104,13 @@ await describe('K01 - GetLog', async () => {
         'simulateLogUploadLifecycle',
         () => Promise.resolve()
       )
+    })
 
+    await it('should register GET_LOG event listener in constructor', () => {
+      assert.strictEqual(service.listenerCount(OCPP20IncomingRequestCommand.GET_LOG), 1)
+    })
+
+    await it('should call simulateLogUploadLifecycle when GET_LOG event emitted with Accepted response', () => {
       const request: OCPP20GetLogRequest = {
         log: {
           remoteLocation: 'https://csms.example.com/logs',
@@ -126,18 +130,6 @@ await describe('K01 - GetLog', async () => {
     })
 
     await it('should NOT call simulateLogUploadLifecycle when GET_LOG event emitted with Rejected response', () => {
-      const service = new OCPP20IncomingRequestService()
-      const simulateMock = mock.method(
-        service as unknown as {
-          simulateLogUploadLifecycle: (
-            chargingStation: ChargingStation,
-            requestId: number
-          ) => Promise<void>
-        },
-        'simulateLogUploadLifecycle',
-        () => Promise.resolve()
-      )
-
       const request: OCPP20GetLogRequest = {
         log: {
           remoteLocation: 'https://csms.example.com/logs',
@@ -155,7 +147,6 @@ await describe('K01 - GetLog', async () => {
     })
 
     await it('should handle simulateLogUploadLifecycle rejection gracefully', async () => {
-      const service = new OCPP20IncomingRequestService()
       mock.method(
         service as unknown as {
           simulateLogUploadLifecycle: (
@@ -181,7 +172,7 @@ await describe('K01 - GetLog', async () => {
 
       service.emit(OCPP20IncomingRequestCommand.GET_LOG, station, request, response)
 
-      await Promise.resolve()
+      await flushMicrotasks()
     })
 
     await describe('N01 - LogStatusNotification lifecycle', async () => {

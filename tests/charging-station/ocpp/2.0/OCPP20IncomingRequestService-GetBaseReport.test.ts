@@ -1,10 +1,10 @@
-import { millisecondsToSeconds } from 'date-fns'
 /**
  * @file Tests for OCPP20IncomingRequestService GetBaseReport
  * @description Unit tests for OCPP 2.0 GetBaseReport command handling (B07)
  */
+import { millisecondsToSeconds } from 'date-fns'
 import assert from 'node:assert/strict'
-import { afterEach, beforeEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 
@@ -21,6 +21,8 @@ import {
   OCPP20ComponentName,
   OCPP20DeviceInfoVariableName,
   type OCPP20GetBaseReportRequest,
+  type OCPP20GetBaseReportResponse,
+  OCPP20IncomingRequestCommand,
   OCPP20OptionalVariableName,
   OCPP20RequiredVariableName,
   type OCPP20SetVariableResultType,
@@ -30,7 +32,7 @@ import {
 } from '../../../../src/types/index.js'
 import { StandardParametersKey } from '../../../../src/types/ocpp/Configuration.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { standardCleanup } from '../../../../tests/helpers/TestLifecycleHelpers.js'
+import { flushMicrotasks, standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import {
   TEST_CHARGE_POINT_MODEL,
   TEST_CHARGE_POINT_SERIAL_NUMBER,
@@ -353,5 +355,90 @@ await describe('B07 - Get Base Report', async () => {
 
     assert.ok(Array.isArray(reportData))
     assert.strictEqual(reportData.length, 0)
+  })
+
+  await describe('GET_BASE_REPORT event listener', async () => {
+    let listenerService: OCPP20IncomingRequestService
+    let sendNotifyMock: ReturnType<typeof mock.fn>
+
+    beforeEach(() => {
+      listenerService = new OCPP20IncomingRequestService()
+      sendNotifyMock = mock.method(
+        listenerService as unknown as {
+          sendNotifyReportRequest: (
+            chargingStation: ChargingStation,
+            request: OCPP20GetBaseReportRequest,
+            response: OCPP20GetBaseReportResponse
+          ) => Promise<void>
+        },
+        'sendNotifyReportRequest',
+        () => Promise.resolve()
+      )
+    })
+
+    afterEach(() => {
+      standardCleanup()
+    })
+
+    await it('should register GET_BASE_REPORT event listener in constructor', () => {
+      assert.strictEqual(
+        listenerService.listenerCount(OCPP20IncomingRequestCommand.GET_BASE_REPORT),
+        1
+      )
+    })
+
+    await it('should call sendNotifyReportRequest when response is Accepted', () => {
+      const request: OCPP20GetBaseReportRequest = {
+        reportBase: ReportBaseEnumType.FullInventory,
+        requestId: 1,
+      }
+      const response: OCPP20GetBaseReportResponse = {
+        status: GenericDeviceModelStatusEnumType.Accepted,
+      }
+
+      listenerService.emit(OCPP20IncomingRequestCommand.GET_BASE_REPORT, station, request, response)
+
+      assert.strictEqual(sendNotifyMock.mock.callCount(), 1)
+    })
+
+    await it('should NOT call sendNotifyReportRequest when response is NotSupported', () => {
+      const request: OCPP20GetBaseReportRequest = {
+        reportBase: ReportBaseEnumType.FullInventory,
+        requestId: 2,
+      }
+      const response: OCPP20GetBaseReportResponse = {
+        status: GenericDeviceModelStatusEnumType.NotSupported,
+      }
+
+      listenerService.emit(OCPP20IncomingRequestCommand.GET_BASE_REPORT, station, request, response)
+
+      assert.strictEqual(sendNotifyMock.mock.callCount(), 0)
+    })
+
+    await it('should handle sendNotifyReportRequest rejection gracefully', async () => {
+      mock.method(
+        listenerService as unknown as {
+          sendNotifyReportRequest: (
+            chargingStation: ChargingStation,
+            request: OCPP20GetBaseReportRequest,
+            response: OCPP20GetBaseReportResponse
+          ) => Promise<void>
+        },
+        'sendNotifyReportRequest',
+        () => Promise.reject(new Error('notify report error'))
+      )
+
+      const request: OCPP20GetBaseReportRequest = {
+        reportBase: ReportBaseEnumType.FullInventory,
+        requestId: 3,
+      }
+      const response: OCPP20GetBaseReportResponse = {
+        status: GenericDeviceModelStatusEnumType.Accepted,
+      }
+
+      listenerService.emit(OCPP20IncomingRequestCommand.GET_BASE_REPORT, station, request, response)
+
+      await flushMicrotasks()
+    })
   })
 })

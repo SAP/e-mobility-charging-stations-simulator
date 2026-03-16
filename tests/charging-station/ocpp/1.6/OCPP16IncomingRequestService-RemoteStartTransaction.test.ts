@@ -4,14 +4,21 @@
  */
 
 import assert from 'node:assert/strict'
-import { afterEach, beforeEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { RemoteStartTransactionRequest } from '../../../../src/types/index.js'
 
-import { AvailabilityType, GenericStatus } from '../../../../src/types/index.js'
-import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
+import { OCPP16IncomingRequestService } from '../../../../src/charging-station/ocpp/1.6/OCPP16IncomingRequestService.js'
+import {
+  AvailabilityType,
+  GenericStatus,
+  OCPP16IncomingRequestCommand,
+  OCPP16RequestCommand,
+} from '../../../../src/types/index.js'
+import { flushMicrotasks, standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import {
   createOCPP16IncomingRequestTestContext,
+  createOCPP16ListenerStation,
   type OCPP16IncomingRequestTestContext,
 } from './OCPP16TestUtils.js'
 
@@ -158,5 +165,142 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
 
     // Assert
     assert.strictEqual(response.status, GenericStatus.Rejected)
+  })
+
+  await describe('REMOTE_START_TRANSACTION event listener', async () => {
+    let incomingRequestService: OCPP16IncomingRequestService
+    let requestHandlerMock: ReturnType<typeof mock.fn>
+    let listenerStation: import('../../../../src/charging-station/ChargingStation.js').ChargingStation
+
+    beforeEach(() => {
+      ;({ requestHandlerMock, station: listenerStation } = createOCPP16ListenerStation(
+        'test-remote-start-listener'
+      ))
+      incomingRequestService = new OCPP16IncomingRequestService()
+    })
+
+    afterEach(() => {
+      standardCleanup()
+    })
+
+    await it('should register REMOTE_START_TRANSACTION event listener in constructor', () => {
+      assert.strictEqual(
+        incomingRequestService.listenerCount(OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION),
+        1
+      )
+    })
+
+    await it('should call StartTransaction when response is Accepted', async () => {
+      // Arrange
+      const connectorStatus = listenerStation.getConnectorStatus(1)
+      assert.notStrictEqual(connectorStatus, undefined)
+
+      const request: RemoteStartTransactionRequest = {
+        connectorId: 1,
+        idTag: 'TEST-TAG-001',
+      }
+      const response = { status: GenericStatus.Accepted }
+
+      // Act
+      incomingRequestService.emit(
+        OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
+        listenerStation,
+        request,
+        response
+      )
+
+      // Flush microtask queue so the async requestHandler call executes
+      await flushMicrotasks()
+
+      // Assert
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
+      const args = requestHandlerMock.mock.calls[0].arguments as [unknown, string, unknown]
+      assert.strictEqual(args[1], OCPP16RequestCommand.START_TRANSACTION)
+    })
+
+    await it('should NOT call StartTransaction when response is Rejected', () => {
+      // Arrange
+      const request: RemoteStartTransactionRequest = {
+        connectorId: 1,
+        idTag: 'TEST-TAG-001',
+      }
+      const response = { status: GenericStatus.Rejected }
+
+      // Act
+      incomingRequestService.emit(
+        OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
+        listenerStation,
+        request,
+        response
+      )
+
+      // Assert
+      assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
+    })
+
+    await it('should set transactionRemoteStarted to true on Accepted', async () => {
+      // Arrange
+      const connectorStatus = listenerStation.getConnectorStatus(1)
+      assert.notStrictEqual(connectorStatus, undefined)
+      if (connectorStatus != null) {
+        connectorStatus.transactionRemoteStarted = false
+      }
+
+      const request: RemoteStartTransactionRequest = {
+        connectorId: 1,
+        idTag: 'TEST-TAG-001',
+      }
+      const response = { status: GenericStatus.Accepted }
+
+      // Act
+      incomingRequestService.emit(
+        OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
+        listenerStation,
+        request,
+        response
+      )
+
+      // Flush microtask queue
+      await flushMicrotasks()
+
+      // Assert
+      assert.strictEqual(connectorStatus?.transactionRemoteStarted, true)
+    })
+
+    await it('should handle StartTransaction failure gracefully', async () => {
+      // Arrange — override requestHandler to reject
+      let startTransactionCallCount = 0
+      ;(
+        listenerStation.ocppRequestService as unknown as {
+          requestHandler: (...args: unknown[]) => Promise<unknown>
+        }
+      ).requestHandler = async (_station: unknown, commandName: unknown) => {
+        if (commandName === OCPP16RequestCommand.START_TRANSACTION) {
+          startTransactionCallCount++
+          throw new Error('StartTransaction rejected by server')
+        }
+        return Promise.resolve({})
+      }
+
+      const request: RemoteStartTransactionRequest = {
+        connectorId: 1,
+        idTag: 'TEST-TAG-001',
+      }
+      const response = { status: GenericStatus.Accepted }
+
+      // Act — should not throw
+      incomingRequestService.emit(
+        OCPP16IncomingRequestCommand.REMOTE_START_TRANSACTION,
+        listenerStation,
+        request,
+        response
+      )
+
+      // Flush microtask queue so .catch(errorHandler) executes
+      await flushMicrotasks()
+
+      // Assert — handler was called and error was swallowed
+      assert.strictEqual(startTransactionCallCount, 1)
+    })
   })
 })

@@ -7,7 +7,7 @@ Conventions for writing maintainable, consistent tests in the e-mobility chargin
 - **Test behavior, not implementation**: Focus on what code does, not how
 - **Isolation is mandatory**: Each test runs independently with fresh state
 - **Determinism required**: Tests must produce identical results on every run
-- **Strict assertions**: Use `assert.strictEqual`, `assert.deepStrictEqual`, `assert.ok` — never loose equality
+- **Strict assertions**: Use `assert.strictEqual`, `assert.deepStrictEqual` — never loose equality. Use `assert.ok` only for boolean/existence checks
 - **Coverage target**: 80%+ on new code
 
 ---
@@ -22,6 +22,10 @@ Pattern: `should [verb]` in **lowercase**
 // ✅ Good
 it('should start successfully with valid configuration', async () => {})
 it('should reject invalid identifier', () => {})
+
+// ✅ Good — with spec traceability prefix (for FR-referenced tests)
+it('G03.FR.01.T5.01 - should evict non-valid entry before valid one', () => {})
+it('G04.INT.01: should wire auth cache into local strategy', async () => {})
 
 // ❌ Bad
 it('Should start successfully', () => {}) // Capital 'S'
@@ -177,7 +181,7 @@ it('should timeout', async () => {
 The test command uses `--test-force-exit` flag to prevent Windows CI hangs:
 
 ```json
-"test": "node --import tsx --test --test-force-exit tests/**/*.test.ts"
+"test": "node --import tsx --test --test-force-exit 'tests/**/*.test.ts'"
 ```
 
 **Why**: Windows Named Pipes for stdout/stderr remain "ref'd" (keep event loop alive) while Unix file descriptors are auto-unref'd. Without `--test-force-exit`, the Node.js process hangs indefinitely after tests complete on Windows.
@@ -272,11 +276,20 @@ assert.strictEqual(AuthValidators.isValidIdentifierValue(123 as any), false)
 
 ### Choose the Right Factory
 
-| Factory                                  | Use Case                         | Location                             |
-| ---------------------------------------- | -------------------------------- | ------------------------------------ |
-| `createMockChargingStation()`            | Full OCPP protocol testing       | `ChargingStationTestUtils.ts`        |
-| `createMockAuthServiceTestStation()`     | Auth service tests (lightweight) | `ocpp/auth/helpers/MockFactories.ts` |
-| `createMockStationWithRequestTracking()` | Verify sent OCPP requests        | `ocpp/2.0/OCPP20TestUtils.ts`        |
+| Factory                                    | Use Case                        | Location                             |
+| ------------------------------------------ | ------------------------------- | ------------------------------------ |
+| `createMockChargingStation()`              | Full OCPP protocol testing      | `helpers/StationHelpers.ts`          |
+| `createStandardStation()`                  | Pre-configured OCPP 1.6 station | `ocpp/1.6/OCPP16TestUtils.ts`        |
+| `createOCPP16IncomingRequestTestContext()` | OCPP 1.6 handler test context   | `ocpp/1.6/OCPP16TestUtils.ts`        |
+| `createOCPP16ListenerStation()`            | OCPP 1.6 event listener tests   | `ocpp/1.6/OCPP16TestUtils.ts`        |
+| `createOCPP20ListenerStation()`            | OCPP 2.0 event listener tests   | `ocpp/2.0/OCPP20TestUtils.ts`        |
+| `createOCPP20RequestTestContext()`         | OCPP 2.0 request test context   | `ocpp/2.0/OCPP20TestUtils.ts`        |
+| `createMockStationWithRequestTracking()`   | Verify sent OCPP requests       | `ocpp/2.0/OCPP20TestUtils.ts`        |
+| `createStationWithCertificateManager()`    | Certificate operation tests     | `ocpp/2.0/OCPP20TestUtils.ts`        |
+| `createMockCertificateManager()`           | Certificate manager mock        | `ocpp/2.0/OCPP20TestUtils.ts`        |
+| `createMockAuthService()`                  | Auth service mock               | `ocpp/auth/helpers/MockFactories.ts` |
+| `createMockAuthServiceTestStation()`       | Auth service integration tests  | `ocpp/auth/helpers/MockFactories.ts` |
+| `createMockUIWebSocket()`                  | UI server WebSocket mock        | `ui-server/UIServerTestUtils.ts`     |
 
 ### Usage
 
@@ -288,7 +301,7 @@ const { station, mocks } = createMockChargingStation({
 })
 
 // Verify sent messages
-assert.ok(mocks.webSocket.sentMessages.includes(expectedMessage))
+assert.strictEqual(mocks.webSocket.sentMessages.length, 1)
 ```
 
 ---
@@ -300,9 +313,10 @@ assert.ok(mocks.webSocket.sentMessages.includes(expectedMessage))
 | Utility                           | Purpose                                  |
 | --------------------------------- | ---------------------------------------- |
 | `standardCleanup()`               | **MANDATORY** afterEach cleanup          |
-| `sleep(ms)`                       | Real-time delay                          |
+| `flushMicrotasks()`               | Drain async side-effects from `emit()`   |
 | `withMockTimers()`                | Execute test with timer mocking          |
 | `createTimerScope()`              | Manual timer control                     |
+| `sleep(ms)`                       | Real-time delay (avoid in tests)         |
 | `createLoggerMocks()`             | Create logger spies (error, warn)        |
 | `createConsoleMocks()`            | Create console spies (error, warn, info) |
 | `setupConnectorWithTransaction()` | Setup connector in transaction state     |
@@ -321,7 +335,6 @@ assert.ok(mocks.webSocket.sentMessages.includes(expectedMessage))
 | Utility                                | Purpose                         |
 | -------------------------------------- | ------------------------------- |
 | `createTestableOCPP20RequestService()` | Type-safe private method access |
-| `createMockCertificateManager()`       | Certificate operations mock     |
 | `IdTokenFixtures`                      | Pre-built IdToken fixtures      |
 | `TransactionContextFixtures`           | Transaction context fixtures    |
 
@@ -332,7 +345,72 @@ assert.ok(mocks.webSocket.sentMessages.includes(expectedMessage))
 | `createMockIdentifier()`          | UnifiedIdentifier factory   |
 | `createMockAuthRequest()`         | AuthRequest factory         |
 | `createMockAuthorizationResult()` | AuthorizationResult factory |
-| `expectAcceptedAuthorization()`   | Assert accepted result      |
+
+---
+
+## 11. Event Listener Testing
+
+Commands that use the post-response event listener pattern (handler validates → returns response → event triggers async action) require dedicated listener tests.
+
+### Structure
+
+```typescript
+await describe('COMMAND_NAME event listener', async () => {
+  let listenerService: OCPP16IncomingRequestService // or OCPP20
+  let requestHandlerMock: ReturnType<typeof mock.fn>
+  let station: ChargingStation
+
+  beforeEach(() => {
+    ;({ requestHandlerMock, station } = createOCPP16ListenerStation('test-listener'))
+    listenerService = new OCPP16IncomingRequestService()
+  })
+
+  afterEach(() => {
+    standardCleanup()
+  })
+
+  // 1. Registration test (always first)
+  await it('should register COMMAND_NAME event listener in constructor', () => {
+    assert.strictEqual(
+      listenerService.listenerCount(OCPP16IncomingRequestCommand.COMMAND_NAME),
+      1
+    )
+  })
+
+  // 2. Accepted → fires action
+  await it('should call X when response is Accepted', async () => {
+    listenerService.emit(OCPP16IncomingRequestCommand.COMMAND_NAME, station, request, response)
+    await flushMicrotasks()
+    assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
+  })
+
+  // 3. Rejected → does NOT fire
+  await it('should NOT call X when response is Rejected', () => {
+    listenerService.emit(...)
+    assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
+  })
+
+  // 4. Error → handled gracefully
+  await it('should handle X failure gracefully', async () => {
+    // Override mock to reject (mock.method for lifecycle, new factory for requestHandler)
+    mock.method(listenerService as unknown as Record<string, unknown>, 'privateMethod',
+      () => Promise.reject(new Error('test'))
+    )
+    listenerService.emit(...)
+    await flushMicrotasks()
+    // No crash = pass
+  })
+})
+```
+
+### Rules
+
+- Use `emit()` directly on the service instance — no wrapper helpers
+- Use `flushMicrotasks()` to drain async side-effects — never `await Promise.resolve()`
+- Use `createOCPP16ListenerStation()` or `createOCPP20ListenerStation()` for `requestHandler` mock
+- Use `mock.method()` in `beforeEach` for private lifecycle methods; override in rejection tests
+- Use `listenerCount` as the first test in every listener describe block
+- Listener tests go inside the same top-level describe as handler tests
 
 ---
 
@@ -348,3 +426,4 @@ assert.ok(mocks.webSocket.sentMessages.includes(expectedMessage))
 8. **Types**: No `as any`, use testable interfaces
 9. **Mocks**: Use appropriate factory for your use case
 10. **Utils**: Leverage lifecycle helpers and mock classes
+11. **Listeners**: `emit()` direct, `flushMicrotasks()`, `listenerCount` first, accepted/rejected/error triad

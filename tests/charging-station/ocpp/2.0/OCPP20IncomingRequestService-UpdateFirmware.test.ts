@@ -227,14 +227,12 @@ await describe('L01/L02 - UpdateFirmware', async () => {
   })
 
   await describe('UPDATE_FIRMWARE event listener', async () => {
-    await it('should register UPDATE_FIRMWARE event listener in constructor', () => {
-      const service = new OCPP20IncomingRequestService()
-      assert.strictEqual(service.listenerCount(OCPP20IncomingRequestCommand.UPDATE_FIRMWARE), 1)
-    })
+    let service: OCPP20IncomingRequestService
+    let simulateMock: ReturnType<typeof mock.fn>
 
-    await it('should call simulateFirmwareUpdateLifecycle when UPDATE_FIRMWARE event emitted with Accepted response', () => {
-      const service = new OCPP20IncomingRequestService()
-      const simulateMock = mock.method(
+    beforeEach(() => {
+      service = new OCPP20IncomingRequestService()
+      simulateMock = mock.method(
         service as unknown as {
           simulateFirmwareUpdateLifecycle: (
             chargingStation: ChargingStation,
@@ -245,7 +243,13 @@ await describe('L01/L02 - UpdateFirmware', async () => {
         'simulateFirmwareUpdateLifecycle',
         () => Promise.resolve()
       )
+    })
 
+    await it('should register UPDATE_FIRMWARE event listener in constructor', () => {
+      assert.strictEqual(service.listenerCount(OCPP20IncomingRequestCommand.UPDATE_FIRMWARE), 1)
+    })
+
+    await it('should call simulateFirmwareUpdateLifecycle when UPDATE_FIRMWARE event emitted with Accepted response', () => {
       const request: OCPP20UpdateFirmwareRequest = {
         firmware: {
           location: 'https://firmware.example.com/update.bin',
@@ -266,19 +270,6 @@ await describe('L01/L02 - UpdateFirmware', async () => {
     })
 
     await it('should NOT call simulateFirmwareUpdateLifecycle when UPDATE_FIRMWARE event emitted with Rejected response', () => {
-      const service = new OCPP20IncomingRequestService()
-      const simulateMock = mock.method(
-        service as unknown as {
-          simulateFirmwareUpdateLifecycle: (
-            chargingStation: ChargingStation,
-            requestId: number,
-            firmware: FirmwareType
-          ) => Promise<void>
-        },
-        'simulateFirmwareUpdateLifecycle',
-        () => Promise.resolve()
-      )
-
       const request: OCPP20UpdateFirmwareRequest = {
         firmware: {
           location: 'https://firmware.example.com/update.bin',
@@ -296,7 +287,6 @@ await describe('L01/L02 - UpdateFirmware', async () => {
     })
 
     await it('should handle simulateFirmwareUpdateLifecycle rejection gracefully', async () => {
-      const service = new OCPP20IncomingRequestService()
       mock.method(
         service as unknown as {
           simulateFirmwareUpdateLifecycle: (
@@ -322,7 +312,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
 
       service.emit(OCPP20IncomingRequestCommand.UPDATE_FIRMWARE, station, request, response)
 
-      await Promise.resolve()
+      await flushMicrotasks()
     })
 
     await it('should cancel previous firmware update when new one arrives', async t => {
