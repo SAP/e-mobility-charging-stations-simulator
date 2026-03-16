@@ -267,10 +267,6 @@ await describe('F03 - Remote Stop Transaction', async () => {
           response
         )
 
-        // Two flushes needed: the async chain in requestStopTransaction traverses a
-        // dynamic import() in checkConnectorStatusTransition, which may resolve after
-        // the first setImmediate on some platforms (observed on macOS + Node 22).
-        await flushMicrotasks()
         await flushMicrotasks()
 
         assert.strictEqual(requestHandlerMock.mock.callCount(), 2)
