@@ -277,6 +277,8 @@ assert.strictEqual(AuthValidators.isValidIdentifierValue(123 as any), false)
 | `createMockChargingStation()`            | Full OCPP protocol testing       | `ChargingStationTestUtils.ts`        |
 | `createMockAuthServiceTestStation()`     | Auth service tests (lightweight) | `ocpp/auth/helpers/MockFactories.ts` |
 | `createMockStationWithRequestTracking()` | Verify sent OCPP requests        | `ocpp/2.0/OCPP20TestUtils.ts`        |
+| `createOCPP16ListenerStation()`          | OCPP 1.6 event listener tests    | `ocpp/1.6/OCPP16TestUtils.ts`        |
+| `createOCPP20ListenerStation()`          | OCPP 2.0 event listener tests    | `ocpp/2.0/OCPP20TestUtils.ts`        |
 
 ### Usage
 
@@ -300,6 +302,7 @@ assert.ok(mocks.webSocket.sentMessages.includes(expectedMessage))
 | Utility                           | Purpose                                  |
 | --------------------------------- | ---------------------------------------- |
 | `standardCleanup()`               | **MANDATORY** afterEach cleanup          |
+| `flushMicrotasks()`               | Drain async side-effects from `emit()`   |
 | `sleep(ms)`                       | Real-time delay                          |
 | `withMockTimers()`                | Execute test with timer mocking          |
 | `createTimerScope()`              | Manual timer control                     |
@@ -336,6 +339,69 @@ assert.ok(mocks.webSocket.sentMessages.includes(expectedMessage))
 
 ---
 
+## 11. Event Listener Testing
+
+Commands that use the post-response event listener pattern (handler validates → returns response → event triggers async action) require dedicated listener tests.
+
+### Structure
+
+```typescript
+await describe('COMMAND_NAME event listener', async () => {
+  let listenerService: OCPP16IncomingRequestService // or OCPP20
+  let requestHandlerMock: ReturnType<typeof mock.fn>
+  let station: ChargingStation
+
+  beforeEach(() => {
+    ;({ requestHandlerMock, station } = createOCPP16ListenerStation('test-listener'))
+    listenerService = new OCPP16IncomingRequestService()
+  })
+
+  afterEach(() => {
+    standardCleanup()
+  })
+
+  // 1. Registration test (always first)
+  await it('should register COMMAND_NAME event listener in constructor', () => {
+    assert.strictEqual(
+      listenerService.listenerCount(OCPP16IncomingRequestCommand.COMMAND_NAME),
+      1
+    )
+  })
+
+  // 2. Accepted → fires action
+  await it('should call X when response is Accepted', async () => {
+    listenerService.emit(OCPP16IncomingRequestCommand.COMMAND_NAME, station, request, response)
+    await flushMicrotasks()
+    assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
+  })
+
+  // 3. Rejected → does NOT fire
+  await it('should NOT call X when response is Rejected', () => {
+    listenerService.emit(...)
+    assert.strictEqual(requestHandlerMock.mock.callCount(), 0)
+  })
+
+  // 4. Error → handled gracefully
+  await it('should handle X failure gracefully', async () => {
+    requestHandlerMock.mock.mockImplementation(() => Promise.reject(new Error('test')))
+    listenerService.emit(...)
+    await flushMicrotasks()
+    // No crash = pass
+  })
+})
+```
+
+### Rules
+
+- Use `emit()` directly on the service instance — no wrapper helpers
+- Use `flushMicrotasks()` to drain async side-effects — never `await Promise.resolve()`
+- Use `createOCPP16ListenerStation()` or `createOCPP20ListenerStation()` for `requestHandler` mock
+- Use `mock.method()` in `beforeEach` for private lifecycle methods; override in rejection tests
+- Use `listenerCount` as the first test in every listener describe block
+- Listener tests go inside the same top-level describe as handler tests
+
+---
+
 ## Summary
 
 1. **Name**: `should [verb]` lowercase
@@ -348,3 +414,4 @@ assert.ok(mocks.webSocket.sentMessages.includes(expectedMessage))
 8. **Types**: No `as any`, use testable interfaces
 9. **Mocks**: Use appropriate factory for your use case
 10. **Utils**: Leverage lifecycle helpers and mock classes
+11. **Listeners**: `emit()` direct, `flushMicrotasks()`, `listenerCount` first, accepted/rejected/error triad
