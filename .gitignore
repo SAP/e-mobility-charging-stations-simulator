@@ -118,6 +118,8 @@ package-lock.json
 
 *.bak
 .eslintcache
+.mypy_cache/
+.pytest_cache/
 temp/
 *.tar.gz
 /performance/
