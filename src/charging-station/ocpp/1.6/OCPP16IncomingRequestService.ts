@@ -743,8 +743,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         OCPP16StandardParametersKey.WebSocketPingInterval,
       ])
       if (integerKeys.has(keyToChange.key as OCPP16StandardParametersKey)) {
-        const numValue = convertToInt(value)
-        if (isNaN(numValue) || numValue < 0) {
+        const numValue = Number(value)
+        if (!Number.isInteger(numValue) || numValue < 0) {
           return OCPP16Constants.OCPP_CONFIGURATION_RESPONSE_REJECTED
         }
       }
