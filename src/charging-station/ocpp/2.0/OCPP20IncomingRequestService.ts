@@ -98,8 +98,10 @@ import {
   type OCPP20SetVariablesResponse,
   type OCPP20StatusNotificationRequest,
   type OCPP20StatusNotificationResponse,
+  OCPP20TransactionEventEnumType,
   type OCPP20TriggerMessageRequest,
   type OCPP20TriggerMessageResponse,
+  OCPP20TriggerReasonEnumType,
   type OCPP20UnlockConnectorRequest,
   type OCPP20UnlockConnectorResponse,
   type OCPP20UpdateFirmwareRequest,
@@ -2416,6 +2418,18 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         ConnectorStatusEnum.Occupied,
         evseId
       )
+
+      // E02.FR.01: Send TransactionEvent(Started) to CSMS
+      await OCPP20ServiceUtils.sendTransactionEvent(
+        chargingStation,
+        OCPP20TransactionEventEnumType.Started,
+        OCPP20TriggerReasonEnumType.RemoteStart,
+        connectorId,
+        transactionId
+      )
+
+      const txUpdatedInterval = this.getTxUpdatedInterval(chargingStation)
+      chargingStation.startTxUpdatedInterval(connectorId, txUpdatedInterval)
 
       if (chargingProfile != null) {
         connectorStatus.chargingProfiles ??= []
