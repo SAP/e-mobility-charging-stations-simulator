@@ -542,6 +542,35 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         }
       }
     )
+    this.on(
+      OCPP16IncomingRequestCommand.UPDATE_FIRMWARE,
+      (
+        chargingStation: ChargingStation,
+        request: OCPP16UpdateFirmwareRequest,
+        _response: OCPP16UpdateFirmwareResponse
+      ) => {
+        const retrieveDate = convertToDate(request.retrieveDate)
+        if (retrieveDate == null) return
+        const now = Date.now()
+        if (retrieveDate.getTime() <= now) {
+          this.updateFirmwareSimulation(chargingStation).catch((error: unknown) => {
+            logger.error(
+              `${chargingStation.logPrefix()} ${moduleName}.constructor: UpdateFirmware simulation error:`,
+              error
+            )
+          })
+        } else {
+          setTimeout(() => {
+            this.updateFirmwareSimulation(chargingStation).catch((error: unknown) => {
+              logger.error(
+                `${chargingStation.logPrefix()} ${moduleName}.constructor: UpdateFirmware simulation error:`,
+                error
+              )
+            })
+          }, retrieveDate.getTime() - now)
+        }
+      }
+    )
   }
 
   public override stop (chargingStation: ChargingStation): void {
@@ -1565,7 +1594,6 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     }
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     commandPayload.retrieveDate = convertToDate(commandPayload.retrieveDate)!
-    const { retrieveDate } = commandPayload
     if (
       chargingStation.stationInfo?.firmwareStatus === OCPP16FirmwareStatus.Downloading ||
       chargingStation.stationInfo?.firmwareStatus === OCPP16FirmwareStatus.Downloaded ||
@@ -1575,24 +1603,6 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Cannot simulate firmware update: firmware update is already in progress`
       )
       return OCPP16Constants.OCPP_RESPONSE_EMPTY
-    }
-    const now = Date.now()
-    if (retrieveDate.getTime() <= now) {
-      this.updateFirmwareSimulation(chargingStation).catch((error: unknown) => {
-        logger.error(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Firmware update simulation error:`,
-          error
-        )
-      })
-    } else {
-      setTimeout(() => {
-        this.updateFirmwareSimulation(chargingStation).catch((error: unknown) => {
-          logger.error(
-            `${chargingStation.logPrefix()} ${moduleName}.handleRequestUpdateFirmware: Firmware update simulation error:`,
-            error
-          )
-        })
-      }, retrieveDate.getTime() - now)
     }
     return OCPP16Constants.OCPP_RESPONSE_EMPTY
   }

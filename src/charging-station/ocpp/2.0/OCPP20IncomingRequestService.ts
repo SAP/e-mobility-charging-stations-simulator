@@ -371,6 +371,29 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     )
     this.on(
+      OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION,
+      (
+        chargingStation: ChargingStation,
+        request: OCPP20RequestStopTransactionRequest,
+        response: OCPP20RequestStopTransactionResponse
+      ) => {
+        if (response.status === RequestStartStopStatusEnumType.Accepted) {
+          const connectorId = chargingStation.getConnectorIdByTransactionId(request.transactionId)
+          const evseId = chargingStation.getEvseIdByTransactionId(request.transactionId)
+          if (connectorId != null && evseId != null) {
+            OCPP20ServiceUtils.requestStopTransaction(chargingStation, connectorId, evseId).catch(
+              (error: unknown) => {
+                logger.error(
+                  `${chargingStation.logPrefix()} ${moduleName}.constructor: RequestStopTransaction error:`,
+                  error
+                )
+              }
+            )
+          }
+        }
+      }
+    )
+    this.on(
       OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
       (
         chargingStation: ChargingStation,
@@ -2524,10 +2547,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
   }
 
-  private async handleRequestStopTransaction (
+  private handleRequestStopTransaction (
     chargingStation: ChargingStation,
     commandPayload: OCPP20RequestStopTransactionRequest
-  ): Promise<OCPP20RequestStopTransactionResponse> {
+  ): OCPP20RequestStopTransactionResponse {
     const { transactionId } = commandPayload
     logger.info(
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestStopTransaction: Remote stop transaction request received for transaction ID ${transactionId as string}`
@@ -2574,44 +2597,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
-    try {
-      const stopResponse = await OCPP20ServiceUtils.requestStopTransaction(
-        chargingStation,
-        connectorId,
-        evseId
-      )
-
-      if (stopResponse.status === GenericStatus.Accepted) {
-        logger.info(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestStopTransaction: Remote stop transaction ACCEPTED for transactionId '${transactionId as string}'`
-        )
-        return {
-          status: RequestStartStopStatusEnumType.Accepted,
-        }
-      }
-
-      logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStopTransaction: Remote stop transaction REJECTED for transactionId '${transactionId as string}'`
-      )
-      return {
-        status: RequestStartStopStatusEnumType.Rejected,
-        statusInfo: {
-          additionalInfo: 'Remote stop transaction rejected',
-          reasonCode: ReasonCodeEnumType.Unspecified,
-        },
-      }
-    } catch (error) {
-      logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStopTransaction: Error occurred during remote stop transaction for transaction ID ${transactionId as string} on connector ${connectorId.toString()}:`,
-        error
-      )
-      return {
-        status: RequestStartStopStatusEnumType.Rejected,
-        statusInfo: {
-          additionalInfo: 'Error occurred during remote stop transaction',
-          reasonCode: ReasonCodeEnumType.InternalError,
-        },
-      }
+    logger.info(
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestStopTransaction: Remote stop transaction ACCEPTED for transactionId '${transactionId as string}'`
+    )
+    return {
+      status: RequestStartStopStatusEnumType.Accepted,
     }
   }
 
