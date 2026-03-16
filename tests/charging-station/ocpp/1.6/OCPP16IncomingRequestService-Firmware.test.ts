@@ -174,7 +174,6 @@ await describe('OCPP16IncomingRequestService — Firmware', async () => {
 
     afterEach(() => {
       standardCleanup()
-      mock.reset()
     })
 
     await it('should register UPDATE_FIRMWARE event listener in constructor', () => {

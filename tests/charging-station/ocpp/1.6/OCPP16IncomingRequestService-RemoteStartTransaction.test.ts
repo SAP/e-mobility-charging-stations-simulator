@@ -4,7 +4,7 @@
  */
 
 import assert from 'node:assert/strict'
-import { afterEach, beforeEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { RemoteStartTransactionRequest } from '../../../../src/types/index.js'
 
@@ -169,7 +169,7 @@ await describe('OCPP16IncomingRequestService — RemoteStartTransaction', async 
 
   await describe('REMOTE_START_TRANSACTION event listener', async () => {
     let incomingRequestService: OCPP16IncomingRequestService
-    let requestHandlerMock: ReturnType<typeof import('node:test').mock.fn>
+    let requestHandlerMock: ReturnType<typeof mock.fn>
     let listenerStation: import('../../../../src/charging-station/ChargingStation.js').ChargingStation
 
     beforeEach(() => {

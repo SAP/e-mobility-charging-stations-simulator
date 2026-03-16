@@ -20,7 +20,7 @@ import {
 } from '../../../../src/types/index.js'
 import { OCPP20IdTokenEnumType } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
+import { flushMicrotasks, standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 
@@ -304,7 +304,7 @@ await describe('N32 - CustomerInformation', async () => {
         response
       )
 
-      await Promise.resolve()
+      await flushMicrotasks()
     })
   })
 })

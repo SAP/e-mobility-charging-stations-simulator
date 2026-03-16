@@ -184,7 +184,6 @@ await describe('OCPP16IncomingRequestService — TriggerMessage', async () => {
     })
 
     afterEach(() => {
-      mock.reset()
       standardCleanup()
     })
 

@@ -872,6 +872,33 @@ export function createMockOCSPRequestData (): OCSPRequestDataType {
 }
 
 /**
+ * Create a mock OCPP 2.0 charging station with a spy requestHandler for listener tests.
+ * @param baseName - Base name for the mock charging station
+ * @returns The mock station and its request handler spy
+ */
+export function createOCPP20ListenerStation (baseName: string): {
+  requestHandlerMock: ReturnType<typeof mock.fn>
+  station: ChargingStation
+} {
+  const requestHandlerMock = mock.fn(async () => Promise.resolve({}))
+  const { station } = createMockChargingStation({
+    baseName,
+    connectorsCount: 3,
+    evseConfiguration: { evsesCount: 3 },
+    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
+    ocppRequestService: {
+      requestHandler: requestHandlerMock,
+    },
+    stationInfo: {
+      ocppStrictCompliance: false,
+      ocppVersion: OCPPVersion.VERSION_201,
+    },
+    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
+  })
+  return { requestHandlerMock, station }
+}
+
+/**
  * Create a mock ChargingStation with certificate manager for testing.
  * This encapsulates the type casting pattern for ChargingStationWithCertificateManager.
  * @param baseStation - Optional base station to extend (creates new if not provided)

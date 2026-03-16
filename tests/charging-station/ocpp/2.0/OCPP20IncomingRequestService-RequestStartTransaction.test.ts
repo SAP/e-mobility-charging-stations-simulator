@@ -32,41 +32,16 @@ import {
   OCPP20IdTokenEnumType,
 } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { standardCleanup } from '../../../../tests/helpers/TestLifecycleHelpers.js'
+import { flushMicrotasks, standardCleanup } from '../../../../tests/helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import { createMockAuthService } from '../auth/helpers/MockFactories.js'
 import {
+  createOCPP20ListenerStation,
   resetConnectorTransactionState,
   resetLimits,
   resetReportingValueSize,
 } from './OCPP20TestUtils.js'
-
-/**
- * @param baseName - Base name for the mock charging station
- * @returns The mock station and its request handler spy
- */
-function createListenerStation (baseName: string): {
-  requestHandlerMock: ReturnType<typeof mock.fn>
-  station: ChargingStation
-} {
-  const requestHandlerMock = mock.fn(async () => Promise.resolve({}))
-  const { station } = createMockChargingStation({
-    baseName,
-    connectorsCount: 3,
-    evseConfiguration: { evsesCount: 3 },
-    heartbeatInterval: Constants.DEFAULT_HEARTBEAT_INTERVAL,
-    ocppRequestService: {
-      requestHandler: requestHandlerMock,
-    },
-    stationInfo: {
-      ocppStrictCompliance: false,
-      ocppVersion: OCPPVersion.VERSION_201,
-    },
-    websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
-  })
-  return { requestHandlerMock, station }
-}
 
 await describe('F01 & F02 - Remote Start Transaction', async () => {
   let mockStation: ChargingStation
@@ -405,7 +380,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     let listenerStation: ChargingStation
 
     beforeEach(() => {
-      ;({ requestHandlerMock, station: listenerStation } = createListenerStation(
+      ;({ requestHandlerMock, station: listenerStation } = createOCPP20ListenerStation(
         TEST_CHARGING_STATION_BASE_NAME + '-LISTENER'
       ))
       listenerService = new OCPP20IncomingRequestService()
@@ -465,7 +440,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
         response
       )
 
-      await Promise.resolve()
+      await flushMicrotasks()
 
       assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
       const args = requestHandlerMock.mock.calls[0].arguments as [
@@ -536,7 +511,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
         response
       )
 
-      await Promise.resolve()
+      await flushMicrotasks()
 
       assert.strictEqual(requestHandlerMock.mock.callCount(), 1)
       const args = requestHandlerMock.mock.calls[0].arguments as [
@@ -602,7 +577,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
         } satisfies OCPP20RequestStartTransactionResponse
       )
 
-      await Promise.resolve()
+      await flushMicrotasks()
 
       assert.strictEqual(transactionEventCallCount, 1)
     })

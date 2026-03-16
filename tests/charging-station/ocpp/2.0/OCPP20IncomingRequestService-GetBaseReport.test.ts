@@ -32,7 +32,7 @@ import {
 } from '../../../../src/types/index.js'
 import { StandardParametersKey } from '../../../../src/types/ocpp/Configuration.js'
 import { Constants } from '../../../../src/utils/index.js'
-import { standardCleanup } from '../../../../tests/helpers/TestLifecycleHelpers.js'
+import { flushMicrotasks, standardCleanup } from '../../../../tests/helpers/TestLifecycleHelpers.js'
 import {
   TEST_CHARGE_POINT_MODEL,
   TEST_CHARGE_POINT_SERIAL_NUMBER,
@@ -366,7 +366,6 @@ await describe('B07 - Get Base Report', async () => {
 
     afterEach(() => {
       standardCleanup()
-      mock.reset()
     })
 
     await it('should register GET_BASE_REPORT event listener in constructor', () => {
@@ -451,7 +450,7 @@ await describe('B07 - Get Base Report', async () => {
 
       listenerService.emit(OCPP20IncomingRequestCommand.GET_BASE_REPORT, station, request, response)
 
-      await Promise.resolve()
+      await flushMicrotasks()
     })
   })
 })
