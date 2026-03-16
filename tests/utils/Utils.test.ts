@@ -1,9 +1,10 @@
-import { hoursToMilliseconds, hoursToSeconds } from 'date-fns'
-import { CircularBuffer } from 'mnemonist'
 /**
  * @file Tests for Utils
  * @description Unit tests for general utility functions
  */
+
+import { hoursToMilliseconds, hoursToSeconds } from 'date-fns'
+import { CircularBuffer } from 'mnemonist'
 import assert from 'node:assert/strict'
 import { randomInt } from 'node:crypto'
 import process from 'node:process'

@@ -24,7 +24,7 @@ import {
   ResponseStatus,
 } from '../../../src/types/index.js'
 import { Constants } from '../../../src/utils/index.js'
-import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
+import { flushMicrotasks, standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from '../ChargingStationTestUtils.js'
 import {
   createMockStationWithRequestTracking,
@@ -712,9 +712,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         ],
       })
 
-      await new Promise(resolve => {
-        setTimeout(resolve, 50)
-      })
+      await flushMicrotasks()
 
       assert.strictEqual(sentRequests.length, 1)
       assert.strictEqual(sentRequests[0].command, RequestCommand.GET_15118_EV_CERTIFICATE)
@@ -734,9 +732,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         ],
       })
 
-      await new Promise(resolve => {
-        setTimeout(resolve, 50)
-      })
+      await flushMicrotasks()
 
       assert.strictEqual(sentRequests.length, 1)
       assert.strictEqual(sentRequests[0].command, RequestCommand.LOG_STATUS_NOTIFICATION)
@@ -756,9 +752,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         ],
       })
 
-      await new Promise(resolve => {
-        setTimeout(resolve, 50)
-      })
+      await flushMicrotasks()
 
       assert.strictEqual(sentRequests.length, 1)
       assert.strictEqual(sentRequests[0].command, RequestCommand.NOTIFY_CUSTOMER_INFORMATION)
@@ -778,9 +772,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         ],
       })
 
-      await new Promise(resolve => {
-        setTimeout(resolve, 50)
-      })
+      await flushMicrotasks()
 
       assert.strictEqual(sentRequests.length, 1)
       assert.strictEqual(sentRequests[0].command, RequestCommand.NOTIFY_REPORT)
@@ -800,9 +792,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         ],
       })
 
-      await new Promise(resolve => {
-        setTimeout(resolve, 50)
-      })
+      await flushMicrotasks()
 
       assert.strictEqual(sentRequests.length, 1)
       assert.strictEqual(sentRequests[0].command, RequestCommand.SECURITY_EVENT_NOTIFICATION)
@@ -822,9 +812,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         ],
       })
 
-      await new Promise(resolve => {
-        setTimeout(resolve, 50)
-      })
+      await flushMicrotasks()
 
       assert.strictEqual(sentRequests.length, 1)
       assert.strictEqual(sentRequests[0].command, RequestCommand.METER_VALUES)

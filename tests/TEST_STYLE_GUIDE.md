@@ -23,6 +23,10 @@ Pattern: `should [verb]` in **lowercase**
 it('should start successfully with valid configuration', async () => {})
 it('should reject invalid identifier', () => {})
 
+// ✅ Good — with spec traceability prefix (for FR-referenced tests)
+it('G03.FR.01.T5.01 - should evict non-valid entry before valid one', () => {})
+it('G04.INT.01: should wire auth cache into local strategy', async () => {})
+
 // ❌ Bad
 it('Should start successfully', () => {}) // Capital 'S'
 it('Verify generateUUID()', () => {}) // Imperative

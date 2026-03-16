@@ -22,6 +22,7 @@ import type { ChargingStation } from '../../src/charging-station/ChargingStation
 import { AutomaticTransactionGenerator } from '../../src/charging-station/AutomaticTransactionGenerator.js'
 import { BaseError } from '../../src/exception/index.js'
 import { AuthorizationStatus, type StartTransactionResponse } from '../../src/types/index.js'
+import { flushMicrotasks } from '../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation, standardCleanup } from './ChargingStationTestUtils.js'
 
 type ConnectorStatus = ReturnType<AutomaticTransactionGenerator['connectorsStatus']['get']>
@@ -120,7 +121,7 @@ function mockInternalStartConnector (atg: AutomaticTransactionGenerator): void {
     internalStartConnector: (...args: unknown[]) => Promise<void>
   }
   atgPrivate.internalStartConnector = async () => {
-    await Promise.resolve()
+    await flushMicrotasks()
   }
 }
 

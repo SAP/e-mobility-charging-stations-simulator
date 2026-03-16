@@ -1,8 +1,9 @@
-import { CircularBuffer } from 'mnemonist'
 /**
  * @file Tests for MessageChannelUtils
  * @description Unit tests for charging station worker message builders and performance statistics conversion
  */
+
+import { CircularBuffer } from 'mnemonist'
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
