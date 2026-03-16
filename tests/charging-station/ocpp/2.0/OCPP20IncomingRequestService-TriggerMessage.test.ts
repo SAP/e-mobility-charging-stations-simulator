@@ -60,7 +60,6 @@ await describe('F06 - TriggerMessage', async () => {
   let testableService: ReturnType<typeof createTestableIncomingRequestService>
 
   beforeEach(() => {
-    mock.timers.enable({ apis: ['setInterval', 'setTimeout'] })
     incomingRequestService = new OCPP20IncomingRequestService()
     testableService = createTestableIncomingRequestService(incomingRequestService)
   })
