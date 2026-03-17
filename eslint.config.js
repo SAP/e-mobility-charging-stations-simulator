@@ -146,6 +146,12 @@ export default defineConfig([
       },
     },
     {
+      files: ['**/*.d.ts'],
+      rules: {
+        '@typescript-eslint/consistent-type-imports': 'off',
+      },
+    },
+    {
       files: ['**/*.js', '**/*.mjs', '**/*.cjs'],
       ...plugins['typescript-eslint'].configs.disableTypeChecked,
     }

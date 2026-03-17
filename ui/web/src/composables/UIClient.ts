@@ -1,6 +1,6 @@
 import { useToast } from 'vue-toast-notification'
 
-import type {
+import {
   ApplicationProtocol,
   AuthenticationType,
   type ChargingStationOptions,
@@ -10,7 +10,7 @@ import type {
   type ResponsePayload,
   ResponseStatus,
   type UIServerConfigurationSection,
-  UUIDv4,
+  type UUIDv4,
 } from '@/types'
 
 import { UI_WEBSOCKET_REQUEST_TIMEOUT_MS } from './Constants'
