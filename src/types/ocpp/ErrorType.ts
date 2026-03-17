@@ -1,4 +1,4 @@
-export const enum ErrorType {
+export enum ErrorType {
   // Payload for Action is syntactically incorrect or not conform the PDU structure for Action
   FORMAT_VIOLATION = 'FormatViolation',
   /** @deprecated use FORMAT_VIOLATION instead */

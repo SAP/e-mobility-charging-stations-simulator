@@ -67,7 +67,7 @@ export enum OCPP16RequestCommand {
   STOP_TRANSACTION = 'StopTransaction',
 }
 
-export const enum ResetType {
+export enum ResetType {
   HARD = 'Hard',
   SOFT = 'Soft',
 }
