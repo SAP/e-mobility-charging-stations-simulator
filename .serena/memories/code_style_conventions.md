@@ -66,9 +66,6 @@ Full guide: `tests/TEST_STYLE_GUIDE.md`. Key points:
 
 ## Common Pitfalls
 
-- **`const enum`**: Never use — project uses regular `enum` only
-- **`new Date(externalString)`**: Never use — always `convertToDate()`
 - **ESLint cache**: Clear `.eslintcache` if lint results seem stale after config changes
 - **Web UI is independent**: Always run its quality gates separately from `ui/web/` directory
 - **OCPP server is Python**: Uses Poetry, not pnpm
-- **macOS + Node 22**: Known flaky test (`RequestStopTransaction` listener) — skipped in CI
