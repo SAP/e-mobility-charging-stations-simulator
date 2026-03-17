@@ -68,9 +68,6 @@ export {
   type AuthRequest,
   type CertificateHashData,
   IdentifierType,
-  type UnifiedIdentifier,
-} from './types/AuthTypes.js'
-export {
   isCertificateBased,
   isOCPP16Type,
   isOCPP20Type,
@@ -81,6 +78,7 @@ export {
   mapToOCPP20Status,
   mapToOCPP20TokenType,
   requiresAdditionalInfo,
+  type UnifiedIdentifier,
 } from './types/AuthTypes.js'
 
 // ============================================================================
