@@ -1,3 +1,4 @@
+import type { OCPP20IdTokenInfoType } from '../../../../types/ocpp/2.0/Transaction.js'
 import type { OCPP16AuthAdapter } from '../adapters/OCPP16AuthAdapter.js'
 import type { OCPP20AuthAdapter } from '../adapters/OCPP20AuthAdapter.js'
 import type { LocalAuthStrategy } from '../strategies/LocalAuthStrategy.js'
@@ -5,7 +6,7 @@ import type { LocalAuthStrategy } from '../strategies/LocalAuthStrategy.js'
 import { OCPPError } from '../../../../exception/OCPPError.js'
 import { ErrorType } from '../../../../types/index.js'
 import { OCPPVersion } from '../../../../types/ocpp/OCPPVersion.js'
-import { ensureError, getErrorMessage, logger } from '../../../../utils/index.js'
+import { convertToDate, ensureError, getErrorMessage, logger } from '../../../../utils/index.js'
 import { type ChargingStation } from '../../../ChargingStation.js'
 import { AuthComponentFactory } from '../factories/AuthComponentFactory.js'
 import {
@@ -21,6 +22,7 @@ import {
   AuthorizationStatus,
   type AuthRequest,
   IdentifierType,
+  mapOCPP20AuthorizationStatus,
   type UnifiedIdentifier,
 } from '../types/AuthTypes.js'
 import { AuthConfigValidator } from '../utils/ConfigValidator.js'
@@ -502,6 +504,59 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
 
     // For now return true - real implementation would test remote connectivity
     return true
+  }
+
+  public updateCacheEntry (
+    identifier: string,
+    idTokenInfo: OCPP20IdTokenInfoType,
+    identifierType?: IdentifierType
+  ): void {
+    if (
+      identifierType === IdentifierType.NO_AUTHORIZATION ||
+      identifierType === IdentifierType.CENTRAL
+    ) {
+      logger.debug(
+        `${this.chargingStation.logPrefix()} OCPPAuthServiceImpl.updateCacheEntry: Skipping cache for ${identifierType} identifier type`
+      )
+      return
+    }
+
+    const localStrategy = this.strategies.get('local') as LocalAuthStrategy | undefined
+    const authCache = localStrategy?.getAuthCache()
+    if (authCache == null) {
+      logger.debug(
+        `${this.chargingStation.logPrefix()} OCPPAuthServiceImpl.updateCacheEntry: No auth cache available`
+      )
+      return
+    }
+
+    const unifiedStatus = mapOCPP20AuthorizationStatus(idTokenInfo.status)
+
+    const result: AuthorizationResult = {
+      isOffline: false,
+      method: AuthenticationMethod.REMOTE_AUTHORIZATION,
+      status: unifiedStatus,
+      timestamp: new Date(),
+    }
+
+    let ttl: number | undefined
+    if (idTokenInfo.cacheExpiryDateTime != null) {
+      const expiryDate = convertToDate(idTokenInfo.cacheExpiryDateTime)
+      if (expiryDate != null) {
+        const expiryMs = expiryDate.getTime()
+        const ttlSeconds = Math.ceil((expiryMs - Date.now()) / 1000)
+        if (ttlSeconds > 0) {
+          ttl = ttlSeconds
+        }
+      }
+    }
+    ttl ??= this.config.authorizationCacheLifetime
+
+    authCache.set(identifier, result, ttl)
+
+    logger.debug(
+      `${this.chargingStation.logPrefix()} OCPPAuthServiceImpl.updateCacheEntry: Updated cache for ${identifier.substring(0, 8)}... status=${unifiedStatus}, ttl=${ttl != null ? ttl.toString() : 'default'}s`
+    )
   }
 
   /**

@@ -3,6 +3,7 @@ import type { OCPPVersion } from '../../../../types/ocpp/OCPPVersion.js'
 
 import { OCPP16AuthorizationStatus } from '../../../../types/ocpp/1.6/Transaction.js'
 import {
+  OCPP20AuthorizationStatusEnumType,
   OCPP20IdTokenEnumType,
   RequestStartStopStatusEnumType,
 } from '../../../../types/ocpp/2.0/Transaction.js'
@@ -370,6 +371,45 @@ export const mapOCPP16Status = (status: OCPP16AuthorizationStatus): Authorizatio
       return AuthorizationStatus.EXPIRED
     case OCPP16AuthorizationStatus.INVALID:
       return AuthorizationStatus.INVALID
+    default:
+      return AuthorizationStatus.INVALID
+  }
+}
+
+/**
+ * Maps OCPP 2.0 authorization status enum to unified authorization status
+ * @param status - OCPP 2.0 authorization status
+ * @returns Unified authorization status
+ * @example
+ * ```typescript
+ * const unifiedStatus = mapOCPP20AuthorizationStatus(OCPP20AuthorizationStatusEnumType.Accepted)
+ * // Returns: AuthorizationStatus.ACCEPTED
+ * ```
+ */
+export const mapOCPP20AuthorizationStatus = (
+  status: OCPP20AuthorizationStatusEnumType
+): AuthorizationStatus => {
+  switch (status) {
+    case OCPP20AuthorizationStatusEnumType.Accepted:
+      return AuthorizationStatus.ACCEPTED
+    case OCPP20AuthorizationStatusEnumType.Blocked:
+      return AuthorizationStatus.BLOCKED
+    case OCPP20AuthorizationStatusEnumType.ConcurrentTx:
+      return AuthorizationStatus.CONCURRENT_TX
+    case OCPP20AuthorizationStatusEnumType.Expired:
+      return AuthorizationStatus.EXPIRED
+    case OCPP20AuthorizationStatusEnumType.Invalid:
+      return AuthorizationStatus.INVALID
+    case OCPP20AuthorizationStatusEnumType.NoCredit:
+      return AuthorizationStatus.NO_CREDIT
+    case OCPP20AuthorizationStatusEnumType.NotAllowedTypeEVSE:
+      return AuthorizationStatus.NOT_ALLOWED_TYPE_EVSE
+    case OCPP20AuthorizationStatusEnumType.NotAtThisLocation:
+      return AuthorizationStatus.NOT_AT_THIS_LOCATION
+    case OCPP20AuthorizationStatusEnumType.NotAtThisTime:
+      return AuthorizationStatus.NOT_AT_THIS_TIME
+    case OCPP20AuthorizationStatusEnumType.Unknown:
+      return AuthorizationStatus.UNKNOWN
     default:
       return AuthorizationStatus.INVALID
   }

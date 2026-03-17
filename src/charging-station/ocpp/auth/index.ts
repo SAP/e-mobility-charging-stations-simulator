@@ -75,6 +75,7 @@ export {
   isOCPP16Type,
   isOCPP20Type,
   mapOCPP16Status,
+  mapOCPP20AuthorizationStatus,
   mapOCPP20TokenType,
   mapToOCPP16Status,
   mapToOCPP20Status,

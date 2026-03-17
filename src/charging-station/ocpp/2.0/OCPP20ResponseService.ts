@@ -26,6 +26,7 @@ import {
 } from '../../../types/index.js'
 import { OCPP20AuthorizationStatusEnumType } from '../../../types/ocpp/2.0/Transaction.js'
 import { convertToDate, logger } from '../../../utils/index.js'
+import { mapOCPP20TokenType, OCPPAuthServiceFactory } from '../auth/index.js'
 import { OCPPResponseService } from '../OCPPResponseService.js'
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 
@@ -339,6 +340,23 @@ export class OCPP20ResponseService extends OCPPResponseService {
             `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Could not find connector for transaction ${requestPayload.transactionInfo.transactionId}, cannot stop transaction`
           )
         }
+      }
+      // C10.FR.01/04/05: Update auth cache with idTokenInfo from response
+      if (requestPayload.idToken != null) {
+        const idTokenValue = requestPayload.idToken.idToken
+        const idTokenInfo = payload.idTokenInfo
+        const identifierType = mapOCPP20TokenType(requestPayload.idToken.type)
+        OCPPAuthServiceFactory.getInstance(chargingStation)
+          .then(authService => {
+            authService.updateCacheEntry(idTokenValue, idTokenInfo, identifierType)
+            return undefined
+          })
+          .catch((error: unknown) => {
+            logger.error(
+              `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Error updating auth cache:`,
+              error
+            )
+          })
       }
     }
     if (payload.updatedPersonalMessage != null) {
