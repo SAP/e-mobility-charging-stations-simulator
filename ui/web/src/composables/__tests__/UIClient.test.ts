@@ -1,37 +1,37 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { OCPPVersion, OCPP20TransactionEventEnumType } from '@/types'
+import { OCPP20TransactionEventEnumType, OCPPVersion } from '@/types'
 
 import { UIClient } from '../UIClient'
 
 // Mock the toast notification
 vi.mock('vue-toast-notification', () => ({
   useToast: () => ({
-    success: vi.fn(),
     error: vi.fn(),
     info: vi.fn(),
+    success: vi.fn(),
   }),
 }))
 
 // Mock WebSocket constructor
 class MockWebSocket {
-  readyState = WebSocket.OPEN
-  onopen: (() => void) | null = null
-  onmessage: ((event: MessageEvent) => void) | null = null
-  onerror: ((event: Event) => void) | null = null
+  addEventListener = vi.fn()
+  close = vi.fn()
   onclose: (() => void) | null = null
+  onerror: ((event: Event) => void) | null = null
+  onmessage: ((event: MessageEvent) => void) | null = null
 
+  onopen: (() => void) | null = null
+
+  readyState = WebSocket.OPEN
+  removeEventListener = vi.fn()
+  send = vi.fn()
   constructor () {
     // Simulate async connection
     setTimeout(() => {
       this.onopen?.()
     }, 0)
   }
-
-  send = vi.fn()
-  close = vi.fn()
-  addEventListener = vi.fn()
-  removeEventListener = vi.fn()
 }
 
 describe('UIClient', () => {

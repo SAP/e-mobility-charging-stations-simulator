@@ -4,9 +4,9 @@ import {
   ApplicationProtocol,
   AuthenticationType,
   type ChargingStationOptions,
-  OCPPVersion,
-  type OCPP20TransactionEventRequest,
   OCPP20TransactionEventEnumType,
+  type OCPP20TransactionEventRequest,
+  OCPPVersion,
   ProcedureName,
   type ProtocolResponse,
   type RequestPayload,
@@ -44,6 +44,10 @@ export class UIClient {
       UIClient.instance = new UIClient(uiServerConfiguration)
     }
     return UIClient.instance
+  }
+
+  public static isOCPP20x (version: OCPPVersion | undefined): boolean {
+    return version === OCPPVersion.VERSION_20 || version === OCPPVersion.VERSION_201
   }
 
   public async addChargingStations (
@@ -151,6 +155,22 @@ export class UIClient {
     })
   }
 
+  public async startTransactionForVersion (
+    hashId: string,
+    connectorId: number,
+    idTag: string | undefined,
+    ocppVersion: OCPPVersion | undefined
+  ): Promise<ResponsePayload> {
+    if (UIClient.isOCPP20x(ocppVersion)) {
+      return this.transactionEvent(hashId, {
+        eventType: OCPP20TransactionEventEnumType.STARTED,
+        evseId: connectorId,
+        idToken: idTag != null ? { idToken: idTag, type: 'ISO14443' } : undefined,
+      })
+    }
+    return this.startTransaction(hashId, connectorId, idTag)
+  }
+
   public async stopAutomaticTransactionGenerator (
     hashId: string,
     connectorId: number
@@ -181,36 +201,6 @@ export class UIClient {
     })
   }
 
-  public async transactionEvent (
-    hashId: string,
-    payload: OCPP20TransactionEventRequest
-  ): Promise<ResponsePayload> {
-    return this.sendRequest(ProcedureName.TRANSACTION_EVENT, {
-      hashIds: [hashId],
-      ...payload,
-    })
-  }
-
-  public static isOCPP20x (version: OCPPVersion | undefined): boolean {
-    return version === OCPPVersion.VERSION_20 || version === OCPPVersion.VERSION_201
-  }
-
-  public async startTransactionForVersion (
-    hashId: string,
-    connectorId: number,
-    idTag: string | undefined,
-    ocppVersion: OCPPVersion | undefined
-  ): Promise<ResponsePayload> {
-    if (UIClient.isOCPP20x(ocppVersion)) {
-      return this.transactionEvent(hashId, {
-        eventType: OCPP20TransactionEventEnumType.STARTED,
-        evseId: connectorId,
-        idToken: idTag != null ? { idToken: idTag, type: 'ISO14443' } : undefined,
-      })
-    }
-    return this.startTransaction(hashId, connectorId, idTag)
-  }
-
   public async stopTransactionForVersion (
     hashId: string,
     transactionId: number | string | undefined,
@@ -223,6 +213,16 @@ export class UIClient {
       })
     }
     return this.stopTransaction(hashId, transactionId as number | undefined)
+  }
+
+  public async transactionEvent (
+    hashId: string,
+    payload: OCPP20TransactionEventRequest
+  ): Promise<ResponsePayload> {
+    return this.sendRequest(ProcedureName.TRANSACTION_EVENT, {
+      hashIds: [hashId],
+      ...payload,
+    })
   }
 
   public unregisterWSEventListener<K extends keyof WebSocketEventMap>(

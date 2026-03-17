@@ -87,16 +87,6 @@ export enum OCPP16RequestCommand {
   STOP_TRANSACTION = 'StopTransaction',
 }
 
-export enum OCPPProtocol {
-  JSON = 'json',
-}
-
-export enum OCPPVersion {
-  VERSION_16 = '1.6',
-  VERSION_20 = '2.0',
-  VERSION_201 = '2.0.1',
-}
-
 export enum OCPP20IdTokenEnumType {
   CENTRAL = 'Central',
   EMAID = 'eMAID',
@@ -114,16 +104,14 @@ export enum OCPP20TransactionEventEnumType {
   UPDATED = 'Updated',
 }
 
-export interface OCPP20IdTokenType extends JsonObject {
-  idToken: string
-  type: OCPP20IdTokenEnumType
+export enum OCPPProtocol {
+  JSON = 'json',
 }
 
-export interface OCPP20TransactionEventRequest extends JsonObject {
-  eventType: OCPP20TransactionEventEnumType
-  evseId?: number
-  idToken?: OCPP20IdTokenType
-  transactionId?: string
+export enum OCPPVersion {
+  VERSION_16 = '1.6',
+  VERSION_20 = '2.0',
+  VERSION_201 = '2.0.1',
 }
 
 export enum Voltage {
@@ -279,6 +267,18 @@ export interface ConnectorStatus extends JsonObject {
 export interface EvseStatus extends JsonObject {
   availability: AvailabilityType
   connectors?: ConnectorStatus[]
+}
+
+export interface OCPP20IdTokenType extends JsonObject {
+  idToken: string
+  type: OCPP20IdTokenEnumType
+}
+
+export interface OCPP20TransactionEventRequest extends JsonObject {
+  eventType: OCPP20TransactionEventEnumType
+  evseId?: number
+  idToken?: OCPP20IdTokenType
+  transactionId?: string
 }
 
 export const FirmwareStatus = {

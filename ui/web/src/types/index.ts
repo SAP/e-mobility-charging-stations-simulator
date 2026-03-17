@@ -7,8 +7,8 @@ export type {
   Status,
 } from './ChargingStationType'
 export {
-  OCPPVersion,
   OCPP20TransactionEventEnumType,
+  OCPPVersion,
 } from './ChargingStationType'
 export type { ConfigurationData, UIServerConfigurationSection } from './ConfigurationType'
 export {
