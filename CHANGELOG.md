@@ -1,5 +1,26 @@
 # Changelog
 
+## [3.1.2](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v3.1.1...simulator@v3.1.2) (2026-03-17)
+
+
+### 🐞 Bug Fixes
+
+* **ocpp2:** use convertToDate() for all incoming date fields in handlers ([ecac380](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ecac380caad1e22e6bbd1ae048d2999ebee66249))
+* **ui:** use runtime imports for enums and disable lint rule for .d.ts ([e907244](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e90724441d83cae950cd70dca786388678be292d))
+
+
+### ✨ Polish
+
+* enforce consistent-type-imports eslint rule and fix violations ([7d80b04](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7d80b046ec9ec33ab00a173959aa9b24605ac548))
+* re-export OCPPAuthServiceFactory in ocpp barrel and fix cross-sub-component imports ([51d1eaf](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/51d1eaf71f90136f548d988274db071e43857b03))
+* replace const enum with enum for cross-module runtime compatibility ([4e782ee](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/4e782ee257d5140eda529d72495ccbd4e4bcc882))
+
+
+### 📚 Documentation
+
+* remove redundant common pitfalls from code style conventions ([9a56369](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/9a5636917991360438feddfce9f7e4dc1ae4cdd9))
+* update openspec config with current project structure and conventions ([174c020](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/174c020968e0136e11874b82ae25904f0ab39c13))
+
 ## [3.1.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v3.1.0...simulator@v3.1.1) (2026-03-16)
 
 ### 🐞 Bug Fixes

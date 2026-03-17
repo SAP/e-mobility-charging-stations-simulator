@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.2](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v3.1.1...webui@v3.1.2) (2026-03-17)
+
+
+### 🐞 Bug Fixes
+
+* **ui:** use runtime imports for enums and disable lint rule for .d.ts ([e907244](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e90724441d83cae950cd70dca786388678be292d))
+
 ## [3.1.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v3.1.0...webui@v3.1.1) (2026-03-16)
 
 ### 🧹 Chores

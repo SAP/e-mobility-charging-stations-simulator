@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.2](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ocpp-server@v3.1.1...ocpp-server@v3.1.2) (2026-03-17)
+
+
+### 🐞 Bug Fixes
+
+* **ocpp-server:** update to websockets 16.x API (request.headers, request.path) ([9ea92a4](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/9ea92a4d4e0910b0f1d5431ccbc88807d6cf8674))
+
 ## [3.1.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ocpp-server@v3.1.0...ocpp-server@v3.1.1) (2026-03-16)
 
 ### 🧹 Chores
