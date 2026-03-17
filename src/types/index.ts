@@ -24,13 +24,15 @@ export {
   type WsOptions,
 } from './ChargingStationTemplate.js'
 export {
+  type ATGStatusEntry,
   type ChargingStationData,
   type ChargingStationOptions,
   type ChargingStationWorkerData,
   type ChargingStationWorkerMessage,
   type ChargingStationWorkerMessageData,
   ChargingStationWorkerMessageEvents,
-  type EvseStatusWorkerType,
+  type ConnectorEntry,
+  type EvseEntry,
 } from './ChargingStationWorker.js'
 export {
   ApplicationProtocolVersion,

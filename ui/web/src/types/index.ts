@@ -1,8 +1,11 @@
 export type {
+  ATGStatusEntry,
   ChargingStationData,
   ChargingStationInfo,
   ChargingStationOptions,
+  ConnectorEntry,
   ConnectorStatus,
+  EvseEntry,
   OCPP20TransactionEventRequest,
   Status,
 } from './ChargingStationType'

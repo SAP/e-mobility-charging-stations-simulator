@@ -121,6 +121,11 @@ export enum Voltage {
   VOLTAGE_800 = 800,
 }
 
+export interface ATGStatusEntry extends JsonObject {
+  connectorId: number
+  status: Status
+}
+
 export interface AutomaticTransactionGeneratorConfiguration extends JsonObject {
   enable: boolean
   idTagDistribution?: IdTagDistribution
@@ -142,14 +147,14 @@ export type ChargePointStatus = OCPP16ChargePointStatus
 
 export interface ChargingStationAutomaticTransactionGeneratorConfiguration extends JsonObject {
   automaticTransactionGenerator?: AutomaticTransactionGeneratorConfiguration
-  automaticTransactionGeneratorStatuses?: Status[]
+  automaticTransactionGeneratorStatuses?: ATGStatusEntry[]
 }
 
 export interface ChargingStationData extends JsonObject {
   automaticTransactionGenerator?: ChargingStationAutomaticTransactionGeneratorConfiguration
   bootNotificationResponse?: BootNotificationResponse
-  connectors: ConnectorStatus[]
-  evses: EvseStatus[]
+  connectors?: ConnectorEntry[]
+  evses?: EvseEntry[]
   ocppConfiguration: ChargingStationOcppConfiguration
   started: boolean
   stationInfo: ChargingStationInfo
@@ -243,6 +248,11 @@ export interface ConfigurationKey extends OCPPConfigurationKey {
   visible?: boolean
 }
 
+export interface ConnectorEntry extends JsonObject {
+  connector: ConnectorStatus
+  connectorId: number
+}
+
 export interface ConnectorStatus extends JsonObject {
   authorizeIdTag?: string
   availability: AvailabilityType
@@ -264,9 +274,10 @@ export interface ConnectorStatus extends JsonObject {
   transactionStarted?: boolean
 }
 
-export interface EvseStatus extends JsonObject {
+export interface EvseEntry extends JsonObject {
   availability: AvailabilityType
-  connectors?: ConnectorStatus[]
+  connectors: ConnectorEntry[]
+  evseId: number
 }
 
 export interface OCPP20EVSEType extends JsonObject {

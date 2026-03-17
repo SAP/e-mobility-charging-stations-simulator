@@ -1,8 +1,8 @@
 /**
  * @file Tests for ChargingStationConfigurationUtils
  * @description Unit tests for charging station configuration utility functions including
- *   buildConnectorsStatus, buildEvsesStatus, buildChargingStationAutomaticTransactionGeneratorConfiguration,
- *   and the OutputFormat enum.
+ *   buildConnectorsStatus, buildEvsesStatus, buildConnectorEntries, buildEvseEntries,
+ *   and buildChargingStationAutomaticTransactionGeneratorConfiguration.
  */
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
@@ -13,9 +13,10 @@ import type { ConnectorStatus, EvseStatus } from '../../src/types/index.js'
 import { AvailabilityType } from '../../src/types/index.js'
 import {
   buildChargingStationAutomaticTransactionGeneratorConfiguration,
+  buildConnectorEntries,
   buildConnectorsStatus,
+  buildEvseEntries,
   buildEvsesStatus,
-  OutputFormat,
 } from '../../src/utils/ChargingStationConfigurationUtils.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
@@ -115,6 +116,82 @@ await describe('ChargingStationConfigurationUtils', async () => {
     })
   })
 
+  await describe('buildConnectorEntries', async () => {
+    await it('should return entries with connectorId and stripped connector', () => {
+      const connectors = new Map<number, ConnectorStatus>()
+      connectors.set(0, {
+        availability: AvailabilityType.Operative,
+        MeterValues: [],
+      } as ConnectorStatus)
+      connectors.set(1, {
+        availability: AvailabilityType.Operative,
+        MeterValues: [],
+        transactionEventQueue: [],
+        transactionSetInterval: undefined,
+        transactionTxUpdatedSetInterval: undefined,
+      } as unknown as ConnectorStatus)
+
+      const station = createMockStationForConfigUtils({ connectors })
+      const result = buildConnectorEntries(station)
+
+      assert.strictEqual(result.length, 2)
+      assert.strictEqual(result[0].connectorId, 0)
+      assert.strictEqual(result[1].connectorId, 1)
+      assert.strictEqual(result[1].connector.availability, AvailabilityType.Operative)
+      assert.ok(!('transactionSetInterval' in result[1].connector))
+      assert.ok(!('transactionEventQueue' in result[1].connector))
+      assert.ok(!('transactionTxUpdatedSetInterval' in result[1].connector))
+    })
+
+    await it('should handle empty connectors map', () => {
+      const station = createMockStationForConfigUtils({ connectors: new Map() })
+      const result = buildConnectorEntries(station)
+      assert.strictEqual(result.length, 0)
+    })
+  })
+
+  await describe('buildEvseEntries', async () => {
+    await it('should return entries with evseId, availability, and connector entries', () => {
+      const evseConnectors = new Map<number, ConnectorStatus>()
+      evseConnectors.set(1, {
+        availability: AvailabilityType.Operative,
+        MeterValues: [],
+        transactionEventQueue: [],
+        transactionSetInterval: undefined,
+        transactionTxUpdatedSetInterval: undefined,
+      } as unknown as ConnectorStatus)
+
+      const evses = new Map<number, EvseStatus>()
+      evses.set(0, {
+        availability: AvailabilityType.Operative,
+        connectors: new Map<number, ConnectorStatus>(),
+      })
+      evses.set(1, {
+        availability: AvailabilityType.Operative,
+        connectors: evseConnectors,
+      })
+
+      const station = createMockStationForConfigUtils({ evses })
+      const result = buildEvseEntries(station)
+
+      assert.strictEqual(result.length, 2)
+      assert.strictEqual(result[0].evseId, 0)
+      assert.strictEqual(result[0].availability, AvailabilityType.Operative)
+      assert.strictEqual(result[0].connectors.length, 0)
+      assert.strictEqual(result[1].evseId, 1)
+      assert.strictEqual(result[1].connectors.length, 1)
+      assert.strictEqual(result[1].connectors[0].connectorId, 1)
+      assert.ok(!('transactionSetInterval' in result[1].connectors[0].connector))
+      assert.ok(!('transactionEventQueue' in result[1].connectors[0].connector))
+    })
+
+    await it('should handle empty evses map', () => {
+      const station = createMockStationForConfigUtils({ evses: new Map() })
+      const result = buildEvseEntries(station)
+      assert.strictEqual(result.length, 0)
+    })
+  })
+
   await describe('buildEvsesStatus', async () => {
     await it('should return configuration format with connectorsStatus and without connectors', () => {
       const evseConnectors = new Map<number, ConnectorStatus>()
@@ -137,7 +214,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
       })
 
       const station = createMockStationForConfigUtils({ evses })
-      const result = buildEvsesStatus(station, OutputFormat.configuration)
+      const result = buildEvsesStatus(station)
 
       assert.strictEqual(result.length, 2)
       const evse1 = result[1] as Record<string, unknown>
@@ -145,7 +222,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
       assert.ok(!('connectors' in evse1))
     })
 
-    await it('should strip internal fields from evse connectors in configuration format', () => {
+    await it('should strip internal fields from evse connectors', () => {
       const evseConnectors = new Map<number, ConnectorStatus>()
       evseConnectors.set(1, {
         availability: AvailabilityType.Operative,
@@ -162,7 +239,7 @@ await describe('ChargingStationConfigurationUtils', async () => {
       })
 
       const station = createMockStationForConfigUtils({ evses })
-      const result = buildEvsesStatus(station, OutputFormat.configuration)
+      const result = buildEvsesStatus(station)
       const evse1 = result[0] as Record<string, unknown>
       const connectorsStatus = evse1.connectorsStatus as ConnectorStatus[]
 
@@ -172,68 +249,10 @@ await describe('ChargingStationConfigurationUtils', async () => {
       assert.ok(!('transactionTxUpdatedSetInterval' in connectorsStatus[0]))
     })
 
-    await it('should return worker format with connectors array', () => {
-      const evseConnectors = new Map<number, ConnectorStatus>()
-      evseConnectors.set(1, {
-        availability: AvailabilityType.Operative,
-        MeterValues: [],
-        transactionEventQueue: undefined,
-        transactionSetInterval: undefined,
-        transactionTxUpdatedSetInterval: undefined,
-      } as unknown as ConnectorStatus)
-
-      const evses = new Map<number, EvseStatus>()
-      evses.set(0, {
-        availability: AvailabilityType.Operative,
-        connectors: new Map<number, ConnectorStatus>(),
-      })
-      evses.set(1, {
-        availability: AvailabilityType.Operative,
-        connectors: evseConnectors,
-      })
-
-      const station = createMockStationForConfigUtils({ evses })
-      const result = buildEvsesStatus(station, OutputFormat.worker)
-
-      assert.strictEqual(result.length, 2)
-      const evse1 = result[1] as Record<string, unknown>
-      assert.ok('connectors' in evse1)
-      assert.ok(Array.isArray(evse1.connectors))
-    })
-
-    await it('should default to configuration format when no format specified', () => {
-      const evses = new Map<number, EvseStatus>()
-      evses.set(1, {
-        availability: AvailabilityType.Operative,
-        connectors: new Map<number, ConnectorStatus>(),
-      })
-
-      const station = createMockStationForConfigUtils({ evses })
-      const result = buildEvsesStatus(station)
-
-      assert.strictEqual(result.length, 1)
-      const evse = result[0] as Record<string, unknown>
-      assert.ok('connectorsStatus' in evse)
-      assert.ok(!('connectors' in evse))
-    })
-
     await it('should handle empty evses map', () => {
       const station = createMockStationForConfigUtils({ evses: new Map() })
-      const result = buildEvsesStatus(station, OutputFormat.configuration)
+      const result = buildEvsesStatus(station)
       assert.strictEqual(result.length, 0)
-    })
-
-    await it('should throw RangeError for unknown output format', () => {
-      const evses = new Map<number, EvseStatus>()
-      evses.set(1, {
-        availability: AvailabilityType.Operative,
-        connectors: new Map<number, ConnectorStatus>(),
-      })
-      const station = createMockStationForConfigUtils({ evses })
-
-      assert.throws(() => {
-        buildEvsesStatus(station, 'unknown' as OutputFormat)
-      }, RangeError)
     })
   })
 

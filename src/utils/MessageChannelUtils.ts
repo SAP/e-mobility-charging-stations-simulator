@@ -9,12 +9,7 @@ import {
   type Statistics,
   type TimestampedData,
 } from '../types/index.js'
-import {
-  buildChargingStationAutomaticTransactionGeneratorConfiguration,
-  buildConnectorsStatus,
-  buildEvsesStatus,
-  OutputFormat,
-} from './ChargingStationConfigurationUtils.js'
+import { buildConnectorEntries, buildEvseEntries } from './ChargingStationConfigurationUtils.js'
 
 const buildChargingStationWorkerMessage = (
   chargingStation: ChargingStation,
@@ -98,8 +93,8 @@ export const buildPerformanceStatisticsMessage = (
 const buildChargingStationDataPayload = (chargingStation: ChargingStation): ChargingStationData => {
   return {
     bootNotificationResponse: chargingStation.bootNotificationResponse,
-    connectors: buildConnectorsStatus(chargingStation),
-    evses: buildEvsesStatus(chargingStation, OutputFormat.worker),
+    connectors: buildConnectorEntries(chargingStation),
+    evses: buildEvseEntries(chargingStation),
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     ocppConfiguration: chargingStation.ocppConfiguration!,
     started: chargingStation.started,
@@ -109,8 +104,13 @@ const buildChargingStationDataPayload = (chargingStation: ChargingStation): Char
     timestamp: Date.now(),
     wsState: chargingStation.wsConnection?.readyState,
     ...(chargingStation.automaticTransactionGenerator != null && {
-      automaticTransactionGenerator:
-        buildChargingStationAutomaticTransactionGeneratorConfiguration(chargingStation),
+      automaticTransactionGenerator: {
+        automaticTransactionGenerator:
+          chargingStation.getAutomaticTransactionGeneratorConfiguration(),
+        automaticTransactionGeneratorStatuses: [
+          ...chargingStation.automaticTransactionGenerator.connectorsStatus.entries(),
+        ].map(([connectorId, status]) => ({ connectorId, status })),
+      },
     }),
   }
 }

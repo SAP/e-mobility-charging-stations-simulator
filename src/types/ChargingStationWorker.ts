@@ -1,12 +1,15 @@
 import type { WebSocket } from 'ws'
 
 import type { WorkerData } from '../worker/index.js'
-import type { ChargingStationAutomaticTransactionGeneratorConfiguration } from './AutomaticTransactionGenerator.js'
+import type {
+  AutomaticTransactionGeneratorConfiguration,
+  Status,
+} from './AutomaticTransactionGenerator.js'
 import type { ChargingStationInfo } from './ChargingStationInfo.js'
 import type { ChargingStationOcppConfiguration } from './ChargingStationOcppConfiguration.js'
 import type { ConnectorStatus } from './ConnectorStatus.js'
-import type { EvseStatus } from './Evse.js'
 import type { JsonObject } from './JsonType.js'
+import type { AvailabilityType } from './ocpp/Requests.js'
 import type { BootNotificationResponse } from './ocpp/Responses.js'
 import type { Statistics } from './Statistics.js'
 import type { UUIDv4 } from './UUID.js'
@@ -17,11 +20,19 @@ enum ChargingStationMessageEvents {
   performanceStatistics = 'performanceStatistics',
 }
 
+export interface ATGStatusEntry {
+  connectorId: number
+  status: Status
+}
+
 export interface ChargingStationData extends WorkerData {
-  automaticTransactionGenerator?: ChargingStationAutomaticTransactionGeneratorConfiguration
+  automaticTransactionGenerator?: {
+    automaticTransactionGenerator?: AutomaticTransactionGeneratorConfiguration
+    automaticTransactionGeneratorStatuses?: ATGStatusEntry[]
+  }
   bootNotificationResponse?: BootNotificationResponse
-  connectors: ConnectorStatus[]
-  evses: EvseStatusWorkerType[]
+  connectors: ConnectorEntry[]
+  evses: EvseEntry[]
   ocppConfiguration: ChargingStationOcppConfiguration
   started: boolean
   stationInfo: ChargingStationInfo
@@ -67,6 +78,13 @@ export type ChargingStationWorkerMessageEvents =
   | ChargingStationEvents
   | ChargingStationMessageEvents
 
-export type EvseStatusWorkerType = Omit<EvseStatus, 'connectors'> & {
-  connectors?: ConnectorStatus[]
+export interface ConnectorEntry {
+  connector: ConnectorStatus
+  connectorId: number
+}
+
+export interface EvseEntry {
+  availability: AvailabilityType
+  connectors: ConnectorEntry[]
+  evseId: number
 }
