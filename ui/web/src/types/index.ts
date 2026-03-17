@@ -3,7 +3,12 @@ export type {
   ChargingStationInfo,
   ChargingStationOptions,
   ConnectorStatus,
+  OCPP20TransactionEventRequest,
   Status,
+} from './ChargingStationType'
+export {
+  OCPPVersion,
+  OCPP20TransactionEventEnumType,
 } from './ChargingStationType'
 export type { ConfigurationData, UIServerConfigurationSection } from './ConfigurationType'
 export {
