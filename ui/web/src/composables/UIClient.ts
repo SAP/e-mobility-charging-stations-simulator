@@ -214,7 +214,11 @@ export class UIClient {
         transactionId: transactionId?.toString(),
       })
     }
-    return this.stopTransaction(hashId, transactionId as number | undefined)
+    // For OCPP 1.6, transactionId must be a number
+    if (typeof transactionId === 'string') {
+      throw new Error('OCPP 1.6 requires numeric transactionId')
+    }
+    return this.stopTransaction(hashId, transactionId)
   }
 
   public async transactionEvent (
