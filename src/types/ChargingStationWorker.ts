@@ -20,16 +20,18 @@ enum ChargingStationMessageEvents {
   performanceStatistics = 'performanceStatistics',
 }
 
+export interface ATGConfiguration {
+  automaticTransactionGenerator?: AutomaticTransactionGeneratorConfiguration
+  automaticTransactionGeneratorStatuses?: ATGEntry[]
+}
+
 export interface ATGEntry {
   connectorId: number
   status: Status
 }
 
 export interface ChargingStationData extends WorkerData {
-  automaticTransactionGenerator?: {
-    automaticTransactionGenerator?: AutomaticTransactionGeneratorConfiguration
-    automaticTransactionGeneratorStatuses?: ATGEntry[]
-  }
+  automaticTransactionGenerator?: ATGConfiguration
   bootNotificationResponse?: BootNotificationResponse
   connectors: ConnectorEntry[]
   evses: EvseEntry[]

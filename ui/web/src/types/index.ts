@@ -1,4 +1,5 @@
 export type {
+  ATGConfiguration,
   ATGEntry,
   ChargingStationData,
   ChargingStationInfo,
