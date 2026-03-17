@@ -49,12 +49,7 @@ import { useRouter } from 'vue-router'
 import { useToast } from 'vue-toast-notification'
 
 import Button from '@/components/buttons/Button.vue'
-import {
-  convertToInt,
-  resetToggleButtonState,
-  UIClient,
-  useUIClient,
-} from '@/composables'
+import { convertToInt, resetToggleButtonState, UIClient, useUIClient } from '@/composables'
 import { type OCPPVersion } from '@/types'
 
 const props = defineProps<{
@@ -73,9 +68,7 @@ const state = ref<{ authorizeIdTag: boolean; evseId: number; idTag: string }>({
   idTag: '',
 })
 
-const isOCPP20x = computed(() =>
-  UIClient.isOCPP20x(props.ocppVersion as OCPPVersion | undefined)
-)
+const isOCPP20x = computed(() => UIClient.isOCPP20x(props.ocppVersion as OCPPVersion | undefined))
 
 const uiClient = useUIClient()
 
