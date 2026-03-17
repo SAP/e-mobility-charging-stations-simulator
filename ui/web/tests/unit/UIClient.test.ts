@@ -231,13 +231,14 @@ describe('UIClient', () => {
         })
       })
 
-      it('should throw for string transactionId with OCPP 1.6', async () => {
-        await expect(
-          client.stopTransaction('hash123', {
-            ocppVersion: OCPPVersion.VERSION_16,
-            transactionId: 'string-id',
-          })
-        ).rejects.toThrow('OCPP 1.6 requires numeric transactionId')
+      it('should return failure for string transactionId with OCPP 1.6', async () => {
+        const result = await client.stopTransaction('hash123', {
+          ocppVersion: OCPPVersion.VERSION_16,
+          transactionId: 'string-id',
+        })
+
+        expect(result.status).toBe(ResponseStatus.FAILURE)
+        expect(sendRequestSpy).not.toHaveBeenCalled()
       })
 
       it('should send undefined transactionId for OCPP 1.6 when not provided', async () => {

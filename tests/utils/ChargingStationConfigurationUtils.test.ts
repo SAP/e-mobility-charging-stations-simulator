@@ -1,8 +1,9 @@
 /**
  * @file Tests for ChargingStationConfigurationUtils
  * @description Unit tests for charging station configuration utility functions including
- *   buildConnectorsStatus, buildEvsesStatus, buildConnectorEntries, buildEvseEntries,
- *   buildATGEntries, and buildChargingStationAutomaticTransactionGeneratorConfiguration.
+ *   config persistence (buildConnectorsStatus, buildEvsesStatus,
+ *   buildChargingStationAutomaticTransactionGeneratorConfiguration) and
+ *   UI serialization (buildATGEntries, buildConnectorEntries, buildEvseEntries).
  */
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
@@ -49,6 +50,8 @@ await describe('ChargingStationConfigurationUtils', async () => {
   afterEach(() => {
     standardCleanup()
   })
+
+  // ── Config persistence builders ────────────────────────────────────────
 
   await describe('buildConnectorsStatus', async () => {
     await it('should strip internal transaction fields from connectors', () => {
@@ -116,6 +119,127 @@ await describe('ChargingStationConfigurationUtils', async () => {
       assert.strictEqual(result[0].transactionStarted, true)
     })
   })
+
+  await describe('buildEvsesStatus', async () => {
+    await it('should return configuration format with connectorsStatus and without connectors', () => {
+      const evseConnectors = new Map<number, ConnectorStatus>()
+      evseConnectors.set(1, {
+        availability: AvailabilityType.Operative,
+        MeterValues: [],
+        transactionEventQueue: [],
+        transactionSetInterval: undefined,
+        transactionTxUpdatedSetInterval: undefined,
+      } as unknown as ConnectorStatus)
+
+      const evses = new Map<number, EvseStatus>()
+      evses.set(0, {
+        availability: AvailabilityType.Operative,
+        connectors: new Map<number, ConnectorStatus>(),
+      })
+      evses.set(1, {
+        availability: AvailabilityType.Operative,
+        connectors: evseConnectors,
+      })
+
+      const station = createMockStationForConfigUtils({ evses })
+      const result = buildEvsesStatus(station)
+
+      assert.strictEqual(result.length, 2)
+      const evse1 = result[1] as Record<string, unknown>
+      assert.ok('connectorsStatus' in evse1)
+      assert.ok(!('connectors' in evse1))
+    })
+
+    await it('should strip internal fields from evse connectors', () => {
+      const evseConnectors = new Map<number, ConnectorStatus>()
+      evseConnectors.set(1, {
+        availability: AvailabilityType.Operative,
+        MeterValues: [],
+        transactionEventQueue: [],
+        transactionSetInterval: undefined,
+        transactionTxUpdatedSetInterval: undefined,
+      } as unknown as ConnectorStatus)
+
+      const evses = new Map<number, EvseStatus>()
+      evses.set(1, {
+        availability: AvailabilityType.Operative,
+        connectors: evseConnectors,
+      })
+
+      const station = createMockStationForConfigUtils({ evses })
+      const result = buildEvsesStatus(station)
+      const evse1 = result[0] as Record<string, unknown>
+      const connectorsStatus = evse1.connectorsStatus as ConnectorStatus[]
+
+      assert.strictEqual(connectorsStatus.length, 1)
+      assert.ok(!('transactionSetInterval' in connectorsStatus[0]))
+      assert.ok(!('transactionEventQueue' in connectorsStatus[0]))
+      assert.ok(!('transactionTxUpdatedSetInterval' in connectorsStatus[0]))
+    })
+
+    await it('should handle empty evses map', () => {
+      const station = createMockStationForConfigUtils({ evses: new Map() })
+      const result = buildEvsesStatus(station)
+      assert.strictEqual(result.length, 0)
+    })
+  })
+
+  await describe('buildChargingStationAutomaticTransactionGeneratorConfiguration', async () => {
+    await it('should return ATG configuration when present', () => {
+      const atgConfig = { enable: true, maxDuration: 120, minDuration: 60 }
+      const station = createMockStationForConfigUtils({
+        automaticTransactionGenerator: {
+          connectorsStatus: new Map([[1, { start: false }]]),
+        },
+        getAutomaticTransactionGeneratorConfiguration: () => atgConfig,
+      })
+      const result = buildChargingStationAutomaticTransactionGeneratorConfiguration(station)
+
+      assert.deepStrictEqual(result.automaticTransactionGenerator, atgConfig)
+      assert.notStrictEqual(result.automaticTransactionGeneratorStatuses, undefined)
+      assert.ok(Array.isArray(result.automaticTransactionGeneratorStatuses))
+      assert.strictEqual(result.automaticTransactionGeneratorStatuses.length, 1)
+    })
+
+    await it('should return ATG configuration without statuses when no ATG instance', () => {
+      const atgConfig = { enable: false }
+      const station = createMockStationForConfigUtils({
+        automaticTransactionGenerator: undefined,
+        getAutomaticTransactionGeneratorConfiguration: () => atgConfig,
+      })
+      const result = buildChargingStationAutomaticTransactionGeneratorConfiguration(station)
+
+      assert.deepStrictEqual(result.automaticTransactionGenerator, atgConfig)
+      assert.strictEqual(result.automaticTransactionGeneratorStatuses, undefined)
+    })
+
+    await it('should return undefined ATG config when not configured', () => {
+      const station = createMockStationForConfigUtils({
+        automaticTransactionGenerator: undefined,
+        getAutomaticTransactionGeneratorConfiguration: () => undefined,
+      })
+      const result = buildChargingStationAutomaticTransactionGeneratorConfiguration(station)
+
+      assert.strictEqual(result.automaticTransactionGenerator, undefined)
+      assert.strictEqual(result.automaticTransactionGeneratorStatuses, undefined)
+    })
+
+    await it('should return ATG configuration without statuses when connectorsStatus is null', () => {
+      const atgConfig = { enable: true }
+      const station = createMockStationForConfigUtils({
+        automaticTransactionGenerator: {
+          connectorsStatus: undefined,
+        },
+        getAutomaticTransactionGeneratorConfiguration: () => atgConfig,
+      })
+      const result = buildChargingStationAutomaticTransactionGeneratorConfiguration(station)
+
+      assert.deepStrictEqual(result.automaticTransactionGenerator, atgConfig)
+      assert.strictEqual(result.automaticTransactionGeneratorStatuses, undefined)
+    })
+  })
+
+  // ── UI serialization Entry builders ────────────────────────────────────
 
   await describe('buildATGEntries', async () => {
     await it('should return entries with connectorId and status', () => {
@@ -301,125 +425,6 @@ await describe('ChargingStationConfigurationUtils', async () => {
         result[1].connectors[1].connector.availability,
         AvailabilityType.Inoperative
       )
-    })
-  })
-
-  await describe('buildEvsesStatus', async () => {
-    await it('should return configuration format with connectorsStatus and without connectors', () => {
-      const evseConnectors = new Map<number, ConnectorStatus>()
-      evseConnectors.set(1, {
-        availability: AvailabilityType.Operative,
-        MeterValues: [],
-        transactionEventQueue: [],
-        transactionSetInterval: undefined,
-        transactionTxUpdatedSetInterval: undefined,
-      } as unknown as ConnectorStatus)
-
-      const evses = new Map<number, EvseStatus>()
-      evses.set(0, {
-        availability: AvailabilityType.Operative,
-        connectors: new Map<number, ConnectorStatus>(),
-      })
-      evses.set(1, {
-        availability: AvailabilityType.Operative,
-        connectors: evseConnectors,
-      })
-
-      const station = createMockStationForConfigUtils({ evses })
-      const result = buildEvsesStatus(station)
-
-      assert.strictEqual(result.length, 2)
-      const evse1 = result[1] as Record<string, unknown>
-      assert.ok('connectorsStatus' in evse1)
-      assert.ok(!('connectors' in evse1))
-    })
-
-    await it('should strip internal fields from evse connectors', () => {
-      const evseConnectors = new Map<number, ConnectorStatus>()
-      evseConnectors.set(1, {
-        availability: AvailabilityType.Operative,
-        MeterValues: [],
-        transactionEventQueue: [],
-        transactionSetInterval: undefined,
-        transactionTxUpdatedSetInterval: undefined,
-      } as unknown as ConnectorStatus)
-
-      const evses = new Map<number, EvseStatus>()
-      evses.set(1, {
-        availability: AvailabilityType.Operative,
-        connectors: evseConnectors,
-      })
-
-      const station = createMockStationForConfigUtils({ evses })
-      const result = buildEvsesStatus(station)
-      const evse1 = result[0] as Record<string, unknown>
-      const connectorsStatus = evse1.connectorsStatus as ConnectorStatus[]
-
-      assert.strictEqual(connectorsStatus.length, 1)
-      assert.ok(!('transactionSetInterval' in connectorsStatus[0]))
-      assert.ok(!('transactionEventQueue' in connectorsStatus[0]))
-      assert.ok(!('transactionTxUpdatedSetInterval' in connectorsStatus[0]))
-    })
-
-    await it('should handle empty evses map', () => {
-      const station = createMockStationForConfigUtils({ evses: new Map() })
-      const result = buildEvsesStatus(station)
-      assert.strictEqual(result.length, 0)
-    })
-  })
-
-  await describe('buildChargingStationAutomaticTransactionGeneratorConfiguration', async () => {
-    await it('should return ATG configuration when present', () => {
-      const atgConfig = { enable: true, maxDuration: 120, minDuration: 60 }
-      const station = createMockStationForConfigUtils({
-        automaticTransactionGenerator: {
-          connectorsStatus: new Map([[1, { start: false }]]),
-        },
-        getAutomaticTransactionGeneratorConfiguration: () => atgConfig,
-      })
-      const result = buildChargingStationAutomaticTransactionGeneratorConfiguration(station)
-
-      assert.deepStrictEqual(result.automaticTransactionGenerator, atgConfig)
-      assert.notStrictEqual(result.automaticTransactionGeneratorStatuses, undefined)
-      assert.ok(Array.isArray(result.automaticTransactionGeneratorStatuses))
-      assert.strictEqual(result.automaticTransactionGeneratorStatuses.length, 1)
-    })
-
-    await it('should return ATG configuration without statuses when no ATG instance', () => {
-      const atgConfig = { enable: false }
-      const station = createMockStationForConfigUtils({
-        automaticTransactionGenerator: undefined,
-        getAutomaticTransactionGeneratorConfiguration: () => atgConfig,
-      })
-      const result = buildChargingStationAutomaticTransactionGeneratorConfiguration(station)
-
-      assert.deepStrictEqual(result.automaticTransactionGenerator, atgConfig)
-      assert.strictEqual(result.automaticTransactionGeneratorStatuses, undefined)
-    })
-
-    await it('should return undefined ATG config when not configured', () => {
-      const station = createMockStationForConfigUtils({
-        automaticTransactionGenerator: undefined,
-        getAutomaticTransactionGeneratorConfiguration: () => undefined,
-      })
-      const result = buildChargingStationAutomaticTransactionGeneratorConfiguration(station)
-
-      assert.strictEqual(result.automaticTransactionGenerator, undefined)
-      assert.strictEqual(result.automaticTransactionGeneratorStatuses, undefined)
-    })
-
-    await it('should return ATG configuration without statuses when connectorsStatus is null', () => {
-      const atgConfig = { enable: true }
-      const station = createMockStationForConfigUtils({
-        automaticTransactionGenerator: {
-          connectorsStatus: undefined,
-        },
-        getAutomaticTransactionGeneratorConfiguration: () => atgConfig,
-      })
-      const result = buildChargingStationAutomaticTransactionGeneratorConfiguration(station)
-
-      assert.deepStrictEqual(result.automaticTransactionGenerator, atgConfig)
-      assert.strictEqual(result.automaticTransactionGeneratorStatuses, undefined)
     })
   })
 })
