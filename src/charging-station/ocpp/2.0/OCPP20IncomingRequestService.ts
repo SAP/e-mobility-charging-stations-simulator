@@ -2371,8 +2371,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         masterPassGroupId.length > 0 &&
         groupIdToken?.idToken === masterPassGroupId
       ) {
-        logger.warn(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: C12.FR.09 - IdToken with MasterPassGroupId group cannot start a transaction`
+        logger.debug(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: IdToken with MasterPassGroupId group cannot start a transaction`
         )
         return {
           status: RequestStartStopStatusEnumType.Rejected,
@@ -2929,8 +2929,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     // C01.FR.03(a): Same idToken as the one used to start the transaction
     if (presentedIdToken.idToken === connectorStatus.transactionIdTag) {
-      logger.info(
-        `${chargingStation.logPrefix()} ${moduleName}.isAuthorizedToStopTransaction: Same idToken as start token - authorized locally (C01.FR.03a)`
+      logger.debug(
+        `${chargingStation.logPrefix()} ${moduleName}.isAuthorizedToStopTransaction: Same idToken as start token - authorized locally`
       )
       return true
     }
@@ -2942,8 +2942,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       presentedGroupIdToken?.idToken != null &&
       presentedGroupIdToken.idToken === connectorStatus.transactionGroupIdToken
     ) {
-      logger.info(
-        `${chargingStation.logPrefix()} ${moduleName}.isAuthorizedToStopTransaction: Same GroupIdToken as start token - authorized locally without AuthorizationRequest (C09.FR.03/C09.FR.07)`
+      logger.debug(
+        `${chargingStation.logPrefix()} ${moduleName}.isAuthorizedToStopTransaction: Same GroupIdToken as start token - authorized locally without AuthorizationRequest`
       )
       return true
     }

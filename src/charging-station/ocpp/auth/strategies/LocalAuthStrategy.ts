@@ -80,7 +80,7 @@ export class LocalAuthStrategy implements AuthStrategy {
           // C14.FR.03: non-Accepted local list tokens trigger re-auth unless DisablePostAuthorize
           if (this.shouldTriggerPostAuthorize(localResult, config)) {
             logger.debug(
-              `LocalAuthStrategy: Local list token non-Accepted (${localResult.status}), deferring to remote auth (C14.FR.03)`
+              `LocalAuthStrategy: Local list token non-Accepted (${localResult.status}), deferring to remote auth`
             )
             return undefined
           }
@@ -97,7 +97,7 @@ export class LocalAuthStrategy implements AuthStrategy {
           // C10.FR.03, C12.FR.05: non-Accepted cached tokens trigger re-auth unless DisablePostAuthorize
           if (this.shouldTriggerPostAuthorize(cacheResult, config)) {
             logger.debug(
-              `LocalAuthStrategy: Cached token non-Accepted (${cacheResult.status}), deferring to remote auth (C10.FR.03)`
+              `LocalAuthStrategy: Cached token non-Accepted (${cacheResult.status}), deferring to remote auth`
             )
             return undefined
           }

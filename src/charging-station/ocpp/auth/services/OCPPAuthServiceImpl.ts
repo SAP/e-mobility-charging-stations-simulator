@@ -8,6 +8,7 @@ import { ErrorType } from '../../../../types/index.js'
 import { OCPPVersion } from '../../../../types/ocpp/OCPPVersion.js'
 import { convertToDate, ensureError, getErrorMessage, logger } from '../../../../utils/index.js'
 import { type ChargingStation } from '../../../ChargingStation.js'
+import { truncateId } from '../cache/InMemoryAuthCache.js'
 import { AuthComponentFactory } from '../factories/AuthComponentFactory.js'
 import {
   type AuthStats,
@@ -559,7 +560,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     authCache.set(identifier, result, ttl)
 
     logger.debug(
-      `${this.chargingStation.logPrefix()} OCPPAuthServiceImpl.updateCacheEntry: Updated cache for ${identifier.substring(0, 8)}... status=${unifiedStatus}, ttl=${ttl != null ? ttl.toString() : 'default'}s`
+      `${this.chargingStation.logPrefix()} OCPPAuthServiceImpl.updateCacheEntry: Updated cache for ${truncateId(identifier)} status=${unifiedStatus}, ttl=${ttl != null ? ttl.toString() : 'default'}s`
     )
   }
 
