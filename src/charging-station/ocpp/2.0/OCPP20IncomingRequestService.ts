@@ -2357,6 +2357,33 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     let isAuthorized = true
     if (shouldAuthorizeRemoteStart) {
+      // C12.FR.09: Check MasterPassGroupId before authorization
+      const masterPassGroupIdResults = variableManager.getVariables(chargingStation, [
+        {
+          attributeType: AttributeEnumType.Actual,
+          component: { name: OCPP20ComponentName.AuthCtrlr },
+          variable: { name: 'MasterPassGroupId' },
+        },
+      ])
+      const masterPassGroupId = masterPassGroupIdResults[0]?.attributeValue
+      if (
+        masterPassGroupId != null &&
+        masterPassGroupId.length > 0 &&
+        groupIdToken?.idToken === masterPassGroupId
+      ) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: C12.FR.09 - IdToken with MasterPassGroupId group cannot start a transaction`
+        )
+        return {
+          status: RequestStartStopStatusEnumType.Rejected,
+          statusInfo: {
+            additionalInfo: 'C12.FR.09: MasterPassGroupId tokens cannot start transactions',
+            reasonCode: ReasonCodeEnumType.InvalidIdToken,
+          },
+          transactionId: generateUUID(),
+        }
+      }
+
       try {
         isAuthorized = this.isIdTokenAuthorized(chargingStation, idToken)
       } catch (error) {
@@ -2915,15 +2942,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       presentedGroupIdToken?.idToken != null &&
       presentedGroupIdToken.idToken === connectorStatus.transactionGroupIdToken
     ) {
-      if (this.isIdTokenAuthorized(chargingStation, presentedIdToken)) {
-        logger.info(
-          `${chargingStation.logPrefix()} ${moduleName}.isAuthorizedToStopTransaction: Same GroupIdToken as start token - authorized locally without AuthorizationRequest (C09.FR.03/C09.FR.07)`
-        )
-        return true
-      }
-      logger.debug(
-        `${chargingStation.logPrefix()} ${moduleName}.isAuthorizedToStopTransaction: GroupIdToken matches but presented idToken ${presentedIdToken.idToken} is not authorized`
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.isAuthorizedToStopTransaction: Same GroupIdToken as start token - authorized locally without AuthorizationRequest (C09.FR.03/C09.FR.07)`
       )
+      return true
     }
 
     logger.debug(
@@ -2983,27 +3005,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     )
 
     try {
-      // C12.FR.09: Check if idToken matches MasterPassGroupId - these tokens cannot start transactions
-      const variableManager = OCPP20VariableManager.getInstance()
-      const masterPassGroupIdResults = variableManager.getVariables(chargingStation, [
-        {
-          attributeType: AttributeEnumType.Actual,
-          component: { name: OCPP20ComponentName.AuthCtrlr },
-          variable: { name: 'MasterPassGroupId' },
-        },
-      ])
-      const masterPassGroupId = masterPassGroupIdResults[0]?.attributeValue
-      if (
-        masterPassGroupId != null &&
-        masterPassGroupId.length > 0 &&
-        idToken.idToken === masterPassGroupId
-      ) {
-        logger.warn(
-          `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: C12.FR.09 - IdToken with MasterPassGroupId group cannot start a transaction`
-        )
-        return false
-      }
-
       const localAuthListEnabled = chargingStation.getLocalAuthListEnabled()
       const remoteAuthorizationEnabled = chargingStation.stationInfo?.remoteAuthorization ?? true
 

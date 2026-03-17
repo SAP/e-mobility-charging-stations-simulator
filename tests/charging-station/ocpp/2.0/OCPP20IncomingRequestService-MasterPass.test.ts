@@ -3,16 +3,21 @@
  * @description Unit tests for OCPP 2.0 MasterPassGroupId authorization (C12.FR.09)
  */
 import assert from 'node:assert/strict'
-import { afterEach, beforeEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type { OCPP20RequestStartTransactionRequest } from '../../../../src/types/index.js'
+import type { OCPP20GetVariableDataType } from '../../../../src/types/index.js'
 
-import { addConfigurationKey } from '../../../../src/charging-station/ConfigurationKeyUtils.js'
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
+import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
 import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'
-import { OCPPVersion, RequestStartStopStatusEnumType } from '../../../../src/types/index.js'
+import {
+  GetVariableStatusEnumType,
+  OCPPVersion,
+  RequestStartStopStatusEnumType,
+} from '../../../../src/types/index.js'
 import { OCPP20IdTokenEnumType } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
@@ -27,7 +32,6 @@ import {
 
 await describe('C12.FR.09 - MasterPassGroupId Check', async () => {
   let mockStation: ChargingStation
-  let incomingRequestService: OCPP20IncomingRequestService
   let testableService: ReturnType<typeof createTestableIncomingRequestService>
 
   beforeEach(() => {
@@ -46,7 +50,7 @@ await describe('C12.FR.09 - MasterPassGroupId Check', async () => {
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
     mockStation = station
-    incomingRequestService = new OCPP20IncomingRequestService()
+    const incomingRequestService = new OCPP20IncomingRequestService()
     testableService = createTestableIncomingRequestService(incomingRequestService)
     const stationId = mockStation.stationInfo?.chargingStationId ?? 'unknown'
     OCPPAuthServiceFactory.setInstanceForTesting(stationId, createMockAuthService())
@@ -56,35 +60,58 @@ await describe('C12.FR.09 - MasterPassGroupId Check', async () => {
   })
 
   afterEach(() => {
+    OCPP20VariableManager.getInstance().resetRuntimeOverrides()
+    OCPP20VariableManager.getInstance().invalidateMappingsCache()
     standardCleanup()
     OCPPAuthServiceFactory.clearAllInstances()
   })
 
-  await it('C12.FR.09 - should reject start transaction when idToken groupId matches MasterPassGroupId', async () => {
+  await it('should reject start transaction when groupIdToken matches MasterPassGroupId', async () => {
     const masterPassGroupId = 'MASTER_GROUP_1'
 
-    addConfigurationKey(mockStation, 'MasterPassGroupId', masterPassGroupId)
+    const originalGetVariables = OCPP20VariableManager.getInstance().getVariables.bind(
+      OCPP20VariableManager.getInstance()
+    )
+    mock.method(
+      OCPP20VariableManager.getInstance(),
+      'getVariables',
+      (station: ChargingStation, requests: OCPP20GetVariableDataType[]) => {
+        const results = originalGetVariables(station, requests)
+        for (let i = 0; i < (requests as { variable?: { name?: string } }[]).length; i++) {
+          const req = (requests as { variable?: { name?: string } }[])[i]
+          if (req.variable?.name === 'MasterPassGroupId') {
+            results[i] = {
+              ...results[i],
+              attributeStatus: GetVariableStatusEnumType.Accepted,
+              attributeValue: masterPassGroupId,
+            }
+          }
+        }
+        return results
+      }
+    )
 
-    const requestWithMasterPassGroupId: OCPP20RequestStartTransactionRequest = {
+    const request: OCPP20RequestStartTransactionRequest = {
       evseId: 1,
-      idToken: {
+      groupIdToken: {
         idToken: masterPassGroupId,
+        type: OCPP20IdTokenEnumType.Central,
+      },
+      idToken: {
+        idToken: 'SOME_USER_TOKEN',
         type: OCPP20IdTokenEnumType.ISO14443,
       },
       remoteStartId: 1,
     }
 
-    const response = await testableService.handleRequestStartTransaction(
-      mockStation,
-      requestWithMasterPassGroupId
-    )
+    const response = await testableService.handleRequestStartTransaction(mockStation, request)
 
     assert.notStrictEqual(response, undefined)
     assert.strictEqual(response.status, RequestStartStopStatusEnumType.Rejected)
   })
 
   await it('C12.FR.09 - should be no-op when MasterPassGroupId not configured', async () => {
-    const validRequest: OCPP20RequestStartTransactionRequest = {
+    const request: OCPP20RequestStartTransactionRequest = {
       evseId: 1,
       idToken: {
         idToken: 'VALID_TOKEN_123',
@@ -93,11 +120,10 @@ await describe('C12.FR.09 - MasterPassGroupId Check', async () => {
       remoteStartId: 1,
     }
 
-    const response = await testableService.handleRequestStartTransaction(mockStation, validRequest)
+    const response = await testableService.handleRequestStartTransaction(mockStation, request)
 
     assert.notStrictEqual(response, undefined)
     assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
     assert.notStrictEqual(response.transactionId, undefined)
-    assert.strictEqual(typeof response.transactionId, 'string')
   })
 })

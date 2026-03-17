@@ -511,6 +511,10 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     idTokenInfo: OCPP20IdTokenInfoType,
     identifierType?: IdentifierType
   ): void {
+    if (!this.config.authorizationCacheEnabled) {
+      return
+    }
+
     if (
       identifierType === IdentifierType.NO_AUTHORIZATION ||
       identifierType === IdentifierType.CENTRAL

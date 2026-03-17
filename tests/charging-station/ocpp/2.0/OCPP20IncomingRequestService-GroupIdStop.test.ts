@@ -53,12 +53,13 @@ await describe('C09 - GroupId-based Stop Transaction Authorization', async () =>
   })
 
   /**
-   *
-   * @param station
-   * @param evseId
-   * @param remoteStartId
-   * @param idToken
-   * @param groupIdToken
+   * Start a transaction with group ID token.
+   * @param station - The charging station instance
+   * @param evseId - The EVSE ID (default: 1)
+   * @param remoteStartId - The remote start ID (default: 1)
+   * @param idToken - The ID token (default: START_TOKEN)
+   * @param groupIdToken - The group ID token (optional)
+   * @returns The transaction ID
    */
   async function startTransactionWithGroup (
     station: ChargingStation,
