@@ -24,7 +24,7 @@
           () => {
             $router.push({
               name: 'start-transaction',
-              params: { hashId, chargingStationId, connectorId },
+              params: { hashId, chargingStationId, connectorId, ocppVersion: ocppVersion ?? '' },
             })
           }
         "
@@ -76,7 +76,7 @@ const stopTransaction = (): void => {
     return
   }
   uiClient
-    .stopTransactionForVersion(props.hashId, props.connector.transactionId, props.ocppVersion)
+    .stopTransaction(props.hashId, props.connector.transactionId, props.ocppVersion)
     .then(() => {
       return $toast.success('Transaction successfully stopped')
     })

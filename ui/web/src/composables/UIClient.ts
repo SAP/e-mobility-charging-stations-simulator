@@ -147,20 +147,8 @@ export class UIClient {
   public async startTransaction (
     hashId: string,
     connectorId: number,
-    idTag: string | undefined
-  ): Promise<ResponsePayload> {
-    return this.sendRequest(ProcedureName.START_TRANSACTION, {
-      connectorId,
-      hashIds: [hashId],
-      idTag,
-    })
-  }
-
-  public async startTransactionForVersion (
-    hashId: string,
-    connectorId: number,
     idTag: string | undefined,
-    ocppVersion: OCPPVersion | undefined
+    ocppVersion?: OCPPVersion
   ): Promise<ResponsePayload> {
     if (UIClient.isOCPP20x(ocppVersion)) {
       return this.transactionEvent(hashId, {
@@ -170,7 +158,11 @@ export class UIClient {
           idTag != null ? { idToken: idTag, type: OCPP20IdTokenEnumType.ISO14443 } : undefined,
       })
     }
-    return this.startTransaction(hashId, connectorId, idTag)
+    return this.sendRequest(ProcedureName.START_TRANSACTION, {
+      connectorId,
+      hashIds: [hashId],
+      idTag,
+    })
   }
 
   public async stopAutomaticTransactionGenerator (
@@ -195,18 +187,8 @@ export class UIClient {
 
   public async stopTransaction (
     hashId: string,
-    transactionId: number | undefined
-  ): Promise<ResponsePayload> {
-    return this.sendRequest(ProcedureName.STOP_TRANSACTION, {
-      hashIds: [hashId],
-      transactionId,
-    })
-  }
-
-  public async stopTransactionForVersion (
-    hashId: string,
     transactionId: number | string | undefined,
-    ocppVersion: OCPPVersion | undefined
+    ocppVersion?: OCPPVersion
   ): Promise<ResponsePayload> {
     if (UIClient.isOCPP20x(ocppVersion)) {
       return this.transactionEvent(hashId, {
@@ -214,20 +196,12 @@ export class UIClient {
         transactionId: transactionId?.toString(),
       })
     }
-    // For OCPP 1.6, transactionId must be a number
     if (typeof transactionId === 'string') {
       throw new Error('OCPP 1.6 requires numeric transactionId')
     }
-    return this.stopTransaction(hashId, transactionId)
-  }
-
-  public async transactionEvent (
-    hashId: string,
-    payload: OCPP20TransactionEventRequest
-  ): Promise<ResponsePayload> {
-    return this.sendRequest(ProcedureName.TRANSACTION_EVENT, {
+    return this.sendRequest(ProcedureName.STOP_TRANSACTION, {
       hashIds: [hashId],
-      ...payload,
+      transactionId,
     })
   }
 
@@ -356,6 +330,16 @@ export class UIClient {
       } else {
         reject(new Error(`Send request '${procedureName}' message: connection closed`))
       }
+    })
+  }
+
+  private async transactionEvent (
+    hashId: string,
+    payload: OCPP20TransactionEventRequest
+  ): Promise<ResponsePayload> {
+    return this.sendRequest(ProcedureName.TRANSACTION_EVENT, {
+      hashIds: [hashId],
+      ...payload,
     })
   }
 }

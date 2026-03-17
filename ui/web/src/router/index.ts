@@ -40,7 +40,7 @@ export const router = createRouter({
         default: ChargingStationsView,
       },
       name: 'start-transaction',
-      path: '/start-transaction/:hashId/:chargingStationId/:connectorId',
+      path: '/start-transaction/:hashId/:chargingStationId/:connectorId/:ocppVersion?',
       props: { action: true, default: false },
     },
     {
