@@ -126,9 +126,7 @@ const handleStartTransaction = async (): Promise<void> => {
     }
   }
 
-  const connectorOrEvseId = isOCPP20x.value
-    ? state.value.evseId
-    : convertToInt(props.connectorId)
+  const connectorOrEvseId = isOCPP20x.value ? state.value.evseId : convertToInt(props.connectorId)
   try {
     await uiClient.startTransactionForVersion(
       props.hashId,
