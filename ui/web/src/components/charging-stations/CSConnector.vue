@@ -49,7 +49,7 @@
 <script setup lang="ts">
 import { useToast } from 'vue-toast-notification'
 
-import type { ConnectorStatus, Status } from '@/types'
+import type { ConnectorStatus, OCPPVersion, Status } from '@/types'
 
 import Button from '@/components/buttons/Button.vue'
 import ToggleButton from '@/components/buttons/ToggleButton.vue'
@@ -61,6 +61,7 @@ const props = defineProps<{
   connector: ConnectorStatus
   connectorId: number
   hashId: string
+  ocppVersion?: OCPPVersion
 }>()
 
 const $emit = defineEmits(['need-refresh'])
@@ -75,7 +76,7 @@ const stopTransaction = (): void => {
     return
   }
   uiClient
-    .stopTransaction(props.hashId, props.connector.transactionId)
+    .stopTransactionForVersion(props.hashId, props.connector.transactionId, props.ocppVersion)
     .then(() => {
       return $toast.success('Transaction successfully stopped')
     })

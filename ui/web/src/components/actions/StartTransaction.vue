@@ -51,7 +51,9 @@
 </template>
 
 <script setup lang="ts">
-import { getCurrentInstance, onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useToast } from 'vue-toast-notification'
 
 import type { ChargingStationData } from '@/types'
 
@@ -71,7 +73,8 @@ const props = defineProps<{
   hashId: string
 }>()
 
-const app = getCurrentInstance()
+const $toast = useToast()
+const $router = useRouter()
 
 const state = ref<{ authorizeIdTag: boolean; evseId: number; idTag: string }>({
   authorizeIdTag: false,
@@ -82,7 +85,7 @@ const state = ref<{ authorizeIdTag: boolean; evseId: number; idTag: string }>({
 const ocppVersion = ref<OCPPVersion | undefined>(undefined)
 const isLoading = ref(true)
 
-const isOCPP20x = ref(false)
+const isOCPP20x = computed(() => UIClient.isOCPP20x(ocppVersion.value))
 
 const uiClient = useUIClient()
 
@@ -94,7 +97,6 @@ onMounted(async () => {
       const station = stations.find(s => s.stationInfo.hashId === props.hashId)
       if (station != null) {
         ocppVersion.value = station.stationInfo.ocppVersion
-        isOCPP20x.value = UIClient.isOCPP20x(ocppVersion.value)
       }
     }
   } catch (error) {
@@ -110,53 +112,37 @@ const handleStartTransaction = async (): Promise<void> => {
   // Only authorize for OCPP 1.6 when checkbox is checked
   if (!isOCPP20x.value && state.value.authorizeIdTag) {
     if (state.value.idTag == null || state.value.idTag.trim().length === 0) {
-      app?.appContext.config.globalProperties.$toast.error(
-        'Please provide an RFID tag to authorize'
-      )
+      $toast.error('Please provide an RFID tag to authorize')
       return
     }
     try {
       await uiClient.authorize(props.hashId, state.value.idTag)
     } catch (error) {
-      app?.appContext.config.globalProperties.$toast.error('Error at authorizing RFID tag')
+      $toast.error('Error at authorizing RFID tag')
       console.error('Error at authorizing RFID tag:', error)
       resetToggleButtonState(`${props.hashId}-${props.connectorId}-start-transaction`, true)
-      app?.appContext.config.globalProperties.$router.push({ name: 'charging-stations' })
+      $router.push({ name: 'charging-stations' })
       return
     }
-    const connectorOrEvseId = isOCPP20x.value ? state.value.evseId : convertToInt(props.connectorId)
-    try {
-      await uiClient.startTransactionForVersion(
-        props.hashId,
-        connectorOrEvseId,
-        state.value.idTag,
-        ocppVersion.value
-      )
-      app?.appContext.config.globalProperties.$toast.success('Transaction successfully started')
-    } catch (error) {
-      app?.appContext.config.globalProperties.$toast.error('Error at starting transaction')
-      console.error('Error at starting transaction:', error)
-    } finally {
-      resetToggleButtonState(`${props.hashId}-${props.connectorId}-start-transaction`, true)
-      app?.appContext.config.globalProperties.$router.push({ name: 'charging-stations' })
-    }
-  } else {
-    const connectorOrEvseId = isOCPP20x.value ? state.value.evseId : convertToInt(props.connectorId)
-    try {
-      await uiClient.startTransactionForVersion(
-        props.hashId,
-        connectorOrEvseId,
-        state.value.idTag,
-        ocppVersion.value
-      )
-      app?.appContext.config.globalProperties.$toast.success('Transaction successfully started')
-    } catch (error) {
-      app?.appContext.config.globalProperties.$toast.error('Error at starting transaction')
-      console.error('Error at starting transaction:', error)
-    } finally {
-      resetToggleButtonState(`${props.hashId}-${props.connectorId}-start-transaction`, true)
-      app?.appContext.config.globalProperties.$router.push({ name: 'charging-stations' })
-    }
+  }
+
+  const connectorOrEvseId = isOCPP20x.value
+    ? state.value.evseId
+    : convertToInt(props.connectorId)
+  try {
+    await uiClient.startTransactionForVersion(
+      props.hashId,
+      connectorOrEvseId,
+      state.value.idTag,
+      ocppVersion.value
+    )
+    $toast.success('Transaction successfully started')
+  } catch (error) {
+    $toast.error('Error at starting transaction')
+    console.error('Error at starting transaction:', error)
+  } finally {
+    resetToggleButtonState(`${props.hashId}-${props.connectorId}-start-transaction`, true)
+    $router.push({ name: 'charging-stations' })
   }
 }
 </script>

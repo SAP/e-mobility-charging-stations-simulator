@@ -67,7 +67,7 @@
         :class="simulatorButtonClass"
         :off="() => stopSimulator()"
         :on="() => startSimulator()"
-        :status="simulatorState?.started"
+        :status="simulatorStarted"
       >
         {{ simulatorButtonMessage }}
       </ToggleButton>
@@ -140,11 +140,13 @@ import {
 
 const simulatorState = ref<SimulatorState | undefined>(undefined)
 
-const simulatorButtonClass = computed<string>(() =>
+const simulatorStarted = computed((): boolean | undefined => simulatorState.value?.started)
+
+const simulatorButtonClass = computed((): string =>
   simulatorState.value?.started === true ? 'simulator-stop-button' : 'simulator-start-button'
 )
-const simulatorButtonMessage = computed<string>(
-  () =>
+const simulatorButtonMessage = computed(
+  (): string =>
     `${simulatorState.value?.started === true ? 'Stop' : 'Start'} Simulator${
       simulatorState.value?.version != null ? ` (${simulatorState.value.version})` : ''
     }`
@@ -183,9 +185,12 @@ const clearToggleButtons = (): void => {
 
 const app = getCurrentInstance()
 
-watch(app!.appContext.config.globalProperties!.$chargingStations, () => {
-  state.value.renderChargingStations = randomUUID()
-})
+const chargingStationsRef = app?.appContext.config.globalProperties.$chargingStations
+if (chargingStationsRef != null) {
+  watch(chargingStationsRef, () => {
+    state.value.renderChargingStations = randomUUID()
+  })
+}
 
 watch(simulatorState, () => {
   state.value.renderSimulator = randomUUID()

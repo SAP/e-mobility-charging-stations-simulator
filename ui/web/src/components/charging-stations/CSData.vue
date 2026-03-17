@@ -113,6 +113,7 @@
             :connector="connector"
             :connector-id="index + 1"
             :hash-id="chargingStation.stationInfo.hashId"
+            :ocpp-version="chargingStation.stationInfo.ocppVersion"
             @need-refresh="$emit('need-refresh')"
           />
         </tbody>
