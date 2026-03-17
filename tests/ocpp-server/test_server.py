@@ -72,7 +72,8 @@ TEST_CUSTOM_COST = 42.50
 def mock_connection():
     """Create a mock WebSocket connection for ChargePoint instantiation."""
     conn = MagicMock()
-    conn.path = TEST_CHARGE_POINT_PATH
+    conn.request = MagicMock()
+    conn.request.path = TEST_CHARGE_POINT_PATH
     return conn
 
 
@@ -989,7 +990,8 @@ class TestOnConnect:
 
     async def test_missing_subprotocol_header_closes_connection(self):
         mock_ws = MagicMock()
-        mock_ws.request_headers = {}
+        mock_ws.request = MagicMock()
+        mock_ws.request.headers = {}
         mock_ws.close = AsyncMock()
         config = self._make_config()
 
@@ -998,7 +1000,8 @@ class TestOnConnect:
 
     async def test_protocol_mismatch_closes_connection(self):
         mock_ws = MagicMock()
-        mock_ws.request_headers = {"Sec-WebSocket-Protocol": "ocpp1.6"}
+        mock_ws.request = MagicMock()
+        mock_ws.request.headers = {"Sec-WebSocket-Protocol": "ocpp1.6"}
         mock_ws.subprotocol = None
         mock_ws.close = AsyncMock()
         config = self._make_config()
@@ -1008,9 +1011,10 @@ class TestOnConnect:
 
     async def test_successful_connection_creates_charge_point(self):
         mock_ws = MagicMock()
-        mock_ws.request_headers = {"Sec-WebSocket-Protocol": "ocpp2.0.1"}
+        mock_ws.request = MagicMock()
+        mock_ws.request.headers = {"Sec-WebSocket-Protocol": "ocpp2.0.1"}
         mock_ws.subprotocol = "ocpp2.0.1"
-        mock_ws.path = "/TestCP"
+        mock_ws.request.path = "/TestCP"
         mock_ws.close = AsyncMock()
         config = self._make_config()
 
@@ -1025,9 +1029,10 @@ class TestOnConnect:
         from websockets.frames import Close
 
         mock_ws = MagicMock()
-        mock_ws.request_headers = {"Sec-WebSocket-Protocol": "ocpp2.0.1"}
+        mock_ws.request = MagicMock()
+        mock_ws.request.headers = {"Sec-WebSocket-Protocol": "ocpp2.0.1"}
         mock_ws.subprotocol = "ocpp2.0.1"
-        mock_ws.path = "/TestCP"
+        mock_ws.request.path = "/TestCP"
         mock_ws.close = AsyncMock()
         config = self._make_config()
 
@@ -1043,9 +1048,10 @@ class TestOnConnect:
 
     async def test_command_sent_on_connect_when_specified(self):
         mock_ws = MagicMock()
-        mock_ws.request_headers = {"Sec-WebSocket-Protocol": "ocpp2.0.1"}
+        mock_ws.request = MagicMock()
+        mock_ws.request.headers = {"Sec-WebSocket-Protocol": "ocpp2.0.1"}
         mock_ws.subprotocol = "ocpp2.0.1"
-        mock_ws.path = "/TestCP"
+        mock_ws.request.path = "/TestCP"
         mock_ws.close = AsyncMock()
         config = self._make_config(
             command_name=Action.clear_cache, delay=1.0, period=None

@@ -122,9 +122,11 @@ class ChargePoint(ocpp.v201.ChargePoint):
         charge_points: set["ChargePoint"] | None = None,
     ):
         # Extract CP ID from last URL segment (OCPP 2.0.1 Part 4)
-        cp_id = connection.path.strip("/").split("/")[-1]
+        cp_id = connection.request.path.strip("/").split("/")[-1]
         if cp_id == "":
-            logger.warning("Empty CP ID extracted from path: %s", connection.path)
+            logger.warning(
+                "Empty CP ID extracted from path: %s", connection.request.path
+            )
         super().__init__(cp_id, connection)
         self._charge_points = charge_points if charge_points is not None else set()
         self._command_timer = None
@@ -620,7 +622,7 @@ async def on_connect(
 ):
     """Handle new WebSocket connections from charge points."""
     try:
-        requested_protocols = websocket.request_headers["Sec-WebSocket-Protocol"]
+        requested_protocols = websocket.request.headers["Sec-WebSocket-Protocol"]
     except KeyError:
         logger.info("Client hasn't requested any Subprotocol. Closing Connection")
         return await websocket.close()
