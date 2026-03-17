@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { UIClient } from '@/composables/UIClient'
 import {
   OCPP20TransactionEventEnumType,
   OCPPVersion,
@@ -7,8 +8,6 @@ import {
   ProtocolVersion,
   ResponseStatus,
 } from '@/types'
-
-import { UIClient } from '../UIClient'
 
 vi.mock('vue-toast-notification', () => ({
   useToast: () => ({
