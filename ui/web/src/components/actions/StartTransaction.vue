@@ -3,17 +3,9 @@
     Start Transaction
   </h1>
   <h2>{{ chargingStationId }}</h2>
-  <p v-if="isOCPP20x">
-    EVSE ID:
-    <input
-      id="evseid"
-      v-model.number="state.evseId"
-      min="1"
-      name="evseid"
-      placeholder="EVSE ID"
-      type="number"
-    >
-  </p>
+  <h3 v-if="isOCPP20x">
+    EVSE {{ evseId }} / Connector {{ connectorId }}
+  </h3>
   <h3 v-else>
     Connector {{ connectorId }}
   </h3>
@@ -45,7 +37,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toast-notification'
 
 import Button from '@/components/buttons/Button.vue'
@@ -56,24 +48,26 @@ const props = defineProps<{
   chargingStationId: string
   connectorId: string
   hashId: string
-  ocppVersion?: string
 }>()
 
 const $toast = useToast()
 const $router = useRouter()
+const $route = useRoute()
 
-const state = ref<{ authorizeIdTag: boolean; evseId: number; idTag: string }>({
+const evseId = computed(() =>
+  $route.query.evseId != null ? Number($route.query.evseId) : undefined
+)
+const ocppVersion = computed(() => $route.query.ocppVersion as OCPPVersion | undefined)
+const isOCPP20x = computed(() => UIClient.isOCPP20x(ocppVersion.value))
+
+const state = ref<{ authorizeIdTag: boolean; idTag: string }>({
   authorizeIdTag: false,
-  evseId: convertToInt(props.connectorId),
   idTag: '',
 })
-
-const isOCPP20x = computed(() => UIClient.isOCPP20x(props.ocppVersion as OCPPVersion | undefined))
 
 const uiClient = useUIClient()
 
 const handleStartTransaction = async (): Promise<void> => {
-  // Only authorize for OCPP 1.6 when checkbox is checked
   if (!isOCPP20x.value && state.value.authorizeIdTag) {
     if (state.value.idTag.trim().length === 0) {
       $toast.error('Please provide an RFID tag to authorize')
@@ -90,13 +84,13 @@ const handleStartTransaction = async (): Promise<void> => {
     }
   }
 
-  const connectorOrEvseId = isOCPP20x.value ? state.value.evseId : convertToInt(props.connectorId)
   try {
     await uiClient.startTransaction(
       props.hashId,
-      connectorOrEvseId,
+      convertToInt(props.connectorId),
       state.value.idTag,
-      props.ocppVersion as OCPPVersion | undefined
+      ocppVersion.value,
+      evseId.value
     )
     $toast.success('Transaction successfully started')
   } catch (error) {
@@ -111,10 +105,6 @@ const handleStartTransaction = async (): Promise<void> => {
 
 <style>
 #idtag {
-  text-align: center;
-}
-
-#evseid {
   text-align: center;
 }
 </style>

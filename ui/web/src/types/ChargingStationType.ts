@@ -269,6 +269,11 @@ export interface EvseStatus extends JsonObject {
   connectors?: ConnectorStatus[]
 }
 
+export interface OCPP20EVSEType extends JsonObject {
+  connectorId?: number
+  id: number
+}
+
 export interface OCPP20IdTokenType extends JsonObject {
   idToken: string
   type: OCPP20IdTokenEnumType
@@ -276,7 +281,7 @@ export interface OCPP20IdTokenType extends JsonObject {
 
 export interface OCPP20TransactionEventRequest extends JsonObject {
   eventType: OCPP20TransactionEventEnumType
-  evseId?: number
+  evse?: OCPP20EVSEType
   idToken?: OCPP20IdTokenType
   transactionId?: string
 }

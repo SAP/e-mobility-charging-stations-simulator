@@ -1,7 +1,7 @@
 <template>
   <tr class="connectors-table__row">
     <td class="connectors-table__column">
-      {{ connectorId }}
+      {{ evseId != null ? `${evseId}/${connectorId}` : connectorId }}
     </td>
     <td class="connectors-table__column">
       {{ connector.status ?? 'Ø' }}
@@ -24,7 +24,11 @@
           () => {
             $router.push({
               name: 'start-transaction',
-              params: { hashId, chargingStationId, connectorId, ocppVersion: ocppVersion ?? '' },
+              params: { hashId, chargingStationId, connectorId },
+              query: {
+                ...(evseId != null ? { evseId: String(evseId) } : {}),
+                ...(ocppVersion != null ? { ocppVersion } : {}),
+              },
             })
           }
         "
@@ -60,6 +64,7 @@ const props = defineProps<{
   chargingStationId: string
   connector: ConnectorStatus
   connectorId: number
+  evseId?: number
   hashId: string
   ocppVersion?: OCPPVersion
 }>()

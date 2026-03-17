@@ -95,12 +95,12 @@ describe('UIClient', () => {
         })
       })
 
-      it('should send TRANSACTION_EVENT for OCPP 2.0.x', async () => {
-        await client.startTransaction('hash123', 1, 'idTag123', OCPPVersion.VERSION_20)
+      it('should send TRANSACTION_EVENT with evse object for OCPP 2.0.x', async () => {
+        await client.startTransaction('hash123', 2, 'idTag123', OCPPVersion.VERSION_20, 1)
 
         expect(sendRequestSpy).toHaveBeenCalledWith('transactionEvent', {
           eventType: OCPP20TransactionEventEnumType.STARTED,
-          evseId: 1,
+          evse: { connectorId: 2, id: 1 },
           hashIds: ['hash123'],
           idToken: { idToken: 'idTag123', type: 'ISO14443' },
         })
@@ -116,12 +116,34 @@ describe('UIClient', () => {
         })
       })
 
+      it('should send undefined evse when evseId is not provided for OCPP 2.0.x', async () => {
+        await client.startTransaction('hash123', 1, 'idTag123', OCPPVersion.VERSION_20)
+
+        expect(sendRequestSpy).toHaveBeenCalledWith('transactionEvent', {
+          eventType: OCPP20TransactionEventEnumType.STARTED,
+          evse: undefined,
+          hashIds: ['hash123'],
+          idToken: { idToken: 'idTag123', type: 'ISO14443' },
+        })
+      })
+
       it('should send undefined idToken when idTag is not provided for OCPP 2.0.x', async () => {
+        await client.startTransaction('hash123', 1, undefined, OCPPVersion.VERSION_20, 1)
+
+        expect(sendRequestSpy).toHaveBeenCalledWith('transactionEvent', {
+          eventType: OCPP20TransactionEventEnumType.STARTED,
+          evse: { connectorId: 1, id: 1 },
+          hashIds: ['hash123'],
+          idToken: undefined,
+        })
+      })
+
+      it('should send undefined evse and idToken when both absent for OCPP 2.0.x', async () => {
         await client.startTransaction('hash123', 1, undefined, OCPPVersion.VERSION_20)
 
         expect(sendRequestSpy).toHaveBeenCalledWith('transactionEvent', {
           eventType: OCPP20TransactionEventEnumType.STARTED,
-          evseId: 1,
+          evse: undefined,
           hashIds: ['hash123'],
           idToken: undefined,
         })
@@ -181,6 +203,15 @@ describe('UIClient', () => {
         await expect(
           client.stopTransaction('hash123', 'string-id', OCPPVersion.VERSION_16)
         ).rejects.toThrow('OCPP 1.6 requires numeric transactionId')
+      })
+
+      it('should send undefined transactionId for OCPP 1.6 when not provided', async () => {
+        await client.stopTransaction('hash123', undefined, OCPPVersion.VERSION_16)
+
+        expect(sendRequestSpy).toHaveBeenCalledWith('stopTransaction', {
+          hashIds: ['hash123'],
+          transactionId: undefined,
+        })
       })
     })
   })

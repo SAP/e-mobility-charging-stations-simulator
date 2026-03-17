@@ -148,12 +148,13 @@ export class UIClient {
     hashId: string,
     connectorId: number,
     idTag: string | undefined,
-    ocppVersion?: OCPPVersion
+    ocppVersion?: OCPPVersion,
+    evseId?: number
   ): Promise<ResponsePayload> {
     if (UIClient.isOCPP20x(ocppVersion)) {
       return this.transactionEvent(hashId, {
         eventType: OCPP20TransactionEventEnumType.STARTED,
-        evseId: connectorId,
+        evse: evseId != null ? { connectorId, id: evseId } : undefined,
         idToken:
           idTag != null ? { idToken: idTag, type: OCPP20IdTokenEnumType.ISO14443 } : undefined,
       })
