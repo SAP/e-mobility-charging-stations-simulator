@@ -144,7 +144,6 @@ import {
   warnTemplateKeysDeprecation,
 } from './Helpers.js'
 import { IdTagsCache } from './IdTagsCache.js'
-import { OCPPAuthServiceFactory } from './ocpp/auth/services/OCPPAuthServiceFactory.js'
 import {
   buildMeterValue,
   buildTransactionEndMeterValue,
@@ -158,6 +157,7 @@ import {
   OCPP20ServiceUtils,
   OCPP20TransactionEventEnumType,
   OCPP20TriggerReasonEnumType,
+  OCPPAuthServiceFactory,
   type OCPPIncomingRequestService,
   type OCPPRequestService,
   sendAndSetConnectorStatus,

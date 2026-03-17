@@ -135,7 +135,7 @@ import {
   hasPendingReservations,
   resetConnectorStatus,
 } from '../../Helpers.js'
-import { OCPPAuthServiceFactory } from '../auth/services/OCPPAuthServiceFactory.js'
+import { OCPPAuthServiceFactory } from '../auth/index.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
 import {
   buildMeterValue,
