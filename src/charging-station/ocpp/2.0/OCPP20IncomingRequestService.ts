@@ -2997,7 +2997,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
      * 3. For OCPP 2.0, there's no explicit AuthorizeRequest - authorization is validated
      *    through configuration variables and local auth lists
      * 4. Remote validation through TransactionEvent if needed
-     * 5. C12.FR.09: Check MasterPassGroupId - tokens with this groupId cannot start transactions
      */
 
     logger.debug(

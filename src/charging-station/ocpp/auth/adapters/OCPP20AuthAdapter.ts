@@ -168,7 +168,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
         // Map OCPP 2.0 authorization status to unified status
         const unifiedStatus = this.mapOCPP20AuthStatus(authStatus)
 
-        logger.info(
+        logger.debug(
           `${this.chargingStation.logPrefix()} ${moduleName}.${methodName}: Authorization result for ${idToken.idToken}: ${authStatus} (unified: ${unifiedStatus})`
         )
 

@@ -6,6 +6,7 @@ import type {
 import type { AuthConfiguration, AuthorizationResult, AuthRequest } from '../types/AuthTypes.js'
 
 import { ensureError, getErrorMessage, logger } from '../../../../utils/index.js'
+import { truncateId } from '../cache/InMemoryAuthCache.js'
 import {
   AuthContext,
   AuthenticationError,
@@ -149,7 +150,7 @@ export class LocalAuthStrategy implements AuthStrategy {
 
     try {
       this.authCache.set(identifier, result, ttl)
-      logger.debug(`LocalAuthStrategy: Cached result for ${identifier}`)
+      logger.debug(`LocalAuthStrategy: Cached result for ${truncateId(identifier)}`)
     } catch (error) {
       const errorMessage = getErrorMessage(error)
       logger.error(`LocalAuthStrategy: Failed to cache result: ${errorMessage}`)
@@ -274,7 +275,7 @@ export class LocalAuthStrategy implements AuthStrategy {
 
     try {
       this.authCache.remove(identifier)
-      logger.debug(`LocalAuthStrategy: Invalidated cache for ${identifier}`)
+      logger.debug(`LocalAuthStrategy: Invalidated cache for ${truncateId(identifier)}`)
     } catch (error) {
       const errorMessage = getErrorMessage(error)
       logger.error(`LocalAuthStrategy: Failed to invalidate cache: ${errorMessage}`)
@@ -338,7 +339,7 @@ export class LocalAuthStrategy implements AuthStrategy {
         return undefined
       }
 
-      logger.debug(`LocalAuthStrategy: Cache hit for ${request.identifier.value}`)
+      logger.debug(`LocalAuthStrategy: Cache hit for ${truncateId(request.identifier.value)}`)
       return cachedResult
     } catch (error) {
       const errorMessage = getErrorMessage(error)
@@ -376,7 +377,7 @@ export class LocalAuthStrategy implements AuthStrategy {
 
       // Check if entry is expired
       if (entry.expiryDate && entry.expiryDate < new Date()) {
-        logger.debug(`LocalAuthStrategy: Entry ${request.identifier.value} expired`)
+        logger.debug(`LocalAuthStrategy: Entry ${truncateId(request.identifier.value)} expired`)
         return {
           expiryDate: entry.expiryDate,
           isOffline: false,
@@ -448,7 +449,9 @@ export class LocalAuthStrategy implements AuthStrategy {
     request: AuthRequest,
     config: AuthConfiguration
   ): AuthorizationResult | undefined {
-    logger.debug(`LocalAuthStrategy: Applying offline fallback for ${request.identifier.value}`)
+    logger.debug(
+      `LocalAuthStrategy: Applying offline fallback for ${truncateId(request.identifier.value)}`
+    )
 
     // For transaction stops, always allow (safety requirement)
     if (request.context === AuthContext.TRANSACTION_STOP) {

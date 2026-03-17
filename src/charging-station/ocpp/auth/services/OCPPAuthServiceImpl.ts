@@ -85,7 +85,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     this.metrics.totalRequests++
 
     logger.debug(
-      `${this.chargingStation.logPrefix()} Starting authentication for identifier: ${JSON.stringify(request.identifier)}`
+      `${this.chargingStation.logPrefix()} OCPPAuthServiceImpl.authenticate: Starting authentication for identifier: ${JSON.stringify(request.identifier)}`
     )
 
     // Try each strategy in priority order
@@ -94,28 +94,28 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
 
       if (!strategy) {
         logger.debug(
-          `${this.chargingStation.logPrefix()} Strategy '${strategyName}' not available, skipping`
+          `${this.chargingStation.logPrefix()} OCPPAuthServiceImpl.authenticate: Strategy '${strategyName}' not available, skipping`
         )
         continue
       }
 
       if (!strategy.canHandle(request, this.config)) {
         logger.debug(
-          `${this.chargingStation.logPrefix()} Strategy '${strategyName}' cannot handle request, skipping`
+          `${this.chargingStation.logPrefix()} OCPPAuthServiceImpl.authenticate: Strategy '${strategyName}' cannot handle request, skipping`
         )
         continue
       }
 
       try {
         logger.debug(
-          `${this.chargingStation.logPrefix()} Trying authentication strategy: ${strategyName}`
+          `${this.chargingStation.logPrefix()} OCPPAuthServiceImpl.authenticate: Trying authentication strategy: ${strategyName}`
         )
 
         const result = await strategy.authenticate(request, this.config)
 
         if (!result) {
           logger.debug(
-            `${this.chargingStation.logPrefix()} Strategy '${strategyName}' returned no result, continuing to next strategy`
+            `${this.chargingStation.logPrefix()} OCPPAuthServiceImpl.authenticate: Strategy '${strategyName}' returned no result, continuing to next strategy`
           )
           continue
         }
@@ -126,7 +126,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
         this.updateMetricsForResult(result, strategyName, duration)
 
         logger.info(
-          `${this.chargingStation.logPrefix()} Authentication successful using ${strategyName} strategy (${String(duration)}ms): ${result.status}`
+          `${this.chargingStation.logPrefix()} OCPPAuthServiceImpl.authenticate: Authentication successful using ${strategyName} strategy (${String(duration)}ms): ${result.status}`
         )
 
         return {
@@ -149,7 +149,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
       } catch (error) {
         lastError = ensureError(error)
         logger.debug(
-          `${this.chargingStation.logPrefix()} Strategy '${strategyName}' failed: ${getErrorMessage(error)}`
+          `${this.chargingStation.logPrefix()} OCPPAuthServiceImpl.authenticate: Strategy '${strategyName}' failed: ${getErrorMessage(error)}`
         )
 
         // Continue to next strategy unless it's a critical error
@@ -168,7 +168,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     this.metrics.totalResponseTime += duration
 
     logger.error(
-      `${this.chargingStation.logPrefix()} Authentication failed for all strategies (${String(duration)}ms): ${errorMessage}`
+      `${this.chargingStation.logPrefix()} OCPPAuthServiceImpl.authenticate: Authentication failed for all strategies (${String(duration)}ms): ${errorMessage}`
     )
 
     return {
@@ -241,7 +241,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
       const duration = Date.now() - startTime
 
       logger.info(
-        `${this.chargingStation.logPrefix()} Direct authentication with ${strategyName} successful (${String(duration)}ms): ${result.status}`
+        `${this.chargingStation.logPrefix()} OCPPAuthServiceImpl.authorizeWithStrategy: Direct authentication with ${strategyName} successful (${String(duration)}ms): ${result.status}`
       )
 
       return {
@@ -261,7 +261,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     } catch (error) {
       const duration = Date.now() - startTime
       logger.error(
-        `${this.chargingStation.logPrefix()} Direct authentication with ${strategyName} failed (${String(duration)}ms): ${getErrorMessage(error)}`
+        `${this.chargingStation.logPrefix()} OCPPAuthServiceImpl.authorizeWithStrategy: Direct authentication with ${strategyName} failed (${String(duration)}ms): ${getErrorMessage(error)}`
       )
       throw error
     }
@@ -271,16 +271,22 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * Clear all cached authorizations
    */
   public clearCache (): void {
-    logger.debug(`${this.chargingStation.logPrefix()} Clearing all cached authorizations`)
+    logger.debug(
+      `${this.chargingStation.logPrefix()} OCPPAuthServiceImpl.clearCache: Clearing all cached authorizations`
+    )
 
     // Clear cache in local strategy
     const localStrategy = this.strategies.get('local') as LocalAuthStrategy | undefined
     const localAuthCache = localStrategy?.getAuthCache()
     if (localAuthCache) {
       localAuthCache.clear()
-      logger.info(`${this.chargingStation.logPrefix()} Authorization cache cleared`)
+      logger.info(
+        `${this.chargingStation.logPrefix()} OCPPAuthServiceImpl.clearCache: Authorization cache cleared`
+      )
     } else {
-      logger.debug(`${this.chargingStation.logPrefix()} No authorization cache available to clear`)
+      logger.debug(
+        `${this.chargingStation.logPrefix()} OCPPAuthServiceImpl.clearCache: No authorization cache available to clear`
+      )
     }
   }
 
@@ -418,7 +424,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    */
   public invalidateCache (identifier: UnifiedIdentifier): void {
     logger.debug(
-      `${this.chargingStation.logPrefix()} Invalidating cache for identifier: ${identifier.value}`
+      `${this.chargingStation.logPrefix()} OCPPAuthServiceImpl.invalidateCache: Invalidating cache for identifier: ${identifier.value}`
     )
 
     // Invalidate in local strategy
@@ -426,11 +432,11 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     if (localStrategy) {
       localStrategy.invalidateCache(identifier.value)
       logger.info(
-        `${this.chargingStation.logPrefix()} Cache invalidated for identifier: ${identifier.value}`
+        `${this.chargingStation.logPrefix()} OCPPAuthServiceImpl.invalidateCache: Cache invalidated for identifier: ${identifier.value}`
       )
     } else {
       logger.debug(
-        `${this.chargingStation.logPrefix()} No local strategy available for cache invalidation`
+        `${this.chargingStation.logPrefix()} OCPPAuthServiceImpl.invalidateCache: No local strategy available for cache invalidation`
       )
     }
   }
@@ -464,7 +470,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
         }
       } catch (error) {
         logger.debug(
-          `${this.chargingStation.logPrefix()} Local authorization check failed: ${getErrorMessage(error)}`
+          `${this.chargingStation.logPrefix()} OCPPAuthServiceImpl.isLocallyAuthorized: Local authorization check failed: ${getErrorMessage(error)}`
         )
       }
     }
@@ -579,7 +585,9 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     // Apply validated configuration
     this.config = newConfig
 
-    logger.info(`${this.chargingStation.logPrefix()} Authentication configuration updated`)
+    logger.info(
+      `${this.chargingStation.logPrefix()} OCPPAuthServiceImpl.updateConfiguration: Authentication configuration updated`
+    )
   }
 
   /**
@@ -611,11 +619,11 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     if (isConfigurable(strategy)) {
       strategy.configure(config)
       logger.info(
-        `${this.chargingStation.logPrefix()} Updated configuration for strategy: ${strategyName}`
+        `${this.chargingStation.logPrefix()} OCPPAuthServiceImpl.updateStrategyConfiguration: Updated configuration for strategy: ${strategyName}`
       )
     } else {
       logger.warn(
-        `${this.chargingStation.logPrefix()} Strategy '${strategyName}' does not support runtime configuration updates`
+        `${this.chargingStation.logPrefix()} OCPPAuthServiceImpl.updateStrategyConfiguration: Strategy '${strategyName}' does not support runtime configuration updates`
       )
     }
   }
@@ -693,7 +701,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     })
 
     logger.info(
-      `${this.chargingStation.logPrefix()} Initialized ${String(this.strategies.size)} authentication strategies for OCPP ${ocppVersion ?? 'unknown'}`
+      `${this.chargingStation.logPrefix()} OCPPAuthServiceImpl.initializeStrategies: Initialized ${String(this.strategies.size)} authentication strategies for OCPP ${ocppVersion ?? 'unknown'}`
     )
   }
 

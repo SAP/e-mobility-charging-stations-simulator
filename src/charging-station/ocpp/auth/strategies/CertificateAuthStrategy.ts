@@ -61,7 +61,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
       const certValidation = this.validateCertificateData(request.identifier)
       if (!certValidation.isValid) {
         logger.warn(
-          `${this.chargingStation.logPrefix()} Certificate validation failed: ${String(certValidation.reason)}`
+          `CertificateAuthStrategy: Certificate validation failed: ${String(certValidation.reason)}`
         )
         return this.createFailureResult(
           AuthorizationStatus.INVALID,
@@ -97,7 +97,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
         startTime
       )
     } catch (error) {
-      logger.error(`${this.chargingStation.logPrefix()} Certificate authorization error:`, error)
+      logger.error('CertificateAuthStrategy: Certificate authorization error:', error)
       return this.createFailureResult(
         AuthorizationStatus.INVALID,
         'Certificate authorization failed',
@@ -138,9 +138,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
 
   cleanup (): void {
     this.isInitialized = false
-    logger.debug(
-      `${this.chargingStation.logPrefix()} Certificate authentication strategy cleaned up`
-    )
+    logger.debug('CertificateAuthStrategy: Certificate authentication strategy cleaned up')
   }
 
   getStats (): Record<string, unknown> {
@@ -152,13 +150,11 @@ export class CertificateAuthStrategy implements AuthStrategy {
 
   initialize (config: AuthConfiguration): void {
     if (!config.certificateAuthEnabled) {
-      logger.info(`${this.chargingStation.logPrefix()} Certificate authentication disabled`)
+      logger.info('CertificateAuthStrategy: Certificate authentication disabled')
       return
     }
 
-    logger.info(
-      `${this.chargingStation.logPrefix()} Certificate authentication strategy initialized`
-    )
+    logger.info('CertificateAuthStrategy: Certificate authentication strategy initialized')
     this.isInitialized = true
   }
 
@@ -392,7 +388,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
         }
 
         logger.info(
-          `${this.chargingStation.logPrefix()} Certificate authorization successful for certificate ${request.identifier.certificateHashData?.serialNumber ?? 'unknown'}`
+          `CertificateAuthStrategy: Certificate authorization successful for certificate ${request.identifier.certificateHashData?.serialNumber ?? 'unknown'}`
         )
 
         return successResult
@@ -405,10 +401,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
         )
       }
     } catch (error) {
-      logger.error(
-        `${this.chargingStation.logPrefix()} OCPP 2.0 certificate validation error:`,
-        error
-      )
+      logger.error('CertificateAuthStrategy: OCPP 2.0 certificate validation error:', error)
       return this.createFailureResult(
         AuthorizationStatus.INVALID,
         'Certificate validation error',
