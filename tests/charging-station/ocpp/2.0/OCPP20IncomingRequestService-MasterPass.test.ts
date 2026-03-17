@@ -66,7 +66,7 @@ await describe('C12.FR.09 - MasterPassGroupId Check', async () => {
     OCPPAuthServiceFactory.clearAllInstances()
   })
 
-  await it('should reject start transaction when groupIdToken matches MasterPassGroupId', async () => {
+  await it('C12.FR.09 - should reject start transaction when groupIdToken matches MasterPassGroupId', async () => {
     const masterPassGroupId = 'MASTER_GROUP_1'
 
     const originalGetVariables = OCPP20VariableManager.getInstance().getVariables.bind(
