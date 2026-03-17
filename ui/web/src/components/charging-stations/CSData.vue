@@ -171,9 +171,9 @@ const getConnectorEntries = (): ConnectorTableEntry[] => {
     }))
 }
 const getATGStatus = (connectorId: number): Status | undefined => {
-  return props.chargingStation.automaticTransactionGenerator
-    ?.automaticTransactionGeneratorStatuses?.find(entry => entry.connectorId === connectorId)
-    ?.status
+  return props.chargingStation.automaticTransactionGenerator?.automaticTransactionGeneratorStatuses?.find(
+    entry => entry.connectorId === connectorId
+  )?.status
 }
 const getSupervisionUrl = (): string => {
   const supervisionUrl = new URL(props.chargingStation.supervisionUrl)
