@@ -3,7 +3,7 @@
     Start Transaction
   </h1>
   <h2>{{ chargingStationId }}</h2>
-  <h3 v-if="isOCPP20x">
+  <h3 v-if="evseId != null">
     EVSE {{ evseId }} / Connector {{ connectorId }}
   </h3>
   <h3 v-else>
