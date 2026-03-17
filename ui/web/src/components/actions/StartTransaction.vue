@@ -56,7 +56,13 @@ import { getCurrentInstance, onMounted, ref } from 'vue'
 import type { ChargingStationData } from '@/types'
 
 import Button from '@/components/buttons/Button.vue'
-import { convertToBoolean, convertToInt, resetToggleButtonState, useUIClient, UIClient } from '@/composables'
+import {
+  convertToBoolean,
+  convertToInt,
+  resetToggleButtonState,
+  UIClient,
+  useUIClient,
+} from '@/composables'
 import { OCPPVersion, ResponseStatus } from '@/types'
 
 const props = defineProps<{
@@ -77,8 +83,6 @@ const ocppVersion = ref<OCPPVersion | undefined>(undefined)
 const isLoading = ref(true)
 
 const isOCPP20x = ref(false)
-
-
 
 const uiClient = useUIClient()
 
@@ -120,9 +124,7 @@ const handleStartTransaction = async (): Promise<void> => {
       app?.appContext.config.globalProperties.$router.push({ name: 'charging-stations' })
       return
     }
-    const connectorOrEvseId = isOCPP20x.value
-      ? state.value.evseId
-      : convertToInt(props.connectorId)
+    const connectorOrEvseId = isOCPP20x.value ? state.value.evseId : convertToInt(props.connectorId)
     try {
       await uiClient.startTransactionForVersion(
         props.hashId,
