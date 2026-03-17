@@ -15,6 +15,8 @@ import {
   AuthorizationStatus,
 } from '../types/AuthTypes.js'
 
+const moduleName = 'LocalAuthStrategy'
+
 /**
  * Local Authentication Strategy
  *
@@ -69,19 +71,19 @@ export class LocalAuthStrategy implements AuthStrategy {
 
     try {
       logger.debug(
-        `LocalAuthStrategy: Authenticating ${request.identifier.value} for ${request.context}`
+        `${moduleName}: Authenticating ${request.identifier.value} for ${request.context}`
       )
 
       // 1. Try local authorization list first (highest priority)
       if (config.localAuthListEnabled && this.localAuthListManager) {
         const localResult = await this.checkLocalAuthList(request, config)
         if (localResult) {
-          logger.debug(`LocalAuthStrategy: Found in local auth list: ${localResult.status}`)
+          logger.debug(`${moduleName}: Found in local auth list: ${localResult.status}`)
           this.stats.localListHits++
           // C14.FR.03: non-Accepted local list tokens trigger re-auth unless DisablePostAuthorize
           if (this.shouldTriggerPostAuthorize(localResult, config)) {
             logger.debug(
-              `LocalAuthStrategy: Local list token non-Accepted (${localResult.status}), deferring to remote auth`
+              `${moduleName}: Local list token non-Accepted (${localResult.status}), deferring to remote auth`
             )
             return undefined
           }
@@ -93,12 +95,12 @@ export class LocalAuthStrategy implements AuthStrategy {
       if (config.authorizationCacheEnabled && this.authCache) {
         const cacheResult = this.checkAuthCache(request, config)
         if (cacheResult) {
-          logger.debug(`LocalAuthStrategy: Found in cache: ${cacheResult.status}`)
+          logger.debug(`${moduleName}: Found in cache: ${cacheResult.status}`)
           this.stats.cacheHits++
           // C10.FR.03, C12.FR.05: non-Accepted cached tokens trigger re-auth unless DisablePostAuthorize
           if (this.shouldTriggerPostAuthorize(cacheResult, config)) {
             logger.debug(
-              `LocalAuthStrategy: Cached token non-Accepted (${cacheResult.status}), deferring to remote auth`
+              `${moduleName}: Cached token non-Accepted (${cacheResult.status}), deferring to remote auth`
             )
             return undefined
           }
@@ -110,19 +112,17 @@ export class LocalAuthStrategy implements AuthStrategy {
       if (config.offlineAuthorizationEnabled && request.allowOffline) {
         const offlineResult = this.handleOfflineFallback(request, config)
         if (offlineResult) {
-          logger.debug(`LocalAuthStrategy: Offline fallback: ${offlineResult.status}`)
+          logger.debug(`${moduleName}: Offline fallback: ${offlineResult.status}`)
           this.stats.offlineDecisions++
           return this.enhanceResult(offlineResult, AuthenticationMethod.OFFLINE_FALLBACK, startTime)
         }
       }
 
-      logger.debug(
-        `LocalAuthStrategy: No local authorization found for ${request.identifier.value}`
-      )
+      logger.debug(`${moduleName}: No local authorization found for ${request.identifier.value}`)
       return undefined
     } catch (error) {
       const errorMessage = getErrorMessage(error)
-      logger.error(`LocalAuthStrategy: Authentication error: ${errorMessage}`)
+      logger.error(`${moduleName}: Authentication error: ${errorMessage}`)
       throw new AuthenticationError(
         `Local authentication failed: ${errorMessage}`,
         AuthErrorCode.STRATEGY_ERROR,
@@ -150,10 +150,10 @@ export class LocalAuthStrategy implements AuthStrategy {
 
     try {
       this.authCache.set(identifier, result, ttl)
-      logger.debug(`LocalAuthStrategy: Cached result for ${truncateId(identifier)}`)
+      logger.debug(`${moduleName}: Cached result for ${truncateId(identifier)}`)
     } catch (error) {
       const errorMessage = getErrorMessage(error)
-      logger.error(`LocalAuthStrategy: Failed to cache result: ${errorMessage}`)
+      logger.error(`${moduleName}: Failed to cache result: ${errorMessage}`)
       // Don't throw - caching is not critical
     }
   }
@@ -177,7 +177,7 @@ export class LocalAuthStrategy implements AuthStrategy {
    * Cleanup strategy resources
    */
   public cleanup (): void {
-    logger.info('LocalAuthStrategy: Cleaning up...')
+    logger.info(`${moduleName}: Cleaning up...`)
 
     // Reset internal state
     this.isInitialized = false
@@ -189,7 +189,7 @@ export class LocalAuthStrategy implements AuthStrategy {
       totalRequests: 0,
     }
 
-    logger.info('LocalAuthStrategy: Cleanup completed')
+    logger.info(`${moduleName}: Cleanup completed`)
   }
 
   /**
@@ -232,30 +232,30 @@ export class LocalAuthStrategy implements AuthStrategy {
    */
   public initialize (config: AuthConfiguration): void {
     try {
-      logger.info('LocalAuthStrategy: Initializing...')
+      logger.info(`${moduleName}: Initializing...`)
 
       if (config.localAuthListEnabled && !this.localAuthListManager) {
-        logger.warn('LocalAuthStrategy: Local auth list enabled but no manager provided')
+        logger.warn(`${moduleName}: Local auth list enabled but no manager provided`)
       }
 
       if (config.authorizationCacheEnabled && !this.authCache) {
-        logger.warn('LocalAuthStrategy: Authorization cache enabled but no cache provided')
+        logger.warn(`${moduleName}: Authorization cache enabled but no cache provided`)
       }
 
       // Initialize components if available
       if (this.localAuthListManager) {
-        logger.debug('LocalAuthStrategy: Local auth list manager available')
+        logger.debug(`${moduleName}: Local auth list manager available`)
       }
 
       if (this.authCache) {
-        logger.debug('LocalAuthStrategy: Authorization cache available')
+        logger.debug(`${moduleName}: Authorization cache available`)
       }
 
       this.isInitialized = true
-      logger.info('LocalAuthStrategy: Initialized successfully')
+      logger.info(`${moduleName}: Initialized successfully`)
     } catch (error) {
       const errorMessage = getErrorMessage(error)
-      logger.error(`LocalAuthStrategy: Initialization failed: ${errorMessage}`)
+      logger.error(`${moduleName}: Initialization failed: ${errorMessage}`)
       throw new AuthenticationError(
         `Local auth strategy initialization failed: ${errorMessage}`,
         AuthErrorCode.CONFIGURATION_ERROR,
@@ -275,10 +275,10 @@ export class LocalAuthStrategy implements AuthStrategy {
 
     try {
       this.authCache.remove(identifier)
-      logger.debug(`LocalAuthStrategy: Invalidated cache for ${truncateId(identifier)}`)
+      logger.debug(`${moduleName}: Invalidated cache for ${truncateId(identifier)}`)
     } catch (error) {
       const errorMessage = getErrorMessage(error)
-      logger.error(`LocalAuthStrategy: Failed to invalidate cache: ${errorMessage}`)
+      logger.error(`${moduleName}: Failed to invalidate cache: ${errorMessage}`)
       // Don't throw - cache invalidation errors are not critical
     }
   }
@@ -298,7 +298,7 @@ export class LocalAuthStrategy implements AuthStrategy {
       return !!entry
     } catch (error) {
       const errorMessage = getErrorMessage(error)
-      logger.error(`LocalAuthStrategy: Error checking local list: ${errorMessage}`)
+      logger.error(`${moduleName}: Error checking local list: ${errorMessage}`)
       return false
     }
   }
@@ -339,11 +339,11 @@ export class LocalAuthStrategy implements AuthStrategy {
         return undefined
       }
 
-      logger.debug(`LocalAuthStrategy: Cache hit for ${truncateId(request.identifier.value)}`)
+      logger.debug(`${moduleName}: Cache hit for ${truncateId(request.identifier.value)}`)
       return cachedResult
     } catch (error) {
       const errorMessage = getErrorMessage(error)
-      logger.error(`LocalAuthStrategy: Cache check failed: ${errorMessage}`)
+      logger.error(`${moduleName}: Cache check failed: ${errorMessage}`)
       throw new AuthenticationError(
         `Authorization cache check failed: ${errorMessage}`,
         AuthErrorCode.CACHE_ERROR,
@@ -377,7 +377,7 @@ export class LocalAuthStrategy implements AuthStrategy {
 
       // Check if entry is expired
       if (entry.expiryDate && entry.expiryDate < new Date()) {
-        logger.debug(`LocalAuthStrategy: Entry ${truncateId(request.identifier.value)} expired`)
+        logger.debug(`${moduleName}: Entry ${truncateId(request.identifier.value)} expired`)
         return {
           expiryDate: entry.expiryDate,
           isOffline: false,
@@ -401,7 +401,7 @@ export class LocalAuthStrategy implements AuthStrategy {
       }
     } catch (error) {
       const errorMessage = getErrorMessage(error)
-      logger.error(`LocalAuthStrategy: Local auth list check failed: ${errorMessage}`)
+      logger.error(`${moduleName}: Local auth list check failed: ${errorMessage}`)
       throw new AuthenticationError(
         `Local auth list check failed: ${errorMessage}`,
         AuthErrorCode.LOCAL_LIST_ERROR,
@@ -450,7 +450,7 @@ export class LocalAuthStrategy implements AuthStrategy {
     config: AuthConfiguration
   ): AuthorizationResult | undefined {
     logger.debug(
-      `LocalAuthStrategy: Applying offline fallback for ${truncateId(request.identifier.value)}`
+      `${moduleName}: Applying offline fallback for ${truncateId(request.identifier.value)}`
     )
 
     // For transaction stops, always allow (safety requirement)
@@ -510,7 +510,7 @@ export class LocalAuthStrategy implements AuthStrategy {
       case 'unauthorized':
         return AuthorizationStatus.INVALID
       default:
-        logger.warn(`LocalAuthStrategy: Unknown entry status: ${status}, defaulting to INVALID`)
+        logger.warn(`${moduleName}: Unknown entry status: ${status}, defaulting to INVALID`)
         return AuthorizationStatus.INVALID
     }
   }

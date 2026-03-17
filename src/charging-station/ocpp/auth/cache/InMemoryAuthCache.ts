@@ -4,6 +4,8 @@ import type { AuthorizationResult } from '../types/AuthTypes.js'
 import { logger } from '../../../../utils/index.js'
 import { AuthorizationStatus } from '../types/AuthTypes.js'
 
+const moduleName = 'InMemoryAuthCache'
+
 /**
  * Cached authorization entry with expiration
  */
@@ -137,7 +139,7 @@ export class InMemoryAuthCache implements AuthCache {
     }
 
     logger.info(
-      `InMemoryAuthCache: Initialized with maxEntries=${String(this.maxEntries)}, defaultTtl=${String(this.defaultTtl)}s, rateLimit=${this.rateLimit.enabled ? `${String(this.rateLimit.maxRequests)} req/${String(this.rateLimit.windowMs)}ms` : 'disabled'}`
+      `${moduleName}: Initialized with maxEntries=${String(this.maxEntries)}, defaultTtl=${String(this.defaultTtl)}s, rateLimit=${this.rateLimit.enabled ? `${String(this.rateLimit.maxRequests)} req/${String(this.rateLimit.windowMs)}ms` : 'disabled'}`
     )
   }
 
@@ -150,7 +152,7 @@ export class InMemoryAuthCache implements AuthCache {
     this.lruOrder.clear()
     this.rateLimits.clear()
 
-    logger.info(`InMemoryAuthCache: Cleared ${String(entriesCleared)} entries`)
+    logger.info(`${moduleName}: Cleared ${String(entriesCleared)} entries`)
   }
 
   public dispose (): void {
@@ -170,7 +172,7 @@ export class InMemoryAuthCache implements AuthCache {
     if (!this.checkRateLimit(identifier)) {
       this.stats.rateLimitBlocked++
       logger.warn(
-        `InMemoryAuthCache: Rate limit exceeded for identifier: ${this.truncateId(identifier)}`
+        `${moduleName}: Rate limit exceeded for identifier: ${this.truncateId(identifier)}`
       )
       return undefined
     }
@@ -198,7 +200,7 @@ export class InMemoryAuthCache implements AuthCache {
       }
       this.lruOrder.set(identifier, now)
       logger.debug(
-        `InMemoryAuthCache: Expired entry transitioned to EXPIRED for identifier: ${this.truncateId(identifier)}`
+        `${moduleName}: Expired entry transitioned to EXPIRED for identifier: ${this.truncateId(identifier)}`
       )
       return entry.result
     }
@@ -213,7 +215,7 @@ export class InMemoryAuthCache implements AuthCache {
       entry.expiresAt = now + this.defaultTtl * 1000
     }
 
-    logger.debug(`InMemoryAuthCache: Cache hit for identifier: ${this.truncateId(identifier)}`)
+    logger.debug(`${moduleName}: Cache hit for identifier: ${this.truncateId(identifier)}`)
     return entry.result
   }
 
@@ -261,9 +263,7 @@ export class InMemoryAuthCache implements AuthCache {
     this.lruOrder.delete(identifier)
 
     if (deleted) {
-      logger.debug(
-        `InMemoryAuthCache: Removed entry for identifier: ${this.truncateId(identifier)}`
-      )
+      logger.debug(`${moduleName}: Removed entry for identifier: ${this.truncateId(identifier)}`)
     }
   }
 
@@ -317,7 +317,7 @@ export class InMemoryAuthCache implements AuthCache {
     if (!this.checkRateLimit(identifier)) {
       this.stats.rateLimitBlocked++
       logger.warn(
-        `InMemoryAuthCache: Rate limit exceeded, not caching identifier: ${this.truncateId(identifier)}`
+        `${moduleName}: Rate limit exceeded, not caching identifier: ${this.truncateId(identifier)}`
       )
       return
     }
@@ -343,7 +343,7 @@ export class InMemoryAuthCache implements AuthCache {
     this.stats.sets++
 
     logger.debug(
-      `InMemoryAuthCache: Cached result for identifier: ${this.truncateId(identifier)}, ttl=${String(clampedTtl)}s, entries=${String(this.cache.size)}/${String(this.maxEntries)}`
+      `${moduleName}: Cached result for identifier: ${this.truncateId(identifier)}, ttl=${String(clampedTtl)}s, entries=${String(this.cache.size)}/${String(this.maxEntries)}`
     )
   }
 
@@ -448,7 +448,7 @@ export class InMemoryAuthCache implements AuthCache {
       this.cache.delete(candidateIdentifier)
       this.lruOrder.delete(candidateIdentifier)
       this.stats.evictions++
-      logger.debug(`InMemoryAuthCache: Evicted LRU entry: ${this.truncateId(candidateIdentifier)}`)
+      logger.debug(`${moduleName}: Evicted LRU entry: ${this.truncateId(candidateIdentifier)}`)
     }
   }
 
