@@ -10,7 +10,7 @@ import {
   type TimestampedData,
 } from '../types/index.js'
 import {
-  buildATGStatusEntries,
+  buildATGEntries,
   buildConnectorEntries,
   buildEvseEntries,
 } from './ChargingStationConfigurationUtils.js'
@@ -111,7 +111,7 @@ const buildChargingStationDataPayload = (chargingStation: ChargingStation): Char
       automaticTransactionGenerator: {
         automaticTransactionGenerator:
           chargingStation.getAutomaticTransactionGeneratorConfiguration(),
-        automaticTransactionGeneratorStatuses: buildATGStatusEntries(chargingStation),
+        automaticTransactionGeneratorStatuses: buildATGEntries(chargingStation),
       },
     }),
   }

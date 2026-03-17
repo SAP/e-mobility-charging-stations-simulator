@@ -1,6 +1,6 @@
 export { AsyncLock, AsyncLockType } from './AsyncLock.js'
 export {
-  buildATGStatusEntries,
+  buildATGEntries,
   buildChargingStationAutomaticTransactionGeneratorConfiguration,
   buildConnectorEntries,
   buildConnectorsStatus,

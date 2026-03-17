@@ -24,7 +24,7 @@ export {
   type WsOptions,
 } from './ChargingStationTemplate.js'
 export {
-  type ATGStatusEntry,
+  type ATGEntry,
   type ChargingStationData,
   type ChargingStationOptions,
   type ChargingStationWorkerData,

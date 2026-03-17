@@ -121,7 +121,7 @@ export enum Voltage {
   VOLTAGE_800 = 800,
 }
 
-export interface ATGStatusEntry extends JsonObject {
+export interface ATGEntry extends JsonObject {
   connectorId: number
   status: Status
 }
@@ -147,7 +147,7 @@ export type ChargePointStatus = OCPP16ChargePointStatus
 
 export interface ChargingStationAutomaticTransactionGeneratorConfiguration extends JsonObject {
   automaticTransactionGenerator?: AutomaticTransactionGeneratorConfiguration
-  automaticTransactionGeneratorStatuses?: ATGStatusEntry[]
+  automaticTransactionGeneratorStatuses?: ATGEntry[]
 }
 
 export interface ChargingStationData extends JsonObject {
