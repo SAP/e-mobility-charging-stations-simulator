@@ -14,7 +14,7 @@
     </td>
     <td class="connectors-table__column">
       <ToggleButton
-        :id="`${hashId}-${connectorId}-start-transaction`"
+        :id="`${hashId}-${evseId ?? 0}-${connectorId}-start-transaction`"
         :off="
           () => {
             $router.push({ name: 'charging-stations' })
@@ -81,7 +81,10 @@ const stopTransaction = (): void => {
     return
   }
   uiClient
-    .stopTransaction(props.hashId, props.connector.transactionId, props.ocppVersion)
+    .stopTransaction(props.hashId, {
+      ocppVersion: props.ocppVersion,
+      transactionId: props.connector.transactionId,
+    })
     .then(() => {
       return $toast.success('Transaction successfully stopped')
     })

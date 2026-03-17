@@ -67,37 +67,42 @@ const state = ref<{ authorizeIdTag: boolean; idTag: string }>({
 
 const uiClient = useUIClient()
 
+const toggleButtonId = computed(
+  () => `${props.hashId}-${evseId.value ?? 0}-${props.connectorId}-start-transaction`
+)
+
 const handleStartTransaction = async (): Promise<void> => {
+  const idTag = state.value.idTag.trim().length > 0 ? state.value.idTag.trim() : undefined
+
   if (!isOCPP20x.value && state.value.authorizeIdTag) {
-    if (state.value.idTag.trim().length === 0) {
+    if (idTag == null) {
       $toast.error('Please provide an RFID tag to authorize')
       return
     }
     try {
-      await uiClient.authorize(props.hashId, state.value.idTag)
+      await uiClient.authorize(props.hashId, idTag)
     } catch (error) {
       $toast.error('Error at authorizing RFID tag')
       console.error('Error at authorizing RFID tag:', error)
-      resetToggleButtonState(`${props.hashId}-${props.connectorId}-start-transaction`, true)
+      resetToggleButtonState(toggleButtonId.value, true)
       $router.push({ name: 'charging-stations' })
       return
     }
   }
 
   try {
-    await uiClient.startTransaction(
-      props.hashId,
-      convertToInt(props.connectorId),
-      state.value.idTag,
-      ocppVersion.value,
-      evseId.value
-    )
+    await uiClient.startTransaction(props.hashId, {
+      connectorId: convertToInt(props.connectorId),
+      evseId: evseId.value,
+      idTag,
+      ocppVersion: ocppVersion.value,
+    })
     $toast.success('Transaction successfully started')
   } catch (error) {
     $toast.error('Error at starting transaction')
     console.error('Error at starting transaction:', error)
   } finally {
-    resetToggleButtonState(`${props.hashId}-${props.connectorId}-start-transaction`, true)
+    resetToggleButtonState(toggleButtonId.value, true)
     $router.push({ name: 'charging-stations' })
   }
 }

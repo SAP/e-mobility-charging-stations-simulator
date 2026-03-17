@@ -146,23 +146,30 @@ export class UIClient {
 
   public async startTransaction (
     hashId: string,
-    connectorId: number,
-    idTag: string | undefined,
-    ocppVersion?: OCPPVersion,
-    evseId?: number
+    options: {
+      connectorId: number
+      evseId?: number
+      idTag?: string
+      ocppVersion?: OCPPVersion
+    }
   ): Promise<ResponsePayload> {
-    if (UIClient.isOCPP20x(ocppVersion)) {
+    if (UIClient.isOCPP20x(options.ocppVersion)) {
       return this.transactionEvent(hashId, {
         eventType: OCPP20TransactionEventEnumType.STARTED,
-        evse: evseId != null ? { connectorId, id: evseId } : undefined,
+        evse:
+          options.evseId != null
+            ? { connectorId: options.connectorId, id: options.evseId }
+            : undefined,
         idToken:
-          idTag != null ? { idToken: idTag, type: OCPP20IdTokenEnumType.ISO14443 } : undefined,
+          options.idTag != null
+            ? { idToken: options.idTag, type: OCPP20IdTokenEnumType.ISO14443 }
+            : undefined,
       })
     }
     return this.sendRequest(ProcedureName.START_TRANSACTION, {
-      connectorId,
+      connectorId: options.connectorId,
       hashIds: [hashId],
-      idTag,
+      idTag: options.idTag,
     })
   }
 
@@ -188,21 +195,23 @@ export class UIClient {
 
   public async stopTransaction (
     hashId: string,
-    transactionId: number | string | undefined,
-    ocppVersion?: OCPPVersion
+    options: {
+      ocppVersion?: OCPPVersion
+      transactionId: number | string | undefined
+    }
   ): Promise<ResponsePayload> {
-    if (UIClient.isOCPP20x(ocppVersion)) {
+    if (UIClient.isOCPP20x(options.ocppVersion)) {
       return this.transactionEvent(hashId, {
         eventType: OCPP20TransactionEventEnumType.ENDED,
-        transactionId: transactionId?.toString(),
+        transactionId: options.transactionId?.toString(),
       })
     }
-    if (typeof transactionId === 'string') {
+    if (typeof options.transactionId === 'string') {
       throw new Error('OCPP 1.6 requires numeric transactionId')
     }
     return this.sendRequest(ProcedureName.STOP_TRANSACTION, {
       hashIds: [hashId],
-      transactionId,
+      transactionId: options.transactionId,
     })
   }
 

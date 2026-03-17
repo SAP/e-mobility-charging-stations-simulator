@@ -106,7 +106,7 @@
         </thead>
         <tbody id="connectors-table__body">
           <CSConnector
-            v-for="(entry, index) in getConnectorStatuses()"
+            v-for="(entry, index) in getConnectorEntries()"
             :key="entry.evseId != null ? `${entry.evseId}-${entry.connectorId}` : entry.connectorId"
             :atg-status="getATGStatus(index + 1)"
             :charging-station-id="chargingStation.stationInfo.chargingStationId"
@@ -145,7 +145,7 @@ const props = defineProps<{
 
 const $emit = defineEmits(['need-refresh'])
 
-const getConnectorStatuses = (): ConnectorEntry[] => {
+const getConnectorEntries = (): ConnectorEntry[] => {
   if (Array.isArray(props.chargingStation.evses) && props.chargingStation.evses.length > 0) {
     const entries: ConnectorEntry[] = []
     for (const [evseIndex, evseStatus] of props.chargingStation.evses.entries()) {
