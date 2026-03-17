@@ -16,6 +16,7 @@ pnpm test
 ```bash
 cd ui/web
 pnpm format
+pnpm lint
 pnpm build
 pnpm test
 ```

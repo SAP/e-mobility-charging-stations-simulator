@@ -83,7 +83,6 @@ pnpm test:coverage              # Vitest with V8 coverage
 
 ```bash
 cd tests/ocpp-server
-pipx install poetry              # Install Poetry (if needed)
 poetry install --no-root         # Install dependencies
 ```
 
