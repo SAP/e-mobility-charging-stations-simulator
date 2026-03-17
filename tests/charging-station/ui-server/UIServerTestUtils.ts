@@ -13,9 +13,8 @@ import type {
   ProtocolResponse,
   ProtocolVersion,
   RequestPayload,
-
   UIServerConfiguration,
-  UUIDv4
+  UUIDv4,
 } from '../../../src/types/index.js'
 
 import { UIWebSocketServer } from '../../../src/charging-station/ui-server/UIWebSocketServer.js'

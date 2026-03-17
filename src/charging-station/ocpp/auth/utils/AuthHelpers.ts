@@ -1,4 +1,10 @@
-import type { AuthContext, AuthenticationMethod, AuthorizationResult, AuthRequest, UnifiedIdentifier } from '../types/AuthTypes.js'
+import type {
+  AuthContext,
+  AuthenticationMethod,
+  AuthorizationResult,
+  AuthRequest,
+  UnifiedIdentifier,
+} from '../types/AuthTypes.js'
 
 import { AuthorizationStatus } from '../types/AuthTypes.js'
 
