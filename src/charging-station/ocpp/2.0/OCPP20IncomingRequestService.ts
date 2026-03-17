@@ -127,7 +127,14 @@ import {
   OCPP20ChargingRateUnitEnumType,
   OCPP20ReasonEnumType,
 } from '../../../types/ocpp/2.0/Transaction.js'
-import { Constants, generateUUID, logger, sleep, validateUUID } from '../../../utils/index.js'
+import {
+  Constants,
+  convertToDate,
+  generateUUID,
+  logger,
+  sleep,
+  validateUUID,
+} from '../../../utils/index.js'
 import { getConfigurationKey } from '../../ConfigurationKeyUtils.js'
 import {
   getIdTagsFile,
@@ -3404,7 +3411,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     // C12: If retrieveDateTime is in the future, send DownloadScheduled and wait
     const now = Date.now()
-    const retrieveTime = new Date(retrieveDateTime).getTime()
+    const retrieveTime = convertToDate(retrieveDateTime)?.getTime() ?? now
     if (retrieveTime > now) {
       await this.sendFirmwareStatusNotification(
         chargingStation,
@@ -3456,8 +3463,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     // C12: If installDateTime is in the future, send InstallScheduled and wait
     if (installDateTime != null) {
-      const installTime = new Date(installDateTime).getTime()
       const currentTime = Date.now()
+      const installTime = convertToDate(installDateTime)?.getTime() ?? currentTime
       if (installTime > currentTime) {
         await this.sendFirmwareStatusNotification(
           chargingStation,
@@ -3760,8 +3767,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
 
     const now = new Date()
-    if (chargingProfile.validFrom && chargingProfile.validTo) {
-      if (chargingProfile.validFrom >= chargingProfile.validTo) {
+    const validFromDate = convertToDate(chargingProfile.validFrom)
+    const validToDate = convertToDate(chargingProfile.validTo)
+    if (validFromDate && validToDate) {
+      if (validFromDate >= validToDate) {
         logger.warn(
           `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfile: validFrom must be before validTo`
         )
@@ -3769,7 +3778,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
     }
 
-    if (chargingProfile.validTo && chargingProfile.validTo <= now) {
+    if (validToDate && validToDate <= now) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.validateChargingProfile: Charging profile already expired`
       )
@@ -3942,22 +3951,18 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return false
     }
 
-    if (
-      schedule.startSchedule &&
-      chargingProfile.validFrom &&
-      schedule.startSchedule < chargingProfile.validFrom
-    ) {
+    const startScheduleDate = convertToDate(schedule.startSchedule)
+    const validFromDate = convertToDate(chargingProfile.validFrom)
+    const validToDate = convertToDate(chargingProfile.validTo)
+
+    if (startScheduleDate != null && validFromDate != null && startScheduleDate < validFromDate) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.validateChargingSchedule: Schedule start time cannot be before profile validFrom`
       )
       return false
     }
 
-    if (
-      schedule.startSchedule &&
-      chargingProfile.validTo &&
-      schedule.startSchedule >= chargingProfile.validTo
-    ) {
+    if (startScheduleDate != null && validToDate != null && startScheduleDate >= validToDate) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.validateChargingSchedule: Schedule start time must be before profile validTo`
       )

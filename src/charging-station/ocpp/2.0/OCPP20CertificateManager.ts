@@ -15,7 +15,7 @@ import {
   HashAlgorithmEnumType,
   InstallCertificateUseEnumType,
 } from '../../../types/ocpp/2.0/Common.js'
-import { getErrorMessage } from '../../../utils/index.js'
+import { convertToDate, getErrorMessage } from '../../../utils/index.js'
 
 /**
  * Interface for ChargingStation with certificate manager
@@ -471,10 +471,12 @@ export class OCPP20CertificateManager {
       }
       const cert = new X509Certificate(firstCertMatch[0])
       const now = new Date()
-      if (now < new Date(cert.validFrom)) {
+      const validFromDate = convertToDate(cert.validFrom)
+      const validToDate = convertToDate(cert.validTo)
+      if (validFromDate != null && now < validFromDate) {
         return { reason: 'Certificate is not yet valid', valid: false }
       }
-      if (now > new Date(cert.validTo)) {
+      if (validToDate != null && now > validToDate) {
         return { reason: 'Certificate has expired', valid: false }
       }
       if (!cert.issuer.trim()) {

@@ -25,7 +25,7 @@ import {
   type ResponseHandler,
 } from '../../../types/index.js'
 import { OCPP20AuthorizationStatusEnumType } from '../../../types/ocpp/2.0/Transaction.js'
-import { logger } from '../../../utils/index.js'
+import { convertToDate, logger } from '../../../utils/index.js'
 import { OCPPResponseService } from '../OCPPResponseService.js'
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 
@@ -214,7 +214,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
     payload: OCPP20HeartbeatResponse
   ): void {
     logger.debug(
-      `${chargingStation.logPrefix()} ${moduleName}.handleResponseHeartbeat: Heartbeat response received at ${payload.currentTime.toISOString()}`
+      `${chargingStation.logPrefix()} ${moduleName}.handleResponseHeartbeat: Heartbeat response received at ${convertToDate(payload.currentTime)?.toISOString() ?? 'unknown'}`
     )
   }
 
