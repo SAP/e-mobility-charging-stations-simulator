@@ -7,6 +7,7 @@ export type {
   Status,
 } from './ChargingStationType'
 export {
+  OCPP20IdTokenEnumType,
   OCPP20TransactionEventEnumType,
   OCPPVersion,
 } from './ChargingStationType'

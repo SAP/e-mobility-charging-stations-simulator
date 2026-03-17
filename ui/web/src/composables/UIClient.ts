@@ -4,9 +4,10 @@ import {
   ApplicationProtocol,
   AuthenticationType,
   type ChargingStationOptions,
-  OCPP20TransactionEventEnumType,
-  type OCPP20TransactionEventRequest,
   OCPPVersion,
+  type OCPP20TransactionEventRequest,
+  OCPP20TransactionEventEnumType,
+  OCPP20IdTokenEnumType,
   ProcedureName,
   type ProtocolResponse,
   type RequestPayload,
@@ -165,7 +166,7 @@ export class UIClient {
       return this.transactionEvent(hashId, {
         eventType: OCPP20TransactionEventEnumType.STARTED,
         evseId: connectorId,
-        idToken: idTag != null ? { idToken: idTag, type: 'ISO14443' } : undefined,
+        idToken: idTag != null ? { idToken: idTag, type: OCPP20IdTokenEnumType.ISO14443 } : undefined,
       })
     }
     return this.startTransaction(hashId, connectorId, idTag)

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { OCPP20TransactionEventEnumType, OCPPVersion } from '@/types'
+import { OCPP20TransactionEventEnumType, OCPPVersion, Protocol, ProtocolVersion, ResponseStatus } from '@/types'
 
 import { UIClient } from '../UIClient'
 
@@ -61,8 +61,8 @@ describe('UIClient', () => {
     const mockConfig = {
       host: 'localhost',
       port: 8080,
-      protocol: 'ui',
-      version: '0.0.1',
+      protocol: Protocol.UI,
+      version: ProtocolVersion['0.0.1'],
     }
 
     beforeEach(() => {
@@ -74,8 +74,8 @@ describe('UIClient', () => {
       vi.stubGlobal('WebSocket', MockWebSocket)
 
       client = UIClient.getInstance(mockConfig)
-      startTransactionSpy = vi.spyOn(client, 'startTransaction').mockResolvedValue({ status: 'success' })
-      transactionEventSpy = vi.spyOn(client, 'transactionEvent').mockResolvedValue({ status: 'success' })
+      startTransactionSpy = vi.spyOn(client, 'startTransaction').mockResolvedValue({ status: ResponseStatus.SUCCESS })
+      transactionEventSpy = vi.spyOn(client, 'transactionEvent').mockResolvedValue({ status: ResponseStatus.SUCCESS })
     })
 
     afterEach(() => {
@@ -140,8 +140,8 @@ describe('UIClient', () => {
     const mockConfig = {
       host: 'localhost',
       port: 8080,
-      protocol: 'ui',
-      version: '0.0.1',
+      protocol: Protocol.UI,
+      version: ProtocolVersion['0.0.1'],
     }
 
     beforeEach(() => {
@@ -153,8 +153,8 @@ describe('UIClient', () => {
       vi.stubGlobal('WebSocket', MockWebSocket)
 
       client = UIClient.getInstance(mockConfig)
-      stopTransactionSpy = vi.spyOn(client, 'stopTransaction').mockResolvedValue({ status: 'success' })
-      transactionEventSpy = vi.spyOn(client, 'transactionEvent').mockResolvedValue({ status: 'success' })
+      stopTransactionSpy = vi.spyOn(client, 'stopTransaction').mockResolvedValue({ status: ResponseStatus.SUCCESS })
+      transactionEventSpy = vi.spyOn(client, 'transactionEvent').mockResolvedValue({ status: ResponseStatus.SUCCESS })
     })
 
     afterEach(() => {
