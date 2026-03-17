@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { OCPP20TransactionEventEnumType, OCPPVersion, Protocol, ProtocolVersion, ResponseStatus } from '@/types'
+import {
+  OCPP20TransactionEventEnumType,
+  OCPPVersion,
+  Protocol,
+  ProtocolVersion,
+  ResponseStatus,
+} from '@/types'
 
 import { UIClient } from '../UIClient'
 
@@ -74,8 +80,12 @@ describe('UIClient', () => {
       vi.stubGlobal('WebSocket', MockWebSocket)
 
       client = UIClient.getInstance(mockConfig)
-      startTransactionSpy = vi.spyOn(client, 'startTransaction').mockResolvedValue({ status: ResponseStatus.SUCCESS })
-      transactionEventSpy = vi.spyOn(client, 'transactionEvent').mockResolvedValue({ status: ResponseStatus.SUCCESS })
+      startTransactionSpy = vi
+        .spyOn(client, 'startTransaction')
+        .mockResolvedValue({ status: ResponseStatus.SUCCESS })
+      transactionEventSpy = vi
+        .spyOn(client, 'transactionEvent')
+        .mockResolvedValue({ status: ResponseStatus.SUCCESS })
     })
 
     afterEach(() => {
@@ -153,8 +163,12 @@ describe('UIClient', () => {
       vi.stubGlobal('WebSocket', MockWebSocket)
 
       client = UIClient.getInstance(mockConfig)
-      stopTransactionSpy = vi.spyOn(client, 'stopTransaction').mockResolvedValue({ status: ResponseStatus.SUCCESS })
-      transactionEventSpy = vi.spyOn(client, 'transactionEvent').mockResolvedValue({ status: ResponseStatus.SUCCESS })
+      stopTransactionSpy = vi
+        .spyOn(client, 'stopTransaction')
+        .mockResolvedValue({ status: ResponseStatus.SUCCESS })
+      transactionEventSpy = vi
+        .spyOn(client, 'transactionEvent')
+        .mockResolvedValue({ status: ResponseStatus.SUCCESS })
     })
 
     afterEach(() => {

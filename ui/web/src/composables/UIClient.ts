@@ -166,7 +166,8 @@ export class UIClient {
       return this.transactionEvent(hashId, {
         eventType: OCPP20TransactionEventEnumType.STARTED,
         evseId: connectorId,
-        idToken: idTag != null ? { idToken: idTag, type: OCPP20IdTokenEnumType.ISO14443 } : undefined,
+        idToken:
+          idTag != null ? { idToken: idTag, type: OCPP20IdTokenEnumType.ISO14443 } : undefined,
       })
     }
     return this.startTransaction(hashId, connectorId, idTag)

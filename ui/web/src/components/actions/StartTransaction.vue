@@ -113,12 +113,16 @@ const handleStartTransaction = async (): Promise<void> => {
   // Only authorize for OCPP 1.6 when checkbox is checked
   if (showAuthorize.value && state.value.authorizeIdTag) {
     if (state.value.idTag == null || state.value.idTag.trim().length === 0) {
-      app?.appContext.config.globalProperties.$toast.error('Please provide an RFID tag to authorize')
+      app?.appContext.config.globalProperties.$toast.error(
+        'Please provide an RFID tag to authorize'
+      )
       return
     }
     try {
       await uiClient.authorize(props.hashId, state.value.idTag)
-      const connectorOrEvseId = isOCPP20x.value ? state.value.evseId : convertToInt(props.connectorId)
+      const connectorOrEvseId = isOCPP20x.value
+        ? state.value.evseId
+        : convertToInt(props.connectorId)
       await uiClient.startTransactionForVersion(
         props.hashId,
         connectorOrEvseId,
