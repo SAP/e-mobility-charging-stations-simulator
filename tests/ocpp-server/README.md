@@ -152,12 +152,6 @@ poetry run python server.py --command GetBaseReport --period 5
 - `StatusNotification` - Handle status notifications
 - `TransactionEvent` - Handle transaction events (Started/Updated/Ended)
 
-## Testing
-
-```shell
-poetry run task test
-```
-
 ## Development
 
 ### Code formatting
@@ -170,6 +164,24 @@ poetry run task format
 
 ```shell
 poetry run task lint
+```
+
+### Type checking
+
+```shell
+poetry run task typecheck
+```
+
+### Testing
+
+```shell
+poetry run task test
+```
+
+With coverage report:
+
+```shell
+poetry run task test_coverage
 ```
 
 ## Reference
