@@ -97,6 +97,35 @@ export enum OCPPVersion {
   VERSION_201 = '2.0.1',
 }
 
+export enum OCPP20IdTokenEnumType {
+  CENTRAL = 'Central',
+  EMAID = 'eMAID',
+  ISO14443 = 'ISO14443',
+  ISO15693 = 'ISO15693',
+  KEY_CODE = 'KeyCode',
+  LOCAL = 'Local',
+  MAC_ADDRESS = 'MacAddress',
+  NO_AUTHORIZATION = 'NoAuthorization',
+}
+
+export enum OCPP20TransactionEventEnumType {
+  ENDED = 'Ended',
+  STARTED = 'Started',
+  UPDATED = 'Updated',
+}
+
+export interface OCPP20IdTokenType extends JsonObject {
+  idToken: string
+  type: OCPP20IdTokenEnumType
+}
+
+export interface OCPP20TransactionEventRequest extends JsonObject {
+  eventType: OCPP20TransactionEventEnumType
+  evseId?: number
+  idToken?: OCPP20IdTokenType
+  transactionId?: string
+}
+
 export enum Voltage {
   VOLTAGE_110 = 110,
   VOLTAGE_230 = 230,
@@ -236,7 +265,12 @@ export interface ConnectorStatus extends JsonObject {
   localAuthorizeIdTag?: string
   status?: ChargePointStatus
   transactionEnergyActiveImportRegisterValue?: number // In Wh
-  transactionId?: number
+  /**
+   * Transaction ID.
+   * For OCPP 1.6: numeric ID
+   * For OCPP 2.0.x: UUID string
+   */
+  transactionId?: number | string
   transactionIdTag?: string
   transactionRemoteStarted?: boolean
   transactionStarted?: boolean
