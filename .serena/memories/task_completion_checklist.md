@@ -2,43 +2,42 @@
 
 ## After Completing Any Task
 
-### 1. Code Quality Checks
+### 1. Root Simulator (always)
 
-- [ ] Run `pnpm format` to format code, fix autofixable issues and check for remaining linting issues
-- [ ] Ensure TypeScript compilation passes (part of build process)
+```bash
+pnpm format
+pnpm typecheck
+pnpm build
+pnpm test
+```
 
-### 2. Testing
+### 2. Web UI (if `ui/web/` files changed)
 
-- [ ] Run `pnpm test` to ensure all tests pass
-- [ ] If new functionality added, ensure appropriate tests are included
-- [ ] Check test coverage if relevant: `pnpm test:coverage`
+```bash
+cd ui/web
+pnpm format
+pnpm build
+pnpm test
+```
 
-### 3. Build Verification
+### 3. OCPP Mock Server (if `tests/ocpp-server/` files changed)
 
-- [ ] Run `pnpm build` to ensure production build succeeds
-- [ ] For development changes, verify `pnpm build:dev` works
+```bash
+cd tests/ocpp-server
+poetry run task format
+poetry run task lint
+poetry run task typecheck
+poetry run task test
+```
 
 ### 4. Documentation
 
-- [ ] Update relevant documentation if public API changed
-- [ ] Ensure commit messages follow Conventional Commits format
+- Update docs if public API changed
+- Commit messages follow Conventional Commits (enforced by hook)
 
 ### 5. OCPP Compliance (if applicable)
 
-- [ ] Verify OCPP standard compliance
-- [ ] Check that new OCPP commands/responses follow specification exactly
-- [ ] Validate against JSON schemas when `ocppStrictCompliance` is enabled
+- Verify OCPP standard compliance for any protocol changes
+- Validate against JSON schemas when `ocppStrictCompliance` is enabled
 
-## Git Workflow
-
-- Use Conventional Commits format for commit messages
-- Branch from `main` for new features
-- Ensure all quality gates pass before merging
-
-## Pre-commit Hooks
-
-The project uses husky for pre-commit hooks that automatically:
-
-- Run linting
-- Run formatting
-- Validate commit messages
+Refer to `code_style_conventions` memory for coding rules, and `suggested_commands` memory for full command reference.
