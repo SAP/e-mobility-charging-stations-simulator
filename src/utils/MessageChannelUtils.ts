@@ -9,7 +9,11 @@ import {
   type Statistics,
   type TimestampedData,
 } from '../types/index.js'
-import { buildConnectorEntries, buildEvseEntries } from './ChargingStationConfigurationUtils.js'
+import {
+  buildATGStatusEntries,
+  buildConnectorEntries,
+  buildEvseEntries,
+} from './ChargingStationConfigurationUtils.js'
 
 const buildChargingStationWorkerMessage = (
   chargingStation: ChargingStation,
@@ -107,9 +111,7 @@ const buildChargingStationDataPayload = (chargingStation: ChargingStation): Char
       automaticTransactionGenerator: {
         automaticTransactionGenerator:
           chargingStation.getAutomaticTransactionGeneratorConfiguration(),
-        automaticTransactionGeneratorStatuses: [
-          ...chargingStation.automaticTransactionGenerator.connectorsStatus.entries(),
-        ].map(([connectorId, status]) => ({ connectorId, status })),
+        automaticTransactionGeneratorStatuses: buildATGStatusEntries(chargingStation),
       },
     }),
   }

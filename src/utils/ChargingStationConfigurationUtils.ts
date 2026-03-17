@@ -1,11 +1,21 @@
 import type { ChargingStation } from '../charging-station/index.js'
 import type {
+  ATGStatusEntry,
   ChargingStationAutomaticTransactionGeneratorConfiguration,
   ConnectorEntry,
   ConnectorStatus,
   EvseEntry,
   EvseStatusConfiguration,
 } from '../types/index.js'
+
+export const buildATGStatusEntries = (chargingStation: ChargingStation): ATGStatusEntry[] => {
+  if (chargingStation.automaticTransactionGenerator?.connectorsStatus == null) {
+    return []
+  }
+  return [...chargingStation.automaticTransactionGenerator.connectorsStatus.entries()].map(
+    ([connectorId, status]) => ({ connectorId, status })
+  )
+}
 
 export const buildChargingStationAutomaticTransactionGeneratorConfiguration = (
   chargingStation: ChargingStation
