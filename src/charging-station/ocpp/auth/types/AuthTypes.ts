@@ -120,6 +120,15 @@ export interface AuthConfiguration extends JsonObject {
   /** Enable strict certificate validation (default: false) */
   certificateValidationStrict?: boolean
 
+  /**
+   * Disable post-authorize behavior for non-Accepted cached/local list tokens (OCPP 2.0).
+   * When true, non-Accepted tokens from cache or local list are accepted locally without
+   * triggering a remote AuthorizationRequest (C10.FR.03, C12.FR.05, C14.FR.03).
+   * When false, non-Accepted cached/local tokens trigger re-authorization via remote.
+   * When undefined, existing behavior is preserved (no filtering).
+   */
+  disablePostAuthorize?: boolean
+
   /** Enable local authorization list */
   localAuthListEnabled: boolean
 

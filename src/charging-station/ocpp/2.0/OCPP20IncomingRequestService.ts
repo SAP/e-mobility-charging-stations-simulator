@@ -2504,6 +2504,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       connectorStatus.transactionStarted = true
       connectorStatus.transactionId = transactionId
       connectorStatus.transactionIdTag = idToken.idToken
+      connectorStatus.transactionGroupIdToken = groupIdToken?.idToken
       connectorStatus.transactionStart = new Date()
       connectorStatus.transactionEnergyActiveImportRegisterValue = 0
       connectorStatus.remoteStartId = remoteStartId
@@ -2885,6 +2886,52 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     )
   }
 
+  private isAuthorizedToStopTransaction (
+    chargingStation: ChargingStation,
+    connectorId: number,
+    presentedIdToken: OCPP20IdTokenType,
+    presentedGroupIdToken?: OCPP20IdTokenType
+  ): boolean {
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+    if (connectorStatus?.transactionStarted !== true) {
+      logger.debug(
+        `${chargingStation.logPrefix()} ${moduleName}.isAuthorizedToStopTransaction: No active transaction on connector ${connectorId.toString()}`
+      )
+      return false
+    }
+
+    // C01.FR.03(a): Same idToken as the one used to start the transaction
+    if (presentedIdToken.idToken === connectorStatus.transactionIdTag) {
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.isAuthorizedToStopTransaction: Same idToken as start token - authorized locally (C01.FR.03a)`
+      )
+      return true
+    }
+
+    // C01.FR.03(b) / C09.FR.03 / C09.FR.07:
+    // Different valid idToken with same GroupIdToken as start → authorize locally
+    if (
+      connectorStatus.transactionGroupIdToken != null &&
+      presentedGroupIdToken?.idToken != null &&
+      presentedGroupIdToken.idToken === connectorStatus.transactionGroupIdToken
+    ) {
+      if (this.isIdTokenAuthorized(chargingStation, presentedIdToken)) {
+        logger.info(
+          `${chargingStation.logPrefix()} ${moduleName}.isAuthorizedToStopTransaction: Same GroupIdToken as start token - authorized locally without AuthorizationRequest (C09.FR.03/C09.FR.07)`
+        )
+        return true
+      }
+      logger.debug(
+        `${chargingStation.logPrefix()} ${moduleName}.isAuthorizedToStopTransaction: GroupIdToken matches but presented idToken ${presentedIdToken.idToken} is not authorized`
+      )
+    }
+
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.isAuthorizedToStopTransaction: IdToken ${presentedIdToken.idToken} not authorized to stop transaction on connector ${connectorId.toString()}`
+    )
+    return false
+  }
+
   /**
    * Checks if charging station is idle per OCPP 2.0.1 Errata definition.
    * Idle means: no active transactions, no firmware update in progress, no pending reservations.
@@ -2928,6 +2975,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
      * 3. For OCPP 2.0, there's no explicit AuthorizeRequest - authorization is validated
      *    through configuration variables and local auth lists
      * 4. Remote validation through TransactionEvent if needed
+     * 5. C12.FR.09: Check MasterPassGroupId - tokens with this groupId cannot start transactions
      */
 
     logger.debug(
@@ -2935,6 +2983,27 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     )
 
     try {
+      // C12.FR.09: Check if idToken matches MasterPassGroupId - these tokens cannot start transactions
+      const variableManager = OCPP20VariableManager.getInstance()
+      const masterPassGroupIdResults = variableManager.getVariables(chargingStation, [
+        {
+          attributeType: AttributeEnumType.Actual,
+          component: { name: OCPP20ComponentName.AuthCtrlr },
+          variable: { name: 'MasterPassGroupId' },
+        },
+      ])
+      const masterPassGroupId = masterPassGroupIdResults[0]?.attributeValue
+      if (
+        masterPassGroupId != null &&
+        masterPassGroupId.length > 0 &&
+        idToken.idToken === masterPassGroupId
+      ) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: C12.FR.09 - IdToken with MasterPassGroupId group cannot start a transaction`
+        )
+        return false
+      }
+
       const localAuthListEnabled = chargingStation.getLocalAuthListEnabled()
       const remoteAuthorizationEnabled = chargingStation.stationInfo?.remoteAuthorization ?? true
 

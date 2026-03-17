@@ -77,6 +77,13 @@ export class LocalAuthStrategy implements AuthStrategy {
         if (localResult) {
           logger.debug(`LocalAuthStrategy: Found in local auth list: ${localResult.status}`)
           this.stats.localListHits++
+          // C14.FR.03: non-Accepted local list tokens trigger re-auth unless DisablePostAuthorize
+          if (this.shouldTriggerPostAuthorize(localResult, config)) {
+            logger.debug(
+              `LocalAuthStrategy: Local list token non-Accepted (${localResult.status}), deferring to remote auth (C14.FR.03)`
+            )
+            return undefined
+          }
           return this.enhanceResult(localResult, AuthenticationMethod.LOCAL_LIST, startTime)
         }
       }
@@ -87,6 +94,13 @@ export class LocalAuthStrategy implements AuthStrategy {
         if (cacheResult) {
           logger.debug(`LocalAuthStrategy: Found in cache: ${cacheResult.status}`)
           this.stats.cacheHits++
+          // C10.FR.03, C12.FR.05: non-Accepted cached tokens trigger re-auth unless DisablePostAuthorize
+          if (this.shouldTriggerPostAuthorize(cacheResult, config)) {
+            logger.debug(
+              `LocalAuthStrategy: Cached token non-Accepted (${cacheResult.status}), deferring to remote auth (C10.FR.03)`
+            )
+            return undefined
+          }
           return this.enhanceResult(cacheResult, AuthenticationMethod.CACHE, startTime)
         }
       }
@@ -496,5 +510,22 @@ export class LocalAuthStrategy implements AuthStrategy {
         logger.warn(`LocalAuthStrategy: Unknown entry status: ${status}, defaulting to INVALID`)
         return AuthorizationStatus.INVALID
     }
+  }
+
+  /**
+   * Check whether a non-Accepted result should trigger post-authorize (remote re-auth).
+   *
+   * Per C10.FR.03, C12.FR.05, and C14.FR.03: when DisablePostAuthorize is explicitly false,
+   * non-Accepted tokens from cache or local list should be deferred to remote authorization.
+   * When DisablePostAuthorize is true or not configured, local results are returned as-is.
+   * @param result - Authorization result from cache or local list
+   * @param config - Authentication configuration with disablePostAuthorize setting
+   * @returns True if the result should be discarded to trigger remote re-authorization
+   */
+  private shouldTriggerPostAuthorize (
+    result: AuthorizationResult,
+    config: AuthConfiguration
+  ): boolean {
+    return result.status !== AuthorizationStatus.ACCEPTED && config.disablePostAuthorize === false
   }
 }
