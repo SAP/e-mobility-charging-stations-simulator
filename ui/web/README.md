@@ -182,6 +182,7 @@ This builds the image and runs the container, exposing the Web UI on port 3030. 
 | `pnpm build`         | Build the production bundle to `dist/`              |
 | `pnpm preview`       | Build and preview the production bundle locally     |
 | `pnpm start`         | Build and serve via Node.js HTTP server (port 3030) |
+| `pnpm typecheck`     | Run vue-tsc type checking                           |
 | `pnpm lint`          | Run ESLint                                          |
 | `pnpm lint:fix`      | Run ESLint with auto-fix                            |
 | `pnpm format`        | Run Prettier and ESLint auto-fix                    |

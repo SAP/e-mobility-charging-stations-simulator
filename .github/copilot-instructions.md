@@ -101,7 +101,7 @@ Documentation serves as an operational specification, not narrative prose.
 
 ## Quality gates
 
-- Documented build/lint/type checks pass (where applicable).
+- Documented build/type checks/lint pass (where applicable).
 - Documented tests pass (where applicable).
 - Documentation updated to reflect changes when necessary.
 - Logs use appropriate levels (error, warn, info, debug).
