@@ -51,6 +51,7 @@ import {
   roundTo,
   secureRandom,
   sleep,
+  truncateId,
   validateIdentifierString,
   validateUUID,
 } from '../../src/utils/Utils.js'
@@ -813,5 +814,17 @@ await describe('Utils', async () => {
     assert.throws(() => {
       callback()
     }, error)
+  })
+
+  await describe('truncateId', async () => {
+    await it('should return identifier unchanged when short', () => {
+      const result = truncateId('ABCD')
+      assert.strictEqual(result, 'ABCD')
+    })
+
+    await it('should truncate long identifier with ellipsis', () => {
+      const result = truncateId('ABCDEFGHIJKLMNOP')
+      assert.strictEqual(result, 'ABCDEFGH...')
+    })
   })
 })

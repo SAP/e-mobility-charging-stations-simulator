@@ -12,7 +12,6 @@ import {
   AuthenticationMethod,
   AuthorizationStatus,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
-import { truncateId } from '../../../../../src/utils/index.js'
 import { standardCleanup, withMockTimers } from '../../../../helpers/TestLifecycleHelpers.js'
 import { createMockAuthorizationResult } from '../helpers/MockFactories.js'
 
@@ -728,18 +727,6 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
         const stats = shortCache.getStats()
         assert.strictEqual(stats.totalEntries, 1)
       })
-    })
-  })
-
-  await describe('Helper - truncateId', async () => {
-    await it('should return identifier unchanged when short', () => {
-      const result = truncateId('ABCD')
-      assert.strictEqual(result, 'ABCD')
-    })
-
-    await it('should truncate long identifier with ellipsis', () => {
-      const result = truncateId('ABCDEFGHIJKLMNOP')
-      assert.strictEqual(result, 'ABCDEFGH...')
     })
   })
 
