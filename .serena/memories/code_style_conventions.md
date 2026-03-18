@@ -39,6 +39,13 @@
 - **Message format**: SRPC format: `[messageTypeId, messageId, action, payload]`
 - **Per-station state**: WeakMap-based isolation per station (not singleton properties)
 
+### Request Architecture
+
+- **Single path**: `requestHandler()` → `buildRequestPayload()` → `sendMessage()` — no bypasses
+- **`buildRequestPayload()`** enriches where needed (1.6: meterStart/idTag/timestamp; 2.0: CSR generation), passthrough otherwise
+- **Service utils** (`buildTransactionEvent`, `buildStatusNotificationRequest`, `buildMeterValue`, etc.) build complex payloads upstream before calling `requestHandler`
+- **Broadcast channel handlers** are simple passthroughs to `requestHandler` — no state management or flow duplication
+
 ## Logging
 
 - **Winston** logger with 4 levels: `error`, `warn`, `info`, `debug`

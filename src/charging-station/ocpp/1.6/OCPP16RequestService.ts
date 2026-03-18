@@ -5,6 +5,7 @@ import type { OCPPResponseService } from '../OCPPResponseService.js'
 
 import { OCPPError } from '../../../exception/index.js'
 import {
+  type ConnectorStatusEnum,
   ErrorType,
   type JsonObject,
   type JsonType,
@@ -17,6 +18,7 @@ import {
 } from '../../../types/index.js'
 import { Constants, generateUUID, logger } from '../../../utils/index.js'
 import { OCPPRequestService } from '../OCPPRequestService.js'
+import { buildStatusNotificationRequest } from '../OCPPServiceUtils.js'
 import { OCPP16Constants } from './OCPP16Constants.js'
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js'
 
@@ -183,7 +185,6 @@ export class OCPP16RequestService extends OCPPRequestService {
       case OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION:
       case OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION:
       case OCPP16RequestCommand.METER_VALUES:
-      case OCPP16RequestCommand.STATUS_NOTIFICATION:
         return commandParams as unknown as Request
       case OCPP16RequestCommand.HEARTBEAT:
         return OCPP16Constants.OCPP_REQUEST_EMPTY as unknown as Request
@@ -210,6 +211,16 @@ export class OCPP16RequestService extends OCPPRequestService {
           }),
           ...commandParams,
         } as unknown as Request
+      case OCPP16RequestCommand.STATUS_NOTIFICATION:
+        if (commandParams.errorCode != null) {
+          return commandParams as unknown as Request
+        }
+        return buildStatusNotificationRequest(
+          chargingStation,
+          commandParams.connectorId as number,
+          commandParams.status as ConnectorStatusEnum,
+          commandParams.evseId as number | undefined
+        ) as unknown as Request
       case OCPP16RequestCommand.STOP_TRANSACTION:
         chargingStation.stationInfo?.transactionDataMeterValues === true &&
           (connectorId = chargingStation.getConnectorIdByTransactionId(

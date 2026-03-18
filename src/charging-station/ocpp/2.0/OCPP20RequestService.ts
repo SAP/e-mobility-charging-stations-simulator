@@ -1,6 +1,12 @@
 import type { ValidateFunction } from 'ajv'
 
 import type { ChargingStation } from '../../../charging-station/index.js'
+import type {
+  ConnectorStatusEnum,
+  OCPP20TransactionEventEnumType,
+  OCPP20TriggerReasonEnumType,
+} from '../../../types/index.js'
+import type { OCPP20TransactionEventOptions } from '../../../types/ocpp/2.0/Transaction.js'
 import type { OCPPResponseService } from '../OCPPResponseService.js'
 
 import { OCPPError } from '../../../exception/index.js'
@@ -16,6 +22,7 @@ import {
 } from '../../../types/index.js'
 import { generateUUID, logger } from '../../../utils/index.js'
 import { OCPPRequestService } from '../OCPPRequestService.js'
+import { buildStatusNotificationRequest } from '../OCPPServiceUtils.js'
 import { generatePkcs10Csr } from './Asn1DerUtils.js'
 import { OCPP20Constants } from './OCPP20Constants.js'
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
@@ -157,8 +164,6 @@ export class OCPP20RequestService extends OCPPRequestService {
       case OCPP20RequestCommand.NOTIFY_CUSTOMER_INFORMATION:
       case OCPP20RequestCommand.NOTIFY_REPORT:
       case OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION:
-      case OCPP20RequestCommand.STATUS_NOTIFICATION:
-      case OCPP20RequestCommand.TRANSACTION_EVENT:
         return commandParams as unknown as Request
       case OCPP20RequestCommand.HEARTBEAT:
         return OCPP20Constants.OCPP_RESPONSE_EMPTY as unknown as Request
@@ -194,6 +199,32 @@ export class OCPP20RequestService extends OCPPRequestService {
         }
 
         return requestPayload as unknown as Request
+      }
+      case OCPP20RequestCommand.STATUS_NOTIFICATION:
+        return buildStatusNotificationRequest(
+          chargingStation,
+          commandParams.connectorId as number,
+          commandParams.status as ConnectorStatusEnum,
+          commandParams.evseId as number | undefined
+        ) as unknown as Request
+      case OCPP20RequestCommand.TRANSACTION_EVENT: {
+        // Pre-built payloads (e.g., from offline queue) already have transactionInfo;
+        // pass them through as-is to avoid double-building.
+        if (commandParams.transactionInfo != null) {
+          return commandParams as unknown as Request
+        }
+        const eventType = commandParams.eventType as OCPP20TransactionEventEnumType
+        const triggerReason = commandParams.triggerReason as OCPP20TriggerReasonEnumType
+        const connectorId = commandParams.connectorId as number
+        const transactionId = commandParams.transactionId as string
+        return OCPP20ServiceUtils.buildTransactionEvent(
+          chargingStation,
+          eventType,
+          triggerReason,
+          connectorId,
+          transactionId,
+          commandParams as unknown as OCPP20TransactionEventOptions
+        ) as unknown as Request
       }
       default: {
         // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().

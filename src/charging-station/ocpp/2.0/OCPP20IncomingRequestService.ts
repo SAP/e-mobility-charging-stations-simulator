@@ -144,7 +144,6 @@ import { OCPPAuthServiceFactory } from '../auth/index.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
 import {
   buildMeterValue,
-  buildStatusNotificationRequest,
   restoreConnectorStatus,
   sendAndSetConnectorStatus,
 } from '../OCPPServiceUtils.js'
@@ -3690,7 +3689,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
             .requestHandler<
               OCPP20StatusNotificationRequest,
               OCPP20StatusNotificationResponse
-            >(chargingStation, OCPP20RequestCommand.STATUS_NOTIFICATION, buildStatusNotificationRequest(chargingStation, connectorId, resolvedStatus, evseId) as OCPP20StatusNotificationRequest, { skipBufferingOnError: true, triggerMessage: true })
+            >(chargingStation, OCPP20RequestCommand.STATUS_NOTIFICATION, { connectorId, evseId, status: resolvedStatus } as unknown as OCPP20StatusNotificationRequest, { skipBufferingOnError: true, triggerMessage: true })
             .catch(errorHandler)
         }
       }
@@ -3710,7 +3709,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         .requestHandler<
           OCPP20StatusNotificationRequest,
           OCPP20StatusNotificationResponse
-        >(chargingStation, OCPP20RequestCommand.STATUS_NOTIFICATION, buildStatusNotificationRequest(chargingStation, evse.connectorId, resolvedStatus, evse.id) as OCPP20StatusNotificationRequest, { skipBufferingOnError: true, triggerMessage: true })
+        >(chargingStation, OCPP20RequestCommand.STATUS_NOTIFICATION, { connectorId: evse.connectorId, evseId: evse.id, status: resolvedStatus } as unknown as OCPP20StatusNotificationRequest, { skipBufferingOnError: true, triggerMessage: true })
         .catch(errorHandler)
     } else if (chargingStation.hasEvses) {
       this.triggerAllEvseStatusNotifications(chargingStation, errorHandler)

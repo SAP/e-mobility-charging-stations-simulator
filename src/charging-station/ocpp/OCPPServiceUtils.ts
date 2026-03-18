@@ -308,11 +308,11 @@ export const sendAndSetConnectorStatus = async (
     await chargingStation.ocppRequestService.requestHandler<
       StatusNotificationRequest,
       StatusNotificationResponse
-    >(
-      chargingStation,
-      RequestCommand.STATUS_NOTIFICATION,
-      buildStatusNotificationRequest(chargingStation, connectorId, status, evseId)
-    )
+    >(chargingStation, RequestCommand.STATUS_NOTIFICATION, {
+      connectorId,
+      evseId,
+      status,
+    } as unknown as StatusNotificationRequest)
   }
   connectorStatus.status = status
   chargingStation.emitChargingStationEvent(ChargingStationEvents.connectorStatusChanged, {

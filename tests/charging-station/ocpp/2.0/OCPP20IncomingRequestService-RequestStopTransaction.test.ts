@@ -369,26 +369,16 @@ await describe('F03 - Remote Stop Transaction', async () => {
       const args = requestHandlerMock.mock.calls[0].arguments as [
         unknown,
         string,
-        OCPP20TransactionEventRequest
+        Record<string, unknown>
       ]
-      const transactionEvent = args[2]
+      const minimalParams = args[2]
 
-      assert.strictEqual(transactionEvent.eventType, OCPP20TransactionEventEnumType.Ended)
-      assert.notStrictEqual(transactionEvent.timestamp, undefined)
-      assert.ok(transactionEvent.timestamp instanceof Date)
-      assert.strictEqual(transactionEvent.triggerReason, OCPP20TriggerReasonEnumType.RemoteStop)
-      assert.notStrictEqual(transactionEvent.seqNo, undefined)
-      assert.strictEqual(typeof transactionEvent.seqNo, 'number')
-
-      assert.notStrictEqual(transactionEvent.transactionInfo, undefined)
-      assert.strictEqual(transactionEvent.transactionInfo.transactionId, transactionId)
-      assert.strictEqual(
-        transactionEvent.transactionInfo.stoppedReason,
-        OCPP20ReasonEnumType.Remote
-      )
-
-      assert.notStrictEqual(transactionEvent.evse, undefined)
-      assert.strictEqual(transactionEvent.evse?.id, 2)
+      assert.strictEqual(minimalParams.eventType, OCPP20TransactionEventEnumType.Ended)
+      assert.strictEqual(minimalParams.triggerReason, OCPP20TriggerReasonEnumType.RemoteStop)
+      assert.strictEqual(minimalParams.transactionId, transactionId)
+      assert.strictEqual(minimalParams.stoppedReason, OCPP20ReasonEnumType.Remote)
+      assert.notStrictEqual(minimalParams.connectorId, undefined)
+      assert.strictEqual(typeof minimalParams.connectorId, 'number')
     })
 
     // FR: F03.FR.09

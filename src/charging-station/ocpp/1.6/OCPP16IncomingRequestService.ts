@@ -116,11 +116,7 @@ import {
 } from '../../../utils/index.js'
 import { OCPPConstants } from '../OCPPConstants.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
-import {
-  buildMeterValue,
-  buildStatusNotificationRequest,
-  OCPPServiceUtils,
-} from '../OCPPServiceUtils.js'
+import { buildMeterValue, OCPPServiceUtils } from '../OCPPServiceUtils.js'
 import { OCPP16Constants } from './OCPP16Constants.js'
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js'
 
@@ -487,12 +483,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                 .requestHandler<OCPP16StatusNotificationRequest, OCPP16StatusNotificationResponse>(
                   chargingStation,
                   OCPP16RequestCommand.STATUS_NOTIFICATION,
-                  buildStatusNotificationRequest(
-                    chargingStation,
+                  {
                     connectorId,
-                    chargingStation.getConnectorStatus(connectorId)
-                      ?.status as OCPP16ChargePointStatus
-                  ) as OCPP16StatusNotificationRequest,
+                    status: chargingStation.getConnectorStatus(connectorId)
+                      ?.status as OCPP16ChargePointStatus,
+                  } as unknown as OCPP16StatusNotificationRequest,
                   {
                     triggerMessage: true,
                   }
@@ -508,11 +503,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                     >(
                       chargingStation,
                       OCPP16RequestCommand.STATUS_NOTIFICATION,
-                      buildStatusNotificationRequest(
-                        chargingStation,
-                        id,
-                        connectorStatus.status as OCPP16ChargePointStatus
-                      ) as OCPP16StatusNotificationRequest,
+                      {
+                        connectorId: id,
+                        status: connectorStatus.status as OCPP16ChargePointStatus,
+                      } as unknown as OCPP16StatusNotificationRequest,
                       {
                         triggerMessage: true,
                       }
@@ -529,11 +523,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                   >(
                     chargingStation,
                     OCPP16RequestCommand.STATUS_NOTIFICATION,
-                    buildStatusNotificationRequest(
-                      chargingStation,
-                      id,
-                      connectorStatus.status as OCPP16ChargePointStatus
-                    ) as OCPP16StatusNotificationRequest,
+                    {
+                      connectorId: id,
+                      status: connectorStatus.status as OCPP16ChargePointStatus,
+                    } as unknown as OCPP16StatusNotificationRequest,
                     {
                       triggerMessage: true,
                     }

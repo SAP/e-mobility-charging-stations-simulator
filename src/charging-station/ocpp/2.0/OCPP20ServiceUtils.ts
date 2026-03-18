@@ -745,17 +745,6 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         ? this.selectTriggerReason(eventType, triggerReasonOrContext)
         : triggerReasonOrContext
 
-      // Build the transaction event request
-      const transactionEventRequest = OCPP20ServiceUtils.buildTransactionEvent(
-        chargingStation,
-        eventType,
-        triggerReason,
-        connectorId,
-        transactionId,
-        options
-      )
-
-      // OCPP 2.0.1 offline-first: Queue event if offline, send if online
       const connectorStatus = chargingStation.getConnectorStatus(connectorId)
       if (connectorStatus == null) {
         const errorMsg = `Cannot find connector status for connector ${connectorId.toString()}`
@@ -765,7 +754,17 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         throw new OCPPError(ErrorType.PROPERTY_CONSTRAINT_VIOLATION, errorMsg)
       }
 
+      // Offline path: build payload directly for queueing (queue stores pre-built requests
+      // that are sent as-is on reconnect, bypassing buildRequestPayload).
       if (!chargingStation.isWebSocketConnectionOpened()) {
+        const transactionEventRequest = OCPP20ServiceUtils.buildTransactionEvent(
+          chargingStation,
+          eventType,
+          triggerReason,
+          connectorId,
+          transactionId,
+          options
+        )
         logger.info(
           `${chargingStation.logPrefix()} ${moduleName}.sendTransactionEvent: Station offline, queueing TransactionEvent with seqNo=${transactionEventRequest.seqNo.toString()}`
         )
@@ -778,6 +777,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         return { idTokenInfo: undefined }
       }
 
+      // Online path: pass minimal params to requestHandler → buildRequestPayload builds
       logger.debug(
         `${chargingStation.logPrefix()} ${moduleName}.sendTransactionEvent: Sending TransactionEvent for trigger ${triggerReason}`
       )
@@ -785,7 +785,13 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       const response = await chargingStation.ocppRequestService.requestHandler<
         OCPP20TransactionEventRequest,
         OCPP20TransactionEventResponse
-      >(chargingStation, OCPP20RequestCommand.TRANSACTION_EVENT, transactionEventRequest)
+      >(chargingStation, OCPP20RequestCommand.TRANSACTION_EVENT, {
+        connectorId,
+        eventType,
+        transactionId,
+        triggerReason,
+        ...options,
+      } as unknown as OCPP20TransactionEventRequest)
 
       return response
     } catch (error) {
