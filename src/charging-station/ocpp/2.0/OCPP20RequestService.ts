@@ -1,22 +1,20 @@
 import type { ValidateFunction } from 'ajv'
 
 import type { ChargingStation } from '../../../charging-station/index.js'
-import type {
-  ConnectorStatusEnum,
-  OCPP20TransactionEventEnumType,
-  OCPP20TriggerReasonEnumType,
-} from '../../../types/index.js'
 import type { OCPP20TransactionEventOptions } from '../../../types/ocpp/2.0/Transaction.js'
 import type { OCPPResponseService } from '../OCPPResponseService.js'
 
 import { OCPPError } from '../../../exception/index.js'
 import {
   type CertificateSigningUseEnumType,
+  type ConnectorStatusEnum,
   ErrorType,
   type JsonObject,
   type JsonType,
   OCPP20RequestCommand,
   type OCPP20SignCertificateRequest,
+  OCPP20TransactionEventEnumType,
+  OCPP20TriggerReasonEnumType,
   OCPPVersion,
   type RequestParams,
 } from '../../../types/index.js'
@@ -110,11 +108,10 @@ export class OCPP20RequestService extends OCPPRequestService {
         logger.debug(
           `${chargingStation.logPrefix()} ${moduleName}.requestHandler: Building request payload for '${commandName}'`
         )
-        const requestPayload = this.buildRequestPayload<RequestType>(
-          chargingStation,
-          commandName,
-          commandParams
-        )
+        const requestPayload =
+          params?.rawPayload === true
+            ? (commandParams as RequestType)
+            : this.buildRequestPayload<RequestType>(chargingStation, commandName, commandParams)
         const messageId = generateUUID()
         logger.debug(
           `${chargingStation.logPrefix()} ${moduleName}.requestHandler: Sending '${commandName}' request with message ID '${messageId}'`
@@ -208,15 +205,25 @@ export class OCPP20RequestService extends OCPPRequestService {
           commandParams.evseId as number | undefined
         ) as unknown as Request
       case OCPP20RequestCommand.TRANSACTION_EVENT: {
-        // Pre-built payloads (e.g., from offline queue) already have transactionInfo;
-        // pass them through as-is to avoid double-building.
-        if (commandParams.transactionInfo != null) {
-          return commandParams as unknown as Request
-        }
         const eventType = commandParams.eventType as OCPP20TransactionEventEnumType
-        const triggerReason = commandParams.triggerReason as OCPP20TriggerReasonEnumType
-        const connectorId = commandParams.connectorId as number
-        const transactionId = commandParams.transactionId as string
+        const triggerReason: OCPP20TriggerReasonEnumType =
+          commandParams.triggerReason != null
+            ? (commandParams.triggerReason as OCPP20TriggerReasonEnumType)
+            : eventType === OCPP20TransactionEventEnumType.Ended
+              ? OCPP20TriggerReasonEnumType.RemoteStop
+              : OCPP20TriggerReasonEnumType.Authorized
+        const evse = commandParams.evse as undefined | { connectorId?: number; id?: number }
+        const connectorId: number =
+          commandParams.connectorId != null
+            ? (commandParams.connectorId as number)
+            : (evse?.connectorId ?? evse?.id ?? 1)
+        const transactionId: string =
+          commandParams.transactionId != null
+            ? (commandParams.transactionId as string)
+            : eventType === OCPP20TransactionEventEnumType.Ended
+              ? (chargingStation.getConnectorStatus(connectorId)?.transactionId?.toString() ??
+                generateUUID())
+              : generateUUID()
         return OCPP20ServiceUtils.buildTransactionEvent(
           chargingStation,
           eventType,

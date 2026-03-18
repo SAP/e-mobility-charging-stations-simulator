@@ -703,7 +703,9 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         await chargingStation.ocppRequestService.requestHandler<
           OCPP20TransactionEventRequest,
           OCPP20TransactionEventResponse
-        >(chargingStation, OCPP20RequestCommand.TRANSACTION_EVENT, queuedEvent.request)
+        >(chargingStation, OCPP20RequestCommand.TRANSACTION_EVENT, queuedEvent.request, {
+          rawPayload: true,
+        })
       } catch (error) {
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.sendQueuedTransactionEvents: Failed to send queued TransactionEvent with seqNo=${queuedEvent.seqNo.toString()}:`,
@@ -754,8 +756,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         throw new OCPPError(ErrorType.PROPERTY_CONSTRAINT_VIOLATION, errorMsg)
       }
 
-      // Offline path: build payload directly for queueing (queue stores pre-built requests
-      // that are sent as-is on reconnect, bypassing buildRequestPayload).
+      // Offline: build and queue pre-built payload (sent as-is via rawPayload on reconnect)
       if (!chargingStation.isWebSocketConnectionOpened()) {
         const transactionEventRequest = OCPP20ServiceUtils.buildTransactionEvent(
           chargingStation,
@@ -777,7 +778,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         return { idTokenInfo: undefined }
       }
 
-      // Online path: pass minimal params to requestHandler → buildRequestPayload builds
+      // Online: minimal params → requestHandler → buildRequestPayload
       logger.debug(
         `${chargingStation.logPrefix()} ${moduleName}.sendTransactionEvent: Sending TransactionEvent for trigger ${triggerReason}`
       )

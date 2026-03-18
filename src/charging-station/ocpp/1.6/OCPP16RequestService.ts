@@ -99,11 +99,10 @@ export class OCPP16RequestService extends OCPPRequestService {
         logger.debug(
           `${chargingStation.logPrefix()} ${moduleName}.requestHandler: Building request payload for '${commandName}'`
         )
-        const requestPayload = this.buildRequestPayload<RequestType>(
-          chargingStation,
-          commandName,
-          commandParams
-        )
+        const requestPayload =
+          params?.rawPayload === true
+            ? (commandParams as RequestType)
+            : this.buildRequestPayload<RequestType>(chargingStation, commandName, commandParams)
         const messageId = generateUUID()
         logger.debug(
           `${chargingStation.logPrefix()} ${moduleName}.requestHandler: Sending '${commandName}' request with message ID '${messageId}'`
@@ -212,9 +211,6 @@ export class OCPP16RequestService extends OCPPRequestService {
           ...commandParams,
         } as unknown as Request
       case OCPP16RequestCommand.STATUS_NOTIFICATION:
-        if (commandParams.errorCode != null) {
-          return commandParams as unknown as Request
-        }
         return buildStatusNotificationRequest(
           chargingStation,
           commandParams.connectorId as number,

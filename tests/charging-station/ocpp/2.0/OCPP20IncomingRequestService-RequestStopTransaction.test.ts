@@ -369,7 +369,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
       const args = requestHandlerMock.mock.calls[0].arguments as [
         unknown,
         string,
-        Record<string, unknown>
+        Partial<OCPP20TransactionEventRequest>
       ]
       const minimalParams = args[2]
 

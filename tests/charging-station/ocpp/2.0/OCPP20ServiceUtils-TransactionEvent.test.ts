@@ -30,6 +30,7 @@ import {
   type OCPP20IdTokenType,
   OCPP20ReasonEnumType,
   type OCPP20TransactionContext,
+  type OCPP20TransactionType,
 } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants, generateUUID } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
@@ -2363,7 +2364,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         assert.strictEqual(sentRequests.length, 1)
         assert.strictEqual(
-          (sentRequests[0].payload.transactionInfo as Record<string, unknown>).transactionId,
+          (sentRequests[0].payload.transactionInfo as OCPP20TransactionType).transactionId,
           transactionId1
         )
 
@@ -2374,7 +2375,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         assert.strictEqual(sentRequests.length, 2)
         assert.strictEqual(
-          (sentRequests[1].payload.transactionInfo as Record<string, unknown>).transactionId,
+          (sentRequests[1].payload.transactionInfo as OCPP20TransactionType).transactionId,
           transactionId2
         )
       })

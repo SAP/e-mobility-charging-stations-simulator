@@ -7,8 +7,10 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type {
+  OCPP20StatusNotificationRequest,
   OCPP20TriggerMessageRequest,
   OCPP20TriggerMessageResponse,
+  RequestParams,
 } from '../../../../src/types/index.js'
 import type { MockChargingStation } from '../../ChargingStationTestUtils.js'
 
@@ -506,8 +508,8 @@ await describe('F06 - TriggerMessage', async () => {
         const args = call.arguments as [
           unknown,
           string,
-          Record<string, unknown>,
-          Record<string, unknown>
+          Partial<OCPP20StatusNotificationRequest>,
+          RequestParams
         ]
         const [, command, payload, options] = args
         assert.strictEqual(command, OCPP20RequestCommand.STATUS_NOTIFICATION)
@@ -515,7 +517,10 @@ await describe('F06 - TriggerMessage', async () => {
         assert.ok('evseId' in payload, 'Expected payload to include evseId')
         assert.ok('connectorId' in payload, 'Expected payload to include connectorId')
         assert.ok('status' in payload, 'Expected payload to include status')
-        assert.ok((payload.evseId as number) > 0, 'Expected evseId > 0 (EVSE 0 excluded)')
+        assert.ok(
+          payload.evseId != null && payload.evseId > 0,
+          'Expected evseId > 0 (EVSE 0 excluded)'
+        )
         assert.strictEqual(options.skipBufferingOnError, true)
         assert.strictEqual(options.triggerMessage, true)
       }
@@ -541,8 +546,8 @@ await describe('F06 - TriggerMessage', async () => {
       const args = requestHandlerMock.mock.calls[0].arguments as [
         unknown,
         string,
-        Record<string, unknown>,
-        Record<string, unknown>
+        Partial<OCPP20StatusNotificationRequest>,
+        RequestParams
       ]
       const [, command, payload, options] = args
       assert.strictEqual(command, OCPP20RequestCommand.STATUS_NOTIFICATION)
