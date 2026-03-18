@@ -3,7 +3,7 @@
  *
  * This module provides type-safe testing utilities for OCPP20RequestService.
  * It enables mocking of the protected sendMessage method and provides access
- * to public request methods for testing ISO 15118 certificate and OCSP flows.
+ * to buildRequestPayload and requestHandler for testing the single-path architecture.
  * @example
  * ```typescript
  * import {
@@ -12,33 +12,16 @@
  * } from './__testable__/OCPP20RequestServiceTestable.js'
  *
  * const { sendMessageMock, service } = createTestableRequestService({
- *   sendMessageResponse: { status: Iso15118EVCertificateStatusEnumType.Accepted }
+ *   sendMessageResponse: { status: GenericStatus.Accepted }
  * })
- * const response = await service.requestGet15118EVCertificate(station, schema, action, exi)
+ * const response = await service.requestHandler(station, OCPP20RequestCommand.HEARTBEAT)
  * expect(sendMessageMock.mock.calls.length).toBe(1)
  * ```
  */
 
 import { mock } from 'node:test'
 
-import type {
-  CertificateActionEnumType,
-  CertificateSigningUseEnumType,
-  JsonType,
-  OCPP20FirmwareStatusEnumType,
-  OCPP20FirmwareStatusNotificationResponse,
-  OCPP20Get15118EVCertificateResponse,
-  OCPP20GetCertificateStatusResponse,
-  OCPP20LogStatusNotificationResponse,
-  OCPP20MeterValue,
-  OCPP20MeterValuesResponse,
-  OCPP20RequestCommand,
-  OCPP20SecurityEventNotificationResponse,
-  OCPP20SignCertificateResponse,
-  OCSPRequestDataType,
-  RequestParams,
-  UploadLogStatusEnumType,
-} from '../../../../types/index.js'
+import type { JsonType, OCPP20RequestCommand, RequestParams } from '../../../../types/index.js'
 import type { ChargingStation } from '../../../index.js'
 
 import { OCPP20RequestService } from '../OCPP20RequestService.js'
@@ -72,93 +55,25 @@ export interface SendMessageMock {
  * Interface exposing OCPP20RequestService methods for testing.
  */
 export interface TestableOCPP20RequestService {
-  /**
-   * Build request payload for OCPP 2.0 commands.
-   * Used internally to construct command-specific payloads.
-   */
   buildRequestPayload: (
     chargingStation: ChargingStation,
     commandName: OCPP20RequestCommand,
     commandParams?: JsonType
   ) => JsonType
 
-  /**
-   * Send a FirmwareStatusNotification to the CSMS.
-   * Reports firmware update progress to the CSMS.
-   */
-  requestFirmwareStatusNotification: (
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
+  requestHandler: <RequestType extends JsonType, ResponseType extends JsonType>(
     chargingStation: ChargingStation,
-    status: OCPP20FirmwareStatusEnumType,
-    requestId?: number
-  ) => Promise<OCPP20FirmwareStatusNotificationResponse>
-
-  /**
-   * Request an ISO 15118 EV certificate from the CSMS.
-   * Forwards EXI-encoded certificate request from EV to CSMS.
-   */
-  requestGet15118EVCertificate: (
-    chargingStation: ChargingStation,
-    iso15118SchemaVersion: string,
-    action: CertificateActionEnumType,
-    exiRequest: string
-  ) => Promise<OCPP20Get15118EVCertificateResponse>
-
-  /**
-   * Request OCSP certificate status from the CSMS.
-   * Sends OCSP request to check certificate revocation status.
-   */
-  requestGetCertificateStatus: (
-    chargingStation: ChargingStation,
-    ocspRequestData: OCSPRequestDataType
-  ) => Promise<OCPP20GetCertificateStatusResponse>
-
-  /**
-   * Send a LogStatusNotification to the CSMS.
-   * Reports the status of a log upload initiated by a GetLog request.
-   */
-  requestLogStatusNotification: (
-    chargingStation: ChargingStation,
-    status: UploadLogStatusEnumType,
-    requestId?: number
-  ) => Promise<OCPP20LogStatusNotificationResponse>
-
-  /**
-   * Send MeterValues to the CSMS.
-   * Reports meter values for a specific EVSE outside of a transaction context.
-   */
-  requestMeterValues: (
-    chargingStation: ChargingStation,
-    evseId: number,
-    meterValue: OCPP20MeterValue[]
-  ) => Promise<OCPP20MeterValuesResponse>
-  /**
-   * Send a SecurityEventNotification to the CSMS.
-   * Notifies the CSMS about a security event at the charging station (A04).
-   */
-  requestSecurityEventNotification: (
-    chargingStation: ChargingStation,
-    type: string,
-    timestamp: Date,
-    techInfo?: string
-  ) => Promise<OCPP20SecurityEventNotificationResponse>
-  /**
-   * Request certificate signing from the CSMS.
-   * Generates a CSR and sends it to CSMS for signing.
-   */
-  requestSignCertificate: (
-    chargingStation: ChargingStation,
-    certificateType?: CertificateSigningUseEnumType
-  ) => Promise<OCPP20SignCertificateResponse>
+    commandName: OCPP20RequestCommand,
+    commandParams?: RequestType,
+    params?: RequestParams
+  ) => Promise<ResponseType>
 }
 
 /**
  * Configuration options for creating a testable request service
  */
 export interface TestableRequestServiceOptions<T extends JsonType = JsonType> {
-  /**
-   * Response to return from mocked sendMessage.
-   * Can be a partial response that will be spread into the result.
-   */
   sendMessageResponse?: Partial<T>
 }
 
@@ -166,13 +81,7 @@ export interface TestableRequestServiceOptions<T extends JsonType = JsonType> {
  * Result of creating a testable request service
  */
 export interface TestableRequestServiceResult {
-  /**
-   * The mock function for sendMessage with call tracking
-   */
   sendMessageMock: SendMessageMock
-  /**
-   * The testable service with mocked sendMessage
-   */
   service: TestableOCPP20RequestService
 }
 
@@ -181,33 +90,23 @@ export interface TestableRequestServiceResult {
  *
  * This factory function creates an OCPP20RequestService instance with its
  * protected sendMessage method replaced by a mock that returns configured
- * responses. This allows testing the public request methods without making
+ * responses. This allows testing through requestHandler without making
  * actual network calls.
  * @template T - The expected response type
  * @param options - Configuration for the testable service
  * @returns Object containing the testable service and sendMessage mock
  * @example
  * ```typescript
- * // Create service with mocked response
  * const { sendMessageMock, service } = createTestableRequestService({
- *   sendMessageResponse: {
- *     status: Iso15118EVCertificateStatusEnumType.Accepted,
- *     exiResponse: 'base64EncodedResponse'
- *   }
+ *   sendMessageResponse: { status: GenericStatus.Accepted }
  * })
  *
- * // Call the public method
- * const response = await service.requestGet15118EVCertificate(
+ * const response = await service.requestHandler(
  *   mockStation,
- *   schemaVersion,
- *   CertificateActionEnumType.Install,
- *   exiRequest
+ *   OCPP20RequestCommand.HEARTBEAT
  * )
  *
- * // Verify the call
  * expect(sendMessageMock.mock.calls.length).toBe(1)
- * const sentPayload = sendMessageMock.mock.calls[0].arguments[2]
- * expect(sentPayload.action).toBe(CertificateActionEnumType.Install)
  * ```
  */
 export function createTestableRequestService<T extends JsonType = JsonType> (

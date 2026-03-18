@@ -12,6 +12,7 @@ import { createTestableRequestService } from '../../../../src/charging-station/o
 import {
   CertificateSigningUseEnumType,
   GenericStatus,
+  type JsonType,
   OCPP20RequestCommand,
   type OCPP20SignCertificateRequest,
   type OCPP20SignCertificateResponse,
@@ -41,7 +42,6 @@ await describe('I02 - SignCertificate Request', async () => {
       websocketPingInterval: Constants.DEFAULT_WEBSOCKET_PING_INTERVAL,
     })
     station = createdStation
-    // Set up configuration with OrganizationName
     station.ocppConfiguration = {
       configurationKey: [
         { key: 'SecurityCtrlr.OrganizationName', readonly: false, value: MOCK_ORGANIZATION_NAME },
@@ -62,9 +62,10 @@ await describe('I02 - SignCertificate Request', async () => {
           },
         })
 
-      const response = await service.requestSignCertificate(
+      const response = await service.requestHandler<JsonType, OCPP20SignCertificateResponse>(
         station,
-        CertificateSigningUseEnumType.ChargingStationCertificate
+        OCPP20RequestCommand.SIGN_CERTIFICATE,
+        { certificateType: CertificateSigningUseEnumType.ChargingStationCertificate }
       )
 
       assert.notStrictEqual(response, undefined)
@@ -86,10 +87,9 @@ await describe('I02 - SignCertificate Request', async () => {
           },
         })
 
-      await service.requestSignCertificate(
-        station,
-        CertificateSigningUseEnumType.ChargingStationCertificate
-      )
+      await service.requestHandler(station, OCPP20RequestCommand.SIGN_CERTIFICATE, {
+        certificateType: CertificateSigningUseEnumType.ChargingStationCertificate,
+      })
 
       const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
       assert.ok(sentPayload.csr.startsWith('-----BEGIN CERTIFICATE REQUEST-----\n'))
@@ -103,10 +103,9 @@ await describe('I02 - SignCertificate Request', async () => {
           },
         })
 
-      await service.requestSignCertificate(
-        station,
-        CertificateSigningUseEnumType.ChargingStationCertificate
-      )
+      await service.requestHandler(station, OCPP20RequestCommand.SIGN_CERTIFICATE, {
+        certificateType: CertificateSigningUseEnumType.ChargingStationCertificate,
+      })
 
       const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
       assert.ok(sentPayload.csr.endsWith('\n-----END CERTIFICATE REQUEST-----'))
@@ -120,10 +119,9 @@ await describe('I02 - SignCertificate Request', async () => {
           },
         })
 
-      await service.requestSignCertificate(
-        station,
-        CertificateSigningUseEnumType.ChargingStationCertificate
-      )
+      await service.requestHandler(station, OCPP20RequestCommand.SIGN_CERTIFICATE, {
+        certificateType: CertificateSigningUseEnumType.ChargingStationCertificate,
+      })
 
       const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
       const csrLines = sentPayload.csr.split('\n')
@@ -141,10 +139,9 @@ await describe('I02 - SignCertificate Request', async () => {
           },
         })
 
-      await service.requestSignCertificate(
-        station,
-        CertificateSigningUseEnumType.ChargingStationCertificate
-      )
+      await service.requestHandler(station, OCPP20RequestCommand.SIGN_CERTIFICATE, {
+        certificateType: CertificateSigningUseEnumType.ChargingStationCertificate,
+      })
 
       const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
       const csrLines = sentPayload.csr.split('\n')
@@ -166,10 +163,9 @@ await describe('I02 - SignCertificate Request', async () => {
           },
         })
 
-      await service.requestSignCertificate(
-        station,
-        CertificateSigningUseEnumType.ChargingStationCertificate
-      )
+      await service.requestHandler(station, OCPP20RequestCommand.SIGN_CERTIFICATE, {
+        certificateType: CertificateSigningUseEnumType.ChargingStationCertificate,
+      })
 
       const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
       const csrLines = sentPayload.csr.split('\n')
@@ -189,10 +185,9 @@ await describe('I02 - SignCertificate Request', async () => {
           },
         })
 
-      await service.requestSignCertificate(
-        station,
-        CertificateSigningUseEnumType.ChargingStationCertificate
-      )
+      await service.requestHandler(station, OCPP20RequestCommand.SIGN_CERTIFICATE, {
+        certificateType: CertificateSigningUseEnumType.ChargingStationCertificate,
+      })
 
       const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
       const csrLines = sentPayload.csr.split('\n')
@@ -211,10 +206,9 @@ await describe('I02 - SignCertificate Request', async () => {
           },
         })
 
-      await service.requestSignCertificate(
-        station,
-        CertificateSigningUseEnumType.ChargingStationCertificate
-      )
+      await service.requestHandler(station, OCPP20RequestCommand.SIGN_CERTIFICATE, {
+        certificateType: CertificateSigningUseEnumType.ChargingStationCertificate,
+      })
 
       const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
 
@@ -234,7 +228,9 @@ await describe('I02 - SignCertificate Request', async () => {
           },
         })
 
-      await service.requestSignCertificate(station, CertificateSigningUseEnumType.V2GCertificate)
+      await service.requestHandler(station, OCPP20RequestCommand.SIGN_CERTIFICATE, {
+        certificateType: CertificateSigningUseEnumType.V2GCertificate,
+      })
 
       const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
 
@@ -250,9 +246,10 @@ await describe('I02 - SignCertificate Request', async () => {
         },
       })
 
-      const response = await service.requestSignCertificate(
+      const response = await service.requestHandler<JsonType, OCPP20SignCertificateResponse>(
         station,
-        CertificateSigningUseEnumType.ChargingStationCertificate
+        OCPP20RequestCommand.SIGN_CERTIFICATE,
+        { certificateType: CertificateSigningUseEnumType.ChargingStationCertificate }
       )
 
       assert.notStrictEqual(response, undefined)
@@ -269,9 +266,10 @@ await describe('I02 - SignCertificate Request', async () => {
         },
       })
 
-      const response = await service.requestSignCertificate(
+      const response = await service.requestHandler<JsonType, OCPP20SignCertificateResponse>(
         station,
-        CertificateSigningUseEnumType.ChargingStationCertificate
+        OCPP20RequestCommand.SIGN_CERTIFICATE,
+        { certificateType: CertificateSigningUseEnumType.ChargingStationCertificate }
       )
 
       assert.notStrictEqual(response, undefined)
@@ -290,12 +288,11 @@ await describe('I02 - SignCertificate Request', async () => {
           },
         })
 
-      await service.requestSignCertificate(station)
+      await service.requestHandler(station, OCPP20RequestCommand.SIGN_CERTIFICATE, {})
 
       const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
 
       assert.notStrictEqual(sentPayload.csr, undefined)
-      // certificateType should be undefined when not specified
       assert.strictEqual(sentPayload.certificateType, undefined)
     })
   })
@@ -309,21 +306,19 @@ await describe('I02 - SignCertificate Request', async () => {
           },
         })
 
-      await service.requestSignCertificate(
-        station,
-        CertificateSigningUseEnumType.ChargingStationCertificate
-      )
+      await service.requestHandler(station, OCPP20RequestCommand.SIGN_CERTIFICATE, {
+        certificateType: CertificateSigningUseEnumType.ChargingStationCertificate,
+      })
 
       assert.strictEqual(sendMessageMock.mock.calls.length, 1)
 
       const sentPayload = sendMessageMock.mock.calls[0].arguments[2] as OCPP20SignCertificateRequest
 
-      // Validate payload structure
       assert.strictEqual(typeof sentPayload, 'object')
       assert.notStrictEqual(sentPayload.csr, undefined)
       assert.strictEqual(typeof sentPayload.csr, 'string')
       assert.ok(sentPayload.csr.length > 0)
-      assert.ok(sentPayload.csr.length <= 5500) // Max length per schema
+      assert.ok(sentPayload.csr.length <= 5500)
     })
 
     await it('should send SIGN_CERTIFICATE command name', async () => {
@@ -334,10 +329,9 @@ await describe('I02 - SignCertificate Request', async () => {
           },
         })
 
-      await service.requestSignCertificate(
-        station,
-        CertificateSigningUseEnumType.ChargingStationCertificate
-      )
+      await service.requestHandler(station, OCPP20RequestCommand.SIGN_CERTIFICATE, {
+        certificateType: CertificateSigningUseEnumType.ChargingStationCertificate,
+      })
 
       const commandName = sendMessageMock.mock.calls[0].arguments[3]
 
@@ -372,9 +366,10 @@ await describe('I02 - SignCertificate Request', async () => {
           },
         })
 
-      const response = await service.requestSignCertificate(
+      const response = await service.requestHandler<JsonType, OCPP20SignCertificateResponse>(
         stationWithoutCertManager,
-        CertificateSigningUseEnumType.ChargingStationCertificate
+        OCPP20RequestCommand.SIGN_CERTIFICATE,
+        { certificateType: CertificateSigningUseEnumType.ChargingStationCertificate }
       )
 
       assert.notStrictEqual(response, undefined)

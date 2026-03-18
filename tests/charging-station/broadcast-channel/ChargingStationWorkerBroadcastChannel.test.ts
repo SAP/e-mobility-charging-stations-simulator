@@ -575,19 +575,21 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
       assert.deepStrictEqual(payload, commandParams)
     })
 
-    await it('should build SIGN_CERTIFICATE payload as passthrough', () => {
+    await it('should build SIGN_CERTIFICATE payload with generated CSR', () => {
       const { station, testableRequestService } = createOCPP20RequestTestContext()
       const commandParams = {
-        csr: '-----BEGIN CERTIFICATE REQUEST-----\nMIIBkTCB...\n-----END CERTIFICATE REQUEST-----',
+        certificateType: 'ChargingStationCertificate',
       }
 
       const payload = testableRequestService.buildRequestPayload(
         station,
         RequestCommand.SIGN_CERTIFICATE,
         commandParams
-      )
+      ) as { certificateType?: string; csr: string }
 
-      assert.deepStrictEqual(payload, commandParams)
+      assert.ok(payload.csr.startsWith('-----BEGIN CERTIFICATE REQUEST-----'))
+      assert.ok(payload.csr.endsWith('-----END CERTIFICATE REQUEST-----'))
+      assert.strictEqual(payload.certificateType, 'ChargingStationCertificate')
     })
   })
 

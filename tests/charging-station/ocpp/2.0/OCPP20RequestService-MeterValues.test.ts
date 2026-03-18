@@ -64,7 +64,7 @@ await describe('G01 - MeterValues', async () => {
       },
     ]
 
-    await service.requestMeterValues(station, evseId, meterValue)
+    await service.requestHandler(station, OCPP20RequestCommand.METER_VALUES, { evseId, meterValue })
 
     assert.strictEqual(sendMessageMock.mock.calls.length, 1)
 
@@ -88,7 +88,7 @@ await describe('G01 - MeterValues', async () => {
       },
     ]
 
-    await service.requestMeterValues(station, evseId, meterValue)
+    await service.requestHandler(station, OCPP20RequestCommand.METER_VALUES, { evseId, meterValue })
 
     assert.strictEqual(sendMessageMock.mock.calls.length, 1)
 
@@ -108,8 +108,10 @@ await describe('G01 - MeterValues', async () => {
       },
     ]
 
-    // evseId 0 = main power meter
-    const response = await service.requestMeterValues(station, 0, meterValue)
+    const response = await service.requestHandler<
+      OCPP20MeterValuesRequest,
+      OCPP20MeterValuesResponse
+    >(station, OCPP20RequestCommand.METER_VALUES, { evseId: 0, meterValue })
 
     assert.strictEqual(sendMessageMock.mock.calls.length, 1)
 

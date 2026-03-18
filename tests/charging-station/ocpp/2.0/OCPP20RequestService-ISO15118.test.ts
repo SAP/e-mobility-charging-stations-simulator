@@ -65,12 +65,11 @@ await describe('OCPP20 ISO15118 Request Service', async () => {
             },
           })
 
-        await service.requestGet15118EVCertificate(
-          station,
-          MOCK_ISO15118_SCHEMA_VERSION,
-          CertificateActionEnumType.Install,
-          MOCK_EXI_REQUEST
-        )
+        await service.requestHandler(station, OCPP20RequestCommand.GET_15118_EV_CERTIFICATE, {
+          action: CertificateActionEnumType.Install,
+          exiRequest: MOCK_EXI_REQUEST,
+          iso15118SchemaVersion: MOCK_ISO15118_SCHEMA_VERSION,
+        })
 
         assert.strictEqual(sendMessageMock.mock.calls.length, 1)
 
@@ -91,12 +90,11 @@ await describe('OCPP20 ISO15118 Request Service', async () => {
             },
           })
 
-        await service.requestGet15118EVCertificate(
-          station,
-          MOCK_ISO15118_SCHEMA_VERSION,
-          CertificateActionEnumType.Update,
-          MOCK_EXI_REQUEST
-        )
+        await service.requestHandler(station, OCPP20RequestCommand.GET_15118_EV_CERTIFICATE, {
+          action: CertificateActionEnumType.Update,
+          exiRequest: MOCK_EXI_REQUEST,
+          iso15118SchemaVersion: MOCK_ISO15118_SCHEMA_VERSION,
+        })
 
         const sentPayload = sendMessageMock.mock.calls[0]
           .arguments[2] as OCPP20Get15118EVCertificateRequest
@@ -114,12 +112,14 @@ await describe('OCPP20 ISO15118 Request Service', async () => {
           },
         })
 
-        const response = await service.requestGet15118EVCertificate(
-          station,
-          MOCK_ISO15118_SCHEMA_VERSION,
-          CertificateActionEnumType.Install,
-          MOCK_EXI_REQUEST
-        )
+        const response = await service.requestHandler<
+          OCPP20Get15118EVCertificateRequest,
+          OCPP20Get15118EVCertificateResponse
+        >(station, OCPP20RequestCommand.GET_15118_EV_CERTIFICATE, {
+          action: CertificateActionEnumType.Install,
+          exiRequest: MOCK_EXI_REQUEST,
+          iso15118SchemaVersion: MOCK_ISO15118_SCHEMA_VERSION,
+        })
 
         assert.notStrictEqual(response, undefined)
         assert.strictEqual(response.status, Iso15118EVCertificateStatusEnumType.Accepted)
@@ -137,12 +137,14 @@ await describe('OCPP20 ISO15118 Request Service', async () => {
           },
         })
 
-        const response = await service.requestGet15118EVCertificate(
-          station,
-          MOCK_ISO15118_SCHEMA_VERSION,
-          CertificateActionEnumType.Install,
-          MOCK_EXI_REQUEST
-        )
+        const response = await service.requestHandler<
+          OCPP20Get15118EVCertificateRequest,
+          OCPP20Get15118EVCertificateResponse
+        >(station, OCPP20RequestCommand.GET_15118_EV_CERTIFICATE, {
+          action: CertificateActionEnumType.Install,
+          exiRequest: MOCK_EXI_REQUEST,
+          iso15118SchemaVersion: MOCK_ISO15118_SCHEMA_VERSION,
+        })
 
         assert.notStrictEqual(response, undefined)
         assert.strictEqual(response.status, Iso15118EVCertificateStatusEnumType.Failed)
@@ -160,12 +162,11 @@ await describe('OCPP20 ISO15118 Request Service', async () => {
             },
           })
 
-        await service.requestGet15118EVCertificate(
-          station,
-          MOCK_ISO15118_SCHEMA_VERSION,
-          CertificateActionEnumType.Install,
-          MOCK_EXI_REQUEST
-        )
+        await service.requestHandler(station, OCPP20RequestCommand.GET_15118_EV_CERTIFICATE, {
+          action: CertificateActionEnumType.Install,
+          exiRequest: MOCK_EXI_REQUEST,
+          iso15118SchemaVersion: MOCK_ISO15118_SCHEMA_VERSION,
+        })
 
         const sentPayload = sendMessageMock.mock.calls[0]
           .arguments[2] as OCPP20Get15118EVCertificateRequest
@@ -186,16 +187,14 @@ await describe('OCPP20 ISO15118 Request Service', async () => {
             },
           })
 
-        await service.requestGet15118EVCertificate(
-          station,
-          MOCK_ISO15118_SCHEMA_VERSION,
-          CertificateActionEnumType.Install,
-          complexBase64EXI
-        )
+        await service.requestHandler(station, OCPP20RequestCommand.GET_15118_EV_CERTIFICATE, {
+          action: CertificateActionEnumType.Install,
+          exiRequest: complexBase64EXI,
+          iso15118SchemaVersion: MOCK_ISO15118_SCHEMA_VERSION,
+        })
 
         const sentPayload = sendMessageMock.mock.calls[0]
           .arguments[2] as OCPP20Get15118EVCertificateRequest
-        // EXI should be passed through unchanged - no decoding/encoding
         assert.strictEqual(sentPayload.exiRequest, complexBase64EXI)
       })
     })
@@ -235,7 +234,9 @@ await describe('OCPP20 ISO15118 Request Service', async () => {
 
         const ocspRequestData = createMockOCSPRequestData()
 
-        await service.requestGetCertificateStatus(station, ocspRequestData)
+        await service.requestHandler(station, OCPP20RequestCommand.GET_CERTIFICATE_STATUS, {
+          ocspRequestData,
+        })
 
         assert.strictEqual(sendMessageMock.mock.calls.length, 1)
 
@@ -262,10 +263,12 @@ await describe('OCPP20 ISO15118 Request Service', async () => {
           },
         })
 
-        const response = await service.requestGetCertificateStatus(
-          station,
-          createMockOCSPRequestData()
-        )
+        const response = await service.requestHandler<
+          OCPP20GetCertificateStatusRequest,
+          OCPP20GetCertificateStatusResponse
+        >(station, OCPP20RequestCommand.GET_CERTIFICATE_STATUS, {
+          ocspRequestData: createMockOCSPRequestData(),
+        })
 
         assert.notStrictEqual(response, undefined)
         assert.strictEqual(response.status, GetCertificateStatusEnumType.Accepted)
@@ -282,10 +285,12 @@ await describe('OCPP20 ISO15118 Request Service', async () => {
           },
         })
 
-        const response = await service.requestGetCertificateStatus(
-          station,
-          createMockOCSPRequestData()
-        )
+        const response = await service.requestHandler<
+          OCPP20GetCertificateStatusRequest,
+          OCPP20GetCertificateStatusResponse
+        >(station, OCPP20RequestCommand.GET_CERTIFICATE_STATUS, {
+          ocspRequestData: createMockOCSPRequestData(),
+        })
 
         assert.notStrictEqual(response, undefined)
         assert.strictEqual(response.status, GetCertificateStatusEnumType.Failed)
@@ -295,8 +300,6 @@ await describe('OCPP20 ISO15118 Request Service', async () => {
 
     await describe('Stub OCSP Response', async () => {
       await it('should handle stub OCSP response correctly', async () => {
-        // This tests that the simulator doesn't make real network calls
-        // Response is stubbed/mocked at the sendMessage level
         const stubOcspResult = 'U3R1YiBPQ1NQIFJlc3BvbnNlIERhdGE='
 
         const { sendMessageMock, service } =
@@ -307,16 +310,17 @@ await describe('OCPP20 ISO15118 Request Service', async () => {
             },
           })
 
-        const response = await service.requestGetCertificateStatus(
-          station,
-          createMockOCSPRequestData()
-        )
+        const response = await service.requestHandler<
+          OCPP20GetCertificateStatusRequest,
+          OCPP20GetCertificateStatusResponse
+        >(station, OCPP20RequestCommand.GET_CERTIFICATE_STATUS, {
+          ocspRequestData: createMockOCSPRequestData(),
+        })
 
         assert.notStrictEqual(response, undefined)
         assert.strictEqual(response.status, GetCertificateStatusEnumType.Accepted)
         assert.strictEqual(response.ocspResult, stubOcspResult)
 
-        // Verify sendMessage was called (no real network call)
         assert.strictEqual(sendMessageMock.mock.calls.length, 1)
       })
     })
@@ -353,12 +357,11 @@ await describe('OCPP20 ISO15118 Request Service', async () => {
           },
         })
 
-      await service.requestGet15118EVCertificate(
-        station,
-        MOCK_ISO15118_SCHEMA_VERSION,
-        CertificateActionEnumType.Install,
-        MOCK_EXI_REQUEST
-      )
+      await service.requestHandler(station, OCPP20RequestCommand.GET_15118_EV_CERTIFICATE, {
+        action: CertificateActionEnumType.Install,
+        exiRequest: MOCK_EXI_REQUEST,
+        iso15118SchemaVersion: MOCK_ISO15118_SCHEMA_VERSION,
+      })
 
       const commandName = sendMessageMock.mock.calls[0].arguments[3]
       assert.strictEqual(commandName, OCPP20RequestCommand.GET_15118_EV_CERTIFICATE)
@@ -373,7 +376,9 @@ await describe('OCPP20 ISO15118 Request Service', async () => {
           },
         })
 
-      await service.requestGetCertificateStatus(station, createMockOCSPRequestData())
+      await service.requestHandler(station, OCPP20RequestCommand.GET_CERTIFICATE_STATUS, {
+        ocspRequestData: createMockOCSPRequestData(),
+      })
 
       const commandName = sendMessageMock.mock.calls[0].arguments[3]
       assert.strictEqual(commandName, OCPP20RequestCommand.GET_CERTIFICATE_STATUS)
