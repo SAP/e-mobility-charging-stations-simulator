@@ -19,6 +19,7 @@ import {
   type DiagnosticsStatusNotificationRequest,
   type DiagnosticsStatusNotificationResponse,
   type EmptyObject,
+  ErrorType,
   type FirmwareStatusNotificationRequest,
   type FirmwareStatusNotificationResponse,
   GenericStatus,
@@ -44,8 +45,10 @@ import {
   type OCPP20SecurityEventNotificationResponse,
   type OCPP20SignCertificateRequest,
   type OCPP20SignCertificateResponse,
+  OCPP20TransactionEventEnumType,
   type OCPP20TransactionEventRequest,
   type OCPP20TransactionEventResponse,
+  OCPP20TriggerReasonEnumType,
   OCPPVersion,
   RegistrationStatusEnumType,
   RequestCommand,
@@ -62,13 +65,14 @@ import {
 import {
   Constants,
   convertToInt,
+  generateUUID,
   getErrorMessage,
   isAsyncFunction,
   isEmpty,
   logger,
 } from '../../utils/index.js'
 import { getConfigurationKey } from '../ConfigurationKeyUtils.js'
-import { buildMeterValue } from '../ocpp/index.js'
+import { buildMeterValue, OCPP20ServiceUtils } from '../ocpp/index.js'
 import { WorkerBroadcastChannel } from './WorkerBroadcastChannel.js'
 
 const moduleName = 'ChargingStationWorkerBroadcastChannel'
@@ -619,15 +623,66 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
   private async handleTransactionEvent (
     requestPayload?: BroadcastChannelRequestPayload
   ): Promise<OCPP20TransactionEventResponse> {
-    return await this.chargingStation.ocppRequestService.requestHandler<
-      OCPP20TransactionEventRequest,
-      OCPP20TransactionEventResponse
-    >(
+    const payload = requestPayload as OCPP20TransactionEventRequest
+
+    switch (payload.eventType) {
+      case OCPP20TransactionEventEnumType.Ended:
+        return this.handleUIStopTransaction(payload)
+      case OCPP20TransactionEventEnumType.Started:
+        return this.handleUIStartTransaction(payload)
+      default:
+        return await this.chargingStation.ocppRequestService.requestHandler<
+          OCPP20TransactionEventRequest,
+          OCPP20TransactionEventResponse
+        >(this.chargingStation, RequestCommand.TRANSACTION_EVENT, payload, this.requestParams)
+    }
+  }
+
+  private async handleUIStartTransaction (
+    payload: OCPP20TransactionEventRequest
+  ): Promise<OCPP20TransactionEventResponse> {
+    const connectorId = payload.evse?.connectorId ?? payload.evse?.id ?? 1
+    const transactionId = generateUUID()
+
+    const connectorStatus = this.chargingStation.getConnectorStatus(connectorId)
+    if (connectorStatus != null) {
+      connectorStatus.transactionStarted = true
+      connectorStatus.transactionId = transactionId
+      connectorStatus.transactionIdTag = payload.idToken?.idToken
+      connectorStatus.transactionStart = new Date()
+    }
+
+    const response = await OCPP20ServiceUtils.sendTransactionEvent(
       this.chargingStation,
-      RequestCommand.TRANSACTION_EVENT,
-      requestPayload as OCPP20TransactionEventRequest,
-      this.requestParams
+      OCPP20TransactionEventEnumType.Started,
+      OCPP20TriggerReasonEnumType.Authorized,
+      connectorId,
+      transactionId
     )
+
+    const txUpdatedInterval = OCPP20ServiceUtils.getTxUpdatedInterval(this.chargingStation)
+    this.chargingStation.startTxUpdatedInterval(connectorId, txUpdatedInterval)
+
+    return response
+  }
+
+  private async handleUIStopTransaction (
+    payload: OCPP20TransactionEventRequest
+  ): Promise<OCPP20TransactionEventResponse> {
+    const transactionId = (payload as unknown as { transactionId?: string }).transactionId
+    if (transactionId == null) {
+      throw new OCPPError(ErrorType.PROPERTY_CONSTRAINT_VIOLATION, 'Missing transactionId for stop')
+    }
+
+    const connectorId = this.chargingStation.getConnectorIdByTransactionId(transactionId)
+    if (connectorId == null) {
+      throw new OCPPError(
+        ErrorType.PROPERTY_CONSTRAINT_VIOLATION,
+        `No connector found for transaction ${transactionId}`
+      )
+    }
+
+    return await OCPP20ServiceUtils.requestStopTransaction(this.chargingStation, connectorId)
   }
 
   private messageErrorHandler (messageEvent: MessageEvent): void {

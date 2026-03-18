@@ -2,8 +2,6 @@
 
 import type { ValidateFunction } from 'ajv'
 
-import { secondsToMilliseconds } from 'date-fns'
-
 import type { ChargingStation } from '../../../charging-station/index.js'
 import type {
   OCPP20ChargingProfileType,
@@ -128,7 +126,6 @@ import {
   OCPP20ReasonEnumType,
 } from '../../../types/ocpp/2.0/Transaction.js'
 import {
-  Constants,
   convertToDate,
   generateUUID,
   logger,
@@ -1119,20 +1116,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   private getTxUpdatedInterval (chargingStation: ChargingStation): number {
-    const variableManager = OCPP20VariableManager.getInstance()
-    const results = variableManager.getVariables(chargingStation, [
-      {
-        component: { name: OCPP20ComponentName.SampledDataCtrlr },
-        variable: { name: OCPP20RequiredVariableName.TxUpdatedInterval },
-      },
-    ])
-    if (results.length > 0 && results[0].attributeValue != null) {
-      const intervalSeconds = parseInt(results[0].attributeValue, 10)
-      if (!isNaN(intervalSeconds) && intervalSeconds > 0) {
-        return secondsToMilliseconds(intervalSeconds)
-      }
-    }
-    return secondsToMilliseconds(Constants.DEFAULT_TX_UPDATED_INTERVAL)
+    return OCPP20ServiceUtils.getTxUpdatedInterval(chargingStation)
   }
 
   private handleConnectorChangeAvailability (
