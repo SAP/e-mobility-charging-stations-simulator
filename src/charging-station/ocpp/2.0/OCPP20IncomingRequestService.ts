@@ -410,7 +410,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
                 error
               )
             })
-            const txUpdatedInterval = this.getTxUpdatedInterval(chargingStation)
+            const txUpdatedInterval = OCPP20ServiceUtils.getTxUpdatedInterval(chargingStation)
             chargingStation.startTxUpdatedInterval(connectorId, txUpdatedInterval)
           }
         }
@@ -512,7 +512,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               for (const [cId, connector] of evseStatus.connectors) {
                 if (connector.transactionId == null) continue
                 hasSentTransactionEvent = true
-                const txUpdatedInterval = this.getTxUpdatedInterval(chargingStation)
+                const txUpdatedInterval = OCPP20ServiceUtils.getTxUpdatedInterval(chargingStation)
                 const meterValue = buildMeterValue(
                   chargingStation,
                   cId,
@@ -537,7 +537,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
                   chargingStation,
                   fallbackEvseId > 0 ? fallbackEvseId : 1,
                   0,
-                  this.getTxUpdatedInterval(chargingStation)
+                  OCPP20ServiceUtils.getTxUpdatedInterval(chargingStation)
                 ) as OCPP20MeterValue
               } catch {
                 meterValue = {
@@ -1077,10 +1077,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       this.stationsState.set(chargingStation, state)
     }
     return state
-  }
-
-  private getTxUpdatedInterval (chargingStation: ChargingStation): number {
-    return OCPP20ServiceUtils.getTxUpdatedInterval(chargingStation)
   }
 
   private handleConnectorChangeAvailability (
