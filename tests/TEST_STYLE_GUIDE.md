@@ -336,7 +336,6 @@ assert.strictEqual(mocks.webSocket.sentMessages.length, 1)
 | -------------------------------------- | ------------------------------- |
 | `createTestableOCPP20RequestService()` | Type-safe private method access |
 | `IdTokenFixtures`                      | Pre-built IdToken fixtures      |
-| `TransactionContextFixtures`           | Transaction context fixtures    |
 
 ### Auth (`ocpp/auth/helpers/MockFactories.ts`)
 
