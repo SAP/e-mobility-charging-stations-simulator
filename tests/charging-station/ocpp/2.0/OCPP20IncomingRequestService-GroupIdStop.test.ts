@@ -88,8 +88,7 @@ await describe('C09 - GroupId-based Stop Transaction Authorization', async () =>
     return startResponse.transactionId as string
   }
 
-  // FR: C09.FR.03
-  await it('C09.FR.03 - should authorize stop by same GroupIdToken without AuthorizationRequest', async () => {
+  await it('C09.FR.03/C09.FR.07 - should authorize stop by same GroupIdToken without AuthorizationRequest', async () => {
     await startTransactionWithGroup(mockStation, 1, 100, START_TOKEN, GROUP_ID_TOKEN)
 
     const connectorStatus = mockStation.getConnectorStatus(1)
@@ -98,31 +97,11 @@ await describe('C09 - GroupId-based Stop Transaction Authorization', async () =>
       assert.fail('Expected connectorStatus to be defined')
     }
     assert.strictEqual(connectorStatus.transactionGroupIdToken, GROUP_ID_TOKEN)
-
-    const isAuthorized = testableService.isAuthorizedToStopTransaction(
-      mockStation,
-      1,
-      { idToken: STOP_TOKEN_SAME_GROUP, type: OCPP20IdTokenEnumType.ISO14443 },
-      { idToken: GROUP_ID_TOKEN, type: OCPP20IdTokenEnumType.Central }
-    )
-
-    assert.strictEqual(isAuthorized, true)
-  })
-
-  // FR: C09.FR.07
-  await it('C09.FR.07 - should end authorization without CSMS request when GroupIdToken matches', async () => {
-    await startTransactionWithGroup(mockStation, 2, 200, START_TOKEN, GROUP_ID_TOKEN)
-
-    const connectorStatus = mockStation.getConnectorStatus(2)
-    if (connectorStatus == null) {
-      assert.fail('Expected connectorStatus to be defined')
-    }
-    assert.strictEqual(connectorStatus.transactionGroupIdToken, GROUP_ID_TOKEN)
     assert.strictEqual(connectorStatus.transactionStarted, true)
 
     const isAuthorized = testableService.isAuthorizedToStopTransaction(
       mockStation,
-      2,
+      1,
       { idToken: STOP_TOKEN_SAME_GROUP, type: OCPP20IdTokenEnumType.ISO14443 },
       { idToken: GROUP_ID_TOKEN, type: OCPP20IdTokenEnumType.Central }
     )

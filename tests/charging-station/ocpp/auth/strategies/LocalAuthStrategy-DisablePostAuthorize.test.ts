@@ -3,12 +3,7 @@
  * @description Tests for C10.FR.03, C12.FR.05, C14.FR.03 conformance
  */
 import assert from 'node:assert/strict'
-import { afterEach, beforeEach, describe, it } from 'node:test'
-
-import type {
-  AuthCache,
-  LocalAuthListManager,
-} from '../../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
+import { afterEach, describe, it } from 'node:test'
 
 import { LocalAuthStrategy } from '../../../../../src/charging-station/ocpp/auth/strategies/LocalAuthStrategy.js'
 import {
@@ -29,14 +24,6 @@ import {
 
 await describe('LocalAuthStrategy - DisablePostAuthorize', async () => {
   let strategy: LocalAuthStrategy
-  let mockAuthCache: AuthCache
-  let mockLocalAuthListManager: LocalAuthListManager
-
-  beforeEach(() => {
-    mockAuthCache = createMockAuthCache()
-    mockLocalAuthListManager = createMockLocalAuthListManager()
-    strategy = new LocalAuthStrategy(mockLocalAuthListManager, mockAuthCache)
-  })
 
   afterEach(() => {
     standardCleanup()
@@ -49,7 +36,7 @@ await describe('LocalAuthStrategy - DisablePostAuthorize', async () => {
         method: AuthenticationMethod.CACHE,
         status: AuthorizationStatus.BLOCKED,
       })
-      mockAuthCache = createMockAuthCache({
+      const mockAuthCache = createMockAuthCache({
         get: () => blockedResult,
       })
       strategy = new LocalAuthStrategy(undefined, mockAuthCache)
@@ -81,7 +68,7 @@ await describe('LocalAuthStrategy - DisablePostAuthorize', async () => {
         method: AuthenticationMethod.CACHE,
         status: AuthorizationStatus.BLOCKED,
       })
-      mockAuthCache = createMockAuthCache({
+      const mockAuthCache = createMockAuthCache({
         get: () => blockedResult,
       })
       strategy = new LocalAuthStrategy(undefined, mockAuthCache)
@@ -106,6 +93,39 @@ await describe('LocalAuthStrategy - DisablePostAuthorize', async () => {
     })
   })
 
+  await describe('C14.FR.03 - local list post-authorize', async () => {
+    await it('should accept non-Accepted local list token without re-auth when DisablePostAuthorize=true', async () => {
+      const localListManager = createMockLocalAuthListManager({
+        getEntry: () =>
+          new Promise(resolve => {
+            resolve({
+              identifier: 'BLOCKED-TAG',
+              status: 'Blocked',
+            })
+          }),
+      })
+      strategy = new LocalAuthStrategy(localListManager, undefined)
+      const config = createTestAuthConfig({
+        disablePostAuthorize: true,
+        localAuthListEnabled: true,
+      })
+      strategy.initialize(config)
+      const request = createMockAuthRequest({
+        identifier: createMockIdentifier(
+          OCPPVersion.VERSION_20,
+          'BLOCKED-TAG',
+          IdentifierType.ISO14443
+        ),
+      })
+
+      const result = await strategy.authenticate(request, config)
+
+      assert.notStrictEqual(result, undefined)
+      assert.strictEqual(result?.status, AuthorizationStatus.BLOCKED)
+      assert.strictEqual(result.method, AuthenticationMethod.LOCAL_LIST)
+    })
+  })
+
   await describe('default behavior', async () => {
     await it('should be no-op when DisablePostAuthorize not configured (default behavior preserved)', async () => {
       // Arrange
@@ -113,7 +133,7 @@ await describe('LocalAuthStrategy - DisablePostAuthorize', async () => {
         method: AuthenticationMethod.CACHE,
         status: AuthorizationStatus.BLOCKED,
       })
-      mockAuthCache = createMockAuthCache({
+      const mockAuthCache = createMockAuthCache({
         get: () => blockedResult,
       })
       strategy = new LocalAuthStrategy(undefined, mockAuthCache)

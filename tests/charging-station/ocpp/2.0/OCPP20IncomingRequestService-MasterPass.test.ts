@@ -126,4 +126,90 @@ await describe('C12.FR.09 - MasterPassGroupId Check', async () => {
     assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
     assert.notStrictEqual(response.transactionId, undefined)
   })
+
+  await it('C12.FR.09 - should allow start when groupIdToken does not match MasterPassGroupId', async () => {
+    const masterPassGroupId = 'MASTER_GROUP_1'
+
+    const originalGetVariables = OCPP20VariableManager.getInstance().getVariables.bind(
+      OCPP20VariableManager.getInstance()
+    )
+    mock.method(
+      OCPP20VariableManager.getInstance(),
+      'getVariables',
+      (station: ChargingStation, requests: OCPP20GetVariableDataType[]) => {
+        const results = originalGetVariables(station, requests)
+        for (let i = 0; i < (requests as { variable?: { name?: string } }[]).length; i++) {
+          const req = (requests as { variable?: { name?: string } }[])[i]
+          if (req.variable?.name === 'MasterPassGroupId') {
+            results[i] = {
+              ...results[i],
+              attributeStatus: GetVariableStatusEnumType.Accepted,
+              attributeValue: masterPassGroupId,
+            }
+          }
+        }
+        return results
+      }
+    )
+
+    const request: OCPP20RequestStartTransactionRequest = {
+      evseId: 1,
+      groupIdToken: {
+        idToken: 'DIFFERENT_GROUP',
+        type: OCPP20IdTokenEnumType.Central,
+      },
+      idToken: {
+        idToken: 'SOME_USER_TOKEN',
+        type: OCPP20IdTokenEnumType.ISO14443,
+      },
+      remoteStartId: 1,
+    }
+
+    const response = await testableService.handleRequestStartTransaction(mockStation, request)
+
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
+  })
+
+  await it('C12.FR.09 - should not reject when idToken matches MasterPassGroupId but groupIdToken does not', async () => {
+    const masterPassGroupId = 'MASTER_GROUP_1'
+
+    const originalGetVariables = OCPP20VariableManager.getInstance().getVariables.bind(
+      OCPP20VariableManager.getInstance()
+    )
+    mock.method(
+      OCPP20VariableManager.getInstance(),
+      'getVariables',
+      (station: ChargingStation, requests: OCPP20GetVariableDataType[]) => {
+        const results = originalGetVariables(station, requests)
+        for (let i = 0; i < (requests as { variable?: { name?: string } }[]).length; i++) {
+          const req = (requests as { variable?: { name?: string } }[])[i]
+          if (req.variable?.name === 'MasterPassGroupId') {
+            results[i] = {
+              ...results[i],
+              attributeStatus: GetVariableStatusEnumType.Accepted,
+              attributeValue: masterPassGroupId,
+            }
+          }
+        }
+        return results
+      }
+    )
+
+    const request: OCPP20RequestStartTransactionRequest = {
+      evseId: 1,
+      groupIdToken: {
+        idToken: 'DIFFERENT_GROUP',
+        type: OCPP20IdTokenEnumType.Central,
+      },
+      idToken: {
+        idToken: masterPassGroupId,
+        type: OCPP20IdTokenEnumType.ISO14443,
+      },
+      remoteStartId: 1,
+    }
+
+    const response = await testableService.handleRequestStartTransaction(mockStation, request)
+
+    assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
+  })
 })

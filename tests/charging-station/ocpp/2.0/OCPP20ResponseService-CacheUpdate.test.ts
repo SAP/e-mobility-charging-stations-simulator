@@ -152,4 +152,32 @@ await describe('C10 - TransactionEventResponse Cache Update', async () => {
     assert.ok(cachedExpired != null, 'Expired status should be cached')
     assert.strictEqual(cachedExpired.status, AuthorizationStatus.EXPIRED)
   })
+
+  await it('should not update cache when authorizationCacheEnabled is false', async () => {
+    // Arrange — create service with cache disabled
+    const { station: disabledStation } = createMockChargingStation({
+      baseName: 'CS_CACHE_DISABLED',
+      connectorsCount: 1,
+      stationInfo: {
+        chargingStationId: 'CS_CACHE_DISABLED',
+        ocppVersion: OCPPVersion.VERSION_201,
+      },
+    })
+    const disabledService = new OCPPAuthServiceImpl(disabledStation)
+    await disabledService.initialize()
+    disabledService.updateConfiguration({ authorizationCacheEnabled: false })
+
+    const idTokenInfo = {
+      status: OCPP20AuthorizationStatusEnumType.Accepted,
+    }
+
+    // Act
+    disabledService.updateCacheEntry(TEST_IDENTIFIER, idTokenInfo, IdentifierType.ISO14443)
+
+    // Assert — cache should not have been written to
+    const localStrategy = disabledService.getStrategy('local') as LocalAuthStrategy | undefined
+    const cache = localStrategy?.getAuthCache()
+    const cached = cache?.get(TEST_IDENTIFIER)
+    assert.strictEqual(cached, undefined, 'Cache entry should not exist when cache is disabled')
+  })
 })
