@@ -179,17 +179,14 @@ export class OCPP16RequestService extends OCPPRequestService {
           ...commandParams,
         } as unknown as Request
       case OCPP16RequestCommand.BOOT_NOTIFICATION:
-        return commandParams as unknown as Request
       case OCPP16RequestCommand.DATA_TRANSFER:
-        return commandParams as unknown as Request
       case OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION:
-        return commandParams as unknown as Request
       case OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION:
+      case OCPP16RequestCommand.METER_VALUES:
+      case OCPP16RequestCommand.STATUS_NOTIFICATION:
         return commandParams as unknown as Request
       case OCPP16RequestCommand.HEARTBEAT:
         return OCPP16Constants.OCPP_REQUEST_EMPTY as unknown as Request
-      case OCPP16RequestCommand.METER_VALUES:
-        return commandParams as unknown as Request
       case OCPP16RequestCommand.START_TRANSACTION:
         return {
           idTag: Constants.DEFAULT_IDTAG,
@@ -213,8 +210,6 @@ export class OCPP16RequestService extends OCPPRequestService {
           }),
           ...commandParams,
         } as unknown as Request
-      case OCPP16RequestCommand.STATUS_NOTIFICATION:
-        return commandParams as unknown as Request
       case OCPP16RequestCommand.STOP_TRANSACTION:
         chargingStation.stationInfo?.transactionDataMeterValues === true &&
           (connectorId = chargingStation.getConnectorIdByTransactionId(

@@ -149,7 +149,6 @@ export class OCPP20RequestService extends OCPPRequestService {
     )
     switch (commandName) {
       case OCPP20RequestCommand.BOOT_NOTIFICATION:
-        return commandParams as unknown as Request
       case OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION:
       case OCPP20RequestCommand.GET_15118_EV_CERTIFICATE:
       case OCPP20RequestCommand.GET_CERTIFICATE_STATUS:
