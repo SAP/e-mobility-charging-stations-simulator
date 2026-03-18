@@ -38,6 +38,11 @@ export interface MockUIClient {
 // ── MockWebSocket ─────────────────────────────────────────────────────────────
 
 export class MockWebSocket {
+  static readonly CLOSED = 3
+  static readonly CLOSING = 2
+  static readonly CONNECTING = 0
+  static readonly OPEN = 1
+
   addEventListener: ReturnType<typeof vi.fn>
   close: ReturnType<typeof vi.fn>
   readonly CLOSED = 3
@@ -48,7 +53,7 @@ export class MockWebSocket {
   onmessage: ((event: MessageEvent) => void) | null = null
   onopen: (() => void) | null = null
   readonly OPEN = 1
-  readyState: number = WebSocket.OPEN
+  readyState: number = MockWebSocket.OPEN
   removeEventListener: ReturnType<typeof vi.fn>
   send: ReturnType<typeof vi.fn>
   sentMessages: string[] = []
@@ -71,7 +76,7 @@ export class MockWebSocket {
   }
 
   simulateClose (code = 1000, reason = ''): void {
-    this.readyState = WebSocket.CLOSED
+    this.readyState = MockWebSocket.CLOSED
     const event = { code, reason } as CloseEvent
     this.onclose?.(event)
   }
