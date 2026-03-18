@@ -78,7 +78,10 @@ const getLoggerInstance = (): WinstonLogger => {
   loggerInstance = createLogger({
     format: logFormat,
     level: logConfiguration.level,
-    silent: logConfiguration.enabled === false || logTransports.length === 0,
+    silent:
+      logConfiguration.enabled === false ||
+      logTransports.length === 0 ||
+      process.env.NODE_ENV === 'test',
     transports: logTransports,
   })
   //
