@@ -2414,7 +2414,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       return {
         status: RequestStartStopStatusEnumType.Rejected,
         statusInfo: {
-          additionalInfo: `IdToken ${idToken.idToken} is not authorized`,
+          additionalInfo: `IdToken ${truncateId(idToken.idToken)} is not authorized`,
           reasonCode: ReasonCodeEnumType.InvalidIdToken,
         },
         transactionId: generateUUID(),
@@ -2447,7 +2447,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         return {
           status: RequestStartStopStatusEnumType.Rejected,
           statusInfo: {
-            additionalInfo: `GroupIdToken ${groupIdToken.idToken} is not authorized`,
+            additionalInfo: `GroupIdToken ${truncateId(groupIdToken.idToken)} is not authorized`,
             reasonCode: ReasonCodeEnumType.InvalidIdToken,
           },
           transactionId: generateUUID(),
