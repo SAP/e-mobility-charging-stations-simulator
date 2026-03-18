@@ -1,9 +1,19 @@
 export type {
+  ATGConfiguration,
+  ATGEntry,
   ChargingStationData,
   ChargingStationInfo,
   ChargingStationOptions,
+  ConnectorEntry,
   ConnectorStatus,
+  EvseEntry,
+  OCPP20TransactionEventRequest,
   Status,
+} from './ChargingStationType'
+export {
+  OCPP20IdTokenEnumType,
+  OCPP20TransactionEventEnumType,
+  OCPPVersion,
 } from './ChargingStationType'
 export type { ConfigurationData, UIServerConfigurationSection } from './ConfigurationType'
 export {

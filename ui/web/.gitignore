@@ -41,3 +41,6 @@ pnpm-debug.log*
 
 # pnpm
 package-lock.json
+
+# TypeScript incremental compilation information
+*.tsbuildinfo

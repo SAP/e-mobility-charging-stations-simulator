@@ -87,6 +87,23 @@ export enum OCPP16RequestCommand {
   STOP_TRANSACTION = 'StopTransaction',
 }
 
+export enum OCPP20IdTokenEnumType {
+  CENTRAL = 'Central',
+  EMAID = 'eMAID',
+  ISO14443 = 'ISO14443',
+  ISO15693 = 'ISO15693',
+  KEY_CODE = 'KeyCode',
+  LOCAL = 'Local',
+  MAC_ADDRESS = 'MacAddress',
+  NO_AUTHORIZATION = 'NoAuthorization',
+}
+
+export enum OCPP20TransactionEventEnumType {
+  ENDED = 'Ended',
+  STARTED = 'Started',
+  UPDATED = 'Updated',
+}
+
 export enum OCPPProtocol {
   JSON = 'json',
 }
@@ -102,6 +119,16 @@ export enum Voltage {
   VOLTAGE_230 = 230,
   VOLTAGE_400 = 400,
   VOLTAGE_800 = 800,
+}
+
+export interface ATGConfiguration extends JsonObject {
+  automaticTransactionGenerator?: AutomaticTransactionGeneratorConfiguration
+  automaticTransactionGeneratorStatuses?: ATGEntry[]
+}
+
+export interface ATGEntry extends JsonObject {
+  connectorId: number
+  status: Status
 }
 
 export interface AutomaticTransactionGeneratorConfiguration extends JsonObject {
@@ -123,16 +150,11 @@ export type BootNotificationResponse = OCPP16BootNotificationResponse
 
 export type ChargePointStatus = OCPP16ChargePointStatus
 
-export interface ChargingStationAutomaticTransactionGeneratorConfiguration extends JsonObject {
-  automaticTransactionGenerator?: AutomaticTransactionGeneratorConfiguration
-  automaticTransactionGeneratorStatuses?: Status[]
-}
-
 export interface ChargingStationData extends JsonObject {
-  automaticTransactionGenerator?: ChargingStationAutomaticTransactionGeneratorConfiguration
+  automaticTransactionGenerator?: ATGConfiguration
   bootNotificationResponse?: BootNotificationResponse
-  connectors: ConnectorStatus[]
-  evses: EvseStatus[]
+  connectors?: ConnectorEntry[]
+  evses?: EvseEntry[]
   ocppConfiguration: ChargingStationOcppConfiguration
   started: boolean
   stationInfo: ChargingStationInfo
@@ -226,6 +248,11 @@ export interface ConfigurationKey extends OCPPConfigurationKey {
   visible?: boolean
 }
 
+export interface ConnectorEntry extends JsonObject {
+  connector: ConnectorStatus
+  connectorId: number
+}
+
 export interface ConnectorStatus extends JsonObject {
   authorizeIdTag?: string
   availability: AvailabilityType
@@ -236,15 +263,38 @@ export interface ConnectorStatus extends JsonObject {
   localAuthorizeIdTag?: string
   status?: ChargePointStatus
   transactionEnergyActiveImportRegisterValue?: number // In Wh
-  transactionId?: number
+  /**
+   * Transaction ID.
+   * For OCPP 1.6: numeric ID
+   * For OCPP 2.0.x: UUID string
+   */
+  transactionId?: number | string
   transactionIdTag?: string
   transactionRemoteStarted?: boolean
   transactionStarted?: boolean
 }
 
-export interface EvseStatus extends JsonObject {
+export interface EvseEntry extends JsonObject {
   availability: AvailabilityType
-  connectors?: ConnectorStatus[]
+  connectors: ConnectorEntry[]
+  evseId: number
+}
+
+export interface OCPP20EVSEType extends JsonObject {
+  connectorId?: number
+  id: number
+}
+
+export interface OCPP20IdTokenType extends JsonObject {
+  idToken: string
+  type: OCPP20IdTokenEnumType
+}
+
+export interface OCPP20TransactionEventRequest extends JsonObject {
+  eventType: OCPP20TransactionEventEnumType
+  evse?: OCPP20EVSEType
+  idToken?: OCPP20IdTokenType
+  transactionId?: string
 }
 
 export const FirmwareStatus = {

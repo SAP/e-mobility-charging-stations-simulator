@@ -160,16 +160,16 @@ poetry run python server.py --command GetBaseReport --period 5
 poetry run task format
 ```
 
-### Code linting
-
-```shell
-poetry run task lint
-```
-
 ### Type checking
 
 ```shell
 poetry run task typecheck
+```
+
+### Code linting
+
+```shell
+poetry run task lint
 ```
 
 ### Testing

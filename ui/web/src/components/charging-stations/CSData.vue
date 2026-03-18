@@ -106,13 +106,15 @@
         </thead>
         <tbody id="connectors-table__body">
           <CSConnector
-            v-for="(connector, index) in getConnectorStatuses()"
-            :key="index + 1"
-            :atg-status="getATGStatus(index + 1)"
+            v-for="entry in getConnectorEntries()"
+            :key="entry.evseId != null ? `${entry.evseId}-${entry.connectorId}` : entry.connectorId"
+            :atg-status="getATGStatus(entry.connectorId)"
             :charging-station-id="chargingStation.stationInfo.chargingStationId"
-            :connector="connector"
-            :connector-id="index + 1"
+            :connector="entry.connector"
+            :connector-id="entry.connectorId"
+            :evse-id="entry.evseId"
             :hash-id="chargingStation.stationInfo.hashId"
+            :ocpp-version="chargingStation.stationInfo.ocppVersion"
             @need-refresh="$emit('need-refresh')"
           />
         </tbody>
@@ -131,29 +133,47 @@ import ToggleButton from '@/components/buttons/ToggleButton.vue'
 import CSConnector from '@/components/charging-stations/CSConnector.vue'
 import { deleteFromLocalStorage, getLocalStorage, useUIClient } from '@/composables'
 
+interface ConnectorTableEntry {
+  connector: ConnectorStatus
+  connectorId: number
+  evseId?: number
+}
+
 const props = defineProps<{
   chargingStation: ChargingStationData
 }>()
 
 const $emit = defineEmits(['need-refresh'])
 
-const getConnectorStatuses = (): ConnectorStatus[] => {
+const getConnectorEntries = (): ConnectorTableEntry[] => {
   if (Array.isArray(props.chargingStation.evses) && props.chargingStation.evses.length > 0) {
-    const connectorStatuses: ConnectorStatus[] = []
-    for (const [evseId, evseStatus] of props.chargingStation.evses.entries()) {
-      if (evseId > 0 && Array.isArray(evseStatus.connectors) && evseStatus.connectors.length > 0) {
-        for (const connectorStatus of evseStatus.connectors) {
-          connectorStatuses.push(connectorStatus)
+    const entries: ConnectorTableEntry[] = []
+    for (const evse of props.chargingStation.evses) {
+      if (evse.evseId > 0) {
+        for (const entry of evse.connectors) {
+          if (entry.connectorId > 0) {
+            entries.push({
+              connector: entry.connector,
+              connectorId: entry.connectorId,
+              evseId: evse.evseId,
+            })
+          }
         }
       }
     }
-    return connectorStatuses
+    return entries
   }
-  return props.chargingStation.connectors?.slice(1)
+  return (props.chargingStation.connectors ?? [])
+    .filter(c => c.connectorId > 0)
+    .map(entry => ({
+      connector: entry.connector,
+      connectorId: entry.connectorId,
+    }))
 }
 const getATGStatus = (connectorId: number): Status | undefined => {
-  return props.chargingStation.automaticTransactionGenerator
-    ?.automaticTransactionGeneratorStatuses?.[connectorId - 1]
+  return props.chargingStation.automaticTransactionGenerator?.automaticTransactionGeneratorStatuses?.find(
+    entry => entry.connectorId === connectorId
+  )?.status
 }
 const getSupervisionUrl = (): string => {
   const supervisionUrl = new URL(props.chargingStation.supervisionUrl)

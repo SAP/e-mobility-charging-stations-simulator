@@ -1,7 +1,7 @@
 <template>
   <tr class="connectors-table__row">
     <td class="connectors-table__column">
-      {{ connectorId }}
+      {{ evseId != null ? `${evseId}/${connectorId}` : connectorId }}
     </td>
     <td class="connectors-table__column">
       {{ connector.status ?? 'Ø' }}
@@ -14,7 +14,7 @@
     </td>
     <td class="connectors-table__column">
       <ToggleButton
-        :id="`${hashId}-${connectorId}-start-transaction`"
+        :id="`${hashId}-${evseId ?? 0}-${connectorId}-start-transaction`"
         :off="
           () => {
             $router.push({ name: 'charging-stations' })
@@ -25,6 +25,10 @@
             $router.push({
               name: 'start-transaction',
               params: { hashId, chargingStationId, connectorId },
+              query: {
+                ...(evseId != null ? { evseId: String(evseId) } : {}),
+                ...(ocppVersion != null ? { ocppVersion } : {}),
+              },
             })
           }
         "
@@ -49,7 +53,7 @@
 <script setup lang="ts">
 import { useToast } from 'vue-toast-notification'
 
-import type { ConnectorStatus, Status } from '@/types'
+import type { ConnectorStatus, OCPPVersion, Status } from '@/types'
 
 import Button from '@/components/buttons/Button.vue'
 import ToggleButton from '@/components/buttons/ToggleButton.vue'
@@ -60,7 +64,9 @@ const props = defineProps<{
   chargingStationId: string
   connector: ConnectorStatus
   connectorId: number
+  evseId?: number
   hashId: string
+  ocppVersion?: OCPPVersion
 }>()
 
 const $emit = defineEmits(['need-refresh'])
@@ -75,7 +81,10 @@ const stopTransaction = (): void => {
     return
   }
   uiClient
-    .stopTransaction(props.hashId, props.connector.transactionId)
+    .stopTransaction(props.hashId, {
+      ocppVersion: props.ocppVersion,
+      transactionId: props.connector.transactionId,
+    })
     .then(() => {
       return $toast.success('Transaction successfully stopped')
     })

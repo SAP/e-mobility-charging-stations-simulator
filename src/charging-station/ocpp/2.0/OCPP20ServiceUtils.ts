@@ -1,11 +1,13 @@
 /* eslint-disable @typescript-eslint/unified-signatures */
 
+import { secondsToMilliseconds } from 'date-fns'
+
 import { type ChargingStation, resetConnectorStatus } from '../../../charging-station/index.js'
 import { OCPPError } from '../../../exception/index.js'
 import {
   ConnectorStatusEnum,
   ErrorType,
-  type GenericResponse,
+  OCPP20ComponentName,
   OCPP20IncomingRequestCommand,
   OCPP20RequestCommand,
   OCPP20TransactionEventEnumType,
@@ -28,10 +30,16 @@ import {
   type OCPP20TransactionEventOptions,
   type OCPP20TransactionType,
 } from '../../../types/ocpp/2.0/Transaction.js'
-import { convertToIntOrNaN, logger, validateIdentifierString } from '../../../utils/index.js'
+import {
+  Constants,
+  convertToIntOrNaN,
+  logger,
+  validateIdentifierString,
+} from '../../../utils/index.js'
 import { getConfigurationKey } from '../../ConfigurationKeyUtils.js'
 import { OCPPServiceUtils, sendAndSetConnectorStatus } from '../OCPPServiceUtils.js'
 import { OCPP20Constants } from './OCPP20Constants.js'
+import { OCPP20VariableManager } from './OCPP20VariableManager.js'
 
 const moduleName = 'OCPP20ServiceUtils'
 
@@ -387,6 +395,30 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
   }
 
   /**
+   * Gets the TxUpdatedInterval configuration value for periodic TransactionEvent(Updated) messages.
+   * Reads the SampledDataCtrlr.TxUpdatedInterval variable and falls back to
+   * Constants.DEFAULT_TX_UPDATED_INTERVAL if not configured.
+   * @param chargingStation - The charging station instance
+   * @returns The interval in milliseconds
+   */
+  public static getTxUpdatedInterval (chargingStation: ChargingStation): number {
+    const variableManager = OCPP20VariableManager.getInstance()
+    const results = variableManager.getVariables(chargingStation, [
+      {
+        component: { name: OCPP20ComponentName.SampledDataCtrlr },
+        variable: { name: OCPP20RequiredVariableName.TxUpdatedInterval },
+      },
+    ])
+    if (results.length > 0 && results[0].attributeValue != null) {
+      const intervalSeconds = parseInt(results[0].attributeValue, 10)
+      if (!isNaN(intervalSeconds) && intervalSeconds > 0) {
+        return secondsToMilliseconds(intervalSeconds)
+      }
+    }
+    return secondsToMilliseconds(Constants.DEFAULT_TX_UPDATED_INTERVAL)
+  }
+
+  /**
    * Read ItemsPerMessage and BytesPerMessage configuration limits
    * Extracts configuration-reading logic shared between handleRequestGetVariables
    * and handleRequestSetVariables to eliminate DRY violations.
@@ -427,7 +459,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     chargingStation: ChargingStation,
     connectorId: number,
     evseId?: number
-  ): Promise<GenericResponse> {
+  ): Promise<OCPP20TransactionEventResponse> {
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
     if (connectorStatus?.transactionStarted && connectorStatus.transactionId != null) {
       let transactionId: string
@@ -436,26 +468,9 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       } else {
         transactionId = connectorStatus.transactionId.toString()
         logger.warn(
-          `${chargingStation.logPrefix()} OCPP20ServiceUtils.remoteStopTransaction: Non-string transaction ID ${transactionId} converted to string for OCPP 2.0`
+          `${chargingStation.logPrefix()} ${moduleName}.requestStopTransaction: Non-string transaction ID ${transactionId} converted to string for OCPP 2.0`
         )
       }
-
-      if (!validateIdentifierString(transactionId, 36)) {
-        logger.error(
-          `${chargingStation.logPrefix()} OCPP20ServiceUtils.remoteStopTransaction: Invalid transaction ID format (must be non-empty string ≤36 characters): ${transactionId}`
-        )
-        return OCPP20Constants.OCPP_RESPONSE_REJECTED
-      }
-
-      evseId = evseId ?? chargingStation.getEvseIdByConnectorId(connectorId)
-      if (evseId == null) {
-        logger.error(
-          `${chargingStation.logPrefix()} ${moduleName}.sendTransactionEvent: Cannot find connector status for connector ${connectorId.toString()}: `
-        )
-        return OCPP20Constants.OCPP_RESPONSE_REJECTED
-      }
-
-      connectorStatus.transactionSeqNo = (connectorStatus.transactionSeqNo ?? 0) + 1
 
       // F03.FR.04: Build final meter values for TransactionEvent(Ended)
       const finalMeterValues: OCPP20MeterValue[] = []
@@ -473,37 +488,29 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         })
       }
 
-      const transactionEventRequest: OCPP20TransactionEventRequest = {
-        eventType: OCPP20TransactionEventEnumType.Ended,
-        evse: {
-          id: evseId,
-        },
-        seqNo: connectorStatus.transactionSeqNo,
-        timestamp: new Date(),
-        transactionInfo: {
+      const response = await this.sendTransactionEvent(
+        chargingStation,
+        OCPP20TransactionEventEnumType.Ended,
+        OCPP20TriggerReasonEnumType.RemoteStop,
+        connectorId,
+        transactionId,
+        {
+          evseId,
+          meterValue: finalMeterValues.length > 0 ? finalMeterValues : undefined,
           stoppedReason: OCPP20ReasonEnumType.Remote,
-          transactionId: transactionId as UUIDv4,
-        },
-        triggerReason: OCPP20TriggerReasonEnumType.RemoteStop,
-      }
-
-      // F03.FR.04: Include final meter values in TransactionEvent(Ended)
-      if (finalMeterValues.length > 0) {
-        transactionEventRequest.meterValue = finalMeterValues
-      }
-
-      await chargingStation.ocppRequestService.requestHandler<
-        OCPP20TransactionEventRequest,
-        OCPP20TransactionEventRequest
-      >(chargingStation, OCPP20RequestCommand.TRANSACTION_EVENT, transactionEventRequest)
+        }
+      )
 
       chargingStation.stopTxUpdatedInterval(connectorId)
       resetConnectorStatus(connectorStatus)
       await sendAndSetConnectorStatus(chargingStation, connectorId, ConnectorStatusEnum.Available)
 
-      return OCPP20Constants.OCPP_RESPONSE_ACCEPTED
+      return response
     }
-    return OCPP20Constants.OCPP_RESPONSE_REJECTED
+    throw new OCPPError(
+      ErrorType.PROPERTY_CONSTRAINT_VIOLATION,
+      `No active transaction on connector ${connectorId.toString()}`
+    )
   }
 
   /**

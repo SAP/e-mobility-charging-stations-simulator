@@ -138,9 +138,12 @@ const state = ref<{
   template: '',
 })
 
-watch(getCurrentInstance()!.appContext.config.globalProperties!.$templates, () => {
-  state.value.renderTemplates = randomUUID()
-})
+const templates = getCurrentInstance()?.appContext.config.globalProperties.$templates
+if (templates != null) {
+  watch(templates, () => {
+    state.value.renderTemplates = randomUUID()
+  })
+}
 </script>
 
 <style>

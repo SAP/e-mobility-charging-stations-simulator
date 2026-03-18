@@ -42,12 +42,12 @@ jobs:
           cache: poetry
       - name: Install Dependencies
         run: poetry install --no-root
-      - name: Lint
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.python == '3.13' }}
-        run: poetry run task lint
       - name: Typecheck
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.python == '3.13' }}
         run: poetry run task typecheck
+      - name: Lint
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.python == '3.13' }}
+        run: poetry run task lint
       - name: Test
         if: ${{ !(github.repository == 'sap/e-mobility-charging-stations-simulator' && matrix.os == 'ubuntu-latest' && matrix.python == '3.13') }}
         run: poetry run task test
@@ -86,12 +86,12 @@ jobs:
       # - name: pnpm audit
       #   if: ${{ matrix.os == 'ubuntu-latest' && matrix.node == '24.x' }}
       #   run: pnpm audit --prod
-      - name: pnpm lint
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node == '24.x' }}
-        run: pnpm lint
       - name: pnpm typecheck
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.node == '24.x' }}
         run: pnpm typecheck
+      - name: pnpm lint
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node == '24.x' }}
+        run: pnpm lint
       - name: pnpm build
         run: pnpm build
       - name: pnpm test
@@ -141,6 +141,9 @@ jobs:
       # - name: pnpm audit
       #   if: ${{ matrix.os == 'ubuntu-latest' && matrix.node == '24.x' }}
       #   run: pnpm audit --prod
+      - name: pnpm typecheck
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node == '24.x' }}
+        run: pnpm typecheck
       - name: pnpm lint
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.node == '24.x' }}
         run: pnpm lint

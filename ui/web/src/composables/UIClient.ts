@@ -4,6 +4,10 @@ import {
   ApplicationProtocol,
   AuthenticationType,
   type ChargingStationOptions,
+  OCPP20IdTokenEnumType,
+  OCPP20TransactionEventEnumType,
+  type OCPP20TransactionEventRequest,
+  OCPPVersion,
   ProcedureName,
   type ProtocolResponse,
   type RequestPayload,
@@ -41,6 +45,10 @@ export class UIClient {
       UIClient.instance = new UIClient(uiServerConfiguration)
     }
     return UIClient.instance
+  }
+
+  public static isOCPP20x (version: OCPPVersion | undefined): boolean {
+    return version === OCPPVersion.VERSION_20 || version === OCPPVersion.VERSION_201
   }
 
   public async addChargingStations (
@@ -138,13 +146,30 @@ export class UIClient {
 
   public async startTransaction (
     hashId: string,
-    connectorId: number,
-    idTag: string | undefined
+    options: {
+      connectorId: number
+      evseId?: number
+      idTag?: string
+      ocppVersion?: OCPPVersion
+    }
   ): Promise<ResponsePayload> {
+    if (UIClient.isOCPP20x(options.ocppVersion)) {
+      return this.transactionEvent(hashId, {
+        eventType: OCPP20TransactionEventEnumType.STARTED,
+        evse:
+          options.evseId != null
+            ? { connectorId: options.connectorId, id: options.evseId }
+            : undefined,
+        idToken:
+          options.idTag != null
+            ? { idToken: options.idTag, type: OCPP20IdTokenEnumType.ISO14443 }
+            : undefined,
+      })
+    }
     return this.sendRequest(ProcedureName.START_TRANSACTION, {
-      connectorId,
+      connectorId: options.connectorId,
       hashIds: [hashId],
-      idTag,
+      idTag: options.idTag,
     })
   }
 
@@ -170,11 +195,26 @@ export class UIClient {
 
   public async stopTransaction (
     hashId: string,
-    transactionId: number | undefined
+    options: {
+      ocppVersion?: OCPPVersion
+      transactionId: number | string | undefined
+    }
   ): Promise<ResponsePayload> {
+    if (UIClient.isOCPP20x(options.ocppVersion)) {
+      return this.transactionEvent(hashId, {
+        eventType: OCPP20TransactionEventEnumType.ENDED,
+        transactionId: options.transactionId?.toString(),
+      })
+    }
+    if (typeof options.transactionId === 'string') {
+      return {
+        errorMessage: 'OCPP 1.6 requires numeric transactionId',
+        status: ResponseStatus.FAILURE,
+      }
+    }
     return this.sendRequest(ProcedureName.STOP_TRANSACTION, {
       hashIds: [hashId],
-      transactionId,
+      transactionId: options.transactionId,
     })
   }
 
@@ -303,6 +343,16 @@ export class UIClient {
       } else {
         reject(new Error(`Send request '${procedureName}' message: connection closed`))
       }
+    })
+  }
+
+  private async transactionEvent (
+    hashId: string,
+    payload: OCPP20TransactionEventRequest
+  ): Promise<ResponsePayload> {
+    return this.sendRequest(ProcedureName.TRANSACTION_EVENT, {
+      hashIds: [hashId],
+      ...payload,
     })
   }
 }
