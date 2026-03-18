@@ -133,6 +133,7 @@ import {
   generateUUID,
   logger,
   sleep,
+  truncateId,
   validateUUID,
 } from '../../../utils/index.js'
 import { getConfigurationKey } from '../../ConfigurationKeyUtils.js'
@@ -704,7 +705,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       const config = authService.getConfiguration()
       if (!config.authorizationCacheEnabled) {
         logger.info(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestClearCache: Authorization cache disabled, returning Rejected (C11.FR.04)`
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestClearCache: Authorization cache disabled, returning Rejected`
         )
         return OCPP20Constants.OCPP_RESPONSE_REJECTED
       }
@@ -2277,7 +2278,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   ): Promise<OCPP20RequestStartTransactionResponse> {
     const { chargingProfile, evseId, groupIdToken, idToken, remoteStartId } = commandPayload
     logger.info(
-      `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Remote start transaction request received on EVSE ${evseId?.toString() ?? 'undefined'} with idToken ${idToken.idToken} and remoteStartId ${remoteStartId.toString()}`
+      `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Remote start transaction request received on EVSE ${evseId?.toString() ?? 'undefined'} with idToken ${truncateId(idToken.idToken)} and remoteStartId ${remoteStartId.toString()}`
     )
 
     let resolvedEvseId = evseId
@@ -2388,7 +2389,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         isAuthorized = this.isIdTokenAuthorized(chargingStation, idToken)
       } catch (error) {
         logger.error(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Authorization error for ${idToken.idToken}:`,
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Authorization error for ${truncateId(idToken.idToken)}:`,
           error
         )
         return {
@@ -2408,7 +2409,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     if (!isAuthorized) {
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: IdToken ${idToken.idToken} is not authorized`
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: IdToken ${truncateId(idToken.idToken)} is not authorized`
       )
       return {
         status: RequestStartStopStatusEnumType.Rejected,
@@ -2426,7 +2427,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         isGroupAuthorized = this.isIdTokenAuthorized(chargingStation, groupIdToken)
       } catch (error) {
         logger.error(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Group authorization error for ${groupIdToken.idToken}:`,
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Group authorization error for ${truncateId(groupIdToken.idToken)}:`,
           error
         )
         return {
@@ -2441,7 +2442,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
       if (!isGroupAuthorized) {
         logger.warn(
-          `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: GroupIdToken ${groupIdToken.idToken} is not authorized`
+          `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: GroupIdToken ${truncateId(groupIdToken.idToken)} is not authorized`
         )
         return {
           status: RequestStartStopStatusEnumType.Rejected,
@@ -2558,7 +2559,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
 
       logger.info(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Remote start transaction ACCEPTED on #${connectorId.toString()} for idToken '${idToken.idToken}'`
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Remote start transaction ACCEPTED on #${connectorId.toString()} for idToken '${truncateId(idToken.idToken)}'`
       )
 
       return {
@@ -2949,7 +2950,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     }
 
     logger.debug(
-      `${chargingStation.logPrefix()} ${moduleName}.isAuthorizedToStopTransaction: IdToken ${presentedIdToken.idToken} not authorized to stop transaction on connector ${connectorId.toString()}`
+      `${chargingStation.logPrefix()} ${moduleName}.isAuthorizedToStopTransaction: IdToken ${truncateId(presentedIdToken.idToken)} not authorized to stop transaction on connector ${connectorId.toString()}`
     )
     return false
   }
@@ -3000,7 +3001,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
      */
 
     logger.debug(
-      `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: Validating idToken ${idToken.idToken} of type ${idToken.type}`
+      `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: Validating idToken ${truncateId(idToken.idToken)} of type ${idToken.type}`
     )
 
     try {
@@ -3018,12 +3019,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         const isLocalAuthorized = this.isIdTokenLocalAuthorized(chargingStation, idToken.idToken)
         if (isLocalAuthorized) {
           logger.debug(
-            `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: IdToken ${idToken.idToken} authorized via local auth list`
+            `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: IdToken ${truncateId(idToken.idToken)} authorized via local auth list`
           )
           return true
         }
         logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: IdToken ${idToken.idToken} not found in local auth list`
+          `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: IdToken ${truncateId(idToken.idToken)} not found in local auth list`
         )
       }
 
@@ -3036,12 +3037,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       }
 
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: IdToken ${idToken.idToken} authorization failed - not found in local list and remote auth not configured`
+        `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: IdToken ${truncateId(idToken.idToken)} authorization failed - not found in local list and remote auth not configured`
       )
       return false
     } catch (error) {
       logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: Error during authorization validation for ${idToken.idToken}:`,
+        `${chargingStation.logPrefix()} ${moduleName}.isIdTokenAuthorized: Error during authorization validation for ${truncateId(idToken.idToken)}:`,
         error
       )
       return false

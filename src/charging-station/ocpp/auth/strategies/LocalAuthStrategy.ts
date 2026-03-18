@@ -5,8 +5,7 @@ import type {
 } from '../interfaces/OCPPAuthService.js'
 import type { AuthConfiguration, AuthorizationResult, AuthRequest } from '../types/AuthTypes.js'
 
-import { ensureError, getErrorMessage, logger } from '../../../../utils/index.js'
-import { truncateId } from '../cache/InMemoryAuthCache.js'
+import { ensureError, getErrorMessage, logger, truncateId } from '../../../../utils/index.js'
 import {
   AuthContext,
   AuthenticationError,

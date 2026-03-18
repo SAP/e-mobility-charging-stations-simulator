@@ -6,9 +6,14 @@ import type { LocalAuthStrategy } from '../strategies/LocalAuthStrategy.js'
 import { OCPPError } from '../../../../exception/OCPPError.js'
 import { ErrorType } from '../../../../types/index.js'
 import { OCPPVersion } from '../../../../types/ocpp/OCPPVersion.js'
-import { convertToDate, ensureError, getErrorMessage, logger } from '../../../../utils/index.js'
+import {
+  convertToDate,
+  ensureError,
+  getErrorMessage,
+  logger,
+  truncateId,
+} from '../../../../utils/index.js'
 import { type ChargingStation } from '../../../ChargingStation.js'
-import { truncateId } from '../cache/InMemoryAuthCache.js'
 import { AuthComponentFactory } from '../factories/AuthComponentFactory.js'
 import {
   type AuthStats,

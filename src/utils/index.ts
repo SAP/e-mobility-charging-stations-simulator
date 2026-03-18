@@ -58,6 +58,7 @@ export {
   roundTo,
   secureRandom,
   sleep,
+  truncateId,
   validateIdentifierString,
   validateUUID,
 } from './Utils.js'
