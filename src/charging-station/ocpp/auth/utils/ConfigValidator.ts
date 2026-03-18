@@ -1,6 +1,8 @@
 import { logger } from '../../../../utils/index.js'
 import { type AuthConfiguration, AuthenticationError, AuthErrorCode } from '../types/AuthTypes.js'
 
+const moduleName = 'AuthConfigValidator'
+
 /**
  * Warn if no authentication method is enabled in the configuration.
  * @param config - Authentication configuration to check
@@ -14,7 +16,7 @@ function checkAuthMethodsEnabled (config: AuthConfiguration): void {
 
   if (!hasLocalList && !hasCache && !hasRemote && !hasCertificate && !hasOffline) {
     logger.warn(
-      'AuthConfigValidator: No authentication method is enabled. All authorization requests will fail unless at least one method is enabled.'
+      `${moduleName}: No authentication method is enabled. All authorization requests will fail unless at least one method is enabled.`
     )
   }
 
@@ -26,9 +28,7 @@ function checkAuthMethodsEnabled (config: AuthConfiguration): void {
   if (hasOffline) enabledMethods.push('offline')
 
   if (enabledMethods.length > 0) {
-    logger.debug(
-      `AuthConfigValidator: Enabled authentication methods: ${enabledMethods.join(', ')}`
-    )
+    logger.debug(`${moduleName}: Enabled authentication methods: ${enabledMethods.join(', ')}`)
   }
 }
 
@@ -46,7 +46,7 @@ function validate (config: AuthConfiguration): void {
   validateOfflineConfig(config)
   checkAuthMethodsEnabled(config)
 
-  logger.debug('AuthConfigValidator: Configuration validated successfully')
+  logger.debug(`${moduleName}: Configuration validated successfully`)
 }
 
 /**
@@ -71,13 +71,13 @@ function validateCacheConfig (config: AuthConfiguration): void {
 
     if (config.authorizationCacheLifetime < 60) {
       logger.warn(
-        `AuthConfigValidator: authorizationCacheLifetime is very short (${String(config.authorizationCacheLifetime)}s). Consider using at least 60s for efficiency.`
+        `${moduleName}: authorizationCacheLifetime is very short (${String(config.authorizationCacheLifetime)}s). Consider using at least 60s for efficiency.`
       )
     }
 
     if (config.authorizationCacheLifetime > 86400) {
       logger.warn(
-        `AuthConfigValidator: authorizationCacheLifetime is very long (${String(config.authorizationCacheLifetime)}s). This may lead to stale authorizations.`
+        `${moduleName}: authorizationCacheLifetime is very long (${String(config.authorizationCacheLifetime)}s). This may lead to stale authorizations.`
       )
     }
   }
@@ -99,7 +99,7 @@ function validateCacheConfig (config: AuthConfiguration): void {
 
     if (config.maxCacheEntries < 10) {
       logger.warn(
-        `AuthConfigValidator: maxCacheEntries is very small (${String(config.maxCacheEntries)}). Cache may be ineffective with frequent evictions.`
+        `${moduleName}: maxCacheEntries is very small (${String(config.maxCacheEntries)}). Cache may be ineffective with frequent evictions.`
       )
     }
   }
@@ -112,7 +112,7 @@ function validateCacheConfig (config: AuthConfiguration): void {
 function validateOfflineConfig (config: AuthConfiguration): void {
   if (config.allowOfflineTxForUnknownId && !config.offlineAuthorizationEnabled) {
     logger.warn(
-      'AuthConfigValidator: allowOfflineTxForUnknownId is true but offlineAuthorizationEnabled is false. Unknown IDs will not be authorized.'
+      `${moduleName}: allowOfflineTxForUnknownId is true but offlineAuthorizationEnabled is false. Unknown IDs will not be authorized.`
     )
   }
 
@@ -122,7 +122,7 @@ function validateOfflineConfig (config: AuthConfiguration): void {
     config.unknownIdAuthorization
   ) {
     logger.debug(
-      `AuthConfigValidator: Offline mode enabled with unknownIdAuthorization=${config.unknownIdAuthorization}`
+      `${moduleName}: Offline mode enabled with unknownIdAuthorization=${config.unknownIdAuthorization}`
     )
   }
 }
@@ -148,13 +148,13 @@ function validateTimeout (config: AuthConfiguration): void {
 
   if (config.authorizationTimeout < 5) {
     logger.warn(
-      `AuthConfigValidator: authorizationTimeout is very short (${String(config.authorizationTimeout)}s). This may cause premature timeouts.`
+      `${moduleName}: authorizationTimeout is very short (${String(config.authorizationTimeout)}s). This may cause premature timeouts.`
     )
   }
 
   if (config.authorizationTimeout > 60) {
     logger.warn(
-      `AuthConfigValidator: authorizationTimeout is very long (${String(config.authorizationTimeout)}s). Users may experience long waits.`
+      `${moduleName}: authorizationTimeout is very long (${String(config.authorizationTimeout)}s). Users may experience long waits.`
     )
   }
 }

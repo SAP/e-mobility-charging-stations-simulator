@@ -482,3 +482,10 @@ export const queueMicrotaskErrorThrowing = (error: Error): void => {
     throw error
   })
 }
+
+export const truncateId = (identifier: string, maxLen = 8): string => {
+  if (identifier.length <= maxLen) {
+    return identifier
+  }
+  return `${identifier.slice(0, maxLen)}...`
+}

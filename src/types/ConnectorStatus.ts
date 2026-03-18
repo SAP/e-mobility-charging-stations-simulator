@@ -34,6 +34,7 @@ export interface ConnectorStatus {
    * that occurs after the EV has connected.
    */
   transactionEvseSent?: boolean
+  transactionGroupIdToken?: string
   transactionId?: number | string
   transactionIdTag?: string
   /**

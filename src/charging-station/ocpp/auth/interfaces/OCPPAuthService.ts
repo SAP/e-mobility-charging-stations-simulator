@@ -1,3 +1,4 @@
+import type { OCPP20IdTokenInfoType } from '../../../../types/ocpp/2.0/Transaction.js'
 import type { OCPPVersion } from '../../../../types/ocpp/OCPPVersion.js'
 import type {
   AuthConfiguration,
@@ -5,6 +6,7 @@ import type {
   AuthRequest,
   UnifiedIdentifier,
 } from '../types/AuthTypes.js'
+import type { IdentifierType } from '../types/AuthTypes.js'
 
 /**
  * Authorization cache interface
@@ -424,6 +426,18 @@ export interface OCPPAuthService {
    * Test connectivity to remote authorization service
    */
   testConnectivity(): boolean
+
+  /**
+   * Update a cache entry from TransactionEventResponse idTokenInfo (C10.FR.01/04/05)
+   * @param identifier - The idToken string to cache
+   * @param idTokenInfo - The idTokenInfo from the CSMS response
+   * @param identifierType - Optional identifier type for cache skip logic (C02.FR.03/C03.FR.02)
+   */
+  updateCacheEntry(
+    identifier: string,
+    idTokenInfo: OCPP20IdTokenInfoType,
+    identifierType?: IdentifierType
+  ): void
 
   /**
    * Update authentication configuration

@@ -37,6 +37,7 @@ import type {
   OCPP20GetTransactionStatusResponse,
   OCPP20GetVariablesRequest,
   OCPP20GetVariablesResponse,
+  OCPP20IdTokenType,
   OCPP20InstallCertificateRequest,
   OCPP20InstallCertificateResponse,
   OCPP20RequestStartTransactionRequest,
@@ -239,6 +240,13 @@ export interface TestableOCPP20IncomingRequestService {
     chargingStation: ChargingStation,
     commandPayload: OCPP20UpdateFirmwareRequest
   ) => OCPP20UpdateFirmwareResponse
+
+  isAuthorizedToStopTransaction: (
+    chargingStation: ChargingStation,
+    connectorId: number,
+    presentedIdToken: OCPP20IdTokenType,
+    presentedGroupIdToken?: OCPP20IdTokenType
+  ) => boolean
 }
 
 /**
@@ -286,6 +294,7 @@ export function createTestableIncomingRequestService (
     handleRequestTriggerMessage: serviceImpl.handleRequestTriggerMessage.bind(service),
     handleRequestUnlockConnector: serviceImpl.handleRequestUnlockConnector.bind(service),
     handleRequestUpdateFirmware: serviceImpl.handleRequestUpdateFirmware.bind(service),
+    isAuthorizedToStopTransaction: serviceImpl.isAuthorizedToStopTransaction.bind(service),
   }
 }
 
