@@ -9,6 +9,8 @@ import { router } from '@/router'
 
 import 'vue-toast-notification/dist/theme-bootstrap.css'
 
+import '@/assets/theme.css'
+
 const app = createApp(App as Component)
 
 const initializeApp = (app: AppType, config: ConfigurationData) => {

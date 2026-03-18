@@ -106,11 +106,11 @@ const $emit = defineEmits(['need-refresh'])
 #cs-table {
   height: fit-content;
   width: 100%;
-  background-color: white;
+  background-color: var(--color-bg-surface);
   display: flex;
   flex-direction: column;
   overflow: auto hidden;
-  border: solid 0.25px black;
+  border: solid 0.25px var(--color-border);
   border-collapse: collapse;
   empty-cells: show;
 }
@@ -123,8 +123,8 @@ const $emit = defineEmits(['need-refresh'])
 }
 
 #cs-table__caption {
-  color: ivory;
-  background-color: black;
+  color: var(--color-text-strong);
+  background-color: var(--color-bg-caption);
   font-size: 1.5rem;
   font-weight: bold;
   padding: 0.5rem;
@@ -137,11 +137,11 @@ const $emit = defineEmits(['need-refresh'])
   flex-direction: row;
   justify-content: center;
   align-items: center;
-  border: solid 0.25px black;
+  border: solid 0.25px var(--color-border-row);
 }
 
 .cs-table__row:nth-of-type(even) {
-  background-color: whitesmoke;
+  background-color: var(--color-bg-hover);
 }
 
 .cs-table__column {
@@ -153,7 +153,7 @@ const $emit = defineEmits(['need-refresh'])
 }
 
 #cs-table__head .cs-table__row {
-  background-color: lightgrey;
+  background-color: var(--color-bg-header);
 }
 
 .cs-table__connectors-column {

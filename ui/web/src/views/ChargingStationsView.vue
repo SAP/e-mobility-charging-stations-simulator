@@ -64,7 +64,6 @@
       <ToggleButton
         :id="'simulator'"
         :key="state.renderSimulator"
-        :class="simulatorButtonClass"
         :off="() => stopSimulator()"
         :on="() => startSimulator()"
         :status="simulatorStarted"
@@ -142,9 +141,6 @@ const simulatorState = ref<SimulatorState | undefined>(undefined)
 
 const simulatorStarted = computed((): boolean | undefined => simulatorState.value?.started)
 
-const simulatorButtonClass = computed((): string =>
-  simulatorState.value?.started === true ? 'simulator-stop-button' : 'simulator-start-button'
-)
 const simulatorButtonMessage = computed(
   (): string =>
     `${simulatorState.value?.started === true ? 'Stop' : 'Start'} Simulator${
@@ -355,18 +351,19 @@ const stopSimulator = (): void => {
 #ui-server-container {
   display: flex;
   justify-content: center;
-  border-style: outset;
+  border: 1px solid var(--color-border-row);
 }
 
 #ui-server-selector {
   width: 100%;
-  background-color: rgb(239, 239, 239);
+  background-color: var(--color-bg-input);
+  color: var(--color-text);
   font: small-caption;
   text-align: center;
 }
 
 #ui-server-selector:hover {
-  background-color: rgb(229, 229, 229);
+  background-color: var(--color-bg-hover);
 }
 
 #buttons-container {
@@ -376,46 +373,22 @@ const stopSimulator = (): void => {
   top: 0;
 }
 
-.simulator-start-button {
-  color: ivory;
-  background-color: green;
-}
-
-.simulator-start-button:hover {
-  background-color: rgb(0, 98, 0);
-}
-
-.simulator-stop-button {
-  color: ivory;
-  background-color: red;
-}
-
-.simulator-stop-button:hover {
-  background-color: rgb(225, 0, 0);
-}
-
 #action-button {
   flex: none;
 }
 
 #reload-button {
-  color: ivory;
-  background-color: blue;
   font-size: 1.5rem;
 }
 
-#reload-button:hover {
-  background-color: rgb(0, 0, 225);
-}
-
 #reload-button:active {
-  background-color: darkblue;
+  background-color: var(--color-primary);
 }
 
 #action {
   min-width: max-content;
-  color: ivory;
-  background-color: black;
+  color: var(--color-text-strong);
+  background-color: var(--color-bg-caption);
   padding: 0.8%;
 }
 </style>

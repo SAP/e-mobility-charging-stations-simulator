@@ -1,0 +1,84 @@
+/* Tokyo Night Storm */
+
+:root {
+  /* Palette */
+  --tn-bg-dark: #1f2335;
+  --tn-bg-base: #24283b;
+  --tn-bg-raised: #1b1e2e;
+  --tn-bg-hover: #292e42;
+  --tn-bg-active: #2c324a;
+  --tn-fg-base: #a9b1d6;
+  --tn-fg-bright: #c0caf5;
+  --tn-fg-muted: #8089b3;
+  --tn-blue: #7aa2f7;
+  --tn-accent: #3d59a1;
+  --tn-white: #ffffff;
+
+  /* Semantic */
+  --color-bg: var(--tn-bg-base);
+  --color-bg-surface: var(--tn-bg-dark);
+  --color-bg-input: var(--tn-bg-raised);
+  --color-bg-hover: var(--tn-bg-hover);
+  --color-bg-active: var(--tn-bg-active);
+  --color-bg-header: var(--tn-bg-dark);
+  --color-bg-caption: var(--tn-bg-raised);
+  --color-bg-button: var(--tn-accent);
+  --color-bg-button-hover: color-mix(in srgb, var(--tn-accent) 67%, transparent);
+  --color-text: var(--tn-fg-base);
+  --color-text-strong: var(--tn-fg-bright);
+  --color-text-muted: var(--tn-fg-muted);
+  --color-text-on-button: var(--tn-white);
+  --color-primary: var(--tn-blue);
+  --color-border: var(--tn-bg-raised);
+  --color-border-row: var(--tn-bg-hover);
+  --color-accent: var(--tn-accent);
+  --color-shadow-inset: rgba(0, 0, 0, 0.4);
+}
+
+body {
+  color: var(--color-text);
+  background-color: var(--color-bg);
+}
+
+button,
+.button {
+  color: var(--color-text-on-button);
+  background-color: var(--color-bg-button);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+}
+
+button:hover,
+.button:hover {
+  background-color: var(--color-bg-button-hover);
+}
+
+input,
+select,
+textarea {
+  color: var(--color-text);
+  background-color: var(--color-bg-input);
+  border: 1px solid var(--color-border-row);
+}
+
+input::placeholder {
+  color: var(--color-text-muted);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 1px solid var(--color-primary);
+}
+
+a {
+  color: var(--color-primary);
+}
+
+h1,
+h2,
+h3,
+p,
+li {
+  color: var(--color-text);
+}

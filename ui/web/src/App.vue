@@ -21,8 +21,8 @@ import Container from '@/components/Container.vue'
   -moz-osx-font-smoothing: grayscale;
   display: flex;
   flex-direction: row;
-  color: black;
-  background-color: white;
+  color: var(--color-text);
+  background-color: var(--color-bg);
 }
 
 #action-container {
@@ -38,7 +38,7 @@ import Container from '@/components/Container.vue'
   margin-right: 0.2%;
   margin-left: 0.2%;
   padding: 0.4%;
-  border: solid 0.25px black;
+  border: solid 0.25px var(--color-border);
 }
 
 body {

@@ -267,7 +267,7 @@ const deleteChargingStation = (): void => {
 #connectors-table {
   display: flex;
   flex-direction: column;
-  background-color: white;
+  background-color: var(--color-bg-surface);
   overflow: auto hidden;
   border-collapse: collapse;
   empty-cells: show;
@@ -283,15 +283,15 @@ const deleteChargingStation = (): void => {
   flex-direction: row;
   justify-content: center;
   align-items: center;
-  border: solid 0.25px black;
+  border: solid 0.25px var(--color-border-row);
 }
 
 .connectors-table__row:nth-of-type(even) {
-  background-color: whitesmoke;
+  background-color: var(--color-bg-hover);
 }
 
 #connectors-table__head .connectors-table__row {
-  background-color: lightgrey;
+  background-color: var(--color-bg-header);
 }
 
 .connectors-table__column {

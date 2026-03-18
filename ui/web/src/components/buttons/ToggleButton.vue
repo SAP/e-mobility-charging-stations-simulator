@@ -50,8 +50,9 @@ const click = (): void => {
 </script>
 
 <style>
-.on {
-  background-color: lightgrey;
-  border-style: inset;
+button.on {
+  background-color: var(--color-bg-active);
+  border: 1px solid var(--color-accent);
+  box-shadow: inset 0 2px 4px var(--color-shadow-inset);
 }
 </style>
