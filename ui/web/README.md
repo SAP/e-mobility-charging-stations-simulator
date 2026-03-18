@@ -142,6 +142,7 @@ Set `theme` in `config.json` to a filename (without `.css`) from `src/assets/the
 | ------------------- | ----- | ---------------------------------------------------------------- |
 | `tokyo-night-storm` | Dark  | [Tokyo Night](https://github.com/enkia/tokyo-night-vscode-theme) |
 | `catppuccin-latte`  | Light | [Catppuccin](https://github.com/catppuccin/catppuccin)           |
+| `sap-horizon`       | Light | [SAP Horizon](https://github.com/SAP/theming-base-content)       |
 
 Default: `tokyo-night-storm`. To add a theme, create a CSS file defining the same semantic tokens.
 

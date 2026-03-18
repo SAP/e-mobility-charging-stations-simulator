@@ -1,0 +1,80 @@
+/* SAP Horizon */
+
+:root {
+  /* Palette */
+  --sap-bg: #f5f6f7;
+  --sap-bg-base: #fff;
+  --sap-bg-shell: #eff1f2;
+  --sap-hover: #eaecee;
+  --sap-active: #dee2e5;
+  --sap-text: #131e29;
+  --sap-label: #556b82;
+  --sap-placeholder: #758ca4;
+  --sap-brand: #0070f2;
+  --sap-highlight: #0064d9;
+  --sap-border: #d9d9d9;
+  --sap-button-bg: #fff;
+  --sap-button-border: #bcc3ca;
+  --sap-button-text: #0064d9;
+  --sap-button-emphasized-bg: #0070f2;
+
+  /* Semantic */
+  --color-bg: var(--sap-bg);
+  --color-bg-surface: var(--sap-bg-base);
+  --color-bg-input: var(--sap-bg-base);
+  --color-bg-hover: var(--sap-hover);
+  --color-bg-active: var(--sap-active);
+  --color-bg-header: var(--sap-bg-shell);
+  --color-bg-caption: var(--sap-bg-shell);
+  --color-bg-button: var(--sap-button-emphasized-bg);
+  --color-bg-button-hover: var(--sap-highlight);
+  --color-text: var(--sap-text);
+  --color-text-strong: var(--sap-text);
+  --color-text-muted: var(--sap-label);
+  --color-text-on-button: #fff;
+  --color-primary: var(--sap-highlight);
+  --color-border: var(--sap-border);
+  --color-border-row: var(--sap-border);
+  --color-accent: var(--sap-brand);
+  --color-shadow-inset: rgba(34, 53, 72, 0.15);
+}
+
+body {
+  color: var(--color-text);
+  background-color: var(--color-bg);
+}
+
+button,
+.button {
+  color: var(--color-text-on-button);
+  background-color: var(--color-bg-button);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+}
+
+button:hover,
+.button:hover {
+  background-color: var(--color-bg-button-hover);
+}
+
+input,
+select,
+textarea {
+  color: var(--color-text);
+  background-color: var(--color-bg-input);
+  border: 1px solid var(--color-border-row);
+}
+
+input::placeholder {
+  color: var(--color-text-muted);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 1px solid var(--color-primary);
+}
+
+a {
+  color: var(--color-primary);
+}
