@@ -16,6 +16,9 @@
       {{ chargingStation.bootNotificationResponse?.status ?? 'Ø' }}
     </td>
     <td class="cs-table__column">
+      {{ chargingStation.stationInfo.ocppVersion ?? 'Ø' }}
+    </td>
+    <td class="cs-table__column">
       {{ chargingStation.stationInfo.templateName }}
     </td>
     <td class="cs-table__column">

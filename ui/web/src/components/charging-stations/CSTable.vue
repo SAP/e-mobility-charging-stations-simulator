@@ -39,6 +39,12 @@
           class="cs-table__column"
           scope="col"
         >
+          OCPP Version
+        </th>
+        <th
+          class="cs-table__column"
+          scope="col"
+        >
           Template
         </th>
         <th
@@ -140,7 +146,7 @@ const $emit = defineEmits(['need-refresh'])
 
 .cs-table__column {
   height: fit-content;
-  width: calc((100% - calc(100% / 3)) / 10);
+  width: calc((100% - calc(100% / 3)) / 11);
   display: flex;
   flex-direction: column;
   text-align: center;
