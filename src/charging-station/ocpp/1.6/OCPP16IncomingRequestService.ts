@@ -113,6 +113,7 @@ import {
   isNotEmptyString,
   logger,
   sleep,
+  truncateId,
 } from '../../../utils/index.js'
 import { OCPPConstants } from '../OCPPConstants.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
@@ -1241,7 +1242,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           `${chargingStation.logPrefix()} ${moduleName}.handleRequestRemoteStartTransaction: Remote start transaction REJECTED on ${
             // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
             chargingStation.stationInfo?.chargingStationId
-          }, idTag '${commandPayload.idTag}': no available connector found`
+          }, idTag '${truncateId(commandPayload.idTag)}': no available connector found`
         )
         return OCPP16Constants.OCPP_RESPONSE_REJECTED
       }

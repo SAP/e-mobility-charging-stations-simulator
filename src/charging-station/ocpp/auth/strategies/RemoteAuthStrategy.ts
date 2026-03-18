@@ -7,7 +7,7 @@ import type {
 } from '../interfaces/OCPPAuthService.js'
 import type { AuthConfiguration, AuthorizationResult, AuthRequest } from '../types/AuthTypes.js'
 
-import { ensureError, getErrorMessage, logger } from '../../../../utils/index.js'
+import { ensureError, getErrorMessage, logger, truncateId } from '../../../../utils/index.js'
 import {
   AuthenticationError,
   AuthenticationMethod,
@@ -93,7 +93,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
 
     try {
       logger.debug(
-        `${moduleName}: Authenticating ${request.identifier.value.substring(0, 8)}... via CSMS for ${request.context}`
+        `${moduleName}: Authenticating ${truncateId(request.identifier.value)} via CSMS for ${request.context}`
       )
 
       // Get appropriate adapter for OCPP version
@@ -126,7 +126,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
           const isInLocalList = await this.localAuthListManager.getEntry(request.identifier.value)
           if (isInLocalList) {
             logger.debug(
-              `${moduleName}: Skipping cache for local list identifier: ${request.identifier.value.substring(0, 8)}...`
+              `${moduleName}: Skipping cache for local list identifier: ${truncateId(request.identifier.value)}`
             )
           } else {
             this.cacheResult(
@@ -149,7 +149,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
       }
 
       logger.debug(
-        `${moduleName}: No remote authorization result for ${request.identifier.value.substring(0, 8)}...`
+        `${moduleName}: No remote authorization result for ${truncateId(request.identifier.value)}`
       )
       return undefined
     } catch (error) {
@@ -385,7 +385,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
       const cacheTtl = ttl ?? result.cacheTtl ?? 300 // Default 5 minutes
       this.authCache.set(identifier, result, cacheTtl)
       logger.debug(
-        `${moduleName}: Cached result for ${identifier.substring(0, 8)}... (TTL: ${String(cacheTtl)}s)`
+        `${moduleName}: Cached result for ${truncateId(identifier)} (TTL: ${String(cacheTtl)}s)`
       )
     } catch (error) {
       const errorMessage = getErrorMessage(error)

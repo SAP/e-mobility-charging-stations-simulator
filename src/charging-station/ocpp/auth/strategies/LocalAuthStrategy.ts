@@ -70,7 +70,7 @@ export class LocalAuthStrategy implements AuthStrategy {
 
     try {
       logger.debug(
-        `${moduleName}: Authenticating ${request.identifier.value} for ${request.context}`
+        `${moduleName}: Authenticating ${truncateId(request.identifier.value)} for ${request.context}`
       )
 
       // 1. Try local authorization list first (highest priority)
@@ -117,7 +117,9 @@ export class LocalAuthStrategy implements AuthStrategy {
         }
       }
 
-      logger.debug(`${moduleName}: No local authorization found for ${request.identifier.value}`)
+      logger.debug(
+        `${moduleName}: No local authorization found for ${truncateId(request.identifier.value)}`
+      )
       return undefined
     } catch (error) {
       const errorMessage = getErrorMessage(error)

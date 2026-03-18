@@ -20,7 +20,7 @@ import {
   OCPP20TriggerReasonEnumType,
 } from '../../../../types/ocpp/2.0/Transaction.js'
 import { OCPPVersion } from '../../../../types/ocpp/OCPPVersion.js'
-import { logger } from '../../../../utils/index.js'
+import { logger, truncateId } from '../../../../utils/index.js'
 import {
   AuthContext,
   AuthenticationMethod,
@@ -64,7 +64,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
 
     try {
       logger.debug(
-        `${this.chargingStation.logPrefix()} ${moduleName}.${methodName}: Authorizing identifier ${identifier.value} via OCPP 2.0 TransactionEvent`
+        `${this.chargingStation.logPrefix()} ${moduleName}.${methodName}: Authorizing identifier ${truncateId(identifier.value)} via OCPP 2.0 TransactionEvent`
       )
 
       // Check if remote authorization is configured

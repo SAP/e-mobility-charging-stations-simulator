@@ -15,7 +15,7 @@ import {
   StandardParametersKey,
 } from '../../../../types/index.js'
 import { OCPPVersion } from '../../../../types/ocpp/OCPPVersion.js'
-import { logger } from '../../../../utils/index.js'
+import { logger, truncateId } from '../../../../utils/index.js'
 import {
   AuthContext,
   AuthenticationMethod,
@@ -55,7 +55,7 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter {
 
     try {
       logger.debug(
-        `${this.chargingStation.logPrefix()} ${moduleName}.${methodName}: Authorizing identifier ${identifier.value} via OCPP 1.6`
+        `${this.chargingStation.logPrefix()} ${moduleName}.${methodName}: Authorizing identifier ${truncateId(identifier.value)} via OCPP 1.6`
       )
 
       // Mark connector as authorizing if provided

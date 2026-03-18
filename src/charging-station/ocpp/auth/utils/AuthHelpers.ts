@@ -6,10 +6,10 @@ import type {
   UnifiedIdentifier,
 } from '../types/AuthTypes.js'
 
+import { truncateId } from '../../../../utils/index.js'
 import { AuthorizationStatus } from '../types/AuthTypes.js'
 
 /**
- * Compute remaining TTL in seconds from an expiry date.
  * @param expiryDate - Expiry timestamp to compute TTL from
  * @returns TTL in seconds, or undefined if already expired or no date provided
  */
@@ -80,8 +80,7 @@ function createRejectedResult (
  * @returns Formatted error string with truncated identifier
  */
 function formatAuthError (error: Error, identifier: UnifiedIdentifier): string {
-  const identifierValue = identifier.value.substring(0, 8) + '...'
-  return `Authentication failed for identifier ${identifierValue} (${identifier.type}): ${error.message}`
+  return `Authentication failed for identifier ${truncateId(identifier.value)} (${identifier.type}): ${error.message}`
 }
 
 /**

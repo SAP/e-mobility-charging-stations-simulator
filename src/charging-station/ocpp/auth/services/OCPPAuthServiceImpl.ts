@@ -92,7 +92,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     this.metrics.totalRequests++
 
     logger.debug(
-      `${this.chargingStation.logPrefix()} ${moduleName}.authenticate: Starting authentication for identifier: ${JSON.stringify(request.identifier)}`
+      `${this.chargingStation.logPrefix()} ${moduleName}.authenticate: Starting authentication for identifier: ${truncateId(request.identifier.value)}`
     )
 
     // Try each strategy in priority order
@@ -431,7 +431,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    */
   public invalidateCache (identifier: UnifiedIdentifier): void {
     logger.debug(
-      `${this.chargingStation.logPrefix()} ${moduleName}.invalidateCache: Invalidating cache for identifier: ${identifier.value}`
+      `${this.chargingStation.logPrefix()} ${moduleName}.invalidateCache: Invalidating cache for identifier: ${truncateId(identifier.value)}`
     )
 
     // Invalidate in local strategy
@@ -439,7 +439,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     if (localStrategy) {
       localStrategy.invalidateCache(identifier.value)
       logger.info(
-        `${this.chargingStation.logPrefix()} ${moduleName}.invalidateCache: Cache invalidated for identifier: ${identifier.value}`
+        `${this.chargingStation.logPrefix()} ${moduleName}.invalidateCache: Cache invalidated for identifier: ${truncateId(identifier.value)}`
       )
     } else {
       logger.debug(

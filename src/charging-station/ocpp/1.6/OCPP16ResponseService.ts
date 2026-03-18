@@ -34,7 +34,7 @@ import {
   ReservationTerminationReason,
   type ResponseHandler,
 } from '../../../types/index.js'
-import { Constants, convertToInt, logger } from '../../../utils/index.js'
+import { Constants, convertToInt, logger, truncateId } from '../../../utils/index.js'
 import { OCPPResponseService } from '../OCPPResponseService.js'
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js'
 
@@ -182,9 +182,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
         authorizeConnectorStatus.idTagAuthorized = false
         delete authorizeConnectorStatus.authorizeIdTag
         logger.debug(
-          `${chargingStation.logPrefix()} ${moduleName}.handleResponseAuthorize: idTag '${
+          `${chargingStation.logPrefix()} ${moduleName}.handleResponseAuthorize: idTag '${truncateId(
             requestPayload.idTag
-          }' rejected with status '${payload.idTagInfo.status}'`
+          )}' rejected with status '${payload.idTagInfo.status}'`
         )
       }
     } else {
@@ -394,9 +394,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
         if (reservation != null) {
           if (reservation.idTag !== requestPayload.idTag) {
             logger.warn(
-              `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Reserved transaction ${payload.transactionId.toString()} started with a different idTag ${
+              `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Reserved transaction ${payload.transactionId.toString()} started with a different idTag ${truncateId(
                 requestPayload.idTag
-              } than the reservation one ${reservation.idTag}`
+              )} than the reservation one ${truncateId(reservation.idTag)}`
             )
           }
           if (hasReservationExpired(reservation)) {
@@ -432,7 +432,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
         `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Transaction with id ${payload.transactionId.toString()} STARTED on ${
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           chargingStation.stationInfo?.chargingStationId
-        }#${connectorId.toString()} for idTag '${requestPayload.idTag}'`
+        }#${connectorId.toString()} for idTag '${truncateId(requestPayload.idTag)}'`
       )
       if (chargingStation.stationInfo?.powerSharedByConnectors === true) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -453,9 +453,9 @@ export class OCPP16ResponseService extends OCPPResponseService {
         `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Starting transaction with id ${payload.transactionId.toString()} REJECTED on ${
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           chargingStation.stationInfo?.chargingStationId
-        }#${connectorId.toString()} with status '${payload.idTagInfo.status}', idTag '${
+        }#${connectorId.toString()} with status '${payload.idTagInfo.status}', idTag '${truncateId(
           requestPayload.idTag
-        }'${
+        )}'${
           OCPP16ServiceUtils.hasReservation(chargingStation, connectorId, requestPayload.idTag)
             ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
               `, reservationId '${requestPayload.reservationId?.toString()}'`

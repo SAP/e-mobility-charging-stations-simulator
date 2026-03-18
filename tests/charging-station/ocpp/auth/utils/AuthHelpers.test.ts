@@ -151,7 +151,8 @@ await describe('AuthHelpers', async () => {
 
       const message = AuthHelpers.formatAuthError(error, identifier)
 
-      assert.ok(message.includes('SHORT...'))
+      assert.ok(message.includes('SHORT'))
+      assert.ok(!message.includes('SHORT...'))
       assert.ok(message.includes('Local'))
       assert.ok(message.includes('Invalid format'))
     })
