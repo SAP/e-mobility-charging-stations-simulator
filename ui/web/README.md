@@ -19,6 +19,7 @@ Vue.js dashboard for monitoring and controlling the e-mobility charging stations
     - [Single server](#single-server)
     - [Multiple servers](#multiple-servers)
   - [Configuration reference](#configuration-reference)
+- [Theming](#theming)
 - [Getting started](#getting-started)
   - [Install dependencies](#install-dependencies)
   - [Development](#development)
@@ -65,6 +66,7 @@ Edit `public/config.json` to point to your simulator UI server(s).
 
 ```json
 {
+  "theme": "tokyo-night-storm",
   "uiServer": {
     "host": "localhost",
     "port": 8080,
@@ -86,6 +88,7 @@ The `uiServer` field accepts an array to connect to multiple simulator instances
 
 ```json
 {
+  "theme": "catppuccin-latte",
   "uiServer": [
     {
       "host": "server1.domain.tld",
@@ -117,18 +120,30 @@ The `uiServer` field accepts an array to connect to multiple simulator instances
 
 ### Configuration reference
 
-| Field                     | Type                    | Required | Description                       |
-| ------------------------- | ----------------------- | -------- | --------------------------------- |
-| `host`                    | `string`                | Yes      | Simulator UI server hostname      |
-| `port`                    | `number`                | Yes      | Simulator UI server port          |
-| `protocol`                | `"ui"`                  | Yes      | WebSocket subprotocol             |
-| `version`                 | `"0.0.1"`               | Yes      | Protocol version                  |
-| `name`                    | `string`                | No       | Display name for server selection |
-| `secure`                  | `boolean`               | No       | Use `wss://` instead of `ws://`   |
-| `authentication.enabled`  | `boolean`               | No       | Enable authentication             |
-| `authentication.type`     | `"protocol-basic-auth"` | No       | Authentication method             |
-| `authentication.username` | `string`                | No       | Basic auth username               |
-| `authentication.password` | `string`                | No       | Basic auth password               |
+| Field                     | Type                    | Required | Description                               |
+| ------------------------- | ----------------------- | -------- | ----------------------------------------- |
+| `theme`                   | `string`                | No       | Theme name (default: `tokyo-night-storm`) |
+| `host`                    | `string`                | Yes      | Simulator UI server hostname              |
+| `port`                    | `number`                | Yes      | Simulator UI server port                  |
+| `protocol`                | `"ui"`                  | Yes      | WebSocket subprotocol                     |
+| `version`                 | `"0.0.1"`               | Yes      | Protocol version                          |
+| `name`                    | `string`                | No       | Display name for server selection         |
+| `secure`                  | `boolean`               | No       | Use `wss://` instead of `ws://`           |
+| `authentication.enabled`  | `boolean`               | No       | Enable authentication                     |
+| `authentication.type`     | `"protocol-basic-auth"` | No       | Authentication method                     |
+| `authentication.username` | `string`                | No       | Basic auth username                       |
+| `authentication.password` | `string`                | No       | Basic auth password                       |
+
+## Theming
+
+Set `theme` in `config.json` to a filename (without `.css`) from `src/assets/themes/`.
+
+| Theme               | Style | Source                                                           |
+| ------------------- | ----- | ---------------------------------------------------------------- |
+| `tokyo-night-storm` | Dark  | [Tokyo Night](https://github.com/enkia/tokyo-night-vscode-theme) |
+| `catppuccin-latte`  | Light | [Catppuccin](https://github.com/catppuccin/catppuccin)           |
+
+Default: `tokyo-night-storm`. To add a theme, create a CSS file defining the same semantic tokens.
 
 ## Getting started
 
