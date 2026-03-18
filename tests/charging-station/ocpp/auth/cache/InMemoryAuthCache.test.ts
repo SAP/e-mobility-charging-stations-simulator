@@ -7,14 +7,12 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { AuthorizationResult } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 
-import {
-  InMemoryAuthCache,
-  truncateId,
-} from '../../../../../src/charging-station/ocpp/auth/cache/InMemoryAuthCache.js'
+import { InMemoryAuthCache } from '../../../../../src/charging-station/ocpp/auth/cache/InMemoryAuthCache.js'
 import {
   AuthenticationMethod,
   AuthorizationStatus,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
+import { truncateId } from '../../../../../src/utils/index.js'
 import { standardCleanup, withMockTimers } from '../../../../helpers/TestLifecycleHelpers.js'
 import { createMockAuthorizationResult } from '../helpers/MockFactories.js'
 

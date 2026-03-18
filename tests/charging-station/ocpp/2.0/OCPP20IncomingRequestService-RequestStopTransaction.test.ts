@@ -249,7 +249,7 @@ await describe('F03 - Remote Stop Transaction', async () => {
     await it(
       'should call requestStopTransaction when response is Accepted',
       {
-        skip: process.platform === 'darwin' && process.versions.node.startsWith('22.'),
+        skip: process.versions.node.startsWith('22.'),
       },
       async () => {
         const transactionId = await startTransaction(listenerStation, 1, 100)

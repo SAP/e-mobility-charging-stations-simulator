@@ -231,6 +231,7 @@ export function resetConnectorTransactionState (chargingStation: ChargingStation
         connectorStatus.transactionStarted = false
         connectorStatus.transactionId = undefined
         connectorStatus.transactionIdTag = undefined
+        connectorStatus.transactionGroupIdToken = undefined
         connectorStatus.transactionStart = undefined
         connectorStatus.transactionEnergyActiveImportRegisterValue = 0
         connectorStatus.remoteStartId = undefined
@@ -244,6 +245,7 @@ export function resetConnectorTransactionState (chargingStation: ChargingStation
       connectorStatus.transactionStarted = false
       connectorStatus.transactionId = undefined
       connectorStatus.transactionIdTag = undefined
+      connectorStatus.transactionGroupIdToken = undefined
       connectorStatus.transactionStart = undefined
       connectorStatus.transactionEnergyActiveImportRegisterValue = 0
       connectorStatus.remoteStartId = undefined

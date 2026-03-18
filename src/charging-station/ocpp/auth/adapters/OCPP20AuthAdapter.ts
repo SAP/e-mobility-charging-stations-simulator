@@ -168,7 +168,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
         // Map OCPP 2.0 authorization status to unified status
         const unifiedStatus = this.mapOCPP20AuthStatus(authStatus)
 
-        logger.info(
+        logger.debug(
           `${this.chargingStation.logPrefix()} ${moduleName}.${methodName}: Authorization result for ${idToken.idToken}: ${authStatus} (unified: ${unifiedStatus})`
         )
 
@@ -453,7 +453,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
       return isOnline && remoteStartEnabled
     } catch (error) {
       logger.warn(
-        `${this.chargingStation.logPrefix()} Error checking remote authorization availability`,
+        `${this.chargingStation.logPrefix()} ${moduleName}.isRemoteAvailable: Error checking remote authorization availability`,
         error
       )
       return false
@@ -506,7 +506,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
 
       if (!hasRemoteAuth && !hasLocalAuth && !hasCertAuth) {
         logger.warn(
-          `${this.chargingStation.logPrefix()} OCPP 2.0 adapter: No authorization methods enabled`
+          `${this.chargingStation.logPrefix()} ${moduleName}.validateConfiguration: No authorization methods enabled`
         )
         return false
       }
@@ -514,7 +514,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
       // Validate timeout values
       if (config.authorizationTimeout < 1) {
         logger.warn(
-          `${this.chargingStation.logPrefix()} OCPP 2.0 adapter: Invalid authorization timeout`
+          `${this.chargingStation.logPrefix()} ${moduleName}.validateConfiguration: Invalid authorization timeout`
         )
         return false
       }
@@ -522,7 +522,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
       return true
     } catch (error) {
       logger.error(
-        `${this.chargingStation.logPrefix()} OCPP 2.0 adapter configuration validation failed`,
+        `${this.chargingStation.logPrefix()} ${moduleName}.validateConfiguration: Configuration validation failed`,
         error
       )
       return false
@@ -577,7 +577,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
       return true
     } catch (error) {
       logger.warn(
-        `${this.chargingStation.logPrefix()} Error getting offline authorization config`,
+        `${this.chargingStation.logPrefix()} ${moduleName}.getOfflineAuthorizationConfig: Error getting offline authorization config`,
         error
       )
       return false
@@ -609,7 +609,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
       // Check if variable was successfully retrieved
       if (results.length === 0) {
         logger.debug(
-          `${this.chargingStation.logPrefix()} Variable ${component}.${variable} not found in registry`
+          `${this.chargingStation.logPrefix()} ${moduleName}.getVariableValue: Variable ${component}.${variable} not found in registry`
         )
         return this.getDefaultVariableValue(component, variable, useDefaultFallback)
       }
@@ -622,7 +622,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
         result.attributeValue == null
       ) {
         logger.debug(
-          `${this.chargingStation.logPrefix()} Variable ${component}.${variable} not available: ${result.attributeStatus}`
+          `${this.chargingStation.logPrefix()} ${moduleName}.getVariableValue: Variable ${component}.${variable} not available: ${result.attributeStatus}`
         )
         return this.getDefaultVariableValue(component, variable, useDefaultFallback)
       }
@@ -630,7 +630,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
       return result.attributeValue
     } catch (error) {
       logger.warn(
-        `${this.chargingStation.logPrefix()} Error getting variable ${component}.${variable}`,
+        `${this.chargingStation.logPrefix()} ${moduleName}.getVariableValue: Error getting variable ${component}.${variable}`,
         error
       )
       return this.getDefaultVariableValue(component, variable, useDefaultFallback)
@@ -749,7 +749,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
     }
 
     logger.warn(
-      `${this.chargingStation.logPrefix()} Invalid boolean value '${value}', using default: ${defaultValue.toString()}`
+      `${this.chargingStation.logPrefix()} ${moduleName}.parseBooleanVariable: Invalid boolean value '${value}', using default: ${defaultValue.toString()}`
     )
     return defaultValue
   }
@@ -776,7 +776,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
 
     if (isNaN(parsed)) {
       logger.warn(
-        `${this.chargingStation.logPrefix()} Invalid integer value '${value}', using default: ${defaultValue.toString()}`
+        `${this.chargingStation.logPrefix()} ${moduleName}.parseIntegerVariable: Invalid integer value '${value}', using default: ${defaultValue.toString()}`
       )
       return defaultValue
     }
@@ -784,14 +784,14 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
     // Validate range
     if (min != null && parsed < min) {
       logger.warn(
-        `${this.chargingStation.logPrefix()} Integer value ${parsed.toString()} below minimum ${min.toString()}, using minimum`
+        `${this.chargingStation.logPrefix()} ${moduleName}.parseIntegerVariable: Integer value ${parsed.toString()} below minimum ${min.toString()}, using minimum`
       )
       return min
     }
 
     if (max != null && parsed > max) {
       logger.warn(
-        `${this.chargingStation.logPrefix()} Integer value ${parsed.toString()} above maximum ${max.toString()}, using maximum`
+        `${this.chargingStation.logPrefix()} ${moduleName}.parseIntegerVariable: Integer value ${parsed.toString()} above maximum ${max.toString()}, using maximum`
       )
       return max
     }

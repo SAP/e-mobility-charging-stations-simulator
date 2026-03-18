@@ -284,7 +284,7 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter {
       return remoteAuthEnabled && isOnline
     } catch (error) {
       logger.warn(
-        `${this.chargingStation.logPrefix()} Error checking remote authorization availability`,
+        `${this.chargingStation.logPrefix()} ${moduleName}.isRemoteAvailable: Error checking remote authorization availability`,
         error
       )
       return false
@@ -331,7 +331,7 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter {
 
       if (!hasLocalAuth && !hasRemoteAuth) {
         logger.warn(
-          `${this.chargingStation.logPrefix()} OCPP 1.6 adapter: No authorization methods enabled`
+          `${this.chargingStation.logPrefix()} ${moduleName}.validateConfiguration: No authorization methods enabled`
         )
         return false
       }
@@ -339,7 +339,7 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter {
       // Validate timeout values
       if (config.authorizationTimeout < 1) {
         logger.warn(
-          `${this.chargingStation.logPrefix()} OCPP 1.6 adapter: Invalid authorization timeout`
+          `${this.chargingStation.logPrefix()} ${moduleName}.validateConfiguration: Invalid authorization timeout`
         )
         return false
       }
@@ -347,7 +347,7 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter {
       return true
     } catch (error) {
       logger.error(
-        `${this.chargingStation.logPrefix()} OCPP 1.6 adapter configuration validation failed`,
+        `${this.chargingStation.logPrefix()} ${moduleName}.validateConfiguration: Configuration validation failed`,
         error
       )
       return false
@@ -367,7 +367,7 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter {
       return configKey?.value === 'true'
     } catch (error) {
       logger.warn(
-        `${this.chargingStation.logPrefix()} Error getting offline transaction config`,
+        `${this.chargingStation.logPrefix()} ${moduleName}.getOfflineTransactionConfig: Error getting offline transaction config`,
         error
       )
       return false
