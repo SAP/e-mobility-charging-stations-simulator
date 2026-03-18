@@ -418,6 +418,37 @@ export const checkConnectorsConfiguration = (
   }
 }
 
+export const checkEvsesConfiguration = (
+  stationTemplate: ChargingStationTemplate,
+  logPrefix: string,
+  templateFile: string
+): void => {
+  if (stationTemplate.Evses == null) {
+    return
+  }
+  for (const evseKey in stationTemplate.Evses) {
+    const evseId = convertToInt(evseKey)
+    const connectorIds = Object.keys(stationTemplate.Evses[evseKey].Connectors).map(convertToInt)
+    if (evseId === 0) {
+      for (const connectorId of connectorIds) {
+        if (connectorId !== 0) {
+          throw new BaseError(
+            `${logPrefix} Template ${templateFile} EVSE 0 has invalid connector id ${connectorId.toString()}, only connector id 0 is allowed (OCPP 2.0.1 §7.2)`
+          )
+        }
+      }
+    } else if (evseId > 0) {
+      for (const connectorId of connectorIds) {
+        if (connectorId < 1) {
+          throw new BaseError(
+            `${logPrefix} Template ${templateFile} EVSE ${evseId.toString()} has invalid connector id ${connectorId.toString()}, connector ids must start at 1 (OCPP 2.0.1 §7.2)`
+          )
+        }
+      }
+    }
+  }
+}
+
 export const checkStationInfoConnectorStatus = (
   connectorId: number,
   connectorStatus: ConnectorStatus,

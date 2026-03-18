@@ -118,6 +118,7 @@ import {
   checkChargingStationState,
   checkConfiguration,
   checkConnectorsConfiguration,
+  checkEvsesConfiguration,
   checkStationInfoConnectorStatus,
   checkTemplate,
   createBootNotificationRequest,
@@ -1571,6 +1572,9 @@ export class ChargingStation extends EventEmitter {
     if (stationTemplate.Connectors != null) {
       checkConnectorsConfiguration(stationTemplate, this.logPrefix(), this.templateFile)
     }
+    if (stationTemplate.Evses != null) {
+      checkEvsesConfiguration(stationTemplate, this.logPrefix(), this.templateFile)
+    }
     const stationInfo = stationTemplateToStationInfo(stationTemplate)
     stationInfo.hashId = getHashId(this.index, stationTemplate)
     stationInfo.templateIndex = this.index
@@ -1864,21 +1868,46 @@ export class ChargingStation extends EventEmitter {
 
   private initializeConnectorsOrEvsesFromFile (configuration: ChargingStationConfiguration): void {
     if (configuration.connectorsStatus != null && configuration.evsesStatus == null) {
-      for (const [connectorId, connectorStatus] of configuration.connectorsStatus.entries()) {
+      const isTupleFormat =
+        configuration.connectorsStatus.length > 0 &&
+        Array.isArray(configuration.connectorsStatus[0])
+      const entries: [number, ConnectorStatus][] = isTupleFormat
+        ? (configuration.connectorsStatus as [number, ConnectorStatus][])
+        : (configuration.connectorsStatus as ConnectorStatus[]).map((status, index) => [
+            index,
+            status,
+          ])
+      for (const [connectorId, connectorStatus] of entries) {
         this.connectors.set(
           connectorId,
           prepareConnectorStatus(clone<ConnectorStatus>(connectorStatus))
         )
       }
     } else if (configuration.evsesStatus != null && configuration.connectorsStatus == null) {
-      for (const [evseId, evseStatusConfiguration] of configuration.evsesStatus.entries()) {
+      const isTupleFormat =
+        configuration.evsesStatus.length > 0 && Array.isArray(configuration.evsesStatus[0])
+      const evseEntries: [number, EvseStatusConfiguration][] = isTupleFormat
+        ? (configuration.evsesStatus as [number, EvseStatusConfiguration][])
+        : (configuration.evsesStatus as EvseStatusConfiguration[]).map((status, index) => [
+            index,
+            status,
+          ])
+      for (const [evseId, evseStatusConfiguration] of evseEntries) {
         const evseStatus = clone<EvseStatusConfiguration>(evseStatusConfiguration)
         delete evseStatus.connectorsStatus
+        const connIsTupleFormat =
+          evseStatusConfiguration.connectorsStatus != null &&
+          evseStatusConfiguration.connectorsStatus.length > 0 &&
+          Array.isArray(evseStatusConfiguration.connectorsStatus[0])
+        const connEntries: [number, ConnectorStatus][] = connIsTupleFormat
+          ? (evseStatusConfiguration.connectorsStatus as [number, ConnectorStatus][])
+          : ((evseStatusConfiguration.connectorsStatus ?? []) as ConnectorStatus[]).map(
+              (status, index) => [index, status]
+            )
         this.evses.set(evseId, {
           ...(evseStatus as EvseStatus),
           connectors: new Map<number, ConnectorStatus>(
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            evseStatusConfiguration.connectorsStatus!.map((connectorStatus, connectorId) => [
+            connEntries.map(([connectorId, connectorStatus]) => [
               connectorId,
               prepareConnectorStatus(connectorStatus),
             ])

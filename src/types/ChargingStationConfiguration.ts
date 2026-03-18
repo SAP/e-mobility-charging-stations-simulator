@@ -14,13 +14,13 @@ export type ChargingStationConfiguration =
     }
 
 export type EvseStatusConfiguration = Omit<EvseStatus, 'connectors'> & {
-  connectorsStatus?: ConnectorStatus[]
+  connectorsStatus?: [number, ConnectorStatus][] | ConnectorStatus[]
 }
 
 interface ConnectorsConfiguration {
-  connectorsStatus?: ConnectorStatus[]
+  connectorsStatus?: [number, ConnectorStatus][] | ConnectorStatus[]
 }
 
 interface EvsesConfiguration {
-  evsesStatus?: EvseStatusConfiguration[]
+  evsesStatus?: [number, EvseStatusConfiguration][] | EvseStatusConfiguration[]
 }

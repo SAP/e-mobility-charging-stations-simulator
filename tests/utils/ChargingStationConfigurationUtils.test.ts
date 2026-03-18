@@ -79,12 +79,14 @@ await describe('ChargingStationConfigurationUtils', async () => {
         const result = buildConnectorsStatus(station)
 
         assert.strictEqual(result.length, 2)
-        for (const connector of result) {
+        for (const [, connector] of result) {
           assert.ok(!('transactionSetInterval' in connector))
           assert.ok(!('transactionEventQueue' in connector))
           assert.ok(!('transactionTxUpdatedSetInterval' in connector))
         }
-        assert.strictEqual(result[1].availability, AvailabilityType.Operative)
+        assert.strictEqual(result[0][0], 0)
+        assert.strictEqual(result[1][0], 1)
+        assert.strictEqual(result[1][1].availability, AvailabilityType.Operative)
       } finally {
         clearInterval(interval1)
         clearInterval(interval2)
@@ -114,9 +116,30 @@ await describe('ChargingStationConfigurationUtils', async () => {
       const result = buildConnectorsStatus(station)
 
       assert.strictEqual(result.length, 1)
-      assert.strictEqual(result[0].availability, AvailabilityType.Operative)
-      assert.strictEqual(result[0].transactionId, 42)
-      assert.strictEqual(result[0].transactionStarted, true)
+      assert.strictEqual(result[0][0], 1)
+      assert.strictEqual(result[0][1].availability, AvailabilityType.Operative)
+      assert.strictEqual(result[0][1].transactionId, 42)
+      assert.strictEqual(result[0][1].transactionStarted, true)
+    })
+
+    await it('should preserve non-sequential connector IDs', () => {
+      const connectors = new Map<number, ConnectorStatus>()
+      connectors.set(0, {
+        availability: AvailabilityType.Operative,
+        MeterValues: [],
+      } as ConnectorStatus)
+      connectors.set(3, {
+        availability: AvailabilityType.Inoperative,
+        MeterValues: [],
+      } as ConnectorStatus)
+
+      const station = createMockStationForConfigUtils({ connectors })
+      const result = buildConnectorsStatus(station)
+
+      assert.strictEqual(result.length, 2)
+      assert.strictEqual(result[0][0], 0)
+      assert.strictEqual(result[1][0], 3)
+      assert.strictEqual(result[1][1].availability, AvailabilityType.Inoperative)
     })
   })
 
@@ -145,9 +168,13 @@ await describe('ChargingStationConfigurationUtils', async () => {
       const result = buildEvsesStatus(station)
 
       assert.strictEqual(result.length, 2)
-      const evse1 = result[1] as Record<string, unknown>
+      assert.strictEqual(result[1][0], 1)
+      const evse1 = result[1][1]
       assert.ok('connectorsStatus' in evse1)
       assert.ok(!('connectors' in evse1))
+      const connectorsStatus = evse1.connectorsStatus as [number, ConnectorStatus][]
+      assert.strictEqual(connectorsStatus.length, 1)
+      assert.strictEqual(connectorsStatus[0][0], 1)
     })
 
     await it('should strip internal fields from evse connectors', () => {
@@ -168,19 +195,82 @@ await describe('ChargingStationConfigurationUtils', async () => {
 
       const station = createMockStationForConfigUtils({ evses })
       const result = buildEvsesStatus(station)
-      const evse1 = result[0] as Record<string, unknown>
-      const connectorsStatus = evse1.connectorsStatus as ConnectorStatus[]
+      const evse1 = result[0][1]
+      const connectorsStatus = evse1.connectorsStatus as [number, ConnectorStatus][]
 
       assert.strictEqual(connectorsStatus.length, 1)
-      assert.ok(!('transactionSetInterval' in connectorsStatus[0]))
-      assert.ok(!('transactionEventQueue' in connectorsStatus[0]))
-      assert.ok(!('transactionTxUpdatedSetInterval' in connectorsStatus[0]))
+      assert.strictEqual(connectorsStatus[0][0], 1)
+      const connector = connectorsStatus[0][1]
+      assert.ok(!('transactionSetInterval' in connector))
+      assert.ok(!('transactionEventQueue' in connector))
+      assert.ok(!('transactionTxUpdatedSetInterval' in connector))
+    })
+
+    await it('should preserve connector IDs across serialization', () => {
+      const evseConnectors = new Map<number, ConnectorStatus>()
+      evseConnectors.set(1, {
+        availability: AvailabilityType.Operative,
+        MeterValues: [],
+      } as ConnectorStatus)
+      evseConnectors.set(2, {
+        availability: AvailabilityType.Inoperative,
+        MeterValues: [],
+      } as ConnectorStatus)
+
+      const evse0Connectors = new Map<number, ConnectorStatus>()
+      evse0Connectors.set(0, {
+        availability: AvailabilityType.Operative,
+        MeterValues: [],
+      } as ConnectorStatus)
+
+      const evses = new Map<number, EvseStatus>()
+      evses.set(0, {
+        availability: AvailabilityType.Operative,
+        connectors: evse0Connectors,
+      })
+      evses.set(1, {
+        availability: AvailabilityType.Operative,
+        connectors: evseConnectors,
+      })
+
+      const station = createMockStationForConfigUtils({ evses })
+      const result = buildEvsesStatus(station)
+
+      const evse0Status = result[0][1].connectorsStatus as [number, ConnectorStatus][]
+      assert.ok(evse0Status.length > 0)
+      assert.strictEqual(evse0Status[0][0], 0)
+
+      const evse1Status = result[1][1].connectorsStatus as [number, ConnectorStatus][]
+      assert.ok(evse1Status.length > 1)
+      assert.strictEqual(evse1Status[0][0], 1)
+      assert.strictEqual(evse1Status[1][0], 2)
+      assert.strictEqual(evse1Status[1][1].availability, AvailabilityType.Inoperative)
     })
 
     await it('should handle empty evses map', () => {
       const station = createMockStationForConfigUtils({ evses: new Map() })
       const result = buildEvsesStatus(station)
       assert.strictEqual(result.length, 0)
+    })
+
+    await it('should preserve non-sequential evse IDs', () => {
+      const evses = new Map<number, EvseStatus>()
+      evses.set(0, {
+        availability: AvailabilityType.Operative,
+        connectors: new Map<number, ConnectorStatus>(),
+      })
+      evses.set(3, {
+        availability: AvailabilityType.Inoperative,
+        connectors: new Map<number, ConnectorStatus>(),
+      })
+
+      const station = createMockStationForConfigUtils({ evses })
+      const result = buildEvsesStatus(station)
+
+      assert.strictEqual(result.length, 2)
+      assert.strictEqual(result[0][0], 0)
+      assert.strictEqual(result[1][0], 3)
+      assert.strictEqual(result[1][1].availability, AvailabilityType.Inoperative)
     })
   })
 

@@ -47,14 +47,19 @@ export const buildConnectorEntries = (chargingStation: ChargingStation): Connect
   )
 }
 
-export const buildConnectorsStatus = (chargingStation: ChargingStation): ConnectorStatus[] => {
-  return [...chargingStation.connectors.values()].map(
-    ({
-      transactionEventQueue,
-      transactionSetInterval,
-      transactionTxUpdatedSetInterval,
-      ...connectorStatus
-    }) => connectorStatus
+export const buildConnectorsStatus = (
+  chargingStation: ChargingStation
+): [number, ConnectorStatus][] => {
+  return [...chargingStation.connectors.entries()].map(
+    ([
+      connectorId,
+      {
+        transactionEventQueue,
+        transactionSetInterval,
+        transactionTxUpdatedSetInterval,
+        ...connectorStatus
+      },
+    ]) => [connectorId, connectorStatus]
   )
 }
 
@@ -79,21 +84,28 @@ export const buildEvseEntries = (chargingStation: ChargingStation): EvseEntry[] 
   }))
 }
 
-export const buildEvsesStatus = (chargingStation: ChargingStation): EvseStatusConfiguration[] => {
-  return [...chargingStation.evses.values()].map(evseStatus => {
-    const connectorsStatus = [...evseStatus.connectors.values()].map(
-      ({
-        transactionEventQueue,
-        transactionSetInterval,
-        transactionTxUpdatedSetInterval,
-        ...connectorStatus
-      }) => connectorStatus
+export const buildEvsesStatus = (
+  chargingStation: ChargingStation
+): [number, EvseStatusConfiguration][] => {
+  return [...chargingStation.evses.entries()].map(([evseId, evseStatus]) => {
+    const connectorsStatus: [number, ConnectorStatus][] = [...evseStatus.connectors.entries()].map(
+      ([
+        connectorId,
+        {
+          transactionEventQueue,
+          transactionSetInterval,
+          transactionTxUpdatedSetInterval,
+          ...connector
+        },
+      ]) => [connectorId, connector]
     )
-    const status: EvseStatusConfiguration = {
-      ...evseStatus,
-      connectorsStatus,
-    }
-    delete (status as { connectors?: unknown }).connectors
-    return status
+    const { connectors: _, ...evseStatusRest } = evseStatus
+    return [
+      evseId,
+      {
+        ...evseStatusRest,
+        connectorsStatus,
+      } as EvseStatusConfiguration,
+    ]
   })
 }
