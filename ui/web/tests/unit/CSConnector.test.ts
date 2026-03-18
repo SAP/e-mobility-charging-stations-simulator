@@ -35,8 +35,9 @@ const ButtonStub = {
 }
 
 /**
- *
- * @param overrideProps
+ * Mounts CSConnector with mock UIClient and Button stub.
+ * @param overrideProps - Props to override defaults
+ * @returns Mounted component wrapper
  */
 function mountCSConnector (overrideProps: Record<string, unknown> = {}) {
   return mount(CSConnector, {
@@ -156,9 +157,7 @@ describe('CSConnector', () => {
       const stopBtn = buttons.find(b => b.text() === 'Stop Transaction')
       await stopBtn?.trigger('click')
       await flushPromises()
-      expect(toastMock.success).toHaveBeenCalledWith(
-        'Transaction successfully stopped'
-      )
+      expect(toastMock.success).toHaveBeenCalledWith('Transaction successfully stopped')
     })
   })
 
@@ -169,10 +168,7 @@ describe('CSConnector', () => {
       const startAtgBtn = buttons.find(b => b.text() === 'Start ATG')
       await startAtgBtn?.trigger('click')
       await flushPromises()
-      expect(mockClient.startAutomaticTransactionGenerator).toHaveBeenCalledWith(
-        TEST_HASH_ID,
-        1
-      )
+      expect(mockClient.startAutomaticTransactionGenerator).toHaveBeenCalledWith(TEST_HASH_ID, 1)
     })
 
     it('should call stopAutomaticTransactionGenerator', async () => {
@@ -181,10 +177,7 @@ describe('CSConnector', () => {
       const stopAtgBtn = buttons.find(b => b.text() === 'Stop ATG')
       await stopAtgBtn?.trigger('click')
       await flushPromises()
-      expect(mockClient.stopAutomaticTransactionGenerator).toHaveBeenCalledWith(
-        TEST_HASH_ID,
-        1
-      )
+      expect(mockClient.stopAutomaticTransactionGenerator).toHaveBeenCalledWith(TEST_HASH_ID, 1)
     })
 
     it('should show error toast on ATG start failure', async () => {

@@ -13,8 +13,9 @@ import CSTable from '@/components/charging-stations/CSTable.vue'
 import { createChargingStationData, createStationInfo } from './constants'
 
 /**
- *
- * @param chargingStations
+ * Mounts CSTable with CSData stubbed out.
+ * @param chargingStations - Array of charging stations
+ * @returns Mounted component wrapper
  */
 function mountCSTable (chargingStations: ChargingStationData[] = []) {
   return mount(CSTable, {

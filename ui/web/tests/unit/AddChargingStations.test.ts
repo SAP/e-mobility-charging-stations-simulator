@@ -22,7 +22,8 @@ describe('AddChargingStations', () => {
   let mockRouter: { push: ReturnType<typeof vi.fn> }
 
   /**
-   *
+   * Mounts AddChargingStations with mock UIClient, router, and templates.
+   * @returns Mounted component wrapper
    */
   function mountComponent () {
     mockClient = createMockUIClient()

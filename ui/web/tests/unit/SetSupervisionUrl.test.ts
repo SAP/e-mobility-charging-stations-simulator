@@ -22,8 +22,9 @@ describe('SetSupervisionUrl', () => {
   let mockRouter: { push: ReturnType<typeof vi.fn> }
 
   /**
-   *
-   * @param props
+   * Mounts SetSupervisionUrl with mock UIClient, router, and toast.
+   * @param props - Props to override defaults
+   * @returns Mounted component wrapper
    */
   function mountComponent (props = {}) {
     mockClient = createMockUIClient()

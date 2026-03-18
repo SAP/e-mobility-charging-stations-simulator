@@ -35,8 +35,9 @@ describe('StartTransaction', () => {
   let mockRouter: { push: ReturnType<typeof vi.fn> }
 
   /**
-   *
-   * @param routeQuery
+   * Mounts StartTransaction with mock UIClient, router, and route query.
+   * @param routeQuery - Route query parameters
+   * @returns Mounted component wrapper
    */
   function mountComponent (routeQuery: Record<string, string> = {}) {
     mockClient = createMockUIClient()

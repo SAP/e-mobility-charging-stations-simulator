@@ -43,8 +43,9 @@ const ButtonStub = {
 }
 
 /**
- *
- * @param chargingStation
+ * Mounts CSData with mock UIClient and stubbed child components.
+ * @param chargingStation - Charging station data
+ * @returns Mounted component wrapper
  */
 function mountCSData (chargingStation: ChargingStationData = createChargingStationData()) {
   return mount(CSData, {
@@ -211,9 +212,7 @@ describe('CSData', () => {
       const startBtn = buttons.find(b => b.text() === 'Start Charging Station')
       await startBtn?.trigger('click')
       await flushPromises()
-      expect(toastMock.success).toHaveBeenCalledWith(
-        'Charging station successfully started'
-      )
+      expect(toastMock.success).toHaveBeenCalledWith('Charging station successfully started')
     })
 
     it('should show error toast on start failure', async () => {
@@ -223,9 +222,7 @@ describe('CSData', () => {
       const startBtn = buttons.find(b => b.text() === 'Start Charging Station')
       await startBtn?.trigger('click')
       await flushPromises()
-      expect(toastMock.error).toHaveBeenCalledWith(
-        'Error at starting charging station'
-      )
+      expect(toastMock.error).toHaveBeenCalledWith('Error at starting charging station')
     })
   })
 
