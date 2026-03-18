@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/unified-signatures */
-
 import { secondsToMilliseconds } from 'date-fns'
 
 import { type ChargingStation, resetConnectorStatus } from '../../../charging-station/index.js'
@@ -7,6 +5,7 @@ import { OCPPError } from '../../../exception/index.js'
 import {
   ConnectorStatusEnum,
   ErrorType,
+  type JsonObject,
   OCPP20ComponentName,
   OCPP20IncomingRequestCommand,
   OCPP20RequestCommand,
@@ -26,19 +25,18 @@ import {
 import {
   type OCPP20EVSEType,
   OCPP20ReasonEnumType,
-  type OCPP20TransactionContext,
   type OCPP20TransactionEventOptions,
   type OCPP20TransactionType,
 } from '../../../types/ocpp/2.0/Transaction.js'
 import {
   Constants,
   convertToIntOrNaN,
+  generateUUID,
   logger,
   validateIdentifierString,
 } from '../../../utils/index.js'
 import { getConfigurationKey } from '../../ConfigurationKeyUtils.js'
 import { OCPPServiceUtils, sendAndSetConnectorStatus } from '../OCPPServiceUtils.js'
-import { OCPP20Constants } from './OCPP20Constants.js'
 import { OCPP20VariableManager } from './OCPP20VariableManager.js'
 
 const moduleName = 'OCPP20ServiceUtils'
@@ -85,169 +83,6 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     [OCPP20RequestCommand.STATUS_NOTIFICATION, 'StatusNotification'],
     [OCPP20RequestCommand.TRANSACTION_EVENT, 'TransactionEvent'],
   ]
-
-  /**
-   * Build a TransactionEvent request according to OCPP 2.0.1 specification
-   *
-   * This method creates a properly formatted TransactionEventRequest that complies with
-   * OCPP 2.0.1 requirements including F01, E01, E06, and TriggerReason specifications.
-   *
-   * Key features:
-   * - Automatic per-EVSE sequence number management
-   * - Full TriggerReason validation (21 enum values)
-   * - EVSE/connector mapping and validation
-   * - Transaction UUID handling
-   * - Comprehensive parameter validation
-   * @param chargingStation - The charging station instance
-   * @param eventType - Transaction event type (Started, Updated, Ended)
-   * @param triggerReason - Reason that triggered the event (21 OCPP 2.0.1 values)
-   * @param connectorId - Connector identifier
-   * @param transactionId - Transaction UUID (required for all events)
-   * @param options - Optional parameters for the transaction event
-   * @param options.evseId
-   * @param options.idToken
-   * @param options.meterValue
-   * @param options.chargingState
-   * @param options.stoppedReason
-   * @param options.remoteStartId
-   * @param options.cableMaxCurrent
-   * @param options.numberOfPhasesUsed
-   * @param options.offline
-   * @param options.reservationId
-   * @param options.customData
-   * @returns Promise<OCPP20TransactionEventRequest> - Built transaction event request
-   * @throws {OCPPError} When parameters are invalid or EVSE mapping fails
-   */
-  public static buildTransactionEvent (
-    chargingStation: ChargingStation,
-    eventType: OCPP20TransactionEventEnumType,
-    context: OCPP20TransactionContext,
-    connectorId: number,
-    transactionId: string,
-    options?: OCPP20TransactionEventOptions
-  ): OCPP20TransactionEventRequest
-  public static buildTransactionEvent (
-    chargingStation: ChargingStation,
-    eventType: OCPP20TransactionEventEnumType,
-    triggerReason: OCPP20TriggerReasonEnumType,
-    connectorId: number,
-    transactionId: string,
-    options?: OCPP20TransactionEventOptions
-  ): OCPP20TransactionEventRequest
-  public static buildTransactionEvent (
-    chargingStation: ChargingStation,
-    eventType: OCPP20TransactionEventEnumType,
-    triggerReasonOrContext: OCPP20TransactionContext | OCPP20TriggerReasonEnumType,
-    connectorId: number,
-    transactionId: string,
-    options: OCPP20TransactionEventOptions = {}
-  ): OCPP20TransactionEventRequest {
-    const isContext = typeof triggerReasonOrContext === 'object'
-    const triggerReason = isContext
-      ? this.selectTriggerReason(eventType, triggerReasonOrContext)
-      : triggerReasonOrContext
-
-    // Validate transaction ID format (must be non-empty string ≤36 characters per OCPP 2.0.1)
-    if (!validateIdentifierString(transactionId, 36)) {
-      const errorMsg = `Invalid transaction ID format (must be non-empty string ≤36 characters): ${transactionId}`
-      logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.buildTransactionEvent: ${errorMsg}`
-      )
-      throw new OCPPError(ErrorType.PROPERTY_CONSTRAINT_VIOLATION, errorMsg)
-    }
-
-    const evseId = options.evseId ?? chargingStation.getEvseIdByConnectorId(connectorId)
-    if (evseId == null) {
-      const errorMsg = `Cannot find EVSE ID for connector ${connectorId.toString()}`
-      logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.buildTransactionEvent: ${errorMsg}`
-      )
-      throw new OCPPError(ErrorType.PROPERTY_CONSTRAINT_VIOLATION, errorMsg)
-    }
-
-    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
-    if (connectorStatus == null) {
-      const errorMsg = `Cannot find connector status for connector ${connectorId.toString()}`
-      logger.error(
-        `${chargingStation.logPrefix()} ${moduleName}.buildTransactionEvent: ${errorMsg}`
-      )
-      throw new OCPPError(ErrorType.PROPERTY_CONSTRAINT_VIOLATION, errorMsg)
-    }
-
-    // Per-EVSE sequence number management (OCPP 2.0.1 §1.3.2.1)
-    if (connectorStatus.transactionSeqNo == null) {
-      connectorStatus.transactionSeqNo = 0
-    } else {
-      connectorStatus.transactionSeqNo = connectorStatus.transactionSeqNo + 1
-    }
-
-    // Build EVSE object (E01.FR.16: only include in first TransactionEvent after EV connected)
-    let evse: OCPP20EVSEType | undefined
-    if (connectorStatus.transactionEvseSent !== true) {
-      evse = { id: evseId }
-      if (connectorId !== evseId) {
-        evse.connectorId = connectorId
-      }
-      connectorStatus.transactionEvseSent = true
-    }
-
-    const transactionInfo: OCPP20TransactionType = {
-      transactionId: transactionId as UUIDv4,
-    }
-
-    if (options.chargingState !== undefined) {
-      transactionInfo.chargingState = options.chargingState
-    }
-    if (options.stoppedReason !== undefined) {
-      transactionInfo.stoppedReason = options.stoppedReason
-    }
-    if (options.remoteStartId !== undefined) {
-      transactionInfo.remoteStartId = options.remoteStartId
-    }
-
-    const transactionEventRequest: OCPP20TransactionEventRequest = {
-      eventType,
-      seqNo: connectorStatus.transactionSeqNo,
-      timestamp: new Date(),
-      transactionInfo,
-      triggerReason,
-    }
-
-    // E01.FR.16: Include evse only in first TransactionEvent
-    if (evse !== undefined) {
-      transactionEventRequest.evse = evse
-    }
-
-    // E03.FR.01: Include idToken only once per transaction (first event after authorization)
-    if (options.idToken !== undefined && connectorStatus.transactionIdTokenSent !== true) {
-      transactionEventRequest.idToken = options.idToken
-      connectorStatus.transactionIdTokenSent = true
-    }
-    if (options.meterValue !== undefined && options.meterValue.length > 0) {
-      transactionEventRequest.meterValue = options.meterValue
-    }
-    if (options.cableMaxCurrent !== undefined) {
-      transactionEventRequest.cableMaxCurrent = options.cableMaxCurrent
-    }
-    if (options.numberOfPhasesUsed !== undefined) {
-      transactionEventRequest.numberOfPhasesUsed = options.numberOfPhasesUsed
-    }
-    if (options.offline !== undefined) {
-      transactionEventRequest.offline = options.offline
-    }
-    if (options.reservationId !== undefined) {
-      transactionEventRequest.reservationId = options.reservationId
-    }
-    if (options.customData !== undefined) {
-      transactionEventRequest.customData = options.customData
-    }
-
-    logger.debug(
-      `${chargingStation.logPrefix()} ${moduleName}.buildTransactionEvent: Building TransactionEvent for trigger ${triggerReason}`
-    )
-
-    return transactionEventRequest
-  }
 
   /**
    * OCPP 2.0 Incoming Request Service validator configurations
@@ -535,146 +370,6 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     }
   }
 
-  /**
-   * Intelligently select appropriate TriggerReason based on transaction context
-   *
-   * This method implements the E02.FR.17 requirement for context-aware TriggerReason selection.
-   * It analyzes the transaction context to determine the most appropriate TriggerReason according
-   * to OCPP 2.0.1 specification and best practices.
-   *
-   * Selection Logic (by priority):
-   * 1. Remote commands (RequestStartTransaction, RequestStopTransaction, etc.) -> RemoteStart/RemoteStop
-   * 2. Authorization events (token presented) -> Authorized/StopAuthorized/Deauthorized
-   * 3. Cable physical actions -> CablePluggedIn
-   * 4. Charging state transitions -> ChargingStateChanged
-   * 5. System events (EV detection, communication) -> EVDetected/EVDeparted/EVCommunicationLost
-   * 6. Meter value events -> MeterValuePeriodic/MeterValueClock
-   * 7. Energy/Time limits -> EnergyLimitReached/TimeLimitReached
-   * 8. Abnormal conditions -> AbnormalCondition
-   * @param eventType - The transaction event type (Started, Updated, Ended)
-   * @param context - Context information describing the trigger source and details
-   * @returns OCPP20TriggerReasonEnumType - The most appropriate trigger reason
-   */
-  public static selectTriggerReason (
-    eventType: OCPP20TransactionEventEnumType,
-    context: OCPP20TransactionContext
-  ): OCPP20TriggerReasonEnumType {
-    const candidates = OCPP20Constants.TriggerReasonMapping.filter(
-      entry => entry.source === context.source
-    )
-
-    for (const entry of candidates) {
-      if (context.source === 'remote_command' && context.command != null) {
-        if (
-          (context.command === OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION &&
-            entry.triggerReason === OCPP20TriggerReasonEnumType.RemoteStart) ||
-          (context.command === OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION &&
-            entry.triggerReason === OCPP20TriggerReasonEnumType.RemoteStop) ||
-          (context.command === OCPP20IncomingRequestCommand.RESET &&
-            entry.triggerReason === OCPP20TriggerReasonEnumType.ResetCommand) ||
-          (context.command === OCPP20IncomingRequestCommand.TRIGGER_MESSAGE &&
-            entry.triggerReason === OCPP20TriggerReasonEnumType.Trigger) ||
-          (context.command === OCPP20IncomingRequestCommand.UNLOCK_CONNECTOR &&
-            entry.triggerReason === OCPP20TriggerReasonEnumType.UnlockCommand)
-        ) {
-          return entry.triggerReason
-        }
-      }
-
-      if (context.source === 'local_authorization' && context.authorizationMethod != null) {
-        if (context.isDeauthorized === true) {
-          if (entry.triggerReason === OCPP20TriggerReasonEnumType.Deauthorized) {
-            return entry.triggerReason
-          }
-        } else if (
-          (context.authorizationMethod === 'groupIdToken' ||
-            context.authorizationMethod === 'idToken') &&
-          entry.triggerReason === OCPP20TriggerReasonEnumType.Authorized
-        ) {
-          return entry.triggerReason
-        } else if (
-          context.authorizationMethod === 'stopAuthorized' &&
-          entry.triggerReason === OCPP20TriggerReasonEnumType.StopAuthorized
-        ) {
-          return entry.triggerReason
-        }
-      }
-
-      if (context.source === 'cable_action' && context.cableState != null) {
-        if (
-          (context.cableState === 'detected' &&
-            entry.triggerReason === OCPP20TriggerReasonEnumType.EVDetected) ||
-          (context.cableState === 'plugged_in' &&
-            entry.triggerReason === OCPP20TriggerReasonEnumType.CablePluggedIn) ||
-          (context.cableState === 'unplugged' &&
-            entry.triggerReason === OCPP20TriggerReasonEnumType.EVDeparted)
-        ) {
-          return entry.triggerReason
-        }
-      }
-
-      if (
-        context.source === 'charging_state' &&
-        context.chargingStateChange != null &&
-        entry.triggerReason === OCPP20TriggerReasonEnumType.ChargingStateChanged
-      ) {
-        return entry.triggerReason
-      }
-
-      if (context.source === 'system_event' && context.systemEvent != null) {
-        if (
-          (context.systemEvent === 'ev_communication_lost' &&
-            entry.triggerReason === OCPP20TriggerReasonEnumType.EVCommunicationLost) ||
-          (context.systemEvent === 'ev_connect_timeout' &&
-            entry.triggerReason === OCPP20TriggerReasonEnumType.EVConnectTimeout) ||
-          (context.systemEvent === 'ev_departed' &&
-            entry.triggerReason === OCPP20TriggerReasonEnumType.EVDeparted) ||
-          (context.systemEvent === 'ev_detected' &&
-            entry.triggerReason === OCPP20TriggerReasonEnumType.EVDetected)
-        ) {
-          return entry.triggerReason
-        }
-      }
-
-      if (context.source === 'meter_value') {
-        if (
-          (context.isSignedDataReceived === true &&
-            entry.triggerReason === OCPP20TriggerReasonEnumType.SignedDataReceived) ||
-          (context.isPeriodicMeterValue === true &&
-            entry.triggerReason === OCPP20TriggerReasonEnumType.MeterValuePeriodic) ||
-          (context.isSignedDataReceived !== true &&
-            context.isPeriodicMeterValue !== true &&
-            entry.triggerReason === OCPP20TriggerReasonEnumType.MeterValueClock)
-        ) {
-          return entry.triggerReason
-        }
-      }
-
-      if (
-        (context.source === 'energy_limit' &&
-          entry.triggerReason === OCPP20TriggerReasonEnumType.EnergyLimitReached) ||
-        (context.source === 'time_limit' &&
-          entry.triggerReason === OCPP20TriggerReasonEnumType.TimeLimitReached) ||
-        (context.source === 'external_limit' &&
-          entry.triggerReason === OCPP20TriggerReasonEnumType.ChargingRateChanged)
-      ) {
-        return entry.triggerReason
-      }
-
-      if (
-        context.source === 'abnormal_condition' &&
-        entry.triggerReason === OCPP20TriggerReasonEnumType.AbnormalCondition
-      ) {
-        return entry.triggerReason
-      }
-    }
-
-    logger.warn(
-      `${moduleName}.selectTriggerReason: No matching context found for source '${context.source}', defaulting to Trigger`
-    )
-    return OCPP20TriggerReasonEnumType.Trigger
-  }
-
   public static async sendQueuedTransactionEvents (
     chargingStation: ChargingStation,
     connectorId: number
@@ -718,35 +413,12 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
   public static async sendTransactionEvent (
     chargingStation: ChargingStation,
     eventType: OCPP20TransactionEventEnumType,
-    context: OCPP20TransactionContext,
-    connectorId: number,
-    transactionId: string,
-    options?: OCPP20TransactionEventOptions
-  ): Promise<OCPP20TransactionEventResponse>
-  public static async sendTransactionEvent (
-    chargingStation: ChargingStation,
-    eventType: OCPP20TransactionEventEnumType,
     triggerReason: OCPP20TriggerReasonEnumType,
-    connectorId: number,
-    transactionId: string,
-    options?: OCPP20TransactionEventOptions
-  ): Promise<OCPP20TransactionEventResponse>
-  // Implementation with union type + type guard
-  public static async sendTransactionEvent (
-    chargingStation: ChargingStation,
-    eventType: OCPP20TransactionEventEnumType,
-    triggerReasonOrContext: OCPP20TransactionContext | OCPP20TriggerReasonEnumType,
     connectorId: number,
     transactionId: string,
     options: OCPP20TransactionEventOptions = {}
   ): Promise<OCPP20TransactionEventResponse> {
     try {
-      // Type guard: distinguish between context object and direct trigger reason
-      const isContext = typeof triggerReasonOrContext === 'object'
-      const triggerReason = isContext
-        ? this.selectTriggerReason(eventType, triggerReasonOrContext)
-        : triggerReasonOrContext
-
       const connectorStatus = chargingStation.getConnectorStatus(connectorId)
       if (connectorStatus == null) {
         const errorMsg = `Cannot find connector status for connector ${connectorId.toString()}`
@@ -758,7 +430,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
 
       // Offline: build and queue pre-built payload (sent as-is via rawPayload on reconnect)
       if (!chargingStation.isWebSocketConnectionOpened()) {
-        const transactionEventRequest = OCPP20ServiceUtils.buildTransactionEvent(
+        const transactionEventRequest = buildTransactionEvent(
           chargingStation,
           eventType,
           triggerReason,
@@ -803,4 +475,162 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       throw error
     }
   }
+}
+export function buildTransactionEvent (
+  chargingStation: ChargingStation,
+  eventType: OCPP20TransactionEventEnumType,
+  triggerReason: OCPP20TriggerReasonEnumType,
+  connectorId: number,
+  transactionId: string,
+  options?: OCPP20TransactionEventOptions
+): OCPP20TransactionEventRequest
+export function buildTransactionEvent (
+  chargingStation: ChargingStation,
+  commandParams: JsonObject
+): OCPP20TransactionEventRequest
+/**
+ *
+ * @param chargingStation
+ * @param eventTypeOrParams
+ * @param triggerReasonArg
+ * @param connectorIdArg
+ * @param transactionIdArg
+ * @param options
+ */
+export function buildTransactionEvent (
+  chargingStation: ChargingStation,
+  eventTypeOrParams: JsonObject | OCPP20TransactionEventEnumType,
+  triggerReasonArg?: OCPP20TriggerReasonEnumType,
+  connectorIdArg?: number,
+  transactionIdArg?: string,
+  options: OCPP20TransactionEventOptions = {}
+): OCPP20TransactionEventRequest {
+  let eventType: OCPP20TransactionEventEnumType
+  let triggerReason: OCPP20TriggerReasonEnumType
+  let connectorId: number
+  let transactionId: string
+
+  if (typeof eventTypeOrParams === 'object') {
+    const params = eventTypeOrParams
+    eventType = params.eventType as OCPP20TransactionEventEnumType
+    triggerReason =
+      params.triggerReason != null
+        ? (params.triggerReason as OCPP20TriggerReasonEnumType)
+        : eventType === OCPP20TransactionEventEnumType.Ended
+          ? OCPP20TriggerReasonEnumType.RemoteStop
+          : OCPP20TriggerReasonEnumType.Authorized
+    const evse = params.evse as undefined | { connectorId?: number; id?: number }
+    connectorId =
+      params.connectorId != null
+        ? (params.connectorId as number)
+        : (evse?.connectorId ?? evse?.id ?? 1)
+    transactionId =
+      params.transactionId != null
+        ? (params.transactionId as string)
+        : eventType === OCPP20TransactionEventEnumType.Ended
+          ? (chargingStation.getConnectorStatus(connectorId)?.transactionId?.toString() ??
+            generateUUID())
+          : generateUUID()
+    options = params as unknown as OCPP20TransactionEventOptions
+  } else {
+    eventType = eventTypeOrParams
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    triggerReason = triggerReasonArg!
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    connectorId = connectorIdArg!
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    transactionId = transactionIdArg!
+  }
+
+  if (!validateIdentifierString(transactionId, 36)) {
+    const errorMsg = `Invalid transaction ID format (must be non-empty string ≤36 characters): ${transactionId}`
+    logger.error(`${chargingStation.logPrefix()} ${moduleName}.buildTransactionEvent: ${errorMsg}`)
+    throw new OCPPError(ErrorType.PROPERTY_CONSTRAINT_VIOLATION, errorMsg)
+  }
+
+  const evseId = options.evseId ?? chargingStation.getEvseIdByConnectorId(connectorId)
+  if (evseId == null) {
+    const errorMsg = `Cannot find EVSE ID for connector ${connectorId.toString()}`
+    logger.error(`${chargingStation.logPrefix()} ${moduleName}.buildTransactionEvent: ${errorMsg}`)
+    throw new OCPPError(ErrorType.PROPERTY_CONSTRAINT_VIOLATION, errorMsg)
+  }
+
+  const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+  if (connectorStatus == null) {
+    const errorMsg = `Cannot find connector status for connector ${connectorId.toString()}`
+    logger.error(`${chargingStation.logPrefix()} ${moduleName}.buildTransactionEvent: ${errorMsg}`)
+    throw new OCPPError(ErrorType.PROPERTY_CONSTRAINT_VIOLATION, errorMsg)
+  }
+
+  if (connectorStatus.transactionSeqNo == null) {
+    connectorStatus.transactionSeqNo = 0
+  } else {
+    connectorStatus.transactionSeqNo = connectorStatus.transactionSeqNo + 1
+  }
+
+  // E01.FR.16: only include EVSE in first TransactionEvent
+  let evse: OCPP20EVSEType | undefined
+  if (connectorStatus.transactionEvseSent !== true) {
+    evse = { id: evseId }
+    if (connectorId !== evseId) {
+      evse.connectorId = connectorId
+    }
+    connectorStatus.transactionEvseSent = true
+  }
+
+  const transactionInfo: OCPP20TransactionType = {
+    transactionId: transactionId as UUIDv4,
+  }
+
+  if (options.chargingState !== undefined) {
+    transactionInfo.chargingState = options.chargingState
+  }
+  if (options.stoppedReason !== undefined) {
+    transactionInfo.stoppedReason = options.stoppedReason
+  }
+  if (options.remoteStartId !== undefined) {
+    transactionInfo.remoteStartId = options.remoteStartId
+  }
+
+  const transactionEventRequest: OCPP20TransactionEventRequest = {
+    eventType,
+    seqNo: connectorStatus.transactionSeqNo,
+    timestamp: new Date(),
+    transactionInfo,
+    triggerReason,
+  }
+
+  if (evse !== undefined) {
+    transactionEventRequest.evse = evse
+  }
+
+  // E03.FR.01: Include idToken only once per transaction
+  if (options.idToken !== undefined && connectorStatus.transactionIdTokenSent !== true) {
+    transactionEventRequest.idToken = options.idToken
+    connectorStatus.transactionIdTokenSent = true
+  }
+  if (options.meterValue !== undefined && options.meterValue.length > 0) {
+    transactionEventRequest.meterValue = options.meterValue
+  }
+  if (options.cableMaxCurrent !== undefined) {
+    transactionEventRequest.cableMaxCurrent = options.cableMaxCurrent
+  }
+  if (options.numberOfPhasesUsed !== undefined) {
+    transactionEventRequest.numberOfPhasesUsed = options.numberOfPhasesUsed
+  }
+  if (options.offline !== undefined) {
+    transactionEventRequest.offline = options.offline
+  }
+  if (options.reservationId !== undefined) {
+    transactionEventRequest.reservationId = options.reservationId
+  }
+  if (options.customData !== undefined) {
+    transactionEventRequest.customData = options.customData
+  }
+
+  logger.debug(
+    `${chargingStation.logPrefix()} ${moduleName}.buildTransactionEvent: Building TransactionEvent for trigger ${triggerReason}`
+  )
+
+  return transactionEventRequest
 }

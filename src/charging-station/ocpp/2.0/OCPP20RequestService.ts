@@ -1,7 +1,6 @@
 import type { ValidateFunction } from 'ajv'
 
 import type { ChargingStation } from '../../../charging-station/index.js'
-import type { OCPP20TransactionEventOptions } from '../../../types/ocpp/2.0/Transaction.js'
 import type { OCPPResponseService } from '../OCPPResponseService.js'
 
 import { OCPPError } from '../../../exception/index.js'
@@ -13,8 +12,6 @@ import {
   type JsonType,
   OCPP20RequestCommand,
   type OCPP20SignCertificateRequest,
-  OCPP20TransactionEventEnumType,
-  OCPP20TriggerReasonEnumType,
   OCPPVersion,
   type RequestParams,
 } from '../../../types/index.js'
@@ -23,7 +20,7 @@ import { OCPPRequestService } from '../OCPPRequestService.js'
 import { buildStatusNotificationRequest } from '../OCPPServiceUtils.js'
 import { generatePkcs10Csr } from './Asn1DerUtils.js'
 import { OCPP20Constants } from './OCPP20Constants.js'
-import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
+import { buildTransactionEvent, OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 
 const moduleName = 'OCPP20RequestService'
 
@@ -204,35 +201,8 @@ export class OCPP20RequestService extends OCPPRequestService {
           commandParams.status as ConnectorStatusEnum,
           commandParams.evseId as number | undefined
         ) as unknown as Request
-      case OCPP20RequestCommand.TRANSACTION_EVENT: {
-        const eventType = commandParams.eventType as OCPP20TransactionEventEnumType
-        const triggerReason: OCPP20TriggerReasonEnumType =
-          commandParams.triggerReason != null
-            ? (commandParams.triggerReason as OCPP20TriggerReasonEnumType)
-            : eventType === OCPP20TransactionEventEnumType.Ended
-              ? OCPP20TriggerReasonEnumType.RemoteStop
-              : OCPP20TriggerReasonEnumType.Authorized
-        const evse = commandParams.evse as undefined | { connectorId?: number; id?: number }
-        const connectorId: number =
-          commandParams.connectorId != null
-            ? (commandParams.connectorId as number)
-            : (evse?.connectorId ?? evse?.id ?? 1)
-        const transactionId: string =
-          commandParams.transactionId != null
-            ? (commandParams.transactionId as string)
-            : eventType === OCPP20TransactionEventEnumType.Ended
-              ? (chargingStation.getConnectorStatus(connectorId)?.transactionId?.toString() ??
-                generateUUID())
-              : generateUUID()
-        return OCPP20ServiceUtils.buildTransactionEvent(
-          chargingStation,
-          eventType,
-          triggerReason,
-          connectorId,
-          transactionId,
-          commandParams as unknown as OCPP20TransactionEventOptions
-        ) as unknown as Request
-      }
+      case OCPP20RequestCommand.TRANSACTION_EVENT:
+        return buildTransactionEvent(chargingStation, commandParams) as unknown as Request
       default: {
         // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
         const errorMsg = `Unsupported OCPP command ${commandName as string} for payload building`

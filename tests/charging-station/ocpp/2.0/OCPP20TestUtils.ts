@@ -16,10 +16,7 @@ import type {
   OCPP20RequestCommand,
   OCSPRequestDataType,
 } from '../../../../src/types/index.js'
-import type {
-  OCPP20IdTokenType,
-  OCPP20TransactionContext,
-} from '../../../../src/types/ocpp/2.0/Transaction.js'
+import type { OCPP20IdTokenType } from '../../../../src/types/ocpp/2.0/Transaction.js'
 
 import { OCPP20RequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20RequestService.js'
 import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
@@ -30,7 +27,6 @@ import {
   OCPP20RequiredVariableName,
   OCPPVersion,
 } from '../../../../src/types/index.js'
-import { OCPP20IncomingRequestCommand } from '../../../../src/types/ocpp/2.0/Requests.js'
 import { OCPP20IdTokenEnumType } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
@@ -449,200 +445,6 @@ export const IdTokenFixtures = {
 } as const
 
 /**
- * Pre-built TransactionContext factories for common flow patterns.
- * Use these to create standardized contexts for different transaction flows.
- */
-export const TransactionContextFixtures = {
-  // ===== Local Authorization Contexts =====
-
-  /**
-   * Abnormal condition (with optional condition type).
-   * @param condition - The abnormal condition type.
-   * @returns An OCPP20TransactionContext for abnormal conditions.
-   */
-  abnormalCondition: (condition = 'OverCurrent'): OCPP20TransactionContext => ({
-    abnormalCondition: condition,
-    source: 'abnormal_condition',
-  }),
-
-  /**
-   * Cable plugged in (E02 cable-first start).
-   * @returns An OCPP20TransactionContext for cable plugged in.
-   */
-  cablePluggedIn: (): OCPP20TransactionContext => ({
-    cableState: 'plugged_in',
-    source: 'cable_action',
-  }),
-
-  /**
-   * Deauthorization (token revoked or invalid).
-   * @returns An OCPP20TransactionContext for deauthorization.
-   */
-  deauthorized: (): OCPP20TransactionContext => ({
-    authorizationMethod: 'idToken',
-    isDeauthorized: true,
-    source: 'local_authorization',
-  }),
-
-  // ===== Cable Action Contexts (E02 flow) =====
-
-  /**
-   * Energy limit reached.
-   * @returns An OCPP20TransactionContext for energy limit reached.
-   */
-  energyLimitReached: (): OCPP20TransactionContext => ({
-    source: 'energy_limit',
-  }),
-
-  /**
-   * EV communication lost.
-   * @returns An OCPP20TransactionContext for EV communication lost.
-   */
-  evCommunicationLost: (): OCPP20TransactionContext => ({
-    source: 'system_event',
-    systemEvent: 'ev_communication_lost',
-  }),
-
-  /**
-   * EV connect timeout.
-   * @returns An OCPP20TransactionContext for EV connect timeout.
-   */
-  evConnectTimeout: (): OCPP20TransactionContext => ({
-    source: 'system_event',
-    systemEvent: 'ev_connect_timeout',
-  }),
-
-  // ===== Remote Command Contexts =====
-
-  /**
-   * Cable unplugged / EV departed.
-   * @returns An OCPP20TransactionContext for EV departure.
-   */
-  evDeparted: (): OCPP20TransactionContext => ({
-    cableState: 'unplugged',
-    source: 'cable_action',
-  }),
-
-  /**
-   * EV detected after cable connection.
-   * @returns An OCPP20TransactionContext for EV detection.
-   */
-  evDetected: (): OCPP20TransactionContext => ({
-    cableState: 'detected',
-    source: 'cable_action',
-  }),
-
-  /**
-   * IdToken-first authorization (E03 flow start).
-   * @param authorizationMethod - The authorization method used.
-   * @returns An OCPP20TransactionContext for IdToken authorization.
-   */
-  idTokenAuthorized: (
-    authorizationMethod: 'groupIdToken' | 'idToken' = 'idToken'
-  ): OCPP20TransactionContext => ({
-    authorizationMethod,
-    source: 'local_authorization',
-  }),
-
-  /**
-   * Clock-aligned meter value.
-   * @returns An OCPP20TransactionContext for clock-aligned meter values.
-   */
-  meterValueClock: (): OCPP20TransactionContext => ({
-    isPeriodicMeterValue: false,
-    source: 'meter_value',
-  }),
-
-  /**
-   * Periodic meter value (sampled interval).
-   * @returns An OCPP20TransactionContext for periodic meter values.
-   */
-  meterValuePeriodic: (): OCPP20TransactionContext => ({
-    isPeriodicMeterValue: true,
-    source: 'meter_value',
-  }),
-
-  // ===== Meter Value Contexts =====
-
-  /**
-   * Remote start transaction request.
-   * @returns An OCPP20TransactionContext for remote start.
-   */
-  remoteStart: (): OCPP20TransactionContext => ({
-    command: OCPP20IncomingRequestCommand.REQUEST_START_TRANSACTION,
-    source: 'remote_command',
-  }),
-
-  /**
-   * Remote stop transaction request.
-   * @returns An OCPP20TransactionContext for remote stop.
-   */
-  remoteStop: (): OCPP20TransactionContext => ({
-    command: OCPP20IncomingRequestCommand.REQUEST_STOP_TRANSACTION,
-    source: 'remote_command',
-  }),
-
-  /**
-   * Reset command.
-   * @returns An OCPP20TransactionContext for reset.
-   */
-  reset: (): OCPP20TransactionContext => ({
-    command: OCPP20IncomingRequestCommand.RESET,
-    source: 'remote_command',
-  }),
-
-  // ===== System Event Contexts =====
-
-  /**
-   * Signed data received.
-   * @returns An OCPP20TransactionContext for signed data.
-   */
-  signedData: (): OCPP20TransactionContext => ({
-    isSignedDataReceived: true,
-    source: 'meter_value',
-  }),
-
-  /**
-   * Stop authorized by local token presentation.
-   * @returns An OCPP20TransactionContext for stop authorization.
-   */
-  stopAuthorized: (): OCPP20TransactionContext => ({
-    authorizationMethod: 'stopAuthorized',
-    source: 'local_authorization',
-  }),
-
-  // ===== Limit Contexts =====
-
-  /**
-   * Time limit reached.
-   * @returns An OCPP20TransactionContext for time limit.
-   */
-  timeLimitReached: (): OCPP20TransactionContext => ({
-    source: 'time_limit',
-  }),
-
-  /**
-   * Trigger message command.
-   * @returns An OCPP20TransactionContext for trigger message.
-   */
-  triggerMessage: (): OCPP20TransactionContext => ({
-    command: OCPP20IncomingRequestCommand.TRIGGER_MESSAGE,
-    source: 'remote_command',
-  }),
-
-  // ===== Abnormal Condition Contexts =====
-
-  /**
-   * Unlock connector command.
-   * @returns An OCPP20TransactionContext for unlock connector.
-   */
-  unlockConnector: (): OCPP20TransactionContext => ({
-    command: OCPP20IncomingRequestCommand.UNLOCK_CONNECTOR,
-    source: 'remote_command',
-  }),
-} as const
-
-/**
  * Pre-built mock station fixtures for Reset command testing.
  * These factories create properly configured MockChargingStation instances
  * with common configurations to avoid duplication across test files.
@@ -706,8 +508,6 @@ export interface TransactionFlowPattern {
   expectedStartTrigger: string
   /** Whether to include idToken in Started event */
   includeIdToken: boolean
-  /** Context to use for Started event (determines initial trigger reason) */
-  startContext: OCPP20TransactionContext
 }
 
 /**
@@ -719,19 +519,16 @@ export const TransactionFlowPatterns: TransactionFlowPattern[] = [
     description: 'E02 Cable-First: CablePluggedIn → Charging → EVDeparted',
     expectedStartTrigger: 'CablePluggedIn',
     includeIdToken: false,
-    startContext: TransactionContextFixtures.cablePluggedIn(),
   },
   {
     description: 'E03 IdToken-First: Authorized → Cable → Charging → StopAuthorized',
     expectedStartTrigger: 'Authorized',
     includeIdToken: true,
-    startContext: TransactionContextFixtures.idTokenAuthorized(),
   },
   {
     description: 'Remote Start: RemoteStart → Charging → RemoteStop',
     expectedStartTrigger: 'RemoteStart',
     includeIdToken: false,
-    startContext: TransactionContextFixtures.remoteStart(),
   },
 ] as const
 
