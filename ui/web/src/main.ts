@@ -9,11 +9,21 @@ import { router } from '@/router'
 
 import 'vue-toast-notification/dist/theme-bootstrap.css'
 
-import '@/assets/theme.css'
+const DEFAULT_THEME = 'tokyo-night-storm'
+
+const loadTheme = async (theme: string): Promise<void> => {
+  try {
+    await import(`./assets/themes/${theme}.css`)
+  } catch {
+    console.error(`Theme '${theme}' not found, falling back to '${DEFAULT_THEME}'`)
+    await import(`./assets/themes/${DEFAULT_THEME}.css`)
+  }
+}
 
 const app = createApp(App as Component)
 
-const initializeApp = (app: AppType, config: ConfigurationData) => {
+const initializeApp = async (app: AppType, config: ConfigurationData): Promise<void> => {
+  await loadTheme(config.theme ?? DEFAULT_THEME)
   app.config.errorHandler = (error, instance, info) => {
     console.error('Error:', error)
     console.info('Vue instance:', instance)
@@ -57,8 +67,8 @@ fetch('/config.json')
     response
       .json()
       // eslint-disable-next-line promise/no-nesting
-      .then(config => {
-        initializeApp(app, config as ConfigurationData)
+      .then(async config => {
+        await initializeApp(app, config as ConfigurationData)
         return undefined
       })
       // eslint-disable-next-line promise/no-nesting

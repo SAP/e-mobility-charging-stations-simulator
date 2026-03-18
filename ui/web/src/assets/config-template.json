@@ -1,4 +1,5 @@
 {
+  "theme": "tokyo-night-storm",
   "uiServer": {
     "host": "localhost",
     "port": 8080,

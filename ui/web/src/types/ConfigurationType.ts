@@ -1,6 +1,7 @@
 import type { AuthenticationType, Protocol, ProtocolVersion } from './UIProtocol'
 
 export interface ConfigurationData {
+  theme?: string
   uiServer: UIServerConfigurationSection | UIServerConfigurationSection[]
 }
 
