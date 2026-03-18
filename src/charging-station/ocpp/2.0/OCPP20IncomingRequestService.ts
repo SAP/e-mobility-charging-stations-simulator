@@ -2378,7 +2378,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         return {
           status: RequestStartStopStatusEnumType.Rejected,
           statusInfo: {
-            additionalInfo: 'C12.FR.09: MasterPassGroupId tokens cannot start transactions',
+            additionalInfo: 'MasterPassGroupId tokens cannot start transactions',
             reasonCode: ReasonCodeEnumType.InvalidIdToken,
           },
           transactionId: generateUUID(),
