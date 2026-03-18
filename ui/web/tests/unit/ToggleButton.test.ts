@@ -17,13 +17,15 @@ import ToggleButton from '@/components/buttons/ToggleButton.vue'
  * @param props.status - Initial toggle status
  * @returns Mounted wrapper
  */
-function mountToggleButton (props: {
-  id: string
-  off?: () => void
-  on?: () => void
-  shared?: boolean
-  status?: boolean
-} = { id: 'test-toggle' }) {
+function mountToggleButton (
+  props: {
+    id: string
+    off?: () => void
+    on?: () => void
+    shared?: boolean
+    status?: boolean
+  } = { id: 'test-toggle' }
+) {
   return mount(ToggleButton, {
     global: {
       stubs: {
@@ -78,7 +80,12 @@ describe('ToggleButton', () => {
 
     it('should call on callback when toggled to active', async () => {
       const onCallback = vi.fn()
-      const wrapper = mountToggleButton({ id: 'on-callback-test', off: vi.fn(), on: onCallback, status: false })
+      const wrapper = mountToggleButton({
+        id: 'on-callback-test',
+        off: vi.fn(),
+        on: onCallback,
+        status: false,
+      })
       const button = wrapper.find('button')
 
       await button.trigger('click')
@@ -87,7 +94,12 @@ describe('ToggleButton', () => {
 
     it('should call off callback when toggled to inactive', async () => {
       const offCallback = vi.fn()
-      const wrapper = mountToggleButton({ id: 'off-callback-test', off: offCallback, on: vi.fn(), status: true })
+      const wrapper = mountToggleButton({
+        id: 'off-callback-test',
+        off: offCallback,
+        on: vi.fn(),
+        status: true,
+      })
       const button = wrapper.find('button')
 
       await button.trigger('click')
