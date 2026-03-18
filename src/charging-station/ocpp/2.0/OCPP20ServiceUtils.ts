@@ -489,13 +489,13 @@ export function buildTransactionEvent (
   commandParams: JsonObject
 ): OCPP20TransactionEventRequest
 /**
- *
- * @param chargingStation
- * @param eventTypeOrParams
- * @param triggerReasonArg
- * @param connectorIdArg
- * @param transactionIdArg
- * @param options
+ * @param chargingStation - Charging station instance
+ * @param eventTypeOrParams - Event type enum or minimal params object
+ * @param triggerReasonArg - Trigger reason (explicit overload)
+ * @param connectorIdArg - Connector identifier (explicit overload)
+ * @param transactionIdArg - Transaction UUID (explicit overload)
+ * @param options - Optional transaction event fields
+ * @returns Built TransactionEventRequest
  */
 export function buildTransactionEvent (
   chargingStation: ChargingStation,

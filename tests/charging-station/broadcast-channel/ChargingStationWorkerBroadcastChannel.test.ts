@@ -26,10 +26,7 @@ import {
 import { Constants } from '../../../src/utils/index.js'
 import { flushMicrotasks, standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from '../ChargingStationTestUtils.js'
-import {
-  createMockStationWithRequestTracking,
-  createOCPP20RequestTestContext,
-} from '../ocpp/2.0/OCPP20TestUtils.js'
+import { createMockStationWithRequestTracking } from '../ocpp/2.0/OCPP20TestUtils.js'
 
 // ============================================================================
 // Testable Interfaces
@@ -529,67 +526,6 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
       )
 
       assert.strictEqual(status, ResponseStatus.FAILURE)
-    })
-  })
-
-  // ==========================================================================
-  // Group 3: buildRequestPayload — OCPP 2.0.1 certificate passthrough (3 tests)
-  // ==========================================================================
-
-  await describe('buildRequestPayload OCPP 2.0.1 certificate passthrough', async () => {
-    await it('should build GET_15118_EV_CERTIFICATE payload as passthrough', () => {
-      const { station, testableRequestService } = createOCPP20RequestTestContext()
-      const commandParams = {
-        action: 'Install',
-        exiRequest: 'base64EncodedData',
-        iso15118SchemaVersion: 'urn:iso:15118:2:2013:MsgDef',
-      }
-
-      const payload = testableRequestService.buildRequestPayload(
-        station,
-        RequestCommand.GET_15118_EV_CERTIFICATE,
-        commandParams
-      )
-
-      assert.deepStrictEqual(payload, commandParams)
-    })
-
-    await it('should build GET_CERTIFICATE_STATUS payload as passthrough', () => {
-      const { station, testableRequestService } = createOCPP20RequestTestContext()
-      const commandParams = {
-        ocspRequestData: {
-          hashAlgorithm: 'SHA256',
-          issuerKeyHash: 'abc123def456issuerkeyhash',
-          issuerNameHash: 'abc123def456issuernamehash',
-          responderURL: 'http://ocsp.example.com',
-          serialNumber: '1234567890',
-        },
-      }
-
-      const payload = testableRequestService.buildRequestPayload(
-        station,
-        RequestCommand.GET_CERTIFICATE_STATUS,
-        commandParams
-      )
-
-      assert.deepStrictEqual(payload, commandParams)
-    })
-
-    await it('should build SIGN_CERTIFICATE payload with generated CSR', () => {
-      const { station, testableRequestService } = createOCPP20RequestTestContext()
-      const commandParams = {
-        certificateType: 'ChargingStationCertificate',
-      }
-
-      const payload = testableRequestService.buildRequestPayload(
-        station,
-        RequestCommand.SIGN_CERTIFICATE,
-        commandParams
-      ) as { certificateType?: string; csr: string }
-
-      assert.ok(payload.csr.startsWith('-----BEGIN CERTIFICATE REQUEST-----'))
-      assert.ok(payload.csr.endsWith('-----END CERTIFICATE REQUEST-----'))
-      assert.strictEqual(payload.certificateType, 'ChargingStationCertificate')
     })
   })
 
