@@ -52,7 +52,6 @@ import {
   type OCPP16CancelReservationRequest,
   type OCPP16ChangeAvailabilityRequest,
   type OCPP16ChangeAvailabilityResponse,
-  OCPP16ChargePointErrorCode,
   OCPP16ChargePointStatus,
   type OCPP16ChargingProfile,
   OCPP16ChargingProfilePurposeType,
@@ -117,7 +116,11 @@ import {
 } from '../../../utils/index.js'
 import { OCPPConstants } from '../OCPPConstants.js'
 import { OCPPIncomingRequestService } from '../OCPPIncomingRequestService.js'
-import { buildMeterValue, OCPPServiceUtils } from '../OCPPServiceUtils.js'
+import {
+  buildMeterValue,
+  buildStatusNotificationRequest,
+  OCPPServiceUtils,
+} from '../OCPPServiceUtils.js'
 import { OCPP16Constants } from './OCPP16Constants.js'
 import { OCPP16ServiceUtils } from './OCPP16ServiceUtils.js'
 
@@ -484,12 +487,12 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                 .requestHandler<OCPP16StatusNotificationRequest, OCPP16StatusNotificationResponse>(
                   chargingStation,
                   OCPP16RequestCommand.STATUS_NOTIFICATION,
-                  {
+                  buildStatusNotificationRequest(
+                    chargingStation,
                     connectorId,
-                    errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
-                    status: chargingStation.getConnectorStatus(connectorId)
-                      ?.status as OCPP16ChargePointStatus,
-                  },
+                    chargingStation.getConnectorStatus(connectorId)
+                      ?.status as OCPP16ChargePointStatus
+                  ) as OCPP16StatusNotificationRequest,
                   {
                     triggerMessage: true,
                   }
@@ -505,11 +508,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                     >(
                       chargingStation,
                       OCPP16RequestCommand.STATUS_NOTIFICATION,
-                      {
-                        connectorId: id,
-                        errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
-                        status: connectorStatus.status as OCPP16ChargePointStatus,
-                      },
+                      buildStatusNotificationRequest(
+                        chargingStation,
+                        id,
+                        connectorStatus.status as OCPP16ChargePointStatus
+                      ) as OCPP16StatusNotificationRequest,
                       {
                         triggerMessage: true,
                       }
@@ -526,11 +529,11 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                   >(
                     chargingStation,
                     OCPP16RequestCommand.STATUS_NOTIFICATION,
-                    {
-                      connectorId: id,
-                      errorCode: OCPP16ChargePointErrorCode.NO_ERROR,
-                      status: connectorStatus.status as OCPP16ChargePointStatus,
-                    },
+                    buildStatusNotificationRequest(
+                      chargingStation,
+                      id,
+                      connectorStatus.status as OCPP16ChargePointStatus
+                    ) as OCPP16StatusNotificationRequest,
                     {
                       triggerMessage: true,
                     }

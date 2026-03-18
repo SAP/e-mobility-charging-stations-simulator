@@ -98,7 +98,7 @@ export const getMessageTypeString = (messageType: MessageType | undefined): stri
   }
 }
 
-const buildStatusNotificationRequest = (
+export const buildStatusNotificationRequest = (
   chargingStation: ChargingStation,
   connectorId: number,
   status: ConnectorStatusEnum,
