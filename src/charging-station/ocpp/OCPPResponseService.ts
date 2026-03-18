@@ -34,6 +34,7 @@ export abstract class OCPPResponseService {
   protected abstract readonly bootNotificationRequestCommand: RequestCommand
   protected abstract readonly csmsName: string
   protected emptyResponseHandler = Constants.EMPTY_FUNCTION
+  protected abstract readonly moduleName: string
   protected abstract payloadValidatorFunctions: Map<RequestCommand, ValidateFunction<JsonType>>
   protected abstract readonly responseHandlers: Map<RequestCommand, ResponseHandler>
   private readonly version: OCPPVersion
@@ -82,7 +83,7 @@ export abstract class OCPPResponseService {
         try {
           this.validateResponsePayload(chargingStation, commandName, payload)
           logger.debug(
-            `${chargingStation.logPrefix()} ${this.constructor.name}.responseHandler: Handling '${commandName}' response`
+            `${chargingStation.logPrefix()} ${this.moduleName}.responseHandler: Handling '${commandName}' response`
           )
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           const responseHandler = this.responseHandlers.get(commandName)!
@@ -98,11 +99,11 @@ export abstract class OCPPResponseService {
             )(chargingStation, payload, requestPayload)
           }
           logger.debug(
-            `${chargingStation.logPrefix()} ${this.constructor.name}.responseHandler: '${commandName}' response processed successfully`
+            `${chargingStation.logPrefix()} ${this.moduleName}.responseHandler: '${commandName}' response processed successfully`
           )
         } catch (error) {
           logger.error(
-            `${chargingStation.logPrefix()} ${this.constructor.name}.responseHandler: Handle '${commandName}' response error:`,
+            `${chargingStation.logPrefix()} ${this.moduleName}.responseHandler: Handle '${commandName}' response error:`,
             error
           )
           throw error

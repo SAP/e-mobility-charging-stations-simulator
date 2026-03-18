@@ -158,8 +158,9 @@ const moduleName = 'OCPP16IncomingRequestService'
 
 export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
   protected readonly csmsName = 'central system'
-
   protected readonly incomingRequestHandlers: Map<IncomingRequestCommand, IncomingRequestHandler>
+
+  protected readonly moduleName = moduleName
 
   protected payloadValidatorFunctions: Map<OCPP16IncomingRequestCommand, ValidateFunction<JsonType>>
 

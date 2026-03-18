@@ -34,6 +34,8 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
     IncomingRequestHandler
   >
 
+  protected abstract readonly moduleName: string
+
   protected abstract payloadValidatorFunctions: Map<
     IncomingRequestCommand,
     ValidateFunction<JsonType>
@@ -107,7 +109,7 @@ export abstract class OCPPIncomingRequestService extends EventEmitter {
         } catch (error) {
           // Log
           logger.error(
-            `${chargingStation.logPrefix()} ${this.constructor.name}.incomingRequestHandler: Handle incoming request error:`,
+            `${chargingStation.logPrefix()} ${this.moduleName}.incomingRequestHandler: Handle incoming request error:`,
             error
           )
           throw error

@@ -209,8 +209,9 @@ interface OCPP20StationState {
 
 export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   protected readonly csmsName = 'CSMS'
-
   protected readonly incomingRequestHandlers: Map<IncomingRequestCommand, IncomingRequestHandler>
+
+  protected readonly moduleName = moduleName
 
   protected payloadValidatorFunctions: Map<OCPP20IncomingRequestCommand, ValidateFunction<JsonType>>
 

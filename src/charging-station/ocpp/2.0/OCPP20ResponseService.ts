@@ -82,6 +82,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
 
   protected readonly bootNotificationRequestCommand = OCPP20RequestCommand.BOOT_NOTIFICATION
   protected readonly csmsName = 'CSMS'
+  protected readonly moduleName = moduleName
 
   protected payloadValidatorFunctions: Map<OCPP20RequestCommand, ValidateFunction<JsonType>>
 
