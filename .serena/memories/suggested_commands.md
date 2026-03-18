@@ -23,9 +23,9 @@ pnpm start:dev:debug            # Build + run with Node inspector
 
 ```bash
 pnpm format                     # Prettier + ESLint auto-fix (run this first)
+pnpm typecheck                  # TypeScript type check (no emit)
 pnpm lint                       # ESLint check only
 pnpm lint:fix                   # ESLint auto-fix only
-pnpm typecheck                  # TypeScript type check (no emit)
 ```
 
 ### Test
@@ -62,6 +62,7 @@ pnpm preview                    # Build + Vite preview
 
 ```bash
 pnpm format                     # Prettier + ESLint auto-fix
+pnpm typecheck                  # vue-tsc type checking (no emit)
 pnpm lint                       # ESLint check only
 pnpm lint:fix                   # ESLint auto-fix only
 ```
@@ -100,8 +101,8 @@ poetry run python server.py --command GetBaseReport --period 5
 
 ```bash
 poetry run task format           # Ruff auto-fix + format
-poetry run task lint             # Ruff check + format check
 poetry run task typecheck        # Mypy type check
+poetry run task lint             # Ruff check + format check
 ```
 
 ### Test

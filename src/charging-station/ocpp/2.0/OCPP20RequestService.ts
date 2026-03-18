@@ -576,25 +576,14 @@ export class OCPP20RequestService extends OCPPRequestService {
       case OCPP20RequestCommand.LOG_STATUS_NOTIFICATION:
       case OCPP20RequestCommand.METER_VALUES:
       case OCPP20RequestCommand.NOTIFY_CUSTOMER_INFORMATION:
+      case OCPP20RequestCommand.NOTIFY_REPORT:
       case OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION:
       case OCPP20RequestCommand.SIGN_CERTIFICATE:
+      case OCPP20RequestCommand.STATUS_NOTIFICATION:
+      case OCPP20RequestCommand.TRANSACTION_EVENT:
         return commandParams as unknown as Request
       case OCPP20RequestCommand.HEARTBEAT:
         return OCPP20Constants.OCPP_RESPONSE_EMPTY as unknown as Request
-      case OCPP20RequestCommand.NOTIFY_REPORT:
-        return {
-          ...commandParams,
-        } as unknown as Request
-      case OCPP20RequestCommand.STATUS_NOTIFICATION:
-        return {
-          timestamp: new Date(),
-          ...commandParams,
-        } as unknown as Request
-      case OCPP20RequestCommand.TRANSACTION_EVENT:
-        return {
-          timestamp: new Date(),
-          ...commandParams,
-        } as unknown as Request
       default: {
         // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
         const errorMsg = `Unsupported OCPP command ${commandName as string} for payload building`

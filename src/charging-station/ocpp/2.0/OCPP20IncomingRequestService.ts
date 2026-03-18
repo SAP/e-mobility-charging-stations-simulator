@@ -159,6 +159,47 @@ import { getVariableMetadata, VARIABLE_REGISTRY } from './OCPP20VariableRegistry
 
 const moduleName = 'OCPP20IncomingRequestService'
 
+interface StationInfoReportField {
+  property: 'chargePointModel' | 'chargePointSerialNumber' | 'chargePointVendor' | 'firmwareVersion'
+  variable: OCPP20DeviceInfoVariableName
+}
+
+const STATION_INFO_FIELDS_FULL: readonly StationInfoReportField[] = Object.freeze([
+  { property: 'chargePointModel', variable: OCPP20DeviceInfoVariableName.Model },
+  { property: 'chargePointVendor', variable: OCPP20DeviceInfoVariableName.VendorName },
+  { property: 'chargePointSerialNumber', variable: OCPP20DeviceInfoVariableName.SerialNumber },
+  { property: 'firmwareVersion', variable: OCPP20DeviceInfoVariableName.FirmwareVersion },
+])
+
+const STATION_INFO_FIELDS_SUMMARY: readonly StationInfoReportField[] = Object.freeze([
+  { property: 'chargePointModel', variable: OCPP20DeviceInfoVariableName.Model },
+  { property: 'chargePointVendor', variable: OCPP20DeviceInfoVariableName.VendorName },
+  { property: 'firmwareVersion', variable: OCPP20DeviceInfoVariableName.FirmwareVersion },
+])
+
+const buildStationInfoReportData = (
+  chargingStation: ChargingStation,
+  fields: readonly StationInfoReportField[]
+): ReportDataType[] => {
+  const stationInfo = chargingStation.stationInfo
+  if (stationInfo == null) {
+    return []
+  }
+  const reportData: ReportDataType[] = []
+  for (const { property, variable } of fields) {
+    const value = stationInfo[property]
+    if (value != null) {
+      reportData.push({
+        component: { name: OCPP20ComponentName.ChargingStation },
+        variable: { name: variable },
+        variableAttribute: [{ type: AttributeEnumType.Actual, value }],
+        variableCharacteristics: { dataType: DataEnumType.string, supportsMonitoring: false },
+      })
+    }
+  }
+  return reportData
+}
+
 interface OCPP20StationState {
   activeFirmwareUpdateAbortController?: AbortController
   activeFirmwareUpdateRequestId?: number
@@ -442,7 +483,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               .requestHandler<
                 OCPP20HeartbeatRequest,
                 OCPP20HeartbeatResponse
-              >(chargingStation, OCPP20RequestCommand.HEARTBEAT, {}, { skipBufferingOnError: true, triggerMessage: true })
+              >(chargingStation, OCPP20RequestCommand.HEARTBEAT, OCPP20Constants.OCPP_RESPONSE_EMPTY as OCPP20HeartbeatRequest, { skipBufferingOnError: true, triggerMessage: true })
               .catch(errorHandler)
             break
           case MessageTriggerEnumType.LogStatusNotification:
@@ -770,52 +811,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         break
 
       case ReportBaseEnumType.FullInventory:
-        if (chargingStation.stationInfo) {
-          const stationInfo = chargingStation.stationInfo
-          if (stationInfo.chargePointModel) {
-            reportData.push({
-              component: { name: OCPP20ComponentName.ChargingStation },
-              variable: { name: OCPP20DeviceInfoVariableName.Model },
-              variableAttribute: [
-                { type: AttributeEnumType.Actual, value: stationInfo.chargePointModel },
-              ],
-              variableCharacteristics: { dataType: DataEnumType.string, supportsMonitoring: false },
-            })
-          }
-          if (stationInfo.chargePointVendor) {
-            reportData.push({
-              component: { name: OCPP20ComponentName.ChargingStation },
-              variable: { name: OCPP20DeviceInfoVariableName.VendorName },
-              variableAttribute: [
-                { type: AttributeEnumType.Actual, value: stationInfo.chargePointVendor },
-              ],
-              variableCharacteristics: { dataType: DataEnumType.string, supportsMonitoring: false },
-            })
-          }
-          if (stationInfo.chargePointSerialNumber) {
-            reportData.push({
-              component: { name: OCPP20ComponentName.ChargingStation },
-              variable: { name: OCPP20DeviceInfoVariableName.SerialNumber },
-              variableAttribute: [
-                {
-                  type: AttributeEnumType.Actual,
-                  value: stationInfo.chargePointSerialNumber,
-                },
-              ],
-              variableCharacteristics: { dataType: DataEnumType.string, supportsMonitoring: false },
-            })
-          }
-          if (stationInfo.firmwareVersion) {
-            reportData.push({
-              component: { name: OCPP20ComponentName.ChargingStation },
-              variable: { name: OCPP20DeviceInfoVariableName.FirmwareVersion },
-              variableAttribute: [
-                { type: AttributeEnumType.Actual, value: stationInfo.firmwareVersion },
-              ],
-              variableCharacteristics: { dataType: DataEnumType.string, supportsMonitoring: false },
-            })
-          }
-        }
+        reportData.push(...buildStationInfoReportData(chargingStation, STATION_INFO_FIELDS_FULL))
 
         if (chargingStation.ocppConfiguration?.configurationKey) {
           for (const configKey of chargingStation.ocppConfiguration.configurationKey) {
@@ -987,39 +983,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         break
 
       case ReportBaseEnumType.SummaryInventory:
-        if (chargingStation.stationInfo) {
-          const stationInfo = chargingStation.stationInfo
-          if (stationInfo.chargePointModel) {
-            reportData.push({
-              component: { name: OCPP20ComponentName.ChargingStation },
-              variable: { name: OCPP20DeviceInfoVariableName.Model },
-              variableAttribute: [
-                { type: AttributeEnumType.Actual, value: stationInfo.chargePointModel },
-              ],
-              variableCharacteristics: { dataType: DataEnumType.string, supportsMonitoring: false },
-            })
-          }
-          if (stationInfo.chargePointVendor) {
-            reportData.push({
-              component: { name: OCPP20ComponentName.ChargingStation },
-              variable: { name: OCPP20DeviceInfoVariableName.VendorName },
-              variableAttribute: [
-                { type: AttributeEnumType.Actual, value: stationInfo.chargePointVendor },
-              ],
-              variableCharacteristics: { dataType: DataEnumType.string, supportsMonitoring: false },
-            })
-          }
-          if (stationInfo.firmwareVersion) {
-            reportData.push({
-              component: { name: OCPP20ComponentName.ChargingStation },
-              variable: { name: OCPP20DeviceInfoVariableName.FirmwareVersion },
-              variableAttribute: [
-                { type: AttributeEnumType.Actual, value: stationInfo.firmwareVersion },
-              ],
-              variableCharacteristics: { dataType: DataEnumType.string, supportsMonitoring: false },
-            })
-          }
-        }
+        reportData.push(...buildStationInfoReportData(chargingStation, STATION_INFO_FIELDS_SUMMARY))
 
         reportData.push({
           component: { name: OCPP20ComponentName.ChargingStation },

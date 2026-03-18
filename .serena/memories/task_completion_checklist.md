@@ -7,6 +7,7 @@
 ```bash
 pnpm format
 pnpm typecheck
+pnpm lint
 pnpm build
 pnpm test
 ```
@@ -16,6 +17,7 @@ pnpm test
 ```bash
 cd ui/web
 pnpm format
+pnpm typecheck
 pnpm lint
 pnpm build
 pnpm test
@@ -26,8 +28,8 @@ pnpm test
 ```bash
 cd tests/ocpp-server
 poetry run task format
-poetry run task lint
 poetry run task typecheck
+poetry run task lint
 poetry run task test
 ```
 
