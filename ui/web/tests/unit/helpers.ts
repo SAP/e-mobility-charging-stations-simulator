@@ -77,10 +77,6 @@ export class MockWebSocket {
     this.send = vi.fn((data: string) => {
       this.sentMessages.push(data)
     })
-    // Simulate async open
-    setTimeout(() => {
-      this.simulateOpen()
-    }, 0)
   }
 
   simulateClose (code = 1000, reason = ''): void {

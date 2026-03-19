@@ -7,7 +7,6 @@ import { describe, expect, it } from 'vitest'
 
 import type { ChargingStationData } from '@/types'
 
-import CSData from '@/components/charging-stations/CSData.vue'
 import CSTable from '@/components/charging-stations/CSTable.vue'
 
 import { createChargingStationData, createStationInfo } from './constants'
@@ -58,12 +57,12 @@ describe('CSTable', () => {
         }),
       ]
       const wrapper = mountCSTable(stations)
-      expect(wrapper.findAllComponents(CSData)).toHaveLength(2)
+      expect(wrapper.findAllComponents({ name: 'CSData' })).toHaveLength(2)
     })
 
     it('should handle empty charging stations array', () => {
       const wrapper = mountCSTable([])
-      expect(wrapper.findAllComponents(CSData)).toHaveLength(0)
+      expect(wrapper.findAllComponents({ name: 'CSData' })).toHaveLength(0)
     })
 
     it('should propagate need-refresh event from CSData', async () => {

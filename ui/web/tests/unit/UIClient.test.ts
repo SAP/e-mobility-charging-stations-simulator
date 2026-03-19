@@ -14,8 +14,9 @@ import {
   ResponseStatus,
 } from '@/types'
 
+import { toastMock } from '../setup'
 import { createUIServerConfig, TEST_HASH_ID, TEST_ID_TAG } from './constants'
-import { flushAllPromises, MockWebSocket } from './helpers'
+import { MockWebSocket } from './helpers'
 
 // Reset singleton between tests
 beforeEach(() => {
@@ -108,9 +109,12 @@ describe('UIClient', () => {
       expect(protocols[1]).toMatch(/^authorization\.basic\./)
     })
 
-    it('should handle WebSocket open event', async () => {
-      UIClient.getInstance(createUIServerConfig())
-      await flushAllPromises()
+    it('should show success toast on WebSocket open', () => {
+      const client = UIClient.getInstance(createUIServerConfig())
+      // @ts-expect-error — accessing private property for testing
+      const ws = client.ws as MockWebSocket
+      ws.simulateOpen()
+      expect(toastMock.success).toHaveBeenCalledWith(expect.stringContaining('successfully opened'))
     })
 
     it('should log error on WebSocket error', () => {
@@ -237,9 +241,8 @@ describe('UIClient', () => {
       }).toThrow('Not a response to a request')
     })
 
-    it('should handle response with invalid UUID', async () => {
+    it('should handle response with invalid UUID', () => {
       const client = UIClient.getInstance(createUIServerConfig())
-      await flushAllPromises()
       // @ts-expect-error — accessing private property for testing
       const ws = client.ws as MockWebSocket
       ws.simulateMessage(['not-a-valid-uuid', { status: ResponseStatus.SUCCESS }])
