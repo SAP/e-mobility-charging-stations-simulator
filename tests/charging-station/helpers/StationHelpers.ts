@@ -769,11 +769,6 @@ export function createMockChargingStation (
       this.startHeartbeat()
     },
 
-    restartMeterValues (connectorId: number, interval: number): void {
-      this.stopMeterValues(connectorId)
-      this.startMeterValues(connectorId, interval)
-    },
-
     restartWebSocketPing (): void {
       /* empty */
     },
@@ -793,29 +788,6 @@ export function createMockChargingStation (
       }, 30000)
     },
     starting,
-
-    startMeterValues (connectorId: number, interval: number): void {
-      const connector = this.getConnectorStatus(connectorId)
-      if (connector != null) {
-        connector.transactionSetInterval = setInterval(() => {
-          /* empty */
-        }, interval)
-      }
-    },
-
-    startTxUpdatedInterval (connectorId: number, interval: number): void {
-      if (
-        this.stationInfo.ocppVersion === OCPPVersion.VERSION_20 ||
-        this.stationInfo.ocppVersion === OCPPVersion.VERSION_201
-      ) {
-        const connector = this.getConnectorStatus(connectorId)
-        if (connector != null) {
-          connector.transactionTxUpdatedSetInterval = setInterval(() => {
-            /* empty */
-          }, interval)
-        }
-      }
-    },
 
     startWebSocketPing (): void {
       /* empty */
@@ -852,22 +824,8 @@ export function createMockChargingStation (
         delete this.heartbeatSetInterval
       }
     },
-    stopMeterValues (connectorId: number): void {
-      const connector = this.getConnectorStatus(connectorId)
-      if (connector?.transactionSetInterval != null) {
-        clearInterval(connector.transactionSetInterval)
-        delete connector.transactionSetInterval
-      }
-    },
     stopping: false,
 
-    stopTxUpdatedInterval (connectorId: number): void {
-      const connector = this.getConnectorStatus(connectorId)
-      if (connector?.transactionTxUpdatedSetInterval != null) {
-        clearInterval(connector.transactionTxUpdatedSetInterval)
-        delete connector.transactionTxUpdatedSetInterval
-      }
-    },
     templateFile,
     wsConnection: null as MockWebSocket | null,
     wsConnectionRetryCount: 0,

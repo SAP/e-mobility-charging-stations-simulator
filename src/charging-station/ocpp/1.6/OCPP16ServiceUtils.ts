@@ -660,6 +660,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
     if (connectorStatus?.transactionSetInterval != null) {
       clearInterval(connectorStatus.transactionSetInterval)
+      delete connectorStatus.transactionSetInterval
     }
   }
 
