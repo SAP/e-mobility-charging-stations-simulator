@@ -61,7 +61,7 @@ export class MockWebSocket {
   onmessage: ((event: MessageEvent) => void) | null = null
   onopen: (() => void) | null = null
   readonly OPEN = 1
-  readyState: number = MockWebSocket.OPEN
+  readyState: number = MockWebSocket.CONNECTING
   removeEventListener: ReturnType<typeof vi.fn>
   send: ReturnType<typeof vi.fn>
   sentMessages: string[] = []
