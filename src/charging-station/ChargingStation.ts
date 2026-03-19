@@ -161,7 +161,7 @@ import {
   type OCPPRequestService,
   sendAndSetConnectorStatus,
 } from './ocpp/index.js'
-import { stopRunningTransactions } from './ocpp/OCPPServiceUtils.js'
+import { flushQueuedTransactionMessages, stopRunningTransactions } from './ocpp/OCPPServiceUtils.js'
 import { SharedLRUCache } from './SharedLRUCache.js'
 
 export class ChargingStation extends EventEmitter {
@@ -1218,40 +1218,6 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  private async flushQueuedTransactionEvents (): Promise<void> {
-    if (this.hasEvses) {
-      for (const evseStatus of this.evses.values()) {
-        for (const [connectorId, connectorStatus] of evseStatus.connectors) {
-          if ((connectorStatus.transactionEventQueue?.length ?? 0) === 0) {
-            continue
-          }
-          await OCPP20ServiceUtils.sendQueuedTransactionEvents(this, connectorId).catch(
-            (error: unknown) => {
-              logger.error(
-                `${this.logPrefix()} Error while flushing queued TransactionEvents:`,
-                error
-              )
-            }
-          )
-        }
-      }
-    } else {
-      for (const [connectorId, connectorStatus] of this.connectors) {
-        if ((connectorStatus.transactionEventQueue?.length ?? 0) === 0) {
-          continue
-        }
-        await OCPP20ServiceUtils.sendQueuedTransactionEvents(this, connectorId).catch(
-          (error: unknown) => {
-            logger.error(
-              `${this.logPrefix()} Error while flushing queued TransactionEvents:`,
-              error
-            )
-          }
-        )
-      }
-    }
-  }
-
   private getAmperageLimitation (): number | undefined {
     if (
       isNotEmptyString(this.stationInfo?.amperageLimitationOcppKey) &&
@@ -2301,8 +2267,8 @@ export class ChargingStation extends EventEmitter {
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           `${this.logPrefix()} Registration failure: maximum retries reached (${registrationRetryCount.toString()}) or retry disabled (${this.stationInfo?.registrationMaxRetries?.toString()})`
         )
-      } else if (this.stationInfo?.ocppVersion === OCPPVersion.VERSION_20) {
-        await this.flushQueuedTransactionEvents()
+      } else {
+        await flushQueuedTransactionMessages(this)
       }
       this.emitChargingStationEvent(ChargingStationEvents.updated)
     } else {

@@ -408,6 +408,7 @@ export {
   type AuthorizeResponse,
   type StartTransactionRequest,
   type StartTransactionResponse,
+  type StartTransactionResult,
   StopTransactionReason,
   type StopTransactionRequest,
   type StopTransactionResponse,

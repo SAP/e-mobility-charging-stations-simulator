@@ -36,6 +36,8 @@ import {
   type OCPP16SupportedFeatureProfiles,
   OCPPVersion,
   RequestCommand,
+  type StartTransactionRequest,
+  type StartTransactionResponse,
   type StopTransactionReason,
   type StopTransactionRequest,
   type StopTransactionResponse,
@@ -584,6 +586,20 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       }
     }
     !cpReplaced && chargingStation.getConnectorStatus(connectorId)?.chargingProfiles?.push(cp)
+  }
+
+  public static async startTransactionOnConnector (
+    chargingStation: ChargingStation,
+    connectorId: number,
+    idTag?: string
+  ): Promise<StartTransactionResponse> {
+    return chargingStation.ocppRequestService.requestHandler<
+      Partial<StartTransactionRequest>,
+      StartTransactionResponse
+    >(chargingStation, RequestCommand.START_TRANSACTION, {
+      connectorId,
+      ...(idTag != null && { idTag }),
+    })
   }
 
   public static async stopTransactionOnConnector (

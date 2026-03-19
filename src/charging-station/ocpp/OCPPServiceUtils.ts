@@ -43,15 +43,18 @@ import {
   OCPP16StopTransactionReason,
   OCPP20AuthorizationStatusEnumType,
   type OCPP20ConnectorStatusEnumType,
+  OCPP20IdTokenEnumType,
   type OCPP20MeterValue,
   OCPP20ReasonEnumType,
   type OCPP20SampledValue,
+  OCPP20TransactionEventEnumType,
   OCPP20TriggerReasonEnumType,
   OCPPVersion,
   RequestCommand,
   type SampledValue,
   type SampledValueTemplate,
   StandardParametersKey,
+  type StartTransactionResult,
   type StatusNotificationRequest,
   type StatusNotificationResponse,
   type StopTransactionResult,
@@ -400,6 +403,50 @@ export const mapStopReasonToOCPP20 = (
   }
 }
 
+export const startTransactionOnConnector = async (
+  chargingStation: ChargingStation,
+  connectorId: number,
+  idTag?: string
+): Promise<StartTransactionResult> => {
+  switch (chargingStation.stationInfo?.ocppVersion) {
+    case OCPPVersion.VERSION_16: {
+      const { OCPP16ServiceUtils } = await import('./1.6/OCPP16ServiceUtils.js')
+      const response = await OCPP16ServiceUtils.startTransactionOnConnector(
+        chargingStation,
+        connectorId,
+        idTag
+      )
+      return { accepted: response.idTagInfo.status === AuthorizationStatus.ACCEPTED }
+    }
+    case OCPPVersion.VERSION_20:
+    case OCPPVersion.VERSION_201: {
+      const { OCPP20ServiceUtils } = await import('./2.0/OCPP20ServiceUtils.js')
+      const response = await OCPP20ServiceUtils.sendTransactionEvent(
+        chargingStation,
+        OCPP20TransactionEventEnumType.Started,
+        OCPP20TriggerReasonEnumType.Authorized,
+        connectorId,
+        chargingStation.getConnectorStatus(connectorId)?.transactionId as string,
+        {
+          idToken:
+            idTag != null ? { idToken: idTag, type: OCPP20IdTokenEnumType.Central } : undefined,
+        }
+      )
+      return {
+        accepted:
+          response.idTokenInfo == null ||
+          response.idTokenInfo.status === OCPP20AuthorizationStatusEnumType.Accepted,
+      }
+    }
+    default:
+      throw new OCPPError(
+        ErrorType.INTERNAL_ERROR,
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        `startTransactionOnConnector: unsupported OCPP version ${chargingStation.stationInfo?.ocppVersion}`
+      )
+  }
+}
+
 export const stopTransactionOnConnector = async (
   chargingStation: ChargingStation,
   connectorId: number,
@@ -492,6 +539,53 @@ export const stopRunningTransactions = async (
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         `stopRunningTransactions: unsupported OCPP version ${chargingStation.stationInfo?.ocppVersion}`
       )
+  }
+}
+
+export const flushQueuedTransactionMessages = async (
+  chargingStation: ChargingStation
+): Promise<void> => {
+  switch (chargingStation.stationInfo?.ocppVersion) {
+    case OCPPVersion.VERSION_16:
+      break
+    case OCPPVersion.VERSION_20:
+    case OCPPVersion.VERSION_201: {
+      const { OCPP20ServiceUtils } = await import('./2.0/OCPP20ServiceUtils.js')
+      if (chargingStation.hasEvses) {
+        for (const evseStatus of chargingStation.evses.values()) {
+          for (const [connectorId, connectorStatus] of evseStatus.connectors) {
+            if ((connectorStatus.transactionEventQueue?.length ?? 0) > 0) {
+              await OCPP20ServiceUtils.sendQueuedTransactionEvents(
+                chargingStation,
+                connectorId
+              ).catch((error: unknown) => {
+                logger.error(
+                  `${chargingStation.logPrefix()} OCPPServiceUtils.flushQueuedTransactionMessages: Error flushing queued TransactionEvents:`,
+                  error
+                )
+              })
+            }
+          }
+        }
+      } else {
+        for (const [connectorId, connectorStatus] of chargingStation.connectors) {
+          if ((connectorStatus.transactionEventQueue?.length ?? 0) > 0) {
+            await OCPP20ServiceUtils.sendQueuedTransactionEvents(
+              chargingStation,
+              connectorId
+            ).catch((error: unknown) => {
+              logger.error(
+                `${chargingStation.logPrefix()} OCPPServiceUtils.flushQueuedTransactionMessages: Error flushing queued TransactionEvents:`,
+                error
+              )
+            })
+          }
+        }
+      }
+      break
+    }
+    default:
+      break
   }
 }
 
