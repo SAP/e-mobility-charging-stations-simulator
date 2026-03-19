@@ -10,15 +10,16 @@ import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
 import type { TestableOCPP16IncomingRequestService } from '../../../../src/charging-station/ocpp/1.6/__testable__/index.js'
-import type { RemoteStopTransactionRequest } from '../../../../src/types/ocpp/1.6/Requests.js'
-import type { GenericResponse } from '../../../../src/types/ocpp/Common.js'
+import type { GenericResponse, RemoteStopTransactionRequest } from '../../../../src/types/index.js'
 
 import { OCPP16IncomingRequestService } from '../../../../src/charging-station/ocpp/1.6/OCPP16IncomingRequestService.js'
 import { OCPP16ServiceUtils } from '../../../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
-import { OCPP16IncomingRequestCommand } from '../../../../src/types/ocpp/1.6/Requests.js'
-import { OCPP16UnlockStatus } from '../../../../src/types/ocpp/1.6/Responses.js'
-import { OCPP16AuthorizationStatus } from '../../../../src/types/ocpp/1.6/Transaction.js'
-import { GenericStatus } from '../../../../src/types/ocpp/Common.js'
+import {
+  GenericStatus,
+  OCPP16AuthorizationStatus,
+  OCPP16IncomingRequestCommand,
+  OCPP16UnlockStatus,
+} from '../../../../src/types/index.js'
 import {
   flushMicrotasks,
   setupConnectorWithTransaction,

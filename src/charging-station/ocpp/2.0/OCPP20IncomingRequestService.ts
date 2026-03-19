@@ -3,11 +3,6 @@
 import type { ValidateFunction } from 'ajv'
 
 import type { ChargingStation } from '../../../charging-station/index.js'
-import type {
-  OCPP20ChargingProfileType,
-  OCPP20ChargingScheduleType,
-  OCPP20IdTokenType,
-} from '../../../types/ocpp/2.0/Transaction.js'
 
 import { OCPPError } from '../../../exception/index.js'
 import {
@@ -41,6 +36,11 @@ import {
   type OCPP20CertificateSignedResponse,
   type OCPP20ChangeAvailabilityRequest,
   type OCPP20ChangeAvailabilityResponse,
+  OCPP20ChargingProfileKindEnumType,
+  OCPP20ChargingProfilePurposeEnumType,
+  type OCPP20ChargingProfileType,
+  OCPP20ChargingRateUnitEnumType,
+  type OCPP20ChargingScheduleType,
   type OCPP20ClearCacheResponse,
   OCPP20ComponentName,
   OCPP20ConnectorStatusEnumType,
@@ -66,6 +66,7 @@ import {
   type OCPP20GetVariablesResponse,
   type OCPP20HeartbeatRequest,
   type OCPP20HeartbeatResponse,
+  type OCPP20IdTokenType,
   OCPP20IncomingRequestCommand,
   type OCPP20InstallCertificateRequest,
   type OCPP20InstallCertificateResponse,
@@ -79,6 +80,7 @@ import {
   type OCPP20NotifyReportRequest,
   type OCPP20NotifyReportResponse,
   OCPP20OperationalStatusEnumType,
+  OCPP20ReasonEnumType,
   OCPP20RequestCommand,
   type OCPP20RequestStartTransactionRequest,
   type OCPP20RequestStartTransactionResponse,
@@ -119,12 +121,6 @@ import {
   UpdateFirmwareStatusEnumType,
   UploadLogStatusEnumType,
 } from '../../../types/index.js'
-import {
-  OCPP20ChargingProfileKindEnumType,
-  OCPP20ChargingProfilePurposeEnumType,
-  OCPP20ChargingRateUnitEnumType,
-  OCPP20ReasonEnumType,
-} from '../../../types/ocpp/2.0/Transaction.js'
 import {
   convertToDate,
   generateUUID,

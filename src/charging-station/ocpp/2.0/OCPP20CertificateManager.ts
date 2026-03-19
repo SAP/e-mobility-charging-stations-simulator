@@ -14,7 +14,7 @@ import {
   GetCertificateIdUseEnumType,
   HashAlgorithmEnumType,
   InstallCertificateUseEnumType,
-} from '../../../types/ocpp/2.0/Common.js'
+} from '../../../types/index.js'
 import { convertToDate, getErrorMessage } from '../../../utils/index.js'
 
 /**

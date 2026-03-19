@@ -14,7 +14,7 @@ import {
   type UnifiedIdentifier,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import { AuthHelpers } from '../../../../../src/charging-station/ocpp/auth/utils/AuthHelpers.js'
-import { OCPPVersion } from '../../../../../src/types/ocpp/OCPPVersion.js'
+import { OCPPVersion } from '../../../../../src/types/index.js'
 import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
 
 await describe('AuthHelpers', async () => {

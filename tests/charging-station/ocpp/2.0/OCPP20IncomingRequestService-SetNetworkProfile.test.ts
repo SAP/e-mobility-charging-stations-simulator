@@ -12,15 +12,13 @@ import { createTestableIncomingRequestService } from '../../../../src/charging-s
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import {
   type OCPP20SetNetworkProfileRequest,
+  OCPPInterfaceEnumType,
+  OCPPTransportEnumType,
   OCPPVersion,
+  OCPPVersionEnumType,
   ReasonCodeEnumType,
   SetNetworkProfileStatusEnumType,
 } from '../../../../src/types/index.js'
-import {
-  OCPPInterfaceEnumType,
-  OCPPTransportEnumType,
-  OCPPVersionEnumType,
-} from '../../../../src/types/ocpp/2.0/Common.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'

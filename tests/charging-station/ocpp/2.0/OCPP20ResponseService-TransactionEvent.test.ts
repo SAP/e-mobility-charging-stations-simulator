@@ -16,13 +16,13 @@ import type { UUIDv4 } from '../../../../src/types/UUID.js'
 
 import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
-import { OCPPVersion } from '../../../../src/types/index.js'
 import {
   OCPP20AuthorizationStatusEnumType,
   OCPP20MessageFormatEnumType,
   OCPP20TransactionEventEnumType,
   OCPP20TriggerReasonEnumType,
-} from '../../../../src/types/ocpp/2.0/Transaction.js'
+  OCPPVersion,
+} from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
 import {
   setupConnectorWithTransaction,

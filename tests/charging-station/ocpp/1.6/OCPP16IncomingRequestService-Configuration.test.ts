@@ -12,8 +12,10 @@ import type {
   GetConfigurationRequest,
 } from '../../../../src/types/index.js'
 
-import { OCPP16StandardParametersKey } from '../../../../src/types/index.js'
-import { OCPP16ConfigurationStatus } from '../../../../src/types/ocpp/1.6/Responses.js'
+import {
+  OCPP16ConfigurationStatus,
+  OCPP16StandardParametersKey,
+} from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import {
   createOCPP16IncomingRequestTestContext,

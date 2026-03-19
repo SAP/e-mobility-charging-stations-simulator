@@ -12,17 +12,15 @@ import type { ConnectorStatus } from '../../../../src/types/ConnectorStatus.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import {
   ConnectorStatusEnum,
-  type OCPP20RequestStartTransactionRequest,
-  RequestStartStopStatusEnumType,
-} from '../../../../src/types/index.js'
-import { OCPP20OperationalStatusEnumType } from '../../../../src/types/ocpp/2.0/Common.js'
-import {
   OCPP20ChargingProfileKindEnumType,
   OCPP20ChargingProfilePurposeEnumType,
   OCPP20IdTokenEnumType,
   type OCPP20IdTokenType,
-} from '../../../../src/types/ocpp/2.0/Transaction.js'
-import { OCPPVersion } from '../../../../src/types/ocpp/OCPPVersion.js'
+  OCPP20OperationalStatusEnumType,
+  type OCPP20RequestStartTransactionRequest,
+  OCPPVersion,
+  RequestStartStopStatusEnumType,
+} from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 
 await describe('G03 - Remote Start Pre-Authorization', async () => {

@@ -21,17 +21,15 @@ import { createTestableIncomingRequestService } from '../../../../src/charging-s
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'
 import {
+  OCPP20IdTokenEnumType,
   OCPP20IncomingRequestCommand,
+  OCPP20ReasonEnumType,
   OCPP20RequestCommand,
   OCPP20TransactionEventEnumType,
   OCPP20TriggerReasonEnumType,
   OCPPVersion,
   RequestStartStopStatusEnumType,
 } from '../../../../src/types/index.js'
-import {
-  OCPP20IdTokenEnumType,
-  OCPP20ReasonEnumType,
-} from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { flushMicrotasks, standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'

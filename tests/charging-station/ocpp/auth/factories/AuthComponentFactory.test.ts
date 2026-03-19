@@ -9,7 +9,7 @@ import { afterEach, describe, it } from 'node:test'
 import type { AuthConfiguration } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 
 import { AuthComponentFactory } from '../../../../../src/charging-station/ocpp/auth/factories/AuthComponentFactory.js'
-import { OCPPVersion } from '../../../../../src/types/ocpp/OCPPVersion.js'
+import { OCPPVersion } from '../../../../../src/types/index.js'
 import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
 import { TEST_AUTHORIZATION_TIMEOUT_MS } from '../../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../../ChargingStationTestUtils.js'

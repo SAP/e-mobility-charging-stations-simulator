@@ -17,9 +17,9 @@ import {
   GenericStatus,
   OCPP16AuthorizationStatus,
   OCPP16ChargePointStatus,
+  OCPP16ReservationStatus,
   OCPP16StandardParametersKey,
 } from '../../../../src/types/index.js'
-import { OCPP16ReservationStatus } from '../../../../src/types/ocpp/1.6/Responses.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import {
   createOCPP16IncomingRequestTestContext,

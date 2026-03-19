@@ -13,7 +13,7 @@ import {
   AuthorizationStatus,
   IdentifierType,
 } from '../../src/charging-station/ocpp/auth/types/AuthTypes.js'
-import { OCPPVersion } from '../../src/types/ocpp/OCPPVersion.js'
+import { OCPPVersion } from '../../src/types/index.js'
 import { logger } from '../../src/utils/Logger.js'
 
 export class OCPPAuthIntegrationTest {

@@ -13,6 +13,7 @@ import { OCPP16ServiceUtils } from '../../../../src/charging-station/ocpp/1.6/OC
 import { OCPPServiceUtils } from '../../../../src/charging-station/ocpp/OCPPServiceUtils.js'
 import {
   type OCPP16ChargingProfile,
+  OCPP16ChargingProfileKindType,
   OCPP16ChargingProfilePurposeType,
   OCPP16ChargingRateUnitType,
   type OCPP16ChargingSchedule,
@@ -27,7 +28,6 @@ import {
   OCPP16SupportedFeatureProfiles,
   OCPPVersion,
 } from '../../../../src/types/index.js'
-import { OCPP16ChargingProfileKindType } from '../../../../src/types/ocpp/1.6/ChargingProfile.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from '../../helpers/StationHelpers.js'
 import { createCommandsSupport, createMeterValuesTemplate } from './OCPP16TestUtils.js'

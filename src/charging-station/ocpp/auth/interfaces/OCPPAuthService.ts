@@ -1,5 +1,4 @@
-import type { OCPP20IdTokenInfoType } from '../../../../types/ocpp/2.0/Transaction.js'
-import type { OCPPVersion } from '../../../../types/ocpp/OCPPVersion.js'
+import type { OCPP20IdTokenInfoType, OCPPVersion } from '../../../../types/index.js'
 import type {
   AuthConfiguration,
   AuthorizationResult,

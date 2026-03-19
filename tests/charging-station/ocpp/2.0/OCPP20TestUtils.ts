@@ -13,10 +13,10 @@ import type {
   CertificateHashDataType,
   GetCertificateIdUseEnumType,
   JsonType,
+  OCPP20IdTokenType,
   OCPP20RequestCommand,
   OCSPRequestDataType,
 } from '../../../../src/types/index.js'
-import type { OCPP20IdTokenType } from '../../../../src/types/ocpp/2.0/Transaction.js'
 
 import { OCPP20RequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20RequestService.js'
 import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
@@ -24,10 +24,10 @@ import {
   ConnectorStatusEnum,
   DeleteCertificateStatusEnumType,
   HashAlgorithmEnumType,
+  OCPP20IdTokenEnumType,
   OCPP20RequiredVariableName,
   OCPPVersion,
 } from '../../../../src/types/index.js'
-import { OCPP20IdTokenEnumType } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import {

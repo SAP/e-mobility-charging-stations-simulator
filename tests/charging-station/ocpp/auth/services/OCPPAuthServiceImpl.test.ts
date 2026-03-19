@@ -17,7 +17,7 @@ import {
   IdentifierType,
   type UnifiedIdentifier,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
-import { OCPPVersion } from '../../../../../src/types/ocpp/OCPPVersion.js'
+import { OCPPVersion } from '../../../../../src/types/index.js'
 import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
 import { createMockAuthServiceTestStation } from '../helpers/MockFactories.js'
 

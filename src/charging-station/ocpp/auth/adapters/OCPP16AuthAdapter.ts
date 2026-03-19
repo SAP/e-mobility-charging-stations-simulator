@@ -11,10 +11,10 @@ import { getConfigurationKey } from '../../../../charging-station/ConfigurationK
 import {
   type OCPP16AuthorizeRequest,
   type OCPP16AuthorizeResponse,
+  OCPPVersion,
   RequestCommand,
   StandardParametersKey,
 } from '../../../../types/index.js'
-import { OCPPVersion } from '../../../../types/ocpp/OCPPVersion.js'
 import { logger, truncateId } from '../../../../utils/index.js'
 import {
   AuthContext,

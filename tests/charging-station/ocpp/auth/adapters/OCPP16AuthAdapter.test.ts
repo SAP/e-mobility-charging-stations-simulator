@@ -6,7 +6,7 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../../src/charging-station/ChargingStation.js'
-import type { OCPP16AuthorizeResponse } from '../../../../../src/types/ocpp/1.6/Transaction.js'
+import type { OCPP16AuthorizeResponse } from '../../../../../src/types/index.js'
 
 import { OCPP16AuthAdapter } from '../../../../../src/charging-station/ocpp/auth/adapters/OCPP16AuthAdapter.js'
 import {
@@ -16,8 +16,7 @@ import {
   AuthorizationStatus,
   IdentifierType,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
-import { OCPP16AuthorizationStatus } from '../../../../../src/types/ocpp/1.6/Transaction.js'
-import { OCPPVersion } from '../../../../../src/types/ocpp/OCPPVersion.js'
+import { OCPP16AuthorizationStatus, OCPPVersion } from '../../../../../src/types/index.js'
 import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
 import { createMockAuthorizationResult, createMockIdentifier } from '../helpers/MockFactories.js'
 

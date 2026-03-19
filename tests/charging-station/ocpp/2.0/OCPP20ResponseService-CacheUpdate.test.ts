@@ -17,8 +17,7 @@ import {
   AuthorizationStatus,
   IdentifierType,
 } from '../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
-import { OCPP20AuthorizationStatusEnumType } from '../../../../src/types/ocpp/2.0/Transaction.js'
-import { OCPPVersion } from '../../../../src/types/ocpp/OCPPVersion.js'
+import { OCPP20AuthorizationStatusEnumType, OCPPVersion } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 

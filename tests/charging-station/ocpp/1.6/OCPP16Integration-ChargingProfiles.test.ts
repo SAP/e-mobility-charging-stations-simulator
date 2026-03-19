@@ -9,22 +9,21 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type {
+  OCPP16ChargingProfile,
   OCPP16ClearChargingProfileRequest,
   OCPP16GetCompositeScheduleRequest,
   SetChargingProfileRequest,
 } from '../../../../src/types/index.js'
-import type { OCPP16ChargingProfile } from '../../../../src/types/ocpp/1.6/ChargingProfile.js'
 
-import { GenericStatus, OCPP16StandardParametersKey } from '../../../../src/types/index.js'
 import {
+  GenericStatus,
   OCPP16ChargingProfileKindType,
   OCPP16ChargingProfilePurposeType,
-  OCPP16ChargingRateUnitType,
-} from '../../../../src/types/ocpp/1.6/ChargingProfile.js'
-import {
   OCPP16ChargingProfileStatus,
+  OCPP16ChargingRateUnitType,
   OCPP16ClearChargingProfileStatus,
-} from '../../../../src/types/ocpp/1.6/Responses.js'
+  OCPP16StandardParametersKey,
+} from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import {
   ChargingProfileFixtures,

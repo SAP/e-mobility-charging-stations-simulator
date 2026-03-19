@@ -7,29 +7,25 @@ import {
   ConnectorStatusEnum,
   ErrorType,
   type JsonObject,
+  OCPP20ChargingStateEnumType,
   OCPP20ComponentName,
+  type OCPP20EVSEType,
   OCPP20IncomingRequestCommand,
+  OCPP20MeasurandEnumType,
+  type OCPP20MeterValue,
+  OCPP20ReadingContextEnumType,
+  OCPP20ReasonEnumType,
   OCPP20RequestCommand,
+  OCPP20RequiredVariableName,
   OCPP20TransactionEventEnumType,
+  type OCPP20TransactionEventOptions,
   type OCPP20TransactionEventRequest,
   type OCPP20TransactionEventResponse,
+  type OCPP20TransactionType,
   OCPP20TriggerReasonEnumType,
   OCPPVersion,
   type UUIDv4,
 } from '../../../types/index.js'
-import { OCPP20RequiredVariableName } from '../../../types/index.js'
-import {
-  OCPP20MeasurandEnumType,
-  type OCPP20MeterValue,
-  OCPP20ReadingContextEnumType,
-} from '../../../types/ocpp/2.0/MeterValues.js'
-import {
-  OCPP20ChargingStateEnumType,
-  type OCPP20EVSEType,
-  OCPP20ReasonEnumType,
-  type OCPP20TransactionEventOptions,
-  type OCPP20TransactionType,
-} from '../../../types/ocpp/2.0/Transaction.js'
 import {
   Constants,
   convertToIntOrNaN,

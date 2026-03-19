@@ -9,14 +9,15 @@ import { mock } from 'node:test'
 import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
 import type { ChargingStationInfo } from '../../../../src/types/ChargingStationInfo.js'
 import type { ConfigurationKey } from '../../../../src/types/ChargingStationOcppConfiguration.js'
-import type { JsonObject } from '../../../../src/types/JsonType.js'
-import type { SampledValueTemplate } from '../../../../src/types/MeasurandPerPhaseSampledValueTemplates.js'
 import type {
+  IncomingRequestCommand,
   OCPP16ChargingProfile,
   OCPP16ChargingSchedulePeriod,
-} from '../../../../src/types/ocpp/1.6/ChargingProfile.js'
-import type { OCPP16SampledValue } from '../../../../src/types/ocpp/1.6/MeterValues.js'
-import type { IncomingRequestCommand, RequestCommand } from '../../../../src/types/ocpp/Requests.js'
+  OCPP16SampledValue,
+  RequestCommand,
+} from '../../../../src/types/index.js'
+import type { JsonObject } from '../../../../src/types/JsonType.js'
+import type { SampledValueTemplate } from '../../../../src/types/MeasurandPerPhaseSampledValueTemplates.js'
 
 import {
   createTestableIncomingRequestService,
@@ -28,13 +29,13 @@ import { OCPP16IncomingRequestService } from '../../../../src/charging-station/o
 import { OCPP16RequestService } from '../../../../src/charging-station/ocpp/1.6/OCPP16RequestService.js'
 import { OCPP16ResponseService } from '../../../../src/charging-station/ocpp/1.6/OCPP16ResponseService.js'
 import {
+  OCPP16ChargingProfileKindType,
   OCPP16ChargingProfilePurposeType,
   OCPP16ChargingRateUnitType,
   type OCPP16RequestCommand,
   OCPP16StandardParametersKey,
   OCPPVersion,
 } from '../../../../src/types/index.js'
-import { OCPP16ChargingProfileKindType } from '../../../../src/types/ocpp/1.6/ChargingProfile.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import {

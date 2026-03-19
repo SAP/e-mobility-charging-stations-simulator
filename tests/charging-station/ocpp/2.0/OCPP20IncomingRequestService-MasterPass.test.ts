@@ -15,10 +15,10 @@ import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0
 import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'
 import {
   GetVariableStatusEnumType,
+  OCPP20IdTokenEnumType,
   OCPPVersion,
   RequestStartStopStatusEnumType,
 } from '../../../../src/types/index.js'
-import { OCPP20IdTokenEnumType } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'

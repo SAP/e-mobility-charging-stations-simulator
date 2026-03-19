@@ -9,10 +9,10 @@ import type { ChargingStation } from '../../../../src/charging-station/index.js'
 
 import {
   BootReasonEnumType,
+  type ChargingStationType,
   type OCPP20BootNotificationRequest,
   OCPP20RequestCommand,
 } from '../../../../src/types/index.js'
-import { type ChargingStationType } from '../../../../src/types/ocpp/2.0/Common.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import {
   TEST_CHARGE_POINT_MODEL,

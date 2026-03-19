@@ -1,4 +1,4 @@
-import type { OCPPVersion } from '../../../../types/ocpp/OCPPVersion.js'
+import type { OCPPVersion } from '../../../../types/index.js'
 import type {
   AuthCache,
   AuthStrategy,

@@ -2075,7 +2075,9 @@ export class OCPPServiceUtils {
     chargingStation: ChargingStation,
     messageTrigger: MessageTrigger
   ): boolean {
-    const isMessageTrigger = Object.values(MessageTrigger).includes(messageTrigger)
+    const isMessageTrigger = (Object.values(MessageTrigger) as MessageTrigger[]).includes(
+      messageTrigger
+    )
     if (isMessageTrigger && chargingStation.stationInfo?.messageTriggerSupport == null) {
       return true
     } else if (

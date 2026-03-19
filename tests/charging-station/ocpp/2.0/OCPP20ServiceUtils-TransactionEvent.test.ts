@@ -24,26 +24,20 @@ import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0
 import { OCPPError } from '../../../../src/exception/OCPPError.js'
 import {
   AttributeEnumType,
-  OCPP20ComponentName,
-  OCPP20RequiredVariableName,
-} from '../../../../src/types/index.js'
-import {
   ConnectorStatusEnum,
+  OCPP20ChargingStateEnumType,
+  OCPP20ComponentName,
+  OCPP20IdTokenEnumType,
+  type OCPP20IdTokenType,
+  OCPP20MeasurandEnumType,
+  OCPP20ReadingContextEnumType,
+  OCPP20ReasonEnumType,
+  OCPP20RequiredVariableName,
   OCPP20TransactionEventEnumType,
+  type OCPP20TransactionType,
   OCPP20TriggerReasonEnumType,
   OCPPVersion,
 } from '../../../../src/types/index.js'
-import {
-  OCPP20MeasurandEnumType,
-  OCPP20ReadingContextEnumType,
-} from '../../../../src/types/ocpp/2.0/MeterValues.js'
-import {
-  OCPP20ChargingStateEnumType,
-  OCPP20IdTokenEnumType,
-  type OCPP20IdTokenType,
-  OCPP20ReasonEnumType,
-  type OCPP20TransactionType,
-} from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants, generateUUID } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'

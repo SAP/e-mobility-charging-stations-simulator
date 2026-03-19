@@ -1,4 +1,8 @@
-import type { RequestStartStopStatusEnumType } from '../../../../types/index.js'
+import type {
+  AdditionalInfoType,
+  OCPP20TransactionEventResponse,
+  RequestStartStopStatusEnumType,
+} from '../../../../types/index.js'
 import type { ChargingStation } from '../../../index.js'
 import type { OCPPAuthAdapter } from '../interfaces/OCPPAuthService.js'
 import type {
@@ -10,16 +14,15 @@ import type {
 
 import { OCPP20ServiceUtils } from '../../2.0/OCPP20ServiceUtils.js'
 import { OCPP20VariableManager } from '../../2.0/OCPP20VariableManager.js'
-import { GetVariableStatusEnumType, type OCPP20IdTokenType } from '../../../../types/index.js'
 import {
-  type AdditionalInfoType,
+  GetVariableStatusEnumType,
   OCPP20AuthorizationStatusEnumType,
   OCPP20IdTokenEnumType,
+  type OCPP20IdTokenType,
   OCPP20TransactionEventEnumType,
-  type OCPP20TransactionEventResponse,
   OCPP20TriggerReasonEnumType,
-} from '../../../../types/ocpp/2.0/Transaction.js'
-import { OCPPVersion } from '../../../../types/ocpp/OCPPVersion.js'
+  OCPPVersion,
+} from '../../../../types/index.js'
 import { generateUUID, logger, truncateId } from '../../../../utils/index.js'
 import {
   AuthContext,

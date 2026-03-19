@@ -1,15 +1,15 @@
 import type { ValidateFunction } from 'ajv'
 
-import type { OCPP20IncomingRequestCommand } from '../../../types/index.js'
-
 import { addConfigurationKey, type ChargingStation } from '../../../charging-station/index.js'
 import {
   ChargingStationEvents,
   ConnectorStatusEnum,
   type JsonType,
+  OCPP20AuthorizationStatusEnumType,
   type OCPP20BootNotificationResponse,
   type OCPP20FirmwareStatusNotificationResponse,
   type OCPP20HeartbeatResponse,
+  type OCPP20IncomingRequestCommand,
   type OCPP20LogStatusNotificationResponse,
   type OCPP20MeterValuesResponse,
   type OCPP20NotifyCustomerInformationResponse,
@@ -18,6 +18,7 @@ import {
   OCPP20RequestCommand,
   type OCPP20SecurityEventNotificationResponse,
   type OCPP20StatusNotificationResponse,
+  OCPP20TransactionEventEnumType,
   type OCPP20TransactionEventRequest,
   type OCPP20TransactionEventResponse,
   OCPPVersion,
@@ -25,10 +26,6 @@ import {
   type RequestCommand,
   type ResponseHandler,
 } from '../../../types/index.js'
-import {
-  OCPP20AuthorizationStatusEnumType,
-  OCPP20TransactionEventEnumType,
-} from '../../../types/ocpp/2.0/Transaction.js'
 import { convertToDate, logger } from '../../../utils/index.js'
 import { mapOCPP20TokenType, OCPPAuthServiceFactory } from '../auth/index.js'
 import { OCPPResponseService } from '../OCPPResponseService.js'

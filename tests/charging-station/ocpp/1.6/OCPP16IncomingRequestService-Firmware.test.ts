@@ -11,12 +11,12 @@ import type { GetDiagnosticsRequest } from '../../../../src/types/index.js'
 
 import { OCPP16IncomingRequestService } from '../../../../src/charging-station/ocpp/1.6/OCPP16IncomingRequestService.js'
 import {
+  OCPP16FirmwareStatus,
   OCPP16IncomingRequestCommand,
   OCPP16StandardParametersKey,
   type OCPP16UpdateFirmwareRequest,
   type OCPP16UpdateFirmwareResponse,
 } from '../../../../src/types/index.js'
-import { OCPP16FirmwareStatus } from '../../../../src/types/ocpp/1.6/Requests.js'
 import {
   flushMicrotasks,
   standardCleanup,

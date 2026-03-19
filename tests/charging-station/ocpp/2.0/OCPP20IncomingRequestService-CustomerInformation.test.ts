@@ -15,10 +15,10 @@ import {
   HashAlgorithmEnumType,
   type OCPP20CustomerInformationRequest,
   type OCPP20CustomerInformationResponse,
+  OCPP20IdTokenEnumType,
   OCPP20IncomingRequestCommand,
   OCPPVersion,
 } from '../../../../src/types/index.js'
-import { OCPP20IdTokenEnumType } from '../../../../src/types/ocpp/2.0/Transaction.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { flushMicrotasks, standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'

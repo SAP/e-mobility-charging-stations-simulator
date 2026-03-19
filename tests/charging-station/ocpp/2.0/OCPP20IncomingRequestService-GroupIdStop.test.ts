@@ -12,8 +12,10 @@ import type { OCPP20RequestStartTransactionRequest } from '../../../../src/types
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import { OCPPAuthServiceFactory } from '../../../../src/charging-station/ocpp/auth/services/OCPPAuthServiceFactory.js'
-import { RequestStartStopStatusEnumType } from '../../../../src/types/index.js'
-import { OCPP20IdTokenEnumType } from '../../../../src/types/ocpp/2.0/Transaction.js'
+import {
+  OCPP20IdTokenEnumType,
+  RequestStartStopStatusEnumType,
+} from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockAuthService } from '../auth/helpers/MockFactories.js'

@@ -8,12 +8,14 @@ import {
   type OCPP16StopTransactionRequest,
   type OCPP16StopTransactionResponse,
 } from './1.6/Transaction.js'
+import { OCPP20AuthorizationStatusEnumType, OCPP20ReasonEnumType } from './2.0/Transaction.js'
 
 export const AuthorizationStatus = {
   ...OCPP16AuthorizationStatus,
+  ...OCPP20AuthorizationStatusEnumType,
 } as const
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type AuthorizationStatus = OCPP16AuthorizationStatus
+export type AuthorizationStatus = OCPP16AuthorizationStatus | OCPP20AuthorizationStatusEnumType
 
 export type AuthorizeRequest = OCPP16AuthorizeRequest
 
@@ -25,9 +27,10 @@ export type StartTransactionResponse = OCPP16StartTransactionResponse
 
 export const StopTransactionReason = {
   ...OCPP16StopTransactionReason,
+  ...OCPP20ReasonEnumType,
 } as const
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type StopTransactionReason = OCPP16StopTransactionReason
+export type StopTransactionReason = OCPP16StopTransactionReason | OCPP20ReasonEnumType
 
 export type StopTransactionRequest = OCPP16StopTransactionRequest
 

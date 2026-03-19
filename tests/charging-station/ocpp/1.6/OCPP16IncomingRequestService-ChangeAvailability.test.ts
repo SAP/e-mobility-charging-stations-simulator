@@ -12,10 +12,10 @@ import type { ChargingStation } from '../../../../src/charging-station/ChargingS
 import type { TestableOCPP16IncomingRequestService } from '../../../../src/charging-station/ocpp/1.6/__testable__/index.js'
 
 import {
+  OCPP16AvailabilityStatus,
   OCPP16AvailabilityType,
   type OCPP16ChangeAvailabilityRequest,
 } from '../../../../src/types/index.js'
-import { OCPP16AvailabilityStatus } from '../../../../src/types/ocpp/1.6/Responses.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { createOCPP16IncomingRequestTestContext, setMockRequestHandler } from './OCPP16TestUtils.js'
 

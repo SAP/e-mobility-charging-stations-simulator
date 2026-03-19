@@ -23,7 +23,7 @@ import {
   IdentifierType,
   type UnifiedIdentifier,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
-import { OCPPVersion } from '../../../../../src/types/ocpp/OCPPVersion.js'
+import { OCPPVersion } from '../../../../../src/types/index.js'
 
 /**
  * Factory functions for creating test mocks and fixtures

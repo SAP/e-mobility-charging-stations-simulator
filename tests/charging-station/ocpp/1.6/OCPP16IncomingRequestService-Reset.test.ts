@@ -8,8 +8,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ResetRequest } from '../../../../src/types/index.js'
 
-import { GenericStatus } from '../../../../src/types/index.js'
-import { ResetType } from '../../../../src/types/ocpp/1.6/Requests.js'
+import { GenericStatus, ResetType } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import {
   createOCPP16IncomingRequestTestContext,

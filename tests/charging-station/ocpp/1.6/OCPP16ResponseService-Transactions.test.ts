@@ -15,11 +15,13 @@ import type {
   OCPP16StartTransactionResponse,
   OCPP16StopTransactionRequest,
   OCPP16StopTransactionResponse,
-} from '../../../../src/types/ocpp/1.6/Transaction.js'
+} from '../../../../src/types/index.js'
 
-import { OCPP16MeterValueUnit } from '../../../../src/types/index.js'
-import { OCPP16RequestCommand } from '../../../../src/types/ocpp/1.6/Requests.js'
-import { OCPP16AuthorizationStatus } from '../../../../src/types/ocpp/1.6/Transaction.js'
+import {
+  OCPP16AuthorizationStatus,
+  OCPP16MeterValueUnit,
+  OCPP16RequestCommand,
+} from '../../../../src/types/index.js'
 import {
   setupConnectorWithTransaction,
   standardCleanup,

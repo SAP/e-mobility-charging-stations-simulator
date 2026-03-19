@@ -6,7 +6,7 @@
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
-import { OCPP16DataTransferStatus } from '../../../../src/types/ocpp/1.6/Responses.js'
+import { OCPP16DataTransferStatus } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import {
   createOCPP16IncomingRequestTestContext,

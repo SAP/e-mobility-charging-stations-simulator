@@ -6,7 +6,7 @@ import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
 import { OCPP16Constants } from '../../../../src/charging-station/ocpp/1.6/OCPP16Constants.js'
-import { OCPP16ChargePointStatus } from '../../../../src/types/ocpp/1.6/ChargePointStatus.js'
+import { OCPP16ChargePointStatus } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 
 await describe('OCPP16Constants', async () => {

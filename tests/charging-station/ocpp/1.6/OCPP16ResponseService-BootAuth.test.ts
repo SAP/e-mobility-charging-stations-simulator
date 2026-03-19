@@ -16,7 +16,7 @@ import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 import type {
   OCPP16AuthorizeRequest,
   OCPP16AuthorizeResponse,
-} from '../../../../src/types/ocpp/1.6/Transaction.js'
+} from '../../../../src/types/index.js'
 
 import {
   ChargingStationEvents,

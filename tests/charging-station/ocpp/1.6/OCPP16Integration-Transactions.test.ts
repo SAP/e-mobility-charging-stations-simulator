@@ -13,15 +13,13 @@ import type { ChargingStation } from '../../../../src/charging-station/ChargingS
 import type { TestableOCPP16IncomingRequestService } from '../../../../src/charging-station/ocpp/1.6/__testable__/index.js'
 import type { OCPP16ResponseService } from '../../../../src/charging-station/ocpp/1.6/OCPP16ResponseService.js'
 import type {
-  RemoteStartTransactionRequest,
-  RemoteStopTransactionRequest,
-} from '../../../../src/types/ocpp/1.6/Requests.js'
-import type {
   OCPP16StartTransactionRequest,
   OCPP16StartTransactionResponse,
   OCPP16StopTransactionRequest,
   OCPP16StopTransactionResponse,
-} from '../../../../src/types/ocpp/1.6/Transaction.js'
+  RemoteStartTransactionRequest,
+  RemoteStopTransactionRequest,
+} from '../../../../src/types/index.js'
 
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/1.6/__testable__/index.js'
 import { OCPP16IncomingRequestService } from '../../../../src/charging-station/ocpp/1.6/OCPP16IncomingRequestService.js'
@@ -29,12 +27,12 @@ import { OCPP16ResponseService as OCPP16ResponseServiceClass } from '../../../..
 import {
   AvailabilityType,
   GenericStatus,
+  OCPP16AuthorizationStatus,
   OCPP16ChargePointStatus,
   OCPP16MeterValueUnit,
+  OCPP16RequestCommand,
   OCPPVersion,
 } from '../../../../src/types/index.js'
-import { OCPP16RequestCommand } from '../../../../src/types/ocpp/1.6/Requests.js'
-import { OCPP16AuthorizationStatus } from '../../../../src/types/ocpp/1.6/Transaction.js'
 import { Constants } from '../../../../src/utils/index.js'
 import {
   setupConnectorWithTransaction,

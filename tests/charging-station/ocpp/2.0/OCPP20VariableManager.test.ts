@@ -30,9 +30,9 @@ import {
   OCPPVersion,
   ReasonCodeEnumType,
   SetVariableStatusEnumType,
+  StandardParametersKey,
   type VariableType,
 } from '../../../../src/types/index.js'
-import { StandardParametersKey } from '../../../../src/types/ocpp/Configuration.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
