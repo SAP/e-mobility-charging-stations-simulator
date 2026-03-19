@@ -34,18 +34,22 @@ import {
   MeterValueMeasurand,
   MeterValuePhase,
   MeterValueUnit,
+  OCPP16StopTransactionReason,
   type OCPP16ChargePointStatus,
   type OCPP16MeterValue,
   type OCPP16SampledValue,
   type OCPP16StatusNotificationRequest,
   type OCPP20ConnectorStatusEnumType,
   type OCPP20MeterValue,
+  OCPP20ReasonEnumType,
+  OCPP20TriggerReasonEnumType,
   type OCPP20SampledValue,
   OCPPVersion,
   RequestCommand,
   type SampledValue,
   type SampledValueTemplate,
   StandardParametersKey,
+  StopTransactionReason,
   type StatusNotificationRequest,
   type StatusNotificationResponse,
 } from '../../types/index.js'
@@ -333,6 +337,63 @@ export const restoreConnectorStatus = async (
     await sendAndSetConnectorStatus(chargingStation, connectorId, ConnectorStatusEnum.Reserved)
   } else if (connectorStatus?.status !== ConnectorStatusEnum.Available) {
     await sendAndSetConnectorStatus(chargingStation, connectorId, ConnectorStatusEnum.Available)
+  }
+}
+
+export const mapStopReasonToOCPP20 = (
+  reason?: StopTransactionReason
+): {
+  triggerReason: OCPP20TriggerReasonEnumType
+  stoppedReason: OCPP20ReasonEnumType
+} => {
+  switch (reason) {
+    case OCPP16StopTransactionReason.REMOTE:
+    case OCPP20ReasonEnumType.Remote:
+      return {
+        stoppedReason: OCPP20ReasonEnumType.Remote,
+        triggerReason: OCPP20TriggerReasonEnumType.RemoteStop,
+      }
+    case OCPP16StopTransactionReason.HARD_RESET:
+    case OCPP16StopTransactionReason.SOFT_RESET:
+    case OCPP16StopTransactionReason.REBOOT:
+    case OCPP20ReasonEnumType.Reboot:
+    case OCPP20ReasonEnumType.ImmediateReset:
+      return {
+        stoppedReason: OCPP20ReasonEnumType.ImmediateReset,
+        triggerReason: OCPP20TriggerReasonEnumType.ResetCommand,
+      }
+    case OCPP16StopTransactionReason.POWER_LOSS:
+    case OCPP20ReasonEnumType.PowerLoss:
+      return {
+        stoppedReason: OCPP20ReasonEnumType.PowerLoss,
+        triggerReason: OCPP20TriggerReasonEnumType.AbnormalCondition,
+      }
+    case OCPP16StopTransactionReason.EMERGENCY_STOP:
+    case OCPP20ReasonEnumType.EmergencyStop:
+      return {
+        stoppedReason: OCPP20ReasonEnumType.EmergencyStop,
+        triggerReason: OCPP20TriggerReasonEnumType.AbnormalCondition,
+      }
+    case OCPP16StopTransactionReason.DE_AUTHORIZED:
+    case OCPP20ReasonEnumType.DeAuthorized:
+      return {
+        stoppedReason: OCPP20ReasonEnumType.DeAuthorized,
+        triggerReason: OCPP20TriggerReasonEnumType.Deauthorized,
+      }
+    case OCPP16StopTransactionReason.EV_DISCONNECTED:
+    case OCPP20ReasonEnumType.EVDisconnected:
+      return {
+        stoppedReason: OCPP20ReasonEnumType.EVDisconnected,
+        triggerReason: OCPP20TriggerReasonEnumType.EVDeparted,
+      }
+    case undefined:
+    case OCPP16StopTransactionReason.LOCAL:
+    case OCPP20ReasonEnumType.Local:
+    default:
+      return {
+        stoppedReason: OCPP20ReasonEnumType.Local,
+        triggerReason: OCPP20TriggerReasonEnumType.StopAuthorized,
+      }
   }
 }
 
@@ -1990,6 +2051,7 @@ export class OCPPServiceUtils {
   public static readonly buildTransactionEndMeterValue = buildTransactionEndMeterValue
   public static readonly isIdTagAuthorized = isIdTagAuthorized
   public static readonly isIdTagAuthorizedUnified = isIdTagAuthorizedUnified
+  public static readonly mapStopReasonToOCPP20 = mapStopReasonToOCPP20
   public static readonly restoreConnectorStatus = restoreConnectorStatus
   public static readonly sendAndSetConnectorStatus = sendAndSetConnectorStatus
 

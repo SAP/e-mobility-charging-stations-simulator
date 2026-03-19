@@ -35,3 +35,7 @@ export type StopTransactionReason = OCPP16StopTransactionReason | OCPP20ReasonEn
 export type StopTransactionRequest = OCPP16StopTransactionRequest
 
 export type StopTransactionResponse = OCPP16StopTransactionResponse
+
+export interface StopTransactionResult {
+  readonly accepted: boolean
+}
