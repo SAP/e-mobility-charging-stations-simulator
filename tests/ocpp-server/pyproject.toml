@@ -58,6 +58,7 @@ source = ["server", "timer"]
 
 [tool.coverage.report]
 show_missing = true
+fail_under = 83
 exclude_also = [
     "if TYPE_CHECKING:",
     "if __name__ == .__main__.:",
