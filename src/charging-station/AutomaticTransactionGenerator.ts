@@ -533,6 +533,8 @@ export class AutomaticTransactionGenerator {
           .getConnectorStatus(connectorId)
           ?.transactionId?.toString()}`
       )
+      // TODO: OCPP 2.0 stations should use OCPP20ServiceUtils.requestStopTransaction() instead
+      // See: src/charging-station/ChargingStation.ts#stopRunningTransactionsOCPP20
       stopResponse = await this.chargingStation.stopTransactionOnConnector(connectorId, reason)
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       ++this.connectorsStatus.get(connectorId)!.stopTransactionRequests

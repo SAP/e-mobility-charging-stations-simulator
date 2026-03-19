@@ -44,6 +44,7 @@ import {
   type MeterValuesRequest,
   type MeterValuesResponse,
   type OCPP20MeterValue,
+  OCPP20ReasonEnumType,
   OCPP20TransactionEventEnumType,
   OCPP20TriggerReasonEnumType,
   OCPPVersion,
@@ -2727,6 +2728,13 @@ export class ChargingStation extends EventEmitter {
   }
 
   private async stopRunningTransactions (reason?: StopTransactionReason): Promise<void> {
+    if (
+      this.stationInfo?.ocppVersion === OCPPVersion.VERSION_20 ||
+      this.stationInfo?.ocppVersion === OCPPVersion.VERSION_201
+    ) {
+      await this.stopRunningTransactionsOCPP20(reason)
+      return
+    }
     if (this.hasEvses) {
       for (const [evseId, evseStatus] of this.evses) {
         if (evseId === 0) {
@@ -2744,6 +2752,49 @@ export class ChargingStation extends EventEmitter {
           await this.stopTransactionOnConnector(connectorId, reason)
         }
       }
+    }
+  }
+
+  private async stopRunningTransactionsOCPP20 (reason?: StopTransactionReason): Promise<void> {
+    const stoppedReason =
+      reason != null ? (reason as unknown as OCPP20ReasonEnumType) : OCPP20ReasonEnumType.Local
+    const terminationPromises: Promise<unknown>[] = []
+
+    for (const [evseId, evseStatus] of this.evses) {
+      if (evseId === 0) {
+        continue
+      }
+      for (const [connectorId, connectorStatus] of evseStatus.connectors) {
+        if (
+          connectorStatus.transactionStarted === true ||
+          connectorStatus.transactionPending === true
+        ) {
+          logger.info(
+            `${this.logPrefix()} stopRunningTransactionsOCPP20: Stopping transaction ${connectorStatus.transactionId?.toString() ?? 'unknown'} on connector ${connectorId.toString()}`
+          )
+          terminationPromises.push(
+            OCPP20ServiceUtils.requestStopTransaction(
+              this,
+              connectorId,
+              evseId,
+              OCPP20TriggerReasonEnumType.StopAuthorized,
+              stoppedReason
+            ).catch((error: unknown) => {
+              logger.error(
+                `${this.logPrefix()} stopRunningTransactionsOCPP20: Error stopping transaction on connector ${connectorId.toString()}:`,
+                error
+              )
+            })
+          )
+        }
+      }
+    }
+
+    if (terminationPromises.length > 0) {
+      await Promise.all(terminationPromises)
+      logger.info(
+        `${this.logPrefix()} stopRunningTransactionsOCPP20: All transactions stopped on charging station`
+      )
     }
   }
 
