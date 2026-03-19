@@ -58,8 +58,6 @@ import {
   StandardParametersKey,
   type Status,
   type StopTransactionReason,
-  type StopTransactionRequest,
-  type StopTransactionResponse,
   SupervisionUrlDistribution,
   SupportedFeatureProfiles,
   type Voltage,
@@ -147,16 +145,13 @@ import {
   validateStationInfo,
   warnTemplateKeysDeprecation,
 } from './Helpers.js'
-import { stopRunningTransactions } from './ocpp/OCPPServiceUtils.js'
 import { IdTagsCache } from './IdTagsCache.js'
 import {
   buildMeterValue,
-  buildTransactionEndMeterValue,
   getMessageTypeString,
   OCPP16IncomingRequestService,
   OCPP16RequestService,
   OCPP16ResponseService,
-  OCPP16ServiceUtils,
   OCPP20IncomingRequestService,
   OCPP20RequestService,
   OCPP20ResponseService,
@@ -166,6 +161,7 @@ import {
   type OCPPRequestService,
   sendAndSetConnectorStatus,
 } from './ocpp/index.js'
+import { stopRunningTransactions } from './ocpp/OCPPServiceUtils.js'
 import { SharedLRUCache } from './SharedLRUCache.js'
 
 export class ChargingStation extends EventEmitter {

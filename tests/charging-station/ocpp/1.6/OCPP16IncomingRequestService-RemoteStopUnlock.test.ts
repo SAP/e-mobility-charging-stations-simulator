@@ -45,9 +45,10 @@ await describe('OCPP16IncomingRequestService — RemoteStopTransaction and Unloc
       Promise.resolve({ idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } })
     )
 
-    // Mock stopTransactionOnConnector — called by UnlockConnector when transaction is active
-    station.stopTransactionOnConnector = async () =>
+    // Mock OCPP16ServiceUtils.stopTransactionOnConnector — called by UnlockConnector when transaction is active
+    mock.method(OCPP16ServiceUtils, 'stopTransactionOnConnector', async () =>
       Promise.resolve({ idTagInfo: { status: OCPP16AuthorizationStatus.ACCEPTED } })
+    )
   })
 
   afterEach(() => {
@@ -147,8 +148,9 @@ await describe('OCPP16IncomingRequestService — RemoteStopTransaction and Unloc
     await it('should return UnlockFailed when active transaction stop is rejected', async () => {
       // Arrange
       setupConnectorWithTransaction(station, 1, { transactionId: 200 })
-      station.stopTransactionOnConnector = async () =>
+      mock.method(OCPP16ServiceUtils, 'stopTransactionOnConnector', async () =>
         Promise.resolve({ idTagInfo: { status: OCPP16AuthorizationStatus.INVALID } })
+      )
 
       // Act
       const response = await testableService.handleRequestUnlockConnector(station, {

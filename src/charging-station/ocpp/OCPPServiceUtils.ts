@@ -5,6 +5,8 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import type { StopTransactionReason } from '../../types/index.js'
+
 import {
   type ChargingStation,
   getConfigurationKey,
@@ -34,26 +36,25 @@ import {
   MeterValueMeasurand,
   MeterValuePhase,
   MeterValueUnit,
-  OCPP16StopTransactionReason,
   type OCPP16ChargePointStatus,
   type OCPP16MeterValue,
   type OCPP16SampledValue,
   type OCPP16StatusNotificationRequest,
+  OCPP16StopTransactionReason,
   OCPP20AuthorizationStatusEnumType,
   type OCPP20ConnectorStatusEnumType,
   type OCPP20MeterValue,
   OCPP20ReasonEnumType,
-  OCPP20TriggerReasonEnumType,
   type OCPP20SampledValue,
+  OCPP20TriggerReasonEnumType,
   OCPPVersion,
   RequestCommand,
   type SampledValue,
   type SampledValueTemplate,
   StandardParametersKey,
-  StopTransactionReason,
-  type StopTransactionResult,
   type StatusNotificationRequest,
   type StatusNotificationResponse,
+  type StopTransactionResult,
 } from '../../types/index.js'
 import {
   ACElectricUtils,
@@ -345,21 +346,33 @@ export const restoreConnectorStatus = async (
 export const mapStopReasonToOCPP20 = (
   reason?: StopTransactionReason
 ): {
-  triggerReason: OCPP20TriggerReasonEnumType
   stoppedReason: OCPP20ReasonEnumType
+  triggerReason: OCPP20TriggerReasonEnumType
 } => {
   switch (reason) {
-    case OCPP16StopTransactionReason.REMOTE:
-    case OCPP20ReasonEnumType.Remote:
+    case OCPP16StopTransactionReason.DE_AUTHORIZED:
+    case OCPP20ReasonEnumType.DeAuthorized:
       return {
-        stoppedReason: OCPP20ReasonEnumType.Remote,
-        triggerReason: OCPP20TriggerReasonEnumType.RemoteStop,
+        stoppedReason: OCPP20ReasonEnumType.DeAuthorized,
+        triggerReason: OCPP20TriggerReasonEnumType.Deauthorized,
+      }
+    case OCPP16StopTransactionReason.EMERGENCY_STOP:
+    case OCPP20ReasonEnumType.EmergencyStop:
+      return {
+        stoppedReason: OCPP20ReasonEnumType.EmergencyStop,
+        triggerReason: OCPP20TriggerReasonEnumType.AbnormalCondition,
+      }
+    case OCPP16StopTransactionReason.EV_DISCONNECTED:
+    case OCPP20ReasonEnumType.EVDisconnected:
+      return {
+        stoppedReason: OCPP20ReasonEnumType.EVDisconnected,
+        triggerReason: OCPP20TriggerReasonEnumType.EVDeparted,
       }
     case OCPP16StopTransactionReason.HARD_RESET:
-    case OCPP16StopTransactionReason.SOFT_RESET:
     case OCPP16StopTransactionReason.REBOOT:
-    case OCPP20ReasonEnumType.Reboot:
+    case OCPP16StopTransactionReason.SOFT_RESET:
     case OCPP20ReasonEnumType.ImmediateReset:
+    case OCPP20ReasonEnumType.Reboot:
       return {
         stoppedReason: OCPP20ReasonEnumType.ImmediateReset,
         triggerReason: OCPP20TriggerReasonEnumType.ResetCommand,
@@ -370,27 +383,15 @@ export const mapStopReasonToOCPP20 = (
         stoppedReason: OCPP20ReasonEnumType.PowerLoss,
         triggerReason: OCPP20TriggerReasonEnumType.AbnormalCondition,
       }
-    case OCPP16StopTransactionReason.EMERGENCY_STOP:
-    case OCPP20ReasonEnumType.EmergencyStop:
+    case OCPP16StopTransactionReason.REMOTE:
+    case OCPP20ReasonEnumType.Remote:
       return {
-        stoppedReason: OCPP20ReasonEnumType.EmergencyStop,
-        triggerReason: OCPP20TriggerReasonEnumType.AbnormalCondition,
+        stoppedReason: OCPP20ReasonEnumType.Remote,
+        triggerReason: OCPP20TriggerReasonEnumType.RemoteStop,
       }
-    case OCPP16StopTransactionReason.DE_AUTHORIZED:
-    case OCPP20ReasonEnumType.DeAuthorized:
-      return {
-        stoppedReason: OCPP20ReasonEnumType.DeAuthorized,
-        triggerReason: OCPP20TriggerReasonEnumType.Deauthorized,
-      }
-    case OCPP16StopTransactionReason.EV_DISCONNECTED:
-    case OCPP20ReasonEnumType.EVDisconnected:
-      return {
-        stoppedReason: OCPP20ReasonEnumType.EVDisconnected,
-        triggerReason: OCPP20TriggerReasonEnumType.EVDeparted,
-      }
-    case undefined:
     case OCPP16StopTransactionReason.LOCAL:
     case OCPP20ReasonEnumType.Local:
+    case undefined:
     default:
       return {
         stoppedReason: OCPP20ReasonEnumType.Local,
@@ -418,7 +419,7 @@ export const stopTransactionOnConnector = async (
     case OCPPVersion.VERSION_201: {
       const { OCPP20ServiceUtils } = await import('./2.0/OCPP20ServiceUtils.js')
       const evseId = chargingStation.getEvseIdByConnectorId(connectorId)
-      const { triggerReason, stoppedReason } = mapStopReasonToOCPP20(reason)
+      const { stoppedReason, triggerReason } = mapStopReasonToOCPP20(reason)
       const response = await OCPP20ServiceUtils.requestStopTransaction(
         chargingStation,
         connectorId,
@@ -481,7 +482,7 @@ export const stopRunningTransactions = async (
     case OCPPVersion.VERSION_20:
     case OCPPVersion.VERSION_201: {
       const { OCPP20ServiceUtils } = await import('./2.0/OCPP20ServiceUtils.js')
-      const { triggerReason, stoppedReason } = mapStopReasonToOCPP20(reason)
+      const { stoppedReason, triggerReason } = mapStopReasonToOCPP20(reason)
       const terminationPromises: Promise<unknown>[] = []
       for (const [evseId, evseStatus] of chargingStation.evses) {
         if (evseId === 0) {

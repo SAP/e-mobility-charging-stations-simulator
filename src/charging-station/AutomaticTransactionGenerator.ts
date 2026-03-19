@@ -30,8 +30,8 @@ import {
 } from '../utils/index.js'
 import { checkChargingStationState } from './Helpers.js'
 import { IdTagsCache } from './IdTagsCache.js'
-import { stopTransactionOnConnector } from './ocpp/OCPPServiceUtils.js'
 import { isIdTagAuthorized } from './ocpp/index.js'
+import { stopTransactionOnConnector } from './ocpp/OCPPServiceUtils.js'
 
 export class AutomaticTransactionGenerator {
   private static readonly instances: Map<string, AutomaticTransactionGenerator> = new Map<
