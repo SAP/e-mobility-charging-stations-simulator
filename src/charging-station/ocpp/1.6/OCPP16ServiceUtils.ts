@@ -33,9 +33,15 @@ import {
   OCPP16StopTransactionReason,
   type OCPP16SupportedFeatureProfiles,
   OCPPVersion,
+  type MeterValuesRequest,
+  type MeterValuesResponse,
+  type StopTransactionRequest,
+  type StopTransactionResponse,
+  type StopTransactionReason,
+  RequestCommand,
 } from '../../../types/index.js'
-import { convertToDate, isNotEmptyArray, logger, roundTo } from '../../../utils/index.js'
-import { OCPPServiceUtils } from '../OCPPServiceUtils.js'
+import { convertToDate, isNotEmptyArray, logger, roundTo, convertToInt } from '../../../utils/index.js'
+import { OCPPServiceUtils, buildTransactionEndMeterValue } from '../OCPPServiceUtils.js'
 import { OCPP16Constants } from './OCPP16Constants.js'
 
 const moduleName = 'OCPP16ServiceUtils'
@@ -521,7 +527,8 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       connectorId,
       OCPP16ChargePointStatus.Finishing
     )
-    const stopResponse = await chargingStation.stopTransactionOnConnector(
+    const stopResponse = await OCPP16ServiceUtils.stopTransactionOnConnector(
+      chargingStation,
       connectorId,
       OCPP16StopTransactionReason.REMOTE
     )
@@ -529,6 +536,43 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       return OCPP16Constants.OCPP_RESPONSE_ACCEPTED
     }
     return OCPP16Constants.OCPP_RESPONSE_REJECTED
+  }
+
+  public static async stopTransactionOnConnector (
+    chargingStation: ChargingStation,
+    connectorId: number,
+    reason?: StopTransactionReason
+  ): Promise<StopTransactionResponse> {
+    const rawTransactionId = chargingStation.getConnectorStatus(connectorId)?.transactionId
+    const transactionId = rawTransactionId != null ? convertToInt(rawTransactionId) : undefined
+    if (
+      chargingStation.stationInfo?.beginEndMeterValues === true &&
+      chargingStation.stationInfo.ocppStrictCompliance === true &&
+      chargingStation.stationInfo.outOfOrderEndMeterValues === false
+    ) {
+      const transactionEndMeterValue = buildTransactionEndMeterValue(
+        chargingStation,
+        connectorId,
+        chargingStation.getEnergyActiveImportRegisterByTransactionId(rawTransactionId)
+      )
+      await chargingStation.ocppRequestService.requestHandler<MeterValuesRequest, MeterValuesResponse>(
+        chargingStation,
+        RequestCommand.METER_VALUES,
+        {
+          connectorId,
+          meterValue: [transactionEndMeterValue],
+          transactionId,
+        } as MeterValuesRequest
+      )
+    }
+    return await chargingStation.ocppRequestService.requestHandler<
+      Partial<StopTransactionRequest>,
+      StopTransactionResponse
+    >(chargingStation, RequestCommand.STOP_TRANSACTION, {
+      meterStop: chargingStation.getEnergyActiveImportRegisterByTransactionId(rawTransactionId, true),
+      transactionId,
+      ...(reason != null && { reason: reason as StopTransactionRequest['reason'] }),
+    })
   }
 
   public static setChargingProfile (

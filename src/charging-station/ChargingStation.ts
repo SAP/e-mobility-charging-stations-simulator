@@ -156,6 +156,7 @@ import {
   OCPP16IncomingRequestService,
   OCPP16RequestService,
   OCPP16ResponseService,
+  OCPP16ServiceUtils,
   OCPP20IncomingRequestService,
   OCPP20RequestService,
   OCPP20ResponseService,
@@ -1196,36 +1197,7 @@ export class ChargingStation extends EventEmitter {
     connectorId: number,
     reason?: StopTransactionReason
   ): Promise<StopTransactionResponse> {
-    const rawTransactionId = this.getConnectorStatus(connectorId)?.transactionId
-    const transactionId = rawTransactionId != null ? convertToInt(rawTransactionId) : undefined
-    if (
-      this.stationInfo?.beginEndMeterValues === true &&
-      this.stationInfo.ocppStrictCompliance === true &&
-      this.stationInfo.outOfOrderEndMeterValues === false
-    ) {
-      const transactionEndMeterValue = buildTransactionEndMeterValue(
-        this,
-        connectorId,
-        this.getEnergyActiveImportRegisterByTransactionId(rawTransactionId)
-      )
-      await this.ocppRequestService.requestHandler<MeterValuesRequest, MeterValuesResponse>(
-        this,
-        RequestCommand.METER_VALUES,
-        {
-          connectorId,
-          meterValue: [transactionEndMeterValue],
-          transactionId,
-        } as MeterValuesRequest
-      )
-    }
-    return await this.ocppRequestService.requestHandler<
-      Partial<StopTransactionRequest>,
-      StopTransactionResponse
-    >(this, RequestCommand.STOP_TRANSACTION, {
-      meterStop: this.getEnergyActiveImportRegisterByTransactionId(rawTransactionId, true),
-      transactionId,
-      ...(reason != null && { reason: reason as StopTransactionRequest['reason'] }),
-    })
+    return OCPP16ServiceUtils.stopTransactionOnConnector(this, connectorId, reason)
   }
 
   public stopTxUpdatedInterval (connectorId: number): void {
