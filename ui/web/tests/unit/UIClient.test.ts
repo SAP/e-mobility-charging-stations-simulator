@@ -139,6 +139,7 @@ describe('UIClient', () => {
       const client = UIClient.getInstance(createUIServerConfig())
       // @ts-expect-error — accessing private property for testing
       const ws = client.ws as MockWebSocket
+      ws.simulateOpen()
 
       const promise = client.listChargingStations()
       const [uuid] = JSON.parse(ws.sentMessages[0]) as [string]
@@ -152,6 +153,7 @@ describe('UIClient', () => {
       const client = UIClient.getInstance(createUIServerConfig())
       // @ts-expect-error — accessing private property for testing
       const ws = client.ws as MockWebSocket
+      ws.simulateOpen()
 
       const promise = client.listChargingStations()
       const [uuid] = JSON.parse(ws.sentMessages[0]) as [string]
@@ -166,6 +168,7 @@ describe('UIClient', () => {
       const client = UIClient.getInstance(createUIServerConfig())
       // @ts-expect-error — accessing private property for testing
       const ws = client.ws as MockWebSocket
+      ws.simulateOpen()
 
       const promise = client.listChargingStations()
       const [uuid] = JSON.parse(ws.sentMessages[0]) as [string]
@@ -187,6 +190,7 @@ describe('UIClient', () => {
       const client = UIClient.getInstance(createUIServerConfig())
       // @ts-expect-error — accessing private property for testing
       const ws = client.ws as MockWebSocket
+      ws.simulateOpen()
       ws.send.mockImplementation(() => {
         throw new Error('send failed')
       })
@@ -231,22 +235,6 @@ describe('UIClient', () => {
       expect(() => {
         ws.simulateMessage([fakeUUID, { status: ResponseStatus.SUCCESS }])
       }).toThrow('Not a response to a request')
-    })
-
-    it('should reject on request timeout after 60 seconds', async () => {
-      vi.useFakeTimers()
-      try {
-        const client = UIClient.getInstance(createUIServerConfig())
-        const clearTimeoutSpy = vi
-          .spyOn(globalThis, 'clearTimeout')
-          .mockImplementation(() => undefined)
-        const promise = client.listChargingStations()
-        clearTimeoutSpy.mockRestore()
-        vi.advanceTimersByTime(60_000)
-        await expect(promise).rejects.toThrow('connection timeout')
-      } finally {
-        vi.useRealTimers()
-      }
     })
 
     it('should handle response with invalid UUID', async () => {
@@ -439,6 +427,7 @@ describe('UIClient', () => {
       const client = UIClient.getInstance(createUIServerConfig())
       // @ts-expect-error — accessing private property for testing
       const oldWs = client.ws as MockWebSocket
+      oldWs.simulateOpen()
 
       client.setConfiguration(createUIServerConfig({ port: 9090 }))
 

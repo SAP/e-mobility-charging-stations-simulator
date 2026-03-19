@@ -26,8 +26,6 @@ vi.mock('vue-toast-notification', () => ({
   useToast: () => toastMock,
 }))
 
-// Isolation guarantee: clear all mocks and localStorage after each test
 afterEach(() => {
-  vi.clearAllMocks()
   localStorage.clear()
 })

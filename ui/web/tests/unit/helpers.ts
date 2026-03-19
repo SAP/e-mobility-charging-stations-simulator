@@ -79,7 +79,7 @@ export class MockWebSocket {
     })
     // Simulate async open
     setTimeout(() => {
-      this.onopen?.()
+      this.simulateOpen()
     }, 0)
   }
 
@@ -98,12 +98,17 @@ export class MockWebSocket {
     const event = { data: JSON.stringify(data) } as MessageEvent<string>
     this.onmessage?.(event)
   }
+
+  simulateOpen (): void {
+    this.readyState = MockWebSocket.OPEN
+    this.onopen?.()
+  }
 }
 
 // ── createMockUIClient ────────────────────────────────────────────────────────
 
 /**
- * Creates a mock UIClient with all methods returning success responses.
+ * Creates a mock UIClient. Async methods return success responses; event listener and configuration methods are synchronous stubs.
  * @returns MockUIClient with all methods mocked
  */
 export function createMockUIClient (): MockUIClient {
@@ -146,7 +151,7 @@ export function createMockUIClient (): MockUIClient {
  */
 export function withSetup<T> (
   composable: () => T,
-  options?: { provide?: Record<string | symbol, unknown> }
+  options?: { provide?: Record<string, unknown> }
 ): [T, App] {
   let result!: T
   const app = createApp({
