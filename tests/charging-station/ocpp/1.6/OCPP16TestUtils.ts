@@ -7,15 +7,17 @@
 import { mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
-import type { ChargingStationInfo, ConfigurationKey } from '../../../../src/types/index.js'
 import type {
+  ChargingStationInfo,
+  ConfigurationKey,
   IncomingRequestCommand,
+  JsonObject,
   OCPP16ChargingProfile,
   OCPP16ChargingSchedulePeriod,
   OCPP16SampledValue,
   RequestCommand,
+  SampledValueTemplate,
 } from '../../../../src/types/index.js'
-import type { JsonObject, SampledValueTemplate } from '../../../../src/types/index.js'
 
 import {
   createTestableIncomingRequestService,

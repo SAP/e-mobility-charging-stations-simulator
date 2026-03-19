@@ -6,8 +6,10 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
-import type { OCPP20RequestStartTransactionRequest } from '../../../../src/types/index.js'
-import type { OCPP20GetVariableDataType } from '../../../../src/types/index.js'
+import type {
+  OCPP20GetVariableDataType,
+  OCPP20RequestStartTransactionRequest,
+} from '../../../../src/types/index.js'
 
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/__testable__/index.js'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
