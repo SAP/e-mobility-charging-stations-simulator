@@ -9,8 +9,6 @@ import { URL } from 'node:url'
 import { parentPort } from 'node:worker_threads'
 import { type RawData, WebSocket } from 'ws'
 
-import type { OCPP16StopTransactionReason } from '../types/index.js'
-
 import { BaseError, OCPPError } from '../exception/index.js'
 import { PerformanceStatistics } from '../performance/index.js'
 import {
@@ -1225,7 +1223,7 @@ export class ChargingStation extends EventEmitter {
     >(this, RequestCommand.STOP_TRANSACTION, {
       meterStop: this.getEnergyActiveImportRegisterByTransactionId(rawTransactionId, true),
       transactionId,
-      ...(reason != null && { reason: reason as OCPP16StopTransactionReason }),
+      ...(reason != null && { reason: reason as StopTransactionRequest['reason'] }),
     })
   }
 
