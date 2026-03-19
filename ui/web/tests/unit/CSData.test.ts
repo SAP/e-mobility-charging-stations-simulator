@@ -93,7 +93,7 @@ describe('CSData', () => {
       })
       const wrapper = mountCSData(station)
       const cells = wrapper.findAll('td')
-      expect(cells[8].text()).toBe('Ø')
+      expect(cells[9].text()).toBe('Ø')
     })
 
     it('should display WebSocket state as Open when OPEN', () => {

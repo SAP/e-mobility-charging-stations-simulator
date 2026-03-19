@@ -34,6 +34,7 @@ describe('CSTable', () => {
       expect(text).toContain('Supervision Url')
       expect(text).toContain('WebSocket State')
       expect(text).toContain('Registration Status')
+      expect(text).toContain('OCPP Version')
       expect(text).toContain('Template')
       expect(text).toContain('Vendor')
       expect(text).toContain('Model')
