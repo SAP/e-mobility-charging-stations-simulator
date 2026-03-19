@@ -8,14 +8,8 @@ import { ref } from 'vue'
 
 import AddChargingStations from '@/components/actions/AddChargingStations.vue'
 
-import { createMockUIClient, type MockUIClient } from './helpers'
-
-const mockToast = vi.hoisted(() => ({
-  error: vi.fn(),
-  info: vi.fn(),
-  success: vi.fn(),
-  warning: vi.fn(),
-}))
+import { toastMock } from '../setup'
+import { ButtonStub, createMockUIClient, type MockUIClient } from './helpers'
 
 describe('AddChargingStations', () => {
   let mockClient: MockUIClient
@@ -34,15 +28,12 @@ describe('AddChargingStations', () => {
           globalProperties: {
             $router: mockRouter,
             $templates: ref(['template-A.json', 'template-B.json']),
-            $toast: mockToast,
+            $toast: toastMock,
             $uiClient: mockClient,
           } as never,
         },
         stubs: {
-          Button: {
-            emits: ['click'],
-            template: '<button @click="$emit(\'click\')"><slot /></button>',
-          },
+          Button: ButtonStub,
         },
       },
     })
@@ -85,29 +76,10 @@ describe('AddChargingStations', () => {
   })
 
   it('should show error toast on failure', async () => {
-    mockClient = createMockUIClient()
+    const wrapper = mountComponent()
     mockClient.addChargingStations = vi.fn().mockRejectedValue(new Error('Network error'))
-    mockRouter = { push: vi.fn() }
-    const wrapper = mount(AddChargingStations, {
-      global: {
-        config: {
-          globalProperties: {
-            $router: mockRouter,
-            $templates: ref([]),
-            $toast: mockToast,
-            $uiClient: mockClient,
-          } as never,
-        },
-        stubs: {
-          Button: {
-            emits: ['click'],
-            template: '<button @click="$emit(\'click\')"><slot /></button>',
-          },
-        },
-      },
-    })
     await wrapper.find('button').trigger('click')
     await flushPromises()
-    expect(mockToast.error).toHaveBeenCalled()
+    expect(toastMock.error).toHaveBeenCalled()
   })
 })

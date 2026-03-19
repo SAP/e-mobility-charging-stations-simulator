@@ -11,8 +11,9 @@ import StartTransaction from '@/components/actions/StartTransaction.vue'
 import { useUIClient } from '@/composables'
 import { OCPPVersion } from '@/types'
 
+import { toastMock } from '../setup'
 import { TEST_HASH_ID, TEST_ID_TAG, TEST_STATION_ID } from './constants'
-import { createMockUIClient, type MockUIClient } from './helpers'
+import { ButtonStub, createMockUIClient, type MockUIClient } from './helpers'
 
 vi.mock('@/composables', async importOriginal => {
   const actual: Record<string, unknown> = await importOriginal()
@@ -56,10 +57,7 @@ describe('StartTransaction', () => {
     return mount(StartTransaction, {
       global: {
         stubs: {
-          Button: {
-            emits: ['click'],
-            template: '<button @click="$emit(\'click\')"><slot /></button>',
-          },
+          Button: ButtonStub,
         },
       },
       props: {
@@ -163,43 +161,11 @@ describe('StartTransaction', () => {
     })
 
     it('should show error toast on failure', async () => {
-      const vueToast = await import('vue-toast-notification')
-      const mockToast = { error: vi.fn(), info: vi.fn(), success: vi.fn(), warning: vi.fn() }
-      vi.spyOn(vueToast, 'useToast').mockReturnValue(
-        mockToast as unknown as ReturnType<typeof vueToast.useToast>
-      )
-      mockClient = createMockUIClient()
+      const wrapper = mountComponent()
       mockClient.startTransaction = vi.fn().mockRejectedValue(new Error('Failed'))
-      vi.mocked(useUIClient).mockReturnValue(mockClient as unknown as UIClient)
-      mockRouter = { push: vi.fn() }
-      vi.mocked(useRouter).mockReturnValue(mockRouter as unknown as ReturnType<typeof useRouter>)
-      vi.mocked(useRoute).mockReturnValue({
-        name: 'start-transaction',
-        params: {
-          chargingStationId: TEST_STATION_ID,
-          connectorId: '1',
-          hashId: TEST_HASH_ID,
-        },
-        query: {},
-      } as unknown as ReturnType<typeof useRoute>)
-      const wrapper = mount(StartTransaction, {
-        global: {
-          stubs: {
-            Button: {
-              emits: ['click'],
-              template: '<button @click="$emit(\'click\')"><slot /></button>',
-            },
-          },
-        },
-        props: {
-          chargingStationId: TEST_STATION_ID,
-          connectorId: '1',
-          hashId: TEST_HASH_ID,
-        },
-      })
       await wrapper.find('button').trigger('click')
       await flushPromises()
-      expect(mockToast.error).toHaveBeenCalled()
+      expect(toastMock.error).toHaveBeenCalled()
     })
   })
 })

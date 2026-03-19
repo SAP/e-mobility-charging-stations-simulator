@@ -13,34 +13,19 @@ import CSData from '@/components/charging-stations/CSData.vue'
 import { useUIClient } from '@/composables'
 import { OCPPVersion } from '@/types'
 
+import { toastMock } from '../setup'
 import {
   createChargingStationData,
   createConnectorStatus,
   createEvseEntry,
   createStationInfo,
 } from './constants'
-import { createMockUIClient, type MockUIClient } from './helpers'
-
-const toastMock = vi.hoisted(() => ({
-  error: vi.fn(),
-  info: vi.fn(),
-  success: vi.fn(),
-  warning: vi.fn(),
-}))
-
-vi.mock('vue-toast-notification', () => ({
-  useToast: () => toastMock,
-}))
+import { ButtonStub, createMockUIClient, type MockUIClient } from './helpers'
 
 vi.mock('@/composables', async importOriginal => {
   const actual = await importOriginal()
   return { ...(actual as Record<string, unknown>), useUIClient: vi.fn() }
 })
-
-const ButtonStub = {
-  emits: ['click'],
-  template: '<button @click="$emit(\'click\')"><slot /></button>',
-}
 
 /**
  * Mounts CSData with mock UIClient and stubbed child components.

@@ -7,15 +7,9 @@ import { describe, expect, it, vi } from 'vitest'
 
 import SetSupervisionUrl from '@/components/actions/SetSupervisionUrl.vue'
 
+import { toastMock } from '../setup'
 import { TEST_HASH_ID, TEST_STATION_ID } from './constants'
-import { createMockUIClient, type MockUIClient } from './helpers'
-
-const mockToast = vi.hoisted(() => ({
-  error: vi.fn(),
-  info: vi.fn(),
-  success: vi.fn(),
-  warning: vi.fn(),
-}))
+import { ButtonStub, createMockUIClient, type MockUIClient } from './helpers'
 
 describe('SetSupervisionUrl', () => {
   let mockClient: MockUIClient
@@ -34,15 +28,12 @@ describe('SetSupervisionUrl', () => {
         config: {
           globalProperties: {
             $router: mockRouter,
-            $toast: mockToast,
+            $toast: toastMock,
             $uiClient: mockClient,
           } as never,
         },
         stubs: {
-          Button: {
-            emits: ['click'],
-            template: '<button @click="$emit(\'click\')"><slot /></button>',
-          },
+          Button: ButtonStub,
         },
       },
       props: {
@@ -83,32 +74,10 @@ describe('SetSupervisionUrl', () => {
   })
 
   it('should show error toast on failure', async () => {
-    mockClient = createMockUIClient()
+    const wrapper = mountComponent()
     mockClient.setSupervisionUrl = vi.fn().mockRejectedValue(new Error('Network error'))
-    mockRouter = { push: vi.fn() }
-    const wrapper = mount(SetSupervisionUrl, {
-      global: {
-        config: {
-          globalProperties: {
-            $router: mockRouter,
-            $toast: mockToast,
-            $uiClient: mockClient,
-          } as never,
-        },
-        stubs: {
-          Button: {
-            emits: ['click'],
-            template: '<button @click="$emit(\'click\')"><slot /></button>',
-          },
-        },
-      },
-      props: {
-        chargingStationId: TEST_STATION_ID,
-        hashId: TEST_HASH_ID,
-      },
-    })
     await wrapper.find('button').trigger('click')
     await flushPromises()
-    expect(mockToast.error).toHaveBeenCalled()
+    expect(toastMock.error).toHaveBeenCalled()
   })
 })

@@ -9,30 +9,16 @@ import type { UIClient } from '@/composables/UIClient'
 
 import CSConnector from '@/components/charging-stations/CSConnector.vue'
 import { useUIClient } from '@/composables'
+import { OCPP16ChargePointStatus } from '@/types/ChargingStationType'
 
+import { toastMock } from '../setup'
 import { createConnectorStatus, TEST_HASH_ID, TEST_STATION_ID } from './constants'
-import { createMockUIClient, type MockUIClient } from './helpers'
-
-const toastMock = vi.hoisted(() => ({
-  error: vi.fn(),
-  info: vi.fn(),
-  success: vi.fn(),
-  warning: vi.fn(),
-}))
-
-vi.mock('vue-toast-notification', () => ({
-  useToast: () => toastMock,
-}))
+import { ButtonStub, createMockUIClient, type MockUIClient } from './helpers'
 
 vi.mock('@/composables', async importOriginal => {
   const actual = await importOriginal()
   return { ...(actual as Record<string, unknown>), useUIClient: vi.fn() }
 })
-
-const ButtonStub = {
-  emits: ['click'],
-  template: '<button @click="$emit(\'click\')"><slot /></button>',
-}
 
 /**
  * Mounts CSConnector with mock UIClient and Button stub.
@@ -80,7 +66,7 @@ describe('CSConnector', () => {
 
     it('should display connector status', () => {
       const wrapper = mountCSConnector({
-        connector: createConnectorStatus({ status: 'Charging' as never }),
+        connector: createConnectorStatus({ status: OCPP16ChargePointStatus.CHARGING }),
       })
       const cells = wrapper.findAll('td')
       expect(cells[1].text()).toBe('Charging')

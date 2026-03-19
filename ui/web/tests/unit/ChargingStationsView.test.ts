@@ -13,6 +13,7 @@ import { useUIClient } from '@/composables'
 import { ResponseStatus } from '@/types'
 import ChargingStationsView from '@/views/ChargingStationsView.vue'
 
+import { toastMock } from '../setup'
 import { createChargingStationData, createUIServerConfig } from './constants'
 import { createMockUIClient, type MockUIClient } from './helpers'
 
@@ -20,17 +21,6 @@ vi.mock('@/composables', async importOriginal => {
   const actual = await importOriginal()
   return { ...(actual as Record<string, unknown>), useUIClient: vi.fn() }
 })
-
-const toastMock = vi.hoisted(() => ({
-  error: vi.fn(),
-  info: vi.fn(),
-  success: vi.fn(),
-  warning: vi.fn(),
-}))
-
-vi.mock('vue-toast-notification', () => ({
-  useToast: () => toastMock,
-}))
 
 // ── Configuration fixtures ────────────────────────────────────────────────────
 

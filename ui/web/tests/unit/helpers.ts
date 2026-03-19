@@ -4,7 +4,7 @@
  */
 import { flushPromises } from '@vue/test-utils'
 import { vi } from 'vitest'
-import { type App, createApp, ref } from 'vue'
+import { type App, createApp } from 'vue'
 
 import { ResponseStatus } from '@/types'
 
@@ -33,6 +33,14 @@ export interface MockUIClient {
   stopSimulator: ReturnType<typeof vi.fn>
   stopTransaction: ReturnType<typeof vi.fn>
   unregisterWSEventListener: ReturnType<typeof vi.fn>
+}
+
+// ── ButtonStub ────────────────────────────────────────────────────────────────
+
+/** Functional Button stub that preserves click event propagation. */
+export const ButtonStub = {
+  emits: ['click'],
+  template: '<button @click="$emit(\'click\')"><slot /></button>',
 }
 
 // ── MockWebSocket ─────────────────────────────────────────────────────────────
@@ -89,26 +97,6 @@ export class MockWebSocket {
   simulateMessage (data: unknown): void {
     const event = { data: JSON.stringify(data) } as MessageEvent<string>
     this.onmessage?.(event)
-  }
-}
-
-// ── createMockRouter ──────────────────────────────────────────────────────────
-
-/**
- * Creates a mock Vue Router instance with vi.fn() methods.
- * @returns Mock router object with back, currentRoute, push, replace methods
- */
-export function createMockRouter (): {
-  back: ReturnType<typeof vi.fn>
-  currentRoute: ReturnType<typeof ref>
-  push: ReturnType<typeof vi.fn>
-  replace: ReturnType<typeof vi.fn>
-} {
-  return {
-    back: vi.fn(),
-    currentRoute: ref({ name: 'charging-stations', params: {}, query: {} }),
-    push: vi.fn(),
-    replace: vi.fn(),
   }
 }
 

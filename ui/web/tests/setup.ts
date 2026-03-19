@@ -5,7 +5,7 @@
  *   to the Vitest + `@vue/test-utils` assertion API.
  */
 import { config } from '@vue/test-utils'
-import { afterEach, vi } from 'vitest'
+import { afterEach, type Mock, vi } from 'vitest'
 
 // Global stubs: stub router components in all tests by default
 config.global.stubs = {
@@ -13,14 +13,17 @@ config.global.stubs = {
   RouterView: true,
 }
 
-// Shared mock for vue-toast-notification — used by all component tests
+// ── Shared toast mock ─────────────────────────────────────────────────────────
+// Shared across all test files. Import `toastMock` from setup.ts to assert on calls.
+export const toastMock: { error: Mock; info: Mock; success: Mock; warning: Mock } = {
+  error: vi.fn(),
+  info: vi.fn(),
+  success: vi.fn(),
+  warning: vi.fn(),
+}
+
 vi.mock('vue-toast-notification', () => ({
-  useToast: () => ({
-    error: vi.fn(),
-    info: vi.fn(),
-    success: vi.fn(),
-    warning: vi.fn(),
-  }),
+  useToast: () => toastMock,
 }))
 
 // Isolation guarantee: clear all mocks and localStorage after each test

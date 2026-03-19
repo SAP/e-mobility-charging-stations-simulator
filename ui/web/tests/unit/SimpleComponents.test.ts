@@ -65,8 +65,7 @@ describe('NotFoundView', () => {
 })
 
 describe('App', () => {
-  it('should render router-view placeholder', () => {
-    // Create a minimal router so $route is available
+  it('should render Container component', () => {
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [{ component: DummyComponent, name: 'charging-stations', path: '/' }],
@@ -74,7 +73,7 @@ describe('App', () => {
     const wrapper = mount(App, {
       global: { plugins: [router] },
     })
-    expect(wrapper.exists()).toBe(true)
+    expect(wrapper.findComponent(Container).exists()).toBe(true)
   })
 
   it('should hide action container on charging-stations route', async () => {
