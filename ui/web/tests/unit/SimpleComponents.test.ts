@@ -65,11 +65,13 @@ describe('NotFoundView', () => {
 })
 
 describe('App', () => {
-  it('should render Container component', () => {
+  it('should render Container component', async () => {
     const router = createRouter({
       history: createMemoryHistory(),
       routes: [{ component: DummyComponent, name: 'charging-stations', path: '/' }],
     })
+    await router.push('/')
+    await router.isReady()
     const wrapper = mount(App, {
       global: { plugins: [router] },
     })
