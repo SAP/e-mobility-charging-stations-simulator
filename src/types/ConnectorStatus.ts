@@ -43,6 +43,11 @@ export interface ConnectorStatus {
    * that occurs after the transaction has been authorized.
    */
   transactionIdTokenSent?: boolean
+  /**
+   * OCPP 2.0.1 E02 compliance: Transaction pending CSMS acknowledgment.
+   * Blocks duplicate RequestStartTransaction until response handler sets transactionStarted.
+   */
+  transactionPending?: boolean
   transactionRemoteStarted?: boolean
   transactionSeqNo?: number
   transactionSetInterval?: NodeJS.Timeout

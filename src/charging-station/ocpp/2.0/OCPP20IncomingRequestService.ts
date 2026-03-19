@@ -411,8 +411,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
                 error
               )
             })
-            const txUpdatedInterval = OCPP20ServiceUtils.getTxUpdatedInterval(chargingStation)
-            chargingStation.startTxUpdatedInterval(connectorId, txUpdatedInterval)
           }
         }
       }
@@ -2276,14 +2274,17 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
     }
 
-    if (connectorStatus.transactionStarted === true) {
+    if (
+      connectorStatus.transactionStarted === true ||
+      connectorStatus.transactionPending === true
+    ) {
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Connector ${connectorId.toString()} already has an active transaction`
+        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Connector ${connectorId.toString()} already has an active or pending transaction`
       )
       return {
         status: RequestStartStopStatusEnumType.Rejected,
         statusInfo: {
-          additionalInfo: `Connector ${connectorId.toString()} already has an active transaction`,
+          additionalInfo: `Connector ${connectorId.toString()} already has an active or pending transaction`,
           reasonCode: ReasonCodeEnumType.TxInProgress,
         },
         transactionId: generateUUID(),
@@ -2474,7 +2475,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       logger.debug(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Setting transaction state for connector ${connectorId.toString()}, transaction ID: ${transactionId}`
       )
-      connectorStatus.transactionStarted = true
+      connectorStatus.transactionPending = true
       connectorStatus.transactionId = transactionId
       connectorStatus.transactionIdTag = idToken.idToken
       connectorStatus.transactionGroupIdToken = groupIdToken?.idToken
@@ -2483,16 +2484,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       connectorStatus.remoteStartId = remoteStartId
       logger.debug(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Transaction state set successfully for connector ${connectorId.toString()}`
-      )
-
-      logger.debug(
-        `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Updating connector ${connectorId.toString()} status to Occupied`
-      )
-      await sendAndSetConnectorStatus(
-        chargingStation,
-        connectorId,
-        ConnectorStatusEnum.Occupied,
-        evseId
       )
 
       if (chargingProfile != null) {
@@ -2866,7 +2857,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     presentedGroupIdToken?: OCPP20IdTokenType
   ): boolean {
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
-    if (connectorStatus?.transactionStarted !== true) {
+    if (
+      connectorStatus?.transactionStarted !== true &&
+      connectorStatus?.transactionPending !== true
+    ) {
       logger.debug(
         `${chargingStation.logPrefix()} ${moduleName}.isAuthorizedToStopTransaction: No active transaction on connector ${connectorId.toString()}`
       )

@@ -556,6 +556,7 @@ export const resetConnectorStatus = (connectorStatus: ConnectorStatus | undefine
     )
   }
   resetAuthorizeConnectorStatus(connectorStatus)
+  connectorStatus.transactionPending = false
   connectorStatus.transactionRemoteStarted = false
   connectorStatus.transactionStarted = false
   delete connectorStatus.transactionStart

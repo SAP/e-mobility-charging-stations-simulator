@@ -144,7 +144,7 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
     }
     assert.strictEqual(connectorStatus.remoteStartId, 42)
     assert.strictEqual(connectorStatus.transactionIdTag, 'REMOTE_TOKEN_456')
-    assert.strictEqual(connectorStatus.transactionStarted, true)
+    assert.strictEqual(connectorStatus.transactionPending, true)
     assert.strictEqual(connectorStatus.transactionId, response.transactionId)
 
     OCPPAuthServiceFactory.clearAllInstances()

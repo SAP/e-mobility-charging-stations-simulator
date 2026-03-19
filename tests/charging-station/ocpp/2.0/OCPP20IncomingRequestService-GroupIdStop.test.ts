@@ -97,7 +97,7 @@ await describe('C09 - GroupId-based Stop Transaction Authorization', async () =>
       assert.fail('Expected connectorStatus to be defined')
     }
     assert.strictEqual(connectorStatus.transactionGroupIdToken, GROUP_ID_TOKEN)
-    assert.strictEqual(connectorStatus.transactionStarted, true)
+    assert.strictEqual(connectorStatus.transactionPending, true)
 
     const isAuthorized = testableService.isAuthorizedToStopTransaction(
       mockStation,
