@@ -483,37 +483,7 @@ export const stopRunningTransactions = async (
     case OCPPVersion.VERSION_201: {
       const { OCPP20ServiceUtils } = await import('./2.0/OCPP20ServiceUtils.js')
       const { stoppedReason, triggerReason } = mapStopReasonToOCPP20(reason)
-      const terminationPromises: Promise<unknown>[] = []
-      for (const [evseId, evseStatus] of chargingStation.evses) {
-        if (evseId === 0) {
-          continue
-        }
-        for (const [connectorId, connectorStatus] of evseStatus.connectors) {
-          if (
-            connectorStatus.transactionStarted === true ||
-            connectorStatus.transactionPending === true
-          ) {
-            const evseConnectorId = chargingStation.getEvseIdByConnectorId(connectorId)
-            terminationPromises.push(
-              OCPP20ServiceUtils.requestStopTransaction(
-                chargingStation,
-                connectorId,
-                evseConnectorId,
-                triggerReason,
-                stoppedReason
-              ).catch((error: unknown) => {
-                logger.error(
-                  `${chargingStation.logPrefix()} OCPPServiceUtils.stopRunningTransactions: Error stopping transaction on connector ${connectorId.toString()}:`,
-                  error
-                )
-              })
-            )
-          }
-        }
-      }
-      if (terminationPromises.length > 0) {
-        await Promise.all(terminationPromises)
-      }
+      await OCPP20ServiceUtils.stopAllTransactions(chargingStation, triggerReason, stoppedReason)
       break
     }
     default:

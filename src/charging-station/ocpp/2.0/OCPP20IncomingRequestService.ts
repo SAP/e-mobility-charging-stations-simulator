@@ -3587,34 +3587,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     chargingStation: ChargingStation,
     reason: OCPP20ReasonEnumType
   ): Promise<void> {
-    const terminationPromises: Promise<unknown>[] = []
-
-    for (const [evseId, evse] of chargingStation.evses) {
-      for (const [connectorId, connector] of evse.connectors) {
-        if (connector.transactionId != null) {
-          logger.info(
-            `${chargingStation.logPrefix()} ${moduleName}.terminateAllTransactions: Terminating transaction ${connector.transactionId.toString()} on connector ${connectorId.toString()}`
-          )
-          terminationPromises.push(
-            OCPP20ServiceUtils.requestStopTransaction(chargingStation, connectorId, evseId).catch(
-              (error: unknown) => {
-                logger.error(
-                  `${chargingStation.logPrefix()} ${moduleName}.terminateAllTransactions: Error terminating transaction on connector ${connectorId.toString()}:`,
-                  error
-                )
-              }
-            )
-          )
-        }
-      }
-    }
-
-    if (terminationPromises.length > 0) {
-      await Promise.all(terminationPromises)
-      logger.info(
-        `${chargingStation.logPrefix()} ${moduleName}.terminateAllTransactions: All transactions terminated on charging station`
-      )
-    }
+    await OCPP20ServiceUtils.stopAllTransactions(
+      chargingStation,
+      OCPP20TriggerReasonEnumType.ResetCommand,
+      reason
+    )
   }
 
   /**
@@ -3628,39 +3605,12 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     evseId: number,
     reason: OCPP20ReasonEnumType
   ): Promise<void> {
-    const evse = chargingStation.getEvseStatus(evseId)
-    if (!evse) {
-      logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.terminateEvseTransactions: EVSE ${evseId.toString()} not found`
-      )
-      return
-    }
-
-    const terminationPromises: Promise<unknown>[] = []
-    for (const [connectorId, connector] of evse.connectors) {
-      if (connector.transactionId != null) {
-        logger.info(
-          `${chargingStation.logPrefix()} ${moduleName}.terminateEvseTransactions: Terminating transaction ${connector.transactionId.toString()} on connector ${connectorId.toString()}`
-        )
-        terminationPromises.push(
-          OCPP20ServiceUtils.requestStopTransaction(chargingStation, connectorId, evseId).catch(
-            (error: unknown) => {
-              logger.error(
-                `${chargingStation.logPrefix()} ${moduleName}.terminateEvseTransactions: Error terminating transaction on connector ${connectorId.toString()}:`,
-                error
-              )
-            }
-          )
-        )
-      }
-    }
-
-    if (terminationPromises.length > 0) {
-      await Promise.all(terminationPromises)
-      logger.info(
-        `${chargingStation.logPrefix()} ${moduleName}.terminateEvseTransactions: All transactions terminated on EVSE ${evseId.toString()}`
-      )
-    }
+    await OCPP20ServiceUtils.stopAllTransactions(
+      chargingStation,
+      OCPP20TriggerReasonEnumType.ResetCommand,
+      reason,
+      evseId
+    )
   }
 
   private toHandler (

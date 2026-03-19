@@ -524,6 +524,65 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     }
   }
 
+  public static async stopAllTransactions (
+    chargingStation: ChargingStation,
+    triggerReason: OCPP20TriggerReasonEnumType = OCPP20TriggerReasonEnumType.RemoteStop,
+    stoppedReason: OCPP20ReasonEnumType = OCPP20ReasonEnumType.Remote,
+    evseId?: number
+  ): Promise<void> {
+    const terminationPromises: Promise<unknown>[] = []
+    if (evseId != null) {
+      const evseStatus = chargingStation.getEvseStatus(evseId)
+      if (evseStatus != null) {
+        for (const [connectorId, connectorStatus] of evseStatus.connectors) {
+          if (connectorStatus.transactionId != null) {
+            terminationPromises.push(
+              OCPP20ServiceUtils.requestStopTransaction(
+                chargingStation,
+                connectorId,
+                evseId,
+                triggerReason,
+                stoppedReason
+              ).catch((error: unknown) => {
+                logger.error(
+                  `${chargingStation.logPrefix()} ${moduleName}.stopAllTransactions: Error stopping transaction on connector ${connectorId.toString()}:`,
+                  error
+                )
+              })
+            )
+          }
+        }
+      }
+    } else {
+      for (const [iteratedEvseId, evseStatus] of chargingStation.evses) {
+        if (iteratedEvseId === 0) {
+          continue
+        }
+        for (const [connectorId, connectorStatus] of evseStatus.connectors) {
+          if (connectorStatus.transactionId != null) {
+            terminationPromises.push(
+              OCPP20ServiceUtils.requestStopTransaction(
+                chargingStation,
+                connectorId,
+                iteratedEvseId,
+                triggerReason,
+                stoppedReason
+              ).catch((error: unknown) => {
+                logger.error(
+                  `${chargingStation.logPrefix()} ${moduleName}.stopAllTransactions: Error stopping transaction on connector ${connectorId.toString()}:`,
+                  error
+                )
+              })
+            )
+          }
+        }
+      }
+    }
+    if (terminationPromises.length > 0) {
+      await Promise.all(terminationPromises)
+    }
+  }
+
   private static buildFinalMeterValues (connectorStatus: ConnectorStatus): OCPP20MeterValue[] {
     const finalMeterValues: OCPP20MeterValue[] = []
     const energyValue = connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0
