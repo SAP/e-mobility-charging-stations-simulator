@@ -8,7 +8,7 @@ import type {
 } from '../interfaces/OCPPAuthService.js'
 import type { AuthConfiguration } from '../types/AuthTypes.js'
 
-import { OCPPError } from '../../../../exception/OCPPError.js'
+import { OCPPError } from '../../../../exception/index.js'
 import { ErrorType, OCPPVersion } from '../../../../types/index.js'
 import { InMemoryAuthCache } from '../cache/InMemoryAuthCache.js'
 import { AuthConfigValidator } from '../utils/ConfigValidator.js'

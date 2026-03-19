@@ -21,7 +21,7 @@ import {
   OCPP20ServiceUtils,
 } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
-import { OCPPError } from '../../../../src/exception/OCPPError.js'
+import { OCPPError } from '../../../../src/exception/index.js'
 import {
   AttributeEnumType,
   ConnectorStatusEnum,
