@@ -2036,7 +2036,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       standardCleanup()
     })
 
-    await describe('startTxUpdatedInterval', async () => {
+    await describe('startPeriodicMeterValues', async () => {
       await it('should not start timer for non-OCPP 2.0 stations', () => {
         const { station: ocpp16Station } = createMockChargingStation({
           baseName: TEST_CHARGING_STATION_BASE_NAME,
@@ -2046,10 +2046,10 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           },
         })
 
-        // Call startTxUpdatedInterval on OCPP 1.6 station
-        ocpp16Station.startTxUpdatedInterval(1, 60000)
+        // Call startPeriodicMeterValues on OCPP 1.6 station — should be a no-op
+        OCPP20ServiceUtils.startPeriodicMeterValues(ocpp16Station, 1, 60000)
 
-        // Verify no timer was started (method should return early)
+        // Verify no timer was started
         const connector = ocpp16Station.getConnectorStatus(1)
         assert.strictEqual(connector?.transactionTxUpdatedSetInterval, undefined)
       })

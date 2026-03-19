@@ -27,14 +27,20 @@ import {
   type UUIDv4,
 } from '../../../types/index.js'
 import {
+  clampToSafeTimerValue,
   Constants,
   convertToIntOrNaN,
+  formatDurationMilliSeconds,
   generateUUID,
   logger,
   validateIdentifierString,
 } from '../../../utils/index.js'
 import { getConfigurationKey } from '../../ConfigurationKeyUtils.js'
-import { OCPPServiceUtils, sendAndSetConnectorStatus } from '../OCPPServiceUtils.js'
+import {
+  buildMeterValue,
+  OCPPServiceUtils,
+  sendAndSetConnectorStatus,
+} from '../OCPPServiceUtils.js'
 import { OCPP20VariableManager } from './OCPP20VariableManager.js'
 
 const moduleName = 'OCPP20ServiceUtils'
@@ -332,7 +338,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         }
       )
 
-      chargingStation.stopTxUpdatedInterval(connectorId)
+      OCPP20ServiceUtils.stopPeriodicMeterValues(chargingStation, connectorId)
       resetConnectorStatus(connectorStatus)
       await sendAndSetConnectorStatus(chargingStation, connectorId, ConnectorStatusEnum.Available)
 
@@ -383,7 +389,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         }
       )
 
-      chargingStation.stopTxUpdatedInterval(connectorId)
+      OCPP20ServiceUtils.stopPeriodicMeterValues(chargingStation, connectorId)
       resetConnectorStatus(connectorStatus)
       await sendAndSetConnectorStatus(chargingStation, connectorId, ConnectorStatusEnum.Available)
 
@@ -524,6 +530,59 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     }
   }
 
+  public static startPeriodicMeterValues (
+    chargingStation: ChargingStation,
+    connectorId: number,
+    interval: number
+  ): void {
+    const connector = chargingStation.getConnectorStatus(connectorId)
+    if (connector == null) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.startPeriodicMeterValues: Connector ${connectorId.toString()} not found`
+      )
+      return
+    }
+    if (interval <= 0) {
+      logger.debug(
+        `${chargingStation.logPrefix()} ${moduleName}.startPeriodicMeterValues: TxUpdatedInterval is ${interval.toString()}, not starting periodic TransactionEvent`
+      )
+      return
+    }
+    if (connector.transactionTxUpdatedSetInterval != null) {
+      logger.warn(
+        `${chargingStation.logPrefix()} ${moduleName}.startPeriodicMeterValues: TxUpdatedInterval already started, stopping first`
+      )
+      OCPP20ServiceUtils.stopPeriodicMeterValues(chargingStation, connectorId)
+    }
+    connector.transactionTxUpdatedSetInterval = setInterval(() => {
+      const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+      if (connectorStatus?.transactionStarted === true && connectorStatus.transactionId != null) {
+        const meterValue = buildMeterValue(
+          chargingStation,
+          connectorId,
+          0,
+          interval
+        ) as OCPP20MeterValue
+        OCPP20ServiceUtils.sendTransactionEvent(
+          chargingStation,
+          OCPP20TransactionEventEnumType.Updated,
+          OCPP20TriggerReasonEnumType.MeterValuePeriodic,
+          connectorId,
+          connectorStatus.transactionId as string,
+          { meterValue: [meterValue] }
+        ).catch((error: unknown) => {
+          logger.error(
+            `${chargingStation.logPrefix()} ${moduleName}.startPeriodicMeterValues: Error sending periodic TransactionEvent:`,
+            error
+          )
+        })
+      }
+    }, clampToSafeTimerValue(interval))
+    logger.info(
+      `${chargingStation.logPrefix()} ${moduleName}.startPeriodicMeterValues: TxUpdatedInterval started every ${formatDurationMilliSeconds(interval)}`
+    )
+  }
+
   public static async stopAllTransactions (
     chargingStation: ChargingStation,
     triggerReason: OCPP20TriggerReasonEnumType = OCPP20TriggerReasonEnumType.RemoteStop,
@@ -580,6 +639,20 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     }
     if (terminationPromises.length > 0) {
       await Promise.all(terminationPromises)
+    }
+  }
+
+  public static stopPeriodicMeterValues (
+    chargingStation: ChargingStation,
+    connectorId: number
+  ): void {
+    const connector = chargingStation.getConnectorStatus(connectorId)
+    if (connector?.transactionTxUpdatedSetInterval != null) {
+      clearInterval(connector.transactionTxUpdatedSetInterval)
+      delete connector.transactionTxUpdatedSetInterval
+      logger.info(
+        `${chargingStation.logPrefix()} ${moduleName}.stopPeriodicMeterValues: TxUpdatedInterval stopped`
+      )
     }
   }
 

@@ -41,11 +41,6 @@ import {
   type IncomingRequestCommand,
   MessageType,
   MeterValueMeasurand,
-  type MeterValuesRequest,
-  type MeterValuesResponse,
-  type OCPP20MeterValue,
-  OCPP20TransactionEventEnumType,
-  OCPP20TriggerReasonEnumType,
   OCPPVersion,
   type OutgoingRequest,
   PowerUnits,
@@ -147,7 +142,6 @@ import {
 } from './Helpers.js'
 import { IdTagsCache } from './IdTagsCache.js'
 import {
-  buildMeterValue,
   getMessageTypeString,
   OCPP16IncomingRequestService,
   OCPP16RequestService,
@@ -155,7 +149,6 @@ import {
   OCPP20IncomingRequestService,
   OCPP20RequestService,
   OCPP20ResponseService,
-  OCPP20ServiceUtils,
   OCPPAuthServiceFactory,
   type OCPPIncomingRequestService,
   type OCPPRequestService,
@@ -890,11 +883,6 @@ export class ChargingStation extends EventEmitter {
     this.startHeartbeat()
   }
 
-  public restartMeterValues (connectorId: number, interval: number): void {
-    this.stopMeterValues(connectorId)
-    this.startMeterValues(connectorId, interval)
-  }
-
   public restartWebSocketPing (): void {
     // Stop WebSocket ping
     this.stopWebSocketPing()
@@ -1037,108 +1025,6 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  public startMeterValues (connectorId: number, interval: number): void {
-    if (connectorId === 0) {
-      logger.error(
-        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId.toString()}`
-      )
-      return
-    }
-    const connectorStatus = this.getConnectorStatus(connectorId)
-    if (connectorStatus == null) {
-      logger.error(
-        `${this.logPrefix()} Trying to start MeterValues on non existing connector id
-          ${connectorId.toString()}`
-      )
-      return
-    }
-    if (connectorStatus.transactionStarted === false) {
-      logger.error(
-        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId.toString()} with no transaction started`
-      )
-      return
-    } else if (
-      connectorStatus.transactionStarted === true &&
-      connectorStatus.transactionId == null
-    ) {
-      logger.error(
-        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId.toString()} with no transaction id`
-      )
-      return
-    }
-    if (interval > 0) {
-      connectorStatus.transactionSetInterval = setInterval(() => {
-        const transactionId = convertToInt(connectorStatus.transactionId)
-        const meterValue = buildMeterValue(this, connectorId, transactionId, interval)
-        this.ocppRequestService
-          .requestHandler<MeterValuesRequest, MeterValuesResponse>(
-            this,
-            RequestCommand.METER_VALUES,
-            {
-              connectorId,
-              meterValue: [meterValue],
-              transactionId,
-            } as MeterValuesRequest
-          )
-          .catch((error: unknown) => {
-            logger.error(
-              `${this.logPrefix()} Error while sending '${RequestCommand.METER_VALUES}':`,
-              error
-            )
-          })
-      }, clampToSafeTimerValue(interval))
-    } else {
-      logger.error(
-        `${this.logPrefix()} Charging station ${
-          StandardParametersKey.MeterValueSampleInterval
-        } configuration set to ${interval.toString()}, not sending MeterValues`
-      )
-    }
-  }
-
-  public startTxUpdatedInterval (connectorId: number, interval: number): void {
-    if (this.stationInfo?.ocppVersion !== OCPPVersion.VERSION_20) {
-      return
-    }
-    const connector = this.getConnectorStatus(connectorId)
-    if (connector == null) {
-      logger.error(`${this.logPrefix()} Connector ${connectorId.toString()} not found`)
-      return
-    }
-    if (interval <= 0) {
-      logger.debug(
-        `${this.logPrefix()} TxUpdatedInterval is ${interval.toString()}, not starting periodic TransactionEvent`
-      )
-      return
-    }
-    if (connector.transactionTxUpdatedSetInterval != null) {
-      logger.warn(`${this.logPrefix()} TxUpdatedInterval already started, stopping first`)
-      this.stopTxUpdatedInterval(connectorId)
-    }
-    connector.transactionTxUpdatedSetInterval = setInterval(() => {
-      const connectorStatus = this.getConnectorStatus(connectorId)
-      if (connectorStatus?.transactionStarted === true && connectorStatus.transactionId != null) {
-        const meterValue = buildMeterValue(this, connectorId, 0, interval) as OCPP20MeterValue
-        OCPP20ServiceUtils.sendTransactionEvent(
-          this,
-          OCPP20TransactionEventEnumType.Updated,
-          OCPP20TriggerReasonEnumType.MeterValuePeriodic,
-          connectorId,
-          connectorStatus.transactionId as string,
-          { meterValue: [meterValue] }
-        ).catch((error: unknown) => {
-          logger.error(
-            `${this.logPrefix()} Error sending periodic TransactionEvent at TxUpdatedInterval:`,
-            error
-          )
-        })
-      }
-    }, clampToSafeTimerValue(interval))
-    logger.info(
-      `${this.logPrefix()} TxUpdatedInterval started every ${formatDurationMilliSeconds(interval)}`
-    )
-  }
-
   public async stop (
     reason?: StopTransactionReason,
     stopTransactions = this.stationInfo?.stopTransactionsOnStopped
@@ -1180,22 +1066,6 @@ export class ChargingStation extends EventEmitter {
     }
     this.saveAutomaticTransactionGeneratorConfiguration()
     this.emitChargingStationEvent(ChargingStationEvents.updated)
-  }
-
-  public stopMeterValues (connectorId: number): void {
-    const connectorStatus = this.getConnectorStatus(connectorId)
-    if (connectorStatus?.transactionSetInterval != null) {
-      clearInterval(connectorStatus.transactionSetInterval)
-    }
-  }
-
-  public stopTxUpdatedInterval (connectorId: number): void {
-    const connector = this.getConnectorStatus(connectorId)
-    if (connector?.transactionTxUpdatedSetInterval != null) {
-      clearInterval(connector.transactionTxUpdatedSetInterval)
-      delete connector.transactionTxUpdatedSetInterval
-      logger.info(`${this.logPrefix()} TxUpdatedInterval stopped`)
-    }
   }
 
   private add (): void {

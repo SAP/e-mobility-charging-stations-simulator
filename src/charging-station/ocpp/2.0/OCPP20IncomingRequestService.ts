@@ -3033,7 +3033,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     connectorId: number,
     evseId?: number
   ): Promise<void> {
-    chargingStation.stopMeterValues(connectorId)
+    OCPP20ServiceUtils.stopPeriodicMeterValues(chargingStation, connectorId)
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
     resetConnectorStatus(connectorStatus)
     await restoreConnectorStatus(chargingStation, connectorId, connectorStatus)

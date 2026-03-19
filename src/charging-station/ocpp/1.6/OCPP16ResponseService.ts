@@ -442,7 +442,8 @@ export class OCPP16ResponseService extends OCPPResponseService {
         chargingStation,
         OCPP16StandardParametersKey.MeterValueSampleInterval
       )
-      chargingStation.startMeterValues(
+      OCPP16ServiceUtils.startPeriodicMeterValues(
+        chargingStation,
         connectorId,
         configuredMeterValueSampleInterval != null
           ? secondsToMilliseconds(convertToInt(configuredMeterValueSampleInterval.value))
@@ -518,7 +519,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       chargingStation.powerDivider!--
     }
     resetConnectorStatus(chargingStation.getConnectorStatus(transactionConnectorId))
-    chargingStation.stopMeterValues(transactionConnectorId)
+    OCPP16ServiceUtils.stopPeriodicMeterValues(chargingStation, transactionConnectorId)
     const logMsg = `${chargingStation.logPrefix()} ${moduleName}.handleResponseStopTransaction: Transaction with id ${requestPayload.transactionId.toString()} STOPPED on ${
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       chargingStation.stationInfo?.chargingStationId
@@ -538,7 +539,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     chargingStation: ChargingStation,
     connectorId: number
   ): Promise<void> {
-    chargingStation.stopMeterValues(connectorId)
+    OCPP16ServiceUtils.stopPeriodicMeterValues(chargingStation, connectorId)
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
     resetConnectorStatus(connectorStatus)
     await OCPP16ServiceUtils.restoreConnectorStatus(chargingStation, connectorId, connectorStatus)

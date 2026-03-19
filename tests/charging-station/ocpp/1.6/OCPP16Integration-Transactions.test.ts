@@ -7,6 +7,7 @@
  */
 
 import assert from 'node:assert/strict'
+import { mock } from 'node:test'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
@@ -24,6 +25,7 @@ import type {
 import { createTestableIncomingRequestService } from '../../../../src/charging-station/ocpp/1.6/__testable__/index.js'
 import { OCPP16IncomingRequestService } from '../../../../src/charging-station/ocpp/1.6/OCPP16IncomingRequestService.js'
 import { OCPP16ResponseService as OCPP16ResponseServiceClass } from '../../../../src/charging-station/ocpp/1.6/OCPP16ResponseService.js'
+import { OCPP16ServiceUtils } from '../../../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
 import {
   AvailabilityType,
   GenericStatus,
@@ -73,12 +75,20 @@ function createIntegrationContext (): {
   const responseService = new OCPP16ResponseServiceClass()
 
   // Mock meter value start/stop to avoid real timer setup
-  station.startMeterValues = (_connectorId: number, _interval: number) => {
-    /* noop */
-  }
-  station.stopMeterValues = (_connectorId: number) => {
-    /* noop */
-  }
+  mock.method(
+    OCPP16ServiceUtils,
+    'startPeriodicMeterValues',
+    (_station: unknown, _connectorId: number, _interval: number) => {
+      /* noop */
+    }
+  )
+  mock.method(
+    OCPP16ServiceUtils,
+    'stopPeriodicMeterValues',
+    (_station: unknown, _connectorId: number) => {
+      /* noop */
+    }
+  )
 
   // Add MeterValues template required by buildTransactionBeginMeterValue
   for (const [connectorId] of station.connectors) {

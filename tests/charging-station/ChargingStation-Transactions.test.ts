@@ -7,6 +7,8 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/index.js'
 
+import { OCPP16ServiceUtils } from '../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
+import { OCPP20ServiceUtils } from '../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import { OCPPVersion } from '../../src/types/index.js'
 import { standardCleanup, withMockTimers } from '../helpers/TestLifecycleHelpers.js'
 import { TEST_HEARTBEAT_INTERVAL_MS, TEST_ID_TAG } from './ChargingStationTestConstants.js'
@@ -536,7 +538,7 @@ await describe('ChargingStation Transaction Management', async () => {
         }
 
         // Act
-        station.startMeterValues(1, 10000)
+        OCPP16ServiceUtils.startPeriodicMeterValues(station, 1, 10000)
 
         // Assert - meter values interval should be created
         if (connector1 != null) {
@@ -556,11 +558,12 @@ await describe('ChargingStation Transaction Management', async () => {
           connector1.transactionStarted = true
           connector1.transactionId = 100
         }
-        station.startMeterValues(1, 10000)
+        OCPP16ServiceUtils.startPeriodicMeterValues(station, 1, 10000)
         const firstInterval = connector1?.transactionSetInterval
 
         // Act
-        station.restartMeterValues(1, 15000)
+        OCPP16ServiceUtils.stopPeriodicMeterValues(station, 1)
+        OCPP16ServiceUtils.startPeriodicMeterValues(station, 1, 15000)
         const secondInterval = connector1?.transactionSetInterval
 
         // Assert - interval should be different
@@ -580,10 +583,10 @@ await describe('ChargingStation Transaction Management', async () => {
           connector1.transactionStarted = true
           connector1.transactionId = 100
         }
-        station.startMeterValues(1, 10000)
+        OCPP16ServiceUtils.startPeriodicMeterValues(station, 1, 10000)
 
         // Act
-        station.stopMeterValues(1)
+        OCPP16ServiceUtils.stopPeriodicMeterValues(station, 1)
 
         // Assert - interval should be cleared
         assert.strictEqual(connector1?.transactionSetInterval, undefined)
@@ -605,7 +608,7 @@ await describe('ChargingStation Transaction Management', async () => {
         }
 
         // Act
-        station.startTxUpdatedInterval(1, 5000)
+        OCPP20ServiceUtils.startPeriodicMeterValues(station, 1, 5000)
 
         // Assert - transaction updated interval should be created
         if (connector1 != null) {
@@ -628,10 +631,10 @@ await describe('ChargingStation Transaction Management', async () => {
           connector1.transactionStarted = true
           connector1.transactionId = 100
         }
-        station.startTxUpdatedInterval(1, 5000)
+        OCPP20ServiceUtils.startPeriodicMeterValues(station, 1, 5000)
 
         // Act
-        station.stopTxUpdatedInterval(1)
+        OCPP20ServiceUtils.stopPeriodicMeterValues(station, 1)
 
         // Assert - interval should be cleared
         assert.strictEqual(connector1?.transactionTxUpdatedSetInterval, undefined)
