@@ -1,6 +1,6 @@
 /**
  * @file Tests for ToggleButton component
- * @description Unit tests for toggle state, window.localStorage persistence, shared toggle behavior, and callbacks.
+ * @description Unit tests for toggle state, localStorage persistence, shared toggle behavior, and callbacks.
  */
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
@@ -123,76 +123,76 @@ describe('ToggleButton', () => {
     })
   })
 
-  describe('window.localStorage persistence', () => {
-    it('should save toggle state to window.localStorage on click', async () => {
+  describe('localStorage persistence', () => {
+    it('should save toggle state to localStorage on click', async () => {
       const wrapper = mountToggleButton({ id: 'persist-test', status: false })
       const button = wrapper.find('button')
 
       await button.trigger('click')
-      expect(window.localStorage.getItem('toggle-button-persist-test')).toBe('true')
+      expect(localStorage.getItem('toggle-button-persist-test')).toBe('true')
     })
 
-    it('should restore toggle state from window.localStorage on mount', () => {
-      window.localStorage.setItem('toggle-button-restore-test', 'true')
+    it('should restore toggle state from localStorage on mount', () => {
+      localStorage.setItem('toggle-button-restore-test', 'true')
       const wrapper = mountToggleButton({ id: 'restore-test', status: false })
       const button = wrapper.find('button')
 
       expect(button.classes()).toContain('on')
     })
 
-    it('should use correct window.localStorage key for non-shared toggle', async () => {
+    it('should use correct localStorage key for non-shared toggle', async () => {
       const wrapper = mountToggleButton({ id: 'key-test', shared: false, status: false })
       const button = wrapper.find('button')
 
       await button.trigger('click')
-      expect(window.localStorage.getItem('toggle-button-key-test')).toBe('true')
-      expect(window.localStorage.getItem('shared-toggle-button-key-test')).toBeNull()
+      expect(localStorage.getItem('toggle-button-key-test')).toBe('true')
+      expect(localStorage.getItem('shared-toggle-button-key-test')).toBeNull()
     })
 
-    it('should use correct window.localStorage key for shared toggle', async () => {
+    it('should use correct localStorage key for shared toggle', async () => {
       const wrapper = mountToggleButton({ id: 'shared-key-test', shared: true, status: false })
       const button = wrapper.find('button')
 
       await button.trigger('click')
-      expect(window.localStorage.getItem('shared-toggle-button-shared-key-test')).toBe('true')
-      expect(window.localStorage.getItem('toggle-button-shared-key-test')).toBeNull()
+      expect(localStorage.getItem('shared-toggle-button-shared-key-test')).toBe('true')
+      expect(localStorage.getItem('toggle-button-shared-key-test')).toBeNull()
     })
   })
 
   describe('shared toggle behavior', () => {
     it('should reset other shared toggles when activated', async () => {
-      window.localStorage.setItem('shared-toggle-button-other', 'true')
+      localStorage.setItem('shared-toggle-button-other', 'true')
 
       const wrapper = mountToggleButton({ id: 'mine', shared: true, status: false })
       const button = wrapper.find('button')
 
       await button.trigger('click')
 
-      expect(window.localStorage.getItem('shared-toggle-button-other')).toBe('false')
+      expect(localStorage.getItem('shared-toggle-button-other')).toBe('false')
     })
 
     it('should not reset non-shared toggles when shared toggle is activated', async () => {
-      window.localStorage.setItem('toggle-button-other', 'true')
+      localStorage.setItem('toggle-button-other', 'true')
 
       const wrapper = mountToggleButton({ id: 'shared-mine', shared: true, status: false })
       const button = wrapper.find('button')
 
       await button.trigger('click')
 
-      expect(window.localStorage.getItem('toggle-button-other')).toBe('true')
+      expect(localStorage.getItem('toggle-button-other')).toBe('true')
     })
 
     it('should reset multiple other shared toggles when activated', async () => {
-      window.localStorage.setItem('shared-toggle-button-first', 'true')
-      window.localStorage.setItem('shared-toggle-button-second', 'true')
+      localStorage.setItem('shared-toggle-button-first', 'true')
+      localStorage.setItem('shared-toggle-button-second', 'true')
 
       const wrapper = mountToggleButton({ id: 'third', shared: true, status: false })
       const button = wrapper.find('button')
 
       await button.trigger('click')
 
-      expect(window.localStorage.getItem('shared-toggle-button-first')).toBe('false')
-      expect(window.localStorage.getItem('shared-toggle-button-second')).toBe('false')
+      expect(localStorage.getItem('shared-toggle-button-first')).toBe('false')
+      expect(localStorage.getItem('shared-toggle-button-second')).toBe('false')
     })
   })
 

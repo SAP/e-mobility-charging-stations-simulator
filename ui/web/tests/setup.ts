@@ -27,5 +27,5 @@ vi.mock('vue-toast-notification', () => ({
 }))
 
 afterEach(() => {
-  window.localStorage.clear()
+  localStorage.clear()
 })

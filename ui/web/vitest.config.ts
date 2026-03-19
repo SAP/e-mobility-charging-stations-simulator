@@ -4,6 +4,8 @@ import { configDefaults, defineConfig } from 'vitest/config'
 
 import viteConfig from './vite.config'
 
+const nodeMajor = Number.parseInt(process.versions.node.split('.')[0], 10)
+
 export default mergeConfig(
   viteConfig,
   defineConfig({
@@ -30,6 +32,7 @@ export default mergeConfig(
       },
       environment: 'jsdom',
       exclude: [...configDefaults.exclude, 'e2e/*'],
+      execArgv: nodeMajor >= 25 ? ['--no-webstorage'] : [],
       restoreMocks: true,
       root: fileURLToPath(new URL('./', import.meta.url)),
       setupFiles: ['./tests/setup.ts'],
