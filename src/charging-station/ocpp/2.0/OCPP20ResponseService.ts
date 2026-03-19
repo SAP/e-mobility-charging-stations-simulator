@@ -2,9 +2,14 @@ import type { ValidateFunction } from 'ajv'
 
 import type { OCPP20IncomingRequestCommand } from '../../../types/index.js'
 
-import { addConfigurationKey, type ChargingStation } from '../../../charging-station/index.js'
+import {
+  addConfigurationKey,
+  type ChargingStation,
+  resetConnectorStatus,
+} from '../../../charging-station/index.js'
 import {
   ChargingStationEvents,
+  ConnectorStatusEnum,
   type JsonType,
   type OCPP20BootNotificationResponse,
   type OCPP20FirmwareStatusNotificationResponse,
@@ -24,10 +29,14 @@ import {
   type RequestCommand,
   type ResponseHandler,
 } from '../../../types/index.js'
-import { OCPP20AuthorizationStatusEnumType } from '../../../types/ocpp/2.0/Transaction.js'
+import {
+  OCPP20AuthorizationStatusEnumType,
+  OCPP20TransactionEventEnumType,
+} from '../../../types/ocpp/2.0/Transaction.js'
 import { convertToDate, logger } from '../../../utils/index.js'
 import { mapOCPP20TokenType, OCPPAuthServiceFactory } from '../auth/index.js'
 import { OCPPResponseService } from '../OCPPResponseService.js'
+import { sendAndSetConnectorStatus } from '../OCPPServiceUtils.js'
 import { OCPP20ServiceUtils } from './OCPP20ServiceUtils.js'
 
 const moduleName = 'OCPP20ResponseService'
@@ -290,8 +299,79 @@ export class OCPP20ResponseService extends OCPPResponseService {
     requestPayload: OCPP20TransactionEventRequest
   ): void {
     logger.debug(
-      `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: TransactionEvent response received`
+      `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: TransactionEvent(${requestPayload.eventType}) response received`
     )
+    const connectorId =
+      requestPayload.evse?.connectorId ??
+      requestPayload.evse?.id ??
+      chargingStation.getConnectorIdByTransactionId(requestPayload.transactionInfo.transactionId)
+    const connectorStatus =
+      connectorId != null ? chargingStation.getConnectorStatus(connectorId) : undefined
+
+    switch (requestPayload.eventType) {
+      case OCPP20TransactionEventEnumType.Ended:
+        if (connectorId != null) {
+          if (
+            !chargingStation.isChargingStationAvailable() ||
+            !chargingStation.isConnectorAvailable(connectorId)
+          ) {
+            sendAndSetConnectorStatus(
+              chargingStation,
+              connectorId,
+              ConnectorStatusEnum.Unavailable
+            ).catch((error: unknown) => {
+              logger.error(
+                `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Error sending StatusNotification(Unavailable):`,
+                error
+              )
+            })
+          } else {
+            sendAndSetConnectorStatus(
+              chargingStation,
+              connectorId,
+              ConnectorStatusEnum.Available
+            ).catch((error: unknown) => {
+              logger.error(
+                `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Error sending StatusNotification(Available):`,
+                error
+              )
+            })
+          }
+          chargingStation.stopTxUpdatedInterval(connectorId)
+          chargingStation.stopMeterValues(connectorId)
+          logger.info(
+            `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Transaction ${requestPayload.transactionInfo.transactionId} ENDED on connector ${connectorId.toString()}`
+          )
+        }
+        resetConnectorStatus(connectorStatus)
+        break
+      case OCPP20TransactionEventEnumType.Started:
+        if (connectorStatus != null && connectorStatus.transactionStarted !== true) {
+          connectorStatus.transactionStarted = true
+          connectorStatus.transactionId = requestPayload.transactionInfo.transactionId
+          connectorStatus.transactionIdTag = requestPayload.idToken?.idToken
+          connectorStatus.transactionStart = new Date()
+          connectorStatus.transactionEnergyActiveImportRegisterValue = 0
+          if (connectorId != null) {
+            sendAndSetConnectorStatus(
+              chargingStation,
+              connectorId,
+              ConnectorStatusEnum.Occupied
+            ).catch((error: unknown) => {
+              logger.error(
+                `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Error sending StatusNotification(Occupied):`,
+                error
+              )
+            })
+            const txUpdatedInterval = OCPP20ServiceUtils.getTxUpdatedInterval(chargingStation)
+            chargingStation.startTxUpdatedInterval(connectorId, txUpdatedInterval)
+          }
+          logger.info(
+            `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Transaction ${requestPayload.transactionInfo.transactionId} STARTED on connector ${String(connectorId)}`
+          )
+        }
+        break
+    }
     if (payload.totalCost != null) {
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Total cost: ${payload.totalCost.toString()}`
