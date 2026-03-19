@@ -1,4 +1,3 @@
-export { OCPP20TransactionEventEnumType, OCPP20TriggerReasonEnumType } from '../../types/index.js'
 export { OCPP16IncomingRequestService } from './1.6/OCPP16IncomingRequestService.js'
 export { OCPP16RequestService } from './1.6/OCPP16RequestService.js'
 export { OCPP16ResponseService } from './1.6/OCPP16ResponseService.js'
