@@ -292,9 +292,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     return { bytesLimit, itemsLimit }
   }
 
-  // E05.FR.09/FR.10 + E06.FR.04: Deauthorization flow when CSMS rejects idToken.
-  // Assumes StopTxOnInvalidId=true (simulator default). Sends Updated(Deauthorized, SuspendedEVSE)
-  // then Ended(Deauthorized, DeAuthorized) then cleanup.
+  // E05.FR.09/FR.10 + E06.FR.04: Updated(Deauthorized) → Ended(DeAuthorized). Assumes StopTxOnInvalidId=true.
   public static async requestDeauthorizeTransaction (
     chargingStation: ChargingStation,
     connectorId: number,

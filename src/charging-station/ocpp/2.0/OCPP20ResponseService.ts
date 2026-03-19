@@ -306,8 +306,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
 
     switch (requestPayload.eventType) {
       case OCPP20TransactionEventEnumType.Ended:
-        // Cleanup (stopTxUpdatedInterval, resetConnectorStatus, StatusNotification) is owned by
-        // the caller that sends TransactionEvent(Ended) — see requestStopTransaction in OCPP20ServiceUtils.
+        // Cleanup owned by caller (see requestStopTransaction/requestDeauthorizeTransaction)
         if (connectorId != null) {
           logger.info(
             `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Transaction ${requestPayload.transactionInfo.transactionId} ENDED on connector ${connectorId.toString()}`
