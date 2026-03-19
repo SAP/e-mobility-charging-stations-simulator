@@ -1193,13 +1193,6 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  public async stopTransactionOnConnector (
-    connectorId: number,
-    reason?: StopTransactionReason
-  ): Promise<StopTransactionResponse> {
-    return OCPP16ServiceUtils.stopTransactionOnConnector(this, connectorId, reason)
-  }
-
   public stopTxUpdatedInterval (connectorId: number): void {
     const connector = this.getConnectorStatus(connectorId)
     if (connector?.transactionTxUpdatedSetInterval != null) {

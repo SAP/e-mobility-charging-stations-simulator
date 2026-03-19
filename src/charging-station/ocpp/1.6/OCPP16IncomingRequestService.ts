@@ -1557,7 +1557,8 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       return OCPP16Constants.OCPP_RESPONSE_UNLOCK_NOT_SUPPORTED
     }
     if (chargingStation.getConnectorStatus(connectorId)?.transactionStarted === true) {
-      const stopResponse = await chargingStation.stopTransactionOnConnector(
+      const stopResponse = await OCPP16ServiceUtils.stopTransactionOnConnector(
+        chargingStation,
         connectorId,
         OCPP16StopTransactionReason.UNLOCK_COMMAND
       )
