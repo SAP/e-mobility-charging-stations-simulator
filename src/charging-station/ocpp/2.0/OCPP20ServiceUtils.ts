@@ -347,7 +347,9 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
   public static async requestStopTransaction (
     chargingStation: ChargingStation,
     connectorId: number,
-    evseId?: number
+    evseId?: number,
+    triggerReason: OCPP20TriggerReasonEnumType = OCPP20TriggerReasonEnumType.RemoteStop,
+    stoppedReason: OCPP20ReasonEnumType = OCPP20ReasonEnumType.Remote
   ): Promise<OCPP20TransactionEventResponse> {
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
     if (
@@ -371,13 +373,13 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       const response = await this.sendTransactionEvent(
         chargingStation,
         OCPP20TransactionEventEnumType.Ended,
-        OCPP20TriggerReasonEnumType.RemoteStop,
+        triggerReason,
         connectorId,
         transactionId,
         {
           evseId,
           meterValue: finalMeterValues.length > 0 ? finalMeterValues : undefined,
-          stoppedReason: OCPP20ReasonEnumType.Remote,
+          stoppedReason,
         }
       )
 

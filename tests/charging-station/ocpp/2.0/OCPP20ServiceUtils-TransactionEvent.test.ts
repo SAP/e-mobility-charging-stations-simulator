@@ -2578,4 +2578,75 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       }
     })
   })
+
+  await describe('requestStopTransaction', async () => {
+    let mockTracking: MockStationWithTracking
+
+    beforeEach(() => {
+      mockTracking = createMockStationWithRequestTracking()
+      resetConnectorTransactionState(mockTracking.station)
+    })
+
+    afterEach(() => {
+      standardCleanup()
+    })
+
+    await it('should default to RemoteStop triggerReason and Remote stoppedReason', async () => {
+      // Arrange
+      const connectorId = 1
+      const transactionId = generateUUID()
+      const connectorStatus = mockTracking.station.getConnectorStatus(connectorId)
+      assert.notStrictEqual(connectorStatus, undefined)
+      if (connectorStatus != null) {
+        connectorStatus.transactionStarted = true
+        connectorStatus.transactionId = transactionId
+        connectorStatus.transactionEnergyActiveImportRegisterValue = 0
+      }
+
+      // Act
+      await OCPP20ServiceUtils.requestStopTransaction(mockTracking.station, connectorId, 1)
+
+      // Assert
+      const txEvents = mockTracking.sentRequests.filter(r => r.command === 'TransactionEvent')
+      assert.strictEqual(txEvents.length, 1)
+
+      const endedEvent = txEvents[0].payload
+      assert.strictEqual(endedEvent.eventType, OCPP20TransactionEventEnumType.Ended)
+      assert.strictEqual(endedEvent.triggerReason, OCPP20TriggerReasonEnumType.RemoteStop)
+      assert.strictEqual(endedEvent.stoppedReason, OCPP20ReasonEnumType.Remote)
+    })
+
+    await it('should use custom triggerReason and stoppedReason when provided', async () => {
+      // Arrange
+      const connectorId = 2
+      const transactionId = generateUUID()
+      const customTriggerReason = OCPP20TriggerReasonEnumType.Authorized
+      const customStoppedReason = OCPP20ReasonEnumType.DeAuthorized
+      const connectorStatus = mockTracking.station.getConnectorStatus(connectorId)
+      assert.notStrictEqual(connectorStatus, undefined)
+      if (connectorStatus != null) {
+        connectorStatus.transactionStarted = true
+        connectorStatus.transactionId = transactionId
+        connectorStatus.transactionEnergyActiveImportRegisterValue = 0
+      }
+
+      // Act
+      await OCPP20ServiceUtils.requestStopTransaction(
+        mockTracking.station,
+        connectorId,
+        2,
+        customTriggerReason,
+        customStoppedReason
+      )
+
+      // Assert
+      const txEvents = mockTracking.sentRequests.filter(r => r.command === 'TransactionEvent')
+      assert.strictEqual(txEvents.length, 1)
+
+      const endedEvent = txEvents[0].payload
+      assert.strictEqual(endedEvent.eventType, OCPP20TransactionEventEnumType.Ended)
+      assert.strictEqual(endedEvent.triggerReason, customTriggerReason)
+      assert.strictEqual(endedEvent.stoppedReason, customStoppedReason)
+    })
+  })
 })
