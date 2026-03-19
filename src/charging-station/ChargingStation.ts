@@ -43,6 +43,7 @@ import {
   MeterValueMeasurand,
   type MeterValuesRequest,
   type MeterValuesResponse,
+  type OCPP20MeterValue,
   OCPPVersion,
   type OutgoingRequest,
   PowerUnits,
@@ -1119,12 +1120,14 @@ export class ChargingStation extends EventEmitter {
     connector.transactionTxUpdatedSetInterval = setInterval(() => {
       const connectorStatus = this.getConnectorStatus(connectorId)
       if (connectorStatus?.transactionStarted === true && connectorStatus.transactionId != null) {
+        const meterValue = buildMeterValue(this, connectorId, 0, interval) as OCPP20MeterValue
         OCPP20ServiceUtils.sendTransactionEvent(
           this,
           OCPP20TransactionEventEnumType.Updated,
           OCPP20TriggerReasonEnumType.MeterValuePeriodic,
           connectorId,
-          connectorStatus.transactionId as string
+          connectorStatus.transactionId as string,
+          { meterValue: [meterValue] }
         ).catch((error: unknown) => {
           logger.error(
             `${this.logPrefix()} Error sending periodic TransactionEvent at TxUpdatedInterval:`,

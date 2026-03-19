@@ -20,7 +20,7 @@ import {
   OCPP20TriggerReasonEnumType,
 } from '../../../../types/ocpp/2.0/Transaction.js'
 import { OCPPVersion } from '../../../../types/ocpp/OCPPVersion.js'
-import { logger, truncateId } from '../../../../utils/index.js'
+import { generateUUID, logger, truncateId } from '../../../../utils/index.js'
 import {
   AuthContext,
   AuthenticationMethod,
@@ -120,8 +120,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
 
         // OCPP 2.0: Authorization through TransactionEvent
         // According to OCPP 2.0.1 spec section G03 - Authorization
-        const tempTransactionId =
-          transactionId != null ? transactionId.toString() : `auth-${Date.now().toString()}`
+        const tempTransactionId = transactionId != null ? transactionId.toString() : generateUUID()
 
         // Get EVSE ID from connector
         const evseId = connectorId // In OCPP 2.0, connector maps to EVSE

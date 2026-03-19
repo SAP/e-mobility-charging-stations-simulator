@@ -20,12 +20,23 @@ import {
   buildTransactionEvent,
   OCPP20ServiceUtils,
 } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
+import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
+import { OCPPError } from '../../../../src/exception/OCPPError.js'
+import {
+  AttributeEnumType,
+  OCPP20ComponentName,
+  OCPP20RequiredVariableName,
+} from '../../../../src/types/index.js'
 import {
   ConnectorStatusEnum,
   OCPP20TransactionEventEnumType,
   OCPP20TriggerReasonEnumType,
   OCPPVersion,
 } from '../../../../src/types/index.js'
+import {
+  OCPP20MeasurandEnumType,
+  OCPP20ReadingContextEnumType,
+} from '../../../../src/types/ocpp/2.0/MeterValues.js'
 import {
   OCPP20ChargingStateEnumType,
   OCPP20IdTokenEnumType,
@@ -2319,6 +2330,237 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           assert.ok((error as Error).message.includes('Network timeout'))
         }
       })
+    })
+  })
+
+  await describe('getTxUpdatedInterval', async () => {
+    let station: ChargingStation
+
+    beforeEach(() => {
+      const mockTracking = createMockStationWithRequestTracking()
+      station = mockTracking.station
+      resetLimits(station)
+    })
+
+    afterEach(() => {
+      OCPP20VariableManager.getInstance().resetRuntimeOverrides()
+      standardCleanup()
+    })
+
+    await it('should return default interval when TxUpdatedInterval is not configured', () => {
+      const interval = OCPP20ServiceUtils.getTxUpdatedInterval(station)
+
+      assert.strictEqual(interval, Constants.DEFAULT_TX_UPDATED_INTERVAL * 1000)
+    })
+
+    await it('should return configured interval in milliseconds', () => {
+      OCPP20VariableManager.getInstance().setVariables(station, [
+        {
+          attributeType: AttributeEnumType.Actual,
+          attributeValue: '60',
+          component: { name: OCPP20ComponentName.SampledDataCtrlr },
+          variable: { name: OCPP20RequiredVariableName.TxUpdatedInterval },
+        },
+      ])
+
+      const interval = OCPP20ServiceUtils.getTxUpdatedInterval(station)
+
+      assert.strictEqual(interval, 60000)
+    })
+
+    await it('should return default for non-numeric value', () => {
+      OCPP20VariableManager.getInstance().setVariables(station, [
+        {
+          attributeType: AttributeEnumType.Actual,
+          attributeValue: 'abc',
+          component: { name: OCPP20ComponentName.SampledDataCtrlr },
+          variable: { name: OCPP20RequiredVariableName.TxUpdatedInterval },
+        },
+      ])
+
+      const interval = OCPP20ServiceUtils.getTxUpdatedInterval(station)
+
+      assert.strictEqual(interval, Constants.DEFAULT_TX_UPDATED_INTERVAL * 1000)
+    })
+
+    await it('should return default for zero value', () => {
+      OCPP20VariableManager.getInstance().setVariables(station, [
+        {
+          attributeType: AttributeEnumType.Actual,
+          attributeValue: '0',
+          component: { name: OCPP20ComponentName.SampledDataCtrlr },
+          variable: { name: OCPP20RequiredVariableName.TxUpdatedInterval },
+        },
+      ])
+
+      const interval = OCPP20ServiceUtils.getTxUpdatedInterval(station)
+
+      assert.strictEqual(interval, Constants.DEFAULT_TX_UPDATED_INTERVAL * 1000)
+    })
+
+    await it('should return default for negative value', () => {
+      OCPP20VariableManager.getInstance().setVariables(station, [
+        {
+          attributeType: AttributeEnumType.Actual,
+          attributeValue: '-10',
+          component: { name: OCPP20ComponentName.SampledDataCtrlr },
+          variable: { name: OCPP20RequiredVariableName.TxUpdatedInterval },
+        },
+      ])
+
+      const interval = OCPP20ServiceUtils.getTxUpdatedInterval(station)
+
+      assert.strictEqual(interval, Constants.DEFAULT_TX_UPDATED_INTERVAL * 1000)
+    })
+  })
+
+  await describe('requestDeauthorizeTransaction', async () => {
+    let mockTracking: MockStationWithTracking
+
+    beforeEach(() => {
+      mockTracking = createMockStationWithRequestTracking()
+      resetConnectorTransactionState(mockTracking.station)
+    })
+
+    afterEach(() => {
+      standardCleanup()
+    })
+
+    await it('should send Updated(Deauthorized, SuspendedEVSE) then Ended(Deauthorized, DeAuthorized)', async () => {
+      // Arrange
+      const connectorId = 1
+      const transactionId = generateUUID()
+      const connectorStatus = mockTracking.station.getConnectorStatus(connectorId)
+      assert.notStrictEqual(connectorStatus, undefined)
+      if (connectorStatus != null) {
+        connectorStatus.transactionStarted = true
+        connectorStatus.transactionId = transactionId
+        connectorStatus.transactionEnergyActiveImportRegisterValue = 0
+      }
+
+      // Act
+      await OCPP20ServiceUtils.requestDeauthorizeTransaction(mockTracking.station, connectorId, 1)
+
+      // Assert
+      const txEvents = mockTracking.sentRequests.filter(r => r.command === 'TransactionEvent')
+      assert.strictEqual(txEvents.length, 2)
+
+      const updatedEvent = txEvents[0].payload
+      assert.strictEqual(updatedEvent.eventType, OCPP20TransactionEventEnumType.Updated)
+      assert.strictEqual(updatedEvent.triggerReason, OCPP20TriggerReasonEnumType.Deauthorized)
+      assert.strictEqual(updatedEvent.chargingState, OCPP20ChargingStateEnumType.SuspendedEVSE)
+
+      const endedEvent = txEvents[1].payload
+      assert.strictEqual(endedEvent.eventType, OCPP20TransactionEventEnumType.Ended)
+      assert.strictEqual(endedEvent.triggerReason, OCPP20TriggerReasonEnumType.Deauthorized)
+      assert.strictEqual(endedEvent.stoppedReason, OCPP20ReasonEnumType.DeAuthorized)
+    })
+
+    await it('should include final meter values in Ended event', async () => {
+      // Arrange
+      const connectorId = 2
+      const transactionId = generateUUID()
+      const connectorStatus = mockTracking.station.getConnectorStatus(connectorId)
+      assert.notStrictEqual(connectorStatus, undefined)
+      if (connectorStatus != null) {
+        connectorStatus.transactionStarted = true
+        connectorStatus.transactionId = transactionId
+        connectorStatus.transactionEnergyActiveImportRegisterValue = 1500
+      }
+
+      // Act
+      await OCPP20ServiceUtils.requestDeauthorizeTransaction(mockTracking.station, connectorId, 2)
+
+      // Assert
+      const txEvents = mockTracking.sentRequests.filter(r => r.command === 'TransactionEvent')
+      assert.strictEqual(txEvents.length, 2)
+
+      const endedPayload = txEvents[1].payload
+      assert.notStrictEqual(endedPayload.meterValue, undefined)
+      const meterValues = endedPayload.meterValue as {
+        sampledValue: { context: string; measurand: string; value: number }[]
+        timestamp: Date
+      }[]
+      assert.strictEqual(meterValues.length, 1)
+      assert.strictEqual(meterValues[0].sampledValue.length, 1)
+      assert.strictEqual(
+        meterValues[0].sampledValue[0].measurand,
+        OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER
+      )
+      assert.strictEqual(meterValues[0].sampledValue[0].value, 1500)
+      assert.strictEqual(
+        meterValues[0].sampledValue[0].context,
+        OCPP20ReadingContextEnumType.TRANSACTION_END
+      )
+    })
+
+    await it('should reset connector status after deauthorization', async () => {
+      // Arrange
+      const connectorId = 1
+      const transactionId = generateUUID()
+      const connectorStatus = mockTracking.station.getConnectorStatus(connectorId)
+      assert.notStrictEqual(connectorStatus, undefined)
+      if (connectorStatus != null) {
+        connectorStatus.transactionStarted = true
+        connectorStatus.transactionId = transactionId
+        connectorStatus.transactionEnergyActiveImportRegisterValue = 100
+      }
+
+      // Act
+      await OCPP20ServiceUtils.requestDeauthorizeTransaction(mockTracking.station, connectorId, 1)
+
+      // Assert
+      const postStatus = mockTracking.station.getConnectorStatus(connectorId)
+      assert.notStrictEqual(postStatus, undefined)
+      if (postStatus != null) {
+        assert.strictEqual(postStatus.transactionStarted, false)
+        assert.strictEqual(postStatus.transactionId, undefined)
+      }
+    })
+
+    await it('should throw if no active transaction', async () => {
+      const connectorId = 1
+
+      await assert.rejects(
+        OCPP20ServiceUtils.requestDeauthorizeTransaction(mockTracking.station, connectorId, 1),
+        (error: unknown) => {
+          assert.ok(error instanceof OCPPError)
+          return true
+        }
+      )
+    })
+
+    await it('should propagate error and skip cleanup if Updated event fails', async () => {
+      const connectorId = 1
+      const transactionId = generateUUID()
+      const connectorStatus = mockTracking.station.getConnectorStatus(connectorId)
+      if (connectorStatus != null) {
+        connectorStatus.transactionStarted = true
+        connectorStatus.transactionId = transactionId
+        connectorStatus.transactionEnergyActiveImportRegisterValue = 0
+      }
+
+      const originalSend = OCPP20ServiceUtils.sendTransactionEvent.bind(OCPP20ServiceUtils)
+      const sendMock = mock.method(OCPP20ServiceUtils, 'sendTransactionEvent', () => {
+        sendMock.mock.restore()
+        OCPP20ServiceUtils.sendTransactionEvent = originalSend
+        return Promise.reject(new Error('Network failure'))
+      })
+
+      await assert.rejects(
+        OCPP20ServiceUtils.requestDeauthorizeTransaction(mockTracking.station, connectorId, 1),
+        (error: unknown) => {
+          assert.ok(error instanceof Error)
+          assert.strictEqual(error.message, 'Network failure')
+          return true
+        }
+      )
+
+      const postStatus = mockTracking.station.getConnectorStatus(connectorId)
+      if (postStatus != null) {
+        assert.strictEqual(postStatus.transactionStarted, true)
+        assert.strictEqual(postStatus.transactionId, transactionId)
+      }
     })
   })
 })

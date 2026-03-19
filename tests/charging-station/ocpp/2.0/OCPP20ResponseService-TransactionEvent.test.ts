@@ -108,8 +108,10 @@ await describe('D01 - TransactionEvent Response', async () => {
 
   await it('should not stop transaction when idTokenInfo status is Accepted', () => {
     // Arrange
-    const mockStopTransaction = mock.method(OCPP20ServiceUtils, 'requestStopTransaction', () =>
-      Promise.resolve({ status: 'Accepted' })
+    const mockDeauthTransaction = mock.method(
+      OCPP20ServiceUtils,
+      'requestDeauthorizeTransaction',
+      () => Promise.resolve({ status: 'Accepted' })
     )
     const payload: OCPP20TransactionEventResponse = {
       idTokenInfo: {
@@ -122,13 +124,15 @@ await describe('D01 - TransactionEvent Response', async () => {
     testable.handleResponseTransactionEvent(station, payload, requestPayload)
 
     // Assert
-    assert.strictEqual(mockStopTransaction.mock.calls.length, 0)
+    assert.strictEqual(mockDeauthTransaction.mock.calls.length, 0)
   })
 
   await it('should stop only the specific transaction when idTokenInfo status is Invalid', () => {
     // Arrange
-    const mockStopTransaction = mock.method(OCPP20ServiceUtils, 'requestStopTransaction', () =>
-      Promise.resolve({ status: 'Accepted' })
+    const mockDeauthTransaction = mock.method(
+      OCPP20ServiceUtils,
+      'requestDeauthorizeTransaction',
+      () => Promise.resolve({ status: 'Accepted' })
     )
     const payload: OCPP20TransactionEventResponse = {
       idTokenInfo: {
@@ -141,16 +145,18 @@ await describe('D01 - TransactionEvent Response', async () => {
     testable.handleResponseTransactionEvent(station, payload, requestPayload)
 
     // Assert — only the specific connector (1) on EVSE (1) is stopped
-    assert.strictEqual(mockStopTransaction.mock.calls.length, 1)
-    assert.strictEqual(mockStopTransaction.mock.calls[0].arguments[0], station)
-    assert.strictEqual(mockStopTransaction.mock.calls[0].arguments[1], 1)
-    assert.strictEqual(mockStopTransaction.mock.calls[0].arguments[2], 1)
+    assert.strictEqual(mockDeauthTransaction.mock.calls.length, 1)
+    assert.strictEqual(mockDeauthTransaction.mock.calls[0].arguments[0], station)
+    assert.strictEqual(mockDeauthTransaction.mock.calls[0].arguments[1], 1)
+    assert.strictEqual(mockDeauthTransaction.mock.calls[0].arguments[2], 1)
   })
 
   await it('should stop only the specific transaction when idTokenInfo status is Blocked', () => {
     // Arrange
-    const mockStopTransaction = mock.method(OCPP20ServiceUtils, 'requestStopTransaction', () =>
-      Promise.resolve({ status: 'Accepted' })
+    const mockDeauthTransaction = mock.method(
+      OCPP20ServiceUtils,
+      'requestDeauthorizeTransaction',
+      () => Promise.resolve({ status: 'Accepted' })
     )
     const payload: OCPP20TransactionEventResponse = {
       idTokenInfo: {
@@ -163,14 +169,16 @@ await describe('D01 - TransactionEvent Response', async () => {
     testable.handleResponseTransactionEvent(station, payload, requestPayload)
 
     // Assert
-    assert.strictEqual(mockStopTransaction.mock.calls.length, 1)
-    assert.strictEqual(mockStopTransaction.mock.calls[0].arguments[0], station)
+    assert.strictEqual(mockDeauthTransaction.mock.calls.length, 1)
+    assert.strictEqual(mockDeauthTransaction.mock.calls[0].arguments[0], station)
   })
 
   await it('should not stop transaction when only chargingPriority is present', () => {
     // Arrange
-    const mockStopTransaction = mock.method(OCPP20ServiceUtils, 'requestStopTransaction', () =>
-      Promise.resolve({ status: 'Accepted' })
+    const mockDeauthTransaction = mock.method(
+      OCPP20ServiceUtils,
+      'requestDeauthorizeTransaction',
+      () => Promise.resolve({ status: 'Accepted' })
     )
     const payload: OCPP20TransactionEventResponse = {
       chargingPriority: 5,
@@ -181,13 +189,15 @@ await describe('D01 - TransactionEvent Response', async () => {
     testable.handleResponseTransactionEvent(station, payload, requestPayload)
 
     // Assert
-    assert.strictEqual(mockStopTransaction.mock.calls.length, 0)
+    assert.strictEqual(mockDeauthTransaction.mock.calls.length, 0)
   })
 
   await it('should handle empty response without stopping transaction', () => {
     // Arrange
-    const mockStopTransaction = mock.method(OCPP20ServiceUtils, 'requestStopTransaction', () =>
-      Promise.resolve({ status: 'Accepted' })
+    const mockDeauthTransaction = mock.method(
+      OCPP20ServiceUtils,
+      'requestDeauthorizeTransaction',
+      () => Promise.resolve({ status: 'Accepted' })
     )
     const payload: OCPP20TransactionEventResponse = {}
     const requestPayload = buildTransactionEventRequest(TEST_TRANSACTION_ID)
@@ -196,13 +206,15 @@ await describe('D01 - TransactionEvent Response', async () => {
     testable.handleResponseTransactionEvent(station, payload, requestPayload)
 
     // Assert
-    assert.strictEqual(mockStopTransaction.mock.calls.length, 0)
+    assert.strictEqual(mockDeauthTransaction.mock.calls.length, 0)
   })
 
   await it('should stop only the specific transaction when idTokenInfo status is Expired', () => {
     // Arrange
-    const mockStopTransaction = mock.method(OCPP20ServiceUtils, 'requestStopTransaction', () =>
-      Promise.resolve({ status: 'Accepted' })
+    const mockDeauthTransaction = mock.method(
+      OCPP20ServiceUtils,
+      'requestDeauthorizeTransaction',
+      () => Promise.resolve({ status: 'Accepted' })
     )
     const payload: OCPP20TransactionEventResponse = {
       idTokenInfo: {
@@ -215,13 +227,15 @@ await describe('D01 - TransactionEvent Response', async () => {
     testable.handleResponseTransactionEvent(station, payload, requestPayload)
 
     // Assert
-    assert.strictEqual(mockStopTransaction.mock.calls.length, 1)
+    assert.strictEqual(mockDeauthTransaction.mock.calls.length, 1)
   })
 
   await it('should stop only the specific transaction when idTokenInfo status is NoCredit', () => {
     // Arrange
-    const mockStopTransaction = mock.method(OCPP20ServiceUtils, 'requestStopTransaction', () =>
-      Promise.resolve({ status: 'Accepted' })
+    const mockDeauthTransaction = mock.method(
+      OCPP20ServiceUtils,
+      'requestDeauthorizeTransaction',
+      () => Promise.resolve({ status: 'Accepted' })
     )
     const payload: OCPP20TransactionEventResponse = {
       idTokenInfo: {
@@ -234,13 +248,15 @@ await describe('D01 - TransactionEvent Response', async () => {
     testable.handleResponseTransactionEvent(station, payload, requestPayload)
 
     // Assert
-    assert.strictEqual(mockStopTransaction.mock.calls.length, 1)
+    assert.strictEqual(mockDeauthTransaction.mock.calls.length, 1)
   })
 
   await it('should not stop transaction when response has totalCost and updatedPersonalMessage', () => {
     // Arrange
-    const mockStopTransaction = mock.method(OCPP20ServiceUtils, 'requestStopTransaction', () =>
-      Promise.resolve({ status: 'Accepted' })
+    const mockDeauthTransaction = mock.method(
+      OCPP20ServiceUtils,
+      'requestDeauthorizeTransaction',
+      () => Promise.resolve({ status: 'Accepted' })
     )
     const payload: OCPP20TransactionEventResponse = {
       totalCost: 12.5,
@@ -255,7 +271,7 @@ await describe('D01 - TransactionEvent Response', async () => {
     testable.handleResponseTransactionEvent(station, payload, requestPayload)
 
     // Assert
-    assert.strictEqual(mockStopTransaction.mock.calls.length, 0)
+    assert.strictEqual(mockDeauthTransaction.mock.calls.length, 0)
   })
 
   await it('should stop only the targeted transaction on multi-EVSE station', () => {
@@ -284,8 +300,10 @@ await describe('D01 - TransactionEvent Response', async () => {
       connector2.transactionId = txn2
     }
 
-    const mockStopTransaction = mock.method(OCPP20ServiceUtils, 'requestStopTransaction', () =>
-      Promise.resolve({ status: 'Accepted' })
+    const mockDeauthTransaction = mock.method(
+      OCPP20ServiceUtils,
+      'requestDeauthorizeTransaction',
+      () => Promise.resolve({ status: 'Accepted' })
     )
     const payload: OCPP20TransactionEventResponse = {
       idTokenInfo: {
@@ -302,8 +320,8 @@ await describe('D01 - TransactionEvent Response', async () => {
     )
 
     // Assert — only 1 stop call targeting connector 1, EVSE 2 untouched
-    assert.strictEqual(mockStopTransaction.mock.calls.length, 1)
-    assert.strictEqual(mockStopTransaction.mock.calls[0].arguments[0], multiStation)
-    assert.strictEqual(mockStopTransaction.mock.calls[0].arguments[1], 1)
+    assert.strictEqual(mockDeauthTransaction.mock.calls.length, 1)
+    assert.strictEqual(mockDeauthTransaction.mock.calls[0].arguments[0], multiStation)
+    assert.strictEqual(mockDeauthTransaction.mock.calls[0].arguments[1], 1)
   })
 })

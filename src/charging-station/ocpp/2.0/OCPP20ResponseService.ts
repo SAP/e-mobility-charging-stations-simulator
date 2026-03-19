@@ -2,11 +2,7 @@ import type { ValidateFunction } from 'ajv'
 
 import type { OCPP20IncomingRequestCommand } from '../../../types/index.js'
 
-import {
-  addConfigurationKey,
-  type ChargingStation,
-  resetConnectorStatus,
-} from '../../../charging-station/index.js'
+import { addConfigurationKey, type ChargingStation } from '../../../charging-station/index.js'
 import {
   ChargingStationEvents,
   ConnectorStatusEnum,
@@ -310,49 +306,26 @@ export class OCPP20ResponseService extends OCPPResponseService {
 
     switch (requestPayload.eventType) {
       case OCPP20TransactionEventEnumType.Ended:
+        // Cleanup (stopTxUpdatedInterval, resetConnectorStatus, StatusNotification) is owned by
+        // the caller that sends TransactionEvent(Ended) — see requestStopTransaction in OCPP20ServiceUtils.
         if (connectorId != null) {
-          if (
-            !chargingStation.isChargingStationAvailable() ||
-            !chargingStation.isConnectorAvailable(connectorId)
-          ) {
-            sendAndSetConnectorStatus(
-              chargingStation,
-              connectorId,
-              ConnectorStatusEnum.Unavailable
-            ).catch((error: unknown) => {
-              logger.error(
-                `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Error sending StatusNotification(Unavailable):`,
-                error
-              )
-            })
-          } else {
-            sendAndSetConnectorStatus(
-              chargingStation,
-              connectorId,
-              ConnectorStatusEnum.Available
-            ).catch((error: unknown) => {
-              logger.error(
-                `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Error sending StatusNotification(Available):`,
-                error
-              )
-            })
-          }
-          chargingStation.stopTxUpdatedInterval(connectorId)
-          chargingStation.stopMeterValues(connectorId)
           logger.info(
             `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Transaction ${requestPayload.transactionInfo.transactionId} ENDED on connector ${connectorId.toString()}`
           )
         }
-        resetConnectorStatus(connectorStatus)
         break
       case OCPP20TransactionEventEnumType.Started:
-        if (connectorStatus != null && connectorStatus.transactionStarted !== true) {
+        if (connectorStatus != null) {
           connectorStatus.transactionStarted = true
-          connectorStatus.transactionId = requestPayload.transactionInfo.transactionId
-          connectorStatus.transactionIdTag = requestPayload.idToken?.idToken
-          connectorStatus.transactionStart = new Date()
-          connectorStatus.transactionEnergyActiveImportRegisterValue = 0
-          if (connectorId != null) {
+          connectorStatus.transactionPending = false
+          connectorStatus.transactionId ??= requestPayload.transactionInfo.transactionId
+          connectorStatus.transactionIdTag ??= requestPayload.idToken?.idToken
+          connectorStatus.transactionStart ??= new Date()
+          connectorStatus.transactionEnergyActiveImportRegisterValue ??= 0
+          const isIdTokenAccepted =
+            payload.idTokenInfo == null ||
+            payload.idTokenInfo.status === OCPP20AuthorizationStatusEnumType.Accepted
+          if (connectorId != null && isIdTokenAccepted) {
             sendAndSetConnectorStatus(
               chargingStation,
               connectorId,
@@ -386,39 +359,31 @@ export class OCPP20ResponseService extends OCPPResponseService {
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: IdToken info status: ${payload.idTokenInfo.status}`
       )
-      // D01/D05: Stop transaction when idToken authorization is rejected by CSMS
-      const rejectedStatuses = new Set<OCPP20AuthorizationStatusEnumType>([
-        OCPP20AuthorizationStatusEnumType.Blocked,
-        OCPP20AuthorizationStatusEnumType.Expired,
-        OCPP20AuthorizationStatusEnumType.Invalid,
-        OCPP20AuthorizationStatusEnumType.NoCredit,
-      ])
-      if (rejectedStatuses.has(payload.idTokenInfo.status)) {
+      // E05.FR.09/FR.10 + E06.FR.04: Deauthorize transaction when idToken is not accepted by CSMS
+      if (payload.idTokenInfo.status !== OCPP20AuthorizationStatusEnumType.Accepted) {
         logger.warn(
-          `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: IdToken authorization rejected with status '${payload.idTokenInfo.status}', stopping active transaction per OCPP 2.0.1 spec (D01/D05)`
+          `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: IdToken authorization rejected with status '${payload.idTokenInfo.status}', de-authorizing transaction per E05.FR.09/E05.FR.10/E06.FR.04`
         )
-        // Find the specific connector for this transaction
-        const connectorId = chargingStation.getConnectorIdByTransactionId(
+        const txConnectorId = chargingStation.getConnectorIdByTransactionId(
           requestPayload.transactionInfo.transactionId
         )
-        const evseId = chargingStation.getEvseIdByTransactionId(
+        const txEvseId = chargingStation.getEvseIdByTransactionId(
           requestPayload.transactionInfo.transactionId
         )
-        if (connectorId != null && evseId != null) {
-          logger.info(
-            `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Stopping transaction ${requestPayload.transactionInfo.transactionId} on EVSE ${evseId.toString()}, connector ${connectorId.toString()} due to rejected idToken`
-          )
-          OCPP20ServiceUtils.requestStopTransaction(chargingStation, connectorId, evseId).catch(
-            (error: unknown) => {
-              logger.error(
-                `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Error stopping transaction ${requestPayload.transactionInfo.transactionId} on connector ${connectorId.toString()}:`,
-                error
-              )
-            }
-          )
+        if (txConnectorId != null && txEvseId != null) {
+          OCPP20ServiceUtils.requestDeauthorizeTransaction(
+            chargingStation,
+            txConnectorId,
+            txEvseId
+          ).catch((error: unknown) => {
+            logger.error(
+              `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Error de-authorizing transaction ${requestPayload.transactionInfo.transactionId} on connector ${txConnectorId.toString()}:`,
+              error
+            )
+          })
         } else {
           logger.warn(
-            `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Could not find connector for transaction ${requestPayload.transactionInfo.transactionId}, cannot stop transaction`
+            `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Could not find connector for transaction ${requestPayload.transactionInfo.transactionId}, cannot de-authorize`
           )
         }
       }
