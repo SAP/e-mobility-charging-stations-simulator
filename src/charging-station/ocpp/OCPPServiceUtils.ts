@@ -466,6 +466,12 @@ export const stopTransactionOnConnector = async (
     case OCPPVersion.VERSION_201: {
       const { OCPP20ServiceUtils } = await import('./2.0/OCPP20ServiceUtils.js')
       const evseId = chargingStation.getEvseIdByConnectorId(connectorId)
+      if (evseId == null) {
+        logger.warn(
+          `${chargingStation.logPrefix()} stopTransactionOnConnector: cannot resolve EVSE ID for connector ${connectorId.toString()}, skipping`
+        )
+        return { accepted: false }
+      }
       const { stoppedReason, triggerReason } = mapStopReasonToOCPP20(reason)
       const response = await OCPP20ServiceUtils.requestStopTransaction(
         chargingStation,
@@ -534,10 +540,9 @@ export const stopRunningTransactions = async (
       break
     }
     default:
-      throw new OCPPError(
-        ErrorType.INTERNAL_ERROR,
+      logger.warn(
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        `stopRunningTransactions: unsupported OCPP version ${chargingStation.stationInfo?.ocppVersion}`
+        `${chargingStation.logPrefix()} stopRunningTransactions: unsupported OCPP version ${chargingStation.stationInfo?.ocppVersion}, no transactions stopped`
       )
   }
 }
