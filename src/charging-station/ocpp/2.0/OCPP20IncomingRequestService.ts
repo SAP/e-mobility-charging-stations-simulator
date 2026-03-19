@@ -2468,6 +2468,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     const transactionId = generateUUID()
 
     try {
+      // E01.FR.07 + E01.FR.16 + E03.FR.01: ensure clean transaction state for new transaction
+      OCPP20ServiceUtils.resetTransactionSequenceNumber(chargingStation, connectorId)
       logger.debug(
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestStartTransaction: Setting transaction state for connector ${connectorId.toString()}, transaction ID: ${transactionId}`
       )

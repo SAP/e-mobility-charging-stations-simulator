@@ -581,5 +581,40 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
 
       assert.strictEqual(transactionEventCallCount, 1)
     })
+
+    // E01.FR.07 + E01.FR.16 + E03.FR.01: Verify transaction sequence number reset
+    await it('should reset transaction sequence number before setting up new transaction state', async () => {
+      const connectorStatus = mockStation.getConnectorStatus(1)
+      if (connectorStatus == null) {
+        assert.fail('Expected connectorStatus to be defined')
+      }
+
+      // Set stale transaction state values
+      connectorStatus.transactionSeqNo = 5
+      connectorStatus.transactionEvseSent = true
+      connectorStatus.transactionIdTokenSent = true
+
+      const validRequest: OCPP20RequestStartTransactionRequest = {
+        evseId: 1,
+        idToken: {
+          idToken: 'RESET_SEQ_TOKEN',
+          type: OCPP20IdTokenEnumType.ISO14443,
+        },
+        remoteStartId: 1,
+      }
+
+      const response = await testableService.handleRequestStartTransaction(
+        mockStation,
+        validRequest
+      )
+
+      assert.strictEqual(response.status, RequestStartStopStatusEnumType.Accepted)
+      assert.notStrictEqual(response.transactionId, undefined)
+
+      // Verify transaction sequence number was reset
+      assert.strictEqual(connectorStatus.transactionSeqNo, undefined)
+      assert.strictEqual(connectorStatus.transactionEvseSent, undefined)
+      assert.strictEqual(connectorStatus.transactionIdTokenSent, undefined)
+    })
   })
 })
