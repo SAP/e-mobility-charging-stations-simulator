@@ -27,7 +27,7 @@
 
 import { mock } from 'node:test'
 
-import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
+import type { ChargingStation } from '../../src/charging-station/index.js'
 
 import { MockIdTagsCache, MockSharedLRUCache } from '../charging-station/mocks/MockCaches.js'
 

@@ -8,7 +8,7 @@ import { afterEach, describe, it } from 'node:test'
 import { BaseError } from '../../src/exception/BaseError.js'
 import { OCPPError } from '../../src/exception/OCPPError.js'
 import { ErrorType, RequestCommand } from '../../src/types/index.js'
-import { Constants } from '../../src/utils/Constants.js'
+import { Constants } from '../../src/utils/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 await describe('OCPPError', async () => {

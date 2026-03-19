@@ -17,7 +17,7 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
-import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
+import type { ChargingStation } from '../../src/charging-station/index.js'
 
 import { AutomaticTransactionGenerator } from '../../src/charging-station/AutomaticTransactionGenerator.js'
 import { BaseError } from '../../src/exception/index.js'

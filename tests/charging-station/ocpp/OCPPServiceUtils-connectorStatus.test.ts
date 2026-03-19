@@ -10,7 +10,7 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, it, mock } from 'node:test'
 
-import type { ChargingStation } from '../../../src/charging-station/ChargingStation.js'
+import type { ChargingStation } from '../../../src/charging-station/index.js'
 import type { Reservation } from '../../../src/types/index.js'
 import type { MockChargingStationOptions } from '../helpers/StationHelpers.js'
 

@@ -6,7 +6,7 @@ import assert from 'node:assert/strict'
 import process from 'node:process'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
-import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
+import type { ChargingStation } from '../../src/charging-station/index.js'
 
 import {
   FileType,
@@ -22,7 +22,7 @@ import {
   handleUncaughtException,
   handleUnhandledRejection,
 } from '../../src/utils/ErrorUtils.js'
-import { logger } from '../../src/utils/Logger.js'
+import { logger } from '../../src/utils/index.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../charging-station/ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../charging-station/ChargingStationTestUtils.js'
 import {

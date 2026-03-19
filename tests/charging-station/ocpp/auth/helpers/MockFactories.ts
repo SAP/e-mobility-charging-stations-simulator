@@ -4,7 +4,7 @@
  */
 import assert from 'node:assert/strict'
 
-import type { ChargingStation } from '../../../../../src/charging-station/ChargingStation.js'
+import type { ChargingStation } from '../../../../../src/charging-station/index.js'
 import type {
   AuthCache,
   LocalAuthEntry,

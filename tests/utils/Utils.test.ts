@@ -16,7 +16,7 @@ import type { TimestampedData } from '../../src/types/index.js'
 
 import { JSRuntime, runtime } from '../../scripts/runtime.js'
 import { MapStringifyFormat } from '../../src/types/index.js'
-import { Constants } from '../../src/utils/Constants.js'
+import { Constants } from '../../src/utils/index.js'
 import {
   clampToSafeTimerValue,
   clone,

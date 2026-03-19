@@ -6,9 +6,8 @@
 
 import { mock } from 'node:test'
 
-import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
-import type { ChargingStationInfo } from '../../../../src/types/ChargingStationInfo.js'
-import type { ConfigurationKey } from '../../../../src/types/ChargingStationOcppConfiguration.js'
+import type { ChargingStation } from '../../../../src/charging-station/index.js'
+import type { ChargingStationInfo, ConfigurationKey } from '../../../../src/types/index.js'
 import type {
   IncomingRequestCommand,
   OCPP16ChargingProfile,
@@ -16,8 +15,7 @@ import type {
   OCPP16SampledValue,
   RequestCommand,
 } from '../../../../src/types/index.js'
-import type { JsonObject } from '../../../../src/types/JsonType.js'
-import type { SampledValueTemplate } from '../../../../src/types/MeasurandPerPhaseSampledValueTemplates.js'
+import type { JsonObject, SampledValueTemplate } from '../../../../src/types/index.js'
 
 import {
   createTestableIncomingRequestService,

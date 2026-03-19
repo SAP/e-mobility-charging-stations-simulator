@@ -8,7 +8,7 @@
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
-import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
+import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type { OCPP16ResponseService } from '../../../../src/charging-station/ocpp/1.6/OCPP16ResponseService.js'
 import type {
   OCPP16StartTransactionRequest,

@@ -12,7 +12,7 @@ import type {
   OCPP20TransactionEventRequest,
   OCPP20TransactionEventResponse,
 } from '../../../../src/types/index.js'
-import type { UUIDv4 } from '../../../../src/types/UUID.js'
+import type { UUIDv4 } from '../../../../src/types/index.js'
 
 import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'

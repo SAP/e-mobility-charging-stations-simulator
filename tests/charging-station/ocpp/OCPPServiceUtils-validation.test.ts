@@ -12,7 +12,7 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
-import type { ChargingStation } from '../../../src/charging-station/ChargingStation.js'
+import type { ChargingStation } from '../../../src/charging-station/index.js'
 
 import { OCPPServiceUtils } from '../../../src/charging-station/ocpp/OCPPServiceUtils.js'
 import { IncomingRequestCommand, MessageTrigger, RequestCommand } from '../../../src/types/index.js'

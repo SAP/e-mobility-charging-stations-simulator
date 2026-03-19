@@ -13,7 +13,7 @@ import {
   getConfigurationKey,
   setConfigurationKeyValue,
 } from '../../src/charging-station/ConfigurationKeyUtils.js'
-import { logger } from '../../src/utils/Logger.js'
+import { logger } from '../../src/utils/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from './ChargingStationTestUtils.js'
 

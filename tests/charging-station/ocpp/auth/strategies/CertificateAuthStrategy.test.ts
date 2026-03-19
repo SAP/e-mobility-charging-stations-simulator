@@ -5,7 +5,7 @@
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
-import type { ChargingStation } from '../../../../../src/charging-station/ChargingStation.js'
+import type { ChargingStation } from '../../../../../src/charging-station/index.js'
 import type { OCPPAuthAdapter } from '../../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
 
 import { CertificateAuthStrategy } from '../../../../../src/charging-station/ocpp/auth/strategies/CertificateAuthStrategy.js'

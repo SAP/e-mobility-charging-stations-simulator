@@ -4,13 +4,13 @@
  */
 import { mock } from 'node:test'
 
-import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
+import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type { ChargingStationWithCertificateManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20CertificateManager.js'
-import type { ConfigurationKey } from '../../../../src/types/ChargingStationOcppConfiguration.js'
-import type { EmptyObject } from '../../../../src/types/EmptyObject.js'
 import type {
   CertificateHashDataChainType,
   CertificateHashDataType,
+  ConfigurationKey,
+  EmptyObject,
   GetCertificateIdUseEnumType,
   JsonType,
   OCPP20IdTokenType,

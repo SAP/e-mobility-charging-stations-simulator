@@ -8,7 +8,7 @@
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
-import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
+import type { ChargingStation } from '../../src/charging-station/index.js'
 import type { ConnectorStatus, EvseStatus } from '../../src/types/index.js'
 
 import { AvailabilityType } from '../../src/types/index.js'

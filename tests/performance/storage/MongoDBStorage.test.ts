@@ -6,8 +6,7 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import { MongoDBStorage } from '../../../src/performance/storage/MongoDBStorage.js'
-import { Constants } from '../../../src/utils/index.js'
-import { logger } from '../../../src/utils/Logger.js'
+import { Constants, logger } from '../../../src/utils/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { buildTestStatistics } from './StorageTestHelpers.js'
 

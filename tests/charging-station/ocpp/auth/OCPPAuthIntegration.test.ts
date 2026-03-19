@@ -6,7 +6,7 @@
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
-import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
+import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type { LocalAuthEntry } from '../../../../src/charging-station/ocpp/auth/interfaces/OCPPAuthService.js'
 
 import { InMemoryAuthCache } from '../../../../src/charging-station/ocpp/auth/cache/InMemoryAuthCache.js'

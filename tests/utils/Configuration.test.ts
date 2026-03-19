@@ -29,7 +29,7 @@ import {
   SupervisionUrlDistribution,
 } from '../../src/types/index.js'
 import { Configuration } from '../../src/utils/index.js'
-import { WorkerProcessType } from '../../src/worker/WorkerTypes.js'
+import { WorkerProcessType } from '../../src/worker/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 /**

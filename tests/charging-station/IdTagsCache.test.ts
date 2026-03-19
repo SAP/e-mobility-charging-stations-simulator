@@ -15,7 +15,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, it } from 'node:test'
 
-import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
+import type { ChargingStation } from '../../src/charging-station/index.js'
 
 import { getIdTagsFile } from '../../src/charging-station/Helpers.js'
 import { IdTagsCache } from '../../src/charging-station/IdTagsCache.js'

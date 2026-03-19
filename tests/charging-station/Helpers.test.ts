@@ -31,7 +31,7 @@ import {
   OCPPVersion,
   type Reservation,
 } from '../../src/types/index.js'
-import { logger } from '../../src/utils/Logger.js'
+import { logger } from '../../src/utils/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from './ChargingStationTestConstants.js'
 import {

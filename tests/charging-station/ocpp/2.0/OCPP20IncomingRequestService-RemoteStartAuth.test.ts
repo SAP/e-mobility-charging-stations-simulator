@@ -6,8 +6,8 @@
 import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
-import type { ChargingStation } from '../../../../src/charging-station/ChargingStation.js'
-import type { ConnectorStatus } from '../../../../src/types/ConnectorStatus.js'
+import type { ChargingStation } from '../../../../src/charging-station/index.js'
+import type { ConnectorStatus } from '../../../../src/types/index.js'
 
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import {

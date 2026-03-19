@@ -4,7 +4,7 @@
  * Factory functions to create mock ChargingStation instances with isolated dependencies.
  */
 
-import type { ChargingStation } from '../../../src/charging-station/ChargingStation.js'
+import type { ChargingStation } from '../../../src/charging-station/index.js'
 import type {
   ChargingStationInfo,
   ChargingStationOcppConfiguration,

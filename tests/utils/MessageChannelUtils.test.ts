@@ -7,7 +7,7 @@ import { CircularBuffer } from 'mnemonist'
 import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
-import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
+import type { ChargingStation } from '../../src/charging-station/index.js'
 import type { Statistics, TimestampedData } from '../../src/types/index.js'
 
 import { ChargingStationWorkerMessageEvents } from '../../src/types/index.js'

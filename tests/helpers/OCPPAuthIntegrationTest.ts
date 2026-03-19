@@ -1,4 +1,4 @@
-import type { ChargingStation } from '../../src/charging-station/ChargingStation.js'
+import type { ChargingStation } from '../../src/charging-station/index.js'
 import type {
   AuthConfiguration,
   AuthorizationResult,
@@ -14,7 +14,7 @@ import {
   IdentifierType,
 } from '../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import { OCPPVersion } from '../../src/types/index.js'
-import { logger } from '../../src/utils/Logger.js'
+import { logger } from '../../src/utils/index.js'
 
 export class OCPPAuthIntegrationTest {
   private authService: OCPPAuthServiceImpl

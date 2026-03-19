@@ -10,7 +10,7 @@ import { afterEach, describe, it } from 'node:test'
 
 import { FileType } from '../../src/types/index.js'
 import { watchJsonFile } from '../../src/utils/FileUtils.js'
-import { logger } from '../../src/utils/Logger.js'
+import { logger } from '../../src/utils/index.js'
 import { createLoggerMocks, standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 
 const noop: WatchListener<string> = () => {
