@@ -475,13 +475,14 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
 
       // Offline: build and queue pre-built payload (sent as-is via rawPayload on reconnect)
       if (!chargingStation.isWebSocketConnectionOpened()) {
+        // E04.FR.03: offline flag SHALL be TRUE for any TransactionEventRequest that occurred while offline
         const transactionEventRequest = buildTransactionEvent(
           chargingStation,
           eventType,
           triggerReason,
           connectorId,
           transactionId,
-          options
+          { ...options, offline: true }
         )
         logger.info(
           `${chargingStation.logPrefix()} ${moduleName}.sendTransactionEvent: Station offline, queueing TransactionEvent with seqNo=${transactionEventRequest.seqNo.toString()}`

@@ -1625,6 +1625,27 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         )
         assert.ok(connector.transactionEventQueue[0].timestamp.getTime() <= afterQueue.getTime())
       })
+
+      await it('should set offline flag to true when queueing transaction event while station is offline', async () => {
+        const connectorId = 1
+        const transactionId = generateUUID()
+
+        setOnline(false)
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(mockStation, connectorId)
+
+        await OCPP20ServiceUtils.sendTransactionEvent(
+          mockStation,
+          OCPP20TransactionEventEnumType.Started,
+          OCPP20TriggerReasonEnumType.Authorized,
+          connectorId,
+          transactionId
+        )
+
+        const connector = mockStation.getConnectorStatus(connectorId)
+        assert.ok(connector?.transactionEventQueue != null)
+        assert.strictEqual(connector.transactionEventQueue.length, 1)
+        assert.strictEqual(connector.transactionEventQueue[0].request.offline, true)
+      })
     })
 
     await describe('Queue draining when coming online', async () => {
