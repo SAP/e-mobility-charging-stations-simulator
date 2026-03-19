@@ -8,16 +8,14 @@ import {
   type ChargingStationInfo,
   type ConnectorStatus,
   type EvseEntry,
+  OCPP16AvailabilityType,
+  OCPP16ChargePointStatus,
+  OCPP16RegistrationStatus,
   OCPPVersion,
   Protocol,
   ProtocolVersion,
   type UIServerConfigurationSection,
 } from '@/types'
-import {
-  OCPP16AvailabilityType,
-  OCPP16ChargePointStatus,
-  OCPP16RegistrationStatus,
-} from '@/types/ChargingStationType'
 
 // ── Shared Test Constants ─────────────────────────────────────────────────────
 

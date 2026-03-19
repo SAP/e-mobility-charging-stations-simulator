@@ -7,7 +7,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 
-import type { UIClient } from '@/composables/UIClient'
+import type { UIClient } from '@/composables'
 
 import { useUIClient } from '@/composables'
 import { ResponseStatus } from '@/types'

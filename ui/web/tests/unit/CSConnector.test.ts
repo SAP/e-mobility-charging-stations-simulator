@@ -5,11 +5,11 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { UIClient } from '@/composables/UIClient'
+import type { UIClient } from '@/composables'
 
 import CSConnector from '@/components/charging-stations/CSConnector.vue'
 import { useUIClient } from '@/composables'
-import { OCPP16ChargePointStatus } from '@/types/ChargingStationType'
+import { OCPP16ChargePointStatus } from '@/types'
 
 import { toastMock } from '../setup'
 import { createConnectorStatus, TEST_HASH_ID, TEST_STATION_ID } from './constants'

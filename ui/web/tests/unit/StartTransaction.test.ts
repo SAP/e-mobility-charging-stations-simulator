@@ -5,7 +5,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 
-import type { UIClient } from '@/composables/UIClient'
+import type { UIClient } from '@/composables'
 
 import StartTransaction from '@/components/actions/StartTransaction.vue'
 import { useUIClient } from '@/composables'

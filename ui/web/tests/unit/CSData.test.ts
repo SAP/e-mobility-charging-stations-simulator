@@ -5,7 +5,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { UIClient } from '@/composables/UIClient'
+import type { UIClient } from '@/composables'
 import type { ChargingStationData } from '@/types'
 
 import CSConnector from '@/components/charging-stations/CSConnector.vue'
