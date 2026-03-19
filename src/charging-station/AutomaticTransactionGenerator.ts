@@ -15,7 +15,7 @@ import {
   type StartTransactionResponse,
   type Status,
   StopTransactionReason,
-  type StopTransactionResponse,
+  type StopTransactionResult,
 } from '../types/index.js'
 import {
   clone,
@@ -30,6 +30,7 @@ import {
 } from '../utils/index.js'
 import { checkChargingStationState } from './Helpers.js'
 import { IdTagsCache } from './IdTagsCache.js'
+import { stopTransactionOnConnector } from './ocpp/OCPPServiceUtils.js'
 import { isIdTagAuthorized } from './ocpp/index.js'
 
 export class AutomaticTransactionGenerator {
@@ -522,10 +523,10 @@ export class AutomaticTransactionGenerator {
   private async stopTransaction (
     connectorId: number,
     reason = StopTransactionReason.LOCAL
-  ): Promise<StopTransactionResponse | undefined> {
+  ): Promise<StopTransactionResult | undefined> {
     const measureId = 'StopTransaction with ATG'
     const beginId = PerformanceStatistics.beginMeasure(measureId)
-    let stopResponse: StopTransactionResponse | undefined
+    let result: StopTransactionResult | undefined
     if (this.chargingStation.getConnectorStatus(connectorId)?.transactionStarted === true) {
       logger.info(
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
@@ -533,12 +534,10 @@ export class AutomaticTransactionGenerator {
           .getConnectorStatus(connectorId)
           ?.transactionId?.toString()}`
       )
-      // TODO: OCPP 2.0 stations should use OCPP20ServiceUtils.requestStopTransaction() instead
-      // See: src/charging-station/ChargingStation.ts#stopRunningTransactionsOCPP20
-      stopResponse = await this.chargingStation.stopTransactionOnConnector(connectorId, reason)
+      result = await stopTransactionOnConnector(this.chargingStation, connectorId, reason)
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       ++this.connectorsStatus.get(connectorId)!.stopTransactionRequests
-      if (stopResponse.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
+      if (result.accepted) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         ++this.connectorsStatus.get(connectorId)!.acceptedStopTransactionRequests
       } else {
@@ -554,7 +553,7 @@ export class AutomaticTransactionGenerator {
       )
     }
     PerformanceStatistics.endMeasure(measureId, beginId)
-    return stopResponse
+    return result
   }
 
   private async waitChargingStationAvailable (connectorId: number): Promise<void> {
