@@ -232,6 +232,31 @@ describe('UIClient', () => {
         ws.simulateMessage([fakeUUID, { status: ResponseStatus.SUCCESS }])
       }).toThrow('Not a response to a request')
     })
+
+    it('should reject on request timeout after 60 seconds', async () => {
+      vi.useFakeTimers()
+      try {
+        const client = UIClient.getInstance(createUIServerConfig())
+        const clearTimeoutSpy = vi
+          .spyOn(globalThis, 'clearTimeout')
+          .mockImplementation(() => undefined)
+        const promise = client.listChargingStations()
+        clearTimeoutSpy.mockRestore()
+        vi.advanceTimersByTime(60_000)
+        await expect(promise).rejects.toThrow('connection timeout')
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('should handle response with invalid UUID', async () => {
+      const client = UIClient.getInstance(createUIServerConfig())
+      await flushAllPromises()
+      // @ts-expect-error — accessing private property for testing
+      const ws = client.ws as MockWebSocket
+      ws.simulateMessage(['not-a-valid-uuid', { status: ResponseStatus.SUCCESS }])
+      // Should not throw — just logs error via toast
+    })
   })
 
   describe('simulator operations', () => {

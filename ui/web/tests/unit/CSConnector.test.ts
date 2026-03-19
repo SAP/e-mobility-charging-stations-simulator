@@ -177,5 +177,28 @@ describe('CSConnector', () => {
         'Error at starting automatic transaction generator'
       )
     })
+
+    it('should show success toast when ATG started', async () => {
+      const wrapper = mountCSConnector()
+      const buttons = wrapper.findAll('button')
+      const btn = buttons.find(b => b.text().includes('Start ATG'))
+      await btn?.trigger('click')
+      await flushPromises()
+      expect(toastMock.success).toHaveBeenCalledWith(
+        'Automatic transaction generator successfully started'
+      )
+    })
+
+    it('should show error toast when ATG stop fails', async () => {
+      mockClient.stopAutomaticTransactionGenerator.mockRejectedValueOnce(new Error('fail'))
+      const wrapper = mountCSConnector()
+      const buttons = wrapper.findAll('button')
+      const btn = buttons.find(b => b.text().includes('Stop ATG'))
+      await btn?.trigger('click')
+      await flushPromises()
+      expect(toastMock.error).toHaveBeenCalledWith(
+        'Error at stopping automatic transaction generator'
+      )
+    })
   })
 })

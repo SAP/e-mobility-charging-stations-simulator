@@ -351,4 +351,67 @@ describe('ChargingStationsView', () => {
       expect(toastMock.error).toHaveBeenCalledWith('Error at fetching simulator state')
     })
   })
+
+  describe('server switching', () => {
+    it('should call setConfiguration when server index changes', async () => {
+      const wrapper = mountView({ configuration: multiServerConfig })
+      const selector = wrapper.find('#ui-server-selector')
+      await selector.setValue(1)
+      expect(mockClient.setConfiguration).toHaveBeenCalled()
+    })
+
+    it('should register new WS event listeners after server switch', async () => {
+      const wrapper = mountView({ configuration: multiServerConfig })
+      // Reset call count from initial mount registration
+      vi.mocked(mockClient.registerWSEventListener).mockClear()
+      const selector = wrapper.find('#ui-server-selector')
+      await selector.setValue(1)
+      // registerWSEventListeners called again
+      expect(mockClient.registerWSEventListener).toHaveBeenCalledWith('open', expect.any(Function))
+    })
+
+    it('should save server index to localStorage on successful switch', async () => {
+      const wrapper = mountView({ configuration: multiServerConfig })
+      const selector = wrapper.find('#ui-server-selector')
+      await selector.setValue(1)
+      // Simulate the WS open for the new connection (once-listener from server switching)
+      const onceOpenCalls = vi
+        .mocked(mockClient.registerWSEventListener)
+        .mock.calls.filter(
+          ([event, , options]) =>
+            event === 'open' &&
+            (options as undefined | { once?: boolean }) != null &&
+            (options as { once?: boolean }).once === true
+        )
+      const onceOpenHandler = onceOpenCalls[onceOpenCalls.length - 1]?.[1] as
+        | (() => void)
+        | undefined
+      onceOpenHandler?.()
+      await flushPromises()
+      expect(localStorage.getItem('uiServerConfigurationIndex')).toBe('1')
+    })
+
+    it('should revert server index on connection error', async () => {
+      localStorage.setItem('uiServerConfigurationIndex', '0')
+      const wrapper = mountView({ configuration: multiServerConfig })
+      const selector = wrapper.find('#ui-server-selector')
+      await selector.setValue(1)
+      // Find the once-error listener
+      const onceErrorCalls = vi
+        .mocked(mockClient.registerWSEventListener)
+        .mock.calls.filter(
+          ([event, , options]) =>
+            event === 'error' &&
+            (options as undefined | { once?: boolean }) != null &&
+            (options as { once?: boolean }).once === true
+        )
+      const onceErrorHandler = onceErrorCalls[onceErrorCalls.length - 1]?.[1] as
+        | (() => void)
+        | undefined
+      onceErrorHandler?.()
+      await flushPromises()
+      // Should revert to index 0
+      expect(mockClient.setConfiguration).toHaveBeenCalledTimes(2)
+    })
+  })
 })

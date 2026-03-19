@@ -122,6 +122,27 @@ describe('StartTransaction', () => {
       expect(mockClient.authorize).toHaveBeenCalledWith(TEST_HASH_ID, TEST_ID_TAG)
       expect(mockClient.startTransaction).toHaveBeenCalled()
     })
+
+    it('should show error toast when authorize checked but no idTag provided', async () => {
+      const wrapper = mountComponent({ ocppVersion: OCPPVersion.VERSION_16 })
+      await wrapper.find('[type="checkbox"]').setValue(true)
+      await wrapper.find('button').trigger('click')
+      await flushPromises()
+      expect(toastMock.error).toHaveBeenCalledWith('Please provide an RFID tag to authorize')
+      expect(mockClient.startTransaction).not.toHaveBeenCalled()
+    })
+
+    it('should show error toast and navigate when authorize call fails', async () => {
+      const wrapper = mountComponent({ ocppVersion: OCPPVersion.VERSION_16 })
+      mockClient.authorize = vi.fn().mockRejectedValue(new Error('Auth failed'))
+      await wrapper.find('#idtag').setValue(TEST_ID_TAG)
+      await wrapper.find('[type="checkbox"]').setValue(true)
+      await wrapper.find('button').trigger('click')
+      await flushPromises()
+      expect(toastMock.error).toHaveBeenCalledWith('Error at authorizing RFID tag')
+      expect(mockRouter.push).toHaveBeenCalledWith({ name: 'charging-stations' })
+      expect(mockClient.startTransaction).not.toHaveBeenCalled()
+    })
   })
 
   describe('OCPP 2.0.x transaction flow', () => {

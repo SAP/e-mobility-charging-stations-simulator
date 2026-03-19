@@ -82,4 +82,33 @@ describe('AddChargingStations', () => {
     await flushPromises()
     expect(toastMock.error).toHaveBeenCalled()
   })
+
+  it('should render option checkboxes', () => {
+    const wrapper = mountComponent()
+    const checkboxes = wrapper.findAll('input[type="checkbox"]')
+    expect(checkboxes.length).toBe(4)
+  })
+
+  it('should pass supervision URL option when provided', async () => {
+    const wrapper = mountComponent()
+    await wrapper.find('#supervision-url').setValue('wss://custom-server.com')
+    await wrapper.find('button').trigger('click')
+    await flushPromises()
+    expect(mockClient.addChargingStations).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.objectContaining({ supervisionUrls: 'wss://custom-server.com' })
+    )
+  })
+
+  it('should not pass supervision URL option when empty', async () => {
+    const wrapper = mountComponent()
+    await wrapper.find('button').trigger('click')
+    await flushPromises()
+    expect(mockClient.addChargingStations).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.objectContaining({ supervisionUrls: undefined })
+    )
+  })
 })

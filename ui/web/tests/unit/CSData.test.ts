@@ -125,6 +125,16 @@ describe('CSData', () => {
       const cells = wrapper.findAll('td')
       expect(cells[4].text()).toBe('Ø')
     })
+
+    it('should display WebSocket state as Connecting when CONNECTING', () => {
+      const wrapper = mountCSData(createChargingStationData({ wsState: WebSocket.CONNECTING }))
+      expect(wrapper.text()).toContain('Connecting')
+    })
+
+    it('should display WebSocket state as Closing when CLOSING', () => {
+      const wrapper = mountCSData(createChargingStationData({ wsState: WebSocket.CLOSING }))
+      expect(wrapper.text()).toContain('Closing')
+    })
   })
 
   describe('supervision URL display', () => {
@@ -208,6 +218,22 @@ describe('CSData', () => {
       await startBtn?.trigger('click')
       await flushPromises()
       expect(toastMock.error).toHaveBeenCalledWith('Error at starting charging station')
+    })
+
+    it('should clean localStorage entries for deleted station', async () => {
+      const stationData = createChargingStationData()
+      const hashId = stationData.stationInfo.hashId
+      localStorage.setItem(`toggle-button-${hashId}-test`, 'true')
+      localStorage.setItem(`shared-toggle-button-${hashId}-other`, 'false')
+      localStorage.setItem('unrelated-key', 'keep')
+      const wrapper = mountCSData(stationData)
+      const buttons = wrapper.findAll('button')
+      const deleteBtn = buttons.find(b => b.text().includes('Delete'))
+      await deleteBtn?.trigger('click')
+      await flushPromises()
+      expect(localStorage.getItem(`toggle-button-${hashId}-test`)).toBeNull()
+      expect(localStorage.getItem(`shared-toggle-button-${hashId}-other`)).toBeNull()
+      expect(localStorage.getItem('unrelated-key')).toBe('keep')
     })
   })
 
