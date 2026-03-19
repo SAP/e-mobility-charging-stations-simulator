@@ -223,17 +223,17 @@ describe('CSData', () => {
     it('should clean localStorage entries for deleted station', async () => {
       const stationData = createChargingStationData()
       const hashId = stationData.stationInfo.hashId
-      localStorage.setItem(`toggle-button-${hashId}-test`, 'true')
-      localStorage.setItem(`shared-toggle-button-${hashId}-other`, 'false')
-      localStorage.setItem('unrelated-key', 'keep')
+      window.localStorage.setItem(`toggle-button-${hashId}-test`, 'true')
+      window.localStorage.setItem(`shared-toggle-button-${hashId}-other`, 'false')
+      window.localStorage.setItem('unrelated-key', 'keep')
       const wrapper = mountCSData(stationData)
       const buttons = wrapper.findAll('button')
       const deleteBtn = buttons.find(b => b.text().includes('Delete'))
       await deleteBtn?.trigger('click')
       await flushPromises()
-      expect(localStorage.getItem(`toggle-button-${hashId}-test`)).toBeNull()
-      expect(localStorage.getItem(`shared-toggle-button-${hashId}-other`)).toBeNull()
-      expect(localStorage.getItem('unrelated-key')).toBe('keep')
+      expect(window.localStorage.getItem(`toggle-button-${hashId}-test`)).toBeNull()
+      expect(window.localStorage.getItem(`shared-toggle-button-${hashId}-other`)).toBeNull()
+      expect(window.localStorage.getItem('unrelated-key')).toBe('keep')
     })
   })
 

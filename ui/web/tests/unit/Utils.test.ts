@@ -121,14 +121,14 @@ describe('Utils', () => {
 
   describe('localStorage utilities', () => {
     afterEach(() => {
-      localStorage.clear()
+      window.localStorage.clear()
     })
 
     it('should get value from localStorage when key exists', () => {
       // Arrange
       const key = 'test-key'
       const value = { count: 42, name: 'test' }
-      localStorage.setItem(key, JSON.stringify(value))
+      window.localStorage.setItem(key, JSON.stringify(value))
 
       // Act
       const result = getFromLocalStorage(key, null)
@@ -158,7 +158,7 @@ describe('Utils', () => {
       setToLocalStorage(key, value)
 
       // Assert
-      expect(localStorage.getItem(key)).toBe(JSON.stringify(value))
+      expect(window.localStorage.getItem(key)).toBe(JSON.stringify(value))
     })
 
     it('should set string value to localStorage', () => {
@@ -170,19 +170,19 @@ describe('Utils', () => {
       setToLocalStorage(key, value)
 
       // Assert
-      expect(localStorage.getItem(key)).toBe(JSON.stringify(value))
+      expect(window.localStorage.getItem(key)).toBe(JSON.stringify(value))
     })
 
     it('should delete value from localStorage', () => {
       // Arrange
       const key = 'test-key'
-      localStorage.setItem(key, 'test-value')
+      window.localStorage.setItem(key, 'test-value')
 
       // Act
       deleteFromLocalStorage(key)
 
       // Assert
-      expect(localStorage.getItem(key)).toBeNull()
+      expect(window.localStorage.getItem(key)).toBeNull()
     })
 
     it('should return localStorage instance', () => {
@@ -264,33 +264,33 @@ describe('Utils', () => {
 
   describe('resetToggleButtonState', () => {
     afterEach(() => {
-      localStorage.clear()
+      window.localStorage.clear()
     })
 
     it('should delete non-shared toggle button state with correct key', () => {
       // Arrange
       const id = 'button-1'
       const key = `toggle-button-${id}`
-      localStorage.setItem(key, 'true')
+      window.localStorage.setItem(key, 'true')
 
       // Act
       resetToggleButtonState(id, false)
 
       // Assert
-      expect(localStorage.getItem(key)).toBeNull()
+      expect(window.localStorage.getItem(key)).toBeNull()
     })
 
     it('should delete shared toggle button state with correct key', () => {
       // Arrange
       const id = 'button-1'
       const key = `shared-toggle-button-${id}`
-      localStorage.setItem(key, 'true')
+      window.localStorage.setItem(key, 'true')
 
       // Act
       resetToggleButtonState(id, true)
 
       // Assert
-      expect(localStorage.getItem(key)).toBeNull()
+      expect(window.localStorage.getItem(key)).toBeNull()
     })
 
     it('should use non-shared key by default', () => {
@@ -298,15 +298,15 @@ describe('Utils', () => {
       const id = 'button-1'
       const nonSharedKey = `toggle-button-${id}`
       const sharedKey = `shared-toggle-button-${id}`
-      localStorage.setItem(nonSharedKey, 'true')
-      localStorage.setItem(sharedKey, 'true')
+      window.localStorage.setItem(nonSharedKey, 'true')
+      window.localStorage.setItem(sharedKey, 'true')
 
       // Act
       resetToggleButtonState(id)
 
       // Assert
-      expect(localStorage.getItem(nonSharedKey)).toBeNull()
-      expect(localStorage.getItem(sharedKey)).toBe('true')
+      expect(window.localStorage.getItem(nonSharedKey)).toBeNull()
+      expect(window.localStorage.getItem(sharedKey)).toBe('true')
     })
 
     it('should handle deletion of non-existent key gracefully', () => {

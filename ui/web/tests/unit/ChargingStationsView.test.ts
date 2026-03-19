@@ -388,11 +388,11 @@ describe('ChargingStationsView', () => {
         | undefined
       onceOpenHandler?.()
       await flushPromises()
-      expect(localStorage.getItem('uiServerConfigurationIndex')).toBe('1')
+      expect(window.localStorage.getItem('uiServerConfigurationIndex')).toBe('1')
     })
 
     it('should revert server index on connection error', async () => {
-      localStorage.setItem('uiServerConfigurationIndex', '0')
+      window.localStorage.setItem('uiServerConfigurationIndex', '0')
       const wrapper = mountView({ configuration: multiServerConfig })
       const selector = wrapper.find('#ui-server-selector')
       await selector.setValue(1)
