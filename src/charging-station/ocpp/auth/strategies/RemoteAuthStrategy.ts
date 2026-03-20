@@ -266,19 +266,27 @@ export class RemoteAuthStrategy implements AuthStrategy {
         logger.warn(`${moduleName}: No OCPP adapters provided`)
       }
 
-      // Validate adapter configurations
-      for (const [version, adapter] of this.adapters) {
+      const stationVersion = config.ocppVersion ?? 'unknown'
+
+      // Validate adapter configurations (deduplicate by instance to avoid
+      // validating the same adapter twice for VERSION_20 and VERSION_201)
+      const validatedAdapters = new Set<OCPPAuthAdapter>()
+      for (const [, adapter] of this.adapters) {
+        if (validatedAdapters.has(adapter)) {
+          continue
+        }
+        validatedAdapters.add(adapter)
         try {
           const isValid = adapter.validateConfiguration(config)
           if (!isValid) {
-            logger.warn(`${moduleName}: Invalid configuration for OCPP ${version}`)
+            logger.warn(`${moduleName}: Invalid configuration for OCPP ${stationVersion}`)
           } else {
-            logger.debug(`${moduleName}: OCPP ${version} adapter configured`)
+            logger.debug(`${moduleName}: OCPP ${stationVersion} adapter configured`)
           }
         } catch (error) {
           const errorMessage = getErrorMessage(error)
           logger.error(
-            `${moduleName}: Configuration validation failed for OCPP ${version}: ${errorMessage}`
+            `${moduleName}: Configuration validation failed for OCPP ${stationVersion}: ${errorMessage}`
           )
         }
       }

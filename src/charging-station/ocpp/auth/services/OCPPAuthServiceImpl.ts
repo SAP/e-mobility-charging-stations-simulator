@@ -651,6 +651,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
       localAuthListEnabled: true,
       localPreAuthorize: false,
       maxCacheEntries: 1000,
+      ocppVersion: this.chargingStation.stationInfo?.ocppVersion,
       offlineAuthorizationEnabled: true,
       remoteAuthorization: true,
       unknownIdAuthorization: AuthorizationStatus.INVALID,

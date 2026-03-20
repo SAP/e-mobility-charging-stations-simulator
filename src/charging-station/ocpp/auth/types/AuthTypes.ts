@@ -137,6 +137,9 @@ export interface AuthConfiguration extends JsonObject {
   /** Maximum cache entries */
   maxCacheEntries?: number
 
+  /** OCPP protocol version configured on the charging station */
+  ocppVersion?: string
+
   /** Enable offline authorization */
   offlineAuthorizationEnabled: boolean
 
