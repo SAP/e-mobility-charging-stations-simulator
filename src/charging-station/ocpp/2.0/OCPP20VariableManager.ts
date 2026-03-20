@@ -293,9 +293,15 @@ export class OCPP20VariableManager {
           )
         } else {
           invalidVariables.add(variableKey)
-          logger.error(
-            `${chargingStation.logPrefix()} Missing configuration key mapping and no default for variable '${configurationKeyName}'`
-          )
+          if (variableMetadata.required === true) {
+            logger.error(
+              `${chargingStation.logPrefix()} Missing required configuration key mapping and no default for variable '${configurationKeyName}'`
+            )
+          } else {
+            logger.warn(
+              `${chargingStation.logPrefix()} Missing optional configuration key mapping and no default for variable '${configurationKeyName}'`
+            )
+          }
         }
       }
     }
