@@ -5,6 +5,8 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import type { StopTransactionReason } from '../../types/index.js'
+
 import {
   type ChargingStation,
   getConfigurationKey,
@@ -38,16 +40,24 @@ import {
   type OCPP16MeterValue,
   type OCPP16SampledValue,
   type OCPP16StatusNotificationRequest,
+  OCPP16StopTransactionReason,
+  OCPP20AuthorizationStatusEnumType,
   type OCPP20ConnectorStatusEnumType,
+  OCPP20IdTokenEnumType,
   type OCPP20MeterValue,
+  OCPP20ReasonEnumType,
   type OCPP20SampledValue,
+  OCPP20TransactionEventEnumType,
+  OCPP20TriggerReasonEnumType,
   OCPPVersion,
   RequestCommand,
   type SampledValue,
   type SampledValueTemplate,
   StandardParametersKey,
+  type StartTransactionResult,
   type StatusNotificationRequest,
   type StatusNotificationResponse,
+  type StopTransactionResult,
 } from '../../types/index.js'
 import {
   ACElectricUtils,
@@ -55,6 +65,7 @@ import {
   convertToFloat,
   convertToInt,
   DCElectricUtils,
+  generateUUID,
   getRandomFloatFluctuatedRounded,
   getRandomFloatRounded,
   handleFileException,
@@ -333,6 +344,317 @@ export const restoreConnectorStatus = async (
     await sendAndSetConnectorStatus(chargingStation, connectorId, ConnectorStatusEnum.Reserved)
   } else if (connectorStatus?.status !== ConnectorStatusEnum.Available) {
     await sendAndSetConnectorStatus(chargingStation, connectorId, ConnectorStatusEnum.Available)
+  }
+}
+
+export const mapStopReasonToOCPP20 = (
+  reason?: StopTransactionReason
+): {
+  stoppedReason: OCPP20ReasonEnumType
+  triggerReason: OCPP20TriggerReasonEnumType
+} => {
+  switch (reason) {
+    case OCPP16StopTransactionReason.DE_AUTHORIZED:
+    case OCPP20ReasonEnumType.DeAuthorized:
+      return {
+        stoppedReason: OCPP20ReasonEnumType.DeAuthorized,
+        triggerReason: OCPP20TriggerReasonEnumType.Deauthorized,
+      }
+    case OCPP16StopTransactionReason.EMERGENCY_STOP:
+    case OCPP20ReasonEnumType.EmergencyStop:
+      return {
+        stoppedReason: OCPP20ReasonEnumType.EmergencyStop,
+        triggerReason: OCPP20TriggerReasonEnumType.AbnormalCondition,
+      }
+    case OCPP16StopTransactionReason.EV_DISCONNECTED:
+    case OCPP20ReasonEnumType.EVDisconnected:
+      return {
+        stoppedReason: OCPP20ReasonEnumType.EVDisconnected,
+        triggerReason: OCPP20TriggerReasonEnumType.EVDeparted,
+      }
+    case OCPP16StopTransactionReason.HARD_RESET:
+    case OCPP16StopTransactionReason.REBOOT:
+    case OCPP16StopTransactionReason.SOFT_RESET:
+    case OCPP20ReasonEnumType.ImmediateReset:
+    case OCPP20ReasonEnumType.Reboot:
+      return {
+        stoppedReason: OCPP20ReasonEnumType.ImmediateReset,
+        triggerReason: OCPP20TriggerReasonEnumType.ResetCommand,
+      }
+    case OCPP16StopTransactionReason.OTHER:
+    case OCPP20ReasonEnumType.Other:
+      return {
+        stoppedReason: OCPP20ReasonEnumType.Other,
+        triggerReason: OCPP20TriggerReasonEnumType.AbnormalCondition,
+      }
+    case OCPP16StopTransactionReason.POWER_LOSS:
+    case OCPP20ReasonEnumType.PowerLoss:
+      return {
+        stoppedReason: OCPP20ReasonEnumType.PowerLoss,
+        triggerReason: OCPP20TriggerReasonEnumType.AbnormalCondition,
+      }
+    case OCPP16StopTransactionReason.REMOTE:
+    case OCPP20ReasonEnumType.Remote:
+      return {
+        stoppedReason: OCPP20ReasonEnumType.Remote,
+        triggerReason: OCPP20TriggerReasonEnumType.RemoteStop,
+      }
+    case OCPP16StopTransactionReason.LOCAL:
+    case OCPP20ReasonEnumType.Local:
+    case undefined:
+    default:
+      return {
+        stoppedReason: OCPP20ReasonEnumType.Local,
+        triggerReason: OCPP20TriggerReasonEnumType.StopAuthorized,
+      }
+  }
+}
+
+export const startTransactionOnConnector = async (
+  chargingStation: ChargingStation,
+  connectorId: number,
+  idTag?: string
+): Promise<StartTransactionResult> => {
+  switch (chargingStation.stationInfo?.ocppVersion) {
+    case OCPPVersion.VERSION_16: {
+      const { OCPP16ServiceUtils } = await import('./1.6/OCPP16ServiceUtils.js')
+      const response = await OCPP16ServiceUtils.startTransactionOnConnector(
+        chargingStation,
+        connectorId,
+        idTag
+      )
+      return { accepted: response.idTagInfo.status === AuthorizationStatus.ACCEPTED }
+    }
+    case OCPPVersion.VERSION_20:
+    case OCPPVersion.VERSION_201: {
+      const { OCPP20ServiceUtils } = await import('./2.0/OCPP20ServiceUtils.js')
+      const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+      let transactionId = connectorStatus?.transactionId as string | undefined
+      if (transactionId == null) {
+        transactionId = generateUUID()
+        if (connectorStatus != null) {
+          connectorStatus.transactionId = transactionId
+        }
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(chargingStation, connectorId)
+      }
+      const response = await OCPP20ServiceUtils.sendTransactionEvent(
+        chargingStation,
+        OCPP20TransactionEventEnumType.Started,
+        OCPP20TriggerReasonEnumType.Authorized,
+        connectorId,
+        transactionId,
+        {
+          idToken:
+            idTag != null ? { idToken: idTag, type: OCPP20IdTokenEnumType.Central } : undefined,
+        }
+      )
+      return {
+        accepted:
+          response.idTokenInfo == null ||
+          response.idTokenInfo.status === OCPP20AuthorizationStatusEnumType.Accepted,
+      }
+    }
+    default:
+      throw new OCPPError(
+        ErrorType.INTERNAL_ERROR,
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        `startTransactionOnConnector: unsupported OCPP version ${chargingStation.stationInfo?.ocppVersion}`
+      )
+  }
+}
+
+export const stopTransactionOnConnector = async (
+  chargingStation: ChargingStation,
+  connectorId: number,
+  reason?: StopTransactionReason
+): Promise<StopTransactionResult> => {
+  switch (chargingStation.stationInfo?.ocppVersion) {
+    case OCPPVersion.VERSION_16: {
+      const { OCPP16ServiceUtils } = await import('./1.6/OCPP16ServiceUtils.js')
+      const response = await OCPP16ServiceUtils.stopTransactionOnConnector(
+        chargingStation,
+        connectorId,
+        reason
+      )
+      return { accepted: response.idTagInfo?.status === AuthorizationStatus.ACCEPTED }
+    }
+    case OCPPVersion.VERSION_20:
+    case OCPPVersion.VERSION_201: {
+      const { OCPP20ServiceUtils } = await import('./2.0/OCPP20ServiceUtils.js')
+      const evseId = chargingStation.getEvseIdByConnectorId(connectorId)
+      if (evseId == null) {
+        logger.warn(
+          `${chargingStation.logPrefix()} stopTransactionOnConnector: cannot resolve EVSE ID for connector ${connectorId.toString()}, skipping`
+        )
+        return { accepted: false }
+      }
+      const { stoppedReason, triggerReason } = mapStopReasonToOCPP20(reason)
+      const response = await OCPP20ServiceUtils.requestStopTransaction(
+        chargingStation,
+        connectorId,
+        evseId,
+        triggerReason,
+        stoppedReason
+      )
+      return {
+        accepted:
+          response.idTokenInfo == null ||
+          response.idTokenInfo.status === OCPP20AuthorizationStatusEnumType.Accepted,
+      }
+    }
+    default:
+      throw new OCPPError(
+        ErrorType.INTERNAL_ERROR,
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        `stopTransactionOnConnector: unsupported OCPP version ${chargingStation.stationInfo?.ocppVersion}`
+      )
+  }
+}
+
+export const stopRunningTransactions = async (
+  chargingStation: ChargingStation,
+  reason?: StopTransactionReason
+): Promise<void> => {
+  switch (chargingStation.stationInfo?.ocppVersion) {
+    case OCPPVersion.VERSION_16: {
+      const { OCPP16ServiceUtils } = await import('./1.6/OCPP16ServiceUtils.js')
+      // Sequential — OCPP 1.6 behavior
+      if (chargingStation.hasEvses) {
+        for (const [evseId, evseStatus] of chargingStation.evses) {
+          if (evseId === 0) {
+            continue
+          }
+          for (const [connectorId, connectorStatus] of evseStatus.connectors) {
+            if (connectorStatus.transactionStarted === true) {
+              await OCPP16ServiceUtils.stopTransactionOnConnector(
+                chargingStation,
+                connectorId,
+                reason
+              )
+            }
+          }
+        }
+      } else {
+        for (const connectorId of chargingStation.connectors.keys()) {
+          if (
+            connectorId > 0 &&
+            chargingStation.getConnectorStatus(connectorId)?.transactionStarted === true
+          ) {
+            await OCPP16ServiceUtils.stopTransactionOnConnector(
+              chargingStation,
+              connectorId,
+              reason
+            )
+          }
+        }
+      }
+      break
+    }
+    case OCPPVersion.VERSION_20:
+    case OCPPVersion.VERSION_201: {
+      const { OCPP20ServiceUtils } = await import('./2.0/OCPP20ServiceUtils.js')
+      const { stoppedReason, triggerReason } = mapStopReasonToOCPP20(reason)
+      await OCPP20ServiceUtils.stopAllTransactions(chargingStation, triggerReason, stoppedReason)
+      break
+    }
+    default:
+      logger.warn(
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        `${chargingStation.logPrefix()} stopRunningTransactions: unsupported OCPP version ${chargingStation.stationInfo?.ocppVersion}, no transactions stopped`
+      )
+  }
+}
+
+export const startPeriodicMeterValues = async (
+  chargingStation: ChargingStation,
+  connectorId: number,
+  interval: number
+): Promise<void> => {
+  switch (chargingStation.stationInfo?.ocppVersion) {
+    case OCPPVersion.VERSION_16: {
+      const { OCPP16ServiceUtils } = await import('./1.6/OCPP16ServiceUtils.js')
+      OCPP16ServiceUtils.startPeriodicMeterValues(chargingStation, connectorId, interval)
+      break
+    }
+    case OCPPVersion.VERSION_20:
+    case OCPPVersion.VERSION_201: {
+      const { OCPP20ServiceUtils } = await import('./2.0/OCPP20ServiceUtils.js')
+      OCPP20ServiceUtils.startPeriodicMeterValues(chargingStation, connectorId, interval)
+      break
+    }
+    default:
+      logger.error(
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        `${chargingStation.logPrefix()} OCPPServiceUtils.startPeriodicMeterValues: unsupported OCPP version ${chargingStation.stationInfo?.ocppVersion}`
+      )
+  }
+}
+
+export const stopPeriodicMeterValues = async (
+  chargingStation: ChargingStation,
+  connectorId: number
+): Promise<void> => {
+  switch (chargingStation.stationInfo?.ocppVersion) {
+    case OCPPVersion.VERSION_16: {
+      const { OCPP16ServiceUtils } = await import('./1.6/OCPP16ServiceUtils.js')
+      OCPP16ServiceUtils.stopPeriodicMeterValues(chargingStation, connectorId)
+      break
+    }
+    case OCPPVersion.VERSION_20:
+    case OCPPVersion.VERSION_201: {
+      const { OCPP20ServiceUtils } = await import('./2.0/OCPP20ServiceUtils.js')
+      OCPP20ServiceUtils.stopPeriodicMeterValues(chargingStation, connectorId)
+      break
+    }
+    default:
+      break
+  }
+}
+
+export const flushQueuedTransactionMessages = async (
+  chargingStation: ChargingStation
+): Promise<void> => {
+  switch (chargingStation.stationInfo?.ocppVersion) {
+    case OCPPVersion.VERSION_16:
+      break
+    case OCPPVersion.VERSION_20:
+    case OCPPVersion.VERSION_201: {
+      const { OCPP20ServiceUtils } = await import('./2.0/OCPP20ServiceUtils.js')
+      if (chargingStation.hasEvses) {
+        for (const evseStatus of chargingStation.evses.values()) {
+          for (const [connectorId, connectorStatus] of evseStatus.connectors) {
+            if ((connectorStatus.transactionEventQueue?.length ?? 0) > 0) {
+              await OCPP20ServiceUtils.sendQueuedTransactionEvents(
+                chargingStation,
+                connectorId
+              ).catch((error: unknown) => {
+                logger.error(
+                  `${chargingStation.logPrefix()} OCPPServiceUtils.flushQueuedTransactionMessages: Error flushing queued TransactionEvents:`,
+                  error
+                )
+              })
+            }
+          }
+        }
+      } else {
+        for (const [connectorId, connectorStatus] of chargingStation.connectors) {
+          if ((connectorStatus.transactionEventQueue?.length ?? 0) > 0) {
+            await OCPP20ServiceUtils.sendQueuedTransactionEvents(
+              chargingStation,
+              connectorId
+            ).catch((error: unknown) => {
+              logger.error(
+                `${chargingStation.logPrefix()} OCPPServiceUtils.flushQueuedTransactionMessages: Error flushing queued TransactionEvents:`,
+                error
+              )
+            })
+          }
+        }
+      }
+      break
+    }
+    default:
+      break
   }
 }
 
@@ -1990,8 +2312,10 @@ export class OCPPServiceUtils {
   public static readonly buildTransactionEndMeterValue = buildTransactionEndMeterValue
   public static readonly isIdTagAuthorized = isIdTagAuthorized
   public static readonly isIdTagAuthorizedUnified = isIdTagAuthorizedUnified
+  public static readonly mapStopReasonToOCPP20 = mapStopReasonToOCPP20
   public static readonly restoreConnectorStatus = restoreConnectorStatus
   public static readonly sendAndSetConnectorStatus = sendAndSetConnectorStatus
+  public static readonly stopRunningTransactions = stopRunningTransactions
 
   protected static buildSampledValue = buildSampledValue
   protected static getSampledValueTemplate = getSampledValueTemplate

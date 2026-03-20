@@ -29,9 +29,17 @@ export const StopTransactionReason = {
   ...OCPP16StopTransactionReason,
   ...OCPP20ReasonEnumType,
 } as const
+export interface StartTransactionResult {
+  readonly accepted: boolean
+}
+
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type StopTransactionReason = OCPP16StopTransactionReason | OCPP20ReasonEnumType
 
 export type StopTransactionRequest = OCPP16StopTransactionRequest
 
 export type StopTransactionResponse = OCPP16StopTransactionResponse
+
+export interface StopTransactionResult {
+  readonly accepted: boolean
+}

@@ -16,6 +16,8 @@ import {
 import {
   type ConfigurationKey,
   type GenericResponse,
+  type MeterValuesRequest,
+  type MeterValuesResponse,
   OCPP16AuthorizationStatus,
   type OCPP16AvailabilityType,
   type OCPP16ChangeAvailabilityResponse,
@@ -33,9 +35,26 @@ import {
   OCPP16StopTransactionReason,
   type OCPP16SupportedFeatureProfiles,
   OCPPVersion,
+  RequestCommand,
+  type StartTransactionRequest,
+  type StartTransactionResponse,
+  type StopTransactionReason,
+  type StopTransactionRequest,
+  type StopTransactionResponse,
 } from '../../../types/index.js'
-import { convertToDate, isNotEmptyArray, logger, roundTo } from '../../../utils/index.js'
-import { OCPPServiceUtils } from '../OCPPServiceUtils.js'
+import {
+  clampToSafeTimerValue,
+  convertToDate,
+  convertToInt,
+  isNotEmptyArray,
+  logger,
+  roundTo,
+} from '../../../utils/index.js'
+import {
+  buildMeterValue,
+  buildTransactionEndMeterValue,
+  OCPPServiceUtils,
+} from '../OCPPServiceUtils.js'
 import { OCPP16Constants } from './OCPP16Constants.js'
 
 const moduleName = 'OCPP16ServiceUtils'
@@ -521,7 +540,8 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       connectorId,
       OCPP16ChargePointStatus.Finishing
     )
-    const stopResponse = await chargingStation.stopTransactionOnConnector(
+    const stopResponse = await OCPP16ServiceUtils.stopTransactionOnConnector(
+      chargingStation,
       connectorId,
       OCPP16StopTransactionReason.REMOTE
     )
@@ -571,6 +591,116 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       }
     }
     !cpReplaced && chargingStation.getConnectorStatus(connectorId)?.chargingProfiles?.push(cp)
+  }
+
+  public static startPeriodicMeterValues (
+    chargingStation: ChargingStation,
+    connectorId: number,
+    interval: number
+  ): void {
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+    if (connectorStatus == null) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.startPeriodicMeterValues: Connector ${connectorId.toString()} not found`
+      )
+      return
+    }
+    if (connectorStatus.transactionStarted !== true || connectorStatus.transactionId == null) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.startPeriodicMeterValues: No active transaction on connector ${connectorId.toString()}`
+      )
+      return
+    }
+    if (interval <= 0) {
+      logger.error(
+        `${chargingStation.logPrefix()} ${moduleName}.startPeriodicMeterValues: MeterValueSampleInterval set to ${interval.toString()}, not sending MeterValues`
+      )
+      return
+    }
+    connectorStatus.transactionSetInterval = setInterval(() => {
+      const transactionId = convertToInt(connectorStatus.transactionId)
+      const meterValue = buildMeterValue(chargingStation, connectorId, transactionId, interval)
+      chargingStation.ocppRequestService
+        .requestHandler<MeterValuesRequest, MeterValuesResponse>(
+          chargingStation,
+          RequestCommand.METER_VALUES,
+          {
+            connectorId,
+            meterValue: [meterValue],
+            transactionId,
+          } as MeterValuesRequest
+        )
+        .catch((error: unknown) => {
+          logger.error(
+            `${chargingStation.logPrefix()} ${moduleName}.startPeriodicMeterValues: Error while sending '${RequestCommand.METER_VALUES}':`,
+            error
+          )
+        })
+    }, clampToSafeTimerValue(interval))
+  }
+
+  public static async startTransactionOnConnector (
+    chargingStation: ChargingStation,
+    connectorId: number,
+    idTag?: string
+  ): Promise<StartTransactionResponse> {
+    return chargingStation.ocppRequestService.requestHandler<
+      Partial<StartTransactionRequest>,
+      StartTransactionResponse
+    >(chargingStation, RequestCommand.START_TRANSACTION, {
+      connectorId,
+      ...(idTag != null && { idTag }),
+    })
+  }
+
+  public static stopPeriodicMeterValues (
+    chargingStation: ChargingStation,
+    connectorId: number
+  ): void {
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+    if (connectorStatus?.transactionSetInterval != null) {
+      clearInterval(connectorStatus.transactionSetInterval)
+      delete connectorStatus.transactionSetInterval
+    }
+  }
+
+  public static async stopTransactionOnConnector (
+    chargingStation: ChargingStation,
+    connectorId: number,
+    reason?: StopTransactionReason
+  ): Promise<StopTransactionResponse> {
+    const rawTransactionId = chargingStation.getConnectorStatus(connectorId)?.transactionId
+    const transactionId = rawTransactionId != null ? convertToInt(rawTransactionId) : undefined
+    if (
+      chargingStation.stationInfo?.beginEndMeterValues === true &&
+      chargingStation.stationInfo.ocppStrictCompliance === true &&
+      chargingStation.stationInfo.outOfOrderEndMeterValues === false
+    ) {
+      const transactionEndMeterValue = buildTransactionEndMeterValue(
+        chargingStation,
+        connectorId,
+        chargingStation.getEnergyActiveImportRegisterByTransactionId(rawTransactionId)
+      )
+      await chargingStation.ocppRequestService.requestHandler<
+        MeterValuesRequest,
+        MeterValuesResponse
+      >(chargingStation, RequestCommand.METER_VALUES, {
+        connectorId,
+        meterValue: [transactionEndMeterValue],
+        transactionId,
+      } as MeterValuesRequest)
+    }
+    return await chargingStation.ocppRequestService.requestHandler<
+      Partial<StopTransactionRequest>,
+      StopTransactionResponse
+    >(chargingStation, RequestCommand.STOP_TRANSACTION, {
+      meterStop: chargingStation.getEnergyActiveImportRegisterByTransactionId(
+        rawTransactionId,
+        true
+      ),
+      transactionId,
+      ...(reason != null && { reason: reason as StopTransactionRequest['reason'] }),
+    })
   }
 
   private static readonly composeChargingSchedule = (

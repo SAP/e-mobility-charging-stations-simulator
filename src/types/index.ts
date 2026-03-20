@@ -408,9 +408,11 @@ export {
   type AuthorizeResponse,
   type StartTransactionRequest,
   type StartTransactionResponse,
+  type StartTransactionResult,
   StopTransactionReason,
   type StopTransactionRequest,
   type StopTransactionResponse,
+  type StopTransactionResult,
 } from './ocpp/Transaction.js'
 export { PerformanceRecord } from './orm/entities/PerformanceRecord.js'
 export type { SimulatorState } from './SimulatorState.js'

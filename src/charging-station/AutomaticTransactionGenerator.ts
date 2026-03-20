@@ -8,14 +8,11 @@ import type { ChargingStation } from './ChargingStation.js'
 import { BaseError } from '../exception/index.js'
 import { PerformanceStatistics } from '../performance/index.js'
 import {
-  AuthorizationStatus,
   ChargingStationEvents,
-  RequestCommand,
-  type StartTransactionRequest,
-  type StartTransactionResponse,
+  type StartTransactionResult,
   type Status,
   StopTransactionReason,
-  type StopTransactionResponse,
+  type StopTransactionResult,
 } from '../types/index.js'
 import {
   clone,
@@ -31,6 +28,7 @@ import {
 import { checkChargingStationState } from './Helpers.js'
 import { IdTagsCache } from './IdTagsCache.js'
 import { isIdTagAuthorized } from './ocpp/index.js'
+import { startTransactionOnConnector, stopTransactionOnConnector } from './ocpp/OCPPServiceUtils.js'
 
 export class AutomaticTransactionGenerator {
   private static readonly instances: Map<string, AutomaticTransactionGenerator> = new Map<
@@ -238,13 +236,10 @@ export class AutomaticTransactionGenerator {
     )
   }
 
-  private handleStartTransactionResponse (
-    connectorId: number,
-    startResponse: StartTransactionResponse
-  ): void {
+  private handleStartTransactionResult (connectorId: number, result: StartTransactionResult): void {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     ++this.connectorsStatus.get(connectorId)!.startTransactionRequests
-    if (startResponse.idTagInfo.status === AuthorizationStatus.ACCEPTED) {
+    if (result.accepted) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       ++this.connectorsStatus.get(connectorId)!.acceptedStartTransactionRequests
     } else {
@@ -317,7 +312,7 @@ export class AutomaticTransactionGenerator {
         this.connectorsStatus.get(connectorId)!.skippedConsecutiveTransactions = 0
         // Start transaction
         const startResponse = await this.startTransaction(connectorId)
-        if (startResponse?.idTagInfo.status === AuthorizationStatus.ACCEPTED) {
+        if (startResponse?.accepted === true) {
           // Wait until end of transaction
           const waitTrxEnd = secondsToMilliseconds(
             randomInt(
@@ -436,12 +431,10 @@ export class AutomaticTransactionGenerator {
     }
   }
 
-  private async startTransaction (
-    connectorId: number
-  ): Promise<StartTransactionResponse | undefined> {
+  private async startTransaction (connectorId: number): Promise<StartTransactionResult | undefined> {
     const measureId = 'StartTransaction with ATG'
     const beginId = PerformanceStatistics.beginMeasure(measureId)
-    let startResponse: StartTransactionResponse | undefined
+    let result: StartTransactionResult | undefined
     if (this.chargingStation.hasIdTags()) {
       const idTag = IdTagsCache.getInstance().getIdTag(
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -459,46 +452,27 @@ export class AutomaticTransactionGenerator {
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           ++this.connectorsStatus.get(connectorId)!.acceptedAuthorizeRequests
           logger.info(startTransactionLogMsg)
-          // Start transaction
-          startResponse = await this.chargingStation.ocppRequestService.requestHandler<
-            Partial<StartTransactionRequest>,
-            StartTransactionResponse
-          >(this.chargingStation, RequestCommand.START_TRANSACTION, {
-            connectorId,
-            idTag,
-          })
-          this.handleStartTransactionResponse(connectorId, startResponse)
+          result = await startTransactionOnConnector(this.chargingStation, connectorId, idTag)
+          this.handleStartTransactionResult(connectorId, result)
           PerformanceStatistics.endMeasure(measureId, beginId)
-          return startResponse
+          return result
         }
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         ++this.connectorsStatus.get(connectorId)!.rejectedAuthorizeRequests
         PerformanceStatistics.endMeasure(measureId, beginId)
-        return startResponse
+        return result
       }
       logger.info(startTransactionLogMsg)
-      // Start transaction
-      startResponse = await this.chargingStation.ocppRequestService.requestHandler<
-        Partial<StartTransactionRequest>,
-        StartTransactionResponse
-      >(this.chargingStation, RequestCommand.START_TRANSACTION, {
-        connectorId,
-        idTag,
-      })
-      this.handleStartTransactionResponse(connectorId, startResponse)
+      result = await startTransactionOnConnector(this.chargingStation, connectorId, idTag)
+      this.handleStartTransactionResult(connectorId, result)
       PerformanceStatistics.endMeasure(measureId, beginId)
-      return startResponse
+      return result
     }
     logger.info(`${this.logPrefix(connectorId)} start transaction without an idTag`)
-    startResponse = await this.chargingStation.ocppRequestService.requestHandler<
-      Partial<StartTransactionRequest>,
-      StartTransactionResponse
-    >(this.chargingStation, RequestCommand.START_TRANSACTION, {
-      connectorId,
-    })
-    this.handleStartTransactionResponse(connectorId, startResponse)
+    result = await startTransactionOnConnector(this.chargingStation, connectorId)
+    this.handleStartTransactionResult(connectorId, result)
     PerformanceStatistics.endMeasure(measureId, beginId)
-    return startResponse
+    return result
   }
 
   private stopConnectors (): void {
@@ -522,10 +496,10 @@ export class AutomaticTransactionGenerator {
   private async stopTransaction (
     connectorId: number,
     reason = StopTransactionReason.LOCAL
-  ): Promise<StopTransactionResponse | undefined> {
+  ): Promise<StopTransactionResult | undefined> {
     const measureId = 'StopTransaction with ATG'
     const beginId = PerformanceStatistics.beginMeasure(measureId)
-    let stopResponse: StopTransactionResponse | undefined
+    let result: StopTransactionResult | undefined
     if (this.chargingStation.getConnectorStatus(connectorId)?.transactionStarted === true) {
       logger.info(
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
@@ -533,12 +507,10 @@ export class AutomaticTransactionGenerator {
           .getConnectorStatus(connectorId)
           ?.transactionId?.toString()}`
       )
-      // TODO: OCPP 2.0 stations should use OCPP20ServiceUtils.requestStopTransaction() instead
-      // See: src/charging-station/ChargingStation.ts#stopRunningTransactionsOCPP20
-      stopResponse = await this.chargingStation.stopTransactionOnConnector(connectorId, reason)
+      result = await stopTransactionOnConnector(this.chargingStation, connectorId, reason)
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       ++this.connectorsStatus.get(connectorId)!.stopTransactionRequests
-      if (stopResponse.idTagInfo?.status === AuthorizationStatus.ACCEPTED) {
+      if (result.accepted) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         ++this.connectorsStatus.get(connectorId)!.acceptedStopTransactionRequests
       } else {
@@ -554,7 +526,7 @@ export class AutomaticTransactionGenerator {
       )
     }
     PerformanceStatistics.endMeasure(measureId, beginId)
-    return stopResponse
+    return result
   }
 
   private async waitChargingStationAvailable (connectorId: number): Promise<void> {

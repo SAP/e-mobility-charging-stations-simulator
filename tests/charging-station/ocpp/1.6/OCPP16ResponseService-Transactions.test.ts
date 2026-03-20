@@ -6,7 +6,7 @@
  */
 
 import assert from 'node:assert/strict'
-import { afterEach, beforeEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 import type { OCPP16ResponseService } from '../../../../src/charging-station/ocpp/1.6/OCPP16ResponseService.js'
@@ -17,6 +17,7 @@ import type {
   OCPP16StopTransactionResponse,
 } from '../../../../src/types/index.js'
 
+import { OCPP16ServiceUtils } from '../../../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
 import {
   OCPP16AuthorizationStatus,
   OCPP16MeterValueUnit,
@@ -41,12 +42,12 @@ await describe('OCPP16ResponseService — StartTransaction and StopTransaction',
     setMockRequestHandler(station, async () => Promise.resolve({}))
 
     // Mock startMeterValues/stopMeterValues to avoid real timer setup
-    station.startMeterValues = (_connectorId: number, _interval: number) => {
+    mock.method(OCPP16ServiceUtils, 'startPeriodicMeterValues', () => {
       /* noop */
-    }
-    station.stopMeterValues = (_connectorId: number) => {
+    })
+    mock.method(OCPP16ServiceUtils, 'stopPeriodicMeterValues', () => {
       /* noop */
-    }
+    })
 
     // Add MeterValues template required by buildTransactionBeginMeterValue
     for (const [connectorId] of station.connectors) {

@@ -6,7 +6,7 @@
  * - Singleton pattern (getInstance / deleteInstance)
  * - Lifecycle state machine (start / stop / starting / stopping guards)
  * - Connector status management (startConnector / stopConnector)
- * - handleStartTransactionResponse — transaction counter updates
+ * - handleStartTransactionResult — transaction counter updates
  * - initializeConnectorsStatus — connector status initialization
  *
  * Note: The async transaction loop (internalStartConnector, startTransaction, stopTransaction)
@@ -21,7 +21,7 @@ import type { ChargingStation } from '../../src/charging-station/index.js'
 
 import { AutomaticTransactionGenerator } from '../../src/charging-station/AutomaticTransactionGenerator.js'
 import { BaseError } from '../../src/exception/index.js'
-import { AuthorizationStatus, type StartTransactionResponse } from '../../src/types/index.js'
+import { type StartTransactionResult } from '../../src/types/index.js'
 import { flushMicrotasks } from '../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation, standardCleanup } from './ChargingStationTestUtils.js'
 
@@ -95,21 +95,18 @@ function getDefinedATG (station: ChargingStation): AutomaticTransactionGenerator
 }
 
 /**
- * Extracts the private handleStartTransactionResponse method from an ATG instance.
+ * Extracts the private handleStartTransactionResult method from an ATG instance.
  * @param atg - The ATG instance to extract the method from
- * @returns The bound handleStartTransactionResponse method
+ * @returns The bound handleStartTransactionResult method
  */
-function getHandleStartTransactionResponse (
+function getHandleStartTransactionResult (
   atg: AutomaticTransactionGenerator
-): (connectorId: number, response: StartTransactionResponse) => void {
+): (connectorId: number, result: StartTransactionResult) => void {
   return (
     atg as unknown as {
-      handleStartTransactionResponse: (
-        connectorId: number,
-        response: StartTransactionResponse
-      ) => void
+      handleStartTransactionResult: (connectorId: number, result: StartTransactionResult) => void
     }
-  ).handleStartTransactionResponse.bind(atg)
+  ).handleStartTransactionResult.bind(atg)
 }
 
 /**
@@ -247,17 +244,14 @@ await describe('AutomaticTransactionGenerator', async () => {
     })
   })
 
-  await describe('handleStartTransactionResponse', async () => {
+  await describe('handleStartTransactionResult', async () => {
     await it('should increment accepted counters on accepted start response', () => {
       const station = createStationForATG()
       const atg = getDefinedATG(station)
       const connectorStatus = getConnectorStatus(atg, 1)
-      const handleResponse = getHandleStartTransactionResponse(atg)
+      const handleResult = getHandleStartTransactionResult(atg)
 
-      handleResponse(1, {
-        idTagInfo: { status: AuthorizationStatus.ACCEPTED },
-        transactionId: 1,
-      } as StartTransactionResponse)
+      handleResult(1, { accepted: true })
 
       assert.strictEqual(connectorStatus.startTransactionRequests, 1)
       assert.strictEqual(connectorStatus.acceptedStartTransactionRequests, 1)
@@ -268,12 +262,9 @@ await describe('AutomaticTransactionGenerator', async () => {
       const station = createStationForATG()
       const atg = getDefinedATG(station)
       const connectorStatus = getConnectorStatus(atg, 1)
-      const handleResponse = getHandleStartTransactionResponse(atg)
+      const handleResult = getHandleStartTransactionResult(atg)
 
-      handleResponse(1, {
-        idTagInfo: { status: AuthorizationStatus.INVALID },
-        transactionId: 1,
-      } as StartTransactionResponse)
+      handleResult(1, { accepted: false })
 
       assert.strictEqual(connectorStatus.startTransactionRequests, 1)
       assert.strictEqual(connectorStatus.acceptedStartTransactionRequests, 0)

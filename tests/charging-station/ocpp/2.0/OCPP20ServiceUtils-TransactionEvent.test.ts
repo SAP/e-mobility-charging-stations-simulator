@@ -21,6 +21,7 @@ import {
   OCPP20ServiceUtils,
 } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import { OCPP20VariableManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js'
+import { startPeriodicMeterValues } from '../../../../src/charging-station/ocpp/OCPPServiceUtils.js'
 import { OCPPError } from '../../../../src/exception/index.js'
 import {
   AttributeEnumType,
@@ -39,7 +40,7 @@ import {
   OCPPVersion,
 } from '../../../../src/types/index.js'
 import { Constants, generateUUID } from '../../../../src/utils/index.js'
-import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
+import { standardCleanup, withMockTimers } from '../../../helpers/TestLifecycleHelpers.js'
 import { TEST_CHARGING_STATION_BASE_NAME } from '../../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import {
@@ -2036,22 +2037,22 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       standardCleanup()
     })
 
-    await describe('startTxUpdatedInterval', async () => {
-      await it('should not start timer for non-OCPP 2.0 stations', () => {
-        const { station: ocpp16Station } = createMockChargingStation({
-          baseName: TEST_CHARGING_STATION_BASE_NAME,
-          connectorsCount: 1,
-          stationInfo: {
-            ocppVersion: OCPPVersion.VERSION_16,
-          },
+    await describe('startPeriodicMeterValues', async () => {
+      await it('should not start OCPP 2.0 timer for OCPP 1.6 stations via unified dispatch', async t => {
+        await withMockTimers(t, ['setInterval'], async () => {
+          const { station: ocpp16Station } = createMockChargingStation({
+            baseName: TEST_CHARGING_STATION_BASE_NAME,
+            connectorsCount: 1,
+            stationInfo: {
+              ocppVersion: OCPPVersion.VERSION_16,
+            },
+          })
+
+          await startPeriodicMeterValues(ocpp16Station, 1, 60000)
+
+          const connector = ocpp16Station.getConnectorStatus(1)
+          assert.strictEqual(connector?.transactionTxUpdatedSetInterval, undefined)
         })
-
-        // Call startTxUpdatedInterval on OCPP 1.6 station
-        ocpp16Station.startTxUpdatedInterval(1, 60000)
-
-        // Verify no timer was started (method should return early)
-        const connector = ocpp16Station.getConnectorStatus(1)
-        assert.strictEqual(connector?.transactionTxUpdatedSetInterval, undefined)
       })
 
       await it('should not start timer when interval is zero', () => {

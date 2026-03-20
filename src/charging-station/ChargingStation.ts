@@ -41,12 +41,6 @@ import {
   type IncomingRequestCommand,
   MessageType,
   MeterValueMeasurand,
-  type MeterValuesRequest,
-  type MeterValuesResponse,
-  type OCPP20MeterValue,
-  OCPP20ReasonEnumType,
-  OCPP20TransactionEventEnumType,
-  OCPP20TriggerReasonEnumType,
   OCPPVersion,
   type OutgoingRequest,
   PowerUnits,
@@ -59,8 +53,6 @@ import {
   StandardParametersKey,
   type Status,
   type StopTransactionReason,
-  type StopTransactionRequest,
-  type StopTransactionResponse,
   SupervisionUrlDistribution,
   SupportedFeatureProfiles,
   type Voltage,
@@ -150,8 +142,6 @@ import {
 } from './Helpers.js'
 import { IdTagsCache } from './IdTagsCache.js'
 import {
-  buildMeterValue,
-  buildTransactionEndMeterValue,
   getMessageTypeString,
   OCPP16IncomingRequestService,
   OCPP16RequestService,
@@ -159,12 +149,12 @@ import {
   OCPP20IncomingRequestService,
   OCPP20RequestService,
   OCPP20ResponseService,
-  OCPP20ServiceUtils,
   OCPPAuthServiceFactory,
   type OCPPIncomingRequestService,
   type OCPPRequestService,
   sendAndSetConnectorStatus,
 } from './ocpp/index.js'
+import { flushQueuedTransactionMessages, stopRunningTransactions } from './ocpp/OCPPServiceUtils.js'
 import { SharedLRUCache } from './SharedLRUCache.js'
 
 export class ChargingStation extends EventEmitter {
@@ -893,11 +883,6 @@ export class ChargingStation extends EventEmitter {
     this.startHeartbeat()
   }
 
-  public restartMeterValues (connectorId: number, interval: number): void {
-    this.stopMeterValues(connectorId)
-    this.startMeterValues(connectorId, interval)
-  }
-
   public restartWebSocketPing (): void {
     // Stop WebSocket ping
     this.stopWebSocketPing()
@@ -1040,108 +1025,6 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
-  public startMeterValues (connectorId: number, interval: number): void {
-    if (connectorId === 0) {
-      logger.error(
-        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId.toString()}`
-      )
-      return
-    }
-    const connectorStatus = this.getConnectorStatus(connectorId)
-    if (connectorStatus == null) {
-      logger.error(
-        `${this.logPrefix()} Trying to start MeterValues on non existing connector id
-          ${connectorId.toString()}`
-      )
-      return
-    }
-    if (connectorStatus.transactionStarted === false) {
-      logger.error(
-        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId.toString()} with no transaction started`
-      )
-      return
-    } else if (
-      connectorStatus.transactionStarted === true &&
-      connectorStatus.transactionId == null
-    ) {
-      logger.error(
-        `${this.logPrefix()} Trying to start MeterValues on connector id ${connectorId.toString()} with no transaction id`
-      )
-      return
-    }
-    if (interval > 0) {
-      connectorStatus.transactionSetInterval = setInterval(() => {
-        const transactionId = convertToInt(connectorStatus.transactionId)
-        const meterValue = buildMeterValue(this, connectorId, transactionId, interval)
-        this.ocppRequestService
-          .requestHandler<MeterValuesRequest, MeterValuesResponse>(
-            this,
-            RequestCommand.METER_VALUES,
-            {
-              connectorId,
-              meterValue: [meterValue],
-              transactionId,
-            } as MeterValuesRequest
-          )
-          .catch((error: unknown) => {
-            logger.error(
-              `${this.logPrefix()} Error while sending '${RequestCommand.METER_VALUES}':`,
-              error
-            )
-          })
-      }, clampToSafeTimerValue(interval))
-    } else {
-      logger.error(
-        `${this.logPrefix()} Charging station ${
-          StandardParametersKey.MeterValueSampleInterval
-        } configuration set to ${interval.toString()}, not sending MeterValues`
-      )
-    }
-  }
-
-  public startTxUpdatedInterval (connectorId: number, interval: number): void {
-    if (this.stationInfo?.ocppVersion !== OCPPVersion.VERSION_20) {
-      return
-    }
-    const connector = this.getConnectorStatus(connectorId)
-    if (connector == null) {
-      logger.error(`${this.logPrefix()} Connector ${connectorId.toString()} not found`)
-      return
-    }
-    if (interval <= 0) {
-      logger.debug(
-        `${this.logPrefix()} TxUpdatedInterval is ${interval.toString()}, not starting periodic TransactionEvent`
-      )
-      return
-    }
-    if (connector.transactionTxUpdatedSetInterval != null) {
-      logger.warn(`${this.logPrefix()} TxUpdatedInterval already started, stopping first`)
-      this.stopTxUpdatedInterval(connectorId)
-    }
-    connector.transactionTxUpdatedSetInterval = setInterval(() => {
-      const connectorStatus = this.getConnectorStatus(connectorId)
-      if (connectorStatus?.transactionStarted === true && connectorStatus.transactionId != null) {
-        const meterValue = buildMeterValue(this, connectorId, 0, interval) as OCPP20MeterValue
-        OCPP20ServiceUtils.sendTransactionEvent(
-          this,
-          OCPP20TransactionEventEnumType.Updated,
-          OCPP20TriggerReasonEnumType.MeterValuePeriodic,
-          connectorId,
-          connectorStatus.transactionId as string,
-          { meterValue: [meterValue] }
-        ).catch((error: unknown) => {
-          logger.error(
-            `${this.logPrefix()} Error sending periodic TransactionEvent at TxUpdatedInterval:`,
-            error
-          )
-        })
-      }
-    }, clampToSafeTimerValue(interval))
-    logger.info(
-      `${this.logPrefix()} TxUpdatedInterval started every ${formatDurationMilliSeconds(interval)}`
-    )
-  }
-
   public async stop (
     reason?: StopTransactionReason,
     stopTransactions = this.stationInfo?.stopTransactionsOnStopped
@@ -1185,58 +1068,6 @@ export class ChargingStation extends EventEmitter {
     this.emitChargingStationEvent(ChargingStationEvents.updated)
   }
 
-  public stopMeterValues (connectorId: number): void {
-    const connectorStatus = this.getConnectorStatus(connectorId)
-    if (connectorStatus?.transactionSetInterval != null) {
-      clearInterval(connectorStatus.transactionSetInterval)
-    }
-  }
-
-  public async stopTransactionOnConnector (
-    connectorId: number,
-    reason?: StopTransactionReason
-  ): Promise<StopTransactionResponse> {
-    const rawTransactionId = this.getConnectorStatus(connectorId)?.transactionId
-    const transactionId = rawTransactionId != null ? convertToInt(rawTransactionId) : undefined
-    if (
-      this.stationInfo?.beginEndMeterValues === true &&
-      this.stationInfo.ocppStrictCompliance === true &&
-      this.stationInfo.outOfOrderEndMeterValues === false
-    ) {
-      const transactionEndMeterValue = buildTransactionEndMeterValue(
-        this,
-        connectorId,
-        this.getEnergyActiveImportRegisterByTransactionId(rawTransactionId)
-      )
-      await this.ocppRequestService.requestHandler<MeterValuesRequest, MeterValuesResponse>(
-        this,
-        RequestCommand.METER_VALUES,
-        {
-          connectorId,
-          meterValue: [transactionEndMeterValue],
-          transactionId,
-        } as MeterValuesRequest
-      )
-    }
-    return await this.ocppRequestService.requestHandler<
-      Partial<StopTransactionRequest>,
-      StopTransactionResponse
-    >(this, RequestCommand.STOP_TRANSACTION, {
-      meterStop: this.getEnergyActiveImportRegisterByTransactionId(rawTransactionId, true),
-      transactionId,
-      ...(reason != null && { reason: reason as StopTransactionRequest['reason'] }),
-    })
-  }
-
-  public stopTxUpdatedInterval (connectorId: number): void {
-    const connector = this.getConnectorStatus(connectorId)
-    if (connector?.transactionTxUpdatedSetInterval != null) {
-      clearInterval(connector.transactionTxUpdatedSetInterval)
-      delete connector.transactionTxUpdatedSetInterval
-      logger.info(`${this.logPrefix()} TxUpdatedInterval stopped`)
-    }
-  }
-
   private add (): void {
     this.emitChargingStationEvent(ChargingStationEvents.added)
   }
@@ -1254,40 +1085,6 @@ export class ChargingStation extends EventEmitter {
       this.sendMessageBuffer(() => {
         this.flushingMessageBuffer = false
       })
-    }
-  }
-
-  private async flushQueuedTransactionEvents (): Promise<void> {
-    if (this.hasEvses) {
-      for (const evseStatus of this.evses.values()) {
-        for (const [connectorId, connectorStatus] of evseStatus.connectors) {
-          if ((connectorStatus.transactionEventQueue?.length ?? 0) === 0) {
-            continue
-          }
-          await OCPP20ServiceUtils.sendQueuedTransactionEvents(this, connectorId).catch(
-            (error: unknown) => {
-              logger.error(
-                `${this.logPrefix()} Error while flushing queued TransactionEvents:`,
-                error
-              )
-            }
-          )
-        }
-      }
-    } else {
-      for (const [connectorId, connectorStatus] of this.connectors) {
-        if ((connectorStatus.transactionEventQueue?.length ?? 0) === 0) {
-          continue
-        }
-        await OCPP20ServiceUtils.sendQueuedTransactionEvents(this, connectorId).catch(
-          (error: unknown) => {
-            logger.error(
-              `${this.logPrefix()} Error while flushing queued TransactionEvents:`,
-              error
-            )
-          }
-        )
-      }
     }
   }
 
@@ -2340,8 +2137,8 @@ export class ChargingStation extends EventEmitter {
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           `${this.logPrefix()} Registration failure: maximum retries reached (${registrationRetryCount.toString()}) or retry disabled (${this.stationInfo?.registrationMaxRetries?.toString()})`
         )
-      } else if (this.stationInfo?.ocppVersion === OCPPVersion.VERSION_20) {
-        await this.flushQueuedTransactionEvents()
+      } else {
+        await flushQueuedTransactionMessages(this)
       }
       this.emitChargingStationEvent(ChargingStationEvents.updated)
     } else {
@@ -2702,7 +2499,7 @@ export class ChargingStation extends EventEmitter {
   ): Promise<void> {
     this.internalStopMessageSequence()
     // Stop ongoing transactions
-    stopTransactions && (await this.stopRunningTransactions(reason))
+    stopTransactions && (await stopRunningTransactions(this, reason))
     if (this.hasEvses) {
       for (const [evseId, evseStatus] of this.evses) {
         if (evseId > 0) {
@@ -2724,77 +2521,6 @@ export class ChargingStation extends EventEmitter {
           delete this.getConnectorStatus(connectorId)?.status
         }
       }
-    }
-  }
-
-  private async stopRunningTransactions (reason?: StopTransactionReason): Promise<void> {
-    if (
-      this.stationInfo?.ocppVersion === OCPPVersion.VERSION_20 ||
-      this.stationInfo?.ocppVersion === OCPPVersion.VERSION_201
-    ) {
-      await this.stopRunningTransactionsOCPP20(reason)
-      return
-    }
-    if (this.hasEvses) {
-      for (const [evseId, evseStatus] of this.evses) {
-        if (evseId === 0) {
-          continue
-        }
-        for (const [connectorId, connectorStatus] of evseStatus.connectors) {
-          if (connectorStatus.transactionStarted === true) {
-            await this.stopTransactionOnConnector(connectorId, reason)
-          }
-        }
-      }
-    } else {
-      for (const connectorId of this.connectors.keys()) {
-        if (connectorId > 0 && this.getConnectorStatus(connectorId)?.transactionStarted === true) {
-          await this.stopTransactionOnConnector(connectorId, reason)
-        }
-      }
-    }
-  }
-
-  private async stopRunningTransactionsOCPP20 (reason?: StopTransactionReason): Promise<void> {
-    const stoppedReason =
-      reason != null ? (reason as unknown as OCPP20ReasonEnumType) : OCPP20ReasonEnumType.Local
-    const terminationPromises: Promise<unknown>[] = []
-
-    for (const [evseId, evseStatus] of this.evses) {
-      if (evseId === 0) {
-        continue
-      }
-      for (const [connectorId, connectorStatus] of evseStatus.connectors) {
-        if (
-          connectorStatus.transactionStarted === true ||
-          connectorStatus.transactionPending === true
-        ) {
-          logger.info(
-            `${this.logPrefix()} stopRunningTransactionsOCPP20: Stopping transaction ${connectorStatus.transactionId?.toString() ?? 'unknown'} on connector ${connectorId.toString()}`
-          )
-          terminationPromises.push(
-            OCPP20ServiceUtils.requestStopTransaction(
-              this,
-              connectorId,
-              evseId,
-              OCPP20TriggerReasonEnumType.StopAuthorized,
-              stoppedReason
-            ).catch((error: unknown) => {
-              logger.error(
-                `${this.logPrefix()} stopRunningTransactionsOCPP20: Error stopping transaction on connector ${connectorId.toString()}:`,
-                error
-              )
-            })
-          )
-        }
-      }
-    }
-
-    if (terminationPromises.length > 0) {
-      await Promise.all(terminationPromises)
-      logger.info(
-        `${this.logPrefix()} stopRunningTransactionsOCPP20: All transactions stopped on charging station`
-      )
     }
   }
 
