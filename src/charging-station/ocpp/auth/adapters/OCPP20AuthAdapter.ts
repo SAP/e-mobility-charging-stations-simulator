@@ -1,6 +1,7 @@
 import type {
   AdditionalInfoType,
-  OCPP20TransactionEventResponse,
+  OCPP20AuthorizeRequest,
+  OCPP20AuthorizeResponse,
   RequestStartStopStatusEnumType,
 } from '../../../../types/index.js'
 import type { ChargingStation } from '../../../index.js'
@@ -12,18 +13,16 @@ import type {
   UnifiedIdentifier,
 } from '../types/AuthTypes.js'
 
-import { OCPP20ServiceUtils } from '../../2.0/OCPP20ServiceUtils.js'
 import { OCPP20VariableManager } from '../../2.0/OCPP20VariableManager.js'
 import {
   GetVariableStatusEnumType,
   OCPP20AuthorizationStatusEnumType,
   OCPP20IdTokenEnumType,
   type OCPP20IdTokenType,
-  OCPP20TransactionEventEnumType,
-  OCPP20TriggerReasonEnumType,
+  OCPP20RequestCommand,
   OCPPVersion,
 } from '../../../../types/index.js'
-import { generateUUID, logger, truncateId } from '../../../../utils/index.js'
+import { logger, truncateId } from '../../../../utils/index.js'
 import {
   AuthContext,
   AuthenticationMethod,
@@ -39,9 +38,6 @@ const moduleName = 'OCPP20AuthAdapter'
  *
  * Handles authentication for OCPP 2.0/2.1 charging stations by translating
  * between unified auth types and OCPP 2.0 specific types and protocols.
- *
- * Note: OCPP 2.0 doesn't have a dedicated Authorize message. Authorization
- * happens through TransactionEvent messages and local configuration.
  */
 export class OCPP20AuthAdapter implements OCPPAuthAdapter {
   readonly ocppVersion = OCPPVersion.VERSION_20
@@ -49,10 +45,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
   constructor (private readonly chargingStation: ChargingStation) {}
 
   /**
-   * Perform remote authorization using OCPP 2.0 mechanisms
-   *
-   * Since OCPP 2.0 doesn't have Authorize, we simulate authorization
-   * by checking if we can start a transaction with the identifier
+   * Perform remote authorization using OCPP 2.0 Authorize request.
    * @param identifier - Unified identifier containing the IdToken to authorize
    * @param connectorId - EVSE/connector ID for the authorization context
    * @param transactionId - Optional existing transaction ID for ongoing transactions
@@ -67,7 +60,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
 
     try {
       logger.debug(
-        `${this.chargingStation.logPrefix()} ${moduleName}.${methodName}: Authorizing identifier ${truncateId(identifier.value)} via OCPP 2.0 TransactionEvent`
+        `${this.chargingStation.logPrefix()} ${moduleName}.${methodName}: Authorizing identifier ${truncateId(identifier.value)} via OCPP 2.0 Authorize`
       )
 
       // Check if remote authorization is configured
@@ -121,51 +114,21 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
           }
         }
 
-        // OCPP 2.0: Authorization through TransactionEvent
-        // According to OCPP 2.0.1 spec section G03 - Authorization
-        const tempTransactionId = transactionId != null ? transactionId.toString() : generateUUID()
-
-        // Get EVSE ID from connector
-        const evseId = connectorId // In OCPP 2.0, connector maps to EVSE
-
         logger.debug(
-          `${this.chargingStation.logPrefix()} ${moduleName}.${methodName}: Sending TransactionEvent for authorization (evseId: ${evseId.toString()}, idToken: ${idToken.idToken})`
+          `${this.chargingStation.logPrefix()} ${moduleName}.${methodName}: Sending Authorize request (idToken: ${idToken.idToken})`
         )
 
-        // Send TransactionEvent with idToken to request authorization
-        const response: OCPP20TransactionEventResponse =
-          await OCPP20ServiceUtils.sendTransactionEvent(
-            this.chargingStation,
-            OCPP20TransactionEventEnumType.Started,
-            OCPP20TriggerReasonEnumType.Authorized,
-            connectorId,
-            tempTransactionId,
-            {
-              evseId,
-              idToken,
-            }
-          )
+        // Send Authorize request
+        const response = await this.chargingStation.ocppRequestService.requestHandler<
+          OCPP20AuthorizeRequest,
+          OCPP20AuthorizeResponse
+        >(this.chargingStation, OCPP20RequestCommand.AUTHORIZE, {
+          idToken,
+        })
 
         // Extract authorization status from response
-        const authStatus = response.idTokenInfo?.status
-        const cacheExpiryDateTime = response.idTokenInfo?.cacheExpiryDateTime
-
-        if (authStatus == null) {
-          logger.warn(
-            `${this.chargingStation.logPrefix()} ${moduleName}.${methodName}: No idTokenInfo in TransactionEvent response, treating as Unknown`
-          )
-          return {
-            additionalInfo: {
-              connectorId,
-              note: 'No authorization status in response',
-              transactionId: tempTransactionId,
-            },
-            isOffline: false,
-            method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-            status: AuthorizationStatus.UNKNOWN,
-            timestamp: new Date(),
-          }
-        }
+        const authStatus = response.idTokenInfo.status
+        const cacheExpiryDateTime = response.idTokenInfo.cacheExpiryDateTime
 
         // Map OCPP 2.0 authorization status to unified status
         const unifiedStatus = this.mapOCPP20AuthStatus(authStatus)
@@ -177,12 +140,11 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
         return {
           additionalInfo: {
             cacheExpiryDateTime,
-            chargingPriority: response.idTokenInfo?.chargingPriority,
+            chargingPriority: response.idTokenInfo.chargingPriority,
             connectorId,
             ocpp20Status: authStatus,
             tokenType: idToken.type,
             tokenValue: idToken.idToken,
-            transactionId: tempTransactionId,
           },
           isOffline: false,
           method: AuthenticationMethod.REMOTE_AUTHORIZATION,
@@ -191,7 +153,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
         }
       } catch (error) {
         logger.error(
-          `${this.chargingStation.logPrefix()} ${moduleName}.${methodName}: TransactionEvent authorization failed`,
+          `${this.chargingStation.logPrefix()} ${moduleName}.${methodName}: Authorize request failed`,
           error
         )
 

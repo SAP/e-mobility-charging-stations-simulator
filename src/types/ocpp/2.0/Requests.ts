@@ -58,6 +58,7 @@ export enum OCPP20IncomingRequestCommand {
 }
 
 export enum OCPP20RequestCommand {
+  AUTHORIZE = 'Authorize',
   BOOT_NOTIFICATION = 'BootNotification',
   FIRMWARE_STATUS_NOTIFICATION = 'FirmwareStatusNotification',
   GET_15118_EV_CERTIFICATE = 'Get15118EVCertificate',
@@ -71,6 +72,11 @@ export enum OCPP20RequestCommand {
   SIGN_CERTIFICATE = 'SignCertificate',
   STATUS_NOTIFICATION = 'StatusNotification',
   TRANSACTION_EVENT = 'TransactionEvent',
+}
+
+export interface OCPP20AuthorizeRequest extends JsonObject {
+  customData?: CustomDataType
+  idToken: OCPP20IdTokenType
 }
 
 export interface OCPP20BootNotificationRequest extends JsonObject {

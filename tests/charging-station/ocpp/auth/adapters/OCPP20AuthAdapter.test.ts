@@ -7,7 +7,6 @@ import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../../src/charging-station/index.js'
 
-import { OCPP20ServiceUtils } from '../../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import { OCPP20AuthAdapter } from '../../../../../src/charging-station/ocpp/auth/adapters/OCPP20AuthAdapter.js'
 import {
   type AuthConfiguration,
@@ -223,19 +222,16 @@ await describe('OCPP20AuthAdapter', async () => {
       // Mock isRemoteAvailable to return true (avoids OCPP20VariableManager singleton issues)
       t.mock.method(adapter, 'isRemoteAvailable', () => true)
 
-      // Mock sendTransactionEvent to return accepted authorization
-      t.mock.method(
-        OCPP20ServiceUtils,
-        'sendTransactionEvent',
-        () =>
-          new Promise<Record<string, unknown>>(resolve => {
-            resolve({
-              idTokenInfo: {
-                status: OCPP20AuthorizationStatusEnumType.Accepted,
-              },
-            })
+      // Mock requestHandler to return accepted authorization
+      mockStation.ocppRequestService = {
+        requestHandler: mock.fn(() =>
+          Promise.resolve({
+            idTokenInfo: {
+              status: OCPP20AuthorizationStatusEnumType.Accepted,
+            },
           })
-      )
+        ),
+      } as unknown as ChargingStation['ocppRequestService']
 
       const identifier = createMockIdentifier(
         OCPPVersion.VERSION_20,

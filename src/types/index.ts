@@ -210,6 +210,7 @@ export {
   type OCPP20UnitOfMeasure,
 } from './ocpp/2.0/MeterValues.js'
 export {
+  type OCPP20AuthorizeRequest,
   type OCPP20BootNotificationRequest,
   type OCPP20CertificateSignedRequest,
   type OCPP20ChangeAvailabilityRequest,
@@ -245,6 +246,7 @@ export {
   type OCPP20UpdateFirmwareRequest,
 } from './ocpp/2.0/Requests.js'
 export type {
+  OCPP20AuthorizeResponse,
   OCPP20BootNotificationResponse,
   OCPP20CertificateSignedResponse,
   OCPP20ChangeAvailabilityResponse,

@@ -24,8 +24,13 @@ import type {
   UnlockStatusEnumType,
   UpdateFirmwareStatusEnumType,
 } from './Common.js'
-import type { RequestStartStopStatusEnumType } from './Transaction.js'
+import type { OCPP20IdTokenInfoType, RequestStartStopStatusEnumType } from './Transaction.js'
 import type { OCPP20GetVariableResultType, OCPP20SetVariableResultType } from './Variables.js'
+
+export interface OCPP20AuthorizeResponse extends JsonObject {
+  customData?: CustomDataType
+  idTokenInfo: OCPP20IdTokenInfoType
+}
 
 export interface OCPP20BootNotificationResponse extends JsonObject {
   currentTime: Date
