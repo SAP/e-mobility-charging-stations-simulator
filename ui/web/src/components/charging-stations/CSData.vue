@@ -72,7 +72,6 @@
     </td>
     <td class="cs-table__connectors-column">
       <table id="connectors-table">
-        <caption />
         <thead id="connectors-table__head">
           <tr class="connectors-table__row">
             <th
@@ -265,24 +264,13 @@ const deleteChargingStation = (): void => {
 
 <style>
 #connectors-table {
-  display: flex;
-  flex-direction: column;
+  width: 100%;
   background-color: var(--color-bg-surface);
-  overflow: auto hidden;
   border-collapse: collapse;
   empty-cells: show;
 }
 
-#connectors-table__body {
-  display: flex;
-  flex-direction: column;
-}
-
 .connectors-table__row {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
   border: solid 0.25px var(--color-border-row);
 }
 
@@ -295,9 +283,8 @@ const deleteChargingStation = (): void => {
 }
 
 .connectors-table__column {
-  width: calc(100% / 5);
-  display: flex;
-  flex-direction: column;
   text-align: center;
+  vertical-align: middle;
+  padding: 0.25rem;
 }
 </style>

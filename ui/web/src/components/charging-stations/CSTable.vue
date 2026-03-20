@@ -1,93 +1,109 @@
 <template>
-  <table id="cs-table">
-    <caption id="cs-table__caption">
-      Charging Stations
-    </caption>
-    <thead id="cs-table__head">
-      <tr class="cs-table__row">
-        <th
-          class="cs-table__column"
-          scope="col"
-        >
-          Name
-        </th>
-        <th
-          class="cs-table__column"
-          scope="col"
-        >
-          Started
-        </th>
-        <th
-          class="cs-table__column"
-          scope="col"
-        >
-          Supervision Url
-        </th>
-        <th
-          class="cs-table__column"
-          scope="col"
-        >
-          WebSocket State
-        </th>
-        <th
-          class="cs-table__column"
-          scope="col"
-        >
-          Registration Status
-        </th>
-        <th
-          class="cs-table__column"
-          scope="col"
-        >
-          OCPP Version
-        </th>
-        <th
-          class="cs-table__column"
-          scope="col"
-        >
-          Template
-        </th>
-        <th
-          class="cs-table__column"
-          scope="col"
-        >
-          Vendor
-        </th>
-        <th
-          class="cs-table__column"
-          scope="col"
-        >
-          Model
-        </th>
-        <th
-          class="cs-table__column"
-          scope="col"
-        >
-          Firmware
-        </th>
-        <th
-          class="cs-table__column"
-          scope="col"
-        >
-          Actions
-        </th>
-        <th
-          class="cs-table__connectors-column"
-          scope="col"
-        >
-          Connector(s)
-        </th>
-      </tr>
-    </thead>
-    <tbody id="cs-table__body">
-      <CSData
-        v-for="chargingStation in chargingStations"
-        :key="chargingStation.stationInfo.hashId"
-        :charging-station="chargingStation"
-        @need-refresh="$emit('need-refresh')"
-      />
-    </tbody>
-  </table>
+  <div class="cs-table__wrapper">
+    <table id="cs-table">
+      <caption id="cs-table__caption">
+        Charging Stations
+      </caption>
+      <colgroup>
+        <col>
+        <col>
+        <col>
+        <col>
+        <col>
+        <col>
+        <col>
+        <col>
+        <col>
+        <col>
+        <col>
+        <col class="cs-table__col--connectors">
+      </colgroup>
+      <thead id="cs-table__head">
+        <tr class="cs-table__row">
+          <th
+            class="cs-table__column"
+            scope="col"
+          >
+            Name
+          </th>
+          <th
+            class="cs-table__column"
+            scope="col"
+          >
+            Started
+          </th>
+          <th
+            class="cs-table__column"
+            scope="col"
+          >
+            Supervision Url
+          </th>
+          <th
+            class="cs-table__column"
+            scope="col"
+          >
+            WebSocket State
+          </th>
+          <th
+            class="cs-table__column"
+            scope="col"
+          >
+            Registration Status
+          </th>
+          <th
+            class="cs-table__column"
+            scope="col"
+          >
+            OCPP Version
+          </th>
+          <th
+            class="cs-table__column"
+            scope="col"
+          >
+            Template
+          </th>
+          <th
+            class="cs-table__column"
+            scope="col"
+          >
+            Vendor
+          </th>
+          <th
+            class="cs-table__column"
+            scope="col"
+          >
+            Model
+          </th>
+          <th
+            class="cs-table__column"
+            scope="col"
+          >
+            Firmware
+          </th>
+          <th
+            class="cs-table__column"
+            scope="col"
+          >
+            Actions
+          </th>
+          <th
+            class="cs-table__connectors-column"
+            scope="col"
+          >
+            Connector(s)
+          </th>
+        </tr>
+      </thead>
+      <tbody id="cs-table__body">
+        <CSData
+          v-for="chargingStation in chargingStations"
+          :key="chargingStation.stationInfo.hashId"
+          :charging-station="chargingStation"
+          @need-refresh="$emit('need-refresh')"
+        />
+      </tbody>
+    </table>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -103,23 +119,17 @@ const $emit = defineEmits(['need-refresh'])
 </script>
 
 <style>
+.cs-table__wrapper {
+  overflow-x: auto;
+}
+
 #cs-table {
-  height: fit-content;
   width: 100%;
+  min-width: 1280px;
   background-color: var(--color-bg-surface);
-  display: flex;
-  flex-direction: column;
-  overflow: auto hidden;
   border: solid 0.25px var(--color-border);
   border-collapse: collapse;
   empty-cells: show;
-}
-
-#cs-table__body {
-  height: fit-content;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
 }
 
 #cs-table__caption {
@@ -131,12 +141,6 @@ const $emit = defineEmits(['need-refresh'])
 }
 
 .cs-table__row {
-  height: fit-content;
-  width: 100%;
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
   border: solid 0.25px var(--color-border-row);
 }
 
@@ -144,22 +148,23 @@ const $emit = defineEmits(['need-refresh'])
   background-color: var(--color-bg-hover);
 }
 
-.cs-table__column {
-  height: fit-content;
-  width: calc((100% - calc(100% / 3)) / 11);
-  display: flex;
-  flex-direction: column;
-  text-align: center;
-}
-
 #cs-table__head .cs-table__row {
   background-color: var(--color-bg-header);
 }
 
+.cs-table__column {
+  text-align: center;
+  vertical-align: middle;
+  padding: 0.25rem;
+  overflow-wrap: anywhere;
+}
+
+.cs-table__col--connectors {
+  width: 33%;
+}
+
 .cs-table__connectors-column {
-  height: fit-content;
-  width: calc(100% / 3);
-  display: flex;
-  flex-direction: column;
+  vertical-align: top;
+  padding: 0;
 }
 </style>

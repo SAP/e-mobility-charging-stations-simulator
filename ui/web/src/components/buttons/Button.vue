@@ -9,10 +9,10 @@
 
 <style>
 .button {
-  display: flex;
+  display: block;
   flex: auto;
-  justify-content: center;
-  align-items: center;
+  width: 100%;
+  text-align: center;
   font: small-caption;
 }
 </style>
