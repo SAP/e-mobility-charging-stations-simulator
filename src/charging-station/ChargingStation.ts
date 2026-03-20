@@ -2499,7 +2499,7 @@ export class ChargingStation extends EventEmitter {
   ): Promise<void> {
     this.internalStopMessageSequence()
     // Stop ongoing transactions
-    stopTransactions && (await this.stopRunningTransactions(reason))
+    stopTransactions && (await stopRunningTransactions(this, reason))
     if (this.hasEvses) {
       for (const [evseId, evseStatus] of this.evses) {
         if (evseId > 0) {
@@ -2522,10 +2522,6 @@ export class ChargingStation extends EventEmitter {
         }
       }
     }
-  }
-
-  private async stopRunningTransactions (reason?: StopTransactionReason): Promise<void> {
-    await stopRunningTransactions(this, reason)
   }
 
   private stopWebSocketPing (): void {
