@@ -421,12 +421,22 @@ export const startTransactionOnConnector = async (
     case OCPPVersion.VERSION_20:
     case OCPPVersion.VERSION_201: {
       const { OCPP20ServiceUtils } = await import('./2.0/OCPP20ServiceUtils.js')
+      const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+      let transactionId = connectorStatus?.transactionId as string | undefined
+      if (transactionId == null) {
+        const { generateUUID } = await import('../../utils/index.js')
+        transactionId = generateUUID()
+        if (connectorStatus != null) {
+          connectorStatus.transactionId = transactionId
+        }
+        OCPP20ServiceUtils.resetTransactionSequenceNumber(chargingStation, connectorId)
+      }
       const response = await OCPP20ServiceUtils.sendTransactionEvent(
         chargingStation,
         OCPP20TransactionEventEnumType.Started,
         OCPP20TriggerReasonEnumType.Authorized,
         connectorId,
-        chargingStation.getConnectorStatus(connectorId)?.transactionId as string,
+        transactionId,
         {
           idToken:
             idTag != null ? { idToken: idTag, type: OCPP20IdTokenEnumType.Central } : undefined,
@@ -481,7 +491,9 @@ export const stopTransactionOnConnector = async (
         stoppedReason
       )
       return {
-        accepted: response.idTokenInfo?.status === OCPP20AuthorizationStatusEnumType.Accepted,
+        accepted:
+          response.idTokenInfo == null ||
+          response.idTokenInfo.status === OCPP20AuthorizationStatusEnumType.Accepted,
       }
     }
     default:
