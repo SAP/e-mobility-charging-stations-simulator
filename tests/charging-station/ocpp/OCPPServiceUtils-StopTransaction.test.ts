@@ -201,5 +201,19 @@ await describe('OCPPServiceUtils — stop transaction functions', async () => {
       const txEventCalls = sentPayloads.filter(p => p.command === 'TransactionEvent')
       assert.strictEqual(txEventCalls.length, 2)
     })
+
+    await it('should handle errors gracefully when OCPP 2.0 transaction stop fails', async () => {
+      const { requestHandler, station } = createStationWithRequestHandler({
+        connectorsCount: 2,
+        evseConfiguration: { evsesCount: 2 },
+        ocppVersion: OCPPVersion.VERSION_20,
+      })
+      requestHandler.mock.mockImplementation(async () =>
+        Promise.reject(new Error('Simulated network error'))
+      )
+      setupTransaction(station, 1, 'tx-fail')
+
+      await assert.doesNotReject(() => stopRunningTransactions(station))
+    })
   })
 })
