@@ -11,10 +11,17 @@ import type { ChargingStation } from '../../../src/charging-station/index.js'
 import type { MockChargingStationOptions } from '../helpers/StationHelpers.js'
 
 import {
+  flushQueuedTransactionMessages,
+  mapStopReasonToOCPP20,
+  startTransactionOnConnector,
   stopRunningTransactions,
   stopTransactionOnConnector,
 } from '../../../src/charging-station/ocpp/OCPPServiceUtils.js'
-import { OCPPVersion } from '../../../src/types/index.js'
+import {
+  type OCPP20TransactionEventRequest,
+  OCPPVersion,
+  type StopTransactionReason,
+} from '../../../src/types/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from '../ChargingStationTestUtils.js'
 
@@ -214,6 +221,116 @@ await describe('OCPPServiceUtils — stop transaction functions', async () => {
       setupTransaction(station, 1, 'tx-fail')
 
       await assert.doesNotReject(() => stopRunningTransactions(station))
+    })
+  })
+
+  await describe('startTransactionOnConnector', async () => {
+    await it('should send StartTransaction for OCPP 1.6 stations and return accepted: true', async () => {
+      const { requestHandler, station } = createStationWithRequestHandler()
+      requestHandler.mock.mockImplementation(async (..._args: unknown[]) =>
+        Promise.resolve({ idTagInfo: { status: 'Accepted' }, transactionId: 1 })
+      )
+
+      const result = await startTransactionOnConnector(station, 1, 'TAG001')
+
+      assert.strictEqual(result.accepted, true)
+      assert.ok(requestHandler.mock.calls.length >= 1)
+      assert.strictEqual(requestHandler.mock.calls[0].arguments[1] as string, 'StartTransaction')
+    })
+
+    await it('should send TransactionEvent(Started) for OCPP 2.0 stations and return accepted: true', async () => {
+      const { requestHandler, station } = createStationWithRequestHandler({
+        evseConfiguration: { evsesCount: 1 },
+        ocppVersion: OCPPVersion.VERSION_20,
+      })
+      requestHandler.mock.mockImplementation(async (..._args: unknown[]) =>
+        Promise.resolve({ idTokenInfo: { status: 'Accepted' } })
+      )
+
+      const result = await startTransactionOnConnector(station, 1, 'TAG002')
+
+      assert.strictEqual(result.accepted, true)
+      assert.ok(requestHandler.mock.calls.length >= 1)
+      assert.strictEqual(requestHandler.mock.calls[0].arguments[1] as string, 'TransactionEvent')
+    })
+
+    await it('should generate transactionId for OCPP 2.0 when not pre-populated', async () => {
+      const { requestHandler, station } = createStationWithRequestHandler({
+        evseConfiguration: { evsesCount: 1 },
+        ocppVersion: OCPPVersion.VERSION_20,
+      })
+      requestHandler.mock.mockImplementation(async (..._args: unknown[]) =>
+        Promise.resolve({ idTokenInfo: { status: 'Accepted' } })
+      )
+      const connector = station.getConnectorStatus(1)
+      assert.notStrictEqual(connector, undefined)
+      assert(connector != null)
+      delete connector.transactionId
+
+      await startTransactionOnConnector(station, 1)
+
+      assert.notStrictEqual(connector.transactionId, undefined)
+      assert.strictEqual(typeof connector.transactionId, 'string')
+    })
+  })
+
+  await describe('flushQueuedTransactionMessages', async () => {
+    await it('should be a no-op for OCPP 1.6 stations', async () => {
+      const { station } = createStationWithRequestHandler()
+
+      await assert.doesNotReject(() => flushQueuedTransactionMessages(station))
+    })
+
+    await it('should flush queued events for OCPP 2.0 stations', async () => {
+      const { requestHandler, station } = createStationWithRequestHandler({
+        evseConfiguration: { evsesCount: 1 },
+        ocppVersion: OCPPVersion.VERSION_20,
+      })
+      requestHandler.mock.mockImplementation(async (..._args: unknown[]) => Promise.resolve({}))
+      const connector = station.getConnectorStatus(1)
+      assert.notStrictEqual(connector, undefined)
+      assert(connector != null)
+      connector.transactionEventQueue = [
+        {
+          request: {
+            eventType: 'Updated',
+            offline: true,
+            seqNo: 1,
+            timestamp: new Date().toISOString(),
+            transactionInfo: { transactionId: '550e8400-e29b-41d4-a716-446655440000' },
+            triggerReason: 'MeterValuePeriodic',
+          } as unknown as OCPP20TransactionEventRequest,
+          seqNo: 1,
+          timestamp: new Date(),
+        },
+      ]
+
+      await flushQueuedTransactionMessages(station)
+
+      assert.strictEqual(connector.transactionEventQueue.length, 0)
+    })
+  })
+
+  await describe('mapStopReasonToOCPP20', async () => {
+    await it('should map Other to Other/AbnormalCondition', () => {
+      const result = mapStopReasonToOCPP20('Other' as StopTransactionReason)
+
+      assert.strictEqual(result.stoppedReason, 'Other')
+      assert.strictEqual(result.triggerReason, 'AbnormalCondition')
+    })
+
+    await it('should map undefined to Local/StopAuthorized', () => {
+      const result = mapStopReasonToOCPP20(undefined)
+
+      assert.strictEqual(result.stoppedReason, 'Local')
+      assert.strictEqual(result.triggerReason, 'StopAuthorized')
+    })
+
+    await it('should map Remote to Remote/RemoteStop', () => {
+      const result = mapStopReasonToOCPP20('Remote' as StopTransactionReason)
+
+      assert.strictEqual(result.stoppedReason, 'Remote')
+      assert.strictEqual(result.triggerReason, 'RemoteStop')
     })
   })
 })
