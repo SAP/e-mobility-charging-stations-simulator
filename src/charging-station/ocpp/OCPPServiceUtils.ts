@@ -65,6 +65,7 @@ import {
   convertToFloat,
   convertToInt,
   DCElectricUtils,
+  generateUUID,
   getRandomFloatFluctuatedRounded,
   getRandomFloatRounded,
   handleFileException,
@@ -380,6 +381,12 @@ export const mapStopReasonToOCPP20 = (
         stoppedReason: OCPP20ReasonEnumType.ImmediateReset,
         triggerReason: OCPP20TriggerReasonEnumType.ResetCommand,
       }
+    case OCPP16StopTransactionReason.OTHER:
+    case OCPP20ReasonEnumType.Other:
+      return {
+        stoppedReason: OCPP20ReasonEnumType.Other,
+        triggerReason: OCPP20TriggerReasonEnumType.AbnormalCondition,
+      }
     case OCPP16StopTransactionReason.POWER_LOSS:
     case OCPP20ReasonEnumType.PowerLoss:
       return {
@@ -424,7 +431,6 @@ export const startTransactionOnConnector = async (
       const connectorStatus = chargingStation.getConnectorStatus(connectorId)
       let transactionId = connectorStatus?.transactionId as string | undefined
       if (transactionId == null) {
-        const { generateUUID } = await import('../../utils/index.js')
         transactionId = generateUUID()
         if (connectorStatus != null) {
           connectorStatus.transactionId = transactionId
