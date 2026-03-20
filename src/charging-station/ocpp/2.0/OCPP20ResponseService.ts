@@ -6,8 +6,11 @@ import {
   ConnectorStatusEnum,
   type JsonType,
   OCPP20AuthorizationStatusEnumType,
+  type OCPP20AuthorizeResponse,
   type OCPP20BootNotificationResponse,
   type OCPP20FirmwareStatusNotificationResponse,
+  type OCPP20Get15118EVCertificateResponse,
+  type OCPP20GetCertificateStatusResponse,
   type OCPP20HeartbeatResponse,
   type OCPP20IncomingRequestCommand,
   type OCPP20LogStatusNotificationResponse,
@@ -17,6 +20,7 @@ import {
   OCPP20OptionalVariableName,
   OCPP20RequestCommand,
   type OCPP20SecurityEventNotificationResponse,
+  type OCPP20SignCertificateResponse,
   type OCPP20StatusNotificationResponse,
   OCPP20TransactionEventEnumType,
   type OCPP20TransactionEventRequest,
@@ -93,6 +97,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
   public constructor () {
     super(OCPPVersion.VERSION_201)
     this.responseHandlers = new Map<RequestCommand, ResponseHandler>([
+      [OCPP20RequestCommand.AUTHORIZE, this.handleResponseAuthorize.bind(this) as ResponseHandler],
       [
         OCPP20RequestCommand.BOOT_NOTIFICATION,
         this.handleResponseBootNotification.bind(this) as ResponseHandler,
@@ -100,6 +105,14 @@ export class OCPP20ResponseService extends OCPPResponseService {
       [
         OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
         this.handleResponseFirmwareStatusNotification.bind(this) as ResponseHandler,
+      ],
+      [
+        OCPP20RequestCommand.GET_15118_EV_CERTIFICATE,
+        this.handleResponseGet15118EVCertificate.bind(this) as ResponseHandler,
+      ],
+      [
+        OCPP20RequestCommand.GET_CERTIFICATE_STATUS,
+        this.handleResponseGetCertificateStatus.bind(this) as ResponseHandler,
       ],
       [OCPP20RequestCommand.HEARTBEAT, this.handleResponseHeartbeat.bind(this) as ResponseHandler],
       [
@@ -121,6 +134,10 @@ export class OCPP20ResponseService extends OCPPResponseService {
       [
         OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION,
         this.handleResponseSecurityEventNotification.bind(this) as ResponseHandler,
+      ],
+      [
+        OCPP20RequestCommand.SIGN_CERTIFICATE,
+        this.handleResponseSignCertificate.bind(this) as ResponseHandler,
       ],
       [
         OCPP20RequestCommand.STATUS_NOTIFICATION,
@@ -151,6 +168,15 @@ export class OCPP20ResponseService extends OCPPResponseService {
     return OCPP20ServiceUtils.isRequestCommandSupported(
       chargingStation,
       commandName as OCPP20RequestCommand
+    )
+  }
+
+  private handleResponseAuthorize (
+    chargingStation: ChargingStation,
+    payload: OCPP20AuthorizeResponse
+  ): void {
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.handleResponseAuthorize: Authorize response received, status: ${payload.idTokenInfo.status}`
     )
   }
 
@@ -213,6 +239,24 @@ export class OCPP20ResponseService extends OCPPResponseService {
     )
   }
 
+  private handleResponseGet15118EVCertificate (
+    chargingStation: ChargingStation,
+    payload: OCPP20Get15118EVCertificateResponse
+  ): void {
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.handleResponseGet15118EVCertificate: Get15118EVCertificate response received, status: ${payload.status}`
+    )
+  }
+
+  private handleResponseGetCertificateStatus (
+    chargingStation: ChargingStation,
+    payload: OCPP20GetCertificateStatusResponse
+  ): void {
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.handleResponseGetCertificateStatus: GetCertificateStatus response received, status: ${payload.status}`
+    )
+  }
+
   private handleResponseHeartbeat (
     chargingStation: ChargingStation,
     payload: OCPP20HeartbeatResponse
@@ -264,6 +308,15 @@ export class OCPP20ResponseService extends OCPPResponseService {
   ): void {
     logger.debug(
       `${chargingStation.logPrefix()} ${moduleName}.handleResponseSecurityEventNotification: SecurityEventNotification response received successfully`
+    )
+  }
+
+  private handleResponseSignCertificate (
+    chargingStation: ChargingStation,
+    payload: OCPP20SignCertificateResponse
+  ): void {
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.handleResponseSignCertificate: SignCertificate response received, status: ${payload.status}`
     )
   }
 

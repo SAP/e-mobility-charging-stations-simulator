@@ -17,6 +17,8 @@ import { join } from 'node:path'
 import { afterEach, describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
+import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
+import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
 import { OCPP20IncomingRequestCommand, OCPP20RequestCommand } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
@@ -252,6 +254,27 @@ await describe('OCPP 2.0 schema validation — negative tests', async () => {
           existsSync(join(SCHEMA_DIR, schemaPath)),
           `schema file missing for ${command}: ${schemaPath}`
         )
+      }
+    })
+
+    await it('should register a response handler for every OCPP20RequestCommand', () => {
+      const responseService = new OCPP20ResponseService()
+      const handlers = (responseService as unknown as { responseHandlers: Map<string, unknown> })
+        .responseHandlers
+      const registered = new Set(handlers.keys())
+      for (const command of Object.values(OCPP20RequestCommand)) {
+        assert.ok(registered.has(command), `missing response handler for: ${command}`)
+      }
+    })
+
+    await it('should register an incoming request handler for every OCPP20IncomingRequestCommand', () => {
+      const incomingService = new OCPP20IncomingRequestService()
+      const handlers = (
+        incomingService as unknown as { incomingRequestHandlers: Map<string, unknown> }
+      ).incomingRequestHandlers
+      const registered = new Set(handlers.keys())
+      for (const command of Object.values(OCPP20IncomingRequestCommand)) {
+        assert.ok(registered.has(command), `missing incoming request handler for: ${command}`)
       }
     })
   })

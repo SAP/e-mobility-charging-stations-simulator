@@ -14,6 +14,8 @@ import { join } from 'node:path'
 import { afterEach, describe, it } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
+import { OCPP16IncomingRequestService } from '../../../../src/charging-station/ocpp/1.6/OCPP16IncomingRequestService.js'
+import { OCPP16ResponseService } from '../../../../src/charging-station/ocpp/1.6/OCPP16ResponseService.js'
 import { OCPP16ServiceUtils } from '../../../../src/charging-station/ocpp/1.6/OCPP16ServiceUtils.js'
 import { OCPP16IncomingRequestCommand, OCPP16RequestCommand } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
@@ -322,6 +324,27 @@ await describe('OCPP16SchemaValidation', async () => {
           existsSync(join(SCHEMA_DIR, schemaPath)),
           `schema file missing for ${command}: ${schemaPath}`
         )
+      }
+    })
+
+    await it('should register a response handler for every OCPP16RequestCommand', () => {
+      const responseService = new OCPP16ResponseService()
+      const handlers = (responseService as unknown as { responseHandlers: Map<string, unknown> })
+        .responseHandlers
+      const registered = new Set(handlers.keys())
+      for (const command of Object.values(OCPP16RequestCommand)) {
+        assert.ok(registered.has(command), `missing response handler for: ${command}`)
+      }
+    })
+
+    await it('should register an incoming request handler for every OCPP16IncomingRequestCommand', () => {
+      const incomingService = new OCPP16IncomingRequestService()
+      const handlers = (
+        incomingService as unknown as { incomingRequestHandlers: Map<string, unknown> }
+      ).incomingRequestHandlers
+      const registered = new Set(handlers.keys())
+      for (const command of Object.values(OCPP16IncomingRequestCommand)) {
+        assert.ok(registered.has(command), `missing incoming request handler for: ${command}`)
       }
     })
   })
