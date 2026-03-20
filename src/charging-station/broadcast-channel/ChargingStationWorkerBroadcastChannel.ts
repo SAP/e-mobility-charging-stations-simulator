@@ -470,7 +470,10 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
   private async handleMeterValues (
     requestPayload?: BroadcastChannelRequestPayload
   ): Promise<MeterValuesResponse> {
-    if (this.chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_201) {
+    if (
+      this.chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_20 ||
+      this.chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_201
+    ) {
       return await this.chargingStation.ocppRequestService.requestHandler<
         MeterValuesRequest,
         MeterValuesResponse
