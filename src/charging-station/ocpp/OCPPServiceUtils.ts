@@ -1523,7 +1523,7 @@ const buildCurrentMeasurandValue = (
 export const buildMeterValue = (
   chargingStation: ChargingStation,
   connectorId: number,
-  transactionId: number,
+  transactionId: number | string | undefined,
   interval: number,
   debug = false
 ): MeterValue => {

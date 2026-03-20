@@ -511,7 +511,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
                 const meterValue = buildMeterValue(
                   chargingStation,
                   cId,
-                  0,
+                  connector.transactionId,
                   txUpdatedInterval
                 ) as OCPP20MeterValue
                 OCPP20ServiceUtils.sendTransactionEvent(
@@ -531,7 +531,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
                 meterValue = buildMeterValue(
                   chargingStation,
                   fallbackEvseId > 0 ? fallbackEvseId : 1,
-                  0,
+                  undefined,
                   OCPP20ServiceUtils.getTxUpdatedInterval(chargingStation)
                 ) as OCPP20MeterValue
               } catch {

@@ -560,7 +560,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         const meterValue = buildMeterValue(
           chargingStation,
           connectorId,
-          0,
+          connectorStatus.transactionId,
           interval
         ) as OCPP20MeterValue
         OCPP20ServiceUtils.sendTransactionEvent(
