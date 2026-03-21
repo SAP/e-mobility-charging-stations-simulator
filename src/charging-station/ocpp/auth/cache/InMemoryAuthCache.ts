@@ -53,7 +53,7 @@ interface RateLimitStats {
  * - Memory usage tracking
  * - Comprehensive statistics
  *
- * Security considerations (G03.FR.01):
+ * Security considerations:
  * - Rate limiting prevents DoS attacks on auth endpoints
  * - Cache expiration ensures stale auth data doesn't persist
  * - Memory limits prevent memory exhaustion attacks
@@ -187,7 +187,7 @@ export class InMemoryAuthCache implements AuthCache {
     const now = Date.now()
     if (now >= entry.expiresAt) {
       this.stats.expired++
-      // Transition to EXPIRED status instead of deleting (R10)
+      // Transition to EXPIRED status instead of deleting (C10.FR.08)
       entry.result = { ...entry.result, status: AuthorizationStatus.EXPIRED }
       // Apply absolute lifetime cap to expired-transition TTL refresh (default-TTL entries only)
       if (!entry.hasExplicitTtl) {
@@ -203,7 +203,7 @@ export class InMemoryAuthCache implements AuthCache {
       return entry.result
     }
 
-    // Cache hit - update LRU order and reset TTL (R16, R5)
+    // Cache hit - update LRU order and reset TTL (C10.FR.08)
     this.stats.hits++
     this.lruOrder.set(identifier, now)
 
@@ -289,7 +289,7 @@ export class InMemoryAuthCache implements AuthCache {
           this.cache.delete(key)
           this.lruOrder.delete(key)
         } else {
-          // First expiration — transition to EXPIRED status (consistent with get() R10 semantics)
+          // First expiration — transition to EXPIRED status (consistent with get() C10.FR.08 semantics)
           entry.result = { ...entry.result, status: AuthorizationStatus.EXPIRED }
           if (!entry.hasExplicitTtl) {
             const absoluteDeadline = entry.createdAt + this.maxAbsoluteLifetimeMs
@@ -420,7 +420,7 @@ export class InMemoryAuthCache implements AuthCache {
       return
     }
 
-    // Phase 1 (R2): prefer evicting non-valid (status != ACCEPTED) entries
+    // Phase 1 (C10.FR.07): prefer evicting non-valid (status != ACCEPTED) entries
     let candidateIdentifier: string | undefined
     let candidateTime = Number.POSITIVE_INFINITY
 

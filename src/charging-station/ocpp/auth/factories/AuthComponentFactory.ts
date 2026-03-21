@@ -146,7 +146,7 @@ export class AuthComponentFactory {
    * @param adapter - OCPP version-specific adapter
    * @param cache - Authorization cache for storing remote auth results
    * @param config - Authentication configuration controlling remote auth behavior
-   * @param localAuthListManager - Optional local auth list manager for R17 cache exclusion
+   * @param localAuthListManager - Optional local auth list manager for C13.FR.01 cache exclusion
    * @returns Remote strategy instance or undefined if remote auth disabled
    */
   static async createRemoteStrategy (
