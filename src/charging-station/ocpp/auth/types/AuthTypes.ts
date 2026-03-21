@@ -274,7 +274,6 @@ export interface UnifiedIdentifier {
  * Authentication error with context
  */
 export class AuthenticationError extends Error {
-  public override readonly cause?: Error
   public readonly code: AuthErrorCode
   public readonly context?: AuthContext
   public readonly identifier?: string
@@ -292,12 +291,11 @@ export class AuthenticationError extends Error {
       ocppVersion?: OCPPVersion
     }
   ) {
-    super(message)
+    super(message, { cause: options?.cause })
     this.code = code
     this.identifier = options?.identifier
     this.context = options?.context
     this.ocppVersion = options?.ocppVersion
-    this.cause = options?.cause
   }
 }
 

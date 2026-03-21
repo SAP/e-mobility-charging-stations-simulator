@@ -16,7 +16,6 @@ import type {
 import { OCPP20VariableManager } from '../../2.0/OCPP20VariableManager.js'
 import {
   GetVariableStatusEnumType,
-  OCPP20AuthorizationStatusEnumType,
   OCPP20IdTokenEnumType,
   type OCPP20IdTokenType,
   OCPP20RequestCommand,
@@ -28,6 +27,7 @@ import {
   AuthenticationMethod,
   AuthorizationStatus,
   IdentifierType,
+  mapOCPP20AuthorizationStatus,
   mapToOCPP20Status,
 } from '../types/AuthTypes.js'
 
@@ -79,22 +79,6 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
         }
       }
 
-      // Validate inputs
-      if (connectorId == null) {
-        logger.warn(
-          `${this.chargingStation.logPrefix()} ${moduleName}.${methodName}: No connector specified for authorization`
-        )
-        return {
-          additionalInfo: {
-            error: 'Connector ID is required for OCPP 2.0 authorization',
-          },
-          isOffline: false,
-          method: AuthenticationMethod.REMOTE_AUTHORIZATION,
-          status: AuthorizationStatus.INVALID,
-          timestamp: new Date(),
-        }
-      }
-
       try {
         const idToken = this.convertFromUnifiedIdentifier(identifier)
 
@@ -131,7 +115,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
         const cacheExpiryDateTime = response.idTokenInfo.cacheExpiryDateTime
 
         // Map OCPP 2.0 authorization status to unified status
-        const unifiedStatus = this.mapOCPP20AuthStatus(authStatus)
+        const unifiedStatus = mapOCPP20AuthorizationStatus(authStatus)
 
         logger.debug(
           `${this.chargingStation.logPrefix()} ${moduleName}.${methodName}: Authorization result for ${idToken.idToken}: ${authStatus} (unified: ${unifiedStatus})`
@@ -536,9 +520,8 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
    */
   private getOfflineAuthorizationConfig (): boolean {
     try {
-      // In OCPP 2.0, this would be controlled by LocalAuthorizeOffline variable
-      // For now, return a default value
-      return true
+      const value = this.getVariableValue('AuthCtrlr', 'LocalAuthorizeOffline')
+      return this.parseBooleanVariable(value, true)
     } catch (error) {
       logger.warn(
         `${this.chargingStation.logPrefix()} ${moduleName}.getOfflineAuthorizationConfig: Error getting offline authorization config`,
@@ -628,39 +611,6 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
         return OCPP20IdTokenEnumType.NoAuthorization
       default:
         return OCPP20IdTokenEnumType.Central
-    }
-  }
-
-  /**
-   * Maps OCPP 2.0 AuthorizationStatusEnumType to unified AuthorizationStatus
-   * @param ocpp20Status - OCPP 2.0 authorization status
-   * @returns Unified authorization status
-   */
-  private mapOCPP20AuthStatus (
-    ocpp20Status: OCPP20AuthorizationStatusEnumType
-  ): AuthorizationStatus {
-    switch (ocpp20Status) {
-      case OCPP20AuthorizationStatusEnumType.Accepted:
-        return AuthorizationStatus.ACCEPTED
-      case OCPP20AuthorizationStatusEnumType.Blocked:
-        return AuthorizationStatus.BLOCKED
-      case OCPP20AuthorizationStatusEnumType.ConcurrentTx:
-        return AuthorizationStatus.CONCURRENT_TX
-      case OCPP20AuthorizationStatusEnumType.Expired:
-        return AuthorizationStatus.EXPIRED
-      case OCPP20AuthorizationStatusEnumType.Invalid:
-        return AuthorizationStatus.INVALID
-      case OCPP20AuthorizationStatusEnumType.NoCredit:
-        return AuthorizationStatus.NO_CREDIT
-      case OCPP20AuthorizationStatusEnumType.NotAllowedTypeEVSE:
-        return AuthorizationStatus.NOT_ALLOWED_TYPE_EVSE
-      case OCPP20AuthorizationStatusEnumType.NotAtThisLocation:
-        return AuthorizationStatus.NOT_AT_THIS_LOCATION
-      case OCPP20AuthorizationStatusEnumType.NotAtThisTime:
-        return AuthorizationStatus.NOT_AT_THIS_TIME
-      case OCPP20AuthorizationStatusEnumType.Unknown:
-      default:
-        return AuthorizationStatus.UNKNOWN
     }
   }
 

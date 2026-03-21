@@ -515,8 +515,18 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
       return false
     }
 
-    // For now return true - real implementation would test remote connectivity
-    return true
+    // Check if any adapter reports remote availability
+    for (const adapter of this.adapters.values()) {
+      try {
+        if (adapter.isRemoteAvailable()) {
+          return true
+        }
+      } catch {
+        // Continue checking other adapters
+      }
+    }
+
+    return false
   }
 
   public updateCacheEntry (
@@ -696,15 +706,9 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
       this.config
     )
 
-    // Map strategies by their priority to strategy names
     strategies.forEach(strategy => {
-      if (strategy.priority === 1) {
-        this.strategies.set('local', strategy)
-      } else if (strategy.priority === 2) {
-        this.strategies.set('remote', strategy)
-      } else if (strategy.priority === 3) {
-        this.strategies.set('certificate', strategy)
-      }
+      const key = strategy.name.replace('AuthStrategy', '').toLowerCase()
+      this.strategies.set(key, strategy)
     })
 
     logger.info(
