@@ -28,7 +28,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
   public readonly name = 'CertificateAuthStrategy'
   public readonly priority = 3
 
-  private readonly adapters: Map<OCPPVersion, OCPPAuthAdapter>
+  private readonly adapter: OCPPAuthAdapter
   private readonly chargingStation: ChargingStation
   private isInitialized = false
   private stats = {
@@ -39,9 +39,9 @@ export class CertificateAuthStrategy implements AuthStrategy {
     totalRequests: 0,
   }
 
-  constructor (chargingStation: ChargingStation, adapters: Map<OCPPVersion, OCPPAuthAdapter>) {
+  constructor (chargingStation: ChargingStation, adapter: OCPPAuthAdapter) {
     this.chargingStation = chargingStation
-    this.adapters = adapters
+    this.adapter = adapter
   }
 
   /**
@@ -73,16 +73,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
         )
       }
 
-      // Get the appropriate adapter
-      const adapter = this.adapters.get(request.identifier.ocppVersion)
-      if (!adapter) {
-        return this.createFailureResult(
-          AuthorizationStatus.INVALID,
-          `No adapter available for OCPP ${request.identifier.ocppVersion}`,
-          request.identifier,
-          startTime
-        )
-      }
+      const adapter = this.adapter
 
       // For OCPP 2.0, we can use certificate-based validation
       if (request.identifier.ocppVersion === OCPPVersion.VERSION_20) {
@@ -126,16 +117,13 @@ export class CertificateAuthStrategy implements AuthStrategy {
       return false
     }
 
-    // Must have an adapter for this OCPP version
-    const hasAdapter = this.adapters.has(request.identifier.ocppVersion)
-
     // Certificate authentication must be enabled
     const certAuthEnabled = config.certificateAuthEnabled
 
     // Must have certificate data in the identifier
     const hasCertificateData = this.hasCertificateData(request.identifier)
 
-    return hasAdapter && certAuthEnabled && hasCertificateData && this.isInitialized
+    return certAuthEnabled && hasCertificateData && this.isInitialized
   }
 
   cleanup (): void {

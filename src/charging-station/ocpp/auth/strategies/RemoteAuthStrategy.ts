@@ -1,4 +1,3 @@
-import type { OCPPVersion } from '../../../../types/index.js'
 import type {
   AuthCache,
   AuthStrategy,
@@ -33,7 +32,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
   public readonly name = 'RemoteAuthStrategy'
   public readonly priority = 2 // After local but before certificate
 
-  private adapters = new Map<OCPPVersion, OCPPAuthAdapter>()
+  private adapter?: OCPPAuthAdapter
   private authCache?: AuthCache
   private isInitialized = false
   private localAuthListManager?: LocalAuthListManager
@@ -49,25 +48,13 @@ export class RemoteAuthStrategy implements AuthStrategy {
   }
 
   constructor (
-    adapters?: Map<OCPPVersion, OCPPAuthAdapter>,
+    adapter?: OCPPAuthAdapter,
     authCache?: AuthCache,
     localAuthListManager?: LocalAuthListManager
   ) {
-    if (adapters) {
-      this.adapters = adapters
-    }
+    this.adapter = adapter
     this.authCache = authCache
     this.localAuthListManager = localAuthListManager
-  }
-
-  /**
-   * Add an OCPP adapter for a specific version
-   * @param version - OCPP protocol version the adapter handles
-   * @param adapter - OCPP authentication adapter instance for remote operations
-   */
-  public addAdapter (version: OCPPVersion, adapter: OCPPAuthAdapter): void {
-    this.adapters.set(version, adapter)
-    logger.debug(`${moduleName}: Added OCPP ${version} adapter`)
   }
 
   /**
@@ -96,12 +83,10 @@ export class RemoteAuthStrategy implements AuthStrategy {
         `${moduleName}: Authenticating ${truncateId(request.identifier.value)} via CSMS for ${request.context}`
       )
 
-      // Get appropriate adapter for OCPP version
-      const adapter = this.adapters.get(request.identifier.ocppVersion)
+      // Get adapter
+      const adapter = this.adapter
       if (!adapter) {
-        logger.warn(
-          `${moduleName}: No adapter available for OCPP version ${request.identifier.ocppVersion}`
-        )
+        logger.warn(`${moduleName}: No adapter available`)
         return undefined
       }
 
@@ -179,11 +164,11 @@ export class RemoteAuthStrategy implements AuthStrategy {
    * Check if this strategy can handle the authentication request
    * @param request - Authorization request to evaluate
    * @param config - Authentication configuration with remote authorization settings
-   * @returns True if an adapter exists for the OCPP version and remote auth is enabled
+   * @returns True if an adapter is available and remote auth is enabled
    */
   public canHandle (request: AuthRequest, config: AuthConfiguration): boolean {
-    // Can handle if we have an adapter for the identifier's OCPP version
-    const hasAdapter = this.adapters.has(request.identifier.ocppVersion)
+    // Can handle if we have an adapter
+    const hasAdapter = this.adapter != null
 
     // Remote authorization must be enabled via configuration
     const remoteEnabled = config.remoteAuthorization !== false
@@ -214,28 +199,34 @@ export class RemoteAuthStrategy implements AuthStrategy {
   }
 
   /**
+   * Clear the OCPP adapter
+   */
+  public clearAdapter (): void {
+    this.adapter = undefined
+    logger.debug(`${moduleName}: Cleared OCPP adapter`)
+  }
+
+  /**
    * Get strategy statistics
    * @returns Strategy statistics including success rates, response times, and error counts
    */
   public async getStats (): Promise<Record<string, unknown>> {
     const cacheStats = this.authCache ? this.authCache.getStats() : null
-    const adapterStats = new Map<string, unknown>()
 
-    // Collect adapter availability status
-    for (const [version, adapter] of this.adapters) {
+    let adapterAvailable = false
+    if (this.adapter) {
       try {
-        const isAvailable = await adapter.isRemoteAvailable()
-        adapterStats.set(`ocpp${version}Available`, isAvailable)
-      } catch (error) {
-        adapterStats.set(`ocpp${version}Available`, false)
+        adapterAvailable = await this.adapter.isRemoteAvailable()
+      } catch {
+        adapterAvailable = false
       }
     }
 
     return {
       ...this.stats,
-      adapterCount: this.adapters.size,
-      adapterStats: Object.fromEntries(adapterStats),
+      adapterAvailable,
       cacheStats,
+      hasAdapter: this.adapter != null,
       hasAuthCache: !!this.authCache,
       isInitialized: this.isInitialized,
       networkErrorRate:
@@ -254,30 +245,24 @@ export class RemoteAuthStrategy implements AuthStrategy {
   }
 
   /**
-   * Initialize strategy with configuration and adapters
+   * Initialize strategy with configuration and adapter
    * @param config - Authentication configuration for adapter validation
    */
   public initialize (config: AuthConfiguration): void {
     try {
       logger.info(`${moduleName}: Initializing...`)
 
-      // Validate that we have at least one adapter
-      if (this.adapters.size === 0) {
-        logger.warn(`${moduleName}: No OCPP adapters provided`)
+      // Validate that we have an adapter
+      if (this.adapter == null) {
+        logger.warn(`${moduleName}: No OCPP adapter provided`)
       }
 
       const stationVersion = config.ocppVersion ?? 'unknown'
 
-      // Validate adapter configurations (deduplicate by instance to avoid
-      // validating the same adapter twice for VERSION_20 and VERSION_201)
-      const validatedAdapters = new Set<OCPPAuthAdapter>()
-      for (const [, adapter] of this.adapters) {
-        if (validatedAdapters.has(adapter)) {
-          continue
-        }
-        validatedAdapters.add(adapter)
+      // Validate adapter configuration
+      if (this.adapter) {
         try {
-          const isValid = adapter.validateConfiguration(config)
+          const isValid = this.adapter.validateConfiguration(config)
           if (!isValid) {
             logger.warn(`${moduleName}: Invalid configuration for OCPP ${stationVersion}`)
           } else {
@@ -309,16 +294,12 @@ export class RemoteAuthStrategy implements AuthStrategy {
   }
 
   /**
-   * Remove an OCPP adapter
-   * @param version - OCPP protocol version of the adapter to remove
-   * @returns True if the adapter was found and removed
+   * Set the OCPP adapter
+   * @param adapter - OCPP authentication adapter instance for remote operations
    */
-  public removeAdapter (version: OCPPVersion): boolean {
-    const removed = this.adapters.delete(version)
-    if (removed) {
-      logger.debug(`${moduleName}: Removed OCPP ${version} adapter`)
-    }
-    return removed
+  public setAdapter (adapter: OCPPAuthAdapter): void {
+    this.adapter = adapter
+    logger.debug(`${moduleName}: Set OCPP adapter`)
   }
 
   /**
@@ -339,26 +320,18 @@ export class RemoteAuthStrategy implements AuthStrategy {
 
   /**
    * Test connectivity to remote authorization service
-   * @returns True if at least one OCPP adapter can reach its remote service
+   * @returns True if the OCPP adapter can reach its remote service
    */
   public async testConnectivity (): Promise<boolean> {
-    if (!this.isInitialized || this.adapters.size === 0) {
+    if (!this.isInitialized || this.adapter == null) {
       return false
     }
 
-    // Test connectivity for all adapters
-    const connectivityTests = Array.from(this.adapters.values()).map(async adapter => {
-      try {
-        return await adapter.isRemoteAvailable()
-      } catch (error) {
-        return false
-      }
-    })
-
-    const results = await Promise.allSettled(connectivityTests)
-
-    // Return true if at least one adapter is available
-    return results.some(result => result.status === 'fulfilled' && result.value)
+    try {
+      return await this.adapter.isRemoteAvailable()
+    } catch {
+      return false
+    }
   }
 
   /**

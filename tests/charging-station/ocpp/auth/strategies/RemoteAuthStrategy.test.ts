@@ -36,19 +36,13 @@ await describe('RemoteAuthStrategy', async () => {
   let mockAuthCache: AuthCache
   let mockLocalAuthListManager: LocalAuthListManager
   let mockOCPP16Adapter: OCPPAuthAdapter
-  let mockOCPP20Adapter: OCPPAuthAdapter
 
   beforeEach(() => {
     mockAuthCache = createMockAuthCache()
     mockLocalAuthListManager = createMockLocalAuthListManager()
     mockOCPP16Adapter = createMockOCPPAdapter(OCPPVersion.VERSION_16)
-    mockOCPP20Adapter = createMockOCPPAdapter(OCPPVersion.VERSION_20)
 
-    const adapters = new Map<OCPPVersion, OCPPAuthAdapter>()
-    adapters.set(OCPPVersion.VERSION_16, mockOCPP16Adapter)
-    adapters.set(OCPPVersion.VERSION_20, mockOCPP20Adapter)
-
-    strategy = new RemoteAuthStrategy(adapters, mockAuthCache, mockLocalAuthListManager)
+    strategy = new RemoteAuthStrategy(mockOCPP16Adapter, mockAuthCache, mockLocalAuthListManager)
   })
 
   afterEach(() => {
@@ -69,16 +63,15 @@ await describe('RemoteAuthStrategy', async () => {
   })
 
   await describe('initialize', async () => {
-    await it('should initialize successfully with adapters', () => {
+    await it('should initialize successfully with adapter', () => {
       const config = createTestAuthConfig({ authorizationCacheEnabled: true })
       assert.doesNotThrow(() => {
         strategy.initialize(config)
       })
     })
 
-    await it('should validate adapter configurations', () => {
+    await it('should validate adapter configuration', () => {
       mockOCPP16Adapter.validateConfiguration = () => true
-      mockOCPP20Adapter.validateConfiguration = () => true
       const config = createTestAuthConfig()
       assert.doesNotThrow(() => {
         strategy.initialize(config)
@@ -133,7 +126,7 @@ await describe('RemoteAuthStrategy', async () => {
       strategy.initialize(config)
     })
 
-    await it('should authenticate using OCPP 1.6 adapter', async () => {
+    await it('should authenticate using adapter', async () => {
       const config = createTestAuthConfig({ authorizationCacheEnabled: true })
       const request = createMockAuthRequest({
         identifier: createMockIdentifier(
@@ -141,23 +134,6 @@ await describe('RemoteAuthStrategy', async () => {
           'REMOTE_TAG',
           IdentifierType.ID_TAG
         ),
-      })
-
-      const result = await strategy.authenticate(request, config)
-
-      assert.notStrictEqual(result, undefined)
-      assert.strictEqual(result?.status, AuthorizationStatus.ACCEPTED)
-      assert.strictEqual(result.method, AuthenticationMethod.REMOTE_AUTHORIZATION)
-    })
-
-    await it('should authenticate using OCPP 2.0 adapter', async () => {
-      const config = createTestAuthConfig({ authorizationCacheEnabled: true })
-      const request = createMockAuthRequest({
-        identifier: {
-          ocppVersion: OCPPVersion.VERSION_20,
-          type: IdentifierType.ID_TAG,
-          value: 'REMOTE_TAG_20',
-        },
       })
 
       const result = await strategy.authenticate(request, config)
@@ -321,6 +297,9 @@ await describe('RemoteAuthStrategy', async () => {
     })
 
     await it('should return undefined when no adapter available', async () => {
+      const strategyNoAdapter = new RemoteAuthStrategy(undefined, mockAuthCache)
+      strategyNoAdapter.initialize(createTestAuthConfig())
+
       const config = createTestAuthConfig()
       const request = createMockAuthRequest({
         identifier: {
@@ -330,7 +309,7 @@ await describe('RemoteAuthStrategy', async () => {
         },
       })
 
-      const result = await strategy.authenticate(request, config)
+      const result = await strategyNoAdapter.authenticate(request, config)
       assert.strictEqual(result, undefined)
     })
 
@@ -417,9 +396,9 @@ await describe('RemoteAuthStrategy', async () => {
   })
 
   await describe('adapter management', async () => {
-    await it('should add adapter dynamically', () => {
+    await it('should set adapter dynamically', () => {
       const newStrategy = new RemoteAuthStrategy()
-      newStrategy.addAdapter(OCPPVersion.VERSION_16, mockOCPP16Adapter)
+      newStrategy.setAdapter(mockOCPP16Adapter)
 
       const config = createTestAuthConfig()
       const request = createMockAuthRequest({
@@ -429,8 +408,8 @@ await describe('RemoteAuthStrategy', async () => {
       assert.strictEqual(newStrategy.canHandle(request, config), true)
     })
 
-    await it('should remove adapter', () => {
-      void strategy.removeAdapter(OCPPVersion.VERSION_16)
+    await it('should clear adapter', () => {
+      strategy.clearAdapter()
 
       const config = createTestAuthConfig()
       const request = createMockAuthRequest({
@@ -454,9 +433,8 @@ await describe('RemoteAuthStrategy', async () => {
       assert.strictEqual(result, false)
     })
 
-    await it('should return false when all adapters unavailable', async () => {
+    await it('should return false when adapter unavailable', async () => {
       mockOCPP16Adapter.isRemoteAvailable = () => false
-      mockOCPP20Adapter.isRemoteAvailable = () => false
 
       strategy.initialize(createTestAuthConfig())
       const result = await strategy.testConnectivity()
@@ -467,7 +445,7 @@ await describe('RemoteAuthStrategy', async () => {
   await describe('getStats', async () => {
     await it('should return strategy statistics', async () => {
       const stats = await strategy.getStats()
-      assert.strictEqual(stats.adapterCount, 2)
+      assert.strictEqual(stats.hasAdapter, true)
       assert.strictEqual(stats.failedRemoteAuth, 0)
       assert.strictEqual(stats.hasAuthCache, true)
       assert.strictEqual(stats.isInitialized, false)
@@ -478,7 +456,7 @@ await describe('RemoteAuthStrategy', async () => {
     await it('should include adapter statistics', async () => {
       strategy.initialize(createTestAuthConfig())
       const stats = await strategy.getStats()
-      assert.notStrictEqual(stats.adapterStats, undefined)
+      assert.strictEqual(typeof stats.adapterAvailable, 'boolean')
     })
   })
 

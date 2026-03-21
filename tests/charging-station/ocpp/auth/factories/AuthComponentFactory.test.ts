@@ -19,35 +19,35 @@ await describe('AuthComponentFactory', async () => {
     standardCleanup()
   })
 
-  await describe('createAdapters', async () => {
+  await describe('createAdapter', async () => {
     await it('should create OCPP 1.6 adapter', async () => {
       const { station: chargingStation } = createMockChargingStation({
         stationInfo: { ocppVersion: OCPPVersion.VERSION_16 },
       })
-      const result = await AuthComponentFactory.createAdapters(chargingStation)
+      const adapter = await AuthComponentFactory.createAdapter(chargingStation)
 
-      assert.notStrictEqual(result.ocpp16Adapter, undefined)
-      assert.strictEqual(result.ocpp20Adapter, undefined)
+      assert.notStrictEqual(adapter, undefined)
+      assert.strictEqual(adapter.ocppVersion, OCPPVersion.VERSION_16)
     })
 
     await it('should create OCPP 2.0 adapter', async () => {
       const { station: chargingStation } = createMockChargingStation({
         stationInfo: { ocppVersion: OCPPVersion.VERSION_20 },
       })
-      const result = await AuthComponentFactory.createAdapters(chargingStation)
+      const adapter = await AuthComponentFactory.createAdapter(chargingStation)
 
-      assert.strictEqual(result.ocpp16Adapter, undefined)
-      assert.notStrictEqual(result.ocpp20Adapter, undefined)
+      assert.notStrictEqual(adapter, undefined)
+      assert.strictEqual(adapter.ocppVersion, OCPPVersion.VERSION_20)
     })
 
     await it('should create OCPP 2.0.1 adapter', async () => {
       const { station: chargingStation } = createMockChargingStation({
         stationInfo: { ocppVersion: OCPPVersion.VERSION_201 },
       })
-      const result = await AuthComponentFactory.createAdapters(chargingStation)
+      const adapter = await AuthComponentFactory.createAdapter(chargingStation)
 
-      assert.strictEqual(result.ocpp16Adapter, undefined)
-      assert.notStrictEqual(result.ocpp20Adapter, undefined)
+      assert.notStrictEqual(adapter, undefined)
+      assert.strictEqual(adapter.ocppVersion, OCPPVersion.VERSION_20)
     })
 
     await it('should throw error for unsupported version', async () => {
@@ -55,7 +55,7 @@ await describe('AuthComponentFactory', async () => {
         stationInfo: { ocppVersion: 'VERSION_15' as OCPPVersion },
       })
 
-      await assert.rejects(AuthComponentFactory.createAdapters(chargingStation), {
+      await assert.rejects(AuthComponentFactory.createAdapter(chargingStation), {
         message: /Unsupported OCPP version/,
       })
     })
@@ -64,7 +64,7 @@ await describe('AuthComponentFactory', async () => {
       const { station: chargingStation } = createMockChargingStation()
       chargingStation.stationInfo = undefined
 
-      await assert.rejects(AuthComponentFactory.createAdapters(chargingStation), {
+      await assert.rejects(AuthComponentFactory.createAdapter(chargingStation), {
         message: /OCPP version not found/,
       })
     })
@@ -153,7 +153,7 @@ await describe('AuthComponentFactory', async () => {
       const { station: chargingStation } = createMockChargingStation({
         stationInfo: { ocppVersion: OCPPVersion.VERSION_16 },
       })
-      const adapters = await AuthComponentFactory.createAdapters(chargingStation)
+      const adapter = await AuthComponentFactory.createAdapter(chargingStation)
       const config: AuthConfiguration = {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: false,
@@ -165,7 +165,7 @@ await describe('AuthComponentFactory', async () => {
         remoteAuthorization: false,
       }
 
-      const result = await AuthComponentFactory.createRemoteStrategy(adapters, undefined, config)
+      const result = await AuthComponentFactory.createRemoteStrategy(adapter, undefined, config)
 
       assert.strictEqual(result, undefined)
     })
@@ -174,7 +174,7 @@ await describe('AuthComponentFactory', async () => {
       const { station: chargingStation } = createMockChargingStation({
         stationInfo: { ocppVersion: OCPPVersion.VERSION_16 },
       })
-      const adapters = await AuthComponentFactory.createAdapters(chargingStation)
+      const adapter = await AuthComponentFactory.createAdapter(chargingStation)
       const config: AuthConfiguration = {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: false,
@@ -186,7 +186,7 @@ await describe('AuthComponentFactory', async () => {
         remoteAuthorization: true,
       }
 
-      const result = await AuthComponentFactory.createRemoteStrategy(adapters, undefined, config)
+      const result = await AuthComponentFactory.createRemoteStrategy(adapter, undefined, config)
 
       assert.notStrictEqual(result, undefined)
       if (result) {
@@ -200,7 +200,7 @@ await describe('AuthComponentFactory', async () => {
       const { station: chargingStation } = createMockChargingStation({
         stationInfo: { ocppVersion: OCPPVersion.VERSION_16 },
       })
-      const adapters = await AuthComponentFactory.createAdapters(chargingStation)
+      const adapter = await AuthComponentFactory.createAdapter(chargingStation)
       const config: AuthConfiguration = {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: false,
@@ -213,7 +213,7 @@ await describe('AuthComponentFactory', async () => {
 
       const result = await AuthComponentFactory.createCertificateStrategy(
         chargingStation,
-        adapters,
+        adapter,
         config
       )
 
@@ -227,7 +227,7 @@ await describe('AuthComponentFactory', async () => {
       const { station: chargingStation } = createMockChargingStation({
         stationInfo: { ocppVersion: OCPPVersion.VERSION_16 },
       })
-      const adapters = await AuthComponentFactory.createAdapters(chargingStation)
+      const adapter = await AuthComponentFactory.createAdapter(chargingStation)
       const config: AuthConfiguration = {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: false,
@@ -240,7 +240,7 @@ await describe('AuthComponentFactory', async () => {
 
       const result = await AuthComponentFactory.createStrategies(
         chargingStation,
-        adapters,
+        adapter,
         undefined,
         undefined,
         config
@@ -254,7 +254,7 @@ await describe('AuthComponentFactory', async () => {
       const { station: chargingStation } = createMockChargingStation({
         stationInfo: { ocppVersion: OCPPVersion.VERSION_16 },
       })
-      const adapters = await AuthComponentFactory.createAdapters(chargingStation)
+      const adapter = await AuthComponentFactory.createAdapter(chargingStation)
       const config: AuthConfiguration = {
         allowOfflineTxForUnknownId: false,
         authorizationCacheEnabled: false,
@@ -268,7 +268,7 @@ await describe('AuthComponentFactory', async () => {
 
       const result = await AuthComponentFactory.createStrategies(
         chargingStation,
-        adapters,
+        adapter,
         undefined,
         undefined,
         config

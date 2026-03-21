@@ -54,10 +54,7 @@ await describe('CertificateAuthStrategy', async () => {
       }),
     })
 
-    const adapters = new Map<OCPPVersion, OCPPAuthAdapter>()
-    adapters.set(OCPPVersion.VERSION_20, mockOCPP20Adapter)
-
-    strategy = new CertificateAuthStrategy(mockStation, adapters)
+    strategy = new CertificateAuthStrategy(mockStation, mockOCPP20Adapter)
   })
 
   afterEach(() => {

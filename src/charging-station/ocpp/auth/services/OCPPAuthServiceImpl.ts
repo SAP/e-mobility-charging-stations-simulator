@@ -1,6 +1,5 @@
 import type { OCPP20IdTokenInfoType } from '../../../../types/index.js'
-import type { OCPP16AuthAdapter } from '../adapters/OCPP16AuthAdapter.js'
-import type { OCPP20AuthAdapter } from '../adapters/OCPP20AuthAdapter.js'
+import type { OCPPAuthAdapter } from '../interfaces/OCPPAuthService.js'
 import type { LocalAuthStrategy } from '../strategies/LocalAuthStrategy.js'
 
 import { OCPPError } from '../../../../exception/index.js'
@@ -35,7 +34,7 @@ import { AuthConfigValidator } from '../utils/ConfigValidator.js'
 const moduleName = 'OCPPAuthServiceImpl'
 
 export class OCPPAuthServiceImpl implements OCPPAuthService {
-  private readonly adapters: Map<OCPPVersion, OCPP16AuthAdapter | OCPP20AuthAdapter>
+  private adapter?: OCPPAuthAdapter
   private readonly chargingStation: ChargingStation
   private config: AuthConfiguration
   private readonly metrics: {
@@ -56,7 +55,6 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
   constructor (chargingStation: ChargingStation) {
     this.chargingStation = chargingStation
     this.strategies = new Map()
-    this.adapters = new Map()
     this.strategyPriority = ['local', 'remote', 'certificate']
 
     // Initialize metrics tracking
@@ -75,7 +73,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     // Initialize default configuration
     this.config = this.createDefaultConfiguration()
 
-    // Note: Adapters and strategies will be initialized async via initialize()
+    // Note: Adapter and strategies will be initialized async via initialize()
   }
 
   /**
@@ -420,7 +418,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
    * Must be called after construction
    */
   public async initialize (): Promise<void> {
-    await this.initializeAdapters()
+    await this.initializeAdapter()
     await this.initializeStrategies()
   }
 
@@ -515,14 +513,14 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
       return false
     }
 
-    // Check if any adapter reports remote availability
-    for (const adapter of this.adapters.values()) {
+    // Check if adapter reports remote availability
+    if (this.adapter) {
       try {
-        if (adapter.isRemoteAvailable()) {
+        if (this.adapter.isRemoteAvailable()) {
           return true
         }
       } catch {
-        // Continue checking other adapters
+        // Adapter unavailable
       }
     }
 
@@ -669,19 +667,10 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
   }
 
   /**
-   * Initialize OCPP adapters using AuthComponentFactory
+   * Initialize OCPP adapter using AuthComponentFactory
    */
-  private async initializeAdapters (): Promise<void> {
-    const adapters = await AuthComponentFactory.createAdapters(this.chargingStation)
-
-    if (adapters.ocpp16Adapter) {
-      this.adapters.set(OCPPVersion.VERSION_16, adapters.ocpp16Adapter)
-    }
-
-    if (adapters.ocpp20Adapter) {
-      this.adapters.set(OCPPVersion.VERSION_20, adapters.ocpp20Adapter)
-      this.adapters.set(OCPPVersion.VERSION_201, adapters.ocpp20Adapter)
-    }
+  private async initializeAdapter (): Promise<void> {
+    this.adapter = await AuthComponentFactory.createAdapter(this.chargingStation)
   }
 
   /**
@@ -690,9 +679,9 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
   private async initializeStrategies (): Promise<void> {
     const ocppVersion = this.chargingStation.stationInfo?.ocppVersion
 
-    // Get adapters for strategy creation with proper typing
-    const ocpp16Adapter = this.adapters.get(OCPPVersion.VERSION_16) as OCPP16AuthAdapter | undefined
-    const ocpp20Adapter = this.adapters.get(OCPPVersion.VERSION_20) as OCPP20AuthAdapter | undefined
+    if (this.adapter == null) {
+      throw new OCPPError(ErrorType.INTERNAL_ERROR, 'Adapter must be initialized before strategies')
+    }
 
     // Create auth cache for strategy injection
     const authCache = AuthComponentFactory.createAuthCache(this.config)
@@ -700,7 +689,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     // Create strategies using factory
     const strategies = await AuthComponentFactory.createStrategies(
       this.chargingStation,
-      { ocpp16Adapter, ocpp20Adapter },
+      this.adapter,
       undefined, // manager - delegated to OCPPAuthServiceImpl
       authCache,
       this.config
