@@ -485,7 +485,7 @@ await describe('InMemoryAuthCache - G03.FR.01 Conformance', async () => {
       assert.notStrictEqual(result, undefined)
     })
 
-    await it('should handle concurrent operations', () => {
+    await it('should handle sequential batch operations', () => {
       // Concurrent sets
       cache.set('token-1', mockResult)
       cache.set('token-2', mockResult)

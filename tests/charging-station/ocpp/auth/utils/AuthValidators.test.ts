@@ -112,6 +112,24 @@ await describe('AuthValidators', async () => {
     await it('should handle empty string', () => {
       assert.strictEqual(AuthValidators.sanitizeIdTag(''), '')
     })
+
+    await it('should not truncate exactly 19 characters', () => {
+      const tag19 = 'A'.repeat(19)
+      assert.strictEqual(AuthValidators.sanitizeIdTag(tag19).length, 19)
+      assert.strictEqual(AuthValidators.sanitizeIdTag(tag19), tag19)
+    })
+
+    await it('should not truncate exactly 20 characters', () => {
+      const tag20 = 'A'.repeat(20)
+      assert.strictEqual(AuthValidators.sanitizeIdTag(tag20).length, 20)
+      assert.strictEqual(AuthValidators.sanitizeIdTag(tag20), tag20)
+    })
+
+    await it('should truncate 21 characters to 20', () => {
+      const tag21 = 'A'.repeat(21)
+      assert.strictEqual(AuthValidators.sanitizeIdTag(tag21).length, 20)
+      assert.strictEqual(AuthValidators.sanitizeIdTag(tag21), 'A'.repeat(20))
+    })
   })
 
   await describe('sanitizeIdToken', async () => {
