@@ -125,7 +125,7 @@ const $emit = defineEmits(['need-refresh'])
 
 .cs-table {
   width: 100%;
-  min-width: 1280px;
+  table-layout: fixed;
   background-color: var(--color-bg-surface);
   border: solid 0.25px var(--color-border);
   border-collapse: collapse;
