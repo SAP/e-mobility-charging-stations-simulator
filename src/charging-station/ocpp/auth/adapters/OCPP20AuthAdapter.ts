@@ -219,7 +219,7 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
    * Convert OCPP 2.0 IdToken to unified identifier
    * @param identifier - OCPP 2.0 IdToken or raw string identifier
    * @param additionalData - Optional metadata to include in the unified identifier
-   * @returns Unified identifier with normalized type and OCPP version metadata
+   * @returns Unified identifier with normalized type and metadata
    */
   convertToUnifiedIdentifier (
     identifier: OCPP20IdTokenType | string,
@@ -256,7 +256,6 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
           ? Object.fromEntries(Object.entries(additionalData).map(([k, v]) => [k, String(v)]))
           : {}),
       },
-      ocppVersion: OCPPVersion.VERSION_20,
       parentId: additionalData?.parentId as string | undefined,
       type: unifiedType,
       value: idToken.idToken,

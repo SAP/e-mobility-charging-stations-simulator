@@ -76,7 +76,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
       const adapter = this.adapter
 
       // For OCPP 2.0, we can use certificate-based validation
-      if (request.identifier.ocppVersion === OCPPVersion.VERSION_20) {
+      if (this.adapter.ocppVersion === OCPPVersion.VERSION_20) {
         const result = await this.validateCertificateWithOCPP20(request, adapter, config)
         this.updateStatistics(result, startTime)
         return result
@@ -85,7 +85,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
       // Should not reach here due to canHandle check, but handle gracefully
       return this.createFailureResult(
         AuthorizationStatus.INVALID,
-        `Certificate authentication not supported for OCPP ${request.identifier.ocppVersion}`,
+        `Certificate authentication not supported for OCPP ${this.adapter.ocppVersion}`,
         request.identifier,
         startTime
       )
@@ -113,7 +113,7 @@ export class CertificateAuthStrategy implements AuthStrategy {
     }
 
     // Only supported in OCPP 2.0+
-    if (request.identifier.ocppVersion === OCPPVersion.VERSION_16) {
+    if (this.adapter.ocppVersion === OCPPVersion.VERSION_16) {
       return false
     }
 

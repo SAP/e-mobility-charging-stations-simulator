@@ -74,7 +74,7 @@ await describe('OCPP Authentication', async () => {
       const request = createMockAuthRequest({
         connectorId: 1,
         context: AuthContext.TRANSACTION_START,
-        identifier: createMockIdentifier(OCPPVersion.VERSION_16, 'VALID_ID_123'),
+        identifier: createMockIdentifier('VALID_ID_123'),
       })
 
       const result = await authService16.authenticate(request)
@@ -98,7 +98,7 @@ await describe('OCPP Authentication', async () => {
         const request = createMockAuthRequest({
           connectorId: 1,
           context,
-          identifier: createMockIdentifier(OCPPVersion.VERSION_16, `CONTEXT_TEST_${context}`),
+          identifier: createMockIdentifier(`CONTEXT_TEST_${context}`),
         })
 
         const result = await authService16.authenticate(request)
@@ -110,7 +110,7 @@ await describe('OCPP Authentication', async () => {
     await it('should authorize request directly', async () => {
       const request = createMockAuthRequest({
         connectorId: 1,
-        identifier: createMockIdentifier(OCPPVersion.VERSION_16, 'AUTH_DIRECT_TEST'),
+        identifier: createMockIdentifier('AUTH_DIRECT_TEST'),
       })
 
       const result = await authService16.authorize(request)
@@ -130,7 +130,7 @@ await describe('OCPP Authentication', async () => {
       const request = createMockAuthRequest({
         connectorId: 2,
         context: AuthContext.TRANSACTION_START,
-        identifier: createMockIdentifier(OCPPVersion.VERSION_20, 'VALID_ID_456'),
+        identifier: createMockIdentifier('VALID_ID_456'),
       })
 
       const result = await authService20.authenticate(request)
@@ -153,7 +153,7 @@ await describe('OCPP Authentication', async () => {
         const request = createMockAuthRequest({
           connectorId: 2,
           context,
-          identifier: createMockIdentifier(OCPPVersion.VERSION_20, `V20_CONTEXT_${context}`),
+          identifier: createMockIdentifier(`V20_CONTEXT_${context}`),
         })
 
         const result = await authService20.authenticate(request)
@@ -175,7 +175,6 @@ await describe('OCPP Authentication', async () => {
         connectorId: 999, // Invalid connector
         context: AuthContext.TRANSACTION_START,
         identifier: {
-          ocppVersion: OCPPVersion.VERSION_16,
           type: IdentifierType.ISO14443,
           value: '', // Invalid empty value
         },
@@ -204,7 +203,7 @@ await describe('OCPP Authentication', async () => {
         const request = createMockAuthRequest({
           connectorId: 1,
           context: i % 2 === 0 ? AuthContext.TRANSACTION_START : AuthContext.TRANSACTION_STOP,
-          identifier: createMockIdentifier(OCPPVersion.VERSION_16, `CONCURRENT_${String(i)}`),
+          identifier: createMockIdentifier(`CONCURRENT_${String(i)}`),
         })
         promises.push(authServiceConcurrent.authenticate(request))
       }
@@ -356,7 +355,7 @@ await describe('OCPP Authentication', async () => {
         strategy.initialize(config)
 
         const request = createMockAuthRequest({
-          identifier: createMockIdentifier(OCPPVersion.VERSION_16, 'LIST-ID'),
+          identifier: createMockIdentifier('LIST-ID'),
         })
         const result = await strategy.authenticate(request, config)
 

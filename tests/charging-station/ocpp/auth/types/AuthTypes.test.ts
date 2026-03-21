@@ -252,14 +252,12 @@ await describe('AuthTypes', async () => {
   await describe('UnifiedIdentifier', async () => {
     await it('should create valid OCPP 1.6 identifier', () => {
       const identifier: UnifiedIdentifier = {
-        ocppVersion: OCPPVersion.VERSION_16,
         type: IdentifierType.ID_TAG,
         value: 'VALID_ID_TAG',
       }
 
       assert.strictEqual(identifier.value, 'VALID_ID_TAG')
       assert.strictEqual(identifier.type, IdentifierType.ID_TAG)
-      assert.strictEqual(identifier.ocppVersion, OCPPVersion.VERSION_16)
     })
 
     await it('should create valid OCPP 2.0 identifier with additional info', () => {
@@ -268,14 +266,12 @@ await describe('AuthTypes', async () => {
           contractId: 'CONTRACT123',
           issuer: 'EMSProvider',
         },
-        ocppVersion: OCPPVersion.VERSION_20,
         type: IdentifierType.E_MAID,
         value: 'EMAID123456',
       }
 
       assert.strictEqual(identifier.value, 'EMAID123456')
       assert.strictEqual(identifier.type, IdentifierType.E_MAID)
-      assert.strictEqual(identifier.ocppVersion, OCPPVersion.VERSION_20)
       assert.notStrictEqual(identifier.additionalInfo, undefined)
       assert.strictEqual(identifier.additionalInfo?.issuer, 'EMSProvider')
     })
@@ -288,7 +284,6 @@ await describe('AuthTypes', async () => {
           issuerNameHash: 'ISSUER_HASH',
           serialNumber: '123456',
         },
-        ocppVersion: OCPPVersion.VERSION_20,
         type: IdentifierType.CERTIFICATE,
         value: 'CERT_IDENTIFIER',
       }

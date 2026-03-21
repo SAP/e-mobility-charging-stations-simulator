@@ -308,17 +308,13 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
     const supportedTypes = new Set<string>()
 
     // Test common identifier types
-    const ocppVersion =
-      this.chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_16
-        ? OCPPVersion.VERSION_16
-        : OCPPVersion.VERSION_20
     const testIdentifiers: UnifiedIdentifier[] = [
-      { ocppVersion, type: IdentifierType.ISO14443, value: 'test' },
-      { ocppVersion, type: IdentifierType.ISO15693, value: 'test' },
-      { ocppVersion, type: IdentifierType.KEY_CODE, value: 'test' },
-      { ocppVersion, type: IdentifierType.LOCAL, value: 'test' },
-      { ocppVersion, type: IdentifierType.MAC_ADDRESS, value: 'test' },
-      { ocppVersion, type: IdentifierType.NO_AUTHORIZATION, value: 'test' },
+      { type: IdentifierType.ISO14443, value: 'test' },
+      { type: IdentifierType.ISO15693, value: 'test' },
+      { type: IdentifierType.KEY_CODE, value: 'test' },
+      { type: IdentifierType.LOCAL, value: 'test' },
+      { type: IdentifierType.MAC_ADDRESS, value: 'test' },
+      { type: IdentifierType.NO_AUTHORIZATION, value: 'test' },
     ]
 
     testIdentifiers.forEach(identifier => {

@@ -144,7 +144,7 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter {
    * Convert OCPP 1.6 idTag to unified identifier
    * @param identifier - OCPP 1.6 idTag string to convert
    * @param additionalData - Optional metadata to include in unified identifier
-   * @returns Unified identifier with ID_TAG type and OCPP 1.6 version
+   * @returns Unified identifier with ID_TAG type
    */
   convertToUnifiedIdentifier (
     identifier: string,
@@ -154,7 +154,6 @@ export class OCPP16AuthAdapter implements OCPPAuthAdapter {
       additionalInfo: additionalData
         ? Object.fromEntries(Object.entries(additionalData).map(([k, v]) => [k, String(v)]))
         : undefined,
-      ocppVersion: OCPPVersion.VERSION_16,
       parentId: additionalData?.parentId as string | undefined,
       type: IdentifierType.ID_TAG,
       value: identifier,

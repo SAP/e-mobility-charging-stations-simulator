@@ -11,7 +11,6 @@ import {
   AuthorizationStatus,
   IdentifierType,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
-import { OCPPVersion } from '../../../../../src/types/index.js'
 import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
 import {
   createMockAuthCache,
@@ -46,11 +45,7 @@ await describe('LocalAuthStrategy - DisablePostAuthorize', async () => {
       })
       strategy.initialize(config)
       const request = createMockAuthRequest({
-        identifier: createMockIdentifier(
-          OCPPVersion.VERSION_20,
-          'BLOCKED-TAG',
-          IdentifierType.ISO14443
-        ),
+        identifier: createMockIdentifier('BLOCKED-TAG', IdentifierType.ISO14443),
       })
 
       // Act
@@ -78,11 +73,7 @@ await describe('LocalAuthStrategy - DisablePostAuthorize', async () => {
       })
       strategy.initialize(config)
       const request = createMockAuthRequest({
-        identifier: createMockIdentifier(
-          OCPPVersion.VERSION_20,
-          'BLOCKED-TAG',
-          IdentifierType.ISO14443
-        ),
+        identifier: createMockIdentifier('BLOCKED-TAG', IdentifierType.ISO14443),
       })
 
       // Act
@@ -111,11 +102,7 @@ await describe('LocalAuthStrategy - DisablePostAuthorize', async () => {
       })
       strategy.initialize(config)
       const request = createMockAuthRequest({
-        identifier: createMockIdentifier(
-          OCPPVersion.VERSION_20,
-          'BLOCKED-TAG',
-          IdentifierType.ISO14443
-        ),
+        identifier: createMockIdentifier('BLOCKED-TAG', IdentifierType.ISO14443),
       })
 
       const result = await strategy.authenticate(request, config)
@@ -142,11 +129,7 @@ await describe('LocalAuthStrategy - DisablePostAuthorize', async () => {
       })
       strategy.initialize(config)
       const request = createMockAuthRequest({
-        identifier: createMockIdentifier(
-          OCPPVersion.VERSION_20,
-          'BLOCKED-TAG',
-          IdentifierType.ISO14443
-        ),
+        identifier: createMockIdentifier('BLOCKED-TAG', IdentifierType.ISO14443),
       })
 
       // Act

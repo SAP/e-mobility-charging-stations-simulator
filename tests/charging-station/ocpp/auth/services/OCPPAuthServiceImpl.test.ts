@@ -103,7 +103,6 @@ await describe('OCPPAuthServiceImpl', async () => {
       await authService.initialize()
 
       const idTagIdentifier: UnifiedIdentifier = {
-        ocppVersion: OCPPVersion.VERSION_16,
         type: IdentifierType.ID_TAG,
         value: 'VALID_ID_TAG',
       }
@@ -116,7 +115,6 @@ await describe('OCPPAuthServiceImpl', async () => {
       await authService.initialize()
 
       const centralIdentifier: UnifiedIdentifier = {
-        ocppVersion: OCPPVersion.VERSION_20,
         type: IdentifierType.CENTRAL,
         value: 'CENTRAL_ID',
       }
@@ -167,7 +165,6 @@ await describe('OCPPAuthServiceImpl', async () => {
       const authService = new OCPPAuthServiceImpl(mockStation)
 
       const identifier: UnifiedIdentifier = {
-        ocppVersion: OCPPVersion.VERSION_16,
         type: IdentifierType.ID_TAG,
         value: 'TAG_TO_INVALIDATE',
       }
@@ -208,7 +205,6 @@ await describe('OCPPAuthServiceImpl', async () => {
       const authService = new OCPPAuthServiceImpl(mockStation)
 
       const identifier: UnifiedIdentifier = {
-        ocppVersion: OCPPVersion.VERSION_16,
         type: IdentifierType.ID_TAG,
         value: 'VALID_TAG',
       }
@@ -230,7 +226,6 @@ await describe('OCPPAuthServiceImpl', async () => {
       const authService = new OCPPAuthServiceImpl(mockStation)
 
       const identifier: UnifiedIdentifier = {
-        ocppVersion: OCPPVersion.VERSION_16,
         type: IdentifierType.ID_TAG,
         value: 'UNKNOWN_TAG',
       }
@@ -259,7 +254,6 @@ await describe('OCPPAuthServiceImpl', async () => {
       const authService = new OCPPAuthServiceImpl(mockStation)
 
       const identifier: UnifiedIdentifier = {
-        ocppVersion: OCPPVersion.VERSION_16,
         type: IdentifierType.ID_TAG,
         value: 'LOCAL_TAG',
       }
@@ -284,7 +278,6 @@ await describe('OCPPAuthServiceImpl', async () => {
       const authService = new OCPPAuthServiceImpl(mockStation16)
 
       const identifier: UnifiedIdentifier = {
-        ocppVersion: OCPPVersion.VERSION_16,
         type: IdentifierType.ID_TAG,
         value: 'OCPP16_TAG',
       }
@@ -304,7 +297,6 @@ await describe('OCPPAuthServiceImpl', async () => {
       const authService = new OCPPAuthServiceImpl(mockStation20)
 
       const identifier: UnifiedIdentifier = {
-        ocppVersion: OCPPVersion.VERSION_20,
         type: IdentifierType.E_MAID,
         value: 'EMAID123456',
       }
@@ -332,7 +324,6 @@ await describe('OCPPAuthServiceImpl', async () => {
       const authService = new OCPPAuthServiceImpl(mockStation)
 
       const identifier: UnifiedIdentifier = {
-        ocppVersion: OCPPVersion.VERSION_16,
         type: IdentifierType.ID_TAG,
         value: '',
       }
@@ -362,7 +353,6 @@ await describe('OCPPAuthServiceImpl', async () => {
       const authService = new OCPPAuthServiceImpl(mockStation16)
 
       const identifier: UnifiedIdentifier = {
-        ocppVersion: OCPPVersion.VERSION_16,
         type: IdentifierType.ID_TAG,
         value: 'START_TAG',
       }
@@ -383,7 +373,6 @@ await describe('OCPPAuthServiceImpl', async () => {
       const authService = new OCPPAuthServiceImpl(mockStation16)
 
       const identifier: UnifiedIdentifier = {
-        ocppVersion: OCPPVersion.VERSION_16,
         type: IdentifierType.ID_TAG,
         value: 'STOP_TAG',
       }
@@ -404,7 +393,6 @@ await describe('OCPPAuthServiceImpl', async () => {
       const authService = new OCPPAuthServiceImpl(mockStation20)
 
       const identifier: UnifiedIdentifier = {
-        ocppVersion: OCPPVersion.VERSION_20,
         type: IdentifierType.CENTRAL,
         value: 'REMOTE_ID',
       }

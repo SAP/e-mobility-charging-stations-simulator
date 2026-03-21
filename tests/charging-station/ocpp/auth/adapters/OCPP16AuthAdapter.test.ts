@@ -69,10 +69,9 @@ await describe('OCPP16AuthAdapter', async () => {
       const idTag = 'TEST_ID_TAG'
       const result = adapter.convertToUnifiedIdentifier(idTag)
 
-      const expected = createMockIdentifier(OCPPVersion.VERSION_16, idTag)
+      const expected = createMockIdentifier(idTag)
       assert.strictEqual(result.value, expected.value)
       assert.strictEqual(result.type, expected.type)
-      assert.strictEqual(result.ocppVersion, expected.ocppVersion)
     })
 
     await it('should include additional data in unified identifier', () => {
@@ -88,7 +87,7 @@ await describe('OCPP16AuthAdapter', async () => {
 
   await describe('convertFromUnifiedIdentifier', async () => {
     await it('should convert unified identifier to OCPP 1.6 idTag', () => {
-      const identifier = createMockIdentifier(OCPPVersion.VERSION_16, 'TEST_ID_TAG')
+      const identifier = createMockIdentifier('TEST_ID_TAG')
 
       const result = adapter.convertFromUnifiedIdentifier(identifier)
       assert.strictEqual(result, 'TEST_ID_TAG')
@@ -97,32 +96,25 @@ await describe('OCPP16AuthAdapter', async () => {
 
   await describe('isValidIdentifier', async () => {
     await it('should validate correct OCPP 1.6 identifier', () => {
-      const identifier = createMockIdentifier(OCPPVersion.VERSION_16, 'VALID_TAG')
+      const identifier = createMockIdentifier('VALID_TAG')
 
       assert.strictEqual(adapter.isValidIdentifier(identifier), true)
     })
 
     await it('should reject identifier with empty value', () => {
-      const identifier = createMockIdentifier(OCPPVersion.VERSION_16, '')
+      const identifier = createMockIdentifier('')
 
       assert.strictEqual(adapter.isValidIdentifier(identifier), false)
     })
 
     await it('should reject identifier exceeding max length (20 chars)', () => {
-      const identifier = createMockIdentifier(
-        OCPPVersion.VERSION_16,
-        'THIS_TAG_IS_TOO_LONG_FOR_OCPP16'
-      )
+      const identifier = createMockIdentifier('THIS_TAG_IS_TOO_LONG_FOR_OCPP16')
 
       assert.strictEqual(adapter.isValidIdentifier(identifier), false)
     })
 
     await it('should reject non-ID_TAG types', () => {
-      const identifier = createMockIdentifier(
-        OCPPVersion.VERSION_16,
-        'TEST_TAG',
-        IdentifierType.CENTRAL
-      )
+      const identifier = createMockIdentifier('TEST_TAG', IdentifierType.CENTRAL)
 
       assert.strictEqual(adapter.isValidIdentifier(identifier), false)
     })
@@ -157,7 +149,7 @@ await describe('OCPP16AuthAdapter', async () => {
 
   await describe('authorizeRemote', async () => {
     await it('should perform remote authorization successfully', async () => {
-      const identifier = createMockIdentifier(OCPPVersion.VERSION_16, 'VALID_TAG')
+      const identifier = createMockIdentifier('VALID_TAG')
 
       const result = await adapter.authorizeRemote(identifier, 1, 123)
 
@@ -174,7 +166,7 @@ await describe('OCPP16AuthAdapter', async () => {
           reject(new Error('Network error'))
         })
 
-      const identifier = createMockIdentifier(OCPPVersion.VERSION_16, 'TEST_TAG')
+      const identifier = createMockIdentifier('TEST_TAG')
 
       const result = await adapter.authorizeRemote(identifier, 1)
 

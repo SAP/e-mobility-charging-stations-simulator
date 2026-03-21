@@ -11,7 +11,6 @@ import {
   type UnifiedIdentifier,
 } from '../../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import { AuthValidators } from '../../../../../src/charging-station/ocpp/auth/utils/AuthValidators.js'
-import { OCPPVersion } from '../../../../../src/types/index.js'
 import { standardCleanup } from '../../../../helpers/TestLifecycleHelpers.js'
 
 await describe('AuthValidators', async () => {
@@ -257,7 +256,6 @@ await describe('AuthValidators', async () => {
 
     await it('should return false for empty value', () => {
       const identifier: UnifiedIdentifier = {
-        ocppVersion: OCPPVersion.VERSION_16,
         type: IdentifierType.ID_TAG,
         value: '',
       }
@@ -267,7 +265,6 @@ await describe('AuthValidators', async () => {
 
     await it('should return false for ID_TAG exceeding 20 characters', () => {
       const identifier: UnifiedIdentifier = {
-        ocppVersion: OCPPVersion.VERSION_16,
         type: IdentifierType.ID_TAG,
         value: 'VERY_LONG_IDENTIFIER_VALUE_123456789',
       }
@@ -277,7 +274,6 @@ await describe('AuthValidators', async () => {
 
     await it('should return true for valid ID_TAG within 20 characters', () => {
       const identifier: UnifiedIdentifier = {
-        ocppVersion: OCPPVersion.VERSION_16,
         type: IdentifierType.ID_TAG,
         value: 'VALID_ID_TAG',
       }
@@ -287,7 +283,6 @@ await describe('AuthValidators', async () => {
 
     await it('should return true for OCPP 2.0 LOCAL type within 36 characters', () => {
       const identifier: UnifiedIdentifier = {
-        ocppVersion: OCPPVersion.VERSION_20,
         type: IdentifierType.LOCAL,
         value: 'LOCAL_TOKEN_123',
       }
@@ -297,7 +292,6 @@ await describe('AuthValidators', async () => {
 
     await it('should return false for OCPP 2.0 type exceeding 36 characters', () => {
       const identifier: UnifiedIdentifier = {
-        ocppVersion: OCPPVersion.VERSION_20,
         type: IdentifierType.CENTRAL,
         value: 'VERY_LONG_CENTRAL_IDENTIFIER_VALUE_1234567890123456789',
       }
@@ -307,7 +301,6 @@ await describe('AuthValidators', async () => {
 
     await it('should return true for CENTRAL type within 36 characters', () => {
       const identifier: UnifiedIdentifier = {
-        ocppVersion: OCPPVersion.VERSION_20,
         type: IdentifierType.CENTRAL,
         value: 'CENTRAL_TOKEN',
       }
@@ -317,7 +310,6 @@ await describe('AuthValidators', async () => {
 
     await it('should return true for E_MAID type', () => {
       const identifier: UnifiedIdentifier = {
-        ocppVersion: OCPPVersion.VERSION_20,
         type: IdentifierType.E_MAID,
         value: 'DE-ABC-123456',
       }
@@ -327,7 +319,6 @@ await describe('AuthValidators', async () => {
 
     await it('should return true for ISO14443 type', () => {
       const identifier: UnifiedIdentifier = {
-        ocppVersion: OCPPVersion.VERSION_20,
         type: IdentifierType.ISO14443,
         value: '04A2B3C4D5E6F7',
       }
@@ -337,7 +328,6 @@ await describe('AuthValidators', async () => {
 
     await it('should return true for KEY_CODE type', () => {
       const identifier: UnifiedIdentifier = {
-        ocppVersion: OCPPVersion.VERSION_20,
         type: IdentifierType.KEY_CODE,
         value: '1234',
       }
@@ -347,7 +337,6 @@ await describe('AuthValidators', async () => {
 
     await it('should return true for MAC_ADDRESS type', () => {
       const identifier: UnifiedIdentifier = {
-        ocppVersion: OCPPVersion.VERSION_20,
         type: IdentifierType.MAC_ADDRESS,
         value: '00:11:22:33:44:55',
       }
@@ -357,7 +346,6 @@ await describe('AuthValidators', async () => {
 
     await it('should return true for NO_AUTHORIZATION type', () => {
       const identifier: UnifiedIdentifier = {
-        ocppVersion: OCPPVersion.VERSION_20,
         type: IdentifierType.NO_AUTHORIZATION,
         value: 'NO_AUTH',
       }
@@ -367,7 +355,6 @@ await describe('AuthValidators', async () => {
 
     await it('should return false for unsupported type', () => {
       const identifier: UnifiedIdentifier = {
-        ocppVersion: OCPPVersion.VERSION_20,
         // @ts-expect-error: Testing invalid type
         type: 'UNSUPPORTED_TYPE',
         value: 'VALUE',

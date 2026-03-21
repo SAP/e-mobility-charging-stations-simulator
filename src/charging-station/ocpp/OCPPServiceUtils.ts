@@ -191,7 +191,6 @@ export const isIdTagAuthorizedUnified = async (
         connectorId,
         context: AuthContext.TRANSACTION_START,
         identifier: {
-          ocppVersion: stationOcppVersion,
           type: IdentifierType.ID_TAG,
           value: idTag,
         },

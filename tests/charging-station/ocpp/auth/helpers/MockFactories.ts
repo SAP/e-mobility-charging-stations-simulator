@@ -32,17 +32,14 @@ import { OCPPVersion } from '../../../../../src/types/index.js'
 
 /**
  * Create a mock UnifiedIdentifier for any OCPP version.
- * @param ocppVersion - OCPP version (defaults to VERSION_16)
  * @param value - Identifier token value (defaults to 'TEST-TAG-001')
  * @param type - Identifier type enum value (defaults to ID_TAG)
- * @returns Mock UnifiedIdentifier configured for specified OCPP version
+ * @returns Mock UnifiedIdentifier configured for testing
  */
 export const createMockIdentifier = (
-  ocppVersion: OCPPVersion = OCPPVersion.VERSION_16,
   value = 'TEST-TAG-001',
   type: IdentifierType = IdentifierType.ID_TAG
 ): UnifiedIdentifier => ({
-  ocppVersion,
   type,
   value,
 })
@@ -209,7 +206,6 @@ export const createMockOCPPAdapter = (
       ? identifier.value
       : { idToken: identifier.value, type: identifier.type },
   convertToUnifiedIdentifier: (identifier: object | string) => ({
-    ocppVersion,
     type: IdentifierType.ID_TAG,
     value:
       typeof identifier === 'string'

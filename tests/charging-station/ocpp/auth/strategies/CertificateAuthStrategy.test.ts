@@ -48,7 +48,6 @@ await describe('CertificateAuthStrategy', async () => {
           )
         }),
       convertToUnifiedIdentifier: identifier => ({
-        ocppVersion: OCPPVersion.VERSION_20,
         type: IdentifierType.CERTIFICATE,
         value: typeof identifier === 'string' ? identifier : JSON.stringify(identifier),
       }),
@@ -100,7 +99,6 @@ await describe('CertificateAuthStrategy', async () => {
             issuerNameHash: 'DEF456',
             serialNumber: 'TEST_CERT_001',
           },
-          ocppVersion: OCPPVersion.VERSION_20,
           type: IdentifierType.CERTIFICATE,
           value: 'CERT_IDENTIFIER',
         },
@@ -113,7 +111,6 @@ await describe('CertificateAuthStrategy', async () => {
       const config = createTestAuthConfig({ certificateAuthEnabled: true })
       const request = createMockAuthRequest({
         identifier: {
-          ocppVersion: OCPPVersion.VERSION_20,
           type: IdentifierType.ID_TAG,
           value: 'ID_TAG',
         },
@@ -123,16 +120,25 @@ await describe('CertificateAuthStrategy', async () => {
     })
 
     await it('should return false for OCPP 1.6', () => {
+      const ocpp16Adapter = createMockOCPPAdapter(OCPPVersion.VERSION_16)
+      const ocpp16Strategy = new CertificateAuthStrategy(mockStation, ocpp16Adapter)
+      ocpp16Strategy.initialize(createTestAuthConfig({ certificateAuthEnabled: true }))
+
       const config = createTestAuthConfig({ certificateAuthEnabled: true })
       const request = createMockAuthRequest({
         identifier: {
-          ocppVersion: OCPPVersion.VERSION_16,
+          certificateHashData: {
+            hashAlgorithm: 'SHA256',
+            issuerKeyHash: 'ABC123',
+            issuerNameHash: 'DEF456',
+            serialNumber: 'TEST_CERT_001',
+          },
           type: IdentifierType.CERTIFICATE,
           value: 'CERT',
         },
       })
 
-      assert.strictEqual(strategy.canHandle(request, config), false)
+      assert.strictEqual(ocpp16Strategy.canHandle(request, config), false)
     })
 
     await it('should return false when certificate auth is disabled', () => {
@@ -145,7 +151,6 @@ await describe('CertificateAuthStrategy', async () => {
             issuerNameHash: 'DEF456',
             serialNumber: 'TEST_CERT_001',
           },
-          ocppVersion: OCPPVersion.VERSION_20,
           type: IdentifierType.CERTIFICATE,
           value: 'CERT',
         },
@@ -158,7 +163,6 @@ await describe('CertificateAuthStrategy', async () => {
       const config = createTestAuthConfig({ certificateAuthEnabled: true })
       const request = createMockAuthRequest({
         identifier: {
-          ocppVersion: OCPPVersion.VERSION_20,
           type: IdentifierType.CERTIFICATE,
           value: 'CERT_NO_DATA',
         },
@@ -184,7 +188,6 @@ await describe('CertificateAuthStrategy', async () => {
             issuerNameHash: '789012ghi345',
             serialNumber: 'TEST_CERT_001',
           },
-          ocppVersion: OCPPVersion.VERSION_20,
           type: IdentifierType.CERTIFICATE,
           value: 'CERT_TEST',
         },
@@ -207,7 +210,6 @@ await describe('CertificateAuthStrategy', async () => {
             issuerNameHash: 'def456',
             serialNumber: 'INVALID_CERT',
           },
-          ocppVersion: OCPPVersion.VERSION_20,
           type: IdentifierType.CERTIFICATE,
           value: 'CERT_INVALID',
         },
@@ -229,7 +231,6 @@ await describe('CertificateAuthStrategy', async () => {
             issuerNameHash: 'def456',
             serialNumber: 'REVOKED_CERT',
           },
-          ocppVersion: OCPPVersion.VERSION_20,
           type: IdentifierType.CERTIFICATE,
           value: 'CERT_REVOKED',
         },
@@ -245,7 +246,6 @@ await describe('CertificateAuthStrategy', async () => {
       const config = createTestAuthConfig({ certificateAuthEnabled: true })
       const request = createMockAuthRequest({
         identifier: {
-          ocppVersion: OCPPVersion.VERSION_20,
           type: IdentifierType.CERTIFICATE,
           value: 'CERT_NO_DATA',
         },
@@ -267,7 +267,6 @@ await describe('CertificateAuthStrategy', async () => {
             issuerNameHash: 'def456',
             serialNumber: 'TEST_CERT',
           },
-          ocppVersion: OCPPVersion.VERSION_20,
           type: IdentifierType.CERTIFICATE,
           value: 'CERT_BAD_ALGO',
         },
@@ -289,7 +288,6 @@ await describe('CertificateAuthStrategy', async () => {
             issuerNameHash: 'also-not-hex!',
             serialNumber: 'TEST_CERT',
           },
-          ocppVersion: OCPPVersion.VERSION_20,
           type: IdentifierType.CERTIFICATE,
           value: 'CERT_BAD_HASH',
         },
@@ -324,7 +322,6 @@ await describe('CertificateAuthStrategy', async () => {
             issuerNameHash: 'def456',
             serialNumber: 'TEST_CERT_001',
           },
-          ocppVersion: OCPPVersion.VERSION_20,
           type: IdentifierType.CERTIFICATE,
           value: 'CERT_TEST',
         },

@@ -58,21 +58,19 @@ await describe('OCPP20AuthAdapter', async () => {
       }
 
       const result = adapter.convertToUnifiedIdentifier(idToken)
-      const expected = createMockIdentifier(OCPPVersion.VERSION_20, 'TEST_TOKEN')
+      const expected = createMockIdentifier('TEST_TOKEN')
 
       assert.strictEqual(result.value, expected.value)
       assert.strictEqual(result.type, IdentifierType.ID_TAG)
-      assert.strictEqual(result.ocppVersion, expected.ocppVersion)
       assert.strictEqual(result.additionalInfo?.ocpp20Type, OCPP20IdTokenEnumType.Central)
     })
 
     await it('should convert string to unified identifier', () => {
       const result = adapter.convertToUnifiedIdentifier('STRING_TOKEN')
-      const expected = createMockIdentifier(OCPPVersion.VERSION_20, 'STRING_TOKEN')
+      const expected = createMockIdentifier('STRING_TOKEN')
 
       assert.strictEqual(result.value, expected.value)
       assert.strictEqual(result.type, expected.type)
-      assert.strictEqual(result.ocppVersion, expected.ocppVersion)
     })
 
     await it('should handle eMAID type correctly', () => {
@@ -107,11 +105,7 @@ await describe('OCPP20AuthAdapter', async () => {
 
   await describe('convertFromUnifiedIdentifier', async () => {
     await it('should convert unified identifier to OCPP 2.0 IdToken', () => {
-      const identifier = createMockIdentifier(
-        OCPPVersion.VERSION_20,
-        'CENTRAL_TOKEN',
-        IdentifierType.CENTRAL
-      )
+      const identifier = createMockIdentifier('CENTRAL_TOKEN', IdentifierType.CENTRAL)
 
       const result = adapter.convertFromUnifiedIdentifier(identifier)
 
@@ -120,11 +114,7 @@ await describe('OCPP20AuthAdapter', async () => {
     })
 
     await it('should map E_MAID type correctly', () => {
-      const identifier = createMockIdentifier(
-        OCPPVersion.VERSION_20,
-        'EMAID_TOKEN',
-        IdentifierType.E_MAID
-      )
+      const identifier = createMockIdentifier('EMAID_TOKEN', IdentifierType.E_MAID)
 
       const result = adapter.convertFromUnifiedIdentifier(identifier)
 
@@ -133,7 +123,7 @@ await describe('OCPP20AuthAdapter', async () => {
     })
 
     await it('should handle ID_TAG to Local mapping', () => {
-      const identifier = createMockIdentifier(OCPPVersion.VERSION_20, 'LOCAL_TAG')
+      const identifier = createMockIdentifier('LOCAL_TAG')
 
       const result = adapter.convertFromUnifiedIdentifier(identifier)
 
@@ -143,24 +133,19 @@ await describe('OCPP20AuthAdapter', async () => {
 
   await describe('isValidIdentifier', async () => {
     await it('should validate correct OCPP 2.0 identifier', () => {
-      const identifier = createMockIdentifier(
-        OCPPVersion.VERSION_20,
-        'VALID_TOKEN',
-        IdentifierType.CENTRAL
-      )
+      const identifier = createMockIdentifier('VALID_TOKEN', IdentifierType.CENTRAL)
 
       assert.strictEqual(adapter.isValidIdentifier(identifier), true)
     })
 
     await it('should reject identifier with empty value', () => {
-      const identifier = createMockIdentifier(OCPPVersion.VERSION_20, '', IdentifierType.CENTRAL)
+      const identifier = createMockIdentifier('', IdentifierType.CENTRAL)
 
       assert.strictEqual(adapter.isValidIdentifier(identifier), false)
     })
 
     await it('should reject identifier exceeding max length (36 chars)', () => {
       const identifier = createMockIdentifier(
-        OCPPVersion.VERSION_20,
         'THIS_TOKEN_IS_DEFINITELY_TOO_LONG_FOR_OCPP20_SPECIFICATION',
         IdentifierType.CENTRAL
       )
@@ -180,7 +165,7 @@ await describe('OCPP20AuthAdapter', async () => {
       ]
 
       for (const type of validTypes) {
-        const identifier = createMockIdentifier(OCPPVersion.VERSION_20, 'VALID_TOKEN', type)
+        const identifier = createMockIdentifier('VALID_TOKEN', type)
         assert.strictEqual(adapter.isValidIdentifier(identifier), true)
       }
     })
@@ -233,11 +218,7 @@ await describe('OCPP20AuthAdapter', async () => {
         ),
       } as unknown as ChargingStation['ocppRequestService']
 
-      const identifier = createMockIdentifier(
-        OCPPVersion.VERSION_20,
-        'VALID_TOKEN',
-        IdentifierType.CENTRAL
-      )
+      const identifier = createMockIdentifier('VALID_TOKEN', IdentifierType.CENTRAL)
 
       const result = await adapter.authorizeRemote(identifier, 1, 'tx_123')
 
@@ -248,7 +229,7 @@ await describe('OCPP20AuthAdapter', async () => {
     })
 
     await it('should handle invalid token gracefully', async () => {
-      const identifier = createMockIdentifier(OCPPVersion.VERSION_20, '', IdentifierType.CENTRAL)
+      const identifier = createMockIdentifier('', IdentifierType.CENTRAL)
 
       const result = await adapter.authorizeRemote(identifier, 1)
 

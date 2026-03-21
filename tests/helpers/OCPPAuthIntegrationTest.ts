@@ -13,7 +13,6 @@ import {
   AuthorizationStatus,
   IdentifierType,
 } from '../../src/charging-station/ocpp/auth/types/AuthTypes.js'
-import { OCPPVersion } from '../../src/types/index.js'
 import { logger } from '../../src/utils/index.js'
 
 export class OCPPAuthIntegrationTest {
@@ -115,10 +114,6 @@ export class OCPPAuthIntegrationTest {
 
   private async testCacheOperations (): Promise<void> {
     const testIdentifier: UnifiedIdentifier = {
-      ocppVersion:
-        this.chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_16
-          ? OCPPVersion.VERSION_16
-          : OCPPVersion.VERSION_201,
       type: IdentifierType.LOCAL,
       value: 'CACHE_TEST_ID',
     }
@@ -162,7 +157,6 @@ export class OCPPAuthIntegrationTest {
 
   private async testErrorHandling (): Promise<void> {
     const invalidIdentifier: UnifiedIdentifier = {
-      ocppVersion: OCPPVersion.VERSION_16,
       type: IdentifierType.ISO14443,
       value: '',
     }
@@ -195,7 +189,6 @@ export class OCPPAuthIntegrationTest {
 
   private async testOCPP16AuthFlow (): Promise<void> {
     const identifier: UnifiedIdentifier = {
-      ocppVersion: OCPPVersion.VERSION_16,
       type: IdentifierType.ISO14443,
       value: 'VALID_ID_123',
     }
@@ -224,7 +217,6 @@ export class OCPPAuthIntegrationTest {
 
   private async testOCPP20AuthFlow (): Promise<void> {
     const identifier: UnifiedIdentifier = {
-      ocppVersion: OCPPVersion.VERSION_20,
       type: IdentifierType.ISO15693,
       value: 'VALID_ID_456',
     }
@@ -270,10 +262,6 @@ export class OCPPAuthIntegrationTest {
     }
 
     const identifier: UnifiedIdentifier = {
-      ocppVersion:
-        this.chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_16
-          ? OCPPVersion.VERSION_16
-          : OCPPVersion.VERSION_20,
       type: IdentifierType.ISO14443,
       value: 'PERF_TEST_ID',
     }
@@ -340,10 +328,6 @@ export class OCPPAuthIntegrationTest {
     }
 
     const testIdentifier: UnifiedIdentifier = {
-      ocppVersion:
-        this.chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_16
-          ? OCPPVersion.VERSION_16
-          : OCPPVersion.VERSION_20,
       type: IdentifierType.ISO14443,
       value: 'TEST123',
     }

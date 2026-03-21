@@ -257,9 +257,6 @@ export interface UnifiedIdentifier {
   /** Group identifier for group-based authorization (OCPP 2.0) */
   readonly groupId?: string
 
-  /** OCPP version this identifier originated from */
-  readonly ocppVersion: OCPPVersion
-
   /** Parent ID for hierarchical authorization (OCPP 1.6) */
   readonly parentId?: string
 
