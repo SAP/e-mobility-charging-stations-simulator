@@ -71,8 +71,8 @@
       </Button>
     </td>
     <td class="cs-table__connectors-column">
-      <table id="connectors-table">
-        <thead id="connectors-table__head">
+      <table class="connectors-table">
+        <thead class="connectors-table__head">
           <tr class="connectors-table__row">
             <th
               class="connectors-table__column"
@@ -106,7 +106,7 @@
             </th>
           </tr>
         </thead>
-        <tbody id="connectors-table__body">
+        <tbody class="connectors-table__body">
           <CSConnector
             v-for="entry in getConnectorEntries()"
             :key="entry.evseId != null ? `${entry.evseId}-${entry.connectorId}` : entry.connectorId"
@@ -262,27 +262,27 @@ const deleteChargingStation = (): void => {
 }
 </script>
 
-<style>
-#connectors-table {
+<style scoped>
+.connectors-table {
   width: 100%;
   background-color: var(--color-bg-surface);
   border-collapse: collapse;
   empty-cells: show;
 }
 
-.connectors-table__row {
-  border: solid 0.25px var(--color-border-row);
-}
-
-.connectors-table__row:nth-of-type(even) {
-  background-color: var(--color-bg-hover);
-}
-
-#connectors-table__head .connectors-table__row {
+.connectors-table__head .connectors-table__row {
   background-color: var(--color-bg-header);
 }
 
-.connectors-table__column {
+:deep(.connectors-table__row) {
+  border: solid 0.25px var(--color-border-row);
+}
+
+:deep(.connectors-table__row:nth-of-type(even)) {
+  background-color: var(--color-bg-hover);
+}
+
+:deep(.connectors-table__column) {
   text-align: center;
   vertical-align: middle;
   padding: 0.25rem;

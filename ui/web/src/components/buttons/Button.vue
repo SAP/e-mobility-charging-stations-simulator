@@ -7,12 +7,17 @@
   </button>
 </template>
 
-<style>
+<style scoped>
 .button {
   display: block;
-  flex: auto;
   width: 100%;
   text-align: center;
-  font: small-caption;
+  white-space: nowrap;
+  font-size: var(--font-size-sm);
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
 }
 </style>

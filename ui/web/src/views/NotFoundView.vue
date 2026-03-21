@@ -1,5 +1,5 @@
 <template>
-  <Container id="not-found">
+  <Container class="not-found">
     404 - Not found
   </Container>
 </template>
@@ -8,8 +8,8 @@
 import Container from '@/components/Container.vue'
 </script>
 
-<style>
-#not-found {
+<style scoped>
+.not-found {
   display: flex;
   justify-content: center;
   align-items: center;

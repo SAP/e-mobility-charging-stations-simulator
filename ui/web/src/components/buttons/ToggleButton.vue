@@ -49,7 +49,7 @@ const click = (): void => {
 }
 </script>
 
-<style>
+<style scoped>
 button.on {
   color: var(--color-text);
   background-color: var(--color-bg-active);

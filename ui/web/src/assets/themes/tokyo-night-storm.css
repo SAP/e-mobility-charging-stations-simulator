@@ -33,6 +33,17 @@
   --color-border-row: var(--tn-bg-hover);
   --color-accent: var(--tn-accent);
   --color-shadow-inset: rgba(0, 0, 0, 0.4);
+
+  /* Spacing */
+  --spacing-xs: 0.125rem;
+  --spacing-sm: 0.25rem;
+  --spacing-md: 0.5rem;
+  --spacing-lg: 1rem;
+  --spacing-xl: 1.5rem;
+
+  /* Typography */
+  --font-family: Tahoma, 'Arial Narrow', Arial, Helvetica, sans-serif;
+  --font-size-sm: 0.875rem;
 }
 
 body {

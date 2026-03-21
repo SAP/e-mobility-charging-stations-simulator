@@ -3,6 +3,7 @@
   <Container
     v-show="$route.name !== 'charging-stations' && $route.name !== 'not-found'"
     id="action-container"
+    class="action-container"
   >
     <router-view name="action" />
   </Container>
@@ -12,37 +13,19 @@
 import Container from '@/components/Container.vue'
 </script>
 
-<style>
-#app {
-  height: fit-content;
-  width: 100%;
-  font-family: Tahoma, 'Arial Narrow', Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  display: flex;
-  flex-direction: row;
-  color: var(--color-text);
-  background-color: var(--color-bg);
-}
-
-#action-container {
+<style scoped>
+.action-container {
   min-width: max-content;
   height: fit-content;
   display: flex;
   position: sticky;
-  top: 0.008%;
+  top: 0;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   text-align: center;
-  margin-right: 0.2%;
-  margin-left: 0.2%;
-  padding: 0.4%;
+  margin-inline: var(--spacing-sm);
+  padding: var(--spacing-md);
   border: solid 0.25px var(--color-border);
-}
-
-body {
-  margin: 0.008%;
-  padding: 0.008%;
 }
 </style>

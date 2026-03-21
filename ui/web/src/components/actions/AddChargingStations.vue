@@ -1,5 +1,5 @@
 <template>
-  <h1 id="action">
+  <h1 class="action">
     Add Charging Stations
   </h1>
   <p>Template:</p>
@@ -25,18 +25,20 @@
   <input
     id="number-of-stations"
     v-model="state.numberOfStations"
+    class="number-of-stations"
     min="1"
     name="number-of-stations"
     placeholder="number of stations"
     type="number"
   >
   <p>Template options overrides:</p>
-  <ul id="template-options">
+  <ul class="template-options">
     <li>
       Supervision url:
       <input
         id="supervision-url"
         v-model.trim="state.supervisionUrl"
+        class="supervision-url"
         name="supervision-url"
         placeholder="wss://"
         type="url"
@@ -146,18 +148,27 @@ if (templates != null) {
 }
 </script>
 
-<style>
-#number-of-stations {
-  width: 15%;
+<style scoped>
+.action {
+  min-width: max-content;
+  color: var(--color-text-strong);
+  background-color: var(--color-bg-caption);
+  padding: var(--spacing-lg);
+}
+
+.number-of-stations {
+  width: auto;
+  max-width: 6rem;
   text-align: center;
 }
 
-#supervision-url {
-  width: 90%;
+.supervision-url {
+  width: 100%;
+  max-width: 40rem;
   text-align: left;
 }
 
-#template-options {
+.template-options {
   list-style: circle inside;
   text-align: left;
 }

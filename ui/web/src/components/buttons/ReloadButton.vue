@@ -12,8 +12,8 @@ defineProps<{
 }>()
 </script>
 
-<style>
-@keyframes rotation {
+<style scoped>
+@keyframes spin {
   from {
     transform: rotate(0deg);
   }
@@ -23,6 +23,6 @@ defineProps<{
 }
 
 .spin {
-  animation: rotation 2s linear infinite;
+  animation: spin 2s linear infinite;
 }
 </style>

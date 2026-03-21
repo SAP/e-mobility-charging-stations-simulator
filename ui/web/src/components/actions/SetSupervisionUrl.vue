@@ -1,5 +1,5 @@
 <template>
-  <h1 id="action">
+  <h1 class="action">
     Set Supervision Url
   </h1>
   <h2>{{ chargingStationId }}</h2>
@@ -7,6 +7,7 @@
   <input
     id="supervision-url"
     v-model.trim="state.supervisionUrl"
+    class="supervision-url"
     name="supervision-url"
     placeholder="wss://"
     type="url"
@@ -52,9 +53,17 @@ const state = ref<{ supervisionUrl: string }>({
 })
 </script>
 
-<style>
-#supervision-url {
-  width: 90%;
+<style scoped>
+.action {
+  min-width: max-content;
+  color: var(--color-text-strong);
+  background-color: var(--color-bg-caption);
+  padding: var(--spacing-lg);
+}
+
+.supervision-url {
+  width: 100%;
+  max-width: 40rem;
   text-align: left;
 }
 </style>

@@ -1,13 +1,15 @@
 <template>
-  <Container id="charging-stations-container">
-    <Container id="buttons-container">
+  <Container class="charging-stations-container">
+    <Container class="buttons-container">
       <Container
         v-show="Array.isArray(uiServerConfigurations) && uiServerConfigurations.length > 1"
         id="ui-server-container"
+        class="ui-server-container"
       >
         <select
           id="ui-server-selector"
           v-model="state.uiServerIndex"
+          class="ui-server-selector"
           @change="
             () => {
               if (
@@ -93,7 +95,7 @@
         Add Charging Stations
       </ToggleButton>
       <ReloadButton
-        id="reload-button"
+        class="reload-button"
         :loading="state.gettingChargingStations"
         @click="getChargingStations()"
       />
@@ -340,55 +342,56 @@ const stopSimulator = (): void => {
 }
 </script>
 
-<style>
-#charging-stations-container {
+<style scoped>
+.charging-stations-container {
   height: fit-content;
   width: 100%;
   display: flex;
   flex-direction: column;
 }
 
-#ui-server-container {
+.ui-server-container {
   display: flex;
+  flex: 3 1 0;
+  min-width: 0;
   justify-content: center;
   border: 1px solid var(--color-border-row);
 }
 
-#ui-server-selector {
+.ui-server-selector {
   width: 100%;
   background-color: var(--color-bg-input);
   color: var(--color-text);
-  font: small-caption;
+  font-size: var(--font-size-sm);
   text-align: center;
 }
 
-#ui-server-selector:hover {
+.ui-server-selector:hover {
   background-color: var(--color-bg-hover);
 }
 
-#buttons-container {
+.ui-server-selector:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+.buttons-container {
   display: flex;
   flex-direction: row;
+  gap: var(--spacing-xs);
   position: sticky;
   top: 0;
 }
 
-#action-button {
-  flex: none;
+.buttons-container > * {
+  flex: 1 1 0;
 }
 
-#reload-button {
+.reload-button {
   font-size: 1.5rem;
 }
 
-#reload-button:active {
+.reload-button:active {
   background-color: var(--color-primary);
-}
-
-#action {
-  min-width: max-content;
-  color: var(--color-text-strong);
-  background-color: var(--color-bg-caption);
-  padding: 0.8%;
 }
 </style>

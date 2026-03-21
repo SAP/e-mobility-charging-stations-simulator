@@ -1,5 +1,5 @@
 <template>
-  <h1 id="action">
+  <h1 class="action">
     Start Transaction
   </h1>
   <h2>{{ chargingStationId }}</h2>
@@ -14,6 +14,7 @@
     <input
       id="idtag"
       v-model.trim="state.idTag"
+      class="idtag"
       name="idtag"
       placeholder="RFID tag"
       type="text"
@@ -108,8 +109,15 @@ const handleStartTransaction = async (): Promise<void> => {
 }
 </script>
 
-<style>
-#idtag {
+<style scoped>
+.action {
+  min-width: max-content;
+  color: var(--color-text-strong);
+  background-color: var(--color-bg-caption);
+  padding: var(--spacing-lg);
+}
+
+.idtag {
   text-align: center;
 }
 </style>
