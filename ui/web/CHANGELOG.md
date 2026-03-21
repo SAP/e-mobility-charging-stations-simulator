@@ -1,5 +1,45 @@
 # Changelog
 
+## [3.2.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v3.1.2...webui@v3.2.0) (2026-03-21)
+
+
+### 🚀 Features
+
+* **ui:** add Catppuccin Latte light theme ([68bae4f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/68bae4f0f08b95d37c92c05542810824b547afca))
+* **ui:** add configurable theme support ([9e90933](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/9e90933044fa4dc28d51efb4701a2fc90290db91))
+* **ui:** add OCPP 2.0.x command support to Web UI ([#1734](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1734)) ([4aeb171](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/4aeb171dbb5cd2f9122452c1e45759e843d6ddb1))
+* **ui:** add OCPP version column to charging stations table ([730eba4](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/730eba4760715c762f3a629e868c8a4beb3b0e21))
+* **ui:** add SAP Horizon theme from official theming-base-content ([2656c11](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/2656c1142e5fda0729c52ead2d35ccdac1c249b2))
+* **ui:** apply Tokyo Night Storm theme with semantic CSS tokens ([9cc3a26](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/9cc3a26a490813d549b4c3c0f6e86d21957f6701))
+
+
+### 🐞 Bug Fixes
+
+* **deps:** update all non-major dependencies ([#1739](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1739)) ([3f56c2b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3f56c2b2c080386026855ecb3c27b1a1f877dfa6))
+* **ui:** remove redundant text color selectors that override toast styles ([18ac2ac](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/18ac2ac7194804597f7763d9b58b3717be76665e))
+* **ui:** use theme text color on toggle pressed state for readability ([0f2bcc5](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/0f2bcc5f27e55bee299f825587362c1eeb881124))
+* **webui:** prevent action panel flex grow and allow table container to shrink ([63e7235](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/63e72355f744b2271c48d0178f1af048d28f694b))
+* **webui:** remove white-space nowrap on buttons to prevent table overflow ([0842dc8](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/0842dc8275b2c3555bb20c3eb1c0bfe2223da068))
+* **webui:** use table-layout fixed so table shrinks with container when action panel opens ([d79e718](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/d79e71887c9c171fa7b311afa2550db4f473c239))
+
+
+### ✨ Polish
+
+* **webui:** css quality overhaul with scoped styles, class selectors, design tokens ([45c47c1](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/45c47c1cf861c7d2d0a82d23e5c5186ba348cb68))
+* **webui:** harmonize barrel usage in types and composables ([97dde41](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/97dde41f2772bf4d8abacec46786205683b42adc))
+* **webui:** restore native table layout to fix column overlap on action panel open ([3970d2c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3970d2c7149972b97af404c401eebb7bbcf340d2))
+
+
+### 🧪 Tests
+
+* **ui:** raise coverage thresholds to match current levels ([0c59cdc](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/0c59cdc9b49a1dbc124c9319719aff96daae2996))
+* **webui:** add comprehensive unit test suite ([#1738](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1738)) ([8e92434](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/8e92434ca274469cc8b0643546a9980710dc6bc1))
+
+
+### 📚 Documentation
+
+* **ui:** document theme configuration and available themes ([3926beb](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3926beb67a5266774c4b5b50e27292d64fa1ec26))
+
 ## [3.1.2](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v3.1.1...webui@v3.1.2) (2026-03-17)
 
 ### 🐞 Bug Fixes

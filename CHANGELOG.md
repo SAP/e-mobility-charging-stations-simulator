@@ -1,5 +1,77 @@
 # Changelog
 
+## [3.2.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v3.1.2...simulator@v3.2.0) (2026-03-21)
+
+
+### 🚀 Features
+
+* **ocpp2.0:** implement Authorize request, fix double TransactionEvent(Started) ([c13a409](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c13a409bc03e6e95436af2cfabf6a4b838680810))
+* **ocpp2:** fix authorization conformance gaps (C10, C12, C01, C09) ([#1735](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1735)) ([cde7fa6](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/cde7fa6344684107572c35d6de64737bdd1a4ad2))
+* **ui:** add OCPP 2.0.x command support to Web UI ([#1734](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1734)) ([4aeb171](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/4aeb171dbb5cd2f9122452c1e45759e843d6ddb1))
+
+
+### 🐞 Bug Fixes
+
+* **auth:** address audit findings in OCPP auth abstraction layer ([382bd67](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/382bd67c4afeed8d49dcb18d70123ad2048e9996))
+* **auth:** log actual station OCPP version in RemoteAuthStrategy ([9691126](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/969112652f4a8dcc8e5d1946a6659202a3f96017))
+* **auth:** replace phantom spec references in source code comments ([d6e48eb](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/d6e48eb6e7c4bea13fc5e64ebcae5dab8412d14c))
+* **deps:** update all non-major dependencies ([#1739](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1739)) ([3f56c2b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3f56c2b2c080386026855ecb3c27b1a1f877dfa6))
+* **lifecycle:** clear auth service on template reload and station reset ([3e8dea4](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3e8dea439e02e67a1a1ac32eb9da4ecff62ba24a))
+* merge duplicate node:process imports in Utils.test.ts ([1eec746](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/1eec746bfc468b6fc3c3c17ea3f0cd6af6335dbd))
+* merge duplicate type imports from same barrel module ([1c3e3e9](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/1c3e3e9beb79ba25ac9dedf49934b7a3981c94b7))
+* **ocpp2.0:** add proper response handlers for certificate commands + handler coverage tests ([273f539](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/273f53994d1c816a3760db3e08dc17c4995c9363))
+* **ocpp2.0:** align VARIABLE_REGISTRY spec conformance and log severity ([3c1c342](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3c1c342fd9a082cebe832393eceed749f4dd7555))
+* **ocpp2.0:** guard BroadcastChannel MeterValues for both VERSION_20 and VERSION_201 ([9c0fcfd](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/9c0fcfda63dbbf24bbb240f2d4ba45667fbd9c9a))
+* **ocpp2.0:** inject offline:true in sendTransactionEvent offline path per E04.FR.03 ([2f582de](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/2f582de93197aa642029cb372a3441f023665a12))
+* **ocpp2.0:** make stopRunningTransactions version-aware for OCPP 2.0 ([ede4205](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/ede4205df134de4df4de088f82a80090742029ea))
+* **ocpp2.0:** pass real transactionId to buildMeterValue for energy accumulation ([dcfc120](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/dcfc120c6562e7d20830629a067a3224d5bc37ca))
+* **ocpp2.0:** reset transaction sequence number before new transaction per E01.FR.07 ([3c431b0](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/3c431b0be843098d4478bbdfc11dc7b21dc5f535))
+* **ocpp2:** add AvailabilityState defaults and allow self-transitions ([8733ff9](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/8733ff9ab5995803109737a40f3b85fbc7089619))
+* **ocpp2:** audit TransactionEvent — state ownership, deauthorization, meter values ([710db15](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/710db15c07aeed99831aff3663176eba177fc12d))
+* **ocpp2:** handle transaction lifecycle in TransactionEvent response ([0af4959](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/0af495949035f5ee78057526ecf9f2c67468e879))
+* **ocpp2:** revert UI transaction handlers to simple passthrough ([7b543d0](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7b543d0cd334e0ddb350bc1311731f1732de4116))
+* **ocpp:** keep StopTransactionRequest as 1.6 wire type, narrow reason via indexed access ([c6aac34](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c6aac34df81f2bea43b465cb58e563015df4de70))
+* **ocpp:** remove type re-export from services barrel ([31852b7](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/31852b7db6b9ac7165c563e5a684fd0c1f1f0857))
+* **ocpp:** replace this.constructor.name with moduleName in base class logs ([442b290](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/442b290129ea93a45c8a842ce868b2443a70caf1))
+* preserve EVSE and connector IDs in configuration persistence ([7040dac](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7040dac859f4bfe0c6c2567e829b38c752454142))
+* prevent tests from polluting production log files ([03ef74b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/03ef74bd10770a057dfa0a25bb73f324ddd0fe20))
+* use exception barrel instead of direct module imports ([351d607](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/351d6077e316dd323384446a052e1c70c7a72786))
+* use truncateId consistently for all user identifiers in logs ([e786699](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e786699dd36ea61c2a46baed8ff98567f0893918))
+
+
+### ✨ Polish
+
+* **auth:** remove ocppVersion from UnifiedIdentifier ([f369b3a](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f369b3ad1613a219f599689d48e3cd43d705f52a))
+* **auth:** replace adapter Map with single adapter per station ([7021e25](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/7021e25c37ec7e337bc4222d062124247d75d882))
+* build version-agnostic OCPP transaction primitives in service layer ([#1741](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1741)) ([72993ba](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/72993ba65aad25297b5a98a9802704661099be32))
+* harmonize barrel usage across all test files ([6656593](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/665659308a1c771e5f88fa37ae7840454ec4e645))
+* **ocpp2.0:** parameterize requestStopTransaction triggerReason and stoppedReason ([a488b92](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/a488b9265e632d6af204b85bb82ee5ac9c72571b))
+* **ocpp2:** centralize payload construction and eliminate duplication ([285b9a3](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/285b9a3b2ca05509483c9ca9a21c2c1ed389b597))
+* **ocpp2:** consolidate dual-path request architecture into single path ([a91da1d](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/a91da1dbeab41c25b6d08569e29d6b07ea54771b))
+* **ocpp2:** extract buildTransactionEvent as standalone function, remove dead context code ([0d25748](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/0d25748bfdc427e530144246bf60e92d3abaea6d))
+* **ocpp2:** harmonize and condense audit comments to match existing FR style ([fe485a8](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/fe485a8a839bd82c3aaa45cdc45b7144aa715906))
+* **ocpp2:** remove redundant getTxUpdatedInterval wrapper ([6eba8ca](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6eba8caeedbff34f42c62aa286e61368c0955205))
+* **ocpp2:** use enum values instead of string literals in variable registry ([6f0f52f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6f0f52f6d53554508455f5edf9a51c26710bdfc1))
+* **ocpp:** add rawPayload bypass, resolve minimal params in buildRequestPayload, fix test types ([0d54c72](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/0d54c7212b5448e2bb749b4ac029ec528fd8a5b0))
+* **ocpp:** consolidate cross-stack types and harmonize barrel imports ([0dd1fb1](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/0dd1fb158fa202630ff7ed64599feece78792953))
+* **ocpp:** harmonize buildRequestPayload switch structure across versions ([db04e15](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/db04e1514590d0a79fab7a7e4af34a9b48d86861))
+* **ocpp:** make buildRequestPayload the authoritative builder for all commands ([2f82688](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/2f8268862300f3f2260f99003958bd1c3fa0f948))
+* **ocpp:** use buildStatusNotificationRequest helper in TriggerMessage handlers ([f611016](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f611016b6820336b74aaa7fd6f9d37c41b1b150e))
+* **test:** remove duplicate certificate passthrough tests from broadcast channel ([6d3a996](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6d3a9962fa8909d2c4b7b5d1a9da1436e762c4b5))
+
+
+### 🧪 Tests
+
+* **auth:** fix OCPP spec references and remove duplicated tests ([20912b5](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/20912b5744e7288410616c873c9d60af3d998874))
+* **auth:** strengthen assertion quality and edge case coverage ([4943d4f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/4943d4f9b706c2f81ef845add2c4f7db72d83cdd))
+* move truncateId tests from InMemoryAuthCache to Utils ([351cccc](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/351cccce0ed2855b760c190b638aa19421e6d9d7))
+* **ocpp:** add call chain integration tests for both OCPP stacks ([df31480](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/df314809b7e7c5458618235a061117e83ae48cda))
+
+
+### 📚 Documentation
+
+* update suggested commands and task completion checklist ([0894428](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/0894428747e964b4aefdbfa5490efa2d2fa8ac11))
+
 ## [3.1.2](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v3.1.1...simulator@v3.1.2) (2026-03-17)
 
 ### 🐞 Bug Fixes
