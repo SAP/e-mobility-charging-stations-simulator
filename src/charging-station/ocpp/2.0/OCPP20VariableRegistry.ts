@@ -6,6 +6,7 @@ import {
   AttributeEnumType,
   DataEnumType,
   MutabilityEnumType,
+  OCPP20ChargingRateUnitEnumType,
   OCPP20ComponentName,
   OCPP20DeviceInfoVariableName,
   OCPP20MeasurandEnumType,
@@ -2152,10 +2153,9 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   [buildRegistryKey(OCPP20ComponentName.SmartChargingCtrlr as string, 'RateUnit')]: {
     component: OCPP20ComponentName.SmartChargingCtrlr as string,
     dataType: DataEnumType.MemberList,
-    defaultValue: 'A,W',
-    description:
-      "A list of supported quantities for use in a ChargingSchedule. Allowed values: 'A' and 'W'",
-    enumeration: ['A', 'W'],
+    defaultValue: `${OCPP20ChargingRateUnitEnumType.A},${OCPP20ChargingRateUnitEnumType.W}`,
+    description: `A list of supported quantities for use in a ChargingSchedule. Allowed values: '${OCPP20ChargingRateUnitEnumType.A}' and '${OCPP20ChargingRateUnitEnumType.W}'`,
+    enumeration: [OCPP20ChargingRateUnitEnumType.A, OCPP20ChargingRateUnitEnumType.W],
     mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Persistent,
     required: true,
