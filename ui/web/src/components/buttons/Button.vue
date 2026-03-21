@@ -12,7 +12,6 @@
   display: block;
   width: 100%;
   text-align: center;
-  white-space: nowrap;
   font-size: var(--font-size-sm);
 }
 
