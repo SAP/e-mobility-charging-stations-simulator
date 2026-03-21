@@ -872,6 +872,7 @@ export class ChargingStation extends EventEmitter {
     }
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     await sleep(this.stationInfo!.resetTime!)
+    OCPPAuthServiceFactory.clearInstance(this)
     this.initialize()
     this.start()
   }
@@ -935,6 +936,7 @@ export class ChargingStation extends EventEmitter {
                   this.sharedLRUCache.deleteChargingStationTemplate(this.templateFileHash)
                   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                   this.idTagsCache.deleteIdTags(getIdTagsFile(this.stationInfo!)!)
+                  OCPPAuthServiceFactory.clearInstance(this)
                   // Initialize
                   this.initialize()
                   // Restart the ATG
