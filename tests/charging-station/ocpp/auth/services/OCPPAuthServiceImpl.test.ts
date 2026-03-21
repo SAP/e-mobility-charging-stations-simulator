@@ -409,14 +409,14 @@ await describe('OCPPAuthServiceImpl', async () => {
     })
   })
 
-  await describe('G03.FR.01.100 - Cache Wiring', async () => {
+  await describe('Cache Wiring', async () => {
     let mockStation: ChargingStation
 
     beforeEach(() => {
       mockStation = createMockAuthServiceTestStation('cache-wiring')
     })
 
-    await it('G03.FR.01.101 - local strategy has a defined authCache after initialization', async () => {
+    await it('should have a defined authCache after initialization', async () => {
       const authService = new OCPPAuthServiceImpl(mockStation)
       await authService.initialize()
 

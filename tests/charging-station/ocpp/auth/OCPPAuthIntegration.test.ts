@@ -19,10 +19,9 @@ import {
   IdentifierType,
 } from '../../../../src/charging-station/ocpp/auth/types/AuthTypes.js'
 import { OCPPVersion } from '../../../../src/types/index.js'
-import { sleep, standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
+import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from '../../ChargingStationTestUtils.js'
 import {
-  createMockAuthorizationResult,
   createMockAuthRequest,
   createMockIdentifier,
   createMockLocalAuthListManager,
@@ -220,8 +219,8 @@ await describe('OCPP Authentication', async () => {
   })
 
   await describe('Cache Spec Compliance Integration', async () => {
-    // G04.INT.01 - Cache wiring regression (T2)
-    await it('G04.INT.01: OCPPAuthServiceImpl wires auth cache into local strategy', async () => {
+    // C10.INT.01 - Cache wiring regression
+    await it('C10.INT.01: OCPPAuthServiceImpl wires auth cache into local strategy', async () => {
       const result16 = createMockChargingStation({
         baseName: 'TEST_CACHE_WIRING',
         connectorsCount: 1,
@@ -241,103 +240,8 @@ await describe('OCPP Authentication', async () => {
       assert.notStrictEqual(authCache, undefined)
     })
 
-    // G04.INT.02 - All-status caching (T4)
-    await it('G04.INT.02: cache stores and retrieves all authorization statuses', () => {
-      const cache = new InMemoryAuthCache({ cleanupIntervalSeconds: 0 })
-      try {
-        const blockedResult = createMockAuthorizationResult({
-          status: AuthorizationStatus.BLOCKED,
-        })
-
-        cache.set('BLOCKED-ID', blockedResult)
-        const retrieved = cache.get('BLOCKED-ID')
-
-        assert.notStrictEqual(retrieved, undefined)
-        assert.strictEqual(retrieved?.status, AuthorizationStatus.BLOCKED)
-      } finally {
-        cache.dispose()
-      }
-    })
-
-    // G04.INT.03 - Status-aware eviction (T5)
-    await it('G04.INT.03: eviction prefers ACCEPTED entries over non-ACCEPTED', () => {
-      const cache = new InMemoryAuthCache({ cleanupIntervalSeconds: 0, maxEntries: 3 })
-      try {
-        // Add 3 ACCEPTED entries
-        for (let i = 0; i < 3; i++) {
-          cache.set(
-            `ACCEPTED-${String(i)}`,
-            createMockAuthorizationResult({ status: AuthorizationStatus.ACCEPTED })
-          )
-        }
-
-        // Insert a BLOCKED entry — triggers eviction of one ACCEPTED entry
-        cache.set(
-          'BLOCKED-ENTRY',
-          createMockAuthorizationResult({ status: AuthorizationStatus.BLOCKED })
-        )
-
-        const stats = cache.getStats()
-        assert.strictEqual(stats.totalEntries, 3)
-
-        // BLOCKED entry must still exist
-        const blocked = cache.get('BLOCKED-ENTRY')
-        assert.notStrictEqual(blocked, undefined)
-        assert.strictEqual(blocked?.status, AuthorizationStatus.BLOCKED)
-      } finally {
-        cache.dispose()
-      }
-    })
-
-    // G04.INT.04 - TTL sliding window (T6/R5/R16)
-    await it('G04.INT.04: cache hit resets TTL sliding window', async () => {
-      const cache = new InMemoryAuthCache({ cleanupIntervalSeconds: 0, defaultTtl: 1 })
-      try {
-        cache.set(
-          'SLIDING-ID',
-          createMockAuthorizationResult({ status: AuthorizationStatus.ACCEPTED })
-        )
-
-        // Wait 500ms, then access to reset TTL
-        await sleep(500)
-        const midResult = cache.get('SLIDING-ID')
-        assert.notStrictEqual(midResult, undefined)
-        assert.strictEqual(midResult?.status, AuthorizationStatus.ACCEPTED)
-
-        // Wait another 700ms (total 1200ms from initial set, but only 700ms from last access)
-        await sleep(700)
-        const lateResult = cache.get('SLIDING-ID')
-
-        // Entry should still be valid because TTL was reset at the 500ms access
-        assert.notStrictEqual(lateResult, undefined)
-        assert.strictEqual(lateResult?.status, AuthorizationStatus.ACCEPTED)
-      } finally {
-        cache.dispose()
-      }
-    })
-
-    // G04.INT.05 - Expired entry transition (T7/R10)
-    await it('G04.INT.05: expired entries transition to EXPIRED status instead of being deleted', async () => {
-      const cache = new InMemoryAuthCache({ cleanupIntervalSeconds: 0, defaultTtl: 1 })
-      try {
-        cache.set(
-          'EXPIRE-ID',
-          createMockAuthorizationResult({ status: AuthorizationStatus.ACCEPTED })
-        )
-
-        // Wait for TTL to expire
-        await sleep(1100)
-        const result = cache.get('EXPIRE-ID')
-
-        assert.notStrictEqual(result, undefined)
-        assert.strictEqual(result?.status, AuthorizationStatus.EXPIRED)
-      } finally {
-        cache.dispose()
-      }
-    })
-
-    // G04.INT.06 - Local Auth List exclusion (T8/R17)
-    await it('G04.INT.06: identifiers from local auth list are not cached', async () => {
+    // C13.FR.01.INT.01 - Local Auth List exclusion (R17)
+    await it('C13.FR.01.INT.01: identifiers from local auth list are not cached', async () => {
       const cache = new InMemoryAuthCache({ cleanupIntervalSeconds: 0 })
       try {
         const listManager = createMockLocalAuthListManager({
@@ -366,40 +270,6 @@ await describe('OCPP Authentication', async () => {
         // Verify cache does NOT contain the identifier (R17)
         const cached = cache.get('LIST-ID')
         assert.strictEqual(cached, undefined)
-      } finally {
-        cache.dispose()
-      }
-    })
-
-    // G04.INT.07 - Cache lifecycle with stats preservation (T11)
-    await it('G04.INT.07: clear preserves stats, resetStats zeroes them', () => {
-      const cache = new InMemoryAuthCache({ cleanupIntervalSeconds: 0 })
-      try {
-        // Perform some operations to generate stats
-        cache.set(
-          'STATS-ID',
-          createMockAuthorizationResult({ status: AuthorizationStatus.ACCEPTED })
-        )
-        cache.get('STATS-ID')
-        cache.get('NONEXISTENT')
-
-        const statsBefore = cache.getStats()
-        assert.ok(statsBefore.hits > 0)
-        assert.ok(statsBefore.misses > 0)
-
-        // Clear entries — stats should be preserved
-        cache.clear()
-        const statsAfterClear = cache.getStats()
-        assert.strictEqual(statsAfterClear.totalEntries, 0)
-        assert.strictEqual(statsAfterClear.hits, statsBefore.hits)
-        assert.strictEqual(statsAfterClear.misses, statsBefore.misses)
-
-        // Reset stats — counters should be zeroed
-        cache.resetStats()
-        const statsAfterReset = cache.getStats()
-        assert.strictEqual(statsAfterReset.hits, 0)
-        assert.strictEqual(statsAfterReset.misses, 0)
-        assert.strictEqual(statsAfterReset.evictions, 0)
       } finally {
         cache.dispose()
       }

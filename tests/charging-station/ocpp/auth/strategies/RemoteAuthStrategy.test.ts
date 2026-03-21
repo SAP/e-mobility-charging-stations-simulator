@@ -151,7 +151,7 @@ await describe('RemoteAuthStrategy', async () => {
       assert.strictEqual(cachedTtl, 300)
     })
 
-    await it('G03.FR.01.T4.01 - should cache BLOCKED authorization status', async () => {
+    await it('C10.FR.01.T01 - should cache BLOCKED authorization status', async () => {
       let cachedKey: string | undefined
       let cachedValue: AuthorizationResult | undefined
       let cachedTtl: number | undefined
@@ -184,7 +184,7 @@ await describe('RemoteAuthStrategy', async () => {
       assert.strictEqual(cachedTtl, 300)
     })
 
-    await it('G03.FR.01.T4.02 - should cache EXPIRED authorization status', async () => {
+    await it('C10.FR.01.T02 - should cache EXPIRED authorization status', async () => {
       let cachedKey: string | undefined
       let cachedValue: AuthorizationResult | undefined
       let cachedTtl: number | undefined
@@ -217,7 +217,7 @@ await describe('RemoteAuthStrategy', async () => {
       assert.strictEqual(cachedTtl, 300)
     })
 
-    await it('G03.FR.01.T4.03 - should cache INVALID authorization status', async () => {
+    await it('C10.FR.01.T03 - should cache INVALID authorization status', async () => {
       let cachedKey: string | undefined
       let cachedValue: AuthorizationResult | undefined
       let cachedTtl: number | undefined
@@ -250,7 +250,7 @@ await describe('RemoteAuthStrategy', async () => {
       assert.strictEqual(cachedTtl, 300)
     })
 
-    await it('G03.FR.01.T4.04 - should still cache ACCEPTED authorization status (regression)', async () => {
+    await it('C10.FR.01.T04 - should still cache ACCEPTED authorization status (regression)', async () => {
       let cachedKey: string | undefined
       let cachedValue: AuthorizationResult | undefined
       let cachedTtl: number | undefined
@@ -334,7 +334,7 @@ await describe('RemoteAuthStrategy', async () => {
       assert.strictEqual(result?.status, AuthorizationStatus.ACCEPTED)
     })
 
-    await it('G03.FR.01.T8.01 - should not cache identifier that is in local auth list', async () => {
+    await it('C13.FR.01.T01 - should not cache identifier that is in local auth list', async () => {
       let cachedKey: string | undefined
       mockAuthCache.set = (key: string) => {
         cachedKey = key
@@ -365,7 +365,7 @@ await describe('RemoteAuthStrategy', async () => {
       assert.strictEqual(cachedKey, undefined)
     })
 
-    await it('G03.FR.01.T8.02 - should cache identifier that is not in local auth list', async () => {
+    await it('C10.FR.01.T05 - should cache identifier that is not in local auth list', async () => {
       let cachedKey: string | undefined
       mockAuthCache.set = (key: string) => {
         cachedKey = key

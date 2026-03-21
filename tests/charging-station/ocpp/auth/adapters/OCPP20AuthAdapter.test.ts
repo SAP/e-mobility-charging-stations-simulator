@@ -368,7 +368,7 @@ await describe('OCPP20AuthAdapter', async () => {
     })
   })
 
-  await describe('OCPP20AuthAdapter - G03.FR.02 Offline Authorization', async () => {
+  await describe('OCPP20AuthAdapter - C15 Offline Authorization', async () => {
     let offlineAdapter: OCPP20AuthAdapter
     let offlineMockChargingStation: ChargingStation
 
@@ -388,7 +388,7 @@ await describe('OCPP20AuthAdapter', async () => {
       mock.reset()
     })
 
-    await describe('G03.FR.02.001 - Offline detection', async () => {
+    await describe('C15 - Offline detection', async () => {
       await it('should detect station is offline when not in accepted state', () => {
         // Given: Station is offline (not in accepted state)
         offlineMockChargingStation.inAcceptedState = () => false
@@ -417,7 +417,7 @@ await describe('OCPP20AuthAdapter', async () => {
       })
     })
 
-    await describe('G03.FR.02.002 - Remote availability check', async () => {
+    await describe('C15 - Remote availability check', async () => {
       await it('should return false when offline even with valid configuration', () => {
         // Given: Station is offline
         offlineMockChargingStation.inAcceptedState = () => false
@@ -443,7 +443,7 @@ await describe('OCPP20AuthAdapter', async () => {
       })
     })
 
-    await describe('G03.FR.02.003 - Configuration validation', async () => {
+    await describe('Configuration validation', async () => {
       await it('should initialize with default configuration for offline scenarios', () => {
         // When: Adapter is created
         // Then: Should have OCPP 2.0 version
