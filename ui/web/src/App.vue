@@ -14,7 +14,8 @@ import Container from '@/components/Container.vue'
 </script>
 
 <style scoped>
-.action-container {
+#action-container {
+  flex: none;
   min-width: max-content;
   height: fit-content;
   display: flex;

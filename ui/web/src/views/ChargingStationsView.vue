@@ -344,8 +344,8 @@ const stopSimulator = (): void => {
 
 <style scoped>
 .charging-stations-container {
+  min-width: 0;
   height: fit-content;
-  width: 100%;
   display: flex;
   flex-direction: column;
 }
