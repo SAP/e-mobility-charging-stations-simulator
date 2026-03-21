@@ -17,7 +17,10 @@ export class OCPP20Constants extends OCPPConstants {
   static readonly ChargingStationStatusTransitions: readonly ConnectorStatusTransition[] =
     Object.freeze([
       { to: OCPP20ConnectorStatusEnumType.Available },
-      // { from: OCPP20ConnectorStatusEnumType.Available, to: OCPP20ConnectorStatusEnumType.Available },
+      {
+        from: OCPP20ConnectorStatusEnumType.Available,
+        to: OCPP20ConnectorStatusEnumType.Available,
+      },
       {
         from: OCPP20ConnectorStatusEnumType.Available,
         to: OCPP20ConnectorStatusEnumType.Unavailable,

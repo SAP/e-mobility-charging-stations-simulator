@@ -9,6 +9,7 @@ import {
   OCPP20ComponentName,
   OCPP20DeviceInfoVariableName,
   OCPP20MeasurandEnumType,
+  OCPP20OperationalStatusEnumType,
   OCPP20OptionalVariableName,
   OCPP20RequiredVariableName,
   OCPP20UnitEnumType,
@@ -559,8 +560,12 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   )]: {
     component: OCPP20ComponentName.ChargingStation as string,
     dataType: DataEnumType.OptionList,
+    defaultValue: OCPP20OperationalStatusEnumType.Operative,
     description: 'Current availability state for the ChargingStation.',
-    enumeration: ['Operative', 'Inoperative'],
+    enumeration: [
+      OCPP20OperationalStatusEnumType.Operative,
+      OCPP20OperationalStatusEnumType.Inoperative,
+    ],
     mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Persistent,
     required: true,
@@ -902,9 +907,12 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   [buildRegistryKey(OCPP20ComponentName.EVSE as string, 'AvailabilityState')]: {
     component: OCPP20ComponentName.EVSE as string,
     dataType: DataEnumType.OptionList,
-    defaultValue: 'Operative',
+    defaultValue: OCPP20OperationalStatusEnumType.Operative,
     description: 'This variable reports current availability state for the EVSE',
-    enumeration: ['Operative', 'Inoperative'],
+    enumeration: [
+      OCPP20OperationalStatusEnumType.Operative,
+      OCPP20OperationalStatusEnumType.Inoperative,
+    ],
     mutability: MutabilityEnumType.ReadOnly,
     persistence: PersistenceEnumType.Volatile,
     required: true,
