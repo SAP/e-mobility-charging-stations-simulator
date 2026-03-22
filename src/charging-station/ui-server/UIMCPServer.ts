@@ -81,7 +81,7 @@ export class UIMCPServer extends AbstractUIServer {
 
     const mcpServer = new McpServer({
       name: 'e-mobility-charging-stations-simulator',
-      version: '1.0.0',
+      version,
     })
 
     const service = this.uiServices.get(version)
