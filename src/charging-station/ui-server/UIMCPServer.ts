@@ -19,6 +19,7 @@ import {
 import { generateUUID, logger } from '../../utils/index.js'
 import { AbstractUIServer } from './AbstractUIServer.js'
 import { mcpToolSchemas, registerMCPResources } from './mcp/index.js'
+import { HttpMethod } from './UIServerUtils.js'
 
 const moduleName = 'UIMCPServer'
 
@@ -148,10 +149,10 @@ export class UIMCPServer extends AbstractUIServer {
     }
 
     try {
-      if (req.method === 'POST') {
+      if (req.method === HttpMethod.POST) {
         const body = await this.readRequestBody(req)
         await transport.handleRequest(req, res, body)
-      } else if (req.method === 'GET' || req.method === 'DELETE') {
+      } else if (req.method === HttpMethod.GET || req.method === HttpMethod.DELETE) {
         await transport.handleRequest(req, res)
       } else {
         res.writeHead(405, { 'Content-Type': 'text/plain' }).end('405 Method Not Allowed')

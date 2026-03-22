@@ -27,18 +27,11 @@ import {
   DEFAULT_RATE_LIMIT,
   DEFAULT_RATE_WINDOW,
 } from './UIServerSecurity.js'
-import { isProtocolAndVersionSupported } from './UIServerUtils.js'
+import { HttpMethod, isProtocolAndVersionSupported } from './UIServerUtils.js'
 
 const moduleName = 'UIHttpServer'
 
 const rateLimiter = createRateLimiter(DEFAULT_RATE_LIMIT, DEFAULT_RATE_WINDOW)
-
-enum HttpMethods {
-  GET = 'GET',
-  PATCH = 'PATCH',
-  POST = 'POST',
-  PUT = 'PUT',
-}
 
 /**
  * @deprecated Use UIMCPServer (ApplicationProtocol.MCP) instead. Will be removed in a future major version.
@@ -180,7 +173,7 @@ export class UIHttpServer extends AbstractUIServer {
           }
         })
 
-        if (req.method !== HttpMethods.POST) {
+        if (req.method !== HttpMethod.POST) {
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           throw new BaseError(`Unsupported HTTP method: '${req.method}'`)
         }
