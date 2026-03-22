@@ -24,6 +24,8 @@ import {
   OCPP20ChargingProfilePurposeEnumType,
   OCPP20IdTokenEnumType,
   OCPP20IncomingRequestCommand,
+  OCPP20MeasurandEnumType,
+  OCPP20ReadingContextEnumType,
   OCPP20RequestCommand,
   OCPP20TransactionEventEnumType,
   OCPP20TriggerReasonEnumType,
@@ -453,10 +455,13 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
         Array.isArray(args[2].meterValue) && args[2].meterValue.length > 0,
         'TransactionEvent(Started) should include non-empty meterValue array'
       )
-      assert.strictEqual(args[2].meterValue[0].sampledValue[0].context, 'Transaction.Begin')
+      assert.strictEqual(
+        args[2].meterValue[0].sampledValue[0].context,
+        OCPP20ReadingContextEnumType.TRANSACTION_BEGIN
+      )
       assert.strictEqual(
         args[2].meterValue[0].sampledValue[0].measurand,
-        'Energy.Active.Import.Register'
+        OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER
       )
     })
 
