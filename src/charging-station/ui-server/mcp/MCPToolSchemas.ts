@@ -213,7 +213,7 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
       description: 'Set the OCPP server supervision URL for one or more charging stations',
       inputSchema: z.object({
         hashIds,
-        supervisionUrl: z.url().describe('The OCPP server supervision URL to set'),
+        url: z.url().describe('The OCPP server supervision URL to set'),
       }),
     },
   ],
@@ -294,7 +294,7 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
       description: 'Stop a charging transaction on one or more charging stations',
       inputSchema: z.object({
         hashIds,
-        transactionIds: z.array(z.string()).optional().describe('Transaction IDs to stop'),
+        transactionId: z.number().int().optional().describe('Transaction ID to stop'),
       }),
     },
   ],

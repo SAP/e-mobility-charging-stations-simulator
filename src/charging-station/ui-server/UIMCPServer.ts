@@ -19,11 +19,20 @@ import {
 import { generateUUID, logger } from '../../utils/index.js'
 import { AbstractUIServer } from './AbstractUIServer.js'
 import { mcpToolSchemas, registerMCPResources } from './mcp/index.js'
+import {
+  createBodySizeLimiter,
+  createRateLimiter,
+  DEFAULT_MAX_PAYLOAD_SIZE,
+  DEFAULT_RATE_LIMIT,
+  DEFAULT_RATE_WINDOW,
+} from './UIServerSecurity.js'
 import { HttpMethod } from './UIServerUtils.js'
 
 const moduleName = 'UIMCPServer'
 
 const MCP_TOOL_TIMEOUT_MS = 30_000
+
+const rateLimiter = createRateLimiter(DEFAULT_RATE_LIMIT, DEFAULT_RATE_WINDOW)
 
 export class UIMCPServer extends AbstractUIServer {
   protected override readonly uiServerType = 'UI MCP Server'
@@ -95,6 +104,16 @@ export class UIMCPServer extends AbstractUIServer {
     this.httpServer.on('request', (req: IncomingMessage, res: ServerResponse) => {
       const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`)
       if (!url.pathname.startsWith('/mcp')) {
+        res.writeHead(404, { 'Content-Type': 'text/plain' }).end('404 Not Found')
+        if (!req.complete) {
+          req.destroy()
+        }
+        return
+      }
+
+      const clientIp = req.socket.remoteAddress ?? 'unknown'
+      if (!rateLimiter(clientIp)) {
+        res.writeHead(429, { 'Content-Type': 'text/plain' }).end('429 Too Many Requests')
         return
       }
 
@@ -151,8 +170,24 @@ export class UIMCPServer extends AbstractUIServer {
     try {
       if (req.method === HttpMethod.POST) {
         const body = await this.readRequestBody(req)
+        res.on('close', () => {
+          transport.close().catch((error: unknown) => {
+            logger.error(
+              `${this.logPrefix(moduleName, 'handleMcpRequest')} MCP transport close error:`,
+              error
+            )
+          })
+        })
         await transport.handleRequest(req, res, body)
       } else if (req.method === HttpMethod.GET || req.method === HttpMethod.DELETE) {
+        res.on('close', () => {
+          transport.close().catch((error: unknown) => {
+            logger.error(
+              `${this.logPrefix(moduleName, 'handleMcpRequest')} MCP transport close error:`,
+              error
+            )
+          })
+        })
         await transport.handleRequest(req, res)
       } else {
         res.writeHead(405, { 'Content-Type': 'text/plain' }).end('405 Method Not Allowed')
@@ -160,17 +195,13 @@ export class UIMCPServer extends AbstractUIServer {
     } catch (error: unknown) {
       logger.error(`${this.logPrefix(moduleName, 'handleMcpRequest')} MCP transport error:`, error)
       if (!res.headersSent) {
-        res.writeHead(500, { 'Content-Type': 'text/plain' }).end('500 Internal Server Error')
+        const isBadRequest =
+          error instanceof SyntaxError ||
+          (error instanceof Error && error.message.includes('Payload too large'))
+        res
+          .writeHead(isBadRequest ? 400 : 500, { 'Content-Type': 'text/plain' })
+          .end(isBadRequest ? '400 Bad Request' : '500 Internal Server Error')
       }
-    } finally {
-      res.on('close', () => {
-        transport.close().catch((error: unknown) => {
-          logger.error(
-            `${this.logPrefix(moduleName, 'handleMcpRequest')} MCP transport close error:`,
-            error
-          )
-        })
-      })
     }
   }
 
@@ -268,7 +299,15 @@ export class UIMCPServer extends AbstractUIServer {
   private readRequestBody (req: IncomingMessage): Promise<unknown> {
     return new Promise((resolve, reject) => {
       const chunks: Buffer[] = []
+      const checkBodySize = createBodySizeLimiter(DEFAULT_MAX_PAYLOAD_SIZE)
+      let totalSize = 0
       req.on('data', (chunk: Buffer) => {
+        totalSize += chunk.length
+        if (!checkBodySize(totalSize)) {
+          reject(new Error('Payload too large'))
+          req.destroy()
+          return
+        }
         chunks.push(chunk)
       })
       req.on('end', () => {
