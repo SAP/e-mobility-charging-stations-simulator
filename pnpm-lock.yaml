@@ -73,8 +73,8 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0(winston@3.19.0)
       ws:
-        specifier: ^8.19.0
-        version: 8.19.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
+        specifier: ^8.20.0
+        version: 8.20.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
     devDependencies:
       '@commitlint/cli':
         specifier: ^20.5.0
@@ -5872,8 +5872,8 @@ packages:
   write-file-atomic@3.0.3:
     resolution: {integrity: sha512-AvHcyZ5JnSfq3ioSyjrBkH9yW4m7Ayk8/9My/DD9onKeu/94fwrMocemO2QAJFAlnnDN+ZDS+ZjAR5ua1/PV/Q==}
 
-  ws@8.19.0:
-    resolution: {integrity: sha512-blAT2mjOEIi0ZzruJfIhb3nps74PRWTCz1IjglWEEpQl5XS/UNama6u2/rjFkDDouqr4L67ry+1aGIALViWjDg==}
+  ws@8.20.0:
+    resolution: {integrity: sha512-sAt8BhgNbzCtgGbt2OxmpuryO63ZoDk/sqaB/znQm94T4fCEsy/yV+7CdC1kJhOU9lboAEU7R3kquuycDoibVA==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
       bufferutil: ^4.0.1
@@ -12408,7 +12408,7 @@ snapshots:
       signal-exit: 3.0.7
       typedarray-to-buffer: 3.1.5
 
-  ws@8.19.0(bufferutil@4.1.0)(utf-8-validate@6.0.6):
+  ws@8.20.0(bufferutil@4.1.0)(utf-8-validate@6.0.6):
     optionalDependencies:
       bufferutil: 4.1.0
       utf-8-validate: 6.0.6
