@@ -302,53 +302,31 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     connectorId: number,
     evseId?: number
   ): Promise<OCPP20TransactionEventResponse> {
-    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
-    if (
-      (connectorStatus?.transactionStarted === true ||
-        connectorStatus?.transactionPending === true) &&
-      connectorStatus.transactionId != null
-    ) {
-      const transactionId =
-        typeof connectorStatus.transactionId === 'string'
-          ? connectorStatus.transactionId
-          : connectorStatus.transactionId.toString()
+    const { connectorStatus, transactionId } = OCPP20ServiceUtils.resolveActiveTransaction(
+      chargingStation,
+      connectorId
+    )
 
-      await this.sendTransactionEvent(
-        chargingStation,
-        OCPP20TransactionEventEnumType.Updated,
-        OCPP20TriggerReasonEnumType.Deauthorized,
-        connectorId,
-        transactionId,
-        {
-          chargingState: OCPP20ChargingStateEnumType.SuspendedEVSE,
-          evseId,
-        }
-      )
+    await this.sendTransactionEvent(
+      chargingStation,
+      OCPP20TransactionEventEnumType.Updated,
+      OCPP20TriggerReasonEnumType.Deauthorized,
+      connectorId,
+      transactionId,
+      {
+        chargingState: OCPP20ChargingStateEnumType.SuspendedEVSE,
+        evseId,
+      }
+    )
 
-      const finalMeterValues = this.buildFinalMeterValues(connectorStatus)
-
-      const response = await this.sendTransactionEvent(
-        chargingStation,
-        OCPP20TransactionEventEnumType.Ended,
-        OCPP20TriggerReasonEnumType.Deauthorized,
-        connectorId,
-        transactionId,
-        {
-          evseId,
-          meterValue: finalMeterValues.length > 0 ? finalMeterValues : undefined,
-          stoppedReason: OCPP20ReasonEnumType.DeAuthorized,
-        }
-      )
-
-      OCPP20ServiceUtils.stopPeriodicMeterValues(chargingStation, connectorId)
-      resetConnectorStatus(connectorStatus)
-      await sendAndSetConnectorStatus(chargingStation, connectorId, ConnectorStatusEnum.Available)
-
-      return response
-    }
-    throw new OCPPError(
-      ErrorType.PROPERTY_CONSTRAINT_VIOLATION,
-      `No active transaction on connector ${connectorId.toString()}`
+    return this.terminateTransaction(
+      chargingStation,
+      connectorId,
+      connectorStatus,
+      transactionId,
+      OCPP20TriggerReasonEnumType.Deauthorized,
+      OCPP20ReasonEnumType.DeAuthorized,
+      evseId
     )
   }
 
@@ -359,47 +337,19 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     triggerReason: OCPP20TriggerReasonEnumType = OCPP20TriggerReasonEnumType.RemoteStop,
     stoppedReason: OCPP20ReasonEnumType = OCPP20ReasonEnumType.Remote
   ): Promise<OCPP20TransactionEventResponse> {
-    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
-    if (
-      (connectorStatus?.transactionStarted === true ||
-        connectorStatus?.transactionPending === true) &&
-      connectorStatus.transactionId != null
-    ) {
-      let transactionId: string
-      if (typeof connectorStatus.transactionId === 'string') {
-        transactionId = connectorStatus.transactionId
-      } else {
-        transactionId = connectorStatus.transactionId.toString()
-        logger.warn(
-          `${chargingStation.logPrefix()} ${moduleName}.requestStopTransaction: Non-string transaction ID ${transactionId} converted to string for OCPP 2.0`
-        )
-      }
+    const { connectorStatus, transactionId } = OCPP20ServiceUtils.resolveActiveTransaction(
+      chargingStation,
+      connectorId
+    )
 
-      // F03.FR.04: Build final meter values for TransactionEvent(Ended)
-      const finalMeterValues = this.buildFinalMeterValues(connectorStatus)
-
-      const response = await this.sendTransactionEvent(
-        chargingStation,
-        OCPP20TransactionEventEnumType.Ended,
-        triggerReason,
-        connectorId,
-        transactionId,
-        {
-          evseId,
-          meterValue: finalMeterValues.length > 0 ? finalMeterValues : undefined,
-          stoppedReason,
-        }
-      )
-
-      OCPP20ServiceUtils.stopPeriodicMeterValues(chargingStation, connectorId)
-      resetConnectorStatus(connectorStatus)
-      await sendAndSetConnectorStatus(chargingStation, connectorId, ConnectorStatusEnum.Available)
-
-      return response
-    }
-    throw new OCPPError(
-      ErrorType.PROPERTY_CONSTRAINT_VIOLATION,
-      `No active transaction on connector ${connectorId.toString()}`
+    return this.terminateTransaction(
+      chargingStation,
+      connectorId,
+      connectorStatus,
+      transactionId,
+      triggerReason,
+      stoppedReason,
+      evseId
     )
   }
 
@@ -706,6 +656,64 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       }
     }
     return secondsToMilliseconds(defaultSeconds)
+  }
+
+  private static resolveActiveTransaction (
+    chargingStation: ChargingStation,
+    connectorId: number
+  ): { connectorStatus: ConnectorStatus; transactionId: string } {
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+    if (
+      (connectorStatus?.transactionStarted === true ||
+        connectorStatus?.transactionPending === true) &&
+      connectorStatus.transactionId != null
+    ) {
+      let transactionId: string
+      if (typeof connectorStatus.transactionId === 'string') {
+        transactionId = connectorStatus.transactionId
+      } else {
+        transactionId = connectorStatus.transactionId.toString()
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.resolveActiveTransaction: Non-string transaction ID ${transactionId} converted to string for OCPP 2.0`
+        )
+      }
+      return { connectorStatus, transactionId }
+    }
+    throw new OCPPError(
+      ErrorType.PROPERTY_CONSTRAINT_VIOLATION,
+      `No active transaction on connector ${connectorId.toString()}`
+    )
+  }
+
+  private static async terminateTransaction (
+    chargingStation: ChargingStation,
+    connectorId: number,
+    connectorStatus: ConnectorStatus,
+    transactionId: string,
+    triggerReason: OCPP20TriggerReasonEnumType,
+    stoppedReason: OCPP20ReasonEnumType,
+    evseId?: number
+  ): Promise<OCPP20TransactionEventResponse> {
+    const finalMeterValues = this.buildFinalMeterValues(connectorStatus)
+
+    const response = await this.sendTransactionEvent(
+      chargingStation,
+      OCPP20TransactionEventEnumType.Ended,
+      triggerReason,
+      connectorId,
+      transactionId,
+      {
+        evseId,
+        meterValue: finalMeterValues.length > 0 ? finalMeterValues : undefined,
+        stoppedReason,
+      }
+    )
+
+    OCPP20ServiceUtils.stopPeriodicMeterValues(chargingStation, connectorId)
+    resetConnectorStatus(connectorStatus)
+    await sendAndSetConnectorStatus(chargingStation, connectorId, ConnectorStatusEnum.Available)
+
+    return response
   }
 }
 export function buildTransactionEvent (
