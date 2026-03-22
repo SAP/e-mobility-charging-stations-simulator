@@ -1,8 +1,25 @@
 import { type McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { readFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 
 import type { AbstractUIServer } from '../AbstractUIServer.js'
+
+import { ConfigurationSection, type LogConfiguration } from '../../../types/index.js'
+import { Configuration } from '../../../utils/Configuration.js'
+
+const getLogFilePath = (configField: 'errorFile' | 'file'): string | undefined => {
+  const logConfig = Configuration.getConfigurationSection<LogConfiguration>(
+    ConfigurationSection.log
+  )
+  const relativePath = logConfig[configField]
+  if (relativePath == null) {
+    return undefined
+  }
+  const date = new Date().toISOString().slice(0, 10)
+  const dir = dirname(resolve(relativePath))
+  const baseName = configField === 'file' ? `combined-${date}.log` : `error-${date}.log`
+  return join(dir, baseName)
+}
 
 export const registerMCPResources = (server: McpServer, uiServer: AbstractUIServer): void => {
   server.registerResource(
@@ -71,8 +88,14 @@ export const registerMCPResources = (server: McpServer, uiServer: AbstractUIServ
     { description: 'Recent combined simulator log entries', mimeType: 'text/plain' },
     async _uri => {
       try {
-        const date = new Date().toISOString().slice(0, 10)
-        const logPath = join(process.cwd(), 'logs', `combined-${date}.log`)
+        const logPath = getLogFilePath('file')
+        if (logPath == null) {
+          return {
+            contents: [
+              { mimeType: 'text/plain', text: 'Log file not configured', uri: 'log://combined' },
+            ],
+          }
+        }
         const content = await readFile(logPath, 'utf8')
         const lines = content.split('\n')
         const recent = lines.slice(-200).join('\n')
@@ -93,8 +116,14 @@ export const registerMCPResources = (server: McpServer, uiServer: AbstractUIServ
     { description: 'Recent error log entries', mimeType: 'text/plain' },
     async _uri => {
       try {
-        const date = new Date().toISOString().slice(0, 10)
-        const logPath = join(process.cwd(), 'logs', `error-${date}.log`)
+        const logPath = getLogFilePath('errorFile')
+        if (logPath == null) {
+          return {
+            contents: [
+              { mimeType: 'text/plain', text: 'Error log file not configured', uri: 'log://error' },
+            ],
+          }
+        }
         const content = await readFile(logPath, 'utf8')
         const lines = content.split('\n')
         const recent = lines.slice(-100).join('\n')
