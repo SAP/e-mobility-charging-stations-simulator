@@ -436,6 +436,10 @@ export const startTransactionOnConnector = async (
         }
         OCPP20ServiceUtils.resetTransactionSequenceNumber(chargingStation, connectorId)
       }
+      const beginMeterValues =
+        connectorStatus != null
+          ? OCPP20ServiceUtils.buildTransactionBeginMeterValues(connectorStatus)
+          : []
       const response = await OCPP20ServiceUtils.sendTransactionEvent(
         chargingStation,
         OCPP20TransactionEventEnumType.Started,
@@ -445,6 +449,7 @@ export const startTransactionOnConnector = async (
         {
           idToken:
             idTag != null ? { idToken: idTag, type: OCPP20IdTokenEnumType.Central } : undefined,
+          ...(beginMeterValues.length > 0 && { meterValue: beginMeterValues }),
         }
       )
       return {
