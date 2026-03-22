@@ -7,6 +7,7 @@ import assert from 'node:assert/strict'
 import { afterEach, describe, it } from 'node:test'
 
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
+import { ReasonCodeEnumType } from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 
 interface MockLogger {
@@ -170,7 +171,7 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
       assert.strictEqual(result.rejected, true)
       assert.strictEqual(result.results.length, 3)
       for (const r of result.results as RejectedResult[]) {
-        assert.strictEqual(r.reasonCode, 'TooManyElements')
+        assert.strictEqual(r.reasonCode, ReasonCodeEnumType.TooManyElements)
         assert.ok(r.info.includes('ItemsPerMessage limit 2'))
       }
     })
@@ -194,7 +195,7 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
       assert.strictEqual(result.rejected, true)
       assert.strictEqual(result.results.length, 2)
       for (const r of result.results as RejectedResult[]) {
-        assert.strictEqual(r.reasonCode, 'TooManyElements')
+        assert.strictEqual(r.reasonCode, ReasonCodeEnumType.TooManyElements)
       }
     })
 
@@ -259,7 +260,7 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
       assert.strictEqual(result.rejected, true)
       assert.strictEqual(result.results.length, 1)
       const r = (result.results as RejectedResult[])[0]
-      assert.strictEqual(r.reasonCode, 'TooLargeElement')
+      assert.strictEqual(r.reasonCode, ReasonCodeEnumType.TooLargeElement)
       assert.ok(r.info.includes('BytesPerMessage limit 1'))
     })
 
@@ -282,7 +283,7 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
       assert.strictEqual(result.rejected, true)
       assert.strictEqual(result.results.length, 2)
       for (const r of result.results as RejectedResult[]) {
-        assert.strictEqual(r.reasonCode, 'TooLargeElement')
+        assert.strictEqual(r.reasonCode, ReasonCodeEnumType.TooLargeElement)
       }
     })
 
@@ -326,7 +327,7 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
 
       assert.strictEqual(result.rejected, true)
       for (const r of result.results as RejectedResult[]) {
-        assert.strictEqual(r.reasonCode, 'TooManyElements')
+        assert.strictEqual(r.reasonCode, ReasonCodeEnumType.TooManyElements)
       }
     })
   })
@@ -377,7 +378,7 @@ await describe('OCPP20ServiceUtils.enforceMessageLimits', async () => {
       )
 
       assert.strictEqual(capturedReasons.length, 1)
-      assert.strictEqual(capturedReasons[0].reasonCode, 'TooLargeElement')
+      assert.strictEqual(capturedReasons[0].reasonCode, ReasonCodeEnumType.TooLargeElement)
       assert.strictEqual(typeof capturedReasons[0].info, 'string')
       assert.ok(capturedReasons[0].info.length > 0)
     })

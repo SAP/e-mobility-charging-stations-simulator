@@ -34,6 +34,7 @@ import {
   OCPP20MeasurandEnumType,
   OCPP20ReadingContextEnumType,
   OCPP20ReasonEnumType,
+  OCPP20RequestCommand,
   OCPP20RequiredVariableName,
   OCPP20TransactionEventEnumType,
   type OCPP20TransactionType,
@@ -2111,7 +2112,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         // Verify the request was sent with correct trigger reason
         assert.strictEqual(sentRequests.length, 1)
-        assert.strictEqual(sentRequests[0].command, 'TransactionEvent')
+        assert.strictEqual(sentRequests[0].command, OCPP20RequestCommand.TRANSACTION_EVENT)
         assert.strictEqual(
           sentRequests[0].payload.eventType,
           OCPP20TransactionEventEnumType.Updated
@@ -2459,7 +2460,9 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       await OCPP20ServiceUtils.requestDeauthorizeTransaction(mockTracking.station, connectorId, 1)
 
       // Assert
-      const txEvents = mockTracking.sentRequests.filter(r => r.command === 'TransactionEvent')
+      const txEvents = mockTracking.sentRequests.filter(
+        r => r.command === (OCPP20RequestCommand.TRANSACTION_EVENT as string)
+      )
       assert.strictEqual(txEvents.length, 2)
 
       const updatedEvent = txEvents[0].payload
@@ -2489,7 +2492,9 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       await OCPP20ServiceUtils.requestDeauthorizeTransaction(mockTracking.station, connectorId, 2)
 
       // Assert
-      const txEvents = mockTracking.sentRequests.filter(r => r.command === 'TransactionEvent')
+      const txEvents = mockTracking.sentRequests.filter(
+        r => r.command === (OCPP20RequestCommand.TRANSACTION_EVENT as string)
+      )
       assert.strictEqual(txEvents.length, 2)
 
       const endedPayload = txEvents[1].payload
@@ -2609,7 +2614,9 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       await OCPP20ServiceUtils.requestStopTransaction(mockTracking.station, connectorId, 1)
 
       // Assert
-      const txEvents = mockTracking.sentRequests.filter(r => r.command === 'TransactionEvent')
+      const txEvents = mockTracking.sentRequests.filter(
+        r => r.command === (OCPP20RequestCommand.TRANSACTION_EVENT as string)
+      )
       assert.strictEqual(txEvents.length, 1)
 
       const endedEvent = txEvents[0].payload
@@ -2642,7 +2649,9 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       )
 
       // Assert
-      const txEvents = mockTracking.sentRequests.filter(r => r.command === 'TransactionEvent')
+      const txEvents = mockTracking.sentRequests.filter(
+        r => r.command === (OCPP20RequestCommand.TRANSACTION_EVENT as string)
+      )
       assert.strictEqual(txEvents.length, 1)
 
       const endedEvent = txEvents[0].payload

@@ -19,6 +19,7 @@ import {
   type OCPP20CertificateSignedResponse,
   OCPP20RequestCommand,
   OCPPVersion,
+  ReasonCodeEnumType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
@@ -198,7 +199,7 @@ await describe('I04 - CertificateSigned', async () => {
       assert.notStrictEqual(response, undefined)
       assert.strictEqual(response.status, GenericStatus.Rejected)
       assert.notStrictEqual(response.statusInfo, undefined)
-      assert.strictEqual(response.statusInfo?.reasonCode, 'InternalError')
+      assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.InternalError)
     })
   })
 

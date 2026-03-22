@@ -20,7 +20,12 @@ import { fileURLToPath } from 'node:url'
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
 import { OCPP20ServiceUtils } from '../../../../src/charging-station/ocpp/2.0/OCPP20ServiceUtils.js'
-import { OCPP20IncomingRequestCommand, OCPP20RequestCommand } from '../../../../src/types/index.js'
+import {
+  MessageTriggerEnumType,
+  OCPP20IncomingRequestCommand,
+  OCPP20RequestCommand,
+  ResetEnumType,
+} from '../../../../src/types/index.js'
 import { standardCleanup } from '../../../helpers/TestLifecycleHelpers.js'
 
 const AjvConstructor = _Ajv.default
@@ -198,15 +203,18 @@ await describe('OCPP 2.0 schema validation — negative tests', async () => {
 
   await it('should pass validation for valid Reset payloads', () => {
     const validate = makeValidator('ResetRequest.json')
-    assert.strictEqual(validate({ type: 'Immediate' }), true)
-    assert.strictEqual(validate({ type: 'OnIdle' }), true)
-    assert.strictEqual(validate({ evseId: 1, type: 'OnIdle' }), true)
+    assert.strictEqual(validate({ type: ResetEnumType.Immediate }), true)
+    assert.strictEqual(validate({ type: ResetEnumType.OnIdle }), true)
+    assert.strictEqual(validate({ evseId: 1, type: ResetEnumType.OnIdle }), true)
   })
 
   await it('should pass validation for valid TriggerMessage payloads', () => {
     const validate = makeValidator('TriggerMessageRequest.json')
-    assert.strictEqual(validate({ requestedMessage: 'Heartbeat' }), true)
-    assert.strictEqual(validate({ requestedMessage: 'BootNotification' }), true)
+    assert.strictEqual(validate({ requestedMessage: MessageTriggerEnumType.Heartbeat }), true)
+    assert.strictEqual(
+      validate({ requestedMessage: MessageTriggerEnumType.BootNotification }),
+      true
+    )
   })
 
   await describe('schema registration coverage', async () => {
