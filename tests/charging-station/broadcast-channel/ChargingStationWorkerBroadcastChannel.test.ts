@@ -17,6 +17,7 @@ import {
   GenericStatus,
   GetCertificateStatusEnumType,
   Iso15118EVCertificateStatusEnumType,
+  MeterValueMeasurand,
   OCPP20AuthorizationStatusEnumType,
   OCPPVersion,
   ProcedureName,
@@ -739,6 +740,18 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
     await it('should dispatch METER_VALUES for OCPP 2.0.1 via requestHandler', async () => {
       const { sentRequests, station } = createMockStationWithRequestTracking()
 
+      // Add MeterValues template to connector 1 so buildMeterValue can construct a valid payload
+      const connectorStatus = station.getConnectorStatus(1)
+      if (connectorStatus != null) {
+        connectorStatus.MeterValues = [
+          {
+            measurand: MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+            unit: 'Wh',
+            value: 0,
+          },
+        ]
+      }
+
       instance = new ChargingStationWorkerBroadcastChannel(station)
       const testable = createTestableWorkerBroadcastChannel(instance)
 
@@ -746,7 +759,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
         data: [
           randomUUID(),
           BroadcastChannelProcedureName.METER_VALUES,
-          { hashIds: [station.stationInfo?.hashId] },
+          { connectorId: 1, hashIds: [station.stationInfo?.hashId] },
         ],
       })
 
@@ -754,6 +767,14 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
 
       assert.strictEqual(sentRequests.length, 1)
       assert.strictEqual(sentRequests[0].command, RequestCommand.METER_VALUES)
+      assert.ok(
+        sentRequests[0].payload.evseId != null,
+        'OCPP 2.0.1 meter values payload should contain evseId'
+      )
+      assert.ok(
+        Array.isArray(sentRequests[0].payload.meterValue),
+        'OCPP 2.0.1 meter values payload should contain meterValue array'
+      )
     })
   })
 

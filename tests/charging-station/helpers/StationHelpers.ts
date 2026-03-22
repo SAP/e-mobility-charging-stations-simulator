@@ -486,6 +486,9 @@ export function createMockChargingStation (
       }
       return undefined
     },
+    getConnectorMaximumAvailablePower (_connectorId: number): number {
+      return stationInfoOverrides?.maximumPower ?? 22000
+    },
     // Methods
     getConnectorStatus (connectorId: number): ConnectorStatus | undefined {
       if (useEvses) {

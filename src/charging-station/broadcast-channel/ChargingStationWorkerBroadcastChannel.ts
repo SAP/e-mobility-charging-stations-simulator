@@ -68,7 +68,7 @@ import {
   logger,
 } from '../../utils/index.js'
 import { getConfigurationKey } from '../ConfigurationKeyUtils.js'
-import { buildMeterValue } from '../ocpp/index.js'
+import { buildMeterValue, OCPP20ServiceUtils } from '../ocpp/index.js'
 import { WorkerBroadcastChannel } from './WorkerBroadcastChannel.js'
 
 const moduleName = 'ChargingStationWorkerBroadcastChannel'
@@ -470,17 +470,35 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
   private async handleMeterValues (
     requestPayload?: BroadcastChannelRequestPayload
   ): Promise<MeterValuesResponse> {
+    const connectorId = requestPayload?.connectorId
     if (
       this.chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_20 ||
       this.chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_201
     ) {
+      const txUpdatedInterval = OCPP20ServiceUtils.getTxUpdatedInterval(this.chargingStation)
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const evseId = this.chargingStation.getEvseIdByConnectorId(connectorId!)
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const transactionId = this.chargingStation.getConnectorStatus(connectorId!)?.transactionId
       return await this.chargingStation.ocppRequestService.requestHandler<
         MeterValuesRequest,
         MeterValuesResponse
       >(
         this.chargingStation,
         RequestCommand.METER_VALUES,
-        requestPayload as MeterValuesRequest,
+        {
+          evseId,
+          meterValue: [
+            buildMeterValue(
+              this.chargingStation,
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+              connectorId!,
+              transactionId,
+              txUpdatedInterval
+            ),
+          ],
+          ...requestPayload,
+        } as MeterValuesRequest,
         this.requestParams
       )
     }
@@ -488,7 +506,6 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       this.chargingStation,
       StandardParametersKey.MeterValueSampleInterval
     )
-    const connectorId = requestPayload?.connectorId
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const transactionId = this.chargingStation.getConnectorStatus(connectorId!)?.transactionId
     return await this.chargingStation.ocppRequestService.requestHandler<
