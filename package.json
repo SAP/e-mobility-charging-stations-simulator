@@ -92,7 +92,7 @@
     "tar": "^7.5.12",
     "winston": "^3.19.0",
     "winston-daily-rotate-file": "^5.0.0",
-    "ws": "^8.19.0"
+    "ws": "^8.20.0"
   },
   "optionalDependencies": {
     "bufferutil": "^4.1.0",
