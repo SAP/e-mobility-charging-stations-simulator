@@ -1,6 +1,7 @@
 import { type McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js'
-import { open, stat } from 'node:fs/promises'
+import { open, readdir, readFile, stat } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { z } from 'zod'
 
 import type { AbstractUIServer } from '../AbstractUIServer.js'
@@ -108,6 +109,95 @@ export const registerMCPResources = (server: McpServer, uiServer: AbstractUIServ
         },
       ],
     })
+  )
+}
+
+const OCPP_SCHEMA_VERSIONS = ['1.6', '2.0'] as const
+
+const getSchemaBaseDir = (): string => {
+  const currentDir = dirname(fileURLToPath(import.meta.url))
+  const prodPath = join(currentDir, 'assets', 'json-schemas', 'ocpp')
+  const devPath = join(currentDir, '..', '..', '..', 'assets', 'json-schemas', 'ocpp')
+  return resolve(prodPath).includes('assets') ? prodPath : devPath
+}
+
+export const registerMCPSchemaResources = (server: McpServer): void => {
+  for (const version of OCPP_SCHEMA_VERSIONS) {
+    server.registerResource(
+      `ocpp-${version}-schema-list`,
+      `schema://ocpp/${version}`,
+      {
+        description: `List all available OCPP ${version} JSON command schemas`,
+        mimeType: 'application/json',
+      },
+      async _uri => {
+        try {
+          const schemaDir = join(getSchemaBaseDir(), version)
+          const files = await readdir(schemaDir)
+          const commands = files
+            .filter(f => f.endsWith('.json'))
+            .map(f => f.replace('.json', ''))
+            .sort()
+          return {
+            contents: [
+              {
+                mimeType: 'application/json',
+                text: JSON.stringify({ commands, count: commands.length, version }, null, 2),
+                uri: `schema://ocpp/${version}`,
+              },
+            ],
+          }
+        } catch {
+          return {
+            contents: [
+              {
+                mimeType: 'application/json',
+                text: JSON.stringify({ error: `OCPP ${version} schemas not available` }),
+                uri: `schema://ocpp/${version}`,
+              },
+            ],
+          }
+        }
+      }
+    )
+  }
+
+  server.registerResource(
+    'ocpp-schema-by-command',
+    new ResourceTemplate('schema://ocpp/{version}/{command}', { list: undefined }),
+    {
+      description:
+        'Full OCPP JSON schema for a specific command (e.g., schema://ocpp/1.6/Authorize or schema://ocpp/2.0/AuthorizeRequest)',
+      mimeType: 'application/json',
+    },
+    async (uri, { command, version }) => {
+      try {
+        const schemaDir = join(getSchemaBaseDir(), String(version))
+        const schemaPath = join(schemaDir, `${String(command)}.json`)
+        const content = await readFile(schemaPath, 'utf8')
+        return {
+          contents: [
+            {
+              mimeType: 'application/json',
+              text: content,
+              uri: uri.href,
+            },
+          ],
+        }
+      } catch {
+        return {
+          contents: [
+            {
+              mimeType: 'application/json',
+              text: JSON.stringify({
+                error: `Schema '${String(command)}' not found for OCPP ${String(version)}`,
+              }),
+              uri: uri.href,
+            },
+          ],
+        }
+      }
+    }
   )
 }
 
