@@ -8,6 +8,7 @@ import { request as httpRequest } from 'node:http'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import { UIMCPServer } from '../../../src/charging-station/ui-server/UIMCPServer.js'
+import { HttpMethod } from '../../../src/charging-station/ui-server/UIServerUtils.js'
 import { ApplicationProtocol } from '../../../src/types/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { createMockUIServerConfiguration } from './UIServerTestUtils.js'
@@ -45,7 +46,7 @@ const makeMcpPost = (port: number, body: object): Promise<{ events: object[]; st
           'Content-Type': 'application/json',
         },
         hostname: 'localhost',
-        method: 'POST',
+        method: HttpMethod.POST,
         path: '/mcp',
         port,
       },

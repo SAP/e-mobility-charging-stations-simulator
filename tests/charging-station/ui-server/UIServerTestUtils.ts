@@ -17,6 +17,7 @@ import type {
   UUIDv4,
 } from '../../../src/types/index.js'
 
+import { HttpMethod } from '../../../src/charging-station/ui-server/UIServerUtils.js'
 import { UIWebSocketServer } from '../../../src/charging-station/ui-server/UIWebSocketServer.js'
 import {
   ApplicationProtocol,
@@ -179,7 +180,7 @@ export const createMockIncomingMessage = (
 ): IncomingMessage => {
   return {
     headers: {},
-    method: 'POST',
+    method: HttpMethod.POST,
     url: '/ui',
     ...overrides,
   } as IncomingMessage
