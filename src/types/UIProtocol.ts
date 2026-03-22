@@ -4,6 +4,7 @@ import type { BroadcastChannelResponsePayload } from './WorkerBroadcastChannel.j
 
 export enum ApplicationProtocol {
   HTTP = 'http',
+  MCP = 'mcp',
   WS = 'ws',
 }
 
