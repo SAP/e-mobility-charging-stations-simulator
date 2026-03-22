@@ -14,6 +14,7 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
+import type { ConnectorStatus } from '../../../../src/types/ConnectorStatus.js'
 import type { EmptyObject } from '../../../../src/types/index.js'
 
 import {
@@ -2648,6 +2649,55 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       assert.strictEqual(endedEvent.eventType, OCPP20TransactionEventEnumType.Ended)
       assert.strictEqual(endedEvent.triggerReason, customTriggerReason)
       assert.strictEqual(endedEvent.stoppedReason, customStoppedReason)
+    })
+  })
+
+  await describe('buildTransactionBeginMeterValues', async () => {
+    await it('should build meter value with Transaction.Begin context and energy register', () => {
+      const connectorStatus = {
+        availability: 'Operative',
+        MeterValues: [],
+        transactionEnergyActiveImportRegisterValue: 1234,
+      } as unknown as ConnectorStatus
+
+      const result = OCPP20ServiceUtils.buildTransactionBeginMeterValues(connectorStatus)
+
+      assert.strictEqual(result.length, 1)
+      assert.strictEqual(result[0].sampledValue.length, 1)
+      assert.strictEqual(
+        result[0].sampledValue[0].context,
+        OCPP20ReadingContextEnumType.TRANSACTION_BEGIN
+      )
+      assert.strictEqual(
+        result[0].sampledValue[0].measurand,
+        OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER
+      )
+      assert.strictEqual(result[0].sampledValue[0].value, 1234)
+      assert.ok(result[0].timestamp instanceof Date)
+    })
+
+    await it('should return meter value with 0 energy when register value is undefined', () => {
+      const connectorStatus = {
+        availability: 'Operative',
+        MeterValues: [],
+      } as unknown as ConnectorStatus
+
+      const result = OCPP20ServiceUtils.buildTransactionBeginMeterValues(connectorStatus)
+
+      assert.strictEqual(result.length, 1)
+      assert.strictEqual(result[0].sampledValue[0].value, 0)
+    })
+
+    await it('should return empty array when energy register value is negative', () => {
+      const connectorStatus = {
+        availability: 'Operative',
+        MeterValues: [],
+        transactionEnergyActiveImportRegisterValue: -1,
+      } as unknown as ConnectorStatus
+
+      const result = OCPP20ServiceUtils.buildTransactionBeginMeterValues(connectorStatus)
+
+      assert.strictEqual(result.length, 0)
     })
   })
 })
