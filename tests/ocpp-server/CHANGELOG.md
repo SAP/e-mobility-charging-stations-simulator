@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.2.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ocpp-server@v3.2.0...ocpp-server@v3.2.1) (2026-03-22)
+
+### 🐞 Bug Fixes
+
+- **deps:** update all non-major dependencies ([#1742](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1742)) ([60a10a7](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/60a10a795c1382285beab3020e01ad6ee3db6c3c))
+
 ## [3.2.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ocpp-server@v3.1.2...ocpp-server@v3.2.0) (2026-03-21)
 
 ### 🚀 Features
