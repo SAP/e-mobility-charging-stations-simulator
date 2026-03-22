@@ -653,7 +653,7 @@ The recommended transport for programmatic access. [MCP](https://spec.modelconte
 
 ### WebSocket Protocol
 
-SRPC protocol over WebSocket for real-time dashboard communication.
+SRPC protocol over WebSocket for real-time dashboard communication. PDU stands for 'Protocol Data Unit'.
 
 ```mermaid
 sequenceDiagram
