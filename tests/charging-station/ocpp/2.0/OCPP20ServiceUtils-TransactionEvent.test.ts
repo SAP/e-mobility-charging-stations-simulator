@@ -2676,7 +2676,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       assert.ok(result[0].timestamp instanceof Date)
     })
 
-    await it('should return meter value with 0 energy when register value is undefined', () => {
+    await it('should include meter value with 0 energy when register value is undefined (zero is a valid begin reading)', () => {
       const connectorStatus = {
         availability: 'Operative',
         MeterValues: [],

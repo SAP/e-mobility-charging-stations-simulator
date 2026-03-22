@@ -90,21 +90,10 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
   ]
 
   static buildTransactionBeginMeterValues (connectorStatus: ConnectorStatus): OCPP20MeterValue[] {
-    const beginMeterValues: OCPP20MeterValue[] = []
-    const energyValue = connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0
-    if (energyValue >= 0) {
-      beginMeterValues.push({
-        sampledValue: [
-          {
-            context: OCPP20ReadingContextEnumType.TRANSACTION_BEGIN,
-            measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
-            value: energyValue,
-          },
-        ],
-        timestamp: new Date(),
-      })
-    }
-    return beginMeterValues
+    return OCPP20ServiceUtils.buildEnergyMeterValues(
+      connectorStatus,
+      OCPP20ReadingContextEnumType.TRANSACTION_BEGIN
+    )
   }
 
   /**
@@ -264,7 +253,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     const results = variableManager.getVariables(chargingStation, [
       {
         component: { name: OCPP20ComponentName.AlignedDataCtrlr },
-        variable: { name: 'Interval' },
+        variable: { name: OCPP20RequiredVariableName.AlignedDataInterval },
       },
     ])
     if (results.length > 0 && results[0].attributeValue != null) {
@@ -700,14 +689,17 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     }
   }
 
-  private static buildFinalMeterValues (connectorStatus: ConnectorStatus): OCPP20MeterValue[] {
-    const finalMeterValues: OCPP20MeterValue[] = []
+  private static buildEnergyMeterValues (
+    connectorStatus: ConnectorStatus,
+    context: OCPP20ReadingContextEnumType
+  ): OCPP20MeterValue[] {
+    const meterValues: OCPP20MeterValue[] = []
     const energyValue = connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0
     if (energyValue >= 0) {
-      finalMeterValues.push({
+      meterValues.push({
         sampledValue: [
           {
-            context: OCPP20ReadingContextEnumType.TRANSACTION_END,
+            context,
             measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
             value: energyValue,
           },
@@ -715,7 +707,14 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         timestamp: new Date(),
       })
     }
-    return finalMeterValues
+    return meterValues
+  }
+
+  private static buildFinalMeterValues (connectorStatus: ConnectorStatus): OCPP20MeterValue[] {
+    return OCPP20ServiceUtils.buildEnergyMeterValues(
+      connectorStatus,
+      OCPP20ReadingContextEnumType.TRANSACTION_END
+    )
   }
 }
 export function buildTransactionEvent (

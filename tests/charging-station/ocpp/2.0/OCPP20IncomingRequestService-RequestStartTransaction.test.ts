@@ -449,6 +449,15 @@ await describe('F01 & F02 - Remote Start Transaction', async () => {
       ]
       assert.strictEqual(args[1], OCPP20RequestCommand.TRANSACTION_EVENT)
       assert.strictEqual(args[2].eventType, OCPP20TransactionEventEnumType.Started)
+      assert.ok(
+        Array.isArray(args[2].meterValue) && args[2].meterValue.length > 0,
+        'TransactionEvent(Started) should include non-empty meterValue array'
+      )
+      assert.strictEqual(args[2].meterValue[0].sampledValue[0].context, 'Transaction.Begin')
+      assert.strictEqual(
+        args[2].meterValue[0].sampledValue[0].measurand,
+        'Energy.Active.Import.Register'
+      )
     })
 
     await it('should NOT call TransactionEvent when response is Rejected', () => {
