@@ -636,18 +636,41 @@ All kind of OCPP parameters are supported in charging station configuration or c
 
 ## UI Protocol
 
-Protocol to control the simulator via a WebSocket or HTTP server:
+Protocol to control the simulator via the UI server. Three transport types are available:
+
+### MCP Protocol (Model Context Protocol)
+
+The recommended transport for programmatic access. [MCP](https://spec.modelcontextprotocol.io) enables LLM agents and AI tools to discover and use the simulator's capabilities automatically.
+
+Tools and resources are self-discoverable via the MCP protocol — no manual API documentation needed.
+
+Configuration:
+
+```json
+{
+  "uiServer": {
+    "type": "mcp",
+    "version": "1.1",
+    "options": {
+      "host": "localhost",
+      "port": 8080
+    }
+  }
+}
+```
+
+Endpoint: `POST /mcp` ([Streamable HTTP](https://spec.modelcontextprotocol.io/specification/2025-03-26/basic/transports/#streamable-http) transport, stateless)
+
+### WebSocket Protocol
+
+SRPC protocol over WebSocket for real-time dashboard communication.
 
 ```mermaid
 sequenceDiagram
 Client->>UI Server: request
 UI Server->>Client: response
-Note over UI Server,Client: HTTP or WebSocket
+Note over UI Server,Client: WebSocket
 ```
-
-### WebSocket Protocol
-
-SRPC protocol over WebSocket. PDU stands for 'Protocol Data Unit'.
 
 - Request:  
   [`uuid`, `ProcedureName`, `PDU`]  
@@ -1007,73 +1030,11 @@ Examples:
      `responsesFailed`: failed responses payload array (optional)  
     }
 
-### HTTP Protocol
+### HTTP Protocol (deprecated)
 
-> **Note**: The HTTP transport (`"type": "http"`) is deprecated in favor of the MCP transport. Use `"type": "mcp"` for HTTP-based access to the simulator.
+> **Deprecated**: Use `"type": "mcp"` for HTTP-based access to the simulator.
 
 To learn how to use the HTTP protocol to pilot the simulator, an [Insomnia](https://insomnia.rest/) HTTP requests collection is available in [src/assets/ui-protocol](./src/assets/ui-protocol) directory.
-
-### MCP Protocol (Model Context Protocol)
-
-The simulator supports the [Model Context Protocol](https://spec.modelcontextprotocol.io) (MCP) as a transport type, enabling LLM agents and AI tools to control the simulator programmatically.
-
-**Configuration**:
-
-```json
-{
-  "uiServer": {
-    "type": "mcp",
-    "version": "1.1",
-    "options": {
-      "host": "localhost",
-      "port": 8080
-    }
-  }
-}
-```
-
-**Endpoint**: `POST /mcp` (Streamable HTTP transport, stateless)
-
-**Available MCP Tools** (all UI procedures):
-
-- `listChargingStations` — List all charging stations
-- `listTemplates` — List available configuration templates
-- `simulatorState` — Get current simulator state
-- `startSimulator` / `stopSimulator` — Control the simulator
-- `startChargingStation` / `stopChargingStation` — Control individual stations
-- `startTransaction` / `stopTransaction` — Manage OCPP transactions
-- `startAutomaticTransactionGenerator` / `stopAutomaticTransactionGenerator` — ATG control
-- `addChargingStations`
-- `authorize`
-- `bootNotification`
-- `closeConnection`
-- `dataTransfer`
-- `deleteChargingStations`
-- `diagnosticsStatusNotification`
-- `firmwareStatusNotification`
-- `get15118EvCertificate`
-- `getCertificateStatus`
-- `heartbeat`
-- `logStatusNotification`
-- `meterValues`
-- `notifyCustomerInformation`
-- `notifyReport`
-- `openConnection`
-- `performanceStatistics`
-- `securityEventNotification`
-- `setSupervisionUrl`
-- `signCertificate`
-- `statusNotification`
-- `transactionEvent`
-- And all other OCPP procedures (authorize, heartbeat, meterValues, etc.)
-
-**Available MCP Resources**:
-
-- `station://list` — All charging stations with status
-- `station://{hashId}` — Individual station data
-- `template://list` — Available configuration templates
-- `log://combined` — Recent combined log entries
-- `log://error` — Recent error log entries
 
 ## Support, Feedback, Contributing
 
