@@ -19,17 +19,22 @@ import {
   hasPendingReservation,
   hasPendingReservations,
   hasReservationExpired,
+  resetConnectorStatus,
   validateStationInfo,
 } from '../../src/charging-station/Helpers.js'
 import {
   AvailabilityType,
+  type ChargingProfile,
+  ChargingProfilePurposeType,
   type ChargingStationConfiguration,
   type ChargingStationInfo,
   type ChargingStationTemplate,
   type ConnectorStatus,
   ConnectorStatusEnum,
+  type MeterValue,
   OCPPVersion,
   type Reservation,
+  type SampledValueTemplate,
 } from '../../src/types/index.js'
 import { logger } from '../../src/utils/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
@@ -770,5 +775,104 @@ await describe('Helpers', async () => {
 
     // Act & Assert
     assert.strictEqual(hasPendingReservations(chargingStation), false)
+  })
+
+  await describe('resetConnectorStatus', async () => {
+    afterEach(() => {
+      standardCleanup()
+    })
+
+    await it('should be a no-op for undefined input', () => {
+      resetConnectorStatus(undefined)
+    })
+
+    await it('should reset all transaction fields', () => {
+      const connectorStatus: ConnectorStatus = {
+        availability: AvailabilityType.Operative,
+        MeterValues: [],
+        transactionBeginMeterValue: { sampledValue: [], timestamp: new Date() } as MeterValue,
+        transactionDeauthorized: true,
+        transactionDeauthorizedEnergyWh: 500,
+        transactionEnergyActiveImportRegisterValue: 1234,
+        transactionEvseSent: true,
+        transactionGroupIdToken: 'group-token',
+        transactionId: 'tx-123',
+        transactionIdTag: 'tag-abc',
+        transactionIdTokenSent: true,
+        transactionPending: true,
+        transactionRemoteStarted: true,
+        transactionSeqNo: 5,
+        transactionStart: new Date(),
+        transactionStarted: true,
+      }
+
+      resetConnectorStatus(connectorStatus)
+
+      assert.strictEqual(connectorStatus.transactionStarted, false)
+      assert.strictEqual(connectorStatus.transactionPending, false)
+      assert.strictEqual(connectorStatus.transactionRemoteStarted, false)
+      assert.strictEqual(connectorStatus.transactionEnergyActiveImportRegisterValue, 0)
+      assert.strictEqual(connectorStatus.transactionId, undefined)
+      assert.strictEqual(connectorStatus.transactionIdTag, undefined)
+      assert.strictEqual(connectorStatus.transactionGroupIdToken, undefined)
+      assert.strictEqual(connectorStatus.transactionStart, undefined)
+      assert.strictEqual(connectorStatus.transactionBeginMeterValue, undefined)
+      assert.strictEqual(connectorStatus.transactionSeqNo, undefined)
+      assert.strictEqual(connectorStatus.transactionEvseSent, undefined)
+      assert.strictEqual(connectorStatus.transactionIdTokenSent, undefined)
+      assert.strictEqual(connectorStatus.transactionDeauthorized, undefined)
+      assert.strictEqual(connectorStatus.transactionDeauthorizedEnergyWh, undefined)
+      assert.strictEqual(connectorStatus.idTagAuthorized, false)
+      assert.strictEqual(connectorStatus.idTagLocalAuthorized, false)
+      assert.strictEqual(connectorStatus.authorizeIdTag, undefined)
+      assert.strictEqual(connectorStatus.localAuthorizeIdTag, undefined)
+    })
+
+    await it('should remove TX_PROFILE charging profiles matching transaction', () => {
+      const txProfile = {
+        chargingProfileId: 1,
+        chargingProfilePurpose: ChargingProfilePurposeType.TX_PROFILE,
+        stackLevel: 0,
+        transactionId: 'tx-123',
+      } as unknown as ChargingProfile
+      const otherProfile = {
+        chargingProfileId: 2,
+        chargingProfilePurpose: ChargingProfilePurposeType.TX_DEFAULT_PROFILE,
+        stackLevel: 0,
+      } as unknown as ChargingProfile
+      const connectorStatus: ConnectorStatus = {
+        availability: AvailabilityType.Operative,
+        chargingProfiles: [txProfile, otherProfile],
+        MeterValues: [],
+        transactionId: 'tx-123',
+        transactionStarted: true,
+      }
+
+      resetConnectorStatus(connectorStatus)
+
+      if (connectorStatus.chargingProfiles == null) {
+        assert.fail('chargingProfiles should not be undefined')
+      }
+      assert.strictEqual(connectorStatus.chargingProfiles.length, 1)
+      assert.strictEqual(
+        connectorStatus.chargingProfiles[0].chargingProfilePurpose,
+        ChargingProfilePurposeType.TX_DEFAULT_PROFILE
+      )
+    })
+
+    await it('should preserve non-transaction fields', () => {
+      const connectorStatus: ConnectorStatus = {
+        availability: AvailabilityType.Operative,
+        MeterValues: [{} as unknown as SampledValueTemplate],
+        status: ConnectorStatusEnum.Available,
+        transactionStarted: true,
+      }
+
+      resetConnectorStatus(connectorStatus)
+
+      assert.strictEqual(connectorStatus.availability, AvailabilityType.Operative)
+      assert.strictEqual(connectorStatus.status, ConnectorStatusEnum.Available)
+      assert.strictEqual(connectorStatus.MeterValues.length, 1)
+    })
   })
 })

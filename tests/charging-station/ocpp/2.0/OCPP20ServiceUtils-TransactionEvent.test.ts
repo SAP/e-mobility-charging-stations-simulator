@@ -2527,6 +2527,8 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         connectorStatus.transactionStarted = true
         connectorStatus.transactionId = transactionId
         connectorStatus.transactionEnergyActiveImportRegisterValue = 100
+        connectorStatus.transactionDeauthorized = true
+        connectorStatus.transactionDeauthorizedEnergyWh = 50
       }
 
       // Act
@@ -2538,6 +2540,8 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       if (postStatus != null) {
         assert.strictEqual(postStatus.transactionStarted, false)
         assert.strictEqual(postStatus.transactionId, undefined)
+        assert.strictEqual(postStatus.transactionDeauthorized, undefined)
+        assert.strictEqual(postStatus.transactionDeauthorizedEnergyWh, undefined)
       }
     })
 
