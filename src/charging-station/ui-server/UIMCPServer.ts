@@ -69,7 +69,7 @@ export class UIMCPServer extends AbstractUIServer {
       this.pendingMcpRequests.delete(uuid)
       pending.resolve(payload)
     } else {
-      logger.warn(
+      logger.error(
         `${this.logPrefix(moduleName, 'sendResponse')} Response for unknown request id: ${uuid}`
       )
     }

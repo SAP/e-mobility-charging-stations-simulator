@@ -74,12 +74,12 @@ export class UIServerFactory {
       )
     }
     switch (uiServerConfiguration.type) {
-      case ApplicationProtocol.HTTP:
-        logger.warn(
-          `${UIServerFactory.logPrefix()} Application protocol type '${uiServerConfiguration.type}' is deprecated. Use '${ApplicationProtocol.MCP}' instead`
-        )
+      case ApplicationProtocol.HTTP: {
+        const logMsg = `Application protocol type '${uiServerConfiguration.type}' is deprecated in '${ConfigurationSection.uiServer}' configuration section. Use '${ApplicationProtocol.MCP}' instead`
+        logger.warn(`${UIServerFactory.logPrefix()} ${logMsg}`)
         // eslint-disable-next-line @typescript-eslint/no-deprecated
         return new UIHttpServer(uiServerConfiguration)
+      }
       case ApplicationProtocol.MCP:
         return new UIMCPServer(uiServerConfiguration)
       case ApplicationProtocol.WS:
