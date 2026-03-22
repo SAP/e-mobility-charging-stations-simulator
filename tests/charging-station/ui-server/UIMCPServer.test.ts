@@ -8,23 +8,21 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ResponsePayload } from '../../../src/types/index.js'
 
-import { UIMCPServer } from '../../../src/charging-station/ui-server/UIMCPServer.js'
 import { mcpToolSchemas } from '../../../src/charging-station/ui-server/mcp/index.js'
+import { UIMCPServer } from '../../../src/charging-station/ui-server/UIMCPServer.js'
 import { ApplicationProtocol, ProcedureName, ResponseStatus } from '../../../src/types/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { TEST_UUID, TEST_UUID_2 } from './UIServerTestConstants.js'
 import { createMockUIServerConfiguration } from './UIServerTestUtils.js'
 
 class TestableUIMCPServer extends UIMCPServer {
-  public getPendingMcpRequest (
-    uuid: string
-  ):
+  public getPendingMcpRequest (uuid: string):
+    | undefined
     | {
       reject: (error: Error) => void
       resolve: (payload: ResponsePayload) => void
       timeout: ReturnType<typeof setTimeout>
-    }
-    | undefined {
+    } {
     return (
       Reflect.get(this, 'pendingMcpRequests') as Map<
         string,
@@ -76,10 +74,7 @@ await describe('UIMCPServer', async () => {
 
   await describe('Construction and type', async () => {
     await it('should have uiServerType of UI MCP Server', () => {
-      assert.strictEqual(
-        Reflect.get(server, 'uiServerType'),
-        'UI MCP Server'
-      )
+      assert.strictEqual(Reflect.get(server, 'uiServerType'), 'UI MCP Server')
     })
 
     await it('should create HTTP server', () => {
@@ -89,10 +84,7 @@ await describe('UIMCPServer', async () => {
 
   await describe('Tool schema registration', async () => {
     await it('should have a tool schema for every ProcedureName', () => {
-      assert.strictEqual(
-        mcpToolSchemas.size,
-        Object.keys(ProcedureName).length
-      )
+      assert.strictEqual(mcpToolSchemas.size, Object.keys(ProcedureName).length)
     })
   })
 
@@ -102,8 +94,10 @@ await describe('UIMCPServer', async () => {
     })
 
     await it('should return true when response handler registered via base class', () => {
+      // eslint-disable-next-line @typescript-eslint/dot-notation
       server['responseHandlers'].set(TEST_UUID, {} as never)
       assert.strictEqual(server.hasResponseHandler(TEST_UUID), true)
+      // eslint-disable-next-line @typescript-eslint/dot-notation
       server['responseHandlers'].delete(TEST_UUID)
     })
 

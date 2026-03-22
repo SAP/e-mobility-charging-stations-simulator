@@ -94,6 +94,7 @@ export default defineConfig([
               'PPTP',
               // UI server protocol acronyms
               'UIMCP',
+              'Streamable',
             ],
           },
         },
