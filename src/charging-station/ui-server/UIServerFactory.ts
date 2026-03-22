@@ -10,6 +10,7 @@ import {
 } from '../../types/index.js'
 import { logger, logPrefix } from '../../utils/index.js'
 import { UIHttpServer } from './UIHttpServer.js'
+import { UIMCPServer } from './UIMCPServer.js'
 import { isLoopback } from './UIServerUtils.js'
 import { UIWebSocketServer } from './UIWebSocketServer.js'
 
@@ -55,10 +56,29 @@ export class UIServerFactory {
       logger.warn(`${UIServerFactory.logPrefix()} ${logMsg}`)
       uiServerConfiguration.version = ApplicationProtocolVersion.VERSION_11
     }
+    if (
+      uiServerConfiguration.type === ApplicationProtocol.MCP &&
+      uiServerConfiguration.version !== ApplicationProtocolVersion.VERSION_11
+    ) {
+      const logMsg = `Only version ${ApplicationProtocolVersion.VERSION_11} with application protocol type '${uiServerConfiguration.type}' is supported in '${ConfigurationSection.uiServer}' configuration section. Falling back to version ${ApplicationProtocolVersion.VERSION_11}`
+      logger.warn(`${UIServerFactory.logPrefix()} ${logMsg}`)
+      uiServerConfiguration.version = ApplicationProtocolVersion.VERSION_11
+    }
+    if (
+      uiServerConfiguration.type === ApplicationProtocol.MCP &&
+      uiServerConfiguration.authentication?.enabled === true &&
+      uiServerConfiguration.authentication.type === AuthenticationType.PROTOCOL_BASIC_AUTH
+    ) {
+      throw new BaseError(
+        `'${uiServerConfiguration.authentication.type}' authentication type with application protocol type '${uiServerConfiguration.type}' is not supported in '${ConfigurationSection.uiServer}' configuration section`
+      )
+    }
     switch (uiServerConfiguration.type) {
       case ApplicationProtocol.HTTP:
         // eslint-disable-next-line @typescript-eslint/no-deprecated
         return new UIHttpServer(uiServerConfiguration)
+      case ApplicationProtocol.MCP:
+        return new UIMCPServer(uiServerConfiguration)
       case ApplicationProtocol.WS:
       default:
         if (
