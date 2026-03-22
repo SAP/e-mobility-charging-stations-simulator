@@ -32,6 +32,7 @@ import {
   OCPP20IdTokenEnumType,
   type OCPP20IdTokenType,
   OCPP20MeasurandEnumType,
+  OCPP20OperationalStatusEnumType,
   OCPP20ReadingContextEnumType,
   OCPP20ReasonEnumType,
   OCPP20RequestCommand,
@@ -2664,7 +2665,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
   await describe('buildTransactionStartedMeterValues', async () => {
     await it('should build meter value with Transaction.Begin context and energy register', () => {
       const connectorStatus = {
-        availability: 'Operative',
+        availability: OCPP20OperationalStatusEnumType.Operative,
         MeterValues: [],
         transactionEnergyActiveImportRegisterValue: 1234,
       } as unknown as ConnectorStatus
@@ -2687,7 +2688,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
     await it('should include meter value with 0 energy when register value is undefined (zero is a valid begin reading)', () => {
       const connectorStatus = {
-        availability: 'Operative',
+        availability: OCPP20OperationalStatusEnumType.Operative,
         MeterValues: [],
       } as unknown as ConnectorStatus
 
@@ -2699,7 +2700,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
     await it('should return empty array when energy register value is negative', () => {
       const connectorStatus = {
-        availability: 'Operative',
+        availability: OCPP20OperationalStatusEnumType.Operative,
         MeterValues: [],
         transactionEnergyActiveImportRegisterValue: -1,
       } as unknown as ConnectorStatus
