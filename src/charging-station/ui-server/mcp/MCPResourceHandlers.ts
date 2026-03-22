@@ -1,5 +1,5 @@
 import { type McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js'
-import { readFile } from 'node:fs/promises'
+import { open, stat } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 
 import type { AbstractUIServer } from '../AbstractUIServer.js'
@@ -19,6 +19,26 @@ const getLogFilePath = (configField: 'errorFile' | 'file'): string | undefined =
   const dir = dirname(resolve(relativePath))
   const baseName = configField === 'file' ? `combined-${date}.log` : `error-${date}.log`
   return join(dir, baseName)
+}
+
+const TAIL_BYTES = 65_536
+
+const tailFile = async (filePath: string, maxLines: number): Promise<string> => {
+  const fileStat = await stat(filePath)
+  const fileHandle = await open(filePath, 'r')
+  try {
+    const readSize = Math.min(TAIL_BYTES, fileStat.size)
+    const position = Math.max(0, fileStat.size - readSize)
+    const buffer = Buffer.alloc(readSize)
+    await fileHandle.read(buffer, 0, readSize, position)
+    const lines = buffer.toString('utf8').split('\n')
+    if (position > 0) {
+      lines.shift()
+    }
+    return lines.slice(-maxLines).join('\n')
+  } finally {
+    await fileHandle.close()
+  }
 }
 
 export const registerMCPResources = (server: McpServer, uiServer: AbstractUIServer): void => {
@@ -96,9 +116,7 @@ export const registerMCPResources = (server: McpServer, uiServer: AbstractUIServ
             ],
           }
         }
-        const content = await readFile(logPath, 'utf8')
-        const lines = content.split('\n')
-        const recent = lines.slice(-200).join('\n')
+        const recent = await tailFile(logPath, 200)
         return { contents: [{ mimeType: 'text/plain', text: recent, uri: 'log://combined' }] }
       } catch {
         return {
@@ -124,9 +142,7 @@ export const registerMCPResources = (server: McpServer, uiServer: AbstractUIServ
             ],
           }
         }
-        const content = await readFile(logPath, 'utf8')
-        const lines = content.split('\n')
-        const recent = lines.slice(-100).join('\n')
+        const recent = await tailFile(logPath, 100)
         return { contents: [{ mimeType: 'text/plain', text: recent, uri: 'log://error' }] }
       } catch {
         return {
