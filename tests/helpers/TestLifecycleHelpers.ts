@@ -113,9 +113,9 @@ export function clearConnectorTransaction (station: ChargingStation, connectorId
   connector.idTagLocalAuthorized = false
 
   // Clear any transaction interval
-  if (connector.transactionSetInterval != null) {
-    clearInterval(connector.transactionSetInterval)
-    connector.transactionSetInterval = undefined
+  if (connector.transactionMeterValuesSetInterval != null) {
+    clearInterval(connector.transactionMeterValuesSetInterval)
+    connector.transactionMeterValuesSetInterval = undefined
   }
 }
 

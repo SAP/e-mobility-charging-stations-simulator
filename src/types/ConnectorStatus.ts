@@ -21,6 +21,8 @@ export interface ConnectorStatus {
   reservation?: Reservation
   status?: ConnectorStatusEnum
   transactionBeginMeterValue?: MeterValue
+  transactionDeauthorized?: boolean
+  transactionDeauthorizedEnergyWh?: number
   transactionEnergyActiveImportRegisterValue?: number // In Wh
   /**
    * OCPP 2.0.1 offline-first: Queue of TransactionEvents waiting to be sent
@@ -43,6 +45,7 @@ export interface ConnectorStatus {
    * that occurs after the transaction has been authorized.
    */
   transactionIdTokenSent?: boolean
+  transactionMeterValuesSetInterval?: NodeJS.Timeout
   /**
    * OCPP 2.0.1 E02 compliance: Transaction pending CSMS acknowledgment.
    * Blocks duplicate RequestStartTransaction until response handler sets transactionStarted.
@@ -50,10 +53,8 @@ export interface ConnectorStatus {
   transactionPending?: boolean
   transactionRemoteStarted?: boolean
   transactionSeqNo?: number
-  transactionSetInterval?: NodeJS.Timeout
   transactionStart?: Date
   transactionStarted?: boolean
-  transactionTxUpdatedSetInterval?: NodeJS.Timeout
   type?: ConnectorEnumType
 }
 

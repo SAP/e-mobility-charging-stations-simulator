@@ -34,12 +34,7 @@ export const buildConnectorEntries = (chargingStation: ChargingStation): Connect
   return [...chargingStation.connectors.entries()].map(
     ([
       connectorId,
-      {
-        transactionEventQueue,
-        transactionSetInterval,
-        transactionTxUpdatedSetInterval,
-        ...connector
-      },
+      { transactionEventQueue, transactionMeterValuesSetInterval, ...connector },
     ]) => ({
       connector,
       connectorId,
@@ -53,12 +48,7 @@ export const buildConnectorsStatus = (
   return [...chargingStation.connectors.entries()].map(
     ([
       connectorId,
-      {
-        transactionEventQueue,
-        transactionSetInterval,
-        transactionTxUpdatedSetInterval,
-        ...connectorStatus
-      },
+      { transactionEventQueue, transactionMeterValuesSetInterval, ...connectorStatus },
     ]) => [connectorId, connectorStatus]
   )
 }
@@ -69,12 +59,7 @@ export const buildEvseEntries = (chargingStation: ChargingStation): EvseEntry[] 
     connectors: [...evseStatus.connectors.entries()].map(
       ([
         connectorId,
-        {
-          transactionEventQueue,
-          transactionSetInterval,
-          transactionTxUpdatedSetInterval,
-          ...connector
-        },
+        { transactionEventQueue, transactionMeterValuesSetInterval, ...connector },
       ]) => ({
         connector,
         connectorId,
@@ -91,12 +76,7 @@ export const buildEvsesStatus = (
     const connectorsStatus: [number, ConnectorStatus][] = [...evseStatus.connectors.entries()].map(
       ([
         connectorId,
-        {
-          transactionEventQueue,
-          transactionSetInterval,
-          transactionTxUpdatedSetInterval,
-          ...connector
-        },
+        { transactionEventQueue, transactionMeterValuesSetInterval, ...connector },
       ]) => [connectorId, connector]
     )
     const { connectors: _, ...evseStatusRest } = evseStatus

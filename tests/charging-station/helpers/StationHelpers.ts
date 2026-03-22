@@ -218,26 +218,18 @@ export function cleanupChargingStation (station: ChargingStation): void {
 
   // Clear connector transaction state and timers
   for (const connectorStatus of station.connectors.values()) {
-    if (connectorStatus.transactionSetInterval != null) {
-      clearInterval(connectorStatus.transactionSetInterval)
-      connectorStatus.transactionSetInterval = undefined
-    }
-    if (connectorStatus.transactionTxUpdatedSetInterval != null) {
-      clearInterval(connectorStatus.transactionTxUpdatedSetInterval)
-      connectorStatus.transactionTxUpdatedSetInterval = undefined
+    if (connectorStatus.transactionMeterValuesSetInterval != null) {
+      clearInterval(connectorStatus.transactionMeterValuesSetInterval)
+      connectorStatus.transactionMeterValuesSetInterval = undefined
     }
   }
 
   // Clear EVSE connector transaction state and timers
   for (const evseStatus of station.evses.values()) {
     for (const connectorStatus of evseStatus.connectors.values()) {
-      if (connectorStatus.transactionSetInterval != null) {
-        clearInterval(connectorStatus.transactionSetInterval)
-        connectorStatus.transactionSetInterval = undefined
-      }
-      if (connectorStatus.transactionTxUpdatedSetInterval != null) {
-        clearInterval(connectorStatus.transactionTxUpdatedSetInterval)
-        connectorStatus.transactionTxUpdatedSetInterval = undefined
+      if (connectorStatus.transactionMeterValuesSetInterval != null) {
+        clearInterval(connectorStatus.transactionMeterValuesSetInterval)
+        connectorStatus.transactionMeterValuesSetInterval = undefined
       }
     }
   }
@@ -954,8 +946,8 @@ function resetConnectorStatus (status: ConnectorStatus, isConnectorZero: boolean
   status.transactionEnergyActiveImportRegisterValue = 0
 
   // Clear transaction interval
-  if (status.transactionSetInterval != null) {
-    clearInterval(status.transactionSetInterval)
-    status.transactionSetInterval = undefined
+  if (status.transactionMeterValuesSetInterval != null) {
+    clearInterval(status.transactionMeterValuesSetInterval)
+    status.transactionMeterValuesSetInterval = undefined
   }
 }

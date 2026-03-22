@@ -617,7 +617,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       )
       return
     }
-    connectorStatus.transactionSetInterval = setInterval(() => {
+    connectorStatus.transactionMeterValuesSetInterval = setInterval(() => {
       const transactionId = convertToInt(connectorStatus.transactionId)
       const meterValue = buildMeterValue(chargingStation, connectorId, transactionId, interval)
       chargingStation.ocppRequestService
@@ -658,9 +658,9 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     connectorId: number
   ): void {
     const connectorStatus = chargingStation.getConnectorStatus(connectorId)
-    if (connectorStatus?.transactionSetInterval != null) {
-      clearInterval(connectorStatus.transactionSetInterval)
-      delete connectorStatus.transactionSetInterval
+    if (connectorStatus?.transactionMeterValuesSetInterval != null) {
+      clearInterval(connectorStatus.transactionMeterValuesSetInterval)
+      delete connectorStatus.transactionMeterValuesSetInterval
     }
   }
 

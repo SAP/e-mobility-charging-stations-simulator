@@ -2032,9 +2032,9 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       // Clean up any running timers
       for (let connectorId = 1; connectorId <= 3; connectorId++) {
         const connector = mockStation.getConnectorStatus(connectorId)
-        if (connector?.transactionTxUpdatedSetInterval != null) {
-          clearInterval(connector.transactionTxUpdatedSetInterval)
-          connector.transactionTxUpdatedSetInterval = undefined
+        if (connector?.transactionMeterValuesSetInterval != null) {
+          clearInterval(connector.transactionMeterValuesSetInterval)
+          connector.transactionMeterValuesSetInterval = undefined
         }
       }
       standardCleanup()
@@ -2054,7 +2054,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           await startPeriodicMeterValues(ocpp16Station, 1, 60000)
 
           const connector = ocpp16Station.getConnectorStatus(1)
-          assert.strictEqual(connector?.transactionTxUpdatedSetInterval, undefined)
+          assert.strictEqual(connector?.transactionMeterValuesSetInterval, undefined)
         })
       })
 
@@ -2068,7 +2068,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         // Zero interval should not start timer
         // This is verified by the implementation logging debug message
-        assert.strictEqual(connector.transactionTxUpdatedSetInterval, undefined)
+        assert.strictEqual(connector.transactionMeterValuesSetInterval, undefined)
       })
 
       await it('should not start timer when interval is negative', () => {
@@ -2078,7 +2078,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert(connector != null)
 
         // Negative interval should not start timer
-        assert.strictEqual(connector.transactionTxUpdatedSetInterval, undefined)
+        assert.strictEqual(connector.transactionMeterValuesSetInterval, undefined)
       })
 
       await it('should handle non-existent connector gracefully', () => {
@@ -2527,6 +2527,8 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         connectorStatus.transactionStarted = true
         connectorStatus.transactionId = transactionId
         connectorStatus.transactionEnergyActiveImportRegisterValue = 100
+        connectorStatus.transactionDeauthorized = true
+        connectorStatus.transactionDeauthorizedEnergyWh = 50
       }
 
       // Act
@@ -2538,6 +2540,8 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       if (postStatus != null) {
         assert.strictEqual(postStatus.transactionStarted, false)
         assert.strictEqual(postStatus.transactionId, undefined)
+        assert.strictEqual(postStatus.transactionDeauthorized, undefined)
+        assert.strictEqual(postStatus.transactionDeauthorizedEnergyWh, undefined)
       }
     })
 
@@ -2551,6 +2555,68 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           return true
         }
       )
+    })
+
+    await it('should not terminate when StopTxOnInvalidId is false', async () => {
+      // Arrange
+      const connectorId = 1
+      const transactionId = generateUUID()
+      const connectorStatus = mockTracking.station.getConnectorStatus(connectorId)
+      assert.notStrictEqual(connectorStatus, undefined)
+      if (connectorStatus != null) {
+        connectorStatus.transactionStarted = true
+        connectorStatus.transactionId = transactionId
+        connectorStatus.transactionEnergyActiveImportRegisterValue = 0
+      }
+      OCPP20VariableManager.getInstance().setVariables(mockTracking.station, [
+        {
+          attributeType: AttributeEnumType.Actual,
+          attributeValue: 'false',
+          component: { name: OCPP20ComponentName.TxCtrlr },
+          variable: { name: OCPP20RequiredVariableName.StopTxOnInvalidId },
+        },
+      ])
+
+      // Act
+      await OCPP20ServiceUtils.requestDeauthorizeTransaction(mockTracking.station, connectorId, 1)
+
+      // Assert — only Updated(Deauthorized), no Ended
+      const txEvents = mockTracking.sentRequests.filter(
+        r => r.command === (OCPP20RequestCommand.TRANSACTION_EVENT as string)
+      )
+      assert.strictEqual(txEvents.length, 1)
+      assert.strictEqual(txEvents[0].payload.eventType, OCPP20TransactionEventEnumType.Updated)
+      assert.strictEqual(
+        txEvents[0].payload.triggerReason,
+        OCPP20TriggerReasonEnumType.Deauthorized
+      )
+
+      // Transaction should still be active
+      const postStatus = mockTracking.station.getConnectorStatus(connectorId)
+      if (postStatus != null) {
+        assert.strictEqual(postStatus.transactionStarted, true)
+        assert.strictEqual(postStatus.transactionId, transactionId)
+      }
+
+      OCPP20VariableManager.getInstance().resetRuntimeOverrides()
+    })
+
+    await it('should track deauth state for deferred termination via periodic meter values', () => {
+      const connectorId = 1
+      const transactionId = generateUUID()
+      const connectorStatus = mockTracking.station.getConnectorStatus(connectorId)
+      if (connectorStatus == null) {
+        assert.fail('connectorStatus should not be undefined')
+      }
+      connectorStatus.transactionStarted = true
+      connectorStatus.transactionId = transactionId
+      connectorStatus.transactionEnergyActiveImportRegisterValue = 500
+      connectorStatus.transactionDeauthorized = true
+      connectorStatus.transactionDeauthorizedEnergyWh = 500
+
+      assert.strictEqual(connectorStatus.transactionDeauthorized, true)
+      assert.strictEqual(connectorStatus.transactionDeauthorizedEnergyWh, 500)
+      assert.strictEqual(connectorStatus.transactionStarted, true)
     })
 
     await it('should propagate error and skip cleanup if Updated event fails', async () => {
