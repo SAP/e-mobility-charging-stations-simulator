@@ -40,6 +40,9 @@ enum HttpMethods {
   PUT = 'PUT',
 }
 
+/**
+ * @deprecated Use UIMCPServer (ApplicationProtocol.MCP) instead. Will be removed in a future major version.
+ */
 export class UIHttpServer extends AbstractUIServer {
   protected override readonly uiServerType = 'UI HTTP Server'
 
@@ -100,6 +103,9 @@ export class UIHttpServer extends AbstractUIServer {
     }
   }
 
+  /**
+   * @deprecated Use UIMCPServer (ApplicationProtocol.MCP) instead. Will be removed in a future major version.
+   */
   public start (): void {
     this.httpServer.on('request', this.requestListener.bind(this))
     this.startHttpServer()

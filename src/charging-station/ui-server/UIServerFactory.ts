@@ -57,6 +57,7 @@ export class UIServerFactory {
     }
     switch (uiServerConfiguration.type) {
       case ApplicationProtocol.HTTP:
+        // eslint-disable-next-line @typescript-eslint/no-deprecated
         return new UIHttpServer(uiServerConfiguration)
       case ApplicationProtocol.WS:
       default:
