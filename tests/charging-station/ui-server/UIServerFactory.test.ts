@@ -46,8 +46,9 @@ await describe('UIServerFactory', async () => {
       type: ApplicationProtocol.MCP,
       version: ApplicationProtocolVersion.VERSION_20,
     })
-    UIServerFactory.getUIServerImplementation(config)
+    const server = UIServerFactory.getUIServerImplementation(config)
     assert.strictEqual(config.version, ApplicationProtocolVersion.VERSION_11)
+    server.stop()
   })
 
   await it('should fall back to VERSION_11 for WS with VERSION_20', () => {
@@ -55,7 +56,8 @@ await describe('UIServerFactory', async () => {
       type: ApplicationProtocol.WS,
       version: ApplicationProtocolVersion.VERSION_20,
     })
-    UIServerFactory.getUIServerImplementation(config)
+    const server = UIServerFactory.getUIServerImplementation(config)
     assert.strictEqual(config.version, ApplicationProtocolVersion.VERSION_11)
+    server.stop()
   })
 })

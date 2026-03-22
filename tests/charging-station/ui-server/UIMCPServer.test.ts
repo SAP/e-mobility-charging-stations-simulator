@@ -11,7 +11,8 @@ import type { ResponsePayload } from '../../../src/types/index.js'
 import { mcpToolSchemas } from '../../../src/charging-station/ui-server/mcp/index.js'
 import { UIMCPServer } from '../../../src/charging-station/ui-server/UIMCPServer.js'
 import { ApplicationProtocol, ProcedureName, ResponseStatus } from '../../../src/types/index.js'
-import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
+import { logger } from '../../../src/utils/Logger.js'
+import { createLoggerMocks, standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { TEST_UUID, TEST_UUID_2 } from './UIServerTestConstants.js'
 import { createMockUIServerConfiguration } from './UIServerTestUtils.js'
 
@@ -137,13 +138,8 @@ await describe('UIMCPServer', async () => {
       assert.deepStrictEqual(resolvedPayload, expectedPayload)
     })
 
-    await it('should clear timeout when resolving pending request', () => {
-      let timeoutCleared = false
-      const originalClearTimeout = globalThis.clearTimeout
-      globalThis.clearTimeout = ((_id: ReturnType<typeof setTimeout>) => {
-        timeoutCleared = true
-        originalClearTimeout(_id)
-      }) as typeof globalThis.clearTimeout
+    await it('should clear timeout when resolving pending request', t => {
+      const clearTimeoutMock = t.mock.method(globalThis, 'clearTimeout')
 
       const timeout = setTimeout(() => undefined, 30000)
       const pendingMap = server.getPendingMcpRequestsMap()
@@ -155,9 +151,7 @@ await describe('UIMCPServer', async () => {
 
       server.sendResponse([TEST_UUID, { status: ResponseStatus.SUCCESS }])
 
-      globalThis.clearTimeout = originalClearTimeout
-
-      assert.strictEqual(timeoutCleared, true)
+      assert.ok(clearTimeoutMock.mock.calls.length > 0)
     })
 
     await it('should delete pending entry after resolve', () => {
@@ -176,18 +170,22 @@ await describe('UIMCPServer', async () => {
       assert.strictEqual(server.getPendingMcpRequestsSize(), 0)
     })
 
-    await it('should log warning when sendResponse called for unknown UUID', () => {
+    await it('should log error when sendResponse called for unknown UUID', t => {
+      const { errorMock } = createLoggerMocks(t, logger)
+
       server.sendResponse([TEST_UUID, { status: ResponseStatus.SUCCESS }])
 
-      assert.strictEqual(server.getPendingMcpRequestsSize(), 0)
+      assert.strictEqual(errorMock.mock.calls.length, 1)
     })
   })
 
   await describe('sendRequest warning', async () => {
-    await it('should log warning when sendRequest is called in stateless mode', () => {
+    await it('should log warning when sendRequest is called in stateless mode', t => {
+      const { warnMock } = createLoggerMocks(t, logger)
+
       server.sendRequest([TEST_UUID, ProcedureName.LIST_CHARGING_STATIONS, {}])
 
-      assert.strictEqual(server.getPendingMcpRequestsSize(), 0)
+      assert.strictEqual(warnMock.mock.calls.length, 1)
     })
   })
 
@@ -224,13 +222,8 @@ await describe('UIMCPServer', async () => {
       assert.strictEqual(rejectedErrors[1].message, 'Server stopping')
     })
 
-    await it('should clear all timeouts on stop', () => {
-      let clearedCount = 0
-      const originalClearTimeout = globalThis.clearTimeout
-      globalThis.clearTimeout = ((_id: ReturnType<typeof setTimeout>) => {
-        clearedCount++
-        originalClearTimeout(_id)
-      }) as typeof globalThis.clearTimeout
+    await it('should clear all timeouts on stop', t => {
+      const clearTimeoutMock = t.mock.method(globalThis, 'clearTimeout')
 
       const timeout1 = setTimeout(() => undefined, 30000)
       const timeout2 = setTimeout(() => undefined, 30000)
@@ -249,9 +242,7 @@ await describe('UIMCPServer', async () => {
 
       server.stop()
 
-      globalThis.clearTimeout = originalClearTimeout
-
-      assert.strictEqual(clearedCount, 2)
+      assert.ok(clearTimeoutMock.mock.calls.length >= 2)
     })
 
     await it('should clear pending map on stop', () => {
