@@ -395,9 +395,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           const connectorId = chargingStation.getConnectorIdByTransactionId(response.transactionId)
           if (connectorId != null) {
             const connectorStatus = chargingStation.getConnectorStatus(connectorId)
-            const beginMeterValues =
+            const startedMeterValues =
               connectorStatus != null
-                ? OCPP20ServiceUtils.buildTransactionBeginMeterValues(connectorStatus)
+                ? OCPP20ServiceUtils.buildTransactionStartedMeterValues(connectorStatus)
                 : []
             OCPP20ServiceUtils.sendTransactionEvent(
               chargingStation,
@@ -406,7 +406,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               connectorId,
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               response.transactionId!,
-              beginMeterValues.length > 0 ? { meterValue: beginMeterValues } : undefined
+              startedMeterValues.length > 0 ? { meterValue: startedMeterValues } : undefined
             ).catch((error: unknown) => {
               logger.error(
                 `${chargingStation.logPrefix()} ${moduleName}.constructor: TransactionEvent(Started) error:`,

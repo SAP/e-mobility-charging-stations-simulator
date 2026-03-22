@@ -89,7 +89,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     [OCPP20RequestCommand.TRANSACTION_EVENT, 'TransactionEvent'],
   ]
 
-  static buildTransactionBeginMeterValues (connectorStatus: ConnectorStatus): OCPP20MeterValue[] {
+  static buildTransactionStartedMeterValues (connectorStatus: ConnectorStatus): OCPP20MeterValue[] {
     return OCPP20ServiceUtils.buildEnergyMeterValues(
       connectorStatus,
       OCPP20ReadingContextEnumType.TRANSACTION_BEGIN
@@ -629,7 +629,9 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     return meterValues
   }
 
-  private static buildFinalMeterValues (connectorStatus: ConnectorStatus): OCPP20MeterValue[] {
+  private static buildTransactionEndedMeterValues (
+    connectorStatus: ConnectorStatus
+  ): OCPP20MeterValue[] {
     return OCPP20ServiceUtils.buildEnergyMeterValues(
       connectorStatus,
       OCPP20ReadingContextEnumType.TRANSACTION_END
@@ -694,7 +696,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     stoppedReason: OCPP20ReasonEnumType,
     evseId?: number
   ): Promise<OCPP20TransactionEventResponse> {
-    const finalMeterValues = this.buildFinalMeterValues(connectorStatus)
+    const endedMeterValues = this.buildTransactionEndedMeterValues(connectorStatus)
 
     const response = await this.sendTransactionEvent(
       chargingStation,
@@ -704,7 +706,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       transactionId,
       {
         evseId,
-        meterValue: finalMeterValues.length > 0 ? finalMeterValues : undefined,
+        meterValue: endedMeterValues.length > 0 ? endedMeterValues : undefined,
         stoppedReason,
       }
     )

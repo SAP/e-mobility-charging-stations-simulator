@@ -2661,7 +2661,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
     })
   })
 
-  await describe('buildTransactionBeginMeterValues', async () => {
+  await describe('buildTransactionStartedMeterValues', async () => {
     await it('should build meter value with Transaction.Begin context and energy register', () => {
       const connectorStatus = {
         availability: 'Operative',
@@ -2669,7 +2669,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         transactionEnergyActiveImportRegisterValue: 1234,
       } as unknown as ConnectorStatus
 
-      const result = OCPP20ServiceUtils.buildTransactionBeginMeterValues(connectorStatus)
+      const result = OCPP20ServiceUtils.buildTransactionStartedMeterValues(connectorStatus)
 
       assert.strictEqual(result.length, 1)
       assert.strictEqual(result[0].sampledValue.length, 1)
@@ -2691,7 +2691,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         MeterValues: [],
       } as unknown as ConnectorStatus
 
-      const result = OCPP20ServiceUtils.buildTransactionBeginMeterValues(connectorStatus)
+      const result = OCPP20ServiceUtils.buildTransactionStartedMeterValues(connectorStatus)
 
       assert.strictEqual(result.length, 1)
       assert.strictEqual(result[0].sampledValue[0].value, 0)
@@ -2704,7 +2704,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         transactionEnergyActiveImportRegisterValue: -1,
       } as unknown as ConnectorStatus
 
-      const result = OCPP20ServiceUtils.buildTransactionBeginMeterValues(connectorStatus)
+      const result = OCPP20ServiceUtils.buildTransactionStartedMeterValues(connectorStatus)
 
       assert.strictEqual(result.length, 0)
     })
