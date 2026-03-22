@@ -241,53 +241,22 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     return currentResults
   }
 
-  /**
-   * Gets the AlignedDataInterval configuration value for standalone MeterValuesRequest messages.
-   * Reads the AlignedDataCtrlr.Interval variable and falls back to 900 seconds (15 min)
-   * if not configured, matching the OCPP 2.0.1 registry default.
-   * @param chargingStation - The charging station instance
-   * @returns The interval in milliseconds
-   */
   public static getAlignedDataInterval (chargingStation: ChargingStation): number {
-    const variableManager = OCPP20VariableManager.getInstance()
-    const results = variableManager.getVariables(chargingStation, [
-      {
-        component: { name: OCPP20ComponentName.AlignedDataCtrlr },
-        variable: { name: OCPP20RequiredVariableName.AlignedDataInterval },
-      },
-    ])
-    if (results.length > 0 && results[0].attributeValue != null) {
-      const intervalSeconds = parseInt(results[0].attributeValue, 10)
-      if (!isNaN(intervalSeconds) && intervalSeconds > 0) {
-        return secondsToMilliseconds(intervalSeconds)
-      }
-    }
-    // Default: 900 seconds (15 min) per OCPP 2.0.1 AlignedDataCtrlr.Interval registry default
-    return secondsToMilliseconds(900)
+    return OCPP20ServiceUtils.readVariableAsIntervalMs(
+      chargingStation,
+      OCPP20ComponentName.AlignedDataCtrlr,
+      OCPP20RequiredVariableName.AlignedDataInterval,
+      900
+    )
   }
 
-  /**
-   * Gets the TxUpdatedInterval configuration value for periodic TransactionEvent(Updated) messages.
-   * Reads the SampledDataCtrlr.TxUpdatedInterval variable and falls back to
-   * Constants.DEFAULT_TX_UPDATED_INTERVAL if not configured.
-   * @param chargingStation - The charging station instance
-   * @returns The interval in milliseconds
-   */
   public static getTxUpdatedInterval (chargingStation: ChargingStation): number {
-    const variableManager = OCPP20VariableManager.getInstance()
-    const results = variableManager.getVariables(chargingStation, [
-      {
-        component: { name: OCPP20ComponentName.SampledDataCtrlr },
-        variable: { name: OCPP20RequiredVariableName.TxUpdatedInterval },
-      },
-    ])
-    if (results.length > 0 && results[0].attributeValue != null) {
-      const intervalSeconds = parseInt(results[0].attributeValue, 10)
-      if (!isNaN(intervalSeconds) && intervalSeconds > 0) {
-        return secondsToMilliseconds(intervalSeconds)
-      }
-    }
-    return secondsToMilliseconds(Constants.DEFAULT_TX_UPDATED_INTERVAL)
+    return OCPP20ServiceUtils.readVariableAsIntervalMs(
+      chargingStation,
+      OCPP20ComponentName.SampledDataCtrlr,
+      OCPP20RequiredVariableName.TxUpdatedInterval,
+      Constants.DEFAULT_TX_UPDATED_INTERVAL
+    )
   }
 
   /**
@@ -715,6 +684,28 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       connectorStatus,
       OCPP20ReadingContextEnumType.TRANSACTION_END
     )
+  }
+
+  private static readVariableAsIntervalMs (
+    chargingStation: ChargingStation,
+    componentName: string,
+    variableName: string,
+    defaultSeconds: number
+  ): number {
+    const variableManager = OCPP20VariableManager.getInstance()
+    const results = variableManager.getVariables(chargingStation, [
+      {
+        component: { name: componentName },
+        variable: { name: variableName },
+      },
+    ])
+    if (results.length > 0 && results[0].attributeValue != null) {
+      const intervalSeconds = parseInt(results[0].attributeValue, 10)
+      if (!isNaN(intervalSeconds) && intervalSeconds > 0) {
+        return secondsToMilliseconds(intervalSeconds)
+      }
+    }
+    return secondsToMilliseconds(defaultSeconds)
   }
 }
 export function buildTransactionEvent (
