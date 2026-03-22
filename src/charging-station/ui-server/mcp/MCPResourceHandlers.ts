@@ -1,11 +1,16 @@
 import { type McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { open, stat } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
+import { z } from 'zod'
 
 import type { AbstractUIServer } from '../AbstractUIServer.js'
 
 import { ConfigurationSection, type LogConfiguration } from '../../../types/index.js'
 import { Configuration } from '../../../utils/Configuration.js'
+
+const MAX_TAIL_LINES = 5000
+const DEFAULT_TAIL_LINES = 200
+const TAIL_BYTES = 65_536
 
 const getLogFilePath = (configField: 'errorFile' | 'file'): string | undefined => {
   const logConfig = Configuration.getConfigurationSection<LogConfiguration>(
@@ -21,21 +26,24 @@ const getLogFilePath = (configField: 'errorFile' | 'file'): string | undefined =
   return join(dir, baseName)
 }
 
-const TAIL_BYTES = 65_536
-
-const tailFile = async (filePath: string, maxLines: number): Promise<string> => {
+const tailFile = async (
+  filePath: string,
+  maxLines: number
+): Promise<{ lines: string[]; totalLines: number }> => {
   const fileStat = await stat(filePath)
   const fileHandle = await open(filePath, 'r')
   try {
+    const fullContent = fileStat.size <= TAIL_BYTES
     const readSize = Math.min(TAIL_BYTES, fileStat.size)
     const position = Math.max(0, fileStat.size - readSize)
     const buffer = Buffer.alloc(readSize)
     await fileHandle.read(buffer, 0, readSize, position)
-    const lines = buffer.toString('utf8').split('\n')
+    const allLines = buffer.toString('utf8').split('\n')
     if (position > 0) {
-      lines.shift()
+      allLines.shift()
     }
-    return lines.slice(-maxLines).join('\n')
+    const totalLines = fullContent ? allLines.length : -1
+    return { lines: allLines.slice(-maxLines), totalLines }
   } finally {
     await fileHandle.close()
   }
@@ -101,54 +109,88 @@ export const registerMCPResources = (server: McpServer, uiServer: AbstractUIServ
       ],
     })
   )
+}
 
-  server.registerResource(
-    'log-combined',
-    'log://combined',
-    { description: 'Recent combined simulator log entries', mimeType: 'text/plain' },
-    async _uri => {
+export const registerMCPLogTools = (server: McpServer): void => {
+  server.registerTool(
+    'readCombinedLog',
+    {
+      annotations: { readOnlyHint: true },
+      description:
+        'Read recent entries from the combined simulator log file. Returns the last N lines (default 200, max 5000).',
+      inputSchema: {
+        tail: z
+          .number()
+          .int()
+          .positive()
+          .max(MAX_TAIL_LINES)
+          .default(DEFAULT_TAIL_LINES)
+          .describe('Number of lines to return from the end of the log'),
+      },
+    },
+    async ({ tail }) => {
       try {
         const logPath = getLogFilePath('file')
         if (logPath == null) {
           return {
-            contents: [
-              { mimeType: 'text/plain', text: 'Log file not configured', uri: 'log://combined' },
-            ],
+            content: [{ text: 'Log file not configured', type: 'text' as const }],
+            isError: true,
           }
         }
-        const recent = await tailFile(logPath, 200)
-        return { contents: [{ mimeType: 'text/plain', text: recent, uri: 'log://combined' }] }
+        const { lines, totalLines } = await tailFile(logPath, tail)
+        const meta =
+          totalLines >= 0
+            ? `Showing last ${String(lines.length)} of ${String(totalLines)} lines`
+            : `Showing last ${String(lines.length)} lines`
+        return {
+          content: [{ text: `${meta}\n\n${lines.join('\n')}`, type: 'text' as const }],
+        }
       } catch {
         return {
-          contents: [
-            { mimeType: 'text/plain', text: 'Log file not available', uri: 'log://combined' },
-          ],
+          content: [{ text: 'Log file not available', type: 'text' as const }],
+          isError: true,
         }
       }
     }
   )
 
-  server.registerResource(
-    'log-error',
-    'log://error',
-    { description: 'Recent error log entries', mimeType: 'text/plain' },
-    async _uri => {
+  server.registerTool(
+    'readErrorLog',
+    {
+      annotations: { readOnlyHint: true },
+      description:
+        'Read recent entries from the error log file. Returns the last N lines (default 200, max 5000).',
+      inputSchema: {
+        tail: z
+          .number()
+          .int()
+          .positive()
+          .max(MAX_TAIL_LINES)
+          .default(DEFAULT_TAIL_LINES)
+          .describe('Number of lines to return from the end of the log'),
+      },
+    },
+    async ({ tail }) => {
       try {
         const logPath = getLogFilePath('errorFile')
         if (logPath == null) {
           return {
-            contents: [
-              { mimeType: 'text/plain', text: 'Error log file not configured', uri: 'log://error' },
-            ],
+            content: [{ text: 'Error log file not configured', type: 'text' as const }],
+            isError: true,
           }
         }
-        const recent = await tailFile(logPath, 100)
-        return { contents: [{ mimeType: 'text/plain', text: recent, uri: 'log://error' }] }
+        const { lines, totalLines } = await tailFile(logPath, tail)
+        const meta =
+          totalLines >= 0
+            ? `Showing last ${String(lines.length)} of ${String(totalLines)} lines`
+            : `Showing last ${String(lines.length)} lines`
+        return {
+          content: [{ text: `${meta}\n\n${lines.join('\n')}`, type: 'text' as const }],
+        }
       } catch {
         return {
-          contents: [
-            { mimeType: 'text/plain', text: 'Log file not available', uri: 'log://error' },
-          ],
+          content: [{ text: 'Error log file not available', type: 'text' as const }],
+          isError: true,
         }
       }
     }

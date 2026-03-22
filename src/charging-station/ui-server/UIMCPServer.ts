@@ -18,7 +18,7 @@ import {
 } from '../../types/index.js'
 import { generateUUID, logger } from '../../utils/index.js'
 import { AbstractUIServer } from './AbstractUIServer.js'
-import { mcpToolSchemas, registerMCPResources } from './mcp/index.js'
+import { mcpToolSchemas, registerMCPLogTools, registerMCPResources } from './mcp/index.js'
 import {
   createBodySizeLimiter,
   createRateLimiter,
@@ -100,6 +100,7 @@ export class UIMCPServer extends AbstractUIServer {
     }
 
     registerMCPResources(mcpServer, this)
+    registerMCPLogTools(mcpServer)
 
     this.httpServer.on('request', (req: IncomingMessage, res: ServerResponse) => {
       const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`)
