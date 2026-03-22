@@ -29,6 +29,8 @@ import {
 import {
   clampToSafeTimerValue,
   Constants,
+  convertToBoolean,
+  convertToInt,
   convertToIntOrNaN,
   formatDurationMilliSeconds,
   generateUUID,
@@ -296,7 +298,6 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     return { bytesLimit, itemsLimit }
   }
 
-  // E05.FR.09/FR.10 + E06.FR.04: Updated(Deauthorized) → Ended(DeAuthorized). Assumes StopTxOnInvalidId=true.
   public static async requestDeauthorizeTransaction (
     chargingStation: ChargingStation,
     connectorId: number,
@@ -306,6 +307,50 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       chargingStation,
       connectorId
     )
+
+    const stopTxOnInvalidId = OCPP20ServiceUtils.readVariableAsBoolean(
+      chargingStation,
+      OCPP20ComponentName.TxCtrlr,
+      OCPP20RequiredVariableName.StopTxOnInvalidId,
+      true
+    )
+
+    if (!stopTxOnInvalidId) {
+      await this.sendTransactionEvent(
+        chargingStation,
+        OCPP20TransactionEventEnumType.Updated,
+        OCPP20TriggerReasonEnumType.Deauthorized,
+        connectorId,
+        transactionId,
+        { evseId }
+      )
+      return { idTokenInfo: undefined }
+    }
+
+    const maxEnergyOnInvalidId = OCPP20ServiceUtils.readVariableAsInteger(
+      chargingStation,
+      OCPP20ComponentName.TxCtrlr,
+      'MaxEnergyOnInvalidId',
+      0
+    )
+
+    if (maxEnergyOnInvalidId > 0) {
+      // E05.FR.03: continue charging up to MaxEnergyOnInvalidId Wh before terminating
+      connectorStatus.transactionDeauthorized = true
+      connectorStatus.transactionDeauthorizedEnergyWh =
+        connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0
+
+      await this.sendTransactionEvent(
+        chargingStation,
+        OCPP20TransactionEventEnumType.Updated,
+        OCPP20TriggerReasonEnumType.Deauthorized,
+        connectorId,
+        transactionId,
+        { evseId }
+      )
+
+      return { idTokenInfo: undefined }
+    }
 
     await this.sendTransactionEvent(
       chargingStation,
@@ -500,15 +545,46 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       )
       return
     }
-    if (connector.transactionTxUpdatedSetInterval != null) {
+    if (connector.transactionMeterValuesSetInterval != null) {
       logger.warn(
         `${chargingStation.logPrefix()} ${moduleName}.startPeriodicMeterValues: TxUpdatedInterval already started, stopping first`
       )
       OCPP20ServiceUtils.stopPeriodicMeterValues(chargingStation, connectorId)
     }
-    connector.transactionTxUpdatedSetInterval = setInterval(() => {
+    connector.transactionMeterValuesSetInterval = setInterval(() => {
       const connectorStatus = chargingStation.getConnectorStatus(connectorId)
       if (connectorStatus?.transactionStarted === true && connectorStatus.transactionId != null) {
+        if (
+          connectorStatus.transactionDeauthorized === true &&
+          connectorStatus.transactionDeauthorizedEnergyWh != null
+        ) {
+          const maxEnergy = OCPP20ServiceUtils.readVariableAsInteger(
+            chargingStation,
+            OCPP20ComponentName.TxCtrlr,
+            'MaxEnergyOnInvalidId',
+            0
+          )
+          const currentEnergy = connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0
+          const energySinceDeauth = currentEnergy - connectorStatus.transactionDeauthorizedEnergyWh
+          if (maxEnergy > 0 && energySinceDeauth >= maxEnergy) {
+            const evseId = chargingStation.getEvseIdByConnectorId(connectorId)
+            OCPP20ServiceUtils.terminateTransaction(
+              chargingStation,
+              connectorId,
+              connectorStatus,
+              connectorStatus.transactionId as string,
+              OCPP20TriggerReasonEnumType.Deauthorized,
+              OCPP20ReasonEnumType.DeAuthorized,
+              evseId
+            ).catch((error: unknown) => {
+              logger.error(
+                `${chargingStation.logPrefix()} ${moduleName}.startPeriodicMeterValues: Error terminating deauthorized transaction:`,
+                error
+              )
+            })
+            return
+          }
+        }
         const meterValue = buildMeterValue(
           chargingStation,
           connectorId,
@@ -599,9 +675,9 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     connectorId: number
   ): void {
     const connector = chargingStation.getConnectorStatus(connectorId)
-    if (connector?.transactionTxUpdatedSetInterval != null) {
-      clearInterval(connector.transactionTxUpdatedSetInterval)
-      delete connector.transactionTxUpdatedSetInterval
+    if (connector?.transactionMeterValuesSetInterval != null) {
+      clearInterval(connector.transactionMeterValuesSetInterval)
+      delete connector.transactionMeterValuesSetInterval
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.stopPeriodicMeterValues: TxUpdatedInterval stopped`
       )
@@ -638,12 +714,55 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     )
   }
 
+  private static readVariableAsBoolean (
+    chargingStation: ChargingStation,
+    componentName: string,
+    variableName: string,
+    defaultValue: boolean
+  ): boolean {
+    const value = OCPP20ServiceUtils.readVariableValue(chargingStation, componentName, variableName)
+    return value != null ? convertToBoolean(value) : defaultValue
+  }
+
+  private static readVariableAsInteger (
+    chargingStation: ChargingStation,
+    componentName: string,
+    variableName: string,
+    defaultValue: number
+  ): number {
+    const value = OCPP20ServiceUtils.readVariableValue(chargingStation, componentName, variableName)
+    if (value != null) {
+      try {
+        return convertToInt(value)
+      } catch {
+        return defaultValue
+      }
+    }
+    return defaultValue
+  }
+
   private static readVariableAsIntervalMs (
     chargingStation: ChargingStation,
     componentName: string,
     variableName: string,
     defaultSeconds: number
   ): number {
+    const intervalSeconds = OCPP20ServiceUtils.readVariableAsInteger(
+      chargingStation,
+      componentName,
+      variableName,
+      defaultSeconds
+    )
+    return intervalSeconds > 0
+      ? secondsToMilliseconds(intervalSeconds)
+      : secondsToMilliseconds(defaultSeconds)
+  }
+
+  private static readVariableValue (
+    chargingStation: ChargingStation,
+    componentName: string,
+    variableName: string
+  ): string | undefined {
     const variableManager = OCPP20VariableManager.getInstance()
     const results = variableManager.getVariables(chargingStation, [
       {
@@ -652,12 +771,9 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       },
     ])
     if (results.length > 0 && results[0].attributeValue != null) {
-      const intervalSeconds = parseInt(results[0].attributeValue, 10)
-      if (!isNaN(intervalSeconds) && intervalSeconds > 0) {
-        return secondsToMilliseconds(intervalSeconds)
-      }
+      return results[0].attributeValue
     }
-    return secondsToMilliseconds(defaultSeconds)
+    return undefined
   }
 
   private static resolveActiveTransaction (

@@ -2032,9 +2032,9 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       // Clean up any running timers
       for (let connectorId = 1; connectorId <= 3; connectorId++) {
         const connector = mockStation.getConnectorStatus(connectorId)
-        if (connector?.transactionTxUpdatedSetInterval != null) {
-          clearInterval(connector.transactionTxUpdatedSetInterval)
-          connector.transactionTxUpdatedSetInterval = undefined
+        if (connector?.transactionMeterValuesSetInterval != null) {
+          clearInterval(connector.transactionMeterValuesSetInterval)
+          connector.transactionMeterValuesSetInterval = undefined
         }
       }
       standardCleanup()
@@ -2054,7 +2054,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           await startPeriodicMeterValues(ocpp16Station, 1, 60000)
 
           const connector = ocpp16Station.getConnectorStatus(1)
-          assert.strictEqual(connector?.transactionTxUpdatedSetInterval, undefined)
+          assert.strictEqual(connector?.transactionMeterValuesSetInterval, undefined)
         })
       })
 
@@ -2068,7 +2068,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         // Zero interval should not start timer
         // This is verified by the implementation logging debug message
-        assert.strictEqual(connector.transactionTxUpdatedSetInterval, undefined)
+        assert.strictEqual(connector.transactionMeterValuesSetInterval, undefined)
       })
 
       await it('should not start timer when interval is negative', () => {
@@ -2078,7 +2078,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert(connector != null)
 
         // Negative interval should not start timer
-        assert.strictEqual(connector.transactionTxUpdatedSetInterval, undefined)
+        assert.strictEqual(connector.transactionMeterValuesSetInterval, undefined)
       })
 
       await it('should handle non-existent connector gracefully', () => {
