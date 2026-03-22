@@ -89,6 +89,24 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     [OCPP20RequestCommand.TRANSACTION_EVENT, 'TransactionEvent'],
   ]
 
+  static buildTransactionBeginMeterValues (connectorStatus: ConnectorStatus): OCPP20MeterValue[] {
+    const beginMeterValues: OCPP20MeterValue[] = []
+    const energyValue = connectorStatus.transactionEnergyActiveImportRegisterValue ?? 0
+    if (energyValue >= 0) {
+      beginMeterValues.push({
+        sampledValue: [
+          {
+            context: OCPP20ReadingContextEnumType.TRANSACTION_BEGIN,
+            measurand: OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER,
+            value: energyValue,
+          },
+        ],
+        timestamp: new Date(),
+      })
+    }
+    return beginMeterValues
+  }
+
   /**
    * OCPP 2.0 Incoming Request Service validator configurations
    * @returns Array of validator configuration tuples
@@ -232,6 +250,31 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       }
     }
     return currentResults
+  }
+
+  /**
+   * Gets the AlignedDataInterval configuration value for standalone MeterValuesRequest messages.
+   * Reads the AlignedDataCtrlr.Interval variable and falls back to 900 seconds (15 min)
+   * if not configured, matching the OCPP 2.0.1 registry default.
+   * @param chargingStation - The charging station instance
+   * @returns The interval in milliseconds
+   */
+  public static getAlignedDataInterval (chargingStation: ChargingStation): number {
+    const variableManager = OCPP20VariableManager.getInstance()
+    const results = variableManager.getVariables(chargingStation, [
+      {
+        component: { name: OCPP20ComponentName.AlignedDataCtrlr },
+        variable: { name: 'Interval' },
+      },
+    ])
+    if (results.length > 0 && results[0].attributeValue != null) {
+      const intervalSeconds = parseInt(results[0].attributeValue, 10)
+      if (!isNaN(intervalSeconds) && intervalSeconds > 0) {
+        return secondsToMilliseconds(intervalSeconds)
+      }
+    }
+    // Default: 900 seconds (15 min) per OCPP 2.0.1 AlignedDataCtrlr.Interval registry default
+    return secondsToMilliseconds(900)
   }
 
   /**

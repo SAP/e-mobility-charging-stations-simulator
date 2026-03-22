@@ -475,7 +475,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       this.chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_20 ||
       this.chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_201
     ) {
-      const txUpdatedInterval = OCPP20ServiceUtils.getTxUpdatedInterval(this.chargingStation)
+      const alignedDataInterval = OCPP20ServiceUtils.getAlignedDataInterval(this.chargingStation)
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const evseId = this.chargingStation.getEvseIdByConnectorId(connectorId!)
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -494,7 +494,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
               // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               connectorId!,
               transactionId,
-              txUpdatedInterval
+              alignedDataInterval
             ),
           ],
           ...requestPayload,
