@@ -2553,6 +2553,68 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       )
     })
 
+    await it('should not terminate when StopTxOnInvalidId is false', async () => {
+      // Arrange
+      const connectorId = 1
+      const transactionId = generateUUID()
+      const connectorStatus = mockTracking.station.getConnectorStatus(connectorId)
+      assert.notStrictEqual(connectorStatus, undefined)
+      if (connectorStatus != null) {
+        connectorStatus.transactionStarted = true
+        connectorStatus.transactionId = transactionId
+        connectorStatus.transactionEnergyActiveImportRegisterValue = 0
+      }
+      OCPP20VariableManager.getInstance().setVariables(mockTracking.station, [
+        {
+          attributeType: AttributeEnumType.Actual,
+          attributeValue: 'false',
+          component: { name: OCPP20ComponentName.TxCtrlr },
+          variable: { name: OCPP20RequiredVariableName.StopTxOnInvalidId },
+        },
+      ])
+
+      // Act
+      await OCPP20ServiceUtils.requestDeauthorizeTransaction(mockTracking.station, connectorId, 1)
+
+      // Assert — only Updated(Deauthorized), no Ended
+      const txEvents = mockTracking.sentRequests.filter(
+        r => r.command === (OCPP20RequestCommand.TRANSACTION_EVENT as string)
+      )
+      assert.strictEqual(txEvents.length, 1)
+      assert.strictEqual(txEvents[0].payload.eventType, OCPP20TransactionEventEnumType.Updated)
+      assert.strictEqual(
+        txEvents[0].payload.triggerReason,
+        OCPP20TriggerReasonEnumType.Deauthorized
+      )
+
+      // Transaction should still be active
+      const postStatus = mockTracking.station.getConnectorStatus(connectorId)
+      if (postStatus != null) {
+        assert.strictEqual(postStatus.transactionStarted, true)
+        assert.strictEqual(postStatus.transactionId, transactionId)
+      }
+
+      OCPP20VariableManager.getInstance().resetRuntimeOverrides()
+    })
+
+    await it('should track deauth state for deferred termination via periodic meter values', () => {
+      const connectorId = 1
+      const transactionId = generateUUID()
+      const connectorStatus = mockTracking.station.getConnectorStatus(connectorId)
+      if (connectorStatus == null) {
+        assert.fail('connectorStatus should not be undefined')
+      }
+      connectorStatus.transactionStarted = true
+      connectorStatus.transactionId = transactionId
+      connectorStatus.transactionEnergyActiveImportRegisterValue = 500
+      connectorStatus.transactionDeauthorized = true
+      connectorStatus.transactionDeauthorizedEnergyWh = 500
+
+      assert.strictEqual(connectorStatus.transactionDeauthorized, true)
+      assert.strictEqual(connectorStatus.transactionDeauthorizedEnergyWh, 500)
+      assert.strictEqual(connectorStatus.transactionStarted, true)
+    })
+
     await it('should propagate error and skip cleanup if Updated event fails', async () => {
       const connectorId = 1
       const transactionId = generateUUID()

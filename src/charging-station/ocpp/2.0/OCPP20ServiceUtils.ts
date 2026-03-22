@@ -572,7 +572,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
               chargingStation,
               connectorId,
               connectorStatus,
-              connectorStatus.transactionId as string,
+              connectorStatus.transactionId.toString(),
               OCPP20TriggerReasonEnumType.Deauthorized,
               OCPP20ReasonEnumType.DeAuthorized,
               evseId
@@ -735,6 +735,9 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       try {
         return convertToInt(value)
       } catch {
+        logger.warn(
+          `${moduleName}.readVariableAsInteger: Cannot convert '${value}' to integer for ${componentName}.${variableName}, using default ${defaultValue.toString()}`
+        )
         return defaultValue
       }
     }
