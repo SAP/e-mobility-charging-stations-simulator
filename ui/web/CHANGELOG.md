@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.2.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v3.2.0...webui@v3.2.1) (2026-03-22)
+
+
+### 🐞 Bug Fixes
+
+* **ocpp2:** implement StopTxOnInvalidId and MaxEnergyOnInvalidId per E05 ([#1745](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1745)) ([865b7d1](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/865b7d1f8d56d1152d57784d2a542d1ca6b62f2b))
+
 ## [3.2.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v3.1.2...webui@v3.2.0) (2026-03-21)
 
 ### 🚀 Features

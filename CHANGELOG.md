@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.2.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v3.2.0...simulator@v3.2.1) (2026-03-22)
+
+
+### 🐞 Bug Fixes
+
+* **deps:** update all non-major dependencies ([#1742](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1742)) ([60a10a7](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/60a10a795c1382285beab3020e01ad6ee3db6c3c))
+* **ocpp2:** align MeterValues implementation with OCPP 2.0.1 spec ([#1744](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1744)) ([dbe034f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/dbe034ffae6a2648fc9e41197f2c3e015a196592))
+* **ocpp2:** build meter values payload in broadcast channel for OCPP 2.0.x ([6833a3b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6833a3b40f4e07b7b022cf0e50efe325143e5e47))
+* **ocpp2:** implement StopTxOnInvalidId and MaxEnergyOnInvalidId per E05 ([#1745](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1745)) ([865b7d1](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/865b7d1f8d56d1152d57784d2a542d1ca6b62f2b))
+
 ## [3.2.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v3.1.2...simulator@v3.2.0) (2026-03-21)
 
 ### 🚀 Features
