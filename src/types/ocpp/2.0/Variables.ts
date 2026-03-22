@@ -38,6 +38,7 @@ export enum OCPP20OptionalVariableName {
 }
 
 export enum OCPP20RequiredVariableName {
+  AlignedDataInterval = 'Interval',
   AuthorizeRemoteStart = 'AuthorizeRemoteStart',
   BytesPerMessage = 'BytesPerMessage',
   CertificateEntries = 'CertificateEntries',

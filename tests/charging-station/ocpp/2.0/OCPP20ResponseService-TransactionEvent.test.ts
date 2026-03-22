@@ -111,7 +111,7 @@ await describe('D01 - TransactionEvent Response', async () => {
     const mockDeauthTransaction = mock.method(
       OCPP20ServiceUtils,
       'requestDeauthorizeTransaction',
-      () => Promise.resolve({ status: 'Accepted' })
+      () => Promise.resolve({} as OCPP20TransactionEventResponse)
     )
     const payload: OCPP20TransactionEventResponse = {
       idTokenInfo: {
@@ -132,7 +132,7 @@ await describe('D01 - TransactionEvent Response', async () => {
     const mockDeauthTransaction = mock.method(
       OCPP20ServiceUtils,
       'requestDeauthorizeTransaction',
-      () => Promise.resolve({ status: 'Accepted' })
+      () => Promise.resolve({} as OCPP20TransactionEventResponse)
     )
     const payload: OCPP20TransactionEventResponse = {
       idTokenInfo: {
@@ -156,7 +156,7 @@ await describe('D01 - TransactionEvent Response', async () => {
     const mockDeauthTransaction = mock.method(
       OCPP20ServiceUtils,
       'requestDeauthorizeTransaction',
-      () => Promise.resolve({ status: 'Accepted' })
+      () => Promise.resolve({} as OCPP20TransactionEventResponse)
     )
     const payload: OCPP20TransactionEventResponse = {
       idTokenInfo: {
@@ -178,7 +178,7 @@ await describe('D01 - TransactionEvent Response', async () => {
     const mockDeauthTransaction = mock.method(
       OCPP20ServiceUtils,
       'requestDeauthorizeTransaction',
-      () => Promise.resolve({ status: 'Accepted' })
+      () => Promise.resolve({} as OCPP20TransactionEventResponse)
     )
     const payload: OCPP20TransactionEventResponse = {
       chargingPriority: 5,
@@ -197,7 +197,7 @@ await describe('D01 - TransactionEvent Response', async () => {
     const mockDeauthTransaction = mock.method(
       OCPP20ServiceUtils,
       'requestDeauthorizeTransaction',
-      () => Promise.resolve({ status: 'Accepted' })
+      () => Promise.resolve({} as OCPP20TransactionEventResponse)
     )
     const payload: OCPP20TransactionEventResponse = {}
     const requestPayload = buildTransactionEventRequest(TEST_TRANSACTION_ID)
@@ -214,7 +214,7 @@ await describe('D01 - TransactionEvent Response', async () => {
     const mockDeauthTransaction = mock.method(
       OCPP20ServiceUtils,
       'requestDeauthorizeTransaction',
-      () => Promise.resolve({ status: 'Accepted' })
+      () => Promise.resolve({} as OCPP20TransactionEventResponse)
     )
     const payload: OCPP20TransactionEventResponse = {
       idTokenInfo: {
@@ -235,7 +235,7 @@ await describe('D01 - TransactionEvent Response', async () => {
     const mockDeauthTransaction = mock.method(
       OCPP20ServiceUtils,
       'requestDeauthorizeTransaction',
-      () => Promise.resolve({ status: 'Accepted' })
+      () => Promise.resolve({} as OCPP20TransactionEventResponse)
     )
     const payload: OCPP20TransactionEventResponse = {
       idTokenInfo: {
@@ -256,7 +256,7 @@ await describe('D01 - TransactionEvent Response', async () => {
     const mockDeauthTransaction = mock.method(
       OCPP20ServiceUtils,
       'requestDeauthorizeTransaction',
-      () => Promise.resolve({ status: 'Accepted' })
+      () => Promise.resolve({} as OCPP20TransactionEventResponse)
     )
     const payload: OCPP20TransactionEventResponse = {
       totalCost: 12.5,
@@ -303,7 +303,7 @@ await describe('D01 - TransactionEvent Response', async () => {
     const mockDeauthTransaction = mock.method(
       OCPP20ServiceUtils,
       'requestDeauthorizeTransaction',
-      () => Promise.resolve({ status: 'Accepted' })
+      () => Promise.resolve({} as OCPP20TransactionEventResponse)
     )
     const payload: OCPP20TransactionEventResponse = {
       idTokenInfo: {

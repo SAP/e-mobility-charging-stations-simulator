@@ -14,6 +14,7 @@ import {
   ChangeAvailabilityStatusEnumType,
   OCPP20OperationalStatusEnumType,
   OCPPVersion,
+  ReasonCodeEnumType,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
 import {
@@ -116,7 +117,7 @@ await describe('G03 - ChangeAvailability', async () => {
 
     assert.strictEqual(response.status, ChangeAvailabilityStatusEnumType.Rejected)
     assert.notStrictEqual(response.statusInfo, undefined)
-    assert.strictEqual(response.statusInfo?.reasonCode, 'UnknownEvse')
+    assert.strictEqual(response.statusInfo?.reasonCode, ReasonCodeEnumType.UnknownEvse)
   })
 
   await it('should accept when already in requested state (idempotent)', () => {

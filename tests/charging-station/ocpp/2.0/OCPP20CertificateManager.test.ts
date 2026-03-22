@@ -10,6 +10,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 import { OCPP20CertificateManager } from '../../../../src/charging-station/ocpp/2.0/OCPP20CertificateManager.js'
 import {
   type CertificateHashDataType,
+  DeleteCertificateStatusEnumType,
   HashAlgorithmEnumType,
   InstallCertificateUseEnumType,
 } from '../../../../src/types/index.js'
@@ -128,7 +129,13 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
 
       assert.notStrictEqual(result, undefined)
       assert.notStrictEqual(result.status, undefined)
-      assert.ok(['Accepted', 'Failed', 'NotFound'].includes(result.status))
+      assert.ok(
+        [
+          DeleteCertificateStatusEnumType.Accepted,
+          DeleteCertificateStatusEnumType.Failed,
+          DeleteCertificateStatusEnumType.NotFound,
+        ].includes(result.status)
+      )
     })
 
     await it('should return NotFound for non-existent certificate', async () => {
@@ -142,7 +149,7 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
       const result = await manager.deleteCertificate(TEST_STATION_HASH_ID, hashData)
 
       assert.notStrictEqual(result, undefined)
-      assert.strictEqual(result.status, 'NotFound')
+      assert.strictEqual(result.status, DeleteCertificateStatusEnumType.NotFound)
     })
 
     await it('should handle filesystem errors gracefully', async () => {
@@ -156,7 +163,11 @@ await describe('I02-I04 - ISO15118 Certificate Management', async () => {
       const result = await manager.deleteCertificate('invalid-station-id', hashData)
 
       assert.notStrictEqual(result, undefined)
-      assert.ok(['Failed', 'NotFound'].includes(result.status))
+      assert.ok(
+        [DeleteCertificateStatusEnumType.Failed, DeleteCertificateStatusEnumType.NotFound].includes(
+          result.status
+        )
+      )
     })
   })
 

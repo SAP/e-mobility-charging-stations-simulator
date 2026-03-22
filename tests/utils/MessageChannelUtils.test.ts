@@ -10,7 +10,7 @@ import { afterEach, describe, it } from 'node:test'
 import type { ChargingStation } from '../../src/charging-station/index.js'
 import type { Statistics, TimestampedData } from '../../src/types/index.js'
 
-import { ChargingStationWorkerMessageEvents } from '../../src/types/index.js'
+import { AvailabilityType, ChargingStationWorkerMessageEvents } from '../../src/types/index.js'
 import {
   buildAddedMessage,
   buildDeletedMessage,
@@ -37,14 +37,14 @@ function createMockStationForMessages (): ChargingStation {
       [
         0,
         {
-          availability: 'Operative',
+          availability: AvailabilityType.Operative,
           MeterValues: [],
         },
       ],
       [
         1,
         {
-          availability: 'Operative',
+          availability: AvailabilityType.Operative,
           MeterValues: [],
         },
       ],

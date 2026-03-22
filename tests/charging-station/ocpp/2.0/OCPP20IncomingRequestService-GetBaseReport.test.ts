@@ -29,6 +29,7 @@ import {
   OCPPVersion,
   ReportBaseEnumType,
   type ReportDataType,
+  SetVariableStatusEnumType,
   StandardParametersKey,
 } from '../../../../src/types/index.js'
 import { Constants } from '../../../../src/utils/index.js'
@@ -292,7 +293,7 @@ await describe('B07 - Get Base Report', async () => {
         variable: { name: OCPP20RequiredVariableName.TimeSource },
       },
     ])
-    assert.strictEqual(setResult[0].attributeStatus, 'Accepted')
+    assert.strictEqual(setResult[0].attributeStatus, SetVariableStatusEnumType.Accepted)
 
     // Build report; value should be truncated to length 10
     const reportData = testableService.buildReportData(station, ReportBaseEnumType.FullInventory)

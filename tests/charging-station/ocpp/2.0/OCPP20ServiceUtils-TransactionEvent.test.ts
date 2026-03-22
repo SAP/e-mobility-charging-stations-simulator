@@ -14,6 +14,7 @@ import assert from 'node:assert/strict'
 import { afterEach, beforeEach, describe, it, mock } from 'node:test'
 
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
+import type { ConnectorStatus } from '../../../../src/types/ConnectorStatus.js'
 import type { EmptyObject } from '../../../../src/types/index.js'
 
 import {
@@ -31,8 +32,10 @@ import {
   OCPP20IdTokenEnumType,
   type OCPP20IdTokenType,
   OCPP20MeasurandEnumType,
+  OCPP20OperationalStatusEnumType,
   OCPP20ReadingContextEnumType,
   OCPP20ReasonEnumType,
+  OCPP20RequestCommand,
   OCPP20RequiredVariableName,
   OCPP20TransactionEventEnumType,
   type OCPP20TransactionType,
@@ -2110,7 +2113,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         // Verify the request was sent with correct trigger reason
         assert.strictEqual(sentRequests.length, 1)
-        assert.strictEqual(sentRequests[0].command, 'TransactionEvent')
+        assert.strictEqual(sentRequests[0].command, OCPP20RequestCommand.TRANSACTION_EVENT)
         assert.strictEqual(
           sentRequests[0].payload.eventType,
           OCPP20TransactionEventEnumType.Updated
@@ -2458,7 +2461,9 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       await OCPP20ServiceUtils.requestDeauthorizeTransaction(mockTracking.station, connectorId, 1)
 
       // Assert
-      const txEvents = mockTracking.sentRequests.filter(r => r.command === 'TransactionEvent')
+      const txEvents = mockTracking.sentRequests.filter(
+        r => r.command === (OCPP20RequestCommand.TRANSACTION_EVENT as string)
+      )
       assert.strictEqual(txEvents.length, 2)
 
       const updatedEvent = txEvents[0].payload
@@ -2488,7 +2493,9 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       await OCPP20ServiceUtils.requestDeauthorizeTransaction(mockTracking.station, connectorId, 2)
 
       // Assert
-      const txEvents = mockTracking.sentRequests.filter(r => r.command === 'TransactionEvent')
+      const txEvents = mockTracking.sentRequests.filter(
+        r => r.command === (OCPP20RequestCommand.TRANSACTION_EVENT as string)
+      )
       assert.strictEqual(txEvents.length, 2)
 
       const endedPayload = txEvents[1].payload
@@ -2608,7 +2615,9 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       await OCPP20ServiceUtils.requestStopTransaction(mockTracking.station, connectorId, 1)
 
       // Assert
-      const txEvents = mockTracking.sentRequests.filter(r => r.command === 'TransactionEvent')
+      const txEvents = mockTracking.sentRequests.filter(
+        r => r.command === (OCPP20RequestCommand.TRANSACTION_EVENT as string)
+      )
       assert.strictEqual(txEvents.length, 1)
 
       const endedEvent = txEvents[0].payload
@@ -2641,13 +2650,64 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
       )
 
       // Assert
-      const txEvents = mockTracking.sentRequests.filter(r => r.command === 'TransactionEvent')
+      const txEvents = mockTracking.sentRequests.filter(
+        r => r.command === (OCPP20RequestCommand.TRANSACTION_EVENT as string)
+      )
       assert.strictEqual(txEvents.length, 1)
 
       const endedEvent = txEvents[0].payload
       assert.strictEqual(endedEvent.eventType, OCPP20TransactionEventEnumType.Ended)
       assert.strictEqual(endedEvent.triggerReason, customTriggerReason)
       assert.strictEqual(endedEvent.stoppedReason, customStoppedReason)
+    })
+  })
+
+  await describe('buildTransactionStartedMeterValues', async () => {
+    await it('should build meter value with Transaction.Begin context and energy register', () => {
+      const connectorStatus = {
+        availability: OCPP20OperationalStatusEnumType.Operative,
+        MeterValues: [],
+        transactionEnergyActiveImportRegisterValue: 1234,
+      } as unknown as ConnectorStatus
+
+      const result = OCPP20ServiceUtils.buildTransactionStartedMeterValues(connectorStatus)
+
+      assert.strictEqual(result.length, 1)
+      assert.strictEqual(result[0].sampledValue.length, 1)
+      assert.strictEqual(
+        result[0].sampledValue[0].context,
+        OCPP20ReadingContextEnumType.TRANSACTION_BEGIN
+      )
+      assert.strictEqual(
+        result[0].sampledValue[0].measurand,
+        OCPP20MeasurandEnumType.ENERGY_ACTIVE_IMPORT_REGISTER
+      )
+      assert.strictEqual(result[0].sampledValue[0].value, 1234)
+      assert.ok(result[0].timestamp instanceof Date)
+    })
+
+    await it('should include meter value with 0 energy when register value is undefined (zero is a valid begin reading)', () => {
+      const connectorStatus = {
+        availability: OCPP20OperationalStatusEnumType.Operative,
+        MeterValues: [],
+      } as unknown as ConnectorStatus
+
+      const result = OCPP20ServiceUtils.buildTransactionStartedMeterValues(connectorStatus)
+
+      assert.strictEqual(result.length, 1)
+      assert.strictEqual(result[0].sampledValue[0].value, 0)
+    })
+
+    await it('should return empty array when energy register value is negative', () => {
+      const connectorStatus = {
+        availability: OCPP20OperationalStatusEnumType.Operative,
+        MeterValues: [],
+        transactionEnergyActiveImportRegisterValue: -1,
+      } as unknown as ConnectorStatus
+
+      const result = OCPP20ServiceUtils.buildTransactionStartedMeterValues(connectorStatus)
+
+      assert.strictEqual(result.length, 0)
     })
   })
 })
