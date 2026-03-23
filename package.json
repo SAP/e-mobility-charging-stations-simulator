@@ -79,6 +79,7 @@
     "@mikro-orm/core": "^6.6.9",
     "@mikro-orm/mariadb": "^6.6.9",
     "@mikro-orm/reflection": "^6.6.9",
+    "@modelcontextprotocol/sdk": "~1.27.1",
     "ajv": "^8.18.0",
     "ajv-formats": "^3.0.1",
     "basic-ftp": "^5.2.0",
@@ -92,7 +93,8 @@
     "tar": "^7.5.12",
     "winston": "^3.19.0",
     "winston-daily-rotate-file": "^5.0.0",
-    "ws": "^8.20.0"
+    "ws": "^8.20.0",
+    "zod": "^4.3.6"
   },
   "optionalDependencies": {
     "bufferutil": "^4.1.0",

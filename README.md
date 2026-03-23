@@ -44,8 +44,9 @@ Simple [node.js](https://nodejs.org/) software to simulate and scale a set of ch
   - [Version 1.6](#version-16-1)
   - [Version 2.0.x](#version-20x-1)
 - [UI Protocol](#ui-protocol)
+  - [MCP Protocol](#mcp-protocol-model-context-protocol)
   - [WebSocket Protocol](#websocket-protocol)
-  - [HTTP Protocol](#http-protocol)
+  - [HTTP Protocol (deprecated)](#http-protocol-deprecated)
 - [Support, Feedback, Contributing](#support-feedback-contributing)
 - [Code of Conduct](#code-of-conduct)
 - [Licensing](#licensing)
@@ -173,7 +174,7 @@ But the modifications to test have to be done to the files in the build target d
 | supervisionUrlDistribution | round-robin/random/charging-station-affinity | charging-station-affinity                                                                                                                                                                                                     | string                                                                                                                                                                                                                                                                          | supervision urls distribution policy to simulated charging stations                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | log                        |                                              | {<br />"enabled": true,<br />"file": "logs/combined.log",<br />"errorFile": "logs/error.log",<br />"statisticsInterval": 60,<br />"level": "info",<br />"console": false,<br />"format": "simple",<br />"rotate": true<br />} | {<br />enabled?: boolean;<br />file?: string;<br />errorFile?: string;<br />statisticsInterval?: number;<br />level?: string;<br />console?: boolean;<br />format?: string;<br />rotate?: boolean;<br />maxFiles?: string \| number;<br />maxSize?: string \| number;<br />}    | Log configuration section:<br />- _enabled_: enable logging<br />- _file_: log file relative path<br />- _errorFile_: error log file relative path<br />- _statisticsInterval_: seconds between charging stations statistics output in the logs<br />- _level_: emerg/alert/crit/error/warning/notice/info/debug [winston](https://github.com/winstonjs/winston) logging level</br >- _console_: output logs on the console<br />- _format_: [winston](https://github.com/winstonjs/winston) log format<br />- _rotate_: enable daily log files rotation<br />- _maxFiles_: maximum number of log files: https://github.com/winstonjs/winston-daily-rotate-file#options<br />- _maxSize_: maximum size of log files in bytes, or units of kb, mb, and gb: https://github.com/winstonjs/winston-daily-rotate-file#options                                                                                        |
 | worker                     |                                              | {<br />"processType": "workerSet",<br />"startDelay": 500,<br />"elementAddDelay": 0,<br />"elementsPerWorker": 'auto',<br />"poolMinSize": 4,<br />"poolMaxSize": 16<br />}                                                  | {<br />processType?: WorkerProcessType;<br />startDelay?: number;<br />elementAddDelay?: number;<br />elementsPerWorker?: number \| 'auto' \| 'all';<br />poolMinSize?: number;<br />poolMaxSize?: number;<br />resourceLimits?: ResourceLimits;<br />}                         | Worker configuration section:<br />- _processType_: worker threads process type (`workerSet`/`fixedPool`/`dynamicPool`)<br />- _startDelay_: milliseconds to wait at worker threads startup (only for `workerSet` worker threads process type)<br />- _elementAddDelay_: milliseconds to wait between charging station add<br />- _elementsPerWorker_: number of charging stations per worker threads for the `workerSet` process type (`auto` means (number of stations) / (number of CPUs) \* 1.5 if (number of stations) > (number of CPUs), otherwise 1; `all` means a unique worker will run all charging stations)<br />- _poolMinSize_: worker threads pool minimum number of threads</br >- _poolMaxSize_: worker threads pool maximum number of threads<br />- _resourceLimits_: worker threads [resource limits](https://nodejs.org/api/worker_threads.html#new-workerfilename-options) object option |
-| uiServer                   |                                              | {<br />"enabled": false,<br />"type": "ws",<br />"version": "1.1",<br />"options": {<br />"host": "localhost",<br />"port": 8080<br />}<br />}                                                                                | {<br />enabled?: boolean;<br />type?: ApplicationProtocol;<br />version?: ApplicationProtocolVersion;<br />options?: ServerOptions;<br />authentication?: {<br />enabled: boolean;<br />type: AuthenticationType;<br />username?: string;<br />password?: string;<br />}<br />} | UI server configuration section:<br />- _enabled_: enable UI server<br />- _type_: 'http' or 'ws'<br />- _version_: HTTP version '1.1' or '2.0'<br />- _options_: node.js net module [listen options](https://nodejs.org/api/net.html#serverlistenoptions-callback)<br />- _authentication_: authentication type configuration section                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| uiServer                   |                                              | {<br />"enabled": false,<br />"type": "ws",<br />"version": "1.1",<br />"options": {<br />"host": "localhost",<br />"port": 8080<br />}<br />}                                                                                | {<br />enabled?: boolean;<br />type?: ApplicationProtocol;<br />version?: ApplicationProtocolVersion;<br />options?: ServerOptions;<br />authentication?: {<br />enabled: boolean;<br />type: AuthenticationType;<br />username?: string;<br />password?: string;<br />}<br />} | UI server configuration section:<br />- _enabled_: enable UI server<br />- _type_: 'ws', 'mcp' or 'http' (deprecated)<br />- _version_: HTTP version '1.1' or '2.0' (ws and mcp transports only support '1.1')<br />- _options_: node.js net module [listen options](https://nodejs.org/api/net.html#serverlistenoptions-callback)<br />- _authentication_: authentication type configuration section                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | performanceStorage         |                                              | {<br />"enabled": true,<br />"type": "none",<br />}                                                                                                                                                                           | {<br />enabled?: boolean;<br />type?: string;<br />uri?: string;<br />}                                                                                                                                                                                                         | Performance storage configuration section:<br />- _enabled_: enable performance storage<br />- _type_: 'jsonfile', 'mongodb' or 'none'<br />- _uri_: storage URI                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | stationTemplateUrls        |                                              | {}[]                                                                                                                                                                                                                          | {<br />file: string;<br />numberOfStations: number;<br />provisionedNumberOfStations?: number;<br />}[]                                                                                                                                                                         | array of charging station templates URIs configuration section:<br />- _file_: charging station configuration template file relative path<br />- _numberOfStations_: template number of stations at startup<br />- _provisionedNumberOfStations_: template provisioned number of stations after startup                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 
@@ -349,6 +350,50 @@ type AutomaticTransactionGeneratorConfiguration = {
 ```
 
 #### Evses section syntax example
+
+`MeterValues` can be defined at EVSE level or at connector level. EVSE-level definitions apply to all connectors of the EVSE and override connector-level definitions.
+
+##### MeterValues at EVSE level
+
+```json
+  "Evses": {
+    "0": {
+      "Connectors": {
+        "0": {}
+      }
+    },
+    "1": {
+      "MeterValues": [
+        ...
+        {
+          "unit": "W",
+          "measurand": "Power.Active.Import",
+          "phase": "L1-N",
+          "value": "5000",
+          "fluctuationPercent": "10"
+        },
+        ...
+        {
+          "unit": "A",
+          "measurand": "Current.Import",
+          "minimum": "0.5"
+        },
+        ...
+        {
+          "unit": "Wh"
+        },
+        ...
+      ],
+      "Connectors": {
+        "1": {
+          "bootStatus": "Available"
+        }
+      }
+    }
+  },
+```
+
+##### MeterValues at connector level
 
 ```json
   "Evses": {
@@ -636,18 +681,31 @@ All kind of OCPP parameters are supported in charging station configuration or c
 
 ## UI Protocol
 
-Protocol to control the simulator via a WebSocket or HTTP server:
+Protocol to control the simulator via the UI server. Three transport types are available:
+
+### MCP Protocol (Model Context Protocol)
+
+The recommended transport for programmatic access. [MCP](https://spec.modelcontextprotocol.io) enables LLM agents and AI tools to discover and use the simulator's capabilities automatically.
+
+#### Agent configuration
+
+| Parameter        | Value                      | Description                                                                           |
+| ---------------- | -------------------------- | ------------------------------------------------------------------------------------- |
+| URL              | `http://<host>:<port>/mcp` | Streamable HTTP endpoint (stateless)                                                  |
+| Transport        | Streamable HTTP            | `POST /mcp` for requests, `GET /mcp` for SSE stream, `DELETE /mcp` for session close  |
+| Authentication   | Basic Auth (optional)      | If enabled in simulator config, use `Authorization: Basic <base64(user:pass)>` header |
+| Protocol version | `2025-03-26`               | MCP specification version                                                             |
+
+### WebSocket Protocol
+
+SRPC protocol over WebSocket for real-time dashboard communication. PDU stands for 'Protocol Data Unit'.
 
 ```mermaid
 sequenceDiagram
 Client->>UI Server: request
 UI Server->>Client: response
-Note over UI Server,Client: HTTP or WebSocket
+Note over UI Server,Client: WebSocket
 ```
-
-### WebSocket Protocol
-
-SRPC protocol over WebSocket. PDU stands for 'Protocol Data Unit'.
 
 - Request:  
   [`uuid`, `ProcedureName`, `PDU`]  
@@ -1007,7 +1065,9 @@ Examples:
      `responsesFailed`: failed responses payload array (optional)  
     }
 
-### HTTP Protocol
+### HTTP Protocol (deprecated)
+
+> **Deprecated**: Use `"type": "mcp"` for HTTP-based access to the simulator.
 
 To learn how to use the HTTP protocol to pilot the simulator, an [Insomnia](https://insomnia.rest/) HTTP requests collection is available in [src/assets/ui-protocol](./src/assets/ui-protocol) directory.
 

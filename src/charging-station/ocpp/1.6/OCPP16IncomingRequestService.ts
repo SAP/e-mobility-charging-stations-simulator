@@ -437,7 +437,6 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                       meterValue: [
                         buildMeterValue(
                           chargingStation,
-                          connectorId,
                           convertToInt(connectorStatus.transactionId),
                           0
                         ) as OCPP16MeterValue,
@@ -463,7 +462,6 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                         meterValue: [
                           buildMeterValue(
                             chargingStation,
-                            id,
                             convertToInt(cs.transactionId),
                             0
                           ) as OCPP16MeterValue,
@@ -742,11 +740,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       }
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       chargingStation.getConnectorStatus(connectorId)!.availability = type
-      await OCPP16ServiceUtils.sendAndSetConnectorStatus(
-        chargingStation,
+      await OCPP16ServiceUtils.sendAndSetConnectorStatus(chargingStation, {
         connectorId,
-        chargePointStatus
-      )
+        status: chargePointStatus,
+      } as OCPP16StatusNotificationRequest)
       return OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED
     }
     return OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_REJECTED
@@ -1569,11 +1566,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       }
       return OCPP16Constants.OCPP_RESPONSE_UNLOCK_FAILED
     }
-    await OCPP16ServiceUtils.sendAndSetConnectorStatus(
-      chargingStation,
+    await OCPP16ServiceUtils.sendAndSetConnectorStatus(chargingStation, {
       connectorId,
-      OCPP16ChargePointStatus.Available
-    )
+      status: OCPP16ChargePointStatus.Available,
+    } as OCPP16StatusNotificationRequest)
     return OCPP16Constants.OCPP_RESPONSE_UNLOCKED
   }
 
@@ -1667,11 +1663,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         if (evseId > 0) {
           for (const [connectorId, connectorStatus] of evseStatus.connectors) {
             if (connectorStatus.transactionStarted === false) {
-              await OCPP16ServiceUtils.sendAndSetConnectorStatus(
-                chargingStation,
+              await OCPP16ServiceUtils.sendAndSetConnectorStatus(chargingStation, {
                 connectorId,
-                OCPP16ChargePointStatus.Unavailable
-              )
+                status: OCPP16ChargePointStatus.Unavailable,
+              } as OCPP16StatusNotificationRequest)
             }
           }
         }
@@ -1682,11 +1677,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           connectorId > 0 &&
           chargingStation.getConnectorStatus(connectorId)?.transactionStarted === false
         ) {
-          await OCPP16ServiceUtils.sendAndSetConnectorStatus(
-            chargingStation,
+          await OCPP16ServiceUtils.sendAndSetConnectorStatus(chargingStation, {
             connectorId,
-            OCPP16ChargePointStatus.Unavailable
-          )
+            status: OCPP16ChargePointStatus.Unavailable,
+          } as OCPP16StatusNotificationRequest)
         }
       }
     }
@@ -1742,11 +1736,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
             if (evseId > 0) {
               for (const [connectorId, connectorStatus] of evseStatus.connectors) {
                 if (connectorStatus.status !== OCPP16ChargePointStatus.Unavailable) {
-                  await OCPP16ServiceUtils.sendAndSetConnectorStatus(
-                    chargingStation,
+                  await OCPP16ServiceUtils.sendAndSetConnectorStatus(chargingStation, {
                     connectorId,
-                    OCPP16ChargePointStatus.Unavailable
-                  )
+                    status: OCPP16ChargePointStatus.Unavailable,
+                  } as OCPP16StatusNotificationRequest)
                 }
               }
             }
@@ -1758,11 +1751,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
               chargingStation.getConnectorStatus(connectorId)?.status !==
                 OCPP16ChargePointStatus.Unavailable
             ) {
-              await OCPP16ServiceUtils.sendAndSetConnectorStatus(
-                chargingStation,
+              await OCPP16ServiceUtils.sendAndSetConnectorStatus(chargingStation, {
                 connectorId,
-                OCPP16ChargePointStatus.Unavailable
-              )
+                status: OCPP16ChargePointStatus.Unavailable,
+              } as OCPP16StatusNotificationRequest)
             }
           }
         }

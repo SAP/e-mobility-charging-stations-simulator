@@ -8,7 +8,6 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 import type { ChargingStation } from '../../../../src/charging-station/index.js'
 
 import {
-  ConnectorStatusEnum,
   OCPP20ConnectorStatusEnumType,
   OCPP20RequestCommand,
   type OCPP20StatusNotificationRequest,
@@ -55,8 +54,8 @@ await describe('G01 - Status Notification', async () => {
       OCPP20RequestCommand.STATUS_NOTIFICATION,
       {
         connectorId: 1,
+        connectorStatus: OCPP20ConnectorStatusEnumType.Available,
         evseId: 1,
-        status: ConnectorStatusEnum.Available,
       }
     ) as OCPP20StatusNotificationRequest
 
@@ -74,8 +73,8 @@ await describe('G01 - Status Notification', async () => {
       OCPP20RequestCommand.STATUS_NOTIFICATION,
       {
         connectorId: 2,
+        connectorStatus: OCPP20ConnectorStatusEnumType.Occupied,
         evseId: 2,
-        status: ConnectorStatusEnum.Occupied,
       }
     ) as OCPP20StatusNotificationRequest
 
@@ -93,8 +92,8 @@ await describe('G01 - Status Notification', async () => {
       OCPP20RequestCommand.STATUS_NOTIFICATION,
       {
         connectorId: 1,
+        connectorStatus: OCPP20ConnectorStatusEnumType.Faulted,
         evseId: 1,
-        status: ConnectorStatusEnum.Faulted,
       }
     ) as OCPP20StatusNotificationRequest
 
@@ -107,27 +106,27 @@ await describe('G01 - Status Notification', async () => {
 
   // FR: G01.FR.04
   await it('should handle all OCPP20ConnectorStatusEnumType values correctly', () => {
-    const statusValues: [ConnectorStatusEnum, OCPP20ConnectorStatusEnumType][] = [
-      [ConnectorStatusEnum.Available, OCPP20ConnectorStatusEnumType.Available],
-      [ConnectorStatusEnum.Faulted, OCPP20ConnectorStatusEnumType.Faulted],
-      [ConnectorStatusEnum.Occupied, OCPP20ConnectorStatusEnumType.Occupied],
-      [ConnectorStatusEnum.Reserved, OCPP20ConnectorStatusEnumType.Reserved],
-      [ConnectorStatusEnum.Unavailable, OCPP20ConnectorStatusEnumType.Unavailable],
+    const statusValues: OCPP20ConnectorStatusEnumType[] = [
+      OCPP20ConnectorStatusEnumType.Available,
+      OCPP20ConnectorStatusEnumType.Faulted,
+      OCPP20ConnectorStatusEnumType.Occupied,
+      OCPP20ConnectorStatusEnumType.Reserved,
+      OCPP20ConnectorStatusEnumType.Unavailable,
     ]
 
-    statusValues.forEach(([inputStatus, expectedConnectorStatus], index) => {
+    statusValues.forEach((connectorStatus, index) => {
       const payload = testableRequestService.buildRequestPayload(
         station,
         OCPP20RequestCommand.STATUS_NOTIFICATION,
         {
           connectorId: index + 1,
+          connectorStatus,
           evseId: index + 1,
-          status: inputStatus,
         }
       ) as OCPP20StatusNotificationRequest
 
       assert.notStrictEqual(payload, undefined)
-      assert.strictEqual(payload.connectorStatus, expectedConnectorStatus)
+      assert.strictEqual(payload.connectorStatus, connectorStatus)
       assert.strictEqual(payload.connectorId, index + 1)
       assert.strictEqual(payload.evseId, index + 1)
       assert.ok(payload.timestamp instanceof Date)
@@ -141,8 +140,8 @@ await describe('G01 - Status Notification', async () => {
       OCPP20RequestCommand.STATUS_NOTIFICATION,
       {
         connectorId: 3,
+        connectorStatus: OCPP20ConnectorStatusEnumType.Reserved,
         evseId: 2,
-        status: ConnectorStatusEnum.Reserved,
       }
     ) as OCPP20StatusNotificationRequest
 
@@ -174,8 +173,8 @@ await describe('G01 - Status Notification', async () => {
       OCPP20RequestCommand.STATUS_NOTIFICATION,
       {
         connectorId: 0,
+        connectorStatus: OCPP20ConnectorStatusEnumType.Available,
         evseId: 1,
-        status: ConnectorStatusEnum.Available,
       }
     ) as OCPP20StatusNotificationRequest
 
@@ -191,8 +190,8 @@ await describe('G01 - Status Notification', async () => {
       OCPP20RequestCommand.STATUS_NOTIFICATION,
       {
         connectorId: 1,
+        connectorStatus: OCPP20ConnectorStatusEnumType.Unavailable,
         evseId: 0,
-        status: ConnectorStatusEnum.Unavailable,
       }
     ) as OCPP20StatusNotificationRequest
 
@@ -208,21 +207,21 @@ await describe('G01 - Status Notification', async () => {
     // buildRequestPayload now generates its own timestamp via buildStatusNotificationRequest,
     // so we verify the output always has a valid Date timestamp
     const statusValues = [
-      ConnectorStatusEnum.Available,
-      ConnectorStatusEnum.Occupied,
-      ConnectorStatusEnum.Faulted,
-      ConnectorStatusEnum.Reserved,
+      OCPP20ConnectorStatusEnumType.Available,
+      OCPP20ConnectorStatusEnumType.Occupied,
+      OCPP20ConnectorStatusEnumType.Faulted,
+      OCPP20ConnectorStatusEnumType.Reserved,
     ]
 
     const beforeBuild = new Date()
-    statusValues.forEach(status => {
+    statusValues.forEach(connectorStatus => {
       const payload = testableRequestService.buildRequestPayload(
         station,
         OCPP20RequestCommand.STATUS_NOTIFICATION,
         {
           connectorId: 1,
+          connectorStatus,
           evseId: 1,
-          status,
         }
       ) as OCPP20StatusNotificationRequest
 

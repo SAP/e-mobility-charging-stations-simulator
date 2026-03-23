@@ -63,6 +63,7 @@ export const TEST_ID_TAG_BLOCKED = 'BLOCKED_TAG'
  * Test values for transaction-related operations
  */
 export const TEST_TRANSACTION_ID = 1
+export const TEST_TRANSACTION_ID_STRING = 'tx-ocpp20-1'
 export const TEST_TRANSACTION_ENERGY_WH = 5000
 
 /**

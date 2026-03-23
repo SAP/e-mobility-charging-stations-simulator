@@ -21,6 +21,7 @@ import {
   OCPP20RequestCommand,
   type OCPP20SecurityEventNotificationResponse,
   type OCPP20SignCertificateResponse,
+  type OCPP20StatusNotificationRequest,
   type OCPP20StatusNotificationResponse,
   OCPP20TransactionEventEnumType,
   type OCPP20TransactionEventRequest,
@@ -375,11 +376,10 @@ export class OCPP20ResponseService extends OCPPResponseService {
             payload.idTokenInfo == null ||
             payload.idTokenInfo.status === OCPP20AuthorizationStatusEnumType.Accepted
           if (connectorId != null && isIdTokenAccepted) {
-            sendAndSetConnectorStatus(
-              chargingStation,
+            sendAndSetConnectorStatus(chargingStation, {
               connectorId,
-              ConnectorStatusEnum.Occupied
-            ).catch((error: unknown) => {
+              connectorStatus: ConnectorStatusEnum.Occupied,
+            } as unknown as OCPP20StatusNotificationRequest).catch((error: unknown) => {
               logger.error(
                 `${chargingStation.logPrefix()} ${moduleName}.handleResponseTransactionEvent: Error sending StatusNotification(Occupied):`,
                 error

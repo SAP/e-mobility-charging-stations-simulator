@@ -4,6 +4,14 @@ import { BaseError } from '../../exception/index.js'
 import { Protocol, ProtocolVersion } from '../../types/index.js'
 import { getErrorMessage, isEmpty, logger, logPrefix } from '../../utils/index.js'
 
+export enum HttpMethod {
+  DELETE = 'DELETE',
+  GET = 'GET',
+  PATCH = 'PATCH',
+  POST = 'POST',
+  PUT = 'PUT',
+}
+
 export const getUsernameAndPasswordFromAuthorizationToken = (
   authorizationToken: string,
   next: (err?: Error) => void

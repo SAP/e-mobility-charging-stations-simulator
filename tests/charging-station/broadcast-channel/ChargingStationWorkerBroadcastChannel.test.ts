@@ -26,6 +26,7 @@ import {
 } from '../../../src/types/index.js'
 import { Constants } from '../../../src/utils/index.js'
 import { flushMicrotasks, standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
+import { TEST_TRANSACTION_ID_STRING } from '../ChargingStationTestConstants.js'
 import { createMockChargingStation } from '../ChargingStationTestUtils.js'
 import { createMockStationWithRequestTracking } from '../ocpp/2.0/OCPP20TestUtils.js'
 
@@ -750,6 +751,7 @@ await describe('ChargingStationWorkerBroadcastChannel', async () => {
             value: 0,
           },
         ]
+        connectorStatus.transactionId = TEST_TRANSACTION_ID_STRING
       }
 
       instance = new ChargingStationWorkerBroadcastChannel(station)

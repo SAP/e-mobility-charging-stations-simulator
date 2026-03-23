@@ -6,7 +6,6 @@ import {
   type ConnectorStatus,
   ConnectorStatusEnum,
   ErrorType,
-  type JsonObject,
   OCPP20ChargingStateEnumType,
   OCPP20ComponentName,
   type OCPP20EVSEType,
@@ -17,6 +16,7 @@ import {
   OCPP20ReasonEnumType,
   OCPP20RequestCommand,
   OCPP20RequiredVariableName,
+  type OCPP20StatusNotificationRequest,
   OCPP20TransactionEventEnumType,
   type OCPP20TransactionEventOptions,
   type OCPP20TransactionEventRequest,
@@ -481,14 +481,14 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       // Offline: build and queue pre-built payload (sent as-is via rawPayload on reconnect)
       if (!chargingStation.isWebSocketConnectionOpened()) {
         // E04.FR.03: offline flag SHALL be TRUE for any TransactionEventRequest that occurred while offline
-        const transactionEventRequest = buildTransactionEvent(
-          chargingStation,
-          eventType,
-          triggerReason,
+        const transactionEventRequest = buildTransactionEvent(chargingStation, {
           connectorId,
+          eventType,
           transactionId,
-          { ...options, offline: true }
-        )
+          triggerReason,
+          ...options,
+          offline: true,
+        } as unknown as OCPP20TransactionEventRequest)
         logger.info(
           `${chargingStation.logPrefix()} ${moduleName}.sendTransactionEvent: Station offline, queueing TransactionEvent with seqNo=${transactionEventRequest.seqNo.toString()}`
         )
@@ -587,7 +587,6 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         }
         const meterValue = buildMeterValue(
           chargingStation,
-          connectorId,
           connectorStatus.transactionId,
           interval
         ) as OCPP20MeterValue
@@ -832,76 +831,45 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
 
     OCPP20ServiceUtils.stopPeriodicMeterValues(chargingStation, connectorId)
     resetConnectorStatus(connectorStatus)
-    await sendAndSetConnectorStatus(chargingStation, connectorId, ConnectorStatusEnum.Available)
+    await sendAndSetConnectorStatus(chargingStation, {
+      connectorId,
+      connectorStatus: ConnectorStatusEnum.Available,
+    } as unknown as OCPP20StatusNotificationRequest)
 
     return response
   }
 }
-export function buildTransactionEvent (
-  chargingStation: ChargingStation,
-  eventType: OCPP20TransactionEventEnumType,
-  triggerReason: OCPP20TriggerReasonEnumType,
-  connectorId: number,
-  transactionId: string,
-  options?: OCPP20TransactionEventOptions
-): OCPP20TransactionEventRequest
-export function buildTransactionEvent (
-  chargingStation: ChargingStation,
-  commandParams: JsonObject
-): OCPP20TransactionEventRequest
+
 /**
  * @param chargingStation - Charging station instance
- * @param eventTypeOrParams - Event type enum or minimal params object
- * @param triggerReasonArg - Trigger reason (explicit overload)
- * @param connectorIdArg - Connector identifier (explicit overload)
- * @param transactionIdArg - Transaction UUID (explicit overload)
- * @param options - Optional transaction event fields
+ * @param commandParams - Transaction event request parameters
  * @returns Built TransactionEventRequest
  */
 export function buildTransactionEvent (
   chargingStation: ChargingStation,
-  eventTypeOrParams: JsonObject | OCPP20TransactionEventEnumType,
-  triggerReasonArg?: OCPP20TriggerReasonEnumType,
-  connectorIdArg?: number,
-  transactionIdArg?: string,
-  options: OCPP20TransactionEventOptions = {}
+  commandParams: OCPP20TransactionEventRequest
 ): OCPP20TransactionEventRequest {
-  let eventType: OCPP20TransactionEventEnumType
-  let triggerReason: OCPP20TriggerReasonEnumType
-  let connectorId: number
-  let transactionId: string
-
-  if (typeof eventTypeOrParams === 'object') {
-    const params = eventTypeOrParams
-    eventType = params.eventType as OCPP20TransactionEventEnumType
-    triggerReason =
-      params.triggerReason != null
-        ? (params.triggerReason as OCPP20TriggerReasonEnumType)
-        : eventType === OCPP20TransactionEventEnumType.Ended
-          ? OCPP20TriggerReasonEnumType.RemoteStop
-          : OCPP20TriggerReasonEnumType.Authorized
-    const evse = params.evse as undefined | { connectorId?: number; id?: number }
-    connectorId =
-      params.connectorId != null
-        ? (params.connectorId as number)
-        : (evse?.connectorId ?? evse?.id ?? 1)
-    transactionId =
-      params.transactionId != null
-        ? (params.transactionId as string)
-        : eventType === OCPP20TransactionEventEnumType.Ended
-          ? (chargingStation.getConnectorStatus(connectorId)?.transactionId?.toString() ??
-            generateUUID())
-          : generateUUID()
-    options = params as unknown as OCPP20TransactionEventOptions
-  } else {
-    eventType = eventTypeOrParams
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    triggerReason = triggerReasonArg!
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    connectorId = connectorIdArg!
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    transactionId = transactionIdArg!
-  }
+  const params = commandParams as Record<string, unknown>
+  const eventType = params.eventType as OCPP20TransactionEventEnumType
+  const triggerReason =
+    params.triggerReason != null
+      ? (params.triggerReason as OCPP20TriggerReasonEnumType)
+      : eventType === OCPP20TransactionEventEnumType.Ended
+        ? OCPP20TriggerReasonEnumType.RemoteStop
+        : OCPP20TriggerReasonEnumType.Authorized
+  const inputEvse = params.evse as undefined | { connectorId?: number; id?: number }
+  const connectorId =
+    params.connectorId != null
+      ? (params.connectorId as number)
+      : (inputEvse?.connectorId ?? inputEvse?.id ?? 1)
+  const transactionId =
+    params.transactionId != null
+      ? (params.transactionId as string)
+      : eventType === OCPP20TransactionEventEnumType.Ended
+        ? (chargingStation.getConnectorStatus(connectorId)?.transactionId?.toString() ??
+          generateUUID())
+        : generateUUID()
+  const options = params as unknown as OCPP20TransactionEventOptions
 
   if (!validateIdentifierString(transactionId, 36)) {
     const errorMsg = `Invalid transaction ID format (must be non-empty string ≤36 characters): ${transactionId}`

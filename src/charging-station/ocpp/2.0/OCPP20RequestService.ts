@@ -6,12 +6,13 @@ import type { OCPPResponseService } from '../OCPPResponseService.js'
 import { OCPPError } from '../../../exception/index.js'
 import {
   type CertificateSigningUseEnumType,
-  type ConnectorStatusEnum,
   ErrorType,
   type JsonObject,
   type JsonType,
   OCPP20RequestCommand,
   type OCPP20SignCertificateRequest,
+  type OCPP20StatusNotificationRequest,
+  type OCPP20TransactionEventRequest,
   OCPPVersion,
   type RequestParams,
 } from '../../../types/index.js'
@@ -198,12 +199,13 @@ export class OCPP20RequestService extends OCPPRequestService {
       case OCPP20RequestCommand.STATUS_NOTIFICATION:
         return buildStatusNotificationRequest(
           chargingStation,
-          commandParams.connectorId as number,
-          commandParams.status as ConnectorStatusEnum,
-          commandParams.evseId as number | undefined
+          commandParams as unknown as OCPP20StatusNotificationRequest
         ) as unknown as Request
       case OCPP20RequestCommand.TRANSACTION_EVENT:
-        return buildTransactionEvent(chargingStation, commandParams) as unknown as Request
+        return buildTransactionEvent(
+          chargingStation,
+          commandParams as unknown as OCPP20TransactionEventRequest
+        ) as unknown as Request
       default: {
         // OCPPError usage here is debatable: it's an error in the OCPP stack but not targeted to sendError().
         const errorMsg = `Unsupported OCPP command ${commandName as string} for payload building`

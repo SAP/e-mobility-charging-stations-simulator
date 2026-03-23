@@ -18,7 +18,12 @@ import {
   restoreConnectorStatus,
   sendAndSetConnectorStatus,
 } from '../../../src/charging-station/ocpp/OCPPServiceUtils.js'
-import { ConnectorStatusEnum, OCPPVersion } from '../../../src/types/index.js'
+import {
+  ConnectorStatusEnum,
+  type OCPP16StatusNotificationRequest,
+  type OCPP20StatusNotificationRequest,
+  OCPPVersion,
+} from '../../../src/types/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from '../ChargingStationTestUtils.js'
 
@@ -48,7 +53,10 @@ await describe('OCPPServiceUtils — connector status management', async () => {
     await it('should send StatusNotification and update connector status', async () => {
       const { requestHandler, station } = createStationWithRequestHandler()
 
-      await sendAndSetConnectorStatus(station, 1, ConnectorStatusEnum.Occupied)
+      await sendAndSetConnectorStatus(station, {
+        connectorId: 1,
+        status: ConnectorStatusEnum.Occupied,
+      } as unknown as OCPP16StatusNotificationRequest)
 
       assert.strictEqual(requestHandler.mock.calls.length, 1)
       assert.strictEqual(station.getConnectorStatus(1)?.status, ConnectorStatusEnum.Occupied)
@@ -57,7 +65,10 @@ await describe('OCPPServiceUtils — connector status management', async () => {
     await it('should return early when connector does not exist', async () => {
       const { requestHandler, station } = createStationWithRequestHandler()
 
-      await sendAndSetConnectorStatus(station, 99, ConnectorStatusEnum.Occupied)
+      await sendAndSetConnectorStatus(station, {
+        connectorId: 99,
+        status: ConnectorStatusEnum.Occupied,
+      } as unknown as OCPP16StatusNotificationRequest)
 
       assert.strictEqual(requestHandler.mock.calls.length, 0)
     })
@@ -65,9 +76,16 @@ await describe('OCPPServiceUtils — connector status management', async () => {
     await it('should skip sending when options.send is false', async () => {
       const { requestHandler, station } = createStationWithRequestHandler()
 
-      await sendAndSetConnectorStatus(station, 1, ConnectorStatusEnum.Occupied, undefined, {
-        send: false,
-      })
+      await sendAndSetConnectorStatus(
+        station,
+        {
+          connectorId: 1,
+          status: ConnectorStatusEnum.Occupied,
+        } as unknown as OCPP16StatusNotificationRequest,
+        {
+          send: false,
+        }
+      )
 
       assert.strictEqual(requestHandler.mock.calls.length, 0)
       assert.strictEqual(station.getConnectorStatus(1)?.status, ConnectorStatusEnum.Occupied)
@@ -78,7 +96,10 @@ await describe('OCPPServiceUtils — connector status management', async () => {
 
       assert.strictEqual(station.getConnectorStatus(1)?.status, ConnectorStatusEnum.Available)
 
-      await sendAndSetConnectorStatus(station, 1, ConnectorStatusEnum.Unavailable)
+      await sendAndSetConnectorStatus(station, {
+        connectorId: 1,
+        status: ConnectorStatusEnum.Unavailable,
+      } as unknown as OCPP16StatusNotificationRequest)
 
       assert.strictEqual(station.getConnectorStatus(1)?.status, ConnectorStatusEnum.Unavailable)
     })
@@ -88,7 +109,10 @@ await describe('OCPPServiceUtils — connector status management', async () => {
       const stationObj = station as unknown as { emitChargingStationEvent: () => void }
       const emitSpy = mock.method(stationObj, 'emitChargingStationEvent')
 
-      await sendAndSetConnectorStatus(station, 1, ConnectorStatusEnum.Occupied)
+      await sendAndSetConnectorStatus(station, {
+        connectorId: 1,
+        status: ConnectorStatusEnum.Occupied,
+      } as unknown as OCPP16StatusNotificationRequest)
 
       assert.strictEqual(emitSpy.mock.calls.length, 1)
     })
@@ -98,7 +122,11 @@ await describe('OCPPServiceUtils — connector status management', async () => {
         ocppVersion: OCPPVersion.VERSION_20,
       })
 
-      await sendAndSetConnectorStatus(station, 1, ConnectorStatusEnum.Occupied, 1)
+      await sendAndSetConnectorStatus(station, {
+        connectorId: 1,
+        connectorStatus: ConnectorStatusEnum.Occupied,
+        evseId: 1,
+      } as unknown as OCPP20StatusNotificationRequest)
 
       assert.strictEqual(requestHandler.mock.calls.length, 1)
       assert.strictEqual(station.getConnectorStatus(1)?.status, ConnectorStatusEnum.Occupied)
@@ -107,7 +135,10 @@ await describe('OCPPServiceUtils — connector status management', async () => {
     await it('should default options.send to true when options not provided', async () => {
       const { requestHandler, station } = createStationWithRequestHandler()
 
-      await sendAndSetConnectorStatus(station, 1, ConnectorStatusEnum.Occupied)
+      await sendAndSetConnectorStatus(station, {
+        connectorId: 1,
+        status: ConnectorStatusEnum.Occupied,
+      } as unknown as OCPP16StatusNotificationRequest)
 
       assert.strictEqual(requestHandler.mock.calls.length, 1)
     })

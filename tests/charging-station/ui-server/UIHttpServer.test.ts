@@ -20,6 +20,7 @@ import {
   waitForStreamFlush,
 } from './UIServerTestUtils.js'
 
+// eslint-disable-next-line @typescript-eslint/no-deprecated
 class TestableUIHttpServer extends UIHttpServer {
   public addResponseHandler (uuid: UUIDv4, res: MockServerResponse): void {
     this.responseHandlers.set(uuid, res as never)
@@ -173,6 +174,7 @@ await describe('UIHttpServer', async () => {
   })
 
   await it('should create server with custom host and port', () => {
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     const serverCustom = new UIHttpServer(
       createMockUIServerConfiguration({
         options: {

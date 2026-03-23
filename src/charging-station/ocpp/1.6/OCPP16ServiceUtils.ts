@@ -32,6 +32,7 @@ import {
   OCPP16RequestCommand,
   type OCPP16SampledValue,
   OCPP16StandardParametersKey,
+  type OCPP16StatusNotificationRequest,
   OCPP16StopTransactionReason,
   type OCPP16SupportedFeatureProfiles,
   OCPPVersion,
@@ -152,11 +153,10 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
       }
       connectorStatus.availability = availabilityType
       if (response === OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED) {
-        await OCPP16ServiceUtils.sendAndSetConnectorStatus(
-          chargingStation,
+        await OCPP16ServiceUtils.sendAndSetConnectorStatus(chargingStation, {
           connectorId,
-          chargePointStatus
-        )
+          status: chargePointStatus,
+        } as OCPP16StatusNotificationRequest)
       }
       responses.push(response)
     }
@@ -535,11 +535,10 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     chargingStation: ChargingStation,
     connectorId: number
   ): Promise<GenericResponse> => {
-    await OCPP16ServiceUtils.sendAndSetConnectorStatus(
-      chargingStation,
+    await OCPP16ServiceUtils.sendAndSetConnectorStatus(chargingStation, {
       connectorId,
-      OCPP16ChargePointStatus.Finishing
-    )
+      status: OCPP16ChargePointStatus.Finishing,
+    } as OCPP16StatusNotificationRequest)
     const stopResponse = await OCPP16ServiceUtils.stopTransactionOnConnector(
       chargingStation,
       connectorId,
@@ -619,7 +618,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     }
     connectorStatus.transactionMeterValuesSetInterval = setInterval(() => {
       const transactionId = convertToInt(connectorStatus.transactionId)
-      const meterValue = buildMeterValue(chargingStation, connectorId, transactionId, interval)
+      const meterValue = buildMeterValue(chargingStation, transactionId, interval)
       chargingStation.ocppRequestService
         .requestHandler<MeterValuesRequest, MeterValuesResponse>(
           chargingStation,

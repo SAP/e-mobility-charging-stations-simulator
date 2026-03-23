@@ -16,7 +16,6 @@ import { BaseError, OCPPError } from '../../exception/index.js'
 import {
   AuthorizationStatus,
   type AuthorizeRequest,
-  type AuthorizeResponse,
   ChargePointErrorCode,
   ChargingStationEvents,
   type ConnectorStatus,
@@ -36,17 +35,19 @@ import {
   MeterValueMeasurand,
   MeterValuePhase,
   MeterValueUnit,
-  type OCPP16ChargePointStatus,
+  type OCPP16AuthorizeResponse,
   type OCPP16MeterValue,
   type OCPP16SampledValue,
   type OCPP16StatusNotificationRequest,
   OCPP16StopTransactionReason,
   OCPP20AuthorizationStatusEnumType,
+  type OCPP20AuthorizeResponse,
   type OCPP20ConnectorStatusEnumType,
   OCPP20IdTokenEnumType,
   type OCPP20MeterValue,
   OCPP20ReasonEnumType,
   type OCPP20SampledValue,
+  type OCPP20StatusNotificationRequest,
   OCPP20TransactionEventEnumType,
   OCPP20TriggerReasonEnumType,
   OCPPVersion,
@@ -111,19 +112,23 @@ export const getMessageTypeString = (messageType: MessageType | undefined): stri
 
 export const buildStatusNotificationRequest = (
   chargingStation: ChargingStation,
-  connectorId: number,
-  status: ConnectorStatusEnum,
-  evseId?: number
+  commandParams: StatusNotificationRequest
 ): StatusNotificationRequest => {
   switch (chargingStation.stationInfo?.ocppVersion) {
-    case OCPPVersion.VERSION_16:
+    case OCPPVersion.VERSION_16: {
+      const params = commandParams as OCPP16StatusNotificationRequest
       return {
-        connectorId,
+        connectorId: params.connectorId,
         errorCode: ChargePointErrorCode.NO_ERROR,
-        status: status as OCPP16ChargePointStatus,
+        status: params.status,
       } satisfies OCPP16StatusNotificationRequest
+    }
     case OCPPVersion.VERSION_20:
     case OCPPVersion.VERSION_201: {
+      const params = commandParams as Record<string, unknown>
+      const connectorId = params.connectorId as number
+      const connectorStatus = (params.connectorStatus ?? params.status) as ConnectorStatusEnum
+      const evseId = params.evseId as number | undefined
       const resolvedEvseId = evseId ?? chargingStation.getEvseIdByConnectorId(connectorId)
       if (resolvedEvseId === undefined) {
         throw new OCPPError(
@@ -134,10 +139,10 @@ export const buildStatusNotificationRequest = (
       }
       return {
         connectorId,
-        connectorStatus: status as OCPP20ConnectorStatusEnumType,
+        connectorStatus: connectorStatus as OCPP20ConnectorStatusEnumType,
         evseId: resolvedEvseId,
         timestamp: new Date(),
-      } satisfies StatusNotificationRequest
+      } satisfies OCPP20StatusNotificationRequest
     }
     default:
       throw new OCPPError(
@@ -162,66 +167,54 @@ export const isIdTagAuthorizedUnified = async (
   connectorId: number,
   idTag: string
 ): Promise<boolean> => {
-  const stationOcppVersion = chargingStation.stationInfo?.ocppVersion
-  // OCPP 2.0+ always uses unified auth system
-  // OCPP 1.6 can optionally use unified or legacy system
-  const shouldUseUnified =
-    stationOcppVersion === OCPPVersion.VERSION_20 || stationOcppVersion === OCPPVersion.VERSION_201
+  switch (chargingStation.stationInfo?.ocppVersion) {
+    case OCPPVersion.VERSION_20:
+    case OCPPVersion.VERSION_201:
+      try {
+        logger.debug(
+          `${chargingStation.logPrefix()} Using unified auth system for idTag '${idTag}' on connector ${connectorId.toString()}`
+        )
 
-  if (shouldUseUnified) {
-    try {
-      logger.debug(
-        `${chargingStation.logPrefix()} Using unified auth system for idTag '${idTag}' on connector ${connectorId.toString()}`
-      )
+        // Dynamic import to avoid circular dependencies
+        const { OCPPAuthServiceFactory } = await import('./auth/services/OCPPAuthServiceFactory.js')
+        const {
+          AuthContext,
+          AuthorizationStatus: UnifiedAuthorizationStatus,
+          IdentifierType,
+        } = await import('./auth/types/AuthTypes.js')
 
-      // Dynamic import to avoid circular dependencies
-      const { OCPPAuthServiceFactory } = await import('./auth/services/OCPPAuthServiceFactory.js')
-      const {
-        AuthContext,
-        AuthorizationStatus: UnifiedAuthorizationStatus,
-        IdentifierType,
-      } = await import('./auth/types/AuthTypes.js')
+        // Get unified auth service
+        const authService = await OCPPAuthServiceFactory.getInstance(chargingStation)
 
-      // Get unified auth service
-      const authService = await OCPPAuthServiceFactory.getInstance(chargingStation)
+        // Create auth request with unified types
+        const authResult = await authService.authorize({
+          allowOffline: false,
+          connectorId,
+          context: AuthContext.TRANSACTION_START,
+          identifier: {
+            type: IdentifierType.ID_TAG,
+            value: idTag,
+          },
+          timestamp: new Date(),
+        })
 
-      // Create auth request with unified types
-      const authResult = await authService.authorize({
-        allowOffline: false,
-        connectorId,
-        context: AuthContext.TRANSACTION_START,
-        identifier: {
-          type: IdentifierType.ID_TAG,
-          value: idTag,
-        },
-        timestamp: new Date(),
-      })
+        logger.debug(
+          `${chargingStation.logPrefix()} Unified auth result for idTag '${idTag}': ${authResult.status} using ${authResult.method} method`
+        )
 
-      logger.debug(
-        `${chargingStation.logPrefix()} Unified auth result for idTag '${idTag}': ${authResult.status} using ${authResult.method} method`
-      )
-
-      // Use AuthorizationStatus enum from unified system
-      return authResult.status === UnifiedAuthorizationStatus.ACCEPTED
-    } catch (error) {
-      logger.error(
-        `${chargingStation.logPrefix()} Unified auth failed, falling back to legacy system`,
-        error
-      )
-      // Fall back to legacy system on error (only for OCPP 1.6)
-      if (chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_16) {
-        return isIdTagAuthorized(chargingStation, connectorId, idTag)
+        return authResult.status === UnifiedAuthorizationStatus.ACCEPTED
+      } catch (error) {
+        logger.error(`${chargingStation.logPrefix()} Unified auth failed for OCPP 2.0`, error)
+        return false
       }
-      // For OCPP 2.0, return false on error (no legacy fallback)
+    case OCPPVersion.VERSION_16:
+      logger.debug(
+        `${chargingStation.logPrefix()} Using legacy auth system for idTag '${idTag}' on connector ${connectorId.toString()}`
+      )
+      return isIdTagAuthorized(chargingStation, connectorId, idTag)
+    default:
       return false
-    }
   }
-
-  // Use legacy auth system for OCPP 1.6 when unified auth not explicitly enabled
-  logger.debug(
-    `${chargingStation.logPrefix()} Using legacy auth system for idTag '${idTag}' on connector ${connectorId.toString()}`
-  )
-  return isIdTagAuthorized(chargingStation, connectorId, idTag)
 }
 
 /**
@@ -237,36 +230,36 @@ export const isIdTagAuthorized = async (
   connectorId: number,
   idTag: string
 ): Promise<boolean> => {
-  // OCPP 2.0+ always delegates to unified system
-  if (
-    chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_20 ||
-    chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_201
-  ) {
-    return isIdTagAuthorizedUnified(chargingStation, connectorId, idTag)
+  switch (chargingStation.stationInfo?.ocppVersion) {
+    case OCPPVersion.VERSION_16: {
+      if (
+        !chargingStation.getLocalAuthListEnabled() &&
+        chargingStation.stationInfo.remoteAuthorization === false
+      ) {
+        logger.warn(
+          `${chargingStation.logPrefix()} The charging station expects to authorize RFID tags but nor local authorization nor remote authorization are enabled. Misbehavior may occur`
+        )
+      }
+      const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+      if (
+        connectorStatus != null &&
+        chargingStation.getLocalAuthListEnabled() &&
+        isIdTagLocalAuthorized(chargingStation, idTag)
+      ) {
+        connectorStatus.localAuthorizeIdTag = idTag
+        connectorStatus.idTagLocalAuthorized = true
+        return true
+      } else if (chargingStation.stationInfo.remoteAuthorization === true) {
+        return await isIdTagRemoteAuthorized(chargingStation, connectorId, idTag)
+      }
+      return false
+    }
+    case OCPPVersion.VERSION_20:
+    case OCPPVersion.VERSION_201:
+      return isIdTagAuthorizedUnified(chargingStation, connectorId, idTag)
+    default:
+      return false
   }
-
-  // Legacy authorization logic for OCPP 1.6
-  if (
-    !chargingStation.getLocalAuthListEnabled() &&
-    chargingStation.stationInfo?.remoteAuthorization === false
-  ) {
-    logger.warn(
-      `${chargingStation.logPrefix()} The charging station expects to authorize RFID tags but nor local authorization nor remote authorization are enabled. Misbehavior may occur`
-    )
-  }
-  const connectorStatus = chargingStation.getConnectorStatus(connectorId)
-  if (
-    connectorStatus != null &&
-    chargingStation.getLocalAuthListEnabled() &&
-    isIdTagLocalAuthorized(chargingStation, idTag)
-  ) {
-    connectorStatus.localAuthorizeIdTag = idTag
-    connectorStatus.idTagLocalAuthorized = true
-    return true
-  } else if (chargingStation.stationInfo?.remoteAuthorization === true) {
-    return await isIdTagRemoteAuthorized(chargingStation, connectorId, idTag)
-  }
-  return false
 }
 
 const isIdTagLocalAuthorized = (chargingStation: ChargingStation, idTag: string): boolean => {
@@ -288,27 +281,44 @@ const isIdTagRemoteAuthorized = async (
 ): Promise<boolean> => {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   chargingStation.getConnectorStatus(connectorId)!.authorizeIdTag = idTag
-  return (
-    (
-      await chargingStation.ocppRequestService.requestHandler<AuthorizeRequest, AuthorizeResponse>(
-        chargingStation,
-        RequestCommand.AUTHORIZE,
-        {
-          idTag,
-        }
+  switch (chargingStation.stationInfo?.ocppVersion) {
+    case OCPPVersion.VERSION_16:
+      return (
+        (
+          await chargingStation.ocppRequestService.requestHandler<
+            AuthorizeRequest,
+            OCPP16AuthorizeResponse
+          >(chargingStation, RequestCommand.AUTHORIZE, {
+            idTag,
+          })
+        ).idTagInfo.status === AuthorizationStatus.ACCEPTED
       )
-    ).idTagInfo.status === AuthorizationStatus.ACCEPTED
-  )
+    case OCPPVersion.VERSION_20:
+    case OCPPVersion.VERSION_201:
+      return (
+        (
+          await chargingStation.ocppRequestService.requestHandler<
+            AuthorizeRequest,
+            OCPP20AuthorizeResponse
+          >(chargingStation, RequestCommand.AUTHORIZE, {
+            idToken: { idToken: idTag, type: OCPP20IdTokenEnumType.ISO14443 },
+          })
+        ).idTokenInfo.status === AuthorizationStatus.Accepted
+      )
+    default:
+      return false
+  }
 }
 
 export const sendAndSetConnectorStatus = async (
   chargingStation: ChargingStation,
-  connectorId: number,
-  status: ConnectorStatusEnum,
-  evseId?: number,
+  commandParams: StatusNotificationRequest,
   options?: { send: boolean }
 ): Promise<void> => {
   options = { send: true, ...options }
+  const params = commandParams as Record<string, unknown>
+  const connectorId = params.connectorId as number
+  const status = (params.connectorStatus ?? params.status) as ConnectorStatusEnum
   const connectorStatus = chargingStation.getConnectorStatus(connectorId)
   if (connectorStatus == null) {
     return
@@ -318,11 +328,7 @@ export const sendAndSetConnectorStatus = async (
     await chargingStation.ocppRequestService.requestHandler<
       StatusNotificationRequest,
       StatusNotificationResponse
-    >(chargingStation, RequestCommand.STATUS_NOTIFICATION, {
-      connectorId,
-      evseId,
-      status,
-    } as unknown as StatusNotificationRequest)
+    >(chargingStation, RequestCommand.STATUS_NOTIFICATION, commandParams)
   }
   connectorStatus.status = status
   chargingStation.emitChargingStationEvent(ChargingStationEvents.connectorStatusChanged, {
@@ -340,9 +346,15 @@ export const restoreConnectorStatus = async (
     connectorStatus?.reservation != null &&
     connectorStatus.status !== ConnectorStatusEnum.Reserved
   ) {
-    await sendAndSetConnectorStatus(chargingStation, connectorId, ConnectorStatusEnum.Reserved)
+    await sendAndSetConnectorStatus(chargingStation, {
+      connectorId,
+      status: ConnectorStatusEnum.Reserved,
+    } as unknown as StatusNotificationRequest)
   } else if (connectorStatus?.status !== ConnectorStatusEnum.Available) {
-    await sendAndSetConnectorStatus(chargingStation, connectorId, ConnectorStatusEnum.Available)
+    await sendAndSetConnectorStatus(chargingStation, {
+      connectorId,
+      status: ConnectorStatusEnum.Available,
+    } as unknown as StatusNotificationRequest)
   }
 }
 
@@ -773,12 +785,14 @@ export const convertDateToISOString = <T extends JsonType>(object: T): void => {
 
 const buildSocMeasurandValue = (
   chargingStation: ChargingStation,
-  connectorId: number
+  connectorId: number,
+  evseId?: number
 ): null | SingleValueMeasurandData => {
   const socSampledValueTemplate = getSampledValueTemplate(
     chargingStation,
     connectorId,
-    MeterValueMeasurand.STATE_OF_CHARGE
+    MeterValueMeasurand.STATE_OF_CHARGE,
+    evseId
   )
   if (socSampledValueTemplate == null) {
     return null
@@ -824,12 +838,14 @@ const validateSocMeasurandValue = (
 
 const buildVoltageMeasurandValue = (
   chargingStation: ChargingStation,
-  connectorId: number
+  connectorId: number,
+  evseId?: number
 ): null | SingleValueMeasurandData => {
   const voltageSampledValueTemplate = getSampledValueTemplate(
     chargingStation,
     connectorId,
-    MeterValueMeasurand.VOLTAGE
+    MeterValueMeasurand.VOLTAGE,
+    evseId
   )
   if (voltageSampledValueTemplate == null) {
     return null
@@ -898,6 +914,7 @@ const addPhaseVoltageToMeterValue = <TSampledValue extends SampledValue>(
     chargingStation,
     connectorId,
     MeterValueMeasurand.VOLTAGE,
+    undefined,
     phaseLineToNeutralValue
   )
   let voltagePhaseLineToNeutralMeasurandValue: number | undefined
@@ -955,6 +972,7 @@ const addLineToLineVoltageToMeterValue = <TSampledValue extends SampledValue>(
     chargingStation,
     connectorId,
     MeterValueMeasurand.VOLTAGE,
+    undefined,
     phaseLineToLineValue
   )
   let voltagePhaseLineToLineMeasurandValue: number | undefined
@@ -985,9 +1003,10 @@ const addLineToLineVoltageToMeterValue = <TSampledValue extends SampledValue>(
 const buildEnergyMeasurandValue = (
   chargingStation: ChargingStation,
   connectorId: number,
-  interval: number
+  interval: number,
+  evseId?: number
 ): null | SingleValueMeasurandData => {
-  const energyTemplate = getSampledValueTemplate(chargingStation, connectorId)
+  const energyTemplate = getSampledValueTemplate(chargingStation, connectorId, undefined, evseId)
   if (energyTemplate == null) {
     return null
   }
@@ -1067,12 +1086,14 @@ const validateEnergyMeasurandValue = (
 
 const buildPowerMeasurandValue = (
   chargingStation: ChargingStation,
-  connectorId: number
+  connectorId: number,
+  evseId?: number
 ): MultiPhaseMeasurandData | null => {
   const powerTemplate = getSampledValueTemplate(
     chargingStation,
     connectorId,
-    MeterValueMeasurand.POWER_ACTIVE_IMPORT
+    MeterValueMeasurand.POWER_ACTIVE_IMPORT,
+    evseId
   )
   if (powerTemplate == null) {
     return null
@@ -1085,18 +1106,21 @@ const buildPowerMeasurandValue = (
         chargingStation,
         connectorId,
         MeterValueMeasurand.POWER_ACTIVE_IMPORT,
+        evseId,
         MeterValuePhase.L1_N
       ),
       L2: getSampledValueTemplate(
         chargingStation,
         connectorId,
         MeterValueMeasurand.POWER_ACTIVE_IMPORT,
+        evseId,
         MeterValuePhase.L2_N
       ),
       L3: getSampledValueTemplate(
         chargingStation,
         connectorId,
         MeterValueMeasurand.POWER_ACTIVE_IMPORT,
+        evseId,
         MeterValuePhase.L3_N
       ),
     }
@@ -1337,12 +1361,14 @@ const validateCurrentMeasurandPhaseValue = (
 
 const buildCurrentMeasurandValue = (
   chargingStation: ChargingStation,
-  connectorId: number
+  connectorId: number,
+  evseId?: number
 ): MultiPhaseMeasurandData | null => {
   const currentTemplate = getSampledValueTemplate(
     chargingStation,
     connectorId,
-    MeterValueMeasurand.CURRENT_IMPORT
+    MeterValueMeasurand.CURRENT_IMPORT,
+    evseId
   )
   if (currentTemplate == null) {
     return null
@@ -1355,18 +1381,21 @@ const buildCurrentMeasurandValue = (
         chargingStation,
         connectorId,
         MeterValueMeasurand.CURRENT_IMPORT,
+        evseId,
         MeterValuePhase.L1
       ),
       L2: getSampledValueTemplate(
         chargingStation,
         connectorId,
         MeterValueMeasurand.CURRENT_IMPORT,
+        evseId,
         MeterValuePhase.L2
       ),
       L3: getSampledValueTemplate(
         chargingStation,
         connectorId,
         MeterValueMeasurand.CURRENT_IMPORT,
+        evseId,
         MeterValuePhase.L3
       ),
     }
@@ -1526,15 +1555,24 @@ const buildCurrentMeasurandValue = (
 
 export const buildMeterValue = (
   chargingStation: ChargingStation,
-  connectorId: number,
   transactionId: number | string | undefined,
   interval: number,
   debug = false
 ): MeterValue => {
-  const connector = chargingStation.getConnectorStatus(connectorId)
-
+  if (transactionId == null) {
+    return { sampledValue: [], timestamp: new Date() }
+  }
   switch (chargingStation.stationInfo?.ocppVersion) {
     case OCPPVersion.VERSION_16: {
+      const connectorId = chargingStation.getConnectorIdByTransactionId(transactionId)
+      if (connectorId == null) {
+        throw new OCPPError(
+          ErrorType.INTERNAL_ERROR,
+          `Cannot build MeterValues: no connector found for transaction ${String(transactionId)}`,
+          RequestCommand.METER_VALUES
+        )
+      }
+      const connector = chargingStation.getConnectorStatus(connectorId)
       const meterValue: OCPP16MeterValue = {
         sampledValue: [],
         timestamp: new Date(),
@@ -1747,6 +1785,16 @@ export const buildMeterValue = (
     }
     case OCPPVersion.VERSION_20:
     case OCPPVersion.VERSION_201: {
+      const connectorId = chargingStation.getConnectorIdByTransactionId(transactionId)
+      const evseId = chargingStation.getEvseIdByTransactionId(transactionId)
+      if (connectorId == null || evseId == null) {
+        throw new OCPPError(
+          ErrorType.INTERNAL_ERROR,
+          `Cannot build MeterValues: no connector/EVSE found for transaction ${String(transactionId)}`,
+          RequestCommand.METER_VALUES
+        )
+      }
+      const connector = chargingStation.getConnectorStatus(connectorId)
       const meterValue: OCPP20MeterValue = {
         sampledValue: [],
         timestamp: new Date(),
@@ -1760,7 +1808,7 @@ export const buildMeterValue = (
         return buildSampledValueForOCPP20(sampledValueTemplate, value, context, phase)
       }
       // SoC measurand
-      const socMeasurand = buildSocMeasurandValue(chargingStation, connectorId)
+      const socMeasurand = buildSocMeasurandValue(chargingStation, connectorId, evseId)
       if (socMeasurand != null) {
         const socSampledValue = buildVersionedSampledValue(
           socMeasurand.template,
@@ -1777,7 +1825,7 @@ export const buildMeterValue = (
         )
       }
       // Voltage measurand
-      const voltageMeasurand = buildVoltageMeasurandValue(chargingStation, connectorId)
+      const voltageMeasurand = buildVoltageMeasurandValue(chargingStation, connectorId, evseId)
       if (voltageMeasurand != null) {
         addMainVoltageToMeterValue(
           chargingStation,
@@ -1809,7 +1857,12 @@ export const buildMeterValue = (
         }
       }
       // Energy.Active.Import.Register measurand
-      const energyMeasurand = buildEnergyMeasurandValue(chargingStation, connectorId, interval)
+      const energyMeasurand = buildEnergyMeasurandValue(
+        chargingStation,
+        connectorId,
+        interval,
+        evseId
+      )
       if (energyMeasurand != null) {
         updateConnectorEnergyValues(connector, energyMeasurand.value)
         const unitDivider =
@@ -1842,7 +1895,7 @@ export const buildMeterValue = (
         )
       }
       // Power.Active.Import measurand
-      const powerMeasurand = buildPowerMeasurandValue(chargingStation, connectorId)
+      const powerMeasurand = buildPowerMeasurandValue(chargingStation, connectorId, evseId)
       if (powerMeasurand?.values.allPhases != null) {
         const powerSampledValue = buildVersionedSampledValue(
           powerMeasurand.template,
@@ -1851,7 +1904,7 @@ export const buildMeterValue = (
         meterValue.sampledValue.push(powerSampledValue)
       }
       // Current.Import measurand
-      const currentMeasurand = buildCurrentMeasurandValue(chargingStation, connectorId)
+      const currentMeasurand = buildCurrentMeasurandValue(chargingStation, connectorId, evseId)
       if (currentMeasurand?.values.allPhases != null) {
         const currentSampledValue = buildVersionedSampledValue(
           currentMeasurand.template,
@@ -1987,6 +2040,7 @@ const getSampledValueTemplate = (
   chargingStation: ChargingStation,
   connectorId: number,
   measurand: MeterValueMeasurand = MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+  evseId?: number,
   phase?: MeterValuePhase
 ): SampledValueTemplate | undefined => {
   const onPhaseStr = phase != null ? `on phase ${phase} ` : ''
@@ -2010,9 +2064,25 @@ const getSampledValueTemplate = (
     )
     return
   }
-  const sampledValueTemplates =
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    chargingStation.getConnectorStatus(connectorId)!.MeterValues
+  let sampledValueTemplates: SampledValueTemplate[] | undefined
+  if (evseId != null) {
+    const evseStatus = chargingStation.getEvseStatus(evseId)
+    if (evseStatus != null) {
+      if (isNotEmptyArray(evseStatus.MeterValues)) {
+        sampledValueTemplates = evseStatus.MeterValues
+      } else {
+        const connectorTemplates: SampledValueTemplate[] = []
+        for (const connectorStatus of evseStatus.connectors.values()) {
+          if (isNotEmptyArray(connectorStatus.MeterValues)) {
+            connectorTemplates.push(...connectorStatus.MeterValues)
+          }
+        }
+        sampledValueTemplates = isNotEmptyArray(connectorTemplates) ? connectorTemplates : undefined
+      }
+    }
+  } else {
+    sampledValueTemplates = chargingStation.getConnectorStatus(connectorId)?.MeterValues
+  }
   for (
     let index = 0;
     isNotEmptyArray(sampledValueTemplates) && index < sampledValueTemplates.length;

@@ -92,6 +92,10 @@ export default defineConfig([
               'reservability',
               // VPN protocol acronyms
               'PPTP',
+              // UI server protocol acronyms
+              'UIMCP',
+              'Streamable',
+              'modelcontextprotocol',
             ],
           },
         },

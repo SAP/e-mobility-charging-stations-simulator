@@ -516,7 +516,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
                 const txUpdatedInterval = OCPP20ServiceUtils.getTxUpdatedInterval(chargingStation)
                 const meterValue = buildMeterValue(
                   chargingStation,
-                  cId,
                   connector.transactionId,
                   txUpdatedInterval
                 ) as OCPP20MeterValue
@@ -531,27 +530,16 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               }
             }
             if (!hasSentTransactionEvent) {
-              const fallbackEvseId = evse?.id ?? 0
-              let meterValue: OCPP20MeterValue
-              try {
-                meterValue = buildMeterValue(
-                  chargingStation,
-                  fallbackEvseId > 0 ? fallbackEvseId : 1,
-                  undefined,
-                  OCPP20ServiceUtils.getTxUpdatedInterval(chargingStation)
-                ) as OCPP20MeterValue
-              } catch {
-                meterValue = {
-                  sampledValue: [{ value: 0 }],
-                  timestamp: new Date(),
-                }
+              const meterValue: OCPP20MeterValue = {
+                sampledValue: [{ value: 0 }],
+                timestamp: new Date(),
               }
               chargingStation.ocppRequestService
                 .requestHandler<OCPP20MeterValuesRequest, OCPP20MeterValuesResponse>(
                   chargingStation,
                   OCPP20RequestCommand.METER_VALUES,
                   {
-                    evseId: fallbackEvseId,
+                    evseId: evse?.id ?? 1,
                     meterValue: [meterValue],
                   },
                   { skipBufferingOnError: true, triggerMessage: true }
@@ -1113,11 +1101,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         ? this.getRestoredConnectorStatus(chargingStation, connectorId)
         : newConnectorStatus
 
-    sendAndSetConnectorStatus(
-      chargingStation,
+    sendAndSetConnectorStatus(chargingStation, {
       connectorId,
-      resolvedStatus as ConnectorStatusEnum
-    ).catch((error: unknown) => {
+      connectorStatus: resolvedStatus,
+    } as unknown as OCPP20StatusNotificationRequest).catch((error: unknown) => {
       logger.error(
         `${chargingStation.logPrefix()} ${moduleName}.handleConnectorChangeAvailability: Error sending status notification for connector ${connectorId.toString()}:`,
         error
@@ -2710,12 +2697,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         `${chargingStation.logPrefix()} ${moduleName}.handleRequestUnlockConnector: Unlocking connector ${connectorId.toString()} on EVSE ${evseId.toString()}`
       )
 
-      await sendAndSetConnectorStatus(
-        chargingStation,
+      await sendAndSetConnectorStatus(chargingStation, {
         connectorId,
-        ConnectorStatusEnum.Available,
-        evseId
-      )
+        connectorStatus: ConnectorStatusEnum.Available,
+        evseId,
+      } as unknown as OCPP20StatusNotificationRequest)
 
       return { status: UnlockStatusEnumType.Unlocked }
     } catch (error) {
@@ -3181,11 +3167,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
   ): void {
     for (const [, evse] of chargingStation.evses) {
       for (const [connectorId] of evse.connectors) {
-        sendAndSetConnectorStatus(
-          chargingStation,
+        sendAndSetConnectorStatus(chargingStation, {
           connectorId,
-          status as ConnectorStatusEnum
-        ).catch((error: unknown) => {
+          connectorStatus: status,
+        } as unknown as OCPP20StatusNotificationRequest).catch((error: unknown) => {
           logger.error(
             `${chargingStation.logPrefix()} ${moduleName}.sendAllConnectorsStatusNotifications: Error sending status notification for connector ${connectorId.toString()}:`,
             error
@@ -3209,11 +3194,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     const evse = chargingStation.getEvseStatus(evseId)
     if (evse) {
       for (const [connectorId] of evse.connectors) {
-        sendAndSetConnectorStatus(
-          chargingStation,
+        sendAndSetConnectorStatus(chargingStation, {
           connectorId,
-          status as ConnectorStatusEnum
-        ).catch((error: unknown) => {
+          connectorStatus: status,
+        } as unknown as OCPP20StatusNotificationRequest).catch((error: unknown) => {
           logger.error(
             `${chargingStation.logPrefix()} ${moduleName}.sendEvseStatusNotifications: Error sending status notification for connector ${connectorId.toString()}:`,
             error
@@ -3347,11 +3331,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       if (evseId > 0) {
         for (const [connectorId] of evseStatus.connectors) {
           const restoredStatus = this.getRestoredConnectorStatus(chargingStation, connectorId)
-          sendAndSetConnectorStatus(
-            chargingStation,
+          sendAndSetConnectorStatus(chargingStation, {
             connectorId,
-            restoredStatus as ConnectorStatusEnum
-          ).catch((error: unknown) => {
+            connectorStatus: restoredStatus,
+          } as unknown as OCPP20StatusNotificationRequest).catch((error: unknown) => {
             logger.error(
               `${chargingStation.logPrefix()} ${moduleName}.sendRestoredAllConnectorsStatusNotifications: Error sending status notification for connector ${connectorId.toString()}:`,
               error
@@ -3370,11 +3353,10 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     if (evse) {
       for (const [connectorId] of evse.connectors) {
         const restoredStatus = this.getRestoredConnectorStatus(chargingStation, connectorId)
-        sendAndSetConnectorStatus(
-          chargingStation,
+        sendAndSetConnectorStatus(chargingStation, {
           connectorId,
-          restoredStatus as ConnectorStatusEnum
-        ).catch((error: unknown) => {
+          connectorStatus: restoredStatus,
+        } as unknown as OCPP20StatusNotificationRequest).catch((error: unknown) => {
           logger.error(
             `${chargingStation.logPrefix()} ${moduleName}.sendRestoredEvseStatusNotifications: Error sending status notification for connector ${connectorId.toString()}:`,
             error
@@ -3638,7 +3620,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
             .requestHandler<
               OCPP20StatusNotificationRequest,
               OCPP20StatusNotificationResponse
-            >(chargingStation, OCPP20RequestCommand.STATUS_NOTIFICATION, { connectorId, evseId, status: resolvedStatus } as unknown as OCPP20StatusNotificationRequest, { skipBufferingOnError: true, triggerMessage: true })
+            >(chargingStation, OCPP20RequestCommand.STATUS_NOTIFICATION, { connectorId, connectorStatus: resolvedStatus, evseId } as unknown as OCPP20StatusNotificationRequest, { skipBufferingOnError: true, triggerMessage: true })
             .catch(errorHandler)
         }
       }
@@ -3658,7 +3640,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         .requestHandler<
           OCPP20StatusNotificationRequest,
           OCPP20StatusNotificationResponse
-        >(chargingStation, OCPP20RequestCommand.STATUS_NOTIFICATION, { connectorId: evse.connectorId, evseId: evse.id, status: resolvedStatus } as unknown as OCPP20StatusNotificationRequest, { skipBufferingOnError: true, triggerMessage: true })
+        >(chargingStation, OCPP20RequestCommand.STATUS_NOTIFICATION, { connectorId: evse.connectorId, connectorStatus: resolvedStatus, evseId: evse.id } as unknown as OCPP20StatusNotificationRequest, { skipBufferingOnError: true, triggerMessage: true })
         .catch(errorHandler)
     } else if (chargingStation.hasEvses) {
       this.triggerAllEvseStatusNotifications(chargingStation, errorHandler)
