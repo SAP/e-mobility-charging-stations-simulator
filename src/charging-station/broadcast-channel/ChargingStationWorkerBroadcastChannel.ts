@@ -29,7 +29,9 @@ import {
   type MessageEvent,
   type MeterValuesRequest,
   type MeterValuesResponse,
+  type OCPP16AuthorizeResponse,
   OCPP20AuthorizationStatusEnumType,
+  type OCPP20AuthorizeResponse,
   type OCPP20Get15118EVCertificateRequest,
   type OCPP20Get15118EVCertificateResponse,
   type OCPP20GetCertificateStatusRequest,
@@ -261,12 +263,33 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
   ): ResponseStatus {
     switch (command) {
       case BroadcastChannelProcedureName.AUTHORIZE:
+        switch (this.chargingStation.stationInfo?.ocppVersion) {
+          case OCPPVersion.VERSION_16:
+            if (
+              (commandResponse as OCPP16AuthorizeResponse).idTagInfo.status ===
+              AuthorizationStatus.ACCEPTED
+            ) {
+              return ResponseStatus.SUCCESS
+            }
+            return ResponseStatus.FAILURE
+          case OCPPVersion.VERSION_20:
+          case OCPPVersion.VERSION_201:
+            if (
+              (commandResponse as OCPP20AuthorizeResponse).idTokenInfo.status ===
+              AuthorizationStatus.Accepted
+            ) {
+              return ResponseStatus.SUCCESS
+            }
+            return ResponseStatus.FAILURE
+          default:
+            return ResponseStatus.FAILURE
+        }
       case BroadcastChannelProcedureName.START_TRANSACTION:
       case BroadcastChannelProcedureName.STOP_TRANSACTION:
         if (
           (
             commandResponse as
-              | AuthorizeResponse
+              | OCPP16AuthorizeResponse
               | StartTransactionResponse
               | StopTransactionResponse
           ).idTagInfo?.status === AuthorizationStatus.ACCEPTED
@@ -518,8 +541,8 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
             meterValue: [
               buildMeterValue(
                 this.chargingStation,
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                transactionId!,
+
+                transactionId,
                 alignedDataInterval
               ),
             ],

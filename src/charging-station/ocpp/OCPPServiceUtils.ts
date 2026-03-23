@@ -16,7 +16,6 @@ import { BaseError, OCPPError } from '../../exception/index.js'
 import {
   AuthorizationStatus,
   type AuthorizeRequest,
-  type AuthorizeResponse,
   ChargePointErrorCode,
   ChargingStationEvents,
   type ConnectorStatus,
@@ -36,11 +35,13 @@ import {
   MeterValueMeasurand,
   MeterValuePhase,
   MeterValueUnit,
+  type OCPP16AuthorizeResponse,
   type OCPP16MeterValue,
   type OCPP16SampledValue,
   type OCPP16StatusNotificationRequest,
   OCPP16StopTransactionReason,
   OCPP20AuthorizationStatusEnumType,
+  type OCPP20AuthorizeResponse,
   type OCPP20ConnectorStatusEnumType,
   OCPP20IdTokenEnumType,
   type OCPP20MeterValue,
@@ -292,17 +293,33 @@ const isIdTagRemoteAuthorized = async (
 ): Promise<boolean> => {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   chargingStation.getConnectorStatus(connectorId)!.authorizeIdTag = idTag
-  return (
-    (
-      await chargingStation.ocppRequestService.requestHandler<AuthorizeRequest, AuthorizeResponse>(
-        chargingStation,
-        RequestCommand.AUTHORIZE,
-        {
-          idTag,
-        }
+  switch (chargingStation.stationInfo?.ocppVersion) {
+    case OCPPVersion.VERSION_16:
+      return (
+        (
+          await chargingStation.ocppRequestService.requestHandler<
+            AuthorizeRequest,
+            OCPP16AuthorizeResponse
+          >(chargingStation, RequestCommand.AUTHORIZE, {
+            idTag,
+          })
+        ).idTagInfo.status === AuthorizationStatus.ACCEPTED
       )
-    ).idTagInfo.status === AuthorizationStatus.ACCEPTED
-  )
+    case OCPPVersion.VERSION_20:
+    case OCPPVersion.VERSION_201:
+      return (
+        (
+          await chargingStation.ocppRequestService.requestHandler<
+            AuthorizeRequest,
+            OCPP20AuthorizeResponse
+          >(chargingStation, RequestCommand.AUTHORIZE, {
+            idToken: { idToken: idTag, type: OCPP20IdTokenEnumType.ISO14443 },
+          })
+        ).idTokenInfo.status === AuthorizationStatus.Accepted
+      )
+    default:
+      return false
+  }
 }
 
 export const sendAndSetConnectorStatus = async (
@@ -1550,10 +1567,13 @@ const buildCurrentMeasurandValue = (
 
 export const buildMeterValue = (
   chargingStation: ChargingStation,
-  transactionId: number | string,
+  transactionId: number | string | undefined,
   interval: number,
   debug = false
 ): MeterValue => {
+  if (transactionId == null) {
+    return { sampledValue: [], timestamp: new Date() }
+  }
   switch (chargingStation.stationInfo?.ocppVersion) {
     case OCPPVersion.VERSION_16: {
       const connectorId = chargingStation.getConnectorIdByTransactionId(transactionId)
