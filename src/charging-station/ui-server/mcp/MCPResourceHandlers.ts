@@ -21,6 +21,9 @@ const getLogFilePath = (configField: 'errorFile' | 'file'): string | undefined =
   if (relativePath == null) {
     return undefined
   }
+  if (logConfig.rotate !== true) {
+    return resolve(relativePath)
+  }
   const date = new Date().toISOString().slice(0, 10)
   const dir = dirname(resolve(relativePath))
   const baseName = configField === 'file' ? `combined-${date}.log` : `error-${date}.log`
@@ -119,6 +122,17 @@ const getSchemaBaseDir = (): string => {
   return join(currentDir, '..', '..', '..', 'assets', 'json-schemas', 'ocpp')
 }
 
+/**
+ * Validate that a resolved path stays within the expected base directory (path traversal guard).
+ * @param candidatePath
+ * @param baseDir
+ */
+const isPathWithinBase = (candidatePath: string, baseDir: string): boolean => {
+  const resolvedBase = resolve(baseDir)
+  const resolvedCandidate = resolve(candidatePath)
+  return resolvedCandidate.startsWith(`${resolvedBase}/`) || resolvedCandidate === resolvedBase
+}
+
 export const registerMCPSchemaResources = (server: McpServer): void => {
   for (const version of OCPP_SCHEMA_VERSIONS) {
     server.registerResource(
@@ -130,7 +144,19 @@ export const registerMCPSchemaResources = (server: McpServer): void => {
       },
       async _uri => {
         try {
-          const schemaDir = join(getSchemaBaseDir(), version)
+          const baseDir = getSchemaBaseDir()
+          const schemaDir = join(baseDir, version)
+          if (!isPathWithinBase(schemaDir, baseDir)) {
+            return {
+              contents: [
+                {
+                  mimeType: 'application/json',
+                  text: JSON.stringify({ error: `Invalid OCPP version '${version}'` }),
+                  uri: `schema://ocpp/${version}`,
+                },
+              ],
+            }
+          }
           const files = await readdir(schemaDir)
           const commands = files
             .filter(f => f.endsWith('.json'))
@@ -172,8 +198,21 @@ export const registerMCPSchemaResources = (server: McpServer): void => {
       try {
         const versionStr = version as string
         const commandStr = command as string
-        const schemaDir = join(getSchemaBaseDir(), versionStr)
-        const schemaPath = join(schemaDir, `${commandStr}.json`)
+        const baseDir = getSchemaBaseDir()
+        const schemaPath = join(baseDir, versionStr, `${commandStr}.json`)
+        if (!isPathWithinBase(schemaPath, baseDir)) {
+          return {
+            contents: [
+              {
+                mimeType: 'application/json',
+                text: JSON.stringify({
+                  error: `Invalid schema path for '${commandStr}' in OCPP ${versionStr}`,
+                }),
+                uri: uri.href,
+              },
+            ],
+          }
+        }
         const content = await readFile(schemaPath, 'utf8')
         return {
           contents: [

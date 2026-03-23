@@ -61,7 +61,6 @@ export const ocppSchemaMapping = new Map<ProcedureName, { ocpp16?: string; ocpp2
   ],
   [ProcedureName.GET_15118_EV_CERTIFICATE, { ocpp20: 'Get15118EVCertificateRequest' }],
   [ProcedureName.GET_CERTIFICATE_STATUS, { ocpp20: 'GetCertificateStatusRequest' }],
-  [ProcedureName.HEARTBEAT, { ocpp16: 'Heartbeat', ocpp20: 'HeartbeatRequest' }],
   [ProcedureName.LOG_STATUS_NOTIFICATION, { ocpp20: 'LogStatusNotificationRequest' }],
   [ProcedureName.METER_VALUES, { ocpp16: 'MeterValues', ocpp20: 'MeterValuesRequest' }],
   [ProcedureName.NOTIFY_CUSTOMER_INFORMATION, { ocpp20: 'NotifyCustomerInformationRequest' }],
@@ -229,7 +228,7 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
   [
     ProcedureName.HEARTBEAT,
     {
-      description: ocppDescription('Send a Heartbeat request', ProcedureName.HEARTBEAT),
+      description: 'Send a Heartbeat request (OCPP 1.6 & 2.0.x)',
       inputSchema: broadcastInputSchema,
     },
   ],

@@ -259,6 +259,7 @@ export class UIMCPServer extends AbstractUIServer {
         await transport.handleRequest(req, res)
       } else {
         res.writeHead(405, { 'Content-Type': 'text/plain' }).end('405 Method Not Allowed')
+        this.closeTransportSafely(transport)
       }
     } catch (error: unknown) {
       logger.error(`${this.logPrefix(moduleName, 'handleMcpRequest')} MCP transport error:`, error)
