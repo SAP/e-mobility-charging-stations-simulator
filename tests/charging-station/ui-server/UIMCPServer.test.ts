@@ -7,7 +7,7 @@ import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import type { IncomingMessage } from 'node:http'
 
 import assert from 'node:assert/strict'
-import { EventEmitter } from 'node:events'
+import { Readable } from 'node:stream'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ProtocolResponse, RequestPayload, ResponsePayload } from '../../../src/types/index.js'
@@ -599,59 +599,47 @@ await describe('UIMCPServer', async () => {
 
   await describe('readRequestBody', async () => {
     await it('should resolve with parsed JSON on valid body', async () => {
-      const mockReq = new EventEmitter()
       const expected = { jsonrpc: '2.0', method: 'tools/list' }
+      const mockReq = Readable.from([Buffer.from(JSON.stringify(expected))])
 
-      const resultPromise = server.callReadRequestBody(mockReq as unknown as IncomingMessage)
-      mockReq.emit('data', Buffer.from(JSON.stringify(expected)))
-      mockReq.emit('end')
-
-      const result = await resultPromise
+      const result = await server.callReadRequestBody(mockReq as unknown as IncomingMessage)
       assert.deepStrictEqual(result, expected)
     })
 
     await it('should reject with BaseError when payload too large', async () => {
-      const mockReq = new EventEmitter()
-      let destroyed = false
-      Object.defineProperty(mockReq, 'destroy', {
-        value: () => {
-          destroyed = true
-        },
-      })
-
-      const resultPromise = server.callReadRequestBody(mockReq as unknown as IncomingMessage)
       const oversizedChunk = Buffer.alloc(DEFAULT_MAX_PAYLOAD_SIZE + 1)
-      mockReq.emit('data', oversizedChunk)
+      const mockReq = Readable.from([oversizedChunk])
 
-      await assert.rejects(resultPromise, (error: Error) => {
-        assert.ok(error instanceof BaseError)
-        assert.ok(error.message.includes('Payload too large'))
-        return true
-      })
-      assert.strictEqual(destroyed, true)
+      await assert.rejects(
+        server.callReadRequestBody(mockReq as unknown as IncomingMessage),
+        (error: Error) => {
+          assert.ok(error instanceof BaseError)
+          assert.ok(error.message.includes('Payload too large'))
+          return true
+        }
+      )
     })
 
     await it('should reject with error on invalid JSON', async () => {
-      const mockReq = new EventEmitter()
+      const mockReq = Readable.from([Buffer.from('not valid json {{{')])
 
-      const resultPromise = server.callReadRequestBody(mockReq as unknown as IncomingMessage)
-      mockReq.emit('data', Buffer.from('not valid json {{{'))
-      mockReq.emit('end')
-
-      await assert.rejects(resultPromise)
+      await assert.rejects(server.callReadRequestBody(mockReq as unknown as IncomingMessage))
     })
 
     await it('should reject with error on stream error', async () => {
-      const mockReq = new EventEmitter()
-      const streamError = new Error('Connection reset')
-
-      const resultPromise = server.callReadRequestBody(mockReq as unknown as IncomingMessage)
-      mockReq.emit('error', streamError)
-
-      await assert.rejects(resultPromise, (error: Error) => {
-        assert.strictEqual(error.message, 'Connection reset')
-        return true
+      const mockReq = new Readable({
+        read () {
+          this.destroy(new Error('Connection reset'))
+        },
       })
+
+      await assert.rejects(
+        server.callReadRequestBody(mockReq as unknown as IncomingMessage),
+        (error: Error) => {
+          assert.strictEqual(error.message, 'Connection reset')
+          return true
+        }
+      )
     })
   })
 

@@ -31,7 +31,6 @@ import {
   registerMCPSchemaResources,
 } from './mcp/index.js'
 import {
-  createBodySizeLimiter,
   createRateLimiter,
   DEFAULT_MAX_PAYLOAD_SIZE,
   DEFAULT_RATE_LIMIT,
@@ -48,6 +47,8 @@ const rateLimiter = createRateLimiter(DEFAULT_RATE_LIMIT, DEFAULT_RATE_WINDOW)
 export class UIMCPServer extends AbstractUIServer {
   protected override readonly uiServerType = 'UI MCP Server'
 
+  private ocppSchemaCache: Map<string, { ocpp16?: unknown; ocpp20?: unknown }>
+
   private readonly pendingMcpRequests: Map<
     UUIDv4,
     {
@@ -57,9 +58,12 @@ export class UIMCPServer extends AbstractUIServer {
     }
   >
 
+  private service: AbstractUIService | undefined
+
   public constructor (protected override readonly uiServerConfiguration: UIServerConfiguration) {
     super(uiServerConfiguration)
     this.pendingMcpRequests = new Map()
+    this.ocppSchemaCache = new Map()
   }
 
   private static createToolErrorResponse (error: string): CallToolResult {
@@ -100,32 +104,8 @@ export class UIMCPServer extends AbstractUIServer {
   public start (): void {
     const version = ProtocolVersion['0.0.1']
     this.registerProtocolVersionUIService(version)
-
-    const mcpServer = new McpServer({
-      name: 'e-mobility-charging-stations-simulator',
-      version,
-    })
-
-    const service = this.uiServices.get(version)
-
-    for (const [procedureName, schema] of mcpToolSchemas) {
-      mcpServer.registerTool(
-        procedureName,
-        {
-          description: schema.description,
-          inputSchema: schema.inputSchema.shape,
-        },
-        async (input: Record<string, unknown>) => {
-          return await this.invokeProcedure(procedureName, input as RequestPayload, service)
-        }
-      )
-    }
-
-    registerMCPResources(mcpServer, this)
-    registerMCPSchemaResources(mcpServer)
-    registerMCPLogTools(mcpServer)
-
-    this.injectOcppJsonSchemas(mcpServer)
+    this.service = this.uiServices.get(version)
+    this.ocppSchemaCache = this.loadOcppSchemas()
 
     this.httpServer.on('request', (req: IncomingMessage, res: ServerResponse) => {
       const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`)
@@ -158,7 +138,7 @@ export class UIMCPServer extends AbstractUIServer {
         return
       }
 
-      this.handleMcpRequest(mcpServer, req, res).catch((error: unknown) => {
+      this.handleMcpRequest(req, res).catch((error: unknown) => {
         logger.error(
           `${this.logPrefix(moduleName, 'start.httpServer.request')} Unhandled MCP request error:`,
           error
@@ -230,40 +210,71 @@ export class UIMCPServer extends AbstractUIServer {
     })
   }
 
-  // SDK stateless examples create a new McpServer per request. We reuse a single instance
-  // to avoid re-registering 33+ tools/resources on every HTTP request. This works because
-  // tool/resource handlers are stateless and transport lifecycle is managed per-request.
-  private async handleMcpRequest (
-    mcpServer: McpServer,
-    req: IncomingMessage,
-    res: ServerResponse
-  ): Promise<void> {
+  // Per the MCP SDK design, McpServer.connect() overwrites a single internal _transport field.
+  // A new McpServer must be created per request to avoid transport cross-talk under concurrency.
+  // Tool registration is ~12µs for 33 tools (Map.set + closure allocation) — negligible.
+  private createMcpServer (): McpServer {
+    const mcpServer = new McpServer({
+      name: 'e-mobility-charging-stations-simulator',
+      version: ProtocolVersion['0.0.1'],
+    })
+
+    for (const [procedureName, schema] of mcpToolSchemas) {
+      mcpServer.registerTool(
+        procedureName,
+        {
+          description: schema.description,
+          inputSchema: schema.inputSchema.shape,
+        },
+        async (input: Record<string, unknown>) => {
+          return await this.invokeProcedure(procedureName, input as RequestPayload, this.service)
+        }
+      )
+    }
+
+    registerMCPResources(mcpServer, this)
+    registerMCPSchemaResources(mcpServer)
+    registerMCPLogTools(mcpServer)
+    this.injectOcppJsonSchemas(mcpServer)
+
+    return mcpServer
+  }
+
+  private async handleMcpRequest (req: IncomingMessage, res: ServerResponse): Promise<void> {
+    const mcpServer = this.createMcpServer()
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined })
     try {
       await mcpServer.connect(transport)
     } catch (error: unknown) {
       logger.error(`${this.logPrefix(moduleName, 'handleMcpRequest')} MCP connect error:`, error)
+      this.closeTransportSafely(transport)
       if (!res.headersSent) {
         res.writeHead(500, { 'Content-Type': 'text/plain' }).end('500 Internal Server Error')
       }
       return
     }
 
+    const cleanup = (): void => {
+      this.closeTransportSafely(transport)
+      mcpServer.close().catch((error: unknown) => {
+        logger.error(
+          `${this.logPrefix(moduleName, 'handleMcpRequest')} MCP server close error:`,
+          error
+        )
+      })
+    }
+
     try {
       if (req.method === HttpMethod.POST) {
         const body = await this.readRequestBody(req)
-        res.on('close', () => {
-          this.closeTransportSafely(transport)
-        })
+        res.on('close', cleanup)
         await transport.handleRequest(req, res, body)
       } else if (req.method === HttpMethod.GET || req.method === HttpMethod.DELETE) {
-        res.on('close', () => {
-          this.closeTransportSafely(transport)
-        })
+        res.on('close', cleanup)
         await transport.handleRequest(req, res)
       } else {
         res.writeHead(405, { 'Content-Type': 'text/plain' }).end('405 Method Not Allowed')
-        this.closeTransportSafely(transport)
+        cleanup()
       }
     } catch (error: unknown) {
       logger.error(`${this.logPrefix(moduleName, 'handleMcpRequest')} MCP transport error:`, error)
@@ -279,11 +290,10 @@ export class UIMCPServer extends AbstractUIServer {
   }
 
   private injectOcppJsonSchemas (mcpServer: McpServer): void {
-    const schemaCache = this.loadOcppSchemas()
-    if (schemaCache.size === 0) {
+    if (this.ocppSchemaCache.size === 0) {
       return
     }
-    // Access MCP SDK internal handler map — pinned to @modelcontextprotocol/sdk@1.27.x
+    // Access MCP SDK internal handler map — pinned to @modelcontextprotocol/sdk@~1.27.x
     // The SDK does not provide a public API for wrapping existing handlers.
     // setRequestHandler() replaces handlers entirely, losing Zod→JSON Schema conversion.
     const handlers = Reflect.get(mcpServer.server, '_requestHandlers') as
@@ -304,7 +314,7 @@ export class UIMCPServer extends AbstractUIServer {
         tools: { inputSchema: { properties: Record<string, unknown> }; name: string }[]
       }
       for (const tool of result.tools) {
-        const schemas = schemaCache.get(tool.name)
+        const schemas = this.ocppSchemaCache.get(tool.name)
         if (schemas == null) {
           continue
         }
@@ -323,9 +333,6 @@ export class UIMCPServer extends AbstractUIServer {
       }
       return result
     })
-    logger.info(
-      `${this.logPrefix(moduleName, 'injectOcppJsonSchemas')} OCPP JSON schema injection enabled for ${schemaCache.size.toString()} tool(s)`
-    )
   }
 
   private async invokeProcedure (
@@ -443,31 +450,24 @@ export class UIMCPServer extends AbstractUIServer {
         cache.set(procedureName, entry)
       }
     }
+    if (cache.size > 0) {
+      logger.info(
+        `${this.logPrefix(moduleName, 'loadOcppSchemas')} OCPP JSON schema injection enabled for ${cache.size.toString()} tool(s)`
+      )
+    }
     return cache
   }
 
-  private readRequestBody (req: IncomingMessage): Promise<unknown> {
-    return new Promise((resolve, reject) => {
-      const chunks: Buffer[] = []
-      const checkBodySize = createBodySizeLimiter(DEFAULT_MAX_PAYLOAD_SIZE)
-      req.on('data', (chunk: Buffer) => {
-        if (!checkBodySize(chunk.length)) {
-          reject(new BaseError('Payload too large'))
-          req.destroy()
-          return
-        }
-        chunks.push(chunk)
-      })
-      req.on('end', () => {
-        try {
-          resolve(JSON.parse(Buffer.concat(chunks).toString()))
-        } catch (error: unknown) {
-          reject(error instanceof Error ? error : new BaseError(String(error)))
-        }
-      })
-      req.on('error', (error: Error) => {
-        reject(error)
-      })
-    })
+  private async readRequestBody (req: IncomingMessage): Promise<unknown> {
+    const chunks: Buffer[] = []
+    let received = 0
+    for await (const chunk of req) {
+      received += (chunk as Buffer).length
+      if (received > DEFAULT_MAX_PAYLOAD_SIZE) {
+        throw new BaseError('Payload too large')
+      }
+      chunks.push(chunk as Buffer)
+    }
+    return JSON.parse(Buffer.concat(chunks).toString('utf8'))
   }
 }
