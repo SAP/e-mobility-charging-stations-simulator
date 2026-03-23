@@ -129,7 +129,7 @@ export class UIMCPServer extends AbstractUIServer {
 
     this.httpServer.on('request', (req: IncomingMessage, res: ServerResponse) => {
       const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`)
-      if (!url.pathname.startsWith('/mcp')) {
+      if (url.pathname !== '/mcp') {
         res.writeHead(404, { 'Content-Type': 'text/plain' }).end('404 Not Found')
         if (!req.complete) {
           req.destroy()
@@ -323,6 +323,9 @@ export class UIMCPServer extends AbstractUIServer {
       }
       return result
     })
+    logger.info(
+      `${this.logPrefix(moduleName, 'injectOcppJsonSchemas')} OCPP JSON schema injection enabled for ${schemaCache.size.toString()} tool(s)`
+    )
   }
 
   private async invokeProcedure (
