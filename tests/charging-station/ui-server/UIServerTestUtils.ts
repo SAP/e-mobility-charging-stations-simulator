@@ -23,6 +23,7 @@ import {
   ApplicationProtocol,
   ApplicationProtocolVersion,
   AuthenticationType,
+  type OCPPVersion,
   ResponseStatus,
 } from '../../../src/types/index.js'
 import { MockWebSocket } from '../mocks/MockWebSocket.js'
@@ -289,3 +290,26 @@ export const waitForStreamFlush = async (delayMs: number): Promise<void> => {
     setTimeout(resolve, delayMs)
   })
 }
+
+/**
+ * Create mock charging station data with a specific OCPP version.
+ * @param hashId - Unique identifier for the charging station
+ * @param ocppVersion - OCPP protocol version
+ * @returns ChargingStationData with the specified OCPP version
+ */
+export const createMockChargingStationDataWithVersion = (
+  hashId: string,
+  ocppVersion: OCPPVersion
+): ChargingStationData =>
+  createMockChargingStationData(hashId, {
+    stationInfo: {
+      baseName: 'test',
+      chargePointModel: 'TestModel',
+      chargePointVendor: 'TestVendor',
+      chargingStationId: hashId,
+      hashId,
+      ocppVersion,
+      templateIndex: 0,
+      templateName: 'test-template',
+    },
+  })
