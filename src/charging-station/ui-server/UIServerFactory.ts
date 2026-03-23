@@ -49,15 +49,8 @@ export class UIServerFactory {
       logger.warn(`${UIServerFactory.logPrefix()} ${logMsg}`)
     }
     if (
-      uiServerConfiguration.type === ApplicationProtocol.WS &&
-      uiServerConfiguration.version !== ApplicationProtocolVersion.VERSION_11
-    ) {
-      const logMsg = `Only version ${ApplicationProtocolVersion.VERSION_11} with application protocol type '${uiServerConfiguration.type}' is supported in '${ConfigurationSection.uiServer}' configuration section. Falling back to version ${ApplicationProtocolVersion.VERSION_11}`
-      logger.warn(`${UIServerFactory.logPrefix()} ${logMsg}`)
-      uiServerConfiguration.version = ApplicationProtocolVersion.VERSION_11
-    }
-    if (
-      uiServerConfiguration.type === ApplicationProtocol.MCP &&
+      (uiServerConfiguration.type === ApplicationProtocol.WS ||
+        uiServerConfiguration.type === ApplicationProtocol.MCP) &&
       uiServerConfiguration.version !== ApplicationProtocolVersion.VERSION_11
     ) {
       const logMsg = `Only version ${ApplicationProtocolVersion.VERSION_11} with application protocol type '${uiServerConfiguration.type}' is supported in '${ConfigurationSection.uiServer}' configuration section. Falling back to version ${ApplicationProtocolVersion.VERSION_11}`
