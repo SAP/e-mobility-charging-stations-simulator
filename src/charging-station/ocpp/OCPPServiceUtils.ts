@@ -167,66 +167,54 @@ export const isIdTagAuthorizedUnified = async (
   connectorId: number,
   idTag: string
 ): Promise<boolean> => {
-  const stationOcppVersion = chargingStation.stationInfo?.ocppVersion
-  // OCPP 2.0+ always uses unified auth system
-  // OCPP 1.6 can optionally use unified or legacy system
-  const shouldUseUnified =
-    stationOcppVersion === OCPPVersion.VERSION_20 || stationOcppVersion === OCPPVersion.VERSION_201
+  switch (chargingStation.stationInfo?.ocppVersion) {
+    case OCPPVersion.VERSION_20:
+    case OCPPVersion.VERSION_201:
+      try {
+        logger.debug(
+          `${chargingStation.logPrefix()} Using unified auth system for idTag '${idTag}' on connector ${connectorId.toString()}`
+        )
 
-  if (shouldUseUnified) {
-    try {
-      logger.debug(
-        `${chargingStation.logPrefix()} Using unified auth system for idTag '${idTag}' on connector ${connectorId.toString()}`
-      )
+        // Dynamic import to avoid circular dependencies
+        const { OCPPAuthServiceFactory } = await import('./auth/services/OCPPAuthServiceFactory.js')
+        const {
+          AuthContext,
+          AuthorizationStatus: UnifiedAuthorizationStatus,
+          IdentifierType,
+        } = await import('./auth/types/AuthTypes.js')
 
-      // Dynamic import to avoid circular dependencies
-      const { OCPPAuthServiceFactory } = await import('./auth/services/OCPPAuthServiceFactory.js')
-      const {
-        AuthContext,
-        AuthorizationStatus: UnifiedAuthorizationStatus,
-        IdentifierType,
-      } = await import('./auth/types/AuthTypes.js')
+        // Get unified auth service
+        const authService = await OCPPAuthServiceFactory.getInstance(chargingStation)
 
-      // Get unified auth service
-      const authService = await OCPPAuthServiceFactory.getInstance(chargingStation)
+        // Create auth request with unified types
+        const authResult = await authService.authorize({
+          allowOffline: false,
+          connectorId,
+          context: AuthContext.TRANSACTION_START,
+          identifier: {
+            type: IdentifierType.ID_TAG,
+            value: idTag,
+          },
+          timestamp: new Date(),
+        })
 
-      // Create auth request with unified types
-      const authResult = await authService.authorize({
-        allowOffline: false,
-        connectorId,
-        context: AuthContext.TRANSACTION_START,
-        identifier: {
-          type: IdentifierType.ID_TAG,
-          value: idTag,
-        },
-        timestamp: new Date(),
-      })
+        logger.debug(
+          `${chargingStation.logPrefix()} Unified auth result for idTag '${idTag}': ${authResult.status} using ${authResult.method} method`
+        )
 
-      logger.debug(
-        `${chargingStation.logPrefix()} Unified auth result for idTag '${idTag}': ${authResult.status} using ${authResult.method} method`
-      )
-
-      // Use AuthorizationStatus enum from unified system
-      return authResult.status === UnifiedAuthorizationStatus.ACCEPTED
-    } catch (error) {
-      logger.error(
-        `${chargingStation.logPrefix()} Unified auth failed, falling back to legacy system`,
-        error
-      )
-      // Fall back to legacy system on error (only for OCPP 1.6)
-      if (chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_16) {
-        return isIdTagAuthorized(chargingStation, connectorId, idTag)
+        return authResult.status === UnifiedAuthorizationStatus.ACCEPTED
+      } catch (error) {
+        logger.error(`${chargingStation.logPrefix()} Unified auth failed for OCPP 2.0`, error)
+        return false
       }
-      // For OCPP 2.0, return false on error (no legacy fallback)
+    case OCPPVersion.VERSION_16:
+      logger.debug(
+        `${chargingStation.logPrefix()} Using legacy auth system for idTag '${idTag}' on connector ${connectorId.toString()}`
+      )
+      return isIdTagAuthorized(chargingStation, connectorId, idTag)
+    default:
       return false
-    }
   }
-
-  // Use legacy auth system for OCPP 1.6 when unified auth not explicitly enabled
-  logger.debug(
-    `${chargingStation.logPrefix()} Using legacy auth system for idTag '${idTag}' on connector ${connectorId.toString()}`
-  )
-  return isIdTagAuthorized(chargingStation, connectorId, idTag)
 }
 
 /**
@@ -242,36 +230,36 @@ export const isIdTagAuthorized = async (
   connectorId: number,
   idTag: string
 ): Promise<boolean> => {
-  // OCPP 2.0+ always delegates to unified system
-  if (
-    chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_20 ||
-    chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_201
-  ) {
-    return isIdTagAuthorizedUnified(chargingStation, connectorId, idTag)
+  switch (chargingStation.stationInfo?.ocppVersion) {
+    case OCPPVersion.VERSION_16: {
+      if (
+        !chargingStation.getLocalAuthListEnabled() &&
+        chargingStation.stationInfo.remoteAuthorization === false
+      ) {
+        logger.warn(
+          `${chargingStation.logPrefix()} The charging station expects to authorize RFID tags but nor local authorization nor remote authorization are enabled. Misbehavior may occur`
+        )
+      }
+      const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+      if (
+        connectorStatus != null &&
+        chargingStation.getLocalAuthListEnabled() &&
+        isIdTagLocalAuthorized(chargingStation, idTag)
+      ) {
+        connectorStatus.localAuthorizeIdTag = idTag
+        connectorStatus.idTagLocalAuthorized = true
+        return true
+      } else if (chargingStation.stationInfo.remoteAuthorization === true) {
+        return await isIdTagRemoteAuthorized(chargingStation, connectorId, idTag)
+      }
+      return false
+    }
+    case OCPPVersion.VERSION_20:
+    case OCPPVersion.VERSION_201:
+      return isIdTagAuthorizedUnified(chargingStation, connectorId, idTag)
+    default:
+      return false
   }
-
-  // Legacy authorization logic for OCPP 1.6
-  if (
-    !chargingStation.getLocalAuthListEnabled() &&
-    chargingStation.stationInfo?.remoteAuthorization === false
-  ) {
-    logger.warn(
-      `${chargingStation.logPrefix()} The charging station expects to authorize RFID tags but nor local authorization nor remote authorization are enabled. Misbehavior may occur`
-    )
-  }
-  const connectorStatus = chargingStation.getConnectorStatus(connectorId)
-  if (
-    connectorStatus != null &&
-    chargingStation.getLocalAuthListEnabled() &&
-    isIdTagLocalAuthorized(chargingStation, idTag)
-  ) {
-    connectorStatus.localAuthorizeIdTag = idTag
-    connectorStatus.idTagLocalAuthorized = true
-    return true
-  } else if (chargingStation.stationInfo?.remoteAuthorization === true) {
-    return await isIdTagRemoteAuthorized(chargingStation, connectorId, idTag)
-  }
-  return false
 }
 
 const isIdTagLocalAuthorized = (chargingStation: ChargingStation, idTag: string): boolean => {
