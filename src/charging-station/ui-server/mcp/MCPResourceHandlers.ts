@@ -119,7 +119,7 @@ const OCPP_SCHEMA_VERSIONS = [OCPPVersion.VERSION_16, OCPPVersion.VERSION_20] as
 
 const getSchemaBaseDir = (): string => {
   const currentDir = dirname(fileURLToPath(import.meta.url))
-  return join(currentDir, '..', '..', '..', 'assets', 'json-schemas', 'ocpp')
+  return join(currentDir, 'assets', 'json-schemas', 'ocpp')
 }
 
 // Path traversal guard: validate that the resolved path stays within the expected base directory.

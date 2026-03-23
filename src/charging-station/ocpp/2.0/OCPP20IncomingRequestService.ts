@@ -3638,7 +3638,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
             .requestHandler<
               OCPP20StatusNotificationRequest,
               OCPP20StatusNotificationResponse
-            >(chargingStation, OCPP20RequestCommand.STATUS_NOTIFICATION, { connectorId, evseId, status: resolvedStatus } as unknown as OCPP20StatusNotificationRequest, { skipBufferingOnError: true, triggerMessage: true })
+            >(chargingStation, OCPP20RequestCommand.STATUS_NOTIFICATION, { connectorId, connectorStatus: resolvedStatus, evseId } as unknown as OCPP20StatusNotificationRequest, { skipBufferingOnError: true, triggerMessage: true })
             .catch(errorHandler)
         }
       }
@@ -3658,7 +3658,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         .requestHandler<
           OCPP20StatusNotificationRequest,
           OCPP20StatusNotificationResponse
-        >(chargingStation, OCPP20RequestCommand.STATUS_NOTIFICATION, { connectorId: evse.connectorId, evseId: evse.id, status: resolvedStatus } as unknown as OCPP20StatusNotificationRequest, { skipBufferingOnError: true, triggerMessage: true })
+        >(chargingStation, OCPP20RequestCommand.STATUS_NOTIFICATION, { connectorId: evse.connectorId, connectorStatus: resolvedStatus, evseId: evse.id } as unknown as OCPP20StatusNotificationRequest, { skipBufferingOnError: true, triggerMessage: true })
         .catch(errorHandler)
     } else if (chargingStation.hasEvses) {
       this.triggerAllEvseStatusNotifications(chargingStation, errorHandler)

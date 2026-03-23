@@ -421,7 +421,7 @@ export class UIMCPServer extends AbstractUIServer {
   private loadOcppSchemas (): Map<string, { ocpp16?: unknown; ocpp20?: unknown }> {
     const cache = new Map<string, { ocpp16?: unknown; ocpp20?: unknown }>()
     const currentDir = dirname(fileURLToPath(import.meta.url))
-    const baseDir = join(currentDir, '..', '..', 'assets', 'json-schemas', 'ocpp')
+    const baseDir = join(currentDir, 'assets', 'json-schemas', 'ocpp')
     for (const [procedureName, mapping] of ocppSchemaMapping) {
       const entry: { ocpp16?: unknown; ocpp20?: unknown } = {}
       if (mapping.ocpp16 != null) {

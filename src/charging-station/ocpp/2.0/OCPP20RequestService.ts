@@ -199,7 +199,7 @@ export class OCPP20RequestService extends OCPPRequestService {
         return buildStatusNotificationRequest(
           chargingStation,
           commandParams.connectorId as number,
-          commandParams.status as ConnectorStatusEnum,
+          commandParams.connectorStatus as ConnectorStatusEnum,
           commandParams.evseId as number | undefined
         ) as unknown as Request
       case OCPP20RequestCommand.TRANSACTION_EVENT:
