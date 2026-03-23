@@ -46,6 +46,83 @@ const chargingStationOptionsSchema = z.object({
     .describe('OCPP server supervision URL(s)'),
 })
 
+/** Maps ProcedureName to OCPP JSON Schema file base names per version */
+export const ocppSchemaMapping = new Map<ProcedureName, { ocpp16?: string; ocpp20?: string }>([
+  [ProcedureName.AUTHORIZE, { ocpp16: 'Authorize', ocpp20: 'AuthorizeRequest' }],
+  [
+    ProcedureName.BOOT_NOTIFICATION,
+    { ocpp16: 'BootNotification', ocpp20: 'BootNotificationRequest' },
+  ],
+  [ProcedureName.DATA_TRANSFER, { ocpp16: 'DataTransfer', ocpp20: 'DataTransferRequest' }],
+  [ProcedureName.DIAGNOSTICS_STATUS_NOTIFICATION, { ocpp16: 'DiagnosticsStatusNotification' }],
+  [
+    ProcedureName.FIRMWARE_STATUS_NOTIFICATION,
+    { ocpp16: 'FirmwareStatusNotification', ocpp20: 'FirmwareStatusNotificationRequest' },
+  ],
+  [ProcedureName.GET_15118_EV_CERTIFICATE, { ocpp20: 'Get15118EVCertificateRequest' }],
+  [ProcedureName.GET_CERTIFICATE_STATUS, { ocpp20: 'GetCertificateStatusRequest' }],
+  [ProcedureName.HEARTBEAT, { ocpp16: 'Heartbeat', ocpp20: 'HeartbeatRequest' }],
+  [ProcedureName.LOG_STATUS_NOTIFICATION, { ocpp20: 'LogStatusNotificationRequest' }],
+  [ProcedureName.METER_VALUES, { ocpp16: 'MeterValues', ocpp20: 'MeterValuesRequest' }],
+  [ProcedureName.NOTIFY_CUSTOMER_INFORMATION, { ocpp20: 'NotifyCustomerInformationRequest' }],
+  [ProcedureName.NOTIFY_REPORT, { ocpp20: 'NotifyReportRequest' }],
+  [ProcedureName.SECURITY_EVENT_NOTIFICATION, { ocpp20: 'SecurityEventNotificationRequest' }],
+  [ProcedureName.SIGN_CERTIFICATE, { ocpp20: 'SignCertificateRequest' }],
+  [ProcedureName.START_TRANSACTION, { ocpp16: 'StartTransaction' }],
+  [
+    ProcedureName.STATUS_NOTIFICATION,
+    { ocpp16: 'StatusNotification', ocpp20: 'StatusNotificationRequest' },
+  ],
+  [ProcedureName.STOP_TRANSACTION, { ocpp16: 'StopTransaction' }],
+  [ProcedureName.TRANSACTION_EVENT, { ocpp20: 'TransactionEventRequest' }],
+])
+
+const ocpp16PayloadField = z
+  .record(z.string(), z.unknown())
+  .optional()
+  .describe('OCPP 1.6 request payload')
+
+const ocpp20PayloadField = z
+  .record(z.string(), z.unknown())
+  .optional()
+  .describe('OCPP 2.0.1 request payload')
+
+const buildOcppInputSchema = (mapping: {
+  ocpp16?: string
+  ocpp20?: string
+}): z.ZodObject<z.ZodRawShape> => {
+  const fields: Record<string, z.ZodType> = { connectorIds, hashIds }
+  if (mapping.ocpp16 != null) {
+    fields.ocpp16Payload = ocpp16PayloadField
+  }
+  if (mapping.ocpp20 != null) {
+    fields.ocpp20Payload = ocpp20PayloadField
+  }
+  return z.object(fields)
+}
+
+const buildVersionAffinity = (mapping: { ocpp16?: string; ocpp20?: string }): string => {
+  if (mapping.ocpp16 != null && mapping.ocpp20 != null) return '(OCPP 1.6 & 2.0.x)'
+  if (mapping.ocpp16 != null) return '(OCPP 1.6 only)'
+  return '(OCPP 2.0.x only)'
+}
+
+const getMapping = (name: ProcedureName): { ocpp16?: string; ocpp20?: string } =>
+  ocppSchemaMapping.get(name) ?? {}
+
+const ocppDescription = (base: string, name: ProcedureName): string => {
+  const mapping = getMapping(name)
+  const affinity = buildVersionAffinity(mapping)
+  const hint =
+    mapping.ocpp16 != null && mapping.ocpp20 != null
+      ? '. Provide ocpp16Payload for 1.6 stations, ocpp20Payload for 2.0 stations.'
+      : ''
+  return `${base} ${affinity}${hint}`
+}
+
+const ocppInputSchema = (name: ProcedureName): z.ZodObject<z.ZodRawShape> =>
+  buildOcppInputSchema(getMapping(name))
+
 export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
   [
     ProcedureName.ADD_CHARGING_STATIONS,
@@ -67,15 +144,18 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
   [
     ProcedureName.AUTHORIZE,
     {
-      description: 'Send an Authorize request to the OCPP server for charging stations',
-      inputSchema: broadcastInputSchema,
+      description: ocppDescription('Send an Authorize request', ProcedureName.AUTHORIZE),
+      inputSchema: ocppInputSchema(ProcedureName.AUTHORIZE),
     },
   ],
   [
     ProcedureName.BOOT_NOTIFICATION,
     {
-      description: 'Send a BootNotification request to the OCPP server for charging stations',
-      inputSchema: broadcastInputSchema,
+      description: ocppDescription(
+        'Send a BootNotification request',
+        ProcedureName.BOOT_NOTIFICATION
+      ),
+      inputSchema: ocppInputSchema(ProcedureName.BOOT_NOTIFICATION),
     },
   ],
   [
@@ -89,8 +169,8 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
   [
     ProcedureName.DATA_TRANSFER,
     {
-      description: 'Send a DataTransfer request to the OCPP server for charging stations',
-      inputSchema: broadcastInputSchema,
+      description: ocppDescription('Send a DataTransfer request', ProcedureName.DATA_TRANSFER),
+      inputSchema: ocppInputSchema(ProcedureName.DATA_TRANSFER),
     },
   ],
   [
@@ -109,35 +189,47 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
   [
     ProcedureName.DIAGNOSTICS_STATUS_NOTIFICATION,
     {
-      description: 'Send a DiagnosticsStatusNotification to the OCPP server for charging stations',
-      inputSchema: broadcastInputSchema,
+      description: ocppDescription(
+        'Send a DiagnosticsStatusNotification',
+        ProcedureName.DIAGNOSTICS_STATUS_NOTIFICATION
+      ),
+      inputSchema: ocppInputSchema(ProcedureName.DIAGNOSTICS_STATUS_NOTIFICATION),
     },
   ],
   [
     ProcedureName.FIRMWARE_STATUS_NOTIFICATION,
     {
-      description: 'Send a FirmwareStatusNotification to the OCPP server for charging stations',
-      inputSchema: broadcastInputSchema,
+      description: ocppDescription(
+        'Send a FirmwareStatusNotification',
+        ProcedureName.FIRMWARE_STATUS_NOTIFICATION
+      ),
+      inputSchema: ocppInputSchema(ProcedureName.FIRMWARE_STATUS_NOTIFICATION),
     },
   ],
   [
     ProcedureName.GET_15118_EV_CERTIFICATE,
     {
-      description: 'Request an ISO 15118 EV certificate from the OCPP server for charging stations',
-      inputSchema: broadcastInputSchema,
+      description: ocppDescription(
+        'Request an ISO 15118 EV certificate',
+        ProcedureName.GET_15118_EV_CERTIFICATE
+      ),
+      inputSchema: ocppInputSchema(ProcedureName.GET_15118_EV_CERTIFICATE),
     },
   ],
   [
     ProcedureName.GET_CERTIFICATE_STATUS,
     {
-      description: 'Get the certificate status from the OCPP server for charging stations',
-      inputSchema: broadcastInputSchema,
+      description: ocppDescription(
+        'Get the certificate status',
+        ProcedureName.GET_CERTIFICATE_STATUS
+      ),
+      inputSchema: ocppInputSchema(ProcedureName.GET_CERTIFICATE_STATUS),
     },
   ],
   [
     ProcedureName.HEARTBEAT,
     {
-      description: 'Send a Heartbeat request to the OCPP server for charging stations',
+      description: ocppDescription('Send a Heartbeat request', ProcedureName.HEARTBEAT),
       inputSchema: broadcastInputSchema,
     },
   ],
@@ -158,30 +250,35 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
   [
     ProcedureName.LOG_STATUS_NOTIFICATION,
     {
-      description: 'Send a LogStatusNotification to the OCPP server for charging stations',
-      inputSchema: broadcastInputSchema,
+      description: ocppDescription(
+        'Send a LogStatusNotification',
+        ProcedureName.LOG_STATUS_NOTIFICATION
+      ),
+      inputSchema: ocppInputSchema(ProcedureName.LOG_STATUS_NOTIFICATION),
     },
   ],
   [
     ProcedureName.METER_VALUES,
     {
-      description: 'Send MeterValues to the OCPP server for charging stations',
-      inputSchema: broadcastInputSchema,
+      description: ocppDescription('Send MeterValues', ProcedureName.METER_VALUES),
+      inputSchema: ocppInputSchema(ProcedureName.METER_VALUES),
     },
   ],
   [
     ProcedureName.NOTIFY_CUSTOMER_INFORMATION,
     {
-      description:
-        'Send a NotifyCustomerInformation message to the OCPP server for charging stations',
-      inputSchema: broadcastInputSchema,
+      description: ocppDescription(
+        'Send a NotifyCustomerInformation',
+        ProcedureName.NOTIFY_CUSTOMER_INFORMATION
+      ),
+      inputSchema: ocppInputSchema(ProcedureName.NOTIFY_CUSTOMER_INFORMATION),
     },
   ],
   [
     ProcedureName.NOTIFY_REPORT,
     {
-      description: 'Send a NotifyReport message to the OCPP server for charging stations',
-      inputSchema: broadcastInputSchema,
+      description: ocppDescription('Send a NotifyReport', ProcedureName.NOTIFY_REPORT),
+      inputSchema: ocppInputSchema(ProcedureName.NOTIFY_REPORT),
     },
   ],
   [
@@ -203,8 +300,11 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
   [
     ProcedureName.SECURITY_EVENT_NOTIFICATION,
     {
-      description: 'Send a SecurityEventNotification to the OCPP server for charging stations',
-      inputSchema: broadcastInputSchema,
+      description: ocppDescription(
+        'Send a SecurityEventNotification',
+        ProcedureName.SECURITY_EVENT_NOTIFICATION
+      ),
+      inputSchema: ocppInputSchema(ProcedureName.SECURITY_EVENT_NOTIFICATION),
     },
   ],
   [
@@ -220,8 +320,11 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
   [
     ProcedureName.SIGN_CERTIFICATE,
     {
-      description: 'Send a SignCertificate request to the OCPP server for charging stations',
-      inputSchema: broadcastInputSchema,
+      description: ocppDescription(
+        'Send a SignCertificate request',
+        ProcedureName.SIGN_CERTIFICATE
+      ),
+      inputSchema: ocppInputSchema(ProcedureName.SIGN_CERTIFICATE),
     },
   ],
   [
@@ -256,15 +359,15 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
   [
     ProcedureName.START_TRANSACTION,
     {
-      description: 'Start a charging transaction on one or more charging stations',
-      inputSchema: broadcastInputSchema,
+      description: ocppDescription('Start a charging transaction', ProcedureName.START_TRANSACTION),
+      inputSchema: ocppInputSchema(ProcedureName.START_TRANSACTION),
     },
   ],
   [
     ProcedureName.STATUS_NOTIFICATION,
     {
-      description: 'Send a StatusNotification to the OCPP server for charging stations',
-      inputSchema: broadcastInputSchema,
+      description: ocppDescription('Send a StatusNotification', ProcedureName.STATUS_NOTIFICATION),
+      inputSchema: ocppInputSchema(ProcedureName.STATUS_NOTIFICATION),
     },
   ],
   [
@@ -291,9 +394,13 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
   [
     ProcedureName.STOP_TRANSACTION,
     {
-      description: 'Stop a charging transaction on one or more charging stations',
+      description: ocppDescription('Stop a charging transaction', ProcedureName.STOP_TRANSACTION),
       inputSchema: z.object({
         hashIds,
+        ocpp16Payload: z
+          .record(z.string(), z.unknown())
+          .optional()
+          .describe('OCPP 1.6 StopTransaction payload'),
         transactionId: z.number().int().optional().describe('Transaction ID to stop'),
       }),
     },
@@ -301,9 +408,8 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
   [
     ProcedureName.TRANSACTION_EVENT,
     {
-      description:
-        'Send a TransactionEvent notification to the OCPP server for charging stations (OCPP 2.0.x)',
-      inputSchema: broadcastInputSchema,
+      description: ocppDescription('Send a TransactionEvent', ProcedureName.TRANSACTION_EVENT),
+      inputSchema: ocppInputSchema(ProcedureName.TRANSACTION_EVENT),
     },
   ],
 ])

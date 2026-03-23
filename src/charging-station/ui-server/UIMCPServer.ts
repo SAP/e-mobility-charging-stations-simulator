@@ -3,6 +3,9 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import type { AbstractUIService } from './ui-services/AbstractUIService.js'
 
@@ -20,6 +23,7 @@ import { generateUUID, logger } from '../../utils/index.js'
 import { AbstractUIServer } from './AbstractUIServer.js'
 import {
   mcpToolSchemas,
+  ocppSchemaMapping,
   registerMCPLogTools,
   registerMCPResources,
   registerMCPSchemaResources,
@@ -108,6 +112,8 @@ export class UIMCPServer extends AbstractUIServer {
     registerMCPSchemaResources(mcpServer)
     registerMCPLogTools(mcpServer)
 
+    this.injectOcppJsonSchemas(mcpServer)
+
     this.httpServer.on('request', (req: IncomingMessage, res: ServerResponse) => {
       const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`)
       if (!url.pathname.startsWith('/mcp')) {
@@ -156,6 +162,59 @@ export class UIMCPServer extends AbstractUIServer {
       this.pendingMcpRequests.delete(uuid)
     }
     super.stop()
+  }
+
+  private checkVersionCompatibility (
+    hashIds: string[] | undefined,
+    ocpp16Payload: Record<string, unknown> | undefined,
+    ocpp20Payload: Record<string, unknown> | undefined,
+    procedureName: ProcedureName
+  ): CallToolResult | undefined {
+    if (ocpp16Payload == null && ocpp20Payload == null) {
+      return undefined
+    }
+    const expectedVersion = ocpp16Payload != null ? '1.6' : '2.0'
+    const payloadLabel = ocpp16Payload != null ? 'ocpp16Payload' : 'ocpp20Payload'
+    const alternativeLabel = ocpp16Payload != null ? 'ocpp20Payload' : 'ocpp16Payload'
+    const stationsToCheck =
+      hashIds != null
+        ? hashIds
+          .map(id => {
+            const data = this.getChargingStationData(id)
+            return data != null
+              ? { hashId: id, version: data.stationInfo.ocppVersion }
+              : undefined
+          })
+          .filter(s => s != null)
+        : this.listChargingStationData().map(data => ({
+          hashId: data.stationInfo.hashId,
+          version: data.stationInfo.ocppVersion,
+        }))
+    const mismatched = stationsToCheck.filter(s => {
+      if (expectedVersion === '1.6') {
+        return String(s.version) !== '1.6'
+      }
+      return String(s.version) !== '2.0' && String(s.version) !== '2.0.1'
+    })
+    if (mismatched.length > 0) {
+      const ids = mismatched.map(s => s.hashId).join(', ')
+      const versions = [...new Set(mismatched.map(s => s.version ?? 'unknown'))].join(', ')
+      return {
+        content: [
+          {
+            text: JSON.stringify({
+              error:
+                `Station(s) ${ids} run OCPP ${versions} but received ${payloadLabel} for '${procedureName}'. ` +
+                `Use ${alternativeLabel} instead, or target only compatible stations via hashIds.`,
+              status: 'failure',
+            }),
+            type: 'text',
+          },
+        ],
+        isError: true,
+      }
+    }
+    return undefined
   }
 
   private async handleMcpRequest (
@@ -212,6 +271,52 @@ export class UIMCPServer extends AbstractUIServer {
     }
   }
 
+  private injectOcppJsonSchemas (mcpServer: McpServer): void {
+    const schemaCache = this.loadOcppSchemas()
+    if (schemaCache.size === 0) {
+      return
+    }
+    const handlers = (
+      mcpServer.server as unknown as {
+        _requestHandlers: Map<string, (...args: unknown[]) => Promise<unknown>>
+      }
+    )._requestHandlers
+    if (!(handlers instanceof Map)) {
+      logger.warn(
+        `${this.logPrefix(moduleName, 'injectOcppJsonSchemas')} MCP SDK internal API changed — OCPP schema injection disabled`
+      )
+      return
+    }
+    const originalHandler = handlers.get('tools/list')
+    if (originalHandler == null) {
+      return
+    }
+    handlers.set('tools/list', async (...args: unknown[]) => {
+      const result = (await originalHandler(...args)) as {
+        tools: { inputSchema: { properties: Record<string, unknown> }; name: string }[]
+      }
+      for (const tool of result.tools) {
+        const schemas = schemaCache.get(tool.name)
+        if (schemas == null) {
+          continue
+        }
+        if (schemas.ocpp16 != null && tool.inputSchema.properties.ocpp16Payload != null) {
+          tool.inputSchema.properties.ocpp16Payload = {
+            ...schemas.ocpp16,
+            description: `OCPP 1.6 ${tool.name} request payload`,
+          }
+        }
+        if (schemas.ocpp20 != null && tool.inputSchema.properties.ocpp20Payload != null) {
+          tool.inputSchema.properties.ocpp20Payload = {
+            ...schemas.ocpp20,
+            description: `OCPP 2.0.1 ${tool.name} request payload`,
+          }
+        }
+      }
+      return result
+    })
+  }
+
   private async invokeProcedure (
     procedureName: ProcedureName,
     input: RequestPayload,
@@ -228,6 +333,42 @@ export class UIMCPServer extends AbstractUIServer {
         isError: true,
       }
     }
+
+    const { ocpp16Payload, ocpp20Payload, ...rest } = input as RequestPayload & {
+      ocpp16Payload?: Record<string, unknown>
+      ocpp20Payload?: Record<string, unknown>
+    }
+
+    if (ocpp16Payload != null && ocpp20Payload != null) {
+      return {
+        content: [
+          {
+            text: JSON.stringify({
+              error:
+                'Cannot provide both ocpp16Payload and ocpp20Payload. Use ocpp16Payload for OCPP 1.6 stations or ocpp20Payload for OCPP 2.0 stations.',
+              status: 'failure',
+            }),
+            type: 'text',
+          },
+        ],
+        isError: true,
+      }
+    }
+
+    const versionMismatchError = this.checkVersionCompatibility(
+      rest.hashIds,
+      ocpp16Payload,
+      ocpp20Payload,
+      procedureName
+    )
+    if (versionMismatchError != null) {
+      return versionMismatchError
+    }
+
+    const flatPayload = {
+      ...rest,
+      ...(ocpp16Payload ?? ocpp20Payload),
+    } as RequestPayload
 
     const uuid = generateUUID()
 
@@ -266,7 +407,7 @@ export class UIMCPServer extends AbstractUIServer {
         timeout,
       })
 
-      const request = this.buildProtocolRequest(uuid, procedureName, input)
+      const request = this.buildProtocolRequest(uuid, procedureName, flatPayload)
       service
         .requestHandler(request)
         .then(directResponse => {
@@ -301,6 +442,41 @@ export class UIMCPServer extends AbstractUIServer {
           })
         })
     })
+  }
+
+  private loadOcppSchemas (): Map<string, { ocpp16?: unknown; ocpp20?: unknown }> {
+    const cache = new Map<string, { ocpp16?: unknown; ocpp20?: unknown }>()
+    const currentDir = dirname(fileURLToPath(import.meta.url))
+    const baseDir = join(currentDir, '..', '..', 'assets', 'json-schemas', 'ocpp')
+    for (const [procedureName, mapping] of ocppSchemaMapping) {
+      const entry: { ocpp16?: unknown; ocpp20?: unknown } = {}
+      if (mapping.ocpp16 != null) {
+        try {
+          entry.ocpp16 = JSON.parse(
+            readFileSync(join(baseDir, '1.6', `${mapping.ocpp16}.json`), 'utf8')
+          )
+        } catch {
+          logger.warn(
+            `${this.logPrefix(moduleName, 'loadOcppSchemas')} Failed to load OCPP 1.6 schema for ${procedureName}`
+          )
+        }
+      }
+      if (mapping.ocpp20 != null) {
+        try {
+          entry.ocpp20 = JSON.parse(
+            readFileSync(join(baseDir, '2.0', `${mapping.ocpp20}.json`), 'utf8')
+          )
+        } catch {
+          logger.warn(
+            `${this.logPrefix(moduleName, 'loadOcppSchemas')} Failed to load OCPP 2.0 schema for ${procedureName}`
+          )
+        }
+      }
+      if (entry.ocpp16 != null || entry.ocpp20 != null) {
+        cache.set(procedureName, entry)
+      }
+    }
+    return cache
   }
 
   private readRequestBody (req: IncomingMessage): Promise<unknown> {
