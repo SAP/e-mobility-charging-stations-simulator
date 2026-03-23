@@ -157,7 +157,7 @@ export const registerMCPSchemaResources = (server: McpServer): void => {
           const commands = files
             .filter(f => f.endsWith('.json'))
             .map(f => f.replace('.json', ''))
-            .sort()
+            .sort((a, b) => a.localeCompare(b))
           return {
             contents: [
               {

@@ -252,9 +252,7 @@ export class UIMCPServer extends AbstractUIServer {
     } catch (error: unknown) {
       logger.error(`${this.logPrefix(moduleName, 'handleMcpRequest')} MCP connect error:`, error)
       this.closeTransportSafely(transport)
-      if (!res.headersSent) {
-        res.writeHead(500, { 'Content-Type': 'text/plain' }).end('500 Internal Server Error')
-      }
+      this.sendErrorResponse(res, 500)
       return
     }
 
@@ -277,19 +275,15 @@ export class UIMCPServer extends AbstractUIServer {
         res.on('close', cleanup)
         await transport.handleRequest(req, res)
       } else {
-        res.writeHead(405, { 'Content-Type': 'text/plain' }).end('405 Method Not Allowed')
+        this.sendErrorResponse(res, 405)
         cleanup()
       }
     } catch (error: unknown) {
       logger.error(`${this.logPrefix(moduleName, 'handleMcpRequest')} MCP transport error:`, error)
-      if (!res.headersSent) {
-        const isBadRequest =
-          error instanceof SyntaxError ||
-          (error instanceof Error && error.message.includes('Payload too large'))
-        res
-          .writeHead(isBadRequest ? 400 : 500, { 'Content-Type': 'text/plain' })
-          .end(isBadRequest ? '400 Bad Request' : '500 Internal Server Error')
-      }
+      const isBadRequest =
+        error instanceof SyntaxError ||
+        (error instanceof Error && error.message.includes('Payload too large'))
+      this.sendErrorResponse(res, isBadRequest ? 400 : 500)
     }
   }
 
@@ -472,5 +466,17 @@ export class UIMCPServer extends AbstractUIServer {
       chunks.push(chunk as Buffer)
     }
     return JSON.parse(Buffer.concat(chunks).toString('utf8'))
+  }
+
+  private sendErrorResponse (res: ServerResponse, statusCode: number): void {
+    if (res.headersSent) return
+    const messages: Record<number, string> = {
+      400: '400 Bad Request',
+      405: '405 Method Not Allowed',
+      500: '500 Internal Server Error',
+    }
+    res
+      .writeHead(statusCode, { 'Content-Type': 'text/plain' })
+      .end(messages[statusCode] ?? `${statusCode.toString()} Error`)
   }
 }
