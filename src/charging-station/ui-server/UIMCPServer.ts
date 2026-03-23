@@ -442,10 +442,8 @@ export class UIMCPServer extends AbstractUIServer {
     return new Promise((resolve, reject) => {
       const chunks: Buffer[] = []
       const checkBodySize = createBodySizeLimiter(DEFAULT_MAX_PAYLOAD_SIZE)
-      let totalSize = 0
       req.on('data', (chunk: Buffer) => {
-        totalSize += chunk.length
-        if (!checkBodySize(totalSize)) {
+        if (!checkBodySize(chunk.length)) {
           reject(new BaseError('Payload too large'))
           req.destroy()
           return
