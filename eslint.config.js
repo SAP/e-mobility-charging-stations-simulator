@@ -95,6 +95,7 @@ export default defineConfig([
               // UI server protocol acronyms
               'UIMCP',
               'Streamable',
+              'modelcontextprotocol',
             ],
           },
         },

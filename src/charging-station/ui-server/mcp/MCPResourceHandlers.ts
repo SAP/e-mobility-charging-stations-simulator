@@ -122,11 +122,7 @@ const getSchemaBaseDir = (): string => {
   return join(currentDir, '..', '..', '..', 'assets', 'json-schemas', 'ocpp')
 }
 
-/**
- * Validate that a resolved path stays within the expected base directory (path traversal guard).
- * @param candidatePath
- * @param baseDir
- */
+// Path traversal guard: validate that the resolved path stays within the expected base directory.
 const isPathWithinBase = (candidatePath: string, baseDir: string): boolean => {
   const resolvedBase = resolve(baseDir)
   const resolvedCandidate = resolve(candidatePath)

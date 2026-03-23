@@ -3,8 +3,10 @@
  * @description HTTP integration tests verifying MCP endpoint responds correctly
  */
 
+import type { AddressInfo } from 'node:net'
+
 import assert from 'node:assert/strict'
-import { request as httpRequest } from 'node:http'
+import { request as httpRequest, type Server } from 'node:http'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import { UIMCPServer } from '../../../src/charging-station/ui-server/UIMCPServer.js'
@@ -12,8 +14,6 @@ import { HttpMethod } from '../../../src/charging-station/ui-server/UIServerUtil
 import { ApplicationProtocol } from '../../../src/types/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 import { createMockUIServerConfiguration } from './UIServerTestUtils.js'
-
-const TEST_PORT = 18999
 
 /**
  * Parse SSE events from raw response body.
@@ -76,15 +76,25 @@ const makeMcpPost = (port: number, body: object): Promise<{ events: object[]; st
 
 await describe('UIMCPServer HTTP Integration', async () => {
   let server: UIMCPServer
+  let testPort: number
 
-  beforeEach(() => {
+  beforeEach(async () => {
     server = new UIMCPServer(
       createMockUIServerConfiguration({
-        options: { host: 'localhost', port: TEST_PORT },
+        options: { host: 'localhost', port: 0 },
         type: ApplicationProtocol.MCP,
       })
     )
     server.start()
+    const httpServer = Reflect.get(server, 'httpServer') as Server
+    await new Promise<void>(resolve => {
+      if (httpServer.listening) {
+        resolve()
+      } else {
+        httpServer.on('listening', resolve)
+      }
+    })
+    testPort = (httpServer.address() as AddressInfo).port
   })
 
   afterEach(async () => {
@@ -96,11 +106,7 @@ await describe('UIMCPServer HTTP Integration', async () => {
   })
 
   await it('should respond to MCP initialize request with serverInfo and capabilities', async () => {
-    await new Promise(resolve => {
-      setTimeout(resolve, 100)
-    })
-
-    const response = await makeMcpPost(TEST_PORT, {
+    const response = await makeMcpPost(testPort, {
       id: '1',
       jsonrpc: '2.0',
       method: 'initialize',

@@ -144,6 +144,7 @@ export class UIMCPServer extends AbstractUIServer {
       }
 
       let authError: Error | undefined
+      // authenticate() is synchronous — authError is set before the if-check
       this.authenticate(req, err => {
         authError = err
       })
@@ -169,10 +170,10 @@ export class UIMCPServer extends AbstractUIServer {
   }
 
   public override stop (): void {
-    for (const [uuid, pending] of this.pendingMcpRequests) {
+    for (const [uuid, pending] of [...this.pendingMcpRequests]) {
       clearTimeout(pending.timeout)
-      pending.reject(new BaseError('Server stopping'))
       this.pendingMcpRequests.delete(uuid)
+      pending.reject(new BaseError('Server stopping'))
     }
     super.stop()
   }
@@ -229,6 +230,9 @@ export class UIMCPServer extends AbstractUIServer {
     })
   }
 
+  // SDK stateless examples create a new McpServer per request. We reuse a single instance
+  // to avoid re-registering 33+ tools/resources on every HTTP request. This works because
+  // tool/resource handlers are stateless and transport lifecycle is managed per-request.
   private async handleMcpRequest (
     mcpServer: McpServer,
     req: IncomingMessage,
