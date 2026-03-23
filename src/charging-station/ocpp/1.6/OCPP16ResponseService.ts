@@ -26,6 +26,7 @@ import {
   OCPP16StandardParametersKey,
   type OCPP16StartTransactionRequest,
   type OCPP16StartTransactionResponse,
+  type OCPP16StatusNotificationRequest,
   type OCPP16StopTransactionRequest,
   type OCPP16StopTransactionResponse,
   OCPPVersion,
@@ -423,11 +424,10 @@ export class OCPP16ResponseService extends OCPPResponseService {
           meterValue: [connectorStatus.transactionBeginMeterValue],
           transactionId: payload.transactionId,
         } satisfies OCPP16MeterValuesRequest))
-      await OCPP16ServiceUtils.sendAndSetConnectorStatus(
-        chargingStation,
+      await OCPP16ServiceUtils.sendAndSetConnectorStatus(chargingStation, {
         connectorId,
-        OCPP16ChargePointStatus.Charging
-      )
+        status: OCPP16ChargePointStatus.Charging,
+      } as OCPP16StatusNotificationRequest)
       logger.info(
         `${chargingStation.logPrefix()} ${moduleName}.handleResponseStartTransaction: Transaction with id ${payload.transactionId.toString()} STARTED on ${
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
@@ -502,17 +502,15 @@ export class OCPP16ResponseService extends OCPPResponseService {
       !chargingStation.isChargingStationAvailable() ||
       !chargingStation.isConnectorAvailable(transactionConnectorId)
     ) {
-      await OCPP16ServiceUtils.sendAndSetConnectorStatus(
-        chargingStation,
-        transactionConnectorId,
-        OCPP16ChargePointStatus.Unavailable
-      )
+      await OCPP16ServiceUtils.sendAndSetConnectorStatus(chargingStation, {
+        connectorId: transactionConnectorId,
+        status: OCPP16ChargePointStatus.Unavailable,
+      } as OCPP16StatusNotificationRequest)
     } else {
-      await OCPP16ServiceUtils.sendAndSetConnectorStatus(
-        chargingStation,
-        transactionConnectorId,
-        OCPP16ChargePointStatus.Available
-      )
+      await OCPP16ServiceUtils.sendAndSetConnectorStatus(chargingStation, {
+        connectorId: transactionConnectorId,
+        status: OCPP16ChargePointStatus.Available,
+      } as OCPP16StatusNotificationRequest)
     }
     if (chargingStation.stationInfo?.powerSharedByConnectors === true) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

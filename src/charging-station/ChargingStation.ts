@@ -52,6 +52,7 @@ import {
   type Response,
   StandardParametersKey,
   type Status,
+  type StatusNotificationRequest,
   type StopTransactionReason,
   SupervisionUrlDistribution,
   SupportedFeatureProfiles,
@@ -302,9 +303,10 @@ export class ChargingStation extends EventEmitter {
     connectorStatus.reservation = reservation
     await sendAndSetConnectorStatus(
       this,
-      reservation.connectorId,
-      ConnectorStatusEnum.Reserved,
-      undefined,
+      {
+        connectorId: reservation.connectorId,
+        status: ConnectorStatusEnum.Reserved,
+      } as unknown as StatusNotificationRequest,
       { send: reservation.connectorId !== 0 }
     )
   }
@@ -850,9 +852,10 @@ export class ChargingStation extends EventEmitter {
       case ReservationTerminationReason.RESERVATION_CANCELED:
         await sendAndSetConnectorStatus(
           this,
-          reservation.connectorId,
-          ConnectorStatusEnum.Available,
-          undefined,
+          {
+            connectorId: reservation.connectorId,
+            status: ConnectorStatusEnum.Available,
+          } as unknown as StatusNotificationRequest,
           { send: reservation.connectorId !== 0 }
         )
         delete connector.reservation
@@ -2415,12 +2418,11 @@ export class ChargingStation extends EventEmitter {
       for (const [evseId, evseStatus] of this.evses) {
         if (evseId > 0) {
           for (const [connectorId, connectorStatus] of evseStatus.connectors) {
-            await sendAndSetConnectorStatus(
-              this,
+            await sendAndSetConnectorStatus(this, {
               connectorId,
-              getBootConnectorStatus(this, connectorId, connectorStatus),
-              evseId
-            )
+              evseId,
+              status: getBootConnectorStatus(this, connectorId, connectorStatus),
+            } as unknown as StatusNotificationRequest)
           }
         }
       }
@@ -2434,11 +2436,10 @@ export class ChargingStation extends EventEmitter {
             )
             continue
           }
-          await sendAndSetConnectorStatus(
-            this,
+          await sendAndSetConnectorStatus(this, {
             connectorId,
-            getBootConnectorStatus(this, connectorId, connectorStatus)
-          )
+            status: getBootConnectorStatus(this, connectorId, connectorStatus),
+          } as unknown as StatusNotificationRequest)
         }
       }
     }
@@ -2506,12 +2507,11 @@ export class ChargingStation extends EventEmitter {
       for (const [evseId, evseStatus] of this.evses) {
         if (evseId > 0) {
           for (const [connectorId, connectorStatus] of evseStatus.connectors) {
-            await sendAndSetConnectorStatus(
-              this,
+            await sendAndSetConnectorStatus(this, {
               connectorId,
-              ConnectorStatusEnum.Unavailable,
-              evseId
-            )
+              evseId,
+              status: ConnectorStatusEnum.Unavailable,
+            } as unknown as StatusNotificationRequest)
             delete connectorStatus.status
           }
         }
@@ -2519,7 +2519,10 @@ export class ChargingStation extends EventEmitter {
     } else {
       for (const connectorId of this.connectors.keys()) {
         if (connectorId > 0) {
-          await sendAndSetConnectorStatus(this, connectorId, ConnectorStatusEnum.Unavailable)
+          await sendAndSetConnectorStatus(this, {
+            connectorId,
+            status: ConnectorStatusEnum.Unavailable,
+          } as unknown as StatusNotificationRequest)
           delete this.getConnectorStatus(connectorId)?.status
         }
       }

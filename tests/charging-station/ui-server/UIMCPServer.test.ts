@@ -7,8 +7,10 @@ import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import type { IncomingMessage } from 'node:http'
 
 import assert from 'node:assert/strict'
+import { dirname, join } from 'node:path'
 import { Readable } from 'node:stream'
 import { afterEach, beforeEach, describe, it } from 'node:test'
+import { fileURLToPath } from 'node:url'
 
 import type { ProtocolResponse, RequestPayload, ResponsePayload } from '../../../src/types/index.js'
 
@@ -121,6 +123,19 @@ class TestableUIMCPServer extends UIMCPServer {
 
   public getPendingMcpRequestsSize (): number {
     return (Reflect.get(this, 'pendingMcpRequests') as Map<string, unknown>).size
+  }
+
+  protected override getSchemaBaseDir (): string {
+    return join(
+      dirname(fileURLToPath(import.meta.url)),
+      '..',
+      '..',
+      '..',
+      'src',
+      'assets',
+      'json-schemas',
+      'ocpp'
+    )
   }
 }
 

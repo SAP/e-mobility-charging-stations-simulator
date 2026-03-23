@@ -516,7 +516,7 @@ await describe('F06 - TriggerMessage', async () => {
         assert.notStrictEqual(payload, undefined)
         assert.ok('evseId' in payload, 'Expected payload to include evseId')
         assert.ok('connectorId' in payload, 'Expected payload to include connectorId')
-        assert.ok('status' in payload, 'Expected payload to include status')
+        assert.ok('connectorStatus' in payload, 'Expected payload to include connectorStatus')
         assert.ok(
           payload.evseId != null && payload.evseId > 0,
           'Expected evseId > 0 (EVSE 0 excluded)'
@@ -553,7 +553,7 @@ await describe('F06 - TriggerMessage', async () => {
       assert.strictEqual(command, OCPP20RequestCommand.STATUS_NOTIFICATION)
       assert.strictEqual(payload.evseId, 1)
       assert.strictEqual(payload.connectorId, 1)
-      assert.ok('status' in payload)
+      assert.ok('connectorStatus' in payload)
       assert.strictEqual(options.skipBufferingOnError, true)
       assert.strictEqual(options.triggerMessage, true)
     })

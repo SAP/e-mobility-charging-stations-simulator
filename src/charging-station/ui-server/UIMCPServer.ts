@@ -158,6 +158,10 @@ export class UIMCPServer extends AbstractUIServer {
     super.stop()
   }
 
+  protected getSchemaBaseDir (): string {
+    return join(dirname(fileURLToPath(import.meta.url)), 'assets', 'json-schemas', 'ocpp')
+  }
+
   private checkVersionCompatibility (
     hashIds: string[] | undefined,
     ocpp16Payload: Record<string, unknown> | undefined,
@@ -420,8 +424,7 @@ export class UIMCPServer extends AbstractUIServer {
 
   private loadOcppSchemas (): Map<string, { ocpp16?: unknown; ocpp20?: unknown }> {
     const cache = new Map<string, { ocpp16?: unknown; ocpp20?: unknown }>()
-    const currentDir = dirname(fileURLToPath(import.meta.url))
-    const baseDir = join(currentDir, 'assets', 'json-schemas', 'ocpp')
+    const baseDir = this.getSchemaBaseDir()
     for (const [procedureName, mapping] of ocppSchemaMapping) {
       const entry: { ocpp16?: unknown; ocpp20?: unknown } = {}
       if (mapping.ocpp16 != null) {

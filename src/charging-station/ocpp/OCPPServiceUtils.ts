@@ -36,7 +36,6 @@ import {
   MeterValueMeasurand,
   MeterValuePhase,
   MeterValueUnit,
-  type OCPP16ChargePointStatus,
   type OCPP16MeterValue,
   type OCPP16SampledValue,
   type OCPP16StatusNotificationRequest,
@@ -47,6 +46,7 @@ import {
   type OCPP20MeterValue,
   OCPP20ReasonEnumType,
   type OCPP20SampledValue,
+  type OCPP20StatusNotificationRequest,
   OCPP20TransactionEventEnumType,
   OCPP20TriggerReasonEnumType,
   OCPPVersion,
@@ -111,19 +111,23 @@ export const getMessageTypeString = (messageType: MessageType | undefined): stri
 
 export const buildStatusNotificationRequest = (
   chargingStation: ChargingStation,
-  connectorId: number,
-  status: ConnectorStatusEnum,
-  evseId?: number
+  commandParams: StatusNotificationRequest
 ): StatusNotificationRequest => {
   switch (chargingStation.stationInfo?.ocppVersion) {
-    case OCPPVersion.VERSION_16:
+    case OCPPVersion.VERSION_16: {
+      const params = commandParams as OCPP16StatusNotificationRequest
       return {
-        connectorId,
+        connectorId: params.connectorId,
         errorCode: ChargePointErrorCode.NO_ERROR,
-        status: status as OCPP16ChargePointStatus,
+        status: params.status,
       } satisfies OCPP16StatusNotificationRequest
+    }
     case OCPPVersion.VERSION_20:
     case OCPPVersion.VERSION_201: {
+      const params = commandParams as Record<string, unknown>
+      const connectorId = params.connectorId as number
+      const connectorStatus = (params.connectorStatus ?? params.status) as ConnectorStatusEnum
+      const evseId = params.evseId as number | undefined
       const resolvedEvseId = evseId ?? chargingStation.getEvseIdByConnectorId(connectorId)
       if (resolvedEvseId === undefined) {
         throw new OCPPError(
@@ -134,10 +138,10 @@ export const buildStatusNotificationRequest = (
       }
       return {
         connectorId,
-        connectorStatus: status as OCPP20ConnectorStatusEnumType,
+        connectorStatus: connectorStatus as OCPP20ConnectorStatusEnumType,
         evseId: resolvedEvseId,
         timestamp: new Date(),
-      } satisfies StatusNotificationRequest
+      } satisfies OCPP20StatusNotificationRequest
     }
     default:
       throw new OCPPError(
@@ -303,12 +307,13 @@ const isIdTagRemoteAuthorized = async (
 
 export const sendAndSetConnectorStatus = async (
   chargingStation: ChargingStation,
-  connectorId: number,
-  status: ConnectorStatusEnum,
-  evseId?: number,
+  commandParams: StatusNotificationRequest,
   options?: { send: boolean }
 ): Promise<void> => {
   options = { send: true, ...options }
+  const params = commandParams as Record<string, unknown>
+  const connectorId = params.connectorId as number
+  const status = (params.connectorStatus ?? params.status) as ConnectorStatusEnum
   const connectorStatus = chargingStation.getConnectorStatus(connectorId)
   if (connectorStatus == null) {
     return
@@ -318,11 +323,7 @@ export const sendAndSetConnectorStatus = async (
     await chargingStation.ocppRequestService.requestHandler<
       StatusNotificationRequest,
       StatusNotificationResponse
-    >(chargingStation, RequestCommand.STATUS_NOTIFICATION, {
-      connectorId,
-      evseId,
-      status,
-    } as unknown as StatusNotificationRequest)
+    >(chargingStation, RequestCommand.STATUS_NOTIFICATION, commandParams)
   }
   connectorStatus.status = status
   chargingStation.emitChargingStationEvent(ChargingStationEvents.connectorStatusChanged, {
@@ -340,9 +341,15 @@ export const restoreConnectorStatus = async (
     connectorStatus?.reservation != null &&
     connectorStatus.status !== ConnectorStatusEnum.Reserved
   ) {
-    await sendAndSetConnectorStatus(chargingStation, connectorId, ConnectorStatusEnum.Reserved)
+    await sendAndSetConnectorStatus(chargingStation, {
+      connectorId,
+      status: ConnectorStatusEnum.Reserved,
+    } as unknown as StatusNotificationRequest)
   } else if (connectorStatus?.status !== ConnectorStatusEnum.Available) {
-    await sendAndSetConnectorStatus(chargingStation, connectorId, ConnectorStatusEnum.Available)
+    await sendAndSetConnectorStatus(chargingStation, {
+      connectorId,
+      status: ConnectorStatusEnum.Available,
+    } as unknown as StatusNotificationRequest)
   }
 }
 

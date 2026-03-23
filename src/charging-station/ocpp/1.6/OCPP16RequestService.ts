@@ -5,7 +5,6 @@ import type { OCPPResponseService } from '../OCPPResponseService.js'
 
 import { OCPPError } from '../../../exception/index.js'
 import {
-  type ConnectorStatusEnum,
   ErrorType,
   type JsonObject,
   type JsonType,
@@ -13,6 +12,7 @@ import {
   type OCPP16MeterValue,
   OCPP16RequestCommand,
   type OCPP16StartTransactionRequest,
+  type OCPP16StatusNotificationRequest,
   OCPPVersion,
   type RequestParams,
 } from '../../../types/index.js'
@@ -110,11 +110,10 @@ export class OCPP16RequestService extends OCPPRequestService {
         // Pre request actions hook
         switch (commandName) {
           case OCPP16RequestCommand.START_TRANSACTION:
-            await OCPP16ServiceUtils.sendAndSetConnectorStatus(
-              chargingStation,
-              (commandParams as OCPP16StartTransactionRequest).connectorId,
-              OCPP16ChargePointStatus.Preparing
-            )
+            await OCPP16ServiceUtils.sendAndSetConnectorStatus(chargingStation, {
+              connectorId: (commandParams as OCPP16StartTransactionRequest).connectorId,
+              status: OCPP16ChargePointStatus.Preparing,
+            } as OCPP16StatusNotificationRequest)
             break
         }
         const response = (await this.sendMessage(
@@ -213,9 +212,7 @@ export class OCPP16RequestService extends OCPPRequestService {
       case OCPP16RequestCommand.STATUS_NOTIFICATION:
         return buildStatusNotificationRequest(
           chargingStation,
-          commandParams.connectorId as number,
-          commandParams.status as ConnectorStatusEnum,
-          commandParams.evseId as number | undefined
+          commandParams as unknown as OCPP16StatusNotificationRequest
         ) as unknown as Request
       case OCPP16RequestCommand.STOP_TRANSACTION:
         chargingStation.stationInfo?.transactionDataMeterValues === true &&

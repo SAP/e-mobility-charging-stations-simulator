@@ -61,8 +61,8 @@ await describe('OCPP 2.0 Request Call Chain — requestHandler → buildRequestP
     await it('should build complete StatusNotificationRequest from connectorId + status', async () => {
       await service.requestHandler(station, OCPP20RequestCommand.STATUS_NOTIFICATION, {
         connectorId: 1,
+        connectorStatus: ConnectorStatusEnum.Available,
         evseId: 1,
-        status: ConnectorStatusEnum.Available,
       })
 
       assert.strictEqual(sendMessageMock.mock.calls.length, 1)
@@ -77,7 +77,7 @@ await describe('OCPP 2.0 Request Call Chain — requestHandler → buildRequestP
     await it('should resolve evseId from station when not provided', async () => {
       await service.requestHandler(station, OCPP20RequestCommand.STATUS_NOTIFICATION, {
         connectorId: 1,
-        status: ConnectorStatusEnum.Occupied,
+        connectorStatus: ConnectorStatusEnum.Occupied,
       })
 
       assert.strictEqual(sendMessageMock.mock.calls.length, 1)
