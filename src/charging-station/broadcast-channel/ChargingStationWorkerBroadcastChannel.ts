@@ -471,65 +471,68 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     requestPayload?: BroadcastChannelRequestPayload
   ): Promise<MeterValuesResponse> {
     const connectorId = requestPayload?.connectorId
-    if (
-      this.chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_20 ||
-      this.chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_201
-    ) {
-      const alignedDataInterval = OCPP20ServiceUtils.getAlignedDataInterval(this.chargingStation)
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const evseId = this.chargingStation.getEvseIdByConnectorId(connectorId!)
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const transactionId = this.chargingStation.getConnectorStatus(connectorId!)?.transactionId
-      return await this.chargingStation.ocppRequestService.requestHandler<
-        MeterValuesRequest,
-        MeterValuesResponse
-      >(
-        this.chargingStation,
-        RequestCommand.METER_VALUES,
-        {
-          evseId,
-          meterValue: [
-            buildMeterValue(
-              this.chargingStation,
-              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-              connectorId!,
-              transactionId,
-              alignedDataInterval
-            ),
-          ],
-          ...requestPayload,
-        } as MeterValuesRequest,
-        this.requestParams
-      )
+    switch (this.chargingStation.stationInfo?.ocppVersion) {
+      case OCPPVersion.VERSION_16: {
+        const configuredMeterValueSampleInterval = getConfigurationKey(
+          this.chargingStation,
+          StandardParametersKey.MeterValueSampleInterval
+        )
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const transactionId = this.chargingStation.getConnectorStatus(connectorId!)?.transactionId
+        return await this.chargingStation.ocppRequestService.requestHandler<
+          MeterValuesRequest,
+          MeterValuesResponse
+        >(
+          this.chargingStation,
+          RequestCommand.METER_VALUES,
+          {
+            meterValue: [
+              buildMeterValue(
+                this.chargingStation,
+                convertToInt(transactionId),
+                configuredMeterValueSampleInterval != null
+                  ? secondsToMilliseconds(convertToInt(configuredMeterValueSampleInterval.value))
+                  : Constants.DEFAULT_METER_VALUES_INTERVAL
+              ),
+            ],
+            ...requestPayload,
+          } as MeterValuesRequest,
+          this.requestParams
+        )
+      }
+      case OCPPVersion.VERSION_20:
+      case OCPPVersion.VERSION_201: {
+        const alignedDataInterval = OCPP20ServiceUtils.getAlignedDataInterval(this.chargingStation)
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const evseId = this.chargingStation.getEvseIdByConnectorId(connectorId!)
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const transactionId = this.chargingStation.getConnectorStatus(connectorId!)?.transactionId
+        return await this.chargingStation.ocppRequestService.requestHandler<
+          MeterValuesRequest,
+          MeterValuesResponse
+        >(
+          this.chargingStation,
+          RequestCommand.METER_VALUES,
+          {
+            evseId,
+            meterValue: [
+              buildMeterValue(
+                this.chargingStation,
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                transactionId!,
+                alignedDataInterval
+              ),
+            ],
+            ...requestPayload,
+          } as MeterValuesRequest,
+          this.requestParams
+        )
+      }
+      default:
+        throw new BaseError(
+          `${this.chargingStation.logPrefix()} ${moduleName}.handleMeterValues: Unsupported OCPP version for MeterValues`
+        )
     }
-    const configuredMeterValueSampleInterval = getConfigurationKey(
-      this.chargingStation,
-      StandardParametersKey.MeterValueSampleInterval
-    )
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const transactionId = this.chargingStation.getConnectorStatus(connectorId!)?.transactionId
-    return await this.chargingStation.ocppRequestService.requestHandler<
-      MeterValuesRequest,
-      MeterValuesResponse
-    >(
-      this.chargingStation,
-      RequestCommand.METER_VALUES,
-      {
-        meterValue: [
-          buildMeterValue(
-            this.chargingStation,
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            connectorId!,
-            convertToInt(transactionId),
-            configuredMeterValueSampleInterval != null
-              ? secondsToMilliseconds(convertToInt(configuredMeterValueSampleInterval.value))
-              : Constants.DEFAULT_METER_VALUES_INTERVAL
-          ),
-        ],
-        ...requestPayload,
-      } as MeterValuesRequest,
-      this.requestParams
-    )
   }
 
   private async handleNotifyCustomerInformation (

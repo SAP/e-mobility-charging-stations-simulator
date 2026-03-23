@@ -516,7 +516,6 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
                 const txUpdatedInterval = OCPP20ServiceUtils.getTxUpdatedInterval(chargingStation)
                 const meterValue = buildMeterValue(
                   chargingStation,
-                  cId,
                   connector.transactionId,
                   txUpdatedInterval
                 ) as OCPP20MeterValue
@@ -531,27 +530,16 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
               }
             }
             if (!hasSentTransactionEvent) {
-              const fallbackEvseId = evse?.id ?? 0
-              let meterValue: OCPP20MeterValue
-              try {
-                meterValue = buildMeterValue(
-                  chargingStation,
-                  fallbackEvseId > 0 ? fallbackEvseId : 1,
-                  undefined,
-                  OCPP20ServiceUtils.getTxUpdatedInterval(chargingStation)
-                ) as OCPP20MeterValue
-              } catch {
-                meterValue = {
-                  sampledValue: [{ value: 0 }],
-                  timestamp: new Date(),
-                }
+              const meterValue: OCPP20MeterValue = {
+                sampledValue: [{ value: 0 }],
+                timestamp: new Date(),
               }
               chargingStation.ocppRequestService
                 .requestHandler<OCPP20MeterValuesRequest, OCPP20MeterValuesResponse>(
                   chargingStation,
                   OCPP20RequestCommand.METER_VALUES,
                   {
-                    evseId: fallbackEvseId,
+                    evseId: evse?.id ?? 1,
                     meterValue: [meterValue],
                   },
                   { skipBufferingOnError: true, triggerMessage: true }

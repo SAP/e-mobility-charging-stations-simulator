@@ -437,7 +437,6 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                       meterValue: [
                         buildMeterValue(
                           chargingStation,
-                          connectorId,
                           convertToInt(connectorStatus.transactionId),
                           0
                         ) as OCPP16MeterValue,
@@ -463,7 +462,6 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                         meterValue: [
                           buildMeterValue(
                             chargingStation,
-                            id,
                             convertToInt(cs.transactionId),
                             0
                           ) as OCPP16MeterValue,

@@ -618,7 +618,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     }
     connectorStatus.transactionMeterValuesSetInterval = setInterval(() => {
       const transactionId = convertToInt(connectorStatus.transactionId)
-      const meterValue = buildMeterValue(chargingStation, connectorId, transactionId, interval)
+      const meterValue = buildMeterValue(chargingStation, transactionId, interval)
       chargingStation.ocppRequestService
         .requestHandler<MeterValuesRequest, MeterValuesResponse>(
           chargingStation,
