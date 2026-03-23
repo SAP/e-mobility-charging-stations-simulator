@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url'
 import type { AbstractUIService } from './ui-services/AbstractUIService.js'
 
 import {
+  OCPPVersion,
   type ProcedureName,
   type ProtocolRequest,
   type ProtocolResponse,
@@ -173,7 +174,7 @@ export class UIMCPServer extends AbstractUIServer {
     if (ocpp16Payload == null && ocpp20Payload == null) {
       return undefined
     }
-    const expectedVersion = ocpp16Payload != null ? '1.6' : '2.0'
+    const expectedVersion = ocpp16Payload != null ? OCPPVersion.VERSION_16 : OCPPVersion.VERSION_20
     const payloadLabel = ocpp16Payload != null ? 'ocpp16Payload' : 'ocpp20Payload'
     const alternativeLabel = ocpp16Payload != null ? 'ocpp20Payload' : 'ocpp16Payload'
     const stationsToCheck =
@@ -191,10 +192,10 @@ export class UIMCPServer extends AbstractUIServer {
           version: data.stationInfo.ocppVersion,
         }))
     const mismatched = stationsToCheck.filter(s => {
-      if (expectedVersion === '1.6') {
-        return String(s.version) !== '1.6'
+      if (expectedVersion === OCPPVersion.VERSION_16) {
+        return s.version !== OCPPVersion.VERSION_16
       }
-      return String(s.version) !== '2.0' && String(s.version) !== '2.0.1'
+      return s.version !== OCPPVersion.VERSION_20 && s.version !== OCPPVersion.VERSION_201
     })
     if (mismatched.length > 0) {
       const ids = mismatched.map(s => s.hashId).join(', ')
@@ -453,7 +454,7 @@ export class UIMCPServer extends AbstractUIServer {
       if (mapping.ocpp16 != null) {
         try {
           entry.ocpp16 = JSON.parse(
-            readFileSync(join(baseDir, '1.6', `${mapping.ocpp16}.json`), 'utf8')
+            readFileSync(join(baseDir, OCPPVersion.VERSION_16, `${mapping.ocpp16}.json`), 'utf8')
           )
         } catch {
           logger.warn(
@@ -464,7 +465,7 @@ export class UIMCPServer extends AbstractUIServer {
       if (mapping.ocpp20 != null) {
         try {
           entry.ocpp20 = JSON.parse(
-            readFileSync(join(baseDir, '2.0', `${mapping.ocpp20}.json`), 'utf8')
+            readFileSync(join(baseDir, OCPPVersion.VERSION_20, `${mapping.ocpp20}.json`), 'utf8')
           )
         } catch {
           logger.warn(

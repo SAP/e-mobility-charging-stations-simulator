@@ -6,7 +6,7 @@ import { z } from 'zod'
 
 import type { AbstractUIServer } from '../AbstractUIServer.js'
 
-import { ConfigurationSection, type LogConfiguration } from '../../../types/index.js'
+import { ConfigurationSection, type LogConfiguration, OCPPVersion } from '../../../types/index.js'
 import { Configuration } from '../../../utils/Configuration.js'
 
 const MAX_TAIL_LINES = 5000
@@ -112,7 +112,7 @@ export const registerMCPResources = (server: McpServer, uiServer: AbstractUIServ
   )
 }
 
-const OCPP_SCHEMA_VERSIONS = ['1.6', '2.0'] as const
+const OCPP_SCHEMA_VERSIONS = [OCPPVersion.VERSION_16, OCPPVersion.VERSION_20] as const
 
 const getSchemaBaseDir = (): string => {
   const currentDir = dirname(fileURLToPath(import.meta.url))
