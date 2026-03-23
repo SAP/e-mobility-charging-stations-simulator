@@ -16,6 +16,7 @@ await build({
   entryPoints: ['./src/start.ts', './src/charging-station/ChargingStationWorker.ts'],
   external: [
     '@mikro-orm/*',
+    '@modelcontextprotocol/*',
     'ajv',
     'ajv-formats',
     'basic-ftp',
@@ -33,6 +34,7 @@ await build({
     'winston/*',
     'winston-daily-rotate-file',
     'ws',
+    'zod',
   ],
   format: 'esm',
   minify: true,
