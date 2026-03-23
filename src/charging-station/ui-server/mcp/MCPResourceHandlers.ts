@@ -85,7 +85,7 @@ export const registerMCPResources = (server: McpServer, uiServer: AbstractUIServ
             text:
               data != null
                 ? JSON.stringify(data, null, 2)
-                : JSON.stringify({ error: `Station '${String(hashId)}' not found` }),
+                : JSON.stringify({ error: `Station '${hashId as string}' not found` }),
             uri: uri.href,
           },
         ],
@@ -172,8 +172,10 @@ export const registerMCPSchemaResources = (server: McpServer): void => {
     },
     async (uri, { command, version }) => {
       try {
-        const schemaDir = join(getSchemaBaseDir(), String(version))
-        const schemaPath = join(schemaDir, `${String(command)}.json`)
+        const versionStr = version as string
+        const commandStr = command as string
+        const schemaDir = join(getSchemaBaseDir(), versionStr)
+        const schemaPath = join(schemaDir, `${commandStr}.json`)
         const content = await readFile(schemaPath, 'utf8')
         return {
           contents: [
@@ -190,7 +192,7 @@ export const registerMCPSchemaResources = (server: McpServer): void => {
             {
               mimeType: 'application/json',
               text: JSON.stringify({
-                error: `Schema '${String(command)}' not found for OCPP ${String(version)}`,
+                error: `Schema '${command as string}' not found for OCPP ${version as string}`,
               }),
               uri: uri.href,
             },
@@ -201,13 +203,18 @@ export const registerMCPSchemaResources = (server: McpServer): void => {
   )
 }
 
-export const registerMCPLogTools = (server: McpServer): void => {
+const registerLogReadTool = (
+  server: McpServer,
+  name: string,
+  configField: 'errorFile' | 'file',
+  description: string
+): void => {
+  const label = configField === 'file' ? 'Log' : 'Error log'
   server.registerTool(
-    'readCombinedLog',
+    name,
     {
       annotations: { readOnlyHint: true },
-      description:
-        'Read recent entries from the combined simulator log file. Returns the last N lines (default 200, max 5000).',
+      description,
       inputSchema: {
         tail: z
           .number()
@@ -220,10 +227,10 @@ export const registerMCPLogTools = (server: McpServer): void => {
     },
     async ({ tail }) => {
       try {
-        const logPath = getLogFilePath('file')
+        const logPath = getLogFilePath(configField)
         if (logPath == null) {
           return {
-            content: [{ text: 'Log file not configured', type: 'text' as const }],
+            content: [{ text: `${label} file not configured`, type: 'text' as const }],
             isError: true,
           }
         }
@@ -237,52 +244,25 @@ export const registerMCPLogTools = (server: McpServer): void => {
         }
       } catch {
         return {
-          content: [{ text: 'Log file not available', type: 'text' as const }],
+          content: [{ text: `${label} file not available`, type: 'text' as const }],
           isError: true,
         }
       }
     }
   )
+}
 
-  server.registerTool(
+export const registerMCPLogTools = (server: McpServer): void => {
+  registerLogReadTool(
+    server,
+    'readCombinedLog',
+    'file',
+    'Read recent entries from the combined simulator log file. Returns the last N lines (default 200, max 5000).'
+  )
+  registerLogReadTool(
+    server,
     'readErrorLog',
-    {
-      annotations: { readOnlyHint: true },
-      description:
-        'Read recent entries from the error log file. Returns the last N lines (default 200, max 5000).',
-      inputSchema: {
-        tail: z
-          .number()
-          .int()
-          .positive()
-          .max(MAX_TAIL_LINES)
-          .default(DEFAULT_TAIL_LINES)
-          .describe('Number of lines to return from the end of the log'),
-      },
-    },
-    async ({ tail }) => {
-      try {
-        const logPath = getLogFilePath('errorFile')
-        if (logPath == null) {
-          return {
-            content: [{ text: 'Error log file not configured', type: 'text' as const }],
-            isError: true,
-          }
-        }
-        const { lines, totalLines } = await tailFile(logPath, tail)
-        const meta =
-          totalLines >= 0
-            ? `Showing last ${String(lines.length)} of ${String(totalLines)} lines`
-            : `Showing last ${String(lines.length)} lines`
-        return {
-          content: [{ text: `${meta}\n\n${lines.join('\n')}`, type: 'text' as const }],
-        }
-      } catch {
-        return {
-          content: [{ text: 'Error log file not available', type: 'text' as const }],
-          isError: true,
-        }
-      }
-    }
+    'errorFile',
+    'Read recent entries from the error log file. Returns the last N lines (default 200, max 5000).'
   )
 }

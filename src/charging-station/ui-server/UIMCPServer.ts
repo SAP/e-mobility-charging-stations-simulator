@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url'
 
 import type { AbstractUIService } from './ui-services/AbstractUIService.js'
 
+import { BaseError } from '../../exception/index.js'
 import {
   OCPPVersion,
   type ProcedureName,
@@ -59,6 +60,17 @@ export class UIMCPServer extends AbstractUIServer {
   public constructor (protected override readonly uiServerConfiguration: UIServerConfiguration) {
     super(uiServerConfiguration)
     this.pendingMcpRequests = new Map()
+  }
+
+  private static createToolErrorResponse (error: string): CallToolResult {
+    return {
+      content: [{ text: JSON.stringify({ error, status: 'failure' }), type: 'text' as const }],
+      isError: true,
+    }
+  }
+
+  private static createToolResponse (payload: unknown): CallToolResult {
+    return { content: [{ text: JSON.stringify(payload), type: 'text' as const }] }
   }
 
   public override hasResponseHandler (uuid: UUIDv4): boolean {
@@ -159,7 +171,7 @@ export class UIMCPServer extends AbstractUIServer {
   public override stop (): void {
     for (const [uuid, pending] of this.pendingMcpRequests) {
       clearTimeout(pending.timeout)
-      pending.reject(new Error('Server stopping'))
+      pending.reject(new BaseError('Server stopping'))
       this.pendingMcpRequests.delete(uuid)
     }
     super.stop()
@@ -200,22 +212,21 @@ export class UIMCPServer extends AbstractUIServer {
     if (mismatched.length > 0) {
       const ids = mismatched.map(s => s.hashId).join(', ')
       const versions = [...new Set(mismatched.map(s => s.version ?? 'unknown'))].join(', ')
-      return {
-        content: [
-          {
-            text: JSON.stringify({
-              error:
-                `Station(s) ${ids} run OCPP ${versions} but received ${payloadLabel} for '${procedureName}'. ` +
-                `Use ${alternativeLabel} instead, or target only compatible stations via hashIds.`,
-              status: 'failure',
-            }),
-            type: 'text',
-          },
-        ],
-        isError: true,
-      }
+      return UIMCPServer.createToolErrorResponse(
+        `Station(s) ${ids} run OCPP ${versions} but received ${payloadLabel} for '${procedureName}'. ` +
+          `Use ${alternativeLabel} instead, or target only compatible stations via hashIds.`
+      )
     }
     return undefined
+  }
+
+  private closeTransportSafely (transport: StreamableHTTPServerTransport): void {
+    transport.close().catch((error: unknown) => {
+      logger.error(
+        `${this.logPrefix(moduleName, 'handleMcpRequest')} MCP transport close error:`,
+        error
+      )
+    })
   }
 
   private async handleMcpRequest (
@@ -238,22 +249,12 @@ export class UIMCPServer extends AbstractUIServer {
       if (req.method === HttpMethod.POST) {
         const body = await this.readRequestBody(req)
         res.on('close', () => {
-          transport.close().catch((error: unknown) => {
-            logger.error(
-              `${this.logPrefix(moduleName, 'handleMcpRequest')} MCP transport close error:`,
-              error
-            )
-          })
+          this.closeTransportSafely(transport)
         })
         await transport.handleRequest(req, res, body)
       } else if (req.method === HttpMethod.GET || req.method === HttpMethod.DELETE) {
         res.on('close', () => {
-          transport.close().catch((error: unknown) => {
-            logger.error(
-              `${this.logPrefix(moduleName, 'handleMcpRequest')} MCP transport close error:`,
-              error
-            )
-          })
+          this.closeTransportSafely(transport)
         })
         await transport.handleRequest(req, res)
       } else {
@@ -277,12 +278,13 @@ export class UIMCPServer extends AbstractUIServer {
     if (schemaCache.size === 0) {
       return
     }
-    const handlers = (
-      mcpServer.server as unknown as {
-        _requestHandlers: Map<string, (...args: unknown[]) => Promise<unknown>>
-      }
-    )._requestHandlers
-    if (!(handlers instanceof Map)) {
+    // Access MCP SDK internal handler map — pinned to @modelcontextprotocol/sdk@1.27.x
+    // The SDK does not provide a public API for wrapping existing handlers.
+    // setRequestHandler() replaces handlers entirely, losing Zod→JSON Schema conversion.
+    const handlers = Reflect.get(mcpServer.server, '_requestHandlers') as
+      | Map<string, (...args: unknown[]) => Promise<unknown>>
+      | undefined
+    if (handlers == null || !(handlers instanceof Map)) {
       logger.warn(
         `${this.logPrefix(moduleName, 'injectOcppJsonSchemas')} MCP SDK internal API changed — OCPP schema injection disabled`
       )
@@ -324,15 +326,7 @@ export class UIMCPServer extends AbstractUIServer {
     service: AbstractUIService | undefined
   ): Promise<CallToolResult> {
     if (service == null) {
-      return {
-        content: [
-          {
-            text: JSON.stringify({ error: 'UI service not available', status: 'failure' }),
-            type: 'text',
-          },
-        ],
-        isError: true,
-      }
+      return UIMCPServer.createToolErrorResponse('UI service not available')
     }
 
     const { ocpp16Payload, ocpp20Payload, ...rest } = input as RequestPayload & {
@@ -341,19 +335,9 @@ export class UIMCPServer extends AbstractUIServer {
     }
 
     if (ocpp16Payload != null && ocpp20Payload != null) {
-      return {
-        content: [
-          {
-            text: JSON.stringify({
-              error:
-                'Cannot provide both ocpp16Payload and ocpp20Payload. Use ocpp16Payload for OCPP 1.6 stations or ocpp20Payload for OCPP 2.0 stations.',
-              status: 'failure',
-            }),
-            type: 'text',
-          },
-        ],
-        isError: true,
-      }
+      return UIMCPServer.createToolErrorResponse(
+        'Cannot provide both ocpp16Payload and ocpp20Payload. Use ocpp16Payload for OCPP 1.6 stations or ocpp20Payload for OCPP 2.0 stations.'
+      )
     }
 
     const versionMismatchError = this.checkVersionCompatibility(
@@ -376,34 +360,15 @@ export class UIMCPServer extends AbstractUIServer {
     return await new Promise<CallToolResult>(resolve => {
       const timeout = setTimeout(() => {
         this.pendingMcpRequests.delete(uuid)
-        resolve({
-          content: [
-            {
-              text: JSON.stringify({
-                error: `Tool '${procedureName}' timed out`,
-                status: 'failure',
-              }),
-              type: 'text',
-            },
-          ],
-          isError: true,
-        })
+        resolve(UIMCPServer.createToolErrorResponse(`Tool '${procedureName}' timed out`))
       }, MCP_TOOL_TIMEOUT_MS)
 
       this.pendingMcpRequests.set(uuid, {
         reject: (error: Error) => {
-          resolve({
-            content: [
-              {
-                text: JSON.stringify({ error: error.message, status: 'failure' }),
-                type: 'text',
-              },
-            ],
-            isError: true,
-          })
+          resolve(UIMCPServer.createToolErrorResponse(error.message))
         },
         resolve: (payload: ResponsePayload) => {
-          resolve({ content: [{ text: JSON.stringify(payload), type: 'text' }] })
+          resolve(UIMCPServer.createToolResponse(payload))
         },
         timeout,
       })
@@ -418,7 +383,7 @@ export class UIMCPServer extends AbstractUIServer {
               clearTimeout(pending.timeout)
               this.pendingMcpRequests.delete(uuid)
               const [, payload] = directResponse
-              resolve({ content: [{ text: JSON.stringify(payload), type: 'text' }] })
+              resolve(UIMCPServer.createToolResponse(payload))
             }
           }
           return undefined
@@ -429,18 +394,11 @@ export class UIMCPServer extends AbstractUIServer {
             clearTimeout(pending.timeout)
             this.pendingMcpRequests.delete(uuid)
           }
-          resolve({
-            content: [
-              {
-                text: JSON.stringify({
-                  error: error instanceof Error ? error.message : String(error),
-                  status: 'failure',
-                }),
-                type: 'text',
-              },
-            ],
-            isError: true,
-          })
+          resolve(
+            UIMCPServer.createToolErrorResponse(
+              error instanceof Error ? error.message : String(error)
+            )
+          )
         })
     })
   }
@@ -488,7 +446,7 @@ export class UIMCPServer extends AbstractUIServer {
       req.on('data', (chunk: Buffer) => {
         totalSize += chunk.length
         if (!checkBodySize(totalSize)) {
-          reject(new Error('Payload too large'))
+          reject(new BaseError('Payload too large'))
           req.destroy()
           return
         }
@@ -498,7 +456,7 @@ export class UIMCPServer extends AbstractUIServer {
         try {
           resolve(JSON.parse(Buffer.concat(chunks).toString()))
         } catch (error: unknown) {
-          reject(error instanceof Error ? error : new Error(String(error)))
+          reject(error instanceof Error ? error : new BaseError(String(error)))
         }
       })
       req.on('error', (error: Error) => {
