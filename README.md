@@ -44,8 +44,9 @@ Simple [node.js](https://nodejs.org/) software to simulate and scale a set of ch
   - [Version 1.6](#version-16-1)
   - [Version 2.0.x](#version-20x-1)
 - [UI Protocol](#ui-protocol)
+  - [MCP Protocol](#mcp-protocol-model-context-protocol)
   - [WebSocket Protocol](#websocket-protocol)
-  - [HTTP Protocol](#http-protocol)
+  - [HTTP Protocol (deprecated)](#http-protocol-deprecated)
 - [Support, Feedback, Contributing](#support-feedback-contributing)
 - [Code of Conduct](#code-of-conduct)
 - [Licensing](#licensing)
@@ -349,6 +350,50 @@ type AutomaticTransactionGeneratorConfiguration = {
 ```
 
 #### Evses section syntax example
+
+`MeterValues` can be defined at EVSE level or at connector level. EVSE-level definitions apply to all connectors of the EVSE and override connector-level definitions.
+
+##### MeterValues at EVSE level
+
+```json
+  "Evses": {
+    "0": {
+      "Connectors": {
+        "0": {}
+      }
+    },
+    "1": {
+      "MeterValues": [
+        ...
+        {
+          "unit": "W",
+          "measurand": "Power.Active.Import",
+          "phase": "L1-N",
+          "value": "5000",
+          "fluctuationPercent": "10"
+        },
+        ...
+        {
+          "unit": "A",
+          "measurand": "Current.Import",
+          "minimum": "0.5"
+        },
+        ...
+        {
+          "unit": "Wh"
+        },
+        ...
+      ],
+      "Connectors": {
+        "1": {
+          "bootStatus": "Available"
+        }
+      }
+    }
+  },
+```
+
+##### MeterValues at connector level
 
 ```json
   "Evses": {
