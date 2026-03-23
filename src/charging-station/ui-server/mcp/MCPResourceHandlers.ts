@@ -13,7 +13,7 @@ const MAX_TAIL_LINES = 5000
 const DEFAULT_TAIL_LINES = 200
 const TAIL_BYTES = 65_536
 
-const getLogFilePath = (configField: 'errorFile' | 'file'): string | undefined => {
+const getLogFilePath = (configField: 'errorFile' | 'file', date?: string): string | undefined => {
   const logConfig = Configuration.getConfigurationSection<LogConfiguration>(
     ConfigurationSection.log
   )
@@ -24,9 +24,12 @@ const getLogFilePath = (configField: 'errorFile' | 'file'): string | undefined =
   if (logConfig.rotate !== true) {
     return resolve(relativePath)
   }
-  const date = new Date().toISOString().slice(0, 10)
+  const now = new Date()
+  const localDate =
+    date ??
+    `${now.getFullYear().toString()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`
   const dir = dirname(resolve(relativePath))
-  const baseName = configField === 'file' ? `combined-${date}.log` : `error-${date}.log`
+  const baseName = configField === 'file' ? `combined-${localDate}.log` : `error-${localDate}.log`
   return join(dir, baseName)
 }
 
@@ -249,6 +252,11 @@ const registerLogReadTool = (
       annotations: { readOnlyHint: true },
       description,
       inputSchema: {
+        date: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/)
+          .optional()
+          .describe('Log file date in YYYY-MM-DD format. Defaults to current local date'),
         tail: z
           .number()
           .int()
@@ -258,9 +266,9 @@ const registerLogReadTool = (
           .describe('Number of lines to return from the end of the log'),
       },
     },
-    async ({ tail }) => {
+    async ({ date, tail }) => {
       try {
-        const logPath = getLogFilePath(configField)
+        const logPath = getLogFilePath(configField, date)
         if (logPath == null) {
           return {
             content: [{ text: `${label} file not configured`, type: 'text' as const }],
@@ -290,12 +298,12 @@ export const registerMCPLogTools = (server: McpServer): void => {
     server,
     'readCombinedLog',
     'file',
-    'Read recent entries from the combined simulator log file. Returns the last N lines (default 200, max 5000).'
+    'Read recent entries from the combined simulator log file. Returns the last N lines (default 200, max 5000). Optionally specify a date (YYYY-MM-DD) for rotated log files.'
   )
   registerLogReadTool(
     server,
     'readErrorLog',
     'errorFile',
-    'Read recent entries from the error log file. Returns the last N lines (default 200, max 5000).'
+    'Read recent entries from the error log file. Returns the last N lines (default 200, max 5000). Optionally specify a date (YYYY-MM-DD) for rotated log files.'
   )
 }

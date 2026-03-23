@@ -6,7 +6,9 @@
 import type { AddressInfo } from 'node:net'
 
 import assert from 'node:assert/strict'
+import { writeFileSync } from 'node:fs'
 import { request as httpRequest, type Server } from 'node:http'
+import { join } from 'node:path'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import { UIMCPServer } from '../../../src/charging-station/ui-server/UIMCPServer.js'
@@ -74,6 +76,37 @@ const makeMcpPost = (port: number, body: object): Promise<{ events: object[]; st
   })
 }
 
+const callTool = async (
+  port: number,
+  toolName: string,
+  args: Record<string, unknown> = {}
+): Promise<{ content: { text: string; type: string }[]; isError?: boolean }> => {
+  // Initialize session
+  await makeMcpPost(port, {
+    id: 'init',
+    jsonrpc: '2.0',
+    method: 'initialize',
+    params: {
+      capabilities: {},
+      clientInfo: { name: 'test-client', version: '1.0' },
+      protocolVersion: '2025-03-26',
+    },
+  })
+  // Call tool
+  const response = await makeMcpPost(port, {
+    id: 'call',
+    jsonrpc: '2.0',
+    method: 'tools/call',
+    params: { arguments: args, name: toolName },
+  })
+  assert.strictEqual(response.status, 200)
+  assert.ok(response.events.length > 0)
+  const body = response.events[response.events.length - 1] as Record<string, unknown>
+  assert.strictEqual(body.jsonrpc, '2.0')
+  assert.strictEqual(body.id, 'call')
+  return body.result as { content: { text: string; type: string }[]; isError?: boolean }
+}
+
 await describe('UIMCPServer HTTP Integration', async () => {
   let server: UIMCPServer
   let testPort: number
@@ -126,5 +159,49 @@ await describe('UIMCPServer HTTP Integration', async () => {
     const result = body.result as Record<string, unknown>
     assert.ok('serverInfo' in result, 'Result should have serverInfo')
     assert.ok('capabilities' in result, 'Result should have capabilities')
+  })
+
+  await describe('readCombinedLog tool', async () => {
+    await it('should return log content with default date (current local date)', async () => {
+      // Arrange - create a log file for today's local date
+      const now = new Date()
+      const todayDate = `${now.getFullYear().toString()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`
+      const logDir = join(process.cwd(), 'logs')
+      const logFile = join(logDir, `combined-${todayDate}.log`)
+      writeFileSync(logFile, 'info: test log line 1\ninfo: test log line 2\n', { flag: 'a' })
+
+      // Act
+      const result = await callTool(testPort, 'readCombinedLog', { tail: 10 })
+
+      // Assert
+      assert.strictEqual(result.isError, undefined)
+      assert.ok(result.content.length > 0)
+      assert.strictEqual(result.content[0].type, 'text')
+      assert.ok(result.content[0].text.includes('Showing last'))
+    })
+
+    await it('should return log content for explicit date parameter', async () => {
+      // Arrange - create a log file for a specific date
+      const logDir = join(process.cwd(), 'logs')
+      const testDate = '2020-01-01'
+      const logFile = join(logDir, `combined-${testDate}.log`)
+      writeFileSync(logFile, 'info: historical log entry\n')
+
+      // Act
+      const result = await callTool(testPort, 'readCombinedLog', { date: testDate, tail: 10 })
+
+      // Assert
+      assert.strictEqual(result.isError, undefined)
+      assert.ok(result.content.length > 0)
+      assert.strictEqual(result.content[0].type, 'text')
+      assert.ok(result.content[0].text.includes('historical log entry'))
+    })
+
+    await it('should return error for non-existent date log file', async () => {
+      const result = await callTool(testPort, 'readCombinedLog', { date: '1999-01-01', tail: 10 })
+
+      assert.strictEqual(result.isError, true)
+      assert.ok(result.content[0].text.includes('not available'))
+    })
   })
 })
