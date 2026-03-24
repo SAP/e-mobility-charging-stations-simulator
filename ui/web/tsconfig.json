@@ -7,7 +7,6 @@
     "noImplicitOverride": true,
     "sourceMap": true,
     "composite": true,
-    "baseUrl": "./",
     "types": ["node", "jsdom"],
     "paths": {
       "@/*": ["./src/*"]
