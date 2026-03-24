@@ -6,7 +6,13 @@ import type {
 } from '../interfaces/OCPPAuthService.js'
 import type { AuthConfiguration, AuthorizationResult, AuthRequest } from '../types/AuthTypes.js'
 
-import { ensureError, getErrorMessage, logger, truncateId } from '../../../../utils/index.js'
+import {
+  ensureError,
+  getErrorMessage,
+  logger,
+  promiseWithTimeout,
+  truncateId,
+} from '../../../../utils/index.js'
 import {
   AuthenticationError,
   AuthenticationMethod,
@@ -387,19 +393,11 @@ export class RemoteAuthStrategy implements AuthStrategy {
   ): Promise<boolean> {
     try {
       const timeout = (config.authorizationTimeout * 1000) / 2
-      let timeoutHandle: ReturnType<typeof setTimeout> | undefined
-
-      const result = await Promise.race([
+      return await promiseWithTimeout(
         Promise.resolve(adapter.isRemoteAvailable()),
-        new Promise<boolean>((_resolve, reject) => {
-          timeoutHandle = setTimeout(() => {
-            reject(new AuthenticationError('Availability check timeout', AuthErrorCode.TIMEOUT))
-          }, timeout)
-        }),
-      ])
-
-      clearTimeout(timeoutHandle)
-      return result
+        timeout,
+        new AuthenticationError('Availability check timeout', AuthErrorCode.TIMEOUT)
+      )
     } catch (error) {
       const errorMessage = getErrorMessage(error)
       logger.debug(`${moduleName}: Remote availability check failed: ${errorMessage}`)
@@ -443,47 +441,36 @@ export class RemoteAuthStrategy implements AuthStrategy {
     startTime: number
   ): Promise<AuthorizationResult | undefined> {
     const timeout = config.authorizationTimeout * 1000
-    let timeoutHandle: ReturnType<typeof setTimeout> | undefined
 
     try {
-      // Create the authorization promise
       const authPromise = adapter.authorizeRemote(
         request.identifier,
         request.connectorId,
         request.transactionId
       )
 
-      // Race between authorization and timeout
-      const result = await Promise.race([
+      const result = await promiseWithTimeout(
         authPromise,
-        new Promise<never>((_resolve, reject) => {
-          timeoutHandle = setTimeout(() => {
-            reject(
-              new AuthenticationError(
-                `Remote authorization timeout after ${String(config.authorizationTimeout)}s`,
-                AuthErrorCode.TIMEOUT,
-                {
-                  context: request.context,
-                  identifier: request.identifier.value,
-                }
-              )
-            )
-          }, timeout)
-        }),
-      ])
+        timeout,
+        new AuthenticationError(
+          `Remote authorization timeout after ${String(config.authorizationTimeout)}s`,
+          AuthErrorCode.TIMEOUT,
+          {
+            context: request.context,
+            identifier: request.identifier.value,
+          }
+        )
+      )
 
-      clearTimeout(timeoutHandle)
       logger.debug(
         `${moduleName}: Remote authorization completed in ${String(Date.now() - startTime)}ms`
       )
       return result
     } catch (error) {
-      clearTimeout(timeoutHandle)
       if (error instanceof AuthenticationError) {
-        throw error // Re-throw authentication errors as-is
+        throw error
       }
 
-      // Wrap other errors as network errors
       const errorMessage = getErrorMessage(error)
       throw new AuthenticationError(
         `Remote authorization failed: ${errorMessage}`,

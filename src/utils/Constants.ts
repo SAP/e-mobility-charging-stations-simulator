@@ -108,6 +108,8 @@ export class Constants {
 
   static readonly STOP_CHARGING_STATIONS_TIMEOUT = 60000 // Ms
 
+  static readonly STOP_MESSAGE_SEQUENCE_TIMEOUT = 30000 // Ms
+
   static readonly UNKNOWN_OCPP_COMMAND = 'unknown OCPP command' as
     | IncomingRequestCommand
     | RequestCommand

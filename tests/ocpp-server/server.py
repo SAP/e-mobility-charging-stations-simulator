@@ -274,7 +274,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
         return ocpp.v201.call_result.LogStatusNotification()
 
     @on(Action.security_event_notification)
-    async def on_security_event_notification(self, event_type, timestamp, **kwargs):
+    async def on_security_event_notification(self, **kwargs):
         logger.info("Received %s", Action.security_event_notification)
         return ocpp.v201.call_result.SecurityEventNotification()
 

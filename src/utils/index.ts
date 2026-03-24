@@ -57,6 +57,7 @@ export {
   logPrefix,
   mergeDeepRight,
   once,
+  promiseWithTimeout,
   roundTo,
   secureRandom,
   sleep,

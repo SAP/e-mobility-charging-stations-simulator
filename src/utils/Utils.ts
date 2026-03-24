@@ -149,6 +149,33 @@ export const sleep = async (milliSeconds: number): Promise<NodeJS.Timeout> => {
   })
 }
 
+/**
+ * Races a promise against a timeout. Resolves/rejects with the promise result
+ * if it settles before the deadline, otherwise rejects with a timeout error.
+ * The timer is always cleaned up when the promise settles first.
+ * @param promise - The promise to race
+ * @param timeoutMs - Timeout duration in milliseconds
+ * @param timeoutError - Error (or message string) to reject with on timeout
+ * @returns The resolved value of the original promise, or rejects on timeout
+ */
+export const promiseWithTimeout = <T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  timeoutError: Error | string
+): Promise<T> => {
+  let timer: ReturnType<typeof setTimeout>
+  return Promise.race([
+    promise.finally(() => {
+      clearTimeout(timer)
+    }),
+    new Promise<never>((_resolve, reject) => {
+      timer = setTimeout(() => {
+        reject(typeof timeoutError === 'string' ? new Error(timeoutError) : timeoutError)
+      }, timeoutMs)
+    }),
+  ])
+}
+
 export const formatDurationMilliSeconds = (duration: number): string => {
   duration = convertToInt(duration)
   if (duration < 0) {

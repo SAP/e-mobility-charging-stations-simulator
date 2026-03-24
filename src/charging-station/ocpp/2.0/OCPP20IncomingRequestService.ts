@@ -125,6 +125,7 @@ import {
   convertToDate,
   generateUUID,
   logger,
+  promiseWithTimeout,
   sleep,
   truncateId,
   validateUUID,
@@ -1833,7 +1834,11 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
       )
       const resultPromise: Promise<StoreCertificateResult> =
         rawResult instanceof Promise
-          ? withTimeout(rawResult, OCPP20Constants.HANDLER_TIMEOUT_MS, 'storeCertificate')
+          ? promiseWithTimeout(
+            rawResult,
+            OCPP20Constants.HANDLER_TIMEOUT_MS,
+              `storeCertificate timed out after ${OCPP20Constants.HANDLER_TIMEOUT_MS.toString()}ms`
+          )
           : Promise.resolve(rawResult)
       const storeResult: StoreCertificateResult = await resultPromise
 
@@ -4023,24 +4028,3 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
  * @see {@link handleRequestStartTransaction} Example OCPP 2.0+ request handler
  * @see {@link OCPP20VariableManager} Variable management integration
  */
-
-/**
- * Races a promise against a timeout, clearing the timer on settlement to avoid leaks.
- * @param promise - The promise to race against the timeout
- * @param ms - Timeout duration in milliseconds
- * @param label - Descriptive label for the timeout error message
- * @returns The resolved value of the original promise, or rejects with a timeout error
- */
-function withTimeout<T> (promise: Promise<T>, ms: number, label: string): Promise<T> {
-  let timer: ReturnType<typeof setTimeout>
-  return Promise.race([
-    promise.finally(() => {
-      clearTimeout(timer)
-    }),
-    new Promise<never>((_resolve, reject) => {
-      timer = setTimeout(() => {
-        reject(new Error(`${label} timed out after ${ms.toString()}ms`))
-      }, ms)
-    }),
-  ])
-}
