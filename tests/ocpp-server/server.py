@@ -166,6 +166,8 @@ class ChargePoint(ocpp.v201.ChargePoint):
         self._command_timer = None
         self._commands_task = None
         self._boot_sequence = boot_sequence
+        if not self._boot_sequence:
+            raise ValueError("boot_sequence must contain at least one status")
         self._boot_index = boot_index if boot_index is not None else [0]
         self._total_cost = total_cost
         self._trigger_message_type = trigger_message_type
@@ -284,7 +286,10 @@ class ChargePoint(ocpp.v201.ChargePoint):
 
                 transaction_id = transaction_info.get("transaction_id", "")
                 evse_id = kwargs.get("evse", {}).get("id", 0)
-                self._active_transactions[transaction_id] = evse_id
+                if transaction_id:
+                    self._active_transactions[transaction_id] = evse_id
+                else:
+                    logger.warning("TransactionEvent.Started with empty transaction_id")
 
                 id_token = kwargs.get("id_token", {})
                 token_id = id_token.get("id_token", "")
@@ -701,6 +706,8 @@ class ChargePoint(ocpp.v201.ChargePoint):
         logger.info("ChargePoint %s closed connection", self.id)
         if self._command_timer:
             self._command_timer.cancel()
+        if self._commands_task:
+            self._commands_task.cancel()
         self._charge_points.discard(self)
         logger.debug("Connected ChargePoint(s): %d", len(self._charge_points))
 
@@ -785,8 +792,10 @@ def _parse_commands(commands_str: str) -> list[tuple[Action, float]]:
             raise argparse.ArgumentTypeError(
                 f"Invalid delay '{delay_str.strip()}': must be a number"
             ) from None
-        if delay <= 0:
-            raise argparse.ArgumentTypeError(f"Delay must be positive, got {delay}")
+        if not math.isfinite(delay) or delay <= 0:
+            raise argparse.ArgumentTypeError(
+                f"Delay must be a finite positive number, got {delay}"
+            )
         result.append((cmd, delay))
     return result
 

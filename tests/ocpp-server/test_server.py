@@ -421,6 +421,10 @@ class TestChargePointDefaultConfig:
         cp = ChargePoint(mock_connection, total_cost=25.50)
         assert cp._total_cost == 25.50
 
+    def test_empty_boot_sequence_raises(self, mock_connection):
+        with pytest.raises(ValueError, match="at least one status"):
+            ChargePoint(mock_connection, boot_sequence=())
+
 
 # --- Async handler tests ---
 
@@ -652,6 +656,8 @@ class TestRicherAuthorizeResponse:
             id_token={"id_token": "test_token", "type": "ISO14443"}
         )
         assert "cache_expiry_date_time" in result.id_token_info
+        expiry = result.id_token_info["cache_expiry_date_time"]
+        assert isinstance(expiry, str) and "T" in expiry
 
     async def test_authorize_no_enrichment_by_default(self, charge_point):
         result = await charge_point.on_authorize(
@@ -789,6 +795,17 @@ class TestTransactionTracking:
         await command_charge_point._send_request_stop_transaction()
         request = command_charge_point.call.call_args[0][0]
         assert request.transaction_id == "test_transaction_123"
+
+    async def test_empty_transaction_id_not_stored(self, charge_point):
+        await charge_point.on_transaction_event(
+            event_type=TransactionEventEnumType.started,
+            timestamp=TEST_TIMESTAMP,
+            trigger_reason="Authorized",
+            seq_no=0,
+            transaction_info={"transaction_id": ""},
+            id_token={"id_token": TEST_TOKEN, "type": "ISO14443"},
+        )
+        assert "" not in charge_point._active_transactions
 
 
 class TestCertificateHandlers:
@@ -1335,6 +1352,12 @@ class TestHandleConnectionClosed:
         charge_point.handle_connection_closed()
         mock_timer.cancel.assert_called_once()
 
+    def test_commands_task_cancelled_on_close(self, charge_point):
+        mock_task = MagicMock()
+        charge_point._commands_task = mock_task
+        charge_point.handle_connection_closed()
+        mock_task.cancel.assert_called_once()
+
     def test_timer_none_no_error(self, charge_point):
         charge_point._command_timer = None
         charge_point.handle_connection_closed()
@@ -1597,6 +1620,18 @@ class TestCommandSequencing:
     def test_parse_commands_unknown_action(self):
         with pytest.raises(argparse.ArgumentTypeError, match="Unknown action"):
             _parse_commands("UnknownAction:5")
+
+    def test_parse_commands_case_sensitive(self):
+        with pytest.raises(argparse.ArgumentTypeError, match="Unknown action"):
+            _parse_commands("reset:5")
+
+    def test_parse_commands_infinite_delay(self):
+        with pytest.raises(argparse.ArgumentTypeError, match="finite positive"):
+            _parse_commands("Reset:inf")
+
+    def test_parse_commands_nan_delay(self):
+        with pytest.raises(argparse.ArgumentTypeError, match="finite positive"):
+            _parse_commands("Reset:nan")
 
 
 class TestMultiVariableCommands:
