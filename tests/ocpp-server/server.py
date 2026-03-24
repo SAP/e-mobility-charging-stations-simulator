@@ -874,7 +874,10 @@ async def main():
         "--boot-status",
         type=RegistrationStatusEnumType,
         default=None,
-        help="boot notification response status (default: accepted)",
+        help=(
+            "boot notification response status"
+            " (Accepted, Pending, Rejected; default: Accepted)"
+        ),
     )
     boot_group.add_argument(
         "--boot-status-sequence",
@@ -882,7 +885,7 @@ async def main():
         default=None,
         help=(
             "comma-separated boot notification status sequence"
-            " (e.g. pending,pending,accepted)"
+            " (e.g. Pending,Pending,Accepted)"
         ),
     )
     parser.add_argument(
@@ -896,19 +899,19 @@ async def main():
         "--trigger-message",
         type=MessageTriggerEnumType,
         default=MessageTriggerEnumType.status_notification,
-        help="TriggerMessage requested_message type (default: status_notification)",
+        help="TriggerMessage requested_message type (default: StatusNotification)",
     )
     parser.add_argument(
         "--reset-type",
         type=ResetEnumType,
         default=ResetEnumType.immediate,
-        help="Reset type (default: immediate)",
+        help="Reset type: Immediate, OnIdle (default: Immediate)",
     )
     parser.add_argument(
         "--availability-status",
         type=OperationalStatusEnumType,
         default=OperationalStatusEnumType.operative,
-        help="ChangeAvailability operational status (default: operative)",
+        help="ChangeAvailability status: Operative, Inoperative (default: Operative)",
     )
 
     # Auth configuration
@@ -984,10 +987,19 @@ async def main():
     )
 
     if args.boot_status_sequence is not None:
-        boot_sequence = tuple(
-            RegistrationStatusEnumType(s.strip())
-            for s in args.boot_status_sequence.split(",")
-        )
+        boot_sequence_items: list[RegistrationStatusEnumType] = []
+        for raw_value in args.boot_status_sequence.split(","):
+            value = raw_value.strip()
+            try:
+                status = RegistrationStatusEnumType(value)
+            except ValueError:
+                valid = ", ".join(e.value for e in RegistrationStatusEnumType)
+                parser.error(
+                    f"invalid value for --boot-status-sequence: {value!r}."
+                    f" Valid values are: {valid}"
+                )
+            boot_sequence_items.append(status)
+        boot_sequence = tuple(boot_sequence_items)
     elif args.boot_status is not None:
         boot_sequence = (args.boot_status,)
     else:
