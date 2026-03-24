@@ -1,5 +1,22 @@
 # Changelog
 
+## [3.3.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v3.2.1...simulator@v3.3.0) (2026-03-24)
+
+### 🚀 Features
+
+- **ui-server:** add MCP transport and deprecate HTTP ([#1746](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1746)) ([8fd32d2](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/8fd32d22c9e6f4fe3c63878b488f1eef67aab19d))
+
+### 🐞 Bug Fixes
+
+- **deps:** update all non-major dependencies ([#1749](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1749)) ([9d005b5](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/9d005b59e45788c7285f7654426fbab0386c0b1e))
+
+### ✨ Polish
+
+- **broadcast-channel:** extract passthrough() factory, remove 20 identical handlers ([accb056](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/accb056172b75c281dc5bc6376f9e29762e98c50))
+- **broadcast-channel:** extract response status registries from switch/case ([6eb69c8](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6eb69c8939189af3f6d8df55eb9935afc514262f))
+- **mcp:** split MCP definitions by spec concern — Resources, Tools, ToolSchemas ([9d738e3](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/9d738e3408daddd27d2182d7416dd22eb38c0cea))
+- **ocpp:** extract buildEmptyMeterValue helper for empty MeterValue construction ([e19ff6c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/e19ff6c4e109105f061f70525771015dc48fed5c))
+
 ## [3.2.1](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/simulator@v3.2.0...simulator@v3.2.1) (2026-03-22)
 
 ### 🐞 Bug Fixes
