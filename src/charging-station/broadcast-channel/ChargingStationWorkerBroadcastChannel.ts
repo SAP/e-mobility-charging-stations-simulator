@@ -486,8 +486,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     const [uuid, command, requestPayload] = validatedMessageEvent.data as BroadcastChannelRequest
     if (
       requestPayload.hashIds != null &&
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      !requestPayload.hashIds.includes(this.chargingStation.stationInfo!.hashId)
+      !requestPayload.hashIds.includes(this.chargingStation.stationInfo?.hashId ?? '')
     ) {
       return
     }

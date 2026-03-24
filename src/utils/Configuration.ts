@@ -178,10 +178,12 @@ export class Configuration {
     if (
       Configuration.getConfigurationData()?.['supervisionURLs' as keyof ConfigurationData] != null
     ) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      Configuration.getConfigurationData()!.supervisionUrls = Configuration.getConfigurationData()![
-        'supervisionURLs' as keyof ConfigurationData
-      ] as string | string[]
+      const configData = Configuration.getConfigurationData()
+      if (configData != null) {
+        configData.supervisionUrls = configData['supervisionURLs' as keyof ConfigurationData] as
+          | string
+          | string[]
+      }
     }
     return Configuration.getConfigurationData()?.supervisionUrls
   }
@@ -262,8 +264,7 @@ export class Configuration {
           Configuration.getConfigurationData()?.performanceStorage?.type === StorageType.SQLITE) &&
           Configuration.getConfigurationData()?.performanceStorage?.uri != null && {
           uri: buildPerformanceUriFilePath(
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            new URL(Configuration.getConfigurationData()!.performanceStorage!.uri!).pathname
+            new URL(Configuration.getConfigurationData()?.performanceStorage?.uri ?? '').pathname
           ),
         }),
       }
@@ -276,14 +277,14 @@ export class Configuration {
     if (has(ConfigurationSection.uiServer, Configuration.getConfigurationData())) {
       uiServerConfiguration = mergeDeepRight<UIServerConfiguration, Partial<UIServerConfiguration>>(
         uiServerConfiguration,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        Configuration.getConfigurationData()!.uiServer!
+        Configuration.getConfigurationData()?.uiServer ?? defaultUIServerConfiguration
       )
     }
     if (isCFEnvironment()) {
       delete uiServerConfiguration.options?.host
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      uiServerConfiguration.options!.port = Number.parseInt(env.PORT!)
+      if (uiServerConfiguration.options != null) {
+        uiServerConfiguration.options.port = Number.parseInt(env.PORT ?? '')
+      }
     }
     return uiServerConfiguration
   }
@@ -478,14 +479,17 @@ export class Configuration {
       Configuration.warnDeprecatedConfigurationKey(key, section, msg)
     }
     // station template url(s) remapping
-    Configuration.getConfigurationData()?.['stationTemplateURLs' as keyof ConfigurationData] !=
-      null &&
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      (Configuration.getConfigurationData()!.stationTemplateUrls =
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        Configuration.getConfigurationData()![
+    if (
+      Configuration.getConfigurationData()?.['stationTemplateURLs' as keyof ConfigurationData] !=
+      null
+    ) {
+      const configData = Configuration.getConfigurationData()
+      if (configData != null) {
+        configData.stationTemplateUrls = configData[
           'stationTemplateURLs' as keyof ConfigurationData
-        ] as StationTemplateUrl[])
+        ] as StationTemplateUrl[]
+      }
+    }
     Configuration.getConfigurationData()?.stationTemplateUrls.forEach(
       (stationTemplateUrl: StationTemplateUrl) => {
         if (stationTemplateUrl['numberOfStation' as keyof StationTemplateUrl] != null) {
@@ -529,8 +533,7 @@ export class Configuration {
       return watch(Configuration.configurationFile, (event, filename): void => {
         if (
           !Configuration.configurationFileReloading &&
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          filename!.trim().length > 0 &&
+          (filename?.trim().length ?? 0) > 0 &&
           event === 'change'
         ) {
           Configuration.configurationFileReloading = true

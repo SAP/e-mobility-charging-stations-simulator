@@ -787,9 +787,7 @@ export const getChargingStationChargingProfilesLimit = (
     const chargingProfilesLimit = getChargingProfilesLimit(chargingStation, 0, chargingProfiles)
     if (chargingProfilesLimit != null) {
       const limit = buildChargingProfilesLimit(chargingStation, chargingProfilesLimit)
-      const chargingStationMaximumPower =
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        chargingStation.stationInfo!.maximumPower!
+      const chargingStationMaximumPower = chargingStation.stationInfo?.maximumPower ?? 0
       if (limit > chargingStationMaximumPower) {
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.getChargingStationChargingProfilesLimit: Charging profile id ${getChargingProfileId(chargingProfilesLimit.chargingProfile)} limit ${limit.toString()} is greater than charging station maximum ${chargingStationMaximumPower.toString()}: %j`,
@@ -853,8 +851,7 @@ export const getConnectorChargingProfilesLimit = (
     if (chargingProfilesLimit != null) {
       const limit = buildChargingProfilesLimit(chargingStation, chargingProfilesLimit)
       const connectorMaximumPower =
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        chargingStation.stationInfo!.maximumPower! / chargingStation.powerDivider!
+        (chargingStation.stationInfo?.maximumPower ?? 0) / (chargingStation.powerDivider ?? 1)
       if (limit > connectorMaximumPower) {
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.getConnectorChargingProfilesLimit: Charging profile id ${getChargingProfileId(chargingProfilesLimit.chargingProfile)} limit ${limit.toString()} is greater than connector ${connectorId.toString()} maximum ${connectorMaximumPower.toString()}: %j`,

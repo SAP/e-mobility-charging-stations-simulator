@@ -51,10 +51,11 @@ export class IdTagsCache {
     chargingStation: ChargingStation,
     connectorId: number
   ): string {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const hashId = chargingStation.stationInfo!.hashId
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const idTagsFile = getIdTagsFile(chargingStation.stationInfo!)!
+    if (chargingStation.stationInfo == null) {
+      return ''
+    }
+    const hashId = chargingStation.stationInfo.hashId
+    const idTagsFile = getIdTagsFile(chargingStation.stationInfo) ?? ''
     switch (distribution) {
       case IdTagDistribution.CONNECTOR_AFFINITY:
         return this.getConnectorAffinityIdTag(chargingStation, connectorId)
@@ -96,21 +97,20 @@ export class IdTagsCache {
   }
 
   private getConnectorAffinityIdTag (chargingStation: ChargingStation, connectorId: number): string {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const file = getIdTagsFile(chargingStation.stationInfo!)!
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const idTags = this.getIdTags(file)!
+    if (chargingStation.stationInfo == null) {
+      return ''
+    }
+    const file = getIdTagsFile(chargingStation.stationInfo) ?? ''
+    const idTags = this.getIdTags(file) ?? []
     const addressableKey = this.getIdTagsCacheIndexesAddressableKey(
       file,
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      chargingStation.stationInfo!.hashId
+      chargingStation.stationInfo.hashId
     )
     this.idTagsCachesAddressableIndexes.set(
       addressableKey,
       (chargingStation.index - 1 + (connectorId - 1)) % idTags.length
     )
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return idTags[this.idTagsCachesAddressableIndexes.get(addressableKey)!]
+    return idTags[this.idTagsCachesAddressableIndexes.get(addressableKey) ?? 0]
   }
 
   private getIdTagsCache (file: string): string[] | undefined {

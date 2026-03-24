@@ -257,8 +257,12 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       ) => {
         if (response.status === GenericStatus.Accepted) {
           const { connectorId, idTag } = request
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          chargingStation.getConnectorStatus(connectorId!)!.transactionRemoteStarted = true
+          if (connectorId != null) {
+            const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+            if (connectorStatus != null) {
+              connectorStatus.transactionRemoteStarted = true
+            }
+          }
           chargingStation.ocppRequestService
             .requestHandler<Partial<OCPP16StartTransactionRequest>, OCPP16StartTransactionResponse>(
               chargingStation,
@@ -306,8 +310,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       ) => {
         if (response.status === GenericStatus.Accepted) {
           const { transactionId } = request
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          const connectorId = chargingStation.getConnectorIdByTransactionId(transactionId)!
+          const connectorId = chargingStation.getConnectorIdByTransactionId(transactionId)
+          if (connectorId == null) {
+            return
+          }
           OCPP16ServiceUtils.remoteStopTransaction(chargingStation, connectorId)
             .then(response => {
               if (response.status === GenericStatus.Accepted) {
@@ -679,15 +685,16 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       )
       return OCPP16Constants.OCPP_CANCEL_RESERVATION_RESPONSE_ACCEPTED
     } catch (error) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      return handleIncomingRequestError<GenericResponse>(
-        chargingStation,
-        OCPP16IncomingRequestCommand.CANCEL_RESERVATION,
-        ensureError(error),
-        {
-          errorResponse: OCPP16Constants.OCPP_CANCEL_RESERVATION_RESPONSE_REJECTED,
-        }
-      )!
+      return (
+        handleIncomingRequestError<GenericResponse>(
+          chargingStation,
+          OCPP16IncomingRequestCommand.CANCEL_RESERVATION,
+          ensureError(error),
+          {
+            errorResponse: OCPP16Constants.OCPP_CANCEL_RESERVATION_RESPONSE_REJECTED,
+          }
+        ) ?? OCPP16Constants.OCPP_CANCEL_RESERVATION_RESPONSE_REJECTED
+      )
     }
   }
 
@@ -725,8 +732,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           type
         )
       }
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      return response!
+      return response ?? OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_ACCEPTED
     } else if (
       connectorId > 0 &&
       (chargingStation.isChargingStationAvailable() ||
@@ -734,12 +740,16 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
           type === OCPP16AvailabilityType.Inoperative))
     ) {
       if (chargingStation.getConnectorStatus(connectorId)?.transactionStarted === true) {
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        chargingStation.getConnectorStatus(connectorId)!.availability = type
+        const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+        if (connectorStatus != null) {
+          connectorStatus.availability = type
+        }
         return OCPP16Constants.OCPP_AVAILABILITY_RESPONSE_SCHEDULED
       }
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      chargingStation.getConnectorStatus(connectorId)!.availability = type
+      const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+      if (connectorStatus != null) {
+        connectorStatus.availability = type
+      }
       await OCPP16ServiceUtils.sendAndSetConnectorStatus(chargingStation, {
         connectorId,
         status: chargePointStatus,
@@ -843,8 +853,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
   }
 
   private handleRequestClearCache (chargingStation: ChargingStation): ClearCacheResponse {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    if (chargingStation.idTagsCache.deleteIdTags(getIdTagsFile(chargingStation.stationInfo!)!)) {
+    const idTagsFile =
+      chargingStation.stationInfo != null ? getIdTagsFile(chargingStation.stationInfo) : undefined
+    if (idTagsFile != null && chargingStation.idTagsCache.deleteIdTags(idTagsFile)) {
       return OCPPConstants.OCPP_RESPONSE_ACCEPTED
     }
     return OCPPConstants.OCPP_RESPONSE_REJECTED
@@ -941,13 +952,14 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       }
       return OCPP16Constants.OCPP_DATA_TRANSFER_RESPONSE_ACCEPTED
     } catch (error) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      return handleIncomingRequestError<OCPP16DataTransferResponse>(
-        chargingStation,
-        OCPP16IncomingRequestCommand.DATA_TRANSFER,
-        ensureError(error),
-        { errorResponse: OCPP16Constants.OCPP_DATA_TRANSFER_RESPONSE_REJECTED }
-      )!
+      return (
+        handleIncomingRequestError<OCPP16DataTransferResponse>(
+          chargingStation,
+          OCPP16IncomingRequestCommand.DATA_TRANSFER,
+          ensureError(error),
+          { errorResponse: OCPP16Constants.OCPP_DATA_TRANSFER_RESPONSE_REJECTED }
+        ) ?? OCPP16Constants.OCPP_DATA_TRANSFER_RESPONSE_REJECTED
+      )
     }
   }
 
@@ -1045,8 +1057,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     const configurationKey: OCPPConfigurationKey[] = []
     const unknownKey: string[] = []
     if (key == null || isEmpty(key)) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      for (const configKey of chargingStation.ocppConfiguration!.configurationKey!) {
+      for (const configKey of chargingStation.ocppConfiguration?.configurationKey ?? []) {
         if (!OCPP16ServiceUtils.isConfigurationKeyVisible(configKey)) {
           continue
         }
@@ -1129,8 +1140,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
                 info.bytes / 1024
               ).toString()} bytes transferred from diagnostics archive ${info.name}`
             )
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            chargingStation.stationInfo!.diagnosticsStatus = OCPP16DiagnosticsStatus.Uploading
+            if (chargingStation.stationInfo != null) {
+              chargingStation.stationInfo.diagnosticsStatus = OCPP16DiagnosticsStatus.Uploading
+            }
             chargingStation.ocppRequestService
               .requestHandler<
                 OCPP16DiagnosticsStatusNotificationRequest,
@@ -1158,8 +1170,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
             >(chargingStation, OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION, {
               status: OCPP16DiagnosticsStatus.Uploaded,
             })
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            chargingStation.stationInfo!.diagnosticsStatus = OCPP16DiagnosticsStatus.Uploaded
+            if (chargingStation.stationInfo != null) {
+              chargingStation.stationInfo.diagnosticsStatus = OCPP16DiagnosticsStatus.Uploaded
+            }
             ftpClient.close()
             return { fileName: diagnosticsArchive }
           }
@@ -1182,16 +1195,18 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         >(chargingStation, OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION, {
           status: OCPP16DiagnosticsStatus.UploadFailed,
         })
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        chargingStation.stationInfo!.diagnosticsStatus = OCPP16DiagnosticsStatus.UploadFailed
+        if (chargingStation.stationInfo != null) {
+          chargingStation.stationInfo.diagnosticsStatus = OCPP16DiagnosticsStatus.UploadFailed
+        }
         ftpClient?.close()
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        return handleIncomingRequestError<GetDiagnosticsResponse>(
-          chargingStation,
-          OCPP16IncomingRequestCommand.GET_DIAGNOSTICS,
-          ensureError(error),
-          { errorResponse: OCPP16Constants.OCPP_RESPONSE_EMPTY }
-        )!
+        return (
+          handleIncomingRequestError<GetDiagnosticsResponse>(
+            chargingStation,
+            OCPP16IncomingRequestCommand.GET_DIAGNOSTICS,
+            ensureError(error),
+            { errorResponse: OCPP16Constants.OCPP_RESPONSE_EMPTY }
+          ) ?? OCPP16Constants.OCPP_RESPONSE_EMPTY
+        )
       }
     } else {
       logger.warn(
@@ -1205,8 +1220,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       >(chargingStation, OCPP16RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION, {
         status: OCPP16DiagnosticsStatus.UploadFailed,
       })
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      chargingStation.stationInfo!.diagnosticsStatus = OCPP16DiagnosticsStatus.UploadFailed
+      if (chargingStation.stationInfo != null) {
+        chargingStation.stationInfo.diagnosticsStatus = OCPP16DiagnosticsStatus.UploadFailed
+      }
       return OCPP16Constants.OCPP_RESPONSE_EMPTY
     }
   }
@@ -1332,8 +1348,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     ) {
       return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    commandPayload.expiryDate = convertToDate(commandPayload.expiryDate)!
+    commandPayload.expiryDate = convertToDate(commandPayload.expiryDate) ?? new Date()
     const { connectorId, idTag, reservationId } = commandPayload
     if (!chargingStation.hasConnector(connectorId)) {
       logger.warn(
@@ -1350,8 +1365,10 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     if (!(await OCPPServiceUtils.isIdTagAuthorizedUnified(chargingStation, connectorId, idTag))) {
       return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const connectorStatus = chargingStation.getConnectorStatus(connectorId)!
+    const connectorStatus = chargingStation.getConnectorStatus(connectorId)
+    if (connectorStatus == null) {
+      return OCPP16Constants.OCPP_RESERVATION_RESPONSE_REJECTED
+    }
     resetAuthorizeConnectorStatus(connectorStatus)
     let response: OCPP16ReserveNowResponse
     try {
@@ -1390,15 +1407,18 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       }
       return response
     } catch (error) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      chargingStation.getConnectorStatus(connectorId)!.status = OCPP16ChargePointStatus.Available
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      return handleIncomingRequestError<OCPP16ReserveNowResponse>(
-        chargingStation,
-        OCPP16IncomingRequestCommand.RESERVE_NOW,
-        ensureError(error),
-        { errorResponse: OCPP16Constants.OCPP_RESERVATION_RESPONSE_FAULTED }
-      )!
+      const errorConnectorStatus = chargingStation.getConnectorStatus(connectorId)
+      if (errorConnectorStatus != null) {
+        errorConnectorStatus.status = OCPP16ChargePointStatus.Available
+      }
+      return (
+        handleIncomingRequestError<OCPP16ReserveNowResponse>(
+          chargingStation,
+          OCPP16IncomingRequestCommand.RESERVE_NOW,
+          ensureError(error),
+          { errorResponse: OCPP16Constants.OCPP_RESERVATION_RESPONSE_FAULTED }
+        ) ?? OCPP16Constants.OCPP_RESERVATION_RESPONSE_FAULTED
+      )
     }
   }
 
@@ -1423,8 +1443,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     })
     logger.info(
       `${chargingStation.logPrefix()} ${moduleName}.handleRequestReset: ${type} reset request received, simulating it. The station will be back online in ${formatDurationMilliSeconds(
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        chargingStation.stationInfo!.resetTime!
+        chargingStation.stationInfo?.resetTime ?? 0
       )}`
     )
     return OCPP16Constants.OCPP_RESPONSE_ACCEPTED
@@ -1690,8 +1709,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     >(chargingStation, OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION, {
       status: OCPP16FirmwareStatus.Downloading,
     })
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    chargingStation.stationInfo!.firmwareStatus = OCPP16FirmwareStatus.Downloading
+    if (chargingStation.stationInfo != null) {
+      chargingStation.stationInfo.firmwareStatus = OCPP16FirmwareStatus.Downloading
+    }
     if (
       chargingStation.stationInfo?.firmwareUpgrade?.failureStatus ===
       OCPP16FirmwareStatus.DownloadFailed
@@ -1714,8 +1734,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     >(chargingStation, OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION, {
       status: OCPP16FirmwareStatus.Downloaded,
     })
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    chargingStation.stationInfo!.firmwareStatus = OCPP16FirmwareStatus.Downloaded
+    if (chargingStation.stationInfo != null) {
+      chargingStation.stationInfo.firmwareStatus = OCPP16FirmwareStatus.Downloaded
+    }
     let wasTransactionsStarted = false
     let transactionsStarted: boolean
     do {
@@ -1772,8 +1793,9 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
     >(chargingStation, OCPP16RequestCommand.FIRMWARE_STATUS_NOTIFICATION, {
       status: OCPP16FirmwareStatus.Installing,
     })
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    chargingStation.stationInfo!.firmwareStatus = OCPP16FirmwareStatus.Installing
+    if (chargingStation.stationInfo != null) {
+      chargingStation.stationInfo.firmwareStatus = OCPP16FirmwareStatus.Installing
+    }
     if (
       chargingStation.stationInfo?.firmwareUpgrade?.failureStatus ===
       OCPP16FirmwareStatus.InstallationFailed

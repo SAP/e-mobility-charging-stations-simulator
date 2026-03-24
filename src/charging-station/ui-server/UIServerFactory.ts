@@ -42,8 +42,7 @@ export class UIServerFactory {
     }
     if (
       uiServerConfiguration.authentication?.enabled !== true &&
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      !isLoopback(uiServerConfiguration.options!.host!)
+      !isLoopback(uiServerConfiguration.options?.host ?? '')
     ) {
       const logMsg = `Non loopback address in '${ConfigurationSection.uiServer}' configuration section without authentication enabled. This is not recommended`
       logger.warn(`${UIServerFactory.logPrefix()} ${logMsg}`)
