@@ -72,8 +72,45 @@ type CommandResponse =
   | StopTransactionResponse
 
 export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChannel {
+  private static readonly acceptedStatusCommands = new Map<
+    BroadcastChannelProcedureName,
+    (response: CommandResponse) => boolean
+      >([
+        [
+          BroadcastChannelProcedureName.BOOT_NOTIFICATION,
+          r => r.status === RegistrationStatusEnumType.ACCEPTED,
+        ],
+        [BroadcastChannelProcedureName.DATA_TRANSFER, r => r.status === DataTransferStatus.ACCEPTED],
+        [
+          BroadcastChannelProcedureName.GET_15118_EV_CERTIFICATE,
+          r =>
+            (r as OCPP20Get15118EVCertificateResponse).status ===
+        Iso15118EVCertificateStatusEnumType.Accepted,
+        ],
+        [
+          BroadcastChannelProcedureName.GET_CERTIFICATE_STATUS,
+          r =>
+            (r as OCPP20GetCertificateStatusResponse).status === GetCertificateStatusEnumType.Accepted,
+        ],
+        [
+          BroadcastChannelProcedureName.SIGN_CERTIFICATE,
+          r => (r as OCPP20SignCertificateResponse).status === GenericStatus.Accepted,
+        ],
+      ])
+
+  private static readonly emptyResponseCommands = new Set<BroadcastChannelProcedureName>([
+    BroadcastChannelProcedureName.LOG_STATUS_NOTIFICATION,
+    BroadcastChannelProcedureName.METER_VALUES,
+    BroadcastChannelProcedureName.NOTIFY_CUSTOMER_INFORMATION,
+    BroadcastChannelProcedureName.NOTIFY_REPORT,
+    BroadcastChannelProcedureName.SECURITY_EVENT_NOTIFICATION,
+    BroadcastChannelProcedureName.STATUS_NOTIFICATION,
+  ])
+
   private readonly chargingStation: ChargingStation
+
   private readonly commandHandlers: Map<BroadcastChannelProcedureName, CommandHandler>
+
   private readonly requestParams: RequestParams = {
     throwError: true,
   }
@@ -251,6 +288,13 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     command: BroadcastChannelProcedureName,
     commandResponse: CommandResponse
   ): ResponseStatus {
+    if (ChargingStationWorkerBroadcastChannel.emptyResponseCommands.has(command)) {
+      return isEmpty(commandResponse) ? ResponseStatus.SUCCESS : ResponseStatus.FAILURE
+    }
+    const statusCheck = ChargingStationWorkerBroadcastChannel.acceptedStatusCommands.get(command)
+    if (statusCheck != null) {
+      return statusCheck(commandResponse) ? ResponseStatus.SUCCESS : ResponseStatus.FAILURE
+    }
     switch (command) {
       case BroadcastChannelProcedureName.AUTHORIZE:
         switch (this.chargingStation.stationInfo?.ocppVersion) {
@@ -287,52 +331,8 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
           return ResponseStatus.SUCCESS
         }
         return ResponseStatus.FAILURE
-      case BroadcastChannelProcedureName.BOOT_NOTIFICATION:
-        if (commandResponse.status === RegistrationStatusEnumType.ACCEPTED) {
-          return ResponseStatus.SUCCESS
-        }
-        return ResponseStatus.FAILURE
-      case BroadcastChannelProcedureName.DATA_TRANSFER:
-        if (commandResponse.status === DataTransferStatus.ACCEPTED) {
-          return ResponseStatus.SUCCESS
-        }
-        return ResponseStatus.FAILURE
-      case BroadcastChannelProcedureName.GET_15118_EV_CERTIFICATE:
-        if (
-          (commandResponse as OCPP20Get15118EVCertificateResponse).status ===
-          Iso15118EVCertificateStatusEnumType.Accepted
-        ) {
-          return ResponseStatus.SUCCESS
-        }
-        return ResponseStatus.FAILURE
-      case BroadcastChannelProcedureName.GET_CERTIFICATE_STATUS:
-        if (
-          (commandResponse as OCPP20GetCertificateStatusResponse).status ===
-          GetCertificateStatusEnumType.Accepted
-        ) {
-          return ResponseStatus.SUCCESS
-        }
-        return ResponseStatus.FAILURE
       case BroadcastChannelProcedureName.HEARTBEAT:
-        if ('currentTime' in commandResponse) {
-          return ResponseStatus.SUCCESS
-        }
-        return ResponseStatus.FAILURE
-      case BroadcastChannelProcedureName.LOG_STATUS_NOTIFICATION:
-      case BroadcastChannelProcedureName.METER_VALUES:
-      case BroadcastChannelProcedureName.NOTIFY_CUSTOMER_INFORMATION:
-      case BroadcastChannelProcedureName.NOTIFY_REPORT:
-      case BroadcastChannelProcedureName.SECURITY_EVENT_NOTIFICATION:
-      case BroadcastChannelProcedureName.STATUS_NOTIFICATION:
-        if (isEmpty(commandResponse)) {
-          return ResponseStatus.SUCCESS
-        }
-        return ResponseStatus.FAILURE
-      case BroadcastChannelProcedureName.SIGN_CERTIFICATE:
-        if ((commandResponse as OCPP20SignCertificateResponse).status === GenericStatus.Accepted) {
-          return ResponseStatus.SUCCESS
-        }
-        return ResponseStatus.FAILURE
+        return 'currentTime' in commandResponse ? ResponseStatus.SUCCESS : ResponseStatus.FAILURE
       case BroadcastChannelProcedureName.TRANSACTION_EVENT:
         if (
           isEmpty(commandResponse) ||
