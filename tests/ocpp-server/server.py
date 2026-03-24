@@ -808,6 +808,8 @@ def _parse_set_variable_specs(specs_str: str) -> list[dict]:
     result = []
     for entry in specs_str.split(","):
         entry = entry.strip()
+        if not entry:
+            continue
         if "=" not in entry or "." not in entry.split("=")[0]:
             raise argparse.ArgumentTypeError(
                 f"Invalid variable spec '{entry}': expected 'Component.Variable=Value'"
@@ -828,6 +830,8 @@ def _parse_get_variable_specs(specs_str: str) -> list[dict]:
     result = []
     for entry in specs_str.split(","):
         entry = entry.strip()
+        if not entry:
+            continue
         if "." not in entry:
             raise argparse.ArgumentTypeError(
                 f"Invalid variable spec '{entry}': expected 'Component.Variable'"
@@ -994,13 +998,22 @@ async def main():
 
     args = parser.parse_args()
 
-    parsed_commands = _parse_commands(args.commands) if args.commands else None
-    parsed_set_variables = (
-        _parse_set_variable_specs(args.set_variables) if args.set_variables else None
-    )
-    parsed_get_variables = (
-        _parse_get_variable_specs(args.get_variables) if args.get_variables else None
-    )
+    try:
+        parsed_commands = _parse_commands(args.commands) if args.commands else None
+        if parsed_commands is not None and not parsed_commands:
+            parser.error("--commands must contain at least one CMD:DELAY entry")
+        parsed_set_variables = (
+            _parse_set_variable_specs(args.set_variables)
+            if args.set_variables
+            else None
+        )
+        parsed_get_variables = (
+            _parse_get_variable_specs(args.get_variables)
+            if args.get_variables
+            else None
+        )
+    except argparse.ArgumentTypeError as e:
+        parser.error(str(e))
 
     if args.boot_status_sequence is not None:
         boot_sequence_items: list[RegistrationStatusEnumType] = []
