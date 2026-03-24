@@ -1553,6 +1553,11 @@ const buildCurrentMeasurandValue = (
   }
 }
 
+export const buildEmptyMeterValue = (): MeterValue => ({
+  sampledValue: [],
+  timestamp: new Date(),
+})
+
 export const buildMeterValue = (
   chargingStation: ChargingStation,
   transactionId: number | string | undefined,
@@ -1560,7 +1565,7 @@ export const buildMeterValue = (
   debug = false
 ): MeterValue => {
   if (transactionId == null) {
-    return { sampledValue: [], timestamp: new Date() }
+    return buildEmptyMeterValue()
   }
   switch (chargingStation.stationInfo?.ocppVersion) {
     case OCPPVersion.VERSION_16: {
@@ -1573,10 +1578,7 @@ export const buildMeterValue = (
         )
       }
       const connector = chargingStation.getConnectorStatus(connectorId)
-      const meterValue: OCPP16MeterValue = {
-        sampledValue: [],
-        timestamp: new Date(),
-      }
+      const meterValue = buildEmptyMeterValue() as OCPP16MeterValue
       const buildVersionedSampledValue = (
         sampledValueTemplate: SampledValueTemplate,
         value: number,
@@ -1795,10 +1797,7 @@ export const buildMeterValue = (
         )
       }
       const connector = chargingStation.getConnectorStatus(connectorId)
-      const meterValue: OCPP20MeterValue = {
-        sampledValue: [],
-        timestamp: new Date(),
-      }
+      const meterValue = buildEmptyMeterValue() as OCPP20MeterValue
       const buildVersionedSampledValue = (
         sampledValueTemplate: SampledValueTemplate,
         value: number,
@@ -1938,10 +1937,7 @@ export const buildTransactionEndMeterValue = (
   const unitDivider = sampledValueTemplate.unit === MeterValueUnit.KILO_WATT_HOUR ? 1000 : 1
   switch (chargingStation.stationInfo?.ocppVersion) {
     case OCPPVersion.VERSION_16: {
-      const meterValue: OCPP16MeterValue = {
-        sampledValue: [],
-        timestamp: new Date(),
-      }
+      const meterValue = buildEmptyMeterValue() as OCPP16MeterValue
       meterValue.sampledValue.push(
         buildSampledValueForOCPP16(
           sampledValueTemplate,
@@ -1953,10 +1949,7 @@ export const buildTransactionEndMeterValue = (
     }
     case OCPPVersion.VERSION_20:
     case OCPPVersion.VERSION_201: {
-      const meterValue: OCPP20MeterValue = {
-        sampledValue: [],
-        timestamp: new Date(),
-      }
+      const meterValue = buildEmptyMeterValue() as OCPP20MeterValue
       meterValue.sampledValue.push(
         buildSampledValueForOCPP20(
           sampledValueTemplate,

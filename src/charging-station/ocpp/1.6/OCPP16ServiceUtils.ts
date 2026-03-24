@@ -52,6 +52,7 @@ import {
   roundTo,
 } from '../../../utils/index.js'
 import {
+  buildEmptyMeterValue,
   buildMeterValue,
   buildTransactionEndMeterValue,
   OCPPServiceUtils,
@@ -102,10 +103,7 @@ export class OCPP16ServiceUtils extends OCPPServiceUtils {
     connectorId: number,
     meterStart: number | undefined
   ): OCPP16MeterValue {
-    const meterValue: OCPP16MeterValue = {
-      sampledValue: [],
-      timestamp: new Date(),
-    }
+    const meterValue = buildEmptyMeterValue() as OCPP16MeterValue
     // Energy.Active.Import.Register measurand (default)
     const sampledValueTemplate = OCPP16ServiceUtils.getSampledValueTemplate(
       chargingStation,
