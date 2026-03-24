@@ -1072,7 +1072,7 @@ const getSingleChargingSchedule = (
  * @param chargingStation - The charging station instance
  * @param connectorId - The connector identifier
  * @param chargingProfiles - Array of charging profiles
- * @returns ChargingProfilesLimit
+ * @returns Charging profiles limit or undefined if no valid limit found
  */
 const getChargingProfilesLimit = (
   chargingStation: ChargingStation,
