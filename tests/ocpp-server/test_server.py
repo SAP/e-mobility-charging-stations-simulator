@@ -203,6 +203,8 @@ def _patch_main(mock_loop, mock_server, mock_event, extra_patches=None):
         blacklist=["blocked_token"],
         offline=False,
         trigger_message=MessageTriggerEnumType.status_notification,
+        reset_type=ResetEnumType.immediate,
+        availability_status=OperationalStatusEnumType.operative,
     )
     mock_serve_cm = AsyncMock()
     mock_serve_cm.__aenter__ = AsyncMock(return_value=mock_server)
@@ -1458,3 +1460,66 @@ class TestTriggerMessageType:
         call_args = cp.call.call_args
         request = call_args[0][0]
         assert request.requested_message == MessageTriggerEnumType.boot_notification
+
+
+class TestResetType:
+    """Tests for configurable Reset type."""
+
+    async def test_send_reset_default_immediate(self, command_charge_point):
+        """Verify default Reset type is immediate."""
+        command_charge_point.call = AsyncMock(
+            return_value=ocpp.v201.call_result.Reset(
+                status=ResetStatusEnumType.accepted
+            )
+        )
+        await command_charge_point._send_reset()
+        call_args = command_charge_point.call.call_args
+        request = call_args[0][0]
+        assert request.type == ResetEnumType.immediate
+
+    async def test_send_reset_on_idle(self, mock_connection):
+        """Verify custom Reset type is used."""
+        cp = ChargePoint(mock_connection, reset_type=ResetEnumType.on_idle)
+        cp.call = AsyncMock(
+            return_value=ocpp.v201.call_result.Reset(
+                status=ResetStatusEnumType.accepted
+            )
+        )
+        await cp._send_reset()
+        call_args = cp.call.call_args
+        request = call_args[0][0]
+        assert request.type == ResetEnumType.on_idle
+
+
+class TestChangeAvailabilityStatus:
+    """Tests for configurable ChangeAvailability status."""
+
+    async def test_send_change_availability_default_operative(
+        self, command_charge_point
+    ):
+        """Verify default ChangeAvailability status is operative."""
+        command_charge_point.call = AsyncMock(
+            return_value=ocpp.v201.call_result.ChangeAvailability(
+                status=ChangeAvailabilityStatusEnumType.accepted
+            )
+        )
+        await command_charge_point._send_change_availability()
+        call_args = command_charge_point.call.call_args
+        request = call_args[0][0]
+        assert request.operational_status == OperationalStatusEnumType.operative
+
+    async def test_send_change_availability_inoperative(self, mock_connection):
+        """Verify custom ChangeAvailability status is used."""
+        cp = ChargePoint(
+            mock_connection,
+            availability_status=OperationalStatusEnumType.inoperative,
+        )
+        cp.call = AsyncMock(
+            return_value=ocpp.v201.call_result.ChangeAvailability(
+                status=ChangeAvailabilityStatusEnumType.accepted
+            )
+        )
+        await cp._send_change_availability()
+        call_args = cp.call.call_args
+        request = call_args[0][0]
+        assert request.operational_status == OperationalStatusEnumType.inoperative

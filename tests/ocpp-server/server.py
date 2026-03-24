@@ -108,6 +108,8 @@ class ServerConfig:
     trigger_message_type: MessageTriggerEnumType = (
         MessageTriggerEnumType.status_notification
     )
+    reset_type: ResetEnumType = ResetEnumType.immediate
+    availability_status: OperationalStatusEnumType = OperationalStatusEnumType.operative
 
 
 class ChargePoint(ocpp.v201.ChargePoint):
@@ -119,6 +121,8 @@ class ChargePoint(ocpp.v201.ChargePoint):
     _boot_index: int
     _total_cost: float
     _trigger_message_type: MessageTriggerEnumType
+    _reset_type: ResetEnumType
+    _availability_status: OperationalStatusEnumType
     _charge_points: set["ChargePoint"]
 
     def __init__(
@@ -131,6 +135,10 @@ class ChargePoint(ocpp.v201.ChargePoint):
         total_cost: float = DEFAULT_TOTAL_COST,
         trigger_message_type: MessageTriggerEnumType = (
             MessageTriggerEnumType.status_notification
+        ),
+        reset_type: ResetEnumType = ResetEnumType.immediate,
+        availability_status: OperationalStatusEnumType = (
+            OperationalStatusEnumType.operative
         ),
         charge_points: set["ChargePoint"] | None = None,
     ):
@@ -147,6 +155,8 @@ class ChargePoint(ocpp.v201.ChargePoint):
         self._boot_index = 0
         self._total_cost = total_cost
         self._trigger_message_type = trigger_message_type
+        self._reset_type = reset_type
+        self._availability_status = availability_status
         self._charge_points.add(self)
         self._active_transactions: dict[str, int] = {}
         if auth_config is None:
@@ -401,7 +411,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
         logger.info("%s response received", Action.request_stop_transaction)
 
     async def _send_reset(self):
-        request = ocpp.v201.call.Reset(type=ResetEnumType.immediate)
+        request = ocpp.v201.call.Reset(type=self._reset_type)
         await self._call_and_log(request, Action.reset, ResetStatusEnumType.accepted)
 
     async def _send_unlock_connector(self):
@@ -412,7 +422,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
 
     async def _send_change_availability(self):
         request = ocpp.v201.call.ChangeAvailability(
-            operational_status=OperationalStatusEnumType.operative
+            operational_status=self._availability_status
         )
         await self._call_and_log(
             request,
@@ -678,6 +688,8 @@ async def on_connect(
         boot_sequence=config.boot_sequence,
         total_cost=config.total_cost,
         trigger_message_type=config.trigger_message_type,
+        reset_type=config.reset_type,
+        availability_status=config.availability_status,
         charge_points=charge_points,
     )
     if config.command_name:
@@ -762,6 +774,18 @@ async def main():
         default=MessageTriggerEnumType.status_notification,
         help="TriggerMessage requested_message type (default: status_notification)",
     )
+    parser.add_argument(
+        "--reset-type",
+        type=ResetEnumType,
+        default=ResetEnumType.immediate,
+        help="Reset type (default: immediate)",
+    )
+    parser.add_argument(
+        "--availability-status",
+        type=OperationalStatusEnumType,
+        default=OperationalStatusEnumType.operative,
+        help="ChangeAvailability operational status (default: operative)",
+    )
 
     # Auth configuration
     parser.add_argument(
@@ -821,8 +845,10 @@ async def main():
         auth_config=auth_config,
         boot_sequence=boot_sequence,
         total_cost=args.total_cost,
-        charge_points=set(),
         trigger_message_type=args.trigger_message,
+        reset_type=args.reset_type,
+        availability_status=args.availability_status,
+        charge_points=set(),
     )
 
     logger.info(
