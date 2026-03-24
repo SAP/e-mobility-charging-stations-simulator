@@ -6,7 +6,7 @@ import logging
 import math
 import signal
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from enum import StrEnum
 from functools import partial
@@ -107,6 +107,8 @@ class ServerConfig:
     total_cost: float
     # Intentionally mutable despite frozen dataclass
     charge_points: set["ChargePoint"]
+    # Shared mutable counter so boot_sequence advances across reconnections
+    boot_index: list[int] = field(default_factory=lambda: [0])
     commands: list[tuple[Action, float]] | None = None
     trigger_message_type: MessageTriggerEnumType = (
         MessageTriggerEnumType.status_notification
@@ -123,7 +125,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
     _command_timer: Timer | None
     _auth_config: AuthConfig
     _boot_sequence: tuple[RegistrationStatusEnumType, ...]
-    _boot_index: int
+    _boot_index: list[int]
     _total_cost: float
     _trigger_message_type: MessageTriggerEnumType
     _reset_type: ResetEnumType
@@ -139,6 +141,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
         boot_sequence: tuple[RegistrationStatusEnumType, ...] = (
             RegistrationStatusEnumType.accepted,
         ),
+        boot_index: list[int] | None = None,
         total_cost: float = DEFAULT_TOTAL_COST,
         trigger_message_type: MessageTriggerEnumType = (
             MessageTriggerEnumType.status_notification
@@ -161,7 +164,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
         self._charge_points = charge_points if charge_points is not None else set()
         self._command_timer = None
         self._boot_sequence = boot_sequence
-        self._boot_index = 0
+        self._boot_index = boot_index if boot_index is not None else [0]
         self._total_cost = total_cost
         self._trigger_message_type = trigger_message_type
         self._reset_type = reset_type
@@ -222,10 +225,9 @@ class ChargePoint(ocpp.v201.ChargePoint):
     @on(Action.boot_notification)
     async def on_boot_notification(self, charging_station, reason, **kwargs):
         logger.info("Received %s", Action.boot_notification)
-        status = self._boot_sequence[
-            min(self._boot_index, len(self._boot_sequence) - 1)
-        ]
-        self._boot_index += 1
+        idx = self._boot_index[0]
+        status = self._boot_sequence[min(idx, len(self._boot_sequence) - 1)]
+        self._boot_index[0] = idx + 1
         return ocpp.v201.call_result.BootNotification(
             current_time=datetime.now(timezone.utc).isoformat(),
             interval=DEFAULT_HEARTBEAT_INTERVAL,
@@ -728,6 +730,7 @@ async def on_connect(
         websocket,
         auth_config=config.auth_config,
         boot_sequence=config.boot_sequence,
+        boot_index=config.boot_index,
         total_cost=config.total_cost,
         trigger_message_type=config.trigger_message_type,
         reset_type=config.reset_type,
@@ -1006,6 +1009,7 @@ async def main():
         period=args.period,
         auth_config=auth_config,
         boot_sequence=boot_sequence,
+        boot_index=[0],
         total_cost=args.total_cost,
         charge_points=set(),
         commands=parsed_commands,
