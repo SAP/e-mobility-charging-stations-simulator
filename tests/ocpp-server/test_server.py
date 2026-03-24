@@ -202,6 +202,7 @@ def _patch_main(mock_loop, mock_server, mock_event, extra_patches=None):
         whitelist=["valid_token"],
         blacklist=["blocked_token"],
         offline=False,
+        trigger_message=MessageTriggerEnumType.status_notification,
     )
     mock_serve_cm = AsyncMock()
     mock_serve_cm.__aenter__ = AsyncMock(return_value=mock_server)
@@ -1423,3 +1424,37 @@ class TestMainGracefulShutdown:
         assert callable(sigint_handler)
         sigint_handler(signal.SIGINT.value, None)
         mock_loop.call_soon_threadsafe.assert_called_once()
+
+
+class TestTriggerMessageType:
+    """Tests for configurable TriggerMessage type."""
+
+    async def test_send_trigger_message_default_status_notification(
+        self, command_charge_point
+    ):
+        """Verify default TriggerMessage type is status_notification."""
+        command_charge_point.call = AsyncMock(
+            return_value=ocpp.v201.call_result.TriggerMessage(
+                status=TriggerMessageStatusEnumType.accepted
+            )
+        )
+        await command_charge_point._send_trigger_message()
+        call_args = command_charge_point.call.call_args
+        request = call_args[0][0]
+        assert request.requested_message == MessageTriggerEnumType.status_notification
+
+    async def test_send_trigger_message_custom_boot_notification(self, mock_connection):
+        """Verify custom TriggerMessage type is used."""
+        cp = ChargePoint(
+            mock_connection,
+            trigger_message_type=MessageTriggerEnumType.boot_notification,
+        )
+        cp.call = AsyncMock(
+            return_value=ocpp.v201.call_result.TriggerMessage(
+                status=TriggerMessageStatusEnumType.accepted
+            )
+        )
+        await cp._send_trigger_message()
+        call_args = cp.call.call_args
+        request = call_args[0][0]
+        assert request.requested_message == MessageTriggerEnumType.boot_notification

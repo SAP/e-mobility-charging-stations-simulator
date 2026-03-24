@@ -105,6 +105,9 @@ class ServerConfig:
     total_cost: float
     # Intentionally mutable despite frozen dataclass
     charge_points: set["ChargePoint"]
+    trigger_message_type: MessageTriggerEnumType = (
+        MessageTriggerEnumType.status_notification
+    )
 
 
 class ChargePoint(ocpp.v201.ChargePoint):
@@ -115,6 +118,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
     _boot_sequence: tuple[RegistrationStatusEnumType, ...]
     _boot_index: int
     _total_cost: float
+    _trigger_message_type: MessageTriggerEnumType
     _charge_points: set["ChargePoint"]
 
     def __init__(
@@ -125,6 +129,9 @@ class ChargePoint(ocpp.v201.ChargePoint):
             RegistrationStatusEnumType.accepted,
         ),
         total_cost: float = DEFAULT_TOTAL_COST,
+        trigger_message_type: MessageTriggerEnumType = (
+            MessageTriggerEnumType.status_notification
+        ),
         charge_points: set["ChargePoint"] | None = None,
     ):
         # Extract CP ID from last URL segment (OCPP 2.0.1 Part 4)
@@ -139,6 +146,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
         self._boot_sequence = boot_sequence
         self._boot_index = 0
         self._total_cost = total_cost
+        self._trigger_message_type = trigger_message_type
         self._charge_points.add(self)
         self._active_transactions: dict[str, int] = {}
         if auth_config is None:
@@ -414,7 +422,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
 
     async def _send_trigger_message(self):
         request = ocpp.v201.call.TriggerMessage(
-            requested_message=MessageTriggerEnumType.status_notification
+            requested_message=self._trigger_message_type
         )
         await self._call_and_log(
             request, Action.trigger_message, TriggerMessageStatusEnumType.accepted
@@ -669,6 +677,7 @@ async def on_connect(
         auth_config=config.auth_config,
         boot_sequence=config.boot_sequence,
         total_cost=config.total_cost,
+        trigger_message_type=config.trigger_message_type,
         charge_points=charge_points,
     )
     if config.command_name:
@@ -747,6 +756,13 @@ async def main():
         help=f"TransactionEvent.Updated total cost (default: {DEFAULT_TOTAL_COST})",
     )
 
+    parser.add_argument(
+        "--trigger-message",
+        type=MessageTriggerEnumType,
+        default=MessageTriggerEnumType.status_notification,
+        help="TriggerMessage requested_message type (default: status_notification)",
+    )
+
     # Auth configuration
     parser.add_argument(
         "--auth-mode",
@@ -806,6 +822,7 @@ async def main():
         boot_sequence=boot_sequence,
         total_cost=args.total_cost,
         charge_points=set(),
+        trigger_message_type=args.trigger_message,
     )
 
     logger.info(
