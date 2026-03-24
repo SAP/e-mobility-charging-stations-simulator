@@ -126,7 +126,7 @@ export const createMockAuthService = (overrides?: Partial<OCPPAuthService>): OCP
           avgResponseTime: 0,
           cacheHitRate: 0,
           failedAuth: 0,
-          lastUpdated: new Date(),
+          lastUpdatedDate: new Date(),
           localUsageRate: 1,
           remoteSuccessRate: 0,
           successfulAuth: 0,

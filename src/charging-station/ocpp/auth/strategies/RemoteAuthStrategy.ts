@@ -39,7 +39,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
   private stats = {
     avgResponseTimeMs: 0,
     failedRemoteAuth: 0,
-    lastUpdated: new Date(),
+    lastUpdatedDate: new Date(),
     networkErrors: 0,
     successfulRemoteAuth: 0,
     timeoutErrors: 0,
@@ -156,7 +156,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
       return undefined
     } finally {
       this.updateResponseTimeStats(startTime)
-      this.stats.lastUpdated = new Date()
+      this.stats.lastUpdatedDate = new Date()
     }
   }
 
@@ -187,7 +187,7 @@ export class RemoteAuthStrategy implements AuthStrategy {
     this.stats = {
       avgResponseTimeMs: 0,
       failedRemoteAuth: 0,
-      lastUpdated: new Date(),
+      lastUpdatedDate: new Date(),
       networkErrors: 0,
       successfulRemoteAuth: 0,
       timeoutErrors: 0,

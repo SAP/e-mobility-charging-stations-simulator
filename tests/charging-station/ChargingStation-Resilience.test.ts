@@ -118,7 +118,7 @@ await describe('ChargingStation Resilience', async () => {
       mocks.webSocket.simulateMessage('invalid json')
 
       // Assert - Station should still be operational (not crashed)
-      assert.ok(station.connectors.size > 0)
+      assert.strictEqual(station.connectors.size > 0, true)
     })
 
     await it('should handle WebSocket error event gracefully', () => {
@@ -196,7 +196,7 @@ await describe('ChargingStation Resilience', async () => {
       mocks.webSocket.simulateClose(1006, 'Server unreachable')
 
       // Assert - Station should remain in valid state
-      assert.ok(station.connectors.size > 0)
+      assert.strictEqual(station.connectors.size > 0, true)
       assert.strictEqual(mocks.webSocket.readyState, 3) // CLOSED
     })
 
@@ -362,7 +362,7 @@ await describe('ChargingStation Resilience', async () => {
       // Note: Due to async nature, the message may be sent or buffered depending on timing
       // This test verifies the message is queued at minimum
       const stationWithQueue = station as unknown as { messageQueue: string[] }
-      assert.ok(stationWithQueue.messageQueue.length >= 0)
+      assert.strictEqual(stationWithQueue.messageQueue.length >= 0, true)
     })
 
     await it('should flush messages in FIFO order when connection restored', () => {

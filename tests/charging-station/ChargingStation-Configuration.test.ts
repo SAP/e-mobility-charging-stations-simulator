@@ -40,7 +40,7 @@ await describe('ChargingStation Configuration Management', async () => {
       if (station.bootNotificationResponse == null) {
         assert.fail('Expected bootNotificationResponse to be defined')
       }
-      assert.ok(station.bootNotificationResponse.interval > 0)
+      assert.strictEqual(station.bootNotificationResponse.interval > 0, true)
       assert.strictEqual(station.inPendingState(), true)
     })
 
@@ -140,7 +140,7 @@ await describe('ChargingStation Configuration Management', async () => {
       if (station.bootNotificationResponse == null) {
         assert.fail('Expected bootNotificationResponse to be defined')
       }
-      assert.ok(station.bootNotificationResponse.interval > 0)
+      assert.strictEqual(station.bootNotificationResponse.interval > 0, true)
       assert.strictEqual(station.inRejectedState(), true)
     })
 
@@ -756,7 +756,7 @@ await describe('ChargingStation Configuration Management', async () => {
       // Assert
       assert.notStrictEqual(mocks.webSocket.url, undefined)
       assert.strictEqual(typeof mocks.webSocket.url, 'string')
-      assert.ok(mocks.webSocket.url.length > 0)
+      assert.strictEqual(mocks.webSocket.url.length > 0, true)
     })
   })
 
@@ -783,7 +783,7 @@ await describe('ChargingStation Configuration Management', async () => {
         const pingInterval = station.getWebSocketPingInterval()
 
         // Assert - should return a valid interval value
-        assert.ok(pingInterval >= 0)
+        assert.strictEqual(pingInterval >= 0, true)
         assert.strictEqual(typeof pingInterval, 'number')
       })
     })

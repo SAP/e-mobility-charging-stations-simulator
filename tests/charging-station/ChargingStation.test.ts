@@ -40,7 +40,7 @@ await describe('ChargingStation', async () => {
       const station = result.station
 
       assert.notStrictEqual(station, undefined)
-      assert.ok(station.connectors.size > 0)
+      assert.strictEqual(station.connectors.size > 0, true)
       assert.notStrictEqual(station.stationInfo, undefined)
 
       cleanupChargingStation(station)

@@ -36,7 +36,7 @@ export class LocalAuthStrategy implements AuthStrategy {
   private localAuthListManager?: LocalAuthListManager
   private stats = {
     cacheHits: 0,
-    lastUpdated: new Date(),
+    lastUpdatedDate: new Date(),
     localListHits: 0,
     offlineDecisions: 0,
     totalRequests: 0,
@@ -134,7 +134,7 @@ export class LocalAuthStrategy implements AuthStrategy {
         }
       )
     } finally {
-      this.stats.lastUpdated = new Date()
+      this.stats.lastUpdatedDate = new Date()
     }
   }
 
@@ -184,7 +184,7 @@ export class LocalAuthStrategy implements AuthStrategy {
     this.isInitialized = false
     this.stats = {
       cacheHits: 0,
-      lastUpdated: new Date(),
+      lastUpdatedDate: new Date(),
       localListHits: 0,
       offlineDecisions: 0,
       totalRequests: 0,

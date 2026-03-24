@@ -20,6 +20,7 @@ import {
   type VariableName,
 } from '../../../types/index.js'
 import { Constants, convertToIntOrNaN, has } from '../../../utils/index.js'
+import { OCPP20Constants } from './OCPP20Constants.js'
 
 /**
  * Metadata describing a variable (component-level configuration or runtime state).
@@ -599,7 +600,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   )]: {
     component: OCPP20ComponentName.ChargingStation as string,
     dataType: DataEnumType.string,
-    defaultValue: 'ws://localhost',
+    defaultValue: OCPP20Constants.DEFAULT_CONNECTION_URL,
     description: 'Central system connection URL.',
     isUrl: true,
     maxLength: 512,

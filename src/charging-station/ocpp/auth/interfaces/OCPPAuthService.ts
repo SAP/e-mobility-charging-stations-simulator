@@ -84,7 +84,7 @@ export interface AuthStats {
   failedAuth: number
 
   /** Last update timestamp */
-  lastUpdated: Date
+  lastUpdatedDate: Date
 
   /** Local authorization usage rate */
   localUsageRate: number

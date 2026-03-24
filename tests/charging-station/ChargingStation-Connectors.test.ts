@@ -246,7 +246,7 @@ await describe('ChargingStation Connector and EVSE State', async () => {
         assert.fail('Expected evseStatus to be defined')
       }
       assert.notStrictEqual(evseStatus.connectors, undefined)
-      assert.ok(evseStatus.connectors.size > 0)
+      assert.strictEqual(evseStatus.connectors.size > 0, true)
     })
 
     await it('should return undefined for getEvseStatus() with invalid EVSE IDs', () => {

@@ -391,7 +391,7 @@ export class OCPPAuthServiceImpl implements OCPPAuthService {
       avgResponseTime: Math.round(avgResponseTime * 100) / 100,
       cacheHitRate: Math.round(cacheHitRate * 10000) / 100,
       failedAuth: this.metrics.failedAuth,
-      lastUpdated: this.metrics.lastReset,
+      lastUpdatedDate: this.metrics.lastReset,
       localUsageRate: Math.round(localUsageRate * 10000) / 100,
       rateLimit: rateLimitStats,
       remoteSuccessRate: Math.round(remoteSuccessRate * 10000) / 100,

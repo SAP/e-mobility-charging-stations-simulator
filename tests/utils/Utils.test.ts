@@ -226,8 +226,8 @@ await describe('Utils', async () => {
   await it('should generate cryptographically secure random numbers between 0 and 1', () => {
     const random = secureRandom()
     assert.ok(typeof random === 'number')
-    assert.ok(random >= 0)
-    assert.ok(random < 1)
+    assert.strictEqual(random >= 0, true)
+    assert.strictEqual(random < 1, true)
   })
 
   await it('should round numbers to specified decimal places correctly', () => {
@@ -248,8 +248,8 @@ await describe('Utils', async () => {
   await it('should generate random floats within specified range', () => {
     let randomFloat = getRandomFloat()
     assert.ok(typeof randomFloat === 'number')
-    assert.ok(randomFloat >= 0)
-    assert.ok(randomFloat <= Number.MAX_VALUE)
+    assert.strictEqual(randomFloat >= 0, true)
+    assert.strictEqual(randomFloat <= Number.MAX_VALUE, true)
     assert.notDeepStrictEqual(randomFloat, getRandomFloat())
     assert.throws(
       () => {
@@ -264,8 +264,8 @@ await describe('Utils', async () => {
       { message: /Invalid interval/ }
     )
     randomFloat = getRandomFloat(0, -Number.MAX_VALUE)
-    assert.ok(randomFloat >= -Number.MAX_VALUE)
-    assert.ok(randomFloat <= 0)
+    assert.strictEqual(randomFloat >= -Number.MAX_VALUE, true)
+    assert.strictEqual(randomFloat <= 0, true)
   })
 
   await it('should extract numeric values from timestamped circular buffer', () => {
@@ -558,39 +558,39 @@ await describe('Utils', async () => {
 
     // retryNumber = 0: 2^0 * 100 = 100ms base
     const delay0 = exponentialDelay(0)
-    assert.ok(delay0 >= 100)
-    assert.ok(delay0 <= 120) // 100 + 20% max jitter
+    assert.strictEqual(delay0 >= 100, true)
+    assert.strictEqual(delay0 <= 120, true) // 100 + 20% max jitter
 
     // retryNumber = 1: 2^1 * 100 = 200ms base
     const delay1 = exponentialDelay(1)
-    assert.ok(delay1 >= 200)
-    assert.ok(delay1 <= 240) // 200 + 20% max jitter
+    assert.strictEqual(delay1 >= 200, true)
+    assert.strictEqual(delay1 <= 240, true) // 200 + 20% max jitter
 
     // retryNumber = 2: 2^2 * 100 = 400ms base
     const delay2 = exponentialDelay(2)
-    assert.ok(delay2 >= 400)
-    assert.ok(delay2 <= 480) // 400 + 20% max jitter
+    assert.strictEqual(delay2 >= 400, true)
+    assert.strictEqual(delay2 <= 480, true) // 400 + 20% max jitter
 
     // retryNumber = 3: 2^3 * 100 = 800ms base
     const delay3 = exponentialDelay(3)
-    assert.ok(delay3 >= 800)
-    assert.ok(delay3 <= 960) // 800 + 20% max jitter
+    assert.strictEqual(delay3 >= 800, true)
+    assert.strictEqual(delay3 <= 960, true) // 800 + 20% max jitter
   })
 
   await it('should calculate exponential delay with custom delay factor', () => {
     // Custom delayFactor = 50ms
     const delay0 = exponentialDelay(0, 50)
-    assert.ok(delay0 >= 50)
-    assert.ok(delay0 <= 60) // 50 + 20% max jitter
+    assert.strictEqual(delay0 >= 50, true)
+    assert.strictEqual(delay0 <= 60, true) // 50 + 20% max jitter
 
     const delay1 = exponentialDelay(1, 50)
-    assert.ok(delay1 >= 100)
-    assert.ok(delay1 <= 120)
+    assert.strictEqual(delay1 >= 100, true)
+    assert.strictEqual(delay1 <= 120, true)
 
     // Custom delayFactor = 200ms
     const delay2 = exponentialDelay(2, 200)
-    assert.ok(delay2 >= 800) // 2^2 * 200 = 800
-    assert.ok(delay2 <= 960)
+    assert.strictEqual(delay2 >= 800, true) // 2^2 * 200 = 800
+    assert.strictEqual(delay2 <= 960, true)
   })
 
   await it('should follow 2^n exponential growth pattern', () => {
@@ -608,8 +608,8 @@ await describe('Utils', async () => {
     for (let i = 1; i < delays.length; i++) {
       const ratio = delays[i] / delays[i - 1]
       // Allow for jitter variance - ratio should be roughly 2x
-      assert.ok(ratio > 1.5)
-      assert.ok(ratio < 2.5)
+      assert.strictEqual(ratio > 1.5, true)
+      assert.strictEqual(ratio < 2.5, true)
     }
   })
 
@@ -627,7 +627,7 @@ await describe('Utils', async () => {
 
     // With jitter, we expect at least some variation
     // (unlikely to get 10 identical values with secure random)
-    assert.ok(delays.size > 1)
+    assert.strictEqual(delays.size > 1, true)
   })
 
   await it('should keep jitter within 0-20% range of base delay', () => {
@@ -642,27 +642,27 @@ await describe('Utils', async () => {
       const jitter = delay - baseDelay
 
       // Jitter should be non-negative and at most 20% of base delay
-      assert.ok(jitter >= 0)
-      assert.ok(jitter <= baseDelay * 0.2)
+      assert.strictEqual(jitter >= 0, true)
+      assert.strictEqual(jitter <= baseDelay * 0.2, true)
     }
   })
 
   await it('should handle edge cases (default retry, large retry, small factor)', () => {
     // Default retryNumber (0)
     const defaultRetry = exponentialDelay()
-    assert.ok(defaultRetry >= 100) // 2^0 * 100
-    assert.ok(defaultRetry <= 120)
+    assert.strictEqual(defaultRetry >= 100, true) // 2^0 * 100
+    assert.strictEqual(defaultRetry <= 120, true)
 
     // Large retry number (verify no overflow issues)
     const largeRetry = exponentialDelay(10, 100)
     // 2^10 * 100 = 102400ms base
-    assert.ok(largeRetry >= 102400)
-    assert.ok(largeRetry <= 122880) // 102400 + 20%
+    assert.strictEqual(largeRetry >= 102400, true)
+    assert.strictEqual(largeRetry <= 122880, true) // 102400 + 20%
 
     // Very small delay factor
     const smallFactor = exponentialDelay(2, 1)
-    assert.ok(smallFactor >= 4) // 2^2 * 1
-    assert.ok(smallFactor < 5) // 4 + 20%
+    assert.strictEqual(smallFactor >= 4, true) // 2^2 * 1
+    assert.strictEqual(smallFactor < 5, true) // 4 + 20%
   })
 
   await it('should calculate appropriate delays for WebSocket reconnection scenarios', () => {
@@ -671,26 +671,26 @@ await describe('Utils', async () => {
 
     // First reconnect attempt (retry 1)
     const firstDelay = exponentialDelay(1, delayFactor)
-    assert.ok(firstDelay >= 200) // 2^1 * 100
-    assert.ok(firstDelay <= 240)
+    assert.strictEqual(firstDelay >= 200, true) // 2^1 * 100
+    assert.strictEqual(firstDelay <= 240, true)
 
     // After several failures (retry 5)
     const fifthDelay = exponentialDelay(5, delayFactor)
-    assert.ok(fifthDelay >= 3200) // 2^5 * 100
-    assert.ok(fifthDelay <= 3840)
+    assert.strictEqual(fifthDelay >= 3200, true) // 2^5 * 100
+    assert.strictEqual(fifthDelay <= 3840, true)
 
     // Maximum practical retry (retry 10 = ~102 seconds)
     const maxDelay = exponentialDelay(10, delayFactor)
-    assert.ok(maxDelay >= 102400) // ~102 seconds
-    assert.ok(maxDelay <= 122880)
+    assert.strictEqual(maxDelay >= 102400, true) // ~102 seconds
+    assert.strictEqual(maxDelay <= 122880, true)
   })
 
   await it('should return timestamped log prefix with optional string', () => {
     const result = logPrefix()
     assert.strictEqual(typeof result, 'string')
-    assert.ok(result.length > 0)
+    assert.strictEqual(result.length > 0, true)
     const withPrefix = logPrefix(' Test |')
-    assert.ok(withPrefix.includes(' Test |'))
+    assert.strictEqual(withPrefix.includes(' Test |'), true)
   })
 
   await it('should deep merge objects with source overriding target', () => {
@@ -754,17 +754,17 @@ await describe('Utils', async () => {
 
   await it('should generate random float rounded to specified scale', () => {
     const result = getRandomFloatRounded(10, 0, 2)
-    assert.ok(result >= 0)
-    assert.ok(result <= 10)
+    assert.strictEqual(result >= 0, true)
+    assert.strictEqual(result <= 10, true)
     // Check rounding to 2 decimal places
     const decimalStr = result.toString()
     if (decimalStr.includes('.')) {
-      assert.ok(decimalStr.split('.')[1].length <= 2)
+      assert.strictEqual(decimalStr.split('.')[1].length <= 2, true)
     }
     // Default scale
     const defaultScale = getRandomFloatRounded(10, 0)
-    assert.ok(defaultScale >= 0)
-    assert.ok(defaultScale <= 10)
+    assert.strictEqual(defaultScale >= 0, true)
+    assert.strictEqual(defaultScale <= 10, true)
   })
 
   await it('should generate fluctuated random float within percentage range', () => {
@@ -772,8 +772,8 @@ await describe('Utils', async () => {
     assert.strictEqual(getRandomFloatFluctuatedRounded(100, 0), 100)
     // 10% fluctuation: 100 ± 10
     const result = getRandomFloatFluctuatedRounded(100, 10)
-    assert.ok(result >= 90)
-    assert.ok(result <= 110)
+    assert.strictEqual(result >= 90, true)
+    assert.strictEqual(result <= 110, true)
     // Invalid fluctuation percent
     assert.throws(() => {
       getRandomFloatFluctuatedRounded(100, -1)
@@ -783,8 +783,8 @@ await describe('Utils', async () => {
     }, RangeError)
     // Negative static value with fluctuation
     const negResult = getRandomFloatFluctuatedRounded(-100, 10)
-    assert.ok(negResult >= -110)
-    assert.ok(negResult <= -90)
+    assert.strictEqual(negResult >= -110, true)
+    assert.strictEqual(negResult <= -90, true)
   })
 
   await it('should detect Cloud Foundry environment from VCAP_APPLICATION', () => {

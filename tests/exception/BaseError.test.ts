@@ -43,8 +43,8 @@ await describe('BaseError', async () => {
     const beforeNow = Date.now()
     const baseError = new BaseError()
     const afterNow = Date.now()
-    assert.ok(baseError.date.getTime() >= beforeNow - 1000)
-    assert.ok(baseError.date.getTime() <= afterNow + 1000)
+    assert.strictEqual(baseError.date.getTime() >= beforeNow - 1000, true)
+    assert.strictEqual(baseError.date.getTime() <= afterNow + 1000, true)
   })
 
   await it('should set name to subclass name when extended', () => {

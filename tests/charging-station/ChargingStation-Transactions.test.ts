@@ -502,7 +502,7 @@ await describe('ChargingStation Transaction Management', async () => {
         // Assert - interval should be different (old cleared, new created)
         assert.notStrictEqual(secondInterval, undefined)
         assert.strictEqual(typeof secondInterval, 'object')
-        assert.ok(firstInterval !== secondInterval)
+        assert.notStrictEqual(firstInterval, secondInterval)
       })
     })
 
@@ -569,7 +569,7 @@ await describe('ChargingStation Transaction Management', async () => {
         // Assert - interval should be different
         assert.notStrictEqual(secondInterval, undefined)
         assert.strictEqual(typeof secondInterval, 'object')
-        assert.ok(firstInterval !== secondInterval)
+        assert.notStrictEqual(firstInterval, secondInterval)
       })
     })
 

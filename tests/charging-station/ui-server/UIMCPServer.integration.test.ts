@@ -131,10 +131,15 @@ await describe('UIMCPServer HTTP Integration', async () => {
   })
 
   afterEach(async () => {
+    const httpServer = Reflect.get(server, 'httpServer') as Server
+    if (httpServer.listening) {
+      await new Promise<void>(resolve => {
+        httpServer.close(() => {
+          resolve()
+        })
+      })
+    }
     server.stop()
-    await new Promise(resolve => {
-      setTimeout(resolve, 50)
-    })
     standardCleanup()
   })
 

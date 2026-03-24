@@ -236,11 +236,11 @@ await describe('ChargingStationConfigurationUtils', async () => {
       const result = buildEvsesStatus(station)
 
       const evse0Status = result[0][1].connectorsStatus as [number, ConnectorStatus][]
-      assert.ok(evse0Status.length > 0)
+      assert.strictEqual(evse0Status.length > 0, true)
       assert.strictEqual(evse0Status[0][0], 0)
 
       const evse1Status = result[1][1].connectorsStatus as [number, ConnectorStatus][]
-      assert.ok(evse1Status.length > 1)
+      assert.strictEqual(evse1Status.length > 1, true)
       assert.strictEqual(evse1Status[0][0], 1)
       assert.strictEqual(evse1Status[1][0], 2)
       assert.strictEqual(evse1Status[1][1].availability, AvailabilityType.Inoperative)
