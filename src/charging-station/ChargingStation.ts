@@ -1153,13 +1153,15 @@ export class ChargingStation extends EventEmitter {
       if (!this.stopping) {
         this.stopping = true
         try {
-          await promiseWithTimeout(
-            this.stopMessageSequence(reason, stopTransactions),
-            Constants.STOP_MESSAGE_SEQUENCE_TIMEOUT,
-            `Timeout ${formatDurationMilliSeconds(Constants.STOP_MESSAGE_SEQUENCE_TIMEOUT)} reached at stopping message sequence`
-          ).catch((error: unknown) => {
+          try {
+            await promiseWithTimeout(
+              this.stopMessageSequence(reason, stopTransactions),
+              Constants.STOP_MESSAGE_SEQUENCE_TIMEOUT,
+              `Timeout ${formatDurationMilliSeconds(Constants.STOP_MESSAGE_SEQUENCE_TIMEOUT)} reached at stopping message sequence`
+            )
+          } catch (error: unknown) {
             logger.error(`${this.logPrefix()} Error while stopping message sequence:`, error)
-          })
+          }
           this.ocppIncomingRequestService.stop(this)
           this.closeWSConnection()
           if (this.stationInfo?.enableStatistics === true) {
