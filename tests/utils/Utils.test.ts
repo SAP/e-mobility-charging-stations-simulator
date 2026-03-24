@@ -46,6 +46,7 @@ import {
   logPrefix,
   mergeDeepRight,
   once,
+  promiseWithTimeout,
   queueMicrotaskErrorThrowing,
   roundTo,
   secureRandom,
@@ -824,6 +825,59 @@ await describe('Utils', async () => {
     await it('should truncate long identifier with ellipsis', () => {
       const result = truncateId('ABCDEFGHIJKLMNOP')
       assert.strictEqual(result, 'ABCDEFGH...')
+    })
+  })
+
+  await describe('promiseWithTimeout', async () => {
+    await it('should resolve with the promise value when it settles before timeout', async () => {
+      const result = await promiseWithTimeout(Promise.resolve(42), 1000, 'Timeout')
+      assert.strictEqual(result, 42)
+    })
+
+    await it('should reject with timeout Error when promise exceeds timeout', async t => {
+      await withMockTimers(t, ['setTimeout'], async () => {
+        const timeoutError = new Error('Operation timed out')
+        const racePromise = promiseWithTimeout(
+          // eslint-disable-next-line @typescript-eslint/no-empty-function
+          new Promise<never>(() => {}),
+          500,
+          timeoutError
+        )
+        t.mock.timers.tick(500)
+        await assert.rejects(racePromise, (error: Error) => {
+          assert.strictEqual(error, timeoutError)
+          return true
+        })
+      })
+    })
+
+    await it('should convert string timeoutError to Error on timeout', async t => {
+      await withMockTimers(t, ['setTimeout'], async () => {
+        const racePromise = promiseWithTimeout(
+          // eslint-disable-next-line @typescript-eslint/no-empty-function
+          new Promise<never>(() => {}),
+          500,
+          'timed out'
+        )
+        t.mock.timers.tick(500)
+        await assert.rejects(racePromise, (error: Error) => {
+          assert.ok(error instanceof Error)
+          assert.strictEqual(error.message, 'timed out')
+          return true
+        })
+      })
+    })
+
+    await it('should preserve original rejection when promise rejects before timeout', async () => {
+      const originalError = new TypeError('Custom typed error')
+      await assert.rejects(
+        promiseWithTimeout(Promise.reject(originalError), 10000, 'Should not see this'),
+        (error: Error) => {
+          assert.strictEqual(error, originalError)
+          assert.ok(error instanceof TypeError)
+          return true
+        }
+      )
     })
   })
 })

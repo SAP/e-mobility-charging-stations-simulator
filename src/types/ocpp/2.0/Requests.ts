@@ -60,6 +60,7 @@ export enum OCPP20IncomingRequestCommand {
 export enum OCPP20RequestCommand {
   AUTHORIZE = 'Authorize',
   BOOT_NOTIFICATION = 'BootNotification',
+  DATA_TRANSFER = 'DataTransfer',
   FIRMWARE_STATUS_NOTIFICATION = 'FirmwareStatusNotification',
   GET_15118_EV_CERTIFICATE = 'Get15118EVCertificate',
   GET_CERTIFICATE_STATUS = 'GetCertificateStatus',

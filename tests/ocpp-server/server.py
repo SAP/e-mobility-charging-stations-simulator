@@ -350,7 +350,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
         request = ocpp.v201.call.SetVariables(
             set_variable_data=[
                 {
-                    "component": {"name": "ChargingStation"},
+                    "component": {"name": "OCPPCommCtrlr"},
                     "variable": {"name": "HeartbeatInterval"},
                     "attribute_value": "30",
                 }
@@ -431,6 +431,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
             request_id=_random_request_id(),
             report=True,
             clear=False,
+            customer_identifier="test_customer_001",
         )
         await self._call_and_log(
             request,

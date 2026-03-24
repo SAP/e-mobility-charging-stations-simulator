@@ -152,6 +152,7 @@ export class OCPP20RequestService extends OCPPRequestService {
     switch (commandName) {
       case OCPP20RequestCommand.AUTHORIZE:
       case OCPP20RequestCommand.BOOT_NOTIFICATION:
+      case OCPP20RequestCommand.DATA_TRANSFER:
       case OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION:
       case OCPP20RequestCommand.GET_15118_EV_CERTIFICATE:
       case OCPP20RequestCommand.GET_CERTIFICATE_STATUS:

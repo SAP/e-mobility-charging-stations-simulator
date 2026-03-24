@@ -8,6 +8,7 @@ import {
   OCPP20AuthorizationStatusEnumType,
   type OCPP20AuthorizeResponse,
   type OCPP20BootNotificationResponse,
+  type OCPP20DataTransferResponse,
   type OCPP20FirmwareStatusNotificationResponse,
   type OCPP20Get15118EVCertificateResponse,
   type OCPP20GetCertificateStatusResponse,
@@ -102,6 +103,10 @@ export class OCPP20ResponseService extends OCPPResponseService {
       [
         OCPP20RequestCommand.BOOT_NOTIFICATION,
         this.handleResponseBootNotification.bind(this) as ResponseHandler,
+      ],
+      [
+        OCPP20RequestCommand.DATA_TRANSFER,
+        this.handleResponseDataTransfer.bind(this) as ResponseHandler,
       ],
       [
         OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
@@ -229,6 +234,15 @@ export class OCPP20ResponseService extends OCPPResponseService {
         payload
       )
     }
+  }
+
+  private handleResponseDataTransfer (
+    chargingStation: ChargingStation,
+    payload: OCPP20DataTransferResponse
+  ): void {
+    logger.debug(
+      `${chargingStation.logPrefix()} ${moduleName}.handleResponseDataTransfer: DataTransfer response received, status: ${payload.status}`
+    )
   }
 
   private handleResponseFirmwareStatusNotification (
