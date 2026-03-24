@@ -5,7 +5,6 @@ import type { ChargingStation } from '../ChargingStation.js'
 import { BaseError, OCPPError } from '../../exception/index.js'
 import {
   AuthorizationStatus,
-  type AuthorizeRequest,
   type AuthorizeResponse,
   type BootNotificationRequest,
   type BootNotificationResponse,
@@ -13,17 +12,11 @@ import {
   type BroadcastChannelRequest,
   type BroadcastChannelRequestPayload,
   type BroadcastChannelResponsePayload,
-  type DataTransferRequest,
   type DataTransferResponse,
   DataTransferStatus,
-  type DiagnosticsStatusNotificationRequest,
-  type DiagnosticsStatusNotificationResponse,
   type EmptyObject,
-  type FirmwareStatusNotificationRequest,
-  type FirmwareStatusNotificationResponse,
   GenericStatus,
   GetCertificateStatusEnumType,
-  type HeartbeatRequest,
   type HeartbeatResponse,
   Iso15118EVCertificateStatusEnumType,
   type MessageEvent,
@@ -32,21 +25,9 @@ import {
   type OCPP16AuthorizeResponse,
   OCPP20AuthorizationStatusEnumType,
   type OCPP20AuthorizeResponse,
-  type OCPP20Get15118EVCertificateRequest,
   type OCPP20Get15118EVCertificateResponse,
-  type OCPP20GetCertificateStatusRequest,
   type OCPP20GetCertificateStatusResponse,
-  type OCPP20LogStatusNotificationRequest,
-  type OCPP20LogStatusNotificationResponse,
-  type OCPP20NotifyCustomerInformationRequest,
-  type OCPP20NotifyCustomerInformationResponse,
-  type OCPP20NotifyReportRequest,
-  type OCPP20NotifyReportResponse,
-  type OCPP20SecurityEventNotificationRequest,
-  type OCPP20SecurityEventNotificationResponse,
-  type OCPP20SignCertificateRequest,
   type OCPP20SignCertificateResponse,
-  type OCPP20TransactionEventRequest,
   type OCPP20TransactionEventResponse,
   OCPPVersion,
   RegistrationStatusEnumType,
@@ -54,10 +35,7 @@ import {
   type RequestParams,
   ResponseStatus,
   StandardParametersKey,
-  type StartTransactionRequest,
   type StartTransactionResponse,
-  type StatusNotificationRequest,
-  type StatusNotificationResponse,
   type StopTransactionRequest,
   type StopTransactionResponse,
 } from '../../types/index.js'
@@ -104,7 +82,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     super()
     this.chargingStation = chargingStation
     this.commandHandlers = new Map<BroadcastChannelProcedureName, CommandHandler>([
-      [BroadcastChannelProcedureName.AUTHORIZE, this.handleAuthorize.bind(this)],
+      [BroadcastChannelProcedureName.AUTHORIZE, this.passthrough(RequestCommand.AUTHORIZE)],
       [BroadcastChannelProcedureName.BOOT_NOTIFICATION, this.handleBootNotification.bind(this)],
       [
         BroadcastChannelProcedureName.CLOSE_CONNECTION,
@@ -112,7 +90,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
           this.chargingStation.closeWSConnection()
         },
       ],
-      [BroadcastChannelProcedureName.DATA_TRANSFER, this.handleDataTransfer.bind(this)],
+      [BroadcastChannelProcedureName.DATA_TRANSFER, this.passthrough(RequestCommand.DATA_TRANSFER)],
       [
         BroadcastChannelProcedureName.DELETE_CHARGING_STATIONS,
         async (requestPayload?: BroadcastChannelRequestPayload) => {
@@ -121,31 +99,31 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       ],
       [
         BroadcastChannelProcedureName.DIAGNOSTICS_STATUS_NOTIFICATION,
-        this.handleDiagnosticsStatusNotification.bind(this),
+        this.passthrough(RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION),
       ],
       [
         BroadcastChannelProcedureName.FIRMWARE_STATUS_NOTIFICATION,
-        this.handleFirmwareStatusNotification.bind(this),
+        this.passthrough(RequestCommand.FIRMWARE_STATUS_NOTIFICATION),
       ],
       [
         BroadcastChannelProcedureName.GET_15118_EV_CERTIFICATE,
-        this.handleGet15118EVCertificate.bind(this),
+        this.passthrough(RequestCommand.GET_15118_EV_CERTIFICATE),
       ],
       [
         BroadcastChannelProcedureName.GET_CERTIFICATE_STATUS,
-        this.handleGetCertificateStatus.bind(this),
+        this.passthrough(RequestCommand.GET_CERTIFICATE_STATUS),
       ],
-      [BroadcastChannelProcedureName.HEARTBEAT, this.handleHeartbeat.bind(this)],
+      [BroadcastChannelProcedureName.HEARTBEAT, this.passthrough(RequestCommand.HEARTBEAT)],
       [
         BroadcastChannelProcedureName.LOG_STATUS_NOTIFICATION,
-        this.handleLogStatusNotification.bind(this),
+        this.passthrough(RequestCommand.LOG_STATUS_NOTIFICATION),
       ],
       [BroadcastChannelProcedureName.METER_VALUES, this.handleMeterValues.bind(this)],
       [
         BroadcastChannelProcedureName.NOTIFY_CUSTOMER_INFORMATION,
-        this.handleNotifyCustomerInformation.bind(this),
+        this.passthrough(RequestCommand.NOTIFY_CUSTOMER_INFORMATION),
       ],
-      [BroadcastChannelProcedureName.NOTIFY_REPORT, this.handleNotifyReport.bind(this)],
+      [BroadcastChannelProcedureName.NOTIFY_REPORT, this.passthrough(RequestCommand.NOTIFY_REPORT)],
       [
         BroadcastChannelProcedureName.OPEN_CONNECTION,
         () => {
@@ -154,7 +132,7 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       ],
       [
         BroadcastChannelProcedureName.SECURITY_EVENT_NOTIFICATION,
-        this.handleSecurityEventNotification.bind(this),
+        this.passthrough(RequestCommand.SECURITY_EVENT_NOTIFICATION),
       ],
       [
         BroadcastChannelProcedureName.SET_SUPERVISION_URL,
@@ -168,7 +146,10 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
           this.chargingStation.setSupervisionUrl(url)
         },
       ],
-      [BroadcastChannelProcedureName.SIGN_CERTIFICATE, this.handleSignCertificate.bind(this)],
+      [
+        BroadcastChannelProcedureName.SIGN_CERTIFICATE,
+        this.passthrough(RequestCommand.SIGN_CERTIFICATE),
+      ],
       [
         BroadcastChannelProcedureName.START_AUTOMATIC_TRANSACTION_GENERATOR,
         (requestPayload?: BroadcastChannelRequestPayload) => {
@@ -181,8 +162,14 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
           this.chargingStation.start()
         },
       ],
-      [BroadcastChannelProcedureName.START_TRANSACTION, this.handleStartTransaction.bind(this)],
-      [BroadcastChannelProcedureName.STATUS_NOTIFICATION, this.handleStatusNotification.bind(this)],
+      [
+        BroadcastChannelProcedureName.START_TRANSACTION,
+        this.passthrough(RequestCommand.START_TRANSACTION),
+      ],
+      [
+        BroadcastChannelProcedureName.STATUS_NOTIFICATION,
+        this.passthrough(RequestCommand.STATUS_NOTIFICATION),
+      ],
       [
         BroadcastChannelProcedureName.STOP_AUTOMATIC_TRANSACTION_GENERATOR,
         (requestPayload?: BroadcastChannelRequestPayload) => {
@@ -196,7 +183,10 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         },
       ],
       [BroadcastChannelProcedureName.STOP_TRANSACTION, this.handleStopTransaction.bind(this)],
-      [BroadcastChannelProcedureName.TRANSACTION_EVENT, this.handleTransactionEvent.bind(this)],
+      [
+        BroadcastChannelProcedureName.TRANSACTION_EVENT,
+        this.passthrough(RequestCommand.TRANSACTION_EVENT),
+      ],
     ])
     this.onmessage = this.requestHandler.bind(this) as (message: unknown) => void
     this.onmessageerror = this.messageErrorHandler.bind(this) as (message: unknown) => void
@@ -358,20 +348,6 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     }
   }
 
-  private async handleAuthorize (
-    requestPayload?: BroadcastChannelRequestPayload
-  ): Promise<AuthorizeResponse> {
-    return await this.chargingStation.ocppRequestService.requestHandler<
-      AuthorizeRequest,
-      AuthorizeResponse
-    >(
-      this.chargingStation,
-      RequestCommand.AUTHORIZE,
-      requestPayload as AuthorizeRequest,
-      this.requestParams
-    )
-  }
-
   private async handleBootNotification (
     requestPayload?: BroadcastChannelRequestPayload
   ): Promise<BootNotificationResponse> {
@@ -389,104 +365,6 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
         skipBufferingOnError: true,
         throwError: true,
       }
-    )
-  }
-
-  private async handleDataTransfer (
-    requestPayload?: BroadcastChannelRequestPayload
-  ): Promise<DataTransferResponse> {
-    return await this.chargingStation.ocppRequestService.requestHandler<
-      DataTransferRequest,
-      DataTransferResponse
-    >(
-      this.chargingStation,
-      RequestCommand.DATA_TRANSFER,
-      requestPayload as DataTransferRequest,
-      this.requestParams
-    )
-  }
-
-  private async handleDiagnosticsStatusNotification (
-    requestPayload?: BroadcastChannelRequestPayload
-  ): Promise<DiagnosticsStatusNotificationResponse> {
-    return await this.chargingStation.ocppRequestService.requestHandler<
-      DiagnosticsStatusNotificationRequest,
-      DiagnosticsStatusNotificationResponse
-    >(
-      this.chargingStation,
-      RequestCommand.DIAGNOSTICS_STATUS_NOTIFICATION,
-      requestPayload as DiagnosticsStatusNotificationRequest,
-      this.requestParams
-    )
-  }
-
-  private async handleFirmwareStatusNotification (
-    requestPayload?: BroadcastChannelRequestPayload
-  ): Promise<FirmwareStatusNotificationResponse> {
-    return await this.chargingStation.ocppRequestService.requestHandler<
-      FirmwareStatusNotificationRequest,
-      FirmwareStatusNotificationResponse
-    >(
-      this.chargingStation,
-      RequestCommand.FIRMWARE_STATUS_NOTIFICATION,
-      requestPayload as FirmwareStatusNotificationRequest,
-      this.requestParams
-    )
-  }
-
-  private async handleGet15118EVCertificate (
-    requestPayload?: BroadcastChannelRequestPayload
-  ): Promise<OCPP20Get15118EVCertificateResponse> {
-    return await this.chargingStation.ocppRequestService.requestHandler<
-      OCPP20Get15118EVCertificateRequest,
-      OCPP20Get15118EVCertificateResponse
-    >(
-      this.chargingStation,
-      RequestCommand.GET_15118_EV_CERTIFICATE,
-      requestPayload as OCPP20Get15118EVCertificateRequest,
-      this.requestParams
-    )
-  }
-
-  private async handleGetCertificateStatus (
-    requestPayload?: BroadcastChannelRequestPayload
-  ): Promise<OCPP20GetCertificateStatusResponse> {
-    return await this.chargingStation.ocppRequestService.requestHandler<
-      OCPP20GetCertificateStatusRequest,
-      OCPP20GetCertificateStatusResponse
-    >(
-      this.chargingStation,
-      RequestCommand.GET_CERTIFICATE_STATUS,
-      requestPayload as OCPP20GetCertificateStatusRequest,
-      this.requestParams
-    )
-  }
-
-  private async handleHeartbeat (
-    requestPayload?: BroadcastChannelRequestPayload
-  ): Promise<HeartbeatResponse> {
-    return await this.chargingStation.ocppRequestService.requestHandler<
-      HeartbeatRequest,
-      HeartbeatResponse
-    >(
-      this.chargingStation,
-      RequestCommand.HEARTBEAT,
-      requestPayload as HeartbeatRequest,
-      this.requestParams
-    )
-  }
-
-  private async handleLogStatusNotification (
-    requestPayload?: BroadcastChannelRequestPayload
-  ): Promise<OCPP20LogStatusNotificationResponse> {
-    return await this.chargingStation.ocppRequestService.requestHandler<
-      OCPP20LogStatusNotificationRequest,
-      OCPP20LogStatusNotificationResponse
-    >(
-      this.chargingStation,
-      RequestCommand.LOG_STATUS_NOTIFICATION,
-      requestPayload as OCPP20LogStatusNotificationRequest,
-      this.requestParams
     )
   }
 
@@ -558,90 +436,6 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     }
   }
 
-  private async handleNotifyCustomerInformation (
-    requestPayload?: BroadcastChannelRequestPayload
-  ): Promise<OCPP20NotifyCustomerInformationResponse> {
-    return await this.chargingStation.ocppRequestService.requestHandler<
-      OCPP20NotifyCustomerInformationRequest,
-      OCPP20NotifyCustomerInformationResponse
-    >(
-      this.chargingStation,
-      RequestCommand.NOTIFY_CUSTOMER_INFORMATION,
-      requestPayload as OCPP20NotifyCustomerInformationRequest,
-      this.requestParams
-    )
-  }
-
-  private async handleNotifyReport (
-    requestPayload?: BroadcastChannelRequestPayload
-  ): Promise<OCPP20NotifyReportResponse> {
-    return await this.chargingStation.ocppRequestService.requestHandler<
-      OCPP20NotifyReportRequest,
-      OCPP20NotifyReportResponse
-    >(
-      this.chargingStation,
-      RequestCommand.NOTIFY_REPORT,
-      requestPayload as OCPP20NotifyReportRequest,
-      this.requestParams
-    )
-  }
-
-  private async handleSecurityEventNotification (
-    requestPayload?: BroadcastChannelRequestPayload
-  ): Promise<OCPP20SecurityEventNotificationResponse> {
-    return await this.chargingStation.ocppRequestService.requestHandler<
-      OCPP20SecurityEventNotificationRequest,
-      OCPP20SecurityEventNotificationResponse
-    >(
-      this.chargingStation,
-      RequestCommand.SECURITY_EVENT_NOTIFICATION,
-      requestPayload as OCPP20SecurityEventNotificationRequest,
-      this.requestParams
-    )
-  }
-
-  private async handleSignCertificate (
-    requestPayload?: BroadcastChannelRequestPayload
-  ): Promise<OCPP20SignCertificateResponse> {
-    return await this.chargingStation.ocppRequestService.requestHandler<
-      OCPP20SignCertificateRequest,
-      OCPP20SignCertificateResponse
-    >(
-      this.chargingStation,
-      RequestCommand.SIGN_CERTIFICATE,
-      requestPayload as OCPP20SignCertificateRequest,
-      this.requestParams
-    )
-  }
-
-  private async handleStartTransaction (
-    requestPayload?: BroadcastChannelRequestPayload
-  ): Promise<StartTransactionResponse> {
-    return await this.chargingStation.ocppRequestService.requestHandler<
-      StartTransactionRequest,
-      StartTransactionResponse
-    >(
-      this.chargingStation,
-      RequestCommand.START_TRANSACTION,
-      requestPayload as StartTransactionRequest,
-      this.requestParams
-    )
-  }
-
-  private async handleStatusNotification (
-    requestPayload?: BroadcastChannelRequestPayload
-  ): Promise<StatusNotificationResponse> {
-    return await this.chargingStation.ocppRequestService.requestHandler<
-      StatusNotificationRequest,
-      StatusNotificationResponse
-    >(
-      this.chargingStation,
-      RequestCommand.STATUS_NOTIFICATION,
-      requestPayload as StatusNotificationRequest,
-      this.requestParams
-    )
-  }
-
   private async handleStopTransaction (
     requestPayload?: BroadcastChannelRequestPayload
   ): Promise<StopTransactionResponse> {
@@ -662,25 +456,23 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
     )
   }
 
-  private async handleTransactionEvent (
-    requestPayload?: BroadcastChannelRequestPayload
-  ): Promise<OCPP20TransactionEventResponse> {
-    return await this.chargingStation.ocppRequestService.requestHandler<
-      OCPP20TransactionEventRequest,
-      OCPP20TransactionEventResponse
-    >(
-      this.chargingStation,
-      RequestCommand.TRANSACTION_EVENT,
-      requestPayload as OCPP20TransactionEventRequest,
-      this.requestParams
-    )
-  }
-
   private messageErrorHandler (messageEvent: MessageEvent): void {
     logger.error(
       `${this.chargingStation.logPrefix()} ${moduleName}.messageErrorHandler: Error at handling message:`,
       messageEvent
     )
+  }
+
+  private passthrough (command: RequestCommand): CommandHandler {
+    return async (requestPayload?: BroadcastChannelRequestPayload): Promise<CommandResponse> => {
+      const result = await this.chargingStation.ocppRequestService.requestHandler(
+        this.chargingStation,
+        command,
+        requestPayload,
+        this.requestParams
+      )
+      return result as CommandResponse
+    }
   }
 
   private requestHandler (messageEvent: MessageEvent): void {
