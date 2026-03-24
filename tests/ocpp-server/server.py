@@ -105,6 +105,7 @@ class ServerConfig:
     total_cost: float
     # Intentionally mutable despite frozen dataclass
     charge_points: set["ChargePoint"]
+    commands: list[tuple[Action, float]] | None = None
     trigger_message_type: MessageTriggerEnumType = (
         MessageTriggerEnumType.status_notification
     )
@@ -651,6 +652,11 @@ class ChargePoint(ocpp.v201.ChargePoint):
         except ConnectionClosed:
             self.handle_connection_closed()
 
+    async def send_commands(self, commands: list[tuple[Action, float]]) -> None:
+        for command_name, delay in commands:
+            await asyncio.sleep(delay)
+            await self._send_command(command_name)
+
     def handle_connection_closed(self):
         logger.info("ChargePoint %s closed connection", self.id)
         if self._command_timer:
@@ -694,6 +700,8 @@ async def on_connect(
     )
     if config.command_name:
         await cp.send_command(config.command_name, config.delay, config.period)
+    elif config.commands:
+        await cp.send_commands(config.commands)
 
     try:
         await cp.start()
@@ -713,9 +721,46 @@ def check_positive_number(value):
     return value
 
 
+def _parse_commands(commands_str: str) -> list[tuple[Action, float]]:
+    result: list[tuple[Action, float]] = []
+    for entry in commands_str.split(","):
+        entry = entry.strip()
+        if ":" not in entry:
+            raise argparse.ArgumentTypeError(
+                f"Invalid command entry '{entry}': expected 'CMD:DELAY' format"
+            )
+        cmd_str, delay_str = entry.split(":", 1)
+        try:
+            cmd = Action(cmd_str.strip())
+        except ValueError:
+            raise argparse.ArgumentTypeError(
+                f"Unknown action: '{cmd_str.strip()}'"
+            ) from None
+        try:
+            delay = float(delay_str.strip())
+        except ValueError:
+            raise argparse.ArgumentTypeError(
+                f"Invalid delay '{delay_str.strip()}': must be a number"
+            ) from None
+        if delay <= 0:
+            raise argparse.ArgumentTypeError(f"Delay must be positive, got {delay}")
+        result.append((cmd, delay))
+    return result
+
+
 async def main():
     parser = argparse.ArgumentParser(description="OCPP2 Server")
-    parser.add_argument("-c", "--command", type=Action, help="command name")
+    command_group = parser.add_mutually_exclusive_group()
+    command_group.add_argument("-c", "--command", type=Action, help="command name")
+    command_group.add_argument(
+        "--commands",
+        type=str,
+        default=None,
+        help=(
+            'comma-separated command sequence: "CMD1:DELAY1,CMD2:DELAY2,..."'
+            ' (e.g., "RequestStartTransaction:5,RequestStopTransaction:30")'
+        ),
+    )
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
         "-d",
@@ -820,6 +865,8 @@ async def main():
 
     args = parser.parse_args()
 
+    parsed_commands = _parse_commands(args.commands) if args.commands else None
+
     if args.boot_status_sequence is not None:
         boot_sequence = tuple(
             RegistrationStatusEnumType(s.strip())
@@ -845,10 +892,11 @@ async def main():
         auth_config=auth_config,
         boot_sequence=boot_sequence,
         total_cost=args.total_cost,
+        charge_points=set(),
+        commands=parsed_commands,
         trigger_message_type=args.trigger_message,
         reset_type=args.reset_type,
         availability_status=args.availability_status,
-        charge_points=set(),
     )
 
     logger.info(

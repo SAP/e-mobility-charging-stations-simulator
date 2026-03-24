@@ -50,6 +50,7 @@ from server import (
     AuthMode,
     ChargePoint,
     ServerConfig,
+    _parse_commands,
     _random_request_id,
     check_positive_number,
     main,
@@ -191,6 +192,7 @@ def main_mocks():
 def _patch_main(mock_loop, mock_server, mock_event, extra_patches=None):
     args = argparse.Namespace(
         command=None,
+        commands=None,
         delay=None,
         period=None,
         host="127.0.0.1",
@@ -1523,3 +1525,29 @@ class TestChangeAvailabilityStatus:
         call_args = cp.call.call_args
         request = call_args[0][0]
         assert request.operational_status == OperationalStatusEnumType.inoperative
+
+
+class TestCommandSequencing:
+    """Tests for command sequencing (send_commands and _parse_commands)."""
+
+    async def test_send_commands_executes_in_order(self, mock_connection):
+        cp = ChargePoint(mock_connection)
+        mock_send = AsyncMock()
+        with patch.object(cp, "_send_command", mock_send):
+            commands = [(Action.heartbeat, 0.001), (Action.clear_cache, 0.001)]
+            await cp.send_commands(commands)
+            assert mock_send.call_count == 2
+            assert mock_send.call_args_list[0][0][0] == Action.heartbeat
+            assert mock_send.call_args_list[1][0][0] == Action.clear_cache
+
+    def test_parse_commands_valid(self):
+        result = _parse_commands("Reset:5,ClearCache:10")
+        assert result == [(Action.reset, 5.0), (Action.clear_cache, 10.0)]
+
+    def test_parse_commands_invalid_format(self):
+        with pytest.raises(argparse.ArgumentTypeError, match="expected 'CMD:DELAY'"):
+            _parse_commands("ResetOnly")
+
+    def test_parse_commands_unknown_action(self):
+        with pytest.raises(argparse.ArgumentTypeError, match="Unknown action"):
+            _parse_commands("UnknownAction:5")
