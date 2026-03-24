@@ -61,7 +61,7 @@ poetry run python server.py --total-cost 25.50
 - `--blacklist TOKEN ...`: Blocked tokens (default: `blocked_token invalid_user`)
 - `--offline`: Simulate network failure (raises `InternalError` on Authorize)
 - `--auth-group-id <ID>`: Include `groupIdToken` in Authorize and TransactionEvent.Started responses
-- `--auth-cache-expiry <SEC>`: Include `cacheExpiryDateTime` (now + N seconds) in Authorize responses
+- `--auth-cache-expiry <SEC>`: Include `cacheExpiryDateTime` (now + N seconds) in Authorize and TransactionEvent.Started responses
 
 ```shell
 poetry run python server.py --auth-mode whitelist --whitelist valid_token test_token

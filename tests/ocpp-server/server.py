@@ -92,7 +92,7 @@ class AuthConfig:
     offline: bool
     default_status: AuthorizationStatusEnumType
     auth_group_id: str | None = None
-    auth_cache_expiry: int | None = None
+    auth_cache_expiry: float | None = None
 
 
 @dataclass(frozen=True)
@@ -751,6 +751,8 @@ async def on_connect(
     if config.command_name:
         await cp.send_command(config.command_name, config.delay, config.period)
     elif config.commands:
+        # send_commands() begins with asyncio.sleep(delay) which yields to
+        # cp.start() below. All delays are validated > 0 by _parse_commands.
         cp._commands_task = asyncio.create_task(cp.send_commands(config.commands))
 
     try:
@@ -775,6 +777,8 @@ def _parse_commands(commands_str: str) -> list[tuple[Action, float]]:
     result: list[tuple[Action, float]] = []
     for entry in commands_str.split(","):
         entry = entry.strip()
+        if not entry:
+            continue
         if ":" not in entry:
             raise argparse.ArgumentTypeError(
                 f"Invalid command entry '{entry}': expected 'CMD:DELAY' format"
@@ -960,7 +964,7 @@ async def main():
     )
     parser.add_argument(
         "--auth-cache-expiry",
-        type=int,
+        type=check_positive_number,
         default=None,
         help="cacheExpiryDateTime offset in seconds from now (e.g., 3600)",
     )
