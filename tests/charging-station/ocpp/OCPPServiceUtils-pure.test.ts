@@ -3,7 +3,6 @@
  * @description Verifies pure utility functions exported from OCPPServiceUtils
  *
  * Covers:
- * - getMessageTypeString — converts MessageType enum to human-readable string
  * - ajvErrorsToErrorType — maps AJV validation errors to OCPP ErrorType
  * - convertDateToISOString — recursively converts Date objects to ISO strings in-place
  * - OCPPServiceUtils.isConnectorIdValid — validates connector ID ranges
@@ -19,15 +18,9 @@ import type { ChargingStation } from '../../../src/charging-station/index.js'
 import {
   ajvErrorsToErrorType,
   convertDateToISOString,
-  getMessageTypeString,
   OCPPServiceUtils,
 } from '../../../src/charging-station/ocpp/OCPPServiceUtils.js'
-import {
-  ErrorType,
-  IncomingRequestCommand,
-  type JsonType,
-  MessageType,
-} from '../../../src/types/index.js'
+import { ErrorType, IncomingRequestCommand, type JsonType } from '../../../src/types/index.js'
 import { standardCleanup } from '../../helpers/TestLifecycleHelpers.js'
 
 /**
@@ -55,24 +48,6 @@ function makeStationMock (): ChargingStation {
 await describe('OCPPServiceUtils — pure functions', async () => {
   afterEach(() => {
     standardCleanup()
-  })
-
-  await describe('getMessageTypeString', async () => {
-    await it('should return "request" for MessageType.CALL_MESSAGE', () => {
-      assert.strictEqual(getMessageTypeString(MessageType.CALL_MESSAGE), 'request')
-    })
-
-    await it('should return "response" for MessageType.CALL_RESULT_MESSAGE', () => {
-      assert.strictEqual(getMessageTypeString(MessageType.CALL_RESULT_MESSAGE), 'response')
-    })
-
-    await it('should return "error" for MessageType.CALL_ERROR_MESSAGE', () => {
-      assert.strictEqual(getMessageTypeString(MessageType.CALL_ERROR_MESSAGE), 'error')
-    })
-
-    await it('should return "unknown" for undefined', () => {
-      assert.strictEqual(getMessageTypeString(undefined), 'unknown')
-    })
   })
 
   await describe('ajvErrorsToErrorType', async () => {

@@ -1,5 +1,6 @@
 import { millisecondsToSeconds } from 'date-fns'
 
+import { BaseError } from '../../../exception/index.js'
 import {
   AttributeEnumType,
   type ComponentType,
@@ -347,7 +348,7 @@ export class OCPP20VariableManager {
   private getStationId (chargingStation: ChargingStation): string {
     const stationId = chargingStation.stationInfo?.hashId
     if (stationId == null) {
-      throw new Error('ChargingStation has no stationInfo.hashId, cannot identify station')
+      throw new BaseError('ChargingStation has no stationInfo.hashId, cannot identify station')
     }
     return stationId
   }

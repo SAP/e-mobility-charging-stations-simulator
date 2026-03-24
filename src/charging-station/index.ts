@@ -10,6 +10,7 @@ export {
   checkChargingStationState,
   getConnectorChargingProfiles,
   getIdTagsFile,
+  getMessageTypeString,
   hasFeatureProfile,
   hasPendingReservation,
   hasPendingReservations,

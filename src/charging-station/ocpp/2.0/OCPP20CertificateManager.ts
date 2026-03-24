@@ -6,6 +6,7 @@ import { join, resolve, sep } from 'node:path'
 
 import type { ChargingStation } from '../../ChargingStation.js'
 
+import { BaseError } from '../../../exception/index.js'
 import {
   type CertificateHashDataChainType,
   type CertificateHashDataType,
@@ -126,7 +127,7 @@ export class OCPP20CertificateManager {
     issuerCertPem?: string
   ): CertificateHashDataType {
     if (!this.validateCertificateFormat(pemData)) {
-      throw new Error('Invalid PEM certificate format')
+      throw new BaseError('Invalid PEM certificate format')
     }
 
     const algorithmName = this.getHashAlgorithmName(hashAlgorithm)
@@ -626,7 +627,7 @@ export class OCPP20CertificateManager {
 
     // Check if resolved path is within the base directory
     if (!fileResolved.startsWith(baseResolved + sep) && fileResolved !== baseResolved) {
-      throw new Error(
+      throw new BaseError(
         `Path traversal attempt detected: certificate path '${certificateFileName}' resolves outside base directory`
       )
     }

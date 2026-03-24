@@ -1,6 +1,5 @@
 import type { EventEmitter } from 'node:events'
 
-import chalk from 'chalk'
 import {
   addDays,
   addSeconds,
@@ -46,6 +45,7 @@ import {
   ConnectorStatusEnum,
   CurrentType,
   type EvseTemplate,
+  MessageType,
   OCPPVersion,
   RecurrencyKindType,
   type Reservation,
@@ -1026,7 +1026,6 @@ const warnDeprecatedTemplateKey = (
       isNotEmptyString(logMsgToAppend) ? `. ${logMsgToAppend}` : ''
     }`
     logger.warn(`${logPrefix} ${logMsg}`)
-    console.warn(`${chalk.green(logPrefix)} ${chalk.yellow(logMsg)}`)
   }
 }
 
@@ -1510,4 +1509,17 @@ const getRandomSerialNumberSuffix = (params?: {
     return randomSerialNumberSuffix.toUpperCase()
   }
   return randomSerialNumberSuffix
+}
+
+export const getMessageTypeString = (messageType: MessageType | undefined): string => {
+  switch (messageType) {
+    case MessageType.CALL_ERROR_MESSAGE:
+      return 'error'
+    case MessageType.CALL_MESSAGE:
+      return 'request'
+    case MessageType.CALL_RESULT_MESSAGE:
+      return 'response'
+    default:
+      return 'unknown'
+  }
 }

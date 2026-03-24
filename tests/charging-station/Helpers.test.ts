@@ -15,6 +15,7 @@ import {
   getChargingStationId,
   getHashId,
   getMaxNumberOfEvses,
+  getMessageTypeString,
   getPhaseRotationValue,
   hasPendingReservation,
   hasPendingReservations,
@@ -31,6 +32,7 @@ import {
   type ChargingStationTemplate,
   type ConnectorStatus,
   ConnectorStatusEnum,
+  MessageType,
   type MeterValue,
   OCPPVersion,
   type Reservation,
@@ -873,6 +875,24 @@ await describe('Helpers', async () => {
       assert.strictEqual(connectorStatus.availability, AvailabilityType.Operative)
       assert.strictEqual(connectorStatus.status, ConnectorStatusEnum.Available)
       assert.strictEqual(connectorStatus.MeterValues.length, 1)
+    })
+  })
+
+  await describe('getMessageTypeString', async () => {
+    await it('should return "request" for MessageType.CALL_MESSAGE', () => {
+      assert.strictEqual(getMessageTypeString(MessageType.CALL_MESSAGE), 'request')
+    })
+
+    await it('should return "response" for MessageType.CALL_RESULT_MESSAGE', () => {
+      assert.strictEqual(getMessageTypeString(MessageType.CALL_RESULT_MESSAGE), 'response')
+    })
+
+    await it('should return "error" for MessageType.CALL_ERROR_MESSAGE', () => {
+      assert.strictEqual(getMessageTypeString(MessageType.CALL_ERROR_MESSAGE), 'error')
+    })
+
+    await it('should return "unknown" for undefined', () => {
+      assert.strictEqual(getMessageTypeString(undefined), 'unknown')
     })
   })
 })

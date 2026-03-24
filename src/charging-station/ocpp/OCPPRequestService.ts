@@ -30,12 +30,9 @@ import {
   handleSendMessageError,
   logger,
 } from '../../utils/index.js'
+import { getMessageTypeString } from '../index.js'
 import { OCPPConstants } from './OCPPConstants.js'
-import {
-  ajvErrorsToErrorType,
-  convertDateToISOString,
-  getMessageTypeString,
-} from './OCPPServiceUtils.js'
+import { ajvErrorsToErrorType, convertDateToISOString } from './OCPPServiceUtils.js'
 
 type Ajv = _Ajv.default
 // eslint-disable-next-line @typescript-eslint/no-redeclare

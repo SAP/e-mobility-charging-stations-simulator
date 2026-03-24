@@ -14,7 +14,6 @@ export {
   buildMeterValue,
   buildStatusNotificationRequest,
   buildTransactionEndMeterValue,
-  getMessageTypeString,
   isIdTagAuthorized,
   sendAndSetConnectorStatus,
 } from './OCPPServiceUtils.js'

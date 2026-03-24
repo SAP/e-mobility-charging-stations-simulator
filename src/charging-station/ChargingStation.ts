@@ -129,6 +129,7 @@ import {
   getHashId,
   getIdTagsFile,
   getMaxNumberOfEvses,
+  getMessageTypeString,
   getNumberOfReservableConnectors,
   getPhaseRotationValue,
   hasFeatureProfile,
@@ -143,7 +144,6 @@ import {
 } from './Helpers.js'
 import { IdTagsCache } from './IdTagsCache.js'
 import {
-  getMessageTypeString,
   OCPP16IncomingRequestService,
   OCPP16RequestService,
   OCPP16ResponseService,

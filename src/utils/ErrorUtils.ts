@@ -12,7 +12,7 @@ import type {
   RequestCommand,
 } from '../types/index.js'
 
-import { getMessageTypeString } from '../charging-station/ocpp/OCPPServiceUtils.js'
+import { getMessageTypeString } from '../charging-station/index.js'
 import { logger } from './Logger.js'
 import { isNotEmptyString } from './Utils.js'
 
