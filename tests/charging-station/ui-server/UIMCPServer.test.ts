@@ -14,7 +14,11 @@ import { fileURLToPath } from 'node:url'
 
 import type { ProtocolResponse, RequestPayload, ResponsePayload } from '../../../src/types/index.js'
 
-import { mcpToolSchemas } from '../../../src/charging-station/ui-server/mcp/index.js'
+import {
+  mcpToolSchemas,
+  ocppSchemaMapping,
+} from '../../../src/charging-station/ui-server/mcp/index.js'
+import { AbstractUIService } from '../../../src/charging-station/ui-server/ui-services/AbstractUIService.js'
 import { UIMCPServer } from '../../../src/charging-station/ui-server/UIMCPServer.js'
 import { DEFAULT_MAX_PAYLOAD_SIZE } from '../../../src/charging-station/ui-server/UIServerSecurity.js'
 import { BaseError } from '../../../src/exception/index.js'
@@ -178,6 +182,39 @@ await describe('UIMCPServer', async () => {
   await describe('Tool schema registration', async () => {
     await it('should have a tool schema for every ProcedureName', () => {
       assert.strictEqual(mcpToolSchemas.size, Object.keys(ProcedureName).length)
+    })
+
+    await it('should have an OCPP schema mapping for every broadcast channel OCPP command', () => {
+      const broadcastMapping = Reflect.get(
+        AbstractUIService,
+        'ProcedureNameToBroadCastChannelProcedureNameMapping'
+      ) as Map<ProcedureName, unknown>
+      for (const procedureName of broadcastMapping.keys()) {
+        const toolSchema = mcpToolSchemas.get(procedureName)
+        assert.ok(
+          toolSchema != null,
+          `Missing MCP tool schema for broadcast command '${procedureName}'`
+        )
+        const schema = ocppSchemaMapping.get(procedureName)
+        if (
+          'ocpp16Payload' in toolSchema.inputSchema.shape ||
+          'ocpp20Payload' in toolSchema.inputSchema.shape
+        ) {
+          assert.ok(
+            schema != null,
+            `Missing OCPP schema mapping for OCPP command '${procedureName}'`
+          )
+        }
+      }
+    })
+
+    await it('should have ocpp16 or ocpp20 schema file reference for every mapped command', () => {
+      for (const [procedureName, mapping] of ocppSchemaMapping) {
+        assert.ok(
+          mapping.ocpp16 != null || mapping.ocpp20 != null,
+          `OCPP schema mapping for '${procedureName}' has neither ocpp16 nor ocpp20 schema`
+        )
+      }
     })
   })
 
