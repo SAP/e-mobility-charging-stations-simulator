@@ -2115,11 +2115,11 @@ const getSampledValueTemplate = (
 
 /**
  * Builds a sampled value object according to the specified OCPP version.
- * @param ocppVersion The OCPP version to use for formatting the sampled value
- * @param sampledValueTemplate Template containing measurement configuration and metadata
- * @param value The measured numeric value to be included in the sampled value
- * @param context Optional context specifying when the measurement was taken (e.g., Sample.Periodic)
- * @param phase Optional phase information for multi-phase electrical measurements
+ * @param ocppVersion - The OCPP version to use for formatting the sampled value
+ * @param sampledValueTemplate - Template containing measurement configuration and metadata
+ * @param value - The measured numeric value to be included in the sampled value
+ * @param context - Optional context specifying when the measurement was taken (e.g., Sample.Periodic)
+ * @param phase - Optional phase information for multi-phase electrical measurements
  * @returns A sampled value object formatted according to the specified OCPP version
  */
 function buildSampledValue (
@@ -2380,13 +2380,13 @@ export class OCPPServiceUtils {
   /**
    * Creates a Map of compiled OCPP payload validators from configurations.
    * Reduces code duplication across OCPP services.
-   * @param configs Array of tuples containing command and validator configuration
-   * @param options Factory options including OCPP version, schema directory, etc.
-   * @param options.ocppVersion The OCPP version for schema validation
-   * @param options.schemaDir Directory path containing JSON schemas
-   * @param options.moduleName Name of the module for logging
-   * @param options.methodName Name of the method for logging
-   * @param ajvInstance Configured Ajv instance for validation
+   * @param configs - Array of tuples containing command and validator configuration
+   * @param options - Factory options including OCPP version, schema directory, etc.
+   * @param options.ocppVersion - The OCPP version for schema validation
+   * @param options.schemaDir - Directory path containing JSON schemas
+   * @param options.moduleName - Name of the module for logging
+   * @param options.methodName - Name of the method for logging
+   * @param ajvInstance - Configured Ajv instance for validation
    * @returns Map of commands to their compiled validation functions
    */
   public static createPayloadValidatorMap<Command extends JsonType>(
@@ -2491,7 +2491,7 @@ export class OCPPServiceUtils {
 
   /**
    * Configuration for a single payload validator.
-   * @param schemaPath Path to the JSON schema file
+   * @param schemaPath - Path to the JSON schema file
    * @returns Configuration object for payload validator creation
    */
   public static readonly PayloadValidatorConfig = (schemaPath: string) =>
@@ -2501,10 +2501,10 @@ export class OCPPServiceUtils {
 
   /**
    * Options for payload validator creation.
-   * @param ocppVersion The OCPP version
-   * @param schemaDir Directory containing JSON schemas
-   * @param moduleName Name of the OCPP module
-   * @param methodName Name of the method/command
+   * @param ocppVersion - The OCPP version
+   * @param schemaDir - Directory containing JSON schemas
+   * @param moduleName - Name of the OCPP module
+   * @param methodName - Name of the method/command
    * @returns Options object for payload validator creation
    */
   public static readonly PayloadValidatorOptions = (
@@ -2523,10 +2523,10 @@ export class OCPPServiceUtils {
   /**
    * Parses and loads a JSON schema file for OCPP payload validation.
    * Handles file reading and JSON parsing for schema validation.
-   * @param relativePath Path to the schema file relative to the OCPP utils directory
-   * @param ocppVersion The OCPP version for error logging context
-   * @param moduleName Optional module name for error logging
-   * @param methodName Optional method name for error logging
+   * @param relativePath - Path to the schema file relative to the OCPP utils directory
+   * @param ocppVersion - The OCPP version for error logging context
+   * @param moduleName - Optional module name for error logging
+   * @param methodName - Optional method name for error logging
    * @returns Parsed JSON schema object
    * @throws {NodeJS.ErrnoException} If the schema file cannot be read or parsed
    */

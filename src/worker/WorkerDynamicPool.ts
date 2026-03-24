@@ -31,8 +31,8 @@ export class WorkerDynamicPool<D extends WorkerData, R extends WorkerData> exten
 
   /**
    * Creates a new `WorkerDynamicPool`.
-   * @param workerScript -
-   * @param workerOptions -
+   * @param workerScript - Path to the worker script file
+   * @param workerOptions - Worker pool configuration options
    */
   constructor (workerScript: string, workerOptions: WorkerOptions) {
     super(workerScript, workerOptions)

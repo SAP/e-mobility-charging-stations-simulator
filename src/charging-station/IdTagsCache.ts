@@ -41,10 +41,10 @@ export class IdTagsCache {
   /**
    * Gets one idtag from the cache given the distribution
    * Must be called after checking the cache is not an empty array
-   * @param distribution -
-   * @param chargingStation -
-   * @param connectorId -
-   * @returns string
+   * @param distribution - The distribution strategy for selecting an idtag
+   * @param chargingStation - The charging station instance
+   * @param connectorId - The connector identifier
+   * @returns Selected idtag string
    */
   public getIdTag (
     distribution: IdTagDistribution,
@@ -71,8 +71,8 @@ export class IdTagsCache {
   /**
    * Gets all idtags from the cache
    * Must be called after checking the cache is not an empty array
-   * @param file -
-   * @returns string[] | undefined
+   * @param file - The idtags file path
+   * @returns Array of idtag strings or undefined if not cached
    */
   public getIdTags (file: string): string[] | undefined {
     if (!this.hasIdTagsCache(file)) {

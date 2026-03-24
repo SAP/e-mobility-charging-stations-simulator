@@ -59,8 +59,8 @@ export class WorkerSet<D extends WorkerData, R extends WorkerData> extends Worke
 
   /**
    * Creates a new `WorkerSet`.
-   * @param workerScript -
-   * @param workerOptions -
+   * @param workerScript - Path to the worker script file
+   * @param workerOptions - Worker set configuration options
    */
   constructor (workerScript: string, workerOptions: WorkerOptions) {
     super(workerScript, workerOptions)

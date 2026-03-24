@@ -805,7 +805,7 @@ export const getChargingStationChargingProfilesLimit = (
  * and sorted by priorities
  * @param chargingStation - Charging station
  * @param connectorId - Connector id
- * @returns connector charging profiles array
+ * @returns Connector charging profiles array
  */
 export const getConnectorChargingProfiles = (
   chargingStation: ChargingStation,
@@ -1069,9 +1069,9 @@ const getSingleChargingSchedule = (
 /**
  * Get the charging profiles limit for a connector
  * Charging profiles shall already be sorted by priorities
- * @param chargingStation -
- * @param connectorId -
- * @param chargingProfiles -
+ * @param chargingStation - The charging station instance
+ * @param connectorId - The connector identifier
+ * @param chargingProfiles - Array of charging profiles
  * @returns ChargingProfilesLimit
  */
 const getChargingProfilesLimit = (
@@ -1366,10 +1366,10 @@ const canProceedRecurringChargingProfile = (
 
 /**
  * Adjust recurring charging profile startSchedule to the current recurrency time interval if needed
- * @param chargingProfile -
- * @param currentDate -
- * @param logPrefix -
- * @returns boolean
+ * @param chargingProfile - The charging profile to adjust
+ * @param currentDate - The current date/time
+ * @param logPrefix - Prefix for logging messages
+ * @returns Whether the charging profile is active at the given date
  */
 const prepareRecurringChargingProfile = (
   chargingProfile: ChargingProfile,

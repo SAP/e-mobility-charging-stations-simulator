@@ -31,8 +31,8 @@ export class WorkerFixedPool<D extends WorkerData, R extends WorkerData> extends
 
   /**
    * Creates a new `WorkerFixedPool`.
-   * @param workerScript -
-   * @param workerOptions -
+   * @param workerScript - Path to the worker script file
+   * @param workerOptions - Worker pool configuration options
    */
   constructor (workerScript: string, workerOptions: WorkerOptions) {
     super(workerScript, workerOptions)

@@ -345,8 +345,8 @@ export abstract class OCPPRequestService {
       return await new Promise<ResponseType>((resolve, reject: (reason?: unknown) => void) => {
         /**
          * Function that will receive the request's response
-         * @param payload -
-         * @param requestPayload -
+         * @param payload - The response payload
+         * @param requestPayload - The original request payload
          */
         const responseCallback = (payload: JsonType, requestPayload: JsonType): void => {
           if (chargingStation.stationInfo?.enableStatistics === true) {
@@ -376,8 +376,8 @@ export abstract class OCPPRequestService {
 
         /**
          * Function that will receive the request's error response
-         * @param ocppError -
-         * @param requestStatistic -
+         * @param ocppError - The OCPP error response
+         * @param requestStatistic - Whether to record request statistics
          */
         const errorCallback = (ocppError: OCPPError, requestStatistic = true): void => {
           if (requestStatistic && chargingStation.stationInfo?.enableStatistics === true) {

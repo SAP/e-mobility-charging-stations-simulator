@@ -16,8 +16,8 @@ export abstract class WorkerAbstract<D extends WorkerData, R extends WorkerData>
 
   /**
    * `WorkerAbstract` constructor.
-   * @param workerScript -
-   * @param workerOptions -
+   * @param workerScript - Path to the worker script file
+   * @param workerOptions - Worker configuration options
    */
   constructor (workerScript: string | undefined, workerOptions: WorkerOptions) {
     if (workerScript == null) {
@@ -42,7 +42,7 @@ export abstract class WorkerAbstract<D extends WorkerData, R extends WorkerData>
 
   /**
    * Adds a task element to the worker pool/set.
-   * @param elementData -
+   * @param elementData - The element data to process
    */
   public abstract addElement (elementData: D): Promise<R>
   /**

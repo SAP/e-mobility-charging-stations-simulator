@@ -91,9 +91,9 @@ export interface VariableMetadata {
  * 2. Case-insensitive composite key (lookup convenience): `${component}[.<instance>].${variable}` all lower case
  *    - Built with buildCaseInsensitiveCompositeKey().
  * Rationale: Maintain original case for canonical metadata storage while offering tolerant lookups.
- * @param component Component name.
- * @param variable Variable name.
- * @param instance Optional instance qualifier.
+ * @param component - Component name.
+ * @param variable - Variable name.
+ * @param instance - Optional instance qualifier.
  * @returns Primary registry key string.
  */
 function buildRegistryKey (component: string, variable: string, instance?: string): string {
@@ -2375,9 +2375,9 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
 /**
  * Build composite lookup key (lower-cased) including optional instance.
  * Format: `component[.instance].variable` all lower case.
- * @param component Component name.
- * @param instance Optional instance qualifier.
- * @param variable Variable name.
+ * @param component - Component name.
+ * @param instance - Optional instance qualifier.
+ * @param variable - Variable name.
  * @returns Lower-case composite key for lookup.
  */
 export function buildCaseInsensitiveCompositeKey (
@@ -2398,9 +2398,9 @@ const VARIABLE_REGISTRY_LOOKUP_CI: Record<string, VariableMetadata> = Object.val
 
 /**
  * Apply optional metadata post-processing to a resolved variable value.
- * @param chargingStation Charging station context.
- * @param variableMetadata Variable metadata entry.
- * @param value Resolved raw value.
+ * @param chargingStation - Charging station context.
+ * @param variableMetadata - Variable metadata entry.
+ * @param value - Resolved raw value.
  * @returns Post-processed value (or original when no postProcess defined).
  */
 export function applyPostProcess (
@@ -2416,8 +2416,8 @@ export function applyPostProcess (
 
 /**
  * Enforce reporting/value size limit on a string.
- * @param value Incoming value string.
- * @param sizeLimitRaw Raw size limit value (string form).
+ * @param value - Incoming value string.
+ * @param sizeLimitRaw - Raw size limit value (string form).
  * @returns Possibly truncated value respecting size limit.
  */
 export function enforceReportingValueSize (value: string, sizeLimitRaw: string): string {
@@ -2430,9 +2430,9 @@ export function enforceReportingValueSize (value: string, sizeLimitRaw: string):
 
 /**
  * Retrieve variable metadata with case-insensitive fallback.
- * @param component Component name.
- * @param variable Variable name.
- * @param instance Optional instance qualifier.
+ * @param component - Component name.
+ * @param variable - Variable name.
+ * @param instance - Optional instance qualifier.
  * @returns Matching variable metadata or undefined.
  */
 export function getVariableMetadata (
@@ -2459,7 +2459,7 @@ export function getVariableMetadata (
 
 /**
  * Check if variable metadata is persistent.
- * @param variableMetadata Variable metadata entry.
+ * @param variableMetadata - Variable metadata entry.
  * @returns True when persistence is Persistent.
  */
 export function isPersistent (variableMetadata: VariableMetadata): boolean {
@@ -2468,7 +2468,7 @@ export function isPersistent (variableMetadata: VariableMetadata): boolean {
 
 /**
  * Check if variable metadata is read-only.
- * @param variableMetadata Variable metadata entry.
+ * @param variableMetadata - Variable metadata entry.
  * @returns True when mutability is ReadOnly.
  */
 export function isReadOnly (variableMetadata: VariableMetadata): boolean {
@@ -2477,7 +2477,7 @@ export function isReadOnly (variableMetadata: VariableMetadata): boolean {
 
 /**
  * Check if variable metadata is write-only.
- * @param variableMetadata Variable metadata entry.
+ * @param variableMetadata - Variable metadata entry.
  * @returns True when mutability is WriteOnly.
  */
 export function isWriteOnly (variableMetadata: VariableMetadata): boolean {
@@ -2486,8 +2486,8 @@ export function isWriteOnly (variableMetadata: VariableMetadata): boolean {
 
 /**
  * Resolve variable value using dynamicValueResolver if present else defaultValue.
- * @param chargingStation Charging station context.
- * @param variableMetadata Variable metadata entry.
+ * @param chargingStation - Charging station context.
+ * @param variableMetadata - Variable metadata entry.
  * @returns Resolved value string (empty when no default).
  */
 export function resolveValue (
@@ -2503,8 +2503,8 @@ export function resolveValue (
 /**
  * Validate raw value against variable metadata constraints.
  * Performs length, datatype specific and enumeration checks.
- * @param variableMetadata Variable metadata entry.
- * @param rawValue Raw value string to validate.
+ * @param variableMetadata - Variable metadata entry.
+ * @param rawValue - Raw value string to validate.
  * @returns Validation result with ok flag and optional reason/info.
  */
 export function validateValue (
@@ -2721,7 +2721,7 @@ export function validateValue (
 
 /**
  * Validate URL using generic parsing (any scheme accepted).
- * @param value Raw URL string.
+ * @param value - Raw URL string.
  * @returns Validation result with ok flag and optional reason/info.
  */
 function validateGenericUrl (value: string): {
@@ -2737,8 +2737,8 @@ function validateGenericUrl (value: string): {
 
 /**
  * Validate URL scheme against an allowed list after generic format check.
- * @param value Raw URL string.
- * @param allowedSchemes Allowed protocol schemes (with trailing colon).
+ * @param value - Raw URL string.
+ * @param allowedSchemes - Allowed protocol schemes (with trailing colon).
  * @returns Validation result with ok flag and optional reason/info.
  */
 function validateUrlScheme (
