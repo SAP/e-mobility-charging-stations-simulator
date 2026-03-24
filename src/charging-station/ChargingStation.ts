@@ -288,6 +288,10 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
+  /**
+   * Adds a reservation to the specified connector.
+   * @param reservation - The reservation to add
+   */
   public async addReservation (reservation: Reservation): Promise<void> {
     const reservationFound = this.getReservationBy('reservationId', reservation.reservationId)
     if (reservationFound != null) {
@@ -311,11 +315,16 @@ export class ChargingStation extends EventEmitter {
     )
   }
 
+  /**
+   * Buffers an OCPP message for deferred sending when connection is unavailable.
+   * @param message - The OCPP message to buffer
+   */
   public bufferMessage (message: string): void {
     this.messageQueue.push(message)
     this.setIntervalFlushMessageBuffer()
   }
 
+  /** Closes the WebSocket connection to the central server. */
   public closeWSConnection (): void {
     if (this.wsConnection != null) {
       if (this.isWebSocketConnectionOpened()) {
@@ -325,6 +334,10 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
+  /**
+   * Deletes the charging station instance and optionally its persisted configuration.
+   * @param deleteConfiguration - Whether to delete the persisted configuration file
+   */
   public async delete (deleteConfiguration = true): Promise<void> {
     if (this.started) {
       try {
@@ -388,6 +401,10 @@ export class ChargingStation extends EventEmitter {
       : false
   }
 
+  /**
+   * Gets the automatic transaction generator configuration.
+   * @returns The ATG configuration or undefined if not available
+   */
   public getAutomaticTransactionGeneratorConfiguration ():
     | AutomaticTransactionGeneratorConfiguration
     | undefined {
@@ -415,6 +432,10 @@ export class ChargingStation extends EventEmitter {
     return this.automaticTransactionGeneratorConfiguration
   }
 
+  /**
+   * Gets the status of each ATG connector.
+   * @returns Array of ATG connector statuses or undefined
+   */
   public getAutomaticTransactionGeneratorStatuses (): Status[] | undefined {
     return this.getConfigurationFromFile()?.automaticTransactionGeneratorStatuses
   }
@@ -429,6 +450,11 @@ export class ChargingStation extends EventEmitter {
     return Constants.DEFAULT_CONNECTION_TIMEOUT
   }
 
+  /**
+   * Resolves the connector ID for a given transaction ID.
+   * @param transactionId - The transaction ID to resolve
+   * @returns The connector ID or undefined if not found
+   */
   public getConnectorIdByTransactionId (
     transactionId: number | string | undefined
   ): number | undefined {
@@ -451,6 +477,11 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
+  /**
+   * Computes the maximum power available on a connector considering amperage limitations and charging profiles.
+   * @param connectorId - The connector ID
+   * @returns The maximum available power in watts
+   */
   public getConnectorMaximumAvailablePower (connectorId: number): number {
     let connectorAmperageLimitationLimit: number | undefined
     const amperageLimitation = this.getAmperageLimitation()
@@ -500,10 +531,22 @@ export class ChargingStation extends EventEmitter {
     return this.connectors.get(connectorId)
   }
 
+  /**
+   * Gets cumulative active energy imported on a connector.
+   * @param connectorId - The connector ID
+   * @param rounded - Whether to round the value
+   * @returns The cumulative active energy imported in watt-hours
+   */
   public getEnergyActiveImportRegisterByConnectorId (connectorId: number, rounded = false): number {
     return this.getEnergyActiveImportRegister(this.getConnectorStatus(connectorId), rounded)
   }
 
+  /**
+   * Gets cumulative active energy imported for a transaction.
+   * @param transactionId - The transaction ID
+   * @param rounded - Whether to round the value
+   * @returns The cumulative active energy imported in watt-hours
+   */
   public getEnergyActiveImportRegisterByTransactionId (
     transactionId: number | string | undefined,
     rounded = false
@@ -515,6 +558,11 @@ export class ChargingStation extends EventEmitter {
     )
   }
 
+  /**
+   * Resolves the EVSE ID for a given connector ID.
+   * @param connectorId - The connector ID
+   * @returns The EVSE ID or undefined if not found
+   */
   public getEvseIdByConnectorId (connectorId: number): number | undefined {
     if (!this.hasEvses) {
       return undefined
@@ -527,6 +575,11 @@ export class ChargingStation extends EventEmitter {
     return undefined
   }
 
+  /**
+   * Resolves the EVSE ID for a given transaction ID.
+   * @param transactionId - The transaction ID
+   * @returns The EVSE ID or undefined if not found
+   */
   public getEvseIdByTransactionId (transactionId: number | string | undefined): number | undefined {
     if (transactionId == null) {
       return undefined
@@ -592,6 +645,11 @@ export class ChargingStation extends EventEmitter {
     return this.evses.has(0) ? this.evses.size - 1 : this.evses.size
   }
 
+  /**
+   * Gets the number of electrical phases for this station.
+   * @param stationInfo - Optional station info to use instead of this.stationInfo
+   * @returns The number of phases (3 for AC, 0 for DC)
+   */
   public getNumberOfPhases (stationInfo?: ChargingStationInfo): number {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const localStationInfo = stationInfo ?? this.stationInfo!
@@ -603,6 +661,10 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
+  /**
+   * Counts currently active transactions across all connectors.
+   * @returns The number of running transactions
+   */
   public getNumberOfRunningTransactions (): number {
     let numberOfRunningTransactions = 0
     if (this.hasEvses) {
@@ -626,6 +688,12 @@ export class ChargingStation extends EventEmitter {
     return numberOfRunningTransactions
   }
 
+  /**
+   * Finds a reservation matching the given filter predicate.
+   * @param filterKey - The reservation property to filter by
+   * @param value - The value to match
+   * @returns The matching reservation or undefined
+   */
   public getReservationBy (
     filterKey: ReservationKey,
     value: number | string
@@ -654,6 +722,11 @@ export class ChargingStation extends EventEmitter {
     )
   }
 
+  /**
+   * Gets the ID tag used for a given transaction.
+   * @param transactionId - The transaction ID
+   * @returns The ID tag or undefined if not found
+   */
   public getTransactionIdTag (transactionId: number): string | undefined {
     if (this.hasEvses) {
       for (const evseStatus of this.evses.values()) {
@@ -730,6 +803,13 @@ export class ChargingStation extends EventEmitter {
     )
   }
 
+  /**
+   * Checks whether a connector can accept a new reservation.
+   * @param reservationId - The reservation ID to check
+   * @param idTag - Optional ID tag for user reservation check
+   * @param connectorId - Optional connector ID to check availability
+   * @returns True if the connector can accept a reservation
+   */
   public isConnectorReservable (
     reservationId: number,
     idTag?: string,
@@ -775,6 +855,13 @@ export class ChargingStation extends EventEmitter {
     return logPrefix(` ${getChargingStationId(this.index, stationTemplate)} |`)
   }
 
+  /**
+   * Opens the WebSocket connection to the OCPP central server.
+   * @param options - Optional WebSocket connection options
+   * @param params - Optional connection parameters
+   * @param params.closeOpened - Whether to close an existing connection
+   * @param params.terminateOpened - Whether to terminate an existing connection
+   */
   public openWSConnection (
     options?: WsOptions,
     params?: { closeOpened?: boolean; terminateOpened?: boolean }
@@ -836,6 +923,11 @@ export class ChargingStation extends EventEmitter {
     this.wsConnection.on('pong', this.onPong.bind(this))
   }
 
+  /**
+   * Removes a reservation and restores the connector to its previous status.
+   * @param reservation - The reservation to remove
+   * @param reason - The reason for removing the reservation
+   */
   public async removeReservation (
     reservation: Reservation,
     reason: ReservationTerminationReason
@@ -866,6 +958,11 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
+  /**
+   * Resets the charging station with optional graceful shutdown.
+   * @param reason - Optional reason for the reset
+   * @param graceful - Whether to perform a graceful shutdown
+   */
   public async reset (reason?: StopTransactionReason, graceful = true): Promise<void> {
     try {
       await this.stop(reason, graceful ? this.stationInfo?.stopTransactionsOnStopped : false)
@@ -879,6 +976,7 @@ export class ChargingStation extends EventEmitter {
     this.start()
   }
 
+  /** Restarts the periodic heartbeat to the central server. */
   public restartHeartbeat (): void {
     // Stop heartbeat
     this.stopHeartbeat()
@@ -886,6 +984,7 @@ export class ChargingStation extends EventEmitter {
     this.startHeartbeat()
   }
 
+  /** Restarts the WebSocket ping interval. */
   public restartWebSocketPing (): void {
     // Stop WebSocket ping
     this.stopWebSocketPing()
@@ -893,12 +992,17 @@ export class ChargingStation extends EventEmitter {
     this.startWebSocketPing()
   }
 
+  /** Persists the current OCPP configuration to storage. */
   public saveOcppConfiguration (): void {
     if (this.stationInfo?.ocppPersistentConfiguration === true) {
       this.saveConfiguration()
     }
   }
 
+  /**
+   * Updates the supervision server URL in configuration or station info.
+   * @param url - The new supervision server URL
+   */
   public setSupervisionUrl (url: string): void {
     if (
       this.stationInfo?.supervisionUrlOcppConfiguration === true &&
@@ -912,6 +1016,7 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
+  /** Starts the charging station, initializes connectors, and connects to the central server. */
   public start (): void {
     if (!this.started) {
       if (!this.starting) {
@@ -981,6 +1086,11 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
+  /**
+   * Starts automatic transaction generation on the specified connectors.
+   * @param connectorIds - Optional array of connector IDs to start ATG on
+   * @param stopAbsoluteDuration - Whether to use absolute duration for stopping
+   */
   public startAutomaticTransactionGenerator (
     connectorIds?: number[],
     stopAbsoluteDuration?: boolean
@@ -997,6 +1107,7 @@ export class ChargingStation extends EventEmitter {
     this.emitChargingStationEvent(ChargingStationEvents.updated)
   }
 
+  /** Starts the periodic heartbeat to the central server. */
   public startHeartbeat (): void {
     const heartbeatInterval = this.getHeartbeatInterval()
     if (heartbeatInterval > 0 && this.heartbeatSetInterval == null) {
@@ -1028,6 +1139,11 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
+  /**
+   * Stops the charging station and closes the connection to the central server.
+   * @param reason - Optional reason for stopping
+   * @param stopTransactions - Whether to stop active transactions
+   */
   public async stop (
     reason?: StopTransactionReason,
     stopTransactions = this.stationInfo?.stopTransactionsOnStopped
@@ -1059,6 +1175,10 @@ export class ChargingStation extends EventEmitter {
     }
   }
 
+  /**
+   * Stops automatic transaction generation on the specified connectors.
+   * @param connectorIds - Optional array of connector IDs to stop ATG on
+   */
   public stopAutomaticTransactionGenerator (connectorIds?: number[]): void {
     if (isNotEmptyArray(connectorIds)) {
       for (const connectorId of connectorIds) {
