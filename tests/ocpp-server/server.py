@@ -113,6 +113,8 @@ class ServerConfig:
     )
     reset_type: ResetEnumType = ResetEnumType.immediate
     availability_status: OperationalStatusEnumType = OperationalStatusEnumType.operative
+    set_variables_data: list[dict] | None = None
+    get_variables_data: list[dict] | None = None
 
 
 class ChargePoint(ocpp.v201.ChargePoint):
@@ -127,6 +129,8 @@ class ChargePoint(ocpp.v201.ChargePoint):
     _reset_type: ResetEnumType
     _availability_status: OperationalStatusEnumType
     _charge_points: set["ChargePoint"]
+    _set_variables_data: list[dict] | None
+    _get_variables_data: list[dict] | None
 
     def __init__(
         self,
@@ -144,6 +148,8 @@ class ChargePoint(ocpp.v201.ChargePoint):
             OperationalStatusEnumType.operative
         ),
         charge_points: set["ChargePoint"] | None = None,
+        set_variables_data: list[dict] | None = None,
+        get_variables_data: list[dict] | None = None,
     ):
         # Extract CP ID from last URL segment (OCPP 2.0.1 Part 4)
         cp_id = connection.request.path.strip("/").split("/")[-1]
@@ -160,6 +166,8 @@ class ChargePoint(ocpp.v201.ChargePoint):
         self._trigger_message_type = trigger_message_type
         self._reset_type = reset_type
         self._availability_status = availability_status
+        self._set_variables_data = set_variables_data
+        self._get_variables_data = get_variables_data
         self._charge_points.add(self)
         self._active_transactions: dict[str, int] = {}
         if auth_config is None:
@@ -391,20 +399,25 @@ class ChargePoint(ocpp.v201.ChargePoint):
         )
 
     async def _send_get_variables(self):
-        request = ocpp.v201.call.GetVariables(
-            get_variable_data=[
+        data = (
+            self._get_variables_data
+            if self._get_variables_data is not None
+            else [
                 {
                     "component": {"name": "ChargingStation"},
                     "variable": {"name": "AvailabilityState"},
                 }
             ]
         )
+        request = ocpp.v201.call.GetVariables(get_variable_data=data)
         await self.call(request, suppress=False)
         logger.info("%s response received", Action.get_variables)
 
     async def _send_set_variables(self):
-        request = ocpp.v201.call.SetVariables(
-            set_variable_data=[
+        data = (
+            self._set_variables_data
+            if self._set_variables_data is not None
+            else [
                 {
                     "component": {"name": "OCPPCommCtrlr"},
                     "variable": {"name": "HeartbeatInterval"},
@@ -412,6 +425,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
                 }
             ]
         )
+        request = ocpp.v201.call.SetVariables(set_variable_data=data)
         await self.call(request, suppress=False)
         logger.info("%s response received", Action.set_variables)
 
@@ -719,6 +733,8 @@ async def on_connect(
         reset_type=config.reset_type,
         availability_status=config.availability_status,
         charge_points=charge_points,
+        set_variables_data=config.set_variables_data,
+        get_variables_data=config.get_variables_data,
     )
     if config.command_name:
         await cp.send_command(config.command_name, config.delay, config.period)
@@ -767,6 +783,44 @@ def _parse_commands(commands_str: str) -> list[tuple[Action, float]]:
         if delay <= 0:
             raise argparse.ArgumentTypeError(f"Delay must be positive, got {delay}")
         result.append((cmd, delay))
+    return result
+
+
+def _parse_set_variable_specs(specs_str: str) -> list[dict]:
+    result = []
+    for entry in specs_str.split(","):
+        entry = entry.strip()
+        if "=" not in entry or "." not in entry.split("=")[0]:
+            raise argparse.ArgumentTypeError(
+                f"Invalid variable spec '{entry}': expected 'Component.Variable=Value'"
+            )
+        component_var, value = entry.split("=", 1)
+        component, variable = component_var.strip().split(".", 1)
+        result.append(
+            {
+                "component": {"name": component.strip()},
+                "variable": {"name": variable.strip()},
+                "attribute_value": value.strip(),
+            }
+        )
+    return result
+
+
+def _parse_get_variable_specs(specs_str: str) -> list[dict]:
+    result = []
+    for entry in specs_str.split(","):
+        entry = entry.strip()
+        if "." not in entry:
+            raise argparse.ArgumentTypeError(
+                f"Invalid variable spec '{entry}': expected 'Component.Variable'"
+            )
+        component, variable = entry.split(".", 1)
+        result.append(
+            {
+                "component": {"name": component.strip()},
+                "variable": {"name": variable.strip()},
+            }
+        )
     return result
 
 
@@ -894,12 +948,37 @@ async def main():
         help="cacheExpiryDateTime offset in seconds from now (e.g., 3600)",
     )
 
+    parser.add_argument(
+        "--set-variables",
+        type=str,
+        default=None,
+        help=(
+            'SetVariables data: "Component.Variable=Value,..." '
+            '(e.g., "OCPPCommCtrlr.HeartbeatInterval=30")'
+        ),
+    )
+    parser.add_argument(
+        "--get-variables",
+        type=str,
+        default=None,
+        help=(
+            'GetVariables data: "Component.Variable,..." '
+            '(e.g., "ChargingStation.AvailabilityState")'
+        ),
+    )
+
     args, _ = parser.parse_known_args()
     group.required = args.command is not None
 
     args = parser.parse_args()
 
     parsed_commands = _parse_commands(args.commands) if args.commands else None
+    parsed_set_variables = (
+        _parse_set_variable_specs(args.set_variables) if args.set_variables else None
+    )
+    parsed_get_variables = (
+        _parse_get_variable_specs(args.get_variables) if args.get_variables else None
+    )
 
     if args.boot_status_sequence is not None:
         boot_sequence = tuple(
@@ -933,6 +1012,8 @@ async def main():
         trigger_message_type=args.trigger_message,
         reset_type=args.reset_type,
         availability_status=args.availability_status,
+        set_variables_data=parsed_set_variables,
+        get_variables_data=parsed_get_variables,
     )
 
     logger.info(

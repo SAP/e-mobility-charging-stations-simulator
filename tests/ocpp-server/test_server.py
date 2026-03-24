@@ -51,6 +51,8 @@ from server import (
     ChargePoint,
     ServerConfig,
     _parse_commands,
+    _parse_get_variable_specs,
+    _parse_set_variable_specs,
     _random_request_id,
     check_positive_number,
     main,
@@ -209,6 +211,8 @@ def _patch_main(mock_loop, mock_server, mock_event, extra_patches=None):
         trigger_message=MessageTriggerEnumType.status_notification,
         reset_type=ResetEnumType.immediate,
         availability_status=OperationalStatusEnumType.operative,
+        set_variables=None,
+        get_variables=None,
     )
     mock_serve_cm = AsyncMock()
     mock_serve_cm.__aenter__ = AsyncMock(return_value=mock_server)
@@ -1599,3 +1603,52 @@ class TestCommandSequencing:
     def test_parse_commands_unknown_action(self):
         with pytest.raises(argparse.ArgumentTypeError, match="Unknown action"):
             _parse_commands("UnknownAction:5")
+
+
+class TestMultiVariableCommands:
+    """Tests for multi-variable SetVariables/GetVariables CLI support."""
+
+    def test_parse_set_variable_specs_valid(self):
+        result = _parse_set_variable_specs(
+            "OCPPCommCtrlr.HeartbeatInterval=30,TxCtrlr.EVConnectionTimeOut=60"
+        )
+        assert len(result) == 2
+        assert result[0]["component"]["name"] == "OCPPCommCtrlr"
+        assert result[0]["variable"]["name"] == "HeartbeatInterval"
+        assert result[0]["attribute_value"] == "30"
+        assert result[1]["component"]["name"] == "TxCtrlr"
+        assert result[1]["variable"]["name"] == "EVConnectionTimeOut"
+        assert result[1]["attribute_value"] == "60"
+
+    def test_parse_get_variable_specs_valid(self):
+        result = _parse_get_variable_specs(
+            "ChargingStation.AvailabilityState,OCPPCommCtrlr.HeartbeatInterval"
+        )
+        assert len(result) == 2
+        assert result[0]["component"]["name"] == "ChargingStation"
+        assert result[0]["variable"]["name"] == "AvailabilityState"
+        assert result[1]["component"]["name"] == "OCPPCommCtrlr"
+        assert result[1]["variable"]["name"] == "HeartbeatInterval"
+
+    def test_parse_set_variable_specs_invalid_no_dot(self):
+        with pytest.raises(
+            argparse.ArgumentTypeError,
+            match=r"expected 'Component\.Variable=Value'",
+        ):
+            _parse_set_variable_specs("NoComponentVariable=30")
+
+    async def test_send_set_variables_uses_custom_data(self, command_charge_point):
+        custom_data = [
+            {
+                "component": {"name": "TestComp"},
+                "variable": {"name": "TestVar"},
+                "attribute_value": "42",
+            }
+        ]
+        command_charge_point._set_variables_data = custom_data
+        command_charge_point.call = AsyncMock(
+            return_value=MagicMock(set_variable_result=[])
+        )
+        await command_charge_point._send_set_variables()
+        call_args = command_charge_point.call.call_args[0][0]
+        assert call_args.set_variable_data == custom_data
