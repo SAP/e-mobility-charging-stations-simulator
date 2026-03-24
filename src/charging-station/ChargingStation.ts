@@ -454,8 +454,10 @@ export class ChargingStation extends EventEmitter {
   public getConnectorMaximumAvailablePower (connectorId: number): number {
     let connectorAmperageLimitationLimit: number | undefined
     const amperageLimitation = this.getAmperageLimitation()
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    if (amperageLimitation != null && amperageLimitation < this.stationInfo!.maximumAmperage!) {
+    if (
+      amperageLimitation != null &&
+      amperageLimitation < (this.stationInfo?.maximumAmperage ?? Infinity)
+    ) {
       const voltageOut = this.getVoltageOut()
       connectorAmperageLimitationLimit =
         (this.stationInfo?.currentOutType === CurrentType.AC
@@ -465,11 +467,9 @@ export class ChargingStation extends EventEmitter {
             amperageLimitation *
                 (this.hasEvses ? this.getNumberOfEvses() : this.getNumberOfConnectors())
           )
-          : // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          DCElectricUtils.power(voltageOut, amperageLimitation)) / this.powerDivider!
+          : DCElectricUtils.power(voltageOut, amperageLimitation)) / (this.powerDivider ?? 1)
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const connectorMaximumPower = this.stationInfo!.maximumPower! / this.powerDivider!
+    const connectorMaximumPower = (this.stationInfo?.maximumPower ?? 0) / (this.powerDivider ?? 1)
     const chargingStationChargingProfilesLimit =
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       getChargingStationChargingProfilesLimit(this)! / this.powerDivider!
@@ -873,8 +873,7 @@ export class ChargingStation extends EventEmitter {
       logger.error(`${this.logPrefix()} Error during reset stop phase:`, error)
       return
     }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    await sleep(this.stationInfo!.resetTime!)
+    await sleep(this.stationInfo?.resetTime ?? 0)
     OCPPAuthServiceFactory.clearInstance(this)
     this.initialize()
     this.start()
@@ -906,9 +905,8 @@ export class ChargingStation extends EventEmitter {
       isNotEmptyString(this.stationInfo.supervisionUrlOcppKey)
     ) {
       setConfigurationKeyValue(this, this.stationInfo.supervisionUrlOcppKey, url)
-    } else {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this.stationInfo!.supervisionUrls = url
+    } else if (this.stationInfo != null) {
+      this.stationInfo.supervisionUrls = url
       this.configuredSupervisionUrl = this.getConfiguredSupervisionUrl()
       this.saveStationInfo()
     }
@@ -1568,8 +1566,7 @@ export class ChargingStation extends EventEmitter {
         const patchLevelIndex = match.length - 1
         match[patchLevelIndex] = (
           convertToInt(match[patchLevelIndex]) +
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          this.stationInfo.firmwareUpgrade!.versionUpgrade!.step!
+          (this.stationInfo.firmwareUpgrade?.versionUpgrade?.step ?? 1)
         ).toString()
         this.stationInfo.firmwareVersion = match.join('.')
       }
@@ -2115,10 +2112,10 @@ export class ChargingStation extends EventEmitter {
           >(this, RequestCommand.BOOT_NOTIFICATION, this.bootNotificationRequest, {
             skipBufferingOnError: true,
           })
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          this.bootNotificationResponse!.currentTime = convertToDate(
-            this.bootNotificationResponse?.currentTime
-          )!
+          if (this.bootNotificationResponse != null) {
+            this.bootNotificationResponse.currentTime =
+              convertToDate(this.bootNotificationResponse.currentTime) ?? new Date()
+          }
           if (!this.inAcceptedState()) {
             ++registrationRetryCount
             await sleep(
@@ -2133,8 +2130,7 @@ export class ChargingStation extends EventEmitter {
         } while (
           !this.inAcceptedState() &&
           (this.stationInfo?.registrationMaxRetries === -1 ||
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            registrationRetryCount <= this.stationInfo!.registrationMaxRetries!)
+            registrationRetryCount <= (this.stationInfo?.registrationMaxRetries ?? 0))
         )
       }
       if (!this.inAcceptedState()) {
@@ -2164,8 +2160,7 @@ export class ChargingStation extends EventEmitter {
   private async reconnect (): Promise<void> {
     if (
       this.stationInfo?.autoReconnectMaxRetries === -1 ||
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this.wsConnectionRetryCount < this.stationInfo!.autoReconnectMaxRetries!
+      this.wsConnectionRetryCount < (this.stationInfo?.autoReconnectMaxRetries ?? 0)
     ) {
       ++this.wsConnectionRetryCount
       const reconnectDelay =
