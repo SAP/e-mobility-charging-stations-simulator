@@ -7,7 +7,7 @@ import math
 import signal
 import sys
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from enum import StrEnum
 from functools import partial
 from random import randint
@@ -91,6 +91,8 @@ class AuthConfig:
     blacklist: tuple[str, ...]
     offline: bool
     default_status: AuthorizationStatusEnumType
+    auth_group_id: str | None = None
+    auth_cache_expiry: int | None = None
 
 
 @dataclass(frozen=True)
@@ -191,6 +193,22 @@ class ChargePoint(ocpp.v201.ChargePoint):
             case _:
                 return self._auth_config.default_status
 
+    def _build_id_token_info(self, token_id: str) -> dict:
+        """Build id_token_info dict with optional groupIdToken and cacheExpiry."""
+        status = self._resolve_auth_status(token_id)
+        id_token_info: dict = {"status": status}
+        if self._auth_config.auth_group_id is not None:
+            id_token_info["group_id_token"] = {
+                "id_token": self._auth_config.auth_group_id,
+                "type": "Central",
+            }
+        if self._auth_config.auth_cache_expiry is not None:
+            expiry = datetime.now(timezone.utc) + timedelta(
+                seconds=self._auth_config.auth_cache_expiry
+            )
+            id_token_info["cache_expiry_date_time"] = expiry.isoformat()
+        return id_token_info
+
     # --- Incoming message handlers (CS → CSMS) ---
 
     @on(Action.boot_notification)
@@ -231,10 +249,12 @@ class ChargePoint(ocpp.v201.ChargePoint):
             raise InternalError(description="Simulated network failure")
 
         token_id = id_token.get("id_token", "")
-        status = self._resolve_auth_status(token_id)
+        id_token_info = self._build_id_token_info(token_id)
 
-        logger.info("Authorization status for %s: %s", token_id, status)
-        return ocpp.v201.call_result.Authorize(id_token_info={"status": status})
+        logger.info(
+            "Authorization status for %s: %s", token_id, id_token_info["status"]
+        )
+        return ocpp.v201.call_result.Authorize(id_token_info=id_token_info)
 
     @on(Action.transaction_event)
     async def on_transaction_event(
@@ -256,13 +276,15 @@ class ChargePoint(ocpp.v201.ChargePoint):
 
                 id_token = kwargs.get("id_token", {})
                 token_id = id_token.get("id_token", "")
-                status = self._resolve_auth_status(token_id)
+                id_token_info = self._build_id_token_info(token_id)
 
                 logger.info(
-                    "Transaction start auth status for %s: %s", token_id, status
+                    "Transaction start auth status for %s: %s",
+                    token_id,
+                    id_token_info["status"],
                 )
                 return ocpp.v201.call_result.TransactionEvent(
-                    id_token_info={"status": status}
+                    id_token_info=id_token_info
                 )
             case TransactionEventEnumType.updated:
                 logger.info("Received %s Updated", Action.transaction_event)
@@ -859,6 +881,18 @@ async def main():
         action="store_true",
         help="Simulate offline/network failure mode",
     )
+    parser.add_argument(
+        "--auth-group-id",
+        type=str,
+        default=None,
+        help="groupIdToken id_token value to include in Authorize response",
+    )
+    parser.add_argument(
+        "--auth-cache-expiry",
+        type=int,
+        default=None,
+        help="cacheExpiryDateTime offset in seconds from now (e.g., 3600)",
+    )
 
     args, _ = parser.parse_known_args()
     group.required = args.command is not None
@@ -883,6 +917,8 @@ async def main():
         blacklist=tuple(args.blacklist),
         offline=args.offline,
         default_status=AuthorizationStatusEnumType.accepted,
+        auth_group_id=args.auth_group_id,
+        auth_cache_expiry=args.auth_cache_expiry,
     )
 
     config = ServerConfig(

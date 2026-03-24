@@ -204,6 +204,8 @@ def _patch_main(mock_loop, mock_server, mock_event, extra_patches=None):
         whitelist=["valid_token"],
         blacklist=["blocked_token"],
         offline=False,
+        auth_group_id=None,
+        auth_cache_expiry=None,
         trigger_message=MessageTriggerEnumType.status_notification,
         reset_type=ResetEnumType.immediate,
         availability_status=OperationalStatusEnumType.operative,
@@ -609,6 +611,52 @@ class TestAuthorizeHandler:
             response.id_token_info["status"]
             == AuthorizationStatusEnumType.not_at_this_time
         )
+
+
+class TestRicherAuthorizeResponse:
+    """Tests for richer Authorize response with groupIdToken and cacheExpiry."""
+
+    async def test_authorize_includes_group_id_token(self, mock_connection):
+        cp = ChargePoint(
+            mock_connection,
+            auth_config=AuthConfig(
+                mode=AuthMode.normal,
+                whitelist=(),
+                blacklist=(),
+                offline=False,
+                default_status=AuthorizationStatusEnumType.accepted,
+                auth_group_id="MyGroup",
+            ),
+        )
+        result = await cp.on_authorize(
+            id_token={"id_token": "test_token", "type": "ISO14443"}
+        )
+        assert result.id_token_info["group_id_token"]["id_token"] == "MyGroup"  # noqa: S105
+        assert result.id_token_info["group_id_token"]["type"] == "Central"
+
+    async def test_authorize_includes_cache_expiry(self, mock_connection):
+        cp = ChargePoint(
+            mock_connection,
+            auth_config=AuthConfig(
+                mode=AuthMode.normal,
+                whitelist=(),
+                blacklist=(),
+                offline=False,
+                default_status=AuthorizationStatusEnumType.accepted,
+                auth_cache_expiry=3600,
+            ),
+        )
+        result = await cp.on_authorize(
+            id_token={"id_token": "test_token", "type": "ISO14443"}
+        )
+        assert "cache_expiry_date_time" in result.id_token_info
+
+    async def test_authorize_no_enrichment_by_default(self, charge_point):
+        result = await charge_point.on_authorize(
+            id_token={"id_token": "test_token", "type": "ISO14443"}
+        )
+        assert "group_id_token" not in result.id_token_info
+        assert "cache_expiry_date_time" not in result.id_token_info
 
 
 class TestTransactionEventHandler:
