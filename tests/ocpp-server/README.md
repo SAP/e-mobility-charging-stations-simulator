@@ -110,7 +110,7 @@ These flags customize the payload of specific commands:
 - `--availability-status <STATUS>`: ChangeAvailability operational status (default: `Operative`)
   - `Operative` — Connector available
   - `Inoperative` — Connector unavailable
-- `--set-variables <SPECS>`: SetVariables data as `Component.Variable=Value,...`
+- `--set-variables <SPECS>`: SetVariables data as `Component.Variable=Value,...` (values must not contain commas)
 - `--get-variables <SPECS>`: GetVariables data as `Component.Variable,...`
 
 ```shell

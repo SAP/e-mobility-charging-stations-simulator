@@ -929,7 +929,7 @@ async def main():
     parser.add_argument(
         "--auth-mode",
         type=str,
-        choices=["normal", "offline", "whitelist", "blacklist", "rate_limit"],
+        choices=["normal", "whitelist", "blacklist", "rate_limit"],
         default="normal",
         help="Authorization mode (default: normal)",
     )
@@ -971,7 +971,8 @@ async def main():
         default=None,
         help=(
             'SetVariables data: "Component.Variable=Value,..." '
-            '(e.g., "OCPPCommCtrlr.HeartbeatInterval=30")'
+            '(e.g., "OCPPCommCtrlr.HeartbeatInterval=30"). '
+            "Values must not contain commas."
         ),
     )
     parser.add_argument(
@@ -1011,6 +1012,8 @@ async def main():
                 )
             boot_sequence_items.append(status)
         boot_sequence = tuple(boot_sequence_items)
+        if not boot_sequence:
+            parser.error("--boot-status-sequence must contain at least one status")
     elif args.boot_status is not None:
         boot_sequence = (args.boot_status,)
     else:
