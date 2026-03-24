@@ -742,7 +742,7 @@ async def on_connect(
     if config.command_name:
         await cp.send_command(config.command_name, config.delay, config.period)
     elif config.commands:
-        await cp.send_commands(config.commands)
+        cp._commands_task = asyncio.create_task(cp.send_commands(config.commands))
 
     try:
         await cp.start()
