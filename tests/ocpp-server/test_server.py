@@ -4,7 +4,7 @@ import argparse
 import contextlib
 import logging
 import signal
-from typing import ClassVar
+from typing import Any, ClassVar
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import ocpp.v201.call
@@ -195,7 +195,8 @@ def _patch_main(mock_loop, mock_server, mock_event, extra_patches=None):
         period=None,
         host="127.0.0.1",
         port=9000,
-        boot_status=RegistrationStatusEnumType.accepted,
+        boot_status=None,
+        boot_status_sequence=None,
         total_cost=10.0,
         auth_mode="normal",
         whitelist=["valid_token"],
@@ -390,14 +391,15 @@ class TestChargePointDefaultConfig:
     def test_command_timer_initially_none(self, charge_point):
         assert charge_point._command_timer is None
 
-    def test_default_boot_status(self, charge_point):
-        assert charge_point._boot_status == RegistrationStatusEnumType.accepted
+    def test_default_boot_sequence(self, charge_point):
+        assert charge_point._boot_sequence == (RegistrationStatusEnumType.accepted,)
 
-    def test_custom_boot_status(self, mock_connection):
+    def test_custom_boot_sequence(self, mock_connection):
         cp = ChargePoint(
-            mock_connection, boot_status=RegistrationStatusEnumType.rejected
+            mock_connection,
+            boot_sequence=(RegistrationStatusEnumType.rejected,),
         )
-        assert cp._boot_status == RegistrationStatusEnumType.rejected
+        assert cp._boot_sequence == (RegistrationStatusEnumType.rejected,)
 
     def test_default_total_cost(self, charge_point):
         assert charge_point._total_cost == DEFAULT_TOTAL_COST
@@ -425,7 +427,8 @@ class TestBootNotificationHandler:
 
     async def test_configurable_boot_status(self, mock_connection):
         cp = ChargePoint(
-            mock_connection, boot_status=RegistrationStatusEnumType.rejected
+            mock_connection,
+            boot_sequence=(RegistrationStatusEnumType.rejected,),
         )
         response = await cp.on_boot_notification(
             charging_station={"model": TEST_MODEL, "vendor_name": TEST_VENDOR_NAME},
@@ -435,13 +438,99 @@ class TestBootNotificationHandler:
 
     async def test_pending_boot_status(self, mock_connection):
         cp = ChargePoint(
-            mock_connection, boot_status=RegistrationStatusEnumType.pending
+            mock_connection,
+            boot_sequence=(RegistrationStatusEnumType.pending,),
         )
         response = await cp.on_boot_notification(
             charging_station={"model": TEST_MODEL, "vendor_name": TEST_VENDOR_NAME},
             reason="PowerUp",
         )
         assert response.status == RegistrationStatusEnumType.pending
+
+    async def test_boot_notification_single_status_compat(self, mock_connection):
+        """Single-element sequence always returns the same status."""
+        cp = ChargePoint(
+            mock_connection,
+            boot_sequence=(RegistrationStatusEnumType.accepted,),
+        )
+        for _ in range(3):
+            response = await cp.on_boot_notification(
+                charging_station={
+                    "model": TEST_MODEL,
+                    "vendor_name": TEST_VENDOR_NAME,
+                },
+                reason="PowerUp",
+            )
+            assert response.status == RegistrationStatusEnumType.accepted
+
+    async def test_boot_notification_sequence_iterates(self, mock_connection):
+        """Multi-element sequence iterates: Pending, Pending, Accepted."""
+        cp = ChargePoint(
+            mock_connection,
+            boot_sequence=(
+                RegistrationStatusEnumType.pending,
+                RegistrationStatusEnumType.pending,
+                RegistrationStatusEnumType.accepted,
+            ),
+        )
+        r1 = await cp.on_boot_notification(
+            charging_station={"model": TEST_MODEL, "vendor_name": TEST_VENDOR_NAME},
+            reason="PowerUp",
+        )
+        assert r1.status == RegistrationStatusEnumType.pending
+
+        r2 = await cp.on_boot_notification(
+            charging_station={"model": TEST_MODEL, "vendor_name": TEST_VENDOR_NAME},
+            reason="PowerUp",
+        )
+        assert r2.status == RegistrationStatusEnumType.pending
+
+        r3 = await cp.on_boot_notification(
+            charging_station={"model": TEST_MODEL, "vendor_name": TEST_VENDOR_NAME},
+            reason="PowerUp",
+        )
+        assert r3.status == RegistrationStatusEnumType.accepted
+
+    async def test_boot_notification_sequence_clamps_to_last(self, mock_connection):
+        """Beyond sequence length, clamps to last element (no IndexError)."""
+        cp = ChargePoint(
+            mock_connection,
+            boot_sequence=(
+                RegistrationStatusEnumType.pending,
+                RegistrationStatusEnumType.accepted,
+            ),
+        )
+        await cp.on_boot_notification(
+            charging_station={"model": TEST_MODEL, "vendor_name": TEST_VENDOR_NAME},
+            reason="PowerUp",
+        )
+        await cp.on_boot_notification(
+            charging_station={"model": TEST_MODEL, "vendor_name": TEST_VENDOR_NAME},
+            reason="PowerUp",
+        )
+        r3 = await cp.on_boot_notification(
+            charging_station={"model": TEST_MODEL, "vendor_name": TEST_VENDOR_NAME},
+            reason="PowerUp",
+        )
+        r4 = await cp.on_boot_notification(
+            charging_station={"model": TEST_MODEL, "vendor_name": TEST_VENDOR_NAME},
+            reason="PowerUp",
+        )
+        assert r3.status == RegistrationStatusEnumType.accepted
+        assert r4.status == RegistrationStatusEnumType.accepted
+
+    async def test_boot_status_sequence_backwards_compat(self, mock_connection):
+        """boot_sequence=(Accepted,) behaves same as old boot_status=Accepted."""
+        cp = ChargePoint(
+            mock_connection,
+            boot_sequence=(RegistrationStatusEnumType.accepted,),
+        )
+        response = await cp.on_boot_notification(
+            charging_station={"model": TEST_MODEL, "vendor_name": TEST_VENDOR_NAME},
+            reason="PowerUp",
+        )
+        assert response.status == RegistrationStatusEnumType.accepted
+        assert response.interval == DEFAULT_HEARTBEAT_INTERVAL
 
 
 class TestHeartbeatHandler:
@@ -579,6 +668,70 @@ class TestTransactionEventHandler:
     async def test_returns_accepted(self, charge_point):
         response = await charge_point.on_data_transfer(vendor_id=TEST_VENDOR_ID)
         assert response.status == DataTransferStatusEnumType.accepted
+
+
+class TestTransactionTracking:
+    """Tests for active transaction tracking in ChargePoint."""
+
+    async def test_transaction_event_started_stores_transaction(self, charge_point):
+        await charge_point.on_transaction_event(
+            event_type=TransactionEventEnumType.started,
+            timestamp=TEST_TIMESTAMP,
+            trigger_reason="Authorized",
+            seq_no=0,
+            transaction_info={"transaction_id": TEST_TRANSACTION_ID},
+            id_token={"id_token": TEST_TOKEN, "type": "ISO14443"},
+            evse={"id": TEST_EVSE_ID},
+        )
+        assert TEST_TRANSACTION_ID in charge_point._active_transactions
+        assert charge_point._active_transactions[TEST_TRANSACTION_ID] == TEST_EVSE_ID
+
+    async def test_transaction_event_ended_removes_transaction(self, charge_point):
+        charge_point._active_transactions[TEST_TRANSACTION_ID] = TEST_EVSE_ID
+        await charge_point.on_transaction_event(
+            event_type=TransactionEventEnumType.ended,
+            timestamp=TEST_TIMESTAMP,
+            trigger_reason="StopAuthorized",
+            seq_no=2,
+            transaction_info={"transaction_id": TEST_TRANSACTION_ID},
+        )
+        assert TEST_TRANSACTION_ID not in charge_point._active_transactions
+
+    async def test_send_request_stop_uses_active_transaction_id(
+        self, command_charge_point
+    ):
+        command_charge_point._active_transactions["real-txn-999"] = TEST_EVSE_ID
+        command_charge_point.call.return_value = (
+            ocpp.v201.call_result.RequestStopTransaction(
+                status=RequestStartStopStatusEnumType.accepted
+            )
+        )
+        await command_charge_point._send_request_stop_transaction()
+        request = command_charge_point.call.call_args[0][0]
+        assert request.transaction_id == "real-txn-999"
+
+    async def test_send_get_transaction_status_uses_active_transaction_id(
+        self, command_charge_point
+    ):
+        command_charge_point._active_transactions["real-txn-999"] = TEST_EVSE_ID
+        command_charge_point.call.return_value = (
+            ocpp.v201.call_result.GetTransactionStatus(messages_in_queue=False)
+        )
+        await command_charge_point._send_get_transaction_status()
+        request = command_charge_point.call.call_args[0][0]
+        assert request.transaction_id == "real-txn-999"
+
+    async def test_send_request_stop_fallback_when_no_transaction(
+        self, command_charge_point
+    ):
+        command_charge_point.call.return_value = (
+            ocpp.v201.call_result.RequestStopTransaction(
+                status=RequestStartStopStatusEnumType.accepted
+            )
+        )
+        await command_charge_point._send_request_stop_transaction()
+        request = command_charge_point.call.call_args[0][0]
+        assert request.transaction_id == "test_transaction_123"
 
 
 class TestCertificateHandlers:
@@ -1040,8 +1193,7 @@ class TestOnConnect:
 
     @staticmethod
     def _make_config(**overrides):
-        """Create a minimal ServerConfig for testing."""
-        defaults = {
+        defaults: dict[str, Any] = {
             "command_name": None,
             "delay": None,
             "period": None,
@@ -1052,7 +1204,7 @@ class TestOnConnect:
                 offline=False,
                 default_status=AuthorizationStatusEnumType.accepted,
             ),
-            "boot_status": RegistrationStatusEnumType.accepted,
+            "boot_sequence": (RegistrationStatusEnumType.accepted,),
             "total_cost": 0.0,
             "charge_points": set(),
         }

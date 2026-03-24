@@ -101,7 +101,7 @@ class ServerConfig:
     delay: float | None
     period: float | None
     auth_config: AuthConfig
-    boot_status: RegistrationStatusEnumType
+    boot_sequence: tuple[RegistrationStatusEnumType, ...]
     total_cost: float
     # Intentionally mutable despite frozen dataclass
     charge_points: set["ChargePoint"]
@@ -112,7 +112,8 @@ class ChargePoint(ocpp.v201.ChargePoint):
 
     _command_timer: Timer | None
     _auth_config: AuthConfig
-    _boot_status: RegistrationStatusEnumType
+    _boot_sequence: tuple[RegistrationStatusEnumType, ...]
+    _boot_index: int
     _total_cost: float
     _charge_points: set["ChargePoint"]
 
@@ -120,7 +121,9 @@ class ChargePoint(ocpp.v201.ChargePoint):
         self,
         connection,
         auth_config: AuthConfig | None = None,
-        boot_status: RegistrationStatusEnumType = RegistrationStatusEnumType.accepted,
+        boot_sequence: tuple[RegistrationStatusEnumType, ...] = (
+            RegistrationStatusEnumType.accepted,
+        ),
         total_cost: float = DEFAULT_TOTAL_COST,
         charge_points: set["ChargePoint"] | None = None,
     ):
@@ -133,9 +136,11 @@ class ChargePoint(ocpp.v201.ChargePoint):
         super().__init__(cp_id, connection)
         self._charge_points = charge_points if charge_points is not None else set()
         self._command_timer = None
-        self._boot_status = boot_status
+        self._boot_sequence = boot_sequence
+        self._boot_index = 0
         self._total_cost = total_cost
         self._charge_points.add(self)
+        self._active_transactions: dict[str, int] = {}
         if auth_config is None:
             self._auth_config = AuthConfig(
                 mode=AuthMode.normal,
@@ -172,10 +177,14 @@ class ChargePoint(ocpp.v201.ChargePoint):
     @on(Action.boot_notification)
     async def on_boot_notification(self, charging_station, reason, **kwargs):
         logger.info("Received %s", Action.boot_notification)
+        status = self._boot_sequence[
+            min(self._boot_index, len(self._boot_sequence) - 1)
+        ]
+        self._boot_index += 1
         return ocpp.v201.call_result.BootNotification(
             current_time=datetime.now(timezone.utc).isoformat(),
             interval=DEFAULT_HEARTBEAT_INTERVAL,
-            status=self._boot_status,
+            status=status,
         )
 
     @on(Action.heartbeat)
@@ -222,6 +231,10 @@ class ChargePoint(ocpp.v201.ChargePoint):
             case TransactionEventEnumType.started:
                 logger.info("Received %s Started", Action.transaction_event)
 
+                transaction_id = transaction_info.get("transaction_id", "")
+                evse_id = kwargs.get("evse", {}).get("id", 0)
+                self._active_transactions[transaction_id] = evse_id
+
                 id_token = kwargs.get("id_token", {})
                 token_id = id_token.get("id_token", "")
                 status = self._resolve_auth_status(token_id)
@@ -239,6 +252,8 @@ class ChargePoint(ocpp.v201.ChargePoint):
                 )
             case TransactionEventEnumType.ended:
                 logger.info("Received %s Ended", Action.transaction_event)
+                transaction_id = transaction_info.get("transaction_id", "")
+                self._active_transactions.pop(transaction_id, None)
                 return ocpp.v201.call_result.TransactionEvent()
             case _:
                 logger.warning("Unknown transaction event type: %s", event_type)
@@ -369,9 +384,11 @@ class ChargePoint(ocpp.v201.ChargePoint):
         logger.info("%s response received", Action.request_start_transaction)
 
     async def _send_request_stop_transaction(self):
-        request = ocpp.v201.call.RequestStopTransaction(
-            transaction_id="test_transaction_123"
-        )
+        transaction_id = next(iter(self._active_transactions), "")
+        if not transaction_id:
+            logger.warning("No active transaction found, using fallback ID")
+            transaction_id = "test_transaction_123"
+        request = ocpp.v201.call.RequestStopTransaction(transaction_id=transaction_id)
         await self.call(request, suppress=False)
         logger.info("%s response received", Action.request_stop_transaction)
 
@@ -473,8 +490,12 @@ class ChargePoint(ocpp.v201.ChargePoint):
         await self._call_and_log(request, Action.get_log, LogStatusEnumType.accepted)
 
     async def _send_get_transaction_status(self):
+        transaction_id = next(iter(self._active_transactions), "")
+        if not transaction_id:
+            logger.warning("No active transaction found, using fallback ID")
+            transaction_id = "test_transaction_123"
         request = ocpp.v201.call.GetTransactionStatus(
-            transaction_id="test_transaction_123",
+            transaction_id=transaction_id,
         )
         response = await self.call(request, suppress=False)
         logger.info(
@@ -646,7 +667,7 @@ async def on_connect(
     cp = ChargePoint(
         websocket,
         auth_config=config.auth_config,
-        boot_status=config.boot_status,
+        boot_sequence=config.boot_sequence,
         total_cost=config.total_cost,
         charge_points=charge_points,
     )
@@ -703,11 +724,21 @@ async def main():
     )
 
     # Charging configuration
-    parser.add_argument(
+    boot_group = parser.add_mutually_exclusive_group()
+    boot_group.add_argument(
         "--boot-status",
         type=RegistrationStatusEnumType,
-        default=RegistrationStatusEnumType.accepted,
+        default=None,
         help="boot notification response status (default: accepted)",
+    )
+    boot_group.add_argument(
+        "--boot-status-sequence",
+        type=str,
+        default=None,
+        help=(
+            "comma-separated boot notification status sequence"
+            " (e.g. pending,pending,accepted)"
+        ),
     )
     parser.add_argument(
         "--total-cost",
@@ -749,6 +780,16 @@ async def main():
 
     args = parser.parse_args()
 
+    if args.boot_status_sequence is not None:
+        boot_sequence = tuple(
+            RegistrationStatusEnumType(s.strip())
+            for s in args.boot_status_sequence.split(",")
+        )
+    elif args.boot_status is not None:
+        boot_sequence = (args.boot_status,)
+    else:
+        boot_sequence = (RegistrationStatusEnumType.accepted,)
+
     auth_config = AuthConfig(
         mode=AuthMode(args.auth_mode),
         whitelist=tuple(args.whitelist),
@@ -762,7 +803,7 @@ async def main():
         delay=args.delay,
         period=args.period,
         auth_config=auth_config,
-        boot_status=args.boot_status,
+        boot_sequence=boot_sequence,
         total_cost=args.total_cost,
         charge_points=set(),
     )
