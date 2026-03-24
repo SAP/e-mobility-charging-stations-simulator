@@ -320,6 +320,8 @@ class TestResolveAuthStatus:
         status = blacklist_charge_point._resolve_auth_status("")
         assert status == AuthorizationStatusEnumType.accepted
 
+
+class TestHandlerCoverage:
     """Tests verifying all expected OCPP 2.0.1 handlers and commands are implemented."""
 
     EXPECTED_INCOMING_HANDLERS: ClassVar[list[str]] = [
@@ -459,7 +461,6 @@ class TestBootNotificationHandler:
         assert response.status == RegistrationStatusEnumType.pending
 
     async def test_boot_notification_single_status_compat(self, mock_connection):
-        """Single-element sequence always returns the same status."""
         cp = ChargePoint(
             mock_connection,
             boot_sequence=(RegistrationStatusEnumType.accepted,),
@@ -475,7 +476,6 @@ class TestBootNotificationHandler:
             assert response.status == RegistrationStatusEnumType.accepted
 
     async def test_boot_notification_sequence_iterates(self, mock_connection):
-        """Multi-element sequence iterates: Pending, Pending, Accepted."""
         cp = ChargePoint(
             mock_connection,
             boot_sequence=(
@@ -503,7 +503,6 @@ class TestBootNotificationHandler:
         assert r3.status == RegistrationStatusEnumType.accepted
 
     async def test_boot_notification_sequence_clamps_to_last(self, mock_connection):
-        """Beyond sequence length, clamps to last element (no IndexError)."""
         cp = ChargePoint(
             mock_connection,
             boot_sequence=(
@@ -531,7 +530,6 @@ class TestBootNotificationHandler:
         assert r4.status == RegistrationStatusEnumType.accepted
 
     async def test_boot_status_sequence_backwards_compat(self, mock_connection):
-        """boot_sequence=(Accepted,) behaves same as old boot_status=Accepted."""
         cp = ChargePoint(
             mock_connection,
             boot_sequence=(RegistrationStatusEnumType.accepted,),
@@ -720,6 +718,8 @@ class TestTransactionEventHandler:
         assert response.total_cost is None
         assert response.id_token_info is None
 
+
+class TestDataTransferHandler:
     """Tests for the DataTransfer incoming handler."""
 
     async def test_returns_accepted(self, charge_point):
@@ -1488,7 +1488,6 @@ class TestTriggerMessageType:
     async def test_send_trigger_message_default_status_notification(
         self, command_charge_point
     ):
-        """Verify default TriggerMessage type is status_notification."""
         command_charge_point.call = AsyncMock(
             return_value=ocpp.v201.call_result.TriggerMessage(
                 status=TriggerMessageStatusEnumType.accepted
@@ -1500,7 +1499,6 @@ class TestTriggerMessageType:
         assert request.requested_message == MessageTriggerEnumType.status_notification
 
     async def test_send_trigger_message_custom_boot_notification(self, mock_connection):
-        """Verify custom TriggerMessage type is used."""
         cp = ChargePoint(
             mock_connection,
             trigger_message_type=MessageTriggerEnumType.boot_notification,
@@ -1520,7 +1518,6 @@ class TestResetType:
     """Tests for configurable Reset type."""
 
     async def test_send_reset_default_immediate(self, command_charge_point):
-        """Verify default Reset type is immediate."""
         command_charge_point.call = AsyncMock(
             return_value=ocpp.v201.call_result.Reset(
                 status=ResetStatusEnumType.accepted
@@ -1532,7 +1529,6 @@ class TestResetType:
         assert request.type == ResetEnumType.immediate
 
     async def test_send_reset_on_idle(self, mock_connection):
-        """Verify custom Reset type is used."""
         cp = ChargePoint(mock_connection, reset_type=ResetEnumType.on_idle)
         cp.call = AsyncMock(
             return_value=ocpp.v201.call_result.Reset(
@@ -1551,7 +1547,6 @@ class TestChangeAvailabilityStatus:
     async def test_send_change_availability_default_operative(
         self, command_charge_point
     ):
-        """Verify default ChangeAvailability status is operative."""
         command_charge_point.call = AsyncMock(
             return_value=ocpp.v201.call_result.ChangeAvailability(
                 status=ChangeAvailabilityStatusEnumType.accepted
@@ -1563,7 +1558,6 @@ class TestChangeAvailabilityStatus:
         assert request.operational_status == OperationalStatusEnumType.operative
 
     async def test_send_change_availability_inoperative(self, mock_connection):
-        """Verify custom ChangeAvailability status is used."""
         cp = ChargePoint(
             mock_connection,
             availability_status=OperationalStatusEnumType.inoperative,

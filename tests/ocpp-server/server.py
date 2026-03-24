@@ -123,6 +123,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
     """OCPP 2.0.1 charge point handler with configurable behavior for testing."""
 
     _command_timer: Timer | None
+    _commands_task: asyncio.Task[None] | None
     _auth_config: AuthConfig
     _boot_sequence: tuple[RegistrationStatusEnumType, ...]
     _boot_index: list[int]
@@ -163,6 +164,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
         super().__init__(cp_id, connection)
         self._charge_points = charge_points if charge_points is not None else set()
         self._command_timer = None
+        self._commands_task = None
         self._boot_sequence = boot_sequence
         self._boot_index = boot_index if boot_index is not None else [0]
         self._total_cost = total_cost
