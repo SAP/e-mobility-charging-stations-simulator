@@ -6,8 +6,8 @@ import logging
 import math
 import signal
 import sys
-from dataclasses import dataclass
-from datetime import datetime, timezone
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
 from enum import StrEnum
 from functools import partial
 from random import randint
@@ -91,6 +91,8 @@ class AuthConfig:
     blacklist: tuple[str, ...]
     offline: bool
     default_status: AuthorizationStatusEnumType
+    auth_group_id: str | None = None
+    auth_cache_expiry: float | None = None
 
 
 @dataclass(frozen=True)
@@ -101,28 +103,57 @@ class ServerConfig:
     delay: float | None
     period: float | None
     auth_config: AuthConfig
-    boot_status: RegistrationStatusEnumType
+    boot_sequence: tuple[RegistrationStatusEnumType, ...]
     total_cost: float
     # Intentionally mutable despite frozen dataclass
     charge_points: set["ChargePoint"]
+    # Shared mutable counter so boot_sequence advances across reconnections
+    boot_index: list[int] = field(default_factory=lambda: [0])
+    commands: list[tuple[Action, float]] | None = None
+    trigger_message_type: MessageTriggerEnumType = (
+        MessageTriggerEnumType.status_notification
+    )
+    reset_type: ResetEnumType = ResetEnumType.immediate
+    availability_status: OperationalStatusEnumType = OperationalStatusEnumType.operative
+    set_variables_data: list[dict] | None = None
+    get_variables_data: list[dict] | None = None
 
 
 class ChargePoint(ocpp.v201.ChargePoint):
     """OCPP 2.0.1 charge point handler with configurable behavior for testing."""
 
     _command_timer: Timer | None
+    _commands_task: asyncio.Task[None] | None
     _auth_config: AuthConfig
-    _boot_status: RegistrationStatusEnumType
+    _boot_sequence: tuple[RegistrationStatusEnumType, ...]
+    _boot_index: list[int]
     _total_cost: float
+    _trigger_message_type: MessageTriggerEnumType
+    _reset_type: ResetEnumType
+    _availability_status: OperationalStatusEnumType
     _charge_points: set["ChargePoint"]
+    _set_variables_data: list[dict] | None
+    _get_variables_data: list[dict] | None
 
     def __init__(
         self,
         connection,
         auth_config: AuthConfig | None = None,
-        boot_status: RegistrationStatusEnumType = RegistrationStatusEnumType.accepted,
+        boot_sequence: tuple[RegistrationStatusEnumType, ...] = (
+            RegistrationStatusEnumType.accepted,
+        ),
+        boot_index: list[int] | None = None,
         total_cost: float = DEFAULT_TOTAL_COST,
+        trigger_message_type: MessageTriggerEnumType = (
+            MessageTriggerEnumType.status_notification
+        ),
+        reset_type: ResetEnumType = ResetEnumType.immediate,
+        availability_status: OperationalStatusEnumType = (
+            OperationalStatusEnumType.operative
+        ),
         charge_points: set["ChargePoint"] | None = None,
+        set_variables_data: list[dict] | None = None,
+        get_variables_data: list[dict] | None = None,
     ):
         # Extract CP ID from last URL segment (OCPP 2.0.1 Part 4)
         cp_id = connection.request.path.strip("/").split("/")[-1]
@@ -133,9 +164,19 @@ class ChargePoint(ocpp.v201.ChargePoint):
         super().__init__(cp_id, connection)
         self._charge_points = charge_points if charge_points is not None else set()
         self._command_timer = None
-        self._boot_status = boot_status
+        self._commands_task = None
+        self._boot_sequence = boot_sequence
+        if not self._boot_sequence:
+            raise ValueError("boot_sequence must contain at least one status")
+        self._boot_index = boot_index if boot_index is not None else [0]
         self._total_cost = total_cost
+        self._trigger_message_type = trigger_message_type
+        self._reset_type = reset_type
+        self._availability_status = availability_status
+        self._set_variables_data = set_variables_data
+        self._get_variables_data = get_variables_data
         self._charge_points.add(self)
+        self._active_transactions: dict[str, int] = {}
         if auth_config is None:
             self._auth_config = AuthConfig(
                 mode=AuthMode.normal,
@@ -167,15 +208,34 @@ class ChargePoint(ocpp.v201.ChargePoint):
             case _:
                 return self._auth_config.default_status
 
+    def _build_id_token_info(self, token_id: str) -> dict:
+        """Build id_token_info dict with optional groupIdToken and cacheExpiry."""
+        status = self._resolve_auth_status(token_id)
+        id_token_info: dict = {"status": status}
+        if self._auth_config.auth_group_id is not None:
+            id_token_info["group_id_token"] = {
+                "id_token": self._auth_config.auth_group_id,
+                "type": "Central",
+            }
+        if self._auth_config.auth_cache_expiry is not None:
+            expiry = datetime.now(timezone.utc) + timedelta(
+                seconds=self._auth_config.auth_cache_expiry
+            )
+            id_token_info["cache_expiry_date_time"] = expiry.isoformat()
+        return id_token_info
+
     # --- Incoming message handlers (CS → CSMS) ---
 
     @on(Action.boot_notification)
     async def on_boot_notification(self, charging_station, reason, **kwargs):
         logger.info("Received %s", Action.boot_notification)
+        idx = self._boot_index[0]
+        status = self._boot_sequence[min(idx, len(self._boot_sequence) - 1)]
+        self._boot_index[0] = idx + 1
         return ocpp.v201.call_result.BootNotification(
             current_time=datetime.now(timezone.utc).isoformat(),
             interval=DEFAULT_HEARTBEAT_INTERVAL,
-            status=self._boot_status,
+            status=status,
         )
 
     @on(Action.heartbeat)
@@ -203,10 +263,12 @@ class ChargePoint(ocpp.v201.ChargePoint):
             raise InternalError(description="Simulated network failure")
 
         token_id = id_token.get("id_token", "")
-        status = self._resolve_auth_status(token_id)
+        id_token_info = self._build_id_token_info(token_id)
 
-        logger.info("Authorization status for %s: %s", token_id, status)
-        return ocpp.v201.call_result.Authorize(id_token_info={"status": status})
+        logger.info(
+            "Authorization status for %s: %s", token_id, id_token_info["status"]
+        )
+        return ocpp.v201.call_result.Authorize(id_token_info=id_token_info)
 
     @on(Action.transaction_event)
     async def on_transaction_event(
@@ -222,15 +284,24 @@ class ChargePoint(ocpp.v201.ChargePoint):
             case TransactionEventEnumType.started:
                 logger.info("Received %s Started", Action.transaction_event)
 
+                transaction_id = transaction_info.get("transaction_id", "")
+                evse_id = kwargs.get("evse", {}).get("id", 0)
+                if transaction_id:
+                    self._active_transactions[transaction_id] = evse_id
+                else:
+                    logger.warning("TransactionEvent.Started with empty transaction_id")
+
                 id_token = kwargs.get("id_token", {})
                 token_id = id_token.get("id_token", "")
-                status = self._resolve_auth_status(token_id)
+                id_token_info = self._build_id_token_info(token_id)
 
                 logger.info(
-                    "Transaction start auth status for %s: %s", token_id, status
+                    "Transaction start auth status for %s: %s",
+                    token_id,
+                    id_token_info["status"],
                 )
                 return ocpp.v201.call_result.TransactionEvent(
-                    id_token_info={"status": status}
+                    id_token_info=id_token_info
                 )
             case TransactionEventEnumType.updated:
                 logger.info("Received %s Updated", Action.transaction_event)
@@ -239,6 +310,8 @@ class ChargePoint(ocpp.v201.ChargePoint):
                 )
             case TransactionEventEnumType.ended:
                 logger.info("Received %s Ended", Action.transaction_event)
+                transaction_id = transaction_info.get("transaction_id", "")
+                self._active_transactions.pop(transaction_id, None)
                 return ocpp.v201.call_result.TransactionEvent()
             case _:
                 logger.warning("Unknown transaction event type: %s", event_type)
@@ -335,20 +408,25 @@ class ChargePoint(ocpp.v201.ChargePoint):
         )
 
     async def _send_get_variables(self):
-        request = ocpp.v201.call.GetVariables(
-            get_variable_data=[
+        data = (
+            self._get_variables_data
+            if self._get_variables_data is not None
+            else [
                 {
                     "component": {"name": "ChargingStation"},
                     "variable": {"name": "AvailabilityState"},
                 }
             ]
         )
+        request = ocpp.v201.call.GetVariables(get_variable_data=data)
         await self.call(request, suppress=False)
         logger.info("%s response received", Action.get_variables)
 
     async def _send_set_variables(self):
-        request = ocpp.v201.call.SetVariables(
-            set_variable_data=[
+        data = (
+            self._set_variables_data
+            if self._set_variables_data is not None
+            else [
                 {
                     "component": {"name": "OCPPCommCtrlr"},
                     "variable": {"name": "HeartbeatInterval"},
@@ -356,6 +434,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
                 }
             ]
         )
+        request = ocpp.v201.call.SetVariables(set_variable_data=data)
         await self.call(request, suppress=False)
         logger.info("%s response received", Action.set_variables)
 
@@ -369,14 +448,16 @@ class ChargePoint(ocpp.v201.ChargePoint):
         logger.info("%s response received", Action.request_start_transaction)
 
     async def _send_request_stop_transaction(self):
-        request = ocpp.v201.call.RequestStopTransaction(
-            transaction_id="test_transaction_123"
-        )
+        transaction_id = next(iter(self._active_transactions), "")
+        if not transaction_id:
+            logger.warning("No active transaction found, using fallback ID")
+            transaction_id = "test_transaction_123"
+        request = ocpp.v201.call.RequestStopTransaction(transaction_id=transaction_id)
         await self.call(request, suppress=False)
         logger.info("%s response received", Action.request_stop_transaction)
 
     async def _send_reset(self):
-        request = ocpp.v201.call.Reset(type=ResetEnumType.immediate)
+        request = ocpp.v201.call.Reset(type=self._reset_type)
         await self._call_and_log(request, Action.reset, ResetStatusEnumType.accepted)
 
     async def _send_unlock_connector(self):
@@ -387,7 +468,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
 
     async def _send_change_availability(self):
         request = ocpp.v201.call.ChangeAvailability(
-            operational_status=OperationalStatusEnumType.operative
+            operational_status=self._availability_status
         )
         await self._call_and_log(
             request,
@@ -397,7 +478,7 @@ class ChargePoint(ocpp.v201.ChargePoint):
 
     async def _send_trigger_message(self):
         request = ocpp.v201.call.TriggerMessage(
-            requested_message=MessageTriggerEnumType.status_notification
+            requested_message=self._trigger_message_type
         )
         await self._call_and_log(
             request, Action.trigger_message, TriggerMessageStatusEnumType.accepted
@@ -473,8 +554,12 @@ class ChargePoint(ocpp.v201.ChargePoint):
         await self._call_and_log(request, Action.get_log, LogStatusEnumType.accepted)
 
     async def _send_get_transaction_status(self):
+        transaction_id = next(iter(self._active_transactions), "")
+        if not transaction_id:
+            logger.warning("No active transaction found, using fallback ID")
+            transaction_id = "test_transaction_123"
         request = ocpp.v201.call.GetTransactionStatus(
-            transaction_id="test_transaction_123",
+            transaction_id=transaction_id,
         )
         response = await self.call(request, suppress=False)
         logger.info(
@@ -612,10 +697,17 @@ class ChargePoint(ocpp.v201.ChargePoint):
         except ConnectionClosed:
             self.handle_connection_closed()
 
+    async def send_commands(self, commands: list[tuple[Action, float]]) -> None:
+        for command_name, delay in commands:
+            await asyncio.sleep(delay)
+            await self._send_command(command_name)
+
     def handle_connection_closed(self):
         logger.info("ChargePoint %s closed connection", self.id)
         if self._command_timer:
             self._command_timer.cancel()
+        if self._commands_task:
+            self._commands_task.cancel()
         self._charge_points.discard(self)
         logger.debug("Connected ChargePoint(s): %d", len(self._charge_points))
 
@@ -646,12 +738,22 @@ async def on_connect(
     cp = ChargePoint(
         websocket,
         auth_config=config.auth_config,
-        boot_status=config.boot_status,
+        boot_sequence=config.boot_sequence,
+        boot_index=config.boot_index,
         total_cost=config.total_cost,
+        trigger_message_type=config.trigger_message_type,
+        reset_type=config.reset_type,
+        availability_status=config.availability_status,
         charge_points=charge_points,
+        set_variables_data=config.set_variables_data,
+        get_variables_data=config.get_variables_data,
     )
     if config.command_name:
         await cp.send_command(config.command_name, config.delay, config.period)
+    elif config.commands:
+        # send_commands() begins with asyncio.sleep(delay) which yields to
+        # cp.start() below. All delays are validated > 0 by _parse_commands.
+        cp._commands_task = asyncio.create_task(cp.send_commands(config.commands))
 
     try:
         await cp.start()
@@ -671,9 +773,92 @@ def check_positive_number(value):
     return value
 
 
+def _parse_commands(commands_str: str) -> list[tuple[Action, float]]:
+    result: list[tuple[Action, float]] = []
+    for entry in commands_str.split(","):
+        entry = entry.strip()
+        if not entry:
+            continue
+        if ":" not in entry:
+            raise argparse.ArgumentTypeError(
+                f"Invalid command entry '{entry}': expected 'CMD:DELAY' format"
+            )
+        cmd_str, delay_str = entry.split(":", 1)
+        try:
+            cmd = Action(cmd_str.strip())
+        except ValueError:
+            raise argparse.ArgumentTypeError(
+                f"Unknown action: '{cmd_str.strip()}'"
+            ) from None
+        try:
+            delay = float(delay_str.strip())
+        except ValueError:
+            raise argparse.ArgumentTypeError(
+                f"Invalid delay '{delay_str.strip()}': must be a number"
+            ) from None
+        if not math.isfinite(delay) or delay <= 0:
+            raise argparse.ArgumentTypeError(
+                f"Delay must be a finite positive number, got {delay}"
+            )
+        result.append((cmd, delay))
+    return result
+
+
+def _parse_set_variable_specs(specs_str: str) -> list[dict]:
+    result = []
+    for entry in specs_str.split(","):
+        entry = entry.strip()
+        if not entry:
+            continue
+        if "=" not in entry or "." not in entry.split("=")[0]:
+            raise argparse.ArgumentTypeError(
+                f"Invalid variable spec '{entry}': expected 'Component.Variable=Value'"
+            )
+        component_var, value = entry.split("=", 1)
+        component, variable = component_var.strip().split(".", 1)
+        result.append(
+            {
+                "component": {"name": component.strip()},
+                "variable": {"name": variable.strip()},
+                "attribute_value": value.strip(),
+            }
+        )
+    return result
+
+
+def _parse_get_variable_specs(specs_str: str) -> list[dict]:
+    result = []
+    for entry in specs_str.split(","):
+        entry = entry.strip()
+        if not entry:
+            continue
+        if "." not in entry:
+            raise argparse.ArgumentTypeError(
+                f"Invalid variable spec '{entry}': expected 'Component.Variable'"
+            )
+        component, variable = entry.split(".", 1)
+        result.append(
+            {
+                "component": {"name": component.strip()},
+                "variable": {"name": variable.strip()},
+            }
+        )
+    return result
+
+
 async def main():
     parser = argparse.ArgumentParser(description="OCPP2 Server")
-    parser.add_argument("-c", "--command", type=Action, help="command name")
+    command_group = parser.add_mutually_exclusive_group()
+    command_group.add_argument("-c", "--command", type=Action, help="command name")
+    command_group.add_argument(
+        "--commands",
+        type=str,
+        default=None,
+        help=(
+            'comma-separated command sequence: "CMD1:DELAY1,CMD2:DELAY2,..."'
+            ' (e.g., "RequestStartTransaction:5,RequestStopTransaction:30")'
+        ),
+    )
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
         "-d",
@@ -703,11 +888,24 @@ async def main():
     )
 
     # Charging configuration
-    parser.add_argument(
+    boot_group = parser.add_mutually_exclusive_group()
+    boot_group.add_argument(
         "--boot-status",
         type=RegistrationStatusEnumType,
-        default=RegistrationStatusEnumType.accepted,
-        help="boot notification response status (default: accepted)",
+        default=None,
+        help=(
+            "boot notification response status"
+            " (Accepted, Pending, Rejected; default: Accepted)"
+        ),
+    )
+    boot_group.add_argument(
+        "--boot-status-sequence",
+        type=str,
+        default=None,
+        help=(
+            "comma-separated boot notification status sequence"
+            " (e.g. Pending,Pending,Accepted)"
+        ),
     )
     parser.add_argument(
         "--total-cost",
@@ -716,11 +914,30 @@ async def main():
         help=f"TransactionEvent.Updated total cost (default: {DEFAULT_TOTAL_COST})",
     )
 
+    parser.add_argument(
+        "--trigger-message",
+        type=MessageTriggerEnumType,
+        default=MessageTriggerEnumType.status_notification,
+        help="TriggerMessage requested_message type (default: StatusNotification)",
+    )
+    parser.add_argument(
+        "--reset-type",
+        type=ResetEnumType,
+        default=ResetEnumType.immediate,
+        help="Reset type: Immediate, OnIdle (default: Immediate)",
+    )
+    parser.add_argument(
+        "--availability-status",
+        type=OperationalStatusEnumType,
+        default=OperationalStatusEnumType.operative,
+        help="ChangeAvailability status: Operative, Inoperative (default: Operative)",
+    )
+
     # Auth configuration
     parser.add_argument(
         "--auth-mode",
         type=str,
-        choices=["normal", "offline", "whitelist", "blacklist", "rate_limit"],
+        choices=["normal", "whitelist", "blacklist", "rate_limit"],
         default="normal",
         help="Authorization mode (default: normal)",
     )
@@ -743,11 +960,81 @@ async def main():
         action="store_true",
         help="Simulate offline/network failure mode",
     )
+    parser.add_argument(
+        "--auth-group-id",
+        type=str,
+        default=None,
+        help="groupIdToken id_token value to include in Authorize response",
+    )
+    parser.add_argument(
+        "--auth-cache-expiry",
+        type=check_positive_number,
+        default=None,
+        help="cacheExpiryDateTime offset in seconds from now (e.g., 3600)",
+    )
+
+    parser.add_argument(
+        "--set-variables",
+        type=str,
+        default=None,
+        help=(
+            'SetVariables data: "Component.Variable=Value,..." '
+            '(e.g., "OCPPCommCtrlr.HeartbeatInterval=30"). '
+            "Values must not contain commas."
+        ),
+    )
+    parser.add_argument(
+        "--get-variables",
+        type=str,
+        default=None,
+        help=(
+            'GetVariables data: "Component.Variable,..." '
+            '(e.g., "ChargingStation.AvailabilityState")'
+        ),
+    )
 
     args, _ = parser.parse_known_args()
     group.required = args.command is not None
 
     args = parser.parse_args()
+
+    try:
+        parsed_commands = _parse_commands(args.commands) if args.commands else None
+        if parsed_commands is not None and not parsed_commands:
+            parser.error("--commands must contain at least one CMD:DELAY entry")
+        parsed_set_variables = (
+            _parse_set_variable_specs(args.set_variables)
+            if args.set_variables
+            else None
+        )
+        parsed_get_variables = (
+            _parse_get_variable_specs(args.get_variables)
+            if args.get_variables
+            else None
+        )
+    except argparse.ArgumentTypeError as e:
+        parser.error(str(e))
+
+    if args.boot_status_sequence is not None:
+        boot_sequence_items: list[RegistrationStatusEnumType] = []
+        for raw_value in args.boot_status_sequence.split(","):
+            value = raw_value.strip()
+            try:
+                status = RegistrationStatusEnumType(value)
+            except ValueError:
+                valid = ", ".join(e.value for e in RegistrationStatusEnumType)
+                parser.error(
+                    f"invalid value for --boot-status-sequence: {value!r}."
+                    f" Valid values are: {valid}"
+                )
+            boot_sequence_items.append(status)
+        boot_sequence = tuple(boot_sequence_items)
+        if not boot_sequence:
+            parser.error("--boot-status-sequence must contain at least one status")
+    elif args.boot_status is not None:
+        boot_sequence = (args.boot_status,)
+    else:
+        boot_sequence = (RegistrationStatusEnumType.accepted,)
 
     auth_config = AuthConfig(
         mode=AuthMode(args.auth_mode),
@@ -755,6 +1042,8 @@ async def main():
         blacklist=tuple(args.blacklist),
         offline=args.offline,
         default_status=AuthorizationStatusEnumType.accepted,
+        auth_group_id=args.auth_group_id,
+        auth_cache_expiry=args.auth_cache_expiry,
     )
 
     config = ServerConfig(
@@ -762,9 +1051,16 @@ async def main():
         delay=args.delay,
         period=args.period,
         auth_config=auth_config,
-        boot_status=args.boot_status,
+        boot_sequence=boot_sequence,
+        boot_index=[0],
         total_cost=args.total_cost,
         charge_points=set(),
+        commands=parsed_commands,
+        trigger_message_type=args.trigger_message,
+        reset_type=args.reset_type,
+        availability_status=args.availability_status,
+        set_variables_data=parsed_set_variables,
+        get_variables_data=parsed_get_variables,
     )
 
     logger.info(

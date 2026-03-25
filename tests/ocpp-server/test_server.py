@@ -4,7 +4,7 @@ import argparse
 import contextlib
 import logging
 import signal
-from typing import ClassVar
+from typing import Any, ClassVar
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import ocpp.v201.call
@@ -50,6 +50,9 @@ from server import (
     AuthMode,
     ChargePoint,
     ServerConfig,
+    _parse_commands,
+    _parse_get_variable_specs,
+    _parse_set_variable_specs,
     _random_request_id,
     check_positive_number,
     main,
@@ -191,16 +194,25 @@ def main_mocks():
 def _patch_main(mock_loop, mock_server, mock_event, extra_patches=None):
     args = argparse.Namespace(
         command=None,
+        commands=None,
         delay=None,
         period=None,
         host="127.0.0.1",
         port=9000,
-        boot_status=RegistrationStatusEnumType.accepted,
+        boot_status=None,
+        boot_status_sequence=None,
         total_cost=10.0,
         auth_mode="normal",
         whitelist=["valid_token"],
         blacklist=["blocked_token"],
         offline=False,
+        auth_group_id=None,
+        auth_cache_expiry=None,
+        trigger_message=MessageTriggerEnumType.status_notification,
+        reset_type=ResetEnumType.immediate,
+        availability_status=OperationalStatusEnumType.operative,
+        set_variables=None,
+        get_variables=None,
     )
     mock_serve_cm = AsyncMock()
     mock_serve_cm.__aenter__ = AsyncMock(return_value=mock_server)
@@ -308,6 +320,8 @@ class TestResolveAuthStatus:
         status = blacklist_charge_point._resolve_auth_status("")
         assert status == AuthorizationStatusEnumType.accepted
 
+
+class TestHandlerCoverage:
     """Tests verifying all expected OCPP 2.0.1 handlers and commands are implemented."""
 
     EXPECTED_INCOMING_HANDLERS: ClassVar[list[str]] = [
@@ -390,14 +404,15 @@ class TestChargePointDefaultConfig:
     def test_command_timer_initially_none(self, charge_point):
         assert charge_point._command_timer is None
 
-    def test_default_boot_status(self, charge_point):
-        assert charge_point._boot_status == RegistrationStatusEnumType.accepted
+    def test_default_boot_sequence(self, charge_point):
+        assert charge_point._boot_sequence == (RegistrationStatusEnumType.accepted,)
 
-    def test_custom_boot_status(self, mock_connection):
+    def test_custom_boot_sequence(self, mock_connection):
         cp = ChargePoint(
-            mock_connection, boot_status=RegistrationStatusEnumType.rejected
+            mock_connection,
+            boot_sequence=(RegistrationStatusEnumType.rejected,),
         )
-        assert cp._boot_status == RegistrationStatusEnumType.rejected
+        assert cp._boot_sequence == (RegistrationStatusEnumType.rejected,)
 
     def test_default_total_cost(self, charge_point):
         assert charge_point._total_cost == DEFAULT_TOTAL_COST
@@ -405,6 +420,10 @@ class TestChargePointDefaultConfig:
     def test_custom_total_cost(self, mock_connection):
         cp = ChargePoint(mock_connection, total_cost=25.50)
         assert cp._total_cost == 25.50
+
+    def test_empty_boot_sequence_raises(self, mock_connection):
+        with pytest.raises(ValueError, match="at least one status"):
+            ChargePoint(mock_connection, boot_sequence=())
 
 
 # --- Async handler tests ---
@@ -425,7 +444,8 @@ class TestBootNotificationHandler:
 
     async def test_configurable_boot_status(self, mock_connection):
         cp = ChargePoint(
-            mock_connection, boot_status=RegistrationStatusEnumType.rejected
+            mock_connection,
+            boot_sequence=(RegistrationStatusEnumType.rejected,),
         )
         response = await cp.on_boot_notification(
             charging_station={"model": TEST_MODEL, "vendor_name": TEST_VENDOR_NAME},
@@ -435,13 +455,95 @@ class TestBootNotificationHandler:
 
     async def test_pending_boot_status(self, mock_connection):
         cp = ChargePoint(
-            mock_connection, boot_status=RegistrationStatusEnumType.pending
+            mock_connection,
+            boot_sequence=(RegistrationStatusEnumType.pending,),
         )
         response = await cp.on_boot_notification(
             charging_station={"model": TEST_MODEL, "vendor_name": TEST_VENDOR_NAME},
             reason="PowerUp",
         )
         assert response.status == RegistrationStatusEnumType.pending
+
+    async def test_boot_notification_single_status_compat(self, mock_connection):
+        cp = ChargePoint(
+            mock_connection,
+            boot_sequence=(RegistrationStatusEnumType.accepted,),
+        )
+        for _ in range(3):
+            response = await cp.on_boot_notification(
+                charging_station={
+                    "model": TEST_MODEL,
+                    "vendor_name": TEST_VENDOR_NAME,
+                },
+                reason="PowerUp",
+            )
+            assert response.status == RegistrationStatusEnumType.accepted
+
+    async def test_boot_notification_sequence_iterates(self, mock_connection):
+        cp = ChargePoint(
+            mock_connection,
+            boot_sequence=(
+                RegistrationStatusEnumType.pending,
+                RegistrationStatusEnumType.pending,
+                RegistrationStatusEnumType.accepted,
+            ),
+        )
+        r1 = await cp.on_boot_notification(
+            charging_station={"model": TEST_MODEL, "vendor_name": TEST_VENDOR_NAME},
+            reason="PowerUp",
+        )
+        assert r1.status == RegistrationStatusEnumType.pending
+
+        r2 = await cp.on_boot_notification(
+            charging_station={"model": TEST_MODEL, "vendor_name": TEST_VENDOR_NAME},
+            reason="PowerUp",
+        )
+        assert r2.status == RegistrationStatusEnumType.pending
+
+        r3 = await cp.on_boot_notification(
+            charging_station={"model": TEST_MODEL, "vendor_name": TEST_VENDOR_NAME},
+            reason="PowerUp",
+        )
+        assert r3.status == RegistrationStatusEnumType.accepted
+
+    async def test_boot_notification_sequence_clamps_to_last(self, mock_connection):
+        cp = ChargePoint(
+            mock_connection,
+            boot_sequence=(
+                RegistrationStatusEnumType.pending,
+                RegistrationStatusEnumType.accepted,
+            ),
+        )
+        await cp.on_boot_notification(
+            charging_station={"model": TEST_MODEL, "vendor_name": TEST_VENDOR_NAME},
+            reason="PowerUp",
+        )
+        await cp.on_boot_notification(
+            charging_station={"model": TEST_MODEL, "vendor_name": TEST_VENDOR_NAME},
+            reason="PowerUp",
+        )
+        r3 = await cp.on_boot_notification(
+            charging_station={"model": TEST_MODEL, "vendor_name": TEST_VENDOR_NAME},
+            reason="PowerUp",
+        )
+        r4 = await cp.on_boot_notification(
+            charging_station={"model": TEST_MODEL, "vendor_name": TEST_VENDOR_NAME},
+            reason="PowerUp",
+        )
+        assert r3.status == RegistrationStatusEnumType.accepted
+        assert r4.status == RegistrationStatusEnumType.accepted
+
+    async def test_boot_status_sequence_backwards_compat(self, mock_connection):
+        cp = ChargePoint(
+            mock_connection,
+            boot_sequence=(RegistrationStatusEnumType.accepted,),
+        )
+        response = await cp.on_boot_notification(
+            charging_station={"model": TEST_MODEL, "vendor_name": TEST_VENDOR_NAME},
+            reason="PowerUp",
+        )
+        assert response.status == RegistrationStatusEnumType.accepted
+        assert response.interval == DEFAULT_HEARTBEAT_INTERVAL
 
 
 class TestHeartbeatHandler:
@@ -517,6 +619,54 @@ class TestAuthorizeHandler:
         )
 
 
+class TestRicherAuthorizeResponse:
+    """Tests for richer Authorize response with groupIdToken and cacheExpiry."""
+
+    async def test_authorize_includes_group_id_token(self, mock_connection):
+        cp = ChargePoint(
+            mock_connection,
+            auth_config=AuthConfig(
+                mode=AuthMode.normal,
+                whitelist=(),
+                blacklist=(),
+                offline=False,
+                default_status=AuthorizationStatusEnumType.accepted,
+                auth_group_id="MyGroup",
+            ),
+        )
+        result = await cp.on_authorize(
+            id_token={"id_token": "test_token", "type": "ISO14443"}
+        )
+        assert result.id_token_info["group_id_token"]["id_token"] == "MyGroup"  # noqa: S105
+        assert result.id_token_info["group_id_token"]["type"] == "Central"
+
+    async def test_authorize_includes_cache_expiry(self, mock_connection):
+        cp = ChargePoint(
+            mock_connection,
+            auth_config=AuthConfig(
+                mode=AuthMode.normal,
+                whitelist=(),
+                blacklist=(),
+                offline=False,
+                default_status=AuthorizationStatusEnumType.accepted,
+                auth_cache_expiry=3600,
+            ),
+        )
+        result = await cp.on_authorize(
+            id_token={"id_token": "test_token", "type": "ISO14443"}
+        )
+        assert "cache_expiry_date_time" in result.id_token_info
+        expiry = result.id_token_info["cache_expiry_date_time"]
+        assert isinstance(expiry, str) and "T" in expiry
+
+    async def test_authorize_no_enrichment_by_default(self, charge_point):
+        result = await charge_point.on_authorize(
+            id_token={"id_token": "test_token", "type": "ISO14443"}
+        )
+        assert "group_id_token" not in result.id_token_info
+        assert "cache_expiry_date_time" not in result.id_token_info
+
+
 class TestTransactionEventHandler:
     """Tests for the TransactionEvent incoming handler."""
 
@@ -574,11 +724,88 @@ class TestTransactionEventHandler:
         assert response.total_cost is None
         assert response.id_token_info is None
 
+
+class TestDataTransferHandler:
     """Tests for the DataTransfer incoming handler."""
 
     async def test_returns_accepted(self, charge_point):
         response = await charge_point.on_data_transfer(vendor_id=TEST_VENDOR_ID)
         assert response.status == DataTransferStatusEnumType.accepted
+
+
+class TestTransactionTracking:
+    """Tests for active transaction tracking in ChargePoint."""
+
+    async def test_transaction_event_started_stores_transaction(self, charge_point):
+        await charge_point.on_transaction_event(
+            event_type=TransactionEventEnumType.started,
+            timestamp=TEST_TIMESTAMP,
+            trigger_reason="Authorized",
+            seq_no=0,
+            transaction_info={"transaction_id": TEST_TRANSACTION_ID},
+            id_token={"id_token": TEST_TOKEN, "type": "ISO14443"},
+            evse={"id": TEST_EVSE_ID},
+        )
+        assert TEST_TRANSACTION_ID in charge_point._active_transactions
+        assert charge_point._active_transactions[TEST_TRANSACTION_ID] == TEST_EVSE_ID
+
+    async def test_transaction_event_ended_removes_transaction(self, charge_point):
+        charge_point._active_transactions[TEST_TRANSACTION_ID] = TEST_EVSE_ID
+        await charge_point.on_transaction_event(
+            event_type=TransactionEventEnumType.ended,
+            timestamp=TEST_TIMESTAMP,
+            trigger_reason="StopAuthorized",
+            seq_no=2,
+            transaction_info={"transaction_id": TEST_TRANSACTION_ID},
+        )
+        assert TEST_TRANSACTION_ID not in charge_point._active_transactions
+
+    async def test_send_request_stop_uses_active_transaction_id(
+        self, command_charge_point
+    ):
+        command_charge_point._active_transactions["real-txn-999"] = TEST_EVSE_ID
+        command_charge_point.call.return_value = (
+            ocpp.v201.call_result.RequestStopTransaction(
+                status=RequestStartStopStatusEnumType.accepted
+            )
+        )
+        await command_charge_point._send_request_stop_transaction()
+        request = command_charge_point.call.call_args[0][0]
+        assert request.transaction_id == "real-txn-999"
+
+    async def test_send_get_transaction_status_uses_active_transaction_id(
+        self, command_charge_point
+    ):
+        command_charge_point._active_transactions["real-txn-999"] = TEST_EVSE_ID
+        command_charge_point.call.return_value = (
+            ocpp.v201.call_result.GetTransactionStatus(messages_in_queue=False)
+        )
+        await command_charge_point._send_get_transaction_status()
+        request = command_charge_point.call.call_args[0][0]
+        assert request.transaction_id == "real-txn-999"
+
+    async def test_send_request_stop_fallback_when_no_transaction(
+        self, command_charge_point
+    ):
+        command_charge_point.call.return_value = (
+            ocpp.v201.call_result.RequestStopTransaction(
+                status=RequestStartStopStatusEnumType.accepted
+            )
+        )
+        await command_charge_point._send_request_stop_transaction()
+        request = command_charge_point.call.call_args[0][0]
+        assert request.transaction_id == "test_transaction_123"
+
+    async def test_empty_transaction_id_not_stored(self, charge_point):
+        await charge_point.on_transaction_event(
+            event_type=TransactionEventEnumType.started,
+            timestamp=TEST_TIMESTAMP,
+            trigger_reason="Authorized",
+            seq_no=0,
+            transaction_info={"transaction_id": ""},
+            id_token={"id_token": TEST_TOKEN, "type": "ISO14443"},
+        )
+        assert "" not in charge_point._active_transactions
 
 
 class TestCertificateHandlers:
@@ -1040,8 +1267,7 @@ class TestOnConnect:
 
     @staticmethod
     def _make_config(**overrides):
-        """Create a minimal ServerConfig for testing."""
-        defaults = {
+        defaults: dict[str, Any] = {
             "command_name": None,
             "delay": None,
             "period": None,
@@ -1052,7 +1278,7 @@ class TestOnConnect:
                 offline=False,
                 default_status=AuthorizationStatusEnumType.accepted,
             ),
-            "boot_status": RegistrationStatusEnumType.accepted,
+            "boot_sequence": (RegistrationStatusEnumType.accepted,),
             "total_cost": 0.0,
             "charge_points": set(),
         }
@@ -1125,6 +1351,12 @@ class TestHandleConnectionClosed:
         charge_point._command_timer = mock_timer
         charge_point.handle_connection_closed()
         mock_timer.cancel.assert_called_once()
+
+    def test_commands_task_cancelled_on_close(self, charge_point):
+        mock_task = MagicMock()
+        charge_point._commands_task = mock_task
+        charge_point.handle_connection_closed()
+        mock_task.cancel.assert_called_once()
 
     def test_timer_none_no_error(self, charge_point):
         charge_point._command_timer = None
@@ -1271,3 +1503,181 @@ class TestMainGracefulShutdown:
         assert callable(sigint_handler)
         sigint_handler(signal.SIGINT.value, None)
         mock_loop.call_soon_threadsafe.assert_called_once()
+
+
+class TestTriggerMessageType:
+    """Tests for configurable TriggerMessage type."""
+
+    async def test_send_trigger_message_default_status_notification(
+        self, command_charge_point
+    ):
+        command_charge_point.call = AsyncMock(
+            return_value=ocpp.v201.call_result.TriggerMessage(
+                status=TriggerMessageStatusEnumType.accepted
+            )
+        )
+        await command_charge_point._send_trigger_message()
+        call_args = command_charge_point.call.call_args
+        request = call_args[0][0]
+        assert request.requested_message == MessageTriggerEnumType.status_notification
+
+    async def test_send_trigger_message_custom_boot_notification(self, mock_connection):
+        cp = ChargePoint(
+            mock_connection,
+            trigger_message_type=MessageTriggerEnumType.boot_notification,
+        )
+        cp.call = AsyncMock(
+            return_value=ocpp.v201.call_result.TriggerMessage(
+                status=TriggerMessageStatusEnumType.accepted
+            )
+        )
+        await cp._send_trigger_message()
+        call_args = cp.call.call_args
+        request = call_args[0][0]
+        assert request.requested_message == MessageTriggerEnumType.boot_notification
+
+
+class TestResetType:
+    """Tests for configurable Reset type."""
+
+    async def test_send_reset_default_immediate(self, command_charge_point):
+        command_charge_point.call = AsyncMock(
+            return_value=ocpp.v201.call_result.Reset(
+                status=ResetStatusEnumType.accepted
+            )
+        )
+        await command_charge_point._send_reset()
+        call_args = command_charge_point.call.call_args
+        request = call_args[0][0]
+        assert request.type == ResetEnumType.immediate
+
+    async def test_send_reset_on_idle(self, mock_connection):
+        cp = ChargePoint(mock_connection, reset_type=ResetEnumType.on_idle)
+        cp.call = AsyncMock(
+            return_value=ocpp.v201.call_result.Reset(
+                status=ResetStatusEnumType.accepted
+            )
+        )
+        await cp._send_reset()
+        call_args = cp.call.call_args
+        request = call_args[0][0]
+        assert request.type == ResetEnumType.on_idle
+
+
+class TestChangeAvailabilityStatus:
+    """Tests for configurable ChangeAvailability status."""
+
+    async def test_send_change_availability_default_operative(
+        self, command_charge_point
+    ):
+        command_charge_point.call = AsyncMock(
+            return_value=ocpp.v201.call_result.ChangeAvailability(
+                status=ChangeAvailabilityStatusEnumType.accepted
+            )
+        )
+        await command_charge_point._send_change_availability()
+        call_args = command_charge_point.call.call_args
+        request = call_args[0][0]
+        assert request.operational_status == OperationalStatusEnumType.operative
+
+    async def test_send_change_availability_inoperative(self, mock_connection):
+        cp = ChargePoint(
+            mock_connection,
+            availability_status=OperationalStatusEnumType.inoperative,
+        )
+        cp.call = AsyncMock(
+            return_value=ocpp.v201.call_result.ChangeAvailability(
+                status=ChangeAvailabilityStatusEnumType.accepted
+            )
+        )
+        await cp._send_change_availability()
+        call_args = cp.call.call_args
+        request = call_args[0][0]
+        assert request.operational_status == OperationalStatusEnumType.inoperative
+
+
+class TestCommandSequencing:
+    """Tests for command sequencing (send_commands and _parse_commands)."""
+
+    async def test_send_commands_executes_in_order(self, mock_connection):
+        cp = ChargePoint(mock_connection)
+        mock_send = AsyncMock()
+        with patch.object(cp, "_send_command", mock_send):
+            commands = [(Action.heartbeat, 0.001), (Action.clear_cache, 0.001)]
+            await cp.send_commands(commands)
+            assert mock_send.call_count == 2
+            assert mock_send.call_args_list[0][0][0] == Action.heartbeat
+            assert mock_send.call_args_list[1][0][0] == Action.clear_cache
+
+    def test_parse_commands_valid(self):
+        result = _parse_commands("Reset:5,ClearCache:10")
+        assert result == [(Action.reset, 5.0), (Action.clear_cache, 10.0)]
+
+    def test_parse_commands_invalid_format(self):
+        with pytest.raises(argparse.ArgumentTypeError, match="expected 'CMD:DELAY'"):
+            _parse_commands("ResetOnly")
+
+    def test_parse_commands_unknown_action(self):
+        with pytest.raises(argparse.ArgumentTypeError, match="Unknown action"):
+            _parse_commands("UnknownAction:5")
+
+    def test_parse_commands_case_sensitive(self):
+        with pytest.raises(argparse.ArgumentTypeError, match="Unknown action"):
+            _parse_commands("reset:5")
+
+    def test_parse_commands_infinite_delay(self):
+        with pytest.raises(argparse.ArgumentTypeError, match="finite positive"):
+            _parse_commands("Reset:inf")
+
+    def test_parse_commands_nan_delay(self):
+        with pytest.raises(argparse.ArgumentTypeError, match="finite positive"):
+            _parse_commands("Reset:nan")
+
+
+class TestMultiVariableCommands:
+    """Tests for multi-variable SetVariables/GetVariables CLI support."""
+
+    def test_parse_set_variable_specs_valid(self):
+        result = _parse_set_variable_specs(
+            "OCPPCommCtrlr.HeartbeatInterval=30,TxCtrlr.EVConnectionTimeOut=60"
+        )
+        assert len(result) == 2
+        assert result[0]["component"]["name"] == "OCPPCommCtrlr"
+        assert result[0]["variable"]["name"] == "HeartbeatInterval"
+        assert result[0]["attribute_value"] == "30"
+        assert result[1]["component"]["name"] == "TxCtrlr"
+        assert result[1]["variable"]["name"] == "EVConnectionTimeOut"
+        assert result[1]["attribute_value"] == "60"
+
+    def test_parse_get_variable_specs_valid(self):
+        result = _parse_get_variable_specs(
+            "ChargingStation.AvailabilityState,OCPPCommCtrlr.HeartbeatInterval"
+        )
+        assert len(result) == 2
+        assert result[0]["component"]["name"] == "ChargingStation"
+        assert result[0]["variable"]["name"] == "AvailabilityState"
+        assert result[1]["component"]["name"] == "OCPPCommCtrlr"
+        assert result[1]["variable"]["name"] == "HeartbeatInterval"
+
+    def test_parse_set_variable_specs_invalid_no_dot(self):
+        with pytest.raises(
+            argparse.ArgumentTypeError,
+            match=r"expected 'Component\.Variable=Value'",
+        ):
+            _parse_set_variable_specs("NoComponentVariable=30")
+
+    async def test_send_set_variables_uses_custom_data(self, command_charge_point):
+        custom_data = [
+            {
+                "component": {"name": "TestComp"},
+                "variable": {"name": "TestVar"},
+                "attribute_value": "42",
+            }
+        ]
+        command_charge_point._set_variables_data = custom_data
+        command_charge_point.call = AsyncMock(
+            return_value=MagicMock(set_variable_result=[])
+        )
+        await command_charge_point._send_set_variables()
+        call_args = command_charge_point.call.call_args[0][0]
+        assert call_args.set_variable_data == custom_data
