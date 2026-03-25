@@ -837,6 +837,24 @@ export class ChargingStation extends EventEmitter {
     return this.wsConnection?.readyState === WebSocket.OPEN
   }
 
+  public lockConnector (connectorId: number): void {
+    if (connectorId === 0) {
+      logger.warn(`${this.logPrefix()} lockConnector: connector id 0 is not a physical connector`)
+      return
+    }
+    if (!this.hasConnector(connectorId)) {
+      logger.warn(
+        `${this.logPrefix()} lockConnector: connector id ${connectorId.toString()} does not exist`
+      )
+      return
+    }
+    const connectorStatus = this.getConnectorStatus(connectorId)
+    if (connectorStatus == null) {
+      return
+    }
+    connectorStatus.locked = true
+  }
+
   public logPrefix = (): string => {
     if (
       this instanceof ChargingStation &&
@@ -1198,6 +1216,24 @@ export class ChargingStation extends EventEmitter {
     }
     this.saveAutomaticTransactionGeneratorConfiguration()
     this.emitChargingStationEvent(ChargingStationEvents.updated)
+  }
+
+  public unlockConnector (connectorId: number): void {
+    if (connectorId === 0) {
+      logger.warn(`${this.logPrefix()} unlockConnector: connector id 0 is not a physical connector`)
+      return
+    }
+    if (!this.hasConnector(connectorId)) {
+      logger.warn(
+        `${this.logPrefix()} unlockConnector: connector id ${connectorId.toString()} does not exist`
+      )
+      return
+    }
+    const connectorStatus = this.getConnectorStatus(connectorId)
+    if (connectorStatus == null) {
+      return
+    }
+    connectorStatus.locked = false
   }
 
   private add (): void {
