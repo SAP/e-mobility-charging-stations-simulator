@@ -7,13 +7,13 @@
       {{ connector.status ?? 'Ø' }}
     </td>
     <td class="connectors-table__column">
+      {{ connector.locked === true ? 'Yes' : 'No' }}
+    </td>
+    <td class="connectors-table__column">
       {{ connector.transactionStarted === true ? `Yes (${connector.transactionId})` : 'No' }}
     </td>
     <td class="connectors-table__column">
       {{ atgStatus?.start === true ? 'Yes' : 'No' }}
-    </td>
-    <td class="connectors-table__column">
-      {{ connector.locked === true ? 'Yes' : 'No' }}
     </td>
     <td class="connectors-table__column">
       <ToggleButton

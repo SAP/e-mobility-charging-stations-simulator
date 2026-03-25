@@ -83,7 +83,7 @@ describe('CSConnector', () => {
     it('should display No when transaction not started', () => {
       const wrapper = mountCSConnector()
       const cells = wrapper.findAll('td')
-      expect(cells[2].text()).toBe('No')
+      expect(cells[3].text()).toBe('No')
     })
 
     it('should display Yes with transaction ID when transaction started', () => {
@@ -91,25 +91,25 @@ describe('CSConnector', () => {
         connector: createConnectorStatus({ transactionId: 12345, transactionStarted: true }),
       })
       const cells = wrapper.findAll('td')
-      expect(cells[2].text()).toBe('Yes (12345)')
+      expect(cells[3].text()).toBe('Yes (12345)')
     })
 
     it('should display ATG started as Yes when active', () => {
       const wrapper = mountCSConnector({ atgStatus: { start: true } })
       const cells = wrapper.findAll('td')
-      expect(cells[3].text()).toBe('Yes')
+      expect(cells[4].text()).toBe('Yes')
     })
 
     it('should display ATG started as No when not active', () => {
       const wrapper = mountCSConnector({ atgStatus: { start: false } })
       const cells = wrapper.findAll('td')
-      expect(cells[3].text()).toBe('No')
+      expect(cells[4].text()).toBe('No')
     })
 
     it('should display ATG started as No when atgStatus undefined', () => {
       const wrapper = mountCSConnector()
       const cells = wrapper.findAll('td')
-      expect(cells[3].text()).toBe('No')
+      expect(cells[4].text()).toBe('No')
     })
   })
 
@@ -206,7 +206,7 @@ describe('CSConnector', () => {
     it('should display Locked column as No when not locked', () => {
       const wrapper = mountCSConnector()
       const cells = wrapper.findAll('td')
-      expect(cells[4].text()).toBe('No')
+      expect(cells[2].text()).toBe('No')
     })
 
     it('should display Locked column as Yes when locked', () => {
@@ -214,7 +214,7 @@ describe('CSConnector', () => {
         connector: createConnectorStatus({ locked: true }),
       })
       const cells = wrapper.findAll('td')
-      expect(cells[4].text()).toBe('Yes')
+      expect(cells[2].text()).toBe('Yes')
     })
 
     it('should show Lock button when connector is not locked', () => {
