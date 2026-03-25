@@ -251,6 +251,9 @@ export class ChargingStation extends EventEmitter {
     this.on(ChargingStationEvents.updated, () => {
       parentPort?.postMessage(buildUpdatedMessage(this))
     })
+    this.on(ChargingStationEvents.connectorStatusChanged, () => {
+      parentPort?.postMessage(buildUpdatedMessage(this))
+    })
     this.on(ChargingStationEvents.accepted, () => {
       this.startMessageSequence(
         this.wsConnectionRetryCount > 0
