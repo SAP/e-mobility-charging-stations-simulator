@@ -126,7 +126,7 @@
     "semver": "^7.7.4",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
-    "typescript": "~5.9.3",
+    "typescript": "~6.0.2",
     "vue-eslint-parser": "^10.4.0"
   },
   "pnpm": {
