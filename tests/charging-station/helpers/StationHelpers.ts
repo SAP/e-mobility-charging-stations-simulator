@@ -688,6 +688,20 @@ export function createMockChargingStation (
 
     listenerCount: () => 0,
 
+    lockConnector (connectorId: number): void {
+      if (connectorId === 0) {
+        return
+      }
+      if (!this.hasConnector(connectorId)) {
+        return
+      }
+      const connectorStatus = this.getConnectorStatus(connectorId)
+      if (connectorStatus == null) {
+        return
+      }
+      connectorStatus.locked = true
+    },
+
     logPrefix (): string {
       return `${this.stationInfo.chargingStationId} |`
     },
@@ -822,6 +836,21 @@ export function createMockChargingStation (
     stopping: false,
 
     templateFile,
+
+    unlockConnector (connectorId: number): void {
+      if (connectorId === 0) {
+        return
+      }
+      if (!this.hasConnector(connectorId)) {
+        return
+      }
+      const connectorStatus = this.getConnectorStatus(connectorId)
+      if (connectorStatus == null) {
+        return
+      }
+      connectorStatus.locked = false
+    },
+
     wsConnection: null as MockWebSocket | null,
     wsConnectionRetryCount: 0,
   }

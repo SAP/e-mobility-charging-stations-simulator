@@ -627,4 +627,33 @@ describe('UIClient', () => {
       })
     })
   })
+
+  describe('connector lock operations', () => {
+    let client: UIClient
+    let sendRequestSpy: ReturnType<typeof vi.spyOn>
+
+    beforeEach(() => {
+      client = UIClient.getInstance(createUIServerConfig())
+      // @ts-expect-error — accessing private method for testing
+      sendRequestSpy = vi.spyOn(client, 'sendRequest').mockResolvedValue({
+        status: ResponseStatus.SUCCESS,
+      })
+    })
+
+    it('should send LOCK_CONNECTOR with hashIds and connectorId', async () => {
+      await client.lockConnector(TEST_HASH_ID, 1)
+      expect(sendRequestSpy).toHaveBeenCalledWith(ProcedureName.LOCK_CONNECTOR, {
+        connectorId: 1,
+        hashIds: [TEST_HASH_ID],
+      })
+    })
+
+    it('should send UNLOCK_CONNECTOR with hashIds and connectorId', async () => {
+      await client.unlockConnector(TEST_HASH_ID, 2)
+      expect(sendRequestSpy).toHaveBeenCalledWith(ProcedureName.UNLOCK_CONNECTOR, {
+        connectorId: 2,
+        hashIds: [TEST_HASH_ID],
+      })
+    })
+  })
 })

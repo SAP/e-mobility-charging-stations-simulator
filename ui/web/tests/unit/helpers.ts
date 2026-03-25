@@ -19,6 +19,7 @@ export interface MockUIClient {
   deleteChargingStation: ReturnType<typeof vi.fn>
   listChargingStations: ReturnType<typeof vi.fn>
   listTemplates: ReturnType<typeof vi.fn>
+  lockConnector: ReturnType<typeof vi.fn>
   openConnection: ReturnType<typeof vi.fn>
   registerWSEventListener: ReturnType<typeof vi.fn>
   setConfiguration: ReturnType<typeof vi.fn>
@@ -32,6 +33,7 @@ export interface MockUIClient {
   stopChargingStation: ReturnType<typeof vi.fn>
   stopSimulator: ReturnType<typeof vi.fn>
   stopTransaction: ReturnType<typeof vi.fn>
+  unlockConnector: ReturnType<typeof vi.fn>
   unregisterWSEventListener: ReturnType<typeof vi.fn>
 }
 
@@ -116,6 +118,7 @@ export function createMockUIClient (): MockUIClient {
     deleteChargingStation: vi.fn().mockResolvedValue(successResponse),
     listChargingStations: vi.fn().mockResolvedValue({ ...successResponse, chargingStations: [] }),
     listTemplates: vi.fn().mockResolvedValue({ ...successResponse, templates: [] }),
+    lockConnector: vi.fn().mockResolvedValue(successResponse),
     openConnection: vi.fn().mockResolvedValue(successResponse),
     registerWSEventListener: vi.fn(),
     setConfiguration: vi.fn(),
@@ -131,6 +134,7 @@ export function createMockUIClient (): MockUIClient {
     stopChargingStation: vi.fn().mockResolvedValue(successResponse),
     stopSimulator: vi.fn().mockResolvedValue(successResponse),
     stopTransaction: vi.fn().mockResolvedValue(successResponse),
+    unlockConnector: vi.fn().mockResolvedValue(successResponse),
     unregisterWSEventListener: vi.fn(),
   }
 }
