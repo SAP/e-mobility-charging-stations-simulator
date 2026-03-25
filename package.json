@@ -7,10 +7,10 @@
     "pnpm": ">=10.9.0"
   },
   "volta": {
-    "node": "24.14.0",
-    "pnpm": "10.32.1"
+    "node": "24.14.1",
+    "pnpm": "10.33.0"
   },
-  "packageManager": "pnpm@10.32.1",
+  "packageManager": "pnpm@10.33.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/sap/e-mobility-charging-stations-simulator.git"
@@ -88,7 +88,7 @@
     "http-status-codes": "^2.3.0",
     "logform": "^2.7.0",
     "mnemonist": "0.40.3",
-    "mongodb": "^7.1.0",
+    "mongodb": "^7.1.1",
     "poolifier": "^5.3.2",
     "tar": "^7.5.13",
     "winston": "^3.19.0",
