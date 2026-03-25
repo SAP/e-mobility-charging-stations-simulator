@@ -27,6 +27,7 @@ export enum ProcedureName {
   HEARTBEAT = 'heartbeat',
   LIST_CHARGING_STATIONS = 'listChargingStations',
   LIST_TEMPLATES = 'listTemplates',
+  LOCK_CONNECTOR = 'lockConnector',
   LOG_STATUS_NOTIFICATION = 'logStatusNotification',
   METER_VALUES = 'meterValues',
   NOTIFY_CUSTOMER_INFORMATION = 'notifyCustomerInformation',
@@ -47,6 +48,7 @@ export enum ProcedureName {
   STOP_SIMULATOR = 'stopSimulator',
   STOP_TRANSACTION = 'stopTransaction',
   TRANSACTION_EVENT = 'transactionEvent',
+  UNLOCK_CONNECTOR = 'unlockConnector',
 }
 
 export enum Protocol {
