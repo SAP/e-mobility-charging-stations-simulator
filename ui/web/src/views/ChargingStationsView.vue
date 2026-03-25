@@ -136,6 +136,7 @@ import {
   getLocalStorage,
   randomUUID,
   setToLocalStorage,
+  useChargingStations,
   useUIClient,
 } from '@/composables'
 
@@ -179,7 +180,7 @@ const clearToggleButtons = (): void => {
 
 const app = getCurrentInstance()
 
-const chargingStationsRef = app?.appContext.config.globalProperties.$chargingStations
+const chargingStationsRef = useChargingStations()
 if (chargingStationsRef != null) {
   watch(chargingStationsRef, () => {
     state.value.renderChargingStations = randomUUID()
@@ -193,8 +194,8 @@ const clearTemplates = (): void => {
 }
 
 const clearChargingStations = (): void => {
-  if (app != null) {
-    app.appContext.config.globalProperties.$chargingStations!.value = []
+  if (chargingStationsRef != null) {
+    chargingStationsRef.value = []
   }
 }
 
@@ -249,9 +250,8 @@ const getChargingStations = (): void => {
     uiClient
       .listChargingStations()
       .then((response: ResponsePayload) => {
-        if (app != null) {
-          app.appContext.config.globalProperties.$chargingStations!.value =
-            response.chargingStations as ChargingStationData[]
+        if (chargingStationsRef != null) {
+          chargingStationsRef.value = response.chargingStations as ChargingStationData[]
         }
         return undefined
       })
