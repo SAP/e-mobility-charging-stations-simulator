@@ -521,8 +521,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
     resetConnectorStatus(transactionConnectorStatus)
     if (
       transactionConnectorStatus != null &&
-      (payload.idTagInfo == null ||
-        payload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED)
+      (payload.idTagInfo == null || payload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED)
     ) {
       transactionConnectorStatus.locked = false
     }
