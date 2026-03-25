@@ -958,6 +958,40 @@ Set the WebSocket header _Sec-WebSocket-Protocol_ to `ui0.0.1`.
    `responsesFailed`: failed responses payload array (optional)  
   }
 
+###### Lock Connector
+
+- Request:  
+  `ProcedureName`: 'lockConnector'  
+  `PDU`: {  
+   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+   `connectorId`: connector id integer  
+  }
+
+- Response:  
+  `PDU`: {  
+   `status`: 'success' | 'failure',  
+   `hashIdsSucceeded`: charging station unique identifier strings array,  
+   `hashIdsFailed`: charging station unique identifier strings array (optional),  
+   `responsesFailed`: failed responses payload array (optional)  
+  }
+
+###### Unlock Connector
+
+- Request:  
+  `ProcedureName`: 'unlockConnector'  
+  `PDU`: {  
+   `hashIds`: charging station unique identifier strings array (optional, default: all charging stations),  
+   `connectorId`: connector id integer  
+  }
+
+- Response:  
+  `PDU`: {  
+   `status`: 'success' | 'failure',  
+   `hashIdsSucceeded`: charging station unique identifier strings array,  
+   `hashIdsFailed`: charging station unique identifier strings array (optional),  
+   `responsesFailed`: failed responses payload array (optional)  
+  }
+
 ###### OCPP commands trigger
 
 - Request:  

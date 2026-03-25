@@ -381,6 +381,7 @@ export class OCPP16ResponseService extends OCPPResponseService {
       connectorStatus.transactionId = payload.transactionId
       connectorStatus.transactionIdTag = requestPayload.idTag
       connectorStatus.transactionEnergyActiveImportRegisterValue = 0
+      connectorStatus.locked = true
       connectorStatus.transactionBeginMeterValue =
         OCPP16ServiceUtils.buildTransactionBeginMeterValue(
           chargingStation,
@@ -516,7 +517,14 @@ export class OCPP16ResponseService extends OCPPResponseService {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       chargingStation.powerDivider!--
     }
-    resetConnectorStatus(chargingStation.getConnectorStatus(transactionConnectorId))
+    const transactionConnectorStatus = chargingStation.getConnectorStatus(transactionConnectorId)
+    resetConnectorStatus(transactionConnectorStatus)
+    if (
+      transactionConnectorStatus != null &&
+      (payload.idTagInfo == null || payload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED)
+    ) {
+      transactionConnectorStatus.locked = false
+    }
     OCPP16ServiceUtils.stopPeriodicMeterValues(chargingStation, transactionConnectorId)
     const logMsg = `${chargingStation.logPrefix()} ${moduleName}.handleResponseStopTransaction: Transaction with id ${requestPayload.transactionId.toString()} STOPPED on ${
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions

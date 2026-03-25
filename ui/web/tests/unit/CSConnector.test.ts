@@ -83,7 +83,7 @@ describe('CSConnector', () => {
     it('should display No when transaction not started', () => {
       const wrapper = mountCSConnector()
       const cells = wrapper.findAll('td')
-      expect(cells[2].text()).toBe('No')
+      expect(cells[3].text()).toBe('No')
     })
 
     it('should display Yes with transaction ID when transaction started', () => {
@@ -91,25 +91,25 @@ describe('CSConnector', () => {
         connector: createConnectorStatus({ transactionId: 12345, transactionStarted: true }),
       })
       const cells = wrapper.findAll('td')
-      expect(cells[2].text()).toBe('Yes (12345)')
+      expect(cells[3].text()).toBe('Yes (12345)')
     })
 
     it('should display ATG started as Yes when active', () => {
       const wrapper = mountCSConnector({ atgStatus: { start: true } })
       const cells = wrapper.findAll('td')
-      expect(cells[3].text()).toBe('Yes')
+      expect(cells[4].text()).toBe('Yes')
     })
 
     it('should display ATG started as No when not active', () => {
       const wrapper = mountCSConnector({ atgStatus: { start: false } })
       const cells = wrapper.findAll('td')
-      expect(cells[3].text()).toBe('No')
+      expect(cells[4].text()).toBe('No')
     })
 
     it('should display ATG started as No when atgStatus undefined', () => {
       const wrapper = mountCSConnector()
       const cells = wrapper.findAll('td')
-      expect(cells[3].text()).toBe('No')
+      expect(cells[4].text()).toBe('No')
     })
   })
 
@@ -199,6 +199,102 @@ describe('CSConnector', () => {
       expect(toastMock.error).toHaveBeenCalledWith(
         'Error at stopping automatic transaction generator'
       )
+    })
+  })
+
+  describe('lock/unlock actions', () => {
+    it('should display Locked column as No when not locked', () => {
+      const wrapper = mountCSConnector()
+      const cells = wrapper.findAll('td')
+      expect(cells[2].text()).toBe('No')
+    })
+
+    it('should display Locked column as Yes when locked', () => {
+      const wrapper = mountCSConnector({
+        connector: createConnectorStatus({ locked: true }),
+      })
+      const cells = wrapper.findAll('td')
+      expect(cells[2].text()).toBe('Yes')
+    })
+
+    it('should show Lock button when connector is not locked', () => {
+      const wrapper = mountCSConnector()
+      const buttons = wrapper.findAll('button')
+      const lockBtn = buttons.find(b => b.text() === 'Lock')
+      expect(lockBtn).toBeDefined()
+      expect(buttons.find(b => b.text() === 'Unlock')).toBeUndefined()
+    })
+
+    it('should show Unlock button when connector is locked', () => {
+      const wrapper = mountCSConnector({
+        connector: createConnectorStatus({ locked: true }),
+      })
+      const buttons = wrapper.findAll('button')
+      const unlockBtn = buttons.find(b => b.text() === 'Unlock')
+      expect(unlockBtn).toBeDefined()
+      expect(buttons.find(b => b.text() === 'Lock')).toBeUndefined()
+    })
+
+    it('should call lockConnector with correct params', async () => {
+      const wrapper = mountCSConnector()
+      const buttons = wrapper.findAll('button')
+      const lockBtn = buttons.find(b => b.text() === 'Lock')
+      await lockBtn?.trigger('click')
+      await flushPromises()
+      expect(mockClient.lockConnector).toHaveBeenCalledWith(TEST_HASH_ID, 1)
+    })
+
+    it('should call unlockConnector with correct params', async () => {
+      const wrapper = mountCSConnector({
+        connector: createConnectorStatus({ locked: true }),
+      })
+      const buttons = wrapper.findAll('button')
+      const unlockBtn = buttons.find(b => b.text() === 'Unlock')
+      await unlockBtn?.trigger('click')
+      await flushPromises()
+      expect(mockClient.unlockConnector).toHaveBeenCalledWith(TEST_HASH_ID, 1)
+    })
+
+    it('should show success toast after locking connector', async () => {
+      const wrapper = mountCSConnector()
+      const buttons = wrapper.findAll('button')
+      const lockBtn = buttons.find(b => b.text() === 'Lock')
+      await lockBtn?.trigger('click')
+      await flushPromises()
+      expect(toastMock.success).toHaveBeenCalledWith('Connector successfully locked')
+    })
+
+    it('should show error toast on lock failure', async () => {
+      mockClient.lockConnector.mockRejectedValueOnce(new Error('fail'))
+      const wrapper = mountCSConnector()
+      const buttons = wrapper.findAll('button')
+      const lockBtn = buttons.find(b => b.text() === 'Lock')
+      await lockBtn?.trigger('click')
+      await flushPromises()
+      expect(toastMock.error).toHaveBeenCalledWith('Error at locking connector')
+    })
+
+    it('should show success toast after unlocking connector', async () => {
+      const wrapper = mountCSConnector({
+        connector: createConnectorStatus({ locked: true }),
+      })
+      const buttons = wrapper.findAll('button')
+      const unlockBtn = buttons.find(b => b.text() === 'Unlock')
+      await unlockBtn?.trigger('click')
+      await flushPromises()
+      expect(toastMock.success).toHaveBeenCalledWith('Connector successfully unlocked')
+    })
+
+    it('should show error toast on unlock failure', async () => {
+      mockClient.unlockConnector.mockRejectedValueOnce(new Error('fail'))
+      const wrapper = mountCSConnector({
+        connector: createConnectorStatus({ locked: true }),
+      })
+      const buttons = wrapper.findAll('button')
+      const unlockBtn = buttons.find(b => b.text() === 'Unlock')
+      await unlockBtn?.trigger('click')
+      await flushPromises()
+      expect(toastMock.error).toHaveBeenCalledWith('Error at unlocking connector')
     })
   })
 })

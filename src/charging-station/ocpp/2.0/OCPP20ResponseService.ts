@@ -389,6 +389,9 @@ export class OCPP20ResponseService extends OCPPResponseService {
           const isIdTokenAccepted =
             payload.idTokenInfo == null ||
             payload.idTokenInfo.status === OCPP20AuthorizationStatusEnumType.Accepted
+          if (isIdTokenAccepted) {
+            connectorStatus.locked = true
+          }
           if (connectorId != null && isIdTokenAccepted) {
             sendAndSetConnectorStatus(chargingStation, {
               connectorId,

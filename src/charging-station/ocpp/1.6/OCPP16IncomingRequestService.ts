@@ -1589,6 +1589,7 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
       connectorId,
       status: OCPP16ChargePointStatus.Available,
     } as OCPP16StatusNotificationRequest)
+    chargingStation.unlockConnector(connectorId)
     return OCPP16Constants.OCPP_RESPONSE_UNLOCKED
   }
 

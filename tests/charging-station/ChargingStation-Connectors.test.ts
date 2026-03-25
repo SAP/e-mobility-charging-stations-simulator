@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import type { ChargingStation } from '../../src/charging-station/index.js'
 
+import { resetConnectorStatus } from '../../src/charging-station/Helpers.js'
 import { RegistrationStatusEnumType } from '../../src/types/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import { TEST_ONE_HOUR_MS } from './ChargingStationTestConstants.js'
@@ -649,6 +650,109 @@ await describe('ChargingStation Connector and EVSE State', async () => {
       assert.notStrictEqual(found2, undefined)
       assert.strictEqual(found1?.connectorId, 1)
       assert.strictEqual(found2?.connectorId, 2)
+    })
+  })
+
+  await describe('Connector Lock/Unlock', async () => {
+    let station: ChargingStation | undefined
+
+    beforeEach(() => {
+      station = undefined
+    })
+
+    afterEach(() => {
+      standardCleanup()
+      if (station != null) {
+        cleanupChargingStation(station)
+      }
+    })
+
+    await it('should set locked=true on lockConnector() for valid connector', () => {
+      const result = createMockChargingStation({ connectorsCount: 2 })
+      station = result.station
+
+      station.lockConnector(1)
+
+      assert.strictEqual(station.getConnectorStatus(1)?.locked, true)
+    })
+
+    await it('should set locked=false on unlockConnector() for valid connector', () => {
+      const result = createMockChargingStation({ connectorsCount: 2 })
+      station = result.station
+
+      station.lockConnector(1)
+      assert.strictEqual(station.getConnectorStatus(1)?.locked, true)
+
+      station.unlockConnector(1)
+      assert.strictEqual(station.getConnectorStatus(1)?.locked, false)
+    })
+
+    await it('should be idempotent on double lockConnector()', () => {
+      const result = createMockChargingStation({ connectorsCount: 2 })
+      station = result.station
+
+      station.lockConnector(1)
+      station.lockConnector(1)
+
+      assert.strictEqual(station.getConnectorStatus(1)?.locked, true)
+    })
+
+    await it('should be idempotent on double unlockConnector()', () => {
+      const result = createMockChargingStation({ connectorsCount: 2 })
+      station = result.station
+
+      station.unlockConnector(1)
+      station.unlockConnector(1)
+
+      assert.strictEqual(station.getConnectorStatus(1)?.locked, false)
+    })
+
+    await it('should reject connector id 0 for lockConnector()', () => {
+      const result = createMockChargingStation({ connectorsCount: 2 })
+      station = result.station
+
+      station.lockConnector(0)
+
+      assert.notStrictEqual(station.getConnectorStatus(0)?.locked, true)
+    })
+
+    await it('should reject connector id 0 for unlockConnector()', () => {
+      const result = createMockChargingStation({ connectorsCount: 2 })
+      station = result.station
+
+      station.unlockConnector(0)
+
+      assert.notStrictEqual(station.getConnectorStatus(0)?.locked, false)
+    })
+
+    await it('should reject non-existent connector for lockConnector()', () => {
+      const result = createMockChargingStation({ connectorsCount: 2 })
+      station = result.station
+
+      station.lockConnector(999)
+
+      assert.strictEqual(station.getConnectorStatus(999), undefined)
+    })
+
+    await it('should reject non-existent connector for unlockConnector()', () => {
+      const result = createMockChargingStation({ connectorsCount: 2 })
+      station = result.station
+
+      station.unlockConnector(999)
+
+      assert.strictEqual(station.getConnectorStatus(999), undefined)
+    })
+
+    await it('should not clear locked state on resetConnectorStatus', () => {
+      const result = createMockChargingStation({ connectorsCount: 2 })
+      station = result.station
+
+      station.lockConnector(1)
+      assert.strictEqual(station.getConnectorStatus(1)?.locked, true)
+
+      resetConnectorStatus(station.getConnectorStatus(1))
+
+      assert.strictEqual(station.getConnectorStatus(1)?.locked, true)
     })
   })
 })

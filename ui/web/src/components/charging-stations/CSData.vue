@@ -90,6 +90,12 @@
               class="connectors-table__column"
               scope="col"
             >
+              Locked
+            </th>
+            <th
+              class="connectors-table__column"
+              scope="col"
+            >
               Transaction
             </th>
             <th

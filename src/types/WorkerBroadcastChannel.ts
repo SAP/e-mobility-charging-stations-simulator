@@ -12,6 +12,7 @@ export enum BroadcastChannelProcedureName {
   GET_15118_EV_CERTIFICATE = 'get15118EVCertificate',
   GET_CERTIFICATE_STATUS = 'getCertificateStatus',
   HEARTBEAT = 'heartbeat',
+  LOCK_CONNECTOR = 'lockConnector',
   LOG_STATUS_NOTIFICATION = 'logStatusNotification',
   METER_VALUES = 'meterValues',
   NOTIFY_CUSTOMER_INFORMATION = 'notifyCustomerInformation',
@@ -28,6 +29,7 @@ export enum BroadcastChannelProcedureName {
   STOP_CHARGING_STATION = 'stopChargingStation',
   STOP_TRANSACTION = 'stopTransaction',
   TRANSACTION_EVENT = 'transactionEvent',
+  UNLOCK_CONNECTOR = 'unlockConnector',
 }
 
 export type BroadcastChannelRequest = [

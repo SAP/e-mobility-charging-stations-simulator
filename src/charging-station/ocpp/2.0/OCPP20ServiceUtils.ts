@@ -832,6 +832,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
 
     OCPP20ServiceUtils.stopPeriodicMeterValues(chargingStation, connectorId)
     resetConnectorStatus(connectorStatus)
+    connectorStatus.locked = false
     await sendAndSetConnectorStatus(chargingStation, {
       connectorId,
       connectorStatus: ConnectorStatusEnum.Available,

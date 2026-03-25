@@ -261,6 +261,7 @@ export interface ConnectorStatus extends JsonObject {
   idTagAuthorized?: boolean
   idTagLocalAuthorized?: boolean
   localAuthorizeIdTag?: string
+  locked?: boolean
   status?: ChargePointStatus
   transactionEnergyActiveImportRegisterValue?: number // In Wh
   /**
