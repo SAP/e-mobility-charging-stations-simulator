@@ -519,7 +519,11 @@ export class OCPP16ResponseService extends OCPPResponseService {
     }
     const transactionConnectorStatus = chargingStation.getConnectorStatus(transactionConnectorId)
     resetConnectorStatus(transactionConnectorStatus)
-    if (transactionConnectorStatus != null) {
+    if (
+      transactionConnectorStatus != null &&
+      (payload.idTagInfo == null ||
+        payload.idTagInfo.status === OCPP16AuthorizationStatus.ACCEPTED)
+    ) {
       transactionConnectorStatus.locked = false
     }
     OCPP16ServiceUtils.stopPeriodicMeterValues(chargingStation, transactionConnectorId)

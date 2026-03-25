@@ -1581,7 +1581,6 @@ export class OCPP16IncomingRequestService extends OCPPIncomingRequestService {
         OCPP16StopTransactionReason.UNLOCK_COMMAND
       )
       if (stopResponse.idTagInfo?.status === OCPP16AuthorizationStatus.ACCEPTED) {
-        chargingStation.unlockConnector(connectorId)
         return OCPP16Constants.OCPP_RESPONSE_UNLOCKED
       }
       return OCPP16Constants.OCPP_RESPONSE_UNLOCK_FAILED

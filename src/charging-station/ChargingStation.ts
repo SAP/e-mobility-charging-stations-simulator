@@ -850,9 +850,15 @@ export class ChargingStation extends EventEmitter {
     }
     const connectorStatus = this.getConnectorStatus(connectorId)
     if (connectorStatus == null) {
+      logger.warn(
+        `${this.logPrefix()} lockConnector: connector id ${connectorId.toString()} status is null`
+      )
       return
     }
-    connectorStatus.locked = true
+    if (connectorStatus.locked !== true) {
+      connectorStatus.locked = true
+      this.emitChargingStationEvent(ChargingStationEvents.updated)
+    }
   }
 
   public logPrefix = (): string => {
@@ -1231,9 +1237,15 @@ export class ChargingStation extends EventEmitter {
     }
     const connectorStatus = this.getConnectorStatus(connectorId)
     if (connectorStatus == null) {
+      logger.warn(
+        `${this.logPrefix()} unlockConnector: connector id ${connectorId.toString()} status is null`
+      )
       return
     }
-    connectorStatus.locked = false
+    if (connectorStatus.locked !== false) {
+      connectorStatus.locked = false
+      this.emitChargingStationEvent(ChargingStationEvents.updated)
+    }
   }
 
   private add (): void {
