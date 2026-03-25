@@ -386,6 +386,7 @@ export class OCPP20ResponseService extends OCPPResponseService {
           connectorStatus.transactionIdTag ??= requestPayload.idToken?.idToken
           connectorStatus.transactionStart ??= new Date()
           connectorStatus.transactionEnergyActiveImportRegisterValue ??= 0
+          connectorStatus.locked = true
           const isIdTokenAccepted =
             payload.idTokenInfo == null ||
             payload.idTokenInfo.status === OCPP20AuthorizationStatusEnumType.Accepted
