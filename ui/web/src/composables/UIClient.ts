@@ -90,6 +90,13 @@ export class UIClient {
     return this.sendRequest(ProcedureName.LIST_TEMPLATES, {})
   }
 
+  public async lockConnector (hashId: string, connectorId: number): Promise<ResponsePayload> {
+    return this.sendRequest(ProcedureName.LOCK_CONNECTOR, {
+      connectorId,
+      hashIds: [hashId],
+    })
+  }
+
   public async openConnection (hashId: string): Promise<ResponsePayload> {
     return this.sendRequest(ProcedureName.OPEN_CONNECTION, {
       hashIds: [hashId],
@@ -215,6 +222,13 @@ export class UIClient {
     return this.sendRequest(ProcedureName.STOP_TRANSACTION, {
       hashIds: [hashId],
       transactionId: options.transactionId,
+    })
+  }
+
+  public async unlockConnector (hashId: string, connectorId: number): Promise<ResponsePayload> {
+    return this.sendRequest(ProcedureName.UNLOCK_CONNECTOR, {
+      connectorId,
+      hashIds: [hashId],
     })
   }
 

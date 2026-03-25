@@ -13,6 +13,9 @@
       {{ atgStatus?.start === true ? 'Yes' : 'No' }}
     </td>
     <td class="connectors-table__column">
+      {{ connector.locked === true ? 'Yes' : 'No' }}
+    </td>
+    <td class="connectors-table__column">
       <ToggleButton
         :id="`${hashId}-${evseId ?? 0}-${connectorId}-start-transaction`"
         :off="
@@ -45,6 +48,18 @@
       </Button>
       <Button @click="stopAutomaticTransactionGenerator()">
         Stop ATG
+      </Button>
+      <Button
+        v-if="connector.locked !== true"
+        @click="lockConnector()"
+      >
+        Lock
+      </Button>
+      <Button
+        v-else
+        @click="unlockConnector()"
+      >
+        Unlock
       </Button>
     </td>
   </tr>
@@ -91,6 +106,28 @@ const stopTransaction = (): void => {
     .catch((error: Error) => {
       $toast.error('Error at stopping transaction')
       console.error('Error at stopping transaction:', error)
+    })
+}
+const lockConnector = (): void => {
+  uiClient
+    .lockConnector(props.hashId, props.connectorId)
+    .then(() => {
+      return $toast.success('Connector successfully locked')
+    })
+    .catch((error: Error) => {
+      $toast.error('Error at locking connector')
+      console.error('Error at locking connector:', error)
+    })
+}
+const unlockConnector = (): void => {
+  uiClient
+    .unlockConnector(props.hashId, props.connectorId)
+    .then(() => {
+      return $toast.success('Connector successfully unlocked')
+    })
+    .catch((error: Error) => {
+      $toast.error('Error at unlocking connector')
+      console.error('Error at unlocking connector:', error)
     })
 }
 const startAutomaticTransactionGenerator = (): void => {
