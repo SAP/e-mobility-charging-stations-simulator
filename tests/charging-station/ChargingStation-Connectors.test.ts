@@ -687,6 +687,26 @@ await describe('ChargingStation Connector and EVSE State', async () => {
       assert.strictEqual(station.getConnectorStatus(1)?.locked, false)
     })
 
+    await it('should be idempotent on double lockConnector()', () => {
+      const result = createMockChargingStation({ connectorsCount: 2 })
+      station = result.station
+
+      station.lockConnector(1)
+      station.lockConnector(1)
+
+      assert.strictEqual(station.getConnectorStatus(1)?.locked, true)
+    })
+
+    await it('should be idempotent on double unlockConnector()', () => {
+      const result = createMockChargingStation({ connectorsCount: 2 })
+      station = result.station
+
+      station.unlockConnector(1)
+      station.unlockConnector(1)
+
+      assert.strictEqual(station.getConnectorStatus(1)?.locked, false)
+    })
+
     await it('should reject connector id 0 for lockConnector()', () => {
       const result = createMockChargingStation({ connectorsCount: 2 })
       station = result.station
