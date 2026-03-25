@@ -386,10 +386,12 @@ export class OCPP20ResponseService extends OCPPResponseService {
           connectorStatus.transactionIdTag ??= requestPayload.idToken?.idToken
           connectorStatus.transactionStart ??= new Date()
           connectorStatus.transactionEnergyActiveImportRegisterValue ??= 0
-          connectorStatus.locked = true
           const isIdTokenAccepted =
             payload.idTokenInfo == null ||
             payload.idTokenInfo.status === OCPP20AuthorizationStatusEnumType.Accepted
+          if (isIdTokenAccepted) {
+            connectorStatus.locked = true
+          }
           if (connectorId != null && isIdTokenAccepted) {
             sendAndSetConnectorStatus(chargingStation, {
               connectorId,
