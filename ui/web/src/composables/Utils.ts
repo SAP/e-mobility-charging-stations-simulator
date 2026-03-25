@@ -1,6 +1,7 @@
 import type { Ref } from 'vue'
 
 import { getCurrentInstance } from 'vue'
+import { useToast } from 'vue-toast-notification'
 
 import type { ChargingStationData, UUIDv4 } from '@/types'
 
@@ -96,4 +97,19 @@ export const refreshChargingStations = async (): Promise<void> => {
   if (ref == null) return
   const response = await useUIClient().listChargingStations()
   ref.value = response.chargingStations as ChargingStationData[]
+}
+
+export const useExecuteAction = (emit: (event: 'need-refresh') => void) => {
+  const $toast = useToast()
+  return (action: Promise<unknown>, successMsg: string, errorMsg: string): void => {
+    action
+      .then(() => {
+        emit('need-refresh')
+        return $toast.success(successMsg)
+      })
+      .catch((error: unknown) => {
+        $toast.error(errorMsg)
+        console.error(`${errorMsg}:`, error)
+      })
+  }
 }

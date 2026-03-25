@@ -73,7 +73,7 @@ import type { ConnectorStatus, OCPPVersion, Status } from '@/types'
 import Button from '@/components/buttons/Button.vue'
 import StateButton from '@/components/buttons/StateButton.vue'
 import ToggleButton from '@/components/buttons/ToggleButton.vue'
-import { useUIClient } from '@/composables'
+import { useExecuteAction, useUIClient } from '@/composables'
 
 const props = defineProps<{
   atgStatus?: Status
@@ -91,17 +91,7 @@ const uiClient = useUIClient()
 
 const $toast = useToast()
 
-const executeAction = (action: Promise<unknown>, successMsg: string, errorMsg: string): void => {
-  action
-    .then(() => {
-      $emit('need-refresh')
-      return $toast.success(successMsg)
-    })
-    .catch((error: Error) => {
-      $toast.error(errorMsg)
-      console.error(`${errorMsg}:`, error)
-    })
-}
+const executeAction = useExecuteAction($emit)
 
 const stopTransaction = (): void => {
   if (props.connector.transactionId == null) {

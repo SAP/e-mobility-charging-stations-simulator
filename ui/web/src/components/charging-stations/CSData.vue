@@ -143,7 +143,12 @@ import Button from '@/components/buttons/Button.vue'
 import StateButton from '@/components/buttons/StateButton.vue'
 import ToggleButton from '@/components/buttons/ToggleButton.vue'
 import CSConnector from '@/components/charging-stations/CSConnector.vue'
-import { deleteFromLocalStorage, getLocalStorage, useUIClient } from '@/composables'
+import {
+  deleteFromLocalStorage,
+  getLocalStorage,
+  useExecuteAction,
+  useUIClient,
+} from '@/composables'
 
 interface ConnectorTableEntry {
   connector: ConnectorStatus
@@ -212,17 +217,7 @@ const uiClient = useUIClient()
 
 const $toast = useToast()
 
-const executeAction = (action: Promise<unknown>, successMsg: string, errorMsg: string): void => {
-  action
-    .then(() => {
-      $emit('need-refresh')
-      return $toast.success(successMsg)
-    })
-    .catch((error: Error) => {
-      $toast.error(errorMsg)
-      console.error(`${errorMsg}:`, error)
-    })
-}
+const executeAction = useExecuteAction($emit)
 
 const startChargingStation = (): void => {
   executeAction(
