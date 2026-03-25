@@ -15,7 +15,7 @@ import ChargingStationsView from '@/views/ChargingStationsView.vue'
 
 import { toastMock } from '../setup'
 import { createChargingStationData, createUIServerConfig } from './constants'
-import { createMockUIClient, type MockUIClient } from './helpers'
+import { createMockUIClient, type MockUIClient, StateButtonStub, ToggleButtonStub } from './helpers'
 
 vi.mock('@/composables', async importOriginal => {
   const actual = await importOriginal()
@@ -90,17 +90,8 @@ function mountView (
           props: ['loading'],
           template: '<button @click="$emit(\'click\')" />',
         },
-        StateButton: {
-          name: 'StateButton',
-          props: ['active', 'on', 'off', 'onLabel', 'offLabel'],
-          template:
-            '<button @click="active ? off?.() : on?.()">{{ active ? offLabel : onLabel }}</button>',
-        },
-        ToggleButton: {
-          name: 'ToggleButton',
-          props: ['id', 'on', 'off', 'status', 'shared'],
-          template: '<button><slot /></button>',
-        },
+        StateButton: StateButtonStub,
+        ToggleButton: ToggleButtonStub,
       },
     },
   })

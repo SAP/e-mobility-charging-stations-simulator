@@ -7,6 +7,8 @@ import { describe, expect, it, vi } from 'vitest'
 
 import ToggleButton from '@/components/buttons/ToggleButton.vue'
 
+import { ButtonActiveStub } from './helpers'
+
 /**
  * Mount factory — stubs Button child component with slot passthrough
  * @param props - Component props
@@ -29,11 +31,7 @@ function mountToggleButton (
   return mount(ToggleButton, {
     global: {
       stubs: {
-        Button: {
-          props: ['active'],
-          template:
-            '<button :class="[\'button\', { \'button--active\': active }]" type="button"><slot /></button>',
-        },
+        Button: ButtonActiveStub,
       },
     },
     props,

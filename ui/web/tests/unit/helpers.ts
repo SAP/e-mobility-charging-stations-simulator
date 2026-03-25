@@ -46,12 +46,29 @@ export const ButtonStub = {
   template: '<button @click="$emit(\'click\')"><slot /></button>',
 }
 
+/** Functional Button stub that supports the active prop and CSS class. */
+export const ButtonActiveStub = {
+  props: ['active'],
+  template:
+    '<button :class="[\'button\', { \'button--active\': active }]" type="button"><slot /></button>',
+}
+
 // ── StateButtonStub ───────────────────────────────────────────────────────────
 
 /** Functional StateButton stub that renders the active/inactive label and dispatches on/off. */
 export const StateButtonStub = {
+  name: 'StateButton',
   props: ['active', 'on', 'off', 'onLabel', 'offLabel'],
   template: '<button @click="active ? off?.() : on?.()">{{ active ? offLabel : onLabel }}</button>',
+}
+
+// ── ToggleButtonStub ──────────────────────────────────────────────────────────
+
+/** Functional ToggleButton stub that renders slot content and dispatches on/off via props. */
+export const ToggleButtonStub = {
+  name: 'ToggleButton',
+  props: ['id', 'on', 'off', 'status', 'shared'],
+  template: '<button><slot /></button>',
 }
 
 // ── MockWebSocket ─────────────────────────────────────────────────────────────
