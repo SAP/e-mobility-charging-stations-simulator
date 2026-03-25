@@ -2708,6 +2708,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         evseId,
       } as unknown as OCPP20StatusNotificationRequest)
 
+      chargingStation.unlockConnector(connectorId)
       return { status: UnlockStatusEnumType.Unlocked }
     } catch (error) {
       logger.error(
