@@ -12,6 +12,7 @@ import {
   OCPPVersion,
   ProcedureName,
   ResponseStatus,
+  ServerNotification,
 } from '@/types'
 
 import { toastMock } from '../setup'
@@ -210,6 +211,7 @@ describe('UIClient', () => {
 
       ws.onmessage?.({ data: 'not json' } as MessageEvent<string>)
 
+      expect(toastMock.error).toHaveBeenCalledWith('Invalid response JSON format')
       expect(consoleSpy).toHaveBeenCalledWith(
         'Invalid response JSON format',
         expect.any(SyntaxError)
@@ -224,6 +226,7 @@ describe('UIClient', () => {
 
       ws.simulateMessage({ notAnArray: true })
 
+      expect(toastMock.error).toHaveBeenCalledWith('Response not an array')
       expect(consoleSpy).toHaveBeenCalledWith(
         'Response not an array:',
         expect.objectContaining({ notAnArray: true })
@@ -241,12 +244,40 @@ describe('UIClient', () => {
       }).toThrow('Not a response to a request')
     })
 
-    it('should handle response with invalid UUID', () => {
+    it('should show error toast on response with invalid UUID', () => {
+      const consoleSpy = vi.spyOn(console, 'error')
       const client = UIClient.getInstance(createUIServerConfig())
       // @ts-expect-error — accessing private property for testing
       const ws = client.ws as MockWebSocket
       ws.simulateMessage(['not-a-valid-uuid', { status: ResponseStatus.SUCCESS }])
-      // Should not throw — just logs error via toast
+      expect(toastMock.error).toHaveBeenCalledWith('Unknown message format')
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Unknown message format:',
+        expect.arrayContaining(['not-a-valid-uuid'])
+      )
+    })
+  })
+
+  describe('server notifications', () => {
+    it('should invoke refresh listeners on server notification', () => {
+      const client = UIClient.getInstance(createUIServerConfig())
+      const listener = vi.fn()
+      client.onRefresh(listener)
+      // @ts-expect-error — accessing private property for testing
+      const ws = client.ws as MockWebSocket
+      ws.simulateMessage([ServerNotification.REFRESH])
+      expect(listener).toHaveBeenCalledOnce()
+    })
+
+    it('should not invoke refresh listeners after unsubscribe', () => {
+      const client = UIClient.getInstance(createUIServerConfig())
+      const listener = vi.fn()
+      const unsubscribe = client.onRefresh(listener)
+      unsubscribe()
+      // @ts-expect-error — accessing private property for testing
+      const ws = client.ws as MockWebSocket
+      ws.simulateMessage([ServerNotification.REFRESH])
+      expect(listener).not.toHaveBeenCalled()
     })
   })
 

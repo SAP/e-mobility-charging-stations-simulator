@@ -284,12 +284,18 @@ const unregisterWSEventListeners = () => {
   uiClient.unregisterWSEventListener('close', clearChargingStations)
 }
 
+let unsubscribeRefresh: (() => void) | undefined
+
 onMounted(() => {
   registerWSEventListeners()
+  unsubscribeRefresh = uiClient.onRefresh(() => {
+    getChargingStations()
+  })
 })
 
 onUnmounted(() => {
   unregisterWSEventListeners()
+  unsubscribeRefresh?.()
 })
 
 const uiServerConfigurations: {

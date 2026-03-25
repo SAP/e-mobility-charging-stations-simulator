@@ -20,6 +20,7 @@ export interface MockUIClient {
   listChargingStations: ReturnType<typeof vi.fn>
   listTemplates: ReturnType<typeof vi.fn>
   lockConnector: ReturnType<typeof vi.fn>
+  onRefresh: ReturnType<typeof vi.fn>
   openConnection: ReturnType<typeof vi.fn>
   registerWSEventListener: ReturnType<typeof vi.fn>
   setConfiguration: ReturnType<typeof vi.fn>
@@ -127,6 +128,8 @@ export function createMockUIClient (): MockUIClient {
     listChargingStations: vi.fn().mockResolvedValue({ ...successResponse, chargingStations: [] }),
     listTemplates: vi.fn().mockResolvedValue({ ...successResponse, templates: [] }),
     lockConnector: vi.fn().mockResolvedValue(successResponse),
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    onRefresh: vi.fn().mockReturnValue(() => {}),
     openConnection: vi.fn().mockResolvedValue(successResponse),
     registerWSEventListener: vi.fn(),
     setConfiguration: vi.fn(),

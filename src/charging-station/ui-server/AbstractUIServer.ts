@@ -37,6 +37,7 @@ export abstract class AbstractUIServer {
 
   private readonly chargingStations: Map<string, ChargingStationData>
   private readonly chargingStationTemplates: Set<string>
+  private clientNotificationDebounceTimer: ReturnType<typeof setTimeout> | undefined
 
   public constructor (protected readonly uiServerConfiguration: UIServerConfiguration) {
     this.chargingStations = new Map<string, ChargingStationData>()
@@ -117,6 +118,16 @@ export abstract class AbstractUIServer {
     return logPrefix(logMsg)
   }
 
+  public scheduleClientNotification (): void {
+    if (this.clientNotificationDebounceTimer != null) {
+      clearTimeout(this.clientNotificationDebounceTimer)
+    }
+    this.clientNotificationDebounceTimer = setTimeout(() => {
+      this.notifyClients()
+      this.clientNotificationDebounceTimer = undefined
+    }, 500)
+  }
+
   public async sendInternalRequest (request: ProtocolRequest): Promise<ProtocolResponse> {
     const protocolVersion = ProtocolVersion['0.0.1']
     this.registerProtocolVersionUIService(protocolVersion)
@@ -129,11 +140,13 @@ export abstract class AbstractUIServer {
 
   public abstract sendResponse (response: ProtocolResponse): void
 
-  public setChargingStationData (hashId: string, data: ChargingStationData): void {
+  public setChargingStationData (hashId: string, data: ChargingStationData): boolean {
     const cachedData = this.chargingStations.get(hashId)
     if (cachedData == null || data.timestamp >= cachedData.timestamp) {
       this.chargingStations.set(hashId, data)
+      return true
     }
+    return false
   }
 
   public setChargingStationTemplates (templates: string[] | undefined): void {
@@ -148,6 +161,7 @@ export abstract class AbstractUIServer {
   public abstract start (): void
 
   public stop (): void {
+    clearTimeout(this.clientNotificationDebounceTimer)
     this.stopHttpServer()
     for (const uiService of this.uiServices.values()) {
       uiService.stop()
@@ -169,6 +183,10 @@ export abstract class AbstractUIServer {
       ok = this.isValidProtocolBasicAuth(req, next)
     }
     next(ok ? undefined : new BaseError('Unauthorized'))
+  }
+
+  protected notifyClients (): void {
+    // No-op by default — subclasses with push capability override this
   }
 
   protected registerProtocolVersionUIService (version: ProtocolVersion): void {

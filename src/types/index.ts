@@ -430,6 +430,7 @@ export {
   AuthenticationType,
   ProcedureName,
   Protocol,
+  type ProtocolNotification,
   type ProtocolRequest,
   type ProtocolRequestHandler,
   type ProtocolResponse,
@@ -437,6 +438,7 @@ export {
   type RequestPayload,
   type ResponsePayload,
   ResponseStatus,
+  ServerNotification,
 } from './UIProtocol.js'
 export type { UUIDv4 } from './UUID.js'
 export {

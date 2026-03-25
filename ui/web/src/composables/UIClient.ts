@@ -13,6 +13,7 @@ import {
   type RequestPayload,
   type ResponsePayload,
   ResponseStatus,
+  ServerNotification,
   type UIServerConfigurationSection,
   type UUIDv4,
 } from '@/types'
@@ -28,13 +29,14 @@ interface ResponseHandler {
 
 export class UIClient {
   private static instance: null | UIClient = null
+  private readonly refreshListeners: Set<() => void>
   private responseHandlers: Map<UUIDv4, ResponseHandler>
-
   private ws?: WebSocket
 
   private constructor (private uiServerConfiguration: UIServerConfigurationSection) {
     this.openWS()
     this.responseHandlers = new Map<UUIDv4, ResponseHandler>()
+    this.refreshListeners = new Set()
   }
 
   public static getInstance (uiServerConfiguration?: UIServerConfigurationSection): UIClient {
@@ -95,6 +97,13 @@ export class UIClient {
       connectorId,
       hashIds: [hashId],
     })
+  }
+
+  public onRefresh (listener: () => void): () => void {
+    this.refreshListeners.add(listener)
+    return () => {
+      this.refreshListeners.delete(listener)
+    }
   }
 
   public async openConnection (hashId: string): Promise<ResponsePayload> {
@@ -282,51 +291,65 @@ export class UIClient {
   }
 
   private responseHandler (messageEvent: MessageEvent<string>): void {
-    let response: ProtocolResponse
+    let message: unknown
     try {
-      response = JSON.parse(messageEvent.data) as ProtocolResponse
+      message = JSON.parse(messageEvent.data)
     } catch (error) {
       useToast().error('Invalid response JSON format')
       console.error('Invalid response JSON format', error)
       return
     }
 
-    if (!Array.isArray(response)) {
+    if (!Array.isArray(message)) {
       useToast().error('Response not an array')
-      console.error('Response not an array:', response)
+      console.error('Response not an array:', message)
       return
     }
 
-    const [uuid, responsePayload] = response
+    const isServerNotification =
+      message.length === 1 &&
+      Object.values(ServerNotification).includes(message[0] as ServerNotification)
 
-    if (!validateUUID(uuid)) {
-      useToast().error('Response UUID field is invalid')
-      console.error('Response UUID field is invalid:', response)
-      return
-    }
-
-    if (this.responseHandlers.has(uuid)) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const { procedureName, reject, resolve } = this.responseHandlers.get(uuid)!
-      switch (responsePayload.status) {
-        case ResponseStatus.FAILURE:
-          reject(responsePayload)
-          break
-        case ResponseStatus.SUCCESS:
-          resolve(responsePayload)
-          break
-        default:
-          reject(
-            new Error(
-              // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-              `Response status for procedure '${procedureName}' not supported: '${responsePayload.status}'`
-            )
-          )
+    if (isServerNotification) {
+      if (message[0] === ServerNotification.REFRESH) {
+        for (const listener of this.refreshListeners) {
+          listener()
+        }
       }
-      this.responseHandlers.delete(uuid)
-    } else {
-      throw new Error(`Not a response to a request: ${JSON.stringify(response, undefined, 2)}`)
+      return
     }
+
+    const isProtocolResponse = message.length === 2 && validateUUID(message[0] as string)
+
+    if (isProtocolResponse) {
+      const [uuid, responsePayload] = message as ProtocolResponse
+      if (this.responseHandlers.has(uuid)) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const { procedureName, reject, resolve } = this.responseHandlers.get(uuid)!
+        switch (responsePayload.status) {
+          case ResponseStatus.FAILURE:
+            reject(responsePayload)
+            break
+          case ResponseStatus.SUCCESS:
+            resolve(responsePayload)
+            break
+          default:
+            reject(
+              new Error(
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+                `Response status for procedure '${procedureName}' not supported: '${responsePayload.status}'`
+              )
+            )
+        }
+        this.responseHandlers.delete(uuid)
+      } else {
+        throw new Error(`Not a response to a request: ${JSON.stringify(message, undefined, 2)}`)
+      }
+      return
+    }
+
+    useToast().error('Unknown message format')
+    console.error('Unknown message format:', message)
   }
 
   private async sendRequest (

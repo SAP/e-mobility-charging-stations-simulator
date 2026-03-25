@@ -64,6 +64,12 @@ export enum ResponseStatus {
   SUCCESS = 'success',
 }
 
+export enum ServerNotification {
+  REFRESH = 'refresh',
+}
+
+export type ProtocolNotification = [ServerNotification]
+
 export type ProtocolRequest = [UUIDv4, ProcedureName, RequestPayload]
 
 export type ProtocolRequestHandler = (

@@ -594,7 +594,9 @@ export class Bootstrap extends EventEmitter {
   }
 
   private readonly workerEventAdded = (data: ChargingStationData): void => {
-    this.uiServer.setChargingStationData(data.stationInfo.hashId, data)
+    if (this.uiServer.setChargingStationData(data.stationInfo.hashId, data)) {
+      this.uiServer.scheduleClientNotification()
+    }
     logger.info(
       `${this.logPrefix()} ${moduleName}.workerEventAdded: Charging station ${
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
@@ -604,7 +606,9 @@ export class Bootstrap extends EventEmitter {
   }
 
   private readonly workerEventDeleted = (data: ChargingStationData): void => {
-    this.uiServer.deleteChargingStationData(data.stationInfo.hashId)
+    if (this.uiServer.deleteChargingStationData(data.stationInfo.hashId)) {
+      this.uiServer.scheduleClientNotification()
+    }
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const templateStatistics = this.templateStatistics.get(data.stationInfo.templateName)!
     --templateStatistics.added
@@ -635,7 +639,9 @@ export class Bootstrap extends EventEmitter {
   }
 
   private readonly workerEventStarted = (data: ChargingStationData): void => {
-    this.uiServer.setChargingStationData(data.stationInfo.hashId, data)
+    if (this.uiServer.setChargingStationData(data.stationInfo.hashId, data)) {
+      this.uiServer.scheduleClientNotification()
+    }
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     ++this.templateStatistics.get(data.stationInfo.templateName)!.started
     logger.info(
@@ -647,7 +653,9 @@ export class Bootstrap extends EventEmitter {
   }
 
   private readonly workerEventStopped = (data: ChargingStationData): void => {
-    this.uiServer.setChargingStationData(data.stationInfo.hashId, data)
+    if (this.uiServer.setChargingStationData(data.stationInfo.hashId, data)) {
+      this.uiServer.scheduleClientNotification()
+    }
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     --this.templateStatistics.get(data.stationInfo.templateName)!.started
     logger.info(
@@ -659,6 +667,8 @@ export class Bootstrap extends EventEmitter {
   }
 
   private readonly workerEventUpdated = (data: ChargingStationData): void => {
-    this.uiServer.setChargingStationData(data.stationInfo.hashId, data)
+    if (this.uiServer.setChargingStationData(data.stationInfo.hashId, data)) {
+      this.uiServer.scheduleClientNotification()
+    }
   }
 }

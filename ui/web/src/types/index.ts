@@ -24,11 +24,13 @@ export {
   AuthenticationType,
   ProcedureName,
   Protocol,
+  type ProtocolNotification,
   type ProtocolResponse,
   ProtocolVersion,
   type RequestPayload,
   type ResponsePayload,
   ResponseStatus,
+  ServerNotification,
   type SimulatorState,
 } from './UIProtocol'
 export type { UUIDv4 } from './UUID'

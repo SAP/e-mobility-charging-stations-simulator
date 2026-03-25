@@ -6,8 +6,10 @@ import { type RawData, WebSocket, WebSocketServer } from 'ws'
 
 import {
   MapStringifyFormat,
+  type ProtocolNotification,
   type ProtocolRequest,
   type ProtocolResponse,
+  ServerNotification,
   type UIServerConfiguration,
   WebSocketCloseEventStatusCode,
 } from '../../types/index.js'
@@ -196,6 +198,11 @@ export class UIWebSocketServer extends AbstractUIServer {
       })
     })
     this.startHttpServer()
+  }
+
+  protected override notifyClients (): void {
+    const notification: ProtocolNotification = [ServerNotification.REFRESH]
+    this.broadcastToClients(JSON.stringify(notification))
   }
 
   private broadcastToClients (message: string): void {
