@@ -1,4 +1,8 @@
-import type { UUIDv4 } from '@/types'
+import type { Ref } from 'vue'
+
+import { getCurrentInstance } from 'vue'
+
+import type { ChargingStationData, UUIDv4 } from '@/types'
 
 import { UIClient } from './UIClient'
 
@@ -81,4 +85,15 @@ export const validateUUID = (uuid: unknown): uuid is UUIDv4 => {
 
 export const useUIClient = (): UIClient => {
   return UIClient.getInstance()
+}
+
+export const useChargingStations = (): Ref<ChargingStationData[]> | undefined => {
+  return getCurrentInstance()?.appContext.config.globalProperties.$chargingStations
+}
+
+export const refreshChargingStations = async (): Promise<void> => {
+  const ref = useChargingStations()
+  if (ref == null) return
+  const response = await useUIClient().listChargingStations()
+  ref.value = response.chargingStations as ChargingStationData[]
 }

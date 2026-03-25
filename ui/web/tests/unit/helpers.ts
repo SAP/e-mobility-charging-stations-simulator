@@ -45,6 +45,14 @@ export const ButtonStub = {
   template: '<button @click="$emit(\'click\')"><slot /></button>',
 }
 
+// ── StateButtonStub ───────────────────────────────────────────────────────────
+
+/** Functional StateButton stub that renders the active/inactive label and dispatches on/off. */
+export const StateButtonStub = {
+  props: ['active', 'on', 'off', 'onLabel', 'offLabel'],
+  template: '<button @click="active ? off?.() : on?.()">{{ active ? offLabel : onLabel }}</button>',
+}
+
 // ── MockWebSocket ─────────────────────────────────────────────────────────────
 
 export class MockWebSocket {

@@ -96,6 +96,7 @@
           })
           .then(() => {
             $toast.success('Charging stations successfully added')
+            return refreshChargingStations()
           })
           .catch((error: Error) => {
             $toast.error('Error at adding charging stations')
@@ -118,7 +119,12 @@ import { getCurrentInstance, ref, watch } from 'vue'
 import type { UUIDv4 } from '@/types'
 
 import Button from '@/components/buttons/Button.vue'
-import { convertToBoolean, randomUUID, resetToggleButtonState } from '@/composables'
+import {
+  convertToBoolean,
+  randomUUID,
+  refreshChargingStations,
+  resetToggleButtonState,
+} from '@/composables'
 
 const state = ref<{
   autoStart: boolean
@@ -140,7 +146,9 @@ const state = ref<{
   template: '',
 })
 
-const templates = getCurrentInstance()?.appContext.config.globalProperties.$templates
+const app = getCurrentInstance()
+
+const templates = app?.appContext.config.globalProperties.$templates
 if (templates != null) {
   watch(templates, () => {
     state.value.renderTemplates = randomUUID()

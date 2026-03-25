@@ -13,7 +13,7 @@ import { OCPP16ChargePointStatus } from '@/types'
 
 import { toastMock } from '../setup'
 import { createConnectorStatus, TEST_HASH_ID, TEST_STATION_ID } from './constants'
-import { ButtonStub, createMockUIClient, type MockUIClient } from './helpers'
+import { ButtonStub, createMockUIClient, type MockUIClient, StateButtonStub } from './helpers'
 
 vi.mock('@/composables', async importOriginal => {
   const actual = await importOriginal()
@@ -30,6 +30,7 @@ function mountCSConnector (overrideProps: Record<string, unknown> = {}) {
     global: {
       stubs: {
         Button: ButtonStub,
+        StateButton: StateButtonStub,
         ToggleButton: true,
       },
     },
@@ -128,7 +129,10 @@ describe('CSConnector', () => {
     })
 
     it('should show error toast when no transaction to stop', async () => {
-      const connector = createConnectorStatus({ transactionId: undefined })
+      const connector = createConnectorStatus({
+        transactionId: undefined,
+        transactionStarted: true,
+      })
       const wrapper = mountCSConnector({ connector })
       const buttons = wrapper.findAll('button')
       const stopBtn = buttons.find(b => b.text() === 'Stop Transaction')
@@ -158,7 +162,7 @@ describe('CSConnector', () => {
     })
 
     it('should call stopAutomaticTransactionGenerator', async () => {
-      const wrapper = mountCSConnector()
+      const wrapper = mountCSConnector({ atgStatus: { start: true } })
       const buttons = wrapper.findAll('button')
       const stopAtgBtn = buttons.find(b => b.text() === 'Stop ATG')
       await stopAtgBtn?.trigger('click')
@@ -191,7 +195,7 @@ describe('CSConnector', () => {
 
     it('should show error toast when ATG stop fails', async () => {
       mockClient.stopAutomaticTransactionGenerator.mockRejectedValueOnce(new Error('fail'))
-      const wrapper = mountCSConnector()
+      const wrapper = mountCSConnector({ atgStatus: { start: true } })
       const buttons = wrapper.findAll('button')
       const btn = buttons.find(b => b.text().includes('Stop ATG'))
       await btn?.trigger('click')

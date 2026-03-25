@@ -63,15 +63,13 @@
           </option>
         </select>
       </Container>
-      <ToggleButton
-        :id="'simulator'"
-        :key="state.renderSimulator"
+      <StateButton
+        :active="simulatorStarted === true"
         :off="() => stopSimulator()"
+        :off-label="simulatorLabel('Stop')"
         :on="() => startSimulator()"
-        :status="simulatorStarted"
-      >
-        {{ simulatorButtonMessage }}
-      </ToggleButton>
+        :on-label="simulatorLabel('Start')"
+      />
       <ToggleButton
         :id="'add-charging-stations'"
         :key="state.renderAddChargingStations"
@@ -106,6 +104,7 @@
       :charging-stations="$chargingStations!.value"
       @need-refresh="
         () => {
+          getChargingStations()
           state.renderAddChargingStations = randomUUID()
           state.renderChargingStations = randomUUID()
         }
@@ -127,6 +126,7 @@ import type {
 } from '@/types'
 
 import ReloadButton from '@/components/buttons/ReloadButton.vue'
+import StateButton from '@/components/buttons/StateButton.vue'
 import ToggleButton from '@/components/buttons/ToggleButton.vue'
 import CSTable from '@/components/charging-stations/CSTable.vue'
 import Container from '@/components/Container.vue'
@@ -143,12 +143,10 @@ const simulatorState = ref<SimulatorState | undefined>(undefined)
 
 const simulatorStarted = computed((): boolean | undefined => simulatorState.value?.started)
 
-const simulatorButtonMessage = computed(
-  (): string =>
-    `${simulatorState.value?.started === true ? 'Stop' : 'Start'} Simulator${
-      simulatorState.value?.version != null ? ` (${simulatorState.value.version})` : ''
-    }`
-)
+const simulatorLabel = (action: string): string =>
+  `${action} Simulator${
+    simulatorState.value?.version != null ? ` (${simulatorState.value.version})` : ''
+  }`
 
 const state = ref<{
   gettingChargingStations: boolean
@@ -156,7 +154,6 @@ const state = ref<{
   gettingTemplates: boolean
   renderAddChargingStations: UUIDv4
   renderChargingStations: UUIDv4
-  renderSimulator: UUIDv4
   uiServerIndex: number
 }>({
   gettingChargingStations: false,
@@ -164,7 +161,6 @@ const state = ref<{
   gettingTemplates: false,
   renderAddChargingStations: randomUUID(),
   renderChargingStations: randomUUID(),
-  renderSimulator: randomUUID(),
   uiServerIndex: getFromLocalStorage<number>('uiServerConfigurationIndex', 0),
 })
 
@@ -189,10 +185,6 @@ if (chargingStationsRef != null) {
     state.value.renderChargingStations = randomUUID()
   })
 }
-
-watch(simulatorState, () => {
-  state.value.renderSimulator = randomUUID()
-})
 
 const clearTemplates = (): void => {
   if (app != null) {

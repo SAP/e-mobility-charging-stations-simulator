@@ -90,6 +90,12 @@ function mountView (
           props: ['loading'],
           template: '<button @click="$emit(\'click\')" />',
         },
+        StateButton: {
+          name: 'StateButton',
+          props: ['active', 'on', 'off', 'onLabel', 'offLabel'],
+          template:
+            '<button @click="active ? off?.() : on?.()">{{ active ? offLabel : onLabel }}</button>',
+        },
         ToggleButton: {
           name: 'ToggleButton',
           props: ['id', 'on', 'off', 'status', 'shared'],
@@ -283,9 +289,8 @@ describe('ChargingStationsView', () => {
         status: ResponseStatus.SUCCESS,
       })
       const wrapper = mountView()
-      const toggleButtons = wrapper.findAllComponents({ name: 'ToggleButton' })
-      const simulatorButton = toggleButtons.find(tb => tb.props('id') === 'simulator')
-      const onProp = simulatorButton?.props('on') as (() => void) | undefined
+      const stateButton = wrapper.findComponent({ name: 'StateButton' })
+      const onProp = stateButton.props('on') as (() => void) | undefined
       onProp?.()
       await flushPromises()
       expect(mockClient.startSimulator).toHaveBeenCalled()
@@ -295,9 +300,8 @@ describe('ChargingStationsView', () => {
     it('should show error toast when simulator start fails', async () => {
       mockClient.startSimulator = vi.fn().mockRejectedValue(new Error('start failed'))
       const wrapper = mountView()
-      const toggleButtons = wrapper.findAllComponents({ name: 'ToggleButton' })
-      const simulatorButton = toggleButtons.find(tb => tb.props('id') === 'simulator')
-      const onProp = simulatorButton?.props('on') as (() => void) | undefined
+      const stateButton = wrapper.findComponent({ name: 'StateButton' })
+      const onProp = stateButton.props('on') as (() => void) | undefined
       onProp?.()
       await flushPromises()
       expect(toastMock.error).toHaveBeenCalledWith('Error at starting simulator')
@@ -308,9 +312,8 @@ describe('ChargingStationsView', () => {
         status: ResponseStatus.SUCCESS,
       })
       const wrapper = mountView()
-      const toggleButtons = wrapper.findAllComponents({ name: 'ToggleButton' })
-      const simulatorButton = toggleButtons.find(tb => tb.props('id') === 'simulator')
-      const offProp = simulatorButton?.props('off') as (() => void) | undefined
+      const stateButton = wrapper.findComponent({ name: 'StateButton' })
+      const offProp = stateButton.props('off') as (() => void) | undefined
       offProp?.()
       await flushPromises()
       expect(mockClient.stopSimulator).toHaveBeenCalled()
@@ -320,9 +323,8 @@ describe('ChargingStationsView', () => {
     it('should show error toast when simulator stop fails', async () => {
       mockClient.stopSimulator = vi.fn().mockRejectedValue(new Error('stop failed'))
       const wrapper = mountView()
-      const toggleButtons = wrapper.findAllComponents({ name: 'ToggleButton' })
-      const simulatorButton = toggleButtons.find(tb => tb.props('id') === 'simulator')
-      const offProp = simulatorButton?.props('off') as (() => void) | undefined
+      const stateButton = wrapper.findComponent({ name: 'StateButton' })
+      const offProp = stateButton.props('off') as (() => void) | undefined
       offProp?.()
       await flushPromises()
       expect(toastMock.error).toHaveBeenCalledWith('Error at stopping simulator')

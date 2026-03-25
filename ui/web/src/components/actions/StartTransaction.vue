@@ -42,7 +42,13 @@ import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toast-notification'
 
 import Button from '@/components/buttons/Button.vue'
-import { convertToInt, resetToggleButtonState, UIClient, useUIClient } from '@/composables'
+import {
+  convertToInt,
+  refreshChargingStations,
+  resetToggleButtonState,
+  UIClient,
+  useUIClient,
+} from '@/composables'
 import { type OCPPVersion } from '@/types'
 
 const props = defineProps<{
@@ -99,6 +105,7 @@ const handleStartTransaction = async (): Promise<void> => {
       ocppVersion: ocppVersion.value,
     })
     $toast.success('Transaction successfully started')
+    await refreshChargingStations()
   } catch (error) {
     $toast.error('Error at starting transaction')
     console.error('Error at starting transaction:', error)

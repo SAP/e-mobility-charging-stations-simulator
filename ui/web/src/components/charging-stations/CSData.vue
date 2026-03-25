@@ -31,12 +31,20 @@
       {{ chargingStation.stationInfo.firmwareVersion ?? 'Ø' }}
     </td>
     <td class="cs-table__column">
-      <Button @click="startChargingStation()">
-        Start Charging Station
-      </Button>
-      <Button @click="stopChargingStation()">
-        Stop Charging Station
-      </Button>
+      <StateButton
+        :active="chargingStation.started === true"
+        :off="() => stopChargingStation()"
+        off-label="Stop Charging Station"
+        :on="() => startChargingStation()"
+        on-label="Start Charging Station"
+      />
+      <StateButton
+        :active="isWebSocketOpen"
+        :off="() => closeConnection()"
+        off-label="Close Connection"
+        :on="() => openConnection()"
+        on-label="Open Connection"
+      />
       <ToggleButton
         :id="`${chargingStation.stationInfo.hashId}-set-supervision-url`"
         :off="
@@ -60,12 +68,6 @@
       >
         Set Supervision Url
       </ToggleButton>
-      <Button @click="openConnection()">
-        Open Connection
-      </Button>
-      <Button @click="closeConnection()">
-        Close Connection
-      </Button>
       <Button @click="deleteChargingStation()">
         Delete Charging Station
       </Button>
@@ -132,11 +134,13 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useToast } from 'vue-toast-notification'
 
 import type { ChargingStationData, ConnectorStatus, Status } from '@/types'
 
 import Button from '@/components/buttons/Button.vue'
+import StateButton from '@/components/buttons/StateButton.vue'
 import ToggleButton from '@/components/buttons/ToggleButton.vue'
 import CSConnector from '@/components/charging-stations/CSConnector.vue'
 import { deleteFromLocalStorage, getLocalStorage, useUIClient } from '@/composables'
@@ -152,6 +156,8 @@ const props = defineProps<{
 }>()
 
 const $emit = defineEmits(['need-refresh'])
+
+const isWebSocketOpen = computed(() => props.chargingStation.wsState === WebSocket.OPEN)
 
 const getConnectorEntries = (): ConnectorTableEntry[] => {
   if (Array.isArray(props.chargingStation.evses) && props.chargingStation.evses.length > 0) {
@@ -206,49 +212,45 @@ const uiClient = useUIClient()
 
 const $toast = useToast()
 
-const startChargingStation = (): void => {
-  uiClient
-    .startChargingStation(props.chargingStation.stationInfo.hashId)
+const executeAction = (action: Promise<unknown>, successMsg: string, errorMsg: string): void => {
+  action
     .then(() => {
-      return $toast.success('Charging station successfully started')
+      $emit('need-refresh')
+      return $toast.success(successMsg)
     })
     .catch((error: Error) => {
-      $toast.error('Error at starting charging station')
-      console.error('Error at starting charging station:', error)
+      $toast.error(errorMsg)
+      console.error(`${errorMsg}:`, error)
     })
+}
+
+const startChargingStation = (): void => {
+  executeAction(
+    uiClient.startChargingStation(props.chargingStation.stationInfo.hashId),
+    'Charging station successfully started',
+    'Error at starting charging station'
+  )
 }
 const stopChargingStation = (): void => {
-  uiClient
-    .stopChargingStation(props.chargingStation.stationInfo.hashId)
-    .then(() => {
-      return $toast.success('Charging station successfully stopped')
-    })
-    .catch((error: Error) => {
-      $toast.error('Error at stopping charging station')
-      console.error('Error at stopping charging station:', error)
-    })
+  executeAction(
+    uiClient.stopChargingStation(props.chargingStation.stationInfo.hashId),
+    'Charging station successfully stopped',
+    'Error at stopping charging station'
+  )
 }
 const openConnection = (): void => {
-  uiClient
-    .openConnection(props.chargingStation.stationInfo.hashId)
-    .then(() => {
-      return $toast.success('Connection successfully opened')
-    })
-    .catch((error: Error) => {
-      $toast.error('Error at opening connection')
-      console.error('Error at opening connection:', error)
-    })
+  executeAction(
+    uiClient.openConnection(props.chargingStation.stationInfo.hashId),
+    'Connection successfully opened',
+    'Error at opening connection'
+  )
 }
 const closeConnection = (): void => {
-  uiClient
-    .closeConnection(props.chargingStation.stationInfo.hashId)
-    .then(() => {
-      return $toast.success('Connection successfully closed')
-    })
-    .catch((error: Error) => {
-      $toast.error('Error at closing connection')
-      console.error('Error at closing connection:', error)
-    })
+  executeAction(
+    uiClient.closeConnection(props.chargingStation.stationInfo.hashId),
+    'Connection successfully closed',
+    'Error at closing connection'
+  )
 }
 const deleteChargingStation = (): void => {
   uiClient
@@ -259,6 +261,7 @@ const deleteChargingStation = (): void => {
           deleteFromLocalStorage(key)
         }
       }
+      $emit('need-refresh')
       return $toast.success('Charging station successfully deleted')
     })
     .catch((error: Error) => {

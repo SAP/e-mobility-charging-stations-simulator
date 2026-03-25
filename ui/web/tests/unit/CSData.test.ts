@@ -20,7 +20,7 @@ import {
   createEvseEntry,
   createStationInfo,
 } from './constants'
-import { ButtonStub, createMockUIClient, type MockUIClient } from './helpers'
+import { ButtonStub, createMockUIClient, type MockUIClient, StateButtonStub } from './helpers'
 
 vi.mock('@/composables', async importOriginal => {
   const actual = await importOriginal()
@@ -38,6 +38,7 @@ function mountCSData (chargingStation: ChargingStationData = createChargingStati
       stubs: {
         Button: ButtonStub,
         CSConnector: true,
+        StateButton: StateButtonStub,
         ToggleButton: true,
       },
     },
@@ -157,7 +158,7 @@ describe('CSData', () => {
 
   describe('station actions', () => {
     it('should call startChargingStation on button click', async () => {
-      const wrapper = mountCSData()
+      const wrapper = mountCSData(createChargingStationData({ started: false }))
       const buttons = wrapper.findAll('button')
       const startBtn = buttons.find(b => b.text() === 'Start Charging Station')
       await startBtn?.trigger('click')
@@ -166,7 +167,7 @@ describe('CSData', () => {
     })
 
     it('should call stopChargingStation on button click', async () => {
-      const wrapper = mountCSData()
+      const wrapper = mountCSData(createChargingStationData({ started: true }))
       const buttons = wrapper.findAll('button')
       const stopBtn = buttons.find(b => b.text() === 'Stop Charging Station')
       await stopBtn?.trigger('click')
@@ -175,7 +176,7 @@ describe('CSData', () => {
     })
 
     it('should call openConnection on button click', async () => {
-      const wrapper = mountCSData()
+      const wrapper = mountCSData(createChargingStationData({ wsState: WebSocket.CLOSED }))
       const buttons = wrapper.findAll('button')
       const openBtn = buttons.find(b => b.text() === 'Open Connection')
       await openBtn?.trigger('click')
@@ -184,7 +185,7 @@ describe('CSData', () => {
     })
 
     it('should call closeConnection on button click', async () => {
-      const wrapper = mountCSData()
+      const wrapper = mountCSData(createChargingStationData({ wsState: WebSocket.OPEN }))
       const buttons = wrapper.findAll('button')
       const closeBtn = buttons.find(b => b.text() === 'Close Connection')
       await closeBtn?.trigger('click')
@@ -202,7 +203,7 @@ describe('CSData', () => {
     })
 
     it('should show success toast after starting charging station', async () => {
-      const wrapper = mountCSData()
+      const wrapper = mountCSData(createChargingStationData({ started: false }))
       const buttons = wrapper.findAll('button')
       const startBtn = buttons.find(b => b.text() === 'Start Charging Station')
       await startBtn?.trigger('click')
@@ -212,7 +213,7 @@ describe('CSData', () => {
 
     it('should show error toast on start failure', async () => {
       mockClient.startChargingStation.mockRejectedValueOnce(new Error('fail'))
-      const wrapper = mountCSData()
+      const wrapper = mountCSData(createChargingStationData({ started: false }))
       const buttons = wrapper.findAll('button')
       const startBtn = buttons.find(b => b.text() === 'Start Charging Station')
       await startBtn?.trigger('click')

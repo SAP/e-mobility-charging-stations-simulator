@@ -30,7 +30,9 @@ function mountToggleButton (
     global: {
       stubs: {
         Button: {
-          template: '<button class="button" type="button"><slot /></button>',
+          props: ['active'],
+          template:
+            '<button :class="[\'button\', { \'button--active\': active }]" type="button"><slot /></button>',
         },
       },
     },
@@ -49,13 +51,13 @@ describe('ToggleButton', () => {
     it('should not apply on class when status is false', () => {
       const wrapper = mountToggleButton({ id: 'off-test', status: false })
       const button = wrapper.find('button')
-      expect(button.classes()).not.toContain('on')
+      expect(button.classes()).not.toContain('button--active')
     })
 
     it('should apply on class when status is true', () => {
       const wrapper = mountToggleButton({ id: 'on-test', status: true })
       const button = wrapper.find('button')
-      expect(button.classes()).toContain('on')
+      expect(button.classes()).toContain('button--active')
     })
   })
 
@@ -64,18 +66,18 @@ describe('ToggleButton', () => {
       const wrapper = mountToggleButton({ id: 'toggle-inactive-to-active', status: false })
       const button = wrapper.find('button')
 
-      expect(button.classes()).not.toContain('on')
+      expect(button.classes()).not.toContain('button--active')
       await button.trigger('click')
-      expect(button.classes()).toContain('on')
+      expect(button.classes()).toContain('button--active')
     })
 
     it('should toggle from active to inactive on click', async () => {
       const wrapper = mountToggleButton({ id: 'toggle-active-to-inactive', status: true })
       const button = wrapper.find('button')
 
-      expect(button.classes()).toContain('on')
+      expect(button.classes()).toContain('button--active')
       await button.trigger('click')
-      expect(button.classes()).not.toContain('on')
+      expect(button.classes()).not.toContain('button--active')
     })
 
     it('should call on callback when toggled to active', async () => {
@@ -137,7 +139,7 @@ describe('ToggleButton', () => {
       const wrapper = mountToggleButton({ id: 'restore-test', status: false })
       const button = wrapper.find('button')
 
-      expect(button.classes()).toContain('on')
+      expect(button.classes()).toContain('button--active')
     })
 
     it('should use correct localStorage key for non-shared toggle', async () => {
@@ -217,7 +219,7 @@ describe('ToggleButton', () => {
       const wrapper = mountToggleButton({ id: 'default-status' })
       const button = wrapper.find('button')
 
-      expect(button.classes()).not.toContain('on')
+      expect(button.classes()).not.toContain('button--active')
     })
 
     it('should handle multiple consecutive clicks', async () => {
@@ -225,13 +227,13 @@ describe('ToggleButton', () => {
       const button = wrapper.find('button')
 
       await button.trigger('click')
-      expect(button.classes()).toContain('on')
+      expect(button.classes()).toContain('button--active')
 
       await button.trigger('click')
-      expect(button.classes()).not.toContain('on')
+      expect(button.classes()).not.toContain('button--active')
 
       await button.trigger('click')
-      expect(button.classes()).toContain('on')
+      expect(button.classes()).toContain('button--active')
     })
   })
 })

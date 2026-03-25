@@ -16,7 +16,15 @@
       {{ atgStatus?.start === true ? 'Yes' : 'No' }}
     </td>
     <td class="connectors-table__column">
+      <StateButton
+        :active="connector.locked === true"
+        :off="() => unlockConnector()"
+        off-label="Unlock"
+        :on="() => lockConnector()"
+        on-label="Lock"
+      />
       <ToggleButton
+        v-if="connector.transactionStarted !== true"
         :id="`${hashId}-${evseId ?? 0}-${connectorId}-start-transaction`"
         :off="
           () => {
@@ -40,27 +48,19 @@
       >
         Start Transaction
       </ToggleButton>
-      <Button @click="stopTransaction()">
-        Stop Transaction
-      </Button>
-      <Button @click="startAutomaticTransactionGenerator()">
-        Start ATG
-      </Button>
-      <Button @click="stopAutomaticTransactionGenerator()">
-        Stop ATG
-      </Button>
-      <Button
-        v-if="connector.locked !== true"
-        @click="lockConnector()"
-      >
-        Lock
-      </Button>
       <Button
         v-else
-        @click="unlockConnector()"
+        @click="stopTransaction()"
       >
-        Unlock
+        Stop Transaction
       </Button>
+      <StateButton
+        :active="atgStatus?.start === true"
+        :off="() => stopAutomaticTransactionGenerator()"
+        off-label="Stop ATG"
+        :on="() => startAutomaticTransactionGenerator()"
+        on-label="Start ATG"
+      />
     </td>
   </tr>
 </template>
@@ -71,6 +71,7 @@ import { useToast } from 'vue-toast-notification'
 import type { ConnectorStatus, OCPPVersion, Status } from '@/types'
 
 import Button from '@/components/buttons/Button.vue'
+import StateButton from '@/components/buttons/StateButton.vue'
 import ToggleButton from '@/components/buttons/ToggleButton.vue'
 import { useUIClient } from '@/composables'
 
@@ -90,66 +91,58 @@ const uiClient = useUIClient()
 
 const $toast = useToast()
 
+const executeAction = (action: Promise<unknown>, successMsg: string, errorMsg: string): void => {
+  action
+    .then(() => {
+      $emit('need-refresh')
+      return $toast.success(successMsg)
+    })
+    .catch((error: Error) => {
+      $toast.error(errorMsg)
+      console.error(`${errorMsg}:`, error)
+    })
+}
+
 const stopTransaction = (): void => {
   if (props.connector.transactionId == null) {
     $toast.error('No transaction to stop')
     return
   }
-  uiClient
-    .stopTransaction(props.hashId, {
+  executeAction(
+    uiClient.stopTransaction(props.hashId, {
       ocppVersion: props.ocppVersion,
       transactionId: props.connector.transactionId,
-    })
-    .then(() => {
-      return $toast.success('Transaction successfully stopped')
-    })
-    .catch((error: Error) => {
-      $toast.error('Error at stopping transaction')
-      console.error('Error at stopping transaction:', error)
-    })
+    }),
+    'Transaction successfully stopped',
+    'Error at stopping transaction'
+  )
 }
 const lockConnector = (): void => {
-  uiClient
-    .lockConnector(props.hashId, props.connectorId)
-    .then(() => {
-      return $toast.success('Connector successfully locked')
-    })
-    .catch((error: Error) => {
-      $toast.error('Error at locking connector')
-      console.error('Error at locking connector:', error)
-    })
+  executeAction(
+    uiClient.lockConnector(props.hashId, props.connectorId),
+    'Connector successfully locked',
+    'Error at locking connector'
+  )
 }
 const unlockConnector = (): void => {
-  uiClient
-    .unlockConnector(props.hashId, props.connectorId)
-    .then(() => {
-      return $toast.success('Connector successfully unlocked')
-    })
-    .catch((error: Error) => {
-      $toast.error('Error at unlocking connector')
-      console.error('Error at unlocking connector:', error)
-    })
+  executeAction(
+    uiClient.unlockConnector(props.hashId, props.connectorId),
+    'Connector successfully unlocked',
+    'Error at unlocking connector'
+  )
 }
 const startAutomaticTransactionGenerator = (): void => {
-  uiClient
-    .startAutomaticTransactionGenerator(props.hashId, props.connectorId)
-    .then(() => {
-      return $toast.success('Automatic transaction generator successfully started')
-    })
-    .catch((error: Error) => {
-      $toast.error('Error at starting automatic transaction generator')
-      console.error('Error at starting automatic transaction generator:', error)
-    })
+  executeAction(
+    uiClient.startAutomaticTransactionGenerator(props.hashId, props.connectorId),
+    'Automatic transaction generator successfully started',
+    'Error at starting automatic transaction generator'
+  )
 }
 const stopAutomaticTransactionGenerator = (): void => {
-  uiClient
-    .stopAutomaticTransactionGenerator(props.hashId, props.connectorId)
-    .then(() => {
-      return $toast.success('Automatic transaction generator successfully stopped')
-    })
-    .catch((error: Error) => {
-      $toast.error('Error at stopping automatic transaction generator')
-      console.error('Error at stopping automatic transaction generator:', error)
-    })
+  executeAction(
+    uiClient.stopAutomaticTransactionGenerator(props.hashId, props.connectorId),
+    'Automatic transaction generator successfully stopped',
+    'Error at stopping automatic transaction generator'
+  )
 }
 </script>

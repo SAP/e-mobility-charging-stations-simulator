@@ -21,6 +21,7 @@
           ?.setSupervisionUrl(hashId, state.supervisionUrl)
           .then(() => {
             $toast.success('Supervision url successfully set')
+            return refreshChargingStations()
           })
           .catch((error: Error) => {
             $toast.error('Error at setting supervision url')
@@ -41,7 +42,7 @@
 import { ref } from 'vue'
 
 import Button from '@/components/buttons/Button.vue'
-import { resetToggleButtonState } from '@/composables'
+import { refreshChargingStations, resetToggleButtonState } from '@/composables'
 
 const props = defineProps<{
   chargingStationId: string

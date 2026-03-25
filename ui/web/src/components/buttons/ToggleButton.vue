@@ -1,6 +1,6 @@
 <template>
   <Button
-    :class="{ on: state.status }"
+    :active="state.status"
     @click="click()"
   >
     <slot />
@@ -48,12 +48,3 @@ const click = (): void => {
   $emit('clicked', getFromLocalStorage<boolean>(id, props.status ?? false))
 }
 </script>
-
-<style scoped>
-button.on {
-  color: var(--color-text);
-  background-color: var(--color-bg-active);
-  border: 1px solid var(--color-accent);
-  box-shadow: inset 0 2px 4px var(--color-shadow-inset);
-}
-</style>
