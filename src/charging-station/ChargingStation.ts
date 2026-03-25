@@ -857,7 +857,10 @@ export class ChargingStation extends EventEmitter {
     }
     if (connectorStatus.locked !== true) {
       connectorStatus.locked = true
-      this.emitChargingStationEvent(ChargingStationEvents.updated)
+      this.emitChargingStationEvent(ChargingStationEvents.connectorStatusChanged, {
+        connectorId,
+        ...connectorStatus,
+      })
     }
   }
 
@@ -1244,7 +1247,10 @@ export class ChargingStation extends EventEmitter {
     }
     if (connectorStatus.locked !== false) {
       connectorStatus.locked = false
-      this.emitChargingStationEvent(ChargingStationEvents.updated)
+      this.emitChargingStationEvent(ChargingStationEvents.connectorStatusChanged, {
+        connectorId,
+        ...connectorStatus,
+      })
     }
   }
 
