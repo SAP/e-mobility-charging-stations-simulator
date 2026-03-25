@@ -271,6 +271,7 @@ const deleteChargingStation = (): void => {
 <style scoped>
 .connectors-table {
   width: 100%;
+  table-layout: fixed;
   background-color: var(--color-bg-surface);
   border-collapse: collapse;
   empty-cells: show;
