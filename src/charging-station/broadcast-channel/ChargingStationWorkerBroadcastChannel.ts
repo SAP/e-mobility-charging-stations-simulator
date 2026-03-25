@@ -152,6 +152,17 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       ],
       [BroadcastChannelProcedureName.HEARTBEAT, this.passthrough(RequestCommand.HEARTBEAT)],
       [
+        BroadcastChannelProcedureName.LOCK_CONNECTOR,
+        (requestPayload?: BroadcastChannelRequestPayload) => {
+          if (requestPayload?.connectorId == null) {
+            throw new BaseError(
+              `${this.chargingStation.logPrefix()} ${moduleName}.requestHandler: 'connectorId' field is required`
+            )
+          }
+          this.chargingStation.lockConnector(requestPayload.connectorId)
+        },
+      ],
+      [
         BroadcastChannelProcedureName.LOG_STATUS_NOTIFICATION,
         this.passthrough(RequestCommand.LOG_STATUS_NOTIFICATION),
       ],
@@ -223,6 +234,17 @@ export class ChargingStationWorkerBroadcastChannel extends WorkerBroadcastChanne
       [
         BroadcastChannelProcedureName.TRANSACTION_EVENT,
         this.passthrough(RequestCommand.TRANSACTION_EVENT),
+      ],
+      [
+        BroadcastChannelProcedureName.UNLOCK_CONNECTOR,
+        (requestPayload?: BroadcastChannelRequestPayload) => {
+          if (requestPayload?.connectorId == null) {
+            throw new BaseError(
+              `${this.chargingStation.logPrefix()} ${moduleName}.requestHandler: 'connectorId' field is required`
+            )
+          }
+          this.chargingStation.unlockConnector(requestPayload.connectorId)
+        },
       ],
     ])
     this.onmessage = this.requestHandler.bind(this) as (message: unknown) => void

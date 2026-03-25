@@ -67,6 +67,7 @@ export abstract class AbstractUIService {
     ],
     [ProcedureName.GET_CERTIFICATE_STATUS, BroadcastChannelProcedureName.GET_CERTIFICATE_STATUS],
     [ProcedureName.HEARTBEAT, BroadcastChannelProcedureName.HEARTBEAT],
+    [ProcedureName.LOCK_CONNECTOR, BroadcastChannelProcedureName.LOCK_CONNECTOR],
     [ProcedureName.LOG_STATUS_NOTIFICATION, BroadcastChannelProcedureName.LOG_STATUS_NOTIFICATION],
     [ProcedureName.METER_VALUES, BroadcastChannelProcedureName.METER_VALUES],
     [
@@ -95,6 +96,7 @@ export abstract class AbstractUIService {
     [ProcedureName.STOP_CHARGING_STATION, BroadcastChannelProcedureName.STOP_CHARGING_STATION],
     [ProcedureName.STOP_TRANSACTION, BroadcastChannelProcedureName.STOP_TRANSACTION],
     [ProcedureName.TRANSACTION_EVENT, BroadcastChannelProcedureName.TRANSACTION_EVENT],
+    [ProcedureName.UNLOCK_CONNECTOR, BroadcastChannelProcedureName.UNLOCK_CONNECTOR],
   ])
 
   protected readonly requestHandlers: Map<ProcedureName, ProtocolRequestHandler>

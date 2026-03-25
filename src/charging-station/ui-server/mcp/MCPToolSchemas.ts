@@ -22,6 +22,11 @@ const broadcastInputSchema = z.object({
   hashIds,
 })
 
+const connectorInputSchema = z.object({
+  connectorId: z.number().int().positive().describe('Target connector ID'),
+  hashIds,
+})
+
 const emptyInputSchema = z.object({})
 
 const chargingStationOptionsSchema = z.object({
@@ -247,6 +252,13 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
     },
   ],
   [
+    ProcedureName.LOCK_CONNECTOR,
+    {
+      description: 'Engage the cable retention lock on a connector',
+      inputSchema: connectorInputSchema,
+    },
+  ],
+  [
     ProcedureName.LOG_STATUS_NOTIFICATION,
     {
       description: ocppDescription(
@@ -409,6 +421,13 @@ export const mcpToolSchemas = new Map<ProcedureName, MCPToolSchema>([
     {
       description: ocppDescription('Send a TransactionEvent', ProcedureName.TRANSACTION_EVENT),
       inputSchema: ocppInputSchema(ProcedureName.TRANSACTION_EVENT),
+    },
+  ],
+  [
+    ProcedureName.UNLOCK_CONNECTOR,
+    {
+      description: 'Release the cable retention lock on a connector',
+      inputSchema: connectorInputSchema,
     },
   ],
 ])
