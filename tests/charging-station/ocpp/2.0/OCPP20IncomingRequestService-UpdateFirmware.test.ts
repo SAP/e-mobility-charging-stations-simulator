@@ -658,7 +658,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
             sentRequests[2].payload.status,
             OCPP20FirmwareStatusEnumType.InvalidSignature
           )
-          assert.strictEqual(sentRequests.length, 3)
+          assert.strictEqual(sentRequests.length, 4)
 
           const securityEventNotifications = sentRequests.filter(
             req =>

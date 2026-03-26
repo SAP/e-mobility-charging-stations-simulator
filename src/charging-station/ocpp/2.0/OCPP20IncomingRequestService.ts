@@ -3455,6 +3455,42 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     if (signature != null) {
       await sleep(OCPP20Constants.FIRMWARE_VERIFY_DELAY_MS)
       if (checkAborted()) return
+
+      // L01.FR.04: Simulate signature verification
+      const variableManager = OCPP20VariableManager.getInstance()
+      const verificationResults = variableManager.getVariables(chargingStation, [
+        {
+          attributeType: AttributeEnumType.Actual,
+          component: { name: OCPP20ComponentName.FirmwareCtrlr as string },
+          variable: { name: 'SimulateSignatureVerificationFailure' },
+        },
+      ])
+      const simulateFailure = verificationResults[0]?.attributeValue?.toLowerCase() === 'true'
+
+      if (simulateFailure) {
+        // L01.FR.03: InvalidSignature + SecurityEventNotification
+        await this.sendFirmwareStatusNotification(
+          chargingStation,
+          OCPP20FirmwareStatusEnumType.InvalidSignature,
+          requestId
+        )
+        this.sendSecurityEventNotification(
+          chargingStation,
+          'InvalidFirmwareSignature',
+          `Firmware signature verification failed for requestId ${requestId.toString()}`
+        ).catch((error: unknown) => {
+          logger.error(
+            `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: SecurityEventNotification error:`,
+            error
+          )
+        })
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Firmware signature verification failed for requestId ${requestId.toString()} (simulated)`
+        )
+        this.clearActiveFirmwareUpdate(chargingStation, requestId)
+        return
+      }
+
       await this.sendFirmwareStatusNotification(
         chargingStation,
         OCPP20FirmwareStatusEnumType.SignatureVerified,
