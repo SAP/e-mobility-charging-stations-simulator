@@ -6,16 +6,39 @@ import {
   OCPPVersion,
   StandardParametersKey,
 } from '../types/index.js'
-import { logger } from '../utils/index.js'
+import { logger, once } from '../utils/index.js'
 
-const OCPP2_PARAMETER_KEY_MAP: Partial<Record<ConfigurationKeyType, ConfigurationKeyType>> = {
-  [StandardParametersKey.AuthorizeRemoteTxRequests]: StandardParametersKey.AuthorizeRemoteStart,
-  [StandardParametersKey.ConnectionTimeOut]: StandardParametersKey.EVConnectionTimeOut,
-  [StandardParametersKey.LocalAuthorizeOffline]: StandardParametersKey.LocalAuthorizationOffline,
-  [StandardParametersKey.LocalPreAuthorize]: StandardParametersKey.LocalPreAuthorization,
-  [StandardParametersKey.MeterValueSampleInterval]: StandardParametersKey.TxUpdatedInterval,
-  [StandardParametersKey.MeterValuesSampledData]: StandardParametersKey.TxUpdatedMeasurands,
-}
+const OCPP2_PARAMETER_KEY_MAP = new Map<
+  ConfigurationKeyType,
+  {
+    resolved: ConfigurationKeyType
+    warnOnce: (chargingStation: ChargingStation) => void
+  }
+      >(
+      (
+        [
+          [StandardParametersKey.AuthorizeRemoteTxRequests, StandardParametersKey.AuthorizeRemoteStart],
+          [StandardParametersKey.ConnectionTimeOut, StandardParametersKey.EVConnectionTimeOut],
+          [
+            StandardParametersKey.LocalAuthorizeOffline,
+            StandardParametersKey.LocalAuthorizationOffline,
+          ],
+          [StandardParametersKey.LocalPreAuthorize, StandardParametersKey.LocalPreAuthorization],
+          [StandardParametersKey.MeterValueSampleInterval, StandardParametersKey.TxUpdatedInterval],
+          [StandardParametersKey.MeterValuesSampledData, StandardParametersKey.TxUpdatedMeasurands],
+        ] as [ConfigurationKeyType, ConfigurationKeyType][]
+      ).map(([from, to]) => [
+        from,
+        {
+          resolved: to,
+          warnOnce: once((cs: ChargingStation) => {
+            logger.warn(
+          `${cs.logPrefix()} OCPP 1.6 configuration key '${from}' remapped to OCPP 2.0 variable '${to}'`
+            )
+          }),
+        },
+      ])
+      )
 
 const resolveKey = (
   chargingStation: ChargingStation,
@@ -23,7 +46,11 @@ const resolveKey = (
 ): ConfigurationKeyType => {
   const version = chargingStation.stationInfo?.ocppVersion
   if (version === OCPPVersion.VERSION_20 || version === OCPPVersion.VERSION_201) {
-    return OCPP2_PARAMETER_KEY_MAP[key] ?? key
+    const mapping = OCPP2_PARAMETER_KEY_MAP.get(key)
+    if (mapping != null) {
+      mapping.warnOnce(chargingStation)
+      return mapping.resolved
+    }
   }
   return key
 }
