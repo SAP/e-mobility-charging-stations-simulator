@@ -397,7 +397,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
   },
   [buildRegistryKey(
     OCPP20ComponentName.AuthCtrlr as string,
-    OCPP20RequiredVariableName.LocalAuthorizeOffline
+    OCPP20RequiredVariableName.LocalAuthorizationOffline
   )]: {
     component: OCPP20ComponentName.AuthCtrlr as string,
     dataType: DataEnumType.boolean,
@@ -407,11 +407,11 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Persistent,
     required: true,
     supportedAttributes: [AttributeEnumType.Actual],
-    variable: OCPP20RequiredVariableName.LocalAuthorizeOffline as string,
+    variable: OCPP20RequiredVariableName.LocalAuthorizationOffline as string,
   },
   [buildRegistryKey(
     OCPP20ComponentName.AuthCtrlr as string,
-    OCPP20RequiredVariableName.LocalPreAuthorize
+    OCPP20RequiredVariableName.LocalPreAuthorization
   )]: {
     component: OCPP20ComponentName.AuthCtrlr as string,
     dataType: DataEnumType.boolean,
@@ -421,7 +421,7 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Persistent,
     required: true,
     supportedAttributes: [AttributeEnumType.Actual],
-    variable: OCPP20RequiredVariableName.LocalPreAuthorize as string,
+    variable: OCPP20RequiredVariableName.LocalPreAuthorization as string,
   },
 
   // CHAdeMOCtrlr Component

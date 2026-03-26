@@ -11,6 +11,8 @@ import { logger } from '../utils/index.js'
 const OCPP2_PARAMETER_KEY_MAP: Partial<Record<ConfigurationKeyType, ConfigurationKeyType>> = {
   [StandardParametersKey.AuthorizeRemoteTxRequests]: StandardParametersKey.AuthorizeRemoteStart,
   [StandardParametersKey.ConnectionTimeOut]: StandardParametersKey.EVConnectionTimeOut,
+  [StandardParametersKey.LocalAuthorizeOffline]: StandardParametersKey.LocalAuthorizationOffline,
+  [StandardParametersKey.LocalPreAuthorize]: StandardParametersKey.LocalPreAuthorization,
   [StandardParametersKey.MeterValueSampleInterval]: StandardParametersKey.TxUpdatedInterval,
   [StandardParametersKey.MeterValuesSampledData]: StandardParametersKey.TxUpdatedMeasurands,
 }

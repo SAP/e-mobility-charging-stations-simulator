@@ -32,7 +32,7 @@
         "value": "false"
       },
       {
-        "key": "LocalPreAuthorize",
+        "key": "LocalPreAuthorization",
         "readonly": false,
         "value": "false"
       },

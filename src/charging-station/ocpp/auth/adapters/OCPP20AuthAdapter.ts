@@ -16,9 +16,11 @@ import type {
 import { OCPP20VariableManager } from '../../2.0/OCPP20VariableManager.js'
 import {
   GetVariableStatusEnumType,
+  OCPP20ComponentName,
   OCPP20IdTokenEnumType,
   type OCPP20IdTokenType,
   OCPP20RequestCommand,
+  OCPP20RequiredVariableName,
   OCPPVersion,
 } from '../../../../types/index.js'
 import { logger, truncateId } from '../../../../utils/index.js'
@@ -394,7 +396,10 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
       const isOnline = this.chargingStation.inAcceptedState()
 
       // Check AuthorizeRemoteStart variable (with type validation)
-      const remoteStartValue = this.getVariableValue('AuthCtrlr', 'AuthorizeRemoteStart')
+      const remoteStartValue = this.getVariableValue(
+        OCPP20ComponentName.AuthCtrlr,
+        OCPP20RequiredVariableName.AuthorizeRemoteStart
+      )
       const remoteStartEnabled = this.parseBooleanVariable(remoteStartValue, true)
 
       return isOnline && remoteStartEnabled
@@ -478,8 +483,8 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
 
   /**
    * Get default variable value based on OCPP 2.0.1 specification
-   * @param component - OCPP component name (e.g., 'AuthCtrlr')
-   * @param variable - OCPP variable name (e.g., 'AuthorizeRemoteStart')
+   * @param component - OCPP component name (e.g., OCPP20ComponentName.AuthCtrlr)
+   * @param variable - OCPP variable name (e.g., OCPP20RequiredVariableName.AuthorizeRemoteStart)
    * @param useFallback - Whether to return fallback values when variable is not configured
    * @returns Default value according to OCPP 2.0.1 spec, or undefined if no default exists
    */
@@ -493,17 +498,17 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
     }
 
     // Default values from OCPP 2.0.1 specification and variable registry
-    if (component === 'AuthCtrlr') {
+    if (component === (OCPP20ComponentName.AuthCtrlr as string)) {
       switch (variable) {
-        case 'AuthorizeRemoteStart':
-          return 'true' // OCPP 2.0.1 default: remote start requires authorization
         case 'Enabled':
           return 'true' // Default: authorization is enabled
         case 'LocalAuthListEnabled':
           return 'true' // Default: enable local auth list
-        case 'LocalAuthorizeOffline':
+        case OCPP20RequiredVariableName.AuthorizeRemoteStart as string:
+          return 'true' // OCPP 2.0.1 default: remote start requires authorization
+        case OCPP20RequiredVariableName.LocalAuthorizationOffline as string:
           return 'true' // OCPP 2.0.1 default: allow offline authorization
-        case 'LocalPreAuthorize':
+        case OCPP20RequiredVariableName.LocalPreAuthorization as string:
           return 'false' // OCPP 2.0.1 default: wait for CSMS authorization
         default:
           return undefined
@@ -519,7 +524,10 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
    */
   private getOfflineAuthorizationConfig (): boolean {
     try {
-      const value = this.getVariableValue('AuthCtrlr', 'LocalAuthorizeOffline')
+      const value = this.getVariableValue(
+        OCPP20ComponentName.AuthCtrlr,
+        OCPP20RequiredVariableName.LocalAuthorizationOffline
+      )
       return this.parseBooleanVariable(value, true)
     } catch (error) {
       logger.warn(
@@ -532,8 +540,8 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
 
   /**
    * Get variable value from OCPP 2.0 variable system
-   * @param component - OCPP component name (e.g., 'AuthCtrlr')
-   * @param variable - OCPP variable name (e.g., 'AuthorizeRemoteStart')
+   * @param component - OCPP component name (e.g., OCPP20ComponentName.AuthCtrlr)
+   * @param variable - OCPP variable name (e.g., OCPP20RequiredVariableName.AuthorizeRemoteStart)
    * @param useDefaultFallback - If true, use OCPP 2.0.1 spec default values when variable is not found
    * @returns Promise resolving to variable value as string, or undefined if not available
    */

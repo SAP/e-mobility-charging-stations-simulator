@@ -2930,7 +2930,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
      * OCPP 2.0 Authorization Logic Implementation
      *
      * OCPP 2.0 handles authorization differently from 1.6:
-     * 1. Check if authorization is required (LocalAuthorizeOffline, AuthorizeRemoteStart variables)
+     * 1. Check if authorization is required (LocalAuthorizationOffline, AuthorizeRemoteStart variables)
      * 2. Local authorization list validation if enabled
      * 3. For OCPP 2.0, there's no explicit AuthorizeRequest - authorization is validated
      *    through configuration variables and local auth lists
