@@ -14,9 +14,9 @@ import type {
   GetCertificateIdUseEnumType,
   JsonType,
   OCPP20IdTokenType,
-  OCPP20RequestCommand,
   OCSPRequestDataType,
 } from '../../../../src/types/index.js'
+import type { OCPP20RequestCommand } from '../../../../src/types/index.js'
 
 import { OCPP20RequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20RequestService.js'
 import { OCPP20ResponseService } from '../../../../src/charging-station/ocpp/2.0/OCPP20ResponseService.js'
@@ -47,7 +47,7 @@ import {
  */
 export interface CapturedOCPPRequest {
   /** The OCPP command name (e.g., 'TransactionEvent', 'Heartbeat') */
-  command: string
+  command: OCPP20RequestCommand
   /** The request payload */
   payload: Record<string, unknown>
 }
@@ -122,7 +122,7 @@ export function createMockStationWithRequestTracking (): MockStationWithTracking
 
   const requestHandlerMock = mock.fn(async (...args: unknown[]) => {
     sentRequests.push({
-      command: args[1] as string,
+      command: args[1] as OCPP20RequestCommand,
       payload: args[2] as Record<string, unknown>,
     })
     return Promise.resolve({} as EmptyObject)

@@ -595,8 +595,6 @@ make SUBMODULES_INIT=true
 - :white_check_mark: FirmwareStatusNotification
 - :white_check_mark: UpdateFirmware
 
-> **Note**: Firmware signature verification required by L01.FR.04 always succeeds (`SignatureVerified`). `retries`/`retryInterval` parameters are accepted but not honored.
-
 #### M. ISO 15118 CertificateManagement
 
 - :white_check_mark: CertificateSigned

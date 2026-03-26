@@ -181,6 +181,7 @@ export enum OCPP20ComponentName {
   EVRetentionLock = 'EVRetentionLock',
   EVSE = 'EVSE',
   ExternalTemperatureSensor = 'ExternalTemperatureSensor',
+  FirmwareCtrlr = 'FirmwareCtrlr',
   FiscalMetering = 'FiscalMetering',
   FloodSensor = 'FloodSensor',
   GroundIsolationProtection = 'GroundIsolationProtection',

@@ -12,6 +12,7 @@ import { createTestableIncomingRequestService } from '../../../../src/charging-s
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import {
   type FirmwareType,
+  OCPP20ConnectorStatusEnumType,
   OCPP20FirmwareStatusEnumType,
   OCPP20IncomingRequestCommand,
   OCPP20RequestCommand,
@@ -461,7 +462,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
         })
       })
 
-      await it('should send DownloadFailed for malformed firmware location', async t => {
+      await it('should send DownloadFailed for malformed firmware location after exhausting retries (L01.FR.30)', async t => {
         const { sentRequests, station: trackingStation } = createMockStationWithRequestTracking()
         const service = new OCPP20IncomingRequestService()
 
@@ -471,6 +472,8 @@ await describe('L01/L02 - UpdateFirmware', async () => {
             retrieveDateTime: new Date('2020-01-01T00:00:00.000Z'),
           },
           requestId: 8,
+          retries: 2,
+          retryInterval: 3,
         }
         const response: OCPP20UpdateFirmwareResponse = {
           status: UpdateFirmwareStatusEnumType.Accepted,
@@ -485,15 +488,147 @@ await describe('L01/L02 - UpdateFirmware', async () => {
           )
 
           await flushMicrotasks()
+          assert.strictEqual(sentRequests.length, 1)
+          assert.strictEqual(
+            sentRequests[0].payload.status,
+            OCPP20FirmwareStatusEnumType.Downloading
+          )
+
+          // Initial download delay
           t.mock.timers.tick(2000)
           await flushMicrotasks()
 
+          // Retry 1: retryInterval (3s) then re-send Downloading
+          t.mock.timers.tick(3000)
+          await flushMicrotasks()
           assert.strictEqual(sentRequests.length, 2)
           assert.strictEqual(
             sentRequests[1].payload.status,
+            OCPP20FirmwareStatusEnumType.Downloading
+          )
+
+          // Retry 1: download delay (2s)
+          t.mock.timers.tick(2000)
+          await flushMicrotasks()
+
+          // Retry 2: retryInterval (3s) then re-send Downloading
+          t.mock.timers.tick(3000)
+          await flushMicrotasks()
+          assert.strictEqual(sentRequests.length, 3)
+          assert.strictEqual(
+            sentRequests[2].payload.status,
+            OCPP20FirmwareStatusEnumType.Downloading
+          )
+
+          // Retry 2: download delay (2s) → retries exhausted → DownloadFailed
+          t.mock.timers.tick(2000)
+          await flushMicrotasks()
+          assert.strictEqual(sentRequests.length, 4)
+          assert.strictEqual(
+            sentRequests[3].payload.status,
             OCPP20FirmwareStatusEnumType.DownloadFailed
           )
-          assert.strictEqual(sentRequests[1].payload.requestId, 8)
+          assert.strictEqual(sentRequests[3].payload.requestId, 8)
+        })
+      })
+
+      await it('should set newly-available EVSE to Unavailable during transaction wait (L01.FR.07)', async t => {
+        const { sentRequests, station: trackingStation } = createMockStationWithRequestTracking()
+        const service = new OCPP20IncomingRequestService()
+        const sendEvseStatusMock = mock.method(
+          service as unknown as {
+            sendEvseStatusNotifications: (
+              chargingStation: ChargingStation,
+              evseId: number,
+              status: OCPP20ConnectorStatusEnumType
+            ) => void
+          },
+          'sendEvseStatusNotifications',
+          () => undefined
+        )
+        const { OCPP20VariableManager } =
+          await import('../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js')
+        const { AttributeEnumType, OCPP20ComponentName } =
+          await import('../../../../src/types/index.js')
+
+        OCPP20VariableManager.getInstance().setVariables(trackingStation, [
+          {
+            attributeType: AttributeEnumType.Actual,
+            attributeValue: 'false',
+            component: { name: OCPP20ComponentName.ChargingStation as string },
+            variable: { name: 'AllowNewSessionsPendingFirmwareUpdate' },
+          },
+        ])
+
+        // Set active transactions on EVSE 1 and EVSE 2
+        const evse1 = trackingStation.getEvseStatus(1)
+        const evse2 = trackingStation.getEvseStatus(2)
+        const evse1Connector = evse1?.connectors.values().next().value
+        const evse2Connector = evse2?.connectors.values().next().value
+        if (evse1Connector != null) evse1Connector.transactionId = 'tx-fw-001'
+        if (evse2Connector != null) evse2Connector.transactionId = 'tx-fw-002'
+
+        const request: OCPP20UpdateFirmwareRequest = {
+          firmware: {
+            location: 'https://firmware.example.com/update.bin',
+            retrieveDateTime: new Date('2020-01-01T00:00:00.000Z'),
+          },
+          requestId: 10,
+        }
+        const response: OCPP20UpdateFirmwareResponse = {
+          status: UpdateFirmwareStatusEnumType.Accepted,
+        }
+
+        await withMockTimers(t, ['setTimeout'], async () => {
+          service.emit(
+            OCPP20IncomingRequestCommand.UPDATE_FIRMWARE,
+            trackingStation,
+            request,
+            response
+          )
+
+          // Downloading
+          await flushMicrotasks()
+          // Downloaded → enters transaction-wait loop
+          t.mock.timers.tick(2000)
+          await flushMicrotasks()
+
+          // EVSE 3 (no transaction) should be set Unavailable
+          assert.strictEqual(sendEvseStatusMock.mock.callCount(), 1)
+          assert.strictEqual(sendEvseStatusMock.mock.calls[0].arguments[1], 3)
+          assert.strictEqual(
+            sendEvseStatusMock.mock.calls[0].arguments[2],
+            OCPP20ConnectorStatusEnumType.Unavailable
+          )
+
+          // Clear EVSE 2's transaction → it becomes available
+          if (evse2Connector != null) evse2Connector.transactionId = undefined
+
+          // Advance one loop iteration (FIRMWARE_INSTALL_DELAY_MS = 5000ms)
+          t.mock.timers.tick(5000)
+          await flushMicrotasks()
+
+          // EVSE 2 and EVSE 3 should now also be set to Unavailable
+          assert.strictEqual(sendEvseStatusMock.mock.callCount(), 3)
+          const secondIterationEvseIds = sendEvseStatusMock.mock.calls
+            .slice(1)
+            .map(call => Number(call.arguments[1]))
+          assert.ok(
+            secondIterationEvseIds.includes(2),
+            'Expected EVSE 2 to be set Unavailable after clearing its transaction'
+          )
+          assert.ok(secondIterationEvseIds.includes(3), 'Expected EVSE 3 to remain Unavailable')
+
+          // Clear EVSE 1's transaction to let the lifecycle proceed
+          if (evse1Connector != null) evse1Connector.transactionId = undefined
+          t.mock.timers.tick(5000)
+          await flushMicrotasks()
+
+          // Lifecycle should proceed to Installing
+          const installingRequests = sentRequests.filter(
+            req => req.payload.status === OCPP20FirmwareStatusEnumType.Installing
+          )
+          assert.strictEqual(installingRequests.length, 1)
         })
       })
 
@@ -528,9 +663,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
           await flushMicrotasks()
 
           const firmwareNotifications = sentRequests.filter(
-            r =>
-              (r.command as OCPP20RequestCommand) ===
-              OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION
+            r => r.command === OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION
           )
           assert.strictEqual(firmwareNotifications.length, 4)
           for (const req of firmwareNotifications) {
@@ -576,6 +709,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
 
           t.mock.timers.tick(500)
           await flushMicrotasks()
+          assert.strictEqual(sentRequests.length, 4)
           assert.strictEqual(
             sentRequests[2].payload.status,
             OCPP20FirmwareStatusEnumType.SignatureVerified
@@ -590,6 +724,158 @@ await describe('L01/L02 - UpdateFirmware', async () => {
           assert.strictEqual(sentRequests[4].payload.status, OCPP20FirmwareStatusEnumType.Installed)
 
           // H11: SecurityEventNotification after Installed
+          assert.strictEqual(sentRequests.length, 6)
+          assert.strictEqual(
+            sentRequests[5].command,
+            OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION
+          )
+          assert.strictEqual(sentRequests[5].payload.type, 'FirmwareUpdated')
+        })
+      })
+
+      await it('should send InvalidSignature when SimulateSignatureVerificationFailure is true', async t => {
+        const { sentRequests, station: trackingStation } = createMockStationWithRequestTracking()
+        const service = new OCPP20IncomingRequestService()
+        const { OCPP20VariableManager } =
+          await import('../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js')
+        const { AttributeEnumType, OCPP20ComponentName } =
+          await import('../../../../src/types/index.js')
+
+        // Arrange: Set Device Model variable to simulate verification failure
+        OCPP20VariableManager.getInstance().setVariables(trackingStation, [
+          {
+            attributeType: AttributeEnumType.Actual,
+            attributeValue: 'true',
+            component: { name: OCPP20ComponentName.FirmwareCtrlr as string },
+            variable: { name: 'SimulateSignatureVerificationFailure' },
+          },
+        ])
+
+        const request: OCPP20UpdateFirmwareRequest = {
+          firmware: {
+            location: 'https://firmware.example.com/update.bin',
+            retrieveDateTime: new Date('2020-01-01T00:00:00.000Z'),
+            signature: 'dGVzdA==',
+          },
+          requestId: 6,
+        }
+        const response: OCPP20UpdateFirmwareResponse = {
+          status: UpdateFirmwareStatusEnumType.Accepted,
+        }
+
+        await withMockTimers(t, ['setTimeout'], async () => {
+          service.emit(
+            OCPP20IncomingRequestCommand.UPDATE_FIRMWARE,
+            trackingStation,
+            request,
+            response
+          )
+
+          await flushMicrotasks()
+          assert.strictEqual(sentRequests.length, 1)
+          assert.strictEqual(
+            sentRequests[0].payload.status,
+            OCPP20FirmwareStatusEnumType.Downloading
+          )
+
+          t.mock.timers.tick(2000)
+          await flushMicrotasks()
+          assert.strictEqual(sentRequests.length, 2)
+          assert.strictEqual(
+            sentRequests[1].payload.status,
+            OCPP20FirmwareStatusEnumType.Downloaded
+          )
+
+          t.mock.timers.tick(500)
+          await flushMicrotasks()
+          assert.strictEqual(sentRequests.length, 4)
+          assert.strictEqual(
+            sentRequests[2].payload.status,
+            OCPP20FirmwareStatusEnumType.InvalidSignature
+          )
+
+          // Verify lifecycle stops after InvalidSignature: no Installing/Installed emitted
+          const requestCountAfterInvalidSignature = sentRequests.length
+          t.mock.timers.tick(10_000)
+          await flushMicrotasks()
+          assert.strictEqual(sentRequests.length, requestCountAfterInvalidSignature)
+
+          const securityEventNotifications = sentRequests.filter(
+            req => req.command === OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION
+          )
+          assert.strictEqual(securityEventNotifications.length, 1)
+          assert.strictEqual(
+            securityEventNotifications[0]?.payload?.type,
+            'InvalidFirmwareSignature'
+          )
+        })
+      })
+
+      await it('should not send InvalidSignature when SimulateSignatureVerificationFailure is false', async t => {
+        const { sentRequests, station: trackingStation } = createMockStationWithRequestTracking()
+        const service = new OCPP20IncomingRequestService()
+        const { OCPP20VariableManager } =
+          await import('../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js')
+        const { AttributeEnumType, OCPP20ComponentName } =
+          await import('../../../../src/types/index.js')
+
+        // Arrange: Explicitly set variable to false (default behavior)
+        OCPP20VariableManager.getInstance().setVariables(trackingStation, [
+          {
+            attributeType: AttributeEnumType.Actual,
+            attributeValue: 'false',
+            component: { name: OCPP20ComponentName.FirmwareCtrlr as string },
+            variable: { name: 'SimulateSignatureVerificationFailure' },
+          },
+        ])
+
+        const request: OCPP20UpdateFirmwareRequest = {
+          firmware: {
+            location: 'https://firmware.example.com/update.bin',
+            retrieveDateTime: new Date('2020-01-01T00:00:00.000Z'),
+            signature: 'dGVzdA==',
+          },
+          requestId: 7,
+        }
+        const response: OCPP20UpdateFirmwareResponse = {
+          status: UpdateFirmwareStatusEnumType.Accepted,
+        }
+
+        await withMockTimers(t, ['setTimeout'], async () => {
+          service.emit(
+            OCPP20IncomingRequestCommand.UPDATE_FIRMWARE,
+            trackingStation,
+            request,
+            response
+          )
+
+          await flushMicrotasks()
+          assert.strictEqual(sentRequests.length, 1)
+
+          t.mock.timers.tick(2000)
+          await flushMicrotasks()
+          assert.strictEqual(sentRequests.length, 2)
+          assert.strictEqual(
+            sentRequests[1].payload.status,
+            OCPP20FirmwareStatusEnumType.Downloaded
+          )
+
+          t.mock.timers.tick(500)
+          await flushMicrotasks()
+          assert.strictEqual(sentRequests.length, 4)
+          assert.strictEqual(
+            sentRequests[2].payload.status,
+            OCPP20FirmwareStatusEnumType.SignatureVerified
+          )
+          assert.strictEqual(
+            sentRequests[3].payload.status,
+            OCPP20FirmwareStatusEnumType.Installing
+          )
+
+          t.mock.timers.tick(1000)
+          await flushMicrotasks()
+          assert.strictEqual(sentRequests[4].payload.status, OCPP20FirmwareStatusEnumType.Installed)
+
           assert.strictEqual(sentRequests.length, 6)
           assert.strictEqual(
             sentRequests[5].command,

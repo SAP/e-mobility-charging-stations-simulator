@@ -336,7 +336,9 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           this.simulateFirmwareUpdateLifecycle(
             chargingStation,
             request.requestId,
-            request.firmware
+            request.firmware,
+            request.retries,
+            request.retryInterval
           ).catch((error: unknown) => {
             logger.error(
               `${chargingStation.logPrefix()} ${moduleName}.constructor: UpdateFirmware lifecycle error:`,
@@ -3394,11 +3396,15 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param chargingStation - The charging station instance
    * @param requestId - The request ID from the UpdateFirmware request
    * @param firmware - The firmware details including location, dates, and optional signature
+   * @param retries - Number of download retry attempts before reporting DownloadFailed (L01.FR.30)
+   * @param retryInterval - Seconds between download retry attempts
    */
   private async simulateFirmwareUpdateLifecycle (
     chargingStation: ChargingStation,
     requestId: number,
-    firmware: FirmwareType
+    firmware: FirmwareType,
+    retries?: number,
+    retryInterval?: number
   ): Promise<void> {
     const { installDateTime, location, retrieveDateTime, signature } = firmware
 
@@ -3434,13 +3440,30 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
 
     // H9: If firmware location is empty or malformed, send DownloadFailed and stop
     if (location.trim() === '' || !this.isValidFirmwareLocation(location)) {
+      // L01.FR.30: Simulate download retries before reporting DownloadFailed
+      const maxRetries = retries ?? 0
+      const retryDelayMs = (retryInterval ?? 0) * 1000
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Download failed for requestId ${requestId.toString()} - invalid location '${location}' (attempt ${attempt.toString()}/${maxRetries.toString()}, retrying in ${retryInterval?.toString() ?? '0'}s)`
+        )
+        await sleep(retryDelayMs)
+        if (checkAborted()) return
+        await this.sendFirmwareStatusNotification(
+          chargingStation,
+          OCPP20FirmwareStatusEnumType.Downloading,
+          requestId
+        )
+        await sleep(OCPP20Constants.FIRMWARE_STATUS_DELAY_MS)
+        if (checkAborted()) return
+      }
       await this.sendFirmwareStatusNotification(
         chargingStation,
         OCPP20FirmwareStatusEnumType.DownloadFailed,
         requestId
       )
       logger.warn(
-        `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Download failed for requestId ${requestId.toString()} - invalid location '${location}'`
+        `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Download failed for requestId ${requestId.toString()} - invalid location '${location}'${maxRetries > 0 ? ` (exhausted ${maxRetries.toString()} retries)` : ''}`
       )
       this.clearActiveFirmwareUpdate(chargingStation, requestId)
       return
@@ -3455,6 +3478,42 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
     if (signature != null) {
       await sleep(OCPP20Constants.FIRMWARE_VERIFY_DELAY_MS)
       if (checkAborted()) return
+
+      // L01.FR.04: Simulate signature verification
+      const variableManager = OCPP20VariableManager.getInstance()
+      const verificationResults = variableManager.getVariables(chargingStation, [
+        {
+          attributeType: AttributeEnumType.Actual,
+          component: { name: OCPP20ComponentName.FirmwareCtrlr as string },
+          variable: { name: 'SimulateSignatureVerificationFailure' },
+        },
+      ])
+      const simulateFailure = verificationResults[0]?.attributeValue?.toLowerCase() === 'true'
+
+      if (simulateFailure) {
+        // L01.FR.03: InvalidSignature + SecurityEventNotification
+        await this.sendFirmwareStatusNotification(
+          chargingStation,
+          OCPP20FirmwareStatusEnumType.InvalidSignature,
+          requestId
+        )
+        await this.sendSecurityEventNotification(
+          chargingStation,
+          'InvalidFirmwareSignature',
+          `Firmware signature verification failed for requestId ${requestId.toString()}`
+        ).catch((error: unknown) => {
+          logger.error(
+            `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: SecurityEventNotification error:`,
+            error
+          )
+        })
+        logger.warn(
+          `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Firmware signature verification failed for requestId ${requestId.toString()} (simulated)`
+        )
+        this.clearActiveFirmwareUpdate(chargingStation, requestId)
+        return
+      }
+
       await this.sendFirmwareStatusNotification(
         chargingStation,
         OCPP20FirmwareStatusEnumType.SignatureVerified,
@@ -3492,23 +3551,24 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
         },
       ])
       const allowNewSessions = allowNewSessionsResults[0]?.attributeValue?.toLowerCase() === 'true'
-      if (!allowNewSessions) {
-        for (const [fwEvseId, fwEvseStatus] of chargingStation.evses) {
-          if (fwEvseId > 0 && !this.hasEvseActiveTransactions(fwEvseStatus)) {
-            this.sendEvseStatusNotifications(
-              chargingStation,
-              fwEvseId,
-              OCPP20ConnectorStatusEnumType.Unavailable
-            )
-          }
-        }
-      }
       while (
         !checkAborted() &&
         [...chargingStation.evses].some(
           ([evseId, evse]) => evseId > 0 && this.hasEvseActiveTransactions(evse)
         )
       ) {
+        // L01.FR.07: Set newly-available EVSE to Unavailable on each iteration
+        if (!allowNewSessions) {
+          for (const [fwEvseId, fwEvseStatus] of chargingStation.evses) {
+            if (fwEvseId > 0 && !this.hasEvseActiveTransactions(fwEvseStatus)) {
+              this.sendEvseStatusNotifications(
+                chargingStation,
+                fwEvseId,
+                OCPP20ConnectorStatusEnumType.Unavailable
+              )
+            }
+          }
+        }
         logger.debug(
           `${chargingStation.logPrefix()} ${moduleName}.simulateFirmwareUpdateLifecycle: Waiting for active transactions to end before installing (L01.FR.06)`
         )
