@@ -239,15 +239,30 @@ export class Bootstrap extends EventEmitter {
           // Start ChargingStation object instance in worker thread
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           for (const stationTemplateUrl of Configuration.getStationTemplateUrls()!) {
-            try {
-              const nbStations = stationTemplateUrl.numberOfStations
-              const addChargingStationTasks: Promise<ChargingStationInfo | undefined>[] = []
+            const nbStations = stationTemplateUrl.numberOfStations
+            const sequentialAdd =
+              (Configuration.getConfigurationSection<WorkerConfiguration>(
+                ConfigurationSection.worker
+              ).elementAddDelay ?? 0) > 0
+            if (sequentialAdd) {
               for (let index = 1; index <= nbStations; index++) {
-                addChargingStationTasks.push(
-                  this.addChargingStation(index, stationTemplateUrl.file)
-                )
+                try {
+                  await this.addChargingStation(index, stationTemplateUrl.file)
+                } catch (error) {
+                  console.error(
+                    chalk.red(
+                      `Error at starting charging station with template file ${stationTemplateUrl.file}: `
+                    ),
+                    error
+                  )
+                }
               }
-              const results = await Promise.allSettled(addChargingStationTasks)
+            } else {
+              const results = await Promise.allSettled(
+                Array.from({ length: nbStations }, (_, i) =>
+                  this.addChargingStation(i + 1, stationTemplateUrl.file)
+                )
+              )
               for (const result of results) {
                 if (result.status === 'rejected') {
                   console.error(
@@ -258,13 +273,6 @@ export class Bootstrap extends EventEmitter {
                   )
                 }
               }
-            } catch (error) {
-              console.error(
-                chalk.red(
-                  `Error at starting charging station with template file ${stationTemplateUrl.file}: `
-                ),
-                error
-              )
             }
           }
           const workerConfiguration = Configuration.getConfigurationSection<WorkerConfiguration>(
