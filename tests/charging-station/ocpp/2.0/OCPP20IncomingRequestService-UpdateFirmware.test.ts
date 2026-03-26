@@ -649,9 +649,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
           await flushMicrotasks()
 
           const firmwareNotifications = sentRequests.filter(
-            r =>
-              (r.command) ===
-              OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION
+            r => r.command === OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION
           )
           assert.strictEqual(firmwareNotifications.length, 4)
           for (const req of firmwareNotifications) {

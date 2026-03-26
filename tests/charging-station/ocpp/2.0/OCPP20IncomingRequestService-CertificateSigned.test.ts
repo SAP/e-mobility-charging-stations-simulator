@@ -371,7 +371,7 @@ await describe('I04 - CertificateSigned', async () => {
 
       const securityEvents = sentRequests.filter(
         r =>
-          (r.command as OCPP20RequestCommand) === OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION
+          (r.command) === OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION
       )
       assert.strictEqual(securityEvents.length, 1)
       assert.strictEqual(securityEvents[0].payload.type, 'InvalidChargingStationCertificate')
