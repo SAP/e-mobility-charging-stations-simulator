@@ -17,27 +17,17 @@
   "Configuration": {
     "configurationKey": [
       {
-        "key": "MeterValuesSampledData",
+        "key": "TxUpdatedMeasurands",
         "readonly": false,
         "value": "Energy.Active.Import.Register,Power.Active.Import,Current.Import,Voltage"
       },
       {
-        "key": "MeterValueSampleInterval",
+        "key": "TxUpdatedInterval",
         "readonly": false,
         "value": "30"
       },
       {
-        "key": "SupportedFeatureProfiles",
-        "readonly": true,
-        "value": "Core,FirmwareManagement,LocalAuthListManagement,SmartCharging,RemoteTrigger,Reservation"
-      },
-      {
-        "key": "LocalAuthListEnabled",
-        "readonly": false,
-        "value": "false"
-      },
-      {
-        "key": "AuthorizeRemoteTxRequests",
+        "key": "AuthorizeRemoteStart",
         "readonly": false,
         "value": "false"
       },
@@ -45,11 +35,6 @@
         "key": "WebSocketPingInterval",
         "readonly": false,
         "value": "60"
-      },
-      {
-        "key": "ReserveConnectorZeroSupported",
-        "readonly": false,
-        "value": "false"
       }
     ]
   },

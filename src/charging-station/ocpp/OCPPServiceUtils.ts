@@ -2029,17 +2029,19 @@ const getSampledValueTemplate = (
     )
     return
   }
+  const isOCPP2 =
+    chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_20 ||
+    chargingStation.stationInfo?.ocppVersion === OCPPVersion.VERSION_201
+  const measurandsParameterKey = isOCPP2
+    ? StandardParametersKey.TxUpdatedMeasurands
+    : StandardParametersKey.MeterValuesSampledData
   if (
     measurand !== MeterValueMeasurand.ENERGY_ACTIVE_IMPORT_REGISTER &&
-    getConfigurationKey(
-      chargingStation,
-      StandardParametersKey.MeterValuesSampledData
-    )?.value?.includes(measurand) === false
+    getConfigurationKey(chargingStation, measurandsParameterKey)?.value?.includes(measurand) ===
+      false
   ) {
     logger.debug(
-      `${chargingStation.logPrefix()} Trying to get MeterValues measurand '${measurand}' ${onPhaseStr}in template on connector id ${connectorId.toString()} not found in '${
-        StandardParametersKey.MeterValuesSampledData
-      }' OCPP parameter`
+      `${chargingStation.logPrefix()} Trying to get MeterValues measurand '${measurand}' ${onPhaseStr}in template on connector id ${connectorId.toString()} not found in '${measurandsParameterKey}' OCPP parameter`
     )
     return
   }
