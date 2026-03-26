@@ -2,28 +2,24 @@
 
 ## [3.4.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ocpp-server@v3.3.0...ocpp-server@v3.4.0) (2026-03-26)
 
-
 ### 🚀 Features
 
-* **ocpp-server:** add graceful shutdown with signal handling ([b542c81](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b542c817e5f0aeb6be041ce81b3ee46ca3fe0dc4))
-* **ocpp-server:** enhance OCPP 2.0.1 mock server for comprehensive E2E testing ([#1752](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1752)) ([aee410a](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/aee410a1a6f7819b33ae4ff4f2ed27ceb548202e))
-
+- **ocpp-server:** add graceful shutdown with signal handling ([b542c81](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/b542c817e5f0aeb6be041ce81b3ee46ca3fe0dc4))
+- **ocpp-server:** enhance OCPP 2.0.1 mock server for comprehensive E2E testing ([#1752](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1752)) ([aee410a](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/aee410a1a6f7819b33ae4ff4f2ed27ceb548202e))
 
 ### 🐞 Bug Fixes
 
-* add OCPP 2.0 DataTransfer outgoing support and B03 boot retry in Rejected state ([044bd64](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/044bd64305aee79aecbcc8a41ab892717680ea97))
-* prevent shutdown timeout with promiseWithTimeout helper ([32384c4](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/32384c4cce3aa958c5d2e4f771e4ef15812f55d1))
-
+- add OCPP 2.0 DataTransfer outgoing support and B03 boot retry in Rejected state ([044bd64](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/044bd64305aee79aecbcc8a41ab892717680ea97))
+- prevent shutdown timeout with promiseWithTimeout helper ([32384c4](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/32384c4cce3aa958c5d2e4f771e4ef15812f55d1))
 
 ### ✨ Polish
 
-* **ocpp-server:** audit-driven test improvements ([08325b0](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/08325b09d13f38caf769bf20ef255f01cf9d687a))
-* **ocpp-server:** harmonize shutdown tests with project conventions ([f3b4d70](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f3b4d70f110134f0b32cccfc439e0876fceae38d))
-
+- **ocpp-server:** audit-driven test improvements ([08325b0](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/08325b09d13f38caf769bf20ef255f01cf9d687a))
+- **ocpp-server:** harmonize shutdown tests with project conventions ([f3b4d70](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/f3b4d70f110134f0b32cccfc439e0876fceae38d))
 
 ### 🧪 Tests
 
-* **ocpp-server:** add graceful shutdown tests covering signal handling ([619a3c7](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/619a3c7e020d5dc737b7b487f4708b8c29fdc511))
+- **ocpp-server:** add graceful shutdown tests covering signal handling ([619a3c7](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/619a3c7e020d5dc737b7b487f4708b8c29fdc511))
 
 ## [3.3.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/ocpp-server@v3.2.1...ocpp-server@v3.3.0) (2026-03-24)
 
