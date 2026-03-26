@@ -13,6 +13,7 @@ import {
   getConfigurationKey,
   setConfigurationKeyValue,
 } from '../../src/charging-station/ConfigurationKeyUtils.js'
+import { OCPPVersion, StandardParametersKey } from '../../src/types/index.js'
 import { logger } from '../../src/utils/index.js'
 import { standardCleanup } from '../helpers/TestLifecycleHelpers.js'
 import { createMockChargingStation } from './ChargingStationTestUtils.js'
@@ -21,6 +22,9 @@ const TEST_KEY_1 = 'TestKey1'
 const MIXED_CASE_KEY = 'MiXeDkEy'
 const VALUE_A = 'ValueA'
 const VALUE_B = 'ValueB'
+
+const createStationForVersion = (ocppVersion: OCPPVersion) =>
+  createMockChargingStation({ stationInfo: { ocppVersion } }).station
 
 await describe('ConfigurationKeyUtils', async () => {
   afterEach(() => {
@@ -75,6 +79,76 @@ await describe('ConfigurationKeyUtils', async () => {
         assert.fail('Expected configuration key to be found')
       }
       assert.strictEqual(k.key, MIXED_CASE_KEY)
+    })
+
+    await it('should resolve OCPP 1.6 key to OCPP 2.0 equivalent on OCPP 2.0.1 station', () => {
+      // Arrange
+      const cs = createStationForVersion(OCPPVersion.VERSION_201)
+      addConfigurationKey(cs, StandardParametersKey.MeterValuesSampledData, VALUE_A, undefined, {
+        save: false,
+      })
+
+      // Act
+      const k = getConfigurationKey(cs, StandardParametersKey.MeterValuesSampledData)
+
+      // Assert
+      if (k == null) {
+        assert.fail('Expected configuration key to be found')
+      }
+      assert.strictEqual(k.key, StandardParametersKey.TxUpdatedMeasurands)
+      assert.strictEqual(k.value, VALUE_A)
+    })
+
+    await it('should resolve ConnectionTimeOut to EVConnectionTimeOut on OCPP 2.0 station', () => {
+      // Arrange
+      const cs = createStationForVersion(OCPPVersion.VERSION_20)
+      addConfigurationKey(cs, StandardParametersKey.ConnectionTimeOut, '30', undefined, {
+        save: false,
+      })
+
+      // Act
+      const k = getConfigurationKey(cs, StandardParametersKey.ConnectionTimeOut)
+
+      // Assert
+      if (k == null) {
+        assert.fail('Expected configuration key to be found')
+      }
+      assert.strictEqual(k.key, StandardParametersKey.EVConnectionTimeOut)
+      assert.strictEqual(k.value, '30')
+    })
+
+    await it('should not resolve keys on OCPP 1.6 station', () => {
+      // Arrange
+      const cs = createStationForVersion(OCPPVersion.VERSION_16)
+      addConfigurationKey(cs, StandardParametersKey.MeterValuesSampledData, VALUE_A, undefined, {
+        save: false,
+      })
+
+      // Act
+      const k = getConfigurationKey(cs, StandardParametersKey.MeterValuesSampledData)
+
+      // Assert
+      if (k == null) {
+        assert.fail('Expected configuration key to be found')
+      }
+      assert.strictEqual(k.key, StandardParametersKey.MeterValuesSampledData)
+    })
+
+    await it('should not resolve unmapped keys on OCPP 2.0.1 station', () => {
+      // Arrange
+      const cs = createStationForVersion(OCPPVersion.VERSION_201)
+      addConfigurationKey(cs, StandardParametersKey.HeartbeatInterval, '30', undefined, {
+        save: false,
+      })
+
+      // Act
+      const k = getConfigurationKey(cs, StandardParametersKey.HeartbeatInterval)
+
+      // Assert
+      if (k == null) {
+        assert.fail('Expected configuration key to be found')
+      }
+      assert.strictEqual(k.key, StandardParametersKey.HeartbeatInterval)
     })
   })
 
@@ -295,6 +369,42 @@ await describe('ConfigurationKeyUtils', async () => {
       // Assert
       assert.strictEqual(saveMock.mock.calls.length, 1)
     })
+
+    await it('should store resolved OCPP 2.0 key name when adding on OCPP 2.0.1 station', () => {
+      // Arrange
+      const cs = createStationForVersion(OCPPVersion.VERSION_201)
+
+      // Act
+      addConfigurationKey(cs, StandardParametersKey.AuthorizeRemoteTxRequests, 'false', undefined, {
+        save: false,
+      })
+
+      // Assert
+      const k = getConfigurationKey(cs, StandardParametersKey.AuthorizeRemoteTxRequests)
+      if (k == null) {
+        assert.fail('Expected configuration key to be found')
+      }
+      assert.strictEqual(k.key, StandardParametersKey.AuthorizeRemoteStart)
+      assert.strictEqual(k.value, 'false')
+    })
+
+    await it('should resolve MeterValueSampleInterval to TxUpdatedInterval on OCPP 2.0.1 station', () => {
+      // Arrange
+      const cs = createStationForVersion(OCPPVersion.VERSION_201)
+
+      // Act
+      addConfigurationKey(cs, StandardParametersKey.MeterValueSampleInterval, '60', undefined, {
+        save: false,
+      })
+
+      // Assert
+      const k = getConfigurationKey(cs, StandardParametersKey.MeterValueSampleInterval)
+      if (k == null) {
+        assert.fail('Expected configuration key to be found')
+      }
+      assert.strictEqual(k.key, StandardParametersKey.TxUpdatedInterval)
+      assert.strictEqual(k.value, '60')
+    })
   })
 
   await describe('SetConfigurationKeyValue', async () => {
@@ -350,6 +460,24 @@ await describe('ConfigurationKeyUtils', async () => {
 
       // Assert
       assert.strictEqual(updated?.value, VALUE_B)
+    })
+
+    await it('should resolve key on OCPP 2.0.1 station', () => {
+      // Arrange
+      const cs = createStationForVersion(OCPPVersion.VERSION_201)
+      addConfigurationKey(cs, StandardParametersKey.ConnectionTimeOut, '30', undefined, {
+        save: false,
+      })
+
+      // Act
+      setConfigurationKeyValue(cs, StandardParametersKey.ConnectionTimeOut, '60')
+
+      // Assert
+      const k = getConfigurationKey(cs, StandardParametersKey.ConnectionTimeOut)
+      if (k == null) {
+        assert.fail('Expected configuration key to be found')
+      }
+      assert.strictEqual(k.value, '60')
     })
   })
 

@@ -32,6 +32,26 @@
         "value": "false"
       },
       {
+        "key": "LocalPreAuthorize",
+        "readonly": false,
+        "value": "false"
+      },
+      {
+        "key": "OfflineTxForUnknownIdEnabled",
+        "readonly": false,
+        "value": "false"
+      },
+      {
+        "key": "MessageAttempts.TransactionEvent",
+        "readonly": false,
+        "value": "3"
+      },
+      {
+        "key": "MessageAttemptInterval.TransactionEvent",
+        "readonly": false,
+        "value": "20"
+      },
+      {
         "key": "WebSocketPingInterval",
         "readonly": false,
         "value": "60"

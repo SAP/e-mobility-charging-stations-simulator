@@ -1,7 +1,30 @@
-import type { ConfigurationKey, ConfigurationKeyType } from '../types/index.js'
 import type { ChargingStation } from './ChargingStation.js'
 
+import {
+  type ConfigurationKey,
+  type ConfigurationKeyType,
+  OCPPVersion,
+  StandardParametersKey,
+} from '../types/index.js'
 import { logger } from '../utils/index.js'
+
+const OCPP2_PARAMETER_KEY_MAP: Partial<Record<ConfigurationKeyType, ConfigurationKeyType>> = {
+  [StandardParametersKey.AuthorizeRemoteTxRequests]: StandardParametersKey.AuthorizeRemoteStart,
+  [StandardParametersKey.ConnectionTimeOut]: StandardParametersKey.EVConnectionTimeOut,
+  [StandardParametersKey.MeterValueSampleInterval]: StandardParametersKey.TxUpdatedInterval,
+  [StandardParametersKey.MeterValuesSampledData]: StandardParametersKey.TxUpdatedMeasurands,
+}
+
+const resolveKey = (
+  chargingStation: ChargingStation,
+  key: ConfigurationKeyType
+): ConfigurationKeyType => {
+  const version = chargingStation.stationInfo?.ocppVersion
+  if (version === OCPPVersion.VERSION_20 || version === OCPPVersion.VERSION_201) {
+    return OCPP2_PARAMETER_KEY_MAP[key] ?? key
+  }
+  return key
+}
 
 interface AddConfigurationKeyParams {
   caseInsensitive?: boolean
@@ -33,8 +56,9 @@ export const getConfigurationKey = (
   caseInsensitive = false
 ): ConfigurationKey | undefined => {
   if (!Array.isArray(chargingStation.ocppConfiguration?.configurationKey)) return undefined
+  const resolvedKey = resolveKey(chargingStation, key)
   return chargingStation.ocppConfiguration.configurationKey.find(configElement =>
-    matchesConfigurationKey(configElement, key, caseInsensitive)
+    matchesConfigurationKey(configElement, resolvedKey, caseInsensitive)
   )
 }
 
@@ -46,8 +70,9 @@ const getConfigurationKeyIndex = (
   if (!Array.isArray(chargingStation.ocppConfiguration?.configurationKey)) {
     return -1
   }
+  const resolvedKey = resolveKey(chargingStation, key)
   return chargingStation.ocppConfiguration.configurationKey.findIndex(configElement =>
-    matchesConfigurationKey(configElement, key, caseInsensitive)
+    matchesConfigurationKey(configElement, resolvedKey, caseInsensitive)
   )
 }
 
@@ -101,7 +126,7 @@ export const addConfigurationKey = (
     }
   } else {
     chargingStation.ocppConfiguration.configurationKey.push({
-      key,
+      key: resolveKey(chargingStation, key),
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       readonly: options.readonly!,
       reboot: options.reboot,
