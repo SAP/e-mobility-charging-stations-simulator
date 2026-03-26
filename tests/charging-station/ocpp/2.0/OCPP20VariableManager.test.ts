@@ -1877,13 +1877,13 @@ await describe('B05 - OCPP20VariableManager', async () => {
         },
       ])[0]
       assert.strictEqual(res.attributeStatus, GetVariableStatusEnumType.Accepted)
-      assert.strictEqual(res.attributeValue, 'Example Charging Services Ltd')
+      assert.strictEqual(res.attributeValue, 'ChangeMeOrg')
       const after = getConfigurationKey(
         station,
         OCPP20RequiredVariableName.OrganizationName as unknown as VariableType['name']
       )
       assert.notStrictEqual(after, undefined)
-      assert.strictEqual(after?.value, 'Example Charging Services Ltd')
+      assert.strictEqual(after?.value, 'ChangeMeOrg')
     })
 
     await it('should accept setting OrganizationName and require reboot per OCPP 2.0.1 specification', () => {

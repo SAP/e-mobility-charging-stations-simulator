@@ -1074,18 +1074,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'MaxScheduleEntries',
   },
-  [buildRegistryKey(OCPP20ComponentName.ISO15118Ctrlr as string, 'OrganizationName')]: {
-    component: OCPP20ComponentName.ISO15118Ctrlr as string,
-    dataType: DataEnumType.string,
-    defaultValue: 'Example Charging Services Ltd',
-    description:
-      'The organizationName of the CSO operating the charging station. It is used as the organizationName (O) of the SECC leaf certificate.',
-    maxLength: 64,
-    mutability: MutabilityEnumType.ReadWrite,
-    persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: OCPP20RequiredVariableName.OrganizationName,
-  },
   [buildRegistryKey(OCPP20ComponentName.ISO15118Ctrlr as string, 'PnCEnabled')]: {
     component: OCPP20ComponentName.ISO15118Ctrlr as string,
     dataType: DataEnumType.boolean,
