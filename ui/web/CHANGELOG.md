@@ -1,5 +1,33 @@
 # Changelog
 
+## [3.4.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v3.3.0...webui@v3.4.0) (2026-03-26)
+
+
+### 🚀 Features
+
+* add connector cable retention lock/unlock simulation ([#1754](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1754)) ([1f7412b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/1f7412b3178fa3497d12de97539ef3eddc6c717d))
+* add server-side refresh notification over WebSocket ([a2edfbb](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/a2edfbbcc36e126737531c805ae4b4b58ef67f0f))
+
+
+### 🐞 Bug Fixes
+
+* **deps:** update all non-major dependencies ([#1753](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1753)) ([c59d00b](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/c59d00b5498c02269805f76a9452e726bbf5c372))
+* **deps:** update all non-major dependencies ([#1755](https://github.com/SAP/e-mobility-charging-stations-simulator/issues/1755)) ([6385d63](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/6385d634238619f8806d0ceb6b28dd15d43a7755))
+* **webui:** add table-layout fixed to connectors table to prevent overflow on action panel open ([cdb4ad3](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/cdb4ad3be4f7920b7ef50bdef406473beec6c0b8))
+* **webui:** remove deprecated baseUrl for TypeScript 6 compatibility ([fcd3b8e](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/fcd3b8ee439a66294448cd354ff5a99eb1e020a4))
+
+
+### ✨ Polish
+
+* **webui:** add StateButton, centralize active style, fix refresh lifecycle ([9eab3d0](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/9eab3d0f3c77975e247925c8d822467570b4dc81))
+* **webui:** extract useExecuteAction composable to eliminate duplication ([94ca77c](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/94ca77c31986926a813a36dc2a2afc8ecd6e002c))
+* **webui:** use useChargingStations composable in ChargingStationsView ([06d32ae](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/06d32ae9cbd3c2972fe7013fcb78675cd0befdcb))
+
+
+### 🧪 Tests
+
+* **webui:** harmonize test stubs, remove AAA comments, add composable and StateButton tests ([56d264f](https://github.com/SAP/e-mobility-charging-stations-simulator/commit/56d264fec3211a43337144ff6c18c013eadd849b))
+
 ## [3.3.0](https://github.com/SAP/e-mobility-charging-stations-simulator/compare/webui@v3.2.1...webui@v3.3.0) (2026-03-24)
 
 ### 🐞 Bug Fixes
