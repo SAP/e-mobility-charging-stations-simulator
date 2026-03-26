@@ -598,6 +598,155 @@ await describe('L01/L02 - UpdateFirmware', async () => {
           assert.strictEqual(sentRequests[5].payload.type, 'FirmwareUpdated')
         })
       })
+
+      await it('should send InvalidSignature when SimulateSignatureVerificationFailure is true', async t => {
+        const { sentRequests, station: trackingStation } = createMockStationWithRequestTracking()
+        const service = new OCPP20IncomingRequestService()
+        const { OCPP20VariableManager } =
+          await import('../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js')
+        const { AttributeEnumType, OCPP20ComponentName } =
+          await import('../../../../src/types/index.js')
+
+        // Arrange: Set Device Model variable to simulate verification failure
+        OCPP20VariableManager.getInstance().setVariables(trackingStation, [
+          {
+            attributeType: AttributeEnumType.Actual,
+            attributeValue: 'true',
+            component: { name: OCPP20ComponentName.FirmwareCtrlr as string },
+            variable: { name: 'SimulateSignatureVerificationFailure' },
+          },
+        ])
+
+        const request: OCPP20UpdateFirmwareRequest = {
+          firmware: {
+            location: 'https://firmware.example.com/update.bin',
+            retrieveDateTime: new Date('2020-01-01T00:00:00.000Z'),
+            signature: 'dGVzdA==',
+          },
+          requestId: 6,
+        }
+        const response: OCPP20UpdateFirmwareResponse = {
+          status: UpdateFirmwareStatusEnumType.Accepted,
+        }
+
+        await withMockTimers(t, ['setTimeout'], async () => {
+          service.emit(
+            OCPP20IncomingRequestCommand.UPDATE_FIRMWARE,
+            trackingStation,
+            request,
+            response
+          )
+
+          await flushMicrotasks()
+          assert.strictEqual(sentRequests.length, 1)
+          assert.strictEqual(
+            sentRequests[0].payload.status,
+            OCPP20FirmwareStatusEnumType.Downloading
+          )
+
+          t.mock.timers.tick(2000)
+          await flushMicrotasks()
+          assert.strictEqual(sentRequests.length, 2)
+          assert.strictEqual(
+            sentRequests[1].payload.status,
+            OCPP20FirmwareStatusEnumType.Downloaded
+          )
+
+          t.mock.timers.tick(500)
+          await flushMicrotasks()
+          assert.strictEqual(
+            sentRequests[2].payload.status,
+            OCPP20FirmwareStatusEnumType.InvalidSignature
+          )
+          assert.strictEqual(sentRequests.length, 3)
+
+          const securityEventNotifications = sentRequests.filter(
+            req =>
+              req.command ===
+              (OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION as unknown as string)
+          )
+          assert.strictEqual(securityEventNotifications.length, 1)
+          assert.strictEqual(
+            securityEventNotifications[0]?.payload?.type,
+            'InvalidFirmwareSignature'
+          )
+        })
+        standardCleanup()
+      })
+
+      await it('should not send InvalidSignature when SimulateSignatureVerificationFailure is false', async t => {
+        const { sentRequests, station: trackingStation } = createMockStationWithRequestTracking()
+        const service = new OCPP20IncomingRequestService()
+        const { OCPP20VariableManager } =
+          await import('../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js')
+        const { AttributeEnumType, OCPP20ComponentName } =
+          await import('../../../../src/types/index.js')
+
+        // Arrange: Explicitly set variable to false (default behavior)
+        OCPP20VariableManager.getInstance().setVariables(trackingStation, [
+          {
+            attributeType: AttributeEnumType.Actual,
+            attributeValue: 'false',
+            component: { name: OCPP20ComponentName.FirmwareCtrlr as string },
+            variable: { name: 'SimulateSignatureVerificationFailure' },
+          },
+        ])
+
+        const request: OCPP20UpdateFirmwareRequest = {
+          firmware: {
+            location: 'https://firmware.example.com/update.bin',
+            retrieveDateTime: new Date('2020-01-01T00:00:00.000Z'),
+            signature: 'dGVzdA==',
+          },
+          requestId: 7,
+        }
+        const response: OCPP20UpdateFirmwareResponse = {
+          status: UpdateFirmwareStatusEnumType.Accepted,
+        }
+
+        await withMockTimers(t, ['setTimeout'], async () => {
+          service.emit(
+            OCPP20IncomingRequestCommand.UPDATE_FIRMWARE,
+            trackingStation,
+            request,
+            response
+          )
+
+          await flushMicrotasks()
+          assert.strictEqual(sentRequests.length, 1)
+
+          t.mock.timers.tick(2000)
+          await flushMicrotasks()
+          assert.strictEqual(sentRequests.length, 2)
+          assert.strictEqual(
+            sentRequests[1].payload.status,
+            OCPP20FirmwareStatusEnumType.Downloaded
+          )
+
+          t.mock.timers.tick(500)
+          await flushMicrotasks()
+          assert.strictEqual(
+            sentRequests[2].payload.status,
+            OCPP20FirmwareStatusEnumType.SignatureVerified
+          )
+          assert.strictEqual(
+            sentRequests[3].payload.status,
+            OCPP20FirmwareStatusEnumType.Installing
+          )
+
+          t.mock.timers.tick(1000)
+          await flushMicrotasks()
+          assert.strictEqual(sentRequests[4].payload.status, OCPP20FirmwareStatusEnumType.Installed)
+
+          assert.strictEqual(sentRequests.length, 6)
+          assert.strictEqual(
+            sentRequests[5].command,
+            OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION
+          )
+          assert.strictEqual(sentRequests[5].payload.type, 'FirmwareUpdated')
+        })
+        standardCleanup()
+      })
     })
   })
 })
