@@ -3474,7 +3474,7 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
           OCPP20FirmwareStatusEnumType.InvalidSignature,
           requestId
         )
-        this.sendSecurityEventNotification(
+        await this.sendSecurityEventNotification(
           chargingStation,
           'InvalidFirmwareSignature',
           `Firmware signature verification failed for requestId ${requestId.toString()}`

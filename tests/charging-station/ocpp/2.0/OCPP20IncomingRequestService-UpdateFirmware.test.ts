@@ -654,11 +654,17 @@ await describe('L01/L02 - UpdateFirmware', async () => {
 
           t.mock.timers.tick(500)
           await flushMicrotasks()
+          assert.strictEqual(sentRequests.length, 4)
           assert.strictEqual(
             sentRequests[2].payload.status,
             OCPP20FirmwareStatusEnumType.InvalidSignature
           )
-          assert.strictEqual(sentRequests.length, 4)
+
+          // Verify lifecycle stops after InvalidSignature: no Installing/Installed emitted
+          const requestCountAfterInvalidSignature = sentRequests.length
+          t.mock.timers.tick(10_000)
+          await flushMicrotasks()
+          assert.strictEqual(sentRequests.length, requestCountAfterInvalidSignature)
 
           const securityEventNotifications = sentRequests.filter(
             req =>
@@ -671,7 +677,6 @@ await describe('L01/L02 - UpdateFirmware', async () => {
             'InvalidFirmwareSignature'
           )
         })
-        standardCleanup()
       })
 
       await it('should not send InvalidSignature when SimulateSignatureVerificationFailure is false', async t => {
@@ -745,7 +750,6 @@ await describe('L01/L02 - UpdateFirmware', async () => {
           )
           assert.strictEqual(sentRequests[5].payload.type, 'FirmwareUpdated')
         })
-        standardCleanup()
       })
     })
   })

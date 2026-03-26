@@ -595,8 +595,6 @@ make SUBMODULES_INIT=true
 - :white_check_mark: FirmwareStatusNotification
 - :white_check_mark: UpdateFirmware
 
-> **Note**: Firmware signature verification (L01.FR.04) can be configured to fail via the `FirmwareCtrlr.SimulateSignatureVerificationFailure` Device Model variable (default: always succeeds with `SignatureVerified`). `retries`/`retryInterval` parameters are accepted but not honored.
-
 #### M. ISO 15118 CertificateManagement
 
 - :white_check_mark: CertificateSigned
