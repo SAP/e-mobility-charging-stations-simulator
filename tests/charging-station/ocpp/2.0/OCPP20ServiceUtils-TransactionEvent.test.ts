@@ -2419,7 +2419,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
       // Assert
       const txEvents = mockTracking.sentRequests.filter(
-        r => r.command === (OCPP20RequestCommand.TRANSACTION_EVENT as string)
+        r => r.command === OCPP20RequestCommand.TRANSACTION_EVENT
       )
       assert.strictEqual(txEvents.length, 2)
 
@@ -2451,7 +2451,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
       // Assert
       const txEvents = mockTracking.sentRequests.filter(
-        r => r.command === (OCPP20RequestCommand.TRANSACTION_EVENT as string)
+        r => r.command === OCPP20RequestCommand.TRANSACTION_EVENT
       )
       assert.strictEqual(txEvents.length, 2)
 
@@ -2539,7 +2539,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
       // Assert — only Updated(Deauthorized), no Ended
       const txEvents = mockTracking.sentRequests.filter(
-        r => r.command === (OCPP20RequestCommand.TRANSACTION_EVENT as string)
+        r => r.command === OCPP20RequestCommand.TRANSACTION_EVENT
       )
       assert.strictEqual(txEvents.length, 1)
       assert.strictEqual(txEvents[0].payload.eventType, OCPP20TransactionEventEnumType.Updated)
@@ -2639,7 +2639,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
       // Assert
       const txEvents = mockTracking.sentRequests.filter(
-        r => r.command === (OCPP20RequestCommand.TRANSACTION_EVENT as string)
+        r => r.command === OCPP20RequestCommand.TRANSACTION_EVENT
       )
       assert.strictEqual(txEvents.length, 1)
 
@@ -2674,7 +2674,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
       // Assert
       const txEvents = mockTracking.sentRequests.filter(
-        r => r.command === (OCPP20RequestCommand.TRANSACTION_EVENT as string)
+        r => r.command === OCPP20RequestCommand.TRANSACTION_EVENT
       )
       assert.strictEqual(txEvents.length, 1)
 

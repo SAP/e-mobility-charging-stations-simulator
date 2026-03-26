@@ -3396,6 +3396,8 @@ export class OCPP20IncomingRequestService extends OCPPIncomingRequestService {
    * @param chargingStation - The charging station instance
    * @param requestId - The request ID from the UpdateFirmware request
    * @param firmware - The firmware details including location, dates, and optional signature
+   * @param retries - Number of download retry attempts before reporting DownloadFailed (L01.FR.30)
+   * @param retryInterval - Seconds between download retry attempts
    */
   private async simulateFirmwareUpdateLifecycle (
     chargingStation: ChargingStation,

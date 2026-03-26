@@ -12,6 +12,7 @@ import { createTestableIncomingRequestService } from '../../../../src/charging-s
 import { OCPP20IncomingRequestService } from '../../../../src/charging-station/ocpp/2.0/OCPP20IncomingRequestService.js'
 import {
   type FirmwareType,
+  OCPP20ConnectorStatusEnumType,
   OCPP20FirmwareStatusEnumType,
   OCPP20IncomingRequestCommand,
   OCPP20RequestCommand,
@@ -583,7 +584,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
 
           // Now in transaction-wait loop: EVSE 3 (no transaction) should be set Unavailable
           const unavailableBeforeClear = sentRequests.filter(
-            req => req.payload?.connectorStatus === 'Unavailable'
+            req => req.payload.connectorStatus === OCPP20ConnectorStatusEnumType.Unavailable
           )
           assert.notStrictEqual(unavailableBeforeClear.length, 0)
 
@@ -597,7 +598,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
 
           // EVSE 2 should now also be set to Unavailable
           const countAfter = sentRequests.filter(
-            req => req.payload?.connectorStatus === 'Unavailable'
+            req => req.payload.connectorStatus === OCPP20ConnectorStatusEnumType.Unavailable
           ).length
           assert.ok(
             countAfter > countBefore,
@@ -611,7 +612,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
 
           // Lifecycle should proceed to Installing
           const installingRequests = sentRequests.filter(
-            req => req.payload?.status === OCPP20FirmwareStatusEnumType.Installing
+            req => req.payload.status === OCPP20FirmwareStatusEnumType.Installing
           )
           assert.strictEqual(installingRequests.length, 1)
         })
@@ -649,7 +650,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
 
           const firmwareNotifications = sentRequests.filter(
             r =>
-              (r.command as OCPP20RequestCommand) ===
+              (r.command) ===
               OCPP20RequestCommand.FIRMWARE_STATUS_NOTIFICATION
           )
           assert.strictEqual(firmwareNotifications.length, 4)
@@ -788,8 +789,7 @@ await describe('L01/L02 - UpdateFirmware', async () => {
           assert.strictEqual(sentRequests.length, requestCountAfterInvalidSignature)
 
           const securityEventNotifications = sentRequests.filter(
-            req =>
-              req.command === String(OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION)
+            req => req.command === OCPP20RequestCommand.SECURITY_EVENT_NOTIFICATION
           )
           assert.strictEqual(securityEventNotifications.length, 1)
           assert.strictEqual(
