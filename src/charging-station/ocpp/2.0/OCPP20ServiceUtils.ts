@@ -99,6 +99,20 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
     )
   }
 
+  public static async cleanupEndedTransaction (
+    chargingStation: ChargingStation,
+    connectorId: number,
+    connectorStatus: ConnectorStatus
+  ): Promise<void> {
+    OCPP20ServiceUtils.stopPeriodicMeterValues(chargingStation, connectorId)
+    resetConnectorStatus(connectorStatus)
+    connectorStatus.locked = false
+    await sendAndSetConnectorStatus(chargingStation, {
+      connectorId,
+      connectorStatus: ConnectorStatusEnum.Available,
+    } as unknown as OCPP20StatusNotificationRequest)
+  }
+
   /**
    * OCPP 2.0 Incoming Request Service validator configurations
    * @returns Array of validator configuration tuples
@@ -452,6 +466,13 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
         >(chargingStation, OCPP20RequestCommand.TRANSACTION_EVENT, queuedEvent.request, {
           rawPayload: true,
         })
+        if (queuedEvent.request.eventType === OCPP20TransactionEventEnumType.Ended) {
+          await OCPP20ServiceUtils.cleanupEndedTransaction(
+            chargingStation,
+            connectorId,
+            connectorStatus
+          )
+        }
       } catch (error) {
         logger.error(
           `${chargingStation.logPrefix()} ${moduleName}.sendQueuedTransactionEvents: Failed to send queued TransactionEvent with seqNo=${queuedEvent.seqNo.toString()}:`,
@@ -830,13 +851,7 @@ export class OCPP20ServiceUtils extends OCPPServiceUtils {
       }
     )
 
-    OCPP20ServiceUtils.stopPeriodicMeterValues(chargingStation, connectorId)
-    resetConnectorStatus(connectorStatus)
-    connectorStatus.locked = false
-    await sendAndSetConnectorStatus(chargingStation, {
-      connectorId,
-      connectorStatus: ConnectorStatusEnum.Available,
-    } as unknown as OCPP20StatusNotificationRequest)
+    await OCPP20ServiceUtils.cleanupEndedTransaction(chargingStation, connectorId, connectorStatus)
 
     return response
   }

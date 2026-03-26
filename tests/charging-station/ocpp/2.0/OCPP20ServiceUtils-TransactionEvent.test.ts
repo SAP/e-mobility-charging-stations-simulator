@@ -1638,7 +1638,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
         assert.strictEqual(sentRequests[1].payload.seqNo, 1)
       })
 
-      await it('should clear queue after sending', async () => {
+      await it('should clear queue and cleanup connector after sending', async () => {
         const connectorId = 1
         const transactionId = generateUUID()
 
@@ -1653,13 +1653,28 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
           transactionId
         )
 
+        await OCPP20ServiceUtils.sendTransactionEvent(
+          mockStation,
+          OCPP20TransactionEventEnumType.Ended,
+          OCPP20TriggerReasonEnumType.StopAuthorized,
+          connectorId,
+          transactionId
+        )
+
         const connector = mockStation.getConnectorStatus(connectorId)
-        assert.strictEqual(connector?.transactionEventQueue?.length, 1)
+        assert(connector != null)
+        connector.transactionStarted = true
+        connector.transactionId = transactionId
+        connector.locked = true
+        assert.strictEqual(connector.transactionEventQueue?.length, 2)
 
         setOnline(true)
         await OCPP20ServiceUtils.sendQueuedTransactionEvents(mockStation, connectorId)
 
         assert.strictEqual(connector.transactionEventQueue.length, 0)
+        assert.strictEqual(connector.transactionStarted, false)
+        assert.strictEqual(connector.transactionId, undefined)
+        assert.strictEqual(connector.locked, false)
       })
 
       await it('should preserve FIFO order when draining queue', async () => {
@@ -1959,7 +1974,7 @@ await describe('OCPP20 TransactionEvent ServiceUtils', async () => {
 
         await OCPP20ServiceUtils.sendQueuedTransactionEvents(errorStation, connectorId)
 
-        assert.strictEqual(callCount, 3)
+        assert.strictEqual(callCount, 4)
       })
     })
   })
