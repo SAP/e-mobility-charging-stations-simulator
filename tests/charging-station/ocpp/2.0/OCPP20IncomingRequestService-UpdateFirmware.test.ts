@@ -535,6 +535,17 @@ await describe('L01/L02 - UpdateFirmware', async () => {
       await it('should set newly-available EVSE to Unavailable during transaction wait (L01.FR.07)', async t => {
         const { sentRequests, station: trackingStation } = createMockStationWithRequestTracking()
         const service = new OCPP20IncomingRequestService()
+        const sendEvseStatusMock = mock.method(
+          service as unknown as {
+            sendEvseStatusNotifications: (
+              chargingStation: ChargingStation,
+              evseId: number,
+              status: OCPP20ConnectorStatusEnumType
+            ) => void
+          },
+          'sendEvseStatusNotifications',
+          () => undefined
+        )
         const { OCPP20VariableManager } =
           await import('../../../../src/charging-station/ocpp/2.0/OCPP20VariableManager.js')
         const { AttributeEnumType, OCPP20ComponentName } =
@@ -578,32 +589,35 @@ await describe('L01/L02 - UpdateFirmware', async () => {
 
           // Downloading
           await flushMicrotasks()
-          // Downloaded
+          // Downloaded → enters transaction-wait loop
           t.mock.timers.tick(2000)
           await flushMicrotasks()
 
-          // Now in transaction-wait loop: EVSE 3 (no transaction) should be set Unavailable
-          const unavailableBeforeClear = sentRequests.filter(
-            req => req.payload.connectorStatus === OCPP20ConnectorStatusEnumType.Unavailable
+          // EVSE 3 (no transaction) should be set Unavailable
+          assert.strictEqual(sendEvseStatusMock.mock.callCount(), 1)
+          assert.strictEqual(sendEvseStatusMock.mock.calls[0].arguments[1], 3)
+          assert.strictEqual(
+            sendEvseStatusMock.mock.calls[0].arguments[2],
+            OCPP20ConnectorStatusEnumType.Unavailable
           )
-          assert.notStrictEqual(unavailableBeforeClear.length, 0)
 
           // Clear EVSE 2's transaction → it becomes available
           if (evse2Connector != null) evse2Connector.transactionId = undefined
-          const countBefore = unavailableBeforeClear.length
 
           // Advance one loop iteration (FIRMWARE_INSTALL_DELAY_MS = 5000ms)
           t.mock.timers.tick(5000)
           await flushMicrotasks()
 
-          // EVSE 2 should now also be set to Unavailable
-          const countAfter = sentRequests.filter(
-            req => req.payload.connectorStatus === OCPP20ConnectorStatusEnumType.Unavailable
-          ).length
+          // EVSE 2 and EVSE 3 should now also be set to Unavailable
+          assert.strictEqual(sendEvseStatusMock.mock.callCount(), 3)
+          const secondIterationEvseIds = sendEvseStatusMock.mock.calls
+            .slice(1)
+            .map(call => Number(call.arguments[1]))
           assert.ok(
-            countAfter > countBefore,
-            `Expected more Unavailable notifications after clearing EVSE 2 transaction (before: ${countBefore.toString()}, after: ${countAfter.toString()})`
+            secondIterationEvseIds.includes(2),
+            'Expected EVSE 2 to be set Unavailable after clearing its transaction'
           )
+          assert.ok(secondIterationEvseIds.includes(3), 'Expected EVSE 3 to remain Unavailable')
 
           // Clear EVSE 1's transaction to let the lifecycle proceed
           if (evse1Connector != null) evse1Connector.transactionId = undefined
