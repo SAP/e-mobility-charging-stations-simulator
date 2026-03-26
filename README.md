@@ -718,11 +718,11 @@ All kind of OCPP parameters are supported in charging station configuration or c
 - :white_check_mark: AllowNewSessionsPendingFirmwareUpdate (type: boolean) (units: -)
 - :white_check_mark: AvailabilityState (type: optionlist) (units: -)
 - :white_check_mark: Available (type: boolean) (units: -)
-- :white*check_mark: ConnectionUrl (type: string) (units: -) *(vendor-specific)\_
+- :white_check_mark: ConnectionUrl (type: string) (units: -) **(vendor-specific)**
 - :white_check_mark: Model (type: string) (units: -)
 - :white_check_mark: SupplyPhases (type: integer) (units: -)
 - :white_check_mark: VendorName (type: string) (units: -)
-- :white*check_mark: WebSocketPingInterval (type: integer) (units: seconds) *(vendor-specific)\_
+- :white_check_mark: WebSocketPingInterval (type: integer) (units: seconds) **(vendor-specific)**
 
 #### ClockCtrlr
 
@@ -754,7 +754,7 @@ All kind of OCPP parameters are supported in charging station configuration or c
 
 #### FirmwareCtrlr
 
-- :white*check_mark: SimulateSignatureVerificationFailure (type: boolean) (units: -) *(vendor-specific)\_
+- :white_check_mark: SimulateSignatureVerificationFailure (type: boolean) (units: -) **(vendor-specific)**
 
 #### ISO15118Ctrlr
 
@@ -835,7 +835,7 @@ All kind of OCPP parameters are supported in charging station configuration or c
 - :white_check_mark: CertSigningRepeatTimes (type: integer) (units: -)
 - :white_check_mark: CertSigningWaitMinimum (type: integer) (units: seconds)
 - :white_check_mark: CertificateEntries (type: integer) (units: -)
-- :white*check_mark: CertificatePrivateKey (type: string) (units: -) *(vendor-specific)\_
+- :white_check_mark: CertificatePrivateKey (type: string) (units: -) **(vendor-specific)**
 - :white_check_mark: Identity (type: string) (units: -)
 - :white_check_mark: MaxCertificateChainSize (type: integer) (units: -)
 - :white_check_mark: OrganizationName (type: string) (units: -)
