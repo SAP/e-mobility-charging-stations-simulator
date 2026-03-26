@@ -121,16 +121,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'Available',
   },
-  [buildRegistryKey(OCPP20ComponentName.AlignedDataCtrlr as string, 'Enabled')]: {
-    component: OCPP20ComponentName.AlignedDataCtrlr as string,
-    dataType: DataEnumType.boolean,
-    defaultValue: 'false',
-    description: 'If this variable reports a value of true, Clock-Aligned Data is enabled',
-    mutability: MutabilityEnumType.ReadWrite,
-    persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'Enabled',
-  },
   [buildRegistryKey(OCPP20ComponentName.AlignedDataCtrlr as string, 'Interval')]: {
     component: OCPP20ComponentName.AlignedDataCtrlr as string,
     dataType: DataEnumType.integer,
@@ -249,6 +239,19 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.TxEndedMeasurands,
   },
+  [buildRegistryKey(
+    OCPP20ComponentName.AlignedDataCtrlr as string,
+    OCPP20RequiredVariableName.Enabled as string
+  )]: {
+    component: OCPP20ComponentName.AlignedDataCtrlr as string,
+    dataType: DataEnumType.boolean,
+    defaultValue: 'false',
+    description: 'If this variable reports a value of true, Clock-Aligned Data is enabled',
+    mutability: MutabilityEnumType.ReadWrite,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20RequiredVariableName.Enabled as string,
+  },
 
   // AuthCacheCtrlr Component
   [buildRegistryKey(OCPP20ComponentName.AuthCacheCtrlr as string, 'Available')]: {
@@ -271,16 +274,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'DisablePostAuthorize',
-  },
-  [buildRegistryKey(OCPP20ComponentName.AuthCacheCtrlr as string, 'Enabled')]: {
-    component: OCPP20ComponentName.AuthCacheCtrlr as string,
-    dataType: DataEnumType.boolean,
-    defaultValue: 'false',
-    description: 'If set to true, Authorization caching is enabled.',
-    mutability: MutabilityEnumType.ReadWrite,
-    persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'Enabled',
   },
   [buildRegistryKey(OCPP20ComponentName.AuthCacheCtrlr as string, 'LifeTime')]: {
     component: OCPP20ComponentName.AuthCacheCtrlr as string,
@@ -322,6 +315,19 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     unit: OCPP20UnitEnumType.BYTES,
     variable: 'Storage',
   },
+  [buildRegistryKey(
+    OCPP20ComponentName.AuthCacheCtrlr as string,
+    OCPP20RequiredVariableName.Enabled as string
+  )]: {
+    component: OCPP20ComponentName.AuthCacheCtrlr as string,
+    dataType: DataEnumType.boolean,
+    defaultValue: 'false',
+    description: 'If set to true, Authorization caching is enabled.',
+    mutability: MutabilityEnumType.ReadWrite,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20RequiredVariableName.Enabled as string,
+  },
 
   // AuthCtrlr Component
   [buildRegistryKey(OCPP20ComponentName.AuthCtrlr as string, 'AdditionalInfoItemsPerMessage')]: {
@@ -349,17 +355,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     variable: 'DisableRemoteAuthorization',
   },
 
-  [buildRegistryKey(OCPP20ComponentName.AuthCtrlr as string, 'Enabled')]: {
-    component: OCPP20ComponentName.AuthCtrlr as string,
-    dataType: DataEnumType.boolean,
-    defaultValue: 'true',
-    description:
-      'If set to false, no authorization is done before starting a transaction or when reading an idToken.',
-    mutability: MutabilityEnumType.ReadWrite,
-    persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'Enabled',
-  },
   [buildRegistryKey(OCPP20ComponentName.AuthCtrlr as string, 'MasterPassGroupId')]: {
     component: OCPP20ComponentName.AuthCtrlr as string,
     dataType: DataEnumType.string,
@@ -394,6 +389,20 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     required: true,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.AuthorizeRemoteStart as string,
+  },
+  [buildRegistryKey(
+    OCPP20ComponentName.AuthCtrlr as string,
+    OCPP20RequiredVariableName.Enabled as string
+  )]: {
+    component: OCPP20ComponentName.AuthCtrlr as string,
+    dataType: DataEnumType.boolean,
+    defaultValue: 'true',
+    description:
+      'If set to false, no authorization is done before starting a transaction or when reading an idToken.',
+    mutability: MutabilityEnumType.ReadWrite,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20RequiredVariableName.Enabled as string,
   },
   [buildRegistryKey(
     OCPP20ComponentName.AuthCtrlr as string,
@@ -1175,17 +1184,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'DisablePostAuthorize',
   },
-  [buildRegistryKey(OCPP20ComponentName.LocalAuthListCtrlr as string, 'Enabled')]: {
-    component: OCPP20ComponentName.LocalAuthListCtrlr as string,
-    dataType: DataEnumType.boolean,
-    defaultValue: 'false',
-    description:
-      'If this variable exists and reports a value of true, Local Authorization List is enabled.',
-    mutability: MutabilityEnumType.ReadWrite,
-    persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'Enabled',
-  },
   [buildRegistryKey(OCPP20ComponentName.LocalAuthListCtrlr as string, 'Entries')]: {
     component: OCPP20ComponentName.LocalAuthListCtrlr as string,
     dataType: DataEnumType.integer,
@@ -1225,6 +1223,20 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual, AttributeEnumType.MaxSet],
     unit: OCPP20UnitEnumType.BYTES,
     variable: 'Storage',
+  },
+  [buildRegistryKey(
+    OCPP20ComponentName.LocalAuthListCtrlr as string,
+    OCPP20RequiredVariableName.Enabled as string
+  )]: {
+    component: OCPP20ComponentName.LocalAuthListCtrlr as string,
+    dataType: DataEnumType.boolean,
+    defaultValue: 'false',
+    description:
+      'If this variable exists and reports a value of true, Local Authorization List is enabled.',
+    mutability: MutabilityEnumType.ReadWrite,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20RequiredVariableName.Enabled as string,
   },
 
   // MonitoringCtrlr Component
@@ -1296,16 +1308,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: OCPP20RequiredVariableName.BytesPerMessage,
   },
-  [buildRegistryKey(OCPP20ComponentName.MonitoringCtrlr as string, 'Enabled')]: {
-    component: OCPP20ComponentName.MonitoringCtrlr as string,
-    dataType: DataEnumType.boolean,
-    defaultValue: 'true',
-    description: 'Whether monitoring is enabled.',
-    mutability: MutabilityEnumType.ReadWrite,
-    persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'Enabled',
-  },
   [buildRegistryKey(
     OCPP20ComponentName.MonitoringCtrlr as string,
     'ItemsPerMessage',
@@ -1375,6 +1377,19 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'OfflineQueuingSeverity',
+  },
+  [buildRegistryKey(
+    OCPP20ComponentName.MonitoringCtrlr as string,
+    OCPP20RequiredVariableName.Enabled as string
+  )]: {
+    component: OCPP20ComponentName.MonitoringCtrlr as string,
+    dataType: DataEnumType.boolean,
+    defaultValue: 'true',
+    description: 'Whether monitoring is enabled.',
+    mutability: MutabilityEnumType.ReadWrite,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20RequiredVariableName.Enabled as string,
   },
 
   // OCPPCommCtrlr Component
@@ -1651,16 +1666,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'Available',
   },
-  [buildRegistryKey(OCPP20ComponentName.ReservationCtrlr as string, 'Enabled')]: {
-    component: OCPP20ComponentName.ReservationCtrlr as string,
-    dataType: DataEnumType.boolean,
-    defaultValue: 'false',
-    description: 'Whether reservation is enabled.',
-    mutability: MutabilityEnumType.ReadWrite,
-    persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'Enabled',
-  },
   [buildRegistryKey(OCPP20ComponentName.ReservationCtrlr as string, 'NonEvseSpecific')]: {
     component: OCPP20ComponentName.ReservationCtrlr as string,
     dataType: DataEnumType.boolean,
@@ -1671,6 +1676,19 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'NonEvseSpecific',
+  },
+  [buildRegistryKey(
+    OCPP20ComponentName.ReservationCtrlr as string,
+    OCPP20RequiredVariableName.Enabled as string
+  )]: {
+    component: OCPP20ComponentName.ReservationCtrlr as string,
+    dataType: DataEnumType.boolean,
+    defaultValue: 'false',
+    description: 'Whether reservation is enabled.',
+    mutability: MutabilityEnumType.ReadWrite,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20RequiredVariableName.Enabled as string,
   },
 
   // SampledDataCtrlr Component
@@ -1683,16 +1701,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     persistence: PersistenceEnumType.Persistent,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'Available',
-  },
-  [buildRegistryKey(OCPP20ComponentName.SampledDataCtrlr as string, 'Enabled')]: {
-    component: OCPP20ComponentName.SampledDataCtrlr as string,
-    dataType: DataEnumType.boolean,
-    defaultValue: 'true',
-    description: 'If this variable reports a value of true, Sampled Data is enabled.',
-    mutability: MutabilityEnumType.ReadWrite,
-    persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'Enabled',
   },
   [buildRegistryKey(OCPP20ComponentName.SampledDataCtrlr as string, 'RegisterValuesWithoutPhases')]:
     {
@@ -1790,6 +1798,19 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     unit: OCPP20UnitEnumType.VOLT,
     variable: OCPP20MeasurandEnumType.VOLTAGE,
     vendorSpecific: true,
+  },
+  [buildRegistryKey(
+    OCPP20ComponentName.SampledDataCtrlr as string,
+    OCPP20RequiredVariableName.Enabled as string
+  )]: {
+    component: OCPP20ComponentName.SampledDataCtrlr as string,
+    dataType: DataEnumType.boolean,
+    defaultValue: 'true',
+    description: 'If this variable reports a value of true, Sampled Data is enabled.',
+    mutability: MutabilityEnumType.ReadWrite,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20RequiredVariableName.Enabled as string,
   },
   [buildRegistryKey(
     OCPP20ComponentName.SampledDataCtrlr as string,
@@ -2061,16 +2082,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'Available',
   },
-  [buildRegistryKey(OCPP20ComponentName.SmartChargingCtrlr as string, 'Enabled')]: {
-    component: OCPP20ComponentName.SmartChargingCtrlr as string,
-    dataType: DataEnumType.boolean,
-    defaultValue: 'true',
-    description: 'Whether smart charging is enabled.',
-    mutability: MutabilityEnumType.ReadWrite,
-    persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'Enabled',
-  },
   [buildRegistryKey(
     OCPP20ComponentName.SmartChargingCtrlr as string,
     'Entries',
@@ -2180,6 +2191,19 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'RateUnit',
   },
+  [buildRegistryKey(
+    OCPP20ComponentName.SmartChargingCtrlr as string,
+    OCPP20RequiredVariableName.Enabled as string
+  )]: {
+    component: OCPP20ComponentName.SmartChargingCtrlr as string,
+    dataType: DataEnumType.boolean,
+    defaultValue: 'true',
+    description: 'Whether smart charging is enabled.',
+    mutability: MutabilityEnumType.ReadWrite,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20RequiredVariableName.Enabled as string,
+  },
 
   // TariffCostCtrlr Component
   [buildRegistryKey(OCPP20ComponentName.TariffCostCtrlr as string, 'Available', 'Cost')]: {
@@ -2216,28 +2240,6 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'Currency',
   },
-  [buildRegistryKey(OCPP20ComponentName.TariffCostCtrlr as string, 'Enabled', 'Cost')]: {
-    component: OCPP20ComponentName.TariffCostCtrlr as string,
-    dataType: DataEnumType.boolean,
-    defaultValue: 'false',
-    description: 'Instance Cost: Whether costs are enabled.',
-    instance: 'Cost',
-    mutability: MutabilityEnumType.ReadWrite,
-    persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'Enabled',
-  },
-  [buildRegistryKey(OCPP20ComponentName.TariffCostCtrlr as string, 'Enabled', 'Tariff')]: {
-    component: OCPP20ComponentName.TariffCostCtrlr as string,
-    dataType: DataEnumType.boolean,
-    defaultValue: 'false',
-    description: 'Instance Tariff: Whether tariffs are enabled.',
-    instance: 'Tariff',
-    mutability: MutabilityEnumType.ReadWrite,
-    persistence: PersistenceEnumType.Persistent,
-    supportedAttributes: [AttributeEnumType.Actual],
-    variable: 'Enabled',
-  },
   [buildRegistryKey(OCPP20ComponentName.TariffCostCtrlr as string, 'TariffFallbackMessage')]: {
     component: OCPP20ComponentName.TariffCostCtrlr as string,
     dataType: DataEnumType.string,
@@ -2263,6 +2265,36 @@ export const VARIABLE_REGISTRY: Record<string, VariableMetadata> = {
     required: true,
     supportedAttributes: [AttributeEnumType.Actual],
     variable: 'TotalCostFallbackMessage',
+  },
+  [buildRegistryKey(
+    OCPP20ComponentName.TariffCostCtrlr as string,
+    OCPP20RequiredVariableName.Enabled as string,
+    'Cost'
+  )]: {
+    component: OCPP20ComponentName.TariffCostCtrlr as string,
+    dataType: DataEnumType.boolean,
+    defaultValue: 'false',
+    description: 'Instance Cost: Whether costs are enabled.',
+    instance: 'Cost',
+    mutability: MutabilityEnumType.ReadWrite,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20RequiredVariableName.Enabled as string,
+  },
+  [buildRegistryKey(
+    OCPP20ComponentName.TariffCostCtrlr as string,
+    OCPP20RequiredVariableName.Enabled as string,
+    'Tariff'
+  )]: {
+    component: OCPP20ComponentName.TariffCostCtrlr as string,
+    dataType: DataEnumType.boolean,
+    defaultValue: 'false',
+    description: 'Instance Tariff: Whether tariffs are enabled.',
+    instance: 'Tariff',
+    mutability: MutabilityEnumType.ReadWrite,
+    persistence: PersistenceEnumType.Persistent,
+    supportedAttributes: [AttributeEnumType.Actual],
+    variable: OCPP20RequiredVariableName.Enabled as string,
   },
 
   // TxCtrlr Component

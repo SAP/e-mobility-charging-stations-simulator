@@ -500,16 +500,23 @@ export class OCPP20AuthAdapter implements OCPPAuthAdapter {
     // Default values from OCPP 2.0.1 specification and variable registry
     if (component === (OCPP20ComponentName.AuthCtrlr as string)) {
       switch (variable) {
-        case 'Enabled':
-          return 'true' // Default: authorization is enabled
-        case 'LocalAuthListEnabled':
-          return 'true' // Default: enable local auth list
         case OCPP20RequiredVariableName.AuthorizeRemoteStart as string:
-          return 'true' // OCPP 2.0.1 default: remote start requires authorization
+          return 'true'
+        case OCPP20RequiredVariableName.Enabled as string:
+          return 'true'
         case OCPP20RequiredVariableName.LocalAuthorizationOffline as string:
-          return 'true' // OCPP 2.0.1 default: allow offline authorization
+          return 'true'
         case OCPP20RequiredVariableName.LocalPreAuthorization as string:
-          return 'false' // OCPP 2.0.1 default: wait for CSMS authorization
+          return 'false'
+        default:
+          return undefined
+      }
+    }
+
+    if (component === (OCPP20ComponentName.LocalAuthListCtrlr as string)) {
+      switch (variable) {
+        case OCPP20RequiredVariableName.Enabled as string:
+          return 'true'
         default:
           return undefined
       }
